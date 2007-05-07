@@ -86,7 +86,6 @@ extern node *PRTst (node *arg_node, info *arg_info);
 extern node *PRTssacnt (node *arg_node, info *arg_info);
 extern node *PRTavis (node *arg_node, info *arg_info);
 extern node *PRTinfo (node *arg_node, info *arg_info);
-extern node *PRTcwrapper (node *arg_node, info *arg_info);
 extern node *PRTfuncond (node *arg_node, info *arg_info);
 extern node *PRTdataflowgraph (node *arg_node, info *arg_info);
 extern node *PRTdataflownode (node *arg_node, info *arg_info);

@@ -1021,15 +1021,6 @@ PRTmodule (node *arg_node, info *arg_info)
             /* print function definitions */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
         }
-
-        DBUG_EXECUTE ("PRINT_CWRAPPER", if (MODULE_CWRAPPER (arg_node) != NULL) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  c wrapper functions\n"
-                                     " */\n\n");
-            /* print wrapper mappings */
-            TRAVdo (MODULE_CWRAPPER (arg_node), arg_info);
-        });
     }
 
     DBUG_RETURN (arg_node);
@@ -4493,67 +4484,6 @@ PRTwlgridvar (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-#if 0 /**** TODO ****/
-
-/******************************************************************************
- *
- * function:
- *   node *PrintCWrapper( node *arg_node, info *arg_info)
- *
- * description:
- *   prints N_cwrapper nodes to generate C interface files.
- *
- ******************************************************************************/
-
-node *
-PRTcwrapper (node * arg_node, info * arg_info)
-{
-  DBUG_ENTER ("PrintCWrapper");
-
-  if (NODE_ERROR (arg_node) != NULL) {
-    NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-  }
-
-  if (global.compiler_subphase != PH_cg_prt) {
-    /* internal debug output of mapping-tree of wrappers */
-    DBUG_EXECUTE ("PRINT_CWRAPPER", {
-                  nodelist * funlist;
-                  node * fundef;
-                  char *type_str;
-                  fprintf (global.outfile,
-                           "CWrapper %s with %d arg(s) and %d result(s)\n",
-                           CWRAPPER_NAME (arg_node),
-                           CWRAPPER_ARGCOUNT (arg_node),
-                           CWRAPPER_RESCOUNT (arg_node));
-                  funlist = CWRAPPER_FUNS (arg_node);
-                  while (funlist != NULL) {
-                  fundef = NODELIST_NODE (funlist);
-                  fprintf (global.outfile, "  overloaded for (");
-                  /* print args of function */
-                  if (FUNDEF_ARGS (fundef) != NULL) {
-                  TRAVdo (FUNDEF_ARGS (fundef), arg_info);}
-
-                  fprintf (global.outfile, ") -> (");
-                  /* print results of function */
-                  type_str =
-                  Type2String (FUNDEF_WRAPPERTYPES (fundef), 0, TRUE);
-                  fprintf (global.outfile, "%s", type_str);
-                  type_str = MEMfree (type_str);
-                  fprintf (global.outfile, ")\n");
-                  funlist = NODELIST_NEXT (funlist);}
-
-                  fprintf (global.outfile, "\n\n");
-                  if (CWRAPPER_NEXT (arg_node) != NULL) {
-                  PRINT_CONT (TRAVdo (CWRAPPER_NEXT (arg_node), arg_info),;);}
-                  }
-    );
-  }
-
-  DBUG_RETURN (arg_node);
-}
-
-#endif
 
 /******************************************************************************
  *

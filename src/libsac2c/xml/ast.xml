@@ -91,8 +91,10 @@
           <node name="WLblock" />
           <node name="WLublock" />
           <node name="Nums" />
-          <node name="CWrapper" />
         </travsons>
+        <traverror>
+          <node name="FunBundle" />
+        </traverror>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
       </traversal>
@@ -2390,16 +2392,6 @@
               <node name="Fundef" />
               <phases>
                 <range from="scp_prs" to="tc_esp" />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="CWrapper" default="NULL">
-          <targets>
-            <target mandatory="no">
-              <node name="CWrapper" />
-              <phases>
-                <all />
               </phases>
             </target>
           </targets>
@@ -7360,88 +7352,6 @@
     </node>
 <!--
 
-  N_cwrapper :
-
--->
-    <node name="CWrapper">
-      <sons>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="CWrapper" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Funs">
-          <type name="NodeList">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Name">
-          <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Ns">
-          <type name="Namespace">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ArgCount">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ResCount">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-<!--
-
   N_dataflownode :
 
 -->
@@ -8161,6 +8071,74 @@
         </attribute>
       </attributes>
       <flags></flags>
+    </node>
+<!--
+  
+  N_funbundle :
+
+-->
+    <node name="FunBundle">
+      <sons>
+        <son name="Fundef">
+          <targets>
+            <target mandatory="no" >
+              <node name="Fundef" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no" >
+              <node name="Fundef" />
+              <node name="FunBundle" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Name">
+          <type name="String">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="NS">
+          <type name="Namespace">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Arity">
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
     </node>
   </syntaxtree>
 </definition>

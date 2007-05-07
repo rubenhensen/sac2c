@@ -1488,24 +1488,6 @@ DUPex (node *arg_node, info *arg_info)
 /*******************************************************************************/
 
 node *
-DUPcwrapper (node *arg_node, info *arg_info)
-{
-
-    node *new_node;
-
-    DBUG_ENTER ("DUPcwrapper");
-
-    new_node
-      = TBmakeCwrapper (CWRAPPER_FUNS (arg_node), STRcpy (CWRAPPER_NAME (arg_node)),
-                        NSdupNamespace (CWRAPPER_NS (arg_node)),
-                        CWRAPPER_ARGCOUNT (arg_node), CWRAPPER_RESCOUNT (arg_node),
-                        DUPTRAV (CWRAPPER_NEXT (arg_node)));
-    DBUG_RETURN (new_node);
-}
-
-/*******************************************************************************/
-
-node *
 DUPdataflowgraph (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DUPdataflowgraph");
@@ -2524,7 +2506,36 @@ DUPerror (node *arg_node, info *arg_info)
     new_node = TBmakeError (STRcpy (ERROR_MESSAGE (arg_node)), NULL);
 
     if (ERROR_NEXT (arg_node) != NULL) {
-        ERROR_NEXT (new_node) = DUPerror (ERROR_NEXT (arg_node), NULL);
+        ERROR_NEXT (new_node) = DUPCONT (ERROR_NEXT (arg_node));
+    }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DUPfunbundle( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Duplicates a FunBundle node.
+ *
+ ******************************************************************************/
+
+node *
+DUPfunbundle (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPfunbundle");
+
+    new_node = TBmakeFunbundle (STRcpy (FUNBUNDLE_NAME (arg_node)),
+                                NSdupNamespace (FUNBUNDLE_NS (arg_node)),
+                                FUNBUNDLE_ARITY (arg_node),
+                                DUPTRAV (FUNBUNDLE_FUNDEF (arg_node)), NULL);
+
+    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
+        FUNBUNDLE_NEXT (new_node) = DUPCONT (FUNBUNDLE_NEXT (arg_node));
     }
 
     DBUG_RETURN (new_node);

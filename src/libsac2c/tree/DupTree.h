@@ -114,7 +114,6 @@ extern node *DUPssacnt (node *arg_node, info *arg_info);
 extern node *DUPfuncond (node *arg_node, info *arg_info);
 extern node *DUPannotate (node *arg_node, info *arg_info);
 extern node *DUPex (node *arg_node, info *arg_info);
-extern node *DUPcwrapper (node *arg_node, info *arg_info);
 extern node *DUPdataflownode (node *arg_node, info *arg_info);
 extern node *DUPdataflowgraph (node *arg_node, info *arg_info);
 extern node *DUPimport (node *arg_node, info *arg_info);
@@ -126,7 +125,7 @@ extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
 extern node *DUPerror (node *arg_node, info *arg_info);
-extern node *DUPfungroup (node *arg_node, info *arg_info);
+extern node *DUPfunbundle (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
