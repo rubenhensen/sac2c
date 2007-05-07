@@ -63,7 +63,8 @@ libsac2c_sourcedirs        := global tree support serialize \
                               scanparse flatten constants typecheck types \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
-                              memory precompile codegen print 
+                              memory precompile codegen print \
+                              cinterface
 
 ###############################################################################
 
@@ -177,6 +178,8 @@ libsac2c_codegen     := gen_startup_code compile icm2c icm2c_basic \
 
 libsac2c_print       := print convert
 
+libsac2c_cinterface  := load_module_contents
+
 
 
 ###############################################################################
@@ -254,7 +257,7 @@ libsac_sourcedirs        := essentials mt phm cachesim # interface
 
 libsac_essentials   := commandline message misc profile trace
 
-libsac_interface    := cinterface sac_arg
+libsac_interface    := sac_arg
 
 libsac_mt           := mt_std mt_trace
 

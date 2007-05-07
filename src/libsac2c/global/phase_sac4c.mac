@@ -8,7 +8,7 @@
 
 PHASE (ami, "Analyzing module information", ALWAYS)
 
-SUBPHASE (lm, "Loading module contents", SPdoLocateSource, ALWAYS, lm)
+SUBPHASE (lm, "Loading module contents", LMCdoLoadModuleContents, ALWAYS, ami)
 
 ENDPHASE (ami)
 

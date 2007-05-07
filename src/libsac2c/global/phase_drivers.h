@@ -17,6 +17,7 @@ extern node *PHDdriveSac4c (node *syntax_tree);
 #define FUNBEGINname(name) extern node *PHDdriveCycleFun_##name (node *fundef);
 
 #include "phase_sac2c.mac"
+#include "phase_sac4c.mac"
 
 #undef PHASEname
 #undef CYCLEname

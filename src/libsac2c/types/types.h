@@ -87,6 +87,7 @@ typedef enum {
 #include "phase_sac2c.mac"
     PH_final,
 #include "phase_sac4c.mac"
+    PH_final_sac4c
 } compiler_phase_t;
 
 #undef PHASE

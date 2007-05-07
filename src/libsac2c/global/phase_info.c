@@ -24,6 +24,7 @@
 #define CYCLEPHASEFUNfun(fun) extern node *fun (node *syntax_tree);
 
 #include "phase_sac2c.mac"
+#include "phase_sac4c.mac"
 
 #undef SUBPHASEfun
 #undef CYCLEPHASEfun
@@ -61,6 +62,8 @@ PHIphaseFun (compiler_phase_t phase)
 
     static const phase_fun_t phase_fun[] = {DummyPhaseFun,
 #include "phase_sac2c.mac"
+                                            DummyPhaseFun,
+#include "phase_sac4c.mac"
                                             DummyPhaseFun};
 
     DBUG_RETURN (phase_fun[phase]);
@@ -89,6 +92,8 @@ PHIphaseText (compiler_phase_t phase)
 
     static const char *phase_text[] = {"initial",
 #include "phase_sac2c.mac"
+                                       "final",
+#include "phase_sac4c.mac"
                                        "final"};
 
     DBUG_RETURN (phase_text[phase]);
@@ -117,6 +122,8 @@ PHIphaseType (compiler_phase_t phase)
 
     static phase_type_t phase_type[] = {PHT_dummy,
 #include "phase_sac2c.mac"
+                                        PHT_dummy,
+#include "phase_sac4c.mac"
                                         PHT_dummy};
 
     DBUG_RETURN (phase_type[phase]);
@@ -145,6 +152,8 @@ PHIphaseName (compiler_phase_t phase)
 
     static const char *phase_name[] = {"initial",
 #include "phase_sac2c.mac"
+                                       "final",
+#include "phase_sac4c.mac"
                                        "final"};
 
     DBUG_RETURN (phase_name[phase]);
@@ -178,7 +187,9 @@ PHIphaseParent (compiler_phase_t phase)
 
     static compiler_phase_t phase_parent[] = {PH_initial,
 #include "phase_sac2c.mac"
-                                              PH_initial};
+                                              PH_final,
+#include "phase_sac4c.mac"
+                                              PH_final_sac4c};
 
     DBUG_RETURN (phase_parent[phase]);
 }
@@ -211,6 +222,8 @@ PHIphaseIdent (compiler_phase_t phase)
 
     static const char *phase_ident[] = {"",
 #include "phase_sac2c.mac"
+                                        "",
+#include "phase_sac4c.mac"
                                         ""};
 
     DBUG_RETURN (phase_ident[phase]);
@@ -239,6 +252,8 @@ PHIisFunBased (compiler_phase_t phase)
 
     static bool phase_isfunbased[] = {FALSE,
 #include "phase_sac2c.mac"
+                                      FALSE,
+#include "phase_sac4c.mac"
                                       FALSE};
 
     DBUG_RETURN (phase_isfunbased[phase]);
