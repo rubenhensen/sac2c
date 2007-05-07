@@ -991,10 +991,10 @@ CTIterminateCompilation (node *syntax_tree)
      */
 
     if (global.print_after_break && (syntax_tree != NULL)
-        && (global.compiler_subphase <= PH_cg_cpl)
-        && ((global.break_after_phase < PH_final)
-            || (global.break_after_subphase < PH_final)
-            || (global.break_after_cyclephase < PH_final))) {
+        && ((global.tool != TOOL_sac2c) || (global.compiler_subphase <= PH_cg_cpl))
+        && ((global.break_after_phase < PHIlastPhase ())
+            || (global.break_after_subphase < PHIlastPhase ())
+            || (global.break_after_cyclephase < PHIlastPhase ()))) {
         syntax_tree = PRTdoPrint (syntax_tree);
     }
 
@@ -1015,18 +1015,18 @@ CTIterminateCompilation (node *syntax_tree)
     CTIstate (" ");
     CTIstate ("** Compilation successful");
 
-    if (global.break_after_cyclephase < PH_final) {
+    if (global.break_after_cyclephase < PHIlastPhase ()) {
         CTIstate ("** BREAK during:   %s\n", PHIphaseText (global.compiler_phase));
         CTIstate ("** BREAK in cycle: %s\n", PHIphaseText (global.compiler_subphase));
         CTIstate ("** BREAK in pass:  %d\n", global.break_cycle_specifier);
         CTIstate ("** BREAK after:    %s\n",
                   PHIphaseText (global.break_after_cyclephase));
     } else {
-        if (global.break_after_subphase < PH_final) {
+        if (global.break_after_subphase < PHIlastPhase ()) {
             CTIstate ("** BREAK during: %s\n", PHIphaseText (global.compiler_phase));
             CTIstate ("** BREAK after:  %s\n", PHIphaseText (global.compiler_subphase));
         } else {
-            if (global.break_after_phase < PH_final) {
+            if (global.break_after_phase < PHIlastPhase ()) {
                 CTIstate ("** BREAK after: %s\n", PHIphaseText (global.compiler_phase));
             }
         }

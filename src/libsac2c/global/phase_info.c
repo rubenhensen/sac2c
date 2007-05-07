@@ -12,6 +12,7 @@
 
 #include "dbug.h"
 #include "phase.h"
+#include "globals.h"
 #include "phase_drivers.h"
 
 /*
@@ -265,3 +266,41 @@ PHIisFunBased (compiler_phase_t phase)
 #undef CYCLEPHASEname
 #undef FUNBEGINname
 #undef CYCLEPHASEFUNname
+
+compiler_phase_t
+PHIfirstPhase ()
+{
+    compiler_phase_t result;
+
+    DBUG_ENTER ("PHIfirstPhase");
+
+    switch (global.tool) {
+    case TOOL_sac2c:
+        result = PH_initial;
+        break;
+    case TOOL_sac4c:
+        result = PH_final;
+        break;
+    }
+
+    DBUG_RETURN (result);
+}
+
+compiler_phase_t
+PHIlastPhase ()
+{
+    compiler_phase_t result;
+
+    DBUG_ENTER ("PHIlastPhase");
+
+    switch (global.tool) {
+    case TOOL_sac2c:
+        result = PH_final;
+        break;
+    case TOOL_sac4c:
+        result = PH_final_sac4c;
+        break;
+    }
+
+    DBUG_RETURN (result);
+}

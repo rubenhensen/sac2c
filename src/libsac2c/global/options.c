@@ -32,6 +32,7 @@
 #include "libstat.h"
 #include "stringset.h"
 #include "phase_options.h"
+#include "phase_info.h"
 
 /******************************************************************************
  *
@@ -614,14 +615,14 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     {
         if (NULL == strchr (ARG, '/')) {
             global.my_dbug = TRUE;
-            global.my_dbug_from = PH_initial;
-            global.my_dbug_to = PH_final;
+            global.my_dbug_from = PHIfirstPhase ();
+            global.my_dbug_to = PHIlastPhase ();
             global.my_dbug_str = STRcpy (ARG);
         } else {
             PHOinterpretDbugOption (ARG);
         }
 
-        if (global.my_dbug_from == PH_initial) {
+        if (global.my_dbug_from == PHIfirstPhase ()) {
             DBUG_PUSH (global.my_dbug_str);
             global.my_dbug_active = TRUE;
         }
@@ -764,6 +765,36 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FLAG ("V", USGprintVersion (); exit (0));
 
     ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+
+    /*
+     * DBUG options ####################################################
+     */
+
+#ifndef DBUG_OFF
+
+    ARGS_OPTION_BEGIN ("#")
+    {
+        if (NULL == strchr (ARG, '/')) {
+            global.my_dbug = TRUE;
+            global.my_dbug_from = PHIfirstPhase ();
+            global.my_dbug_to = PHIlastPhase ();
+            global.my_dbug_str = STRcpy (ARG);
+        } else {
+            PHOinterpretDbugOption (ARG);
+        }
+
+        if (global.my_dbug_from == PHIfirstPhase ()) {
+            DBUG_PUSH (global.my_dbug_str);
+            global.my_dbug_active = TRUE;
+        }
+    }
+    ARGS_OPTION_END ("#");
+
+#endif /* DBUG_OFF */
+
+    /*
+     * arguments
+     */
 
     ARGS_ARGUMENT (global.exported_modules
                    = STRSadd (STRcpy (ARG), STRS_saclib, global.exported_modules););

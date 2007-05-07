@@ -27,12 +27,12 @@ SearchPhaseByName (char *name)
 
     DBUG_ENTER ("SearchPhaseByName");
 
-    phase = PH_initial;
+    phase = PHIfirstPhase ();
 
     do {
         phase++;
     } while (
-      (phase < PH_final)
+      (phase < PHIlastPhase ())
       && ((PHIphaseType (phase) != PHT_phase) || !STReq (PHIphaseName (phase), name)));
 
     DBUG_RETURN (phase);
@@ -46,14 +46,14 @@ SearchPhaseByNumber (int num)
 
     DBUG_ENTER ("SearchPhaseByNumber");
 
-    phase = PH_initial;
+    phase = PHIfirstPhase ();
     cnt = 0;
 
     do {
         phase++;
         if (PHIphaseType (phase) == PHT_phase)
             cnt++;
-    } while ((phase < PH_final) && (cnt < num));
+    } while ((phase < PHIlastPhase ()) && (cnt < num));
 
     DBUG_RETURN (phase);
 }
@@ -75,7 +75,7 @@ SearchSubPhase (compiler_phase_t phase, char *name)
              && !STReq (PHIphaseName (subphase), name));
 
     if (PHIphaseParent (subphase) != phase) {
-        subphase = PH_final;
+        subphase = PHIlastPhase ();
     }
 
     DBUG_RETURN (subphase);
@@ -96,7 +96,7 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
              && !STReq (PHIphaseName (cyclephase), name));
 
     if (PHIphaseParent (cyclephase) != cycle) {
-        cyclephase = PH_final;
+        cyclephase = PHIlastPhase ();
     }
 
     DBUG_RETURN (cyclephase);
@@ -134,14 +134,14 @@ PHOinterpretBreakOption (char *option)
          */
         phase = SearchPhaseByNumber (num);
     } else {
-        phase = PH_final;
+        phase = PHIlastPhase ();
     }
 
-    if (phase == PH_final) {
+    if (phase == PHIlastPhase ()) {
         CTIerror ("Illegal compiler phase specification in break option: \n"
                   "  -b %s\n"
-                  "See sac2c -h for a list of legal break options.",
-                  option);
+                  "See %s -h for a list of legal break options.",
+                  option, global.toolname);
     } else {
         global.break_after_phase = phase;
     }
@@ -153,7 +153,7 @@ PHOinterpretBreakOption (char *option)
     if (break_subphase != NULL) {
         subphase = SearchSubPhase (phase, break_subphase);
 
-        if (subphase == PH_final) {
+        if (subphase == PHIlastPhase ()) {
             CTIerror ("Illegal compiler subphase specification in break option:\n"
                       "  -b %s\n"
                       "See sac2c -h for a list of legal break options.",
@@ -169,7 +169,7 @@ PHOinterpretBreakOption (char *option)
         if (break_cyclephase != NULL) {
             cyclephase = SearchCyclePhase (subphase, break_cyclephase);
 
-            if (cyclephase == PH_final) {
+            if (cyclephase == PHIlastPhase ()) {
                 CTIerror ("Illegal compiler cycle phase specification in break option: \n"
                           "  -b %s\n"
                           "See sac2c -h for a list of legal break options.",
@@ -212,11 +212,11 @@ SearchPhaseIdent (char *ident)
 
     DBUG_ENTER ("SearchPhaseIdent");
 
-    phase = PH_initial;
+    phase = PHIfirstPhase ();
 
     do {
         phase++;
-    } while ((phase < PH_final) && !STReq (PHIphaseIdent (phase), ident));
+    } while ((phase < PHIlastPhase ()) && !STReq (PHIphaseIdent (phase), ident));
 
     DBUG_RETURN (phase);
 }
@@ -236,11 +236,11 @@ PHOinterpretDbugOption (char *option)
     if (tok[0] != '\0') {
         phase = SearchPhaseIdent (tok);
 
-        if (phase == PH_final) {
+        if (phase == PHIlastPhase ()) {
             CTIerror ("Illegal start compiler phase specification in dbug option: \n"
                       "  -# %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
+                      "See %s -h for a list of legal break options.",
+                      option, global.toolname);
         } else {
             global.my_dbug_from = phase;
         }
@@ -253,22 +253,22 @@ PHOinterpretDbugOption (char *option)
     if (tok == NULL) {
         CTIerror ("Missing stop compiler phase specification in dbug option: \n"
                   "  -# %s\n"
-                  "See sac2c -h for a list of legal break options.",
-                  option);
+                  "See %s -h for a list of legal break options.",
+                  option, global.toolname);
     } else {
         if (tok[0] != '\0') {
             phase = SearchPhaseIdent (tok);
 
-            if (phase == PH_final) {
+            if (phase == PHIlastPhase ()) {
                 CTIerror ("Illegal start compiler phase specification in dbug option: \n"
                           "  -# %s\n"
-                          "See sac2c -h for a list of legal break options.",
-                          option);
+                          "See %s -h for a list of legal break options.",
+                          option, global.toolname);
             } else if (phase < global.my_dbug_from) {
                 CTIerror ("Stop phase is before start phase in dbug option: \n"
                           "  -# %s\n"
-                          "See sac2c -h for sequence of phases.",
-                          option);
+                          "See %s -h for sequence of phases.",
+                          option, global.toolname);
             } else {
                 global.my_dbug_to = phase;
             }
@@ -281,8 +281,8 @@ PHOinterpretDbugOption (char *option)
         if (tok == NULL) {
             CTIerror ("Missing dbug string in dbug option: \n"
                       "  -# %s\n"
-                      "See sac2c -h for syntac of dbug option.",
-                      option);
+                      "See %s -h for syntac of dbug option.",
+                      option, global.toolname);
         } else {
             global.my_dbug_str = tok;
             global.my_dbug = 1;

@@ -26,5 +26,7 @@ extern const char *PHIphaseName (compiler_phase_t phase);
 extern compiler_phase_t PHIphaseParent (compiler_phase_t phase);
 extern const char *PHIphaseIdent (compiler_phase_t phase);
 extern bool PHIisFunBased (compiler_phase_t phase);
+extern compiler_phase_t PHIfirstPhase (void);
+extern compiler_phase_t PHIlastPhase (void);
 
 #endif

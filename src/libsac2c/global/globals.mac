@@ -545,17 +545,17 @@ GLOBAL (bool, lacinline, TRUE)
  * Inline LAC functions
  */
 
-GLOBAL (compiler_phase_t, break_after_phase, PH_final)
+GLOBAL (compiler_phase_t, break_after_phase, PH_undefined)
 /*
  * Stop compilation process after given phase.
  */
 
-GLOBAL (compiler_phase_t, break_after_subphase, PH_final)
+GLOBAL (compiler_phase_t, break_after_subphase, PH_undefined)
 /*
  * Stop compilation process after given subphase.
  */
 
-GLOBAL (compiler_phase_t, break_after_cyclephase, PH_final)
+GLOBAL (compiler_phase_t, break_after_cyclephase, PH_undefined)
 /*
  * Stop compilation process after given cycle optimization.
  */
