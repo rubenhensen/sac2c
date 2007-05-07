@@ -20,11 +20,11 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <!-- as we make lookups to attributetypes quite often, we create a key -->
-<xsl:key name="types" match="//attributetypes/type" use="@name"/>
+<xsl:key name="types" match="/definition/attributetypes/type" use="@name"/>
 <xsl:key name="arraytypes" match="//attributetypes/type[@size]" use="@name"/>
 
 <!-- the same for traversal defaults -->
-<xsl:key name="traversals" match="//phases//traversal" use="@id" />
+<xsl:key name="traversals" match="/definition/traversals/traversal" use="@id" />
 
 <!-- and one for all nodes -->
 <xsl:key name="nodes" match="/definition/syntaxtree/node" use="@name" />

@@ -74,7 +74,7 @@
     <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked"
     copy="literal" persist="yes" />
   </attributetypes>
-  <phases>
+  <traversals>
     <!-- id is the short id of the traversal 
          name is a descriptive name
 	 default gives the default traversal mode
@@ -84,7 +84,6 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
-    <general>
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
           <node name="SSAstack" />
@@ -252,17 +251,6 @@
       <traversal id="CHK" name="Check the Tree" default="user" ifdef="show_malloc" include="check.h" />
       <traversal id="CHKTST" name="Check the TreeTest" default="user" ifdef="show_malloc" include="checktst.h" />
       <traversal id="CHKM" name="Check the memspace" default="user" postfun="CHKMpostfun" ifdef="show_malloc" include="check_node.h" />
-    </general>
-    
-    <phase id="setup" name="Setting up sac2c compiler environment"
-      startfun="SUdoSetup" include="setup.h"
-      if="true"
-      breakspec="su">
-    </phase>
-    <phase id="sp" name="Loading SAC source file"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="sp">
       <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
         <travuser>
           <node name="SPMop" />
@@ -331,11 +319,6 @@
           <node name="Arg" />
         </travuser>
       </traversal>
-    </phase>
-    <phase id="simplify" name="Simplifying source code" 
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="si">
       <traversal id="W2D" name="While2do" default="sons" include="while2do.h" >
 	<travuser>
 	  <node name="While" />
@@ -406,11 +389,6 @@
           <node name="Ids" />
 	</travuser>
       </traversal>
-    </phase>
-    <phase id="module" name="Processing use statements"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="mo">
       <traversal id="RSA" name="Resolve All Flags" default="sons" include="resolveall.h" >
         <travuser>
 	  <node name="Use" />
@@ -489,11 +467,6 @@
 	  <node name="Symbol" />
         </travuser>
       </traversal>
-    </phase>
-    <phase id="pretypecheck" name="Converting to static single assignment form"
-      startfun="PTCdoPreTypecheck" include="pre_typecheck.h"
-      if="true"
-      breakspec="tc">
       <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
 	<travuser>
           <node name="Module" />
@@ -583,11 +556,6 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-    </phase>
-    <phase id="typecheck" name="Running type inference system"
-      startfun="NTCdoNewTypeCheck" include="new_typecheck.h"
-      if="true"
-      breakspec="tc">
       <traversal id="ESP" name="Enforce Specialization" default="sons" include="enforce_specialization.h" >
         <travuser> 
           <node name="Module" />
@@ -705,11 +673,6 @@
           <node name="Fundef" />
         </travuser>  
       </traversal>
-    </phase>
-    <phase id="export" name="Exporting symbols"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="ex">
       <traversal id="EXP" name="Export Symbols" default="sons" include="export.h">
         <travuser>
 	  <node name="Use" />
@@ -730,11 +693,6 @@
 	  <node name="Objdef" />
 	</travuser>
       </traversal>
-    </phase>
-    <phase id="wlenhance" name="Enhancement of With-Loops"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="we">
       <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h" >
         <travuser>
           <node name="Module" />
@@ -776,11 +734,6 @@
           <node name="Genarray" />
          </travuser>
       </traversal>
-    </phase>
-    <phase id="unq" name="Checking uniqueness properties"
-      startfun="NULL" include="NULL"
-      if="true"
-      breakspec="op">
       <traversal id="CUA" name="Check uniqueness annotations" default="sons" include="check_uniqueness_annotations.h">
         <travuser>
 	  <node name="Objdef" />
@@ -799,11 +752,6 @@
     <node name="Propagate" />
 	</travuser>
       </traversal>
-     </phase>
-    <phase id="sacopt" name="Running SAC optimizations"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="op">
       <traversal id="LOF" name="Lift OptFlags" default="sons" include="liftoptflags.h">
         <travuser>
 	  <node name="Fundef" />
@@ -1403,11 +1351,6 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-    </phase>
-    <phase id="wltrans" name="Transforming with-loop representation"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="wt">
   <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
         <travuser>
           <node name="Assign" />
@@ -1427,11 +1370,6 @@
           <node name="WLgrid" />
         </travuser> 
       </traversal>
-    </phase>
-    <phase id="alloc" name="Introducing explicit allocation instructions"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="al">
       <traversal id="EMAA" name="Alias analysis" default="none" include="aliasanalysis.h" >
         <travuser>
           <node name="Ap" />
@@ -1850,11 +1788,6 @@
           <node name="Code" />
         </travsons>
       </traversal>
-    </phase>
-    <phase id="concurrent" name="Generating annotations for MT 2"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="co">
      <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
         <travuser>
           <node name="Module" />
@@ -1908,12 +1841,6 @@
           <node name="Spmd" />
         </travuser>
       </traversal>
-    </phase>
-
-    <phase id="multithread" name="Generating annotations for MT3"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="mt">
       <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
         <travuser>
           <node name="Ap" />
@@ -2038,11 +1965,6 @@
         <traverror>
         </traverror>
       </traversal>
-    </phase>
-    <phase id="precompile" name="Preparing C code generation" 
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="pc">
       <traversal id="REC" name="Remove External Code" default="sons" include="remove_external_code.h" >
         <travuser>
 	  <node name="Fundef" />
@@ -2179,11 +2101,6 @@
 	  <node name="WLgridVar" />
 	</travuser>
       </traversal>
-    </phase>
-    <phase id="compile" name="Generating C code" 
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="cp">
       <traversal id="COMP" name="Compile" default="sons" include="compile.h">
         <travuser>
           <node name="Ap" />
@@ -2248,23 +2165,14 @@
           </node>
         </traverror>
       </traversal>
-    </phase>
-    <phase id="invokecc" name="Invoking C compiler"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="cc">
-    </phase>
-    <phase id="createlib" name="Creating SAC library"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="cl">
-    </phase>
-    <phase id="final" name="Unknown compiler phase"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="su">
-    </phase>
-   </phases>
+      <traversal id="CBL" name="Construct Bundles" default="sons"
+                 include="construct_bundles.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Module" />
+        </travuser>
+      </traversal>
+   </traversals>
   <nodesets>
     <nodeset name="Expr">
       <target>

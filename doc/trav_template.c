@@ -28,6 +28,10 @@
 /*
  * Other includes go here
  */
+#include "dbug.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "memory.h"
 
 /** <!--********************************************************************-->
  *
@@ -51,7 +55,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TEMP (result) = NULL;
 
@@ -63,7 +67,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

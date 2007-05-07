@@ -76,10 +76,10 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           #miniNav { position:fixed; top:0px; right:0px; padding:0px; 
                      margin:0px; font-size: smaller; 
                      background-color: #AAAAAA; display: none; }
-          #NavPhases{ position:fixed; padding: 0px;
-                      margin:0px; font-size: smaller; 
-                      background-color: #AAAAAA; display: none;
-                      width: 200pt; max-height: 90%; overflow: scroll; }
+          #NavTraversals{ position:fixed; padding: 0px;
+                          margin:0px; font-size: smaller; 
+                          background-color: #AAAAAA; display: none;
+                          width: 200pt; max-height: 90%; overflow: scroll; }
           #NavSets{ position:fixed; padding: 0px;
                     margin:0px; font-size: smaller; 
                     background-color: #AAAAAA; display: none;
@@ -143,12 +143,12 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                 QuickNav
               </td>
               <td>
-                <a href="javascript:void (toggle('NavPhases'))" >Phases</a>
-                <div id="NavPhases">
+                <a href="javascript:void (toggle('NavTraversals'))" >Traversals</a>
+                <div id="NavTraversals">
                   <table class="sub">
                     <tr><td>
                       <ul>
-                        <xsl:apply-templates select="/definition/phases/phase" mode="list-of-tables" />
+                        <xsl:apply-templates select="/definition/traversals/traversal" mode="list-of-tables" />
                       </ul>
                     </td></tr>
                   </table>
@@ -269,37 +269,23 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </li>
   </xsl:template>
 
-  <xsl:template match="phases" mode="list-of-tables">
+  <xsl:template match="traversals" mode="list-of-tables">
     <li>
-      Phases
+      Traversals
       <ul>
         <xsl:apply-templates mode="list-of-tables" />
       </ul>
     </li>
   </xsl:template> 
 
-  <xsl:template match="phase" mode="list-of-tables" >
+  <xsl:template match="traversal" mode="list-of-tables" >
     <li>
       <xsl:element name="a">
         <xsl:attribute name="href">
-          <xsl:value-of select="'#PH_'" />
+          <xsl:value-of select="'#TR_'" />
           <xsl:value-of select="@id" />
         </xsl:attribute>
         <xsl:value-of select="@name" />
-      </xsl:element>
-      <ul>
-        <xsl:apply-templates mode="list-of-tables" />
-      </ul>
-    </li>
-  </xsl:template>
-
-  <xsl:template match="general" mode="list-of-tables" >
-    <li>
-      <xsl:element name="a">
-        <xsl:attribute name="href">
-          <xsl:value-of select="'#GENERALTRAVS'" />
-        </xsl:attribute>
-        General Traversals
       </xsl:element>
       <ul>
         <xsl:apply-templates mode="list-of-tables" />
@@ -392,42 +378,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </tr>
   </xsl:template>
 
-  <!-- phases are transfered into a table -->
-  <xsl:template match="phase" mode="table">
-    <xsl:element name="a">
-      <xsl:attribute name="name">
-        <xsl:value-of select="'PH_'" />
-        <xsl:value-of select="@id" />
-      </xsl:attribute>
-    </xsl:element>
+  <xsl:template match="traversals" mode="table">
     <table>
       <tr>
         <td class="title">
-          <xsl:value-of select="'Phase PH_'" />
-          <xsl:value-of select="@id" />
-          <div class="description">
-            <xsl:value-of select="@name" />
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <xsl:apply-templates select="traversal" mode="table" />
-        </td>
-      </tr>
-    </table>
-  </xsl:template>
-
-  <xsl:template match="general" mode="table">
-    <xsl:element name="a">
-      <xsl:attribute name="name">
-        <xsl:value-of select="'GENERALTRAVS'" />
-      </xsl:attribute>
-    </xsl:element>
-    <table>
-      <tr>
-        <td class="title">
-          General Traversals
+          Traversals
         </td>
       </tr>
       <tr>
@@ -448,6 +403,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               <xsl:value-of select="@id" />
             </xsl:attribute>
             <xsl:value-of select="@name" />
+            <xsl:value-of select="' ('" />
+            <xsl:value-of select="@id" />
+            <xsl:value-of select="')'" />
           </xsl:element>
         </td>
       </tr>

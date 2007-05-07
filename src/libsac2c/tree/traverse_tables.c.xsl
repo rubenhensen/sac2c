@@ -43,7 +43,7 @@
 #include "traverse_tables.h"
 #include "traverse_helper.h"
     </xsl:text>
-      <xsl:apply-templates select="/definition/phases//traversal" mode="include" />
+      <xsl:apply-templates select="/definition/traversals/traversal" mode="include" />
     <xsl:text>
 
 travtables_t travtables = {
@@ -52,28 +52,28 @@ travtables_t travtables = {
     </xsl:text>
     <xsl:apply-templates select="/definition/syntaxtree/node" mode="errortraversal" />
     <xsl:value-of select="'} '" />
-    <xsl:apply-templates select="/definition/phases//traversal" />
+    <xsl:apply-templates select="/definition/traversals/traversal" />
     <xsl:text>
 };
 
 preposttable_t pretable = {
     NULL
     </xsl:text>
-    <xsl:apply-templates select="/definition/phases//traversal" mode="pretable" />
+    <xsl:apply-templates select="/definition/traversals/traversal" mode="pretable" />
     <xsl:text>
 };
 
 preposttable_t posttable = {
     NULL
     </xsl:text>
-    <xsl:apply-templates select="/definition/phases//traversal" mode="posttable" />
+    <xsl:apply-templates select="/definition/traversals/traversal" mode="posttable" />
     <xsl:text>
 };
 
-const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases//traversal) + 1"/><xsl:text>] = {
+const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traversals/traversal) + 1"/><xsl:text>] = {
     "unknown"
     </xsl:text>
-    <xsl:apply-templates select="/definition/phases//traversal" mode="travnames" />
+    <xsl:apply-templates select="/definition/traversals/traversal" mode="travnames" />
     <xsl:text>
 };
 
@@ -282,7 +282,7 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
     <xsl:value-of select="', NULL'" />
   </xsl:template>
 
-  <xsl:template match="/definition/phases//traversal" mode="travnames">
+  <xsl:template match="/definition/traversals/traversal" mode="travnames">
     <xsl:value-of select="', &quot;'" />
     <xsl:call-template name="lowercase" >
       <xsl:with-param name="string" select="@id" />

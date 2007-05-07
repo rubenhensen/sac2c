@@ -44,15 +44,15 @@
 #define _SAC_TYPES_TRAV_H_
 
     </xsl:text>
-    <xsl:apply-templates select="/definition/phases" />
+    <xsl:apply-templates select="/definition/traversals" />
     <xsl:text>
 #endif /* _SAC_TYPES_TRAV_H_ */
     </xsl:text>
   </xsl:template>
 
-  <xsl:template match="phases" >
+  <xsl:template match="traversals" >
     <xsl:value-of select="'typedef enum { TR_undefined = 0'" />
-    <xsl:apply-templates select=".//traversal" />
+    <xsl:apply-templates select="./traversal" />
     <xsl:value-of select="'} trav_t; '" />
   </xsl:template>
 
