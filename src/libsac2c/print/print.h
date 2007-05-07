@@ -129,4 +129,7 @@ extern node *PRTprovide (node *arg_node, info *arg_info);
 extern node *PRTsymbol (node *arg_node, info *arg_info);
 extern node *PRTset (node *arg_node, info *arg_info);
 
+/* sac4c */
+extern node *PRTfunbundle (node *arg_node, info *arg_info);
+
 #endif /* _SAC_PRINT_H_ */

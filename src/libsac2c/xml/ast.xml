@@ -91,9 +91,6 @@
           <node name="WLublock" />
           <node name="Nums" />
         </travsons>
-        <traverror>
-          <node name="FunBundle" />
-        </traverror>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
       </traversal>

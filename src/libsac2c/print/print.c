@@ -4890,6 +4890,16 @@ PRTerror (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTimport (node * arg_node, info * arg_info)
+ *
+ * @brief prints an import node
+ *
+ * @param arg_node import node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
 node *
 PRTimport (node *arg_node, info *arg_info)
 {
@@ -4918,6 +4928,16 @@ PRTimport (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTexport (node * arg_node, info * arg_info)
+ *
+ * @brief prints an export node
+ *
+ * @param arg_node export node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
 node *
 PRTexport (node *arg_node, info *arg_info)
 {
@@ -4946,6 +4966,16 @@ PRTexport (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTuse (node * arg_node, info * arg_info)
+ *
+ * @brief prints an use node
+ *
+ * @param arg_node use node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
 node *
 PRTuse (node *arg_node, info *arg_info)
 {
@@ -4974,6 +5004,16 @@ PRTuse (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTprovide (node * arg_node, info * arg_info)
+ *
+ * @brief prints an provide node
+ *
+ * @param arg_node provide node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
 node *
 PRTprovide (node *arg_node, info *arg_info)
 {
@@ -5002,6 +5042,16 @@ PRTprovide (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTsymbol (node * arg_node, info * arg_info)
+ *
+ * @brief prints an symbol node
+ *
+ * @param arg_node symbol node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
 node *
 PRTsymbol (node *arg_node, info *arg_info)
 {
@@ -5034,6 +5084,55 @@ PRTset (node *arg_node, info *arg_info)
 
     if (SET_NEXT (arg_node) != NULL) {
         SET_NEXT (arg_node) = TRAVdo (SET_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTfunbundle (node *arg_node, info *arg_info)
+ *
+ * @brief prints a function bundle
+ *
+ * @param arg_node funbundle node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
+node *
+PRTfunbundle (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTfunbundle");
+
+    /*
+     * we only print functions bundled in the prototype section, as most
+     * of them won't contain functions with bodies anyways. Otherwise we
+     * would print loads of empty bundles and thereby clutter up the output.
+     */
+    if (INFO_PROTOTYPE (arg_info)) {
+        fprintf (global.outfile,
+                 "\n\n "
+                 "/**********************************************************************"
+                 "*******\n"
+                 " * Function Bundle %s::%s (%d)\n"
+                 " **********************************************************************"
+                 "*******/\n\n",
+                 NSgetName (FUNBUNDLE_NS (arg_node)), FUNBUNDLE_NAME (arg_node),
+                 FUNBUNDLE_ARITY (arg_node));
+    }
+
+    if (FUNBUNDLE_FUNDEF (arg_node) != NULL) {
+        TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
+    }
+
+    if (INFO_PROTOTYPE (arg_info)) {
+        fprintf (global.outfile, "\n\n "
+                                 "/******************************************************"
+                                 "**********************/\n\n");
+    }
+
+    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
+        PRINT_CONT (TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
