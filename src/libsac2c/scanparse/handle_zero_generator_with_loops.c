@@ -461,17 +461,17 @@ HZGWLassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_DELETE (arg_info)) {
-        arg_node = FREEdoFreeNode (arg_node);
-        INFO_DELETE (arg_info) = FALSE;
-    }
-
     if (INFO_POSTASSIGN (arg_info)) {
         tmp = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = INFO_POSTASSIGN (arg_info);
         arg_node = TCappendAssign (arg_node, tmp);
 
         INFO_POSTASSIGN (arg_info) = NULL;
+    }
+
+    if (INFO_DELETE (arg_info)) {
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_DELETE (arg_info) = FALSE;
     }
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
