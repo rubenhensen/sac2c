@@ -34,6 +34,7 @@
 #include "shape.h"
 #include "namespaces.h"
 #include "dbug.h"
+#include "ctinfo.h"
 #include "globals.h"
 
 /*
@@ -379,8 +380,8 @@ TCPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TCPap");
 
-    DBUG_PRINT ("TCP", ("analyzing application of %s::%s ......",
-                        NSgetName (AP_NS (arg_node)), AP_NAME (arg_node)));
+    DBUG_PRINT ("TCP", ("analyzing application of %s ......",
+                        CTIitemName (AP_FUNDEF (arg_node))));
 
     fun_argtab = FUNDEF_ARGTAB (AP_FUNDEF (arg_node));
     ap_argtab = AP_ARGTAB (arg_node);
@@ -400,15 +401,17 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
+                DBUG_PRINT ("TCP",
+                            ("Return value with inappropriate shape class found:"));
+                DBUG_PRINT ("TCP",
+                            ("   ... %s ... = %s( ... ), index %d, %s instead of %s",
+                             CTIitemName (AP_FUNDEF (arg_node)), IDS_NAME (ids), idx,
+                             global.nt_shape_string[actual_cls],
+                             global.nt_shape_string[formal_cls]));
+
                 DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
                              "Conversion from or to scalar encountered!");
 
-                DBUG_PRINT ("TCP",
-                            ("Return value with inappropriate shape class found:"));
-                DBUG_PRINT ("TCP", ("   ... %s ... = %s( ... ), %s instead of %s",
-                                    FUNDEF_NAME (INFO_TCP_FUNDEF (arg_info)),
-                                    IDS_NAME (ids), global.nt_shape_string[actual_cls],
-                                    global.nt_shape_string[formal_cls]));
                 LiftIds (ids, INFO_TCP_FUNDEF (arg_info), RET_TYPE (ret),
                          &(INFO_TCP_POSTASSIGNS (arg_info)));
             }
@@ -436,17 +439,19 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
-                DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
-                             "Conversion from or to scalar encountered!");
+                DBUG_PRINT ("TCP", ("Argument with inappropriate shape class found:"));
+                DBUG_PRINT ("TCP",
+                            ("   ... = %s( ... %s ...), index %d, %s instead of %s",
+                             CTIitemName (AP_FUNDEF (arg_node)), ID_NAME (id), idx,
+                             global.nt_shape_string[actual_cls],
+                             global.nt_shape_string[formal_cls]));
 
                 DBUG_ASSERT ((NODE_TYPE (id) != N_globobj),
                              "possible lifting of global object encountered!");
 
-                DBUG_PRINT ("TCP", ("Argument with inappropriate shape class found:"));
-                DBUG_PRINT ("TCP", ("   ... = %s( ... %s ...), %s instead of %s",
-                                    FUNDEF_NAME (INFO_TCP_FUNDEF (arg_info)),
-                                    ID_NAME (id), global.nt_shape_string[actual_cls],
-                                    global.nt_shape_string[formal_cls]));
+                DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
+                             "Conversion from or to scalar encountered!");
+
                 LiftArg (id, INFO_TCP_FUNDEF (arg_info), ARG_NTYPE (arg),
                          &(INFO_TCP_PREASSIGNS (arg_info)));
             }
