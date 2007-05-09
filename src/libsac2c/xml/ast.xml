@@ -2115,13 +2115,11 @@
           <node name="Return" />
           <node name="Typedef" />
           <node name="Vardec" />
-
           <node name="Num" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
           <node name="Double" />
-
           <node name="With" />
           <node name="Withid" />
           <node name="Part" />
@@ -2165,6 +2163,14 @@
       <traversal id="CBL" name="Construct Bundles" default="sons"
                  include="construct_bundles.h">
         <travuser>
+          <node name="Fundef" />
+          <node name="Module" />
+        </travuser>
+      </traversal>
+      <traversal id="CWH" name="Create wrapper header" default="sons"
+                 include="create_wrapper_header.h">
+        <travuser>
+          <node name="FunBundle" />
           <node name="Fundef" />
           <node name="Module" />
         </travuser>

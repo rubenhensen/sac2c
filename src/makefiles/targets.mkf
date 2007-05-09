@@ -178,7 +178,8 @@ libsac2c_codegen     := gen_startup_code compile icm2c icm2c_basic \
 
 libsac2c_print       := print convert
 
-libsac2c_cinterface  := load_module_contents construct_bundles
+libsac2c_cinterface  := load_module_contents construct_bundles \
+                        create_wrapper_header
 
 
 
