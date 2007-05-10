@@ -103,7 +103,6 @@ PHDdriveSac2c (node *syntax_tree)
   cond);
 
 #include "phase_sac2c.mac"
-#include "phase_sac4c.mac"
 
 #undef PHASEname
 #undef PHASEcond
