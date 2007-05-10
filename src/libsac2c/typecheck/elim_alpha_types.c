@@ -11,6 +11,7 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
@@ -237,6 +238,8 @@ node *
 EATfundef (node *arg_node, info *arg_info)
 {
     ntype *otype, *ftype;
+    str_buf *msgbuf;
+    char *msg, *tmp;
 
     DBUG_ENTER ("EATfundef");
 
@@ -266,10 +269,37 @@ EATfundef (node *arg_node, info *arg_info)
                               " an application of \"%s\" will not terminate",
                               TYtype2String (ftype, FALSE, 0), CTIitemName (arg_node));
             } else {
+                /*
+                 * we replace the non min alpha by a type error and remove the body.
+                 * elim_bottom_types then takes care of the rest.
+                 */
                 DBUG_PRINT ("FIXNT",
-                            ("eliminating function %s due to lacking result type",
+                            ("bottomozing function %s due to lacking result type",
                              CTIitemName (arg_node)));
-                arg_node = FREEdoFreeNode (arg_node);
+
+                if (FUNDEF_ARGS (arg_node) != NULL) {
+                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+                }
+
+                if (FUNDEF_BODY (arg_node) != NULL) {
+                    FUNDEF_BODY (arg_node) = FREEdoFreeNode (FUNDEF_BODY (arg_node));
+                }
+
+                msgbuf = SBUFcreate (255);
+                tmp = TYtype2String (ftype, FALSE, 0);
+                msgbuf = SBUFprintf (msgbuf,
+                                     "One component of inferred return type (%s) "
+                                     "has no lower bound;"
+                                     " an application of \"%s\" will not terminate",
+                                     tmp, CTIitemName (arg_node));
+                msg = SBUF2str (msgbuf);
+                msgbuf = SBUFfree (msgbuf);
+                tmp = MEMfree (tmp);
+
+                FUNDEF_RETS (arg_node)
+                  = TUalphaRettypes2bottom (FUNDEF_RETS (arg_node), msg);
+
+                msg = MEMfree (msg);
             }
         } else {
             DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",

@@ -351,6 +351,34 @@ TUrettypes2alphaFix (node *rets)
 
 /** <!--********************************************************************-->
  *
+ * @fn node  *TUalphaRettypes2bottom( node *rets, const char *msg);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUalphaRettypes2bottom (node *rets, const char *msg)
+{
+    node *tmp = rets;
+
+    DBUG_ENTER ("TUalphaRettypes2bottom");
+
+    while (tmp != NULL) {
+        if (TYisAlpha (RET_TYPE (tmp))) {
+            RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
+            RET_TYPE (tmp) = TYmakeBottomType (STRcpy (msg));
+        }
+        tmp = RET_NEXT (tmp);
+    }
+
+    DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUdimKnown( ntype *ty)
  *
  *   @brief
