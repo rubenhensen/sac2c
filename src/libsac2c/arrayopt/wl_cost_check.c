@@ -6,11 +6,20 @@
  *
  * @defgroup wlcc With Loop Cost Check
  *
- * @brief With Loop Cost Check
+ * @brief Computes the cost of With Loops
  *
- * check if a WL is composed of trivial operations, which means
- * primitive functions but maximal one sel, no user defined
- * function.
+ * Definition of Cost function of With Loops
+ *   SAC Function's Structure
+ *     fundef         ::= assign*
+ *     assign         ::= with-loop | sel | user-defined-fun | other
+ *     with-loop      ::= with-part+
+ *     with-part      ::= assign+
+ *
+ *     cost(fundef)    = sum of all assigns in the function
+ *     cost(with-loop) = max cost(with-part) for all with-part in with-loop
+ *     cost(sel)       = 1
+ *     cost(other)     = 0
+ *     cost(with-part) = sum of all assigns in the with-part
  *
  * @ingroup opt
  *
@@ -43,17 +52,19 @@
  *****************************************************************************/
 struct INFO {
     node *with;
-    int cost;
+    bool do_check;
+    int code_cost;
 };
 
 /**
  * Macro definitions for INFO structure
  */
 #define INFO_WITH(n) ((n)->with)
-#define INFO_COST(n) ((n)->cost)
+#define INFO_DO_CHECK(n) ((n)->do_check)
+#define INFO_CODE_COST(n) ((n)->code_cost)
 
 static info *
-MakeInfo (node *with)
+MakeInfo ()
 {
     info *result;
 
@@ -61,8 +72,9 @@ MakeInfo (node *with)
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_WITH (result) = with;
-    INFO_COST (result) = 0;
+    INFO_WITH (result) = NULL;
+    INFO_DO_CHECK (result) = FALSE;
+    INFO_CODE_COST (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -90,35 +102,34 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLCCdoWLCostCheck( node *with)
+ * @fn node *WLCCdoWLCostCheck( node *fundef)
  *
- * @brief global entry  point of With-Loop cost check
+ * @brief global entry  point of With Loop Cost Check
  *
- * @param with With-Node to do cost-check
+ * @param with Fundef Node to do Cost Check
  *
- * @return checked with node
+ * @return checked node
  *
  *****************************************************************************/
 node *
-WLCCdoWLCostCheck (node *with)
+WLCCdoWLCostCheck (node *fundef)
 {
     info *arg_info;
+
     DBUG_ENTER ("WLCCdoWLCostCheck");
 
-    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
-                 "WLCCdoWLCostCheck called for non-with node");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "WLCCdoWLCostCheck called for non-fundef node");
 
-    arg_info = MakeInfo (with);
+    arg_info = MakeInfo ();
 
     TRAVpush (TR_wlcc);
-    with = TRAVdo (with, arg_info);
+    fundef = TRAVdo (fundef, arg_info);
     TRAVpop ();
-
-    WITH_ISTRIVIAL (with) = INFO_COST (arg_info) > 1 ? FALSE : TRUE;
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (with);
+    DBUG_RETURN (fundef);
 }
 
 /** <!--********************************************************************-->
@@ -142,13 +153,24 @@ WLCCdoWLCostCheck (node *with)
 node *
 WLCCwith (node *arg_node, info *arg_info)
 {
+    node *outer_with;
+
     DBUG_ENTER ("WLCCwith");
 
-    if (arg_node != INFO_WITH (arg_info)) {
-        // This with-node is a nested with-node.
-        INFO_COST (arg_info) += 2;
+    if (INFO_DO_CHECK (arg_info)) {
+        INFO_CODE_COST (arg_info) += WITH_COST (arg_node);
     } else {
+        outer_with = INFO_WITH (arg_info);
+        INFO_WITH (arg_info) = arg_node;
+
+        arg_node = TRAVcont (arg_node, arg_info);
+
+        /* Now all inner With Loops have their cost. */
+        INFO_DO_CHECK (arg_info) = TRUE;
+        INFO_WITH (arg_info) = outer_with;
+        WITH_COST (arg_node) = 0; /* Initialize cost value */
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_DO_CHECK (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -166,14 +188,21 @@ WLCCcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLCCcode");
 
-    INFO_COST (arg_info) = 0;
+    if (!INFO_DO_CHECK (arg_info)) {
+        arg_node = TRAVcont (arg_node, arg_info);
+    } else {
+        INFO_CODE_COST (arg_info) = 0;
+        if (CODE_CBLOCK (arg_node) != NULL) {
+            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+        }
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+        if (INFO_CODE_COST (arg_info) > WITH_COST (INFO_WITH (arg_info))) {
+            WITH_COST (INFO_WITH (arg_info)) = INFO_CODE_COST (arg_info);
+        }
 
-    if (INFO_COST (arg_info) <= 1 && CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+        if (CODE_NEXT (arg_node) != NULL) {
+            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -192,7 +221,7 @@ WLCCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLCCprf");
 
     if (PRF_PRF (arg_node) == F_sel) {
-        INFO_COST (arg_info) += 1;
+        INFO_CODE_COST (arg_info) += 1;
     }
 
     DBUG_RETURN (arg_node);
@@ -210,7 +239,8 @@ WLCCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLCCap");
 
-    INFO_COST (arg_info) += 2;
+    /* TODO: call cost check on user defined functions */
+    INFO_CODE_COST (arg_info) += 2;
 
     DBUG_RETURN (arg_node);
 }

@@ -14,7 +14,7 @@
  * Prefix: WLCC
  *
  *****************************************************************************/
-extern node *WLCCdoWLCostCheck (node *with);
+extern node *WLCCdoWLCostCheck (node *fundef);
 
 extern node *WLCCwith (node *arg_node, info *arg_info);
 extern node *WLCCcode (node *arg_node, info *arg_info);

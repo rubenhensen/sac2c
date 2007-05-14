@@ -5353,8 +5353,8 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="isTrivial">
-          <type name="Bool">
+        <attribute name="Cost">
+          <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />

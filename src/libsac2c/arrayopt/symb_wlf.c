@@ -84,6 +84,7 @@
 #include "free.h"
 #include "LookUpTable.h"
 #include "globals.h"
+#include "wl_cost_check.h"
 
 /** <!--********************************************************************-->
  *
@@ -374,6 +375,9 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops folding in function %s begins",
                              FUNDEF_NAME (arg_node)));
+
+        arg_node = WLCCdoWLCostCheck (arg_node);
+        PRTdoPrintNode (arg_node);
 
         /**
          * Get infer need counters
