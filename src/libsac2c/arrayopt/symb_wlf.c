@@ -2,6 +2,8 @@
  * $Id: symb_wlf.c dpa $
  */
 
+#define DAOEN
+
 /** <!--********************************************************************-->
  *
  * @defgroup swlf Symbolic With-Loop Folding
@@ -376,9 +378,11 @@ SWLFfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops folding in function %s begins",
                              FUNDEF_NAME (arg_node)));
 
+#ifdef DAOEN
         arg_node = WLCCdoWLCostCheck (arg_node);
-        PRTdoPrintNode (arg_node);
+#endif
 
+#ifndef DAOEN
         /**
          * Get infer need counters
          */
@@ -392,6 +396,7 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops folding in function %s completes",
                              FUNDEF_NAME (arg_node)));
+#endif
     }
 
     DBUG_RETURN (arg_node);

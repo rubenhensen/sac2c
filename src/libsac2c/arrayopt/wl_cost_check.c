@@ -15,7 +15,7 @@
  *     with-loop      ::= with-part+
  *     with-part      ::= assign+
  *
- *     cost(fundef)    = sum of all assigns in the function
+ *     cost(user-defined-fun)    = 2
  *     cost(with-loop) = max cost(with-part) for all with-part in with-loop
  *     cost(sel)       = 1
  *     cost(other)     = 0
@@ -158,7 +158,7 @@ WLCCwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLCCwith");
 
     if (INFO_DO_CHECK (arg_info)) {
-        INFO_CODE_COST (arg_info) += WITH_COST (arg_node);
+        INFO_CODE_COST (arg_info) += 2;
     } else {
         outer_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
@@ -166,11 +166,12 @@ WLCCwith (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
 
         /* Now all inner With Loops have their cost. */
+
         INFO_DO_CHECK (arg_info) = TRUE;
-        INFO_WITH (arg_info) = outer_with;
         WITH_COST (arg_node) = 0; /* Initialize cost value */
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_DO_CHECK (arg_info) = FALSE;
+        INFO_WITH (arg_info) = outer_with;
     }
 
     DBUG_RETURN (arg_node);
@@ -239,7 +240,6 @@ WLCCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLCCap");
 
-    /* TODO: call cost check on user defined functions */
     INFO_CODE_COST (arg_info) += 2;
 
     DBUG_RETURN (arg_node);
