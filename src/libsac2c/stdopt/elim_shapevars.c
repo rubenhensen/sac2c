@@ -122,6 +122,11 @@ ResetAvis (node *avis)
     AVIS_HASDTTHENPROXY (avis) = FALSE;
     AVIS_HASDTELSEPROXY (avis) = FALSE;
 
+    if (TRUE == AVIS_HASSAAARGUMENTS (avis)) {
+        AVIS_HASSAAARGUMENTS (avis) = FALSE;
+        DBUG_PRINT ("ISAA", ("removed saa-argument-info from %s", AVIS_NAME (avis)));
+    }
+
     if (AVIS_DIM (avis) != NULL) {
         AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
     }
