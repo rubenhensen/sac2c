@@ -30,7 +30,7 @@ CC_FLAGS_YY     := -DYYLMAX=8192
 
 LD              := @CC@
 LD_FLAGS        := 
-LD_SHARED       := -shared
+LD_DYNAMIC      := @LD_DYNAMIC@
 
 
 ################################################################################

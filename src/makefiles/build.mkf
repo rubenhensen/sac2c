@@ -188,7 +188,7 @@ $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STY
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
 #	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LD) $(LD_FLAGS) $(LD_SHARED) -o $@ \
+	$(HIDE) $(LD_DYNAMIC) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 
