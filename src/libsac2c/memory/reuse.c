@@ -230,18 +230,63 @@ EMRIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRIprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_prop_obj_in:
-    case F_prop_obj_out:
-    case F_accu:
-    case F_wl_assign:
-    case F_free:
-    case F_to_unq:
-    case F_from_unq:
-    case F_inc_rc:
-    case F_dec_rc:
-    case F_type_conv:
-    case F_type_error:
-    case F_dispatch_error:
+    case F_toi_S:
+    case F_toi_A:
+    case F_tof_S:
+    case F_tof_A:
+    case F_tod_S:
+    case F_tod_A:
+    case F_neg:
+    case F_abs:
+    case F_not:
+    case F_and:
+    case F_or:
+    case F_eq:
+    case F_neq:
+    case F_le:
+    case F_lt:
+    case F_ge:
+    case F_gt:
+    case F_min:
+    case F_max:
+    case F_mod:
+    case F_add_SxS:
+    case F_add_SxA:
+    case F_add_AxS:
+    case F_add_AxA:
+    case F_sub_SxS:
+    case F_sub_SxA:
+    case F_sub_AxS:
+    case F_sub_AxA:
+    case F_mul_SxS:
+    case F_mul_SxA:
+    case F_mul_AxS:
+    case F_mul_AxA:
+    case F_div_SxS:
+    case F_div_SxA:
+    case F_div_AxS:
+    case F_div_AxA:
+    case F_dim:
+    case F_shape:
+    case F_idxs2offset:
+        if (PRF_ARGS (arg_node) != NULL) {
+            DBUG_PRINT ("RI", ("prf args"));
+            DBUG_EXECUTE ("RI", PRTdoPrint (PRF_ARGS (arg_node)););
+        }
+
+        rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_LHS (arg_info));
+
+        if (rhc != NULL) {
+            DBUG_PRINT ("RI", ("rhc"));
+            DBUG_EXECUTE ("RI", PRTdoPrint (rhc););
+        }
+
+        INFO_RHSCAND (arg_info) = rhc;
+
+        if (INFO_RHSCAND (arg_info) != NULL) {
+            DBUG_PRINT ("RI", ("RHSCAND"));
+            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
+        }
         break;
 
     case F_reuse:
@@ -301,24 +346,7 @@ EMRIprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        if (PRF_ARGS (arg_node) != NULL) {
-            DBUG_PRINT ("RI", ("prf args"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (PRF_ARGS (arg_node)););
-        }
-
-        rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_LHS (arg_info));
-
-        if (rhc != NULL) {
-            DBUG_PRINT ("RI", ("rhc"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (rhc););
-        }
-
-        INFO_RHSCAND (arg_info) = rhc;
-
-        if (INFO_RHSCAND (arg_info) != NULL) {
-            DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
-        }
+        break;
     }
     DBUG_RETURN (arg_node);
 }
