@@ -305,7 +305,7 @@ libsacphm_compat    := malloc calloc realloc memalign
 #
 ###############################################################################
 
-tools_targets           := csimt csima ctest sac2c sac4c
+tools_targets           := csimt csima ctest sac2c sac2c-p sac2c-d sac4c
 tools_targetdir         := bin
 
 tools_subtarget_suffix  := .o
@@ -315,7 +315,7 @@ tools_extraclean_all    :=
 tools_extraclean_devel  := 
 tools_extraclean_prod   := 
 
-tools_sourcedirs        := csimt csima ctest sac2c sac4c
+tools_sourcedirs        := csimt csima ctest sac2c sac2c-p sac2c-d sac4c
 
 ###############################################################################
 
@@ -326,6 +326,10 @@ tools_csimt           := csimt
 tools_ctest           := accesstime bits ctest l1 l2 verbose
 
 tools_sac2c           := sac2c
+
+tools_sac2c-p         := sac2c-p
+
+tools_sac2c-d         := sac2c-d
 
 tools_sac4c           := sac4c
 

@@ -14,7 +14,6 @@
 
 typedef int (*sacmain_p) (int, char **);
 
-#define LIBSAC2C "/lib/libsac2c.so"
 #define SAC2CBASEENV "SAC2CBASE"
 
 #ifdef RTLD_WORLD
@@ -42,7 +41,7 @@ typedef int (*sacmain_p) (int, char **);
         }                                                                                \
     }
 
-#define LAUNCHFUNCTION(mainfun, argc, argv, result)                                      \
+#define LAUNCHFUNCTIONFROMLIB(library, mainfun, argc, argv, result)                      \
     {                                                                                    \
         char *sac2cbase;                                                                 \
         char *libname;                                                                   \
@@ -53,7 +52,7 @@ typedef int (*sacmain_p) (int, char **);
                                                                                          \
         libname = malloc (                                                               \
           sizeof (char)                                                                  \
-          * (strlen (LIBSAC2C) + ((sac2cbase == NULL) ? 0 : strlen (sac2cbase)) + 1));   \
+          * (strlen (library) + ((sac2cbase == NULL) ? 0 : strlen (sac2cbase)) + 1));    \
                                                                                          \
         if (sac2cbase != NULL) {                                                         \
             strcpy (libname, sac2cbase);                                                 \
@@ -61,7 +60,7 @@ typedef int (*sacmain_p) (int, char **);
             printf ("WARNING: SAC2CBASE is not set.\n");                                 \
             libname[0] = '\0';                                                           \
         }                                                                                \
-        strcat (libname, LIBSAC2C);                                                      \
+        strcat (libname, library);                                                       \
                                                                                          \
         libsac2c = dlopen (libname, DLOPEN_FLAGS);                                       \
                                                                                          \

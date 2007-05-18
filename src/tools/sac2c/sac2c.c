@@ -6,6 +6,7 @@
 
 #include "sactools.h"
 
+#define LIBRARY "/lib/libsac2c.so"
 #define MAINFUN "SACrunSac2c"
 
 int
@@ -13,7 +14,7 @@ main (int argc, char *argv[])
 {
     int result;
 
-    LAUNCHFUNCTION (MAINFUN, argc, argv, result);
+    LAUNCHFUNCTIONFROMLIB (LIBRARY, MAINFUN, argc, argv, result);
 
     return (result);
 }
