@@ -541,28 +541,28 @@ dnl     SCL
 dnl     AKS, AKD, AUD
 dnl
 dnl These are actually reduced to two target macro's, but we still need
-dnl the intermediate ones for AKS, AKD and AUD because it's not a 1:1
+dnl the intermediate ones for the SCL case because it's not a 1:1
 dnl mapping from the LHS.
 
 icm(`SAC_ND_COPY__DATA',
     `SCL', `*', `*',
-    `SAC_ND_COPY__DATA__SCL_SCL', `22', `0', `2')
+    `GEN_SAC_ND_COPY__DATA__SCL', `22', `0', `2')
 icm(`SAC_ND_COPY__DATA',
     `*', `*', `*',
-    `GEN_SAC_ND_COPY__DATA__AKS', `22', `0', `2')
+    `SAC_ND_COPY__DATA__DEFAULT', `22', `0', `2')
 
-dnl GEN_SAC_ND_COPY__DATA__AKS
+dnl GEN_SAC_ND_COPY__DATA__SCL
 dnl
 dnl There are two cases for the RHS:
 dnl   SCL -> copy scalar value
 dnl   AKS, AKD, AUD -> do a data copy
 
-icm(`GEN_SAC_ND_COPY__DATA__AKS',
+icm(`GEN_SAC_ND_COPY__DATA__SCL',
     `SCL', `*', `*',
     `SAC_ND_COPY__DATA__SCL_SCL', `25', `1', `1')
-icm(`GEN_SAC_ND_COPY__DATA__AKS',
+icm(`GEN_SAC_ND_COPY__DATA__SCL',
     `*', `*', `*',
-    `SAC_ND_COPY__DATA__AKS_AKS', `25', `1', `1')
+    `SAC_ND_COPY__DATA__DEFAULT', `25', `1', `1')
 
 dnl SAC_ND_SET__RC
 
