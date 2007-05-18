@@ -123,7 +123,7 @@ CheckExpr (node *expr, prf op)
             && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))) {
 
             if (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop) {
-                result = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (assign)));
+                result = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (assign)));
             }
         }
     }
@@ -383,23 +383,28 @@ UESDprf (node *arg_node, info *arg_info)
                  * nothing to do
                  */
             } else if ((id1 == NULL) && (id2 != NULL)) {
-                EXPRS_NEXT (PRF_ARGS (arg_node))
-                  = FREEdoFreeNode (EXPRS_NEXT (PRF_ARGS (arg_node)));
-                EXPRS_NEXT (PRF_ARGS (arg_node)) = DUPdoDupTree (id2);
+                /*
+                 * convert a op !b -> a !op b
+                 */
+                PRF_ARG2 (arg_node) = FREEdoFreeTree (PRF_ARG2 (arg_node));
+                PRF_ARG2 (arg_node) = DUPdoDupTree (id2);
                 PRF_PRF (arg_node) = TogglePrf (op);
-
             } else if ((id1 != NULL) && (id2 == NULL)) {
-                node *tmp = EXPRS_NEXT (PRF_ARGS (arg_node));
-                EXPRS_NEXT (PRF_ARGS (arg_node)) = NULL;
-                PRF_ARGS (arg_node) = FREEdoFreeNode (PRF_ARGS (arg_node));
-                PRF_ARGS (arg_node) = tmp;
-                EXPRS_NEXT (PRF_ARGS (arg_node)) = DUPdoDupTree (id1);
+                /*
+                 * convert !a op b -> b !op a
+                 */
+                PRF_ARG1 (arg_node) = FREEdoFreeTree (PRF_ARG1 (arg_node));
+                PRF_ARG1 (arg_node) = PRF_ARG2 (arg_node);
+                PRF_ARG2 (arg_node) = DUPdoDupTree (id1);
                 PRF_PRF (arg_node) = TogglePrf (op);
             } else if ((id1 != NULL) && (id2 != NULL)) {
+                /*
+                 * convert !a op !b -> !( a op b)
+                 */
                 node *avis;
-                node *tmp = DUPdoDupTree (id1);
-                EXPRS_NEXT (tmp) = DUPdoDupTree (id2);
-                tmp = TBmakePrf (op, tmp);
+                node *tmp;
+
+                tmp = TCmakePrf2 (op, DUPdoDupTree (id1), DUPdoDupTree (id2));
 
                 avis
                   = TBmakeAvis (TRAVtmpVar (),
@@ -413,9 +418,7 @@ UESDprf (node *arg_node, info *arg_info)
                  * change current prf
                  */
                 PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
-                PRF_ARGS (arg_node)
-                  = TBmakeExprs (TBmakeId (IDS_AVIS (LET_IDS (ASSIGN_INSTR (tmp)))),
-                                 NULL);
+                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
 
                 if (add) {
                     PRF_PRF (arg_node) = F_esd_neg;
@@ -431,17 +434,15 @@ UESDprf (node *arg_node, info *arg_info)
             break;
         }
     } else {
-
         /*
          * bottom-up traversal
          */
 
-        type = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
+        type = AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info))));
 
         if (PRF_PRF (arg_node) == F_esd_neg) {
 
             if (TYisAUD (type)) {
-
                 newop = F_sub_SxA;
             } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
                 newop = F_sub_SxA;
@@ -449,47 +450,51 @@ UESDprf (node *arg_node, info *arg_info)
                 newop = F_sub_SxS;
             }
             PRF_PRF (arg_node) = newop;
-            if (((TYisArray (type)) && (T_int == TYgetSimpleType (TYgetScalar (type))))
-                || ((!TYisArray (type)) && (T_int == TYgetSimpleType (type)))) {
+
+            /*
+             * construct an appropriate zero
+             */
+            if ((TYisArray (type) && (T_int == TYgetSimpleType (TYgetScalar (type))))
+                || (!TYisArray (type) && (T_int == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (0), PRF_ARGS (arg_node));
-            } else if (((TYisArray (type))
+            } else if ((TYisArray (type)
                         && (T_float == TYgetSimpleType (TYgetScalar (type))))
-                       || ((!TYisArray (type)) && (T_float == TYgetSimpleType (type)))) {
+                       || (!TYisArray (type) && (T_float == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node)
                   = TBmakeExprs (TBmakeFloat (0.0), PRF_ARGS (arg_node));
-            } else if (((TYisArray (type))
+            } else if ((TYisArray (type)
                         && (T_double == TYgetSimpleType (TYgetScalar (type))))
-                       || ((!TYisArray (type)) && (T_double == TYgetSimpleType (type)))) {
+                       || (!TYisArray (type) && (T_double == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node)
                   = TBmakeExprs (TBmakeDouble (0.0), PRF_ARGS (arg_node));
             } else {
                 DBUG_ASSERT ((FALSE), "unexpected simpletype");
             }
-        }
-
-        if (PRF_PRF (arg_node) == F_esd_rec) {
+        } else if (PRF_PRF (arg_node) == F_esd_rec) {
 
             if (TYisAUD (type)) {
-
                 newop = F_div_SxA;
             } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
                 newop = F_div_SxA;
             } else {
                 newop = F_div_SxS;
             }
-
             PRF_PRF (arg_node) = newop;
-            if (((TYisArray (type)) && (T_int == TYgetSimpleType (TYgetScalar (type))))
-                || ((!TYisArray (type)) && (T_int == TYgetSimpleType (type)))) {
+
+            /*
+             * construct an appropriate one
+             */
+            if ((TYisArray (type) && (T_int == TYgetSimpleType (TYgetScalar (type))))
+                || (!TYisArray (type) && (T_int == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
-            } else if (((TYisArray (type))
+            } else if ((TYisArray (type)
                         && (T_float == TYgetSimpleType (TYgetScalar (type))))
-                       || ((!TYisArray (type)) && (T_float == TYgetSimpleType (type)))) {
+                       || (!TYisArray (type) && (T_float == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node)
                   = TBmakeExprs (TBmakeFloat (1.0), PRF_ARGS (arg_node));
-            } else if (((TYisArray (type))
+            } else if ((TYisArray (type)
                         && (T_double == TYgetSimpleType (TYgetScalar (type))))
-                       || ((!TYisArray (type)) && (T_double == TYgetSimpleType (type)))) {
+                       || (!TYisArray (type) && (T_double == TYgetSimpleType (type)))) {
                 PRF_ARGS (arg_node)
                   = TBmakeExprs (TBmakeDouble (1.0), PRF_ARGS (arg_node));
             } else {

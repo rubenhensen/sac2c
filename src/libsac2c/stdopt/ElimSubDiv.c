@@ -308,6 +308,7 @@ ESDprf (node *arg_node, info *arg_info)
     if (op != F_noop) {
         node *avis, *vardec;
         node *prf = NULL;
+        ntype *ptype;
 
         /*
          * create new assignment
@@ -315,8 +316,9 @@ ESDprf (node *arg_node, info *arg_info)
         prf = TBmakePrf (op, EXPRS_NEXT (PRF_ARGS (arg_node)));
         EXPRS_NEXT (PRF_ARGS (arg_node)) = NULL;
 
-        avis = TBmakeAvis (TRAVtmpVar (),
-                           TYgetProductMember (NTCnewTypeCheck_Expr (prf), 0));
+        ptype = NTCnewTypeCheck_Expr (prf);
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (ptype, 0)));
+        ptype = TYfreeType (ptype);
 
         INFO_NEWASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), prf), NULL);
