@@ -124,7 +124,6 @@ ResetAvis (node *avis)
 
     if (TRUE == AVIS_HASSAAARGUMENTS (avis)) {
         AVIS_HASSAAARGUMENTS (avis) = FALSE;
-        DBUG_PRINT ("ISAA", ("removed saa-argument-info from %s", AVIS_NAME (avis)));
     }
 
     if (AVIS_DIM (avis) != NULL) {

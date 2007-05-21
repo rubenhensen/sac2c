@@ -27,6 +27,17 @@
  *    to the parameter-avis.
  *    Annotated style requires augmented style.
  *
+ * When using these annotation-levels, the following assertions shall hold:
+ * 1. In classical style, AVIS_DIM and AVIS_SHAPE is set, if FIXME!
+ *
+ * 2. In augmented style, AVIS_DIM and AVIS_SHAPE is set on every avis, that
+ *    is the result of a saabind or an expression, which result types can be
+ *    determined. It is not set on user function results, function parameters
+ *    and not saa-bound avis.
+ * 3. In annotated style, AVIS_DIM and AVIS_SHAPE is set on every avis. Only
+ *    exceptions are avis, that are the result of a user defined function and
+ *    are not jet saa-bound.
+ *
  * This traversal may in certain cases not export values from loops or
  * conditionals; concrete cases are, if the dim or shape of returned avis
  * are not known (e.g. dispatch_error(...)).
@@ -86,6 +97,7 @@ struct INFO {
     node *rhs;
     node *withid;
     node *args;
+    node *returnexpr;
     bool recap;
     bool funparams;
 };
@@ -102,6 +114,7 @@ struct INFO {
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_RECAP(n) ((n)->recap)
 #define INFO_FUNPARAMS(n) ((n)->funparams)
+#define INFO_RETURNEXPR(n) ((n)->returnexpr)
 
 static info *
 MakeInfo ()
@@ -124,6 +137,7 @@ MakeInfo ()
     INFO_ARGS (result) = NULL;
     INFO_RECAP (result) = FALSE;
     INFO_FUNPARAMS (result) = FALSE;
+    INFO_RETURNEXPR (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -256,7 +270,7 @@ CreateVectorAvisFrom (node *source, node *shape, node *fun)
 }
 
 /*
- * the three following static functions assist in the creation and insertion
+ * the two following static functions assist in the creation and insertion
  * of explicit dimension and shape arguments for functions.
  */
 
@@ -300,19 +314,11 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
         if (!TUshapeKnown (AVIS_TYPE (avis))) {
             DBUG_PRINT ("ISAA", ("inserting a formal shape for %s", AVIS_NAME (avis)));
 
-            DBUG_ASSERT ((NULL != AVIS_DIM (avis)),
-                         "created concrete shape for argument without dim!");
-
             newshp = CreateVectorAvisFrom (avis, DUPdoDupNode (AVIS_DIM (avis)), NULL);
             AVIS_HASSAAARGUMENTS (newshp) = TRUE;
 
             AVIS_SHAPE (avis) = TBmakeId (newshp);
             arg_node = TCappendArgs (newarg, TBmakeArg (newshp, arg_node));
-
-            /*
-            DBUG_PRINT( "ISAA", ("made %s shape of %s", AVIS_NAME( newshp ),
-                                 AVIS_NAME( avis ) ) );
-            */
         } else {
             AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
         }
@@ -347,18 +353,13 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
                                                           ARG_NEXT (funargs), arg_info);
     }
 
-    funavis = ARG_AVIS (funargs);
-
     /* there may be an saabind to our avis already */
     avis = ID_AVIS (EXPRS_EXPR (arg_node));
     while (NULL != AVIS_SUBST (avis)) {
         avis = AVIS_SUBST (avis);
     }
 
-    /*
-    DBUG_PRINT( "ISAA", ("looking for concrete args on avis %s/%s",
-                         AVIS_NAME( avis ), AVIS_NAME( funavis ) ) );
-    */
+    funavis = ARG_AVIS (funargs);
 
     if (!AVIS_HASSAAARGUMENTS (funavis)) {
 
@@ -366,16 +367,10 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
             DBUG_PRINT ("ISAA", ("inserting a concrete dim for %s in fun %s",
                                  AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
 
-            /* todo:
-             * 1. create the new avis which holds the dimension.
-             * 2. create an N_let that assigns dim(arg) to our new avis.
-             * 3. prepend the new avis into our parameter list.
-             */
-
-            /* 1. */
+            /* create the new avis that shall be holding our dimension */
             newdim = CreateScalarAvisFrom (avis, INFO_FUNDEF (arg_info));
 
-            /* 2. */
+            /* create a new assignment: newdim = dim( avis ); */
             preass = TBmakeAssign (TBmakeLet (TBmakeIds (newdim, NULL),
                                               TCmakePrf1 (F_dim, TBmakeId (avis))),
                                    NULL);
@@ -383,23 +378,22 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
             INFO_PREASSIGN (arg_info)
               = TCappendAssign (INFO_PREASSIGN (arg_info), preass);
 
-            /* 3. */
+            /* prepend the new dim-avis in our argument list */
             newarg = TBmakeExprs (TBmakeId (newdim), NULL);
         }
 
         if (!TUshapeKnown (AVIS_TYPE (funavis))) {
             DBUG_PRINT ("ISAA", ("inserting a concrete shape for %s in fun %s",
                                  AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
-            /* here we do have the same 3 steps as for the dimension */
 
-            /* 1. */
+            /* create the new avis that shall be holding our shape */
             DBUG_ASSERT ((NULL != AVIS_DIM (avis)),
                          "created concrete shape for argument without dim!");
 
             newshp = CreateVectorAvisFrom (funavis, DUPdoDupNode (AVIS_DIM (avis)),
                                            INFO_FUNDEF (arg_info));
 
-            /* 2. */
+            /* create a new assignment: newshp = shape( avis ); */
             preass = TBmakeAssign (TBmakeLet (TBmakeIds (newshp, NULL),
                                               TCmakePrf1 (F_shape, TBmakeId (avis))),
                                    NULL);
@@ -407,374 +401,12 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
             INFO_PREASSIGN (arg_info)
               = TCappendAssign (INFO_PREASSIGN (arg_info), preass);
 
-            /* 3. */
+            /* put the dim-shape in our argument list, behind dim, before avis */
             arg_node = TCappendExprs (newarg, TBmakeExprs (TBmakeId (newshp), arg_node));
         }
     }
 
     DBUG_RETURN (arg_node);
-}
-
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-static node *
-ISAAretraverse (node *fun, info *arg_info)
-{
-    int travscope;
-    int travmode;
-    node *preblock;
-    node *preassign;
-    node *postassign;
-    node *fundef;
-    node *args;
-
-    DBUG_ENTER ("ISAAretraverse");
-
-    preblock = INFO_PREBLOCK (arg_info);
-    preassign = INFO_PREASSIGN (arg_info);
-    postassign = INFO_POSTASSIGN (arg_info);
-    travscope = INFO_TRAVSCOPE (arg_info);
-    travmode = INFO_TRAVMODE (arg_info);
-    fundef = INFO_FUNDEF (arg_info);
-    args = INFO_ARGS (arg_info);
-    INFO_PREBLOCK (arg_info) = NULL;
-    INFO_PREASSIGN (arg_info) = NULL;
-    INFO_POSTASSIGN (arg_info) = NULL;
-    INFO_TRAVSCOPE (arg_info) = TS_args;
-
-    DBUG_PRINT ("ISAA", ("retraverse SAVES INFO_ARGS"));
-
-    DBUG_PRINT ("ISAA", ("retraverse %s", FUNDEF_NAME (fun)));
-
-    fun = TRAVdo (fun, arg_info);
-
-    DBUG_PRINT ("ISAA", ("retraverse RESTORES INFO_ARGS"));
-
-    INFO_PREBLOCK (arg_info) = preblock;
-    INFO_PREASSIGN (arg_info) = preassign;
-    INFO_POSTASSIGN (arg_info) = postassign;
-    INFO_TRAVSCOPE (arg_info) = travscope;
-    INFO_TRAVMODE (arg_info) = travmode;
-    INFO_FUNDEF (arg_info) = fundef;
-    INFO_ARGS (arg_info) = args;
-
-    DBUG_RETURN (fun);
-}
-#endif
-
-/*
- * the following static functions assist in the creation of proxies.
- */
-static node *
-PrependAssign (node *prefix, node *rest)
-{
-    DBUG_ENTER ("PrependAssign");
-
-    if (prefix != NULL) {
-        if (NODE_TYPE (rest) == N_empty) {
-            rest = FREEdoFreeNode (rest);
-            rest = prefix;
-        } else {
-            rest = TCappendAssign (prefix, rest);
-        }
-    }
-
-    DBUG_RETURN (rest);
-}
-
-static node *
-MakeDTProxy (node *avis, node *postass, info *arg_info)
-{
-    bool makeproxy = FALSE;
-    bool islacfun = FALSE;
-
-    DBUG_ENTER ("MakeDTProxy");
-
-    /*
-    DBUG_PRINT( "ISAA", ("enter MakeDTProxy in %s for %s",
-                         FUNDEF_NAME( INFO_FUNDEF( arg_info ) ),
-                         AVIS_NAME( avis ) ) );
-    */
-
-#if ISAA_USE_EVEN_ANNOTATED_STYLE
-    if (((TRUE == FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
-         || (TRUE == FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))))
-        && (TRUE == INFO_FUNPARAMS (arg_info))) {
-        islacfun = TRUE;
-    }
-
-    if (((NULL == AVIS_SHAPE (avis)) || (NULL == AVIS_DIM (avis)))
-        && (TRUE == islacfun)) {
-        makeproxy = TRUE;
-    } else {
-#endif
-        switch (INFO_TRAVMODE (arg_info)) {
-        case TM_then:
-            makeproxy = (!AVIS_HASDTTHENPROXY (avis));
-            break;
-
-        case TM_else:
-            makeproxy = (!AVIS_HASDTELSEPROXY (avis));
-            break;
-
-        case TM_all:
-            makeproxy = ((!AVIS_HASDTTHENPROXY (avis)) || (!AVIS_HASDTELSEPROXY (avis)));
-            break;
-        }
-#if ISAA_USE_EVEN_ANNOTATED_STYLE
-    }
-#endif
-
-    if (makeproxy) {
-        node *dimavis;
-        node *shpavis;
-        node *dimnode;
-        node *shpnode;
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-        node *dim_postass = NULL;
-        node *shp_postass = NULL;
-#endif
-        node *proxyavis;
-        node *fundef;
-
-        fundef = INFO_FUNDEF (arg_info);
-
-        /* if we do not use annotated_style (see above) this is always false */
-        if (FALSE == islacfun) {
-            dimavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-            AVIS_DIM (dimavis) = TBmakeNum (0);
-            AVIS_SHAPE (dimavis) = TCmakeIntVector (NULL);
-
-            shpavis
-              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
-                            TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
-            AVIS_DIM (shpavis) = TBmakeNum (1);
-            AVIS_SHAPE (shpavis)
-              = TCmakeIntVector (TBmakeExprs (TBmakeId (dimavis), NULL));
-
-            proxyavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
-                                    TYcopyType (AVIS_TYPE (avis)));
-            AVIS_DIM (proxyavis) = TBmakeId (dimavis);
-            AVIS_SHAPE (proxyavis) = TBmakeId (shpavis);
-
-            FUNDEF_VARDEC (fundef)
-              = TBmakeVardec (dimavis,
-                              TBmakeVardec (shpavis,
-                                            TBmakeVardec (proxyavis,
-                                                          FUNDEF_VARDEC (fundef))));
-
-            postass = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
-                                               TCmakePrf3 (F_saabind, TBmakeId (dimavis),
-                                                           TBmakeId (shpavis),
-                                                           TBmakeId (avis))),
-                                    postass);
-            AVIS_SSAASSIGN (proxyavis) = postass;
-            AVIS_SUBST (avis) = proxyavis;
-        }
-
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-        /* if we have passed the shape as a parameter to our function, we may now
-         * look up its avis in AVIS_SHAPE. */
-
-        if (NULL != AVIS_SHAPE (avis)) {
-
-            if (N_id == NODE_TYPE (AVIS_SHAPE (avis))) {
-
-                shp_postass = MakeDTProxy (ID_AVIS (AVIS_SHAPE (avis)), NULL, arg_info);
-
-                if (NULL != AVIS_SUBST (ID_AVIS (AVIS_SHAPE (avis)))) {
-                    shpnode = TBmakeId (AVIS_SUBST (ID_AVIS (AVIS_SHAPE (avis))));
-                } else {
-                    shpnode = DUPdoDupNode (AVIS_SHAPE (avis));
-                }
-
-                /*
-
-            if ( (N_id == NODE_TYPE( AVIS_SHAPE( avis ) ))
-                 && (NULL != AVIS_SUBST( ID_AVIS( AVIS_SHAPE( avis ) ) )) ) {
-
-              / * BEAUTIFY_ME: this is a little ugly:
-               * as we want a saabind'ed shape, we have to proxify it first; but as
-               * it would be proxified after this arg, we have to call for it by hand.
-               * /
-              if ( TS_args == INFO_TRAVSCOPE( arg_info ) ) {
-                DBUG_PRINT( "ISAA", ("proxifiing shape.") );
-
-                shp_postass = MakeDTProxy(ID_AVIS(AVIS_SHAPE(avis)), NULL, arg_info);
-              }
-
-              shpnode = TBmakeId( AVIS_SUBST( ID_AVIS( AVIS_SHAPE( avis ) ) ) );
-
-                */
-            } else {
-                shpnode = DUPdoDupNode (AVIS_SHAPE (avis));
-            }
-        } else {
-            shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
-        }
-#else
-        shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
-#endif
-
-        if (FALSE == islacfun) {
-            postass
-              = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shpnode), postass);
-            AVIS_SSAASSIGN (shpavis) = postass;
-        } else if ((NULL == AVIS_SHAPE (avis)) && (TRUE == islacfun)) {
-            if (N_id == NODE_TYPE (shpnode)) {
-                AVIS_SHAPE (avis) = shpnode;
-            } else {
-                shpnode = FREEdoFreeNode (shpnode);
-                /* in this case the shape has to be statically known */
-
-                DBUG_ASSERT ((TRUE == TUshapeKnown (AVIS_TYPE (avis))),
-                             "Proxified a shape, but was not able to determine shape!");
-
-                AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
-            }
-        }
-
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-        /* same for the dimension we may have. */
-        if (NULL != AVIS_DIM (avis)) {
-
-            if ((N_id == NODE_TYPE (AVIS_DIM (avis)))
-                && (NULL != AVIS_SUBST (ID_AVIS (AVIS_DIM (avis))))) {
-
-                /* BEAUTIFY_ME: same as above */
-                if (TS_args == INFO_TRAVSCOPE (arg_info)) {
-                    dim_postass = MakeDTProxy (ID_AVIS (AVIS_DIM (avis)), NULL, arg_info);
-                }
-
-                dimnode = TBmakeId (AVIS_SUBST (ID_AVIS (AVIS_DIM (avis))));
-            } else {
-                dimnode = DUPdoDupNode (AVIS_DIM (avis));
-            }
-        } else {
-            dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
-        }
-#else
-        dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
-#endif
-
-        if (FALSE == islacfun) {
-            postass
-              = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), dimnode), postass);
-            AVIS_SSAASSIGN (dimavis) = postass;
-        } else if ((NULL == AVIS_DIM (avis)) && (TRUE == islacfun)) {
-            if (N_id == NODE_TYPE (dimnode)) {
-                AVIS_DIM (avis) = dimnode;
-            } else {
-                dimnode = FREEdoFreeNode (dimnode);
-                /* in this case the dimension has to be statically known */
-
-                if (TUdimKnown (AVIS_TYPE (avis))) {
-                    AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
-                }
-            }
-        }
-
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-        if (NULL != shp_postass) {
-            postass = PrependAssign (shp_postass, postass);
-        }
-        if (NULL != dim_postass) {
-            postass = PrependAssign (dim_postass, postass);
-        }
-#endif
-
-        switch (INFO_TRAVMODE (arg_info)) {
-        case TM_then:
-            AVIS_HASDTTHENPROXY (avis) = TRUE;
-            break;
-
-        case TM_else:
-            AVIS_HASDTELSEPROXY (avis) = TRUE;
-            break;
-
-        default:
-            AVIS_HASDTTHENPROXY (avis) = TRUE;
-            AVIS_HASDTELSEPROXY (avis) = TRUE;
-            break;
-        }
-
-        if (FALSE == islacfun) {
-            switch (INFO_TRAVMODE (arg_info)) {
-
-            case TM_then:
-                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
-                break;
-
-            case TM_else:
-                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
-                break;
-
-            default:
-                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
-                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
-                break;
-            }
-        }
-
-        /* do NOT remove dim/shape from avis if in annotated style */
-#if ISAA_USE_AUGMENTED_STYLE // & !ISAA_USE_EVEN_ANNOTATED_STYLE
-
-        if (((AVIS_HASDTTHENPROXY (avis) == TRUE) || (AVIS_HASDTELSEPROXY (avis) == TRUE))
-        /* FIXME
-         * The following requirement for ssaassign to be not null is neccessary
-         * so that saaopt works with lir (with regard to concrete returning
-         * values). Please remove when this is fixed, and change the above
-         * if to not fire on annotated style.
-         */
-
-#if ISAA_USE_EVEN_ANNOTATED_STYLE
-            && (AVIS_SSAASSIGN (avis) != NULL)
-#endif
-        ) {
-
-            /* clean the avis, as we do not want shape/dim on our parameters */
-            if (NULL != AVIS_SHAPE (avis)) {
-                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-            }
-
-            if (NULL != AVIS_DIM (avis)) {
-                AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-            }
-        }
-#endif
-    } /* if ( makeproxy ) */
-
-    DBUG_RETURN (postass);
-}
-
-static node *
-MakeArgProxies (node *arg_node, info *arg_info)
-{
-    node *ass = NULL;
-
-    DBUG_ENTER ("MakeArgProxies");
-
-    if (arg_node != NULL) {
-        ass = MakeArgProxies (ARG_NEXT (arg_node), arg_info);
-        ass = MakeDTProxy (ARG_AVIS (arg_node), ass, arg_info);
-    }
-
-    DBUG_RETURN (ass);
-}
-
-static node *
-RemoveAvisSubst (node *fundef)
-{
-    DBUG_ENTER ("RemoveAvisSubst");
-
-    if (FUNDEF_ARGS (fundef) != NULL) {
-        FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), NULL);
-    }
-    if (FUNDEF_VARDEC (fundef) != NULL) {
-        FUNDEF_VARDEC (fundef) = TRAVdo (FUNDEF_VARDEC (fundef), NULL);
-    }
-
-    DBUG_RETURN (fundef);
 }
 
 /*
@@ -786,15 +418,15 @@ static node *
 PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *fundef,
                              info *arg_info)
 {
-    ntype *ctype = AVIS_TYPE (IDS_AVIS (concreteresults));
-    node *nextfr = RET_NEXT (formalresults);
-    node *nextcr = IDS_NEXT (concreteresults);
+    node *newdim;
+    node *newshp;
 
     node *avis = IDS_AVIS (concreteresults);
     node *newresults = NULL;
 
-    node *newdim;
-    node *newshp;
+    ntype *ctype = AVIS_TYPE (IDS_AVIS (concreteresults));
+    node *nextfr = RET_NEXT (formalresults);
+    node *nextcr = IDS_NEXT (concreteresults);
 
     DBUG_ENTER ("PrependSAAInConcreteResults");
 
@@ -804,14 +436,11 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
     if (FALSE == AVIS_HASSAAARGUMENTS (avis)) {
         AVIS_HASSAAARGUMENTS (avis) = TRUE;
 
-        DBUG_PRINT ("ISAA", ("manip conc res on %s", AVIS_NAME (avis)));
-
         /* we do check if there is a new result to be appended by comparing
          * the result types of our function definition with the types of
          * our results. If there is a discrepancy, than the formal type must be
          * more specific than the concrete type and thereby is the dim or
-         * shape of the concrete result.
-         */
+         * shape of the concrete result. */
 
         if (TY_eq != TYcmpTypes (ctype, RET_TYPE (formalresults))) {
 
@@ -826,10 +455,6 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
                 newdim = CreateScalarAvisFrom (avis, INFO_FUNDEF (arg_info));
                 AVIS_SSAASSIGN (newdim) = AVIS_SSAASSIGN (IDS_AVIS (concreteresults));
                 AVIS_HASSAAARGUMENTS (newdim) = TRUE;
-                /*
-                AVIS_HASDTTHENPROXY( newdim ) = TRUE;
-                AVIS_HASDTELSEPROXY( newdim ) = TRUE;
-                */
 
                 /* insert the avis into our result chain and annotate at its array */
                 newresults = TBmakeIds (newdim, NULL);
@@ -837,8 +462,7 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
                 AVIS_DIM (avis) = newdim;
 
                 /* our formal result types already contain dim, so we need to
-                 * jump over these when traversing into the next element.
-                 */
+                 * jump over these when traversing into the next element. */
                 nextfr = RET_NEXT (nextfr);
             } else {
                 newdim = TBmakeNum (TYgetDim (AVIS_TYPE (IDS_AVIS (concreteresults))));
@@ -853,16 +477,6 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
                                            DUPdoDupNode (newdim), INFO_FUNDEF (arg_info));
             AVIS_SSAASSIGN (newshp) = AVIS_SSAASSIGN (IDS_AVIS (concreteresults));
             AVIS_HASSAAARGUMENTS (newshp) = TRUE;
-            /*
-            AVIS_HASDTTHENPROXY( newshp ) = TRUE;
-            AVIS_HASDTELSEPROXY( newshp ) = TRUE;
-            */
-
-            /* we do need to remove the shape (reference to dim), so that the dim
-             * is not referred to too early */
-            // #if ISAA_USE_EVEN_ANNOTATED_STYLE
-            //       AVIS_SHAPE( newshp ) = FREEdoFreeNode( AVIS_SHAPE( newshp ) );
-            // #endif
 
             /* insert the avis into our result chain and annotate at its array */
             concreteresults
@@ -870,17 +484,6 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
             AVIS_SHAPE (avis) = TBmakeId (newshp);
 
             nextfr = RET_NEXT (nextfr);
-        }
-
-        INFO_POSTASSIGN (arg_info)
-          = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
-
-        if (NULL != AVIS_DIM (avis)) {
-            AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-        }
-
-        if (NULL != AVIS_SHAPE (avis)) {
-            AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
         }
     }
 
@@ -919,7 +522,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
      * 1. The N_ret to be put into the function definition
      *    as the returned node of the function itself
      * 2. The N_exprs to be put in the return( ... )
-     *    via info_preassign (even though this is not the best possibility
+     *    via info_returnexpr
      * 3. The N_assign to be but right in front of the return-statement
      *    via info_postassign; they are taken care of in ISAAassign.
      */
@@ -928,15 +531,14 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
         RET_NEXT (returntype)
           = PrependSAAInFormalResults (RET_NEXT (returntype), EXPRS_NEXT (returnexpr),
                                        fundef, arg_info);
-        EXPRS_NEXT (returnexpr) = INFO_PREASSIGN (arg_info);
+        EXPRS_NEXT (returnexpr) = INFO_RETURNEXPR (arg_info);
     }
 
     avis = ID_AVIS (EXPRS_EXPR (returnexpr));
 
     /* we do check here, if the conditional already has been traversed at its
-     * then as well as its else branch, to ensure that all our avis-dim/shape
-     * are set properly.
-     */
+     * then as well as at its else branch, to ensure that all our avis-dim/shape
+     * are set properly. */
     if ((FALSE != AVIS_HASDTTHENPROXY (ARG_AVIS (FUNDEF_ARGS (fundef))))
         && (FALSE != AVIS_HASDTELSEPROXY (ARG_AVIS (FUNDEF_ARGS (fundef))))
         && (FALSE == AVIS_HASSAAARGUMENTS (avis))) {
@@ -949,8 +551,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
          * newdim = ( predicate ? dim( firstchoice ) : dim ( secondchoice ) );
          *
          * For this, we need to look up the predicate and the two choices for our
-         * returning value. these are p, fc and sc.
-         */
+         * returning value. these are p, fc and sc. */
         p = FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis))));
         fc = ID_AVIS (FUNCOND_THEN (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis)))));
         sc = ID_AVIS (FUNCOND_ELSE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis)))));
@@ -1026,13 +627,18 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             newdim = TBmakeId (newdim);
 
             /* put our dimension into the chains of return( ) and fundef_ret */
-            newretexpr = TBmakeExprs (newdim, NULL);
+            newretexpr = TBmakeExprs (DUPdoDupNode (newdim), NULL);
             newrettype = TBmakeRet (TYcopyType (AVIS_TYPE (ID_AVIS (newdim))), NULL);
         } else if ((FALSE == TUshapeKnown (AVIS_TYPE (avis)))
                    && (TRUE == TUdimKnown (AVIS_TYPE (avis)))) {
             newdim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
         }
 
+        if (NULL != newdim) {
+            AVIS_DIM (avis) = newdim;
+        }
+
+        thennode = AVIS_SHAPE (fc);
         elsenode = AVIS_SHAPE (sc);
 
         if ((FALSE == TUshapeKnown (AVIS_TYPE (avis))) && (NULL != thennode)
@@ -1042,12 +648,6 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             /* create the new avis that holds our returned shape */
             newshp = CreateVectorAvisFrom (avis, DUPdoDupNode (newdim), fundef);
             AVIS_HASSAAARGUMENTS (newshp) = TRUE;
-
-            /* we need to remove the shape here so that it is not referenced to
-             * early */
-            // #if ISAA_USE_EVEN_ANNOTATED_STYLE
-            // AVIS_SHAPE( newshp ) = FREEdoFreeNode( AVIS_SHAPE( newshp ) );
-            // #endif
 
             /*
              * the following if/else constructs are just for the (very seldom!)
@@ -1119,12 +719,333 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             returntype
               = TCappendRet (newrettype,
                              TBmakeRet (TYcopyType (AVIS_TYPE (newshp)), returntype));
+
+            newshp = TBmakeId (newshp);
+        } else if (TRUE == TUshapeKnown (AVIS_TYPE (avis))) {
+            newshp = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
+        }
+
+        if (NULL != newshp) {
+            AVIS_SHAPE (avis) = newshp;
         }
     }
 
-    INFO_PREASSIGN (arg_info) = returnexpr;
+    INFO_RETURNEXPR (arg_info) = returnexpr;
 
     DBUG_RETURN (returntype);
+}
+
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
+static node *
+ISAAretraverse (node *fun, info *arg_info)
+{
+    int travscope;
+    int travmode;
+    node *preblock;
+    node *preassign;
+    node *postassign;
+    node *fundef;
+    node *args;
+
+    DBUG_ENTER ("ISAAretraverse");
+
+    preblock = INFO_PREBLOCK (arg_info);
+    preassign = INFO_PREASSIGN (arg_info);
+    postassign = INFO_POSTASSIGN (arg_info);
+    travscope = INFO_TRAVSCOPE (arg_info);
+    travmode = INFO_TRAVMODE (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
+    args = INFO_ARGS (arg_info);
+    INFO_PREBLOCK (arg_info) = NULL;
+    INFO_PREASSIGN (arg_info) = NULL;
+    INFO_POSTASSIGN (arg_info) = NULL;
+    INFO_TRAVSCOPE (arg_info) = TS_args;
+
+    DBUG_PRINT ("ISAA", ("retraverse SAVES INFO_ARGS"));
+
+    DBUG_PRINT ("ISAA", ("retraverse %s", FUNDEF_NAME (fun)));
+
+    fun = TRAVdo (fun, arg_info);
+
+    DBUG_PRINT ("ISAA", ("retraverse RESTORES INFO_ARGS"));
+
+    INFO_PREBLOCK (arg_info) = preblock;
+    INFO_PREASSIGN (arg_info) = preassign;
+    INFO_POSTASSIGN (arg_info) = postassign;
+    INFO_TRAVSCOPE (arg_info) = travscope;
+    INFO_TRAVMODE (arg_info) = travmode;
+    INFO_FUNDEF (arg_info) = fundef;
+    INFO_ARGS (arg_info) = args;
+
+    DBUG_RETURN (fun);
+}
+#endif
+
+/*
+ * the following static functions assist in the creation of proxies.
+ */
+static node *
+PrependAssign (node *prefix, node *rest)
+{
+    DBUG_ENTER ("PrependAssign");
+
+    if (prefix != NULL) {
+        if (NODE_TYPE (rest) == N_empty) {
+            rest = FREEdoFreeNode (rest);
+            rest = prefix;
+        } else {
+            rest = TCappendAssign (prefix, rest);
+        }
+    }
+
+    DBUG_RETURN (rest);
+}
+
+static node *
+MakeDTProxy (node *avis, node *postass, info *arg_info)
+{
+    bool makeproxy = FALSE;
+    bool islacfun = FALSE;
+    node *newass = NULL;
+
+    DBUG_ENTER ("MakeDTProxy");
+
+    DBUG_PRINT ("ISAA", ("enter MakeDTProxy in %s for %s",
+                         FUNDEF_NAME (INFO_FUNDEF (arg_info)), AVIS_NAME (avis)));
+
+#if ISAA_USE_EVEN_ANNOTATED_STYLE
+    if ((TRUE == FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
+        && (TRUE == INFO_FUNPARAMS (arg_info))) {
+        islacfun = TRUE;
+    }
+
+    if (((NULL == AVIS_SHAPE (avis)) || (NULL == AVIS_DIM (avis)))
+        && (TRUE == islacfun)) {
+        makeproxy = TRUE;
+    } else {
+#endif
+        switch (INFO_TRAVMODE (arg_info)) {
+        case TM_then:
+            makeproxy = (!AVIS_HASDTTHENPROXY (avis));
+            break;
+
+        case TM_else:
+            makeproxy = (!AVIS_HASDTELSEPROXY (avis));
+            break;
+
+        case TM_all:
+            makeproxy = ((!AVIS_HASDTTHENPROXY (avis)) || (!AVIS_HASDTELSEPROXY (avis)));
+            break;
+        }
+#if ISAA_USE_EVEN_ANNOTATED_STYLE
+    }
+#endif
+
+    if (makeproxy) {
+        node *dimavis;
+        node *shpavis;
+        node *dimnode = NULL;
+        node *shpnode = NULL;
+        node *proxyavis;
+        node *fundef;
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
+        node *dim_postass = NULL;
+        node *shp_postass = NULL;
+#endif
+
+        fundef = INFO_FUNDEF (arg_info);
+
+        /* if we do not use annotated_style (see above) this is always false */
+        if (FALSE == islacfun) {
+
+            dimavis = CreateScalarAvisFrom (avis, fundef);
+            shpavis = CreateVectorAvisFrom (avis, TBmakeId (dimavis), fundef);
+
+            proxyavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
+                                    TYcopyType (AVIS_TYPE (avis)));
+            AVIS_DIM (proxyavis) = TBmakeId (dimavis);
+            AVIS_SHAPE (proxyavis) = TBmakeId (shpavis);
+            FUNDEF_VARDEC (fundef) = TBmakeVardec (proxyavis, FUNDEF_VARDEC (fundef));
+
+            /* proxyavis = saabind( dimavis, shpavis, avis ); */
+            newass = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
+                                              TCmakePrf3 (F_saabind, TBmakeId (dimavis),
+                                                          TBmakeId (shpavis),
+                                                          TBmakeId (avis))),
+                                   newass);
+            AVIS_SSAASSIGN (proxyavis) = newass;
+            AVIS_SUBST (avis) = proxyavis;
+        }
+
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
+        /* if we have passed the shape as a parameter to our function, we may now
+         * look up its avis in AVIS_SHAPE. */
+
+        if (NULL != AVIS_SHAPE (avis)) {
+            if (N_id == NODE_TYPE (AVIS_SHAPE (avis))) {
+
+                /* BEAUTIFY_ME: this is a little ugly:
+                 * as we want a saabind'ed shape, we have to proxify it first; but as
+                 * it would be proxified after this arg, we have to call for it by hand.
+                 */
+                shp_postass = MakeDTProxy (ID_AVIS (AVIS_SHAPE (avis)), NULL, arg_info);
+
+                if (NULL != AVIS_SUBST (ID_AVIS (AVIS_SHAPE (avis)))) {
+                    shpnode = TBmakeId (AVIS_SUBST (ID_AVIS (AVIS_SHAPE (avis))));
+                }
+            }
+
+            if (NULL == shpnode) {
+                shpnode = DUPdoDupNode (AVIS_SHAPE (avis));
+            }
+        } else {
+            shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
+        }
+#else
+        shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
+#endif
+
+        if (FALSE == islacfun) {
+            newass
+              = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shpnode), newass);
+            AVIS_SSAASSIGN (shpavis) = newass;
+        } else if ((NULL == AVIS_SHAPE (avis)) && (TRUE == islacfun)) {
+            if (N_id == NODE_TYPE (shpnode)) {
+                AVIS_SHAPE (avis) = shpnode;
+            } else {
+                /* in this case the shape has to be statically known */
+                shpnode = FREEdoFreeNode (shpnode);
+                AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
+            }
+        }
+
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
+        /* same for the dimension we may have. */
+        if (NULL != AVIS_DIM (avis)) {
+            if (N_id == NODE_TYPE (AVIS_DIM (avis))) {
+                dim_postass = MakeDTProxy (ID_AVIS (AVIS_DIM (avis)), NULL, arg_info);
+
+                if (NULL != AVIS_SUBST (ID_AVIS (AVIS_DIM (avis)))) {
+                    dimnode = TBmakeId (AVIS_SUBST (ID_AVIS (AVIS_DIM (avis))));
+                }
+            }
+
+            if (NULL == dimnode) {
+                dimnode = DUPdoDupNode (AVIS_DIM (avis));
+            }
+        } else {
+            dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
+        }
+#else
+        dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
+#endif
+
+        if (FALSE == islacfun) {
+            newass
+              = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), dimnode), newass);
+            AVIS_SSAASSIGN (dimavis) = newass;
+        } else if ((NULL == AVIS_DIM (avis)) && (TRUE == islacfun)) {
+            if (N_id == NODE_TYPE (dimnode)) {
+                AVIS_DIM (avis) = dimnode;
+            } else {
+                /* in this case the dimension has to be statically known */
+                dimnode = FREEdoFreeNode (dimnode);
+                AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
+            }
+        }
+
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
+        if (NULL != shp_postass) {
+            newass = PrependAssign (shp_postass, newass);
+        }
+        if (NULL != dim_postass) {
+            newass = PrependAssign (dim_postass, newass);
+        }
+#endif
+
+        switch (INFO_TRAVMODE (arg_info)) {
+        case TM_then:
+            AVIS_HASDTTHENPROXY (avis) = TRUE;
+            break;
+
+        case TM_else:
+            AVIS_HASDTELSEPROXY (avis) = TRUE;
+            break;
+
+        default:
+            AVIS_HASDTTHENPROXY (avis) = TRUE;
+            AVIS_HASDTELSEPROXY (avis) = TRUE;
+            break;
+        }
+
+        if (FALSE == islacfun) {
+            switch (INFO_TRAVMODE (arg_info)) {
+
+            case TM_then:
+                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
+                break;
+
+            case TM_else:
+                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
+                break;
+
+            default:
+                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
+                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
+                break;
+            }
+        }
+
+        /* do NOT remove dim/shape from avis if in annotated style */
+#if ISAA_USE_AUGMENTED_STYLE && !ISAA_USE_EVEN_ANNOTATED_STYLE
+        if (((AVIS_HASDTTHENPROXY (avis) == TRUE)
+             || (AVIS_HASDTELSEPROXY (avis) == TRUE))) {
+
+            /* clean the avis, as we do not want shape/dim on our parameters */
+            if (NULL != AVIS_SHAPE (avis)) {
+                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+            }
+
+            if (NULL != AVIS_DIM (avis)) {
+                AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
+            }
+        }
+#endif
+    } /* if ( makeproxy ) */
+
+    postass = TCappendAssign (postass, newass);
+
+    DBUG_RETURN (postass);
+}
+
+static node *
+MakeArgProxies (node *arg_node, info *arg_info)
+{
+    node *ass = NULL;
+
+    DBUG_ENTER ("MakeArgProxies");
+
+    if (arg_node != NULL) {
+        ass = MakeArgProxies (ARG_NEXT (arg_node), arg_info);
+        ass = MakeDTProxy (ARG_AVIS (arg_node), ass, arg_info);
+    }
+
+    DBUG_RETURN (ass);
+}
+
+static node *
+RemoveAvisSubst (node *fundef)
+{
+    DBUG_ENTER ("RemoveAvisSubst");
+
+    if (FUNDEF_ARGS (fundef) != NULL) {
+        FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), NULL);
+    }
+    if (FUNDEF_VARDEC (fundef) != NULL) {
+        FUNDEF_VARDEC (fundef) = TRAVdo (FUNDEF_VARDEC (fundef), NULL);
+    }
+
+    DBUG_RETURN (fundef);
 }
 
 /** <!--********************************************************************-->
@@ -1148,77 +1069,61 @@ ISAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISAAfundef");
 
-    DBUG_PRINT ("ISAA", ("enter %s", FUNDEF_NAME (arg_node)));
+    if ((NULL != FUNDEF_BODY (arg_node))
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+#if ISAA_USE_EVEN_ANNOTATED_STYLE
+        /* in annotated style, we only want to traverse lac-funs, if they are
+         * already proxified. if not, skip them (they are traversed later) */
+        && ((TS_args == INFO_TRAVSCOPE (arg_info))
+            || (TRUE != FUNDEF_ISLACFUN (arg_node)))
+#endif
+    ) {
         INFO_FUNDEF (arg_info) = arg_node;
 
-#if ISAA_USE_EVEN_ANNOTATED_STYLE
-        /* in annotated style, we only want to traverse conditionals, if they
-         * are already proxified. if not, pass them. */
-
-        if ((TS_args == INFO_TRAVSCOPE (arg_info))
-            || ((TRUE != FUNDEF_ISLACFUN (arg_node)))) {
-#endif
-
-            /*
-             * Resolve shape variables to dim, shape, idx_shape_sel
-             * In case of cond functions, we need a copy of those variables
-             */
-            if (FUNDEF_ISCONDFUN (arg_node)) {
-
-                INFO_TRAVMODE (arg_info) = TM_then;
-                arg_node = RemoveAvisSubst (arg_node);
-
-                INFO_FUNPARAMS (arg_info) = TRUE;
-                INFO_PREBLOCK (arg_info)
-                  = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
-                INFO_FUNPARAMS (arg_info) = FALSE;
-
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-                INFO_TRAVMODE (arg_info) = TM_else;
-                arg_node = RemoveAvisSubst (arg_node);
-
-                INFO_FUNPARAMS (arg_info) = TRUE;
-                INFO_PREBLOCK (arg_info)
-                  = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
-                INFO_FUNPARAMS (arg_info) = FALSE;
-
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-            } else {
-                node *preblock;
-
-                INFO_TRAVMODE (arg_info) = TM_all;
-                arg_node = RemoveAvisSubst (arg_node);
-
-                INFO_FUNPARAMS (arg_info) = TRUE;
-                preblock = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
-                INFO_FUNPARAMS (arg_info) = FALSE;
-
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-                FUNDEF_INSTR (arg_node)
-                  = TCappendAssign (preblock, FUNDEF_INSTR (arg_node));
-                INFO_PREBLOCK (arg_info) = NULL;
-            }
-
-            /*
-             * Clean up the AVIS_SUBST mess
-             */
+        /*
+         * Resolve shape variables to dim, shape, idx_shape_sel
+         * In case of cond functions, we need a copy of those variables
+         */
+        if (FUNDEF_ISCONDFUN (arg_node)) {
+            INFO_TRAVMODE (arg_info) = TM_then;
             arg_node = RemoveAvisSubst (arg_node);
 
-#if ISAA_USE_EVEN_ANNOTATED_STYLE
-        } else {
-            DBUG_PRINT ("ISAA", ("passed this one."));
-        }
-#endif
-    }
+            INFO_FUNPARAMS (arg_info) = TRUE;
+            INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
 
-    /*
-      DBUG_PRINT( "ISAA", ("leaving %s", FUNDEF_NAME(arg_node)));
-    */
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+            INFO_TRAVMODE (arg_info) = TM_else;
+            arg_node = RemoveAvisSubst (arg_node);
+
+            INFO_FUNPARAMS (arg_info) = TRUE;
+            INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        } else {
+            node *preblock;
+
+            INFO_TRAVMODE (arg_info) = TM_all;
+            arg_node = RemoveAvisSubst (arg_node);
+
+            INFO_FUNPARAMS (arg_info) = TRUE;
+            preblock = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+            FUNDEF_INSTR (arg_node) = TCappendAssign (preblock, FUNDEF_INSTR (arg_node));
+            INFO_PREBLOCK (arg_info) = NULL;
+        }
+
+        /*
+         * Clean up the AVIS_SUBST mess
+         */
+        arg_node = RemoveAvisSubst (arg_node);
+    }
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_module) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -1235,7 +1140,7 @@ ISAAfundef (node *arg_node, info *arg_info)
 node *
 ISAAap (node *arg_node, info *arg_info)
 {
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
     node *fun;
     node *retnode = NULL;
     node *retprev = NULL;
@@ -1245,13 +1150,13 @@ ISAAap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ISAAap");
 
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
+#if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
+
     fun = AP_FUNDEF (arg_node);
 
-    if ((NULL != FUNDEF_ARGS (fun))
-        && ((TS_args != INFO_TRAVSCOPE (arg_info)) || (TRUE == FUNDEF_ISCONDFUN (fun))
-            || (TRUE == FUNDEF_ISDOFUN (fun)))
-        && (fun != INFO_FUNDEF (arg_info))) {
+    if ((NULL != FUNDEF_ARGS (fun)) && (fun != INFO_FUNDEF (arg_info))
+        && ((TS_args != INFO_TRAVSCOPE (arg_info)) || (TRUE == FUNDEF_ISLACFUN (fun)))) {
+
         if (FUNDEF_ISCONDFUN (fun)) {
             /* two things have to be done in order to set the SAA up:
              * 1. Introduce the new arguments on both application and function side.
@@ -1308,62 +1213,44 @@ ISAAap (node *arg_node, info *arg_info)
               = PrependSAAInConcreteResults (FUNDEF_RETS (fun), lhs,
                                              INFO_FUNDEF (arg_info), arg_info);
         } else if (FUNDEF_ISDOFUN (fun)) {
-            /* two things done:
-             * 1. Copy FUNDEF_ARGS to INFO_ARGS, so we have a original reference when
-             *    traversing the function later on.
-             * 2. insert arguments, just like for IsCondFun above.
-             */
-
-            DBUG_PRINT ("ISAA", ("calling a loop fundef %s. (info %s)", FUNDEF_NAME (fun),
+            DBUG_PRINT ("ISAA", ("calling the loop fun %s from %s", FUNDEF_NAME (fun),
                                  FUNDEF_NAME (INFO_FUNDEF (arg_info))));
 
-            /* 1. */
+            /* 1. Create a backup of the original function parameter list, so we have
+             *    a reference when updating the inner call of the loop function.
+             * 2. Prepend dim/shape in arguments. Retraverse afterwards to propagate
+             *    the new information.
+             */
+
             INFO_ARGS (arg_info) = DUPdoDupTree (FUNDEF_ARGS (fun));
 
-            DBUG_PRINT ("ISAA", ("SETTING INFO_ARGS "));
-
-            /* 2. */
+            AP_ARGS (arg_node) = PrependSAAInConcreteArgs (AP_ARGS (arg_node),
+                                                           FUNDEF_ARGS (fun), arg_info);
             FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
-            AP_ARGS (arg_node)
-              = PrependSAAInConcreteArgs (AP_ARGS (arg_node), INFO_ARGS (arg_info),
-                                          arg_info);
-
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, arg_info);
         }
-
-    } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (FUNDEF_ISDOFUN (fun))
+    } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
+        DBUG_PRINT ("ISAA", ("inner application of the loop fun %s", FUNDEF_NAME (fun)));
 
-        DBUG_PRINT ("ISAA", ("inner application of a loop fundef %s. (info %s)",
-                             FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                             FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+        /* 1. We now may insert the dim/shape arguments in our recursive loop
+         *    call; thisfor we need the copy of our arguments.
+         * 2. Free the copied arguments, for they are not needed anymore.
+         */
 
+        /* no new N_assigns in the holy callback-conditional! */
         INFO_RECAP (arg_info) = TRUE;
 
-        DBUG_ASSERT ((NULL != INFO_ARGS (arg_info)),
-                     "INFO_ARGS( arg_info ) is NULL when it should not be!");
-
-        /* now the time has come, when we deliberately need the copied args. */
         AP_ARGS (arg_node)
           = PrependSAAInConcreteArgs (AP_ARGS (arg_node), INFO_ARGS (arg_info), arg_info);
 
         INFO_ARGS (arg_info) = FREEdoFreeTree (INFO_ARGS (arg_info));
-
-        DBUG_PRINT ("ISAA", ("FREEING INFO_ARGS "));
     }
 
     /* we may now traverse the arguments, in order to take care of AVIS_SUBST */
     if (NULL != AP_ARGS (arg_node)) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
-
-    /*
-  #if ISAA_USE_EVEN_ANNOTATED_STYLE
-    if ( TRUE == FUNDEF_ISCONDFUN( fun ) ) {
-      AP_FUNDEF( arg_node ) = ISAAretraverse( fun, arg_info );
-    }
-  #endif
-    */
 
 #else
     TRAVcont (arg_node, arg_info);
@@ -1482,16 +1369,10 @@ ISAAids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ISAAids");
 
-    /*
-    DBUG_PRINT( "ISAA", ("enter ISAAids for %s", AVIS_NAME( IDS_AVIS( arg_node ))));
-    */
+    DBUG_PRINT ("ISAA", ("enter ISAAids for %s", AVIS_NAME (IDS_AVIS (arg_node))));
 
     avis = IDS_AVIS (arg_node);
-    /*
-  #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-    if ( TS_args != INFO_TRAVSCOPE(arg_info) ) {
-  #endif
-    */
+
     if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
         && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
               && ((PRF_PRF (INFO_RHS (arg_info)) == F_saabind)
@@ -1528,11 +1409,7 @@ ISAAids (node *arg_node, info *arg_info)
               = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
         }
     }
-    /*
-  #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
-    }
-  #endif
-    */
+
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
