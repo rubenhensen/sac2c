@@ -79,6 +79,7 @@
 #include "constants.h"
 #include "makedimexpr.h"
 #include "makeshapeexpr.h"
+#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -506,8 +507,8 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
     node *fc;
     node *sc;
 
-    node *newdim;
-    node *newshp;
+    node *newdim = NULL;
+    node *newshp = NULL;
 
     node *thennode;
     node *elsenode;
@@ -631,6 +632,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             newrettype = TBmakeRet (TYcopyType (AVIS_TYPE (ID_AVIS (newdim))), NULL);
         } else if ((FALSE == TUshapeKnown (AVIS_TYPE (avis)))
                    && (TRUE == TUdimKnown (AVIS_TYPE (avis)))) {
+
             newdim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
         }
 
@@ -642,7 +644,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
         elsenode = AVIS_SHAPE (sc);
 
         if ((FALSE == TUshapeKnown (AVIS_TYPE (avis))) && (NULL != thennode)
-            && (NULL != elsenode)) {
+            && (NULL != elsenode) && (NULL != newdim)) {
             DBUG_PRINT ("ISAA", ("inserting a formal result type as shape"));
 
             /* create the new avis that holds our returned shape */
@@ -721,7 +723,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
                              TBmakeRet (TYcopyType (AVIS_TYPE (newshp)), returntype));
 
             newshp = TBmakeId (newshp);
-        } else if (TRUE == TUshapeKnown (AVIS_TYPE (avis))) {
+        } else if ((TRUE == TUshapeKnown (AVIS_TYPE (avis))) && (NULL != newdim)) {
             newshp = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
         }
 
@@ -1144,7 +1146,6 @@ ISAAap (node *arg_node, info *arg_info)
     node *fun;
     node *retnode = NULL;
     node *retprev = NULL;
-    node *preassign = NULL;
     node *lhs = NULL;
 #endif
 
@@ -1179,11 +1180,6 @@ ISAAap (node *arg_node, info *arg_info)
             DBUG_ASSERT ((NULL == INFO_POSTASSIGN (arg_info)),
                          "info_postassign is non-null before saa'ing results!");
 
-            /* save older preassign-info, because we need to pass around different
-             * stuff here. See the apropriate Prepend-functions. */
-            preassign = INFO_PREASSIGN (arg_info);
-            INFO_PREASSIGN (arg_info) = NULL;
-
             /* we need the return expression of our function, so go look for it */
             retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
             while ((NULL != retnode)
@@ -1203,10 +1199,9 @@ ISAAap (node *arg_node, info *arg_info)
                                            arg_info);
 
             /* insert the collected information and restore older state */
-            RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_PREASSIGN (arg_info);
+            RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
             ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
             INFO_POSTASSIGN (arg_info) = NULL;
-            INFO_PREASSIGN (arg_info) = preassign;
 
             /* replace the lhs of the application with the new one */
             LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
