@@ -1246,6 +1246,18 @@
           <node name="Ap"      />
        </travuser>
      </traversal>
+     <traversal id="WLNC" name="With-Loop NeedCount Check" default="sons" include="wl_needcount.h" >
+       <travuser>
+          <node name="Fundef"    />
+          <node name="Block"     />
+          <node name="Avis"      />
+          <node name="With"      />
+          <node name="Code"      />
+          <node name="Prf"       />
+          <node name="Ap"        />
+          <node name="Id"        />
+       </travuser>
+     </traversal>
      <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
 	<travuser>
 	  <node name="Fundef" />
@@ -4839,6 +4851,30 @@
                 <any />
                 <phases>
                   <phase name="opt_lir" />
+                  <phase name="opt_al" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="WL_NeedCount">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="opt_al" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Counting_WL">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="With" />
+                <phases>
                   <phase name="opt_al" />
                 </phases>
               </target>

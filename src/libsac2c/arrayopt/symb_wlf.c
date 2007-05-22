@@ -2,8 +2,6 @@
  * $Id: symb_wlf.c dpa $
  */
 
-// #define DAOEN
-
 /** <!--********************************************************************-->
  *
  * @defgroup swlf Symbolic With-Loop Folding
@@ -87,6 +85,7 @@
 #include "LookUpTable.h"
 #include "globals.h"
 #include "wl_cost_check.h"
+#include "wl_needcount.h"
 
 /** <!--********************************************************************-->
  *
@@ -380,6 +379,7 @@ SWLFfundef (node *arg_node, info *arg_info)
 
 #ifdef DAOEN
         arg_node = WLCCdoWLCostCheck (arg_node);
+        arg_node = WLNCdoWLNeedCount (arg_node);
 #endif
 
 #ifndef DAOEN

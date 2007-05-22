@@ -145,7 +145,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         SSAWLI SSAWLF WithloopFusion detectdependencies \
                         pad pad_collect pad_infer pad_transform pad_info \
                         tagdependencies resolvedependencies symb_wlf \
-                        wl_cost_check show_wl_cost
+                        wl_cost_check wl_needcount show_wl_cost
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs 
 

@@ -46,6 +46,8 @@ SHWLCprintPreFun (node *arg_node, info *arg_info)
     case N_with:
         fprintf (global.outfile, "/* WL-Cost=%d */", WITH_COST (arg_node));
         break;
+    case N_avis:
+        fprintf (global.outfile, "/* WL_NEEDCOUNT=%d */", AVIS_WL_NEEDCOUNT (arg_node));
     default:
         break;
     }
