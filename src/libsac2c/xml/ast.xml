@@ -1252,6 +1252,7 @@
           <node name="Block"     />
           <node name="Avis"      />
           <node name="With"      />
+          <node name="Part"      />
           <node name="Code"      />
           <node name="Prf"       />
           <node name="Ap"        />

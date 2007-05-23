@@ -2,6 +2,8 @@
  * $Id: symb_wlf.c dpa $
  */
 
+// #define DAOEN
+
 /** <!--********************************************************************-->
  *
  * @defgroup swlf Symbolic With-Loop Folding

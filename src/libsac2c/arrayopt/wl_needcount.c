@@ -26,6 +26,7 @@
 #include "dbug.h"
 #include "str.h"
 #include "memory.h"
+#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -179,6 +180,7 @@ WLNCavis (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLNCavis");
 
     AVIS_WL_NEEDCOUNT (arg_node) = 0;
+    AVIS_COUNTING_WL (arg_node) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -198,12 +200,35 @@ WLNCwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLNCwith");
 
     outer_with = INFO_WITH (arg_info);
+    INFO_WITH (arg_info) = arg_node;
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     INFO_WITH (arg_info) = outer_with;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLNCpart( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+WLNCpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLNCpart");
+
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -222,10 +247,6 @@ WLNCcode (node *arg_node, info *arg_info)
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -249,6 +270,8 @@ WLNCprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
+    INFO_FUN (arg_info) = NULL;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -270,6 +293,8 @@ WLNCap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
+    INFO_FUN (arg_info) = NULL;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -284,22 +309,27 @@ node *
 WLNCid (node *arg_node, info *arg_info)
 {
     node *avis;
-
+    node *parent;
+    bool done;
     DBUG_ENTER ("WLNCid");
 
     avis = ID_AVIS (arg_node);
+    parent = INFO_FUN (arg_info);
+    done = FALSE;
 
-    if (NODE_TYPE (INFO_FUN (arg_info)) == N_prf
-        && PRF_PRF (INFO_FUN (arg_info)) == F_sel) {
-
-        AVIS_WL_NEEDCOUNT (avis) += 1;
-
-        if (INFO_WITH (arg_info) != AVIS_COUNTING_WL (avis)) {
-            AVIS_COUNTING_WL (avis) = INFO_WITH (arg_info);
+    if (parent != NULL) {
+        if (NODE_TYPE (parent) == N_prf && PRF_PRF (parent) == F_sel) {
+            if (AVIS_COUNTING_WL (avis) == NULL
+                || AVIS_COUNTING_WL (avis) != INFO_WITH (arg_info)) {
+                AVIS_WL_NEEDCOUNT (avis) += 1;
+                AVIS_COUNTING_WL (avis) = INFO_WITH (arg_info);
+                done = TRUE;
+            }
         }
-    } else {
-        avis = NULL;
     }
+
+    if (!done)
+        AVIS_WL_NEEDCOUNT (avis) += 2;
 
     DBUG_RETURN (arg_node);
 }

@@ -19,6 +19,7 @@ extern node *WLNCfundef (node *arg_node, info *arg_info);
 extern node *WLNCblock (node *arg_node, info *arg_info);
 extern node *WLNCavis (node *arg_node, info *arg_info);
 extern node *WLNCwith (node *arg_node, info *arg_info);
+extern node *WLNCpart (node *arg_node, info *arg_info);
 extern node *WLNCcode (node *arg_node, info *arg_info);
 extern node *WLNCprf (node *arg_node, info *arg_info);
 extern node *WLNCap (node *arg_node, info *arg_info);
