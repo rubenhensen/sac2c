@@ -225,40 +225,30 @@ IVESPLITprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVESPLITprf");
 
-    /*
-     * NOTE: as vect2offset does not yet support IDs as first argument,
-     *       we limit this transformation to structural constants for the
-     *       moment
-     */
-
     switch (PRF_PRF (arg_node)) {
     case F_sel:
         DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL),
                      "missing saa shape!");
 
-        if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)))) == N_array) {
-            avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
-            new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
-            PRF_ARG2 (arg_node) = NULL;
+        avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
+        new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
+        PRF_ARG2 (arg_node) = NULL;
 
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = new_node;
-        }
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = new_node;
         break;
 
     case F_modarray:
         DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
                      "missing saa shape!");
 
-        if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)))) == N_array) {
-            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
-            new_node = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (arg_node), TBmakeId (avis),
-                                   PRF_ARG3 (arg_node));
-            PRF_ARG1 (arg_node) = NULL;
-            PRF_ARG3 (arg_node) = NULL;
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = new_node;
-        }
+        avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+        new_node = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (arg_node), TBmakeId (avis),
+                               PRF_ARG3 (arg_node));
+        PRF_ARG1 (arg_node) = NULL;
+        PRF_ARG3 (arg_node) = NULL;
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = new_node;
         break;
 
     default:

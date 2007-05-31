@@ -453,24 +453,44 @@ ICM_END( ND_PRF_CAT__SHAPE, (to_NT, to_sdim,
 #endif
 
 
-#if defined(ND_VECT2OFFSET) || defined(ICM_ALL)
-ICM_DEF( ND_VECT2OFFSET, ICM_TRACE(prf))
+#if defined(ND_VECT2OFFSET_arr) || defined(ICM_ALL)
+ICM_DEF( ND_VECT2OFFSET_arr, ICM_TRACE(prf))
   ICM_NT( off_NT)
   ICM_INT( from_size)
   ICM_NT( from_NT)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shp_ANY)
-ICM_END( ND_VECT2OFFSET, (off_NT, from_size, from_NT, shp_size, shp_ANY))
+ICM_END( ND_VECT2OFFSET_arr, (off_NT, from_size, from_NT, shp_size, shp_ANY))
 #endif
 
-#if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
-ICM_DEF( ND_IDXS2OFFSET, ICM_TRACE(prf))
+#if defined(ND_VECT2OFFSET_id) || defined(ICM_ALL)
+ICM_DEF( ND_VECT2OFFSET_id, ICM_TRACE(prf))
+  ICM_NT( off_NT)
+  ICM_INT( from_size)
+  ICM_NT( from_NT)
+  ICM_INT( shp_size)
+  ICM_NT( shp_NT)
+ICM_END( ND_VECT2OFFSET_id, (off_NT, from_size, from_NT, shp_size, shp_NT))
+#endif
+
+#if defined(ND_IDXS2OFFSET_arr) || defined(ICM_ALL)
+ICM_DEF( ND_IDXS2OFFSET_arr, ICM_TRACE(prf))
   ICM_NT( off_NT)
   ICM_INT( idxs_size)
   ICM_VARANY( idxs_size, idxs_ANY)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shp_ANY)
-ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY))
+ICM_END( ND_IDXS2OFFSET_arr, (off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY))
+#endif
+
+#if defined(ND_IDXS2OFFSET_id) || defined(ICM_ALL)
+ICM_DEF( ND_IDXS2OFFSET_id, ICM_TRACE(prf))
+  ICM_NT( off_NT)
+  ICM_INT( idxs_size)
+  ICM_VARANY( idxs_size, idxs_ANY)
+  ICM_INT( shp_size)
+  ICM_NT( shp_NT)
+ICM_END( ND_IDXS2OFFSET_id, (off_NT, idxs_size, idxs_ANY, shp_size, shp_NT))
 #endif
 
 

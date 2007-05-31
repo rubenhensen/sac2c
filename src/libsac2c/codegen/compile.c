@@ -4394,17 +4394,33 @@ COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
     node *let_ids;
     node *icm;
     node *idxs_exprs;
-    node *shpexprs;
 
     DBUG_ENTER ("COMPPrfIdxs2Offset");
 
     let_ids = INFO_LASTIDS (arg_info);
-    shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
 
-    icm = TCmakeIcm5 ("ND_IDXS2OFFSET", DUPdupIdsIdNt (let_ids),
-                      TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
-                      TBmakeNum (TCcountExprs (shpexprs)), DUPdoDupTree (shpexprs));
+    /*
+     * either pass the ID of the vector or the
+     * IDs of the shape elements.
+     */
+    if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
+        icm
+          = TCmakeIcm5 ("ND_IDXS2OFFSET_arr", DUPdupIdsIdNt (let_ids),
+                        TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
+                        MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
+                        DUPdoDupTree (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
+    } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+        icm
+          = TCmakeIcm5 ("ND_IDXS2OFFSET_id", DUPdupIdsIdNt (let_ids),
+                        TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
+                        MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
+                        DUPdupIdNt (PRF_ARG1 (arg_node)));
+#ifndef DBUG_OFF
+    } else {
+        DBUG_ASSERT ((0), "unexpected 1st arg to idxs2offset");
+    }
+#endif
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
 }
@@ -4422,19 +4438,32 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *iv_vect;
-    node *shpexprs;
     node *icm;
 
     DBUG_ENTER ("COMPPrfVect2Offset");
 
     let_ids = INFO_LASTIDS (arg_info);
-    shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
     iv_vect = PRF_ARG2 (arg_node);
 
-    icm = TCmakeIcm5 ("ND_VECT2OFFSET", DUPdupIdsIdNt (let_ids),
-                      TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
-                      DUPdupIdNt (iv_vect), TBmakeNum (TCcountExprs (shpexprs)),
-                      DUPdoDupTree (shpexprs));
+    /*
+     * either pass the ID of the vector or the
+     * IDs of the shape elements.
+     */
+    if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
+        icm = TCmakeIcm5 ("ND_VECT2OFFSET_arr", DUPdupIdsIdNt (let_ids),
+                          TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
+                          DUPdupIdNt (iv_vect), MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
+                          DUPdoDupTree (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
+    } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+        icm = TCmakeIcm5 ("ND_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
+                          TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
+                          DUPdupIdNt (iv_vect), MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
+                          DUPdupIdNt (PRF_ARG1 (arg_node)));
+#ifndef DBUG_OFF
+    } else {
+        DBUG_ASSERT ((0), "unexpected 1st arg to vect2offset");
+    }
+#endif
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
 }
@@ -5880,7 +5909,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                                                               break_label_str),
                                                             NULL))),
 #else
-                                          NULL)),
+                                                  NULL)),
 #endif
       fold_rc_icms, free_icms);
     INFO_BREAKLABEL (arg_info) = NULL;

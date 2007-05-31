@@ -1456,34 +1456,35 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_VECT2OFFSET( char *off_NT, int from_size, char *from_NT,
- *                                  int shp_size, char **shp_ANY)
+ *   void ICMCompileND_VECT2OFFSET_arr( char *off_NT, int from_size,
+ *                                      char *from_NT,
+ *                                      int shp_size, char **shp_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_VECT2OFFSET( off_NT, from_size, from_NT, shp_size, shp_ANY)
+ *   ND_VECT2OFFSET_arr( off_NT, from_size, from_NT, shp_size, shp_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT, int shp_size,
-                          char **shp_ANY)
+ICMCompileND_VECT2OFFSET_arr (char *off_NT, int from_size, char *from_NT, int shp_size,
+                              char **shp_ANY)
 {
-    DBUG_ENTER ("ICMCompileND_VECT2OFFSET");
+    DBUG_ENTER ("ICMCompileND_VECT2OFFSET_arr");
 
-#define ND_VECT2OFFSET
+#define ND_VECT2OFFSET_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_VECT2OFFSET
+#undef ND_VECT2OFFSET_arr
 
     /*
      * CAUTION:
      * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
-     * or a constant scalar!
+     * or a constant scalar.
      */
 
-    DBUG_ASSERT ((shp_size >= 0), "illegal shape size");
+    DBUG_ASSERT ((shp_size >= 0), "invalid size found!");
 
     Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, shp_ANY, shp_size, NULL,
                   ReadConstArray_Str);
@@ -1494,32 +1495,69 @@ ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT, int shp_si
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_IDXS2OFFSET( char *off_NT, int idxs_size,
- *                                  char **idxs_ANY,
- *                                  int shp_size, char **shp_ANY)
+ *   void ICMCompileND_VECT2OFFSET_id( char *off_NT, int from_size,
+ *                                     char *from_NT,
+ *                                     int shp_size, char *shp_NT)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_IDXS2OFFSET( off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY)
+ *   ND_VECT2OFFSET_id( off_NT, from_size, from_NT, shp_size, shp_NT)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
-                          char **shp_ANY)
+ICMCompileND_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT, int shp_size,
+                             char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
+    DBUG_ENTER ("ICMCompileND_VECT2OFFSET_id");
 
-#define ND_IDXS2OFFSET
+#define ND_VECT2OFFSET_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_IDXS2OFFSET
+#undef ND_VECT2OFFSET_id
+
+    /*
+     * CAUTION:
+     * shp_NT is a tagged identifier (representing a vector).
+     */
+
+    Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, shp_NT, shp_size, SizeId,
+                  ReadId);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_IDXS2OFFSET_arr( char *off_NT, int idxs_size,
+ *                                      char **idxs_ANY,
+ *                                      int shp_size, char **shp_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_IDXS2OFFSET_arr( off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_IDXS2OFFSET_arr (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
+                              char **shp_ANY)
+{
+    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET_arr");
+
+#define ND_IDXS2OFFSET_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_IDXS2OFFSET_arr
 
     /*
      * CAUTION:
      * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
-     * or a constant scalar!
+     * or a constant scalar.
+     *
      * 'idxs_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
@@ -1529,6 +1567,47 @@ ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_ANY, int shp_
 
     Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_ANY,
                   shp_size, NULL, ReadConstArray_Str);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_IDXS2OFFSET_id( char *off_NT, int idxs_size,
+ *                                     char **idxs_ANY,
+ *                                     int shp_size, char *shp_NT)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_IDXS2OFFSET_id( off_NT, idxs_size, idxs_ANY, shp_size, shp_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
+                             char *shp_NT)
+{
+    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET_id");
+
+#define ND_IDXS2OFFSET_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_IDXS2OFFSET_id
+
+    /*
+     * CAUTION:
+     * shp_NT is a tagged identifier (representing a vector).
+     *
+     * 'idxs_ANY[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    DBUG_ASSERT ((idxs_size >= 0), "illegal index size");
+
+    Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_NT, shp_size,
+                  SizeId, ReadId);
 
     DBUG_VOID_RETURN;
 }
