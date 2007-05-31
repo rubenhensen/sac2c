@@ -6,7 +6,100 @@
  * @ingroup opt
  *
  * <pre>
+ * This optimization does 2 things:
+ *   A) it eliminates empty generators from With-Loops
+ *      In case all generators are eliminated, the entire With-Loop
+ *      is being replaced by some appropriate alternative code (for details
+ *      see below!).
+ *
+ *   B) it creates GENERATOR_GENWIDTH annotations
+ *
+ * It ASSUMES that all With-Loops are full partitions, i.e., WLPG
+ * has been run prior to it AND that WLFS has not yet been run!
+ * As a consequence, all With-Loops need to be of the form:
+ *    with {
+ *      [ (.... ) : expr; ] +
+ *      [ default: expr; ]
+ *    }  ( genarray(...) | modarray(...) | fold(...) [ break ] )
+ *       [ propagate(...) ] *
+ *
+ * Note here, that the absense of a default-partition indicates that appropriate
+ * generator-partitions have been inserted instead!
+ * Note also, that we have a maximum of one genarray/modarray/fold operators!
+ *
+ *
+ *
+ * A) handling empty generator-partitions:
+ *
+ * The criteria for emptiness (as implemented in WLSIMPgenerator) are:
+ *
+ *  1) (  a <= iv <  a)    where a::int[n]  with n>0  !
+ *  2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
+ *                               and vec1 >= vec2
+ *  3) ( [l1, ..., ln] <= iv < [u1, ..., un])
+ *                         where exists n>0 so that:
+ *                               ln and un are the same variable
+ *                               or ln >= un
+ *  4) ( lb <= iv <= ub width a)
+ *                         where a::int[n]{vec} and vec contains a 0
+ *  5) ( lb <= iv <= ub width [v1,...,vn])
+ *                         where exists i such that vi == 0
+ *
+ * In case one of the above criteria holds, INFO_EMPTYPART( arg_info)
+ * is being set which signals WLSIMPpart to delete that partition.
+ *
+ * After all partitions  have been inspected, we may find 3 different
+ * situations (see WLSIMPwith):
+ *  1) at least one generator-partition still exists => we are done
+ *
+ *  2) all generator-partitions are gone
+ *     AND there is no default partition:
+ *
+ *      due to the prerequisite of having a full partition we know that
+ *      the full index space is empty. As a consequence, we can make
+ *      the following changes:
+ *
+ *   res = with {
+ *         } genarray( shape, default);
+ *
+ *         ====>    res =  reshape( _cat_VxV_( shape), shape( default),
+                                    [:basetype])
+ *
+ *   res = with {                    ===>     res = a;
+ *         } modarray( a );
+ *
+ *   res = with {                    ===>     res = neutr;
+ *         } fold( fun, neutr);
+ *
+ *
+ *  3) all generator-partitions are gone
+ *     BUT there is a default partition:
+ *
+ *      as there is a default partition, we know that we are dealing with
+ *      a degenerate genarray-WL or modarray-WL, which we can treat as
+ *      follows:
+ *
+ *   res = with {
+ *           default( iv) : default;
+ *         } genarray( shape, default);
+ *
+ *         ====>    res = with {
+ *                          ( 0 * shape <= iv < shape) : default;
+ *                        } genarray( shape, default);
+ *
+ *   res = with {                    ===>     res = a;
+ *           default( iv) : a[iv];
+ *         } modarray( a );
+ *
+ *      Note here, that we cannot have a fold-WL here, as these never
+ *      obtain default partitions!!
+ *
+ *  IN ALL CASES where we replace a With-Loop by an assignment, we have
+ *  to adjust potential break / propagate operators accordingly!
+ *  More precisely, we have to eliminate the LHSs for breaks and we
+ *  have to create assignments for all propagates.
  * </pre>
+ *
  * @{
  */
 
@@ -45,6 +138,10 @@ struct INFO {
      * elements for identifying empty generators
      */
     bool emptypart;
+    bool default_exists;
+    int num_genparts;
+    node *lhs;
+    bool replacement;
     node *with; /* Needed as long as the [] problem is not ironed out */
 
     /*
@@ -59,6 +156,10 @@ struct INFO {
  */
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_EMPTYPART(n) ((n)->emptypart)
+#define INFO_DEFAULT_EXISTS(n) ((n)->default_exists)
+#define INFO_NUM_GENPARTS(n) ((n)->num_genparts)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_REPLACE(n) ((n)->replacement)
 #define INFO_WITH(n) ((n)->with)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PREASSIGN(n) ((n)->preassign)
@@ -77,6 +178,9 @@ MakeInfo ()
 
     INFO_ONEFUNDEF (result) = TRUE;
     INFO_EMPTYPART (result) = FALSE;
+    INFO_DEFAULT_EXISTS (result) = FALSE;
+    INFO_NUM_GENPARTS (result) = 0;
+    INFO_REPLACE (result) = FALSE;
     INFO_WITH (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -194,10 +298,30 @@ WLSIMPassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
+    if (INFO_REPLACE (arg_info)) {
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_REPLACE (arg_info) = FALSE;
+    }
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -210,49 +334,161 @@ WLSIMPassign (node *arg_node, info *arg_info)
 node *
 WLSIMPwith (node *arg_node, info *arg_info)
 {
+    node *preass;
     DBUG_ENTER ("WLSIMPwith");
 
     if (!(TUshapeKnown (IDS_NTYPE (WITH_VEC (arg_node)))
           && (SHgetUnrLen (TYgetShape (IDS_NTYPE (WITH_VEC (arg_node)))) == 0))) {
 
+        DBUG_PRINT ("WLSIMP", ("examining With-Loop in line %d", NODE_LINE (arg_node)));
         INFO_WITH (arg_info) = arg_node;
+
+        INFO_DEFAULT_EXISTS (arg_info) = FALSE;
+        INFO_NUM_GENPARTS (arg_info) = 0;
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-        if (WITH_PART (arg_node) == NULL) {
-            node *new_node = NULL;
-            switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
-            case N_genarray:
-                /*
-                 * TODO: FIX ME!
-                 *
-                 * Genarray with-loops without oarts should be replaced with
-                 * reshape( cat( shp, shape(def)), (:basetype)[])
-                 *
-                 * This is currently not possible as the basetype of [] cannot be
-                 * preserved in the NTC.
-                 */
-                DBUG_ASSERT ((FALSE), "This must never happen. See comment!");
-                break;
+        if (INFO_NUM_GENPARTS (arg_info) == 0) {
 
-            case N_modarray:
-                new_node = DUPdoDupNode (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
-                break;
+            WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        }
 
-            case N_fold:
-                new_node = DUPdoDupNode (FOLD_NEUTRAL (WITH_WITHOP (arg_node)));
-                break;
-
-            default:
-                DBUG_ASSERT (FALSE, "Illegal withop!");
-                break;
-            }
-
-            arg_node = FREEdoFreeNode (arg_node);
-            arg_node = new_node;
+        if (!INFO_REPLACE (arg_info)) {
+            preass = INFO_PREASSIGN (arg_info);
+            INFO_PREASSIGN (arg_info) = NULL;
+            WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+            INFO_PREASSIGN (arg_info) = preass;
         }
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPgenarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPgenarray");
+
+    if (INFO_DEFAULT_EXISTS (arg_info)) {
+        /*
+         * TODO: FIX ME!
+         *
+         * Here we should generate a non-default partition...
+         */
+        DBUG_ASSERT (FALSE, "killed all gens of genarrayWL!");
+    } else {
+        /*
+         * TODO: FIX ME!
+         *
+         * Genarray with-loops without oarts should be replaced with
+         * reshape( cat( shp, shape(def)), (:basetype)[])
+         *
+         * This is currently not possible as the basetype of [] cannot be
+         * preserved in the NTC.
+         */
+        DBUG_ASSERT (FALSE, "killed all gens of genarrayWL!");
+
+        INFO_REPLACE (arg_info) = TRUE;
+
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPmodarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPmodarray");
+
+    INFO_PREASSIGN (arg_info)
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
+                                 DUPdoDupNode (MODARRAY_ARRAY (arg_node))),
+                      INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+    INFO_REPLACE (arg_info) = TRUE;
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPfold( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPfold");
+    INFO_PREASSIGN (arg_info)
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
+                                 DUPdoDupNode (FOLD_NEUTRAL (arg_node))),
+                      INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+    INFO_REPLACE (arg_info) = TRUE;
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPbreak( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPbreak (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPbreak");
+
+    if (BREAK_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPpropagate( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPpropagate");
+
+    INFO_PREASSIGN (arg_info)
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
+                                 DUPdoDupNode (PROPAGATE_DEFAULT (arg_node))),
+                      INFO_PREASSIGN (arg_info));
+    DBUG_ASSERT (IDS_NEXT (LET_IDS (ASSIGN_INSTR (INFO_PREASSIGN (arg_info)))) == NULL,
+                 " DUPdoDupNode should not copy the IDS_NEXT!");
+    AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -264,8 +500,6 @@ WLSIMPwith (node *arg_node, info *arg_info)
 node *
 WLSIMPcode (node *arg_node, info *arg_info)
 {
-    node *preass;
-
     DBUG_ENTER ("WLSIMPcode");
 
     if (CODE_NEXT (arg_node) != NULL) {
@@ -276,10 +510,7 @@ WLSIMPcode (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
     } else {
         if (CODE_CBLOCK (arg_node) != NULL) {
-            preass = INFO_PREASSIGN (arg_info);
-            INFO_PREASSIGN (arg_info) = NULL;
             CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-            INFO_PREASSIGN (arg_info) = preass;
         }
     }
 
@@ -308,15 +539,32 @@ WLSIMPpart (node *arg_node, info *arg_info)
         /*
          * TODO: FIX ME
          *
-         * Do not delete last part of genarray with-loop. See comment above!
+         * Do not delete last part of genarray with-loop. The problem is the
+         * potential lack of default information....
          */
         if (!((NODE_TYPE (WITH_WITHOP (INFO_WITH (arg_info))) == N_genarray)
-              && (WITH_PART (INFO_WITH (arg_info)) == arg_node)
-              && (PART_NEXT (arg_node) == NULL))) {
+              && (INFO_NUM_GENPARTS (arg_info) == 1))) {
+            DBUG_PRINT ("WLSIMP",
+                        ("eliminating generator in line %d!", NODE_LINE (arg_node)));
             arg_node = FREEdoFreeNode (arg_node);
+
+            INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) - 1;
         }
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPdefault( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPdefault (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPdefault");
+    INFO_DEFAULT_EXISTS (arg_info) = TRUE;
     DBUG_RETURN (arg_node);
 }
 
@@ -333,6 +581,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSIMPgenerator");
 
+    INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
     /**
      * Remove empty generators
      *

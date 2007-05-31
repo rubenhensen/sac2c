@@ -1277,10 +1277,17 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Break" />
+          <node name="Propagate" />
           <node name="Code" />
           <node name="Part" />
           <node name="Generator" />
+          <node name="Default" />
         </travuser>
       </traversal>
       <traversal id="CWLE" name="Copy With-Loop Elimination" default="sons" include="copywlelim.h">

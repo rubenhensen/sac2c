@@ -21,9 +21,16 @@ extern node *WLSIMPdoWithloopSimplification (node *syntax_tree);
 
 extern node *WLSIMPfundef (node *arg_node, info *arg_info);
 extern node *WLSIMPassign (node *arg_node, info *arg_info);
+extern node *WLSIMPlet (node *arg_node, info *arg_info);
 extern node *WLSIMPwith (node *arg_node, info *arg_info);
+extern node *WLSIMPgenarray (node *arg_node, info *arg_info);
+extern node *WLSIMPmodarray (node *arg_node, info *arg_info);
+extern node *WLSIMPfold (node *arg_node, info *arg_info);
+extern node *WLSIMPbreak (node *arg_node, info *arg_info);
+extern node *WLSIMPpropagate (node *arg_node, info *arg_info);
 extern node *WLSIMPcode (node *arg_node, info *arg_info);
 extern node *WLSIMPpart (node *arg_node, info *arg_info);
 extern node *WLSIMPgenerator (node *arg_node, info *arg_info);
+extern node *WLSIMPdefault (node *arg_node, info *arg_info);
 
 #endif /* _SAC_EXPLICITCOPY_H_ */
