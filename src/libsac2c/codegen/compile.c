@@ -4392,7 +4392,7 @@ static node *
 COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
 {
     node *let_ids;
-    node *icm;
+    node *icm = NULL;
     node *idxs_exprs;
 
     DBUG_ENTER ("COMPPrfIdxs2Offset");
@@ -4419,8 +4419,8 @@ COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
 #ifndef DBUG_OFF
     } else {
         DBUG_ASSERT ((0), "unexpected 1st arg to idxs2offset");
-    }
 #endif
+    }
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
 }
@@ -4438,7 +4438,7 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *iv_vect;
-    node *icm;
+    node *icm = NULL;
 
     DBUG_ENTER ("COMPPrfVect2Offset");
 
@@ -4462,8 +4462,8 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 #ifndef DBUG_OFF
     } else {
         DBUG_ASSERT ((0), "unexpected 1st arg to vect2offset");
-    }
 #endif
+    }
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
 }
@@ -5909,7 +5909,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                                                               break_label_str),
                                                             NULL))),
 #else
-                                                  NULL)),
+                                          NULL)),
 #endif
       fold_rc_icms, free_icms);
     INFO_BREAKLABEL (arg_info) = NULL;
