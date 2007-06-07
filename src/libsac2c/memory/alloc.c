@@ -1360,10 +1360,6 @@ EMALprf (node *arg_node, info *arg_info)
         DBUG_ASSERT ((0), "invalid prf found!");
         break;
 
-    case F_take:
-    case F_drop:
-    case F_cat:
-    case F_rotate:
     case F_genarray:
         DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                           " Use array.lib instead!");

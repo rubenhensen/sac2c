@@ -90,12 +90,6 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
   PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCCTprf_dummy,
           NULL, FALSE),
 
-  PRF_IF (F_take, "F_take", "_take_", "take", FALSE, 2, NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_drop, "F_drop", "_drop_", "drop", FALSE, 2, NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, 3, NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, 3, NTCCTprf_dummy, NULL,
-          FALSE),
-
   PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCCTprf_cat_VxV, COcat,
           FALSE),
   PRF_IF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCCTprf_take_SxV,

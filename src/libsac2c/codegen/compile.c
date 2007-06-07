@@ -4728,15 +4728,6 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = COMPPrfConvertArray (arg_node, arg_info);
         break;
 
-    case F_take:
-    case F_drop:
-    case F_cat:
-    case F_rotate:
-        DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
-                          " Use array.lib instead!");
-        ret_node = NULL;
-        break;
-
         /*
          * IVE operations
          */

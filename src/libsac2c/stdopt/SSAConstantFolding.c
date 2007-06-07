@@ -32,7 +32,8 @@
  *   at this time the following primitive operations are implemented:
  *     for full constants (scalar value, arrays with known values):
  *       toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
- *       mod, and, le, lt, eq, ge, neq, reshape, sel, take, drop, modarray
+ *       mod, and, le, lt, eq, ge, neq, reshape, sel, take_SxV, drop_SxV,
+ *       cat_VxV, modarray
  *
  *     structural constant, with full constant iv (array with ids as values):
  *       reshape, sel, take, drop, modarray
@@ -60,8 +61,8 @@
  *  extended to SxA and AxS. rbe
  *
  * TODO:
- *  1. Could extend F_reshape(x,y) and F_take(x,y) to work on any arrays where we can
- *prove that all(x==shape(y)). Perhaps SAA can do this handily.
+ *  1. Could extend F_reshape(x,y) to work on any arrays where we can prove
+ *     that all(x==shape(y)). Perhaps SAA can do this handily.
  *
  *  @ingroup opt
  *
@@ -2514,7 +2515,6 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         break;
 
     case F_take_SxV:
-    case F_take:
         if
             TWO_CONST_ARG (arg_co)
             {
@@ -2530,7 +2530,6 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         break;
 
     case F_drop_SxV:
-    case F_drop:
         if
             TWO_CONST_ARG (arg_co)
             {
@@ -2568,25 +2567,6 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
             new_node = Modarray (arg_expr[0], arg_co[1], arg_expr[2]);
         }
-        break;
-
-#ifdef HADROTATE
-        if
-            we had a rotate primitive, this would do the trick
-
-              /* Rotate by zero is trivial */
-              if FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
-            {
-                if (COisZero (arg_co[0], FALSE)) { /* rotate([0], A) */
-                    new_node = DUPdoDupTree (arg_expr[1]);
-                }
-            }
-        break;
-#endif
-
-    /* not implemented yet */
-    case F_rotate:
-    case F_cat:
         break;
 
     default:

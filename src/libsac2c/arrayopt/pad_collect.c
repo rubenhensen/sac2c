@@ -613,15 +613,11 @@ APCprf (node *arg_node, info *arg_info)
         break;
 
         /* unsupported non-scalar functions */
-    case F_take:
-    case F_drop:
     case F_take_SxV:
     case F_drop_SxV:
     case F_idx_sel:
     case F_reshape:
-    case F_cat:
     case F_cat_VxV:
-    case F_rotate:
     case F_toi_A:
     case F_tof_A:
     case F_tod_A:
