@@ -100,60 +100,103 @@ int charpos = 0;
 "%="                       { FILTER( MODON); }
 
 
-"_dim_"                    { FILTER( PRF_DIM); }
-"_shape_"                  { FILTER( PRF_SHAPE); }
-"_reshape_"                { FILTER( PRF_RESHAPE); }
-"_sel_"                    { FILTER( PRF_SEL); }
-"_genarray_"               { FILTER( PRF_GENARRAY); }
-"_modarray_"               { FILTER( PRF_MODARRAY); }
+"_dim_A_"                  { FILTER( PRF_DIM_A); }
+"_shape_A_"                { FILTER( PRF_SHAPE_A); }
+"_reshape_VxA_"            { FILTER( PRF_RESHAPE_VxA); }
+"_sel_VxA_"                { FILTER( PRF_SEL_VxA); }
+"_modarray_AxVxS_"         { FILTER( PRF_MODARRAY_AxVxS); }
 
 "_cat_VxV_"                { FILTER( PRF_CAT_VxV); }
 "_take_SxV_"               { FILTER( PRF_TAKE_SxV); }
 "_drop_SxV_"               { FILTER( PRF_DROP_SxV); }
 
 "_add_SxS_"                { FILTER( PRF_ADD_SxS); }
-"_add_SxA_"                { FILTER( PRF_ADD_SxA); }
-"_add_AxS_"                { FILTER( PRF_ADD_AxS); }
-"_add_AxA_"                { FILTER( PRF_ADD_AxA); }
+"_add_SxV_"                { FILTER( PRF_ADD_SxV); }
+"_add_VxS_"                { FILTER( PRF_ADD_VxS); }
+"_add_VxV_"                { FILTER( PRF_ADD_VxV); }
 
 "_sub_SxS_"                { FILTER( PRF_SUB_SxS); }
-"_sub_SxA_"                { FILTER( PRF_SUB_SxA); }
-"_sub_AxS_"                { FILTER( PRF_SUB_AxS); }
-"_sub_AxA_"                { FILTER( PRF_SUB_AxA); }
+"_sub_SxV_"                { FILTER( PRF_SUB_SxV); }
+"_sub_VxS_"                { FILTER( PRF_SUB_VxS); }
+"_sub_VxV_"                { FILTER( PRF_SUB_VxV); }
 
 "_mul_SxS_"                { FILTER( PRF_MUL_SxS); }
-"_mul_SxA_"                { FILTER( PRF_MUL_SxA); }
-"_mul_AxS_"                { FILTER( PRF_MUL_AxS); }
-"_mul_AxA_"                { FILTER( PRF_MUL_AxA); }
+"_mul_SxV_"                { FILTER( PRF_MUL_SxV); }
+"_mul_VxS_"                { FILTER( PRF_MUL_VxS); }
+"_mul_VxV_"                { FILTER( PRF_MUL_VxV); }
 
 "_div_SxS_"                { FILTER( PRF_DIV_SxS); }
-"_div_SxA_"                { FILTER( PRF_DIV_SxA); }
-"_div_AxS_"                { FILTER( PRF_DIV_AxS); }
-"_div_AxA_"                { FILTER( PRF_DIV_AxA); }
+"_div_SxV_"                { FILTER( PRF_DIV_SxV); }
+"_div_VxS_"                { FILTER( PRF_DIV_VxS); }
+"_div_VxV_"                { FILTER( PRF_DIV_VxV); }
 
-"_mod_"                    { FILTER( PRF_MOD); }
-"_min_"                    { FILTER( PRF_MIN); }
-"_max_"                    { FILTER( PRF_MAX); }
-"_abs_"                    { FILTER( PRF_ABS); }
-"_neg_"                    { FILTER( PRF_NEG); }
+"_mod_SxS_"                { FILTER( PRF_MOD_SxS); }
+"_mod_SxV_"                { FILTER( PRF_MOD_SxV); }
+"_mod_VxS_"                { FILTER( PRF_MOD_VxS); }
+"_mod_VxV_"                { FILTER( PRF_MOD_VxV); }
 
-"_eq_"                     { FILTER( PRF_EQ);  }
-"_neq_"                    { FILTER( PRF_NEQ); }
-"_le_"                     { FILTER( PRF_LE); }
-"_lt_"                     { FILTER( PRF_LT); }
-"_ge_"                     { FILTER( PRF_GE); }
-"_gt_"                     { FILTER( PRF_GT); }
+"_min_SxS_"                { FILTER( PRF_MIN_SxS); }
+"_min_SxV_"                { FILTER( PRF_MIN_SxV); }
+"_min_VxS_"                { FILTER( PRF_MIN_VxS); }
+"_min_VxV_"                { FILTER( PRF_MIN_VxV); }
 
-"_and_"                    { FILTER( PRF_AND); }
-"_or_"                     { FILTER( PRF_OR);  }
-"_not_"                    { FILTER( PRF_NOT); }
+"_max_SxS_"                { FILTER( PRF_MAX_SxS); }
+"_max_SxV_"                { FILTER( PRF_MAX_SxV); }
+"_max_VxS_"                { FILTER( PRF_MAX_VxS); }
+"_max_VxV_"                { FILTER( PRF_MAX_VxV); }
+
+"_abs_S_"                  { FILTER( PRF_ABS_S); }
+"_abs_V_"                  { FILTER( PRF_ABS_V); }
+
+"_neg_S_"                  { FILTER( PRF_NEG_S); }
+"_neg_V_"                  { FILTER( PRF_NEG_V); }
+
+"_eq_SxS_"                 { FILTER( PRF_EQ_SxS);  }
+"_eq_SxV_"                 { FILTER( PRF_EQ_SxV);  }
+"_eq_VxS_"                 { FILTER( PRF_EQ_VxS);  }
+"_eq_VxV_"                 { FILTER( PRF_EQ_VxV);  }
+
+"_neq_SxS_"                { FILTER( PRF_NEQ_SxS); }
+"_neq_SxV_"                { FILTER( PRF_NEQ_SxV); }
+"_neq_VxS_"                { FILTER( PRF_NEQ_VxS); }
+"_neq_VxV_"                { FILTER( PRF_NEQ_VxV); }
+
+"_le_SxS_"                 { FILTER( PRF_LE_SxS); }
+"_le_SxV_"                 { FILTER( PRF_LE_SxV); }
+"_le_VxS_"                 { FILTER( PRF_LE_VxS); }
+"_le_VxV_"                 { FILTER( PRF_LE_VxV); }
+
+"_lt_SxS_"                 { FILTER( PRF_LT_SxS); }
+"_lt_SxV_"                 { FILTER( PRF_LT_SxV); }
+"_lt_VxS_"                 { FILTER( PRF_LT_VxS); }
+"_lt_VxV_"                 { FILTER( PRF_LT_VxV); }
+
+"_ge_SxS_"                 { FILTER( PRF_GE_SxS); }
+"_ge_SxV_"                 { FILTER( PRF_GE_SxV); }
+"_ge_VxS_"                 { FILTER( PRF_GE_VxS); }
+"_ge_VxV_"                 { FILTER( PRF_GE_VxV); }
+
+"_gt_SxS_"                 { FILTER( PRF_GT_SxS); }
+"_gt_SxV_"                 { FILTER( PRF_GT_SxV); }
+"_gt_VxS_"                 { FILTER( PRF_GT_VxS); }
+"_gt_VxV_"                 { FILTER( PRF_GT_VxV); }
+
+"_and_SxS_"                { FILTER( PRF_AND_SxS); }
+"_and_SxV_"                { FILTER( PRF_AND_SxV); }
+"_and_VxS_"                { FILTER( PRF_AND_VxS); }
+"_and_VxV_"                { FILTER( PRF_AND_VxV); }
+
+"_or_SxS_"                 { FILTER( PRF_OR_SxS);  }
+"_or_SxV_"                 { FILTER( PRF_OR_SxV);  }
+"_or_VxS_"                 { FILTER( PRF_OR_VxS);  }
+"_or_VxV_"                 { FILTER( PRF_OR_VxV);  }
+
+"_not_S_"                  { FILTER( PRF_NOT_S); }
+"_not_V_"                  { FILTER( PRF_NOT_V); }
 
 "_toi_S_"                  { FILTER( PRF_TOI_S); }
-"_toi_A_"                  { FILTER( PRF_TOI_A); }
 "_tof_S_"                  { FILTER( PRF_TOF_S); }
-"_tof_A_"                  { FILTER( PRF_TOF_A); }
 "_tod_S_"                  { FILTER( PRF_TOD_S); }
-"_tod_A_"                  { FILTER( PRF_TOD_A); }
 
 
 "typedef"                  { FILTER( TYPEDEF); }

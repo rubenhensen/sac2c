@@ -108,15 +108,26 @@ TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL 
 
-PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
-PRF_ADD_SxS  PRF_ADD_SxA  PRF_ADD_AxS  PRF_ADD_AxA 
-PRF_SUB_SxS  PRF_SUB_SxA  PRF_SUB_AxS  PRF_SUB_AxA 
-PRF_MUL_SxS  PRF_MUL_SxA  PRF_MUL_AxS  PRF_MUL_AxA 
-PRF_DIV_SxS  PRF_DIV_SxA  PRF_DIV_AxS  PRF_DIV_AxA 
-PRF_MOD  PRF_MIN  PRF_MAX  PRF_ABS  PRF_NEG 
-PRF_EQ  PRF_NEQ  PRF_LE  PRF_LT  PRF_GE  PRF_GT 
-PRF_AND  PRF_OR  PRF_NOT 
-PRF_TOI_S  PRF_TOI_A  PRF_TOF_S  PRF_TOF_A  PRF_TOD_S  PRF_TOD_A 
+PRF_DIM_A  PRF_SHAPE_A  PRF_RESHAPE_VxA  PRF_SEL_VxA  PRF_MODARRAY_AxVxS
+PRF_ADD_SxS  PRF_ADD_SxV  PRF_ADD_VxS  PRF_ADD_VxV 
+PRF_SUB_SxS  PRF_SUB_SxV  PRF_SUB_VxS  PRF_SUB_VxV 
+PRF_MUL_SxS  PRF_MUL_SxV  PRF_MUL_VxS  PRF_MUL_VxV 
+PRF_DIV_SxS  PRF_DIV_SxV  PRF_DIV_VxS  PRF_DIV_VxV 
+PRF_MOD_SxS  PRF_MOD_SxV  PRF_MOD_VxS  PRF_MOD_VxV
+PRF_MIN_SxS  PRF_MIN_SxV  PRF_MIN_VxS  PRF_MIN_VxV
+PRF_MAX_SxS  PRF_MAX_SxV  PRF_MAX_VxS  PRF_MAX_VxV
+PRF_ABS_S  PRF_ABS_V
+PRF_NEG_S  PRF_NEG_V
+PRF_EQ_SxS   PRF_EQ_SxV  PRF_EQ_VxS  PRF_EQ_VxV
+PRF_NEQ_SxS  PRF_NEQ_SxV  PRF_NEQ_VxS  PRF_NEQ_VxV
+PRF_LE_SxS   PRF_LE_SxV  PRF_LE_VxS  PRF_LE_VxV
+PRF_LT_SxS   PRF_LT_SxV  PRF_LT_VxS  PRF_LT_VxV
+PRF_GE_SxS   PRF_GE_SxV  PRF_GE_VxS  PRF_GE_VxV
+PRF_GT_SxS   PRF_GT_SxV  PRF_GT_VxS  PRF_GT_VxV
+PRF_AND_SxS  PRF_AND_SxV  PRF_AND_VxS  PRF_AND_VxV
+PRF_OR_SxS   PRF_OR_SxV  PRF_OR_VxS  PRF_OR_VxV
+PRF_NOT_S  PRF_NOT_V
+PRF_TOI_S  PRF_TOF_S  PRF_TOD_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %token <id> ID  STR  OPTION
@@ -1596,51 +1607,83 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       ;
 
-prf: PRF_DIM       { $$ = F_dim;     }
-   | PRF_SHAPE     { $$ = F_shape;   }
-   | PRF_RESHAPE   { $$ = F_reshape; }
-   | PRF_SEL       { $$ = F_sel;     }
-   | PRF_GENARRAY  { $$ = F_genarray;}
-   | PRF_MODARRAY  { $$ = F_modarray;}
-   | PRF_ADD_SxS   { $$ = F_add_SxS; }
-   | PRF_ADD_SxA   { $$ = F_add_SxA; }
-   | PRF_ADD_AxS   { $$ = F_add_AxS; }
-   | PRF_ADD_AxA   { $$ = F_add_AxA; }
-   | PRF_SUB_SxS   { $$ = F_sub_SxS; }
-   | PRF_SUB_SxA   { $$ = F_sub_SxA; }
-   | PRF_SUB_AxS   { $$ = F_sub_AxS; }
-   | PRF_SUB_AxA   { $$ = F_sub_AxA; }
-   | PRF_MUL_SxS   { $$ = F_mul_SxS; }
-   | PRF_MUL_SxA   { $$ = F_mul_SxA; }
-   | PRF_MUL_AxS   { $$ = F_mul_AxS; }
-   | PRF_MUL_AxA   { $$ = F_mul_AxA; }
-   | PRF_DIV_SxS   { $$ = F_div_SxS; }
-   | PRF_DIV_SxA   { $$ = F_div_SxA; }
-   | PRF_DIV_AxS   { $$ = F_div_AxS; }
-   | PRF_DIV_AxA   { $$ = F_div_AxA; }
-   | PRF_MOD       { $$ = F_mod;     }
-   | PRF_ABS       { $$ = F_abs;     }
-   | PRF_NEG       { $$ = F_neg;     }
-   | PRF_MIN       { $$ = F_min;     }
-   | PRF_MAX       { $$ = F_max;     }
-   | PRF_EQ        { $$ = F_eq;      }
-   | PRF_NEQ       { $$ = F_neq;     }
-   | PRF_LT        { $$ = F_lt;      }
-   | PRF_LE        { $$ = F_le;      }
-   | PRF_GT        { $$ = F_gt;      }
-   | PRF_GE        { $$ = F_ge;      }
-   | PRF_NOT       { $$ = F_not;     }
-   | PRF_AND       { $$ = F_and;     }
-   | PRF_OR        { $$ = F_or;      }
-   | PRF_TOI_S     { $$ = F_toi_S;   }
-   | PRF_TOI_A     { $$ = F_toi_A;   }
-   | PRF_TOF_S     { $$ = F_tof_S;   }
-   | PRF_TOF_A     { $$ = F_tof_A;   }
-   | PRF_TOD_S     { $$ = F_tod_S;   }
-   | PRF_TOD_A     { $$ = F_tod_A;   }
-   | PRF_CAT_VxV   { $$ = F_cat_VxV; }
-   | PRF_TAKE_SxV  { $$ = F_take_SxV;}
-   | PRF_DROP_SxV  { $$ = F_drop_SxV;}
+prf: PRF_DIM_A          { $$ = F_dim;     }
+   | PRF_SHAPE_A        { $$ = F_shape;   }
+   | PRF_RESHAPE_VxA    { $$ = F_reshape; }
+   | PRF_SEL_VxA        { $$ = F_sel;     }
+   | PRF_MODARRAY_AxVxS { $$ = F_modarray;}
+   | PRF_ADD_SxS        { $$ = F_add_SxS; }
+   | PRF_ADD_SxV        { $$ = F_add_SxA; }
+   | PRF_ADD_VxS        { $$ = F_add_AxS; }
+   | PRF_ADD_VxV        { $$ = F_add_AxA; }
+   | PRF_SUB_SxS        { $$ = F_sub_SxS; }
+   | PRF_SUB_SxV        { $$ = F_sub_SxA; }
+   | PRF_SUB_VxS        { $$ = F_sub_AxS; }
+   | PRF_SUB_VxV        { $$ = F_sub_AxA; }
+   | PRF_MUL_SxS        { $$ = F_mul_SxS; }
+   | PRF_MUL_SxV        { $$ = F_mul_SxA; }
+   | PRF_MUL_VxS        { $$ = F_mul_AxS; }
+   | PRF_MUL_VxV        { $$ = F_mul_AxA; }
+   | PRF_DIV_SxS        { $$ = F_div_SxS; }
+   | PRF_DIV_SxV        { $$ = F_div_SxA; }
+   | PRF_DIV_VxS        { $$ = F_div_AxS; }
+   | PRF_DIV_VxV        { $$ = F_div_AxA; }
+   | PRF_MOD_SxS        { $$ = F_mod;     }
+   | PRF_MOD_SxV        { $$ = F_mod;     }
+   | PRF_MOD_VxS        { $$ = F_mod;     }
+   | PRF_MOD_VxV        { $$ = F_mod;     }
+   | PRF_ABS_S          { $$ = F_abs;     }
+   | PRF_ABS_V          { $$ = F_abs;     }
+   | PRF_NEG_S          { $$ = F_neg;     }
+   | PRF_NEG_V          { $$ = F_neg;     }
+   | PRF_MIN_SxS        { $$ = F_min;     }
+   | PRF_MIN_SxV        { $$ = F_min;     }
+   | PRF_MIN_VxS        { $$ = F_min;     }
+   | PRF_MIN_VxV        { $$ = F_min;     }
+   | PRF_MAX_SxS        { $$ = F_max;     }
+   | PRF_MAX_SxV        { $$ = F_max;     }
+   | PRF_MAX_VxS        { $$ = F_max;     }
+   | PRF_MAX_VxV        { $$ = F_max;     }
+   | PRF_EQ_SxS         { $$ = F_eq;      }
+   | PRF_EQ_SxV         { $$ = F_eq;      }
+   | PRF_EQ_VxS         { $$ = F_eq;      }
+   | PRF_EQ_VxV         { $$ = F_eq;      }
+   | PRF_NEQ_SxS        { $$ = F_neq;     }
+   | PRF_NEQ_SxV        { $$ = F_neq;     }
+   | PRF_NEQ_VxS        { $$ = F_neq;     }
+   | PRF_NEQ_VxV        { $$ = F_neq;     }
+   | PRF_LT_SxS         { $$ = F_lt;      }
+   | PRF_LT_SxV         { $$ = F_lt;      }
+   | PRF_LT_VxS         { $$ = F_lt;      }
+   | PRF_LT_VxV         { $$ = F_lt;      }
+   | PRF_LE_SxS         { $$ = F_le;      }
+   | PRF_LE_SxV         { $$ = F_le;      }
+   | PRF_LE_VxS         { $$ = F_le;      }
+   | PRF_LE_VxV         { $$ = F_le;      }
+   | PRF_GT_SxS         { $$ = F_gt;      }
+   | PRF_GT_SxV         { $$ = F_gt;      }
+   | PRF_GT_VxS         { $$ = F_gt;      }
+   | PRF_GT_VxV         { $$ = F_gt;      }
+   | PRF_GE_SxS         { $$ = F_ge;      }
+   | PRF_GE_SxV         { $$ = F_ge;      }
+   | PRF_GE_VxS         { $$ = F_ge;      }
+   | PRF_GE_VxV         { $$ = F_ge;      }
+   | PRF_NOT_S          { $$ = F_not;     }
+   | PRF_NOT_V          { $$ = F_not;     }
+   | PRF_AND_SxS        { $$ = F_and;     }
+   | PRF_AND_SxV        { $$ = F_and;     }
+   | PRF_AND_VxS        { $$ = F_and;     }
+   | PRF_AND_VxV        { $$ = F_and;     }
+   | PRF_OR_SxS         { $$ = F_or;      }
+   | PRF_OR_SxV         { $$ = F_or;      }
+   | PRF_OR_VxS         { $$ = F_or;      }
+   | PRF_OR_VxV         { $$ = F_or;      }
+   | PRF_TOI_S          { $$ = F_toi_S;   }
+   | PRF_TOF_S          { $$ = F_tof_S;   }
+   | PRF_TOD_S          { $$ = F_tod_S;   }
+   | PRF_CAT_VxV        { $$ = F_cat_VxV; }
+   | PRF_TAKE_SxV       { $$ = F_take_SxV;}
+   | PRF_DROP_SxV       { $$ = F_drop_SxV;}
    ;
 
 qual_ext_ids: qual_ext_id COMMA qual_ext_ids
