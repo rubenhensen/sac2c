@@ -160,7 +160,7 @@ FindInPool (const char *module, view_t *view)
             break;
         }
 
-        if ((cnt % BLOCKSIZE) == 99) {
+        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1)) {
             pos = pos->next;
         }
     }
@@ -486,7 +486,7 @@ NSaddMapping (const char *module, view_t *view)
 
     DBUG_ENTER ("NSaddMapping");
 
-    DBUG_PRINT ("NS", ("adding new mapping for '%s'...", module));
+    DBUG_PRINT ("NS", ("adding new mapping for module '%s'...", module));
 
     ns = FindInPool (module, view);
 
@@ -496,7 +496,7 @@ NSaddMapping (const char *module, view_t *view)
 
     result = ns->id;
 
-    DBUG_PRINT ("NS", ("...mapped to %d.", result));
+    DBUG_PRINT ("NS", ("...mapped '%s' to %d.", NSgetName (ns), result));
 
     DBUG_RETURN (result);
 }
@@ -560,13 +560,13 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,
-                 NSgetModule (pool->block[cnt % BLOCKSIZE]));
+                 NSgetModule (pos->block[cnt % BLOCKSIZE]));
 
-        GenerateViewConstructor (file, pool->block[cnt % BLOCKSIZE]->view);
+        GenerateViewConstructor (file, pos->block[cnt % BLOCKSIZE]->view);
 
         fprintf (file, ");\n");
 
-        if ((cnt % BLOCKSIZE) == 99) {
+        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1)) {
             pos = pos->next;
         }
     }

@@ -620,7 +620,10 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
         case SET_typedef:
         case SET_objdef:
             /* first check, whether it is already available */
+            DBUG_PRINT ("DS",
+                        ("Searching for entry '%s' in ast...", STentryName (entry)));
             if (FindSymbolInAst (STentryName (entry)) == NULL) {
+                DBUG_PRINT ("DS", ("Adding entry '%s' to ast...", STentryName (entry)));
                 serfun = MODMgetDeSerializeFunction (STentryName (entry), module);
 
                 DBUG_ASSERT ((serfun != NULL),
@@ -695,6 +698,8 @@ DSaddSymbolById (const char *symbid, const char *module)
     node *entryp;
 
     DBUG_ENTER ("DSaddSymbolById");
+
+    DBUG_PRINT ("DS", ("Adding symbol '%s' from module '5s'...", symbid, module));
 
     mod = MODMloadModule (module);
 
