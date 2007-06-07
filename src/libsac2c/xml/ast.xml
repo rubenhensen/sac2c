@@ -4276,7 +4276,7 @@
           <description>
             Describes the type of function this node
             represents. A list of possible values is
-            found in src/tree/prf_node_info.mac
+            found in src/libsac2c/tree/prf_node_info.mac
           </description>
           <type name="Prf">
             <targets>
