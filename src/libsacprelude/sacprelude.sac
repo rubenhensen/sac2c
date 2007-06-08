@@ -14,12 +14,12 @@ fun( char)
 inline                                                                   \
 a[*] sel( int[.] idx, a[*] array)                                        \
 {                                                                        \
-  new_shape = _drop_SxV_( _sel_( [0], _shape_(idx)), _shape_(array));    \
+  new_shape = _drop_SxV_( _sel_VxA_( [0], _shape_A_(idx)), _shape_A_(array));\
   res = with {                                                           \
           ( . <= iv <= . )                                               \
           {                                                              \
             new_idx = _cat_VxV_( idx, iv);                               \
-          } : _sel_(new_idx, array);                                     \
+          } : _sel_VxA_(new_idx, array);                                     \
         } : genarray( new_shape, zero( array ) );                        \
   return( res);                                                          \
 }
@@ -45,7 +45,7 @@ ZERO( bool, false)
 inline
 bool and( bool a, bool b)
 {
-  return( _and_( a, b));
+  return( _and_SxS_( a, b));
 }
 
 #define EQ( a)                                                       \
@@ -53,8 +53,8 @@ inline                                                               \
 bool eq( a[*] A, a[*] B)                                             \
 {                                                                    \
   res = with {                                                       \
-          ( _mul_SxA_(0, _shape_(A)) <= iv < _shape_(A) )            \
-          : _eq_(_sel_( iv, A), _sel_( iv, B));                      \
+          ( _mul_SxV_(0, _shape_A_(A)) <= iv < _shape_A_(A) )        \
+          : _eq_SxS_(_sel_VxA_( iv, A), _sel_VxA_( iv, B));          \
         } : fold( sacprelude::and, true );                           \
   return( res);                                                      \
 }
@@ -64,13 +64,13 @@ BUILT_IN( EQ)
 
 int[*] adjustLacFunParamsReshape( bool[*] p, int[*] i, int[.] iv, int[.] shp)
 {
-  return( ( _or_(_eq_( _dim_(p), 0), _eq_(_dim_(i), 0)) ?
-            i : _reshape_( shp, i)[iv]));
+  return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
+            i : _reshape_VxA_( shp, i)[iv]));
 }
 
 int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
 {
-  return( ( _or_(_eq_( _dim_(p), 0), _eq_(_dim_(i), 0)) ?
+  return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
             i : i[iv]));
 }
 
