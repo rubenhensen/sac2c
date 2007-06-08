@@ -101,7 +101,7 @@ static const int basetype_size_init[] = {
 
 static const char *prf_string_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) c
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 
@@ -131,13 +131,13 @@ static char *nt_unique_string_init[] = {
 
 static const ct_funptr ntc_funtab_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) g
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 
 static const void *ntc_cffuntab_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) (void *)h
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 
@@ -305,7 +305,7 @@ static const char *mdb_nodetype_init[] = {
 
 static const char *mdb_prf_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) b
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 
@@ -452,13 +452,13 @@ static genlib_flags_t genlib_init = {
 
 static char *prf_symbol_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) d
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 
 static bool prf_is_infix_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h, i) e
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 

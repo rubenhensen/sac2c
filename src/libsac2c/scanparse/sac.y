@@ -69,7 +69,7 @@ static node *SetClassType( node *module, ntype *type);
 
 static int prf_arity[] = {
 #define PRF_IF( a, b, c, d, e, f, g, h, i) f
-#include "prf_node_info.mac"
+#include "prf_info.mac"
 #undef PRF_IF
 };
 

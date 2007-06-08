@@ -322,7 +322,7 @@ MDEprf (node *arg_node, info *arg_info)
     case F_mul_AxA:
     case F_sub_AxA:
     case F_div_AxA:
-    case F_and: /* According to prf_node_info.mac, these are AxA */
+    case F_and: /* According to prf_info.mac, these are AxA */
     case F_or:
     case F_le:
     case F_lt:

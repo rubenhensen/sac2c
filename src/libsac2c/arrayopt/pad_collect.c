@@ -26,7 +26,7 @@
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
  * Revision 3.9  2002/09/11 23:07:39  dkr
- * prf_node_info.mac modified.
+ * prf_info.mac modified.
  *
  * Revision 3.8  2002/09/09 19:15:29  dkr
  * prf_string removed (mdb_prf used instead)
