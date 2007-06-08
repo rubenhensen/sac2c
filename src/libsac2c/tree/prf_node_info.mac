@@ -21,11 +21,8 @@
  * =============================================
  */
 PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE),
-  PRF_IF (F_toi_A, "F_toi_A", "_toi_A_", "toi", FALSE, 1, NTCCTprf_toiA, COtoi, FALSE),
   PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCCTprf_tofS, COtof, FALSE),
-  PRF_IF (F_tof_A, "F_tof_A", "_tof_A_", "tof", FALSE, 1, NTCCTprf_tofA, COtof, FALSE),
   PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCCTprf_todS, COtod, FALSE),
-  PRF_IF (F_tod_A, "F_tod_A", "_tod_A_", "tod", FALSE, 1, NTCCTprf_todA, COtod, FALSE),
 
   PRF_IF (F_neg, "F_neg", "_neg_", "neg", FALSE, 1, NTCCTprf_ari_op_A, COneg, FALSE),
   PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCCTprf_ari_op_A, COabs, FALSE),

@@ -2230,21 +2230,18 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
     switch (op) {
         /* one-argument functions */
     case F_toi_S:
-    case F_toi_A:
         if (T_int == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
             new_node = DUPdoDupTree (arg_expr[0]);
         }
         break;
 
     case F_tod_S:
-    case F_tod_A:
         if (T_double == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
             new_node = DUPdoDupTree (arg_expr[0]);
         }
         break;
 
     case F_tof_S:
-    case F_tof_A:
         if (T_float == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
             new_node = DUPdoDupTree (arg_expr[0]);
         }

@@ -386,9 +386,6 @@ MSEprf (node *arg_node, info *arg_info)
 
     case F_modarray:
     case F_copy:
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
     case F_neg:
     case F_not:
     case F_abs:

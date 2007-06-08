@@ -4154,37 +4154,6 @@ COMPPrfConvertScalar (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfConvertArray( node *arg_node, info *arg_info)
- *
- * @brief  Compiles N_prf node of type F_toi_A, F_tod_A, F_tof_A.
- *
- ******************************************************************************/
-
-static node *
-COMPPrfConvertArray (node *arg_node, info *arg_info)
-{
-    node *arg;
-    node *let_ids;
-    node *ret_node;
-
-    DBUG_ENTER ("COMPPrfConvertArray");
-
-    let_ids = INFO_LASTIDS (arg_info);
-    arg = PRF_ARG1 (arg_node);
-
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_to?_A is no N_id!");
-
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_CONV_A",
-                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
-                                               TBmakeExprs (DUPdupIdNt (arg), NULL)),
-                                 NULL);
-
-    DBUG_RETURN (ret_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *COMPPrfUniScalar( char *icm_name,
  *                              node *arg_node, info *arg_info)
  *
@@ -4716,16 +4685,6 @@ COMPprf (node *arg_node, info *arg_info)
 
     case F_drop_SxV:
         ret_node = COMPPrfDrop (arg_node, arg_info);
-        break;
-
-        /*
-         *  array operations (non-intrinsics)
-         */
-
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
-        ret_node = COMPPrfConvertArray (arg_node, arg_info);
         break;
 
         /*

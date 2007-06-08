@@ -618,9 +618,6 @@ APCprf (node *arg_node, info *arg_info)
     case F_idx_sel:
     case F_reshape:
     case F_cat_VxV:
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
     case F_div_SxA:
     case F_div_AxS:
     case F_div_AxA:

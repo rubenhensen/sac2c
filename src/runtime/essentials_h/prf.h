@@ -92,8 +92,6 @@
  * ND_PRF_CAT__DATA( to_NT, to_sdim,
  *                   from1_NT, from1_sdim, from2_NT, from2_sdim, copyfun)
  *
- * ND_PRF_CONV_A__DATA( to_NT, from_NT)
- *
  * ND_PRF_S__DATA( to_NT, op, scl)
  * ND_PRF_A__DATA( to_NT, op, scl)
  *
@@ -145,16 +143,6 @@
         }                                                                                \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
             SAC_ND_WRITE_READ_COPY (to_NT, SAC_off + SAC_i, from2_NT, SAC_i, copyfun);   \
-        }                                                                                \
-    }
-
-#define SAC_ND_PRF_CONV_A__DATA(to_NT, from_NT)                                          \
-    SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_CONV_A__DATA( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)));             \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE_READ_COPY (to_NT, SAC_i, from_NT, SAC_i, );                     \
         }                                                                                \
     }
 

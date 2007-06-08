@@ -231,11 +231,8 @@ EMRIprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_toi_S:
-    case F_toi_A:
     case F_tof_S:
-    case F_tof_A:
     case F_tod_S:
-    case F_tod_A:
     case F_neg:
     case F_abs:
     case F_not:

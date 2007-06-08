@@ -1293,9 +1293,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq:
     case F_ge:
     case F_gt:
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
     case F_add_AxS:
     case F_sub_AxS:
     case F_mul_AxS:
