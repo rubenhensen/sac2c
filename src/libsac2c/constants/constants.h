@@ -75,6 +75,11 @@ extern void *COgetDataVec (constant *a);
 /*
  * Functions for handling / converting constants:
  */
+
+extern void *COcreateAllIndicesAndFold (shape *shp,
+                                        void *(*foldfun) (constant *idx, void *, void *),
+                                        void *accu, void *attr);
+
 extern constant *COcopyConstant (constant *a);
 extern constant *COcopyScalar2OneElementVector (constant *a);
 extern char *COconstantData2String (int max_char, constant *a);

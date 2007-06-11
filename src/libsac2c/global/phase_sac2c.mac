@@ -411,6 +411,9 @@ ENDCYCLE (scyc)
 
 /*************************************************/
 
+SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
+          opt)
+
 SUBPHASE (lir2, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
 

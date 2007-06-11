@@ -847,6 +847,17 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="LS" name="Loop Scalarization" default="sons" include="loop_scalarization.h" >
+        <travuser>           <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Id" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Fundef" />
@@ -5063,6 +5074,12 @@
         <flag name="HasDTElseProxy" default="FALSE" />
         <flag name="HasSAAArguments" default="FALSE">
           <description>Within the optimisation cycle we may introduce new parameters to functions, representing shape or dimension of other parameters. If this is done for this parameter, we may set this value to TRUE.</description>
+        </flag>
+        <flag name="IsUsed" default="FALSE" >
+          <description>Used by Loop Scalarization to determine whether
+          a variable is used otherwise than within array position of
+          selections.
+          </description>
         </flag>
       </flags>
     </node>
