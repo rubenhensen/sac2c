@@ -87,8 +87,6 @@ OPTIMIZE ("rtup", rtup, TRUE, TRUE, "reverse type upgrade")
 OPTIMIZE ("esd", esd, TRUE, TRUE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, " withloop propagation")
 OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")
-OPTIMIZE ("saaopt", saaopt, FALSE, FALSE,
-          "use symbolic array attributes in optcycle *EXPERIMENTAL*")
 OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
 OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
 

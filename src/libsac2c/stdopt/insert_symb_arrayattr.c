@@ -739,7 +739,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
 
 #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
 static node *
-ISAAretraverse (node *fun, info *arg_info)
+ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
 {
     int travscope;
     int travmode;
@@ -757,19 +757,23 @@ ISAAretraverse (node *fun, info *arg_info)
     travscope = INFO_TRAVSCOPE (arg_info);
     travmode = INFO_TRAVMODE (arg_info);
     fundef = INFO_FUNDEF (arg_info);
-    args = INFO_ARGS (arg_info);
+
     INFO_PREBLOCK (arg_info) = NULL;
     INFO_PREASSIGN (arg_info) = NULL;
     INFO_POSTASSIGN (arg_info) = NULL;
     INFO_TRAVSCOPE (arg_info) = TS_args;
 
-    DBUG_PRINT ("ISAA", ("retraverse SAVES INFO_ARGS"));
+    if (TRUE == save_args) {
+        args = INFO_ARGS (arg_info);
+        INFO_ARGS (arg_info) = newargs;
+    }
 
     DBUG_PRINT ("ISAA", ("retraverse %s", FUNDEF_NAME (fun)));
-
     fun = TRAVdo (fun, arg_info);
 
-    DBUG_PRINT ("ISAA", ("retraverse RESTORES INFO_ARGS"));
+    if (TRUE == save_args) {
+        INFO_ARGS (arg_info) = args;
+    }
 
     INFO_PREBLOCK (arg_info) = preblock;
     INFO_PREASSIGN (arg_info) = preassign;
@@ -777,7 +781,6 @@ ISAAretraverse (node *fun, info *arg_info)
     INFO_TRAVSCOPE (arg_info) = travscope;
     INFO_TRAVMODE (arg_info) = travmode;
     INFO_FUNDEF (arg_info) = fundef;
-    INFO_ARGS (arg_info) = args;
 
     DBUG_RETURN (fun);
 }
@@ -811,10 +814,11 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
     node *newass = NULL;
 
     DBUG_ENTER ("MakeDTProxy");
-
-    DBUG_PRINT ("ISAA", ("enter MakeDTProxy in %s for %s",
-                         FUNDEF_NAME (INFO_FUNDEF (arg_info)), AVIS_NAME (avis)));
-
+    /*
+    DBUG_PRINT( "ISAA", ("enter MakeDTProxy in %s for %s",
+                         FUNDEF_NAME( INFO_FUNDEF( arg_info ) ),
+                         AVIS_NAME( avis ) ) );
+    */
 #if ISAA_USE_EVEN_ANNOTATED_STYLE
     if ((TRUE == FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
         && (TRUE == INFO_FUNPARAMS (arg_info))) {
@@ -844,11 +848,11 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 #endif
 
     if (makeproxy) {
-        node *dimavis;
-        node *shpavis;
+        node *dimavis = NULL;
+        node *shpavis = NULL;
         node *dimnode = NULL;
         node *shpnode = NULL;
-        node *proxyavis;
+        node *proxyavis = NULL;
         node *fundef;
 #if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
         node *dim_postass = NULL;
@@ -1071,6 +1075,10 @@ ISAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISAAfundef");
 
+    /*
+    DBUG_PRINT( "ISAA", ("entering function %s", FUNDEF_NAME( arg_node ) ) );
+    */
+
     if ((NULL != FUNDEF_BODY (arg_node))
 
 #if ISAA_USE_EVEN_ANNOTATED_STYLE
@@ -1147,6 +1155,7 @@ ISAAap (node *arg_node, info *arg_info)
     node *retnode = NULL;
     node *retprev = NULL;
     node *lhs = NULL;
+    node *innerargs = NULL;
 #endif
 
     DBUG_ENTER ("ISAAap");
@@ -1174,7 +1183,7 @@ ISAAap (node *arg_node, info *arg_info)
 
             /* 2. */
             lhs = INFO_LHS (arg_info);
-            AP_FUNDEF (arg_node) = ISAAretraverse (fun, arg_info);
+            AP_FUNDEF (arg_node) = ISAAretraverse (fun, FALSE, NULL, arg_info);
 
             /* 3. */
             DBUG_ASSERT ((NULL == INFO_POSTASSIGN (arg_info)),
@@ -1214,15 +1223,17 @@ ISAAap (node *arg_node, info *arg_info)
             /* 1. Create a backup of the original function parameter list, so we have
              *    a reference when updating the inner call of the loop function.
              * 2. Prepend dim/shape in arguments. Retraverse afterwards to propagate
-             *    the new information.
+             *    the new information, using the copied parameter list.
              */
 
-            INFO_ARGS (arg_info) = DUPdoDupTree (FUNDEF_ARGS (fun));
+            innerargs = DUPdoDupTree (FUNDEF_ARGS (fun));
 
             AP_ARGS (arg_node) = PrependSAAInConcreteArgs (AP_ARGS (arg_node),
                                                            FUNDEF_ARGS (fun), arg_info);
             FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
-            AP_FUNDEF (arg_node) = ISAAretraverse (fun, arg_info);
+
+            AP_FUNDEF (arg_node) = ISAAretraverse (fun, TRUE, innerargs, arg_info);
+            innerargs = FREEdoFreeTree (innerargs);
         }
     } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
@@ -1238,8 +1249,6 @@ ISAAap (node *arg_node, info *arg_info)
 
         AP_ARGS (arg_node)
           = PrependSAAInConcreteArgs (AP_ARGS (arg_node), INFO_ARGS (arg_info), arg_info);
-
-        INFO_ARGS (arg_info) = FREEdoFreeTree (INFO_ARGS (arg_info));
     }
 
     /* we may now traverse the arguments, in order to take care of AVIS_SUBST */
@@ -1363,8 +1372,6 @@ ISAAids (node *arg_node, info *arg_info)
     node *avis;
 
     DBUG_ENTER ("ISAAids");
-
-    DBUG_PRINT ("ISAA", ("enter ISAAids for %s", AVIS_NAME (IDS_AVIS (arg_node))));
 
     avis = IDS_AVIS (arg_node);
 

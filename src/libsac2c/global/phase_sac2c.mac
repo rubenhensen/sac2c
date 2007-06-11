@@ -245,7 +245,7 @@ ENDCYCLE (saacyc1)
 /*************************************************/
 
 SUBPHASE (esaa1, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
-          global.optimize.dosaa && !global.optimize.dosaaopt, opt)
+          global.optimize.dosaa, opt)
 
 SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemovalModule,
           global.optimize.dodcr &&global.optimize.dosaa, opt)
@@ -258,10 +258,6 @@ FUNBEGIN (cyc, opt, cyc)
 
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
-
-CYCLEPHASEFUN (isaa, "Inserting symbolic array attributes",
-               ISAAdoInsertShapeVariablesOneFundef,
-               global.optimize.dosaa &&global.optimize.dosaaopt, opt, cyc)
 
 CYCLEPHASEFUN (ili, "Infering loop invariant variables", ILIdoInferLoopInvariants, ALWAYS,
                opt, cyc)

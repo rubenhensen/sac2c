@@ -146,18 +146,11 @@ CheckOptionConsistency ()
                   "a C-library.");
     }
 
-    if (global.optimize.dosaaopt && !global.optimize.dosaa) {
-        CTIwarn ("Option -dosaaopt requires symbolic array attributes (SAA).\n"
-                 "Symbolic array attributes enabled.");
-        global.optimize.dosaa = TRUE;
-    }
-
-    if ((global.optimize.dosaa || global.optimize.dosaaopt) && !global.optimize.dodcr) {
+    if (global.optimize.dosaa && !global.optimize.dodcr) {
         CTIwarn ("Symbolic array attributes (SAA) require dead code"
                  "removal (DCR).\n"
                  "Symbolic array attributes disabled.");
         global.optimize.dosaa = FALSE;
-        global.optimize.dosaaopt = FALSE;
     }
 
     if (global.optimize.doive && !global.optimize.dosaa) {
