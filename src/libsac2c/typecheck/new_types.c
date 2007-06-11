@@ -6405,8 +6405,14 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                                 new_vardecs);
 
-                prf4 = TBmakePrf (F_and,
+                prf4 = TBmakePrf (F_and_SxS,
                                   TBmakeExprs (flt_prf3, TBmakeExprs (flt_prf4, NULL)));
+                /*
+                 * cg: 11.6.07
+                 *
+                 * I'm not 100% sure if the scalar version is correct above.
+                 */
+
                 flt_prf4
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                                 new_vardecs);

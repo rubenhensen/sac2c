@@ -3034,7 +3034,7 @@ COMParray (node *arg_node, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn  node COMPPrfPropObjIn( node *arg_node, info *arg_info)
+ * @fn  node COMPprfPropObjIn( node *arg_node, info *arg_info)
  *
  * @brief Compiles N_prf node of type F_prop_obj_in.
  *   The return value is a N_assign chain of ICMs.
@@ -3043,10 +3043,10 @@ COMParray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-COMPPrfPropObjIn (node *arg_node, info *arg_info)
+COMPprfPropObjIn (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPPrfPropObjIn");
+    DBUG_ENTER ("COMPprfPropObjIn");
 
     ret_node = MakeIcm_PROP_OBJ_IN (arg_node, INFO_LASTIDS (arg_info), NULL);
     DBUG_RETURN (ret_node);
@@ -3054,7 +3054,7 @@ COMPPrfPropObjIn (node *arg_node, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn  node COMPPrfPropObjIn( node *arg_node, info *arg_info)
+ * @fn  node COMPprfPropObjIn( node *arg_node, info *arg_info)
  *
  * @brief Compiles N_prf node of type F_prop_obj_in.
  *   The return value is a N_assign chain of ICMs.
@@ -3063,10 +3063,10 @@ COMPPrfPropObjIn (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-COMPPrfPropObjOut (node *arg_node, info *arg_info)
+COMPprfPropObjOut (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPPrfPropObjOut");
+    DBUG_ENTER ("COMPprfPropObjOut");
 
     ret_node = MakeIcm_PROP_OBJ_OUT (arg_node, INFO_LASTIDS (arg_info), NULL);
     DBUG_RETURN (ret_node);
@@ -3074,7 +3074,7 @@ COMPPrfPropObjOut (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfIncRC( node *arg_node, info *arg_info)
+ * @fn  node COMPprfIncRC( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_inc_rc.
  *   The return value is a N_assign chain of ICMs.
@@ -3085,14 +3085,14 @@ COMPPrfPropObjOut (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-COMPPrfIncRC (node *arg_node, info *arg_info)
+COMPprfIncRC (node *arg_node, info *arg_info)
 {
     char *name;
     types *type;
     node *ret_node = NULL;
     int num;
 
-    DBUG_ENTER ("COMPPrfIncRC");
+    DBUG_ENTER ("COMPprfIncRC");
 
     switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
     case N_id:
@@ -3121,7 +3121,7 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfDecRC( node *arg_node, info *arg_info)
+ * @fn  node COMPprfDecRC( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_dec_rc.
  *   The return value is a N_assign chain of ICMs.
@@ -3132,14 +3132,14 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-COMPPrfDecRC (node *arg_node, info *arg_info)
+COMPprfDecRC (node *arg_node, info *arg_info)
 {
     char *name;
     types *type;
     node *ret_node = NULL;
     int num;
 
-    DBUG_ENTER ("COMPPrfDecRC");
+    DBUG_ENTER ("COMPprfDecRC");
 
     switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
     case N_id:
@@ -3168,7 +3168,7 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfAlloc( node *arg_node, info *arg_info)
+ * @fn  node COMPprfAlloc( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_alloc.
  *   The return value is a N_assign chain of ICMs.
@@ -3180,7 +3180,7 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfAlloc (node *arg_node, info *arg_info)
+COMPprfAlloc (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
@@ -3188,7 +3188,7 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
     node *get_dim;
     node *set_shape;
 
-    DBUG_ENTER ("COMPPrfAlloc");
+    DBUG_ENTER ("COMPprfAlloc");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3204,7 +3204,7 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfAllocOrReuse( node *arg_node, info *arg_info)
+ * @fn  node COMPprfAllocOrReuse( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_alloc_or_reuse.
  *   The return value is a N_assign chain of ICMs.
@@ -3216,7 +3216,7 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfAllocOrReuse (node *arg_node, info *arg_info)
+COMPprfAllocOrReuse (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
@@ -3225,7 +3225,7 @@ COMPPrfAllocOrReuse (node *arg_node, info *arg_info)
     node *set_shape;
     node *cand;
 
-    DBUG_ENTER ("COMPPrfAllocOrReuse");
+    DBUG_ENTER ("COMPprfAllocOrReuse");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3248,7 +3248,7 @@ COMPPrfAllocOrReuse (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfFree( node *arg_node, info *arg_info)
+ * @fn  node COMPprfFree( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_free
  *   The return value is a N_assign chain of ICMs.
@@ -3259,11 +3259,11 @@ COMPPrfAllocOrReuse (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfFree (node *arg_node, info *arg_info)
+COMPprfFree (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfFree");
+    DBUG_ENTER ("COMPprfFree");
 
     ret_node = MakeSetRcIcm (ID_NAME (PRF_ARG1 (arg_node)), ID_TYPE (PRF_ARG1 (arg_node)),
                              0, NULL);
@@ -3273,7 +3273,7 @@ COMPPrfFree (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfSuballoc( node *arg_node, info *arg_info)
+ * @fn  node COMPprfSuballoc( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_suballoc
  *   The return value is a N_assign chain of ICMs.
@@ -3285,13 +3285,13 @@ COMPPrfFree (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfSuballoc (node *arg_node, info *arg_info)
+COMPprfSuballoc (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
     shape_class_t sc;
 
-    DBUG_ENTER ("COMPPrfSuballoc");
+    DBUG_ENTER ("COMPprfSuballoc");
 
     let_ids = INFO_LASTIDS (arg_info);
     sc = NTUgetShapeClassFromTypes (IDS_TYPE (let_ids));
@@ -3307,7 +3307,7 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfWLAssign( node *arg_node, info *arg_info)
+ * @fn  node COMPprfWLAssign( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_wl_assign
  *   The return value is a N_assign chain of ICMs.
@@ -3319,11 +3319,11 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfWLAssign (node *arg_node, info *arg_info)
+COMPprfWLAssign (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfWLAssign");
+    DBUG_ENTER ("COMPprfWLAssign");
 
     ret_node
       = TCmakeAssignIcm6 ("WL_ASSIGN",
@@ -3345,7 +3345,7 @@ COMPPrfWLAssign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfWLBreak( node *arg_node, info *arg_info)
+ * @fn  node COMPprfWLBreak( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_wl_break
  *   The return value is a N_assign chain of ICMs.
@@ -3357,11 +3357,11 @@ COMPPrfWLAssign (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfWLBreak (node *arg_node, info *arg_info)
+COMPprfWLBreak (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfWLBreak");
+    DBUG_ENTER ("COMPprfWLBreak");
 
     ret_node = TCmakeAssignIcm3 ("ND_ASSIGN__DATA", DUPdupIdNt (PRF_ARG2 (arg_node)),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -3374,7 +3374,7 @@ COMPPrfWLBreak (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfCopy( node *arg_node, info *arg_info)
+ * @fn  node COMPprfCopy( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_copy
  *   The return value is a N_assign chain of ICMs.
@@ -3385,12 +3385,12 @@ COMPPrfWLBreak (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfCopy (node *arg_node, info *arg_info)
+COMPprfCopy (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfCopy");
+    DBUG_ENTER ("COMPprfCopy");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3405,7 +3405,7 @@ COMPPrfCopy (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node COMPPrfIsReused( node *arg_node, info *arg_info)
+ * @fn  node COMPprfIsReused( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_isreused
  *   The return value is a N_assign chain of ICMs.
@@ -3416,12 +3416,12 @@ COMPPrfCopy (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfIsReused (node *arg_node, info *arg_info)
+COMPprfIsReused (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIsReused");
+    DBUG_ENTER ("COMPprfIsReused");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3434,7 +3434,7 @@ COMPPrfIsReused (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfDim( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfDim( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_dim.
  *   The return value is a N_assign chain of ICMs.
@@ -3446,13 +3446,13 @@ COMPPrfIsReused (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfDim (node *arg_node, info *arg_info)
+COMPprfDim (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *arg;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfDim");
+    DBUG_ENTER ("COMPprfDim");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
@@ -3471,7 +3471,7 @@ COMPPrfDim (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfShape( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfShape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_shape.
  *   The return value is a N_assign chain of ICMs.
@@ -3483,13 +3483,13 @@ COMPPrfDim (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfShape (node *arg_node, info *arg_info)
+COMPprfShape (node *arg_node, info *arg_info)
 {
     node *arg;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfShape");
+    DBUG_ENTER ("COMPprfShape");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
@@ -3508,7 +3508,7 @@ COMPPrfShape (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfReshape( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfReshape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_reshape.
  *   The return value is a N_assign chain of ICMs.
@@ -3520,7 +3520,7 @@ COMPPrfShape (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfReshape (node *arg_node, info *arg_info)
+COMPprfReshape (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *set_shape_icm = NULL;
@@ -3529,7 +3529,7 @@ COMPPrfReshape (node *arg_node, info *arg_info)
     int dim_new, dim_old;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPPrfReshape");
+    DBUG_ENTER ("COMPprfReshape");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3600,7 +3600,7 @@ COMPPrfReshape (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfAllocOrReshape( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfAllocOrReshape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_alloc_or_reshape.
  *   The return value is a N_assign chain of ICMs.
@@ -3612,14 +3612,14 @@ COMPPrfReshape (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
+COMPprfAllocOrReshape (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *get_dim = NULL, *set_shape_icm = NULL;
     int rc;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPPrfAllocOrReshape");
+    DBUG_ENTER ("COMPprfAllocOrReshape");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -3632,7 +3632,7 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm1 (
       "IS_LASTREF__BLOCK_BEGIN", DUPdupIdNt (PRF_ARG4 (arg_node)),
       TCappendAssign (
-        COMPPrfReshape (arg_node, arg_info),
+        COMPprfReshape (arg_node, arg_info),
         MakeIncRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,
                       TCmakeAssignIcm1 (
                         "IS_LASTREF__BLOCK_ELSE", DUPdupIdNt (PRF_ARG4 (arg_node)),
@@ -3647,7 +3647,7 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxSel( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfIdxSel( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_idx_sel.
  *   The return value is a N_assign chain of ICMs.
@@ -3658,7 +3658,7 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-COMPPrfIdxSel (node *arg_node, info *arg_info)
+COMPprfIdxSel (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
@@ -3666,7 +3666,7 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIdxSel");
+    DBUG_ENTER ("COMPprfIdxSel");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3700,7 +3700,7 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxModarray( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfIdxModarray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_idx_modarray.
  *   The return value is a N_assign chain of ICMs.
@@ -3712,13 +3712,13 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfIdxModarray (node *arg_node, info *arg_info)
+COMPprfIdxModarray (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *arg3;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIdxModarray");
+    DBUG_ENTER ("COMPprfIdxModarray");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3754,7 +3754,7 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxShapeSel( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfIdxShapeSel( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_idx_shape_sel.
  *         The return value is a N_assign chain of ICMs.
@@ -3766,13 +3766,13 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
+COMPprfIdxShapeSel (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIdxShapeSel");
+    DBUG_ENTER ("COMPprfIdxShapeSel");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3793,7 +3793,7 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfSel( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfSel( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_sel.
  *   The return value is a N_assign chain of ICMs.
@@ -3805,14 +3805,14 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfSel (node *arg_node, info *arg_info)
+COMPprfSel (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfSel");
+    DBUG_ENTER ("COMPprfSel");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3874,7 +3874,7 @@ COMPPrfSel (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfModarray( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfModarray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_modarray.
  *   The return value is a N_assign chain of ICMs.
@@ -3886,13 +3886,13 @@ COMPPrfSel (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfModarray (node *arg_node, info *arg_info)
+COMPprfModarray (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *arg3;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfModarray");
+    DBUG_ENTER ("COMPprfModarray");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3952,7 +3952,7 @@ COMPPrfModarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfGenarray( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfGenarray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_genarray.
  *   The return value is a N_assign chain of ICMs.
@@ -3964,13 +3964,13 @@ COMPPrfModarray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfGenarray (node *arg_node, info *arg_info)
+COMPprfGenarray (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfGenarray");
+    DBUG_ENTER ("COMPprfGenarray");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -3985,7 +3985,7 @@ COMPPrfGenarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfTake( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfTake( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_take_SxV.
  *   The return value is a N_assign chain of ICMs.
@@ -3997,14 +3997,14 @@ COMPPrfGenarray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfTake (node *arg_node, info *arg_info)
+COMPprfTake (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfTake");
+    DBUG_ENTER ("COMPprfTake");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -4029,7 +4029,7 @@ COMPPrfTake (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfDrop( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfDrop( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_drop_SxV.
  *   The return value is a N_assign chain of ICMs.
@@ -4041,14 +4041,14 @@ COMPPrfTake (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfDrop (node *arg_node, info *arg_info)
+COMPprfDrop (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfDrop");
+    DBUG_ENTER ("COMPprfDrop");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -4073,7 +4073,7 @@ COMPPrfDrop (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfCat( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfCat( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_cat_VxV.
  *   The return value is a N_assign chain of ICMs.
@@ -4085,7 +4085,7 @@ COMPPrfDrop (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfCat (node *arg_node, info *arg_info)
+COMPprfCat (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
@@ -4093,7 +4093,7 @@ COMPPrfCat (node *arg_node, info *arg_info)
     char *copyfun1, *copyfun2;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfCat");
+    DBUG_ENTER ("COMPprfCat");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -4122,7 +4122,7 @@ COMPPrfCat (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfConvertScalar( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfConvertScalar( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_toi_S, F_tod_S, F_tof_S:
  *         We can simply remove the conversion function :-)
@@ -4130,13 +4130,13 @@ COMPPrfCat (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfConvertScalar (node *arg_node, info *arg_info)
+COMPprfConvertScalar (node *arg_node, info *arg_info)
 {
     node *arg;
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfConvertScalar");
+    DBUG_ENTER ("COMPprfConvertScalar");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
@@ -4154,7 +4154,7 @@ COMPPrfConvertScalar (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfUniScalar( char *icm_name,
+ * @fn  node *COMPprfUniScalar( char *icm_name,
  *                              node *arg_node, info *arg_info)
  *
  * @brief  Compiles a unary scalar N_prf node into a ND_PRF_S__DATA-icm.
@@ -4167,14 +4167,14 @@ COMPPrfConvertScalar (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info)
+COMPprfUniScalar (char *icm_name, node *arg_node, info *arg_info)
 {
     node *arg;
     node *let_ids;
     char *icm_name2;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfUniScalar");
+    DBUG_ENTER ("COMPprfUniScalar");
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
@@ -4198,7 +4198,88 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfBin( char *icm_name,
+ * @fn  node *COMPprfOp_S( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a unary scalar N_prf node into a ND_PRF_S__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_S (node *arg_node, info *arg_info)
+{
+    node *arg;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_S");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    /* assure that the prf has exactly one argument */
+    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg) != N_id) || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
+                 "non-scalar argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString ("PRF_UNARY"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_V( char *icm_name,
+ *                         node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a unary scalar N_prf node into a ND_PRF_V__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_V (node *arg_node, info *arg_info)
+{
+    node *arg;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_V");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    /* assure that the prf has exactly one argument */
+    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg) != N_id) || (TCgetDim (ID_TYPE (arg)) == 1)),
+                 "non-vector argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_V__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString ("PRF_UNARY"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfBin( char *icm_name,
  *                        node *arg_node, info *arg_info)
  *
  * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
@@ -4211,7 +4292,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
+COMPprfBin (char *icm_name, node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
@@ -4219,7 +4300,7 @@ COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
     bool arg1_is_scalar, arg2_is_scalar;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfBin");
+    DBUG_ENTER ("COMPprfBin");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4264,20 +4345,216 @@ COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfTypeError( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfOp_SxS( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_SxS (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_SxS");
+
+    /* assure that the prf has exactly two arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) == NULL)),
+                 "illegal number of args found!");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
+                  && (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                 "non-scalar first argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id)
+                  && (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                 "non-scalar second argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
+                                                ? "PRF_INFIX"
+                                                : "PRF_PREFIX"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_SxV( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_SxV (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_SxV");
+
+    /* assure that the prf has exactly two arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) == NULL)),
+                 "illegal number of args found!");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
+                  && (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                 "non-scalar first argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
+                 "non-vector second argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
+                                                ? "PRF_INFIX"
+                                                : "PRF_PREFIX"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_VxS( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_VxS (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_VxS");
+
+    /* assure that the prf has exactly two arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) == NULL)),
+                 "illegal number of args found!");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
+                 "non-vector first argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id)
+                  && (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                 "non-scalar second argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
+                                                ? "PRF_INFIX"
+                                                : "PRF_PREFIX"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_VxV( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_VxV (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_VxV");
+
+    /* assure that the prf has exactly two arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) == NULL)),
+                 "illegal number of args found!");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
+                 "non-vector first argument found!");
+
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
+                 "non-vector second argument found!");
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
+                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
+                                                ? "PRF_INFIX"
+                                                : "PRF_PREFIX"),
+                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfTypeError( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfTypeError (node *arg_node, info *arg_info)
+COMPprfTypeError (node *arg_node, info *arg_info)
 {
     node *bottom;
     node *message;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfTypeError");
+    DBUG_ENTER ("COMPprfTypeError");
 
     DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
                  "1st argument of F_type_error not found!");
@@ -4299,20 +4576,20 @@ COMPPrfTypeError (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfDispatchError( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfDispatchError( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfDispatchError (node *arg_node, info *arg_info)
+COMPprfDispatchError (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *head, *tail;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfDispatchError");
+    DBUG_ENTER ("COMPprfDispatchError");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4331,18 +4608,18 @@ COMPPrfDispatchError (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfNoop( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfNoop( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfNoop (node *arg_node, info *arg_info)
+COMPprfNoop (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfNoop");
+    DBUG_ENTER ("COMPprfNoop");
 
     ret_node = TBmakeAssign (TBmakeIcm ("NOOP", NULL), NULL);
 
@@ -4351,20 +4628,20 @@ COMPPrfNoop (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxs2Offset( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfIdxs2Offset( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
+COMPprfIdxs2Offset (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *icm = NULL;
     node *idxs_exprs;
 
-    DBUG_ENTER ("COMPPrfIdxs2Offset");
+    DBUG_ENTER ("COMPprfIdxs2Offset");
 
     let_ids = INFO_LASTIDS (arg_info);
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
@@ -4396,20 +4673,20 @@ COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfVect2Offset( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfVect2Offset( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfVect2Offset (node *arg_node, info *arg_info)
+COMPprfVect2Offset (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *iv_vect;
     node *icm = NULL;
 
-    DBUG_ENTER ("COMPPrfVect2Offset");
+    DBUG_ENTER ("COMPprfVect2Offset");
 
     let_ids = INFO_LASTIDS (arg_info);
     iv_vect = PRF_ARG2 (arg_node);
@@ -4439,7 +4716,7 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfRunMt( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfRunMt( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_run_mt_genarray, F_run_mt_modarray
  *   and F_run_mt_fold.
@@ -4452,12 +4729,12 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfRunMt (node *arg_node, info *arg_info, char *icm_name)
+COMPprfRunMt (node *arg_node, info *arg_info, char *icm_name)
 {
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfRunMt");
+    DBUG_ENTER ("COMPprfRunMt");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4495,10 +4772,10 @@ COMPprf (node *arg_node, info *arg_info)
          */
 
     case F_type_error:
-        ret_node = COMPPrfTypeError (arg_node, arg_info);
+        ret_node = COMPprfTypeError (arg_node, arg_info);
         break;
     case F_dispatch_error:
-        ret_node = COMPPrfDispatchError (arg_node, arg_info);
+        ret_node = COMPprfDispatchError (arg_node, arg_info);
         break;
     case F_to_unq:
         ret_node = COMPIdToUnique (PRF_ARG1 (arg_node), arg_info);
@@ -4510,11 +4787,11 @@ COMPprf (node *arg_node, info *arg_info)
          *  explicit memory management instructions
          */
     case F_alloc:
-        ret_node = COMPPrfAlloc (arg_node, arg_info);
+        ret_node = COMPprfAlloc (arg_node, arg_info);
         break;
 
     case F_alloc_or_reuse:
-        ret_node = COMPPrfAllocOrReuse (arg_node, arg_info);
+        ret_node = COMPprfAllocOrReuse (arg_node, arg_info);
         break;
 
     case F_reuse:
@@ -4522,55 +4799,55 @@ COMPprf (node *arg_node, info *arg_info)
         break;
 
     case F_reshape:
-        ret_node = COMPPrfReshape (arg_node, arg_info);
+        ret_node = COMPprfReshape (arg_node, arg_info);
         break;
 
     case F_alloc_or_reshape:
-        ret_node = COMPPrfAllocOrReshape (arg_node, arg_info);
+        ret_node = COMPprfAllocOrReshape (arg_node, arg_info);
         break;
 
     case F_isreused:
-        ret_node = COMPPrfIsReused (arg_node, arg_info);
+        ret_node = COMPprfIsReused (arg_node, arg_info);
         break;
 
     case F_suballoc:
-        ret_node = COMPPrfSuballoc (arg_node, arg_info);
+        ret_node = COMPprfSuballoc (arg_node, arg_info);
         break;
 
     case F_wl_assign:
-        ret_node = COMPPrfWLAssign (arg_node, arg_info);
+        ret_node = COMPprfWLAssign (arg_node, arg_info);
         break;
 
     case F_wl_break:
-        ret_node = COMPPrfWLBreak (arg_node, arg_info);
+        ret_node = COMPprfWLBreak (arg_node, arg_info);
         break;
 
     case F_copy:
-        ret_node = COMPPrfCopy (arg_node, arg_info);
+        ret_node = COMPprfCopy (arg_node, arg_info);
         break;
 
     case F_noop:
-        ret_node = COMPPrfNoop (arg_node, arg_info);
+        ret_node = COMPprfNoop (arg_node, arg_info);
         break;
 
     case F_free:
-        ret_node = COMPPrfFree (arg_node, arg_info);
+        ret_node = COMPprfFree (arg_node, arg_info);
         break;
 
     case F_dec_rc:
-        ret_node = COMPPrfDecRC (arg_node, arg_info);
+        ret_node = COMPprfDecRC (arg_node, arg_info);
         break;
 
     case F_inc_rc:
-        ret_node = COMPPrfIncRC (arg_node, arg_info);
+        ret_node = COMPprfIncRC (arg_node, arg_info);
         break;
 
     case F_prop_obj_in:
-        ret_node = COMPPrfPropObjIn (arg_node, arg_info);
+        ret_node = COMPprfPropObjIn (arg_node, arg_info);
         break;
 
     case F_prop_obj_out:
-        ret_node = COMPPrfPropObjOut (arg_node, arg_info);
+        ret_node = COMPprfPropObjOut (arg_node, arg_info);
         break;
 
     case F_accu:
@@ -4584,31 +4861,59 @@ COMPprf (node *arg_node, info *arg_info)
     case F_toi_S:
     case F_tof_S:
     case F_tod_S:
-        ret_node = COMPPrfConvertScalar (arg_node, arg_info);
+        ret_node = COMPprfConvertScalar (arg_node, arg_info);
         break;
 
         /*
-         *  arithmetical operations
+         *  unary operators
          */
 
     case F_neg:
-        ret_node = COMPPrfUniScalar ("SAC_PRF_NEG", arg_node, arg_info);
+        ret_node = COMPprfUniScalar ("SAC_PRF_NEG", arg_node, arg_info);
         break;
 
     case F_abs:
-        ret_node = COMPPrfUniScalar ("SAC_PRF_ABS", arg_node, arg_info);
+        ret_node = COMPprfUniScalar ("SAC_PRF_ABS", arg_node, arg_info);
         break;
 
-    case F_not:
-        ret_node = COMPPrfUniScalar ("SAC_PRF_UNIOP", arg_node, arg_info);
+    case F_not_S:
+        ret_node = COMPprfOp_S (arg_node, arg_info);
         break;
+
+    case F_not_V:
+        ret_node = COMPprfOp_V (arg_node, arg_info);
+        break;
+
+        /*
+         *  binary operators
+         */
 
     case F_min:
-        ret_node = COMPPrfBin ("SAC_PRF_MIN", arg_node, arg_info);
+        ret_node = COMPprfBin ("SAC_PRF_MIN", arg_node, arg_info);
         break;
 
     case F_max:
-        ret_node = COMPPrfBin ("SAC_PRF_MAX", arg_node, arg_info);
+        ret_node = COMPprfBin ("SAC_PRF_MAX", arg_node, arg_info);
+        break;
+
+    case F_and_SxS:
+    case F_or_SxS:
+        ret_node = COMPprfOp_SxS (arg_node, arg_info);
+        break;
+
+    case F_and_SxV:
+    case F_or_SxV:
+        ret_node = COMPprfOp_SxV (arg_node, arg_info);
+        break;
+
+    case F_and_VxS:
+    case F_or_VxS:
+        ret_node = COMPprfOp_VxS (arg_node, arg_info);
+        break;
+
+    case F_and_VxV:
+    case F_or_VxV:
+        ret_node = COMPprfOp_VxV (arg_node, arg_info);
         break;
 
     case F_add_SxS:
@@ -4628,15 +4933,13 @@ COMPprf (node *arg_node, info *arg_info)
     case F_div_AxS:
     case F_div_AxA:
     case F_mod:
-    case F_and:
-    case F_or:
     case F_le:
     case F_lt:
     case F_eq:
     case F_neq:
     case F_ge:
     case F_gt:
-        ret_node = COMPPrfBin ("SAC_PRF_BINOP", arg_node, arg_info);
+        ret_node = COMPprfBin ("SAC_PRF_BINOP", arg_node, arg_info);
         break;
 
         /*
@@ -4644,71 +4947,71 @@ COMPprf (node *arg_node, info *arg_info)
          */
 
     case F_dim:
-        ret_node = COMPPrfDim (arg_node, arg_info);
+        ret_node = COMPprfDim (arg_node, arg_info);
         break;
 
     case F_shape:
-        ret_node = COMPPrfShape (arg_node, arg_info);
+        ret_node = COMPprfShape (arg_node, arg_info);
         break;
 
     case F_idx_sel:
-        ret_node = COMPPrfIdxSel (arg_node, arg_info);
+        ret_node = COMPprfIdxSel (arg_node, arg_info);
         break;
 
     case F_idx_modarray:
-        ret_node = COMPPrfIdxModarray (arg_node, arg_info);
+        ret_node = COMPprfIdxModarray (arg_node, arg_info);
         break;
 
     case F_idx_shape_sel:
-        ret_node = COMPPrfIdxShapeSel (arg_node, arg_info);
+        ret_node = COMPprfIdxShapeSel (arg_node, arg_info);
         break;
 
     case F_sel:
-        ret_node = COMPPrfSel (arg_node, arg_info);
+        ret_node = COMPprfSel (arg_node, arg_info);
         break;
 
     case F_modarray:
-        ret_node = COMPPrfModarray (arg_node, arg_info);
+        ret_node = COMPprfModarray (arg_node, arg_info);
         break;
 
     case F_genarray:
-        ret_node = COMPPrfGenarray (arg_node, arg_info);
+        ret_node = COMPprfGenarray (arg_node, arg_info);
         break;
 
     case F_cat_VxV:
-        ret_node = COMPPrfCat (arg_node, arg_info);
+        ret_node = COMPprfCat (arg_node, arg_info);
         break;
 
     case F_take_SxV:
-        ret_node = COMPPrfTake (arg_node, arg_info);
+        ret_node = COMPprfTake (arg_node, arg_info);
         break;
 
     case F_drop_SxV:
-        ret_node = COMPPrfDrop (arg_node, arg_info);
+        ret_node = COMPprfDrop (arg_node, arg_info);
         break;
 
         /*
          * IVE operations
          */
     case F_idxs2offset:
-        ret_node = COMPPrfIdxs2Offset (arg_node, arg_info);
+        ret_node = COMPprfIdxs2Offset (arg_node, arg_info);
         break;
 
     case F_vect2offset:
-        ret_node = COMPPrfVect2Offset (arg_node, arg_info);
+        ret_node = COMPprfVect2Offset (arg_node, arg_info);
         break;
 
         /*
          * MT predicate
          */
     case F_run_mt_genarray:
-        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTGENARRAY__DATA");
+        ret_node = COMPprfRunMt (arg_node, arg_info, "ND_PRF_RUNMTGENARRAY__DATA");
         break;
     case F_run_mt_modarray:
-        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTMODARRAY__DATA");
+        ret_node = COMPprfRunMt (arg_node, arg_info, "ND_PRF_RUNMTMODARRAY__DATA");
         break;
     case F_run_mt_fold:
-        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTFOLD__DATA");
+        ret_node = COMPprfRunMt (arg_node, arg_info, "ND_PRF_RUNMTFOLD__DATA");
         break;
 
         /*

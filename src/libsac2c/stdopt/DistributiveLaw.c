@@ -1,73 +1,5 @@
-/* *
- * $Log$
- * Revision 1.22  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.21  2005/08/18 16:22:12  ktr
- * removed conditional lhs expressions
- *
- * Revision 1.20  2005/07/03 17:11:43  ktr
- * Some codebrushing. IMHO code needs complete rewrite
- *
- * Revision 1.19  2004/11/24 12:05:40  mwe
- * changed signature of TBmakeLet
- *
- * Revision 1.18  2004/11/24 10:53:05  mwe
- * SacDevCamp Dk: compiles!!!
- *
- * Revision 1.17  2004/11/18 11:18:54  mwe
- * usage of DL_EXPRS_FLAG removed (bug80)
- *
- * Revision 1.16  2004/11/10 18:27:29  mwe
- * code for type upgrade added
- * use ntype-structure instead of type-structure
- * new code deactivated by MWE_NTYPE_READY
- *
- * Revision 1.15  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.14  2004/07/07 15:43:36  mwe
- * last changes undone (all changes connected to new type representation with ntype*)
- *
- * Revision 1.11  2004/02/06 14:19:33  mwe
- * remove ASSIGN2
- *
- * Revision 1.10  2003/07/31 16:36:39  mwe
- * some changes regarding to array support
- *
- * Revision 1.9  2003/04/24 21:51:52  mwe
- * big fixed (SacZilla Bug-ID: 13)
- *
- * Revision 1.8  2003/04/23 19:53:44  mwe
- * support for F_add_AxA,... and F_mul_AxA,... added
- *
- * Revision 1.7  2003/04/10 21:26:06  mwe
- * bug in RemoveMostFrequentNode removed
- *
- * Revision 1.6  2003/02/24 17:40:36  mwe
- * declare local used functions as static
- * bug in GetNeutralElement removed
- *
- * Revision 1.5  2003/02/15 16:48:00  mwe
- * bugs removed
- * changed assignment for INFO_DL_TYPES (because former assignment was not up to date)
- *
- * Revision 1.4  2003/02/13 20:15:43  mwe
- * Warnings removed
- *
- * Revision 1.3  2003/02/10 18:01:30  mwe
- * removed bugs
- * enforce_ieee support added
- *
- * Revision 1.2  2003/02/09 22:31:24  mwe
- * removed bugs
- *
- * Revision 1.1  2003/02/08 16:08:02  mwe
- * Initial revision
- *
- *
+/*
+ * $Id:$
  */
 
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
@@ -114,8 +46,8 @@
  *     - F_mul_SxS
  *     - F_max
  *     - F_min
- *     - F_and
- *     - F_or
+ *     - F_and_SxS
+ *     - F_or_SxS
  *
  *
  * order of one optimization cycle:
@@ -496,11 +428,11 @@ GetNeutralElement (node *op, info *arg_info)
         }
         break;
 
-    case F_and:
+    case F_and_SxS:
         neutral_elem = TBmakeBool (TRUE);
         break;
 
-    case F_or:
+    case F_or_SxS:
 #if 0
     /* 
      * commented out as it was not implemented in original implementation
@@ -536,33 +468,38 @@ ExistKnownNeutralElement (node *op)
 
     DBUG_ENTER ("ExistKnownNeutralElement");
 
-    ret = FALSE;
-
-    if (NODE_TYPE (op) == N_prf) {
-
-        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_AxS)
-            || (PRF_PRF (op) == F_add_SxA) || (PRF_PRF (op) == F_add_AxA)) {
-
+    switch (NODE_TYPE (op)) {
+    case N_prf:
+        switch (PRF_PRF (op)) {
+        case F_add_SxS:
+        case F_add_SxA:
+        case F_add_AxS:
+        case F_add_AxA:
+        case F_mul_SxS:
+        case F_mul_SxA:
+        case F_mul_AxS:
+        case F_mul_AxA:
+        case F_and_SxS:
+        case F_and_SxV:
+        case F_and_VxS:
+        case F_and_VxV:
+        case F_or_SxS:
+        case F_or_SxV:
+        case F_or_VxS:
+        case F_or_VxV:
             ret = TRUE;
-
-        } else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_SxA)
-                   || (PRF_PRF (op) == F_mul_AxS) || (PRF_PRF (op) == F_mul_AxA)) {
-
-            ret = TRUE;
-
-        } else if (PRF_PRF (op) == F_and) {
-
-            ret = TRUE;
+            break;
+        default:
+            ret = FALSE;
         }
-
-    } else if (NODE_TYPE (op) == N_ap) {
-
+    case N_ap:
         ret = FALSE;
-
-    } else {
-
+        break;
+    default:
         DBUG_ASSERT (FALSE, "Unexpected node! Only N_prf/N_ap nodes accepted!");
+        ret = FALSE;
     }
+
     DBUG_RETURN (ret);
 }
 
@@ -613,7 +550,7 @@ IsConstant (node *arg_node, info *arg_info)
  *   be associative, commutative.
  *
  * notes:
- *   Till now the function differentiate between prf and ap nodes.
+ *   Until now the function differentiate between prf and ap nodes.
  *   Primitive functions are given. If later user-defined-functions are
  *   also supported in this optimization, they can be added here or the
  *   method call can be placed here!
@@ -641,8 +578,14 @@ CheckOperator (node *operator, info *arg_info )
         case F_mul_AxS:
         case F_mul_SxA:
         case F_mul_AxA:
-        case F_and:
-        case F_or:
+        case F_and_SxS:
+        case F_and_SxV:
+        case F_and_VxS:
+        case F_and_VxV:
+        case F_or_SxS:
+        case F_or_SxV:
+        case F_or_VxS:
+        case F_or_VxV:
         case F_max:
         case F_min:
             support = TRUE;
@@ -745,10 +688,16 @@ GetPriority (node *operator)
         case F_max:
             priority = 5;
             break;
-        case F_and:
+        case F_and_SxS:
+        case F_and_SxV:
+        case F_and_VxS:
+        case F_and_VxV:
             priority = 5;
             break;
-        case F_or:
+        case F_or_SxS:
+        case F_or_SxV:
+        case F_or_VxS:
+        case F_or_VxV:
             priority = 4;
             break;
         default:

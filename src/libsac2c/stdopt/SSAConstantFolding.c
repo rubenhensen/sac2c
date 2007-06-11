@@ -1248,7 +1248,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
         }
         break;
 
-    case F_and:
+    case F_and_SxS:
         if (COisTrue (co, TRUE)) { /* x&&true -> x or true&&x -> x */
             result = DUPdoDupTree (expr);
         } else if (COisFalse (co, TRUE)) { /* x&&false->false or false&&x->false */
@@ -1260,7 +1260,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
         }
         break;
 
-    case F_or:
+    case F_or_SxS:
         if (COisFalse (co, TRUE)) { /* x||false->x or false||x -> x */
             result = DUPdoDupTree (expr);
         } else if (COisFalse (co, TRUE)) { /* x||true->true or true&&x->true */
@@ -2250,7 +2250,8 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
     case F_abs:
         break;
 
-    case F_not:
+    case F_not_S:
+    case F_not_V:
         break;
 
     case F_dim:
@@ -2424,19 +2425,19 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_and:
+    case F_and_SxS:
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = ArithmOpWrapper (F_and, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_and_SxS, arg_co, arg_expr);
             }
         break;
 
-    case F_or:
+    case F_or_SxS:
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = ArithmOpWrapper (F_or, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_or_SxS, arg_co, arg_expr);
             }
         break;
 

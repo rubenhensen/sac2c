@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id:$
  */
 
 /** <!--********************************************************************-->
@@ -376,6 +376,7 @@ MSEprf (node *arg_node, info *arg_info)
     case F_toi_S:
     case F_tof_S:
     case F_tod_S:
+    case F_not_S:
     case F_mod:
     case F_min:
     case F_max:
@@ -387,18 +388,20 @@ MSEprf (node *arg_node, info *arg_info)
     case F_modarray:
     case F_copy:
     case F_neg:
-    case F_not:
+    case F_not_V:
     case F_abs:
     case F_add_AxS:
-    case F_sub_AxS:
-    case F_mul_AxS:
-    case F_div_AxS:
     case F_add_AxA:
-    case F_mul_AxA:
+    case F_sub_AxS:
     case F_sub_AxA:
+    case F_mul_AxS:
+    case F_mul_AxA:
+    case F_div_AxS:
     case F_div_AxA:
-    case F_and: /* According to prf_info.mac, these are AxA */
-    case F_or:
+    case F_and_VxS:
+    case F_and_VxV:
+    case F_or_VxS:
+    case F_or_VxV:
     case F_le:
     case F_lt:
     case F_eq:
@@ -412,6 +415,8 @@ MSEprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_mul_SxA:
     case F_div_SxA:
+    case F_and_SxV:
+    case F_or_SxV:
         rhsnode = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
         break;
 

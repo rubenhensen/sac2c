@@ -1268,43 +1268,67 @@ EMALprf (node *arg_node, info *arg_info)
     case F_sub_SxS:
     case F_mul_SxS:
     case F_div_SxS:
+    case F_and_SxS:
+    case F_or_SxS:
     case F_toi_S:
     case F_tof_S:
     case F_tod_S:
+    case F_not_S:
         /*
-         * single scalar operations
+         * simple scalar operations
          * alloc( 0, [])
          */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_add_SxA:
+    case F_sub_SxA:
+    case F_mul_SxA:
+    case F_div_SxA:
+    case F_and_SxV:
+    case F_or_SxV:
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
+    case F_add_AxS:
+    case F_sub_AxS:
+    case F_mul_AxS:
+    case F_div_AxS:
+    case F_and_VxS:
+    case F_or_VxS:
+    case F_not_V:
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_add_AxA:
+    case F_sub_AxA:
+    case F_mul_AxA:
+    case F_div_AxA:
+    case F_and_VxV:
+    case F_or_VxV:
+        if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        } else {
+            als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        }
+        break;
+
     case F_mod:
     case F_min:
     case F_max:
     case F_neg:
-    case F_not:
     case F_abs:
-    case F_and:
-    case F_or:
     case F_le:
     case F_lt:
     case F_eq:
     case F_neq:
     case F_ge:
     case F_gt:
-    case F_add_AxS:
-    case F_sub_AxS:
-    case F_mul_AxS:
-    case F_div_AxS:
-    case F_add_AxA:
-    case F_mul_AxA:
-    case F_sub_AxA:
-    case F_div_AxA:
-    case F_add_SxA:
-    case F_sub_SxA:
-    case F_mul_SxA:
-    case F_div_SxA:
     case F_copy:
         if ((TCcountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)

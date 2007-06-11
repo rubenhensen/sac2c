@@ -1090,70 +1090,10 @@ APTprf (node *arg_node, info *arg_info)
 
         break;
 
-        /* accept PRFs for scalar arguments, but do no padding */
-    case F_toi_S:
-    case F_tof_S:
-    case F_tod_S:
-    case F_abs:
-    case F_not:
-    case F_min:
-    case F_max:
-    case F_add_SxS:
-    case F_sub_SxS:
-    case F_mul_SxS:
-    case F_div_SxS:
-    case F_mod:
-    case F_and:
-    case F_or:
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_ge:
-    case F_gt:
-    case F_neq:
-
-        /* only arguments of scalar type, so we do not need to traverse them */
-        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
-
-        break;
-
-        /* F_add_*, F_sub_*, F_mul* */
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
-    case F_sub_SxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
-
-        /* traverse arguments to apply padding */
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        /* APTprf will return padding-state of PRF_ARGS */
-        break;
-
     default:
-
-        /* results of unsupported functions have unpadded shape
-         *
-         * currently unsupported are:
-         * F_take, F_drop, F_idx_sel, F_reshape, F_cat, F_rotate,
-         * F_toi_A, F_tof_A, F_tod_A, F_div_SxA, F_div_AxS, F_div_AxA,
-         * F_take_SxV, F_drop_SxV, F_cat_VxV,
-         * F_modarray, F_idx_modarray, F_genarray
-         */
-
-        /* do not traverse sons */
-        DBUG_PRINT ("APT",
-                    (" unsupported PRF '%s'!", global.mdb_prf[PRF_PRF (arg_node)]));
-
+        /* accept PRFs for scalar and vector arguments, but do no padding */
         INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
-
-        break;
     }
-
-    /* enable consistency checking in let-nodes, etc. !!! */
 
     DBUG_RETURN (arg_node);
 }

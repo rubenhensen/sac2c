@@ -1,99 +1,6 @@
 /*
- * $Log$
- * Revision 3.17  2005/07/03 17:17:25  ktr
- * commented out APCgenarray
  *
- * Revision 3.16  2004/12/08 18:02:10  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 3.15  2004/11/26 22:07:12  sbs
- * JHs typo
- *
- * Revision 3.14  2004/11/26 21:04:35  jhb
- * compile .
- *
- * Revision 3.13  2004/11/25 20:19:00  jhb
- * maybe compile
- *
- * Revision 3.12  2004/07/19 14:19:38  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.11  2003/11/18 17:49:13  dkr
- * no changes done
- *
- * Revision 3.10  2003/03/18 16:30:34  sah
- * added new prf cat_VxV, take_SxV, drop_SxV
- *
- * Revision 3.9  2002/09/11 23:07:39  dkr
- * prf_info.mac modified.
- *
- * Revision 3.8  2002/09/09 19:15:29  dkr
- * prf_string removed (mdb_prf used instead)
- *
- * Revision 3.7  2002/09/09 17:48:33  dkr
- * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
- *
- * Revision 3.6  2002/07/29 12:12:53  sbs
- * PRF_IF macro extended by z.
- *
- * Revision 3.5  2002/02/20 14:56:53  dkr
- * fundef DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.4  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.3  2001/05/17 13:40:26  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 3.2  2000/12/06 19:22:16  cg
- * Removed compiler warnings in production mode.
- *
- * Revision 3.1  2000/11/20 18:01:49  sacbase
- * new release made
- *
- * Revision 1.14  2000/10/31 23:02:20  dkr
- * signature of Array2Shpseg() changed
- *
- * Revision 1.13  2000/10/26 12:55:27  dkr
- * DupShpSeg renamed into DupShpseg
- *
- * Revision 1.12  2000/10/24 11:52:47  dkr
- * MakeType renamed into MakeTypes
- *
- * Revision 1.11  2000/08/11 20:58:59  mab
- * fixed bug in CollectAccessPatterns
- *
- * Revision 1.10  2000/08/04 11:41:31  mab
- * fixed bug in APCwith and APTwith (case nested with-loops)
- *
- * Revision 1.9  2000/08/03 15:32:00  mab
- * completed collection of access patterns and unsupported shapes
- *
- * Revision 1.8  2000/07/21 14:43:43  mab
- * added APCcode and APCwithop dummies
- *
- * Revision 1.7  2000/07/19 12:37:30  mab
- * added AccessClass2Group
- *
- * Revision 1.6  2000/06/29 10:23:05  mab
- * renamed APCNwith to APCwith
- *
- * Revision 1.5  2000/06/15 14:38:01  mab
- * dummies for APC block and let added
- *
- * Revision 1.4  2000/06/14 10:43:19  mab
- * dummies for APC ap, exprs, id, prf, fundef added
- *
- * Revision 1.3  2000/06/08 11:13:37  mab
- * added functions for nodes arg, vardec, array
- *
- * Revision 1.2  2000/05/31 16:16:58  mab
- * initial version
- *
- * Revision 1.1  2000/05/26 13:42:00  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -566,72 +473,17 @@ APCprf (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("APC", ("prf-node detected: '%s'", global.mdb_prf[PRF_PRF (arg_node)]));
 
+    INFO_APC_UNSUPPORTED (arg_info) = TRUE;
+
     switch (PRF_PRF (arg_node)) {
-
-        /* result may have padded shape, arguments may also have padded shape */
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
-    case F_sub_SxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
-        break;
-
-        /* result will be unpadded, but padded arguments are supported */
     case F_sel:
     case F_dim:
     case F_shape:
         INFO_APC_UNSUPPORTED (arg_info) = TRUE;
         break;
-
-        /* scalar functions: unpadded result, no padding on arguments */
-    case F_toi_S:
-    case F_tof_S:
-    case F_tod_S:
-    case F_abs:
-    case F_not:
-    case F_min:
-    case F_max:
-    case F_add_SxS:
-    case F_sub_SxS:
-    case F_mul_SxS:
-    case F_div_SxS:
-    case F_mod:
-    case F_and:
-    case F_or:
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_ge:
-    case F_gt:
-    case F_neq:
-        INFO_APC_UNSUPPORTED (arg_info) = TRUE;
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
-
-        /* unsupported non-scalar functions */
-    case F_take_SxV:
-    case F_drop_SxV:
-    case F_idx_sel:
-    case F_reshape:
-    case F_cat_VxV:
-    case F_div_SxA:
-    case F_div_AxS:
-    case F_div_AxA:
-    case F_modarray:
-    case F_idx_modarray:
-    case F_genarray:
-        INFO_APC_UNSUPPORTED (arg_info) = TRUE;
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
-
     default:
-        /* there should be no more functions left */
-        DBUG_ASSERT ((FALSE), "unknown PRF!");
-        break;
+        INFO_APC_UNSUPPORTED (arg_info) = TRUE;
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

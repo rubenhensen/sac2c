@@ -711,12 +711,19 @@ ASDprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_abs:
     case F_neg:
-    case F_not:
+    case F_not_S:
+    case F_not_V:
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
             node *id = PRF_ARG1 (arg_node);
             shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
 
             if (actual_cls != C_scl) {
+                /*
+                 * cg 11.6.07
+                 *
+                 * In my opinion this code should never be executed if we properly
+                 * distinguish between scalar and vector/array prfs.
+                 */
                 ntype *nt;
 
                 DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));

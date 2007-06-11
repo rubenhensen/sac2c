@@ -235,9 +235,16 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_tod_S:
     case F_neg:
     case F_abs:
-    case F_not:
-    case F_and:
-    case F_or:
+    case F_not_S:
+    case F_not_V:
+    case F_and_SxS:
+    case F_and_SxV:
+    case F_and_VxS:
+    case F_and_VxV:
+    case F_or_SxS:
+    case F_or_SxV:
+    case F_or_VxS:
+    case F_or_VxV:
     case F_eq:
     case F_neq:
     case F_le:

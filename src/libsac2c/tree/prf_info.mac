@@ -38,11 +38,22 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
    * Boolean operations
    */
 
-  PRF_IF (F_not, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE),
+  PRF_IF (F_not_S, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE),
+  PRF_IF (F_not_V, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE),
 
-  PRF_IF (F_and, "F_and", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand, FALSE),
+  PRF_IF (F_and_SxS, "F_and_SxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
+          FALSE),
+  PRF_IF (F_and_SxV, "F_and_SxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
+          FALSE),
+  PRF_IF (F_and_VxS, "F_and_VxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
+          FALSE),
+  PRF_IF (F_and_VxV, "F_and_VxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
+          FALSE),
 
-  PRF_IF (F_or, "F_or", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
+  PRF_IF (F_or_SxS, "F_or_SxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
+  PRF_IF (F_or_SxV, "F_or_SxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
+  PRF_IF (F_or_VxS, "F_or_VxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
+  PRF_IF (F_or_VxV, "F_or_VxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
 
   /*******************************************************************************
    * Standard arithmetic operations
