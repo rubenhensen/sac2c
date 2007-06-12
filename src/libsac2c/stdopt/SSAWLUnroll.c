@@ -280,8 +280,55 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
             }
 
             F_prop_obj_found = TRUE;
-        }
+        } else if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+                   && /* If the assignment is a prim. fct. and*/
+                   (PRF_PRF (ASSIGN_RHS (tmp)) == F_prop_obj_out)) { /* it is a prop_out*/
 
+            node *prf_arg = PRF_ARGS (ASSIGN_RHS (tmp));
+            node *lhs = ASSIGN_LHS (tmp);
+            node *prf_prv = NULL;
+            node *lhs_prv = NULL;
+
+            /* replace object in lhs and prf args with new assignment below it*/
+            while (lhs != NULL) {
+
+                if (IDS_AVIS (lhs) == ID_AVIS (EXPRS_EXPR (cexpr))) {
+                    letn = TBmakeLet (TBmakeIds (IDS_AVIS (lhs), NULL),
+                                      TBmakeId (ID_AVIS (EXPRS_EXPR (prf_arg))));
+                    ASSIGN_NEXT (tmp) = TBmakeAssign (letn, ASSIGN_NEXT (tmp));
+
+                    lhs = FREEdoFreeNode (lhs);
+                    if (lhs_prv != NULL) {
+                        IDS_NEXT (lhs_prv) = lhs;
+                    } else {
+                        ASSIGN_LHS (tmp) = lhs;
+                    }
+                    prf_arg = FREEdoFreeNode (prf_arg);
+                    if (prf_prv != NULL) {
+                        EXPRS_NEXT (prf_prv) = prf_arg;
+                    } else {
+                        PRF_ARGS (ASSIGN_RHS (tmp)) = prf_arg;
+                    }
+                } else {
+                    lhs_prv = lhs;
+                    lhs = IDS_NEXT (lhs);
+                    prf_prv = prf_arg;
+                    prf_arg = EXPRS_NEXT (prf_arg);
+                }
+            }
+
+            if (ASSIGN_LHS (tmp) == NULL) {
+                tmp = FREEdoFreeNode (tmp);
+                if (tmp_prev != NULL) {
+                    ASSIGN_NEXT (tmp_prev) = tmp;
+                } else {
+                    bodycode = tmp;
+                }
+                continue;
+            }
+
+            F_prop_obj_found = TRUE;
+        }
         if (ASSIGN_NEXT (tmp) == NULL) {
 
             /* Assign the resulting object of the body to the ingoing object
