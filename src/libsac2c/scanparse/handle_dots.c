@@ -1580,8 +1580,12 @@ HDwith (node *arg_node, info *arg_info)
     /* INFO_HD_DOTSHAPE is used for '.'-substitution in WLgenerators */
     /* in order to handle nested WLs correct, olddotshape stores not */
     /* processed shapes until this (maybe inner) WL is processed.    */
+    /* NOTE: We have to set it to NULL here, as it might be freed    */
+    /*       in HDpart otherwise (this can happen as the DOTSHAPE is */
+    /*       not collected in all traversal modes!                   */
 
     node *olddotshape = INFO_HD_DOTSHAPE (arg_info);
+    INFO_HD_DOTSHAPE (arg_info) = NULL;
 
     DBUG_ENTER ("HDwith");
 
@@ -1688,12 +1692,13 @@ HDpart (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    /**
-     * the shape info in INFO_HD_DOTSHAPE(arg_info) has been used now!
-     * Note here, that it may not be consumed in HDgenerator, as there may exist
-     * more than one generators for a single WL now!
-     */
-    if (INFO_HD_DOTSHAPE (arg_info) != NULL) {
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
+        && (INFO_HD_DOTSHAPE (arg_info) != NULL)) {
+        /**
+         * the shape info in INFO_HD_DOTSHAPE(arg_info) has been used now!
+         * Note here, that it may not be consumed in HDgenerator, as there may
+         * exist more than one generators for a single WL now!
+         */
         INFO_HD_DOTSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_DOTSHAPE (arg_info));
     }
 
@@ -2134,7 +2139,7 @@ HDsetwl (node *arg_node, info *arg_info)
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
-                        TBmakeGenarray (INFO_HD_WLSHAPE (arg_info), NULL));
+                        TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)), NULL));
 
     }
 #ifdef HD_SETWL_VECTOR
@@ -2148,7 +2153,7 @@ HDsetwl (node *arg_node, info *arg_info)
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
-                        TBmakeGenarray (INFO_HD_WLSHAPE (arg_info), NULL));
+                        TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)), NULL));
     }
 #endif
 
@@ -2208,6 +2213,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
     INFO_HD_IDTABLE (arg_info) = oldtable;
     INFO_HD_TRAVSTATE (arg_info) = oldstate;
+    INFO_HD_WLSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_WLSHAPE (arg_info));
     INFO_HD_WLSHAPE (arg_info) = oldshape;
 
     result = TRAVdo (result, arg_info);

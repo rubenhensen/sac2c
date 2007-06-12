@@ -2894,6 +2894,7 @@ PRTsetwl (node *arg_node, info *arg_info)
         TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, "] -> ");
     } else {
+        fprintf (global.outfile, "{ ");
         TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, " -> ");
     }
