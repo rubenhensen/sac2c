@@ -43,12 +43,14 @@ enum { CU_MODE_NORMAL = 0, CU_MODE_THEN = 1, CU_MODE_ELSE = 2 };
  */
 struct INFO {
     int mode;
+    int withlooplevel;
 };
 
 /*
  * INFO macros
  */
 #define INFO_MODE(n) ((n)->mode)
+#define INFO_WITHLOOPLEVEL(n) ((n)->withlooplevel)
 
 /*
  * INFO functions
@@ -63,6 +65,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_MODE (result) = CU_MODE_NORMAL;
+    INFO_WITHLOOPLEVEL (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -166,11 +169,11 @@ CUcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUwith");
 
-    AVIS_WITHLOOPLEVEL (arg_node) = AVIS_WITHLOOPLEVEL (arg_node) + 1;
+    INFO_WITHLOOPLEVEL (arg_info) = INFO_WITHLOOPLEVEL (arg_info) + 1;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    AVIS_WITHLOOPLEVEL (arg_node) = AVIS_WITHLOOPLEVEL (arg_node) - 1;
+    INFO_WITHLOOPLEVEL (arg_info) = INFO_WITHLOOPLEVEL (arg_info) - 1;
 
     DBUG_RETURN (arg_node);
 }
