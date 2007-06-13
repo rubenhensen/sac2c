@@ -5028,6 +5028,18 @@
 	    </targets>
 	  </type>
 	</attribute>
+        <attribute name="WithLoopLevel">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="unq" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="SSADefined" />
