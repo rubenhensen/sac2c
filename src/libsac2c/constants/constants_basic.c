@@ -1044,3 +1044,57 @@ COcompareConstants (constant *c1, constant *c2)
 
     DBUG_RETURN (result);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn: void *COcreateAllIndicesAndFold(
+ *              shape *shp,
+ *              void *(*foldfun)( constant *idx, void *, void *),
+ *              void *accu,
+ *              void* attr)
+ *
+ *
+ ******************************************************************************/
+
+void *
+COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, void *),
+                           void *accu, void *attr)
+{
+    constant *idx;
+    int *datav;
+    int max_d, d, len;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
+    DBUG_ENTER ("COcreateAllIndicesAndFold");
+
+    idx = COmakeZero (T_int, SHcreateShape (1, SHgetDim (shp)));
+    datav = (int *)COgetDataVec (idx);
+    max_d = SHgetDim (shp) - 1;
+    len = SHgetUnrLen (shp);
+
+    if (max_d == -1) {
+        accu = foldfun (idx, accu, attr);
+    } else if (len > 0) {
+        do {
+            accu = foldfun (idx, accu, attr);
+
+            DBUG_EXECUTE ("CO", tmp_str = COconstant2String (idx););
+            DBUG_PRINT ("CO", ("idx: %s", tmp_str));
+            DBUG_EXECUTE ("CO", tmp_str = MEMfree (tmp_str););
+
+            d = max_d;
+            datav[d]++;
+            while ((d > 0) && (datav[d] == SHgetExtent (shp, d))) {
+                datav[d] = 0;
+                d--;
+                datav[d]++;
+            };
+        } while (datav[d] < SHgetExtent (shp, d));
+    }
+
+    idx = COfreeConstant (idx);
+
+    DBUG_RETURN (accu);
+}

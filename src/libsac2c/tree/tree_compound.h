@@ -403,7 +403,6 @@ extern int TCcountVardecs (node *vardecs);
 
 extern int TCcountArgs (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
-extern node *TCmakeExprsFromArgs (node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -648,6 +647,8 @@ extern node *TCappendExprs (node *exprs1, node *exprs2);
  ******************************************************************************/
 
 extern node *TCcombineExprs (node *first, node *second);
+
+extern node *TCcreateExprsFromVardecs (node *vardecs);
 
 /******************************************************************************
  *

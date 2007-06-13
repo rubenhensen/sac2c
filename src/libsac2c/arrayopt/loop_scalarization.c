@@ -177,7 +177,6 @@
  *   ...
  *   i = [2,3];
  *   i_0 = 2;
-5B
  *   i_1 = 3;
  *   ...
  *   do {
@@ -200,6 +199,7 @@
 #include "dbug.h"
 
 #include "types.h"
+#include "DupTree.h"
 #include "free.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -219,15 +219,23 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    bool entry;
+    int level;
     node *reccall;
     node *extcall;
+    node *assigns;
+    node *vardecs;
+    node *lastassign;
+    node *precond;
 };
 
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_ENTRY(n) (n->entry)
-#define INFO_EXTCALL(n) (n->extcall)
-#define INFO_RECCALL(n) (n->reccall)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LEVEL(n) ((n)->level)
+#define INFO_EXTCALL(n) ((n)->extcall)
+#define INFO_EXTASSIGNS(n) ((n)->assigns)
+#define INFO_EXTVARDECS(n) ((n)->vardecs)
+#define INFO_RECCALL(n) ((n)->reccall)
+#define INFO_LASTASSIGN(n) ((n)->lastassign)
+#define INFO_PRECONDASSIGN(n) ((n)->precond)
 
 static info *
 MakeInfo ()
@@ -239,9 +247,13 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_ENTRY (result) = TRUE;
+    INFO_LEVEL (result) = 0;
     INFO_EXTCALL (result) = NULL;
+    INFO_EXTASSIGNS (result) = NULL;
+    INFO_EXTVARDECS (result) = NULL;
     INFO_RECCALL (result) = NULL;
+    INFO_LASTASSIGN (result) = NULL;
+    INFO_PRECONDASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -279,7 +291,7 @@ static void *CreateArg (constant *idx, void *accu, void *scalar_type);
 static node *
 AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
 {
-    node *avis, *vardec;
+    node *avis, *vardec, *block;
     node *new_args, *old_args;
     node *assign;
     ntype *scalar_type;
@@ -292,11 +304,16 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     avis = ARG_AVIS (arg);
     old_args = ARG_NEXT (arg);
     vardec = TBmakeVardec (avis, NULL);
+
+    ARG_AVIS (arg) = NULL;
     arg = FREEdoFreeNode (arg);
 
     /**
      * insert vardec:
      */
+    block = FUNDEF_BODY (INFO_FUNDEF (arg_info));
+    VARDEC_NEXT (vardec) = BLOCK_VARDEC (block);
+    BLOCK_VARDEC (block) = vardec;
 
     /**
      * create the new arguments arg1, ...., argn
@@ -304,22 +321,21 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
     new_args = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type);
-    scalar_type = TYfreeType (scalar_type);
 
     /**
      * create assignment
      *   arg = _reshape_( shp, [arg1, ...., argn] )
      */
-    assign
-      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                 TBmakeArray (TYcopyType (TYgetScalar (AVIS_TYPE (avis))),
-                                              SHcopyShape (shp),
-                                              TCmakeExprsFromArgs (new_args))),
-                      NULL);
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TBmakeArray (scalar_type, SHcopyShape (shp),
+                                                   TCcreateExprsFromArgs (new_args))),
+                           NULL);
     AVIS_SSAASSIGN (avis) = assign;
     /**
      * and insert it:
      */
+    ASSIGN_NEXT (assign) = BLOCK_INSTR (block);
+    BLOCK_INSTR (block) = assign;
 
     DBUG_RETURN (TCappendArgs (new_args, old_args));
 }
@@ -335,28 +351,192 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
 
 /** <!--*******************************************************************-->
  *
- * @fn void AdjustRecursiveCall( node *recarg, shape * shp, info *arg_info)
+ * @fn node *AdjustRecursiveCall( node *recarg, shape * shp, info *arg_info)
  *
  *
  *****************************************************************************/
-static void
-AdjustRecursiveCall (node *recarg, shape *shp, info *arg_info)
+static void *CreateVardecs (constant *idx, void *accu, void *scalar_type);
+static void *CreateAssigns (constant *idx, void *accu, void *local_info);
+struct ca_info {
+    node *exprs;
+    node *avis;
+    node *vardecs;
+};
+static node *
+AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
 {
+    node *old_exprs, *new_exprs;
+    node *avis;
+    ntype *scalar_type;
+    node *new_vardecs, *new_assigns;
+    struct ca_info local_info;
+    struct ca_info *local_info_ptr = &local_info;
+
     DBUG_ENTER ("AdjustRecursiveCall");
-    DBUG_VOID_RETURN;
+
+    /**
+     * eliminate topmost exprs/expr:
+     */
+    avis = ID_AVIS (EXPRS_EXPR (exprs));
+    old_exprs = EXPRS_NEXT (exprs);
+    exprs = FREEdoFreeNode (exprs);
+
+    /**
+     * create the vardecs:
+     */
+    scalar_type
+      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
+    new_vardecs
+      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type);
+
+    /**
+     * create the exprs:
+     */
+    new_exprs = TCcreateExprsFromVardecs (new_vardecs);
+
+    /**
+     * create the assignments:
+     */
+    local_info_ptr->exprs = new_exprs;
+    local_info_ptr->avis = avis;
+    local_info_ptr->vardecs = NULL;
+
+    new_assigns
+      = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL, local_info_ptr);
+    new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
+
+    /**
+     * insert vardecs:
+     */
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (new_vardecs, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+    /**
+     * insert assignments:
+     */
+
+    ASSIGN_NEXT (INFO_PRECONDASSIGN (arg_info))
+      = TCappendAssign (new_assigns, ASSIGN_NEXT (INFO_PRECONDASSIGN (arg_info)));
+
+    DBUG_RETURN (TCappendExprs (new_exprs, old_exprs));
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn void AdjustExternalCall( node *extarg, shape * shp, info *arg_info)
+ * @fn node * AdjustExternalCall( node *exprs, shape * shp, info *arg_info)
+ *
+ * This function replaces the non scalar external argument exprs_expr by an exprs
+ * chain of new scalar identifiers a1, ..., an of the same element type and
+ * returns these. The topmost N-exprs of exprs is freed, its successors are
+ * appended to the freshly created exprs chain!
+ * Furthermore, it creates a sequence of assignments
+ *    a1 = exprs[ 0*shp];
+ *       ...
+ *    an = exprs[ shp-1];
+ * which are stored in INFO_EXTASSIGNS( arg_info) for later insertion.
+ * The according vardecs are stored in INFO_EXTVARDECS( arg_info)
  *
  *
  *****************************************************************************/
-static void
-AdjustExternalCall (node *extarg, shape *shp, info *arg_info)
+static node *
+AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
 {
+    node *old_exprs, *new_exprs;
+    node *avis;
+    ntype *scalar_type;
+    node *new_vardecs, *new_assigns;
+    struct ca_info local_info;
+    struct ca_info *local_info_ptr = &local_info;
+
     DBUG_ENTER ("AdjustExternalCall");
-    DBUG_VOID_RETURN;
+
+    /**
+     * eliminate topmost exprs/expr:
+     */
+    avis = ID_AVIS (EXPRS_EXPR (exprs));
+    old_exprs = EXPRS_NEXT (exprs);
+    exprs = FREEdoFreeNode (exprs);
+
+    /**
+     * create the vardecs:
+     */
+    scalar_type
+      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
+    new_vardecs
+      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type);
+
+    /**
+     * create the exprs:
+     */
+    new_exprs = TCcreateExprsFromVardecs (new_vardecs);
+
+    /**
+     * create the assignments:
+     */
+    local_info_ptr->exprs = new_exprs;
+    local_info_ptr->avis = avis;
+    local_info_ptr->vardecs = NULL;
+
+    new_assigns
+      = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL, local_info_ptr);
+    new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
+
+    /**
+     * insert vardecs and assignments into arg_info:
+     */
+    INFO_EXTVARDECS (arg_info) = TCappendVardec (new_vardecs, INFO_EXTVARDECS (arg_info));
+    INFO_EXTASSIGNS (arg_info) = TCappendAssign (new_assigns, INFO_EXTASSIGNS (arg_info));
+
+    DBUG_RETURN (TCappendExprs (new_exprs, old_exprs));
+}
+
+void *
+CreateVardecs (constant *idx, void *accu, void *scalar_type)
+{
+    accu = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
+                         (node *)accu);
+
+    return (accu);
+}
+
+void *
+CreateAssigns (constant *idx, void *accu, void *local_info)
+{
+    node *scal_avis, *array_avis;
+    node *avis;
+    struct ca_info *l_info;
+
+    l_info = (struct ca_info *)local_info;
+
+    scal_avis = ID_AVIS (EXPRS_EXPR (l_info->exprs));
+    array_avis = l_info->avis;
+
+    /**
+     * create a temp variable to hold the index:
+     */
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKV (TYmakeSimpleType (T_int), COcopyConstant (idx)));
+    l_info->vardecs = TBmakeVardec (avis, l_info->vardecs);
+
+    /**
+     * create the selection:
+     */
+    accu = TBmakeAssign (TBmakeLet (TBmakeIds (scal_avis, NULL),
+                                    TCmakePrf2 (F_sel, TBmakeId (avis),
+                                                TBmakeId (array_avis))),
+                         (node *)accu);
+    AVIS_SSAASSIGN (scal_avis) = accu;
+
+    /**
+     * create the assignment of the constant index:
+     */
+    accu = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), COconstant2AST (idx)),
+                         (node *)accu);
+    AVIS_SSAASSIGN (avis) = accu;
+
+    l_info->exprs = EXPRS_NEXT (l_info->exprs);
+
+    return (accu);
 }
 
 /** <!--*******************************************************************-->
@@ -368,21 +548,16 @@ node *
 LSfundef (node *arg_node, info *arg_info)
 {
     node *fundef;
+    node *extap, *recap;
 
     DBUG_ENTER ("LSfundef");
 
-    if (!(INFO_ENTRY (arg_info)
+    DBUG_PRINT ("LS", ("traversing function %s", FUNDEF_NAME (arg_node)));
+    if (!((INFO_LEVEL (arg_info) == 0)
           && (FUNDEF_ISDOFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
-        if (FUNDEF_ISDOFUN (arg_node)) {
-            fundef = INFO_FUNDEF (arg_info);
-            INFO_FUNDEF (arg_info) = arg_node;
-        } else {
-            /**
-             * although this should be redundant I put it here to make re-engineering
-             * easier ;-))
-             */
-            INFO_FUNDEF (arg_info) = NULL;
-        }
+
+        fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
 
         /**
          *
@@ -390,7 +565,7 @@ LSfundef (node *arg_node, info *arg_info)
          * as ISUSED:
          */
         if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVcont (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
 
         if (FUNDEF_ISDOFUN (arg_node)) {
@@ -401,16 +576,25 @@ LSfundef (node *arg_node, info *arg_info)
              * the args!
              */
             if (FUNDEF_ARGS (arg_node) != NULL) {
-                INFO_EXTCALL (arg_info) = AP_ARGS (INFO_EXTCALL (arg_info));
-                INFO_RECCALL (arg_info) = AP_ARGS (INFO_RECCALL (arg_info));
+                extap = INFO_EXTCALL (arg_info);
+                recap = INFO_RECCALL (arg_info);
+                INFO_EXTCALL (arg_info) = AP_ARGS (extap);
+                INFO_RECCALL (arg_info) = AP_ARGS (recap);
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+                AP_ARGS (extap) = INFO_EXTCALL (arg_info);
+                AP_ARGS (recap) = INFO_RECCALL (arg_info);
             }
             INFO_EXTCALL (arg_info) = NULL;
             INFO_RECCALL (arg_info) = NULL;
-
-            INFO_FUNDEF (arg_info) = fundef;
         }
+
+        INFO_FUNDEF (arg_info) = fundef;
     }
+
+    if (FUNDEF_NEXT (arg_node) && (INFO_LEVEL (arg_info) == 0)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -422,25 +606,31 @@ LSfundef (node *arg_node, info *arg_info)
 node *
 LSarg (node *arg_node, info *arg_info)
 {
-    node *extarg, *recarg;
+    node *mem_extcall, *mem_reccall;
     shape *shp;
 
     DBUG_ENTER ("LSarg");
 
-    extarg = INFO_EXTCALL (arg_info);
-    recarg = INFO_RECCALL (arg_info);
-
     if (ARG_NEXT (arg_node) != NULL) {
-        INFO_EXTCALL (arg_info) = ARG_NEXT (INFO_EXTCALL (arg_info));
-        INFO_RECCALL (arg_info) = ARG_NEXT (INFO_RECCALL (arg_info));
+        mem_extcall = INFO_EXTCALL (arg_info);
+        mem_reccall = INFO_RECCALL (arg_info);
+        INFO_EXTCALL (arg_info) = EXPRS_NEXT (INFO_EXTCALL (arg_info));
+        INFO_RECCALL (arg_info) = EXPRS_NEXT (INFO_RECCALL (arg_info));
+
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+
+        EXPRS_NEXT (mem_extcall) = INFO_EXTCALL (arg_info);
+        EXPRS_NEXT (mem_reccall) = INFO_RECCALL (arg_info);
+        INFO_EXTCALL (arg_info) = mem_extcall;
+        INFO_RECCALL (arg_info) = mem_reccall;
     }
 
-    if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))) {
-        shp = TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node)));
+    if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))
+        && (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) > 0)) {
+        shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
         if ((SHgetUnrLen (shp) <= global.minarray)
             && !AVIS_ISUSED (ARG_AVIS (arg_node))) {
-            shp = TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node)));
+            DBUG_PRINT ("LS", ("replacing arg %s!", ARG_NAME (arg_node)));
             /**
              * First we create new arguments and we insert the array construction
              * at the beginning of the function body:
@@ -450,13 +640,54 @@ LSarg (node *arg_node, info *arg_info)
              * Then, we modify the recursive call to reflect the change
              * in the signature:
              */
-            AdjustRecursiveCall (recarg, shp, arg_info);
+            INFO_RECCALL (arg_info)
+              = AdjustRecursiveCall (INFO_RECCALL (arg_info), shp, arg_info);
             /**
              * Eventually, we compute INFO_EXTVARDECS and INFO_EXTASSIGNS
              * for later insertion into the calling context:
              */
-            AdjustExternalCall (extarg, shp, arg_info);
+            INFO_EXTCALL (arg_info)
+              = AdjustExternalCall (INFO_EXTCALL (arg_info), shp, arg_info);
         }
+        shp = SHfreeShape (shp);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *LSassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+LSassign (node *arg_node, info *arg_info)
+{
+    node *lastassign, *precondassign;
+
+    DBUG_ENTER ("LSassign");
+
+    if (ASSIGN_NEXT (arg_node)) {
+        lastassign = INFO_LASTASSIGN (arg_info);
+        INFO_LASTASSIGN (arg_info) = arg_node;
+
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+
+        INFO_LASTASSIGN (arg_info) = lastassign;
+    }
+
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        INFO_PRECONDASSIGN (arg_info) = lastassign;
+    } else {
+        precondassign = INFO_PRECONDASSIGN (arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        INFO_PRECONDASSIGN (arg_info) = precondassign;
+    }
+
+    if (INFO_EXTASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_EXTASSIGNS (arg_info), arg_node);
+        INFO_EXTASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -474,7 +705,8 @@ LSap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LSap");
 
-    if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+    if ((AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))
+        && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
         INFO_RECCALL (arg_info) = arg_node;
     } else {
         if (AP_ARGS (arg_node) != NULL) {
@@ -482,13 +714,21 @@ LSap (node *arg_node, info *arg_info)
         }
         if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
             || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
-            INFO_ENTRY (arg_info) = FALSE;
+            INFO_LEVEL (arg_info)++;
             external = INFO_EXTCALL (arg_info);
             INFO_EXTCALL (arg_info) = arg_node;
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
+            if (INFO_EXTVARDECS (arg_info) != NULL) {
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TCappendVardec (INFO_EXTVARDECS (arg_info),
+                                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                INFO_EXTVARDECS (arg_info) = NULL;
+            }
+
             INFO_EXTCALL (arg_info) = external;
+            INFO_LEVEL (arg_info)--;
         }
     }
 
@@ -527,6 +767,7 @@ LSid (node *arg_node, info *arg_info)
     DBUG_ENTER ("LSid");
 
     AVIS_ISUSED (ID_AVIS (arg_node)) = TRUE;
+    DBUG_PRINT ("LS", ("%s marked as used!", ID_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

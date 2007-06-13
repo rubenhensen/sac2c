@@ -1261,33 +1261,6 @@ TCappendArgs (node *arg_chain, node *arg)
     DBUG_RETURN (ret);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *TCmakeExprsFromArgs( node *args)
- *
- * @brief Returns an N_exprs chain containing N_id nodes with
- *        the avis given by the given args.
- *
- * @param args N_arg chain
- *
- * @return created N_exprs chain
- ******************************************************************************/
-node *
-TCmakeExprsFromArgs (node *args)
-{
-    node *result;
-
-    DBUG_ENTER ("TCmakeExprsFromArgs");
-
-    if (args != NULL) {
-        result = TBmakeExprs (TBmakeId (ARG_AVIS (args)),
-                              TCmakeExprsFromArgs (ARG_NEXT (args)));
-    } else {
-        result = NULL;
-    }
-
-    DBUG_RETURN (result);
-}
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1888,6 +1861,33 @@ TCcombineExprs (node *first, node *second)
         } else {
             result = second;
         }
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateExprsFromVardecs( node *vardec)
+ *
+ * @brief Returns an N_exprs chain containing N_id nodes with
+ *        the avis given by the given vardecs.
+ *
+ * @param vardec N_vardec chain
+ *
+ * @return created N_exprs chain
+ ******************************************************************************/
+node *
+TCcreateExprsFromVardecs (node *vardec)
+{
+    node *result;
+
+    DBUG_ENTER ("TCcreateExprsFromVardecs");
+
+    if (vardec != NULL) {
+        result = TBmakeExprs (TBmakeId (VARDEC_AVIS (vardec)),
+                              TCcreateExprsFromVardecs (VARDEC_NEXT (vardec)));
     } else {
         result = NULL;
     }
