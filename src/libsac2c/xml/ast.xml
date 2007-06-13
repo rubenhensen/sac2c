@@ -742,11 +742,13 @@
         <travuser>
 	  <node name="Avis" />
 	  <node name="Block" />
+    <node name="Code" />
 	  <node name="Cond" />
 	  <node name="Funcond" />
 	  <node name="Fundef" />
 	  <node name="Id" />
-    <node name="Propagate" />
+    <node name="Code" />
+    <node name="Prf" />
 	</travuser>
       </traversal>
       <traversal id="LOF" name="Lift OptFlags" default="sons" include="liftoptflags.h">
