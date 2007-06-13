@@ -853,6 +853,7 @@
       <traversal id="LS" name="Loop Scalarization" default="sons" include="loop_scalarization.h" >
         <travuser>           <node name="Fundef" />
           <node name="Arg" />
+          <node name="Assign" />
           <node name="Ap" />
           <node name="Prf" />
           <node name="Id" />
