@@ -1,68 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.4  2005/09/27 17:30:23  sbs
- * blend out several definitions iff included from simd.h
- *
- * Revision 3.3  2003/09/19 12:27:56  dkr
- * postfixes _nt, _any of varnames renamed into _NT, _ANY
- *
- * Revision 3.2  2002/04/30 08:35:24  dkr
- * no changes done
- *
- * Revision 3.1  2000/11/20 18:02:12  sacbase
- * new release made
- *
- * Revision 2.13  1999/06/11 12:57:59  cg
- * Cache simulation via memory access trace file implemented.
- * Added help screen for CacheSimAnalyser as well as application
- * programs compiled for cache simulation.
- *
- * Revision 2.12  1999/06/10 09:52:13  cg
- * Added piped cache simulation on remote host machine.
- *
- * Revision 2.11  1999/05/20 14:16:29  cg
- * All simulation parameters may now be set dynamically, including
- * global/blocked simulation.
- *
- * Revision 2.10  1999/05/12 16:44:08  cg
- * Added facilities to invoke piped cache simulation.
- *
- * Revision 2.9  1999/05/10 10:59:20  her
- * adjusted in SAC_CS_Setup the functioncall of SAC_CS_CheckArguments,
- * because SAC_CS_CheckArguments got a new parameter: profilinglevel
- *
- * Revision 2.8  1999/05/03 11:54:17  her
- * corrected the functioncall of SAC_CS_RegisterArray from 'size in elements'
- * to 'size in bytes'
- *
- * Revision 2.7  1999/04/26 11:44:08  her
- * modifications for the piped-cachesimulation
- *
- * Revision 2.6  1999/04/15 15:00:56  cg
- * ';' added behind the definitions of several ICMs.
- *
- * Revision 2.5  1999/04/14 09:22:48  cg
- * Cache simulation may now be triggered by pragmas.
- *
- * Revision 2.4  1999/04/12 10:13:50  cg
- * Array access and register macros added.
- *
- * Revision 2.3  1999/04/06 13:44:27  cg
- * internal declarations moved to libsac_cachesim.h
- * added startup macros
- *
- * Revision 2.2  1999/03/19 11:13:36  her
- * new function (SAC_CS_Start) added
- * function SAC_CS_ShowResults replaced by SAC_CS_Stop
- *
- * Revision 2.1  1999/02/23 12:43:50  sacbase
- * new release made
- *
- * Revision 1.3  1999/02/17 17:14:22  her
- * new parameter for SAC_CS_Initialize: profilelevel
- * english comments
- *
+ * $Id:$
  */
 
 /*****************************************************************************
@@ -89,7 +26,7 @@
 #ifndef _SAC_CACHESIM_H
 #define _SAC_CACHESIM_H
 
-#ifndef _SIMD_H_
+#ifndef SAC_SIMD_COMPILATION
 
 #define SAC_CS_NONE 0
 #define SAC_CS_FILE 1
@@ -262,7 +199,7 @@ extern void (*SAC_CS_Start) (char * /*tag*/);
 
 extern void (*SAC_CS_Stop) (void);
 
-#endif /* ! _SIMD_H_ */
+#endif /* ! SAC_SIMD_COMPILATION */
 
 /*****************************************************************************
  *

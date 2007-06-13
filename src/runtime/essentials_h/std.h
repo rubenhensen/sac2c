@@ -49,15 +49,13 @@
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
+#ifndef SAC_SIMD_COMPILATION
+
 /*
  * implementation type for hidden objects
  */
 
-#ifndef _SIMD_H_
-
 typedef void *SAC_hidden;
-
-#endif
 
 /*
  * array descriptor:
@@ -66,11 +64,10 @@ typedef void *SAC_hidden;
  *   [2]     -> # of elements
  *   [3,...] -> shape vector
  */
-#ifndef _SIMD_H_
 
 typedef int *SAC_array_descriptor_t;
 
-#endif
+#endif /* SAC_SIMD_COMPILATION */
 
 /* size of dimension-independent parts of the descriptor */
 #define FIXED_SIZE_OF_DESC 3

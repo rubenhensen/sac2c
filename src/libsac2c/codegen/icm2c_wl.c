@@ -849,8 +849,12 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
     global.indent = 0;
 
     INDENT;
-    fprintf (global.outfile, "\n#include \"simd.h\"\n");
-
+#if 0
+  fprintf( global.outfile, "\n#include \"simd.h\"\n");
+#else
+    fprintf (global.outfile, "\n#define SAC_SIMD_COMPILATION\n");
+    fprintf (global.outfile, "#include \"sac.h\"\n");
+#endif
     DBUG_VOID_RETURN;
 }
 
@@ -861,9 +865,7 @@ ICMCompileWL_SIMD_END (int cnt)
 
     fclose (global.outfile);
 
-    SYScall ("gcc -E -P -I$SAC2CBASE/include "
-             "-I$SAC2CBASE/src/runtime/core_h "
-             "-I$SAC2CBASE/src/runtime/extras_h %s >%s2",
+    SYScall ("gcc -E -P -I$SAC2CBASE/include %s > %s2",
              /*     global.config.cpp_file,   */
              simd_filename, simd_filename);
     SYScall ("$SAC2CBASE/src/bin/cb -r %s2 >%s", simd_filename, simd_filename);

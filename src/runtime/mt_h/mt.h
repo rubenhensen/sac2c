@@ -19,6 +19,8 @@
 #ifndef _SAC_MT_H_
 #define _SAC_MT_H_
 
+#ifndef SAC_SIMD_COMPILATION
+
 /*****************************************************************************/
 
 #if SAC_DO_MULTITHREAD
@@ -2464,5 +2466,7 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 /*****************************************************************************/
 
 #endif /* SAC_DO_MULTITHREAD */
+
+#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_MT_H_ */

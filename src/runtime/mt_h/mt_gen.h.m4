@@ -12,6 +12,11 @@
 
 include(`icm.m4')
 
+#ifdef _SAC_MT_GEN_H_
+#define _SAC_MT_GEN_H_
+
+#ifndef SAC_SIMD_COMPILATION
+
 #if SAC_DO_MULTITHREAD
 
 dnl SAC_MT_FRAME_ELEMENT_inout
@@ -165,3 +170,7 @@ icm(`SAC_MT_RECEIVE_PARAM_out',
     `SAC_MT_RECEIVE_PARAM_out__NOOP', `10', `3', `0')
 
 #endif  /* SAC_DO_MULTITHREAD */
+
+#endif  /* SAC_SIMD_COMPILATION */
+
+#endif  /* _SAC_MT_GEN_H_ */

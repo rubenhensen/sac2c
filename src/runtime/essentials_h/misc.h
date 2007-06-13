@@ -18,11 +18,11 @@
 #ifndef _SAC_MISC_H_
 #define _SAC_MISC_H_
 
-#ifndef _SIMD_H_
+#ifndef SAC_SIMD_COMPILATION
 
 extern void SAC_String2Array (unsigned char *array, const char *string);
 
-#endif
+#endif /* SAC_SIMD_COMPILATION */
 
 /*****************************************************************************
  *

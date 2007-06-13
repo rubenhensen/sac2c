@@ -18,6 +18,8 @@
 #ifndef _SAC_HEAPMGR_H
 #define _SAC_HEAPMGR_H
 
+#ifndef SAC_SIMD_COMPILATION
+
 /*
  * Basic type definitions.
  */
@@ -790,5 +792,7 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 extern void SAC_HM_ShowDiagnostics ();
 
 #endif /* SAC_DO_PHM */
+
+#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_HEAPMGR_H */
