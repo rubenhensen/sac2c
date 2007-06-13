@@ -10,7 +10,7 @@
  *     tree is in SSA form and has been mangled beyond recognition.
  *     Also, objects are seldomly used explicitly in user code, making
  *     an error message even more cryptic.
- *   - We intentionally skip the default expression of N_propagate nodes,
+ *   - We intentionally skip the arguments expression of prop_in functions,
  *     to work around the fact that it is also used in the N_part of the
  *     with-loop. In actuality it will never be used at the same time,
  *     just like if-then-else, and so we should treat different with-ops
@@ -162,6 +162,20 @@ CUblock (node *arg_node, info *arg_info)
 }
 
 node *
+CUcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUwith");
+
+    AVIS_WITHLOOPLEVEL (arg_node) = AVIS_WITHLOOPLEVEL (arg_node) + 1;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    AVIS_WITHLOOPLEVEL (arg_node) = AVIS_WITHLOOPLEVEL (arg_node) - 1;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 CUcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUcond");
@@ -243,21 +257,6 @@ CUfundef (node *arg_node, info *arg_info)
 }
 
 node *
-CUpropagate (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUpropagate");
-
-    /* Skip the 'default element' son, see PROBLEMS at the top of this
-     * file.  */
-
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 CUid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUid");
@@ -324,3 +323,34 @@ CUid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+node *
+CUprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUprf");
+
+    if (PRF_PRF (arg_node) != F_prop_obj_in) {
+        arg_node = TRAVcont (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ * Skipped because of the decicion to ignore the arguments in prop_in functions
+ * instead of ignoring the Object in N_propagate
+
+node *CUpropagate( node *arg_node, info *arg_info)
+{
+  DBUG_ENTER("CUpropagate");
+
+  * Skip the 'default element' son, see PROBLEMS at the top of this
+  * file.
+
+  if ( PROPAGATE_NEXT( arg_node) != NULL) {
+    PROPAGATE_NEXT( arg_node) = TRAVdo( PROPAGATE_NEXT( arg_node), arg_info);
+  }
+
+  DBUG_RETURN( arg_node);
+}
+*/
