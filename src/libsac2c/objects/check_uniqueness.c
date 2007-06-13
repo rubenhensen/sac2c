@@ -328,6 +328,16 @@ CUid (node *arg_node, info *arg_info)
 }
 
 node *
+CUids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUids");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 CUprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUprf");

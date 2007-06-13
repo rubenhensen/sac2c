@@ -12,6 +12,7 @@ extern node *CUcond (node *arg_node, info *arg_info);
 extern node *CUfuncond (node *arg_node, info *arg_info);
 extern node *CUfundef (node *arg_node, info *arg_info);
 extern node *CUid (node *arg_node, info *arg_info);
+extern node *CUids (node *arg_node, info *arg_info);
 extern node *CUprf (node *arg_node, info *arg_info);
 /*
 extern node *CUpropagate( node *arg_node, info *arg_info);
