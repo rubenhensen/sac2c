@@ -3265,6 +3265,9 @@ COMPprfFree (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfFree");
 
+    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) != N_globobj),
+                 "Application of F_free to N_globobj detected!");
+
     ret_node = MakeSetRcIcm (ID_NAME (PRF_ARG1 (arg_node)), ID_TYPE (PRF_ARG1 (arg_node)),
                              0, NULL);
 
