@@ -701,7 +701,7 @@ LSassign (node *arg_node, info *arg_info)
 node *
 LSap (node *arg_node, info *arg_info)
 {
-    node *external;
+    node *external, *recursive;
 
     DBUG_ENTER ("LSap");
 
@@ -716,6 +716,7 @@ LSap (node *arg_node, info *arg_info)
             || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
             INFO_LEVEL (arg_info)++;
             external = INFO_EXTCALL (arg_info);
+            recursive = INFO_RECCALL (arg_info);
             INFO_EXTCALL (arg_info) = arg_node;
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
@@ -728,6 +729,7 @@ LSap (node *arg_node, info *arg_info)
             }
 
             INFO_EXTCALL (arg_info) = external;
+            INFO_RECCALL (arg_info) = recursive;
             INFO_LEVEL (arg_info)--;
         }
     }
