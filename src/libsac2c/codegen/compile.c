@@ -4374,12 +4374,12 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
-                  && (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
                  "non-scalar first argument found!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id)
-                  && (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
                  "non-scalar second argument found!");
 
     ret_node
@@ -4424,8 +4424,8 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
-                  && (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
                  "non-scalar first argument found!");
 
     DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
@@ -4476,8 +4476,8 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
                  "non-vector first argument found!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id)
-                  && (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
                  "non-scalar second argument found!");
 
     ret_node
