@@ -40,7 +40,7 @@
 #define OPTCOUNTER(id, text) OPTCOUNTERid (id) OPTCOUNTERtext (text)
 #endif
 
-OPTIMIZE ("ls", ls, FALSE, FALSE, "loop scalarization")
+OPTIMIZE ("ls", ls, TRUE, TRUE, "loop scalarization")
 OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, TRUE, TRUE, "constant folding")
 OPTIMIZE ("lir", lir, TRUE, TRUE, "loop invariant removal")
