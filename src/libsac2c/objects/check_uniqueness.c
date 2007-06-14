@@ -320,6 +320,14 @@ CUid (node *arg_node, info *arg_info)
             }
             break;
         }
+
+        if (AVIS_WITHLOOPLEVEL (avis) != INFO_WITHLOOPLEVEL (arg_info)) {
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "Unique var %s of type %s not propagated into this WithLoop",
+                          AVIS_NAME (avis),
+                          UTgetName (TYgetUserType (TYgetScalar (type))),
+                          INFO_WITHLOOPLEVEL (arg_info));
+        }
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -331,6 +339,8 @@ node *
 CUids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUids");
+
+    AVIS_WITHLOOPLEVEL (IDS_AVIS (arg_node)) = INFO_WITHLOOPLEVEL (arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
