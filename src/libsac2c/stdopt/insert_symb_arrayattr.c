@@ -1370,6 +1370,7 @@ node *
 ISAAids (node *arg_node, info *arg_info)
 {
     node *avis;
+    node *preass = NULL;
 
     DBUG_ENTER ("ISAAids");
 
@@ -1383,8 +1384,8 @@ ISAAids (node *arg_node, info *arg_info)
             if (TUdimKnown (AVIS_TYPE (avis))) {
                 AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
             } else {
-                INFO_PREASSIGN (arg_info)
-                  = TCappendAssign (INFO_PREASSIGN (arg_info),
+                preass
+                  = TCappendAssign (preass,
                                     MDEdoMakeDimExpression (INFO_RHS (arg_info), avis,
                                                             INFO_LHS (arg_info),
                                                             INFO_FUNDEF (arg_info)));
@@ -1395,13 +1396,27 @@ ISAAids (node *arg_node, info *arg_info)
             if (TUshapeKnown (AVIS_TYPE (avis))) {
                 AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
             } else {
-
-                INFO_PREASSIGN (arg_info)
-                  = TCappendAssign (INFO_PREASSIGN (arg_info),
+                preass
+                  = TCappendAssign (preass,
                                     MSEdoMakeShapeExpression (INFO_RHS (arg_info), avis,
                                                               INFO_LHS (arg_info),
                                                               INFO_FUNDEF (arg_info)));
             }
+        }
+
+        /* if we could neither detect dim/shape statically nor were we able to
+         * infer expressions, and _if_ the right-hand-side is a fold-withloop,
+         * exactly _then_ we need a proxification.
+         */
+
+        if ((NULL == AVIS_DIM (avis)) && (NULL == AVIS_SHAPE (avis)) && (NULL == preass)
+            && (N_with == NODE_TYPE (INFO_RHS (arg_info)))
+            && (N_fold == NODE_TYPE (WITH_WITHOP (INFO_RHS (arg_info))))) {
+            INFO_POSTASSIGN (arg_info)
+              = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
+        } else if (NULL != preass) {
+            INFO_PREASSIGN (arg_info)
+              = TCappendAssign (INFO_PREASSIGN (arg_info), preass);
         }
     } else {
         if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
