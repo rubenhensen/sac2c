@@ -194,6 +194,69 @@
  * i into a single scalar index anymore. As a net result, we will
  * obtain a superfluous multiplication and a superfluous addition.
  * Note here, that the drawback increases as the length of i increases.
+ *
+ *
+ *
+ * Implementation Strategy:
+ * ------------------------
+ *
+ *  This optimization treats the LaC funs as if they were inline!
+ *  To enable that, use INFO_LEVEL which reflects the current level
+ *  of the function. Thus we can avoid traversing top-level LaC-funs.
+ *
+ *  The overall idea is as follows:
+ *  During the traversal of any Do-Fun, we collect pointers to places
+ *  which are subject to modification (if any) and we infer which arguments
+ *  are used as array arguments in selections only.
+ *  After traversing the body of a Do-fun, we traverse its arguments
+ *  to see which ones are suitable candidates, i.e., which ones are used
+ *  as arrays within selections only AND are AKS with an unrolling smaller
+ *  or equal to "maxae" (default 4).
+ *  For each of these, we generate 3 "portions" of code:
+ *   1) the new formal arguments for changing the signature and the
+ *      array assignment in the beginning of the Do-fun,
+ *   2) the new actual arguments for the recursive call and the scalarization
+ *      of the array used in the recursive call, and
+ *   3) the new actual arguments for the external call and the respective
+ *      scalarization of the old argument.
+ *  While all modifications/ extensions of the Do-fun itself are inserted
+ *  directly after creation, the changes / extensions of the external
+ *  call are done later, after leaving the Do-fun itself.
+ *
+ * Implementation Details:
+ * -----------------------
+ *
+ * Prior to the modifications that happen in LSarg while traversing Do-funs,
+ * we have to collect the following information:
+ *
+ *   INFO_EXTCALL : the N_ap node of the external call to the current Do-fun
+ *   INFO_RECCALL : the N_ap node of the recursive call to the current Do-fun
+ *   INFO_FUNDEF  : the N_fundef of the current Do-fun
+ *   INFO_PRECONDASSIGN : the N_assign node which precedes the N_assign that
+ *                        hosts the N_cond of the current Do-fun
+ *
+ * Furthermore, we tag all N_avis nodes that are used in other positions than
+ * the second arg of F_sel_VxA_ as AVIS_ISUSED (see LSid / LSprf). Thus,
+ * all arguments that are used within selections only are exactly those
+ * that have NOT been tagged;-)
+ *
+ * As can be seen in LSarg, we have extraced the actual code modifications
+ * by means of three local functions:
+ *  - AdjustLoopSignature,
+ *  - AdjustRecursiveCall, and
+ *  - AdjustExternalCall
+ * All these directly modify the formal/actual parameters of the Do-fun and
+ * its two calls. Furthermore, AdjustLoopSignature inserts its vardecs and
+ * assignments via INFO_FUNDEF. Similarily, AdjustRecursiveCall uses
+ * INFO_FUNDEF and INFO_PRECONDASSIGN do directly insert the generated
+ * vardecs and assignments, respectively.
+ * Although AdjustExternalCall creates code very similar to that of
+ * AdjustRecursiveCall, it does not insert the code directly but stores
+ * the vardecs and assignments in INFO_EXTVARDECS and in INFO_EXTASSIGNS.
+ * While the vardecs are inserted in LSap (utilizing INFO_FUNDEF again -
+ * now pointing to the N_fundef of the external function), the assignments
+ * are inserted in LSassign (which is traversed bottom up in order to
+ * avoid a superfluous traversal of the freshly generated assignments).
  */
 
 #include "dbug.h"
@@ -340,7 +403,13 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     DBUG_RETURN (TCappendArgs (new_args, old_args));
 }
 
-void *
+/** <!--*******************************************************************-->
+ *
+ * @fn void *CreateArg( constant *idx, void *accu, void *scalar_type)
+ *
+ * fold function for creating Vardecs.
+ *****************************************************************************/
+static void *
 CreateArg (constant *idx, void *accu, void *scalar_type)
 {
     accu = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
@@ -351,8 +420,19 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *AdjustRecursiveCall( node *recarg, shape * shp, info *arg_info)
+ * @fn node *AdjustRecursiveCall( node *exprs, shape * shp, info *arg_info)
  *
+ * This function replaces the non scalar recursive argument exprs_expr by an exprs
+ * chain of new scalar identifiers a1, ..., an of the same element type and
+ * returns these. The topmost N-exprs of exprs is freed, its successors are
+ * appended to the freshly created exprs chain!
+ * Furthermore, it creates a sequence of assignments
+ *    a1 = exprs[ 0*shp];
+ *       ...
+ *    an = exprs[ shp-1];
+ * which are directly inserted in the body of the function using
+ * INFO_PRECONDASSIGN.
+ * The according vardecs are inserted within the body as well using INFO_FUNDEF.
  *
  *****************************************************************************/
 static void *CreateVardecs (constant *idx, void *accu, void *scalar_type);
@@ -490,7 +570,13 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
     DBUG_RETURN (TCappendExprs (new_exprs, old_exprs));
 }
 
-void *
+/** <!--*******************************************************************-->
+ *
+ * @fn void *CreateVardecs( constant *idx, void *accu, void *scalar_type)
+ *
+ * fold function for creating Vardecs.
+ *****************************************************************************/
+static void *
 CreateVardecs (constant *idx, void *accu, void *scalar_type)
 {
     accu = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
@@ -499,7 +585,13 @@ CreateVardecs (constant *idx, void *accu, void *scalar_type)
     return (accu);
 }
 
-void *
+/** <!--*******************************************************************-->
+ *
+ * @fn void *CreateAssigns( constant *idx, void *accu, void *local_info)
+ *
+ * fold function for creating assignment chains.
+ *****************************************************************************/
+static void *
 CreateAssigns (constant *idx, void *accu, void *local_info)
 {
     node *scal_avis, *array_avis;
