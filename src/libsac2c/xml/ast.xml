@@ -2207,6 +2207,8 @@
         <travuser>
           <node name="FunBundle" />
           <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
           <node name="Module" />
         </travuser>
       </traversal>

@@ -200,7 +200,20 @@ AddModuleToPool (const char *name)
     }
 
     checkHasSameASTVersion (result);
-    checkWasBuildUsingSameFlags (result);
+
+    switch (global.tool) {
+    case TOOL_sac2c:
+        /*
+         * we only need to check this for those tools
+         * that actually compile sac code!
+         */
+        checkWasBuildUsingSameFlags (result);
+        break;
+    case TOOL_sac4c:
+        break;
+    default:
+        DBUG_ASSERT (0, "unknown tool!");
+    }
 
     addNamespaceMappings (result);
 

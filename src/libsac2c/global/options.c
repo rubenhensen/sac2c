@@ -796,6 +796,13 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_END ();
 
+    /*
+     * set defaults not altered by arguments
+     */
+    if (global.outfilename == NULL) {
+        global.outfilename = STRcpy ("a.out");
+    }
+
     DBUG_VOID_RETURN;
 }
 

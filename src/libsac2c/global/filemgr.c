@@ -507,6 +507,28 @@ FMGRappendOpen (const char *format, ...)
     DBUG_RETURN (file);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn FILE *FMGRclose( FILE *file)
+ *
+ * @brief Closes the given file and aborts on error.
+ *
+ * @param file file handle of file to close
+ *
+ * @return always returns NULL
+ ******************************************************************************/
+
+FILE *
+FMGRclose (FILE *file)
+{
+    DBUG_ENTER ("FMGRclose");
+
+    if (fclose (file) != 0) {
+        CTIabort ("There was an error while closing a file.");
+    }
+
+    DBUG_RETURN ((FILE *)NULL);
+}
+
 /******************************************************************************
  *
  * Function:
