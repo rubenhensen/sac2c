@@ -29,7 +29,34 @@ typedef int bool;
 #define TRUE 1
 
 /*
- * The type faeture_t is used as a bit mask for tile size inference.
+ * The NEW node structure of the SAC syntax tree
+ * The type is abstract, as there is _no_ way to access a node other
+ * than using tree_basic.h. Thus the structure is defined in
+ * tree_basic.h. This as well solves dependency problems.
+ */
+typedef struct NODE node;
+
+/*****************************************************************************
+ * The info structure is used during traversal to store some stateful
+ * information. It replaces the old N_info node. The structure is defined
+ * as an abstract type here, so it can be definied by the different
+ * traversals to suit the local needs. To do so, define a structure INFO
+ * within the .c file of your traversal or create a specific .h/.c file
+ * included by all .c files of your traversal. You as well have to create
+ * a static MakeInfo/FreeInfo function.
+ *****************************************************************************/
+
+typedef struct INFO info;
+
+/*
+ * the namespace_t structure is used for namespaces (formerly represented
+ * by module name strings). See namespace.[ch] for details
+ */
+typedef struct NAMESPACE namespace_t;
+typedef struct VIEW view_t;
+
+/*
+ * The type feature_t is used as a bit mask for tile size inference.
  * It stores information about features found within an operator of a
  * with-loop.
  */
@@ -143,10 +170,12 @@ typedef enum {
 typedef struct STRINGSET_T stringset_t;
 
 typedef enum {
-#define PRF_IF(a, b, c, d, e, f, g, h, i) a
+#define PRF_IF(a, b, c, d, e, f, g, h, i, j, k, l, m) a
 #include "prf_info.mac"
 #undef PRF_IF
 } prf;
+
+typedef node *(*cf_fun_t) (node *arg_node);
 
 /*
  * minimum array representation class
@@ -257,36 +286,9 @@ typedef struct GENERATOR_REL {
 
 #define DIM_NO_OFFSET(dim) (((dim) < KNOWN_DIM_OFFSET) ? KNOWN_DIM_OFFSET - (dim) : (dim))
 
-/*
- * The NEW node structure of the SAC syntax tree
- * The type is abstract, as there is _no_ way to access a node other
- * than using tree_basic.h. Thus the structure is defined in
- * tree_basic.h. This as well solves dependency problems.
- */
-typedef struct NODE node;
-
-/*****************************************************************************
- * The info structure is used during traversal to store some stateful
- * information. It replaces the old N_info node. The structure is defined
- * as an abstract type here, so it can be definied by the different
- * traversals to suit the local needs. To do so, define a structure INFO
- * within the .c file of your traversal or create a specific .h/.c file
- * included by all .c files of your traversal. You as well have to create
- * a static MakeInfo/FreeInfo function.
- *****************************************************************************/
-
-typedef struct INFO info;
-
-/*
- * the namespace_t structure is used for namespaces (formerly represented
- * by module name strings). See namespace.[ch] for details
- */
-typedef struct NAMESPACE namespace_t;
-typedef struct VIEW view_t;
-
 /******************************************************************************
  *
- * the following types are needed for Withloopp Folding
+ * the following types are needed for Withloop Folding
  *
  ******************************************************************************/
 
