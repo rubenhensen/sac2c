@@ -34,6 +34,7 @@
 #include "stringset.h"
 #include "str_buffer.h"
 #include "namespaces.h"
+#include "str.h"
 
 /** <!--********************************************************************-->
  *
@@ -201,19 +202,26 @@ PrintFileHeader (FILE *file)
 node *
 CWHfunbundle (node *arg_node, info *arg_info)
 {
+    char *safename, *safens;
+
     DBUG_ENTER ("CWHfunbundle");
 
     INFO_INBUNDLE (arg_info) = TRUE;
 
     DBUG_ASSERT ((FUNBUNDLE_FUNDEF (arg_node) != NULL), "empty funbundle found!");
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_FUNDEC( %d, %s, %s, ",
-             FUNBUNDLE_ARITY (arg_node), NSgetName (FUNBUNDLE_NS (arg_node)),
-             FUNBUNDLE_NAME (arg_node));
+    safename = STRreplaceSpecialCharacters (FUNBUNDLE_NAME (arg_node));
+    safens = STRreplaceSpecialCharacters (NSgetName (FUNBUNDLE_NS (arg_node)));
+
+    fprintf (INFO_FILE (arg_info), "SAC4C_EXTERN SAC4C_FUNNAME( %d, %s, %s) ( ",
+             FUNBUNDLE_ARITY (arg_node), safens, safename);
+
+    safens = MEMfree (safens);
+    safename = MEMfree (safename);
 
     FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
 
-    fprintf (INFO_FILE (arg_info), ")\n\n");
+    fprintf (INFO_FILE (arg_info), ");\n\n");
 
     INFO_INBUNDLE (arg_info) = FALSE;
 
@@ -238,15 +246,12 @@ CWHfundef (node *arg_node, info *arg_info)
 
     if (INFO_INBUNDLE (arg_info)) {
         if (FUNDEF_RETS (arg_node) != NULL) {
-            fprintf (INFO_FILE (arg_info), "SAC4C_RETS( ");
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            fprintf (INFO_FILE (arg_info), "), ");
+            fprintf (INFO_FILE (arg_info), ", ");
         }
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            fprintf (INFO_FILE (arg_info), "SAC4C_ARGS( ");
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            fprintf (INFO_FILE (arg_info), ")");
         } else {
             fprintf (INFO_FILE (arg_info), "SAC4C_VOID");
         }
