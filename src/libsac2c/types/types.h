@@ -170,7 +170,7 @@ typedef enum {
 typedef struct STRINGSET_T stringset_t;
 
 typedef enum {
-#define PRF_IF(a, b, c, d, e, f, g, h, i a
+#define PRF_IF(a, b, c, d, e, f, g, h, i) a
 #include "prf_info.mac"
 #undef PRF_IF
 } prf;
