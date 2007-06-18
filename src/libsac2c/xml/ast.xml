@@ -3973,7 +3973,10 @@
 
 -->
     <node name="Array">
-    <description>Constant array, or array of arrays, which may NOT be constant</description>
+    <description>Constant array of array elements. In early phases, 
+     the elements are exprs; after the array flattening phase, the
+     elements are either N_id nodes or scalar constant nodes.
+     The shapes of all elements must match.</description>
       <sons>
         <son name="AElems">
           <targets>
@@ -3988,6 +3991,8 @@
       </sons>
       <attributes>
         <attribute name="Elemtype">
+          <description> The type of all array elements. The Elemtype may be used
+           to deduce the common shape of those elements.</description>
           <type name="NewType">
             <targets>
               <target mandatory="yes">
