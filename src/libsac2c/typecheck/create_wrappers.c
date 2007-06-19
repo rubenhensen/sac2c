@@ -764,6 +764,13 @@ CRTWRPspfold (node *arg_node, info *arg_info)
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));
         FOLD_GUARD (new_node) = SPFOLD_GUARD (arg_node);
 
+        /*
+         * pick up remaining withops, i.e., propagate.
+         */
+        if (SPFOLD_NEXT (arg_node) != NULL) {
+            FOLD_NEXT (new_node) = TRAVdo (SPFOLD_NEXT (arg_node), arg_info);
+        }
+
         SPFOLD_NEUTRAL (arg_node) = NULL;
         SPFOLD_GUARD (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
