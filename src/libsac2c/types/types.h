@@ -170,9 +170,8 @@ typedef enum {
 typedef struct STRINGSET_T stringset_t;
 
 typedef enum {
-#define PRF_IF(a, b, c, d, e, f, g, h, i) a
+#define PRFnode_name(node_name) node_name
 #include "prf_info.mac"
-#undef PRF_IF
 } prf;
 
 typedef node *(*cf_fun_t) (node *arg_node);
@@ -788,6 +787,11 @@ typedef struct GENLIB_FLAGS_T {
 } genlib_flags_t;
 
 /*
+ * type of traversal functions
+ */
+typedef node *(*travfun_p) (node *, info *);
+
+/*
  * Read in global variables from globals.mac
  */
 
@@ -796,11 +800,6 @@ typedef struct GLOBAL_T {
 #define GLOBALname(it_name) it_name;
 #include "globals.mac"
 } global_t;
-
-/*
- * type of traversal functions
- */
-typedef node *(*travfun_p) (node *, info *);
 
 /******************************************************************************
  * moved from SSAConstantFolding.h:

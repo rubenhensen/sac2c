@@ -56,9 +56,8 @@ FreeInfo (info *info)
 }
 
 static const bool SIMD_suitable[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h, i) i
+#define PRFsimd_suitable(simd_suitable) simd_suitable
 #include "prf_info.mac"
-#undef PRF_IF
 };
 
 /*

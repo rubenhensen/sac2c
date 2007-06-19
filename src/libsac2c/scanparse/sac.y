@@ -68,9 +68,8 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 static node *SetClassType( node *module, ntype *type);
 
 static int prf_arity[] = {
-#define PRF_IF( a, b, c, d, e, f, g, h, i) f
+ #define PRFprf_arity(prf_arity) prf_arity
 #include "prf_info.mac"
-#undef PRF_IF
 };
 
 %}

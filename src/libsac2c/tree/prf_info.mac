@@ -2,154 +2,236 @@
  * $Id$
  */
 
-/**
- **
- **  Some macro definitions used for the automatic creation
- **  of tables which depend on the correct order of the tags
- **  for the prf Type
- **
- **/
-
 /*
  *      node_name        mdb_prf[]          prf_string[]        prf_symbol[]
  *      prf_is_infix[]   prf_arity          NTCPRF_funtab[]     NTCPRF_cffuntab[]
- *      SIMD_suitable[]
+ *      SIMD_suitable[]  cf[]               cf_scs[]            cf_sccs[]
+ *      cf_saa[]
+ *
+ * Default (empty) table access macros follow
  */
 
+#ifndef PRFnode_name
+#define PRFnode_name(node_name)
+#endif
+
+#ifndef PRFmdb_prf
+#define PRFmdb_prf(mdb_prf)
+#endif
+
+#ifndef PRFprf_string
+#define PRFprf_string(prf_string)
+#endif
+
+#ifndef PRFprf_symbol
+#define PRFprf_symbol(prf_symbol)
+#endif
+
+#ifndef PRFprf_is_infix
+#define PRFprf_is_infix(prf_is_infix)
+#endif
+
+#ifndef PRFprf_arity
+#define PRFprf_arity(prf_arity)
+#endif
+
+#ifndef PRFntcprf_fun
+#define PRFntcprf_fun(ntcprf_fun)
+#endif
+
+#ifndef PRFntcprf_cffun
+#define PRFntcprf_cffun(ntcprf_cffun)
+#endif
+
+#ifndef PRFsimd_suitable
+#define PRFsimd_suitable(simd_suitable)
+#endif
+
+#ifndef PRFcf
+#define PRFcf(cf)
+#endif
+
+#ifndef PRFcf_scs
+#define PRFcf_scs(cf_scs)
+#endif
+
+#ifndef PRFcf_sccs
+#define PRFcf_sccs(cf_sccs)
+#endif
+
+#ifndef PRFcf_saa
+#define PRFcf_saa(cf_saa)
+#endif
+
+#define PRF(node_name, mdb_prf, prf_string, prf_symbol, prf_is_infix, prf_arity,         \
+            ntcprf_fun, ntcprf_cffun, simd_suitable, cf, cf_scs, cf_sccs, cf_saa)        \
+    PRFnode_name (node_name) PRFmdb_prf (mdb_prf) PRFprf_string (prf_string)             \
+      PRFprf_symbol (prf_symbol) PRFprf_is_infix (prf_is_infix) PRFprf_arity (prf_arity) \
+        PRFntcprf_fun (ntcprf_fun) PRFntcprf_cffun (ntcprf_cffun)                        \
+          PRFsimd_suitable (simd_suitable) PRFcf (cf) PRFcf_scs (cf_scs)                 \
+            PRFcf_sccs (cf_sccs) PRFcf_saa (cf_saa)
+
 /*******************************************************************************
- *******************************************************************************
  *
- *  A) Primitive operations available externally:
+ *  Primitive compiler operations:
  *
- *******************************************************************************
  *******************************************************************************/
 
 /*******************************************************************************
  * Arithmetic conversion operations
  */
 
-PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE),
+PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE, NULL,
+     SCSprf_toi_S, NULL, NULL),
 
-  PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCCTprf_tofS, COtof, FALSE),
+  PRF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCCTprf_tofS, COtof, FALSE, NULL,
+       SCSprf_tof_S, NULL, NULL),
 
-  PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCCTprf_todS, COtod, FALSE),
+  PRF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCCTprf_todS, COtod, FALSE, NULL,
+       SCSprf_tod_S, NULL, NULL),
 
   /*******************************************************************************
    * Boolean operations
    */
 
-  PRF_IF (F_not_S, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE),
-  PRF_IF (F_not_V, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE),
+  PRF (F_not_S, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE, NULL,
+       SCSprf_not_S, NULL, NULL),
 
-  PRF_IF (F_and_SxS, "F_and_SxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
-          FALSE),
-  PRF_IF (F_and_SxV, "F_and_SxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
-          FALSE),
-  PRF_IF (F_and_VxS, "F_and_VxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
-          FALSE),
-  PRF_IF (F_and_VxV, "F_and_VxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand,
-          FALSE),
+  PRF (F_not_V, "F_not", "_not_", "!", TRUE, 1, NTCCTprf_log_op_A, COnot, FALSE, NULL,
+       SCSprf_not_V, NULL, NULL),
 
-  PRF_IF (F_or_SxS, "F_or_SxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
-  PRF_IF (F_or_SxV, "F_or_SxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
-  PRF_IF (F_or_VxS, "F_or_VxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
-  PRF_IF (F_or_VxV, "F_or_VxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE),
+  PRF (F_and_SxS, "F_and_SxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand, FALSE,
+       NULL, SCSprf_and_SxS, NULL, NULL),
+
+  PRF (F_and_SxV, "F_and_SxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand, FALSE,
+       NULL, SCSprf_and_SxV, NULL, NULL),
+
+  PRF (F_and_VxS, "F_and_VxS", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand, FALSE,
+       NULL, SCSprf_and_VxS, NULL, NULL),
+
+  PRF (F_and_VxV, "F_and_VxV", "_and_", "&", TRUE, 2, NTCCTprf_log_op_AxA, COand, FALSE,
+       NULL, SCSprf_and_VxV, NULL, NULL),
+
+  PRF (F_or_SxS, "F_or_SxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE, NULL,
+       SCSprf_or_SxS, NULL, NULL),
+
+  PRF (F_or_SxV, "F_or_SxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE, NULL,
+       SCSprf_or_SxV, NULL, NULL),
+
+  PRF (F_or_VxS, "F_or_VxS", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE, NULL,
+       SCSprf_or_VxS, NULL, NULL),
+
+  PRF (F_or_VxV, "F_or_VxV", "_or_", "|", TRUE, 2, NTCCTprf_log_op_AxA, COor, FALSE, NULL,
+       SCSprf_or_VxV, NULL, NULL),
 
   /*******************************************************************************
    * Standard arithmetic operations
    */
 
-  PRF_IF (F_add_SxS, "F_add_SxS", "_add_SxS_", "+", TRUE, 2, NTCCTprf_ari_op_SxS, COadd,
-          TRUE),
-  PRF_IF (F_add_SxA, "F_add_SxA", "_add_SxA_", "+", TRUE, 2, NTCCTprf_ari_op_SxA, COadd,
-          FALSE),
-  PRF_IF (F_add_AxS, "F_add_AxS", "_add_AxS_", "+", TRUE, 2, NTCCTprf_ari_op_AxS, COadd,
-          FALSE),
-  PRF_IF (F_add_AxA, "F_add_AxA", "_add_AxA_", "+", TRUE, 2, NTCCTprf_ari_op_AxA, COadd,
-          FALSE),
+  PRF (F_add_SxS, "F_add_SxS", "_add_SxS_", "+", TRUE, 2, NTCCTprf_ari_op_SxS, COadd,
+       TRUE, NULL, NULL, NULL, NULL),
+  PRF (F_add_SxA, "F_add_SxA", "_add_SxA_", "+", TRUE, 2, NTCCTprf_ari_op_SxA, COadd,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_add_AxS, "F_add_AxS", "_add_AxS_", "+", TRUE, 2, NTCCTprf_ari_op_AxS, COadd,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_add_AxA, "F_add_AxA", "_add_AxA_", "+", TRUE, 2, NTCCTprf_ari_op_AxA, COadd,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_sub_SxS, "F_sub_SxS", "_sub_SxS_", "-", TRUE, 2, NTCCTprf_ari_op_SxS, COsub,
-          FALSE),
-  PRF_IF (F_sub_SxA, "F_sub_SxA", "_sub_SxA_", "-", TRUE, 2, NTCCTprf_ari_op_SxA, COsub,
-          FALSE),
-  PRF_IF (F_sub_AxS, "F_sub_AxS", "_sub_AxS_", "-", TRUE, 2, NTCCTprf_ari_op_AxS, COsub,
-          FALSE),
-  PRF_IF (F_sub_AxA, "F_sub_AxA", "_sub_AxA_", "-", TRUE, 2, NTCCTprf_ari_op_AxA, COsub,
-          FALSE),
+  PRF (F_sub_SxS, "F_sub_SxS", "_sub_SxS_", "-", TRUE, 2, NTCCTprf_ari_op_SxS, COsub,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_sub_SxA, "F_sub_SxA", "_sub_SxA_", "-", TRUE, 2, NTCCTprf_ari_op_SxA, COsub,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_sub_AxS, "F_sub_AxS", "_sub_AxS_", "-", TRUE, 2, NTCCTprf_ari_op_AxS, COsub,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_sub_AxA, "F_sub_AxA", "_sub_AxA_", "-", TRUE, 2, NTCCTprf_ari_op_AxA, COsub,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_mul_SxS, "F_mul_SxS", "_mul_SxS_", "*", TRUE, 2, NTCCTprf_ari_op_SxS, COmul,
-          FALSE),
-  PRF_IF (F_mul_SxA, "F_mul_SxA", "_mul_SxA_", "*", TRUE, 2, NTCCTprf_ari_op_SxA, COmul,
-          FALSE),
-  PRF_IF (F_mul_AxS, "F_mul_AxS", "_mul_AxS_", "*", TRUE, 2, NTCCTprf_ari_op_AxS, COmul,
-          FALSE),
-  PRF_IF (F_mul_AxA, "F_mul_AxA", "_mul_AxA_", "*", TRUE, 2, NTCCTprf_ari_op_AxA, COmul,
-          FALSE),
+  PRF (F_mul_SxS, "F_mul_SxS", "_mul_SxS_", "*", TRUE, 2, NTCCTprf_ari_op_SxS, COmul,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_mul_SxA, "F_mul_SxA", "_mul_SxA_", "*", TRUE, 2, NTCCTprf_ari_op_SxA, COmul,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_mul_AxS, "F_mul_AxS", "_mul_AxS_", "*", TRUE, 2, NTCCTprf_ari_op_AxS, COmul,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_mul_AxA, "F_mul_AxA", "_mul_AxA_", "*", TRUE, 2, NTCCTprf_ari_op_AxA, COmul,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_div_SxS, "F_div_SxS", "_div_SxS_", "/", TRUE, 2, NTCCTprf_ari_op_SxS, COdiv,
-          FALSE),
-  PRF_IF (F_div_SxA, "F_div_SxA", "_div_SxA_", "/", TRUE, 2, NTCCTprf_ari_op_SxA, COdiv,
-          FALSE),
-  PRF_IF (F_div_AxS, "F_div_AxS", "_div_AxS_", "/", TRUE, 2, NTCCTprf_ari_op_AxS, COdiv,
-          FALSE),
-  PRF_IF (F_div_AxA, "F_div_AxA", "_div_AxA_", "/", TRUE, 2, NTCCTprf_ari_op_AxA, COdiv,
-          FALSE),
+  PRF (F_div_SxS, "F_div_SxS", "_div_SxS_", "/", TRUE, 2, NTCCTprf_ari_op_SxS, COdiv,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_div_SxA, "F_div_SxA", "_div_SxA_", "/", TRUE, 2, NTCCTprf_ari_op_SxA, COdiv,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_div_AxS, "F_div_AxS", "_div_AxS_", "/", TRUE, 2, NTCCTprf_ari_op_AxS, COdiv,
+       FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_div_AxA, "F_div_AxA", "_div_AxA_", "/", TRUE, 2, NTCCTprf_ari_op_AxA, COdiv,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_mod, "F_mod", "_mod_", "%", TRUE, 2, NTCCTprf_int_op_SxS, COmod, FALSE),
+  PRF (F_mod, "F_mod", "_mod_", "%", TRUE, 2, NTCCTprf_int_op_SxS, COmod, FALSE, NULL,
+       NULL, NULL, NULL),
 
   /*******************************************************************************
    * Further arithmetic operations
    */
 
-  PRF_IF (F_neg, "F_neg", "_neg_", "neg", FALSE, 1, NTCCTprf_ari_op_A, COneg, FALSE),
+  PRF (F_neg, "F_neg", "_neg_", "neg", FALSE, 1, NTCCTprf_ari_op_A, COneg, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCCTprf_ari_op_A, COabs, FALSE),
+  PRF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCCTprf_ari_op_A, COabs, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_min, "F_min", "_min_", "min", FALSE, 2, NTCCTprf_ari_op_SxS, COmin, FALSE),
+  PRF (F_min, "F_min", "_min_", "min", FALSE, 2, NTCCTprf_ari_op_SxS, COmin, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_max, "F_max", "_max_", "max", FALSE, 2, NTCCTprf_ari_op_SxS, COmax, FALSE),
+  PRF (F_max, "F_max", "_max_", "max", FALSE, 2, NTCCTprf_ari_op_SxS, COmax, FALSE, NULL,
+       NULL, NULL, NULL),
 
   /*******************************************************************************
    * Relational operations
    */
 
-  PRF_IF (F_eq, "F_eq", "_eq_", "==", TRUE, 2, NTCCTprf_rel_op_AxA, COeq, FALSE),
+  PRF (F_eq, "F_eq", "_eq_", "==", TRUE, 2, NTCCTprf_rel_op_AxA, COeq, FALSE, NULL, NULL,
+       NULL, NULL),
 
-  PRF_IF (F_neq, "F_neq", "_neq_", "!=", TRUE, 2, NTCCTprf_rel_op_AxA, COneq, FALSE),
+  PRF (F_neq, "F_neq", "_neq_", "!=", TRUE, 2, NTCCTprf_rel_op_AxA, COneq, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_le, "F_le", "_le_", "<=", TRUE, 2, NTCCTprf_rel_op_AxA, COle, FALSE),
+  PRF (F_le, "F_le", "_le_", "<=", TRUE, 2, NTCCTprf_rel_op_AxA, COle, FALSE, NULL, NULL,
+       NULL, NULL),
 
-  PRF_IF (F_lt, "F_lt", "_lt_", "<", TRUE, 2, NTCCTprf_rel_op_AxA, COlt, FALSE),
+  PRF (F_lt, "F_lt", "_lt_", "<", TRUE, 2, NTCCTprf_rel_op_AxA, COlt, FALSE, NULL, NULL,
+       NULL, NULL),
 
-  PRF_IF (F_ge, "F_ge", "_ge_", ">=", TRUE, 2, NTCCTprf_rel_op_AxA, COge, FALSE),
+  PRF (F_ge, "F_ge", "_ge_", ">=", TRUE, 2, NTCCTprf_rel_op_AxA, COge, FALSE, NULL, NULL,
+       NULL, NULL),
 
-  PRF_IF (F_gt, "F_gt", "_gt_", ">", TRUE, 2, NTCCTprf_rel_op_AxA, COgt, FALSE),
+  PRF (F_gt, "F_gt", "_gt_", ">", TRUE, 2, NTCCTprf_rel_op_AxA, COgt, FALSE, NULL, NULL,
+       NULL, NULL),
 
   /*******************************************************************************
    * Array operations
    */
 
-  PRF_IF (F_dim, "F_dim", "_dim_", "dim", FALSE, 1, NTCCTprf_dim, COdim, FALSE),
+  PRF (F_dim, "F_dim", "_dim_", "dim", FALSE, 1, NTCCTprf_dim, COdim, FALSE, NULL,
+       CFprf_dim, NULL, NULL),
 
-  PRF_IF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCCTprf_shape, COshape,
-          FALSE),
+  PRF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCCTprf_shape, COshape, FALSE,
+       NULL, CFprf_shape, NULL, NULL),
 
-  PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
-          COreshape, FALSE),
+  PRF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
+       COreshape, FALSE, NULL, CFprf_reshape, NULL, NULL),
 
-  PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE),
+  PRF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE, NULL, NULL,
+       NULL, NULL),
 
-  PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3,
-          NTCCTprf_modarrayA, COmodarray, FALSE),
+  PRF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3, NTCCTprf_modarrayA,
+       COmodarray, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCCTprf_cat_VxV, COcat,
-          FALSE),
+  PRF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCCTprf_cat_VxV, COcat,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCCTprf_take_SxV,
-          COtake, FALSE),
+  PRF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCCTprf_take_SxV,
+       COtake, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCCTprf_drop_SxV,
-          COdrop, FALSE),
+  PRF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCCTprf_drop_SxV,
+       COdrop, FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    *******************************************************************************
@@ -163,138 +245,161 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
    * Shape selection optimization (WLPG):
    */
 
-  PRF_IF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE,
-          2, NTCCTprf_idx_shape_sel, NULL, FALSE),
+  PRF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE, 2,
+       NTCCTprf_idx_shape_sel, NULL, FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Index vector elimination (IVE)
    */
 
-  PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCCTprf_idx_selS,
-          COidxSel, TRUE),
+  PRF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCCTprf_idx_selS,
+       COidxSel, TRUE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
-          NTCCTprf_dummy, NULL, TRUE),
+  PRF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
+       NTCCTprf_dummy, NULL, TRUE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_idxs2offset, "F_idxs2offset", "_idxs2offset_", "idxs2offset", FALSE, 0,
-          NTCCTprf_dummy, NULL, TRUE),
+  PRF (F_idxs2offset, "F_idxs2offset", "_idxs2offset_", "idxs2offset", FALSE, 0,
+       NTCCTprf_dummy, NULL, TRUE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_vect2offset, "F_vect2offset", "_vect2offset_", "vect2offset", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_vect2offset, "F_vect2offset", "_vect2offset_", "vect2offset", FALSE, 0,
+       NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Fold-WL explicit accumulation:
    */
 
-  PRF_IF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL,
+       NULL, NULL, NULL),
 
   /*******************************************************************************
    * Foldfix-WL explicit break:
    */
 
-  PRF_IF (F_wl_break, "F_wl_break", "_wl_break_", "wl_break", FALSE, 0, NTCCTprf_dummy,
-          NULL, FALSE),
+  PRF (F_wl_break, "F_wl_break", "_wl_break_", "wl_break", FALSE, 0, NTCCTprf_dummy, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Side effects in with-loops:
    */
 
-  PRF_IF (F_prop_obj_in, "F_prop_obj_in", "_prop_obj_in_", "prop_obj_in", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_prop_obj_in, "F_prop_obj_in", "_prop_obj_in_", "prop_obj_in", FALSE, 0,
+       NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_prop_obj_out, "F_prop_obj_out", "_prop_obj_out_", "prop_obj_out", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_prop_obj_out, "F_prop_obj_out", "_prop_obj_out_", "prop_obj_out", FALSE, 0,
+       NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Memory management:
    */
 
-  PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCCTprf_dummy,
-          NULL, FALSE),
+  PRF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCCTprf_dummy, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCCTprf_dummy, NULL, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_reuse, "F_reuse", "_reuse_", "reuse", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_reuse, "F_reuse", "_reuse_", "reuse", FALSE, 0, NTCCTprf_dummy, NULL, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse",
-          FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse", FALSE,
+       0, NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_alloc_or_reshape, "F_alloc_or_reshape", "_alloc_or_reshape_",
-          "alloc_or_reshape", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_alloc_or_reshape, "F_alloc_or_reshape", "_alloc_or_reshape_", "alloc_or_reshape",
+       FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_isreused, "F_isreused", "_isreused_", "isreused", FALSE, 0, NTCCTprf_dummy,
-          NULL, FALSE),
+  PRF (F_isreused, "F_isreused", "_isreused_", "isreused", FALSE, 0, NTCCTprf_dummy, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_wl_assign, "F_wl_assign", "_wl_assign_", "wl_assign", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_wl_assign, "F_wl_assign", "_wl_assign_", "wl_assign", FALSE, 0, NTCCTprf_dummy,
+       NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_suballoc, "F_suballoc", "_suballoc_", "suballoc", FALSE, 0, NTCCTprf_dummy,
-          NULL, FALSE),
+  PRF (F_suballoc, "F_suballoc", "_suballoc_", "suballoc", FALSE, 0, NTCCTprf_dummy, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_copy, "F_copy", "_copy_", "copy", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_copy, "F_copy", "_copy_", "copy", FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_noop, "F_noop", "_noop_", "noop", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_noop, "F_noop", "_noop_", "noop", FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL,
+       NULL, NULL, NULL),
 
-  PRF_IF (F_inc_rc, "F_inc_rc", "_inc_rc_", "inc_rc", FALSE, 0, NTCCTprf_dummy, NULL,
-          FALSE),
+  PRF (F_inc_rc, "F_inc_rc", "_inc_rc_", "inc_rc", FALSE, 0, NTCCTprf_dummy, NULL, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_dec_rc, "F_dec_rc", "_dec_rc_", "dec_rc", FALSE, 0, NTCCTprf_dummy, NULL,
-          FALSE),
+  PRF (F_dec_rc, "F_dec_rc", "_dec_rc_", "dec_rc", FALSE, 0, NTCCTprf_dummy, NULL, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_free, "F_free", "_free_", "free", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_free, "F_free", "_free_", "free", FALSE, 0, NTCCTprf_dummy, NULL, FALSE, NULL,
+       NULL, NULL, NULL),
 
   /*******************************************************************************
    * Uniqueness conversion operations
    */
 
-  PRF_IF (F_to_unq, "F_to_unq", "_to_unq_", "to_unq", FALSE, 1, NTCCTprf_id, NULL, FALSE),
+  PRF (F_to_unq, "F_to_unq", "_to_unq_", "to_unq", FALSE, 1, NTCCTprf_id, NULL, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_from_unq, "F_from_unq", "_from_unq_", "from_unq", FALSE, 1, NTCCTprf_id, NULL,
-          FALSE),
+  PRF (F_from_unq, "F_from_unq", "_from_unq_", "from_unq", FALSE, 1, NTCCTprf_id, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Symbolic array attribute operations (SAA)
    */
 
-  PRF_IF (F_saabind, "F_saabind", "_saabind_", "saabind", FALSE, 1, NTCCTprf_saabind,
-          NULL, FALSE),
+  PRF (F_saabind, "F_saabind", "_saabind_", "saabind", FALSE, 1, NTCCTprf_saabind, NULL,
+       FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Type conversion and assertion operations
    */
 
-  PRF_IF (F_type_conv, "F_type_conv", "_type_conv_", "type_conv", FALSE, 1,
-          NTCCTprf_type_conv, NULL, FALSE),
-  PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
-          NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_dispatch_error, "F_dispatch_error", "_dispatch_error_", "dispatch_error",
-          FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_type_conv, "F_type_conv", "_type_conv_", "type_conv", FALSE, 1,
+       NTCCTprf_type_conv, NULL, FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
+       NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_dispatch_error, "F_dispatch_error", "_dispatch_error_", "dispatch_error", FALSE,
+       1, NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * AL/DL representation of arithmetic expressions:
    */
 
-  PRF_IF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_ari_op_A,
-          COneg, FALSE),
+  PRF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_ari_op_A, COneg,
+       FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_esd_rec, "F_esd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_ari_op_A,
-          COrec, FALSE),
+  PRF (F_esd_rec, "F_esd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_ari_op_A, COrec,
+       FALSE, NULL, NULL, NULL, NULL),
 
   /*******************************************************************************
    * Multithreaded code generation:
    */
 
-  PRF_IF (F_run_mt_genarray, "F_run_mt_genarray", "_run_mt_genarray_", "run_mt_genarray",
-          FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_run_mt_genarray, "F_run_mt_genarray", "_run_mt_genarray_", "run_mt_genarray",
+       FALSE, 1, NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_run_mt_modarray, "F_run_mt_modarray", "_run_mt_modarray_", "run_mt_modarray",
-          FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
+  PRF (F_run_mt_modarray, "F_run_mt_modarray", "_run_mt_modarray_", "run_mt_modarray",
+       FALSE, 1, NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL),
 
-  PRF_IF (F_run_mt_fold, "F_run_mt_fold", "_run_mt_fold_", "run_mt_fold", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE)
+  PRF (F_run_mt_fold, "F_run_mt_fold", "_run_mt_fold_", "run_mt_fold", FALSE, 0,
+       NTCCTprf_dummy, NULL, FALSE, NULL, NULL, NULL, NULL)
 
-  /*******************************************************************************
-   * End of file
-   */
+/*******************************************************************************
+ * End of file
+ */
+
+#undef PRFnode_name
+#undef PRFmdb_prf
+#undef PRFprf_string
+#undef PRFprf_symbol
+#undef PRFprf_is_infix
+#undef PRFprf_arity
+#undef PRFntcprf_fun
+#undef PRFntcprf_cffun
+#undef PRFsimd_suitable
+#undef PRFcf_scs
+#undef PRFcf_sccs
+#undef PRFcf_saa
+#undef PRFcf
+#undef PRF
