@@ -602,7 +602,9 @@
           <node name="Ap" />
           <node name="With" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Fold" />
+          <node name="Propagate" />
         </travuser>
       </traversal>
       <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
@@ -617,7 +619,9 @@
           <node name="Ap" />
           <node name="With" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Fold" />
+          <node name="Propagate" />
           <node name="Let" />
         </travuser>
       </traversal>

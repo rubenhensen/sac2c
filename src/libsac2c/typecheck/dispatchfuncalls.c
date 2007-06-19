@@ -28,7 +28,7 @@
  */
 struct INFO {
     bool onefundef;
-    node *with;
+    node *cexprs;
     node *let;
     node *foldfuns;
 };
@@ -37,7 +37,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
-#define INFO_WITH(n) ((n)->with)
+#define INFO_CEXPRS(n) ((n)->cexprs)
 #define INFO_LASTLET(n) ((n)->let)
 #define INFO_FOLDFUNS(n) ((n)->foldfuns)
 
@@ -54,7 +54,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
-    INFO_WITH (result) = NULL;
+    INFO_CEXPRS (result) = NULL;
     INFO_LASTLET (result) = NULL;
     INFO_FOLDFUNS (result) = NULL;
 
@@ -299,17 +299,14 @@ DFCap (node *arg_node, info *arg_info)
 node *
 DFCwith (node *arg_node, info *arg_info)
 {
-    node *old_with;
     DBUG_ENTER ("DFCwith");
-
-    old_with = INFO_WITH (arg_info);
-    INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-    INFO_WITH (arg_info) = old_with;
+    INFO_CEXPRS (arg_info) = WITH_CEXPRS (arg_node);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    INFO_CEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -334,9 +331,57 @@ DFCgenarray (node *arg_node, info *arg_info)
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *DFCmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief Traverses the modarray withop, updates the cexprs in the info node
+ *        and continues with the next withop.
+ *
+ * @param arg_node N_modarray node
+ * @param arg_info info structure
+ *
+ * @return updated N_modarray node
+ ******************************************************************************/
+node *
+DFCmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DFCmodarray");
+
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DFCfold( node *arg_node, info *arg_info)
+ *
+ * @brief Dispatches the call to the fold-function to one of the newly split
+ *        wrappers.
+ *
+ * @param arg_node N_fold node
+ * @param arg_info info structure
+ *
+ * @return N_fold with corrected fundef pointer
+ ******************************************************************************/
 node *
 DFCfold (node *arg_node, info *arg_info)
 {
@@ -352,8 +397,8 @@ DFCfold (node *arg_node, info *arg_info)
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
     neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
-    body_type
-      = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_WITH (arg_info)))));
+    body_type = TYfixAndEliminateAlpha (
+      AVIS_TYPE (ID_AVIS (EXPRS_EXPR (INFO_CEXPRS (arg_info)))));
 
     arg_type = TYlubOfTypes (neutr_type, body_type);
     arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
@@ -366,6 +411,43 @@ DFCfold (node *arg_node, info *arg_info)
     arg_types = TYfreeType (arg_types);
     body_type = TYfreeType (body_type);
     neutr_type = TYfreeType (neutr_type);
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DFCpropagate( node *arg_node, info *arg_info)
+ *
+ * @brief Traverses the propagate withop, updates the cexprs in the info node
+ *        and continues with the next withop.
+ *
+ * @param arg_node N_propagate node
+ * @param arg_info info structure
+ *
+ * @return updated N_propagate node
+ ******************************************************************************/
+node *
+DFCpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DFCpropagate");
+
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

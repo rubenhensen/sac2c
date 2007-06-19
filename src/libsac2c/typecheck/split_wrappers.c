@@ -38,17 +38,17 @@
 struct INFO {
     int travno;
     lut_t *wrapperfuns;
-    node *with;
     namespace_t *ns;
+    node *cexprs;
 };
 
 /**
  * INFO macros
  */
-#define INFO_SWR_TRAVNO(n) ((n)->travno)
-#define INFO_SWR_WRAPPERFUNS(n) ((n)->wrapperfuns)
-#define INFO_SWR_WITH(n) ((n)->with)
-#define INFO_SWR_NAMESPACE(n) ((n)->ns)
+#define INFO_TRAVNO(n) ((n)->travno)
+#define INFO_WRAPPERFUNS(n) ((n)->wrapperfuns)
+#define INFO_NAMESPACE(n) ((n)->ns)
+#define INFO_CEXPRS(n) ((n)->cexprs)
 
 /**
  * INFO functions
@@ -62,10 +62,10 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_SWR_TRAVNO (result) = 0;
-    INFO_SWR_WRAPPERFUNS (result) = NULL;
-    INFO_SWR_WITH (result) = NULL;
-    INFO_SWR_NAMESPACE (result) = NULL;
+    INFO_TRAVNO (result) = 0;
+    INFO_WRAPPERFUNS (result) = NULL;
+    INFO_NAMESPACE (result) = NULL;
+    INFO_CEXPRS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -108,14 +108,14 @@ SWRmodule (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) != NULL),
                  "MODULE_WRAPPERFUNS not found!");
-    INFO_SWR_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
-    INFO_SWR_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
+    INFO_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
+    INFO_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
 
     /*
      * create separate wrapper function for all base type constellations
      * As all wrappers are in the FUNS, we have to traverse these only!
      */
-    INFO_SWR_TRAVNO (arg_info) = 1;
+    INFO_TRAVNO (arg_info) = 1;
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -125,7 +125,7 @@ SWRmodule (node *arg_node, info *arg_info)
      * adjust AP_FUNDEF pointers
      * As only FUNS may contain N_ap's we have to traverse these only!
      */
-    INFO_SWR_TRAVNO (arg_info) = 2;
+    INFO_TRAVNO (arg_info) = 2;
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
@@ -133,7 +133,7 @@ SWRmodule (node *arg_node, info *arg_info)
     /*
      * remove non-used and zombie funs!
      */
-    INFO_SWR_TRAVNO (arg_info) = 3;
+    INFO_TRAVNO (arg_info) = 3;
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
@@ -260,7 +260,7 @@ SplitWrapper (node *fundef, info *arg_info)
          * mark the wrapper as non-local if it is from
          * a different namespace than the current
          */
-        if (!NSequals (FUNDEF_NS (new_fundef), INFO_SWR_NAMESPACE (arg_info))) {
+        if (!NSequals (FUNDEF_NS (new_fundef), INFO_NAMESPACE (arg_info))) {
             FUNDEF_ISLOCAL (new_fundef) = FALSE;
         }
 
@@ -515,12 +515,12 @@ SWRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWRfundef");
 
-    if (INFO_SWR_TRAVNO (arg_info) == 1) {
+    if (INFO_TRAVNO (arg_info) == 1) {
         /*
          * first traversal -> build wrapper functions and their bodies
          */
         arg_node = FundefBuildWrappers (arg_node, arg_info);
-    } else if (INFO_SWR_TRAVNO (arg_info) == 2) {
+    } else if (INFO_TRAVNO (arg_info) == 2) {
         /*
          * second traversal -> adjust all AP_FUNDEF pointers
          *
@@ -529,7 +529,7 @@ SWRfundef (node *arg_node, info *arg_info)
          */
         arg_node = FundefAdjustPointers (arg_node, arg_info);
     } else {
-        DBUG_ASSERT ((INFO_SWR_TRAVNO (arg_info) == 3), "illegal INFO_SWR_TRAVNO found!");
+        DBUG_ASSERT ((INFO_TRAVNO (arg_info) == 3), "illegal INFO_TRAVNO found!");
         /*
          * third traversal -> move all wrappers to their final ns and mark them
          *                    as local if they contain specialisations
@@ -591,17 +591,14 @@ SWRap (node *arg_node, info *arg_info)
 node *
 SWRwith (node *arg_node, info *arg_info)
 {
-    node *old_with;
     DBUG_ENTER ("SWRwith");
-
-    old_with = INFO_SWR_WITH (arg_info);
-    INFO_SWR_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-    INFO_SWR_WITH (arg_info) = old_with;
+    INFO_CEXPRS (arg_info) = WITH_CEXPRS (arg_node);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    INFO_CEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -626,9 +623,57 @@ SWRgenarray (node *arg_node, info *arg_info)
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *SWRmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief Traverses the modarray withop, updates the cexprs in the info node
+ *        and continues with the next withop.
+ *
+ * @param arg_node N_modarray node
+ * @param arg_info info structure
+ *
+ * @return updated N_modarray node
+ ******************************************************************************/
+node *
+SWRmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWRmodarray");
+
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *SWRfold( node *arg_node, info *arg_info)
+ *
+ * @brief Dispatches the call to the fold-function to one of the newly split
+ *        wrappers.
+ *
+ * @param arg_node N_fold node
+ * @param arg_info info structure
+ *
+ * @return N_fold with corrected fundef pointer
+ ******************************************************************************/
 node *
 SWRfold (node *arg_node, info *arg_info)
 {
@@ -641,7 +686,7 @@ SWRfold (node *arg_node, info *arg_info)
 
     neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
     body_type = TYfixAndEliminateAlpha (
-      AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_SWR_WITH (arg_info)))));
+      AVIS_TYPE (ID_AVIS (EXPRS_EXPR (INFO_CEXPRS (arg_info)))));
 
     arg_type = TYlubOfTypes (neutr_type, body_type);
     arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
@@ -650,6 +695,43 @@ SWRfold (node *arg_node, info *arg_info)
     arg_types = TYfreeType (arg_types);
     body_type = TYfreeType (body_type);
     neutr_type = TYfreeType (neutr_type);
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *SWRpropagate( node *arg_node, info *arg_info)
+ *
+ * @brief Traverses the propagate withop, updates the cexprs in the info node
+ *        and continues with the next withop.
+ *
+ * @param arg_node N_propagate node
+ * @param arg_info info structure
+ *
+ * @return updated N_propagate node
+ ******************************************************************************/
+node *
+SWRpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWRpropagate");
+
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+                     "Fewer cexprs than withops!");
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -18,6 +18,8 @@ extern node *SWRfundef (node *arg_node, info *arg_info);
 extern node *SWRap (node *arg_node, info *arg_info);
 extern node *SWRwith (node *arg_node, info *arg_info);
 extern node *SWRgenarray (node *arg_node, info *arg_info);
+extern node *SWRmodarray (node *arg_node, info *arg_info);
 extern node *SWRfold (node *arg_node, info *arg_info);
+extern node *SWRpropagate (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SPLIT_WRAPPERS_H_ */
