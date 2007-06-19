@@ -51,6 +51,9 @@
  *              }: res break new_s;
  *        fold( op, n );
  *
+ * NB: All this needs to happen correctly even if the fold operator is
+ * "surrounded" by propagate operators! Therefore we have to be carefull
+ * when dealing with FOLD_LHS and FOLD_CEXPR! (cf.bug 376!)
  *
  */
 
@@ -80,19 +83,23 @@
 struct INFO {
     node *fundef;
     node *wl;
+    node *fold;
     node *fold_ids;
     node *accu;
     node *guard;
+    node *cexprs;
     node *expr;
     node *ids;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_WL(n) (n->wl)
+#define INFO_FOLD(n) (n->fold)
 #define INFO_FOLD_LHS(n) (n->fold_ids)
 #define INFO_FOLD_ACCU(n) (n->accu)
 #define INFO_FOLD_GUARD(n) (n->guard)
 #define INFO_FOLD_CEXPR(n) (n->expr)
+#define INFO_CEXPRS(n) (n->cexprs)
 #define INFO_LHS_IDS(n) (n->ids)
 
 /**
@@ -109,6 +116,7 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_WL (result) = NULL;
+    INFO_FOLD (result) = NULL;
     INFO_FOLD_LHS (result) = NULL;
     INFO_FOLD_ACCU (result) = NULL;
     INFO_FOLD_GUARD (result) = NULL;
@@ -209,8 +217,7 @@ MakeFoldFunAssign (info *arg_info)
     /* create <avis> = <fun>( <accu>, old_cexpr_id); */
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                      TCmakeAp2 (FOLD_FUNDEF (
-                                                   WITH_WITHOP (INFO_WL (arg_info))),
+                                      TCmakeAp2 (FOLD_FUNDEF (INFO_FOLD (arg_info)),
                                                  TBmakeId (INFO_FOLD_ACCU (arg_info)),
                                                  old_cexpr_id)),
                            NULL);
@@ -388,8 +395,10 @@ EAwith (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = INFO_FUNDEF (tmp);
     INFO_LHS_IDS (arg_info) = INFO_LHS_IDS (tmp);
     INFO_WL (arg_info) = arg_node;
+    INFO_CEXPRS (arg_info) = CODE_CEXPRS (WITH_CODE (arg_node));
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    INFO_CEXPRS (arg_info) = NULL;
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -400,6 +409,29 @@ EAwith (node *arg_node, info *arg_info)
     /* pop arg_info */
     arg_info = FreeInfo (arg_info);
     arg_info = tmp;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EApropagate(node *arg_node, info *arg_info)
+ *
+ *   @brief  modify code.
+ *
+ *   @param  node *arg_node:  N_propagate
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_propagate
+ ******************************************************************************/
+
+node *
+EApropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EApropagate");
+
+    INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    INFO_LHS_IDS (arg_info) = IDS_NEXT (INFO_LHS_IDS (arg_info));
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -422,7 +454,9 @@ EAfold (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
 
+    INFO_FOLD (arg_info) = arg_node;
     INFO_FOLD_LHS (arg_info) = INFO_LHS_IDS (arg_info);
+    INFO_FOLD_CEXPR (arg_info) = INFO_CEXPRS (arg_info);
 
     if (FOLD_GUARD (arg_node) != NULL) {
         node *avis;
@@ -477,7 +511,6 @@ EAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAcode");
 
-    INFO_FOLD_CEXPR (arg_info) = CODE_CEXPRS (arg_node);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_ASSERT (CODE_NEXT (arg_node) == NULL, "cannot handle multi generator WLs");

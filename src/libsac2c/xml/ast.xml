@@ -701,6 +701,7 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="With" />
+          <node name="Propagate" />
           <node name="Fold" />
           <node name="Code" />
         </travuser>

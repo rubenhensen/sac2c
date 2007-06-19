@@ -35,6 +35,7 @@ extern node *EAassign (node *arg_node, info *arg_info);
 extern node *EAlet (node *arg_node, info *arg_info);
 
 extern node *EAwith (node *arg_node, info *arg_info);
+extern node *EApropagate (node *arg_node, info *arg_info);
 extern node *EAfold (node *arg_node, info *arg_info);
 extern node *EAcode (node *arg_node, info *arg_info);
 
