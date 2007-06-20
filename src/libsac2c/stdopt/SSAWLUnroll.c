@@ -158,7 +158,7 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *cexpr, node *a
  ******************************************************************************/
 
 static node *
-ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
+ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *lhs)
 {
     node *tmp, *letn;
     bool F_accu_found = FALSE;
@@ -182,7 +182,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
         if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
             && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
             ASSIGN_RHS (tmp) = FREEdoFreeNode (ASSIGN_RHS (tmp));
-            ASSIGN_RHS (tmp) = DUPdupIdsId (acc);
+            ASSIGN_RHS (tmp) = DUPdupIdsId (lhs);
             F_accu_found = TRUE;
         }
 
@@ -190,7 +190,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
             DBUG_ASSERT ((F_accu_found), "No F_accu found!");
 
             /* Append new assign: lhs(wl) = cexpr; */
-            letn = TBmakeLet (DUPdoDupNode (acc), DUPdoDupNode (cexpr));
+            letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupNode (cexpr));
             ASSIGN_NEXT (tmp) = TBmakeAssign (letn, NULL);
             tmp = ASSIGN_NEXT (tmp);
         }
@@ -362,7 +362,6 @@ static node *
 ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info *arg_info)
 {
     node *withop;
-    node *acc;
     node *cexpr;
     node *lhs;
 
@@ -375,14 +374,36 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
+            DBUG_PRINT ("WLUR", ("withop: genarray"));
+            break;
+        case N_modarray:
+            DBUG_PRINT ("WLUR", ("withop: modarray"));
+            break;
+        case N_fold:
+            DBUG_PRINT ("WLUR", ("withop: fold"));
+            break;
+        case N_break:
+            DBUG_PRINT ("WLUR", ("withop: break"));
+            break;
+        case N_propagate:
+            DBUG_PRINT ("WLUR", ("withop: propagate"));
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled withop");
+        }
+
+        DBUG_PRINT ("WLUR", ("cexpr: %s", ID_NAME (EXPRS_EXPR (cexpr))));
+        DBUG_PRINT ("WLUR", ("lhs: %s\n", IDS_NAME (lhs)));
+
+        switch (NODE_TYPE (withop)) {
+        case N_genarray:
             bodycode = ApplyModGenarray (bodycode, index, partn, EXPRS_EXPR (cexpr), lhs);
             break;
         case N_modarray:
             bodycode = ApplyModGenarray (bodycode, index, partn, EXPRS_EXPR (cexpr), lhs);
             break;
         case N_fold:
-            acc = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
-            bodycode = ApplyFold (bodycode, index, partn, EXPRS_EXPR (cexpr), acc);
+            bodycode = ApplyFold (bodycode, index, partn, EXPRS_EXPR (cexpr), lhs);
             break;
         case N_break:
             /* no-op */
