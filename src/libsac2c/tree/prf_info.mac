@@ -5,7 +5,7 @@
 /*
  *      node_name        mdb_prf[]          prf_string[]        prf_symbol[]
  *      prf_is_infix[]   prf_arity          NTCPRF_funtab[]     NTCPRF_cffuntab[]
- *      SIMD_suitable[]  cf[]               cf_scs[]            cf_sccs[]
+ *      SIMD_suitable[]  cf[]               cf_scs[]            cf_sccf[]
  *      cf_saa[]
  *
  * Default (empty) table access macros follow
@@ -55,8 +55,8 @@
 #define PRFcf_scs(cf_scs)
 #endif
 
-#ifndef PRFcf_sccs
-#define PRFcf_sccs(cf_sccs)
+#ifndef PRFcf_sccf
+#define PRFcf_sccf(cf_sccf)
 #endif
 
 #ifndef PRFcf_saa
@@ -64,12 +64,12 @@
 #endif
 
 #define PRF(node_name, mdb_prf, prf_string, prf_symbol, prf_is_infix, prf_arity,         \
-            ntcprf_fun, ntcprf_cffun, simd_suitable, cf, cf_scs, cf_sccs, cf_saa)        \
+            ntcprf_fun, ntcprf_cffun, simd_suitable, cf, cf_scs, cf_sccf, cf_saa)        \
     PRFnode_name (node_name) PRFmdb_prf (mdb_prf) PRFprf_string (prf_string)             \
       PRFprf_symbol (prf_symbol) PRFprf_is_infix (prf_is_infix) PRFprf_arity (prf_arity) \
         PRFntcprf_fun (ntcprf_fun) PRFntcprf_cffun (ntcprf_cffun)                        \
           PRFsimd_suitable (simd_suitable) PRFcf (cf) PRFcf_scs (cf_scs)                 \
-            PRFcf_sccs (cf_sccs) PRFcf_saa (cf_saa)
+            PRFcf_sccf (cf_sccf) PRFcf_saa (cf_saa)
 
 /*******************************************************************************
  *
@@ -129,40 +129,40 @@ PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE
    */
 
   PRF (F_add_SxS, "F_add_SxS", "_add_SxS_", "+", TRUE, 2, NTCCTprf_ari_op_SxS, COadd,
-       TRUE, NULL, NULL, NULL, NULL),
+       TRUE, NULL, SCSprf_add_SxS, NULL, NULL),
   PRF (F_add_SxV, "F_add_SxV", "_add_SxV_", "+", TRUE, 2, NTCCTprf_ari_op_SxV, COadd,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_add_SxV, NULL, NULL),
   PRF (F_add_VxS, "F_add_VxS", "_add_VxS_", "+", TRUE, 2, NTCCTprf_ari_op_VxS, COadd,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_add_VxS, NULL, NULL),
   PRF (F_add_VxV, "F_add_VxV", "_add_VxV_", "+", TRUE, 2, NTCCTprf_ari_op_VxV, COadd,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_add_VxV, NULL, NULL),
 
   PRF (F_sub_SxS, "F_sub_SxS", "_sub_SxS_", "-", TRUE, 2, NTCCTprf_ari_op_SxS, COsub,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_sub_SxS, NULL, NULL),
   PRF (F_sub_SxV, "F_sub_SxV", "_sub_SxV_", "-", TRUE, 2, NTCCTprf_ari_op_SxV, COsub,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_sub_SxV, NULL, NULL),
   PRF (F_sub_VxS, "F_sub_VxS", "_sub_VxS_", "-", TRUE, 2, NTCCTprf_ari_op_VxS, COsub,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_sub_VxS, NULL, NULL),
   PRF (F_sub_VxV, "F_sub_VxV", "_sub_VxV_", "-", TRUE, 2, NTCCTprf_ari_op_VxV, COsub,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_sub_VxV, NULL, NULL),
 
   PRF (F_mul_SxS, "F_mul_SxS", "_mul_SxS_", "*", TRUE, 2, NTCCTprf_ari_op_SxS, COmul,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_SxS, NULL, NULL),
   PRF (F_mul_SxV, "F_mul_SxV", "_mul_SxV_", "*", TRUE, 2, NTCCTprf_ari_op_SxV, COmul,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_SxV, NULL, NULL),
   PRF (F_mul_VxS, "F_mul_VxS", "_mul_VxS_", "*", TRUE, 2, NTCCTprf_ari_op_VxS, COmul,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_VxS, NULL, NULL),
   PRF (F_mul_VxV, "F_mul_VxV", "_mul_VxV_", "*", TRUE, 2, NTCCTprf_ari_op_VxV, COmul,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_VxV, NULL, NULL),
 
   PRF (F_div_SxS, "F_div_SxS", "_div_SxS_", "/", TRUE, 2, NTCCTprf_ari_op_SxS, COdiv,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_SxS, NULL, NULL),
   PRF (F_div_SxV, "F_div_SxV", "_div_SxV_", "/", TRUE, 2, NTCCTprf_ari_op_SxV, COdiv,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_SxV, NULL, NULL),
   PRF (F_div_VxS, "F_div_VxS", "_div_VxS_", "/", TRUE, 2, NTCCTprf_ari_op_VxS, COdiv,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_VxS, NULL, NULL),
   PRF (F_div_VxV, "F_div_VxV", "_div_VxV_", "/", TRUE, 2, NTCCTprf_ari_op_VxV, COdiv,
-       FALSE, NULL, NULL, NULL, NULL),
+       FALSE, NULL, SCSprf_mul_VxV, NULL, NULL),
 
   PRF (F_mod, "F_mod", "_mod_", "%", TRUE, 2, NTCCTprf_int_op_SxS, COmod, FALSE, NULL,
        NULL, NULL, NULL),
@@ -210,19 +210,20 @@ PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE
    */
 
   PRF (F_dim_A, "F_dim_A", "_dim_", "dim", FALSE, 1, NTCCTprf_dim, COdim, FALSE, NULL,
-       CFprf_dim, NULL, NULL),
+       CFprf_dim, NULL, SAACFprf_dim),
 
   PRF (F_shape_A, "F_shape_A", "_shape_", "shape", FALSE, 1, NTCCTprf_shape, COshape,
-       FALSE, NULL, CFprf_shape, NULL, NULL),
+       FALSE, NULL, CFprf_shape, NULL, SAACFprf_shape),
 
   PRF (F_reshape_VxA, "F_reshape_VxA", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
-       COreshape, FALSE, NULL, CFprf_reshape, NULL, NULL),
+       COreshape, FALSE, NULL, CFprf_reshape, SCCFprf_reshape, SAACFprf_reshape),
 
   PRF (F_sel_VxA, "F_sel_VxA", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE,
-       NULL, NULL, NULL, NULL),
+       NULL, NULL, SCCFprf_sel, NULL),
 
   PRF (F_modarray_AxVxS, "F_modarray_AxVxS", "_modarray_", "modarray", FALSE, 3,
-       NTCCTprf_modarrayA, COmodarray, FALSE, NULL, NULL, NULL, NULL),
+       NTCCTprf_modarrayA, COmodarray, FALSE, NULL, NULL, SCCFprf_modarray,
+       SAACFprf_modarray),
 
   PRF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCCTprf_cat_VxV, COcat,
        FALSE, NULL, NULL, NULL, NULL),
@@ -246,7 +247,7 @@ PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE
    */
 
   PRF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE, 2,
-       NTCCTprf_idx_shape_sel, NULL, FALSE, NULL, NULL, NULL, NULL),
+       NTCCTprf_idx_shape_sel, NULL, FALSE, NULL, NULL, NULL, SAACFprf_idx_shape_sel),
 
   /*******************************************************************************
    * Index vector elimination (IVE)
@@ -399,7 +400,7 @@ PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE
 #undef PRFntcprf_cffun
 #undef PRFsimd_suitable
 #undef PRFcf_scs
-#undef PRFcf_sccs
+#undef PRFcf_sccf
 #undef PRFcf_saa
 #undef PRFcf
 #undef PRF

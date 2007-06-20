@@ -29,7 +29,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
-#include "SSAConstantFolding.h"
+#include "structural_constant_constant_folding.h"
 #include "WLPartitionGeneration.h"
 #include "wlanalysis.h"
 #include "ctinfo.h"
@@ -201,17 +201,17 @@ PropagateArrayConstants (node **expr)
             const_expr = COfreeConstant (const_expr);
 
         } else {
-            sco_expr = CFscoExpr2StructConstant ((*expr));
+            sco_expr = SCCFexpr2StructConstant ((*expr));
             if (sco_expr != NULL) {
                 gshape = GV_struct_constant;
                 /*
                  * as the sco_expr may share some subexpressions with (*expr),
                  * we have to duplicate these BEFORE deleting (*expr)!!!
                  */
-                tmp = CFscoDupStructConstant2Expr (sco_expr);
+                tmp = SCCFdupStructConstant2Expr (sco_expr);
                 (*expr) = FREEdoFreeTree (*expr);
                 (*expr) = tmp;
-                sco_expr = CFscoFreeStructConstant (sco_expr);
+                sco_expr = SCCFfreeStructConstant (sco_expr);
 
             } else {
                 if (TUshapeKnown (ID_NTYPE (*expr))) {

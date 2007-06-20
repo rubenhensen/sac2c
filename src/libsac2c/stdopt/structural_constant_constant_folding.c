@@ -526,7 +526,7 @@ StructOpSel (constant *idx, node *expr)
             tmp_idx = COdrop (take_vec, idx);
             take_vec = COfreeConstant (take_vec);
 
-            result = TCmakePrf2 (F_sel, COconstant2AST (tmp_idx),
+            result = TCmakePrf2 (F_sel_VxA, COconstant2AST (tmp_idx),
                                  SCCFdupStructConstant2Expr (struc_co));
             tmp_idx = COfreeConstant (tmp_idx);
         } else {
@@ -1147,7 +1147,7 @@ Sel (node *idx_expr, node *array_expr)
 
         switch (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))) {
 
-        case F_modarray:
+        case F_modarray_AxVxS:
             prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
 
             /* get parameter of modarray */
@@ -1201,12 +1201,12 @@ Sel (node *idx_expr, node *array_expr)
 
             break;
 
-        case F_sel:
+        case F_sel_VxA:
             prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
             concat = StructOpCat (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
 
             if (concat != NULL) {
-                result = TCmakePrf2 (F_sel, concat,
+                result = TCmakePrf2 (F_sel_VxA, concat,
                                      DUPdoDupTree (
                                        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
             }

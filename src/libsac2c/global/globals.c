@@ -39,14 +39,10 @@
 #include "memory.h"
 #include "check_mem.h"
 
-#ifdef CFFIX
 #include "constant_folding.h"
 #include "symbolic_constant_simplification.h"
 #include "structural_constant_constant_folding.h"
 #include "saa_constant_folding.h"
-#else
-#include "SSAConstantFolding.h"
-#endif
 
 #include <limits.h>
 
@@ -147,7 +143,6 @@ static const void *ntc_cffuntab_init[] = {
 #include "prf_info.mac"
 };
 
-#ifdef CFFIX
 static const travfun_p prf_cf_init[] = {
 #define PRFcf(cf) cf
 #include "prf_info.mac"
@@ -158,8 +153,8 @@ static const travfun_p prf_cfscs_init[] = {
 #include "prf_info.mac"
 };
 
-static const travfun_p prf_cfsccs_init[] = {
-#define PRFcf_sccs(cf_sccs) cf_sccs
+static const travfun_p prf_cfsccf_init[] = {
+#define PRFcf_sccf(cf_sccf) cf_sccf
 #include "prf_info.mac"
 };
 
@@ -167,7 +162,6 @@ static const travfun_p prf_cfsaa_init[] = {
 #define PRFcf_saa(cf_saa) cf_saa
 #include "prf_info.mac"
 };
-#endif
 
 static const zipcvfunptr zipcv_plus_init[] = {
 #define TYP_IFzipcv(fun) fun##Plus
