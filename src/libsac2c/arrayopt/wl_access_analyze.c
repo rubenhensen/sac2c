@@ -1048,8 +1048,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 /* we need not to do anything here ;)      */
                 break;
 
-            case F_add_SxA:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_SxA"));
+            case F_add_SxV:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_SxV"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
@@ -1094,8 +1094,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 }
                 break;
 
-            case F_add_AxS:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_AxS"));
+            case F_add_VxS:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_VxS"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
@@ -1140,8 +1140,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 }
                 break;
 
-            case F_add_AxA:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_AxA"));
+            case F_add_VxV:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_VxV"));
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
@@ -1251,8 +1251,8 @@ WLAAprf (node *arg_node, info *arg_info)
 
                 break;
 
-            case F_sub_AxS:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxS"));
+            case F_sub_VxS:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_VxS"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 /* not used yet:
                 if (access == NULL) {
@@ -1295,8 +1295,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 }
                 break;
 
-            case F_sub_AxA:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxA"));
+            case F_sub_VxV:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_VxV"));
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
@@ -1397,13 +1397,13 @@ WLAAprf (node *arg_node, info *arg_info)
                 }
                 break;
 
-            case F_sub_SxA:
-            case F_mul_SxA:
-            case F_mul_AxS:
-            case F_mul_AxA:
-            case F_div_SxA:
-            case F_div_AxS:
-            case F_div_AxA:
+            case F_sub_SxV:
+            case F_mul_SxV:
+            case F_mul_VxS:
+            case F_mul_VxV:
+            case F_div_SxV:
+            case F_div_VxS:
+            case F_div_VxV:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function not inferable or unknown"));
                 if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
                     INFO_WLAA_FEATURE (arg_info)

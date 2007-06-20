@@ -130,7 +130,7 @@ FreeInfo (info *info)
  *   prf SimplifyFun( prf prf)
  *
  * description:
- *   Transforms special prf names (e.g. F_add_SxA) to the base name (F_add_SxS).
+ *   Transforms special prf names (e.g. F_add_SxV) to the base name (F_add_SxS).
  *   Does this for add, sub, mul, div.
  *
  ******************************************************************************/
@@ -141,30 +141,30 @@ SimplifyFun (prf prf)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
         prf = F_add_SxS;
         break;
 
     case F_sub_SxS:
-    case F_sub_SxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
+    case F_sub_SxV:
+    case F_sub_VxS:
+    case F_sub_VxV:
         prf = F_sub_SxS;
         break;
 
     case F_mul_SxS:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
         prf = F_mul_SxS;
         break;
 
     case F_div_SxS:
-    case F_div_SxA:
-    case F_div_AxS:
-    case F_div_AxA:
+    case F_div_SxV:
+    case F_div_VxS:
+    case F_div_VxV:
         prf = F_div_SxS;
         break;
 
@@ -456,9 +456,9 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
  *   We have to detect the following cases:
  *   (iv: id of an index vector, i : index scalar, c : constant.)
  *
- *   AxS (SxA): iv prfop c
+ *   VxS (SxV): iv prfop c
  *              [i,i,c] prfop c
- *   AxA      : iv prfop [c,c,c]
+ *   VxV      : iv prfop [c,c,c]
  *              [i,i,c] prfop [c,c,c]
  *
  *   not valid: i prfop [c,c,c]
@@ -760,20 +760,20 @@ WLIlet (node *arg_node, info *arg_info)
                 CreateIndexInfoSxS (exprn, arg_info);
                 break;
 
-            case F_add_SxA:
-            case F_sub_SxA:
-            case F_mul_SxA:
-            case F_div_SxA:
+            case F_add_SxV:
+            case F_sub_SxV:
+            case F_mul_SxV:
+            case F_div_SxV:
 
-            case F_add_AxS:
-            case F_sub_AxS:
-            case F_mul_AxS:
-            case F_div_AxS:
+            case F_add_VxS:
+            case F_sub_VxS:
+            case F_mul_VxS:
+            case F_div_VxS:
 
-            case F_add_AxA:
-            case F_sub_AxA:
-            case F_mul_AxA:
-            case F_div_AxA:
+            case F_add_VxV:
+            case F_sub_VxV:
+            case F_mul_VxV:
+            case F_div_VxV:
                 CreateIndexInfoA (exprn, arg_info);
                 break;
 

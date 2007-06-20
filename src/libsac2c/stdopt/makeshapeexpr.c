@@ -390,14 +390,14 @@ MSEprf (node *arg_node, info *arg_info)
     case F_neg:
     case F_not_V:
     case F_abs:
-    case F_add_AxS:
-    case F_add_AxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
-    case F_div_AxS:
-    case F_div_AxA:
+    case F_add_VxS:
+    case F_add_VxV:
+    case F_sub_VxS:
+    case F_sub_VxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+    case F_div_VxS:
+    case F_div_VxV:
     case F_and_VxS:
     case F_and_VxV:
     case F_or_VxS:
@@ -411,10 +411,10 @@ MSEprf (node *arg_node, info *arg_info)
         rhsnode = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))));
         break;
 
-    case F_add_SxA:
-    case F_sub_SxA:
-    case F_mul_SxA:
-    case F_div_SxA:
+    case F_add_SxV:
+    case F_sub_SxV:
+    case F_mul_SxV:
+    case F_div_SxV:
     case F_and_SxV:
     case F_or_SxV:
         rhsnode = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
@@ -495,7 +495,7 @@ MSEprf (node *arg_node, info *arg_info)
 
             scalar = TBmakeId (absavis);
         }
-        rhsnode = TCmakePrf2 (F_sub_AxS, TBmakeId (vsavis), scalar);
+        rhsnode = TCmakePrf2 (F_sub_VxS, TBmakeId (vsavis), scalar);
     } break;
 
     case F_cat_VxV: {
@@ -507,7 +507,7 @@ MSEprf (node *arg_node, info *arg_info)
         v2savis
           = MakeAssignForIdShape (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
-        rhsnode = TCmakePrf2 (F_add_AxA, TBmakeId (v1savis), TBmakeId (v2savis));
+        rhsnode = TCmakePrf2 (F_add_VxV, TBmakeId (v1savis), TBmakeId (v2savis));
     } break;
 
     case F_saabind:

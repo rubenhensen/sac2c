@@ -88,32 +88,32 @@ TogglePrf (prf op)
         result = F_add_SxS;
         break;
 
-    case F_sub_SxA:
-        result = F_add_SxA;
+    case F_sub_SxV:
+        result = F_add_SxV;
         break;
 
-    case F_sub_AxS:
-        result = F_add_AxS;
+    case F_sub_VxS:
+        result = F_add_VxS;
         break;
 
-    case F_sub_AxA:
-        result = F_add_AxA;
+    case F_sub_VxV:
+        result = F_add_VxV;
         break;
 
     case F_div_SxS:
         result = F_mul_SxS;
         break;
 
-    case F_div_SxA:
-        result = F_mul_SxA;
+    case F_div_SxV:
+        result = F_mul_SxV;
         break;
 
-    case F_div_AxS:
-        result = F_mul_AxS;
+    case F_div_VxS:
+        result = F_mul_VxS;
         break;
 
-    case F_div_AxA:
-        result = F_mul_AxA;
+    case F_div_VxV:
+        result = F_mul_VxV;
         break;
 
     default:
@@ -280,9 +280,9 @@ ESDprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_sub_SxS:
-    case F_sub_AxS:
-    case F_sub_SxA:
-    case F_sub_AxA:
+    case F_sub_VxS:
+    case F_sub_SxV:
+    case F_sub_VxV:
         if ((st == T_int) || (st == T_float) || (st == T_double)) {
             op = F_esd_neg;
         }
@@ -294,9 +294,9 @@ ESDprf (node *arg_node, info *arg_info)
      * errornous results especially when evaluated by the TC
      */
   case F_div_SxS:
-  case F_div_AxS:
-  case F_div_SxA:
-  case F_div_AxA:
+  case F_div_VxS:
+  case F_div_SxV:
+  case F_div_VxV:
     op = F_esd_rec;
     break;
 #endif

@@ -289,7 +289,7 @@ CreateWithLoop (node *ap, info *arg_info)
     idx_avis = CreateTmpVar ("idx", arg_info);
 
     shape_expr = TCmakePrf1 (F_shape, TBmakeId (pred_avis));
-    idx_expr = TCmakePrf2 (F_mul_SxA, TBmakeNum (0), TBmakeId (shape_avis));
+    idx_expr = TCmakePrf2 (F_mul_SxV, TBmakeNum (0), TBmakeId (shape_avis));
 
     INFO_ASSIGNS (arg_info)
       = CreateLetAssign (idx_avis, idx_expr, INFO_ASSIGNS (arg_info));

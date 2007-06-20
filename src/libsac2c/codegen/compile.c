@@ -4328,12 +4328,12 @@ COMPprfBin (char *icm_name, node *arg_node, info *arg_info)
         /* arrays are involved */
 
         if ((!arg1_is_scalar) && arg2_is_scalar) {
-            icm_name2 = "ND_PRF_AxS__DATA";
+            icm_name2 = "ND_PRF_VxS__DATA";
         } else if (arg1_is_scalar && (!arg2_is_scalar)) {
-            icm_name2 = "ND_PRF_SxA__DATA";
+            icm_name2 = "ND_PRF_SxV__DATA";
         } else {
             /* both arguments are arrays! */
-            icm_name2 = "ND_PRF_AxA__DATA";
+            icm_name2 = "ND_PRF_VxV__DATA";
         }
     }
 
@@ -4920,21 +4920,21 @@ COMPprf (node *arg_node, info *arg_info)
         break;
 
     case F_add_SxS:
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
     case F_sub_SxS:
-    case F_sub_SxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
+    case F_sub_SxV:
+    case F_sub_VxS:
+    case F_sub_VxV:
     case F_mul_SxS:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
     case F_div_SxS:
-    case F_div_SxA:
-    case F_div_AxS:
-    case F_div_AxA:
+    case F_div_SxV:
+    case F_div_VxS:
+    case F_div_VxV:
     case F_mod:
     case F_le:
     case F_lt:

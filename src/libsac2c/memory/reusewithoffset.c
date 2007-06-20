@@ -315,7 +315,7 @@ RWOprf (node *arg_node, info *arg_info)
         if (ass != NULL) {
             node *rhs = ASSIGN_RHS (ass);
             if ((NODE_TYPE (rhs) == N_prf)
-                && ((PRF_PRF (rhs) == F_add_AxA) || (PRF_PRF (rhs) == F_sub_AxA))) {
+                && ((PRF_PRF (rhs) == F_add_VxV) || (PRF_PRF (rhs) == F_sub_VxV))) {
                 node *other = NULL;
 
                 if ((NODE_TYPE (PRF_ARG1 (rhs)) == N_id)

@@ -91,9 +91,9 @@ IsSuitableForPropagation (node *expression)
          */
         result = ((NODE_TYPE (expression) == N_prf)
                   && ((PRF_PRF (expression) == F_add_SxS)
-                      || (PRF_PRF (expression) == F_add_SxA)
-                      || (PRF_PRF (expression) == F_add_AxS)
-                      || (PRF_PRF (expression) == F_add_AxA))
+                      || (PRF_PRF (expression) == F_add_SxV)
+                      || (PRF_PRF (expression) == F_add_VxS)
+                      || (PRF_PRF (expression) == F_add_VxV))
                   && (COisConstant (PRF_ARG1 (expression))
                       || COisConstant (PRF_ARG2 (expression))));
     } else {

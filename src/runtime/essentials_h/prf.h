@@ -103,9 +103,9 @@
  * ND_PRF_A__DATA( to_NT, op, scl)
  *
  * ND_PRF_SxS__DATA( to_NT, op, scl1,     scl2)
- * ND_PRF_SxA__DATA( to_NT, op, scl,      from_NT)
- * ND_PRF_AxS__DATA( to_NT, op, from_NT,  scl)
- * ND_PRF_AxA__DATA( to_NT, op, from1_NT, from2_NT)
+ * ND_PRF_SxV__DATA( to_NT, op, scl,      from_NT)
+ * ND_PRF_VxS__DATA( to_NT, op, from_NT,  scl)
+ * ND_PRF_VxV__DATA( to_NT, op, from1_NT, from2_NT)
  *
  * ND_PRF_SHAPE_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, scl)
  * ND_PRF_SHAPE_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, from2_NT)
@@ -201,8 +201,8 @@
         }                                                                                \
     }
 
-#define SAC_ND_PRF_SxA__DATA(to_NT, op_macro, op, scl, from_NT)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+#define SAC_ND_PRF_SxV__DATA(to_NT, op_macro, op, scl, from_NT)                          \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxV__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
                        #op_macro, #op, #scl, NT_STR (from_NT)));                         \
     {                                                                                    \
         int SAC_i;                                                                       \
@@ -223,8 +223,8 @@
         }                                                                                \
     }
 
-#define SAC_ND_PRF_AxS__DATA(to_NT, op_macro, op, from_NT, scl)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxS__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+#define SAC_ND_PRF_VxS__DATA(to_NT, op_macro, op, from_NT, scl)                          \
+    SAC_TR_PRF_PRINT (("ND_PRF_VxS__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
                        #op_macro, #op, NT_STR (from_NT), #scl));                         \
     {                                                                                    \
         int SAC_i;                                                                       \
@@ -246,8 +246,8 @@
         }                                                                                \
     }
 
-#define SAC_ND_PRF_AxA__DATA(to_NT, op_macro, op, from1_NT, from2_NT)                    \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxA__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+#define SAC_ND_PRF_VxV__DATA(to_NT, op_macro, op, from1_NT, from2_NT)                    \
+    SAC_TR_PRF_PRINT (("ND_PRF_VxV__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
                        #op_macro, #op, NT_STR (from1_NT), NT_STR (from2_NT)));           \
     {                                                                                    \
         int SAC_i;                                                                       \

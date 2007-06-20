@@ -1741,7 +1741,7 @@ HDgenerator (node *arg_node, info *arg_info)
             /* replace "." by "0 * shp" */
             GENERATOR_BOUND1 (arg_node) = FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
             GENERATOR_BOUND1 (arg_node)
-              = TCmakePrf2 (F_mul_SxA, TBmakeNum (0),
+              = TCmakePrf2 (F_mul_SxV, TBmakeNum (0),
                             DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)));
         }
 
@@ -1749,7 +1749,7 @@ HDgenerator (node *arg_node, info *arg_info)
             /* make <= from < and add 1 to bound */
             GENERATOR_OP1 (arg_node) = F_le;
             GENERATOR_BOUND1 (arg_node)
-              = TCmakePrf2 (F_add_AxS, GENERATOR_BOUND1 (arg_node), TBmakeNum (1));
+              = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND1 (arg_node), TBmakeNum (1));
         }
 
         if (DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node))) {
@@ -1764,7 +1764,7 @@ HDgenerator (node *arg_node, info *arg_info)
                 GENERATOR_BOUND2 (arg_node)
                   = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
                 GENERATOR_BOUND2 (arg_node)
-                  = TCmakePrf2 (F_sub_AxS, DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)),
+                  = TCmakePrf2 (F_sub_VxS, DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)),
                                 TBmakeNum (1));
             }
         } else {
@@ -1772,7 +1772,7 @@ HDgenerator (node *arg_node, info *arg_info)
                 /* make < from <= and add 1 to bound */
                 GENERATOR_OP2 (arg_node) = F_lt;
                 GENERATOR_BOUND2 (arg_node)
-                  = TCmakePrf2 (F_add_AxS, GENERATOR_BOUND2 (arg_node), TBmakeNum (1));
+                  = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND2 (arg_node), TBmakeNum (1));
             }
         }
     }
@@ -2256,7 +2256,7 @@ HDspid (node *arg_node, info *arg_info)
             /*
              * build 0 * wlshape instead of vector
              */
-            arg_node = TBmakePrf (F_mul_SxA,
+            arg_node = TBmakePrf (F_mul_SxV,
                                   TBmakeExprs (TBmakeNum (0),
                                                TBmakeExprs (DUPdoDupTree (
                                                               INFO_HD_WLSHAPE (arg_info)),

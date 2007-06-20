@@ -130,14 +130,14 @@
  * position LS is NOT applied!
  * One may wonder, whether this transformation could be extended
  * for slightly more general situations. For example, we may consider
- * a situation where x occurs as an argument of F_add_SxA_, such as:
+ * a situation where x occurs as an argument of F_add_SxV_, such as:
  *
  * <pre>
  *   ...
  *   x = [2,3];
  *   ...
  *   do {
- *         x = _add_SxA_( 1, x);
+ *         x = _add_SxV_( 1, x);
  *      }
  *
  *   ... x ...
@@ -145,7 +145,7 @@
  * </pre>
  *
  * In order to avoid the intermediate vectors x, we would need
- * to scalarize F_add_SxA_. Although this could be done, it seems
+ * to scalarize F_add_SxV_. Although this could be done, it seems
  * to us that
  * (a) this is a rare case
  * (b) this prf scalarization could be handled in a more general setting
@@ -162,7 +162,7 @@
  *   i = [2,3];
  *   ...
  *   do {
- *         i = _add_SxA_( 1, i);
+ *         i = _add_SxV_( 1, i);
  *         a[7,3] = a[i];
  *      }
  *

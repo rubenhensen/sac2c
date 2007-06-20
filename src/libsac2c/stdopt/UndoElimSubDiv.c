@@ -104,15 +104,15 @@ CheckExpr (node *expr, prf op)
 
         switch (op) {
         case F_add_SxS:
-        case F_add_AxS:
-        case F_add_SxA:
-        case F_add_AxA:
+        case F_add_VxS:
+        case F_add_SxV:
+        case F_add_VxV:
             prfop = F_esd_neg;
             break;
         case F_mul_SxS:
-        case F_mul_AxS:
-        case F_mul_SxA:
-        case F_mul_AxA:
+        case F_mul_VxS:
+        case F_mul_SxV:
+        case F_mul_VxV:
             prfop = F_esd_rec;
             break;
         default:
@@ -153,32 +153,32 @@ TogglePrf (prf op)
         result = F_sub_SxS;
         break;
 
-    case F_add_SxA:
-        result = F_sub_SxA;
+    case F_add_SxV:
+        result = F_sub_SxV;
         break;
 
-    case F_add_AxS:
-        result = F_sub_AxS;
+    case F_add_VxS:
+        result = F_sub_VxS;
         break;
 
-    case F_add_AxA:
-        result = F_sub_AxA;
+    case F_add_VxV:
+        result = F_sub_VxV;
         break;
 
     case F_mul_SxS:
         result = F_div_SxS;
         break;
 
-    case F_mul_SxA:
-        result = F_div_SxA;
+    case F_mul_SxV:
+        result = F_div_SxV;
         break;
 
-    case F_mul_AxS:
-        result = F_div_AxS;
+    case F_mul_VxS:
+        result = F_div_VxS;
         break;
 
-    case F_mul_AxA:
-        result = F_div_AxA;
+    case F_mul_VxV:
+        result = F_div_VxV;
         break;
 
     default:
@@ -363,15 +363,15 @@ UESDprf (node *arg_node, info *arg_info)
         switch (op) {
 
         case F_add_SxS:
-        case F_add_AxS:
-        case F_add_SxA:
-        case F_add_AxA:
+        case F_add_VxS:
+        case F_add_SxV:
+        case F_add_VxV:
             add = TRUE;
 
         case F_mul_SxS:
-        case F_mul_AxS:
-        case F_mul_SxA:
-        case F_mul_AxA:
+        case F_mul_VxS:
+        case F_mul_SxV:
+        case F_mul_VxV:
             /*
              * handel add and div seperatly
              */
@@ -443,9 +443,9 @@ UESDprf (node *arg_node, info *arg_info)
         if (PRF_PRF (arg_node) == F_esd_neg) {
 
             if (TYisAUD (type)) {
-                newop = F_sub_SxA;
+                newop = F_sub_SxV;
             } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
-                newop = F_sub_SxA;
+                newop = F_sub_SxV;
             } else {
                 newop = F_sub_SxS;
             }
@@ -473,9 +473,9 @@ UESDprf (node *arg_node, info *arg_info)
         } else if (PRF_PRF (arg_node) == F_esd_rec) {
 
             if (TYisAUD (type)) {
-                newop = F_div_SxA;
+                newop = F_div_SxV;
             } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
-                newop = F_div_SxA;
+                newop = F_div_SxV;
             } else {
                 newop = F_div_SxS;
             }

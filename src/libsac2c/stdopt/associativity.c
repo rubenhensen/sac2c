@@ -150,14 +150,14 @@ isAssociativeAndCommutativePrf (prf prf)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
 
     case F_mul_SxS:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
 
     case F_min:
     case F_max:
@@ -274,16 +274,16 @@ normalizePrf (prf prf)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
         prf = F_add_SxS;
         break;
 
     case F_mul_SxS:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
         prf = F_mul_SxS;
         break;
 
@@ -318,36 +318,36 @@ getPrf (prf prf, node *e1, node *e2)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
         if (s1) {
             if (s2)
                 prf = F_add_SxS;
             else
-                prf = F_add_SxA;
+                prf = F_add_SxV;
         } else {
             if (s2)
-                prf = F_add_AxS;
+                prf = F_add_VxS;
             else
-                prf = F_add_AxA;
+                prf = F_add_VxV;
         }
         break;
 
     case F_mul_SxS:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
         if (s1) {
             if (s2)
                 prf = F_mul_SxS;
             else
-                prf = F_mul_SxA;
+                prf = F_mul_SxV;
         } else {
             if (s2)
-                prf = F_mul_AxS;
+                prf = F_mul_VxS;
             else
-                prf = F_mul_AxA;
+                prf = F_mul_VxV;
         }
         break;
 
@@ -380,9 +380,9 @@ isArg1Scl (prf prf)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_SxA:
+    case F_add_SxV:
     case F_mul_SxS:
-    case F_mul_SxA:
+    case F_mul_SxV:
         res = TRUE;
         break;
     default:
@@ -400,9 +400,9 @@ isArg2Scl (prf prf)
 
     switch (prf) {
     case F_add_SxS:
-    case F_add_AxS:
+    case F_add_VxS:
     case F_mul_SxS:
-    case F_mul_AxS:
+    case F_mul_VxS:
         res = TRUE;
         break;
     default:

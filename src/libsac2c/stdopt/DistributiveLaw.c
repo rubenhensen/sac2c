@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
@@ -391,9 +391,9 @@ GetNeutralElement (node *op, info *arg_info)
 
     switch (PRF_PRF (op)) {
     case F_add_SxS:
-    case F_add_AxS:
-    case F_add_SxA:
-    case F_add_AxA:
+    case F_add_VxS:
+    case F_add_SxV:
+    case F_add_VxV:
         switch (basetype) {
         case T_int:
             neutral_elem = TBmakeNum (0);
@@ -410,9 +410,9 @@ GetNeutralElement (node *op, info *arg_info)
         break;
 
     case F_mul_SxS:
-    case F_mul_AxS:
-    case F_mul_SxA:
-    case F_mul_AxA:
+    case F_mul_VxS:
+    case F_mul_SxV:
+    case F_mul_VxV:
         switch (basetype) {
         case T_int:
             neutral_elem = TBmakeNum (1);
@@ -472,13 +472,13 @@ ExistKnownNeutralElement (node *op)
     case N_prf:
         switch (PRF_PRF (op)) {
         case F_add_SxS:
-        case F_add_SxA:
-        case F_add_AxS:
-        case F_add_AxA:
+        case F_add_SxV:
+        case F_add_VxS:
+        case F_add_VxV:
         case F_mul_SxS:
-        case F_mul_SxA:
-        case F_mul_AxS:
-        case F_mul_AxA:
+        case F_mul_SxV:
+        case F_mul_VxS:
+        case F_mul_VxV:
         case F_and_SxS:
         case F_and_SxV:
         case F_and_VxS:
@@ -571,13 +571,13 @@ CheckOperator (node *operator, info *arg_info )
 
         switch (PRF_PRF (operator)) {
         case F_add_SxS:
-        case F_add_AxS:
-        case F_add_SxA:
-        case F_add_AxA:
+        case F_add_VxS:
+        case F_add_SxV:
+        case F_add_VxV:
         case F_mul_SxS:
-        case F_mul_AxS:
-        case F_mul_SxA:
-        case F_mul_AxA:
+        case F_mul_VxS:
+        case F_mul_SxV:
+        case F_mul_VxV:
         case F_and_SxS:
         case F_and_SxV:
         case F_and_VxS:
@@ -671,15 +671,15 @@ GetPriority (node *operator)
 
         switch (PRF_PRF (operator)) {
         case F_add_SxS:
-        case F_add_AxS:
-        case F_add_AxA:
-        case F_add_SxA:
+        case F_add_VxS:
+        case F_add_VxV:
+        case F_add_SxV:
             priority = 6;
             break;
         case F_mul_SxS:
-        case F_mul_AxS:
-        case F_mul_AxA:
-        case F_mul_SxA:
+        case F_mul_VxS:
+        case F_mul_VxV:
+        case F_mul_SxV:
             priority = 7;
             break;
         case F_min:
@@ -829,14 +829,14 @@ IsSameOperator (node *firstop, node *secondop)
 
             switch (PRF_PRF (firstop)) {
             case F_add_SxS:
-            case F_add_AxS:
-            case F_add_SxA:
-            case F_add_AxA: {
+            case F_add_VxS:
+            case F_add_SxV:
+            case F_add_VxV: {
                 switch (PRF_PRF (secondop)) {
                 case F_add_SxS:
-                case F_add_AxS:
-                case F_add_SxA:
-                case F_add_AxA: {
+                case F_add_VxS:
+                case F_add_SxV:
+                case F_add_VxV: {
                     is_same = TRUE;
                 } break;
                 default:
@@ -844,14 +844,14 @@ IsSameOperator (node *firstop, node *secondop)
                 }
             } break;
             case F_mul_SxS:
-            case F_mul_AxS:
-            case F_mul_SxA:
-            case F_mul_AxA: {
+            case F_mul_VxS:
+            case F_mul_SxV:
+            case F_mul_VxV: {
                 switch (PRF_PRF (secondop)) {
                 case F_mul_SxS:
-                case F_mul_AxS:
-                case F_mul_SxA:
-                case F_mul_AxA: {
+                case F_mul_VxS:
+                case F_mul_SxV:
+                case F_mul_VxV: {
                     is_same = TRUE;
                 } break;
                 default:
@@ -1154,9 +1154,9 @@ IsAnArray (node *expr, info *arg_info)
  *   This function creates and returns a new prf or ap node with the operator
  *   'op' and with exprs as the arguments.
  *   'optype' shows which operands are scalar or arrays!
- *   If 'optype' is 3: AxA
- *   If 'optype' is 2: AxS
- *   If 'optype' is 1: SxA
+ *   If 'optype' is 3: VxV
+ *   If 'optype' is 2: VxS
+ *   If 'optype' is 1: SxV
  *   If 'optype' is 0: SxS
  *
  ****************************************************************************/
@@ -1173,35 +1173,35 @@ MakeOperatorNode (node *exprs, node *op, int optype)
 
     if (NODE_TYPE (op) == N_prf) {
 
-        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_SxA)
-            || (PRF_PRF (op) == F_add_AxS) || (PRF_PRF (op) == F_add_AxA)) {
+        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_SxV)
+            || (PRF_PRF (op) == F_add_VxS) || (PRF_PRF (op) == F_add_VxV)) {
 
             if (optype == 0) {
                 new_op_node = TBmakePrf (F_add_SxS, exprs);
             }
             if (optype == 1) {
-                new_op_node = TBmakePrf (F_add_SxA, exprs);
+                new_op_node = TBmakePrf (F_add_SxV, exprs);
             }
             if (optype == 2) {
-                new_op_node = TBmakePrf (F_add_AxS, exprs);
+                new_op_node = TBmakePrf (F_add_VxS, exprs);
             }
             if (optype == 3) {
-                new_op_node = TBmakePrf (F_add_AxA, exprs);
+                new_op_node = TBmakePrf (F_add_VxV, exprs);
             }
-        } else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_SxA)
-                   || (PRF_PRF (op) == F_mul_AxS) || (PRF_PRF (op) == F_mul_AxA)) {
+        } else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_SxV)
+                   || (PRF_PRF (op) == F_mul_VxS) || (PRF_PRF (op) == F_mul_VxV)) {
 
             if (optype == 0) {
                 new_op_node = TBmakePrf (F_mul_SxS, exprs);
             }
             if (optype == 1) {
-                new_op_node = TBmakePrf (F_mul_SxA, exprs);
+                new_op_node = TBmakePrf (F_mul_SxV, exprs);
             }
             if (optype == 2) {
-                new_op_node = TBmakePrf (F_mul_AxS, exprs);
+                new_op_node = TBmakePrf (F_mul_VxS, exprs);
             }
             if (optype == 3) {
-                new_op_node = TBmakePrf (F_mul_AxA, exprs);
+                new_op_node = TBmakePrf (F_mul_VxV, exprs);
             }
         } else {
             new_op_node = TBmakePrf (PRF_PRF (op), exprs);
@@ -1641,48 +1641,48 @@ IntegrateResults (info *arg_info)
             if (IsAnArray (EXPRS_EXPR (new_optnode), arg_info)) {
                 if (IsAnArray (EXPRS_EXPR (new_nonoptnode), arg_info)) {
                     if ((PRF_PRF (original) == F_add_SxS)
-                        || (PRF_PRF (original) == F_add_AxS)
-                        || (PRF_PRF (original) == F_add_SxA)) {
-                        PRF_PRF (original) = F_add_AxA;
+                        || (PRF_PRF (original) == F_add_VxS)
+                        || (PRF_PRF (original) == F_add_SxV)) {
+                        PRF_PRF (original) = F_add_VxV;
                     }
                     if ((PRF_PRF (original) == F_mul_SxS)
-                        || (PRF_PRF (original) == F_mul_AxS)
-                        || (PRF_PRF (original) == F_mul_SxA)) {
-                        PRF_PRF (original) = F_mul_AxA;
+                        || (PRF_PRF (original) == F_mul_VxS)
+                        || (PRF_PRF (original) == F_mul_SxV)) {
+                        PRF_PRF (original) = F_mul_VxV;
                     }
                 } else {
                     if ((PRF_PRF (original) == F_add_SxS)
-                        || (PRF_PRF (original) == F_add_AxA)
-                        || (PRF_PRF (original) == F_add_SxA)) {
-                        PRF_PRF (original) = F_add_AxS;
+                        || (PRF_PRF (original) == F_add_VxV)
+                        || (PRF_PRF (original) == F_add_SxV)) {
+                        PRF_PRF (original) = F_add_VxS;
                     }
                     if ((PRF_PRF (original) == F_mul_SxS)
-                        || (PRF_PRF (original) == F_mul_AxA)
-                        || (PRF_PRF (original) == F_mul_SxA)) {
-                        PRF_PRF (original) = F_mul_AxS;
+                        || (PRF_PRF (original) == F_mul_VxV)
+                        || (PRF_PRF (original) == F_mul_SxV)) {
+                        PRF_PRF (original) = F_mul_VxS;
                     }
                 }
             } else {
                 if (IsAnArray (EXPRS_EXPR (new_nonoptnode), arg_info)) {
                     if ((PRF_PRF (original) == F_add_SxS)
-                        || (PRF_PRF (original) == F_add_AxS)
-                        || (PRF_PRF (original) == F_add_AxA)) {
-                        PRF_PRF (original) = F_add_SxA;
+                        || (PRF_PRF (original) == F_add_VxS)
+                        || (PRF_PRF (original) == F_add_VxV)) {
+                        PRF_PRF (original) = F_add_SxV;
                     }
                     if ((PRF_PRF (original) == F_mul_SxS)
-                        || (PRF_PRF (original) == F_mul_AxS)
-                        || (PRF_PRF (original) == F_mul_AxA)) {
-                        PRF_PRF (original) = F_mul_SxA;
+                        || (PRF_PRF (original) == F_mul_VxS)
+                        || (PRF_PRF (original) == F_mul_VxV)) {
+                        PRF_PRF (original) = F_mul_SxV;
                     }
                 } else {
-                    if ((PRF_PRF (original) == F_add_AxA)
-                        || (PRF_PRF (original) == F_add_AxA)
-                        || (PRF_PRF (original) == F_add_SxA)) {
+                    if ((PRF_PRF (original) == F_add_VxV)
+                        || (PRF_PRF (original) == F_add_VxV)
+                        || (PRF_PRF (original) == F_add_SxV)) {
                         PRF_PRF (original) = F_add_SxS;
                     }
-                    if ((PRF_PRF (original) == F_mul_AxA)
-                        || (PRF_PRF (original) == F_mul_AxA)
-                        || (PRF_PRF (original) == F_mul_SxA)) {
+                    if ((PRF_PRF (original) == F_mul_VxV)
+                        || (PRF_PRF (original) == F_mul_VxV)
+                        || (PRF_PRF (original) == F_mul_SxV)) {
                         PRF_PRF (original) = F_mul_SxS;
                     }
                 }

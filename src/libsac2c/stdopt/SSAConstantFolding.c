@@ -58,7 +58,7 @@
  *  not yet implemented: cat, rotate
  *
  *  As of 2006-12-22, most of the appropriate SxS optimizations have been
- *  extended to SxA and AxS. rbe
+ *  extended to SxV and VxS. rbe
  *
  * TODO:
  *  1. Could extend F_reshape(x,y) to work on any arrays where we can prove
@@ -2297,14 +2297,14 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                 new_node = Add (arg_expr[0], arg_expr[1]);
             }
         break;
-    case F_add_AxA:
+    case F_add_VxV:
         if
             TWO_ARG (arg_expr)
             {
                 new_node = Add (arg_expr[0], arg_expr[1]);
             }
         break;
-    case F_add_AxS:
+    case F_add_VxS:
         if
             SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2314,7 +2314,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_add_SxA:
+    case F_add_SxV:
         if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2337,7 +2337,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_sub_AxA:
+    case F_sub_VxV:
         if
             TWO_ARG (arg_expr)
             {
@@ -2345,7 +2345,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_sub_AxS:
+    case F_sub_VxS:
         if
             SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2353,7 +2353,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                     new_node = DUPdoDupTree (arg_expr[0]);
                 }
             }
-    case F_sub_SxA:
+    case F_sub_SxV:
         break;
 
     case F_mul_SxS:
@@ -2363,7 +2363,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                 new_node = ArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
             }
         break;
-    case F_mul_AxS:
+    case F_mul_VxS:
         if
             SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2373,7 +2373,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_mul_SxA:
+    case F_mul_SxV:
         if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2383,7 +2383,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_mul_AxA:
+    case F_mul_VxV:
         break;
 
     case F_div_SxS:
@@ -2401,7 +2401,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_div_AxS:
+    case F_div_VxS:
         if
             SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2411,8 +2411,8 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_div_SxA:
-    case F_div_AxA:
+    case F_div_SxV:
+    case F_div_VxV:
         break;
 
     case F_mod:

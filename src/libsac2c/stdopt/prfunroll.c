@@ -155,21 +155,21 @@ PRFUnrollOracle (prf p)
     DBUG_ENTER ("PRFUnrollOracle");
 
     switch (p) {
-    case F_add_AxS:
-    case F_add_SxA:
-    case F_add_AxA:
+    case F_add_VxS:
+    case F_add_SxV:
+    case F_add_VxV:
 
-    case F_sub_AxS:
-    case F_sub_SxA:
-    case F_sub_AxA:
+    case F_sub_VxS:
+    case F_sub_SxV:
+    case F_sub_VxV:
 
-    case F_mul_AxS:
-    case F_mul_SxA:
-    case F_mul_AxA:
+    case F_mul_VxS:
+    case F_mul_SxV:
+    case F_mul_VxV:
 
-    case F_div_AxS:
-    case F_div_SxA:
-    case F_div_AxA:
+    case F_div_VxS:
+    case F_div_SxV:
+    case F_div_VxV:
 
         res = TRUE;
         break;
@@ -188,27 +188,27 @@ NormalizePrf (prf p)
     DBUG_ENTER ("NormalizePrf");
 
     switch (p) {
-    case F_add_AxS:
-    case F_add_SxA:
-    case F_add_AxA:
+    case F_add_VxS:
+    case F_add_SxV:
+    case F_add_VxV:
         p = F_add_SxS;
         break;
 
-    case F_sub_AxS:
-    case F_sub_SxA:
-    case F_sub_AxA:
+    case F_sub_VxS:
+    case F_sub_SxV:
+    case F_sub_VxV:
         p = F_sub_SxS;
         break;
 
-    case F_mul_AxS:
-    case F_mul_SxA:
-    case F_mul_AxA:
+    case F_mul_VxS:
+    case F_mul_SxV:
+    case F_mul_VxV:
         p = F_mul_SxS;
         break;
 
-    case F_div_AxS:
-    case F_div_SxA:
-    case F_div_AxA:
+    case F_div_VxS:
+    case F_div_SxV:
+    case F_div_VxV:
         p = F_div_SxS;
         break;
 
@@ -228,10 +228,10 @@ FirstArgScalar (prf p)
     DBUG_ENTER ("FirstArgScalar");
 
     switch (p) {
-    case F_add_SxA:
-    case F_sub_SxA:
-    case F_mul_SxA:
-    case F_div_SxA:
+    case F_add_SxV:
+    case F_sub_SxV:
+    case F_mul_SxV:
+    case F_div_SxV:
         res = TRUE;
         break;
 
@@ -251,10 +251,10 @@ SecondArgScalar (prf p)
     DBUG_ENTER ("SecondArgScalar");
 
     switch (p) {
-    case F_add_AxS:
-    case F_sub_AxS:
-    case F_mul_AxS:
-    case F_div_AxS:
+    case F_add_VxS:
+    case F_sub_VxS:
+    case F_mul_VxS:
+    case F_div_VxS:
         res = TRUE;
         break;
 

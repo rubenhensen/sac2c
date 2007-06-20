@@ -185,11 +185,11 @@ CHECK (SAC_ND_PRF_A__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op,
                            (arg_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 CHECK (SAC_ND_PRF_SxS__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op, scl1,
                              scl2))
-CHECK (SAC_ND_PRF_SxA__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op, scl,
+CHECK (SAC_ND_PRF_SxV__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op, scl,
                              (from_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
-CHECK (SAC_ND_PRF_AxS__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op,
+CHECK (SAC_ND_PRF_VxS__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op,
                              (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), scl))
-CHECK (SAC_ND_PRF_AxA__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op,
+CHECK (SAC_ND_PRF_VxV__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op,
                              (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))),
                              (from2_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 
