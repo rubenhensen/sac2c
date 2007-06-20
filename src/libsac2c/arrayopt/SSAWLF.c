@@ -1574,7 +1574,7 @@ WLFid (node *arg_node, info *arg_info)
                 /* keep original name */
                 _ids = DUPdoDupNode (subst_wl_ids);
 
-                letn = TBmakeLet (_ids, TBmakePrf (F_sel, argsn));
+                letn = TBmakeLet (_ids, TBmakePrf (F_sel_VxA, argsn));
                 subst_header = TBmakeAssign (letn, subst_header);
 
                 letn = TBmakeLet (TBmakeIds (arrayavisn, NULL), arrayn);
@@ -1656,7 +1656,7 @@ WLFlet (node *arg_node, info *arg_info)
         /* is this a prf sel() which can be folded? */
         /* All occurences of ID_WL are used in case (1) here (see header of file) */
         prfn = LET_EXPR (arg_node);
-        if (N_prf == NODE_TYPE (prfn) && F_sel == PRF_PRF (prfn)
+        if (N_prf == NODE_TYPE (prfn) && F_sel_VxA == PRF_PRF (prfn)
             && ID_WL (PRF_ARG2 (prfn))) { /* second arg of sel() references a WL. */
 
             idn = PRF_ARG2 (prfn);

@@ -302,7 +302,7 @@ EMDRcode (node *arg_node, info *arg_info)
                      *
                      * where A' is known to be a reuse of B
                      */
-                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_sel)) {
+                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_sel_VxA)) {
                         node *vec = PRF_ARG1 (sel);
                         node *arr = PRF_ARG2 (sel);
 
@@ -470,7 +470,7 @@ EMDRprf (node *arg_node, info *arg_info)
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         /*
          * b = reshape( dim, shp, a);
          *

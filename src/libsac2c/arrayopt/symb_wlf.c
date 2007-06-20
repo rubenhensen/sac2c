@@ -560,7 +560,7 @@ SWLFprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFprf");
 
-    if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel)
+    if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 

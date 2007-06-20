@@ -322,7 +322,7 @@ REUSEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("REUSEprf");
 
-    if ((PRF_PRF (arg_node) == F_sel) && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
+    if ((PRF_PRF (arg_node) == F_sel_VxA) && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (ID_AVIS (PRF_ARG1 (arg_node)) == IDS_AVIS (INFO_IV (arg_info)))
         && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,

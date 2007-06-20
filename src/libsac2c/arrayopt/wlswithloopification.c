@@ -302,7 +302,7 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
         fundef = TCaddVardecs (fundef, vardecs);
 
         ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                       TCmakePrf2 (F_sel, TBmakeId (IDS_AVIS (iv)),
+                                       TCmakePrf2 (F_sel_VxA, TBmakeId (IDS_AVIS (iv)),
                                                    DUPdoDupNode (arr))),
                             NULL);
         AVIS_SSAASSIGN (avis) = ass;

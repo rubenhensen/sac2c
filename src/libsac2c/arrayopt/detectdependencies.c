@@ -239,7 +239,7 @@ DDEPENDassign (node *arg_node, info *arg_info)
  *
  * @fn node *DDEPENDprf(node *arg_node, info *arg_info)
  *
- *   @brief  calls special function if this prf is F_sel.
+ *   @brief  calls special function if this prf is F_sel_VxA.
  *
  *   @param  node *arg_node:  N_prf
  *           info *arg_info:  N_info
@@ -251,7 +251,7 @@ DDEPENDprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("DDEPENDprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_sel:
+    case F_sel_VxA:
         arg_node = CheckPrfSel (arg_node, arg_info);
         break;
 

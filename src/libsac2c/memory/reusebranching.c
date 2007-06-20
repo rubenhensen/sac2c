@@ -818,7 +818,7 @@ EMRBcode (node *arg_node, info *arg_info)
                         memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (rhs))));
                         if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
                             && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
-                            && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
+                            && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel_VxA)
                                 || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
                             DFMsetMaskEntrySet (INFO_DRCS (arg_info), NULL,
                                                 ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));

@@ -377,7 +377,7 @@ EMREprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         /*
          * a = reshape( rc, dim, shape, b);
          *

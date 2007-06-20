@@ -889,7 +889,7 @@ MakeGetDimIcm (node *arg_node)
 
     case N_prf:
         switch (PRF_PRF (arg_node)) {
-        case F_dim:
+        case F_dim_A:
             get_dim = MakeDimArg (PRF_ARG1 (arg_node), FALSE);
             break;
 
@@ -901,11 +901,11 @@ MakeGetDimIcm (node *arg_node)
                             MakeGetDimIcm (PRF_ARG1 (arg_node)),
                             MakeGetDimIcm (PRF_ARG2 (arg_node)));
             break;
-        case F_sel:
+        case F_sel_VxA:
             DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_num)
                            && (NUM_VAL (PRF_ARG1 (arg_node)) == 0)
                            && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf)
-                           && (PRF_PRF (PRF_ARG2 (arg_node)) == F_shape),
+                           && (PRF_PRF (PRF_ARG2 (arg_node)) == F_shape_A),
                          "Invalid MakeSizeArg descriptor found!");
             get_dim = MakeSizeArg (PRF_ARG1 (PRF_ARG2 (arg_node)), FALSE);
             break;
@@ -956,7 +956,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
 
     case N_prf:
         switch (PRF_PRF (arg_node)) {
-        case F_shape:
+        case F_shape_A:
             arg_node = PRF_ARG1 (arg_node);
             switch (NODE_TYPE (arg_node)) {
             case N_id:
@@ -1023,7 +1023,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( cat( a, b))
-                     * => ND_PRF_CAT__SHAPE
+                     * => ND_PRF_CAT_VxV__SHAPE
                      */
                     {
                         node *icm_args;
@@ -1043,7 +1043,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                                       FALSE, TRUE, FALSE,
                                                                       NULL)));
 
-                        set_shape = TCmakeIcm1 ("ND_PRF_CAT__SHAPE", icm_args);
+                        set_shape = TCmakeIcm1 ("ND_PRF_CAT_VxV__SHAPE", icm_args);
                     }
                     break;
 
@@ -1052,7 +1052,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( drop( a, b))
-                     * => ND_PRF_DROP_SHAPE
+                     * => ND_PRF_DROP_SxV__SHAPE
                      */
                     {
                         node *icm_args;
@@ -1071,7 +1071,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                         TBmakeExprs (DUPdupNodeNt (arg1),
                                                                      NULL)));
 
-                        set_shape = TCmakeIcm1 ("ND_PRF_DROP__SHAPE", icm_args);
+                        set_shape = TCmakeIcm1 ("ND_PRF_DROP_SxV__SHAPE", icm_args);
                     }
                     break;
 
@@ -1080,7 +1080,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( take( a, b))
-                     * => ND_PRF_TAKE_SHAPE
+                     * => ND_PRF_TAKE_SxV__SHAPE
                      */
                     {
                         node *icm_args;
@@ -1099,18 +1099,18 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                         TBmakeExprs (DUPdupNodeNt (arg1),
                                                                      NULL)));
 
-                        set_shape = TCmakeIcm1 ("ND_PRF_TAKE__SHAPE", icm_args);
+                        set_shape = TCmakeIcm1 ("ND_PRF_TAKE_SxV__SHAPE", icm_args);
                     }
                     break;
 
-                case F_sel:
+                case F_sel_VxA:
                     arg1 = PRF_ARG1 (arg_node);
                     arg2 = PRF_ARG2 (arg_node);
                     switch (NODE_TYPE (arg1)) {
                     case N_array:
                         /*
                          * shape( sel( [ 1, ...], b))
-                         * => ND_PRF_SEL__SHAPE_arr
+                         * => ND_PRF_SEL_VxA__SHAPE_arr
                          */
                         {
                             node *icm_args;
@@ -1125,20 +1125,22 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                                             arg1)),
                                                                         NULL))));
 
-                            set_shape = TCmakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
+                            set_shape
+                              = TCmakeIcm1 ("ND_PRF_SEL_VxA__SHAPE_arr", icm_args);
                         }
                         break;
 
                     case N_id:
                         /*
                          * shape( sel( id, b))
-                         * => ND_PRF_SEL_SHAPE_id
+                         * => ND_PRF_SEL_VxA__SHAPE_id
                          */
                         {
                             node *icm_args;
 
                             DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
-                                         "1st arg of F_sel is a illegal indexing var!");
+                                         "1st arg of F_sel_VxA is a illegal indexing "
+                                         "var!");
 
                             icm_args
                               = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -1150,7 +1152,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                                            arg1),
                                                                          NULL)));
 
-                            set_shape = TCmakeIcm1 ("ND_PRF_SEL__SHAPE_id", icm_args);
+                            set_shape = TCmakeIcm1 ("ND_PRF_SEL_VxA__SHAPE_id", icm_args);
                         }
                         break;
 
@@ -1189,7 +1191,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     }
                     break;
 
-                case F_reshape:
+                case F_reshape_VxA:
                     arg1 = PRF_ARG1 (arg_node);
                     arg2 = PRF_ARG2 (arg_node);
                     switch (NODE_TYPE (arg1)) {
@@ -1199,7 +1201,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                          * => ND_RESHAPE_SHAPE_arr
                          */
                         set_shape
-                          = TCmakeIcm1 ("ND_PRF_RESHAPE__SHAPE_arr",
+                          = TCmakeIcm1 ("ND_PRF_RESHAPE_VxA__SHAPE_arr",
                                         MakeTypeArgs (IDS_NAME (let_ids),
                                                       IDS_TYPE (let_ids), FALSE, TRUE,
                                                       FALSE,
@@ -1216,7 +1218,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                          * => ND_RESHAPE_SHAPE_id
                          */
                         set_shape
-                          = TCmakeIcm1 ("ND_PRF_RESHAPE__SHAPE_id",
+                          = TCmakeIcm1 ("ND_PRF_RESHAPE_VxA__SHAPE_id",
                                         MakeTypeArgs (IDS_NAME (let_ids),
                                                       IDS_TYPE (let_ids), FALSE, TRUE,
                                                       FALSE,
@@ -1275,7 +1277,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     }
 
                     break;
-                case F_shape:
+                case F_shape_A:
                     arg1 = PRF_ARG1 (arg_node);
                     /*
                      * shape( shape( a))
@@ -3439,7 +3441,7 @@ COMPprfIsReused (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPprfDim( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_dim.
+ * @brief  Compiles N_prf node of type F_dim_A.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3460,9 +3462,9 @@ COMPprfDim (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim_A is no N_id!");
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_DIM__DATA",
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_DIM_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
@@ -3476,7 +3478,7 @@ COMPprfDim (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPprfShape( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_shape.
+ * @brief  Compiles N_prf node of type F_shape_A.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3497,9 +3499,9 @@ COMPprfShape (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape_A is no N_id!");
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_SHAPE__DATA",
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_SHAPE_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
@@ -3513,7 +3515,7 @@ COMPprfShape (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPprfReshape( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_reshape.
+ * @brief  Compiles N_prf node of type F_reshape_VxA.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3738,7 +3740,7 @@ COMPprfIdxModarray (node *arg_node, info *arg_info)
                  "2nd arg of F_idx_modarray is neither N_id nor N_num, N_prf!");
     DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
                   || (TCgetBasetype (ID_TYPE (arg2)) == T_int)),
-                 "2nd arg of F_modarray is a illegal indexing var!");
+                 "2nd arg of F_modarray_AxVxS is a illegal indexing var!");
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "3rd arg of F_idx_modarray is a N_array!");
 
@@ -3798,7 +3800,7 @@ COMPprfIdxShapeSel (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPprfSel( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_sel.
+ * @brief  Compiles N_prf node of type F_sel_VxA.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3836,11 +3838,11 @@ COMPprfSel (node *arg_node, info *arg_info)
      * [3,4].
      */
 
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_sel is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_sel_VxA is no N_id!");
 
     if (NODE_TYPE (arg1) == N_id) {
         DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
-                     "1st arg of F_sel is a illegal indexing var!");
+                     "1st arg of F_sel_VxA is a illegal indexing var!");
 
         icm_args
           = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -3848,13 +3850,13 @@ COMPprfSel (node *arg_node, info *arg_info)
                                         FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
 
         ret_node
-          = TCmakeAssignIcm3 ("ND_PRF_SEL__DATA_id", DUPdoDupTree (icm_args),
+          = TCmakeAssignIcm3 ("ND_PRF_SEL_VxA__DATA_id", DUPdoDupTree (icm_args),
                               MakeSizeArg (arg1, TRUE),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
-                     "1st arg of F_sel is neither N_id nor N_array!");
+                     "1st arg of F_sel_VxA is neither N_id nor N_array!");
 
         icm_args
           = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -3867,7 +3869,7 @@ COMPprfSel (node *arg_node, info *arg_info)
                                                                     NULL))));
 
         ret_node
-          = TCmakeAssignIcm2 ("ND_PRF_SEL__DATA_arr", DUPdoDupTree (icm_args),
+          = TCmakeAssignIcm2 ("ND_PRF_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     }
@@ -3879,7 +3881,7 @@ COMPprfSel (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPprfModarray( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_modarray.
+ * @brief  Compiles N_prf node of type F_modarray_AxVxS.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3917,15 +3919,16 @@ COMPprfModarray (node *arg_node, info *arg_info)
      * [3,4].
      */
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray is no N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array), "3rd arg of F_modarray is a N_array!");
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray_AxVxS is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+                 "3rd arg of F_modarray_AxVxS is a N_array!");
 
     if (NODE_TYPE (arg2) == N_id) {
         DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg2)) == T_int)),
-                     "2nd arg of F_modarray is a illegal indexing var!");
+                     "2nd arg of F_modarray_AxVxS is a illegal indexing var!");
 
         ret_node
-          = TCmakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_id",
+          = TCmakeAssignIcm5 ("ND_PRF_MODARRAY_AxVxS__DATA_id",
                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                             TRUE, FALSE,
                                             MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
@@ -3936,10 +3939,10 @@ COMPprfModarray (node *arg_node, info *arg_info)
                               NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
-                     "2nd arg of F_modarray is neither N_id nor N_array!");
+                     "2nd arg of F_modarray_AxVxS is neither N_id nor N_array!");
 
         ret_node
-          = TCmakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_arr",
+          = TCmakeAssignIcm5 ("ND_PRF_MODARRAY_AxVxS__DATA_arr",
                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                             TRUE, FALSE,
                                             MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
@@ -4023,7 +4026,7 @@ COMPprfTake (node *arg_node, info *arg_info)
                                     TBmakeExprs (DUPdupNodeNt (arg1), NULL)));
 
     ret_node
-      = TCmakeAssignIcm2 ("ND_PRF_TAKE__DATA", DUPdoDupTree (icm_args),
+      = TCmakeAssignIcm2 ("ND_PRF_TAKE_SxV__DATA", DUPdoDupTree (icm_args),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                           NULL);
 
@@ -4067,7 +4070,7 @@ COMPprfDrop (node *arg_node, info *arg_info)
                                     TBmakeExprs (DUPdupNodeNt (arg1), NULL)));
 
     ret_node
-      = TCmakeAssignIcm2 ("ND_PRF_DROP__DATA", DUPdoDupTree (icm_args),
+      = TCmakeAssignIcm2 ("ND_PRF_DROP_SxV__DATA", DUPdoDupTree (icm_args),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                           NULL);
 
@@ -4117,7 +4120,7 @@ COMPprfCat (node *arg_node, info *arg_info)
                   || (strcmp (copyfun1, copyfun2) == 0)),
                  "F_cat_VxV: different copyfuns found!");
 
-    ret_node = TCmakeAssignIcm2 ("ND_PRF_CAT__DATA", DUPdoDupTree (icm_args),
+    ret_node = TCmakeAssignIcm2 ("ND_PRF_CAT_VxV__DATA", DUPdoDupTree (icm_args),
                                  TCmakeIdCopyString (copyfun1), NULL);
 
     DBUG_RETURN (ret_node);
@@ -4801,7 +4804,7 @@ COMPprf (node *arg_node, info *arg_info)
         DBUG_ASSERT ((0), "F_reuse must be eliminated before code generation");
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         ret_node = COMPprfReshape (arg_node, arg_info);
         break;
 
@@ -4949,11 +4952,11 @@ COMPprf (node *arg_node, info *arg_info)
          *  array operations (intrinsics)
          */
 
-    case F_dim:
+    case F_dim_A:
         ret_node = COMPprfDim (arg_node, arg_info);
         break;
 
-    case F_shape:
+    case F_shape_A:
         ret_node = COMPprfShape (arg_node, arg_info);
         break;
 
@@ -4969,11 +4972,11 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = COMPprfIdxShapeSel (arg_node, arg_info);
         break;
 
-    case F_sel:
+    case F_sel_VxA:
         ret_node = COMPprfSel (arg_node, arg_info);
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
         ret_node = COMPprfModarray (arg_node, arg_info);
         break;
 

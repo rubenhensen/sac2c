@@ -716,7 +716,7 @@ EMAAprf (node *arg_node, info *arg_info)
         MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         MarkIdAliasing (PRF_ARG3 (arg_node), INFO_MASK (arg_info));
         break;
 

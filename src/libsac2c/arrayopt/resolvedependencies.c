@@ -29,7 +29,7 @@
  *
  * In this traversal a special dependency inside an Ncode of one Withloop
  * to another one (fusionable Withloop) is identified and resolved.
- * The special dependency consist of the primitive function F_sel
+ * The special dependency consist of the primitive function F_sel_VxA
  * referencing an LHS identifier of the other Withloop and its selection array
  * contains only the index-vector of the current Withloop.
  * That selection can be replaced by the corresponding cexprs of the suitable
@@ -249,7 +249,7 @@ RDEPENDassign (node *arg_node, info *arg_info)
  *
  * @fn node *RDEPENDprf(node *arg_node, info *arg_info)
  *
- *   @brief  calls special function if this prf is F_sel.
+ *   @brief  calls special function if this prf is F_sel_VxA.
  *
  *   @param  node *arg_node:  N_prf
  *           info *arg_info:  N_info
@@ -261,7 +261,7 @@ RDEPENDprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("RDEPENDprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_sel:
+    case F_sel_VxA:
         arg_node = CheckPrfSel (arg_node, arg_info);
         break;
 

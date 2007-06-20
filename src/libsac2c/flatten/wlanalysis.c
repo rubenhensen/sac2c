@@ -135,10 +135,10 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
         fundef
           = TCaddVardecs (fundef, TBmakeVardec (idx_avis, TBmakeVardec (res_avis, NULL)));
         /**
-         * res_avis = F_sel( idx_avis, expr);
+         * res_avis = F_sel_VxA( idx_avis, expr);
          */
         nassigns = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL),
-                                            TCmakePrf2 (F_sel, TBmakeId (idx_avis),
+                                            TCmakePrf2 (F_sel_VxA, TBmakeId (idx_avis),
                                                         DUPdoDupNode (*expr))),
                                  nassigns);
         AVIS_SSAASSIGN (res_avis) = nassigns;

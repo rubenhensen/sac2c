@@ -108,7 +108,7 @@ EMSRprf (node *arg_node, info *arg_info)
                     /*
                      * a = reshape( dim, shape, b);
                      */
-                    PRF_PRF (arg_node) = F_reshape;
+                    PRF_PRF (arg_node) = F_reshape_VxA;
                 }
                 break;
             }

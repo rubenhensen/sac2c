@@ -386,7 +386,7 @@ CWLEcode (node *arg_node, info *arg_info)
          * we have to check for:
          * code->cexprs->expr-(id)>avis->ssaassign->n_assign->n_let->expr->prf
          *   existing?
-         * prf of type F_sel?
+         * prf of type F_sel_VxA?
          * prf->args->expr-(id)>avis == with_iv?
          * target = prf->args->next->expr-(id)>avis
          */
@@ -402,7 +402,7 @@ CWLEcode (node *arg_node, info *arg_info)
 
             let_expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis)));
 
-            if ((F_sel == PRF_PRF (let_expr))
+            if ((F_sel_VxA == PRF_PRF (let_expr))
                 && (IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))
                     == ID_AVIS (PRF_ARG1 (let_expr)))) {
                 DBUG_PRINT ("CWLE", ("second checks hold (prf selects at iv)"));

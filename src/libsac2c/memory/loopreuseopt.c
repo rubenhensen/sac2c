@@ -286,9 +286,10 @@ EMLRap (node *arg_node, info *arg_info)
                 INFO_PREASSIGN (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
                                              TCmakePrf3 (F_alloc_or_reuse,
-                                                         TCmakePrf1 (F_dim, DUPdoDupNode (
-                                                                              oldarg)),
-                                                         TCmakePrf1 (F_shape,
+                                                         TCmakePrf1 (F_dim_A,
+                                                                     DUPdoDupNode (
+                                                                       oldarg)),
+                                                         TCmakePrf1 (F_shape_A,
                                                                      DUPdoDupNode (
                                                                        oldarg)),
                                                          oldarg)),

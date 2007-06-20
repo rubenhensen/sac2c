@@ -248,7 +248,7 @@ WLSELCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSELCprf");
 
-    if ((INFO_ISWLCODE (arg_info)) && (F_sel == PRF_PRF (arg_node))) {
+    if ((INFO_ISWLCODE (arg_info)) && (F_sel_VxA == PRF_PRF (arg_node))) {
         INFO_WLSELS (arg_info) = INFO_WLSELS (arg_info) + 1;
     }
 

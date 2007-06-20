@@ -30,18 +30,18 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_SHAPE__DATA( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_SHAPE_A__DATA( char *to_NT, int to_sdim,
  *                                      char *from_NT, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SHAPE__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ *   ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
+ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
 #ifndef DBUG_OFF
@@ -50,19 +50,19 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_PRF_SHAPE__DATA");
+    DBUG_ENTER ("ICMCompileND_PRF_SHAPE_A__DATA");
 
-#define ND_PRF_SHAPE__DATA
+#define ND_PRF_SHAPE_A__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_SHAPE__DATA
+#undef ND_PRF_SHAPE_A__DATA
 
-    DBUG_ASSERT ((to_hc == C_nhd), "result of F_shape must be non-hidden!");
+    DBUG_ASSERT ((to_hc == C_nhd), "result of F_shape_A must be non-hidden!");
 
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SHAPE__DATA( %s, %d, %s, %d)\"))\n",
+             " (\"ND_PRF_SHAPE_A__DATA( %s, %d, %s, %d)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     switch (from_sc) {
@@ -106,35 +106,35 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_RESHAPE__SHAPE_id( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id( char *to_NT, int to_sdim,
  *                                            char *shp_NT)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__SHAPE_id( to_NT, to_sdim, shp_NT)
+ *   ND_PRF_RESHAPE_VxA__SHAPE_id( to_NT, to_sdim, shp_NT)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
+ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE__SHAPE_id");
+    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id");
 
-#define ND_PRF_RESHAPE__SHAPE_id
+#define ND_PRF_RESHAPE_VxA__SHAPE_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_RESHAPE__SHAPE_id
+#undef ND_PRF_RESHAPE_VxA__SHAPE_id
 
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
+             " (\"ND_PRF_RESHAPE_VxA__SHAPE( %s, %d, ...)\"))\n",
              to_NT, to_sdim);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
-                                global.prf_string[F_reshape]););
+                                global.prf_string[F_reshape_VxA]););
 
     ICMCompileND_SET__SHAPE_id (to_NT, to_sdim, shp_NT);
 
@@ -144,28 +144,28 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_RESHAPE__SHAPE_arr( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr( char *to_NT, int to_sdim,
  *                                             int shp_size, char **shp_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__SHAPE_arr( to_NT, to_sdim, shp_size, shp_ANY)
+ *   ND_PRF_RESHAPE_VxA__SHAPE_arr( to_NT, to_sdim, shp_size, shp_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
-                                     char **shp_ANY)
+ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
+                                         char **shp_ANY)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE__SHAPE_arr");
+    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr");
 
-#define ND_PRF_RESHAPE__SHAPE_arr
+#define ND_PRF_RESHAPE_VxA__SHAPE_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_RESHAPE__SHAPE_arr
+#undef ND_PRF_RESHAPE_VxA__SHAPE_arr
 
     /*
      * CAUTION:
@@ -176,7 +176,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
+             " (\"ND_PRF_RESHAPE_VxA__SHAPE( %s, %d, ...)\"))\n",
              to_NT, to_sdim);
 
     for (i = 0; i < shp_size; i++) {
@@ -185,7 +185,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
                                       shp_ANY[i]);
                              , fprintf (global.outfile,
                                         "1st argument of %s is not a vector!",
-                                        global.prf_string[F_reshape]););
+                                        global.prf_string[F_reshape_VxA]););
         }
     }
 
@@ -197,20 +197,20 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_SEL_VxA__SHAPE_id( char *to_NT, int to_sdim,
  *                                        char *from_NT, int from_sdim,
  *                                        char *idx_NT)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT)
+ *   ND_PRF_SEL_VxA__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                                char *idx_NT)
+ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
+                                    int from_sdim, char *idx_NT)
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
@@ -218,17 +218,17 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
     char **shp;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_id");
+    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__SHAPE_id");
 
-#define ND_PRF_SEL__SHAPE_id
+#define ND_PRF_SEL_VxA__SHAPE_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_SEL__SHAPE_id
+#undef ND_PRF_SEL_VxA__SHAPE_id
 
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
+             " (\"ND_PRF_SEL_VxA__SHAPE( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile,
@@ -236,7 +236,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
                               " SAC_ND_A_DIM( %s) + SAC_ND_A_SIZE( %s)",
                               from_NT, to_NT, idx_NT);
                      , fprintf (global.outfile, "Inconsistant call of %s found!",
-                                global.prf_string[F_sel]););
+                                global.prf_string[F_sel_VxA]););
 
     switch (to_sc) {
     case C_scl:
@@ -272,13 +272,13 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
          * Unfortunately, such a drop-operation is not covered by the
          * function Set_Shape() for the time being ...
          *
-         * Hence, F_sel is implemented for scalar results only!
+         * Hence, F_sel_VxA is implemented for scalar results only!
          */
         ASSURE_TYPE_ASS (fprintf (global.outfile,
                                   "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)", from_NT,
                                   idx_NT);
                          , fprintf (global.outfile, "Result of %s is not a scalar!",
-                                    global.prf_string[F_sel]););
+                                    global.prf_string[F_sel_VxA]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -293,21 +293,21 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_SEL_VxA__SHAPE_arr( char *to_NT, int to_sdim,
  *                                         char *from_NT, int from_sdim,
  *                                         int idx_size, char **idxs_ANY)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *   ND_PRF_SEL_VxA__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                          idx_size, [ idxs_ANY ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                                 int idx_size, char **idxs_ANY)
+ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
+                                     int from_sdim, int idx_size, char **idxs_ANY)
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
@@ -315,12 +315,12 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
     char **shp;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
+    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__SHAPE_arr");
 
-#define ND_PRF_SEL__SHAPE_arr
+#define ND_PRF_SEL_VxA__SHAPE_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_SEL__SHAPE_arr
+#undef ND_PRF_SEL_VxA__SHAPE_arr
 
     /*
      * CAUTION:
@@ -330,14 +330,14 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
+             " (\"ND_PRF_SEL_VxA__SHAPE( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile,
                               "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d", from_NT,
                               to_NT, idx_size);
                      , fprintf (global.outfile, "Inconsistant call of %s found!",
-                                global.prf_string[F_sel]););
+                                global.prf_string[F_sel_VxA]););
 
     switch (to_sc) {
     case C_scl:
@@ -373,12 +373,12 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
          * Unfortunately, such a drop-operation is not covered by the
          * function Set_Shape() for the time being ...
          *
-         * Hence, F_sel is implemented for scalar results only!
+         * Hence, F_sel_VxA is implemented for scalar results only!
          */
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
                                   idx_size);
                          , fprintf (global.outfile, "Result of %s is not a scalar!",
-                                    global.prf_string[F_sel]););
+                                    global.prf_string[F_sel_VxA]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -432,7 +432,7 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__DATA_id( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_id( char *to_NT, int to_sdim,
  *                                       char *from_NT, int from_sdim,
  *                                       char *idx_NT, int idx_size,
  *                                       char *copyfun)
@@ -440,37 +440,37 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__DATA_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size,
+ *   ND_PRF_SEL_VxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size,
  *                        copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                               char *idx_NT, int idx_size, char *copyfun)
+ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                   char *idx_NT, int idx_size, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__DATA_id");
+    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__DATA_id");
 
-#define ND_PRF_SEL__DATA_id
+#define ND_PRF_SEL_VxA__DATA_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_SEL__DATA_id
+#undef ND_PRF_SEL_VxA__DATA_id
 
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
+             " (\"ND_PRF_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
-                                global.prf_string[F_sel]););
+                                global.prf_string[F_sel_VxA]););
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
                               from_NT, idx_NT);
                      , fprintf (global.outfile,
                                 "Length of index vector used for %s does not "
                                 "match rank of argument array!",
-                                global.prf_string[F_sel]););
+                                global.prf_string[F_sel_VxA]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
@@ -481,7 +481,7 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__DATA_arr( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_arr( char *to_NT, int to_sdim,
  *                                        char *from_NT, int from_sdim,
  *                                        int idx_size, char **idxs_ANY,
  *                                        char *copyfun)
@@ -489,23 +489,24 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *   ND_PRF_SEL_VxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                         idx_size, [ idxs_ANY ]* , copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                                int idx_size, char **idxs_ANY, char *copyfun)
+ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
+                                    int from_sdim, int idx_size, char **idxs_ANY,
+                                    char *copyfun)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__DATA_arr");
+    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__DATA_arr");
 
-#define ND_PRF_SEL__DATA_arr
+#define ND_PRF_SEL_VxA__DATA_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_SEL__DATA_arr
+#undef ND_PRF_SEL_VxA__DATA_arr
 
     /*
      * CAUTION:
@@ -516,7 +517,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
+             " (\"ND_PRF_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     for (i = 0; i < idx_size; i++) {
@@ -525,7 +526,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
                                       idxs_ANY[i]);
                              , fprintf (global.outfile,
                                         "1st argument of %s is not a vector!",
-                                        global.prf_string[F_sel]););
+                                        global.prf_string[F_sel_VxA]););
         }
     }
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
@@ -533,7 +534,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
                      , fprintf (global.outfile,
                                 "Length of index vector used for %s does not "
                                 "match rank of argument array!",
-                                global.prf_string[F_sel]););
+                                global.prf_string[F_sel_VxA]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
                  ReadConstArray_Str, copyfun);
@@ -621,30 +622,30 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY__DATA_id( char *to_NT, int to_sdim,
- *                                            char *from_NT, int from_sdim,
- *                                            char *idx_NT, int idx_size,
- *                                            char *val_ANY, char *copyfun)
+ *   void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id( char *to_NT, int to_sdim,
+ *                                                  char *from_NT, int from_sdim,
+ *                                                  char *idx_NT, int idx_size,
+ *                                                  char *val_ANY, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *   ND_PRF_MODARRAY_AxVxS__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
  *                             idx_NT, idx_size, val_ANY, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
-                                    int from_sdim, char *idx_NT, int idx_size,
-                                    char *val_ANY, char *copyfun)
+ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_NT,
+                                          int from_sdim, char *idx_NT, int idx_size,
+                                          char *val_ANY, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY__DATA_id");
+    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id");
 
-#define ND_PRF_MODARRAY__DATA_id
+#define ND_PRF_MODARRAY_AxVxS__DATA_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_MODARRAY__DATA_id
+#undef ND_PRF_MODARRAY_AxVxS__DATA_id
 
     /*
      * CAUTION:
@@ -654,16 +655,16 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
+             " (\"ND_PRF_MODARRAY_AxVxS__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
-                                global.prf_string[F_modarray]););
+                                global.prf_string[F_modarray_AxVxS]););
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)",
                               from_NT, idx_NT);
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
-                                global.prf_string[F_modarray]););
+                                global.prf_string[F_modarray_AxVxS]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size, SizeId,
                       ReadId, val_ANY, copyfun);
@@ -674,7 +675,7 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY__DATA_arr( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr( char *to_NT, int to_sdim,
  *                                             char *from_NT, int from_sdim,
  *                                             int idx_size, char **idxs_ANY,
  *                                             char *val_ANY,
@@ -683,24 +684,24 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *   ND_PRF_MODARRAY_AxVxS__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                              idx_size, [ idxs_ANY ]* , val_ANY, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
-                                     int from_sdim, int idx_size, char **idxs_ANY,
-                                     char *val_ANY, char *copyfun)
+ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
+                                           int from_sdim, int idx_size, char **idxs_ANY,
+                                           char *val_ANY, char *copyfun)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY__DATA_arr");
+    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr");
 
-#define ND_PRF_MODARRAY__DATA_arr
+#define ND_PRF_MODARRAY_AxVxS__DATA_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_MODARRAY__DATA_arr
+#undef ND_PRF_MODARRAY_AxVxS__DATA_arr
 
     /*
      * CAUTION:
@@ -713,7 +714,7 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
+             " (\"ND_PRF_MODARRAY_AxVxS__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
     for (i = 0; i < idx_size; i++) {
@@ -722,13 +723,13 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                                       idxs_ANY[i]);
                              , fprintf (global.outfile,
                                         "2nd argument of %s is not a vector",
-                                        global.prf_string[F_modarray]););
+                                        global.prf_string[F_modarray_AxVxS]););
         }
     }
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
                               idx_size);
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
-                                global.prf_string[F_modarray]););
+                                global.prf_string[F_modarray_AxVxS]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY, idx_size, NULL,
                       ReadConstArray_Str, val_ANY, copyfun);
@@ -1022,7 +1023,7 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
-                                    global.prf_string[F_modarray]););
+                                    global.prf_string[F_modarray_AxVxS]););
     }
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
@@ -1034,29 +1035,29 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_TAKE__SHAPE( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_TAKE_SxV__SHAPE( char *to_NT, int to_sdim,
  *                                      char *from_NT, int from_sdim,
  *                                      char *cnt_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_TAKE__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *   ND_PRF_TAKE_SxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                              char *cnt_ANY)
+ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                  char *cnt_ANY)
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_TAKE__SHAPE");
+    DBUG_ENTER ("ICMCompileND_PRF_TAKE_SxV__SHAPE");
 
-#define ND_PRF_TAKE__SHAPE
+#define ND_PRF_TAKE_SxV__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_TAKE__SHAPE
+#undef ND_PRF_TAKE_SxV__SHAPE
 
     /*
      * CAUTION:
@@ -1067,7 +1068,7 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_TAKE__SHAPE( %s, %d, %s, %d, %s)\"))\n",
+             " (\"ND_PRF_TAKE_SxV__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
@@ -1097,7 +1098,7 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_TAKE__DATA( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_TAKE_SxV__DATA( char *to_NT, int to_sdim,
  *                                     char *from_NT, int from_sdim,
  *                                     char *cnt_ANY,
  *                                     char *copyfun)
@@ -1105,20 +1106,20 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *   ND_PRF_TAKE_SxV__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                             char *cnt_ANY, char *copyfun)
+ICMCompileND_PRF_TAKE_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                 char *cnt_ANY, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_TAKE__DATA");
+    DBUG_ENTER ("ICMCompileND_PRF_TAKE_SxV__DATA");
 
-#define ND_PRF_TAKE__DATA
+#define ND_PRF_TAKE_SxV__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_TAKE__DATA
+#undef ND_PRF_TAKE_SxV__DATA
 
     /*
      * CAUTION:
@@ -1129,7 +1130,7 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_TAKE__DATA( %s, %d, %s, %d, %s)\"))\n",
+             " (\"ND_PRF_TAKE_SxV__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
@@ -1163,29 +1164,29 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_DROP__SHAPE( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_DROP_SxV__SHAPE( char *to_NT, int to_sdim,
  *                                      char *from_NT, int from_sdim,
  *                                      char *cnt_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_DROP__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *   ND_PRF_DROP_SxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                              char *cnt_ANY)
+ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                  char *cnt_ANY)
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_DROP__SHAPE");
+    DBUG_ENTER ("ICMCompileND_PRF_DROP_SxV__SHAPE");
 
-#define ND_PRF_DROP__SHAPE
+#define ND_PRF_DROP_SxV__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_DROP__SHAPE
+#undef ND_PRF_DROP_SxV__SHAPE
 
     /*
      * CAUTION:
@@ -1196,7 +1197,7 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_DROP__SHAPE( %s, %d, %s, %d, %s)\"))\n",
+             " (\"ND_PRF_DROP_SxV__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
@@ -1228,7 +1229,7 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_DROP__DATA( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_DROP_SxV__DATA( char *to_NT, int to_sdim,
  *                                     char *from_NT, int from_sdim,
  *                                     char *cnt_ANY,
  *                                     char *copyfun)
@@ -1236,20 +1237,20 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *   ND_PRF_DROP_SxV__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                             char *cnt_ANY, char *copyfun)
+ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                 char *cnt_ANY, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_DROP__DATA");
+    DBUG_ENTER ("ICMCompileND_PRF_DROP_SxV__DATA");
 
-#define ND_PRF_DROP__DATA
+#define ND_PRF_DROP_SxV__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_DROP__DATA
+#undef ND_PRF_DROP_SxV__DATA
 
     /*
      * CAUTION:
@@ -1260,7 +1261,7 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_DROP__DATA( %s, %d, %s, %d, %s)\"))\n",
+             " (\"ND_PRF_DROP_SxV__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
@@ -1296,29 +1297,29 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_CAT__SHAPE( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_CAT_VxV__SHAPE( char *to_NT, int to_sdim,
  *                                     char *from1_NT, int from1_sdim,
  *                                     char *from2_NT, int from2_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_CAT__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *   ND_PRF_CAT_VxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1_sdim,
-                             char *from2_NT, int from2_sdim)
+ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1_sdim,
+                                 char *from2_NT, int from2_sdim)
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_CAT__SHAPE");
+    DBUG_ENTER ("ICMCompileND_PRF_CAT_VxV__SHAPE");
 
-#define ND_PRF_CAT__SHAPE
+#define ND_PRF_CAT_VxV__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_CAT__SHAPE
+#undef ND_PRF_CAT_VxV__SHAPE
 
     /*
      * CAUTION:
@@ -1329,7 +1330,7 @@ ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_CAT__SHAPE( %s, %d, %s, %d, %s, %d)\"))\n",
+             " (\"ND_PRF_CAT_VxV__SHAPE( %s, %d, %s, %d, %s, %d)\"))\n",
              to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from1_NT);

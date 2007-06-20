@@ -520,12 +520,12 @@ BuildLeftShape (node *array, dotinfo *info)
         maxdot = info->tripledot - 1;
 
     for (cnt = maxdot; cnt > 0; cnt--) {
-        result = TBmakeExprs (MAKE_BIN_PRF (F_sel,
+        result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                             TCmakeIntVector (
                                               TBmakeExprs (TBmakeNum (LDot2Pos (cnt, info)
                                                                       - 1),
                                                            NULL)),
-                                            TBmakePrf (F_shape,
+                                            TBmakePrf (F_shape_A,
                                                        TBmakeExprs (DUPdoDupTree (array),
                                                                     NULL))),
                               result);
@@ -559,7 +559,7 @@ BuildMiddleShape (node *array, dotinfo *info)
 
     DBUG_ENTER ("BuildMiddleShape");
 
-    shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL));
+    shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
 
     left = TBmakeNum (info->triplepos - 1);
 
@@ -594,20 +594,21 @@ BuildRightShape (node *array, dotinfo *info)
     for (cnt = 1; cnt <= maxdot; cnt++) {
         result = TBmakeExprs (
           MAKE_BIN_PRF (
-            F_sel,
+            F_sel_VxA,
             TCmakeIntVector (TBmakeExprs (
               MAKE_BIN_PRF (
                 F_sub_SxS,
-                MAKE_BIN_PRF (F_sel, TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL)),
-                              TBmakePrf (F_shape,
-                                         TBmakeExprs (TBmakePrf (F_shape,
+                MAKE_BIN_PRF (F_sel_VxA,
+                              TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL)),
+                              TBmakePrf (F_shape_A,
+                                         TBmakeExprs (TBmakePrf (F_shape_A,
                                                                  TBmakeExprs (DUPdoDupTree (
                                                                                 array),
                                                                               NULL)),
                                                       NULL))),
                 TBmakeNum (RDot2Pos (cnt, info))),
               NULL)),
-            TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL))),
+            TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL))),
           result);
     }
 
@@ -702,7 +703,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
     for (cnt = maxcnt; cnt > 0; cnt--) {
         if (LIsDot (cnt, info)) {
             /* Make selection iv[ldot(cnt)-1] */
-            result = TBmakeExprs (MAKE_BIN_PRF (F_sel,
+            result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                                 TCmakeIntVector (
                                                   TBmakeExprs (TBmakeNum (
                                                                  LIsDot (cnt, info) - 1),
@@ -774,13 +775,13 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
             /* Make selection iv[selcnt - rdot(cnt)] */
             result = TBmakeExprs (
               MAKE_BIN_PRF (
-                F_sel,
+                F_sel_VxA,
                 TCmakeIntVector (TBmakeExprs (
                   MAKE_BIN_PRF (F_sub_SxS,
-                                MAKE_BIN_PRF (F_sel,
+                                MAKE_BIN_PRF (F_sel_VxA,
                                               TCmakeIntVector (
                                                 TBmakeExprs (TBmakeNum (0), NULL)),
-                                              TBmakePrf (F_shape,
+                                              TBmakePrf (F_shape_A,
                                                          TBmakeExprs (DUPdoDupTree (iv),
                                                                       NULL))),
                                 TBmakeNum (RIsDot (cnt, info))),
@@ -940,8 +941,9 @@ BuildSelectionElementShape (node *array, dotinfo *info)
 
     DBUG_ENTER ("BuildSelectionElementShape");
 
-    shape = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
-                          TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL)));
+    shape
+      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
+                      TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL)));
 
     DBUG_RETURN (shape);
 }
@@ -1172,7 +1174,7 @@ ScanVector (node *vector, node *array, info *arg_info)
                     if (tripledotflag) {
                         position
                           = MAKE_BIN_PRF (F_sub_SxS,
-                                          TBmakePrf (F_dim,
+                                          TBmakePrf (F_dim_A,
                                                      TBmakeExprs (DUPdoDupTree (array),
                                                                   NULL)),
                                           TBmakeNum (exprslen - poscnt));
@@ -1180,9 +1182,9 @@ ScanVector (node *vector, node *array, info *arg_info)
                         position = TBmakeNum (poscnt);
                     }
 
-                    shape = MAKE_BIN_PRF (F_sel,
+                    shape = MAKE_BIN_PRF (F_sel_VxA,
                                           TCmakeIntVector (TBmakeExprs (position, NULL)),
-                                          TBmakePrf (F_shape,
+                                          TBmakePrf (F_shape_A,
                                                      TBmakeExprs (DUPdoDupTree (array),
                                                                   NULL)));
                     chain = MEMmalloc (sizeof (shpchain));
@@ -1229,7 +1231,7 @@ ScanId (node *id, node *array, info *arg_info)
 
     while (ids != NULL) {
         if ((ids->type == ID_vector) && (STReq (ids->id, SPID_NAME (id)))) {
-            node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL));
+            node *shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
             shpchain *chain = MEMmalloc (sizeof (shpchain));
 
             chain->shape = shape;
@@ -1266,15 +1268,15 @@ BuildShapeVectorMin (shpchain *vectors)
 
     indexids = TBmakeSpids (STRcpy (SPID_NAME (index)), NULL);
 
-    shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (vectors->shape), NULL));
+    shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (vectors->shape), NULL));
 
-    expr = MAKE_BIN_PRF (F_sel, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
+    expr = MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
 
     vectors = vectors->next;
 
     while (vectors != NULL) {
         expr = MAKE_BIN_PRF (F_min,
-                             MAKE_BIN_PRF (F_sel, DUPdoDupTree (index),
+                             MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index),
                                            DUPdoDupTree (vectors->shape)),
                              expr);
         vectors = vectors->next;
@@ -1486,7 +1488,7 @@ BuildPermutatedVector (node *ids, node *vect)
     while (trav != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (trav)) != N_dot) {
             node *entry
-              = MAKE_BIN_PRF (F_sel,
+              = MAKE_BIN_PRF (F_sel_VxA,
                               TCmakeIntVector (TBmakeExprs (TBmakeNum (pos), NULL)),
                               DUPdoDupTree (vect));
 
@@ -1511,7 +1513,7 @@ BuildPermutatedVector (node *ids, node *vect)
     while (trav != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
             node *entry
-              = MAKE_BIN_PRF (F_sel,
+              = MAKE_BIN_PRF (F_sel_VxA,
                               TCmakeIntVector (TBmakeExprs (TBmakeNum (pos), NULL)),
                               DUPdoDupTree (vect));
 
@@ -1646,7 +1648,7 @@ HDmodarray (node *arg_node, info *arg_info)
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         INFO_HD_DOTSHAPE (arg_info)
-          = TCmakePrf1 (F_shape, DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
+          = TCmakePrf1 (F_shape_A, DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -1891,12 +1893,12 @@ HDspap (node *arg_node, info *arg_info)
             dotlist *dots = info->right;
 
             while ((dots != NULL) && (dots->dottype == 1)) {
-                defshape = TBmakeExprs (TCmakePrf2 (F_sel,
+                defshape = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
                                                     TCmakeIntVector (
                                                       TBmakeExprs (TBmakeNum (
                                                                      dots->position - 1),
                                                                    NULL)),
-                                                    TCmakePrf1 (F_shape,
+                                                    TCmakePrf1 (F_shape_A,
                                                                 DUPdoDupTree (
                                                                   SPAP_ARG2 (arg_node)))),
                                         defshape);
@@ -1919,10 +1921,10 @@ HDspap (node *arg_node, info *arg_info)
                 middleshape
                   = TCmakePrf2 (F_take_SxV,
                                 TCmakePrf2 (F_sub_SxS,
-                                            TCmakePrf1 (F_dim, DUPdoDupTree (
-                                                                 SPAP_ARG2 (arg_node))),
+                                            TCmakePrf1 (F_dim_A, DUPdoDupTree (
+                                                                   SPAP_ARG2 (arg_node))),
                                             TBmakeNum (info->selcnt - info->triplepos)),
-                                TCmakePrf1 (F_shape,
+                                TCmakePrf1 (F_shape_A,
                                             DUPdoDupTree (SPAP_ARG2 (arg_node))));
                 /*
                  * drop( triplepos, ...)
@@ -1949,12 +1951,12 @@ HDspap (node *arg_node, info *arg_info)
 
                 while ((dots != NULL) && (dots->dottype == 1)) {
                     leftshape
-                      = TBmakeExprs (TCmakePrf2 (F_sel,
+                      = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
                                                  TCmakeIntVector (
                                                    TBmakeExprs (TBmakeNum (dots->position
                                                                            - 1),
                                                                 NULL)),
-                                                 TCmakePrf1 (F_shape,
+                                                 TCmakePrf1 (F_shape_A,
                                                              DUPdoDupTree (
                                                                SPAP_ARG2 (arg_node)))),
                                      leftshape);
@@ -1973,11 +1975,11 @@ HDspap (node *arg_node, info *arg_info)
              */
 
             if (info->triplepos == 0) {
-                defshape
-                  = TCmakePrf2 (F_cat_VxV, defshape,
-                                TCmakePrf2 (F_drop_SxV, TBmakeNum (info->selcnt),
-                                            TCmakePrf1 (F_shape, DUPdoDupTree (SPAP_ARG2 (
-                                                                   arg_node)))));
+                defshape = TCmakePrf2 (F_cat_VxV, defshape,
+                                       TCmakePrf2 (F_drop_SxV, TBmakeNum (info->selcnt),
+                                                   TCmakePrf1 (F_shape_A,
+                                                               DUPdoDupTree (
+                                                                 SPAP_ARG2 (arg_node)))));
             }
 
             /*
@@ -2000,13 +2002,13 @@ HDspap (node *arg_node, info *arg_info)
 
                 node *wlshape
                   = TCmakePrf2 (F_drop_SxV,
-                                TCmakePrf2 (F_sel,
+                                TCmakePrf2 (F_sel_VxA,
                                             TCmakeIntVector (
                                               TBmakeExprs (TBmakeNum (0), NULL)),
-                                            TCmakePrf1 (F_shape,
+                                            TCmakePrf1 (F_shape_A,
                                                         DUPdoDupTree (
                                                           INFO_HD_WLSHAPE (arg_info)))),
-                                TCmakePrf1 (F_shape,
+                                TCmakePrf1 (F_shape_A,
                                             DUPdoDupTree (SPAP_ARG2 (arg_node))));
 
                 result = BuildDefaultWithloop (SPAP_ARG2 (arg_node), wlshape);
@@ -2052,7 +2054,7 @@ HDprf (node *arg_node, info *arg_info)
 
     /* if in HD_scan mode, scan for shapes */
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel)) {
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel_VxA)) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
                         arg_info);
@@ -2175,7 +2177,7 @@ HDsetwl (node *arg_node, info *arg_info)
         node *withid = MakeTmpId ("permutationiv");
         node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
         node *shape
-          = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
+          = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
         node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
         node *defexpr = NULL;
         node *defshape = NULL;
@@ -2186,7 +2188,7 @@ HDsetwl (node *arg_node, info *arg_info)
         /* build the default value */
         defshape
           = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
-                          TBmakePrf (F_shape,
+                          TBmakePrf (F_shape_A,
                                      TBmakeExprs (DUPdoDupTree (intermediate), NULL)));
 
         defexpr = BuildDefaultWithloop (intermediate, defshape);

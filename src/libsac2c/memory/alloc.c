@@ -339,7 +339,7 @@ MakeDimArg (node *arg)
         break;
 
     case N_id:
-        arg = TCmakePrf1 (F_dim, DUPdoDupNode (arg));
+        arg = TCmakePrf1 (F_dim_A, DUPdoDupNode (arg));
         break;
 
     default:
@@ -379,7 +379,7 @@ MakeShapeArg (node *arg)
         break;
 
     case N_id:
-        arg = TCmakePrf1 (F_shape, DUPdoDupNode (arg));
+        arg = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg));
         break;
 
     default:
@@ -421,7 +421,8 @@ MakeSizeArg (node *arg)
         break;
 
     case N_id:
-        arg = TCmakePrf2 (F_sel, TBmakeNum (0), TCmakePrf1 (F_shape, DUPdoDupNode (arg)));
+        arg = TCmakePrf2 (F_sel_VxA, TBmakeNum (0),
+                          TCmakePrf1 (F_shape_A, DUPdoDupNode (arg)));
         break;
 
     default:
@@ -536,7 +537,7 @@ EMALarray (node *arg_node, info *arg_info)
                 als->dim = MakeDimArg (arg_node);
             }
 
-            als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
+            als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
         }
     }
 
@@ -1136,7 +1137,7 @@ EMALprf (node *arg_node, info *arg_info)
     INFO_MUSTFILL (arg_info) = TRUE;
 
     switch (PRF_PRF (arg_node)) {
-    case F_dim:
+    case F_dim_A:
         /*
          * dim( A );
          * alloc( 0, [] );
@@ -1145,23 +1146,23 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
-    case F_shape:
+    case F_shape_A:
         /*
          * shape( A );
          * alloc(1, shape( shape( A )))
          */
         als->dim = TBmakeNum (1);
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         /*
          * reshape( sh, A );
          * alloc_or_reshape( shape( sh )[0], sh, A );
          * copy( A);
          */
         als->dim = MakeSizeArg (PRF_ARG1 (arg_node));
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
 
         /*
          * For reshaping to work, both RHS and LHS must be non-scalar
@@ -1191,19 +1192,19 @@ EMALprf (node *arg_node, info *arg_info)
          * alloc( 1, shape( cat( V1, V2 )));
          */
         als->dim = TBmakeNum (1);
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
         break;
 
-    case F_sel:
+    case F_sel_VxA:
         /*
          * sel( iv, A );
          * alloc( dim(A) - shape(iv)[0], shape( sel( iv, A)))
          */
-        als->dim
-          = TCmakePrf2 (F_sub_SxS, TCmakePrf1 (F_dim, DUPdoDupNode (PRF_ARG2 (arg_node))),
-                        MakeSizeArg (PRF_ARG1 (arg_node)));
+        als->dim = TCmakePrf2 (F_sub_SxS,
+                               TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
+                               MakeSizeArg (PRF_ARG1 (arg_node)));
 
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupNode (arg_node));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
     case F_idx_sel:
@@ -1217,10 +1218,10 @@ EMALprf (node *arg_node, info *arg_info)
                      TUshapeKnown (AVIS_TYPE (als->avis)),
                      "idx_sel with unknown result shape found!");
         als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupNode (arg_node));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
     case F_idx_modarray:
         /*
          * modarray( A, iv, val);
@@ -1694,7 +1695,7 @@ EMALgenarray (node *arg_node, info *arg_info)
             DBUG_ASSERT (GENARRAY_DEFAULT (arg_node) != NULL,
                          "Default element required!");
             als->shape
-              = TCmakePrf1 (F_shape,
+              = TCmakePrf1 (F_shape_A,
                             TCmakePrf2 (F_genarray,
                                         DUPdoDupNode (GENARRAY_SHAPE (arg_node)),
                                         DUPdoDupNode (GENARRAY_DEFAULT (arg_node))));
@@ -1776,8 +1777,8 @@ EMALmodarray (node *arg_node, info *arg_info)
          * modarray-wl:
          * dim, shape are the same as in the modified array
          */
-        als->dim = TCmakePrf1 (F_dim, DUPdoDupNode (MODARRAY_ARRAY (arg_node)));
-        als->shape = TCmakePrf1 (F_shape, DUPdoDupNode (MODARRAY_ARRAY (arg_node)));
+        als->dim = TCmakePrf1 (F_dim_A, DUPdoDupNode (MODARRAY_ARRAY (arg_node)));
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (MODARRAY_ARRAY (arg_node)));
 
         /*
          * modarray-wl:

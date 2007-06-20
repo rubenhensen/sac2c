@@ -725,7 +725,7 @@ WLIid (node *arg_node, info *arg_info)
  * description:
  *   We are interested in prf applications. This may be transformations of
  *   later used index vectors for arrays to fold.
- *   If we find an F_sel, we check, based on the above made transformation
+ *   If we find an F_sel_VxA, we check, based on the above made transformation
  *   checks, if the index vector is valid (i.e. the array reference is
  *   foldable).
  *
@@ -746,7 +746,7 @@ WLIlet (node *arg_node, info *arg_info)
     /* if we are inside a WL we have to search for valid index transformations. */
     if (INFO_WL (arg_info)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
-           and in indexing (F_sel). */
+           and in indexing (F_sel_VxA). */
         exprn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (exprn)) {
             prf = PRF_PRF (exprn);
@@ -777,7 +777,7 @@ WLIlet (node *arg_node, info *arg_info)
                 CreateIndexInfoA (exprn, arg_info);
                 break;
 
-            case F_sel:
+            case F_sel_VxA:
                 /* check if index (1st argument) is valid. If yes, the array
                    could be folded.
                    We have 3 possibilities here:

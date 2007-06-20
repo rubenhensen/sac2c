@@ -553,7 +553,7 @@ RCIprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
     case F_alloc_or_reuse:
-    case F_reshape:
+    case F_reshape_VxA:
     case F_alloc_or_reshape:
     case F_reuse:
         /*

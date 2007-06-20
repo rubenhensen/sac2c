@@ -318,7 +318,7 @@ WLNCid (node *arg_node, info *arg_info)
     done = FALSE;
 
     if (parent != NULL) {
-        if (NODE_TYPE (parent) == N_prf && PRF_PRF (parent) == F_sel) {
+        if (NODE_TYPE (parent) == N_prf && PRF_PRF (parent) == F_sel_VxA) {
             if (AVIS_COUNTING_WL (avis) == NULL
                 || AVIS_COUNTING_WL (avis) != INFO_WITH (arg_info)) {
                 AVIS_WL_NEEDCOUNT (avis) += 1;

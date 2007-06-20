@@ -373,7 +373,7 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
 
             /* create a new assignment: newdim = dim( avis ); */
             preass = TBmakeAssign (TBmakeLet (TBmakeIds (newdim, NULL),
-                                              TCmakePrf1 (F_dim, TBmakeId (avis))),
+                                              TCmakePrf1 (F_dim_A, TBmakeId (avis))),
                                    NULL);
             AVIS_SSAASSIGN (newdim) = preass;
             INFO_PREASSIGN (arg_info)
@@ -396,7 +396,7 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
 
             /* create a new assignment: newshp = shape( avis ); */
             preass = TBmakeAssign (TBmakeLet (TBmakeIds (newshp, NULL),
-                                              TCmakePrf1 (F_shape, TBmakeId (avis))),
+                                              TCmakePrf1 (F_shape_A, TBmakeId (avis))),
                                    NULL);
             AVIS_SSAASSIGN (newshp) = preass;
             INFO_PREASSIGN (arg_info)
@@ -905,10 +905,10 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                 shpnode = DUPdoDupNode (AVIS_SHAPE (avis));
             }
         } else {
-            shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
+            shpnode = TCmakePrf1 (F_shape_A, TBmakeId (avis));
         }
 #else
-        shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
+        shpnode = TCmakePrf1 (F_shape_A, TBmakeId (avis));
 #endif
 
         if (FALSE == islacfun) {
@@ -940,10 +940,10 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                 dimnode = DUPdoDupNode (AVIS_DIM (avis));
             }
         } else {
-            dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
+            dimnode = TCmakePrf1 (F_dim_A, TBmakeId (avis));
         }
 #else
-        dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
+        dimnode = TCmakePrf1 (F_dim_A, TBmakeId (avis));
 #endif
 
         if (FALSE == islacfun) {

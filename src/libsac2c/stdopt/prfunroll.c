@@ -438,11 +438,11 @@ UPRFprf (node *arg_node, info *arg_info)
                     argavis1 = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (argavis1, INFO_VARDEC (arg_info));
-                    ass
-                      = TBmakeAssign (TBmakeLet (TBmakeIds (argavis1, NULL),
-                                                 TCmakePrf2 (F_sel, TBmakeId (selarravis),
-                                                             TBmakeId (avis1))),
-                                      ass);
+                    ass = TBmakeAssign (TBmakeLet (TBmakeIds (argavis1, NULL),
+                                                   TCmakePrf2 (F_sel_VxA,
+                                                               TBmakeId (selarravis),
+                                                               TBmakeId (avis1))),
+                                        ass);
                     AVIS_SSAASSIGN (argavis1) = ass;
                 }
 
@@ -463,11 +463,11 @@ UPRFprf (node *arg_node, info *arg_info)
                     argavis2 = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (argavis2, INFO_VARDEC (arg_info));
-                    ass
-                      = TBmakeAssign (TBmakeLet (TBmakeIds (argavis2, NULL),
-                                                 TCmakePrf2 (F_sel, TBmakeId (selarravis),
-                                                             TBmakeId (avis2))),
-                                      ass);
+                    ass = TBmakeAssign (TBmakeLet (TBmakeIds (argavis2, NULL),
+                                                   TCmakePrf2 (F_sel_VxA,
+                                                               TBmakeId (selarravis),
+                                                               TBmakeId (avis2))),
+                                        ass);
                     AVIS_SSAASSIGN (argavis2) = ass;
                 }
 

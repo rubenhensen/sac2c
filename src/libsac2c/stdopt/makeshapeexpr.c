@@ -364,10 +364,10 @@ MSEprf (node *arg_node, info *arg_info)
     shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));
 
     switch (PRF_PRF (arg_node)) {
-    case F_dim:
+    case F_dim_A:
     case F_idxs2offset:
     case F_vect2offset:
-    case F_sel:
+    case F_sel_VxA:
     case F_idx_shape_sel:
     case F_add_SxS:
     case F_sub_SxS:
@@ -385,7 +385,7 @@ MSEprf (node *arg_node, info *arg_info)
         rhsnode = TCmakeIntVector (NULL);
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
     case F_copy:
     case F_neg:
     case F_not_V:
@@ -420,11 +420,11 @@ MSEprf (node *arg_node, info *arg_info)
         rhsnode = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         rhsnode = DUPdoDupNode (PRF_ARG1 (arg_node));
         break;
 
-    case F_shape:
+    case F_shape_A:
         if (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
             node *adim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
             rhsnode = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (adim), NULL));

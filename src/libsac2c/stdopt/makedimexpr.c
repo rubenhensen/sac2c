@@ -282,10 +282,10 @@ MDEprf (node *arg_node, info *arg_info)
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
 
     switch (PRF_PRF (arg_node)) {
-    case F_dim:
+    case F_dim_A:
     case F_idxs2offset:
     case F_vect2offset:
-    case F_sel:
+    case F_sel_VxA:
     case F_idx_shape_sel:
     case F_add_SxS:
     case F_sub_SxS:
@@ -303,14 +303,14 @@ MDEprf (node *arg_node, info *arg_info)
         rhsnode = TBmakeNum (0);
         break;
 
-    case F_shape:
+    case F_shape_A:
     case F_drop_SxV:
     case F_take_SxV:
     case F_cat_VxV:
         rhsnode = TBmakeNum (1);
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
     case F_copy:
     case F_neg:
     case F_not_V:
@@ -345,7 +345,7 @@ MDEprf (node *arg_node, info *arg_info)
         rhsnode = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         rhsnode = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0),
                               DUPdoDupNode (PRF_ARG1 (arg_node)));
         break;

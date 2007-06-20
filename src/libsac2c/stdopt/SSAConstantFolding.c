@@ -61,7 +61,7 @@
  *  extended to SxV and VxS. rbe
  *
  * TODO:
- *  1. Could extend F_reshape(x,y) to work on any arrays where we can prove
+ *  1. Could extend F_reshape_VxA(x,y) to work on any arrays where we can prove
  *     that all(x==shape(y)). Perhaps SAA can do this handily.
  *
  *  @ingroup opt
@@ -897,7 +897,7 @@ StructOpSel (constant *idx, node *expr)
             tmp_idx = COdrop (take_vec, idx);
             take_vec = COfreeConstant (take_vec);
 
-            result = TCmakePrf2 (F_sel, COconstant2AST (tmp_idx),
+            result = TCmakePrf2 (F_sel_VxA, COconstant2AST (tmp_idx),
                                  CFscoDupStructConstant2Expr (struc_co));
             tmp_idx = COfreeConstant (tmp_idx);
         } else {
@@ -1495,9 +1495,9 @@ Modarray (node *a, constant *idx, node *elem)
      */
     if (COisEmptyVect (idx)) {
         DBUG_ASSERT ((NODE_TYPE (a) == N_id),
-                     "non id found in array-arg position of F_modarray");
+                     "non id found in array-arg position of F_modarray_AxVxS");
         DBUG_ASSERT ((NODE_TYPE (elem) == N_id),
-                     "non id found in elem-arg position of F_modarray");
+                     "non id found in elem-arg position of F_modarray_AxVxS");
         if (AVIS_SHAPE (ID_AVIS (a)) != NULL) {
             if (CMPTdoCompareTree (AVIS_SHAPE (ID_AVIS (a)), AVIS_SHAPE (ID_AVIS (elem)))
                 == CMPT_EQ) {
@@ -1663,7 +1663,7 @@ Sel (node *idx_expr, node *array_expr)
 
         switch (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))) {
 
-        case F_modarray:
+        case F_modarray_AxVxS:
             prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
 
             /* get parameter of modarray */
@@ -1717,12 +1717,12 @@ Sel (node *idx_expr, node *array_expr)
 
             break;
 
-        case F_sel:
+        case F_sel_VxA:
             prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
             concat = CatVxV (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
 
             if (concat != NULL) {
-                result = TCmakePrf2 (F_sel, concat,
+                result = TCmakePrf2 (F_sel_VxA, concat,
                                      DUPdoDupTree (
                                        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
             }
@@ -2254,7 +2254,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
     case F_not_V:
         break;
 
-    case F_dim:
+    case F_dim_A:
         if
             ONE_ARG (arg_expr)
             {
@@ -2263,7 +2263,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
-    case F_shape:
+    case F_shape_A:
         if
             ONE_ARG (arg_expr)
             {
@@ -2465,7 +2465,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
     case F_neq:
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         if
             TWO_CONST_ARG (arg_co)
             {
@@ -2497,7 +2497,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         }
         break;
 
-    case F_sel:
+    case F_sel_VxA:
         if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2561,7 +2561,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         break;
 
         /* three-argument functions */
-    case F_modarray:
+    case F_modarray_AxVxS:
         if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
             new_node = Modarray (arg_expr[0], arg_co[1], arg_expr[2]);
         }

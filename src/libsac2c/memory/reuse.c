@@ -270,8 +270,8 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_div_SxV:
     case F_div_VxS:
     case F_div_VxV:
-    case F_dim:
-    case F_shape:
+    case F_dim_A:
+    case F_shape_A:
     case F_idxs2offset:
         if (PRF_ARGS (arg_node) != NULL) {
             DBUG_PRINT ("RI", ("prf args"));
@@ -300,7 +300,7 @@ EMRIprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_reshape:
+    case F_reshape_VxA:
         DBUG_ASSERT ((0), "Illegal prf!");
         break;
 

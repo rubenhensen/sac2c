@@ -936,8 +936,8 @@ WLAAprf (node *arg_node, info *arg_info)
             arg_node_arg2 = PRF_ARG2 (arg_node);
 
             switch (PRF_PRF (arg_node)) {
-            case F_sel:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sel"));
+            case F_sel_VxA:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sel_VxA"));
 
                 if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {
                     /*
@@ -1034,8 +1034,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 INFO_WLAA_FEATURE (arg_info) = INFO_WLAA_FEATURE (arg_info) | FEATURE_ROT;
                 break;
 
-            case F_modarray:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_modarray"));
+            case F_modarray_AxVxS:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_modarray_AxVxS"));
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_MODA;
                 break;

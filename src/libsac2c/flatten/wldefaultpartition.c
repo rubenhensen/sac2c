@@ -232,7 +232,7 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
     sel = NULL;
   }
   else if ((len_index == dim_array)) {
-    sel = TBmakePrf( F_sel, TBmakeExprs( DUPdupIdsId( sel_vec),
+    sel = TBmakePrf( F_sel_VxA, TBmakeExprs( DUPdupIdsId( sel_vec),
                                          TBmakeExprs( DUPdoDupNode( sel_array),
                                                       NULL)));
   }

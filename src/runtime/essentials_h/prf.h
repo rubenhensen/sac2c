@@ -67,36 +67,36 @@
  * ICMs for primitive functions
  * ============================
  *
- * ND_PRF_DIM__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_DIM_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_SHAPE__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_RESHAPE__SHAPE_id( to_NT, to_sdim, shp_NT)
- * ND_PRF_RESHAPE__SHAPE_arr( to_NT, to_sdim, shp_size, ...shp_ANY...)
+ * ND_PRF_RESHAPE_VxA__SHAPE_id( to_NT, to_sdim, shp_NT)
+ * ND_PRF_RESHAPE_VxA__SHAPE_arr( to_NT, to_sdim, shp_size, ...shp_ANY...)
  *
- * ND_PRF_SEL__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_SEL_VxA__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim,
  *                       idx_size, idx_NT)
- * ND_PRF_SEL__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_SEL_VxA__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                        idx_size, idxs_ANY)
- * ND_PRF_SEL__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_SEL_VxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
  *                      idx_size, idx_NT, copyfun)
- * ND_PRF_SEL__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_SEL_VxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                       idx_size, idxs_ANY, copyfun)
  *
- * ND_PRF_MODARRAY__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_MODARRAY_AxVxS__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
  *                           idx_size, idx_NT, val_ANY, copyfun)
- * ND_PRF_MODARRAY__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ * ND_PRF_MODARRAY_AxVxS__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
  *
- * ND_PRF_TAKE__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
- * ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
+ * ND_PRF_TAKE_SxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_TAKE_SxV__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
  *
- * ND_PRF_DROP__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
- * ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
+ * ND_PRF_DROP_SxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_DROP_SxV__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
  *
- * ND_PRF_CAT__SHAPE( to_NT, to_sdim,
+ * ND_PRF_CAT_VxV__SHAPE( to_NT, to_sdim,
  *                    from1_NT, from1_sdim, from2_NT, from2_sdim)
- * ND_PRF_CAT__DATA( to_NT, to_sdim,
+ * ND_PRF_CAT_VxV__DATA( to_NT, to_sdim,
  *                   from1_NT, from1_sdim, from2_NT, from2_sdim, copyfun)
  *
  * ND_PRF_S__DATA( to_NT, op, scl)
@@ -114,34 +114,34 @@
  *
  ******************************************************************************/
 
-#define SAC_ND_PRF_DIM__DATA(to_NT, to_sdim, from_NT, from_sdim)                         \
-    SAC_TR_PRF_PRINT (("ND_PRF_DIM__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim,    \
+#define SAC_ND_PRF_DIM_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                       \
+    SAC_TR_PRF_PRINT (("ND_PRF_DIM_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim,  \
                        NT_STR (from_NT), from_sdim))                                     \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
 
-/* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
+/* ND_PRF_SHAPE_A__DATA( ...) is a C-ICM */
 
-/* ND_PRF_RESHAPE__SHAPE_id( ...) is a C-ICM */
-/* ND_PRF_RESHAPE__SHAPE_arr( ...) is a C-ICM */
+/* ND_PRF_RESHAPE_VxA__SHAPE_id( ...) is a C-ICM */
+/* ND_PRF_RESHAPE_VxA__SHAPE_arr( ...) is a C-ICM */
 
-/* ND_PRF_SEL__SHAPE_id( ...) is a C-ICM */
-/* ND_PRF_SEL__SHAPE_arr( ...) is a C-ICM */
-/* ND_PRF_SEL__DATA_id( ...) is a C-ICM */
-/* ND_PRF_SEL__DATA_arr( ...) is a C-ICM */
+/* ND_PRF_SEL_VxA__SHAPE_id( ...) is a C-ICM */
+/* ND_PRF_SEL_VxA__SHAPE_arr( ...) is a C-ICM */
+/* ND_PRF_SEL_VxA__DATA_id( ...) is a C-ICM */
+/* ND_PRF_SEL_VxA__DATA_arr( ...) is a C-ICM */
 
-/* ND_PRF_MODARRAY__DATA_id( ...) is a C-ICM */
-/* ND_PRF_MODARRAY__DATA_arr( ...) is a C-ICM */
+/* ND_PRF_MODARRAY_AxVxS__DATA_id( ...) is a C-ICM */
+/* ND_PRF_MODARRAY_AxVxS__DATA_arr( ...) is a C-ICM */
 
-/* ND_PRF_TAKE__SHAPE( ...) is a C-ICM */
-/* ND_PRF_TAKE__DATA( ...) is a C-ICM */
+/* ND_PRF_TAKE_SxV__SHAPE( ...) is a C-ICM */
+/* ND_PRF_TAKE_SxV__DATA( ...) is a C-ICM */
 
-/* ND_PRF_DROP__SHAPE( ...) is a C-ICM */
-/* ND_PRF_DROP__DATA( ...) is a C-ICM */
+/* ND_PRF_DROP_SxV__SHAPE( ...) is a C-ICM */
+/* ND_PRF_DROP_SxV__DATA( ...) is a C-ICM */
 
-/* ND_PRF_CAT__SHAPE( ...) is a C-ICM */
+/* ND_PRF_CAT_VxV__SHAPE( ...) is a C-ICM */
 
-#define SAC_ND_PRF_CAT__DATA(to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim, \
-                             copyfun)                                                    \
+#define SAC_ND_PRF_CAT_VxV__DATA(to_NT, to_sdim, from1_NT, from1_sdim, from2_NT,         \
+                                 from2_sdim, copyfun)                                    \
     {                                                                                    \
         int SAC_i, SAC_off;                                                              \
         SAC_off = SAC_ND_A_SIZE (from1_NT);                                              \

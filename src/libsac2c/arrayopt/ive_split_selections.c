@@ -226,7 +226,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVESPLITprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_sel:
+    case F_sel_VxA:
         DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL),
                      "missing saa shape!");
 
@@ -238,7 +238,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
         arg_node = new_node;
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
         DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
                      "missing saa shape!");
 

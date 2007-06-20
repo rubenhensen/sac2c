@@ -236,7 +236,7 @@
  *                        hosts the N_cond of the current Do-fun
  *
  * Furthermore, we tag all N_avis nodes that are used in other positions than
- * the second arg of F_sel_VxA_ as AVIS_ISUSED (see LSid / LSprf). Thus,
+ * the second arg of F_sel_VxA_VxA_ as AVIS_ISUSED (see LSid / LSprf). Thus,
  * all arguments that are used within selections only are exactly those
  * that have NOT been tagged;-)
  *
@@ -614,7 +614,7 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
      * create the selection:
      */
     accu = TBmakeAssign (TBmakeLet (TBmakeIds (scal_avis, NULL),
-                                    TCmakePrf2 (F_sel, TBmakeId (avis),
+                                    TCmakePrf2 (F_sel_VxA, TBmakeId (avis),
                                                 TBmakeId (array_avis))),
                          (node *)accu);
     AVIS_SSAASSIGN (scal_avis) = accu;
@@ -840,7 +840,7 @@ LSprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LSprf");
 
-    if (PRF_PRF (arg_node) == F_sel) {
+    if (PRF_PRF (arg_node) == F_sel_VxA) {
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
     } else {
         arg_node = TRAVcont (arg_node, arg_info);

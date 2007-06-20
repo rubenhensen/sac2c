@@ -248,56 +248,56 @@ ICM_END( ND_CREATE__ARRAY__DATA, (to_NT, to_sdim, val_size, vals_ANY, copyfun))
 #endif
 
 
-#if defined(ND_PRF_SHAPE__DATA) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SHAPE__DATA, ICM_TRACE_NONE)
+#if defined(ND_PRF_SHAPE_A__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SHAPE_A__DATA, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_PRF_SHAPE__DATA, (to_NT, to_sdim, from_NT, from_sdim))
+ICM_END( ND_PRF_SHAPE_A__DATA, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
-#if defined(ND_PRF_RESHAPE__SHAPE_id) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_RESHAPE__SHAPE_id, ICM_TRACE_NONE)
+#if defined(ND_PRF_RESHAPE_VxA__SHAPE_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_RESHAPE_VxA__SHAPE_id, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( shp_NT)
-ICM_END( ND_PRF_RESHAPE__SHAPE_id, (to_NT, to_sdim, shp_NT))
+ICM_END( ND_PRF_RESHAPE_VxA__SHAPE_id, (to_NT, to_sdim, shp_NT))
 #endif
 
-#if defined(ND_PRF_RESHAPE__SHAPE_arr) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_RESHAPE__SHAPE_arr, ICM_TRACE_NONE)
+#if defined(ND_PRF_RESHAPE_VxA__SHAPE_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_RESHAPE_VxA__SHAPE_arr, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shp_ANY)
-ICM_END( ND_PRF_RESHAPE__SHAPE_arr, (to_NT, to_sdim, shp_size, shp_ANY))
+ICM_END( ND_PRF_RESHAPE_VxA__SHAPE_arr, (to_NT, to_sdim, shp_size, shp_ANY))
 #endif
 
-#if defined(ND_PRF_SEL__SHAPE_id) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SEL__SHAPE_id, ICM_TRACE_NONE)
+#if defined(ND_PRF_SEL_VxA__SHAPE_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SEL_VxA__SHAPE_id, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_NT( idx_NT)
-ICM_END( ND_PRF_SEL__SHAPE_id, (to_NT, to_sdim, from_NT, from_sdim, idx_NT))
+ICM_END( ND_PRF_SEL_VxA__SHAPE_id, (to_NT, to_sdim, from_NT, from_sdim, idx_NT))
 #endif
 
-#if defined(ND_PRF_SEL__SHAPE_arr) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SEL__SHAPE_arr, ICM_TRACE_NONE)
+#if defined(ND_PRF_SEL_VxA__SHAPE_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SEL_VxA__SHAPE_arr, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_INT( idx_size)
   ICM_VARANY( idx_size, idxs_ANY)
-ICM_END( ND_PRF_SEL__SHAPE_arr, (to_NT, to_sdim, from_NT, from_sdim,
-                                 idx_size, idxs_ANY))
+ICM_END( ND_PRF_SEL_VxA__SHAPE_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                         idx_size, idxs_ANY))
 #endif
 
-#if defined(ND_PRF_SEL__DATA_id) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SEL__DATA_id, ICM_TRACE_NONE)
+#if defined(ND_PRF_SEL_VxA__DATA_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SEL_VxA__DATA_id, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
@@ -305,12 +305,12 @@ ICM_DEF( ND_PRF_SEL__DATA_id, ICM_TRACE_NONE)
   ICM_NT( idx_NT)
   ICM_INT( idx_size)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_SEL__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
-                               idx_NT, idx_size, copyfun))
+ICM_END( ND_PRF_SEL_VxA__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
+                                 idx_NT, idx_size, copyfun))
 #endif
 
-#if defined(ND_PRF_SEL__DATA_arr) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SEL__DATA_arr, ICM_TRACE_NONE)
+#if defined(ND_PRF_SEL_VxA__DATA_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SEL_VxA__DATA_arr, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
@@ -318,12 +318,12 @@ ICM_DEF( ND_PRF_SEL__DATA_arr, ICM_TRACE_NONE)
   ICM_INT( idx_size)
   ICM_VARANY( idx_size, idxs_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_SEL__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
-                                idx_size, idxs_ANY, copyfun))
+ICM_END( ND_PRF_SEL_VxA__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                  idx_size, idxs_ANY, copyfun))
 #endif
 
-#if defined(ND_PRF_MODARRAY__DATA_id) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY__DATA_id, ICM_TRACE_NONE)
+#if defined(ND_PRF_MODARRAY_AxVxS__DATA_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxS__DATA_id, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
@@ -332,12 +332,12 @@ ICM_DEF( ND_PRF_MODARRAY__DATA_id, ICM_TRACE_NONE)
   ICM_INT( idx_size)
   ICM_ANY( val_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_MODARRAY__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
-                                    idx_NT, idx_size, val_ANY, copyfun))
+ICM_END( ND_PRF_MODARRAY_AxVxS__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
+                                          idx_NT, idx_size, val_ANY, copyfun))
 #endif
 
-#if defined(ND_PRF_MODARRAY__DATA_arr) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY__DATA_arr, ICM_TRACE_NONE)
+#if defined(ND_PRF_MODARRAY_AxVxS__DATA_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxS__DATA_arr, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
@@ -346,8 +346,8 @@ ICM_DEF( ND_PRF_MODARRAY__DATA_arr, ICM_TRACE_NONE)
   ICM_VARANY( idx_size, idxs_ANY)
   ICM_ANY( val_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
-                                     idx_size, idxs_ANY, val_ANY, copyfun))
+ICM_END( ND_PRF_MODARRAY_AxVxS__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                             idx_size, idxs_ANY, val_ANY, copyfun))
 #endif
 
 #if defined(ND_PRF_IDX_SEL__SHAPE) || defined(ICM_ALL)
@@ -396,60 +396,60 @@ ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_NT, to_sdim, from_NT, from_sdim,
                                      idx_ANY, val_ANY, copyfun))
 #endif
 
-#if defined(ND_PRF_TAKE__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_TAKE__SHAPE, ICM_TRACE_NONE)
+#if defined(ND_PRF_TAKE_SxV__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_TAKE_SxV__SHAPE, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ANY( cnt_ANY)
-ICM_END( ND_PRF_TAKE__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+ICM_END( ND_PRF_TAKE_SxV__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
 #endif
 
-#if defined(ND_PRF_TAKE__DATA) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_TAKE__DATA, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( from_NT)
-  ICM_INT( from_sdim)
-  ICM_ANY( cnt_ANY)
-  ICM_ID( copyfun)
-ICM_END( ND_PRF_TAKE__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
-                             copyfun))
-#endif
-
-#if defined(ND_PRF_DROP__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_DROP__SHAPE, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( from_NT)
-  ICM_INT( from_sdim)
-  ICM_ANY( cnt_ANY)
-ICM_END( ND_PRF_DROP__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
-#endif
-
-#if defined(ND_PRF_DROP__DATA) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_DROP__DATA, ICM_TRACE_NONE)
+#if defined(ND_PRF_TAKE_SxV__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_TAKE_SxV__DATA, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ANY( cnt_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_DROP__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
-                             copyfun))
+ICM_END( ND_PRF_TAKE_SxV__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
+                                   copyfun))
 #endif
 
-#if defined(ND_PRF_CAT__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_CAT__SHAPE, ICM_TRACE_NONE)
+#if defined(ND_PRF_DROP_SxV__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_DROP_SxV__SHAPE, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+ICM_END( ND_PRF_DROP_SxV__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+#endif
+
+#if defined(ND_PRF_DROP_SxV__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_DROP_SxV__DATA, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+  ICM_ID( copyfun)
+ICM_END( ND_PRF_DROP_SxV__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
+                                  copyfun))
+#endif
+
+#if defined(ND_PRF_CAT_VxV__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_CAT_VxV__SHAPE, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from1_NT)
   ICM_INT( from1_sdim)
   ICM_NT( from2_NT)
   ICM_INT( from2_sdim)
-ICM_END( ND_PRF_CAT__SHAPE, (to_NT, to_sdim,
-                             from1_NT, from1_sdim, from2_NT, from2_sdim))
+ICM_END( ND_PRF_CAT_VxV__SHAPE, (to_NT, to_sdim,
+                                   from1_NT, from1_sdim, from2_NT, from2_sdim))
 #endif
 
 

@@ -265,7 +265,7 @@ CVPid (node *arg_node, info *arg_info)
  * description:
  *   traverse in the arguments of the prf node
  *   Some prf arguments must not become constants.
- *   E.g. The prf implementation of F_dim cannot handle constants at all!
+ *   E.g. The prf implementation of F_dim_A cannot handle constants at all!
  *
  *****************************************************************************/
 
@@ -280,13 +280,13 @@ CVPprf (node *arg_node, info *arg_info)
      * are allowed to become constant
      */
     switch (PRF_PRF (arg_node)) {
-    case F_dim:
-    case F_shape:
+    case F_dim_A:
+    case F_shape_A:
     case F_accu:
     case F_type_conv:
     case F_type_error:
     case F_dispatch_error:
-    case F_sel:
+    case F_sel_VxA:
     case F_copy:
         /*
          * Only propagate variables here
@@ -320,7 +320,7 @@ CVPprf (node *arg_node, info *arg_info)
           = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
-    case F_modarray:
+    case F_modarray_AxVxS:
         /*
          * The first two arguments of modarray must be variable
          * the other one can as well be constant scalars

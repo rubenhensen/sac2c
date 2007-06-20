@@ -1606,11 +1606,11 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       ;
 
-prf: PRF_DIM_A          { $$ = F_dim;     }
-   | PRF_SHAPE_A        { $$ = F_shape;   }
-   | PRF_RESHAPE_VxA    { $$ = F_reshape; }
-   | PRF_SEL_VxA        { $$ = F_sel;     }
-   | PRF_MODARRAY_AxVxS { $$ = F_modarray;}
+prf: PRF_DIM_A          { $$ = F_dim_A;     }
+   | PRF_SHAPE_A        { $$ = F_shape_A;   }
+   | PRF_RESHAPE_VxA    { $$ = F_reshape_VxA; }
+   | PRF_SEL_VxA        { $$ = F_sel_VxA;     }
+   | PRF_MODARRAY_AxVxS { $$ = F_modarray_AxVxS;}
    | PRF_ADD_SxS        { $$ = F_add_SxS; }
    | PRF_ADD_SxV        { $$ = F_add_SxV; }
    | PRF_ADD_VxS        { $$ = F_add_VxS; }

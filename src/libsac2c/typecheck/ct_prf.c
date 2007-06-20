@@ -497,7 +497,7 @@ NTCCTprf_reshape (te_info *info, ntype *args)
                 res = TYmakeAUD (TYcopyType (scalar));
                 break;
             default:
-                DBUG_ASSERT (FALSE, "NTCPRF_reshape applied to non-array type");
+                DBUG_ASSERT (FALSE, "NTCPRF_reshape_VxA applied to non-array type");
             }
         }
     }

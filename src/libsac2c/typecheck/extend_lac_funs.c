@@ -203,7 +203,8 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
         new_arg_avis = CreateTmpVar ("arg", arg_info);
 
         if (arg_avis == pred_avis) {
-            new_arg_expr = TCmakePrf2 (F_sel, TBmakeId (idx_avis), TBmakeId (pred_avis));
+            new_arg_expr
+              = TCmakePrf2 (F_sel_VxA, TBmakeId (idx_avis), TBmakeId (pred_avis));
             assigns = CreateLetAssign (new_arg_avis, new_arg_expr, assigns);
 
         } else {
@@ -288,7 +289,7 @@ CreateWithLoop (node *ap, info *arg_info)
     shape_avis = CreateTmpVar ("shape", arg_info);
     idx_avis = CreateTmpVar ("idx", arg_info);
 
-    shape_expr = TCmakePrf1 (F_shape, TBmakeId (pred_avis));
+    shape_expr = TCmakePrf1 (F_shape_A, TBmakeId (pred_avis));
     idx_expr = TCmakePrf2 (F_mul_SxV, TBmakeNum (0), TBmakeId (shape_avis));
 
     INFO_ASSIGNS (arg_info)

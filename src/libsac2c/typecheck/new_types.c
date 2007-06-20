@@ -6228,16 +6228,16 @@ BuildDimAssign (node *arg, node **new_vardecs)
               = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
                                                                  SHcreateShape (0)),
                                                       new_vardecs),
-                                         TCmakePrf1 (F_dim, TBmakeId (ARG_AVIS (arg)))),
+                                         TCmakePrf1 (F_dim_A, TBmakeId (ARG_AVIS (arg)))),
                               NULL);
 
             dim = TCmakePrf2 (F_sub_SxS, TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))),
                               TBmakeNum (TYgetDim (basetype)));
         } else {
-            dim = TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+            dim = TBmakePrf (F_dim_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
         }
     } else {
-        dim = TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+        dim = TBmakePrf (F_dim_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
     }
 
     assign = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
@@ -6294,16 +6294,17 @@ BuildShapeAssign (node *arg, node **new_vardecs)
               = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKD (TYmakeSimpleType (T_int),
                                                                  1, SHcreateShape (0)),
                                                       new_vardecs),
-                                         TCmakePrf1 (F_shape, TBmakeId (ARG_AVIS (arg)))),
+                                         TCmakePrf1 (F_shape_A,
+                                                     TBmakeId (ARG_AVIS (arg)))),
                               NULL);
 
             shape = TCmakePrf2 (F_drop_SxV, TBmakeNum (-TYgetDim (basetype)),
                                 TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))));
         } else {
-            shape = TBmakePrf (F_shape, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+            shape = TBmakePrf (F_shape_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
         }
     } else {
-        shape = TBmakePrf (F_shape, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+        shape = TBmakePrf (F_shape_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
     }
 
     assign = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAUDGZ (TYmakeSimpleType (T_int)),
@@ -6352,7 +6353,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
 
         switch (prf) {
         case F_sub_SxS: /* last op in dim on udt */
-        case F_dim: {
+        case F_dim_A: {
             node *prf2;
             node *prf_ids2;
 
@@ -6374,7 +6375,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         } break;
 
         case F_drop_SxV: /* last op of shape on udts */
-        case F_shape: {
+        case F_shape_A: {
             node *prf2, *prf3, *prf4, *array;
             node *flt_prf2, *flt_prf3, *flt_prf4, *flt_array;
             node *aexprs, *last_ass;
@@ -6393,7 +6394,8 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                                                    COaST2Constant (array)),
                                         new_vardecs);
 
-                prf2 = TBmakePrf (F_sel, TBmakeExprs (flt_array, TBmakeExprs (id, NULL)));
+                prf2 = TBmakePrf (F_sel_VxA,
+                                  TBmakeExprs (flt_array, TBmakeExprs (id, NULL)));
                 flt_prf2
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
                                 new_vardecs);

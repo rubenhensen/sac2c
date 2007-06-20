@@ -336,7 +336,7 @@ EMRCOprf (node *arg_node, info *arg_info)
             INFO_SECONDTRAV (arg_info) = TRUE;
             break;
 
-        case F_reshape:
+        case F_reshape_VxA:
             /*
              * Mark reused variable in NOFREEMASK such that it will not be
              * statically freed
@@ -412,7 +412,7 @@ EMRCOprf (node *arg_node, info *arg_info)
             case F_alloc_or_reuse:
             case F_reuse:
             case F_alloc_or_reshape:
-            case F_reshape:
+            case F_reshape_VxA:
                 if ((PRF_PRF (prf) == F_dec_rc)
                     && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_LHS (arg_info)))
                     && (NUM_VAL (PRF_ARG1 (arg_node)) == NUM_VAL (PRF_ARG2 (prf)))) {

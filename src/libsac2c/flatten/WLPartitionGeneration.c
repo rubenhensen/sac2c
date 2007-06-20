@@ -1514,7 +1514,7 @@ WLPGwith (node *arg_node, info *arg_info)
                  * array  = [:BASETYPE]
                  * result = reshape( newshp, array);
                  */
-                rhs = TCmakePrf1 (F_shape,
+                rhs = TCmakePrf1 (F_shape_A,
                                   TBmakeId (ID_AVIS (GENARRAY_DEFAULT (genarray))));
 
                 rhs_type = NTCnewTypeCheck_Expr (rhs);
@@ -1595,7 +1595,7 @@ WLPGwith (node *arg_node, info *arg_info)
              */
             arg_node = FREEdoFreeNode (arg_node);
             arg_node
-              = TCmakePrf2 (F_reshape, TBmakeId (newshpavis), TBmakeId (arrayavis));
+              = TCmakePrf2 (F_reshape_VxA, TBmakeId (newshpavis), TBmakeId (arrayavis));
         }
 
         if (shpshape != NULL) {

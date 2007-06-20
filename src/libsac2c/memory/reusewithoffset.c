@@ -95,7 +95,7 @@ IdentifyNoopArray (node *with)
         node *cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
 
         if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel)
+            && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
             && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
             && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
             && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)) {
@@ -121,7 +121,7 @@ IsNoopPart (node *part, node *rc)
     cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
 
     if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel)
+        && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
         && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
         && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)
@@ -293,7 +293,7 @@ RWOprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RWOprf");
 
-    if ((PRF_PRF (arg_node) == F_sel) && (INFO_RC (arg_info) != NULL)
+    if ((PRF_PRF (arg_node) == F_sel_VxA) && (INFO_RC (arg_info) != NULL)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (INFO_RC (arg_info)))) {

@@ -138,7 +138,7 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *cexpr, node *a
     exprs = TBmakeExprs (tmpn, TBmakeExprs (TBmakeId (IDS_AVIS (PART_VEC (partn))),
                                             TBmakeExprs (DUPdoDupTree (cexpr), NULL)));
 
-    letexpr = TBmakePrf (F_modarray, exprs);
+    letexpr = TBmakePrf (F_modarray_AxVxS, exprs);
 
     /* append to body code */
     tmpn = TBmakeAssign (TBmakeLet (DUPdoDupNode (array), letexpr), NULL);
@@ -663,7 +663,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
               = ((N_let == NODE_TYPE (tmpn))
                  && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
                      == IDS_AVIS (LET_IDS (tmpn)))
-                 && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
+                 && (N_prf == NODE_TYPE (exprn)) && (F_sel_VxA == PRF_PRF (exprn))
                  && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
                  && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
                  && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
@@ -802,7 +802,7 @@ FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
                                                      SHcreateShape (1, length)));
     vardecs = TBmakeVardec (vectavis, vardecs);
 
-    reshape = TCmakePrf2 (F_reshape, TBmakeId (shpavis), TBmakeId (vectavis));
+    reshape = TCmakePrf2 (F_reshape_VxA, TBmakeId (shpavis), TBmakeId (vectavis));
 
     if (TYisAKV (type)) {
         IDS_NTYPE (lhs) = TYeliminateAKV (type);

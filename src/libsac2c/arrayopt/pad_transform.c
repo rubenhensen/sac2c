@@ -1048,7 +1048,7 @@ APTprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
 
-    case F_sel:
+    case F_sel_VxA:
         DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " sel() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -1059,7 +1059,7 @@ APTprf (node *arg_node, info *arg_info)
 
         break;
 
-    case F_dim:
+    case F_dim_A:
         DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " dim() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -1070,7 +1070,7 @@ APTprf (node *arg_node, info *arg_info)
 
         break;
 
-    case F_shape:
+    case F_shape_A:
         DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " shape() has empty argument list!");
         /* check, if argument has paddable shape */
 

@@ -173,11 +173,11 @@ CHECK (SAC_PRF_BINOP (op, arg1, arg2))
 CHECK (SAC_PRF_MIN (dummy, arg1, arg2))
 CHECK (SAC_PRF_MAX (dummy, arg1, arg2))
 
-CHECK (SAC_ND_PRF_DIM__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
-                             (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
-CHECK (SAC_ND_PRF_CAT__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
-                             (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
-                             (from2_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, copyfun))
+CHECK (SAC_ND_PRF_DIM_A__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
+                               (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
+CHECK (SAC_ND_PRF_CAT_VxV__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
+                                 (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
+                                 (from2_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, copyfun))
 CHECK (SAC_ND_PRF_CONV_A__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))),
                                 (from1_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 CHECK (SAC_ND_PRF_S__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), op_macro, op, scl))

@@ -209,20 +209,20 @@ PRF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FALSE
    * Array operations
    */
 
-  PRF (F_dim, "F_dim", "_dim_", "dim", FALSE, 1, NTCCTprf_dim, COdim, FALSE, NULL,
+  PRF (F_dim_A, "F_dim_A", "_dim_", "dim", FALSE, 1, NTCCTprf_dim, COdim, FALSE, NULL,
        CFprf_dim, NULL, NULL),
 
-  PRF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCCTprf_shape, COshape, FALSE,
-       NULL, CFprf_shape, NULL, NULL),
+  PRF (F_shape_A, "F_shape_A", "_shape_", "shape", FALSE, 1, NTCCTprf_shape, COshape,
+       FALSE, NULL, CFprf_shape, NULL, NULL),
 
-  PRF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
+  PRF (F_reshape_VxA, "F_reshape_VxA", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
        COreshape, FALSE, NULL, CFprf_reshape, NULL, NULL),
 
-  PRF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE, NULL, NULL,
-       NULL, NULL),
+  PRF (F_sel_VxA, "F_sel_VxA", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE,
+       NULL, NULL, NULL, NULL),
 
-  PRF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3, NTCCTprf_modarrayA,
-       COmodarray, FALSE, NULL, NULL, NULL, NULL),
+  PRF (F_modarray_AxVxS, "F_modarray_AxVxS", "_modarray_", "modarray", FALSE, 3,
+       NTCCTprf_modarrayA, COmodarray, FALSE, NULL, NULL, NULL, NULL),
 
   PRF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCCTprf_cat_VxV, COcat,
        FALSE, NULL, NULL, NULL, NULL),
