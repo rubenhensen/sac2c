@@ -527,6 +527,8 @@ WLSIMPpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSIMPpart");
 
+    INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
+
     if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
@@ -581,7 +583,6 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSIMPgenerator");
 
-    INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
     /**
      * Remove empty generators
      *
