@@ -1,6 +1,6 @@
 /*
  *
- * $Id:$
+ * $Id$
  */
 
 /**
@@ -16,7 +16,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 
-static char *FAIL = '\0';
+static char *FAIL = "";
 
 static node *
 ExtractOneArg (node *exprs, node **arg)
