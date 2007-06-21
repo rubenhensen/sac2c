@@ -3435,6 +3435,8 @@
       </attributes>
       <flags>
         <flag name="IsUnused" />
+        <flag name="Nup" default="FALSE" />
+        <flag name="Ndown" default="FALSE" />
       </flags>
       <checks>
         <check name="CHKassignAvisSSAAssign" />
@@ -5109,6 +5111,8 @@
           selections.
           </description>
         </flag>
+        <flag name="Nup" default="FALSE" />
+        <flag name="Ndown" default="FALSE" />
       </flags>
     </node>
 <!--
