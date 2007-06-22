@@ -66,10 +66,17 @@ OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
 OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
 OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
+#ifndef DISABLE_PHM
 OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
 OPTIMIZE ("aps", aps, TRUE, TRUE, "arena preselection (for PHM)")
 OPTIMIZE ("dao", dao, TRUE, TRUE, "descriptor allocation opt. (for PHM)")
 OPTIMIZE ("msca", msca, TRUE, TRUE, "memory size cache adjustment (for PHM)")
+#else
+OPTIMIZE ("phm", phm, FALSE, FALSE, "private heap management")
+OPTIMIZE ("aps", aps, FALSE, FALSE, "arena preselection (for PHM)")
+OPTIMIZE ("dao", dao, FALSE, FALSE, "descriptor allocation opt. (for PHM)")
+OPTIMIZE ("msca", msca, FALSE, FALSE, "memory size cache adjustment (for PHM)")
+#endif
 OPTIMIZE ("ap", ap, FALSE, FALSE, "array padding")
 OPTIMIZE ("apl", apl, FALSE, FALSE, "array placement")
 OPTIMIZE ("wls", wls, TRUE, TRUE, "with-loop scalarization")
