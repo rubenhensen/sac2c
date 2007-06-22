@@ -84,6 +84,15 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="WLLOM" name="Withloop lock optimization marking" default="sons" include="wl_lock_optimization_marking.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Assign" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
           <node name="SSAstack" />

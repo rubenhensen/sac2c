@@ -516,6 +516,9 @@ SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
 SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dodcr, opt)
 
+SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMarking,
+          global.optimize.dowllo, opt)
+
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
 SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
