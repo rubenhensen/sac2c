@@ -101,6 +101,8 @@ WLLOMids (node *arg_node, info *arg_info)
         AVIS_NUP (IDS_AVIS (arg_node)) = TRUE;
     }
 
+    arg_node = TRAVcont (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
