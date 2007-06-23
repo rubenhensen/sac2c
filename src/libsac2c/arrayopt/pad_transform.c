@@ -1042,7 +1042,7 @@ APTprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("APTprf");
 
-    DBUG_PRINT ("APT", ("prf-node detected: '%s'", global.mdb_prf[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("APT", ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]));
 
     /* only some PRFs may be padded successfully (without conversion) */
 

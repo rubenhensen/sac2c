@@ -170,7 +170,7 @@ typedef enum {
 typedef struct STRINGSET_T stringset_t;
 
 typedef enum {
-#define PRFnode_name(node_name) node_name
+#define PRFname(name) F_##name
 #include "prf_info.mac"
 } prf;
 

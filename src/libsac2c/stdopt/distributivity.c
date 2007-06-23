@@ -149,23 +149,6 @@ DISTRIBdoDistributivityOptimizationOneFundef (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
-#ifndef DBUG_OFF
-static void
-Print (node *n)
-{
-    DBUG_ENTER ("Print");
-
-    global.prf_is_infix[F_add_SxS] = FALSE;
-    global.prf_is_infix[F_mul_SxS] = FALSE;
-
-    PRTdoPrint (n);
-
-    global.prf_is_infix[F_add_SxS] = TRUE;
-    global.prf_is_infix[F_mul_SxS] = TRUE;
-
-    DBUG_VOID_RETURN;
-}
-#endif
 
 static prf
 normalizePrf (prf prf)
@@ -693,7 +676,7 @@ OptimizeMop (node *mop)
                     mop = newmop;
                 }
 
-                DBUG_EXECUTE ("DISTRIB", Print (mop););
+                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
                 global.optcounters.dl_expr++;
                 mop = OptimizeMop (mop);
             }
@@ -716,7 +699,7 @@ OptimizeMop (node *mop)
             }
 
             if (optimized) {
-                DBUG_EXECUTE ("DISTRIB", Print (mop););
+                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
                 mop = OptimizeMop (mop);
             }
         }
@@ -904,7 +887,7 @@ DISTRIBprf (node *arg_node, info *arg_info)
               = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)),
                               isArg1Scl (p) && isArg2Scl (p), INFO_LOCALMASK (arg_info));
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
-                DBUG_EXECUTE ("DISTRIB", Print (mop););
+                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
 
                 /*
                  * Optimize multi-operation
@@ -922,7 +905,7 @@ DISTRIBprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_EXECUTE ("DISTRIB", Print (mop););
+                    DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
                 }

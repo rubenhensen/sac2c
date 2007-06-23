@@ -191,9 +191,9 @@ WLFdbugIndexInfo (index_info *iinfo)
                 if (tmpii->arg_no) {
                     if (1 == tmpii->arg_no)
                         printf ("|   %d%s. ", tmpii->const_arg[sel],
-                                global.mdb_prf[tmpii->prf]);
+                                global.prf_name[tmpii->prf]);
                     else
-                        printf ("|   .%s%d ", global.mdb_prf[tmpii->prf],
+                        printf ("|   .%s%d ", global.prf_name[tmpii->prf],
                                 tmpii->const_arg[sel]);
                 } else
                     printf ("|   no prf ");
@@ -208,9 +208,9 @@ WLFdbugIndexInfo (index_info *iinfo)
         sel = 0;
         if (tmpii->arg_no) {
             if (1 == tmpii->arg_no)
-                printf ("|   %d%s. ", tmpii->const_arg[sel], global.mdb_prf[tmpii->prf]);
+                printf ("|   %d%s. ", tmpii->const_arg[sel], global.prf_name[tmpii->prf]);
             else
-                printf ("|   %s%d. ", global.mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
+                printf ("|   %s%d. ", global.prf_name[tmpii->prf], tmpii->const_arg[sel]);
             printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
         }
     }

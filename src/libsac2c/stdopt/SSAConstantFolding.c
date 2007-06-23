@@ -1284,7 +1284,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 
     if (result != NULL) {
         DBUG_PRINT ("CF",
-                    ("arithmetic constant folding done for %s.", global.mdb_prf[op]));
+                    ("arithmetic constant folding done for %s.", global.prf_name[op]));
     }
 
     DBUG_RETURN (result);
@@ -2569,7 +2569,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
 
     default:
         DBUG_PRINT ("CF", ("no implementation in SSAConstantFolding for prf %s",
-                           global.mdb_prf[op]));
+                           global.prf_name[op]));
     }
 
     /* free used constant data */
@@ -2616,7 +2616,7 @@ CFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
 
     /* look up arguments */
     arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);

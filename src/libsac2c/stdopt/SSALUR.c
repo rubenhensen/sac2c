@@ -469,7 +469,7 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
 #ifndef DBUG_OFF
     if (result) {
-        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", global.mdb_prf[pred], term));
+        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", global.prf_name[pred], term));
     }
 #endif
 
@@ -663,7 +663,7 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
     }
 
     DBUG_PRINT ("SSALUR", ("LUR modifier: %s %s %d", AVIS_NAME (ID_AVIS ((*id))),
-                           global.mdb_prf[(*loop_prf)], (*inc)));
+                           global.prf_name[(*loop_prf)], (*inc)));
 
     DBUG_RETURN (FALSE);
 }

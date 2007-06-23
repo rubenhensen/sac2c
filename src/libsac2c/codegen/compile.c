@@ -164,11 +164,12 @@ FreeInfo (info *info)
  * Enum type for specifying kinds of Generic Functions
  *
  *****************************************************************************/
+
 typedef enum { GF_copy, GF_free } generic_fun_t;
 
 /******************************************************************************
  *
- * global variables for the compilation of the new with-loop
+ * static global variables for the compilation of the new with-loop
  *
  ******************************************************************************/
 
@@ -184,6 +185,17 @@ static node *wlstride = NULL;
  * This macro indicates whether there are multiple segments present or not.
  */
 #define MULTIPLE_SEGS(seg) ((seg != NULL) && (WLSEGX_NEXT (seg) != NULL))
+
+/******************************************************************************
+ *
+ * static global variables for the compilation of primitive functions
+ *
+ ******************************************************************************/
+
+static char *prf_ccode_tab[] = {
+#define PRFccode(ccode) "SAC_ND_PRF_" #ccode
+#include "prf_info.mac"
+};
 
 /** <!--********************************************************************-->
  *
@@ -895,11 +907,9 @@ MakeGetDimIcm (node *arg_node)
 
         case F_add_SxS:
         case F_sub_SxS:
-            get_dim
-              = TCmakeIcm3 ("ND_BINOP",
-                            TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                            MakeGetDimIcm (PRF_ARG1 (arg_node)),
-                            MakeGetDimIcm (PRF_ARG2 (arg_node)));
+            get_dim = TCmakeIcm2 (prf_ccode_tab[PRF_PRF (arg_node)],
+                                  MakeGetDimIcm (PRF_ARG1 (arg_node)),
+                                  MakeGetDimIcm (PRF_ARG2 (arg_node)));
             break;
         case F_sel_VxA:
             DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_num)
@@ -2741,7 +2751,7 @@ COMPid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIdFromUnique( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfFromUnq( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a N_id node representing an application
  *         of the from_class() conversion function on RHS.
@@ -2751,18 +2761,20 @@ COMPid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdFromUnique (node *arg_node, info *arg_info)
+COMPprfFromUnq (node *arg_node, info *arg_info)
 {
     node *let_ids;
     types *lhs_type, *rhs_type;
-    node *ret_node;
+    node *ret_node, *arg;
 
-    DBUG_ENTER ("COMPIdFromUnique");
+    DBUG_ENTER ("COMPprfFromUnq");
 
     let_ids = INFO_LASTIDS (arg_info);
 
+    arg = PRF_ARG1 (arg_node);
+
     /*
-     * 'arg_node' is unique and 'let_ids' is non-unique
+     * 'arg' is unique and 'let_ids' is non-unique
      *
      * Although this is an assignment  A = from_unq( B);  the type of B is
      * possible non-unique, e.g. if this assignment has been added during
@@ -2772,24 +2784,22 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
 
     lhs_type = IDS_TYPE (let_ids);
     DBUG_ASSERT ((!TCisUnique (lhs_type)), "from_unq() with unique LHS found!");
-    rhs_type = ID_TYPE (arg_node);
+    rhs_type = ID_TYPE (arg);
 
     if (!TCisUnique (rhs_type)) {
         /*
          * non-unique type
          *   -> ignore from_unq() in order to get a simpler ICM code
          */
-        ret_node = COMPid (arg_node, arg_info);
+        ret_node = COMPid (arg, arg_info);
     } else {
         ret_node
           = TCmakeAssignIcm1 ("ND_ASSIGN",
                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                             TRUE, FALSE,
-                                            MakeTypeArgs (ID_NAME (arg_node),
-                                                          ID_TYPE (arg_node), FALSE, TRUE,
-                                                          FALSE, NULL)),
-                              TCmakeIdCopyString (
-                                GenericFun (GF_copy, ID_TYPE (arg_node))));
+                                            MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                          FALSE, TRUE, FALSE, NULL)),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg))));
     }
 
     DBUG_RETURN (ret_node);
@@ -2797,7 +2807,7 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIdToUnique( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfToUnq( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a N_id node representing an application
  *   of the to_class() conversion function on RHS.
@@ -2807,21 +2817,24 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdToUnique (node *arg_node, info *arg_info)
+COMPprfToUnq (node *arg_node, info *arg_info)
 {
     node *let_ids;
     types *lhs_type, *rhs_type;
     node *icm_args;
-    node *ret_node;
+    node *ret_node, *arg;
 
-    DBUG_ENTER ("COMPIdToUnique");
+    DBUG_ENTER ("COMPprfToUnq");
 
     let_ids = INFO_LASTIDS (arg_info);
-    DBUG_ASSERT (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node)),
+
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (!STReq (IDS_NAME (let_ids), ID_NAME (arg)),
                  ".=to_unq(.) on identical objects is not allowed!");
 
     /*
-     * 'arg_node' is non-unique and 'let_ids' is unique
+     * 'arg' is non-unique and 'let_ids' is unique
      *
      * Although this is an assignment  A = to_unq( B);  the type of A is
      * possible non-unique, e.g. if this assignment has been added during
@@ -2830,12 +2843,12 @@ COMPIdToUnique (node *arg_node, info *arg_info)
      */
 
     lhs_type = IDS_TYPE (let_ids);
-    rhs_type = ID_TYPE (arg_node);
+    rhs_type = ID_TYPE (arg);
     DBUG_ASSERT ((!TCisUnique (rhs_type)), "to_unq() with unique RHS found!");
 
-    icm_args = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
-                             MakeTypeArgs (ID_NAME (arg_node), rhs_type, FALSE, TRUE,
-                                           FALSE, NULL));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg), rhs_type, FALSE, TRUE, FALSE, NULL));
 
     /*
      * No RC manipulation requires as MAKE_UNIQUE always yields rc == 1
@@ -4126,6 +4139,8 @@ COMPprfCat (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+#if 0
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfConvertScalar( node *arg_node, info *arg_info)
@@ -4135,28 +4150,35 @@ COMPprfCat (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-static node *
-COMPprfConvertScalar (node *arg_node, info *arg_info)
+static
+node *COMPprfConvertScalar( node *arg_node, info *arg_info)
 {
-    node *arg;
-    node *let_ids;
-    node *ret_node;
+  node *arg;
+  node *let_ids;
+  node *ret_node;
 
-    DBUG_ENTER ("COMPprfConvertScalar");
+  DBUG_ENTER( "COMPprfConvertScalar");
 
-    let_ids = INFO_LASTIDS (arg_info);
-    arg = PRF_ARG1 (arg_node);
+  let_ids = INFO_LASTIDS( arg_info);
+  arg = PRF_ARG1( arg_node);
 
-    if (NODE_TYPE (arg) == N_id) {
-        ret_node = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
-                                     DUPdupIdNt (arg), TCmakeIdCopyString (NULL), NULL);
-    } else {
-        ret_node = TCmakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DUPdupIdsIdNt (let_ids),
-                                     DUPdoDupNode (arg), NULL);
-    }
+  if (NODE_TYPE( arg) == N_id) {
+    ret_node = TCmakeAssignIcm3( "ND_COPY__DATA",
+                               DUPdupIdsIdNt( let_ids),
+                               DUPdupIdNt( arg),
+                               TCmakeIdCopyString( NULL),
+               NULL);
+  }
+  else {
+    ret_node = TCmakeAssignIcm2( "ND_CREATE__SCALAR__DATA",
+                               DUPdupIdsIdNt( let_ids),
+                               DUPdoDupNode( arg),
+               NULL);
+  }
 
-    DBUG_RETURN (ret_node);
+  DBUG_RETURN( ret_node);
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -4172,35 +4194,41 @@ COMPprfConvertScalar (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-static node *
-COMPprfUniScalar (char *icm_name, node *arg_node, info *arg_info)
+static
+node *COMPprfUniScalar( char *icm_name,
+                        node *arg_node, info *arg_info)
 {
-    node *arg;
-    node *let_ids;
-    char *icm_name2;
-    node *ret_node;
+  node *arg;
+  node *let_ids;
+  char *icm_name2;
+  node *ret_node;
 
-    DBUG_ENTER ("COMPprfUniScalar");
+  DBUG_ENTER( "COMPprfUniScalar");
 
-    let_ids = INFO_LASTIDS (arg_info);
-    arg = PRF_ARG1 (arg_node);
+  let_ids = INFO_LASTIDS( arg_info);
+  arg = PRF_ARG1( arg_node);
 
-    /* assure that the prf has exactly one argument */
-    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
+  /* assure that the prf has exactly one argument */
+  DBUG_ASSERT( (PRF_EXPRS2( arg_node) == NULL),
+               "more than a single argument found!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg) != N_id) || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
-                 "non-scalar argument found!");
+  DBUG_ASSERT( ((NODE_TYPE( arg) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg)) == SCALAR)),
+               "non-scalar argument found!");
 
-    icm_name2 = "ND_PRF_S__DATA";
+  icm_name2 = "ND_PRF_S__DATA";
 
-    ret_node
-      = TCmakeAssignIcm4 (icm_name2, DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (icm_name),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+  ret_node = 
+    TCmakeAssignIcm4( icm_name2,
+                      DUPdupIdsIdNt( let_ids),
+                      TCmakeIdCopyString( icm_name),
+                      TCmakeIdCopyString(global.prf_symbol[PRF_PRF(arg_node)]),
+                      DupExprs_NT_AddReadIcms( PRF_ARGS( arg_node)),
+             NULL);
 
-    DBUG_RETURN (ret_node);
+  DBUG_RETURN( ret_node);
 }
+#endif
 
 /** <!--********************************************************************-->
  *
@@ -4230,14 +4258,13 @@ COMPprfOp_S (node *arg_node, info *arg_info)
     /* assure that the prf has exactly one argument */
     DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg) != N_id) || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
-                 "non-scalar argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg) != N_id)
+                   || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
+                  ("non-scalar argument found!", global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString ("PRF_UNARY"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4271,17 +4298,17 @@ COMPprfOp_V (node *arg_node, info *arg_info)
     /* assure that the prf has exactly one argument */
     DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg) != N_id) || (TCgetDim (ID_TYPE (arg)) == 1)),
-                 "non-vector argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg) != N_id) || (TCgetDim (ID_TYPE (arg)) == 1)),
+                  ("non-vector argument found!", global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_V__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString ("PRF_UNARY"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_V__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
+
+#if 0
 
 /** <!--********************************************************************-->
  *
@@ -4297,57 +4324,65 @@ COMPprfOp_V (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-static node *
-COMPprfBin (char *icm_name, node *arg_node, info *arg_info)
+static
+node *COMPprfBin( char *icm_name,
+                  node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
-    node *let_ids;
-    char *icm_name2;
-    bool arg1_is_scalar, arg2_is_scalar;
-    node *ret_node;
+  node *arg1, *arg2;
+  node *let_ids;
+  char *icm_name2;
+  bool arg1_is_scalar, arg2_is_scalar;
+  node *ret_node;
 
-    DBUG_ENTER ("COMPprfBin");
+  DBUG_ENTER( "COMPprfBin");
 
-    let_ids = INFO_LASTIDS (arg_info);
+  let_ids = INFO_LASTIDS( arg_info);
 
-    /* assure that the prf has exactly two arguments */
-    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
-                  && (PRF_EXPRS3 (arg_node) == NULL)),
-                 "illegal number of args found!");
+  /* assure that the prf has exactly two arguments */
+  DBUG_ASSERT( ((PRF_EXPRS1( arg_node) != NULL) &&
+                (PRF_EXPRS2( arg_node) != NULL) &&
+                (PRF_EXPRS3( arg_node) == NULL)),
+               "illegal number of args found!");
 
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
+  arg1 = PRF_ARG1( arg_node);
+  arg2 = PRF_ARG2( arg_node);
 
-    arg1_is_scalar
-      = ((NODE_TYPE (arg1) != N_id) || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR));
-    arg2_is_scalar
-      = ((NODE_TYPE (arg2) != N_id) || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR));
+  arg1_is_scalar = ((NODE_TYPE( arg1) != N_id) ||
+                    (TCgetShapeDim( ID_TYPE( arg1)) == SCALAR));
+  arg2_is_scalar = ((NODE_TYPE( arg2) != N_id) ||
+                    (TCgetShapeDim( ID_TYPE( arg2)) == SCALAR));
 
-    if ((arg1_is_scalar) && (arg2_is_scalar)) {
-        /* both arguments are scalars */
+  if ((arg1_is_scalar) && (arg2_is_scalar)) {
+    /* both arguments are scalars */
 
-        icm_name2 = "ND_PRF_SxS__DATA";
-    } else {
-        /* arrays are involved */
+    icm_name2 = "ND_PRF_SxS__DATA";
+  }
+  else {
+    /* arrays are involved */
 
-        if ((!arg1_is_scalar) && arg2_is_scalar) {
-            icm_name2 = "ND_PRF_VxS__DATA";
-        } else if (arg1_is_scalar && (!arg2_is_scalar)) {
-            icm_name2 = "ND_PRF_SxV__DATA";
-        } else {
-            /* both arguments are arrays! */
-            icm_name2 = "ND_PRF_VxV__DATA";
-        }
+    if ((! arg1_is_scalar) && arg2_is_scalar) {
+      icm_name2 = "ND_PRF_VxS__DATA";
     }
+    else if (arg1_is_scalar && (! arg2_is_scalar)) {
+      icm_name2 = "ND_PRF_SxV__DATA";
+    }
+    else {
+      /* both arguments are arrays! */
+      icm_name2 = "ND_PRF_VxV__DATA";
+    }
+  }
 
-    ret_node
-      = TCmakeAssignIcm4 (icm_name2, DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (icm_name),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+  ret_node = 
+    TCmakeAssignIcm4( icm_name2,
+                      DUPdupIdsIdNt( let_ids),
+                      TCmakeIdCopyString( icm_name),
+                      TCmakeIdCopyString(global.prf_symbol[PRF_PRF(arg_node)]),
+                      DupExprs_NT_AddReadIcms( PRF_ARGS( arg_node)),
+                      NULL);
 
-    DBUG_RETURN (ret_node);
+  DBUG_RETURN( ret_node);
 }
+#endif
 
 /** <!--********************************************************************-->
  *
@@ -4380,21 +4415,19 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
-                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                 "non-scalar first argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
+                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                  ("%s: non-scalar first argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
-                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                 "non-scalar second argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
+                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                  ("%s: non-scalar second argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
-                                                ? "PRF_INFIX"
-                                                : "PRF_PREFIX"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4430,20 +4463,18 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
-                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                 "non-scalar first argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
+                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                  ("non-scalar first argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                 "non-vector second argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
+                  ("non-vector second argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
-                                                ? "PRF_INFIX"
-                                                : "PRF_PREFIX"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4479,20 +4510,18 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                 "non-vector first argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
+                  ("non-vector first argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
-                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                 "non-scalar second argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
+                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                  ("non-scalar second argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
-                                                ? "PRF_INFIX"
-                                                : "PRF_PREFIX"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4528,19 +4557,17 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                 "non-vector first argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
+                  ("non-vector first argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                 "non-vector second argument found!");
+    DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
+                  ("non-vector second argument found!",
+                   global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
-                          TCmakeIdCopyString (global.prf_is_infix[PRF_PRF (arg_node)]
-                                                ? "PRF_INFIX"
-                                                : "PRF_PREFIX"),
-                          TCmakeIdCopyString (global.prf_symbol[PRF_PRF (arg_node)]),
-                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4627,7 +4654,7 @@ COMPprfNoop (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfNoop");
 
-    ret_node = TBmakeAssign (TBmakeIcm ("NOOP", NULL), NULL);
+    ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4722,7 +4749,7 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPprfRunMt( node *arg_node, info *arg_info)
+ * @fn  node *COMPprfRunMtGenarray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_run_mt_genarray, F_run_mt_modarray
  *   and F_run_mt_fold.
@@ -4735,22 +4762,125 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPprfRunMt (node *arg_node, info *arg_info, char *icm_name)
+COMPprfRunMtGenarray (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfRunMt");
+    DBUG_ENTER ("COMPprfRunMtGenarray");
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm1 (icm_name,
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_RUNMT_GENARRAY__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE, NULL),
                                  NULL);
 
     DBUG_RETURN (ret_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfRunMtModarray( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_run_mt_genarray, F_run_mt_modarray
+ *   and F_run_mt_fold.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfRunMtModarray (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfRunMtModarray");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_RUNMT_MODARRAY__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE, NULL),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfRunMtFold( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_run_mt_genarray, F_run_mt_modarray
+ *   and F_run_mt_fold.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfRunMtFold (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfRunMtFold");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_RUNMT_FOLD__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE, NULL),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+#if 0
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfAccu( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_accu into Noop.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *
+ ******************************************************************************/
+
+static
+node *COMPprfAccu( node *arg_node, info *arg_info, char *icm_name)
+{
+  DBUG_ENTER( "COMPprfAccu");
+  
+  ret_node = TCmakeAssignIcm0( "NOOP", NULL);
+
+  DBUG_RETURN( ret_node);
+}
+#endif
+
+/******************************************************************************
+ *
+ * static global variables for the compilation of primitive functions
+ *
+ * This function table cannot be defined earlier because we must be in the
+ * scope of the respective functions, which are all static and defined above.
+ *
+ ******************************************************************************/
+
+static const travfun_p prf_comp_funtab[] = {
+#define PRFcomp_fun(comp_fun) comp_fun
+#include "prf_info.mac"
+};
 
 /** <!--********************************************************************-->
  *
@@ -4765,10 +4895,18 @@ COMPprfRunMt (node *arg_node, info *arg_info, char *icm_name)
 node *
 COMPprf (node *arg_node, info *arg_info)
 {
-    node *let_ids;
     node *ret_node = NULL;
 
     DBUG_ENTER ("COMPprf");
+
+#if 1
+
+    DBUG_ASSERT (prf_comp_funtab[PRF_PRF (arg_node)] != NULL,
+                 "prf found that lacks code generation!");
+
+    ret_node = prf_comp_funtab[PRF_PRF (arg_node)](arg_node, arg_info);
+
+#else
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4857,7 +4995,7 @@ COMPprf (node *arg_node, info *arg_info)
         break;
 
     case F_accu:
-        ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
+        ret_node = COMPprfAccu (arg_node, arg_info);
         break;
 
         /*
@@ -5029,6 +5167,8 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = NULL;
         break;
     }
+
+#endif
 
     DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
                  "no assignment chain found!");
@@ -5724,7 +5864,7 @@ COMPwith (node *arg_node, info *arg_info)
              * dim( A_sub) = dim( A) - size( iv)
              */
             sub_get_dim
-              = TCmakeIcm3 ("ND_BINOP", TCmakeIdCopyString (global.prf_symbol[F_sub_SxS]),
+              = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
                             TCmakeIcm1 ("ND_A_DIM",
                                         TCmakeIdCopyStringNt (IDS_NAME (res_ids),
                                                               IDS_TYPE (res_ids))),
@@ -6010,8 +6150,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                  * dim( A_sub) = dim( A) - size( iv)
                  */
                 sub_get_dim
-                  = TCmakeIcm3 ("ND_BINOP",
-                                TCmakeIdCopyString (global.prf_symbol[F_sub_SxS]),
+                  = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
                                 TCmakeIcm1 ("ND_A_DIM", DUPdupIdsIdNt (tmp_ids)),
                                 TBmakeNum (WITH2_DIMS (arg_node)));
 

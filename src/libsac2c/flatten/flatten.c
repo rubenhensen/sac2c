@@ -432,7 +432,7 @@ FLATprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("FLATprf");
 
     DBUG_PRINT ("FLATTEN",
-                ("flattening application of %s:", global.mdb_prf[PRF_PRF (arg_node)]));
+                ("flattening application of %s:", global.prf_name[PRF_PRF (arg_node)]));
 
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLAT_CONTEXT (arg_info);

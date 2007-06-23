@@ -337,7 +337,7 @@ PMprf (prf fun, node *stack)
 
     DBUG_ENTER ("PMprf");
 
-    DBUG_PRINT ("PM", ("trying to match prf \"%s\"...", global.mdb_prf[fun]));
+    DBUG_PRINT ("PM", ("trying to match prf \"%s\"...", global.prf_name[fun]));
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);

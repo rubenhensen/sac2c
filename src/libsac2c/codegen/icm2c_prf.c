@@ -134,7 +134,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
-                                global.prf_string[F_reshape_VxA]););
+                                global.prf_name[F_reshape_VxA]););
 
     ICMCompileND_SET__SHAPE_id (to_NT, to_sdim, shp_NT);
 
@@ -185,7 +185,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
                                       shp_ANY[i]);
                              , fprintf (global.outfile,
                                         "1st argument of %s is not a vector!",
-                                        global.prf_string[F_reshape_VxA]););
+                                        global.prf_name[F_reshape_VxA]););
         }
     }
 
@@ -236,7 +236,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
                               " SAC_ND_A_DIM( %s) + SAC_ND_A_SIZE( %s)",
                               from_NT, to_NT, idx_NT);
                      , fprintf (global.outfile, "Inconsistant call of %s found!",
-                                global.prf_string[F_sel_VxA]););
+                                global.prf_name[F_sel_VxA]););
 
     switch (to_sc) {
     case C_scl:
@@ -278,7 +278,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
                                   "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)", from_NT,
                                   idx_NT);
                          , fprintf (global.outfile, "Result of %s is not a scalar!",
-                                    global.prf_string[F_sel_VxA]););
+                                    global.prf_name[F_sel_VxA]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -337,7 +337,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
                               "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d", from_NT,
                               to_NT, idx_size);
                      , fprintf (global.outfile, "Inconsistant call of %s found!",
-                                global.prf_string[F_sel_VxA]););
+                                global.prf_name[F_sel_VxA]););
 
     switch (to_sc) {
     case C_scl:
@@ -378,7 +378,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
                                   idx_size);
                          , fprintf (global.outfile, "Result of %s is not a scalar!",
-                                    global.prf_string[F_sel_VxA]););
+                                    global.prf_name[F_sel_VxA]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -464,13 +464,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
-                                global.prf_string[F_sel_VxA]););
+                                global.prf_name[F_sel_VxA]););
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
                               from_NT, idx_NT);
                      , fprintf (global.outfile,
                                 "Length of index vector used for %s does not "
                                 "match rank of argument array!",
-                                global.prf_string[F_sel_VxA]););
+                                global.prf_name[F_sel_VxA]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
@@ -526,7 +526,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                                       idxs_ANY[i]);
                              , fprintf (global.outfile,
                                         "1st argument of %s is not a vector!",
-                                        global.prf_string[F_sel_VxA]););
+                                        global.prf_name[F_sel_VxA]););
         }
     }
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
@@ -534,7 +534,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                      , fprintf (global.outfile,
                                 "Length of index vector used for %s does not "
                                 "match rank of argument array!",
-                                global.prf_string[F_sel_VxA]););
+                                global.prf_name[F_sel_VxA]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
                  ReadConstArray_Str, copyfun);
@@ -660,11 +660,11 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
-                                global.prf_string[F_modarray_AxVxS]););
+                                global.prf_name[F_modarray_AxVxS]););
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)",
                               from_NT, idx_NT);
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
-                                global.prf_string[F_modarray_AxVxS]););
+                                global.prf_name[F_modarray_AxVxS]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size, SizeId,
                       ReadId, val_ANY, copyfun);
@@ -723,13 +723,13 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
                                       idxs_ANY[i]);
                              , fprintf (global.outfile,
                                         "2nd argument of %s is not a vector",
-                                        global.prf_string[F_modarray_AxVxS]););
+                                        global.prf_name[F_modarray_AxVxS]););
         }
     }
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
                               idx_size);
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
-                                global.prf_string[F_modarray_AxVxS]););
+                                global.prf_name[F_modarray_AxVxS]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY, idx_size, NULL,
                       ReadConstArray_Str, val_ANY, copyfun);
@@ -783,7 +783,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) <= SAC_ND_A_DIM( %s)",
                               to_NT, from_NT);
                      , fprintf (global.outfile, "result of %s has illegal dimension!",
-                                global.prf_string[F_idx_sel]););
+                                global.prf_name[F_idx_sel]););
 
     switch (to_sc) {
     case C_scl:
@@ -870,7 +870,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (global.outfile, "1st argument of %s is not a scalar!",
-                                    global.prf_string[F_idx_sel]););
+                                    global.prf_name[F_idx_sel]););
     }
 
     if (to_dim == 0) {
@@ -940,7 +940,7 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (global.outfile, "1st argument of %s is not a scalar!",
-                                    global.prf_string[F_idx_shape_sel]););
+                                    global.prf_name[F_idx_shape_sel]););
     }
 
     /*
@@ -1023,7 +1023,7 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
-                                    global.prf_string[F_modarray_AxVxS]););
+                                    global.prf_name[F_modarray_AxVxS]););
     }
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
@@ -1074,12 +1074,12 @@ ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
     if (cnt_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
                          , fprintf (global.outfile, "1st argument of %s is not a scalar!",
-                                    global.prf_string[F_take_SxV]););
+                                    global.prf_name[F_take_SxV]););
     }
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
-                                global.prf_string[F_take_SxV]););
+                                global.prf_name[F_take_SxV]););
 
     shp = (char **)MEMmalloc (sizeof (char *));
     shp[0] = (char *)MEMmalloc ((strlen (cnt_ANY) + 30) * sizeof (char));
@@ -1148,7 +1148,7 @@ ICMCompileND_PRF_TAKE_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
                                              "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
                                     , fprintf (global.outfile,
                                                "1st argument of %s is out of range!",
-                                               global.prf_string[F_take_SxV]););
+                                               global.prf_name[F_take_SxV]););
 
                    FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
                                         , fprintf (global.outfile, "0");
@@ -1203,12 +1203,12 @@ ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
     if (cnt_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
                          , fprintf (global.outfile, "1st argument of %s is not a scalar!",
-                                    global.prf_string[F_drop_SxV]););
+                                    global.prf_name[F_drop_SxV]););
     }
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
-                                global.prf_string[F_drop_SxV]););
+                                global.prf_name[F_drop_SxV]););
 
     shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]
@@ -1281,7 +1281,7 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
                                              "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
                                     , fprintf (global.outfile,
                                                "1st argument of %s is out of range!",
-                                               global.prf_string[F_drop_SxV]););
+                                               global.prf_name[F_drop_SxV]););
 
                    FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
                                         , fprintf (global.outfile, "0");
@@ -1335,10 +1335,10 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from1_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
-                                global.prf_string[F_cat_VxV]););
+                                global.prf_name[F_cat_VxV]););
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from2_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
-                                global.prf_string[F_cat_VxV]););
+                                global.prf_name[F_cat_VxV]););
 
     shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]

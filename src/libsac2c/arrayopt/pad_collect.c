@@ -471,7 +471,7 @@ APCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCprf");
 
-    DBUG_PRINT ("APC", ("prf-node detected: '%s'", global.mdb_prf[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("APC", ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]));
 
     INFO_APC_UNSUPPORTED (arg_info) = TRUE;
 

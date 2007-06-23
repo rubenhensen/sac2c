@@ -728,7 +728,7 @@ ASDprf (node *arg_node, info *arg_info)
 
                 DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));
                 DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                    global.mdb_prf[PRF_PRF (arg_node)], ID_NAME (id),
+                                    global.prf_name[PRF_PRF (arg_node)], ID_NAME (id),
                                     global.nt_shape_string[actual_cls],
                                     global.nt_shape_string[C_scl]));
 

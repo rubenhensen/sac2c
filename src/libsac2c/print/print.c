@@ -2205,45 +2205,23 @@ PRTlet (node *arg_node, info *arg_info)
 node *
 PRTprf (node *arg_node, info *arg_info)
 {
-    prf prf;
-    char *prf_str;
-
     DBUG_ENTER ("PRTprf");
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    prf = PRF_PRF (arg_node);
-    prf_str = global.prf_symbol[prf];
+    DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, NODE_TEXT (arg_node),
+                          global.prf_name[PRF_PRF (arg_node)], arg_node));
 
-    DBUG_PRINT ("PRINT",
-                ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
+    fprintf (global.outfile, "%s(", global.prf_name[PRF_PRF (arg_node)]);
 
-    if (global.prf_is_infix[prf] && (TCcountExprs (PRF_ARGS (arg_node)) < 3)) {
-        /* primitive functions in infix notation */
-        fprintf (global.outfile, "(");
-        if (PRF_EXPRS2 (arg_node) == NULL) {
-            fprintf (global.outfile, "%s ", prf_str);
-            PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        }
-        if (PRF_EXPRS2 (arg_node) != NULL) {
-            PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-            fprintf (global.outfile, " %s ", prf_str);
-            PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        }
-        fprintf (global.outfile, ")");
-    } else {
-        /**
-         * print prf in prefix format
-         */
-        fprintf (global.outfile, "%s(", prf_str);
-        if (PRF_ARGS (arg_node) != NULL) {
-            fprintf (global.outfile, " ");
-            TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
-        fprintf (global.outfile, ")");
+    if (PRF_ARGS (arg_node) != NULL) {
+        fprintf (global.outfile, " ");
+        TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
+
+    fprintf (global.outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
@@ -3027,7 +3005,18 @@ PRTicm (node *arg_node, info *arg_info)
             global.indent += ICM_INDENT_BEFORE (arg_node);
             INDENT;
         }
-        fprintf (global.outfile, "SAC_%s( ", ICM_NAME (arg_node));
+
+        /*
+         * By default we prefix all h-ICMs with SAC_.
+         * However, some ICMs are already prefixed for some reason.
+         * If so, we avoid a double prefixing.
+         */
+        if (STRprefix ("SAC_", ICM_NAME (arg_node))) {
+            fprintf (global.outfile, "%s( ", ICM_NAME (arg_node));
+        } else {
+            fprintf (global.outfile, "SAC_%s( ", ICM_NAME (arg_node));
+        }
+
         if (ICM_ARGS (arg_node) != NULL) {
             TRAVdo (ICM_ARGS (arg_node), arg_info);
         }
@@ -3483,8 +3472,13 @@ PRTgenerator (node *arg_node, info *arg_info)
     } else {
         fprintf (global.outfile, ". (NULL)");
     }
+
     /* print first operator */
-    fprintf (global.outfile, " %s ", global.prf_symbol[GENERATOR_OP1 (arg_node)]);
+    if (GENERATOR_OP1 (arg_node) == F_lt) {
+        fprintf (global.outfile, " < ");
+    } else {
+        fprintf (global.outfile, " <= ");
+    }
 
     /* print indices */
     if (INFO_NPART (arg_info) != NULL) {
@@ -3499,7 +3493,12 @@ PRTgenerator (node *arg_node, info *arg_info)
     }
 
     /* print second operator */
-    fprintf (global.outfile, " %s ", global.prf_symbol[GENERATOR_OP2 (arg_node)]);
+    if (GENERATOR_OP2 (arg_node) == F_lt) {
+        fprintf (global.outfile, " < ");
+    } else {
+        fprintf (global.outfile, " <= ");
+    }
+
     /* print lower bound */
     if (GENERATOR_BOUND2 (arg_node)) {
         TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);

@@ -200,6 +200,73 @@ STReq (const char *first, const char *second)
 
 /*******************************************************************************
  *
+ * Description: Compare two strings.
+ *
+ * Parameters: - first, first string to compare
+ *             - second, second string to compare
+ *             - n, number of relevant characters
+ *
+ * Return: - TRUE, relevant prefixes of strings are equal
+ *         - FALSE, relevant prefixes of strings are not equal
+ *
+ *******************************************************************************/
+
+bool
+STReqn (const char *first, const char *second, int n)
+{
+    bool res;
+
+    DBUG_ENTER ("STReq");
+
+    if ((first == NULL) && (second == NULL)) {
+        res = TRUE;
+    } else if ((first == NULL) || (second == NULL)) {
+        if (n == 0) {
+            res = TRUE;
+        } else {
+            res = FALSE;
+        }
+    } else {
+        res = (0 == strncmp (first, second, n));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
+ * Description: Checks if prefix is prefix of str
+ *
+ * Parameters: - prefix, first string to compare
+ *             - str, second string to compare
+ *
+ * Return: - TRUE, prefix is prefix of str
+ *         - FALSE, otherwise
+ *
+ *******************************************************************************/
+
+bool
+STRprefix (const char *prefix, const char *str)
+{
+    bool res;
+
+    DBUG_ENTER ("STRprefix");
+
+    if (prefix == NULL) {
+        res = TRUE;
+    } else {
+        if (str == NULL) {
+            res = FALSE;
+        } else {
+            res = (0 == strncmp (prefix, str, strlen (prefix)));
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
  * Description: Yield length of string
  *
  *  Mostly to provide a complete interface and to avoid using standard

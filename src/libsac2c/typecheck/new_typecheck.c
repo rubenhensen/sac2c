@@ -150,6 +150,17 @@ FreeInfo (info *info)
 
 /**
  *
+ * Static global variables
+ *
+ */
+
+static const ct_funptr prf_tc_funtab[] = {
+#define PRFntc_fun(ntc_fun) ntc_fun
+#include "prf_info.mac"
+};
+
+/**
+ *
  * @name Entry functions for calling the type inference:
  *
  * @{
@@ -920,7 +931,7 @@ NTClet (node *arg_node, info *arg_info)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
                 CTIabortLine (global.linenum,
                               "%s yields %d instead of %d return value(s)",
-                              global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
+                              global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
@@ -1260,8 +1271,8 @@ NTCprf (node *arg_node, info *arg_info)
         if (prf == F_prop_obj_out) {
             res = args;
         } else {
-            info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf], prf);
-            res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
+            info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf);
+            res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
             TYfreeType (args);
         }
     }

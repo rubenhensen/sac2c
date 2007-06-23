@@ -55,8 +55,8 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static const bool SIMD_suitable[] = {
-#define PRFsimd_suitable(simd_suitable) simd_suitable
+static const bool simd_suitable[] = {
+#define PRFsimd(simd) simd
 #include "prf_info.mac"
 };
 
@@ -129,7 +129,7 @@ SIMDprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("SIMDprf");
 
     INFO_SUITABLE (arg_info)
-      = INFO_SUITABLE (arg_info) && SIMD_suitable[PRF_PRF (arg_node)];
+      = INFO_SUITABLE (arg_info) && simd_suitable[PRF_PRF (arg_node)];
 
     DBUG_RETURN (arg_node);
 }

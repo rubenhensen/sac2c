@@ -28,7 +28,6 @@
 #include "str.h"
 #include "memory.h"
 
-#include "ct_prf.h"
 #include "constants.h"
 #include "basecv.h"
 #include "zipcv.h"
@@ -38,11 +37,6 @@
 #include "str.h"
 #include "memory.h"
 #include "check_mem.h"
-
-#include "constant_folding.h"
-#include "symbolic_constant_simplification.h"
-#include "structural_constant_constant_folding.h"
-#include "saa_constant_folding.h"
 
 #include <limits.h>
 
@@ -104,11 +98,6 @@ static const int basetype_size_init[] = {
 #undef TYP_IFsize
 };
 
-static const char *prf_string_init[] = {
-#define PRFprf_string(prf_string) prf_string
-#include "prf_info.mac"
-};
-
 static char *nt_shape_string_init[] = {
 #define ATTRIB NT_SHAPE_INDEX
 #define NTIFstr(it_str) it_str
@@ -131,36 +120,6 @@ static char *nt_unique_string_init[] = {
 #include "nt_info.mac"
 #undef ATTRIB
 #undef NTIFstr
-};
-
-static const ct_funptr ntc_funtab_init[] = {
-#define PRFntcprf_fun(ntcprf_fun) ntcprf_fun
-#include "prf_info.mac"
-};
-
-static const void *ntc_cffuntab_init[] = {
-#define PRFntcprf_cffun(ntcprf_cffun) (void *)ntcprf_cffun
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cf_init[] = {
-#define PRFcf(cf) cf
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cfscs_init[] = {
-#define PRFcf_scs(cf_scs) cf_scs
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cfsccf_init[] = {
-#define PRFcf_sccf(cf_sccf) cf_sccf
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cfsaa_init[] = {
-#define PRFcf_saa(cf_saa) cf_saa
-#include "prf_info.mac"
 };
 
 static const zipcvfunptr zipcv_plus_init[] = {
@@ -325,11 +284,6 @@ static const char *mdb_nodetype_init[] = {
 #undef NIFname
 };
 
-static const char *mdb_prf_init[] = {
-#define PRFmdb_prf(mdb_prf) mdb_prf
-#include "prf_info.mac"
-};
-
 static const char *mdb_type_init[] = {
 #define TYP_IFdb_str(str) str
 #include "type_info.mac"
@@ -471,13 +425,8 @@ static genlib_flags_t genlib_init = {
  * Initialize  primitive function tables
  */
 
-static char *prf_symbol_init[] = {
-#define PRFprf_symbol(prf_symbol) prf_symbol
-#include "prf_info.mac"
-};
-
-static bool prf_is_infix_init[] = {
-#define PRFprf_is_infix(prf_is_infix) prf_is_infix
+static const char *prf_name_init[] = {
+#define PRFname(name) "_" #name "_"
 #include "prf_info.mac"
 };
 
@@ -526,9 +475,6 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 #define GLOBALinit(init) init;
 
 #include "globals.mac"
-
-#undef GLOBALname
-#undef GLOBALinit
 
     global.argc = argc;
     global.argv = argv;

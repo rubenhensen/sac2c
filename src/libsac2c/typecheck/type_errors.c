@@ -53,6 +53,17 @@ struct TE_INFO {
 
 #define TI_KIND_STR(n) (kind_str[TI_KIND (n)])
 
+/**
+ *
+ * Static global variables
+ *
+ */
+
+static const void *prf_co_funtab[] = {
+#define PRFco_fun(co_fun) (void *)co_fun
+#include "prf_info.mac"
+};
+
 /******************************************************************************
  ***
  ***          local helper functions
@@ -300,7 +311,7 @@ const void *
 TEgetCFFun (te_info *info)
 {
     DBUG_ENTER ("TEgetCFFun");
-    DBUG_RETURN (global.ntc_cffuntab[TI_PRF (info)]);
+    DBUG_RETURN (prf_co_funtab[TI_PRF (info)]);
 }
 
 te_info *

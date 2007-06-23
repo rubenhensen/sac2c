@@ -113,6 +113,7 @@
  * Prefix: CF
  *
  *****************************************************************************/
+
 #include "constant_folding.h"
 
 #include "dbug.h"
@@ -184,6 +185,32 @@ FreeInfo (info *info)
 }
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static global function tables
+ * @{
+ *
+ *****************************************************************************/
+
+static const travfun_p prf_cfscs_funtab[] = {
+#define PRFcf_scs_fun(cf_scs_fun) cf_scs_fun
+#include "prf_info.mac"
+};
+
+static const travfun_p prf_cfsccf_funtab[] = {
+#define PRFcf_sccf_fun(cf_sccf_fun) cf_sccf_fun
+#include "prf_info.mac"
+};
+
+static const travfun_p prf_cfsaa_funtab[] = {
+#define PRFcf_saa_fun(cf_saa_fun) cf_saa_fun
+#include "prf_info.mac"
+};
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static global function tables -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -790,31 +817,34 @@ CFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
 
-    /* Attempt bog-standard constant-folding first */
-    fn = global.prf_cf[PRF_PRF (arg_node)];
-    if (NULL != fn) {
-        new_node = fn (arg_node, arg_info);
-    }
+#if 0
+  /* Attempt bog-standard constant-folding first */
+  /* cg comment: This should be done via AKV type. */
+  fn = prf_cf[ PRF_PRF( arg_node)];
+  if ( NULL != fn) {
+   new_node = fn( arg_node, arg_info);
+  }
+#endif
 #if FIXME
     crippled until we get s0 coverage on refactored code
 
       /* If that doesn't help, try symbolic constant simplification */
       fn
-      = global.prf_cfscs[PRF_PRF (arg_node)];
+      = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL != new_node) && (NULL != fn)) {
         new_node = fn (arg_node, arg_info);
     }
 
     /* If that doesn't help, try structural constant constant folding */
-    fn = global.prf_cfsccf[PRF_PRF (arg_node)];
+    fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
     if ((NULL != new_node) && (NULL != fn)) {
         new_node = fn (arg_node, arg_info);
     }
 
     /* If that doesn't help, try SAA constant folding */
-    fn = global.prf_cfsaa[PRF_PRF (arg_node)];
+    fn = prf_cfsaa_funtab[PRF_PRF (arg_node)];
     if ((NULL != new_node) && (NULL != fn)) {
         new_node = fn (arg_node, arg_info);
     }
