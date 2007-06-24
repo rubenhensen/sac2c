@@ -142,7 +142,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     code = TBmakeCode (TBmakeBlock (ass, NULL), TBmakeExprs (id, NULL));
 
     part = TBmakePart (code, TBmakeWithid (vec_ids, scl_ids),
-                       TBmakeGenerator (F_le, F_lt, TCcreateZeroVector (dim, T_int),
+                       TBmakeGenerator (F_wl_le, F_wl_lt, TCcreateZeroVector (dim, T_int),
                                         DUPdoDupNode (array_shape), NULL, NULL));
 
     withop = TBmakeGenarray (DUPdoDupNode (array_shape), NULL);

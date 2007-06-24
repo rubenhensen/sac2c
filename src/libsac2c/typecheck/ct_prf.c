@@ -1299,6 +1299,66 @@ NTCCTprf_ari_op_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_rel_op_SxS( te_info *info, ntype *args)
+ *
+ * description:
+ *     simple [shp]  x  simple [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_rel_op_SxS (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_rel_op_SxS");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_SxS not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_rel_op_SxV( te_info *info, ntype *args)
+ *
+ * description:
+ *     simple [shp]  x  simple [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_rel_op_SxV");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_SxV not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_rel_op_VxS( te_info *info, ntype *args)
+ *
+ * description:
+ *     simple [shp]  x  simple [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_rel_op_VxS");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxS not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_rel_op_VxV( te_info *info, ntype *args)
  *
  * description:
@@ -1309,13 +1369,33 @@ NTCCTprf_ari_op_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
 {
+    DBUG_ENTER ("NTCCTprf_rel_op_VxV");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxV not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_rel_op_AxA( te_info *info, ntype *args)
+ *
+ * description:
+ *     simple [shp]  x  simple [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
+{
     ntype *res = NULL;
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_VxV");
+    DBUG_ENTER ("NTCCTprf_rel_op_AxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
-                 "rel_op_VxV called with incorrect number of arguments");
+                 "rel_op_AxA called with incorrect number of arguments");
 
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
@@ -1348,6 +1428,66 @@ NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_log_op_SxS( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  x  bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_log_op_SxS (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_log_op_SxS");
+
+    DBUG_ASSERT (FALSE, "log_op_SxS not yet implemented");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_log_op_SxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  x  bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_log_op_SxV (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_log_op_SxV");
+
+    DBUG_ASSERT (FALSE, "log_op_SxV not yet implemented");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_log_op_VxS( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  x  bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_log_op_VxS (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_log_op_VxS");
+
+    DBUG_ASSERT (FALSE, "log_op_VxS not yet implemented");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_log_op_VxV( te_info *info, ntype *args)
  *
  * description:
@@ -1358,13 +1498,33 @@ NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
 ntype *
 NTCCTprf_log_op_VxV (te_info *info, ntype *args)
 {
+    DBUG_ENTER ("NTCCTprf_log_op_VxV");
+
+    DBUG_ASSERT (FALSE, "log_op_VxV not yet implemented");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_log_op_AxA( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  x  bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_log_op_AxA (te_info *info, ntype *args)
+{
     ntype *res = NULL;
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_VxV");
+    DBUG_ENTER ("NTCCTprf_log_op_AxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
-                 "log_op_VxV called with incorrect number of arguments");
+                 "log_op_AxA called with incorrect number of arguments");
 
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
@@ -1429,6 +1589,26 @@ NTCCTprf_log_op_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_log_op_S( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_log_op_S (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_log_op_S");
+
+    DBUG_ASSERT (FALSE, "log_op_S not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_int_op_SxS( te_info *info, ntype *args)
  *
  * description:
@@ -1453,7 +1633,7 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
-    if ((err_msg == NULL) && TEgetPrf (info) == F_mod) {
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxS) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
@@ -1469,6 +1649,66 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_int_op_SxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  int []  ->  int []
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_int_op_SxV (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_int_op_SxV");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_SxV not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_int_op_VxS( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  int []  ->  int []
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_int_op_VxS (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_int_op_VxS");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_VxS not yet implemented.");
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_int_op_VxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  int []  ->  int []
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_int_op_VxV (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_int_op_VxV");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_VxV not yet implemented.");
+
+    DBUG_RETURN (NULL);
 }
 
 /******************************************************************************

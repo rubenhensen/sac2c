@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #include "dbug.h"
@@ -167,7 +167,7 @@ BuildDefault (node *arg_node)
 
     WITH_PART (arg_node)
       = TBmakePart (NULL, TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
-                    TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1), NULL,
+                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1), TBmakeDot (1), NULL,
                                      NULL));
     WITH_CODE (arg_node) = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL), NULL);
 

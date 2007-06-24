@@ -298,7 +298,7 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
     DBUG_ENTER ("CreateNewPart");
 
     /* create tree structures */
-    genn = TBmakeGenerator (F_le, F_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
                             DUPdoDupTree (step), DUPdoDupTree (width));
     partn = TBmakePart (coden, DUPdoDupTree (withid), genn);
     CODE_INC_USED (coden);

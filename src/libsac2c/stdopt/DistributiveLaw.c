@@ -44,7 +44,7 @@
  *   this are the following associative and commutative primitive operations:
  *     - F_add_SxS
  *     - F_mul_SxS
- *     - F_max
+ *     - F_max_SxS
  *     - F_min
  *     - F_and_SxS
  *     - F_or_SxS
@@ -586,8 +586,14 @@ CheckOperator (node *operator, info *arg_info )
         case F_or_SxV:
         case F_or_VxS:
         case F_or_VxV:
-        case F_max:
-        case F_min:
+        case F_max_SxS:
+        case F_max_SxV:
+        case F_max_VxS:
+        case F_max_VxV:
+        case F_min_SxS:
+        case F_min_SxV:
+        case F_min_VxS:
+        case F_min_VxV:
             support = TRUE;
             break;
         default:
@@ -682,10 +688,14 @@ GetPriority (node *operator)
         case F_mul_SxV:
             priority = 7;
             break;
-        case F_min:
-            priority = 5;
-            break;
-        case F_max:
+        case F_max_SxS:
+        case F_max_SxV:
+        case F_max_VxS:
+        case F_max_VxV:
+        case F_min_SxS:
+        case F_min_SxV:
+        case F_min_VxS:
+        case F_min_VxV:
             priority = 5;
             break;
         case F_and_SxS:

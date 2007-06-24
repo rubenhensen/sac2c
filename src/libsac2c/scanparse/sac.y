@@ -1487,7 +1487,7 @@ generator: expr LE genidx genop expr steps width
              }
              $$ = TBmakePart( NULL,
                               $3,
-                              TBmakeGenerator( F_le, $4, $1, $5, $6, $7));
+                              TBmakeGenerator( F_wl_le, $4, $1, $5, $6, $7));
            }
          | expr LT genidx genop expr steps width
            {
@@ -1498,7 +1498,7 @@ generator: expr LE genidx genop expr steps width
              }
              $$ = TBmakePart( NULL,
                               $3,
-                              TBmakeGenerator( F_lt, $4, $1, $5, $6, $7));
+                              TBmakeGenerator( F_wl_lt, $4, $1, $5, $6, $7));
            }
          ;
 
@@ -1522,8 +1522,8 @@ genidx: ID LET SQBR_L ids SQBR_R
       ;
 
 
-genop: LT   { $$ = F_lt; }
-     | LE   { $$ = F_le; }
+genop: LT   { $$ = F_wl_lt; }
+     | LE   { $$ = F_wl_le; }
      ;
 
 
@@ -1627,46 +1627,46 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_DIV_SxV        { $$ = F_div_SxV; }
    | PRF_DIV_VxS        { $$ = F_div_VxS; }
    | PRF_DIV_VxV        { $$ = F_div_VxV; }
-   | PRF_MOD_SxS        { $$ = F_mod;     }
-   | PRF_MOD_SxV        { $$ = F_mod;     }
-   | PRF_MOD_VxS        { $$ = F_mod;     }
-   | PRF_MOD_VxV        { $$ = F_mod;     }
-   | PRF_ABS_S          { $$ = F_abs;     }
-   | PRF_ABS_V          { $$ = F_abs;     }
-   | PRF_NEG_S          { $$ = F_neg;     }
-   | PRF_NEG_V          { $$ = F_neg;     }
-   | PRF_MIN_SxS        { $$ = F_min;     }
-   | PRF_MIN_SxV        { $$ = F_min;     }
-   | PRF_MIN_VxS        { $$ = F_min;     }
-   | PRF_MIN_VxV        { $$ = F_min;     }
-   | PRF_MAX_SxS        { $$ = F_max;     }
-   | PRF_MAX_SxV        { $$ = F_max;     }
-   | PRF_MAX_VxS        { $$ = F_max;     }
-   | PRF_MAX_VxV        { $$ = F_max;     }
-   | PRF_EQ_SxS         { $$ = F_eq;      }
-   | PRF_EQ_SxV         { $$ = F_eq;      }
-   | PRF_EQ_VxS         { $$ = F_eq;      }
-   | PRF_EQ_VxV         { $$ = F_eq;      }
-   | PRF_NEQ_SxS        { $$ = F_neq;     }
-   | PRF_NEQ_SxV        { $$ = F_neq;     }
-   | PRF_NEQ_VxS        { $$ = F_neq;     }
-   | PRF_NEQ_VxV        { $$ = F_neq;     }
-   | PRF_LT_SxS         { $$ = F_lt;      }
-   | PRF_LT_SxV         { $$ = F_lt;      }
-   | PRF_LT_VxS         { $$ = F_lt;      }
-   | PRF_LT_VxV         { $$ = F_lt;      }
-   | PRF_LE_SxS         { $$ = F_le;      }
-   | PRF_LE_SxV         { $$ = F_le;      }
-   | PRF_LE_VxS         { $$ = F_le;      }
-   | PRF_LE_VxV         { $$ = F_le;      }
-   | PRF_GT_SxS         { $$ = F_gt;      }
-   | PRF_GT_SxV         { $$ = F_gt;      }
-   | PRF_GT_VxS         { $$ = F_gt;      }
-   | PRF_GT_VxV         { $$ = F_gt;      }
-   | PRF_GE_SxS         { $$ = F_ge;      }
-   | PRF_GE_SxV         { $$ = F_ge;      }
-   | PRF_GE_VxS         { $$ = F_ge;      }
-   | PRF_GE_VxV         { $$ = F_ge;      }
+   | PRF_MOD_SxS        { $$ = F_mod_SxS; }
+   | PRF_MOD_SxV        { $$ = F_mod_SxV; }
+   | PRF_MOD_VxS        { $$ = F_mod_VxS; }
+   | PRF_MOD_VxV        { $$ = F_mod_VxV; }
+   | PRF_ABS_S          { $$ = F_abs_S;   }
+   | PRF_ABS_V          { $$ = F_abs_V;   }
+   | PRF_NEG_S          { $$ = F_neg_S;   }
+   | PRF_NEG_V          { $$ = F_neg_V;   }
+   | PRF_MIN_SxS        { $$ = F_min_SxS; }
+   | PRF_MIN_SxV        { $$ = F_min_SxV; }
+   | PRF_MIN_VxS        { $$ = F_min_VxS; }
+   | PRF_MIN_VxV        { $$ = F_min_VxV; }
+   | PRF_MAX_SxS        { $$ = F_max_SxS; }
+   | PRF_MAX_SxV        { $$ = F_max_SxV; }
+   | PRF_MAX_VxS        { $$ = F_max_VxS; }
+   | PRF_MAX_VxV        { $$ = F_max_VxV; }
+   | PRF_EQ_SxS         { $$ = F_eq_SxS;  }
+   | PRF_EQ_SxV         { $$ = F_eq_SxV;  }
+   | PRF_EQ_VxS         { $$ = F_eq_VxS;  }
+   | PRF_EQ_VxV         { $$ = F_eq_VxV;  }
+   | PRF_NEQ_SxS        { $$ = F_neq_SxS; }
+   | PRF_NEQ_SxV        { $$ = F_neq_SxV; }
+   | PRF_NEQ_VxS        { $$ = F_neq_VxS; }
+   | PRF_NEQ_VxV        { $$ = F_neq_VxV; }
+   | PRF_LT_SxS         { $$ = F_lt_SxS;  }
+   | PRF_LT_SxV         { $$ = F_lt_SxV;  }
+   | PRF_LT_VxS         { $$ = F_lt_VxS;  }
+   | PRF_LT_VxV         { $$ = F_lt_VxV;  }
+   | PRF_LE_SxS         { $$ = F_le_SxS;  }
+   | PRF_LE_SxV         { $$ = F_le_SxV;  }
+   | PRF_LE_VxS         { $$ = F_le_VxS;  }
+   | PRF_LE_VxV         { $$ = F_le_VxV;  }
+   | PRF_GT_SxS         { $$ = F_gt_SxS;  }
+   | PRF_GT_SxV         { $$ = F_gt_SxV;  }
+   | PRF_GT_VxS         { $$ = F_gt_VxS;  }
+   | PRF_GT_VxV         { $$ = F_gt_VxV;  }
+   | PRF_GE_SxS         { $$ = F_ge_SxS;  }
+   | PRF_GE_SxV         { $$ = F_ge_SxV;  }
+   | PRF_GE_VxS         { $$ = F_ge_VxS;  }
+   | PRF_GE_VxV         { $$ = F_ge_VxV;  }
    | PRF_NOT_S          { $$ = F_not_S;   }
    | PRF_NOT_V          { $$ = F_not_V;   }
    | PRF_AND_SxS        { $$ = F_and_SxS; }

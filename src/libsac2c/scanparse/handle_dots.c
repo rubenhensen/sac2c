@@ -905,8 +905,8 @@ BuildDefaultWithloop (node *array, node *shape)
     result
       = TBmakeWith (TBmakePart (NULL,
                                 TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
-                                TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1),
-                                                 NULL, NULL)),
+                                TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                 TBmakeDot (1), NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),
                                 TBmakeExprs (TCmakeSpap1 (NSgetNamespace (
                                                             global.preludename),
@@ -1005,7 +1005,7 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
     ids = TBmakeSpids (STRcpy (SPID_NAME (iv)), NULL);
 
     result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (ids, NULL),
-                                     TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                     TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                       TBmakeDot (1), NULL, NULL)),
                          TBmakeCode (block, TBmakeExprs (ap, NULL)),
                          TBmakeGenarray (shape, NULL));
@@ -1275,7 +1275,7 @@ BuildShapeVectorMin (shpchain *vectors)
     vectors = vectors->next;
 
     while (vectors != NULL) {
-        expr = MAKE_BIN_PRF (F_min,
+        expr = MAKE_BIN_PRF (F_min_SxS,
                              MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index),
                                            DUPdoDupTree (vectors->shape)),
                              expr);
@@ -1283,7 +1283,7 @@ BuildShapeVectorMin (shpchain *vectors)
     }
 
     result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (indexids, NULL),
-                                     TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                     TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                       TBmakeDot (1), NULL, NULL)),
                          TBmakeCode (MAKE_EMPTY_BLOCK (), TBmakeExprs (expr, NULL)),
                          TBmakeGenarray (shape, NULL));
@@ -1330,7 +1330,7 @@ BuildWLShape (idtable *table, idtable *end)
                 handle = handle->next;
 
                 while (handle != NULL) {
-                    shape = MAKE_BIN_PRF (F_min, shape, handle->shape);
+                    shape = MAKE_BIN_PRF (F_min_VxV, shape, handle->shape);
                     handle = handle->next;
                 }
             }
@@ -1747,17 +1747,17 @@ HDgenerator (node *arg_node, info *arg_info)
                             DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)));
         }
 
-        if (GENERATOR_OP1 (arg_node) == F_lt) {
+        if (GENERATOR_OP1 (arg_node) == F_wl_lt) {
             /* make <= from < and add 1 to bound */
-            GENERATOR_OP1 (arg_node) = F_le;
+            GENERATOR_OP1 (arg_node) = F_wl_le;
             GENERATOR_BOUND1 (arg_node)
               = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND1 (arg_node), TBmakeNum (1));
         }
 
         if (DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node))) {
-            if (GENERATOR_OP2 (arg_node) == F_le) {
+            if (GENERATOR_OP2 (arg_node) == F_wl_le) {
                 /* make < from <= and replace "." by "shp"  */
-                GENERATOR_OP2 (arg_node) = F_lt;
+                GENERATOR_OP2 (arg_node) = F_wl_lt;
                 GENERATOR_BOUND2 (arg_node)
                   = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
                 GENERATOR_BOUND2 (arg_node) = DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info));
@@ -1770,9 +1770,9 @@ HDgenerator (node *arg_node, info *arg_info)
                                 TBmakeNum (1));
             }
         } else {
-            if (GENERATOR_OP2 (arg_node) == F_le) {
+            if (GENERATOR_OP2 (arg_node) == F_wl_le) {
                 /* make < from <= and add 1 to bound */
-                GENERATOR_OP2 (arg_node) = F_lt;
+                GENERATOR_OP2 (arg_node) = F_wl_lt;
                 GENERATOR_BOUND2 (arg_node)
                   = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND2 (arg_node), TBmakeNum (1));
             }
@@ -2136,7 +2136,7 @@ HDsetwl (node *arg_node, info *arg_info)
     if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
         result
           = TBmakeWith (TBmakePart (NULL, TBmakeWithid (NULL, Exprs2Ids (ids)),
-                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                      TBmakeDot (1), NULL, NULL)),
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
@@ -2150,7 +2150,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
         result
           = TBmakeWith (TBmakePart (NULL, TBmakeWithid (newids, NULL),
-                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                      TBmakeDot (1), NULL, NULL)),
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
@@ -2195,7 +2195,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
         result
           = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
-                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                      TBmakeDot (1), NULL, NULL)),
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (TCmakeSpap2 (NULL, STRcpy ("sel"),

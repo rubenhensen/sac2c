@@ -1136,6 +1136,11 @@ EMALprf (node *arg_node, info *arg_info)
      */
     INFO_MUSTFILL (arg_info) = TRUE;
 
+#if 0
+  /* to be done */
+  alloc_funtab[PRF_PRF( arg_node)]( arg_node, arg_info);
+#endif
+
     switch (PRF_PRF (arg_node)) {
     case F_dim_A:
         /*
@@ -1271,6 +1276,19 @@ EMALprf (node *arg_node, info *arg_info)
     case F_div_SxS:
     case F_and_SxS:
     case F_or_SxS:
+    case F_mod_SxS:
+    case F_min_SxS:
+    case F_max_SxS:
+    case F_le_SxS:
+    case F_lt_SxS:
+    case F_eq_SxS:
+    case F_neq_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
+    case F_neg_S:
+    case F_abs_S:
+    case F_tob_S:
+    case F_toc_S:
     case F_toi_S:
     case F_tof_S:
     case F_tod_S:
@@ -1289,6 +1307,15 @@ EMALprf (node *arg_node, info *arg_info)
     case F_div_SxV:
     case F_and_SxV:
     case F_or_SxV:
+    case F_mod_SxV:
+    case F_min_SxV:
+    case F_max_SxV:
+    case F_le_SxV:
+    case F_lt_SxV:
+    case F_eq_SxV:
+    case F_neq_SxV:
+    case F_ge_SxV:
+    case F_gt_SxV:
         als->dim = MakeDimArg (PRF_ARG2 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
         break;
@@ -1299,7 +1326,18 @@ EMALprf (node *arg_node, info *arg_info)
     case F_div_VxS:
     case F_and_VxS:
     case F_or_VxS:
+    case F_mod_VxS:
+    case F_min_VxS:
+    case F_max_VxS:
+    case F_le_VxS:
+    case F_lt_VxS:
+    case F_eq_VxS:
+    case F_neq_VxS:
+    case F_ge_VxS:
+    case F_gt_VxS:
     case F_not_V:
+    case F_neg_V:
+    case F_abs_V:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
@@ -1310,6 +1348,15 @@ EMALprf (node *arg_node, info *arg_info)
     case F_div_VxV:
     case F_and_VxV:
     case F_or_VxV:
+    case F_mod_VxV:
+    case F_min_VxV:
+    case F_max_VxV:
+    case F_le_VxV:
+    case F_lt_VxV:
+    case F_eq_VxV:
+    case F_neq_VxV:
+    case F_ge_VxV:
+    case F_gt_VxV:
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
@@ -1319,17 +1366,6 @@ EMALprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_mod:
-    case F_min:
-    case F_max:
-    case F_neg:
-    case F_abs:
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_neq:
-    case F_ge:
-    case F_gt:
     case F_copy:
         if ((TCcountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
@@ -1346,22 +1382,13 @@ EMALprf (node *arg_node, info *arg_info)
     case F_prop_obj_in:
     case F_prop_obj_out:
     case F_accu:
-        /*
-         * a,... = accu( iv, n, ...) (and prop_obj)
-         * accu requires a special treatment as
-         * none of its return values must be allocated
-         */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
-        break;
-
     case F_type_error:
     case F_type_conv:
     case F_dispatch_error:
         /*
+         * a,... = accu( iv, n, ...) (and prop_obj)
          * v,... = _type_error_( ...)
-         * _type_error_ requires a special treatment as
+         * require a special treatment as
          * none of its return value must be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
@@ -1379,17 +1406,13 @@ EMALprf (node *arg_node, info *arg_info)
     case F_free:
     case F_to_unq:
     case F_from_unq:
-        DBUG_ASSERT ((0), "invalid prf found!");
-        break;
-
     case F_genarray:
-        DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
-                          " Use array.lib instead!");
+        DBUG_ASSERT ((0), "invalid prf found!");
         break;
 
     default:
         DBUG_EXECUTE ("EMAL", PRTdoPrintNode (arg_node););
-        DBUG_ASSERT ((0), "unknown prf found!");
+        DBUG_ASSERT (FALSE, "unknown prf found!");
         break;
     }
 

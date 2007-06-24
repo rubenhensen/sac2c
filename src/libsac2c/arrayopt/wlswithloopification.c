@@ -361,7 +361,7 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
         upper = SHappendShapes (upper_hd, upper_tl);
 
         newpart = TBmakePart (NULL, DUPdoDupNode (withid),
-                              TBmakeGenerator (F_le, F_lt, SHshape2Array (lower),
+                              TBmakeGenerator (F_wl_le, F_wl_lt, SHshape2Array (lower),
                                                SHshape2Array (upper), NULL, NULL));
 
         lower_hd = SHfreeShape (lower_hd);

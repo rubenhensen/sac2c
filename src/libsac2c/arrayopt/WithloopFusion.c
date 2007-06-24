@@ -1063,7 +1063,7 @@ IntersectGrids (gridinfo *arg_gridinfo)
                     < GRIDINFO_NEW_UB_ELEM (arg_gridinfo)) {
                     GRIDINFO_NEW_LB_ELEM (arg_gridinfo) += first;
                     genn
-                      = TBmakeGenerator (F_le, F_lt,
+                      = TBmakeGenerator (F_wl_le, F_wl_lt,
                                          DUPdoDupNode (GRIDINFO_NEW_LB (arg_gridinfo)),
                                          DUPdoDupNode (GRIDINFO_NEW_UB (arg_gridinfo)),
                                          DUPdoDupNode (GRIDINFO_NEW_STEP (arg_gridinfo)),
@@ -1367,8 +1367,8 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                         goto DONE;
                     }
                 } else {
-                    genn = TBmakeGenerator (F_le, F_lt, new_array_lb, new_array_ub, NULL,
-                                            NULL);
+                    genn = TBmakeGenerator (F_wl_le, F_wl_lt, new_array_lb, new_array_ub,
+                                            NULL, NULL);
 
                     if (nparts_1) {
                         PART_NEXT (npart_1)

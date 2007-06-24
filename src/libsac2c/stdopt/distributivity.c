@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "type_utils.h"
 #include "traverse.h"
 #include "dbug.h"
 #include "str.h"
@@ -96,6 +97,7 @@ FreeInfo (info *info)
  * @return
  *
  *****************************************************************************/
+
 node *
 DISTRIBdoDistributivityOptimization (node *syntax_tree)
 {
@@ -125,6 +127,7 @@ DISTRIBdoDistributivityOptimization (node *syntax_tree)
  * @return
  *
  *****************************************************************************/
+
 node *
 DISTRIBdoDistributivityOptimizationOneFundef (node *syntax_tree)
 {
@@ -206,7 +209,16 @@ isScalar (node *n)
         break;
 
     case N_id:
-        res = ID_ISSCLPRF (n);
+#if 0
+    /*
+     * This marking mechanism does not work. Since I haven't found
+     * the bug in reasonable time, we now ask the type system directly.
+     */
+    res = ID_ISSCLPRF( n);
+#else
+        res = TUisScalar (ID_NTYPE (n));
+#endif
+
         break;
 
     default:

@@ -159,8 +159,15 @@ isAssociativeAndCommutativePrf (prf prf)
     case F_mul_VxS:
     case F_mul_VxV:
 
-    case F_min:
-    case F_max:
+    case F_max_SxS:
+    case F_max_SxV:
+    case F_max_VxS:
+    case F_max_VxV:
+
+    case F_min_SxS:
+    case F_min_SxV:
+    case F_min_VxS:
+    case F_min_VxV:
 
     case F_and_SxS:
     case F_and_SxV:
@@ -351,8 +358,15 @@ getPrf (prf prf, node *e1, node *e2)
         }
         break;
 
-    case F_min:
-    case F_max:
+    case F_max_SxS:
+    case F_max_SxV:
+    case F_max_VxS:
+    case F_max_VxV:
+
+    case F_min_SxS:
+    case F_min_SxV:
+    case F_min_VxS:
+    case F_min_VxV:
 
     case F_and_SxS:
     case F_and_SxV:

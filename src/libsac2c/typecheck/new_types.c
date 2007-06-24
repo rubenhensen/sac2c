@@ -6615,7 +6615,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                      * exists
                      */
                     tmp_ass = BuildDimAssign (arg, new_vardecs);
-                    assigns = BuildCondAssign (tmp_ass, F_gt, TBmakeNum (0), assigns,
+                    assigns = BuildCondAssign (tmp_ass, F_gt_SxS, TBmakeNum (0), assigns,
                                                CreateWrapperCode (IBASE_GEN (type), state,
                                                                   3, funname, arg, args,
                                                                   vardecs, new_vardecs),
@@ -6628,7 +6628,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
             if (IBASE_SCAL (type) != NULL) {
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
-                assigns = BuildCondAssign (tmp_ass, F_eq, TBmakeNum (0),
+                assigns = BuildCondAssign (tmp_ass, F_eq_SxS, TBmakeNum (0),
                                            CreateWrapperCode (IBASE_SCAL (type), state, 0,
                                                               funname, arg, args, vardecs,
                                                               new_vardecs),
@@ -6648,7 +6648,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
                 if (IARR_IDIM (type, i) != NULL) {
                     assigns
-                      = BuildCondAssign (tmp_ass, F_eq,
+                      = BuildCondAssign (tmp_ass, F_eq_SxS,
                                          TBmakeNum (IDIM_DIM (IARR_IDIM (type, i))),
                                          CreateWrapperCode (IARR_IDIM (type, i), state,
                                                             lower, funname, arg, args,
@@ -6670,7 +6670,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
                 if (IDIM_ISHAPE (type, i) != NULL) {
                     assigns
-                      = BuildCondAssign (tmp_ass, F_eq,
+                      = BuildCondAssign (tmp_ass, F_eq_SxS,
                                          SHshape2Array (
                                            ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
                                          CreateWrapperCode (IDIM_ISHAPE (type, i), state,

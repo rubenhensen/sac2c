@@ -88,6 +88,7 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
+
 node *
 MakeScalarAvis (char *name)
 {
@@ -102,6 +103,94 @@ MakeScalarAvis (char *name)
 
     DBUG_RETURN (res);
 }
+
+/*
+ * The following functions are used in a function table initialised
+ * via prf_info.mac.
+ */
+
+static node *
+dim_is_0 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("dim_is_0");
+
+    dim_expr = TBmakeNum (0);
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+dim_is_1 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("dim_is_1");
+
+    dim_expr = TBmakeNum (1);
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+dim_of_arg1 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("dim_of_arg1");
+
+    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
+
+    DBUG_RETURN (dim_expr);
+}
+
+#if 0
+/*
+ * Currently unused, but kept for completeness.
+ */
+static
+node *dim_of_arg2( node *arg_node, info *arg_info) 
+{
+  node *dim_expr;
+  
+  DBUG_ENTER("dim_of_arg2");
+  
+  dim_expr = DUPdoDupNode( AVIS_DIM( ID_AVIS( PRF_ARG2( arg_node))));
+  
+  DBUG_RETURN( dim_expr);
+}
+#endif
+
+static node *
+dim_is_arg1_0 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("dim_is_arg1_0");
+
+    dim_expr
+      = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupNode (PRF_ARG1 (arg_node)));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+dim_is_arg1 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("dim_is_arg1");
+
+    dim_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static const travfun_p makedim_funtab[] = {
+#define PRFmakedim_fun(makedim_fun) makedim_fun
+#include "prf_info.mac"
+};
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -268,6 +357,12 @@ MDEap (node *arg_node, info *arg_info)
  * @fn node *MDEprf( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
+/*
+ * CAUTION: This code should be rewritten using a proper function table
+ *          initialised through prf_info.mac.
+ */
+
 node *
 MDEprf (node *arg_node, info *arg_info)
 {
@@ -280,6 +375,18 @@ MDEprf (node *arg_node, info *arg_info)
 
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
+
+#if 1
+
+    if (makedim_funtab[PRF_PRF (arg_node)] != NULL) {
+        rhsnode = makedim_funtab[PRF_PRF (arg_node)](arg_node, arg_info);
+
+        res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
+
+        AVIS_SSAASSIGN (dimavis) = res;
+    }
+
+#else
 
     switch (PRF_PRF (arg_node)) {
     case F_dim_A:
@@ -295,11 +402,18 @@ MDEprf (node *arg_node, info *arg_info)
     case F_tof_S:
     case F_tod_S:
     case F_not_S:
-    case F_mod:
-    case F_min:
-    case F_max:
+    case F_mod_SxS:
+    case F_min_SxS:
+    case F_max_SxS:
     case F_idx_sel:
     case F_idx_modarray:
+    case F_eq_SxS:
+    case F_neq_SxS:
+    case F_gt_SxS:
+    case F_ge_SxS:
+    case F_lt_SxS:
+    case F_le_SxS:
+
         rhsnode = TBmakeNum (0);
         break;
 
@@ -366,6 +480,8 @@ MDEprf (node *arg_node, info *arg_info)
 
         AVIS_SSAASSIGN (dimavis) = res;
     }
+
+#endif
 
     DBUG_RETURN (res);
 }

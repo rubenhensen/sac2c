@@ -342,7 +342,7 @@ CreateWithLoop (node *ap, info *arg_info)
 
     with
       = TBmakeWith (TBmakePart (code_expr, TBmakeWithid (TBmakeIds (iv_avis, NULL), NULL),
-                                TBmakeGenerator (F_le, F_lt, TBmakeId (idx_avis),
+                                TBmakeGenerator (F_wl_le, F_wl_lt, TBmakeId (idx_avis),
                                                  TBmakeId (shape_avis), NULL, NULL)),
                     code_expr,
                     TBmakeGenarray (TBmakeId (shape_avis), TBmakeId (default_avis)));

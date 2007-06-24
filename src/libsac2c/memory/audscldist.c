@@ -709,36 +709,42 @@ ASDprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("ASDprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_abs:
-    case F_neg:
-    case F_not_S:
-    case F_not_V:
-        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
-            node *id = PRF_ARG1 (arg_node);
-            shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
 
-            if (actual_cls != C_scl) {
-                /*
-                 * cg 11.6.07
-                 *
-                 * In my opinion this code should never be executed if we properly
-                 * distinguish between scalar and vector/array prfs.
-                 */
-                ntype *nt;
-
-                DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));
-                DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                    global.prf_name[PRF_PRF (arg_node)], ID_NAME (id),
-                                    global.nt_shape_string[actual_cls],
-                                    global.nt_shape_string[C_scl]));
-
-                nt
-                  = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (id))), SHmakeShape (0));
-                LiftId (id, nt, arg_info);
-                nt = TYfreeType (nt);
-            }
-        }
-        break;
+#if 0
+  case F_abs:
+  case F_neg:
+  case F_not_S: 
+  case F_not_V: 
+    if ( NODE_TYPE( PRF_ARG1( arg_node)) == N_id) {
+      node *id = PRF_ARG1( arg_node);
+      shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+      
+      if (actual_cls != C_scl) {
+        /*
+         * cg 11.6.07
+         *
+         * In my opinion this code should never be executed if we properly
+         * distinguish between scalar and vector/array prfs.
+         */
+        ntype *nt;
+          
+        DBUG_PRINT ("ASD",
+                    ("Unary scalar prf applied to non-scalar found: "));
+        DBUG_PRINT ("ASD",
+                    ("   ... = %s( ... %s ...), %s instead of %s",
+                     global.prf_name[PRF_PRF( arg_node)],
+                     ID_NAME (id),
+                     global.nt_shape_string[actual_cls],
+                     global.nt_shape_string[C_scl]));
+          
+        nt = TYmakeAKS( TYcopyType( TYgetScalar( ID_NTYPE( id))),
+                        SHmakeShape(0));
+        LiftId( id, nt, arg_info);
+        nt = TYfreeType( nt);
+      }
+    }
+    break;
+#endif
 
     case F_type_conv: {
         node *id = PRF_ARG2 (arg_node);

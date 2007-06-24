@@ -1094,7 +1094,8 @@ DFMsetMaskEntryClear (mask_t *mask, const char *id, node *avis)
         }
     }
 
-    DBUG_ASSERT ((i < mask->mask_base->num_ids), "Identifier not present in mask");
+    DBUG_ASSERTF ((i < mask->mask_base->num_ids), ("Identifier not present in mask: %s",
+                                                   id != NULL ? id : AVIS_NAME (avis)));
 
     mask->bitfield[i / (8 * sizeof (unsigned int))]
       &= ~(access_mask_table[i % (8 * sizeof (unsigned int))]);
@@ -1146,7 +1147,8 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
         }
     }
 
-    DBUG_ASSERT ((i < mask->mask_base->num_ids), "Identifier not present in mask");
+    DBUG_ASSERTF ((i < mask->mask_base->num_ids), ("Identifier not present in mask: %s",
+                                                   id != NULL ? id : AVIS_NAME (avis)));
 
     mask->bitfield[i / (8 * sizeof (unsigned int))]
       |= access_mask_table[i % (8 * sizeof (unsigned int))];
@@ -1191,7 +1193,8 @@ DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
         }
     }
 
-    DBUG_ASSERT ((i < mask->mask_base->num_ids), "Identifier not present in mask");
+    DBUG_ASSERTF ((i < mask->mask_base->num_ids), ("Identifier not present in mask: %s",
+                                                   id != NULL ? id : AVIS_NAME (avis)));
 
     res = mask->bitfield[i / (8 * sizeof (unsigned int))]
           & access_mask_table[i % (8 * sizeof (unsigned int))];

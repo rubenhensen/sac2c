@@ -4465,11 +4465,11 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
 
     DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
                    || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                  ("non-scalar first argument found!",
+                  ("%s: non-scalar first argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                  ("non-vector second argument found!",
+                  ("%s: non-vector second argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
@@ -4511,12 +4511,12 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                  ("non-vector first argument found!",
+                  ("%s: non-vector first argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
                    || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                  ("non-scalar second argument found!",
+                  ("%s: non-scalar second argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
@@ -4558,11 +4558,11 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                  ("non-vector first argument found!",
+                  ("%s: non-vector first argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                  ("non-vector second argument found!",
+                  ("%s: non-vector second argument found!",
                    global.prf_name[PRF_PRF (arg_node)]));
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),

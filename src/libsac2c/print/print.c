@@ -3474,7 +3474,7 @@ PRTgenerator (node *arg_node, info *arg_info)
     }
 
     /* print first operator */
-    if (GENERATOR_OP1 (arg_node) == F_lt) {
+    if (GENERATOR_OP1 (arg_node) == F_wl_lt) {
         fprintf (global.outfile, " < ");
     } else {
         fprintf (global.outfile, " <= ");
@@ -3493,7 +3493,7 @@ PRTgenerator (node *arg_node, info *arg_info)
     }
 
     /* print second operator */
-    if (GENERATOR_OP2 (arg_node) == F_lt) {
+    if (GENERATOR_OP2 (arg_node) == F_wl_lt) {
         fprintf (global.outfile, " < ");
     } else {
         fprintf (global.outfile, " <= ");

@@ -621,7 +621,7 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
         stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape) : NULL;
         widthn = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape) : NULL;
         /* create tree structures */
-        genn = TBmakeGenerator (F_le, F_lt, b1n, b2n, stepn, widthn);
+        genn = TBmakeGenerator (F_wl_le, F_wl_lt, b1n, b2n, stepn, widthn);
         *part = TBmakePart (ig->code, DUPdoDupTree (withidn), genn);
         CODE_INC_USED (ig->code);
 

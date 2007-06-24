@@ -2674,8 +2674,8 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
         stride = NULL;
 
         gen = PART_GENERATOR (parts);
-        DBUG_ASSERT ((GENERATOR_OP1 (gen) == F_le), "op1 in generator is not <=");
-        DBUG_ASSERT ((GENERATOR_OP2 (gen) == F_lt), "op2 in generator is not <");
+        DBUG_ASSERT ((GENERATOR_OP1 (gen) == F_wl_le), "op1 in generator is not <=");
+        DBUG_ASSERT ((GENERATOR_OP2 (gen) == F_wl_lt), "op2 in generator is not <");
 
         /* get components of current generator */
         bound1 = ToFirstComponent (GENERATOR_BOUND1 (gen));

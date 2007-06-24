@@ -230,11 +230,15 @@ EMRIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRIprf");
 
     switch (PRF_PRF (arg_node)) {
+    case F_tob_S:
+    case F_toc_S:
     case F_toi_S:
     case F_tof_S:
     case F_tod_S:
-    case F_neg:
-    case F_abs:
+    case F_neg_S:
+    case F_neg_V:
+    case F_abs_S:
+    case F_abs_V:
     case F_not_S:
     case F_not_V:
     case F_and_SxS:
@@ -245,15 +249,42 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_or_SxV:
     case F_or_VxS:
     case F_or_VxV:
-    case F_eq:
-    case F_neq:
-    case F_le:
-    case F_lt:
-    case F_ge:
-    case F_gt:
-    case F_min:
-    case F_max:
-    case F_mod:
+    case F_eq_SxS:
+    case F_eq_SxV:
+    case F_eq_VxS:
+    case F_eq_VxV:
+    case F_neq_SxS:
+    case F_neq_SxV:
+    case F_neq_VxS:
+    case F_neq_VxV:
+    case F_le_SxS:
+    case F_le_SxV:
+    case F_le_VxS:
+    case F_le_VxV:
+    case F_lt_SxS:
+    case F_lt_SxV:
+    case F_lt_VxS:
+    case F_lt_VxV:
+    case F_ge_SxS:
+    case F_ge_SxV:
+    case F_ge_VxS:
+    case F_ge_VxV:
+    case F_gt_SxS:
+    case F_gt_SxV:
+    case F_gt_VxS:
+    case F_gt_VxV:
+    case F_min_SxS:
+    case F_min_SxV:
+    case F_min_VxS:
+    case F_min_VxV:
+    case F_max_SxS:
+    case F_max_SxV:
+    case F_max_VxS:
+    case F_max_VxV:
+    case F_mod_SxS:
+    case F_mod_SxV:
+    case F_mod_VxS:
+    case F_mod_VxV:
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
@@ -352,6 +383,7 @@ EMRIprf (node *arg_node, info *arg_info)
     default:
         break;
     }
+
     DBUG_RETURN (arg_node);
 }
 

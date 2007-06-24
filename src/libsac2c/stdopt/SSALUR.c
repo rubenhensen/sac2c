@@ -351,8 +351,8 @@ SSALURIsLURPredicate (node *predicate)
     /* prf must be one of the comparison prfs */
     comp_prf = PRF_PRF (predicate);
 
-    if ((comp_prf != F_le) && (comp_prf != F_lt) && (comp_prf != F_ge)
-        && (comp_prf != F_gt) && (comp_prf != F_neq)) {
+    if ((comp_prf != F_le_SxS) && (comp_prf != F_lt_SxS) && (comp_prf != F_ge_SxS)
+        && (comp_prf != F_gt_SxS) && (comp_prf != F_neq_SxS)) {
         DBUG_PRINT ("SSALUR", ("predicate with non comparision prf"));
         DBUG_RETURN (FALSE);
     }
@@ -410,18 +410,18 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
     /* transform prf to <=, >= by adjusting term constant */
     switch (pred) {
-    case F_le:
+    case F_le_SxS:
         result = TRUE;
         break;
 
-    case F_ge:
+    case F_ge_SxS:
         result = TRUE;
         break;
 
-    case F_lt:
+    case F_lt_SxS:
         /* include upper border (only for add, mul) */
         if ((loop_prf == F_add_SxS) || (loop_prf == F_mul_SxS)) {
-            pred = F_le;
+            pred = F_le_SxS;
             term = term - 1;
             result = TRUE;
         } else {
@@ -429,10 +429,10 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
         }
         break;
 
-    case F_gt:
+    case F_gt_SxS:
         /* include lower border: only for sub */
         if (loop_prf == F_sub_SxS) {
-            pred = F_ge;
+            pred = F_ge_SxS;
             term = term + 1;
             result = TRUE;
         } else {
@@ -440,17 +440,17 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
         }
         break;
 
-    case F_neq:
+    case F_neq_SxS:
         if ((loop_prf == F_add_SxS) && ((init_counter + loop_increment) <= term)
             && (((term - init_counter) % loop_increment) == 0)) {
             /* change F_neq to F_le for increments */
-            pred = F_le;
+            pred = F_le_SxS;
             term = term - 1;
             result = TRUE;
         } else if ((loop_prf == F_sub_SxS) && (term <= (init_counter - loop_increment))
                    && (((init_counter - term) % loop_increment) == 0)) {
             /* change F_neq to F_ge for decrements */
-            pred = F_ge;
+            pred = F_ge_SxS;
             term = term + 1;
             result = TRUE;
         } else {
@@ -513,20 +513,20 @@ SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term)
 
         /* change prf to have normal form cond = id <prf> const */
         switch (*pred) {
-        case F_lt:
-            *pred = F_gt;
+        case F_lt_SxS:
+            *pred = F_gt_SxS;
             break;
 
-        case F_le:
-            *pred = F_ge;
+        case F_le_SxS:
+            *pred = F_ge_SxS;
             break;
 
-        case F_gt:
-            *pred = F_lt;
+        case F_gt_SxS:
+            *pred = F_lt_SxS;
             break;
 
-        case F_ge:
-            *pred = F_le;
+        case F_ge_SxS:
+            *pred = F_le_SxS;
             break;
 
         default:; /* no change necessary */
@@ -829,10 +829,10 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
     switch (loop_prf) {
     case F_add_SxS:
         if ((((term_counter - init_counter) / loop_increment) > 0)
-            && (pred_prf == F_le)) {
+            && (pred_prf == F_le_SxS)) {
             unrolling = ((term_counter - init_counter) / loop_increment) + 1;
         } else if ((((term_counter - init_counter) / loop_increment) > 0)
-                   && (pred_prf == F_ge)) {
+                   && (pred_prf == F_ge_SxS)) {
             unrolling = UNR_NONE;
         } else {
             unrolling = 1;
@@ -841,10 +841,10 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
 
     case F_sub_SxS:
         if ((((init_counter - term_counter) / loop_increment) > 0)
-            && (pred_prf == F_ge)) {
+            && (pred_prf == F_ge_SxS)) {
             unrolling = ((init_counter - term_counter) / loop_increment) + 1;
         } else if ((((term_counter - init_counter) / loop_increment) > 0)
-                   && (pred_prf == F_le)) {
+                   && (pred_prf == F_le_SxS)) {
             unrolling = UNR_NONE;
         } else {
             unrolling = 1;
@@ -853,7 +853,7 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
 
     case F_mul_SxS:
         mul_unr = CalcMulUnroll (init_counter, loop_increment, term_counter);
-        if ((mul_unr > 0) && (pred_prf == F_le)) {
+        if ((mul_unr > 0) && (pred_prf == F_le_SxS)) {
             unrolling = (loopc_t) (floor (mul_unr) + 1);
         } else {
             unrolling = UNR_NONE;
