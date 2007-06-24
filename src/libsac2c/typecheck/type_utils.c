@@ -1014,3 +1014,23 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
 
     DBUG_RETURN (base);
 }
+
+/** <!-- ****************************************************************** -->
+ * @fn TUisScalar( ntype *ty)
+ *
+ * @brief Simple but useful utility to check whether a type definitely
+ *        represents a scalar. This function has the functionality that
+ *        TYisScalar concerning the name claims to have.
+ *
+ * @param type
+ *
+ * @return boolean
+ ******************************************************************************/
+
+extern bool
+TUisScalar (ntype *ty)
+{
+    DBUG_ENTER ("TUisScalar");
+
+    DBUG_RETURN (TUdimKnown (ty) && (TYgetDim (ty) == 0));
+}

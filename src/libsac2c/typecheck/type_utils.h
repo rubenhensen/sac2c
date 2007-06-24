@@ -21,6 +21,7 @@ extern node *TUrettypes2alphaMax (node *rets);
 extern bool TUdimKnown (ntype *ty);
 extern bool TUshapeKnown (ntype *ty);
 extern bool TUisIntVect (ntype *ty);
+extern bool TUisScalar (ntype *ty);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
 extern bool TUisHidden (ntype *type);
