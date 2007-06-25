@@ -737,6 +737,48 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
     DBUG_RETURN (returntype);
 }
 
+static node *
+GenerateExtendedReturns (node *funret)
+{
+    ntype *newtype;
+    node *newret = NULL;
+
+    DBUG_ENTER ("GenerateExtendedReturns");
+
+    /*
+     * This function basically just generates a 'preview' of what a saa'ed version
+     * of the supplied N_ret-Chain will look like. It is needed for a application
+     * of PrependSAAInConcreteResults to a loop-function prior to applying
+     * PrependSAAInFormalResults.
+     */
+
+    if (NULL != RET_NEXT (funret)) {
+        RET_NEXT (funret) = GenerateExtendedReturns (RET_NEXT (funret));
+    }
+
+    if (FALSE == TUshapeKnown (RET_TYPE (funret))) {
+
+        if (FALSE == TUdimKnown (RET_TYPE (funret))) {
+
+            newtype = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
+
+            /* Here we also do not know the dimension, so we generate a new ret
+             * for it right away. */
+            newret
+              = TBmakeRet (TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)), newret);
+        } else {
+            newtype = TYmakeAKS (TYmakeSimpleType (T_int),
+                                 SHcreateShape (1, TYgetDim (RET_TYPE (funret))));
+        }
+
+        newret = TCappendRet (newret, TBmakeRet (newtype, NULL));
+    }
+
+    funret = TCappendRet (newret, funret);
+
+    DBUG_RETURN (funret);
+}
+
 #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
 static node *
 ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
@@ -1220,10 +1262,11 @@ ISAAap (node *arg_node, info *arg_info)
             DBUG_PRINT ("ISAA", ("calling the loop fun %s from %s", FUNDEF_NAME (fun),
                                  FUNDEF_NAME (INFO_FUNDEF (arg_info))));
 
-            /* 1. Create a backup of the original function parameter list, so we have
-             *    a reference when updating the inner call of the loop function.
-             * 2. Prepend dim/shape in arguments. Retraverse afterwards to propagate
-             *    the new information, using the copied parameter list.
+            /* 1. Copy our argument list. We need this to augment the inner call
+             *    of our loop with the new information.
+             * 2. Prepend new information within concrete and formal args.
+             * 3. Retraverse the loop in order to propagate the saved information into
+             *    the function. Delete the copy afterwards.
              */
 
             innerargs = DUPdoDupTree (FUNDEF_ARGS (fun));
@@ -1232,16 +1275,54 @@ ISAAap (node *arg_node, info *arg_info)
                                                            FUNDEF_ARGS (fun), arg_info);
             FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
 
+            /* Generate the information for appendage in results */
+            retprev = GenerateExtendedReturns (DUPdoDupTree (FUNDEF_RETS (fun)));
+
+            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info)))))
+              = PrependSAAInConcreteResults (retprev, INFO_LHS (arg_info),
+                                             INFO_FUNDEF (arg_info), arg_info);
+            retprev = FREEdoFreeTree (retprev);
+
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, TRUE, innerargs, arg_info);
+
             innerargs = FREEdoFreeTree (innerargs);
+
+            /* now, after everything else is complete, introduce the return arguments
+             * on the formal side of life. */
+
+            DBUG_ASSERT ((NULL == INFO_POSTASSIGN (arg_info)),
+                         "info_postassign is non-null before saa'ing results!");
+
+            /* we need the return expression of our function, so go look for it */
+            retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
+            while ((NULL != retnode)
+                   && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
+                retprev = retnode;
+                retnode = ASSIGN_NEXT (retnode);
+            }
+
+            DBUG_ASSERT (((NULL != retnode)
+                          && (N_return == NODE_TYPE (ASSIGN_INSTR (retnode)))),
+                         "could not find return node of specified function!");
+
+            /* found the N_return node, now lets go get em! */
+            FUNDEF_RETS (fun)
+              = PrependSAAInFormalResults (FUNDEF_RETS (fun),
+                                           RETURN_EXPRS (ASSIGN_INSTR (retnode)), fun,
+                                           arg_info);
+
+            /* insert the collected information and restore older state */
+            RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
+            ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
+            INFO_POSTASSIGN (arg_info) = NULL;
         }
     } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("ISAA", ("inner application of the loop fun %s", FUNDEF_NAME (fun)));
 
         /* 1. We now may insert the dim/shape arguments in our recursive loop
-         *    call; thisfor we need the copy of our arguments.
-         * 2. Free the copied arguments, for they are not needed anymore.
+         *    call; thisfor we need the copy of our arguments (called innerargs
+         *    above, here INFO_ARGS(arg_info)).
          */
 
         /* no new N_assigns in the holy callback-conditional! */
@@ -1249,6 +1330,15 @@ ISAAap (node *arg_node, info *arg_info)
 
         AP_ARGS (arg_node)
           = PrependSAAInConcreteArgs (AP_ARGS (arg_node), INFO_ARGS (arg_info), arg_info);
+
+        /* introduce the new results in the inner calling */
+        retprev = GenerateExtendedReturns (DUPdoDupTree (FUNDEF_RETS (fun)));
+
+        LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info)))))
+          = PrependSAAInConcreteResults (retprev, INFO_LHS (arg_info),
+                                         INFO_FUNDEF (arg_info), arg_info);
+
+        retprev = FREEdoFreeTree (retprev);
     }
 
     /* we may now traverse the arguments, in order to take care of AVIS_SUBST */
