@@ -1480,8 +1480,6 @@ NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
 
     DBUG_ENTER ("NTCCTprf_rel_op_VxV");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxV not yet implemented.");
-
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_AxA called with incorrect number of arguments");
 
