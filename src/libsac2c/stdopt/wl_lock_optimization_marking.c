@@ -71,6 +71,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief this function traverses down the arguments to figure out if one
+ *        contains a variable which depends on an object.
+ *        If the function is a prop_obj_in, it is not necessary to look into
+ *        the arguments.
+ *
+ * @param arg_node N_prf node
+ * @param arg_info INFO structure
+ *
+ * @return N_prf node
+ *******************************************************************************/
 node *
 WLLOMprf (node *arg_node, info *arg_info)
 {
@@ -84,6 +95,16 @@ WLLOMprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief this function just sets the flag in the INFO-structure which shows
+ *        that this id depends on an object.
+ *
+ * @param arg_node N_id node
+ * @param arg_info INFO structure
+ *
+ * @return N_id node
+ *******************************************************************************/
 node *
 WLLOMid (node *arg_node, info *arg_info)
 {
@@ -96,6 +117,16 @@ WLLOMid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief this function just markes the ids as !UP if the corresponding flag
+ *        inside the INFO-structure is set.
+ *        Afterwards it traverses further down the ids-chain.
+ *
+ * @param arg_node N_ids node
+ * @param arg_info INFO structure
+ *
+ * @return N_ids node
+ *******************************************************************************/
 node *
 WLLOMids (node *arg_node, info *arg_info)
 {
@@ -112,14 +143,10 @@ WLLOMids (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief if this assignment is a let-assignment this functions traversals down
- *        the RHS. If the RHS includes an variable which is marked as not beeing
- *        able to be moved upon the lock, all variables on the LHS are marked to
- *        be not allowed to be moved upon this lock.
- *        Additional if this is the last assignment in the assignment-Chain,
- *        this circumstance is marked within the INFO-structure.
+ * @brief this function just traverses down the instruction and if this
+ *        includes a !UP marked variable, it markes the assignement.
  *
- * @param arg_node N_with N_assign
+ * @param arg_node N_assign node
  * @param arg_info INFO structure
  *
  * @return N_assign node
@@ -130,8 +157,12 @@ WLLOMassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLLOMassign");
 
     /*TravDown and therefore !UP-Part*/
+
+    /*First traverse into the INSTR*/
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
+    /*If i is the right WL-level and the INSTR contains variables which depend
+     * an object, mark assignment as !UP*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NUP (arg_info) == TRUE)) {
         ASSIGN_NUP (arg_node) = TRUE;
         DBUG_PRINT ("WLLOM", ("!!! Marked %s=... entirely", ASSIGN_NAME (arg_node)));
@@ -148,6 +179,19 @@ WLLOMassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief functions traversals down the RHS. If the RHS includes an variable
+ *        which is marked as not beeing allowd to be moved upon the lock, all
+ *        variables on the LHS are marked to be not allowed to be moved upon
+ *        this lock.
+ *        Additional if this is the last assignment in the assignment-Chain,
+ *        this circumstance is marked within the INFO-structure.
+ *
+ * @param arg_node N_let node
+ * @param arg_info INFO structure
+ *
+ * @return unchanged N_let node
+ *******************************************************************************/
 node *
 WLLOMlet (node *arg_node, info *arg_info)
 {
@@ -156,6 +200,8 @@ WLLOMlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
+    /*If EXPR contains variables which depend on an object, set flag
+     * NUP and mark the LHS*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_FV (arg_info) == TRUE)) {
         INFO_MARK_NUP (arg_info) = TRUE;
 
