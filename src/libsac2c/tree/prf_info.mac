@@ -77,10 +77,10 @@
  * Built-in type conversion operations
  */
 
-PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
+PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, SCSprf_tob_S, NULL, NULL, dim_is_0,
      shp_is_empty, NULL),
 
-  PRF (toc_S, 1, TOC, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
+  PRF (toc_S, 1, TOC, NOSIMD, NULL, NULL, COMPprfOp_S, SCSprf_toc_S, NULL, NULL, dim_is_0,
        shp_is_empty, NULL),
 
   PRF (toi_S, 1, TOI, NOSIMD, NTCCTprf_toiS, COtoi, COMPprfOp_S, SCSprf_toi_S, NULL, NULL,
@@ -96,11 +96,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
    * Boolean operations
    */
 
-  PRF (not_S, 1, NOT, NOSIMD, NTCCTprf_log_op_A, COnot, COMPprfOp_S, SCSprf_not_S, NULL,
-       NULL, dim_is_0, shp_is_empty, NULL),
+  PRF (not_S, 1, NOT, NOSIMD, NTCCTprf_log_op_A, COnot, COMPprfOp_S, NULL, NULL, NULL,
+       dim_is_0, shp_is_empty, NULL),
 
-  PRF (not_V, 1, NOT, NOSIMD, NTCCTprf_log_op_A, COnot, COMPprfOp_V, SCSprf_not_V, NULL,
-       NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (not_V, 1, NOT, NOSIMD, NTCCTprf_log_op_A, COnot, COMPprfOp_V, NULL, NULL, NULL,
+       dim_is_1, shp_of_arg1, NULL),
 
   PRF (and_SxS, 2, AND, NOSIMD, NTCCTprf_log_op_AxA, COand, COMPprfOp_SxS, SCSprf_and_SxS,
        NULL, NULL, dim_is_0, shp_is_empty, NULL),
@@ -139,16 +139,16 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (add_VxS, 2, ADD, NOSIMD, NTCCTprf_ari_op_VxS, COadd, COMPprfOp_VxS, SCSprf_add_VxS,
        NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (add_VxV, 2, ADD, NOSIMD, NTCCTprf_ari_op_VxV, COadd, COMPprfOp_VxV, SCSprf_add_VxV,
-       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (add_VxV, 2, ADD, NOSIMD, NTCCTprf_ari_op_VxV, COadd, COMPprfOp_VxV, NULL, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (sub_SxS, 2, SUB, NOSIMD, NTCCTprf_ari_op_SxS, COsub, COMPprfOp_SxS, SCSprf_sub_SxS,
+  PRF (sub_SxS, 2, SUB, NOSIMD, NTCCTprf_ari_op_SxS, COsub, COMPprfOp_SxS, SCSprf_sub,
        NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
-  PRF (sub_SxV, 2, SUB, NOSIMD, NTCCTprf_ari_op_SxV, COsub, COMPprfOp_SxV, SCSprf_sub_SxV,
-       NULL, NULL, dim_is_1, shp_of_arg2, NULL),
+  PRF (sub_SxV, 2, SUB, NOSIMD, NTCCTprf_ari_op_SxV, COsub, COMPprfOp_SxV, NULL, NULL,
+       NULL, dim_is_1, shp_of_arg2, NULL),
 
-  PRF (sub_VxS, 2, SUB, NOSIMD, NTCCTprf_ari_op_VxS, COsub, COMPprfOp_VxS, SCSprf_sub_VxS,
+  PRF (sub_VxS, 2, SUB, NOSIMD, NTCCTprf_ari_op_VxS, COsub, COMPprfOp_VxS, SCSprf_sub,
        NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
   PRF (sub_VxV, 2, SUB, NOSIMD, NTCCTprf_ari_op_VxV, COsub, COMPprfOp_VxV, SCSprf_sub_VxV,
@@ -163,20 +163,20 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (mul_VxS, 2, MUL, NOSIMD, NTCCTprf_ari_op_VxS, COmul, COMPprfOp_VxS, SCSprf_mul_VxS,
        NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (mul_VxV, 2, MUL, NOSIMD, NTCCTprf_ari_op_VxV, COmul, COMPprfOp_VxV, SCSprf_mul_VxV,
-       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (mul_VxV, 2, MUL, NOSIMD, NTCCTprf_ari_op_VxV, COmul, COMPprfOp_VxV, NULL, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (div_SxS, 2, DIV, NOSIMD, NTCCTprf_ari_op_SxS, COdiv, COMPprfOp_SxS, SCSprf_mul_SxS,
+  PRF (div_SxS, 2, DIV, NOSIMD, NTCCTprf_ari_op_SxS, COdiv, COMPprfOp_SxS, SCSprf_div,
        NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
-  PRF (div_SxV, 2, DIV, NOSIMD, NTCCTprf_ari_op_SxV, COdiv, COMPprfOp_SxV, SCSprf_mul_SxV,
-       NULL, NULL, dim_is_1, shp_of_arg2, NULL),
+  PRF (div_SxV, 2, DIV, NOSIMD, NTCCTprf_ari_op_SxV, COdiv, COMPprfOp_SxV, NULL, NULL,
+       NULL, dim_is_1, shp_of_arg2, NULL),
 
-  PRF (div_VxS, 2, DIV, NOSIMD, NTCCTprf_ari_op_VxS, COdiv, COMPprfOp_VxS, SCSprf_mul_VxS,
+  PRF (div_VxS, 2, DIV, NOSIMD, NTCCTprf_ari_op_VxS, COdiv, COMPprfOp_VxS, SCSprf_div,
        NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (div_VxV, 2, DIV, NOSIMD, NTCCTprf_ari_op_VxV, COdiv, COMPprfOp_VxV, SCSprf_mul_VxV,
-       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (div_VxV, 2, DIV, NOSIMD, NTCCTprf_ari_op_VxV, COdiv, COMPprfOp_VxV, NULL, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
   PRF (mod_SxS, 2, MOD, NOSIMD, NTCCTprf_int_op_SxS, COmod, COMPprfOp_SxS, NULL, NULL,
        NULL, dim_is_0, shp_is_empty, NULL),
@@ -206,8 +206,8 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (abs_V, 1, ABS, NOSIMD, NTCCTprf_ari_op_A, COabs, COMPprfOp_V, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (min_SxS, 2, MIN, NOSIMD, NTCCTprf_ari_op_SxS, COmin, COMPprfOp_SxS, NULL, NULL,
-       NULL, dim_is_0, shp_is_empty, NULL),
+  PRF (min_SxS, 2, MIN, NOSIMD, NTCCTprf_ari_op_SxS, COmin, COMPprfOp_SxS, SCSprf_minmax,
+       NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (min_SxV, 2, MIN, NOSIMD, NTCCTprf_ari_op_SxV, COmin, COMPprfOp_SxV, NULL, NULL,
        NULL, dim_is_1, shp_of_arg2, NULL),
@@ -215,11 +215,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (min_VxS, 2, MIN, NOSIMD, NTCCTprf_ari_op_VxS, COmin, COMPprfOp_VxS, NULL, NULL,
        NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (min_VxV, 2, MIN, NOSIMD, NTCCTprf_ari_op_VxV, COmin, COMPprfOp_VxV, NULL, NULL,
-       NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (min_VxV, 2, MIN, NOSIMD, NTCCTprf_ari_op_VxV, COmin, COMPprfOp_VxV, SCSprf_minmax,
+       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (max_SxS, 2, MAX, NOSIMD, NTCCTprf_ari_op_SxS, COmax, COMPprfOp_SxS, NULL, NULL,
-       NULL, dim_is_0, shp_is_empty, NULL),
+  PRF (max_SxS, 2, MAX, NOSIMD, NTCCTprf_ari_op_SxS, COmax, COMPprfOp_SxS, SCSprf_minmax,
+       NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (max_SxV, 2, MAX, NOSIMD, NTCCTprf_ari_op_SxV, COmax, COMPprfOp_SxV, NULL, NULL,
        NULL, dim_is_1, shp_of_arg2, NULL),
@@ -227,15 +227,15 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (max_VxS, 2, MAX, NOSIMD, NTCCTprf_ari_op_VxS, COmax, COMPprfOp_VxS, NULL, NULL,
        NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (max_VxV, 2, MAX, NOSIMD, NTCCTprf_ari_op_VxV, COmax, COMPprfOp_VxV, NULL, NULL,
-       NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (max_VxV, 2, MAX, NOSIMD, NTCCTprf_ari_op_VxV, COmax, COMPprfOp_VxV, SCSprf_minmax,
+       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
   /*******************************************************************************
    * Relational operations
    */
 
-  PRF (eq_SxS, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_SxS, NULL, NULL, NULL,
-       dim_is_0, shp_is_empty, NULL),
+  PRF (eq_SxS, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_SxS, SCSprf_lege, NULL,
+       NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (eq_SxV, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_SxV, NULL, NULL, NULL,
        dim_is_1, shp_of_arg2, NULL),
@@ -243,11 +243,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (eq_VxS, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_VxS, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (eq_VxV, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_VxV, NULL, NULL, NULL,
-       dim_is_1, shp_of_arg1, NULL),
+  PRF (eq_VxV, 2, EQ, NOSIMD, NTCCTprf_rel_op_AxA, COeq, COMPprfOp_VxV, SCSprf_lege, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (neq_SxS, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_SxS, NULL, NULL,
-       NULL, dim_is_0, shp_is_empty, NULL),
+  PRF (neq_SxS, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_SxS, SCSprf_nlege,
+       NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (neq_SxV, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_SxV, NULL, NULL,
        NULL, dim_is_1, shp_of_arg2, NULL),
@@ -255,11 +255,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (neq_VxS, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_VxS, NULL, NULL,
        NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (neq_VxV, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_VxV, NULL, NULL,
-       NULL, dim_is_1, shp_of_arg1, NULL),
+  PRF (neq_VxV, 2, NE, NOSIMD, NTCCTprf_rel_op_AxA, COneq, COMPprfOp_VxV, SCSprf_nlege,
+       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (le_SxS, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_SxS, NULL, NULL, NULL,
-       dim_is_0, shp_is_empty, NULL),
+  PRF (le_SxS, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_SxS, SCSprf_lege, NULL,
+       NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (le_SxV, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_SxV, NULL, NULL, NULL,
        dim_is_1, shp_of_arg2, NULL),
@@ -267,11 +267,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (le_VxS, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_VxS, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (le_VxV, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_VxV, NULL, NULL, NULL,
-       dim_is_1, shp_of_arg1, NULL),
+  PRF (le_VxV, 2, LE, NOSIMD, NTCCTprf_rel_op_AxA, COle, COMPprfOp_VxV, SCSprf_lege, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (lt_SxS, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_SxS, NULL, NULL, NULL,
-       dim_is_0, shp_is_empty, NULL),
+  PRF (lt_SxS, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_SxS, SCSprf_nlege,
+       NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (lt_SxV, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_SxV, NULL, NULL, NULL,
        dim_is_1, shp_of_arg2, NULL),
@@ -279,11 +279,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (lt_VxS, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_VxS, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (lt_VxV, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_VxV, NULL, NULL, NULL,
-       dim_is_1, shp_of_arg1, NULL),
+  PRF (lt_VxV, 2, LT, NOSIMD, NTCCTprf_rel_op_AxA, COlt, COMPprfOp_VxV, SCSprf_nlege,
+       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (ge_SxS, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_SxS, NULL, NULL, NULL,
-       dim_is_0, shp_is_empty, NULL),
+  PRF (ge_SxS, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_SxS, SCSprf_lege, NULL,
+       NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (ge_SxV, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_SxV, NULL, NULL, NULL,
        dim_is_1, shp_of_arg2, NULL),
@@ -291,11 +291,11 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (ge_VxS, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_VxS, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (ge_VxV, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_VxV, NULL, NULL, NULL,
-       dim_is_1, shp_of_arg1, NULL),
+  PRF (ge_VxV, 2, GE, NOSIMD, NTCCTprf_rel_op_AxA, COge, COMPprfOp_VxV, SCSprf_lege, NULL,
+       NULL, dim_is_1, shp_of_arg1, NULL),
 
-  PRF (gt_SxS, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_SxS, NULL, NULL, NULL,
-       dim_is_0, shp_is_empty, NULL),
+  PRF (gt_SxS, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_SxS, SCSprf_nlege,
+       NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (gt_SxV, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_SxV, NULL, NULL, NULL,
        dim_is_1, shp_of_arg2, NULL),
@@ -303,37 +303,36 @@ PRF (tob_S, 1, TOB, NOSIMD, NULL, NULL, COMPprfOp_S, NULL, NULL, NULL, dim_is_0,
   PRF (gt_VxS, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_VxS, NULL, NULL, NULL,
        dim_is_1, shp_of_arg1, NULL),
 
-  PRF (gt_VxV, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_VxV, NULL, NULL, NULL,
-       dim_is_1, shp_of_arg1, NULL),
+  PRF (gt_VxV, 2, GT, NOSIMD, NTCCTprf_rel_op_AxA, COgt, COMPprfOp_VxV, SCSprf_nlege,
+       NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
   /*******************************************************************************
    * Array operations
    */
 
-  PRF (dim_A, 1, XXX, NOSIMD, NTCCTprf_dim, COdim, COMPprfDim, CFprf_dim, NULL,
-       SAACFprf_dim, dim_is_0, shp_is_empty, NULL),
+  PRF (dim_A, 1, XXX, NOSIMD, NTCCTprf_dim, COdim, COMPprfDim, NULL, NULL, SAACFprf_dim,
+       dim_is_0, shp_is_empty, NULL),
 
   PRF (shape_A, 1, XXX, NOSIMD, NTCCTprf_shape, COshape, COMPprfShape, CFprf_shape, NULL,
        SAACFprf_shape, dim_is_1, shp_for_shape, NULL),
 
-  PRF (reshape_VxA, 2, XXX, NOSIMD, NTCCTprf_reshape, COreshape, COMPprfReshape,
-       CFprf_reshape, SCCFprf_reshape, SAACFprf_reshape, dim_is_arg1_0, shp_is_arg1,
-       NULL),
+  PRF (reshape_VxA, 2, XXX, NOSIMD, NTCCTprf_reshape, COreshape, COMPprfReshape, NULL,
+       SCCFprf_reshape, SAACFprf_reshape, dim_is_arg1_0, shp_is_arg1, NULL),
 
   PRF (sel_VxA, 2, XXX, NOSIMD, NTCCTprf_selS, COsel, COMPprfSel, NULL, SCCFprf_sel, NULL,
        dim_is_0, shp_is_empty, NULL),
 
   PRF (modarray_AxVxS, 3, XXX, NOSIMD, NTCCTprf_modarrayA, COmodarray, COMPprfModarray,
-       NULL, SCCFprf_modarray, SAACFprf_modarray, dim_of_arg1, shp_of_arg1, NULL),
+       NULL, SCCFprf_modarray, NULL, dim_of_arg1, shp_of_arg1, NULL),
 
-  PRF (cat_VxV, 2, XXX, NOSIMD, NTCCTprf_cat_VxV, COcat, COMPprfCat, NULL, NULL, NULL,
-       dim_is_1, shp_for_cat, NULL),
+  PRF (cat_VxV, 2, XXX, NOSIMD, NTCCTprf_cat_VxV, COcat, COMPprfCat, NULL,
+       SCCFprf_cat_VxV, NULL, dim_is_1, shp_for_cat, NULL),
 
-  PRF (take_SxV, 2, XXX, NOSIMD, NTCCTprf_take_SxV, COtake, COMPprfTake, NULL, NULL, NULL,
-       dim_is_1, shp_for_take, NULL),
+  PRF (take_SxV, 2, XXX, NOSIMD, NTCCTprf_take_SxV, COtake, COMPprfTake, NULL,
+       SCCFprf_take_SxV, NULL, dim_is_1, shp_for_take, NULL),
 
-  PRF (drop_SxV, 2, XXX, NOSIMD, NTCCTprf_drop_SxV, COdrop, COMPprfDrop, NULL, NULL, NULL,
-       dim_is_1, shp_for_drop, NULL),
+  PRF (drop_SxV, 2, XXX, NOSIMD, NTCCTprf_drop_SxV, COdrop, COMPprfDrop, NULL,
+       SCCFprf_drop_SxV, NULL, dim_is_1, shp_for_drop, NULL),
 
 #endif /* PRF_INTERNAL_ONLY */
 
