@@ -4211,10 +4211,12 @@ node *COMPprfUniScalar( char *icm_name,
   /* assure that the prf has exactly one argument */
   DBUG_ASSERT( (PRF_EXPRS2( arg_node) == NULL),
                "more than a single argument found!");
-
+#if 0
+cg overenthused
   DBUG_ASSERT( ((NODE_TYPE( arg) != N_id) ||
                 (TCgetShapeDim( ID_TYPE( arg)) == SCALAR)),
                "non-scalar argument found!");
+#endif
 
   icm_name2 = "ND_PRF_S__DATA";
 
@@ -4257,10 +4259,13 @@ COMPprfOp_S (node *arg_node, info *arg_info)
 
     /* assure that the prf has exactly one argument */
     DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
-
-    DBUG_ASSERTF (((NODE_TYPE (arg) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
-                  ("non-scalar argument found!", global.prf_name[PRF_PRF (arg_node)]));
+#if 0
+cg overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg)) == SCALAR)),
+                ("non-scalar argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
@@ -4297,10 +4302,13 @@ COMPprfOp_V (node *arg_node, info *arg_info)
 
     /* assure that the prf has exactly one argument */
     DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
-
-    DBUG_ASSERTF (((NODE_TYPE (arg) != N_id) || (TCgetDim (ID_TYPE (arg)) == 1)),
-                  ("non-vector argument found!", global.prf_name[PRF_PRF (arg_node)]));
-
+#if 0
+ cg overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg) != N_id) ||
+                 (TCgetDim( ID_TYPE( arg)) == 1)),
+                ("non-vector argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
     ret_node = TCmakeAssignIcm3 ("ND_PRF_V__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
@@ -4415,16 +4423,18 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                  ("%s: non-scalar first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+#if 0
+cg overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg1) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg1)) == SCALAR)),
+                ("%s: non-scalar first argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
 
-    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                  ("%s: non-scalar second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
-
+  DBUG_ASSERTF( ((NODE_TYPE( arg2) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg2)) == SCALAR)),
+                ("%s: non-scalar second argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
@@ -4463,14 +4473,18 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                  ("%s: non-scalar first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+#if 0
+ cg overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg1) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg1)) == SCALAR)),
+                ("%s: non-scalar first argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
 
-    DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                  ("%s: non-vector second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+  DBUG_ASSERTF( ((NODE_TYPE( arg2) == N_id) &&
+                (TCgetDim( ID_TYPE( arg2)) == 1)),
+                ("%s: non-vector second argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
@@ -4509,15 +4523,18 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
+#if 0
+ cg overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg1) == N_id) &&
+                (TCgetDim( ID_TYPE( arg1)) == 1)),
+                ("%s: non-vector first argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                  ("%s: non-vector first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
-
-    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                  ("%s: non-scalar second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+  DBUG_ASSERTF( ((NODE_TYPE( arg2) != N_id) ||
+                (TCgetShapeDim( ID_TYPE( arg2)) == SCALAR)),
+                ("%s: non-scalar second argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
@@ -4556,14 +4573,18 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
+#if 0
+ cg getting overenthused
+  DBUG_ASSERTF( ((NODE_TYPE( arg1) == N_id) &&
+                (TCgetDim( ID_TYPE( arg1)) == 1)),
+                ("%s: non-vector first argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) == N_id) && (TCgetDim (ID_TYPE (arg1)) == 1)),
-                  ("%s: non-vector first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
-
-    DBUG_ASSERTF (((NODE_TYPE (arg2) == N_id) && (TCgetDim (ID_TYPE (arg2)) == 1)),
-                  ("%s: non-vector second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+  DBUG_ASSERTF( ((NODE_TYPE( arg2) == N_id) &&
+                (TCgetDim( ID_TYPE( arg2)) == 1)),
+                ("%s: non-vector second argument found!",
+                 global.prf_name[PRF_PRF(arg_node)]));
+#endif
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
