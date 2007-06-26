@@ -401,10 +401,14 @@ GLOBAL (int, initial_unified_heapsize, 0)
  */
 
 /*
- * Print options
+ * Primitive function info tables
  */
 
 GLOBAL (const char **, prf_name, prf_name_init)
+GLOBAL (const travfun_p *, prf_cfscs, prf_cfscs_init)
+GLOBAL (const travfun_p *, prf_cfsccf, prf_cfsccf_init)
+GLOBAL (const travfun_p *, prf_cfsaa, prf_cfsaa_init)
+
 /*
  * This array contains string representations of primitive function names.
  */

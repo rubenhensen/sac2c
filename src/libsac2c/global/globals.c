@@ -37,7 +37,10 @@
 #include "str.h"
 #include "memory.h"
 #include "check_mem.h"
-
+#include "constant_folding.h"
+#include "symbolic_constant_simplification.h"
+#include "structural_constant_constant_folding.h"
+#include "saa_constant_folding.h"
 #include <limits.h>
 
 /*
@@ -427,6 +430,21 @@ static genlib_flags_t genlib_init = {
 
 static const char *prf_name_init[] = {
 #define PRFname(name) "_" #name "_"
+#include "prf_info.mac"
+};
+
+static const travfun_p prf_cfscs_init[] = {
+#define PRFcf_scs_fun(cf_scs_fun) cf_scs_fun
+#include "prf_info.mac"
+};
+
+static const travfun_p prf_cfsccf_init[] = {
+#define PRFcf_sccf_fun(cf_sccf_fun) cf_sccf_fun
+#include "prf_info.mac"
+};
+
+static const travfun_p prf_cfsaa_init[] = {
+#define PRFcf_saa_fun(cf_saa_fun) cf_saa_fun
 #include "prf_info.mac"
 };
 
