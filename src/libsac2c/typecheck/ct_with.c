@@ -79,8 +79,8 @@ NTCCTwl_idx (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 1);
     ub = TYgetProductMember (args, 2);
 
-    TEassureIntVect ("lower bound of with loop", lb);
-    TEassureIntVect ("upper bound of with loop", ub);
+    TEassureIntV ("lower bound of with loop", lb);
+    TEassureIntV ("upper bound of with loop", ub);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -100,7 +100,7 @@ NTCCTwl_idx (te_info *info, ntype *args)
 
                 if (TYgetProductSize (args) >= 4) {
                     sv = TYgetProductMember (args, 3);
-                    TEassureIntVect ("step vector of with loop", sv);
+                    TEassureIntV ("step vector of with loop", sv);
                     err_msg = TEfetchErrors ();
                     if (err_msg != NULL) {
                         res = TYmakeBottomType (err_msg);
@@ -115,7 +115,7 @@ NTCCTwl_idx (te_info *info, ntype *args)
 
                             if (TYgetProductSize (args) == 5) {
                                 wv = TYgetProductMember (args, 4);
-                                TEassureIntVect ("width vector of with loop", wv);
+                                TEassureIntV ("width vector of with loop", wv);
                                 err_msg = TEfetchErrors ();
                                 if (err_msg != NULL) {
                                     res = TYmakeBottomType (err_msg);
@@ -201,7 +201,7 @@ NTCCTwl_gen (te_info *info, ntype *args)
 
     TEassureSameScalarType ("body expression", expr, "default expression", dexpr);
     expr = TEassureSameShape ("body expression", expr, "default expression", dexpr);
-    TEassureIntVect ("shape expression of genarray with loop", shp);
+    TEassureIntV ("shape expression of genarray with loop", shp);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -252,7 +252,7 @@ NTCCTwl_mod (te_info *info, ntype *args)
     res = TYnestTypes (dummy, expr);
     TYfreeType (dummy);
 
-    TEassureIntVect ("index expression of modarray with loop", idx);
+    TEassureIntV ("index expression of modarray with loop", idx);
     TEassureSameScalarType ("array to be modified", array, "body expression", expr);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -290,7 +290,7 @@ NTCCTwl_fold (te_info *info, ntype *args)
     neutr = TYgetProductMember (args, 1);
     expr = TYgetProductMember (args, 2);
 
-    TEassureIntVect ("index expression of fold with loop", idx);
+    TEassureIntV ("index expression of fold with loop", idx);
     TEassureSameScalarType ("neutral element", neutr, "body expression of fold with loop",
                             expr);
     err_msg = TEfetchErrors ();

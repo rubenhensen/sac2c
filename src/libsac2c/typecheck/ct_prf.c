@@ -350,20 +350,20 @@ NTCCTprf_saabind (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_dim( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_dim_A( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_dim (te_info *info, ntype *args)
+NTCCTprf_dim_A (te_info *info, ntype *args)
 {
     ntype *array;
     ntype *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_dim");
+    DBUG_ENTER ("NTCCTprf_dim_A");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "dim called with incorrect number of arguments");
 
@@ -388,14 +388,14 @@ NTCCTprf_dim (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_shape( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_shape_A( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_shape (te_info *info, ntype *args)
+NTCCTprf_shape_A (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res = NULL;
@@ -404,7 +404,7 @@ NTCCTprf_shape (te_info *info, ntype *args)
 
     int n;
 
-    DBUG_ENTER ("NTCCTprf_shape");
+    DBUG_ENTER ("NTCCTprf_shape_A");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "shape called with incorrect number of arguments");
 
@@ -431,7 +431,7 @@ NTCCTprf_shape (te_info *info, ntype *args)
             res = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
             break;
         default:
-            DBUG_ASSERT (FALSE, "NTCCTprf_shape applied to non-array type");
+            DBUG_ASSERT (FALSE, "NTCCTprf_shape_A applied to non-array type");
         }
     }
 
@@ -441,27 +441,27 @@ NTCCTprf_shape (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_reshape( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_reshape_VxA( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_reshape (te_info *info, ntype *args)
+NTCCTprf_reshape_VxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *new_shp, *array, *scalar;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_reshape");
+    DBUG_ENTER ("NTCCTprf_reshape_VxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "reshape called with incorrect number of arguments");
 
     new_shp = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
 
-    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -508,14 +508,14 @@ NTCCTprf_reshape (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_selS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_sel_VxA( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_selS (te_info *info, ntype *args)
+NTCCTprf_sel_VxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *array;
@@ -528,7 +528,7 @@ NTCCTprf_selS (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
 
-    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -708,20 +708,20 @@ NTCCTprf_idx_shape_sel (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_modarrayS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_modarray_AxVxS( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_modarrayS (te_info *info, ntype *args)
+NTCCTprf_modarray_AxVxS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarrayS");
+    DBUG_ENTER ("NTCCTprf_modarray_AxVxS");
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayS called with incorrect number of arguments");
 
@@ -734,7 +734,7 @@ NTCCTprf_modarrayS (te_info *info, ntype *args)
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
     TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
-    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 2), idx);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), idx);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -776,20 +776,20 @@ NTCCTprf_modarrayS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_modarrayA( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_modarray_AxVxA( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_modarrayA (te_info *info, ntype *args)
+NTCCTprf_modarray_AxVxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarrayA");
+    DBUG_ENTER ("NTCCTprf_modarray_AxVxA");
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayA called with incorrect number of arguments");
 
@@ -801,7 +801,7 @@ NTCCTprf_modarrayA (te_info *info, ntype *args)
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
     TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
-    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -855,12 +855,9 @@ ConvS (te_info *info, ntype *args, simpletype st)
 
     array = TYgetProductMember (args, 0);
 
-#if 0
-  TEassureNumS( TEprfArg2Obj( TEgetNameStr( info), 1), array);
-#else
     TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array);
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-#endif
+
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -876,40 +873,9 @@ ConvS (te_info *info, ntype *args, simpletype st)
     DBUG_RETURN (TYmakeProductType (1, res));
 }
 
-static ntype *
-ConvA (te_info *info, ntype *args, simpletype st)
-{
-    ntype *res = NULL;
-    ntype *array, *scal;
-    char *err_msg;
-
-    DBUG_ENTER ("ConvA");
-    DBUG_ASSERT (TYgetProductSize (args) == 1,
-                 "ConvA called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
-
-    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-    err_msg = TEfetchErrors ();
-    if (err_msg != NULL) {
-        res = TYmakeBottomType (err_msg);
-    } else {
-
-        if (TYisAKV (array)) {
-            res = TYmakeAKV (TYmakeSimpleType (st), ApplyCF (info, args));
-        } else {
-            res = TYcopyType (array);
-            scal = TYgetScalar (res);
-            scal = TYsetSimpleType (scal, st);
-        }
-    }
-
-    DBUG_RETURN (TYmakeProductType (1, res));
-}
-
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_toiS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_toi_S( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _toi_S_
  *
@@ -920,11 +886,11 @@ ConvA (te_info *info, ntype *args, simpletype st)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_toiS (te_info *info, ntype *args)
+NTCCTprf_toi_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toiS");
+    DBUG_ENTER ("NTCCTprf_toi_S");
 
     res = ConvS (info, args, T_int);
 
@@ -933,31 +899,7 @@ NTCCTprf_toiS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_toiA( te_info *info, ntype *args)
- *
- *   @brief  computes the return type of an application of _toi_A_
- *
- *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _toi_A_ is applied to
- *   @return       the result type of applying _toi_A_
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_toiA (te_info *info, ntype *args)
-{
-    ntype *res = NULL;
-
-    DBUG_ENTER ("NTCCTprf_toiA");
-
-    res = ConvA (info, args, T_int);
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn ntype *NTCCTprf_tofS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tof_S( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tof_S_
  *
@@ -968,11 +910,11 @@ NTCCTprf_toiA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_tofS (te_info *info, ntype *args)
+NTCCTprf_tof_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tofS");
+    DBUG_ENTER ("NTCCTprf_tof_S");
 
     res = ConvS (info, args, T_float);
 
@@ -981,31 +923,7 @@ NTCCTprf_tofS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_tofA( te_info *info, ntype *args)
- *
- *   @brief  computes the return type of an application of _tof_A_
- *
- *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _tof_A_ is applied to
- *   @return       the result type of applying _tof_A_
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_tofA (te_info *info, ntype *args)
-{
-    ntype *res = NULL;
-
-    DBUG_ENTER ("NTCCTprf_tofA");
-
-    res = ConvA (info, args, T_float);
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn ntype *NTCCTprf_todS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tod_S( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tod_S_
  *
@@ -1016,11 +934,11 @@ NTCCTprf_tofA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_todS (te_info *info, ntype *args)
+NTCCTprf_tod_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_todS");
+    DBUG_ENTER ("NTCCTprf_tod_S");
 
     res = ConvS (info, args, T_double);
 
@@ -1029,24 +947,48 @@ NTCCTprf_todS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_todA( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tob_S( te_info *info, ntype *args)
  *
- *   @brief  computes the return type of an application of _tod_A_
+ *   @brief  computes the return type of an application of _tob_S_
  *
  *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _tod_A_ is applied to
- *   @return       the result type of applying _tod_A_
+ *   @param args   product of argument types _tod_S_ is applied to
+ *   @return       the result type of applying _tod_S_
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_todA (te_info *info, ntype *args)
+NTCCTprf_tob_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_todA");
+    DBUG_ENTER ("NTCCTprf_tob_S");
 
-    res = ConvA (info, args, T_double);
+    res = ConvS (info, args, T_bool);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCCTprf_toc_S( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _toc_S_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _tod_S_ is applied to
+ *   @return       the result type of applying _tod_S_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_toc_S (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCCTprf_toc_S");
+
+    res = ConvS (info, args, T_char);
 
     DBUG_RETURN (res);
 }
@@ -1127,7 +1069,7 @@ NTCCTprf_ari_op_SxV (te_info *info, ntype *args)
     array2 = TYgetProductMember (args, 1);
 
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
     if (err_msg == NULL) {
         TEassureSameSimpleType (TEarg2Obj (1), array1,
@@ -1177,7 +1119,7 @@ NTCCTprf_ari_op_VxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
     if (err_msg == NULL) {
@@ -1228,8 +1170,8 @@ NTCCTprf_ari_op_VxV (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
@@ -1251,6 +1193,84 @@ NTCCTprf_ari_op_VxV (te_info *info, ntype *args)
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYfreeType (res);
             res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_ari_op_S( te_info *info, ntype *args)
+ *
+ * description:
+ *    simple  ->  simple
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_ari_op_S (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_ari_op_S");
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "ari_op_A called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_ari_op_V( te_info *info, ntype *args)
+ *
+ * description:
+ *    simple [shp]  ->  simple [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_ari_op_V (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_ari_op_V");
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "ari_op_A called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array);
         }
     }
 
@@ -1309,11 +1329,38 @@ NTCCTprf_ari_op_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_rel_op_SxS (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_rel_op_SxS");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_SxS not yet implemented.");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "rel_op_SxS called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureSimpleS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1329,11 +1376,40 @@ NTCCTprf_rel_op_SxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_rel_op_SxV");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_SxV not yet implemented.");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "rel_op_SxV called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureSimpleS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array2);
+            TYfreeType (TYgetScalar (res));
+            res = TYsetScalar (res, TYmakeSimpleType (T_bool));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1349,11 +1425,40 @@ NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
 ntype *
 NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_rel_op_VxS");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxS not yet implemented.");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "rel_op_VxS called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array1);
+            TYfreeType (TYgetScalar (res));
+            res = TYsetScalar (res, TYmakeSimpleType (T_bool));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1369,39 +1474,22 @@ NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTprf_rel_op_VxV");
-
-    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxV not yet implemented.");
-
-    DBUG_RETURN (NULL);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype *NTCCTprf_rel_op_AxA( te_info *info, ntype *args)
- *
- * description:
- *     simple [shp]  x  simple [shp]  ->  bool [shp]
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
-{
     ntype *res = NULL;
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_AxA");
+    DBUG_ENTER ("NTCCTprf_rel_op_VxV");
+
+    DBUG_ASSERT (FALSE, "NTCCTprf_rel_op_VxV not yet implemented.");
+
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_AxA called with incorrect number of arguments");
 
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
@@ -1414,11 +1502,12 @@ NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
         res = TYmakeBottomType (err_msg);
     } else {
 
-        res = TYsetScalar (res, TYmakeSimpleType (T_bool));
-
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYfreeType (res);
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            TYfreeType (TYgetScalar (res));
+            res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
 
@@ -1431,18 +1520,40 @@ NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
  *    ntype *NTCCTprf_log_op_SxS( te_info *info, ntype *args)
  *
  * description:
- *    bool [shp]  x  bool [shp]  ->  bool [shp]
+ *    bool   x  bool   ->  bool
  *
  ******************************************************************************/
 
 ntype *
 NTCCTprf_log_op_SxS (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_log_op_SxS");
 
-    DBUG_ASSERT (FALSE, "log_op_SxS not yet implemented");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "log_op_SxS called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureBoolS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureBoolS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1458,11 +1569,33 @@ NTCCTprf_log_op_SxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_log_op_SxV (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_log_op_SxV");
 
-    DBUG_ASSERT (FALSE, "log_op_SxV not yet implemented");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "log_op_SxV called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureBoolS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array2);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1478,11 +1611,33 @@ NTCCTprf_log_op_SxV (te_info *info, ntype *args)
 ntype *
 NTCCTprf_log_op_VxS (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_log_op_VxS");
 
-    DBUG_ASSERT (FALSE, "log_op_VxS not yet implemented");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "log_op_VxS called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureBoolS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array1);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1498,39 +1653,20 @@ NTCCTprf_log_op_VxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_log_op_VxV (te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTprf_log_op_VxV");
-
-    DBUG_ASSERT (FALSE, "log_op_VxV not yet implemented");
-
-    DBUG_RETURN (NULL);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype *NTCCTprf_log_op_AxA( te_info *info, ntype *args)
- *
- * description:
- *    bool [shp]  x  bool [shp]  ->  bool [shp]
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_log_op_AxA (te_info *info, ntype *args)
-{
     ntype *res = NULL;
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_AxA");
+    DBUG_ENTER ("NTCCTprf_log_op_VxV");
+
     DBUG_ASSERT (TYgetProductSize (args) == 2,
-                 "log_op_AxA called with incorrect number of arguments");
+                 "log_op_VxV called with incorrect number of arguments");
 
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
@@ -1550,7 +1686,7 @@ NTCCTprf_log_op_AxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_log_op_A( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_log_op_V( te_info *info, ntype *args)
  *
  * description:
  *    bool [shp]  ->  bool [shp]
@@ -1558,19 +1694,19 @@ NTCCTprf_log_op_AxA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_log_op_A (te_info *info, ntype *args)
+NTCCTprf_log_op_V (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_A");
+    DBUG_ENTER ("NTCCTprf_log_op_V");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
-                 "log_op_A called with incorrect number of arguments");
+                 "log_op_V called with incorrect number of arguments");
 
     array = TYgetProductMember (args, 0);
 
-    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -1592,18 +1728,38 @@ NTCCTprf_log_op_A (te_info *info, ntype *args)
  *    ntype *NTCCTprf_log_op_S( te_info *info, ntype *args)
  *
  * description:
- *    bool [shp]  ->  bool [shp]
+ *    bool   ->  bool
  *
  ******************************************************************************/
 
 ntype *
 NTCCTprf_log_op_S (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_log_op_S");
 
-    DBUG_ASSERT (FALSE, "log_op_S not yet implemented.");
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "log_op_S called with incorrect number of arguments");
 
-    DBUG_RETURN (NULL);
+    array = TYgetProductMember (args, 0);
+
+    TEassureBoolS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
+        } else {
+            res = TYcopyType (array);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1664,11 +1820,37 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_int_op_SxV (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_int_op_SxV");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "int_op_SxV called with incorrect number of arguments");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_SxV not yet implemented.");
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    DBUG_RETURN (NULL);
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        } else {
+            res = TYeliminateAKV (array2);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1684,11 +1866,37 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
 ntype *
 NTCCTprf_int_op_VxS (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_int_op_VxS");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "int_op_SxV called with incorrect number of arguments");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_VxS not yet implemented.");
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    DBUG_RETURN (NULL);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        } else {
+            res = TYeliminateAKV (array1);
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1704,11 +1912,38 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_int_op_VxV (te_info *info, ntype *args)
 {
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    char *err_msg;
+
     DBUG_ENTER ("NTCCTprf_int_op_VxV");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "int_op_VxV called with incorrect number of arguments");
 
-    DBUG_ASSERT (FALSE, "NTCCTprf_int_op_VxV not yet implemented.");
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    DBUG_RETURN (NULL);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array2);
+    err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYfreeType (res);
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************

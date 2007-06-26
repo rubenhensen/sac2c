@@ -185,6 +185,18 @@ MatchNumA (ntype *type)
     DBUG_RETURN (res);
 }
 
+static bool
+MatchSimpleA (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ("MatchSimpleA");
+
+    res = TYisSimple (TYgetScalar (type));
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  ***
  ***          functions for handling te_info structures:
@@ -643,6 +655,28 @@ TEassureIntS (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
+ *    void TEassureIntV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureIntV (char *obj, ntype *type)
+{
+    DBUG_ENTER ("AssureIntV");
+
+    if (!MatchIntA (type) || !MatchVect (type)) {
+        TEhandleError (global.linenum, "%s should be an integer vector; type found: %s",
+                       obj, TYtype2String (type, FALSE, 0));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *    void TEassureBoolS( char *obj, ntype *type)
  *
  * description:
@@ -658,6 +692,28 @@ TEassureBoolS (char *obj, ntype *type)
     if (!MatchScalar (type) || !MatchBoolA (type)) {
         TEhandleError (global.linenum, "%s should be of type bool; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureBoolV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureBoolV (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEassureBoolV");
+
+    if (!MatchVect (type) || !MatchBoolA (type)) {
+        TEhandleError (global.linenum, "%s should be a boolean vector; type found: %s",
+                       obj, TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
@@ -711,6 +767,30 @@ TEassureNumS (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
+ *    void TEassureNumV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureNumV (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEassureNumV");
+
+    if (!MatchVect (type) || !MatchNumA (type)) {
+        TEhandleError (global.linenum,
+                       "%s should be a vector of type int / float / double; type found: "
+                       "%s",
+                       obj, TYtype2String (type, FALSE, 0));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *    void TEassureNumA( char *obj, ntype *type)
  *
  * description:
@@ -746,7 +826,7 @@ TEassureSimpleType (char *obj, ntype *type)
 {
     DBUG_ENTER ("TEassureSimpleType");
 
-    if (!TYisSimple (TYgetScalar (type))) {
+    if (!MatchSimpleA (type)) {
         TEhandleError (global.linenum, "%s should be a built-in type; type found: %s",
                        obj, TYtype2String (type, FALSE, 0));
     }
@@ -756,7 +836,7 @@ TEassureSimpleType (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEassureIntVect( char *obj, ntype *type)
+ *    void TEassureSimpleS( char *obj, ntype *type)
  *
  * description:
  *
@@ -764,13 +844,37 @@ TEassureSimpleType (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEassureIntVect (char *obj, ntype *type)
+TEassureSimpleS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("AssureIntVect");
+    DBUG_ENTER ("TEassureSimpleS");
 
-    if (!MatchIntA (type) || !MatchVect (type)) {
-        TEhandleError (global.linenum, "%s should be an integer vector; type found: %s",
-                       obj, TYtype2String (type, FALSE, 0));
+    if (!MatchSimpleA (type) || !MatchScalar (type)) {
+        TEhandleError (global.linenum,
+                       "%s should be a scalar of a built-in type; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureSimpleV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureSimpleV (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEassureSimpleV");
+
+    if (!MatchSimpleA (type) || !MatchVect (type)) {
+        TEhandleError (global.linenum,
+                       "%s should be a vector of a built-in type; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
