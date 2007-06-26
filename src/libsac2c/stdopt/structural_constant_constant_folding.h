@@ -1,5 +1,5 @@
 /*
- * $Id: structural_constant_constant_folding.h 15176 2007-01-29 12:14:40Z cg $
+ * $Id$
  */
 #ifndef _SAC_structural_constant_constant_folding_h_
 #define _SAC_structural_constant_constant_folding_h_
@@ -19,6 +19,7 @@ extern node *SCCFprf_sel (node *arg_node, info *arg_info);
 extern node *SCCFprf_modarray (node *arg_node, info *arg_info);
 extern node *SCCFprf_idx_modarray (node *arg_node, info *arg_info);
 extern node *SCCFprf_cat_VxV (node *arg_node, info *arg_info);
+extern node *SCCFprf_take_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_drop_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_idx_shape_sel (node *arg_node, info *arg_info);
 

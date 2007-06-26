@@ -1,5 +1,5 @@
 /*
- * $Id: constantfolding.h 15176 2007-01-29 12:14:40Z cg $
+ * $Id$
  */
 #ifndef _SAC_constantfolding_h_
 #define _SAC_constantfolding_h_
@@ -28,9 +28,7 @@ extern node *CFpart (node *arg_node, info *arg_info);
 extern node *CFcode (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
 
-extern node *CFprf_dim (node *arg_node, info *arg_info);
 extern node *CFprf_shape (node *arg_node, info *arg_info);
-extern node *CFprf_reshape (node *arg_node, info *arg_info);
 
 /** <!--********************************************************************-->
  *
