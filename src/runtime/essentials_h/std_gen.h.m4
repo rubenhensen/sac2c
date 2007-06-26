@@ -549,7 +549,7 @@ icm(`SAC_ND_COPY__DATA',
     `GEN_SAC_ND_COPY__DATA__SCL', `22', `0', `2')
 icm(`SAC_ND_COPY__DATA',
     `*', `*', `*',
-    `SAC_ND_COPY__DATA__DEFAULT', `22', `0', `2')
+    `GEN_SAC_ND_COPY__DATA__ANY', `22', `0', `2')
 
 dnl GEN_SAC_ND_COPY__DATA__SCL
 dnl
@@ -562,7 +562,20 @@ icm(`GEN_SAC_ND_COPY__DATA__SCL',
     `SAC_ND_COPY__DATA__SCL_SCL', `25', `1', `1')
 icm(`GEN_SAC_ND_COPY__DATA__SCL',
     `*', `*', `*',
-    `SAC_ND_COPY__DATA__DEFAULT', `25', `1', `1')
+    `SAC_ND_COPY__DATA__SCL_ANY', `25', `1', `1')
+
+dnl GEN_SAC_ND_COPY__DATA__ANY
+dnl
+dnl There are two cases for the RHS:
+dnl   SCL -> copy scalar value
+dnl   AKS, AKD, AUD -> do a data copy
+
+icm(`GEN_SAC_ND_COPY__DATA__ANY',
+    `SCL', `*', `*',
+    `SAC_ND_COPY__DATA__ANY_SCL', `25', `1', `1')
+icm(`GEN_SAC_ND_COPY__DATA__ANY',
+    `*', `*', `*',
+    `SAC_ND_COPY__DATA__ANY_ANY', `25', `1', `1')
 
 dnl SAC_ND_SET__RC
 

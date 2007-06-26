@@ -949,7 +949,25 @@ typedef int *SAC_array_descriptor_t;
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
 
-#define SAC_ND_COPY__DATA__DEFAULT(to_NT, from_NT, copyfun)                              \
+#define SAC_ND_COPY__DATA__SCL_ANY(to_NT, from_NT, copyfun)                              \
+    {                                                                                    \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
+        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (from_NT) == 0),                                  \
+                         ("Assignment with incompatible types found!"));                 \
+        SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
+    }
+
+#define SAC_ND_COPY__DATA__ANY_SCL(to_NT, from_NT, copyfun)                              \
+    {                                                                                    \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
+        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (to_NT) == 0),                                    \
+                         ("Assignment with incompatible types found!"));                 \
+        SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
+    }
+
+#define SAC_ND_COPY__DATA__ANY_ANY(to_NT, from_NT, copyfun)                              \
     {                                                                                    \
         int SAC_i;                                                                       \
         SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s) at addr: %p", NT_STR (from_NT),   \
