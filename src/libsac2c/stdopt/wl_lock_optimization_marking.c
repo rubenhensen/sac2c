@@ -28,6 +28,8 @@ struct INFO {
     int wllevel;
     bool fv;
     bool mark_nup;
+    bool mark_ndown;
+    bool wb;
 };
 
 /**
@@ -36,6 +38,8 @@ struct INFO {
 #define INFO_WLLEVEL(n) ((n)->wllevel)
 #define INFO_FV(n) ((n)->fv)
 #define INFO_MARK_NUP(n) ((n)->mark_nup)
+#define INFO_MARK_NDOWN(n) ((n)->mark_ndown)
+#define INFO_WB(n) ((n)->wb)
 
 /**
  * INFO functions
@@ -52,7 +56,8 @@ MakeInfo ()
     INFO_WLLEVEL (result) = 0;
     INFO_FV (result) = FALSE;
     INFO_MARK_NUP (result) = FALSE;
-
+    INFO_MARK_NDOWN (result) = FALSE;
+    INFO_WB (result) = FALSE;
     DBUG_RETURN (result);
 }
 
@@ -106,44 +111,74 @@ WLLOMids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief if this assignment is a let-assignment this functions traversals down
+ *        the RHS. If the RHS includes an variable which is marked as not beeing
+ *        able to be moved upon the lock, all variables on the LHS are marked to
+ *        be not allowed to be moved upon this lock.
+ *        Additional if this is the last assignment in the assignment-Chain,
+ *        this circumstance is marked within the INFO-structure.
+ *
+ * @param arg_node N_with N_assign
+ * @param arg_info INFO structure
+ *
+ * @return N_assign node
+ *******************************************************************************/
 node *
 WLLOMassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLLOMassign");
-    if (ASSIGN_INSTRTYPE (arg_node) == N_let) {
-        DBUG_PRINT ("WLLOM", ("ASSIGN_NAME: %s", ASSIGN_NAME (arg_node)));
-        DBUG_ASSERT (ASSIGN_RHS (arg_node) != NULL, "There should be a ASSIGN_RHS...");
 
-        ASSIGN_RHS (arg_node) = TRAVdo (ASSIGN_RHS (arg_node), arg_info);
+    /*TravDown and therefore !UP-Part*/
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-        if ((INFO_FV (arg_info) == TRUE) && (INFO_WLLEVEL (arg_info) == 1)) {
-            INFO_MARK_NUP (arg_info) = TRUE;
+    if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NUP (arg_info) == TRUE)) {
+        ASSIGN_NUP (arg_node) = TRUE;
+        DBUG_PRINT ("WLLOM", ("!!! Marked %s=... entirely", ASSIGN_NAME (arg_node)));
 
-            DBUG_PRINT ("WLLOM", ("??? Mark %s=...", ASSIGN_NAME (arg_node)));
-            ASSIGN_NUP (arg_node) = TRUE;
-            DBUG_PRINT ("WLLOM", ("Marked assignement"));
-            ASSIGN_LHS (arg_node) = TRAVdo (ASSIGN_LHS (arg_node), arg_info);
-            DBUG_PRINT ("WLLOM", ("!!! Marked %s=... entirely", ASSIGN_NAME (arg_node)));
+        INFO_MARK_NUP (arg_info) = FALSE;
+    }
 
-            INFO_MARK_NUP (arg_info) = FALSE;
-            INFO_FV (arg_info) = FALSE;
-        }
-
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            DBUG_ASSERT (ASSIGN_NEXT (arg_node) != NULL,
-                         "There should be a next assignment...");
-            /*
-            DBUG_PRINT("WLLOM",("Go on to the next assignment..."));
-            */
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        arg_node = TRAVcont (arg_node, arg_info);
+        INFO_WB (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);
 }
 
+node *
+WLLOMlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLLOlet");
+    DBUG_PRINT ("WLLOM", ("LET_NAME: %s", LET_NAME (arg_node)));
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_FV (arg_info) == TRUE)) {
+        INFO_MARK_NUP (arg_info) = TRUE;
+
+        DBUG_PRINT ("WLLOM", ("??? Mark %s=...", LET_NAME (arg_node)));
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        DBUG_PRINT ("WLLOM", ("Marked IDS..."));
+
+        INFO_FV (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief  this function just increases the with-loop level counter in the
+ *         INFO-structure when entering this node, continues traversing and
+ *         decreases wl level counter afterwards.
+ *
+ * @param arg_node N_with node
+ * @param arg_info INFO structure
+ *
+ * @return unchanged N_with node
+ *******************************************************************************/
 node *
 WLLOMwith (node *arg_node, info *arg_info)
 {
@@ -165,7 +200,6 @@ WLLOMwith (node *arg_node, info *arg_info)
  *
  * @return transformed syntax tree
  *******************************************************************************/
-
 node *
 WLLOMdoLockOptimizationMarking (node *syntax_tree)
 {

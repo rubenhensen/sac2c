@@ -88,6 +88,7 @@
         <travuser>
           <node name="With" />
           <node name="Assign" />
+          <node name ="Let" />
           <node name="Ids" />
           <node name="Id" />
           <node name="Prf" />
