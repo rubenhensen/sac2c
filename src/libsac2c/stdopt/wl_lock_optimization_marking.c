@@ -49,7 +49,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_WLLEVEL (result) = NULL;
+    INFO_WLLEVEL (result) = 0;
     INFO_FV (result) = FALSE;
     INFO_MARK_NUP (result) = FALSE;
 
