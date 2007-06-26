@@ -1404,7 +1404,6 @@ NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
         } else {
             res = TYcopyType (array2);
-            TYfreeType (TYgetScalar (res));
             res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
@@ -1453,7 +1452,6 @@ NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
         } else {
             res = TYcopyType (array1);
-            TYfreeType (TYgetScalar (res));
             res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
@@ -1504,7 +1502,6 @@ NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
             res = TYfreeType (res);
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
         } else {
-            TYfreeType (TYgetScalar (res));
             res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
