@@ -812,48 +812,37 @@ CFarray (node *arg_node, info *arg_info)
 node *
 CFprf (node *arg_node, info *arg_info)
 {
-    node *new_node = NULL;
+    node *res = NULL;
     travfun_p fn;
 
     DBUG_ENTER ("CFprf");
 
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
 
-#if 0
-  /* Attempt bog-standard constant-folding first */
-  /* cg comment: This should be done via AKV type. */
-  fn = prf_cf[ PRF_PRF( arg_node)];
-  if ( NULL != fn) {
-   new_node = fn( arg_node, arg_info);
-  }
-#endif
-#if FIXME
-    crippled until we get s0 coverage on refactored code
+    /* Bog-standard constant-folding is all handled by typechecker now */
 
-      /* If that doesn't help, try symbolic constant simplification */
-      fn
-      = prf_cfscs_funtab[PRF_PRF (arg_node)];
-    if ((NULL != new_node) && (NULL != fn)) {
-        new_node = fn (arg_node, arg_info);
+    /* Try symbolic constant simplification */
+    fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
+    if ((NULL == res) && (NULL != fn)) {
+        res = fn (arg_node, arg_info);
     }
 
     /* If that doesn't help, try structural constant constant folding */
     fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
-    if ((NULL != new_node) && (NULL != fn)) {
-        new_node = fn (arg_node, arg_info);
+    if ((NULL == res) && (NULL != fn)) {
+        res = fn (arg_node, arg_info);
     }
 
     /* If that doesn't help, try SAA constant folding */
     fn = prf_cfsaa_funtab[PRF_PRF (arg_node)];
-    if ((NULL != new_node) && (NULL != fn)) {
-        new_node = fn (arg_node, arg_info);
+    if ((NULL == res) && (NULL != fn)) {
+        res = fn (arg_node, arg_info);
     }
-#endif
 
-    if (new_node != NULL) {
+    if (res != NULL) {
         /* free this primitive function and replace it by new node */
         arg_node = FREEdoFreeTree (arg_node);
-        arg_node = new_node;
+        arg_node = res;
 
         /* increment constant folding counter */
         global.optcounters.cf_expr++;
@@ -1037,37 +1026,37 @@ CFpart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#if 0 
+ DEAD
 /**<!--*************************************************************-->
- *
- * @fn node *CFprf_dim(node *arg_node, info *arg_info)
- *
- * @brief: performs standard constant-folding on dim primitive
- *         If argument rank is known (i.e., argument is AKS or AKD),
- *         the operation is replaced by the integer rank of the
- *         argument.
- *
- * @param arg_node, arg_info
- *
- * @result new arg_node if dim() operation could be removed
- *         else NULL
- *
- ********************************************************************/
-node *
-CFprf_dim (node *arg_node, info *arg_info)
+  *
+  * @fn node *CFprf_dim(node *arg_node, info *arg_info)
+  *
+  * @brief: performs standard constant-folding on dim primitive
+  *         If argument rank is known (i.e., argument is AKS or AKD),
+  *         the operation is replaced by the integer rank of the
+  *         argument.  
+  *
+  * @param arg_node, arg_info
+  *
+  * @result new arg_node if dim() operation could be removed
+  *         else NULL
+  *
+  ********************************************************************/
+node *CFprf_dim(node *arg_node, info *arg_info)
 {
-    node *res = NULL;
+  node *res = NULL;
 
-    DBUG_ENTER ("CFprf_dim");
-    /* FIXME */
-    DBUG_ASSERT (FALSE, "CFprf_dim executed! This code is supposedly dead now.");
+  DBUG_ENTER( "CFprf_dim");
+  DBUG_ASSERT(N_id == NODE_TYPE( PRF_ARG1(arg_node)),
+               "CF_dim expected N_id node");
 
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)), "CF_dim expected N_id node");
-
-    if (TUdimKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
-        res = TBmakeNum (TYgetDim (ID_NTYPE (PRF_ARG1 (arg_node))));
-    }
-    DBUG_RETURN (res);
+  if ( TUdimKnown( ID_NTYPE( PRF_ARG1(arg_node)))) {
+    res = TBmakeNum( TYgetDim( ID_NTYPE(PRF_ARG1( arg_node))));
+  }
+  DBUG_RETURN( res);
 }
+#endif
 
 /**<!--*************************************************************-->
  *
@@ -1088,76 +1077,79 @@ CFprf_shape (node *arg_node, info *arg_info)
     node *res = NULL;
     node *avis;
 
-    /* FIXME */
-    DBUG_ASSERT (FALSE, "CFprf_shape executed! This code is supposedly dead now.");
     DBUG_ENTER ("CFprf_shape");
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)), "CF_shape_ expected N_id node");
+#if 0
 
-    /* If AKS, result is the array's known shape */
-    if (TUshapeKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
-        res = SHshape2Array (TYgetShape (ID_NTYPE (PRF_ARG1 (arg_node))));
-    } else {
+  /* If AKS, result is the array's known shape */
+  if ( TUshapeKnown( ID_NTYPE( PRF_ARG1( arg_node)))) {
+    res = SHshape2Array( TYgetShape( ID_NTYPE( PRF_ARG1( arg_node))));
+  } else {
 
-        /* If AKD, replace the shape() operation by a list of idx_shape_sel() ops */
-        if (TUdimKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
-            int i;
-            for (i = TYgetDim (ID_NTYPE (PRF_ARG1 (arg_node))) - 1; i >= 0; i--) {
-                avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PRF_ARG1 (arg_node))),
-                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+#endif
+    /* If AKD, replace the shape() operation by a list of idx_shape_sel() ops */
+    if (TUdimKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
+        int i;
+        for (i = TYgetDim (ID_NTYPE (PRF_ARG1 (arg_node))) - 1; i >= 0; i--) {
+            avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PRF_ARG1 (arg_node))),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                             TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
-                                                         DUPdoDupNode (
-                                                           PRF_ARG1 (arg_node)))),
-                                  INFO_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                         TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
+                                                     DUPdoDupNode (PRF_ARG1 (arg_node)))),
+                              INFO_PREASSIGN (arg_info));
+            AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
 
-                res = TBmakeExprs (TBmakeId (avis), res);
-            }
-            res = TCmakeIntVector (res);
+            res = TBmakeExprs (TBmakeId (avis), res);
         }
+        res = TCmakeIntVector (res);
     }
+#if 0
+    }
+#endif
+
     DBUG_RETURN (res);
 }
+
+#if 0
 
 /**<!--*************************************************************-->
- *
- * @fn node *CFprf_reshape(node *arg_node, info *arg_info)
- *
- * @brief: performs standard constant-folding on reshape primitive
- *
- * @param arg_node, arg_info
- *
- * @result if operation is an identity of the form:
- *             z = reshape( shp, arr)
- *
- *      and   (shp == shape(arr)), then the reshape is transformed to:
- *             z = arr
- *      else NULL
- *
- ********************************************************************/
+  *
+  * @fn node *CFprf_reshape(node *arg_node, info *arg_info)
+  *
+  * @brief: performs standard constant-folding on reshape primitive
+  *
+  * @param arg_node, arg_info
+  *
+  * @result if operation is an identity of the form:
+  *             z = reshape( shp, arr)
+  *
+  *      and   (shp == shape(arr)), then the reshape is transformed to:
+  *             z = arr
+  *      else NULL
+  *
+  ********************************************************************/
 
-node *
-CFprf_reshape (node *arg_node, info *arg_info)
+node *CFprf_reshape(node *arg_node, info *arg_info)
 {
-    node *res = NULL;
-    constant *arg1;
+ node *res = NULL;
+ constant *arg1;
 
-    DBUG_ENTER ("CFprf_reshape");
-    /* FIXME */
-    DBUG_ASSERT (FALSE, "CFprf_reshape executed! This code is supposedly dead now.");
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
+  DBUG_ENTER("CFprf_reshape");
+  arg1 = COaST2Constant ( PRF_ARG1( arg_node));
 
-    if ((NULL != arg1) && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
-        && (TUshapeKnown (ID_NTYPE (PRF_ARG2 (arg_node))))
-        && (SHcompareWithCArray (TYgetShape (ID_NTYPE (PRF_ARG2 (arg_node))),
-                                 COgetDataVec (arg1),
-                                 SHgetExtent (COgetShape (arg1), 0)))) {
-        res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    }
-    DBUG_RETURN (res);
+  if ((NULL != arg1) && 
+     (NODE_TYPE( PRF_ARG2( arg_node)) == N_id) &&
+     (TUshapeKnown( ID_NTYPE( PRF_ARG2( arg_node)))) &&
+     ( SHcompareWithCArray( TYgetShape( ID_NTYPE( PRF_ARG2( arg_node))),
+                               COgetDataVec( arg1),
+                               SHgetExtent( COgetShape( arg1),0)))) {
+       res = DUPdoDupNode( PRF_ARG2( arg_node));
+  }
+  DBUG_RETURN( res);
 }
+#endif

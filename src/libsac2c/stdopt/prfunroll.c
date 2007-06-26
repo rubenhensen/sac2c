@@ -1,5 +1,5 @@
 /**
- * $Id: datareuse.c 14355 2005-10-30 10:32:28Z ktr $
+ * $Id$
  *
  * @defgroup uprf unroll primitive operations
  * @ingroup opt

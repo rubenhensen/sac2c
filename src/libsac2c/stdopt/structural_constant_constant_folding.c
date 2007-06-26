@@ -1,5 +1,5 @@
 /*
- * $Id: structural_constant_constant_folding.c 15337 2007-06-11 19:49:07Z cg $
+ * $Id$
  */
 
 /** <!--********************************************************************-->
@@ -160,6 +160,7 @@ SCCFarray2StructConstant (node *array)
     atype = NTCnewTypeCheck_Expr (array);
 
     /* build an abstract structural constant of type (void*) T_hidden */
+    /* Perhaps some or all of the following can be replaced with COaST2Constant??? */
     if (TUshapeKnown (atype)) {
         /* alloc hidden vector */
         realshape = SHcopyShape (TYgetShape (atype));
@@ -175,6 +176,8 @@ SCCFarray2StructConstant (node *array)
             if (tmp == NULL) {
                 /* array contains too few elements - there must be non scalar elements */
                 valid_const = FALSE;
+                DBUG_ASSERT ((tmp == NULL),
+                             "bad dog  == array contains too few elements");
             } else {
                 node_vec[i] = EXPRS_EXPR (tmp);
                 tmp = EXPRS_NEXT (tmp);
@@ -683,9 +686,9 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
     if ((NULL != arg1)) {
         /* constant shp, non-constant arr */
         res = CFStructOpReshape (arg1, PRF_ARG2 (arg_node));
+        arg1 = COfreeConstant (arg1);
     }
 
-    arg1 = COfreeConstant (arg1);
     DBUG_RETURN (res);
 }
 
@@ -752,7 +755,7 @@ StructOpTake (constant *arg1, node *arg2)
 /******************************************************************************
  *
  * function:
- *   node *SCCFprf_take(node *arg_node, info *arg_info)
+ *   node *SCCFprf_take_SxV(node *arg_node, info *arg_info)
  *
  * description:
  *   computes structural undertake on array expressions with constant arg1.
@@ -760,20 +763,21 @@ StructOpTake (constant *arg1, node *arg2)
  *
  *****************************************************************************/
 node *
-SCCFprf_take (node *arg_node, info *arg_info)
+SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     constant *arg1;
     constant *arg2;
     constant *tmp;
 
-    DBUG_ENTER ("SCCFprf_take");
+    DBUG_ENTER ("SCCFprf_take_SxV");
     arg1 = COaST2Constant (PRF_ARG1 (arg_node));
     arg2 = COaST2Constant (PRF_ARG2 (arg_node));
 
     if (NULL != arg1) { /* If arg1 isn't constant, we're stuck */
         if (NULL != arg2) {
             /* Both args are constants. Piece of cake. */
+            DBUG_ASSERT (FALSE, "SCCF:: SCCFprf_take dead code path executed!");
             tmp = COtake (arg1, arg2);
             res = COconstant2AST (tmp);
             tmp = COfreeConstant (tmp);
@@ -782,8 +786,13 @@ SCCFprf_take (node *arg_node, info *arg_info)
             res = StructOpTake (arg1, PRF_ARG2 (arg_node));
         }
     }
-    arg1 = COfreeConstant (arg1);
-    arg2 = COfreeConstant (arg2);
+    if (NULL != arg1) {
+        arg1 = COfreeConstant (arg1);
+    }
+    if (NULL != arg2) {
+        arg2 = COfreeConstant (arg2);
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -852,7 +861,7 @@ StructOpDrop (constant *arg1, node *arg2)
 /******************************************************************************
  *
  * function:
- *   node *SCCFprf_drop(node *arg_node, info *arg_info)
+ *   node *SCCFprf_drop_SxV(node *arg_node, info *arg_info)
  *
  * description:
  *   Implements drop for structural constants
@@ -860,21 +869,20 @@ StructOpDrop (constant *arg1, node *arg2)
  *
  *****************************************************************************/
 node *
-SCCFprf_drop (node *arg_node, info *arg_info)
+SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     constant *arg1;
     constant *arg2;
     constant *tmp;
 
-    DBUG_ENTER ("SCCFprf_drop");
+    DBUG_ENTER ("SCCFprf_drop_SxV");
 
     arg1 = COaST2Constant (PRF_ARG1 (arg_node));
     arg2 = COaST2Constant (PRF_ARG2 (arg_node));
 
-    if (NULL != arg1) { /* If arg1 isn't constant, we're stuck */
-        if (NULL != arg2) {
-            /* Both args are constants. Piece of cake. */
+    if (NULL != arg1) {     /* If arg1 isn't constant, we're stuck */
+        if (NULL != arg2) { /* Both args are constants. Piece of cake. */
             tmp = COdrop (arg1, arg2);
             res = COconstant2AST (tmp);
             tmp = COfreeConstant (tmp);
@@ -883,8 +891,14 @@ SCCFprf_drop (node *arg_node, info *arg_info)
             res = StructOpDrop (arg1, PRF_ARG2 (arg_node));
         }
     }
-    arg1 = COfreeConstant (arg1);
-    arg2 = COfreeConstant (arg2);
+
+    if (NULL != arg1) {
+        arg1 = COfreeConstant (arg1);
+    }
+    if (NULL != arg2) {
+        arg2 = COfreeConstant (arg2);
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -998,9 +1012,8 @@ SCCFprf_modarray (node *arg_node, info *arg_info)
     arg2 = COaST2Constant (PRF_ARG2 (arg_node));
     if (NULL != arg2) {
         res = StructOpModarray (PRF_ARG1 (arg_node), arg2, PRF_ARG3 (arg_node));
+        arg2 = COfreeConstant (arg2);
     }
-
-    arg2 = COfreeConstant (arg2);
     DBUG_RETURN (res);
 }
 
@@ -1083,16 +1096,20 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
 
     /* V++empty or empty++V */
     if ((NULL != arg1) && (0 == SHgetUnrLen (COgetShape (arg1)))) {
-        res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if ((NULL != arg2) && (0 == SHgetUnrLen (COgetShape (arg2)))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else if ((NULL != arg2) && (0 == SHgetUnrLen (COgetShape (arg2)))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else {
         /* Try structural constants */
         res = StructOpCat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
     }
+    if (NULL != arg1) {
+        arg1 = COfreeConstant (arg1);
+    }
+    if (NULL != arg2) {
+        arg2 = COfreeConstant (arg2);
+    }
 
-    arg1 = COfreeConstant (arg1);
-    arg2 = COfreeConstant (arg2);
     DBUG_RETURN (res);
 }
 
@@ -1202,6 +1219,12 @@ Sel (node *idx_expr, node *array_expr)
             break;
 
         case F_sel_VxA:
+            /* This code is probably dead by 2007-06-21, because _sel_ must produce
+             * scalar result now, but sah suggests that it may still be possible
+             * to get here when z = _sel_VxA_([], scalar).
+             */
+            DBUG_ASSERT (FALSE, "SCCF::Sel F_sel dead code path executed!");
+
             prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
             concat = StructOpCat (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
 
@@ -1242,9 +1265,11 @@ SCCFprf_sel (node *arg_node, info *arg_info)
 
     if (NULL != arg1) { /* z = sel (constant, arg2) */
         res = StructOpSel (arg1, PRF_ARG2 (arg_node));
-    } else {
+        arg1 = COfreeConstant (arg1);
+    }
+
+    if (NULL == res) {
         res = Sel (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
     }
-    arg1 = COfreeConstant (arg1);
     DBUG_RETURN (res);
 }

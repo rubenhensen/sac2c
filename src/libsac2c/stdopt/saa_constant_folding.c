@@ -250,26 +250,3 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (res);
 }
-
-/**<!--*************************************************************-->
- *
- * @fn node *SAACFprf_modarray(node *arg_node, info *arg_info)
- *
- * @brief: performs saa constant-folding on modarray primitive
- *
- * @param arg_node
- *
- * @result new arg_node
- *         else NULL
- *
- ********************************************************************/
-
-node *
-SAACFprf_modarray (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ("SAACFprf_modarray");
-
-    DBUG_RETURN (res);
-}
