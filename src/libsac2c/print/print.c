@@ -1013,6 +1013,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
+        if (MODULE_GENERICFUNS (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  generic function definitions (GENERICFUNS)\n"
+                                     " */\n\n");
+            /* print function definitions */
+            TRAVdo (MODULE_GENERICFUNS (arg_node), arg_info);
+        }
         if (MODULE_FUNS (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
@@ -1258,6 +1266,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         fprintf (global.outfile, "inline\n");
     }
 
+    if (FUNDEF_ISGENERIC (arg_node)) {
+        fprintf (global.outfile, "generic\n");
+    }
+
     if (FUNDEF_ISLACINLINE (arg_node)) {
         fprintf (global.outfile, "/* lacinline */\n");
     }
@@ -1290,12 +1302,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         if (FUNDEF_RETS (arg_node) == NULL) {
             fprintf (global.outfile, "void ");
         } else {
-            if (RET_TYPE (FUNDEF_RETS (arg_node)) != NULL) {
-                /*
-                 * We do have new types !
-                 */
-                TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            } else {
+            if (FUNDEF_TYPES (arg_node) != NULL) {
                 /*
                  *  Print old types.
                  */
@@ -1310,6 +1317,11 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                         fprintf (global.outfile, ", ");
                     }
                 }
+            } else {
+                /*
+                 * We do have new types !
+                 */
+                TRAVdo (FUNDEF_RETS (arg_node), arg_info);
             }
 
             if (FUNDEF_HASDOTRETS (arg_node)) {
@@ -2788,6 +2800,73 @@ PRTstr (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * Function:
+ *   node *PRTargtemplate( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTargtemplate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTargtemplate");
+
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, " < %s%s%s[%s] > %s", ARGTEMPLATE_OUTER (arg_node),
+             (ARGTEMPLATE_DODENESTINBODY (arg_node) ? "->" : "="),
+             ARGTEMPLATE_INNER (arg_node), ARGTEMPLATE_SHAPE (arg_node),
+             AVIS_NAME (ARGTEMPLATE_AVIS (arg_node)));
+
+    if (ARGTEMPLATE_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ",");
+        ARGTEMPLATE_NEXT (arg_node) = TRAVdo (ARGTEMPLATE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Function:
+ *   node *PRTrettemplate( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTrettemplate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTrettemplate");
+
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "< %s%s%s[%s] >", RETTEMPLATE_OUTER (arg_node),
+             (RETTEMPLATE_DORENESTINBODY (arg_node) ? "<-" : "="),
+             RETTEMPLATE_INNER (arg_node), RETTEMPLATE_SHAPE (arg_node));
+
+    if (RETTEMPLATE_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ", ");
+        RETTEMPLATE_NEXT (arg_node) = TRAVdo (RETTEMPLATE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Function:
  *   node *PRTtype( node *arg_node, info *arg_info)
  *
  * Description:
@@ -2803,6 +2882,10 @@ PRTtype (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTtype");
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
 
     if (TYPE_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (TYPE_TYPE (arg_node), FALSE, 0);

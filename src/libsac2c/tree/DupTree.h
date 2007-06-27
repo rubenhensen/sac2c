@@ -86,6 +86,8 @@ extern node *DUPobjdef (node *arg_node, info *arg_info);
 extern node *DUPvardec (node *arg_node, info *arg_info);
 extern node *DUParg (node *arg_node, info *arg_info);
 extern node *DUPret (node *arg_node, info *arg_info);
+extern node *DUPargtemplate (node *arg_node, info *arg_info);
+extern node *DUPrettemplate (node *arg_node, info *arg_info);
 extern node *DUPlet (node *arg_node, info *arg_info);
 extern node *DUPids (node *arg_node, info *arg_info);
 extern node *DUPspids (node *arg_node, info *arg_info);

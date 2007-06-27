@@ -951,6 +951,52 @@ DUPret (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPargtemplate (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPargtemplate");
+
+    new_node = TBmakeArgtemplate (STRcpy (ARGTEMPLATE_OUTER (arg_node)),
+                                  STRcpy (ARGTEMPLATE_INNER (arg_node)),
+                                  STRcpy (ARGTEMPLATE_SHAPE (arg_node)),
+                                  DUPTRAV (ARGTEMPLATE_AVIS (arg_node)),
+                                  DUPCONT (ARGTEMPLATE_NEXT (arg_node)));
+
+    ARGTEMPLATE_FLAGSTRUCTURE (new_node) = ARGTEMPLATE_FLAGSTRUCTURE (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    /* correct backreference */
+    AVIS_DECL (ARGTEMPLATE_AVIS (new_node)) = new_node;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPrettemplate (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPrettemplate");
+
+    new_node = TBmakeRettemplate (STRcpy (RETTEMPLATE_OUTER (arg_node)),
+                                  STRcpy (RETTEMPLATE_INNER (arg_node)),
+                                  STRcpy (RETTEMPLATE_SHAPE (arg_node)),
+                                  DUPCONT (RETTEMPLATE_NEXT (arg_node)));
+
+    RETTEMPLATE_FLAGSTRUCTURE (new_node) = RETTEMPLATE_FLAGSTRUCTURE (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPexprs (node *arg_node, info *arg_info)
 {
     node *new_node;

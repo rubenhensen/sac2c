@@ -79,7 +79,8 @@ int charpos = 0;
 ","                        { FILTER( COMMA); }
 "="                        { FILTER( LET); }
 "."                        { FILTER( DOT); }
-"->"                       { FILTER( ARROW); }
+"->"                       { FILTER( RIGHTARROW); }
+"<-"                       { FILTER( LEFTARROW); }
 
 "&"                        { FILTER( AMPERS);} /* needed for refernce params */
 "!"                        { FILTER( EXCL); }  /* needed for monop supp      */
@@ -230,6 +231,7 @@ int charpos = 0;
 "all"                      { FILTER( ALL); }
 "except"                   { FILTER( EXCEPT); }
 "external"                 { FILTER( EXTERN); }
+"generic"                  { FILTER( GENERIC); }
 
 "#"                        { FILTER( HASH); }
 "pragma"                   { FILTER( PRAGMA); }

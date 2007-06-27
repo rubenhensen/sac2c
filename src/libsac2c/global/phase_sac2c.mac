@@ -130,6 +130,9 @@ PHASE (exp, "Processing exports", ALWAYS)
 
 SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 
+SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
+          ALWAYS, exp)
+
 SUBPHASE (iif, "Restoring bodies of imported inline functions", PPIdoPrepareInline,
           ALWAYS, exp)
 
