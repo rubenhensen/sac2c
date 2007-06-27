@@ -82,8 +82,10 @@ default devel prod: checks
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) if [ "$(DISABLE_MT)" = "no" ]; then   \
+                  $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                          PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@ ; \
+                fi
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
