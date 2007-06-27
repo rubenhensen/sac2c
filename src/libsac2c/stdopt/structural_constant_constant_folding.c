@@ -123,7 +123,7 @@ struct STRUCT_CONSTANT {
  */
 
 static node *StructOpSel (constant *idx, node *expr);
-static node *CFStructOpReshape (constant *idx, node *expr);
+static node *SCCFStructOpReshape (constant *idx, node *expr);
 static node *StructOpTake (constant *idx, node *expr);
 static node *StructOpDrop (constant *idx, node *expr);
 
@@ -517,6 +517,7 @@ StructOpSel (constant *idx, node *expr)
              *
              * 1. Perform partial selection
              */
+            DBUG_ASSERT (FALSE, "Dead code walks again: StructOpSel");
             take_vec = COmakeConstantFromInt (structdim);
             tmp_idx = COtake (take_vec, idx);
 
@@ -542,6 +543,7 @@ StructOpSel (constant *idx, node *expr)
                 /*
                  * Selection vector is too short, selection yields subarray
                  */
+                DBUG_ASSERT (FALSE, "Son of Dead code walks again: StructOpSel");
                 tmp_shape = SCO_SHAPE (struc_co);
                 SCO_SHAPE (struc_co) = SHdropFromShape (idxlen, tmp_shape);
                 SHfreeShape (tmp_shape);
@@ -566,7 +568,7 @@ StructOpSel (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *CFStructOpReshape(constant *shp, node *arg_expr)
+ *   node *SCCFStructOpReshape(constant *shp, node *arg_expr)
  *
  * description:
  *   computes structural reshape on array expressions with
@@ -585,7 +587,7 @@ StructOpSel (constant *idx, node *expr)
  *
  *****************************************************************************/
 static node *
-CFStructOpReshape (constant *shp, node *arg2)
+SCCFStructOpReshape (constant *shp, node *arg2)
 {
     struct_constant *struc_co;
     constant *old_hidden_co;
@@ -603,7 +605,7 @@ CFStructOpReshape (constant *shp, node *arg2)
     constant *drop_vec;
     constant *tmp_idx;
 
-    DBUG_ENTER ("CFStructOpReshape");
+    DBUG_ENTER ("SCCFStructOpReshape");
 
     /* Try to convert expr(especially arrays) into a structual constant */
     struc_co = SCCFexpr2StructConstant (arg2);
@@ -685,7 +687,7 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
     /* CF handles const/const case */
     if ((NULL != arg1)) {
         /* constant shp, non-constant arr */
-        res = CFStructOpReshape (arg1, PRF_ARG2 (arg_node));
+        res = SCCFStructOpReshape (arg1, PRF_ARG2 (arg_node));
         arg1 = COfreeConstant (arg1);
     }
 
@@ -883,6 +885,7 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 
     if (NULL != arg1) {     /* If arg1 isn't constant, we're stuck */
         if (NULL != arg2) { /* Both args are constants. Piece of cake. */
+            DBUG_ASSERT (FALSE, "Dead code is not dead, in SCCFprf_drop_SxV");
             tmp = COdrop (arg1, arg2);
             res = COconstant2AST (tmp);
             tmp = COfreeConstant (tmp);
@@ -940,9 +943,11 @@ StructOpModarray (node *arg1, constant *arg2, node *arg3)
         DBUG_ASSERT ((NODE_TYPE (arg3) == N_id),
                      "non id found in arg3-arg position of F_modarray");
         if (AVIS_SHAPE (ID_AVIS (arg1)) != NULL) {
+            DBUG_ASSERT (FALSE, "Bingo1");
             if (CMPTdoCompareTree (AVIS_SHAPE (ID_AVIS (arg1)),
                                    AVIS_SHAPE (ID_AVIS (arg3)))
                 == CMPT_EQ) {
+                DBUG_ASSERT (FALSE, "Bingo2");
                 res = DUPdoDupTree (arg3);
             }
         }

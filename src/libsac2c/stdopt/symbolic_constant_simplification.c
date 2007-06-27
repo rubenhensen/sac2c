@@ -226,50 +226,6 @@ MatchConstantOne (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn bool MatchConstantTrue( node *prfarg)
- * Predicate for PRF_ARG being a constant TRUE of any rank or type.
- * E.g., TRUE or  [TRUE,TRUE] or  genarray([2,3], TRUE)
- *
- *****************************************************************************/
-bool
-MatchConstantTrue (node *prfarg)
-{
-    constant *argconst;
-    bool res = FALSE;
-
-    DBUG_ENTER ("MatchConstantTrue");
-    argconst = COaST2Constant (prfarg);
-    if (NULL != argconst) {
-        res = COisTrue (argconst, TRUE);
-        argconst = COfreeConstant (argconst);
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool MatchConstantFalse( node *prfarg)
- * Predicate for PRF_ARG being a constant FALSE of any rank or type.
- * E.g., FALSE or  [FALSE,FALSE] or  genarray([2,3], FALSE)
- *
- *****************************************************************************/
-bool
-MatchConstantFalse (node *prfarg)
-{
-    constant *argconst;
-    bool res = FALSE;
-
-    DBUG_ENTER ("MatchConstantFalse");
-    argconst = COaST2Constant (prfarg);
-    if (NULL != argconst) {
-        res = COisFalse (argconst, TRUE);
-        argconst = COfreeConstant (argconst);
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool MatchEsdneg( node *prfarg1, node *prfarg2)
  * Predicate for prfarg1 being esdneg(prfarg2) or
  *               prfarg2 being esdneg(prfarg1)
@@ -288,6 +244,21 @@ MatchEsdneg (node *prfarg1, node *prfarg2)
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (prfarg2))))) {
         ssas1 = AVIS_SSAASSIGN (ID_AVIS (prfarg1));
         ssas2 = AVIS_SSAASSIGN (ID_AVIS (prfarg2));
+
+#if 0
+/* attempt to debug esdneg code that never manages to find an esdneg  */
+
+    if ( ssas1 != NULL) {
+           b1 =  NODE_TYPE( ASSIGN_RHS( ssas1)) == N_prf ;
+}
+    if (b1) {
+	   b1 =  PRF_PRF( ASSIGN_RHS( ssas1)) == F_esd_neg;
+}
+ if (b1){
+	   b1 = ID_AVIS( PRF_ARG1( ASSIGN_RHS( ssas1))) == ID_AVIS( prfarg2);
+	}
+
+#endif
 
         if (((ssas1 != NULL) && (NODE_TYPE (ASSIGN_RHS (ssas1)) == N_prf)
              && (PRF_PRF (ASSIGN_RHS (ssas1)) == F_esd_neg)
@@ -326,6 +297,9 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
     } else if (MatchEsdneg (PRF_ARG1 (arg_node),
                             PRF_ARG2 (arg_node))) { /*    X + esdneg(X) */
                                                     /* or esdneg(X) + X */
+        /* CF is not invoked, at present, during the time when esdneg exists,
+         * so don't expect the last IF clause to do anything of interest
+         */
         res = MakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -730,11 +704,9 @@ SCSprf_mod (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    /*FIXME: V_V case needs to be filtered out when CG is done w/prf_info.mac
-     */
     DBUG_ENTER ("SCSprf_mod");
     if (MatchConstantZero (PRF_ARG2 (arg_node))) {
-        CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "Mod(X,0) encountered.");
+        CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "mod(X,0) encountered.");
     }
     DBUG_RETURN (res);
 }
@@ -874,25 +846,6 @@ SCSprf_mod_VxV (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_eq( node *arg_node, info *arg_info)
- * Detect identity when X == X
- * Implements SCSprf_eq_SxS and SCSprf_eq_VxV
- *
- *****************************************************************************/
-node *
-SCSprf_eq (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-    node *X = NULL;
-    DBUG_ENTER ("SCSprf_eq");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) {
-        res = MakeTrue (PRF_ARG1 (arg_node));
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *SCSprf_eq_SxV( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -903,6 +856,7 @@ SCSprf_eq_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_eq_SxV");
     /* Could be supported with ISMOP */
+    /* I.e., attempt to convert V to constant, then check to see if all(S == ConstantV) */
     DBUG_RETURN (res);
 }
 
@@ -1008,7 +962,8 @@ SCSprf_le_VxS (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_lege( node *arg_node, info *arg_info)
  * If (X == Y), then TRUE.
- * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV
+ * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV,
+ *            SCSprf_eq_SxS, SCSprf_eq_VxV
  *
  *****************************************************************************/
 node *

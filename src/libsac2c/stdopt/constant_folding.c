@@ -1115,41 +1115,39 @@ CFprf_shape (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-#if 0
-
 /**<!--*************************************************************-->
-  *
-  * @fn node *CFprf_reshape(node *arg_node, info *arg_info)
-  *
-  * @brief: performs standard constant-folding on reshape primitive
-  *
-  * @param arg_node, arg_info
-  *
-  * @result if operation is an identity of the form:
-  *             z = reshape( shp, arr)
-  *
-  *      and   (shp == shape(arr)), then the reshape is transformed to:
-  *             z = arr
-  *      else NULL
-  *
-  ********************************************************************/
+ *
+ * @fn node *CFprf_reshape(node *arg_node, info *arg_info)
+ *
+ * @brief: performs standard constant-folding on reshape primitive
+ *
+ * @param arg_node, arg_info
+ *
+ * @result if operation is an identity of the form:
+ *             z = reshape( shp, arr)
+ *
+ *      and   (shp == shape(arr)), then the reshape is transformed to:
+ *             z = arr
+ *      else NULL
+ *
+ ********************************************************************/
 
-node *CFprf_reshape(node *arg_node, info *arg_info)
+node *
+CFprf_reshape (node *arg_node, info *arg_info)
 {
- node *res = NULL;
- constant *arg1;
+    node *res = NULL;
+    constant *arg1;
 
-  DBUG_ENTER("CFprf_reshape");
-  arg1 = COaST2Constant ( PRF_ARG1( arg_node));
+    DBUG_ENTER ("CFprf_reshape");
+    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
 
-  if ((NULL != arg1) && 
-     (NODE_TYPE( PRF_ARG2( arg_node)) == N_id) &&
-     (TUshapeKnown( ID_NTYPE( PRF_ARG2( arg_node)))) &&
-     ( SHcompareWithCArray( TYgetShape( ID_NTYPE( PRF_ARG2( arg_node))),
-                               COgetDataVec( arg1),
-                               SHgetExtent( COgetShape( arg1),0)))) {
-       res = DUPdoDupNode( PRF_ARG2( arg_node));
-  }
-  DBUG_RETURN( res);
+    if ((NULL != arg1) && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
+        && (TUshapeKnown (ID_NTYPE (PRF_ARG2 (arg_node))))
+        && (SHcompareWithCArray (TYgetShape (ID_NTYPE (PRF_ARG2 (arg_node))),
+                                 COgetDataVec (arg1),
+                                 SHgetExtent (COgetShape (arg1), 0)))) {
+        DBUG_ASSERT (FALSE, "Night of the living dead code in CFprf_reshape");
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    }
+    DBUG_RETURN (res);
 }
-#endif

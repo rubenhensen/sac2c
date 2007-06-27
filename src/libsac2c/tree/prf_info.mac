@@ -183,13 +183,13 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        COMPprfOp_VxV, NULL, NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
   PRF (mod_SxS, (PA_S, PA_S, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_SxS, COmod,
-       COMPprfOp_SxS, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL),
+       COMPprfOp_SxS, SCSprf_mod, NULL, NULL, dim_is_0, shp_is_empty, NULL),
 
   PRF (mod_SxV, (PA_S, PA_V, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_SxV, COmod,
        COMPprfOp_SxV, NULL, NULL, NULL, dim_is_1, shp_of_arg2, NULL),
 
   PRF (mod_VxS, (PA_V, PA_S, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_VxS, COmod,
-       COMPprfOp_VxS, NULL, NULL, NULL, dim_is_1, shp_of_arg1, NULL),
+       COMPprfOp_VxS, SCSprf_mod, NULL, NULL, dim_is_1, shp_of_arg1, NULL),
 
   PRF (mod_VxV, (PA_V, PA_V, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_VxV, COmod,
        COMPprfOp_VxV, NULL, NULL, NULL, dim_is_1, shp_of_arg1, NULL),

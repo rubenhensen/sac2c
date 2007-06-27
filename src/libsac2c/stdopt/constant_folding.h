@@ -29,6 +29,7 @@ extern node *CFcode (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
 
 extern node *CFprf_shape (node *arg_node, info *arg_info);
+extern node *CFprf_reshape (node *arg_node, info *arg_info);
 
 /** <!--********************************************************************-->
  *
