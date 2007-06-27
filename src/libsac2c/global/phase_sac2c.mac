@@ -522,6 +522,9 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
 SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMarking,
           global.optimize.dowllo, opt)
 
+SUBPHASE (wllos, "Withloop lock optimization shifting", WLLOSdoLockOptimizationShifting,
+          global.optimize.dowllo, opt)
+
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
 SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,

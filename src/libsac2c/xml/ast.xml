@@ -94,6 +94,14 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="WLLOS" name="Withloop lock optimization shifting" default="sons" include="wl_lock_optimization_shifting.h">
+        <travuser>
+        <node name="With" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
           <node name="SSAstack" />
