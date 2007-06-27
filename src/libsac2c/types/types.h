@@ -174,6 +174,8 @@ typedef enum {
 #include "prf_info.mac"
 } prf;
 
+typedef enum { PA_x = 0, PA_S = 1, PA_V = 2, PA_A = 3 } arg_encoding_t;
+
 typedef node *(*cf_fun_t) (node *arg_node);
 
 /*

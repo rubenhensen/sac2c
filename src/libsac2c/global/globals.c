@@ -433,18 +433,9 @@ static const char *prf_name_init[] = {
 #include "prf_info.mac"
 };
 
-static const travfun_p prf_cfscs_init[] = {
-#define PRFcf_scs_fun(cf_scs_fun) cf_scs_fun
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cfsccf_init[] = {
-#define PRFcf_sccf_fun(cf_sccf_fun) cf_sccf_fun
-#include "prf_info.mac"
-};
-
-static const travfun_p prf_cfsaa_init[] = {
-#define PRFcf_saa_fun(cf_saa_fun) cf_saa_fun
+static const arg_encoding_t prf_arg_encoding_init[] = {
+#define PRFarg_encoding_h(a, b, c) a, b, c
+#define PRFarg_encoding(arg_encoding) PRFarg_encoding_h arg_encoding
 #include "prf_info.mac"
 };
 

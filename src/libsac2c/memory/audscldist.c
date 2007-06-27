@@ -706,61 +706,54 @@ ASDcode (node *arg_node, info *arg_info)
 node *
 ASDprf (node *arg_node, info *arg_info)
 {
+    node *args, *arg;
+    ntype *tg, *nt;
+    shape_class_t actual_cls;
+    shape_class_t tg_cls;
+    int arg_cnt;
+
     DBUG_ENTER ("ASDprf");
 
-    switch (PRF_PRF (arg_node)) {
+    if (PRF_PRF (arg_node) == F_type_conv) {
 
-#if 0
-  case F_abs:
-  case F_neg:
-  case F_not_S: 
-  case F_not_V: 
-    if ( NODE_TYPE( PRF_ARG1( arg_node)) == N_id) {
-      node *id = PRF_ARG1( arg_node);
-      shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
-      
-      if (actual_cls != C_scl) {
-        /*
-         * cg 11.6.07
-         *
-         * In my opinion this code should never be executed if we properly
-         * distinguish between scalar and vector/array prfs.
-         */
-        ntype *nt;
-          
-        DBUG_PRINT ("ASD",
-                    ("Unary scalar prf applied to non-scalar found: "));
-        DBUG_PRINT ("ASD",
-                    ("   ... = %s( ... %s ...), %s instead of %s",
-                     global.prf_name[PRF_PRF( arg_node)],
-                     ID_NAME (id),
-                     global.nt_shape_string[actual_cls],
-                     global.nt_shape_string[C_scl]));
-          
-        nt = TYmakeAKS( TYcopyType( TYgetScalar( ID_NTYPE( id))),
-                        SHmakeShape(0));
-        LiftId( id, nt, arg_info);
-        nt = TYfreeType( nt);
-      }
-    }
-    break;
-#endif
+        arg = PRF_ARG2 (arg_node);
+        tg = TYPE_TYPE (PRF_ARG1 (arg_node));
+        actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (arg));
+        tg_cls = NTUgetShapeClassFromNType (tg);
 
-    case F_type_conv: {
-        node *id = PRF_ARG2 (arg_node);
-        ntype *tg = TYPE_TYPE (PRF_ARG1 (arg_node));
-        shape_class_t id_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
-        shape_class_t tg_cls = NTUgetShapeClassFromNType (tg);
-
-        if ((id_cls != tg_cls) && ((id_cls == C_scl) || (tg_cls == C_scl))) {
+        if ((actual_cls != tg_cls) && ((actual_cls == C_scl) || (tg_cls == C_scl))) {
             DBUG_PRINT ("ASD", ("Shape class conversion disguised as typeconv found:"));
             PRF_ARG2 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
-            arg_node = TCmakePrf1 (F_copy, id);
+            arg_node = TCmakePrf1 (F_copy, arg);
         }
-    } break;
-    default:
-        break;
+    } else {
+
+        arg_cnt = 0;
+        args = PRF_ARGS (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if ((global.prf_arg_encoding[3 * PRF_PRF (arg_node) + arg_cnt] == PA_S)
+                && (NODE_TYPE (arg) == N_id)) {
+                actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (arg));
+                if (actual_cls != C_scl) {
+
+                    DBUG_PRINT ("ASD",
+                                (" prf applied to non-scalar in scalar arg-pos found: "));
+                    DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
+                                        global.prf_name[PRF_PRF (arg_node)],
+                                        ID_NAME (arg), global.nt_shape_string[actual_cls],
+                                        global.nt_shape_string[C_scl]));
+
+                    nt = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (arg))),
+                                    SHmakeShape (0));
+                    LiftId (arg, nt, arg_info);
+                    nt = TYfreeType (nt);
+                }
+            }
+            args = EXPRS_NEXT (args);
+            arg_cnt++;
+        }
     }
 
     DBUG_RETURN (arg_node);
