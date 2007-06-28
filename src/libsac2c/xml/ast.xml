@@ -94,11 +94,11 @@
           <node name="Prf" />
         </travuser>
       </traversal>
-      <traversal id="WLLOS" name="Withloop lock optimization shifting" default="sons" include="wl_lock_optimization_shifting.h">
+      <traversal id="WLLOS" name="Withloop lock optimization shifting" default="sons" include="wl_lock_optimization_shifting.h" >
         <travuser>
         <node name="With" />
+        <node name="Block" />
         <node name="Assign" />
-        <node name="Let" />
         <node name="Prf" />
         </travuser>
       </traversal>
