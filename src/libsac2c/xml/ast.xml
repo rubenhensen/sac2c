@@ -885,7 +885,7 @@
           <node name="Withid" />
         </travnone>
       </traversal>
-      <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
+      <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Block" />

@@ -53,7 +53,6 @@
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
-#include "SSAConstantFolding.h"
 #include "str.h"
 #include "memory.h"
 #include "shape.h"

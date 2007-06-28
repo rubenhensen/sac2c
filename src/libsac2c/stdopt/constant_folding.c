@@ -17,10 +17,12 @@
  *          z = M;
  *
  *      SCS uses function table prf_scs, defined
- *      in symbolic_constant_simplifiction.c
+ *      in symbolic_constant_simplification.c
  *
  *    2. SCCF: Structural Constant constant folding, e.g.:
  *      e.g., reshape(const, structuralconst)
+ *      e.g., one = 1; two = 2; three = 3;
+ *            reshape([3],[one, two, three])
  *
  *      SCCF uses function table prf_sccf, defined
  *      in structural_constant_constant_folding.c
@@ -43,8 +45,6 @@
  *       b. Replacement of "x = 2 + 3" by " x = 5", where the value "5"
  *          is known to the typechecker, which has already done the actual
  *          addition.
-
- *      SCCF uses function table prf_sccf, defined in this module.
  *
  *    4. SAACF: SAA Constant Folding,
  *
@@ -74,9 +74,11 @@
  *   At this time, the following primitive operations are implemented:
 
  *     for full constants (scalar value, arrays with known values):
- *       toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
+ *       tob, toc, toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
  *       mod, and, le, lt, eq, ge, neq, reshape, sel, take_SxV, drop_SxV,
  *       cat_VxV, modarray
+ *       Any folding on full constants (i.e., ALL function arguments constants)
+ *       is performed by the type-checker.
  *
  *     structural constant, with full constant iv (array with ids as values):
  *       reshape, sel, take, drop, modarray
@@ -89,16 +91,25 @@
  *
  *  arithmetic optimizations:
  *    add (x+0->x, 0+x->x),
- *    sub (x-0->x),
+ *    sub (x-0->x)
  *    mul (x*0->0, 0*x->0, x*1->x, 1*x->x),
- *    div (x/0->err, 0/x->0, x/1->x),
- *    and (x&&1->x, 1&&x->x, x&&0->0, 0&&x->0),
- *    or  (x||1->1, 1||x->1, x||0->x, 0||x->x)
+ *    div (x/0->error, 0/x->0, x/1->x),
+ *    and (x&&1->x, 1&&x->x, x&&0->0, 0&&x->0), x&&x -> x
+ *    or  (x||1->1, 1||x->1, x||0->x, 0||x->x,  x||x -> x
+ *    mod (x,0) -> error
+ *    min (x,x) -> x
+ *    max (x,x) -> x
+ *
+ *  relationals:
+ *    x==x, x<=x, x>=x  -> genarray(shape(x),true),  if x is AKS or better
+ *    x!=x, x<x,  x>x   -> genarray(shape(x),false), if x is AKS or better
+ *
+ *
  *
  *  special sel-modarray optimization:
  *    looking up in a modarray chain for setting the sel referenced value
  *
- *  not yet implemented: cat, rotate
+ *  not yet implemented: rotate
  *
  *  @ingroup opt
  *
