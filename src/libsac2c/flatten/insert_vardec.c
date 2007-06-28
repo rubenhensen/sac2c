@@ -133,8 +133,11 @@ SearchForNameInArgs (char *name, node *args)
 {
     DBUG_ENTER ("SearchForNameInArgs");
 
-    while ((args != NULL) && (strcmp (ARG_NAME (args), name) != 0)) {
-        args = ARG_NEXT (args);
+    while ((args != NULL)
+           && (((NODE_TYPE (args) == N_arg) && (strcmp (ARG_NAME (args), name) != 0))
+               || ((NODE_TYPE (args) == N_argtemplate)
+                   && (strcmp (ARGTEMPLATE_NAME (args), name) != 0)))) {
+        args = (NODE_TYPE (args) == N_arg) ? ARG_NEXT (args) : ARGTEMPLATE_NEXT (args);
     }
     DBUG_RETURN (args);
 }
@@ -178,6 +181,10 @@ INSVDmodule (node *arg_node, info *arg_info)
 
     INFO_INSVD_MODULE (arg_info) = arg_node;
     INFO_INSVD_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
+
+    if (MODULE_GENERICFUNS (arg_node) != NULL) {
+        MODULE_GENERICFUNS (arg_node) = TRAVdo (MODULE_GENERICFUNS (arg_node), arg_info);
+    }
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -317,7 +324,7 @@ INSVDspid (node *arg_node, info *arg_info)
              * now we can build a real id and remove the spid node
              */
             arg_node = FREEdoFreeNode (arg_node);
-            arg_node = TBmakeId (VARDEC_OR_ARG_AVIS (vardec));
+            arg_node = TBmakeId (DECL_AVIS (vardec));
         }
     } else {
         /*

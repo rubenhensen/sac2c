@@ -180,10 +180,13 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  "N_decl" (N_vardec, N_arg, N_objdef)
+ ***  "N_decl" (N_vardec, N_arg, N_argtemplate)
  ***/
 
-#define DECL_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
+#define DECL_AVIS(n)                                                                     \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_AVIS (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : ARGTEMPLATE_AVIS (n)))
 #define DECL_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
 
 /*--------------------------------------------------------------------------*/
@@ -403,6 +406,18 @@ extern int TCcountVardecs (node *vardecs);
 
 extern int TCcountArgs (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_argtemplate :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define ARGTEMPLATE_NAME(n) (AVIS_NAME (ARGTEMPLATE_AVIS (n)))
 
 /*--------------------------------------------------------------------------*/
 
