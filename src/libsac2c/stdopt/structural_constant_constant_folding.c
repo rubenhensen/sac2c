@@ -596,9 +596,9 @@ SCCFStructOpReshape (constant *shp, node *arg2)
 
     int frame_rank;
 
-    shape *shp_shape;
-    shape *shp_shape_postfix;
-    shape *cell_shape;
+    shape *shp_shape = NULL;
+    shape *shp_shape_postfix = NULL;
+    shape *cell_shape = NULL;
     int cell_dim;
     int shp_dim;
 
