@@ -21,6 +21,7 @@ extern node *MMVdo (node *arg_node, info *arg_info);
 extern node *MMVfold (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);
 extern node *MMVgenarray (node *arg_node, info *arg_info);
+extern node *MMVpropagate (node *arg_node, info *arg_info);
 extern node *MMVid (node *arg_node, info *arg_info);
 extern node *MMVids (node *arg_node, info *arg_info);
 extern node *MMVap (node *arg_node, info *arg_info);

@@ -999,6 +999,31 @@ MMVgenarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVpropagate
+ *
+ *  @brief Just shifts the arguments an goes to the next WO.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVpropagate");
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVmodarray
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this

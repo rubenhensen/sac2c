@@ -2079,6 +2079,7 @@
           <node name="Fold" />
           <node name="Fundef" />
           <node name="Genarray" />
+          <node name="Propagate" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Ap" />
