@@ -270,7 +270,7 @@ PHIisFunBased (compiler_phase_t phase)
 compiler_phase_t
 PHIfirstPhase ()
 {
-    compiler_phase_t result;
+    compiler_phase_t result = PH_undefined;
 
     DBUG_ENTER ("PHIfirstPhase");
 
@@ -289,7 +289,7 @@ PHIfirstPhase ()
 compiler_phase_t
 PHIlastPhase ()
 {
-    compiler_phase_t result;
+    compiler_phase_t result = PH_undefined;
 
     DBUG_ENTER ("PHIlastPhase");
 

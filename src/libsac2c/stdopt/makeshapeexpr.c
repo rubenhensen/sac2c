@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 /** <!--********************************************************************-->
@@ -231,7 +231,7 @@ shp_of_arg2 (node *arg_node, info *arg_info)
 static node *
 shp_for_shape (node *arg_node, info *arg_info)
 {
-    node *shp_expr;
+    node *shp_expr = NULL;
 
     DBUG_ENTER ("shp_for_shape");
 

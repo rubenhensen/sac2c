@@ -755,11 +755,12 @@ LSarg (node *arg_node, info *arg_info)
 node *
 LSassign (node *arg_node, info *arg_info)
 {
-    node *lastassign, *precondassign;
+    node *lastassign = NULL;
+    node *precondassign;
 
     DBUG_ENTER ("LSassign");
 
-    if (ASSIGN_NEXT (arg_node)) {
+    if (ASSIGN_NEXT (arg_node) != NULL) {
         lastassign = INFO_LASTASSIGN (arg_info);
         INFO_LASTASSIGN (arg_info) = arg_node;
 
