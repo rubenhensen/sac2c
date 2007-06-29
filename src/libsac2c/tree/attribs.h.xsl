@@ -72,8 +72,8 @@
      </xsl:apply-templates>
   </xsl:template>
 
-  <!-- generate a attribute structure for a son -->
-  <xsl:template match="node" mode="generate-attrib-structs">
+  <!-- generate a attribute structure for a node -->
+  <xsl:template match="node[attributes/attribute | flags/flag]" mode="generate-attrib-structs">
     <xsl:value-of select="'struct ATTRIBS_N_'"/>
     <xsl:call-template name="uppercase" >
       <xsl:with-param name="string">
@@ -84,6 +84,14 @@
     <xsl:apply-templates select="attributes/attribute" mode="generate-attrib-structs"/>
     <xsl:apply-templates select="flags" mode="generate-attrib-structs"/>
     <xsl:value-of select="' } ;'"/>
+  </xsl:template>
+
+  <xsl:template match="node" mode="generate-attrib-structs">
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'/* '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' has neither attributes nor flags */'" />
+    <xsl:call-template name="newline" />
   </xsl:template>
 
   <!-- generate an entry for an attribute within the attribute structure -->
@@ -122,16 +130,8 @@
  * This union handles all different types of attributes. Its members are
  * called N_nodename.
  ****************************************************************************/
-#ifdef CLEANMEM
-    </xsl:text>
-    <xsl:value-of select="'struct ATTRIBUNION { '"/>
-    <xsl:text>
-#else
     </xsl:text>
     <xsl:value-of select="'union ATTRIBUNION { '"/>
-    <xsl:text>
-#endif
-    </xsl:text>
     <xsl:apply-templates select="node" mode="generate-attrib-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -139,7 +139,7 @@
   </xsl:template>
  
   <!-- generate an entry for each node within the union -->
-  <xsl:template match="node" mode="generate-attrib-union">
+  <xsl:template match="node[attributes/attribute | flags/flag]" mode="generate-attrib-union">
     <xsl:value-of select="'struct ATTRIBS_N_'"/>
     <xsl:call-template name="uppercase" >
       <xsl:with-param name="string">
@@ -154,4 +154,13 @@
     </xsl:call-template>
     <xsl:value-of select="'; '"/>
   </xsl:template>
+
+  <xsl:template match="node" mode="generate-attrib-union">
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'/* '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' has neither attributes nor flags */'" />
+    <xsl:call-template name="newline" />
+  </xsl:template>
+
 </xsl:stylesheet>

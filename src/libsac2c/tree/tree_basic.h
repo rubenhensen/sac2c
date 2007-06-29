@@ -185,17 +185,12 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
 #include "attribs.h"
 
 struct NODE {
-    nodetype nodetype; /* type of node */
-    int lineno;        /* line number in source code */
-    char *src_file;    /* pointer to filename or source code */
-    node *error;       /* error node */
-#ifdef CLEANMEM
-    struct SONUNION sons;       /* the sons */
-    struct ATTRIBUNION attribs; /* the nodes attributes */
-#else
+    nodetype nodetype;         /* type of node */
+    int lineno;                /* line number in source code */
+    char *src_file;            /* pointer to filename or source code */
+    node *error;               /* error node */
     union SONUNION sons;       /* the sons */
     union ATTRIBUNION attribs; /* the nodes attributes */
-#endif
 };
 
 #include "node_basic.h"

@@ -5,9 +5,7 @@
 
 #define SAC_SERIALIZE_VERSION 4 /* 20/01/2007 */
 
-#include "symboltable.h"
-#include "serialize_stack.h"
-#include <stdio.h>
+#include "types.h"
 
 extern node *SERdoSerialize (node *module);
 

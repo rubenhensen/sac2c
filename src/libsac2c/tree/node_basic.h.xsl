@@ -82,8 +82,8 @@ version="1.0">
  *****************************************************************************/
 
   </xsl:text>
-  <xsl:apply-templates select="sons/son" mode="accessor-macros"/>
-  <xsl:apply-templates select="attributes/attribute" mode="accessor-macros"/>
+  <xsl:apply-templates select="sons" mode="accessor-macros"/>
+  <xsl:apply-templates select="attributes" mode="accessor-macros"/>
   <xsl:apply-templates select="flags" mode="accessor-macros"/>
   <xsl:apply-templates select="." mode="make-head-checkmem-ifdef"/>
   <xsl:value-of select="'extern '"/>

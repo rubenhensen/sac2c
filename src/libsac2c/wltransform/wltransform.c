@@ -5935,7 +5935,7 @@ FitWl (node *wlnode)
 static node *
 DoNormalize (node *nodes, int *width)
 {
-    node *node;
+    node *anode;
     int curr_width;
 
     DBUG_ENTER ("DoNormalize");
@@ -5946,71 +5946,73 @@ DoNormalize (node *nodes, int *width)
          */
         curr_width = width[WLNODE_DIM (nodes)];
 
-        node = nodes;
+        anode = nodes;
         do {
             /*
              * adjust upper bound
              */
-            DBUG_ASSERT ((WLNODE_BOUND1_INT (node) < curr_width),
+            DBUG_ASSERT ((WLNODE_BOUND1_INT (anode) < curr_width),
                          "lower bound out of range");
 
-            L_WLNODE_BOUND2_INT (node, MATHmin (WLNODE_BOUND2_INT (node), curr_width));
+            L_WLNODE_BOUND2_INT (anode, MATHmin (WLNODE_BOUND2_INT (anode), curr_width));
 
             /*
              * remove nodes whose index ranges lies outside the current block
              */
-            while ((WLNODE_NEXT (node) != NULL)
-                   && (WLNODE_BOUND1_INT (WLNODE_NEXT (node)) >= curr_width)) {
-                L_WLNODE_NEXT (node, FREEdoFreeNode (WLNODE_NEXT (node)));
+            while ((WLNODE_NEXT (anode) != NULL)
+                   && (WLNODE_BOUND1_INT (WLNODE_NEXT (anode)) >= curr_width)) {
+                L_WLNODE_NEXT (anode, FREEdoFreeNode (WLNODE_NEXT (anode)));
             }
 
             /*
              * perform another fitting if the current node is a stride-node and
              * the extent is not a multiple of the step.
              */
-            if ((NODE_TYPE (node) == N_wlstride)
-                && ((WLNODE_BOUND2_INT (node) - WLNODE_BOUND1_INT (node))
-                      % WLNODE_STEP_INT (node)
+            if ((NODE_TYPE (anode) == N_wlstride)
+                && ((WLNODE_BOUND2_INT (anode) - WLNODE_BOUND1_INT (anode))
+                      % WLNODE_STEP_INT (anode)
                     != 0)) {
-                node = FitNode (node, WLNODE_STEP_INT (node));
+                anode = FitNode (anode, WLNODE_STEP_INT (anode));
             }
 
             /* take next node */
-            node = WLNODE_NEXT (node);
-        } while (node != NULL);
+            anode = WLNODE_NEXT (anode);
+        } while (anode != NULL);
 
-        node = nodes;
+        anode = nodes;
         do {
             /*
              * save width of current index range; adjust step
              */
-            width[WLNODE_DIM (node)]
-              = WLNODE_BOUND2_INT (node) - WLNODE_BOUND1_INT (node);
+            width[WLNODE_DIM (anode)]
+              = WLNODE_BOUND2_INT (anode) - WLNODE_BOUND1_INT (anode);
 
             /* WLgrids do not have a STEP value, so it cannot be set here */
 
-            if (NODE_TYPE (node) != N_wlgrid) {
-                L_WLNODE_STEP_INT (node, MATHmin (WLNODE_STEP_INT (node),
-                                                  width[WLNODE_DIM (node)]));
+            if (NODE_TYPE (anode) != N_wlgrid) {
+                L_WLNODE_STEP_INT (anode, MATHmin (WLNODE_STEP_INT (anode),
+                                                   width[WLNODE_DIM (anode)]));
             }
 
             /*
              * normalize the type-specific sons
              */
-            switch (NODE_TYPE (node)) {
+            switch (NODE_TYPE (anode)) {
             case N_wlblock:
                 /* here is no break missing! */
             case N_wlublock:
-                L_WLXBLOCK_NEXTDIM (node, DoNormalize (WLXBLOCK_NEXTDIM (node), width));
-                L_WLXBLOCK_CONTENTS (node, DoNormalize (WLXBLOCK_CONTENTS (node), width));
+                L_WLXBLOCK_NEXTDIM (anode, DoNormalize (WLXBLOCK_NEXTDIM (anode), width));
+                L_WLXBLOCK_CONTENTS (anode,
+                                     DoNormalize (WLXBLOCK_CONTENTS (anode), width));
                 break;
 
             case N_wlstride:
-                WLSTRIDE_CONTENTS (node) = DoNormalize (WLSTRIDE_CONTENTS (node), width);
+                WLSTRIDE_CONTENTS (anode)
+                  = DoNormalize (WLSTRIDE_CONTENTS (anode), width);
                 break;
 
             case N_wlgrid:
-                WLGRID_NEXTDIM (node) = DoNormalize (WLGRID_NEXTDIM (node), width);
+                WLGRID_NEXTDIM (anode) = DoNormalize (WLGRID_NEXTDIM (anode), width);
                 break;
 
             default:
@@ -6019,8 +6021,8 @@ DoNormalize (node *nodes, int *width)
             }
 
             /* take next node */
-            node = WLNODE_NEXT (node);
-        } while (node != NULL);
+            anode = WLNODE_NEXT (anode);
+        } while (anode != NULL);
 
         /*
          * restore width of current dim

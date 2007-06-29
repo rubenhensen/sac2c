@@ -4,6 +4,7 @@
 
 #include "serialize.h"
 #include "serialize_info.h"
+#include "serialize_stack.h"
 #include "dbug.h"
 #include "build.h"
 #include "str.h"
@@ -287,7 +288,7 @@ AppendSerFunTypeSignature (char *funname, node *fundef, int size)
 }
 
 const char *
-SERgenerateSerFunName (stentrytype_t type, node *node)
+SERgenerateSerFunName (stentrytype_t type, node *arg_node)
 {
     static char result[MAX_FUN_NAME_LEN + 1];
     int size = MAX_FUN_NAME_LEN;
@@ -298,27 +299,28 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
     switch (type) {
     case SET_funbody:
     case SET_wrapperbody:
-        size -= snprintf (result, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
-                          FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
+        size
+          -= snprintf (result, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
+                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
 
-        size = AppendSerFunTypeSignature (result, node, size);
+        size = AppendSerFunTypeSignature (result, arg_node, size);
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        size -= snprintf (result, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
-                          FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
+        size -= snprintf (result, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
+                          FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
 
-        size = AppendSerFunTypeSignature (result, node, size);
+        size = AppendSerFunTypeSignature (result, arg_node, size);
 
         break;
     case SET_typedef:
-        size -= snprintf (result, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (node)),
-                          TYPEDEF_NAME (node));
+        size -= snprintf (result, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (arg_node)),
+                          TYPEDEF_NAME (arg_node));
         break;
     case SET_objdef:
-        size -= snprintf (result, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (node)),
-                          OBJDEF_NAME (node));
+        size -= snprintf (result, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (arg_node)),
+                          OBJDEF_NAME (arg_node));
         break;
     default:
         DBUG_ASSERT (0, "Unexpected symboltype found!");

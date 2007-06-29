@@ -53,15 +53,22 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
-  <xsl:value-of select="'size = sizeof(node) + sizeof( struct SONS_N_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="') + sizeof( struct ATTRIBS_N_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="');'" />
+  <xsl:value-of select="'size = sizeof(node)'" />
+  <xsl:if test="sons/son">
+    <xsl:value-of select="' + sizeof( struct SONS_N_'" />
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="')'" />
+  </xsl:if>
+  <xsl:if test="attributes/attribute | flags/flag">
+    <xsl:value-of select="'+ sizeof( struct ATTRIBS_N_'" />
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="')'" />
+  </xsl:if>
+  <xsl:value-of select="';'" />
   <!-- 
       Part for Memorycheck START 
    -->
@@ -88,28 +95,39 @@ version="1.0">
       Part for Memorycheck END 
    -->
   <!-- set sons and attribs pointer -->
-  <xsl:value-of select="'this->sons.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' = (struct SONS_N_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' *) ((char *) this + sizeof( node));'" />
-  <xsl:value-of select="'this->attribs.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' = (struct ATTRIBS_N_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' *) ((char *) this + sizeof( node) + sizeof( struct SONS_N_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="'));'" />
+  <!-- only set sons if we have sons -->
+  <xsl:if test="sons/son">
+    <xsl:value-of select="'this->sons.'"/>
+    <xsl:call-template name="name-to-nodeenum" >
+      <xsl:with-param name="name" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' = (struct SONS_N_'" />
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' *) ((char *) this + sizeof( node));'" />
+  </xsl:if>
+  <!-- only set attributes/flags if we have some -->
+  <xsl:if test="attributes/attribute | flags/flag">
+    <xsl:value-of select="'this->attribs.'"/>
+    <xsl:call-template name="name-to-nodeenum" >
+      <xsl:with-param name="name" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' = (struct ATTRIBS_N_'" />
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' *) ((char *) this + sizeof( node)'" />
+    <!-- if we had sons, we have to add the memory used by them, as well -->
+    <xsl:if test="sons/son">
+      <xsl:value-of select="'+ sizeof( struct SONS_N_'" />
+      <xsl:call-template name="uppercase">
+        <xsl:with-param name="string" select="@name"/>
+      </xsl:call-template>
+      <xsl:value-of select="')'" />
+    </xsl:if>
+    <xsl:value-of select="');'" />
+  </xsl:if>
   <xsl:value-of select="'NODE_TYPE( this) = N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >

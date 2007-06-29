@@ -65,7 +65,7 @@
      </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="node" mode="generate-sons-structs">
+  <xsl:template match="node[sons/son]" mode="generate-sons-structs">
     <xsl:value-of select="'struct SONS_N_'"/>
     <xsl:call-template name="uppercase" >
       <xsl:with-param name="string">
@@ -75,6 +75,14 @@
     <xsl:value-of select="' { '"/>
     <xsl:apply-templates select="sons/son" mode="generate-sons-structs"/>
     <xsl:value-of select="' } ;'"/>
+  </xsl:template>
+
+  <xsl:template match="node" mode="generate-sons-structs">
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'/* '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' has no sons */'" />
+    <xsl:call-template name="newline" />
   </xsl:template>
 
   <xsl:template match="son" mode="generate-sons-structs">
@@ -89,16 +97,8 @@
  * This union handles all different types of sons. Its members are
  * called N_nodename.
  ****************************************************************************/
-#ifdef CLEANMEM
-    </xsl:text>
-    <xsl:value-of select="'struct SONUNION { '"/>
-    <xsl:text>
-#else
     </xsl:text>
     <xsl:value-of select="'union SONUNION { '"/>
-    <xsl:text>
-#endif
-    </xsl:text>
     <xsl:apply-templates select="node" mode="generate-sons-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -106,7 +106,7 @@
   </xsl:template>
  
   <!-- generate an entry for each node within the union -->
-  <xsl:template match="node" mode="generate-sons-union">
+  <xsl:template match="node[sons/son]" mode="generate-sons-union">
     <xsl:value-of select="'struct SONS_N_'"/>
     <xsl:call-template name="uppercase" >
       <xsl:with-param name="string">
@@ -121,4 +121,13 @@
     </xsl:call-template>
     <xsl:value-of select="'; '"/>
   </xsl:template>
+
+  <xsl:template match="node" mode="generate-sons-union">
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'/* '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' has no sons */'" />
+    <xsl:call-template name="newline" />
+  </xsl:template>
+
 </xsl:stylesheet>

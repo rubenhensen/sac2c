@@ -230,17 +230,21 @@ version="1.0">
     </xsl:otherwise>
   </xsl:choose>
   <!-- invalidate sons structure -->
-  <xsl:value-of select="'arg_node->sons.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' = NULL;'" />
+  <xsl:if test="sons/son">
+    <xsl:value-of select="'arg_node->sons.'"/>
+    <xsl:call-template name="name-to-nodeenum" >
+      <xsl:with-param name="name" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' = NULL;'" />
+  </xsl:if>
   <!-- invalidate attribute structure -->
-  <xsl:value-of select="'arg_node->attribs.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="' = NULL;'" />
+  <xsl:if test="attributes/attribute | flags/flag">
+    <xsl:value-of select="'arg_node->attribs.'"/>
+    <xsl:call-template name="name-to-nodeenum" >
+      <xsl:with-param name="name" select="@name"/>
+    </xsl:call-template>
+    <xsl:value-of select="' = NULL;'" />
+  </xsl:if>
   <!-- calculate return value and free node -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <xsl:choose>

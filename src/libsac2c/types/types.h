@@ -14,6 +14,7 @@
 #define _SAC_TYPES_H_
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "config.h"
 #include "types_nodetype.h"

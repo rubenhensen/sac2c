@@ -161,23 +161,9 @@ DBUG_RETURN( arg_node);
   </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
 
-  <!-- touch the arg_node -->
+  <!-- touch the arg_node (this includes the son/attributes, as they are
+       allocated as one chunck -->
   <xsl:value-of select="'CHKMtouch( arg_node, arg_info);'"/>
-
-  <!-- touch the son and the attributs structure -->
-  <xsl:value-of select="'CHKMtouch( '"/>
-  <xsl:value-of select="'arg_node->sons.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="', arg_info);'"/>
-
-  <xsl:value-of select="'CHKMtouch( '"/>
-  <xsl:value-of select="'arg_node->attribs.'"/>
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="', arg_info);'"/>
 
   <!-- trav the node error -->
   <xsl:value-of select="'NODE_ERROR( arg_node) = CHKMTRAV( NODE_ERROR( arg_node), arg_info);'"/>

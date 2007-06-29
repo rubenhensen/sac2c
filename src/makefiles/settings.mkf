@@ -28,7 +28,7 @@ SETTINGS_DEVEL         := -DSHOW_MALLOC \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED \
-                          -DCLEANMEM
+                          -DCLEANMEM -DCHECK_NODE_ACCESS
 
 SETTINGS_PROD          := -DDBUG_OFF \
                           -DPRODUCTION \

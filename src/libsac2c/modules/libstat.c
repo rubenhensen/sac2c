@@ -13,6 +13,7 @@
 #include "tree_basic.h"
 #include "print.h"
 #include "stringset.h"
+#include "symboltable.h"
 #include "namespaces.h"
 #include "ctinfo.h"
 #include "free.h"
