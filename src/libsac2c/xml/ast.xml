@@ -92,6 +92,7 @@
           <node name="Ids" />
           <node name="Id" />
           <node name="Prf" />
+          <node name="Fundef" />
         </travuser>
       </traversal>
       <traversal id="WLLOS" name="Withloop lock optimization shifting" default="sons" include="wl_lock_optimization_shifting.h" >

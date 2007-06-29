@@ -113,6 +113,25 @@ WLLOMprf (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @brief This functions just resets the Way-Back flag in the INFO-structure.
+ *
+ * @param arg_node N_fundef node
+ * @param arg_info INFO structure
+ *
+ * @return N_fundef node
+ *******************************************************************************/
+node *
+WLLOMfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLLOMfundef");
+
+    INFO_WB (arg_info) = FALSE;
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
  * @brief If the traversal is on its way down this function just sets the flag
  *         in the INFO-structure which shows that this ID depends on an object,
  *         if this ID depends on an object.

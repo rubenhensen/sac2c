@@ -4,6 +4,7 @@
 #include "types.h"
 
 extern node *WLLOMprf (node *arg_node, info *arg_info);
+extern node *WLLOMfundef (node *arg_node, info *arg_info);
 extern node *WLLOMid (node *arg_node, info *arg_info);
 extern node *WLLOMids (node *arg_node, info *arg_info);
 extern node *WLLOMassign (node *arg_node, info *arg_info);
