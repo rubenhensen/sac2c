@@ -777,6 +777,7 @@ node *
 RSOwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSOwith");
+    bool is_nested_withloop = FALSE;
 
     if (WITH_PART (arg_node) != NULL) {
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -784,9 +785,11 @@ RSOwith (node *arg_node, info *arg_info)
 
     if (WITH_CODE (arg_node) != NULL) {
         /* Traverse the with-loop's code body to find object references. */
+        is_nested_withloop = INFO_INWITHLOOP (arg_info);
         INFO_INWITHLOOP (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWITHLOOP (arg_info) = FALSE;
+        INFO_INWITHLOOP (arg_info) = is_nested_withloop;
 
         /* Attach the referenced objects to the with-loop. */
         arg_node = AddObjectsToWithLoop (arg_node, INFO_OBJECTS (arg_info));
