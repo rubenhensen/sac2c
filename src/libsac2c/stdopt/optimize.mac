@@ -96,7 +96,7 @@ OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, " withloop propagation")
 OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")
 OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
 OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
-OPTIMIZE ("wllo", wllo, FALSE, FALSE, "run withloop lock optimization")
+OPTIMIZE ("wllo", wllo, TRUE, TRUE, "run withloop lock optimization")
 
 OPTCOUNTER (dead_expr, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, "dead variable declaration(s) removed")
