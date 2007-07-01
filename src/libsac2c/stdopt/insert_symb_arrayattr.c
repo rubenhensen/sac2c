@@ -498,6 +498,51 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
 }
 
 static node *
+InsertTempCondVarFor (node *avis_ds, node *dim, node *avis, node *fundef, int thenelse)
+{
+    node *tmpds;
+    node *tmpassign;
+    node *retnode;
+    node *ainstr;
+
+    DBUG_ENTER ("InsertTempCondVarFor");
+
+    /* this function is just for the (very seldom!)
+     * case, that the shape or dimension of the returned value of our
+     * lacfun is not an N_id, but merely a N_array. This can happen, if
+     * the shape/dim of the returned value is _not_ known in the other case
+     * but in this it is.
+     */
+
+    if (N_id != NODE_TYPE (avis_ds)) {
+
+        if (NULL == dim) {
+            tmpds = CreateScalarAvisFrom (avis, fundef);
+        } else {
+            tmpds = CreateVectorAvisFrom (avis, DUPdoDupNode (dim), fundef);
+        }
+
+        tmpassign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (tmpds, NULL), DUPdoDupNode (avis_ds)),
+                          NULL);
+        AVIS_SSAASSIGN (tmpds) = tmpassign;
+
+        if (TRUE == thenelse) {
+            ainstr = COND_THEN (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))));
+        } else {
+            ainstr = COND_ELSE (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))));
+        }
+
+        BLOCK_INSTR (ainstr) = TCappendAssign (BLOCK_INSTR (ainstr), tmpassign);
+        retnode = TBmakeId (tmpds);
+    } else {
+        retnode = DUPdoDupNode (avis_ds);
+    }
+
+    DBUG_RETURN (retnode);
+}
+
+static node *
 PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
                            info *arg_info)
 {
@@ -568,55 +613,9 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             newdim = CreateScalarAvisFrom (avis, fundef);
             AVIS_HASSAAARGUMENTS (newdim) = TRUE;
 
-            /*
-             * the following if/else constructs are just for the (very seldom!)
-             * case, that the shape or dimension of the returned value of our
-             * lacfun is not an N_id, but merely a N_array. This can happen, if
-             * the shape/dim of the returned value is _not_ known in the other case
-             * but in this it is.
-             */
-
-            if (N_id != NODE_TYPE (AVIS_DIM (fc))) {
-                node *tmpdim;
-                node *tmpassign;
-
-                tmpdim = CreateScalarAvisFrom (avis, fundef);
-                tmpassign = TBmakeAssign (TBmakeLet (TBmakeIds (tmpdim, NULL),
-                                                     DUPdoDupNode (AVIS_DIM (fc))),
-                                          NULL);
-                AVIS_SSAASSIGN (tmpdim) = tmpassign;
-
-                BLOCK_INSTR (
-                  COND_THEN (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)))))
-                  = TCappendAssign (BLOCK_INSTR (COND_THEN (
-                                      ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))))),
-                                    tmpassign);
-
-                thennode = TBmakeId (tmpdim);
-            } else {
-                thennode = DUPdoDupNode (AVIS_DIM (fc));
-            }
-
-            if (N_id != NODE_TYPE (AVIS_DIM (sc))) {
-                node *tmpdim;
-                node *tmpassign;
-
-                tmpdim = CreateScalarAvisFrom (avis, fundef);
-                tmpassign = TBmakeAssign (TBmakeLet (TBmakeIds (tmpdim, NULL),
-                                                     DUPdoDupNode (AVIS_DIM (sc))),
-                                          NULL);
-                AVIS_SSAASSIGN (tmpdim) = tmpassign;
-
-                BLOCK_INSTR (
-                  COND_ELSE (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)))))
-                  = TCappendAssign (BLOCK_INSTR (COND_ELSE (
-                                      ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))))),
-                                    tmpassign);
-
-                elsenode = TBmakeId (tmpdim);
-            } else {
-                elsenode = DUPdoDupNode (AVIS_DIM (sc));
-            }
+            /* See InsertTempCondVarFor for a detailed description */
+            thennode = InsertTempCondVarFor (AVIS_DIM (fc), NULL, avis, fundef, TRUE);
+            elsenode = InsertTempCondVarFor (AVIS_DIM (sc), NULL, avis, fundef, FALSE);
 
             /* create the funcond for selecting the right dimension */
             newassign = TBmakeAssign (TBmakeLet (TBmakeIds (newdim, NULL),
@@ -651,55 +650,10 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
             newshp = CreateVectorAvisFrom (avis, DUPdoDupNode (newdim), fundef);
             AVIS_HASSAAARGUMENTS (newshp) = TRUE;
 
-            /*
-             * the following if/else constructs are just for the (very seldom!)
-             * case, that the shape or dimension of the returned value of our
-             * lacfun is not an N_id, but merely a N_array. This can happen, if
-             * the shape/dim of the returned value is _not_ known in the other case
-             * but in this it is.
-             */
-
-            if (N_id != NODE_TYPE (AVIS_SHAPE (fc))) {
-                node *tmpshape;
-                node *tmpassign;
-
-                tmpshape = CreateVectorAvisFrom (avis, DUPdoDupNode (newdim), fundef);
-                tmpassign = TBmakeAssign (TBmakeLet (TBmakeIds (tmpshape, NULL),
-                                                     DUPdoDupNode (AVIS_SHAPE (fc))),
-                                          NULL);
-                AVIS_SSAASSIGN (tmpshape) = tmpassign;
-
-                BLOCK_INSTR (
-                  COND_THEN (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)))))
-                  = TCappendAssign (BLOCK_INSTR (COND_THEN (
-                                      ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))))),
-                                    tmpassign);
-
-                thennode = TBmakeId (tmpshape);
-            } else {
-                thennode = DUPdoDupNode (AVIS_SHAPE (fc));
-            }
-
-            if (N_id != NODE_TYPE (AVIS_SHAPE (sc))) {
-                node *tmpshape;
-                node *tmpassign;
-
-                tmpshape = CreateVectorAvisFrom (avis, DUPdoDupNode (newdim), fundef);
-                tmpassign = TBmakeAssign (TBmakeLet (TBmakeIds (tmpshape, NULL),
-                                                     DUPdoDupNode (AVIS_SHAPE (sc))),
-                                          NULL);
-                AVIS_SSAASSIGN (tmpshape) = tmpassign;
-
-                BLOCK_INSTR (
-                  COND_ELSE (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)))))
-                  = TCappendAssign (BLOCK_INSTR (COND_ELSE (
-                                      ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))))),
-                                    tmpassign);
-
-                elsenode = TBmakeId (tmpshape);
-            } else {
-                elsenode = DUPdoDupNode (AVIS_SHAPE (sc));
-            }
+            /* See InsertTempCondVarFor for a detailed description */
+            thennode = InsertTempCondVarFor (AVIS_SHAPE (fc), newdim, avis, fundef, TRUE);
+            elsenode
+              = InsertTempCondVarFor (AVIS_SHAPE (sc), newdim, avis, fundef, FALSE);
 
             /* create the funcond for selecting the right shape */
             INFO_POSTASSIGN (arg_info)
@@ -757,7 +711,6 @@ GenerateExtendedReturns (node *funret)
     }
 
     if (FALSE == TUshapeKnown (RET_TYPE (funret))) {
-
         if (FALSE == TUdimKnown (RET_TYPE (funret))) {
 
             newtype = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
@@ -1207,114 +1160,79 @@ ISAAap (node *arg_node, info *arg_info)
     fun = AP_FUNDEF (arg_node);
 
     if ((NULL != FUNDEF_ARGS (fun)) && (fun != INFO_FUNDEF (arg_info))
-        && ((TS_args != INFO_TRAVSCOPE (arg_info)) || (TRUE == FUNDEF_ISLACFUN (fun)))) {
+        && ((TS_args != INFO_TRAVSCOPE (arg_info)) || (TRUE == FUNDEF_ISLACFUN (fun)))
+        && (TRUE == FUNDEF_ISLACFUN (fun))) {
+        /* At this point we do call an inner lac-function. Several tasks have to be
+         * performed now:
+         * 1. Create a copy of the functions arguments (innerargs); this is needed
+         *    in a loop-function to recreate the inner call.
+         * 2. Traverse the concrete arguments to annotate the SAA-information.
+         * 3. Traverse the formal arguments to do just the same
+         * 4. Retraverse the function, optimising everything within
+         * 5. Introduce SAA-arguments for the function results
+         */
 
-        if (FUNDEF_ISCONDFUN (fun)) {
-            /* two things have to be done in order to set the SAA up:
-             * 1. Introduce the new arguments on both application and function side.
-             * 2. Generate new proxys inside the function, thereby propagating the
-             *    new parameters and removing the AVIS_DIM and AVIS_SHAPE info.
-             *    (refers to augmented style, see on top)
-             * 3. Introduce new return types and arguments for the returned values.
-             */
+        /* 1. */
+        innerargs = DUPdoDupTree (FUNDEF_ARGS (fun));
 
-            /* 1. */
-            AP_ARGS (arg_node) = PrependSAAInConcreteArgs (AP_ARGS (arg_node),
-                                                           FUNDEF_ARGS (fun), arg_info);
-            FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
+        /* 2., 3. */
+        AP_ARGS (arg_node)
+          = PrependSAAInConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (fun), arg_info);
+        FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
 
-            /* 2. */
-            lhs = INFO_LHS (arg_info);
+        lhs = INFO_LHS (arg_info);
+
+        if (TRUE == FUNDEF_ISCONDFUN (fun)) {
+            DBUG_PRINT ("ISAA", ("calling the cond fun %s", FUNDEF_NAME (fun)));
+
+            /* 4. */
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, FALSE, NULL, arg_info);
+        } else if (TRUE == FUNDEF_ISDOFUN (fun)) {
+            DBUG_PRINT ("ISAA", ("calling the loop fun %s", FUNDEF_NAME (fun)));
 
-            /* 3. */
-            DBUG_ASSERT ((NULL == INFO_POSTASSIGN (arg_info)),
-                         "info_postassign is non-null before saa'ing results!");
-
-            /* we need the return expression of our function, so go look for it */
-            retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
-            while ((NULL != retnode)
-                   && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
-                retprev = retnode;
-                retnode = ASSIGN_NEXT (retnode);
-            }
-
-            DBUG_ASSERT (((NULL != retnode)
-                          && (N_return == NODE_TYPE (ASSIGN_INSTR (retnode)))),
-                         "could not find return node of specified function!");
-
-            /* found the N_return node, now lets go get em! */
-            FUNDEF_RETS (fun)
-              = PrependSAAInFormalResults (FUNDEF_RETS (fun),
-                                           RETURN_EXPRS (ASSIGN_INSTR (retnode)), fun,
-                                           arg_info);
-
-            /* insert the collected information and restore older state */
-            RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
-            ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
-            INFO_POSTASSIGN (arg_info) = NULL;
-
-            /* replace the lhs of the application with the new one */
-            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
-              = PrependSAAInConcreteResults (FUNDEF_RETS (fun), lhs,
-                                             INFO_FUNDEF (arg_info), arg_info);
-        } else if (FUNDEF_ISDOFUN (fun)) {
-            DBUG_PRINT ("ISAA", ("calling the loop fun %s from %s", FUNDEF_NAME (fun),
-                                 FUNDEF_NAME (INFO_FUNDEF (arg_info))));
-
-            /* 1. Copy our argument list. We need this to augment the inner call
-             *    of our loop with the new information.
-             * 2. Prepend new information within concrete and formal args.
-             * 3. Retraverse the loop in order to propagate the saved information into
-             *    the function. Delete the copy afterwards.
-             */
-
-            innerargs = DUPdoDupTree (FUNDEF_ARGS (fun));
-
-            AP_ARGS (arg_node) = PrependSAAInConcreteArgs (AP_ARGS (arg_node),
-                                                           FUNDEF_ARGS (fun), arg_info);
-            FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
-
-            /* Generate the information for appendage in results */
+            /* Create a SAA-augmented version of the N_ret-chain, os we may apply
+             * PrependSAAInConreteResults before creating real formal augmented
+             * results. */
             retprev = GenerateExtendedReturns (DUPdoDupTree (FUNDEF_RETS (fun)));
 
-            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info)))))
+            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
               = PrependSAAInConcreteResults (retprev, INFO_LHS (arg_info),
                                              INFO_FUNDEF (arg_info), arg_info);
             retprev = FREEdoFreeTree (retprev);
 
+            /* 4. */
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, TRUE, innerargs, arg_info);
+        }
 
-            innerargs = FREEdoFreeTree (innerargs);
+        innerargs = FREEdoFreeTree (innerargs);
 
-            /* now, after everything else is complete, introduce the return arguments
-             * on the formal side of life. */
+        /* 5. */
+        /* this is rather ugly: we have to search for the N_assign prior to the
+         * assign containing the N_return node */
+        retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
+        while ((NULL != retnode) && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
+            retprev = retnode;
+            retnode = ASSIGN_NEXT (retnode);
+        }
 
-            DBUG_ASSERT ((NULL == INFO_POSTASSIGN (arg_info)),
-                         "info_postassign is non-null before saa'ing results!");
+        DBUG_ASSERT (((NULL != retnode)
+                      && (N_return == NODE_TYPE (ASSIGN_INSTR (retnode)))),
+                     "could not find return node of specified function!");
 
-            /* we need the return expression of our function, so go look for it */
-            retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
-            while ((NULL != retnode)
-                   && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
-                retprev = retnode;
-                retnode = ASSIGN_NEXT (retnode);
-            }
+        FUNDEF_RETS (fun)
+          = PrependSAAInFormalResults (FUNDEF_RETS (fun),
+                                       RETURN_EXPRS (ASSIGN_INSTR (retnode)), fun,
+                                       arg_info);
 
-            DBUG_ASSERT (((NULL != retnode)
-                          && (N_return == NODE_TYPE (ASSIGN_INSTR (retnode)))),
-                         "could not find return node of specified function!");
+        RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
+        ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
+        INFO_POSTASSIGN (arg_info) = NULL;
 
-            /* found the N_return node, now lets go get em! */
-            FUNDEF_RETS (fun)
-              = PrependSAAInFormalResults (FUNDEF_RETS (fun),
-                                           RETURN_EXPRS (ASSIGN_INSTR (retnode)), fun,
-                                           arg_info);
-
-            /* insert the collected information and restore older state */
-            RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
-            ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
-            INFO_POSTASSIGN (arg_info) = NULL;
+        if (TRUE == FUNDEF_ISCONDFUN (fun)) {
+            /* replace the lhs of the application with the new one */
+            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
+              = PrependSAAInConcreteResults (FUNDEF_RETS (fun), lhs,
+                                             INFO_FUNDEF (arg_info), arg_info);
         }
     } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
