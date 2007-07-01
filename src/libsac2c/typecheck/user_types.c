@@ -2,8 +2,6 @@
  * $Id$
  */
 
-#include <string.h>
-
 #include "dbug.h"
 #include "ctinfo.h"
 #include "free.h"
@@ -222,11 +220,11 @@ UTfindUserType (const char *name, const namespace_t *ns)
 
     res = udt_no - 1;
     if (ns == NULL) {
-        while ((res >= 0) && (strcmp (name, ENTRY_NAME (udt_rep[res])) != 0)) {
+        while ((res >= 0) && !STReq (name, ENTRY_NAME (udt_rep[res]))) {
             res--;
         }
         res2 = res - 1;
-        while ((res2 >= 0) && (strcmp (name, ENTRY_NAME (udt_rep[res2])) != 0)) {
+        while ((res2 >= 0) && !STReq (name, ENTRY_NAME (udt_rep[res2]))) {
             res2--;
         }
         if (res2 >= 0) {

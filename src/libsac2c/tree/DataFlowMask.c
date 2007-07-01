@@ -214,7 +214,7 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((tmp == mask_base->decls[i])
-                && (0 == strcmp (ARG_NAME (tmp), mask_base->ids[i]))) {
+                && (STReq (ARG_NAME (tmp), mask_base->ids[i]))) {
                 old_decls[i] = mask_base->decls[i];
                 goto old_arg_found;
             }
@@ -232,7 +232,7 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((tmp == mask_base->decls[i])
-                && (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i]))) {
+                && (STReq (VARDEC_NAME (tmp), mask_base->ids[i]))) {
                 old_decls[i] = mask_base->decls[i];
                 goto old_vardec_found;
             }
@@ -428,7 +428,7 @@ DFMupdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((mask_base->ids[i] != NULL)
                 && ((tmp == mask_base->decls[i])
-                    || (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i])))) {
+                    || (STReq (VARDEC_NAME (tmp), mask_base->ids[i])))) {
                 mask_base->decls[i] = tmp;
                 goto vardec_found;
             }
@@ -1082,7 +1082,7 @@ DFMsetMaskEntryClear (mask_t *mask, const char *id, node *avis)
     if (decl == NULL) {
         for (i = 0; i < mask->mask_base->num_ids; i++) {
             if ((mask->mask_base->ids[i] != NULL)
-                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                && (STReq (mask->mask_base->ids[i], id))) {
                 break;
             }
         }
@@ -1135,7 +1135,7 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
     if (decl == NULL) {
         for (i = 0; i < mask->mask_base->num_ids; i++) {
             if ((mask->mask_base->ids[i] != NULL)
-                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                && (STReq (mask->mask_base->ids[i], id))) {
                 break;
             }
         }
@@ -1181,7 +1181,7 @@ DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
     if (decl == NULL) {
         for (i = 0; i < mask->mask_base->num_ids; i++) {
             if ((mask->mask_base->ids[i] != NULL)
-                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                && (STReq (mask->mask_base->ids[i], id))) {
                 break;
             }
         }
@@ -1328,7 +1328,7 @@ DFMvar2Decl (mask_t *mask, char *var)
     DBUG_ASSERT ((mask != NULL), "DFMvar2Decl() called with mask NULL");
 
     for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if (0 == strcmp (mask->mask_base->ids[i], var)) {
+        if (STReq (mask->mask_base->ids[i], var)) {
             ret = mask->mask_base->decls[i];
             break;
         }

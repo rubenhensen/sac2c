@@ -295,7 +295,7 @@ SCHmakeScheduling (char *discipline, ...)
     disc_no = 0;
 
     while ((scheduler_table[disc_no].discipline[0] != '\0')
-           && (0 != strcmp (scheduler_table[disc_no].discipline, discipline))) {
+           && (!STReq (scheduler_table[disc_no].discipline, discipline))) {
         disc_no++;
     }
 
@@ -391,7 +391,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
     DBUG_ENTER ("SCHmakeSchedulingByPragma");
 
     while ((scheduler_table[i].discipline[0] != '\0')
-           && (0 != strcmp (scheduler_table[i].discipline, SPAP_NAME (ap_node)))) {
+           && (!STReq (scheduler_table[i].discipline, SPAP_NAME (ap_node)))) {
         i++;
     }
 
@@ -787,9 +787,8 @@ SCHadjustmentRequired (int dim, node *wlseg)
 
     DBUG_ENTER ("SCHadjustmentRequired");
 
-    while (0
-           != strcmp (((sched_t *)WLSEGX_SCHEDULING (wlseg))->discipline,
-                      scheduler_table[i].discipline)) {
+    while (!STReq (((sched_t *)WLSEGX_SCHEDULING (wlseg))->discipline,
+                   scheduler_table[i].discipline)) {
         i++;
     }
 
@@ -1195,7 +1194,7 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
     DBUG_ENTER ("SCHmakeTaskselByPragma");
 
     while ((taskselector_table[i].discipline[0] != '\0')
-           && (0 != strcmp (taskselector_table[i].discipline, SPAP_NAME (ap_node)))) {
+           && (!STReq (taskselector_table[i].discipline, SPAP_NAME (ap_node)))) {
         i++;
     }
 

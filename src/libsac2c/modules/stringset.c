@@ -8,8 +8,6 @@
 #include "memory.h"
 #include "check_mem.h"
 
-#include <string.h>
-
 /*
  * stringset routines
  */
@@ -30,7 +28,7 @@ STRScontains (const char *string, stringset_t *set)
     if (set == NULL) {
         result = FALSE;
     } else {
-        if (!strcmp (set->val, string)) {
+        if (STReq (set->val, string)) {
             result = TRUE;
         } else {
             result = STRScontains (string, set->next);

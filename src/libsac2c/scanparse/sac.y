@@ -7,8 +7,8 @@
 
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "config.h"
 #include "types.h"
@@ -2089,7 +2089,7 @@ int SPmyYyparse()
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *) MEMmalloc( (strlen(global.filename)+1) * sizeof( char));
+  tmp = (char *) MEMmalloc( (STRlen(global.filename)+1) * sizeof( char));
   CHKMdoNotReport( tmp);
   strcpy( tmp, global.filename);
   global.filename = tmp;
@@ -2121,11 +2121,11 @@ int yyerror( char *errname)
   
   DBUG_ENTER( "yyerror");
 
-  charpos -= (strlen( yytext) - 1);
+  charpos -= (STRlen( yytext) - 1);
 
   size_of_output = CTIgetErrorMessageLineLength();
   
-  if (strlen( linebuf_ptr) > (size_t) size_of_output) {
+  if (STRlen( linebuf_ptr) > (size_t) size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
       strncpy( linebuf_ptr + offset, "... ", 4);
@@ -2194,7 +2194,7 @@ node *String2Array(char *str)
 
   cnt=0;
   
-  for (i=strlen(str)-1; i>=0; i--) {
+  for (i=STRlen(str)-1; i>=0; i--) {
     if ((i>0) && (str[i-1]=='\\')) {
       switch (str[i]) {
       case 'n':
@@ -2430,7 +2430,7 @@ node *CheckWlcompConf( node *conf, node *exprs)
   DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
 
   if (NODE_TYPE( conf) == N_spid) {
-    if (strcmp( SPID_NAME( conf), "Default")) {
+    if (!STReq( SPID_NAME( conf), "Default")) {
       strcpy( yytext, SPID_NAME( conf));
       yyerror( "innermost configuration is not 'Default'");
     }

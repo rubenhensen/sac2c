@@ -15,8 +15,7 @@
 #include "math_utils.h"
 #include "memory.h"
 #include "vector.h"
-
-#include <string.h>
+#include "str.h"
 
 /******************************************************************************
  ******************************************************************************
@@ -46,7 +45,7 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), ("Illegal wlcomp pragma!"));
 
-        if (!strcmp (SPAP_NAME (ap), "Naive")) {
+        if (STReq (SPAP_NAME (ap), "Naive")) {
             if (SPAP_ARGS (ap) != NULL) {
                 CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
                                     " Naive(): Parameters found");
@@ -117,7 +116,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma.");
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), "Illegal wlcomp pragma.");
-        if (0 == strcmp (SPAP_NAME (ap), "APL")) {
+        if (STReq (SPAP_NAME (ap), "APL")) {
             if ((SPAP_EXPRS1 (ap) == NULL) || (NODE_TYPE (SPAP_ARG1 (ap)) != N_id)
                 || (SPAP_EXPRS2 (ap) == NULL) || (NODE_TYPE (SPAP_ARG2 (ap)) != N_num)
                 || (SPAP_EXPRS3 (ap) == NULL) || (NODE_TYPE (SPAP_ARG3 (ap)) != N_num)) {

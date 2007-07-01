@@ -66,7 +66,7 @@ main (int argc, char *argv[])
 #define ICM_ALL
 #include "icm_betest.c"
 #undef ICM_ALL
-        if (0 == strcmp (buffer, "clear-indent")) {
+        if (STReq (buffer, "clear-indent")) {
             global.indent = 0;
         } else {
             printf ("icm %s not defined!\n", buffer);

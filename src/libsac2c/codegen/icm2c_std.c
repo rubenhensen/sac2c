@@ -1,8 +1,9 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 #include <stdio.h>
 #include <ctype.h>
-#include <string.h>
 
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
@@ -151,7 +152,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
         INDENT;
     }
 
-    if (strcmp (retname, "")) {
+    if (!STReq (retname, "")) {
         fprintf (global.outfile, "return( %s);", retname);
     } else {
         fprintf (global.outfile, "return;");

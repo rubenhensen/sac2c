@@ -13,7 +13,6 @@
  *****************************************************************************/
 
 #include <stdio.h>
-#include <string.h>
 
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
@@ -423,7 +422,7 @@ void ICMCompileMT_SYNCBLOCK_BEGIN( int barrier_id,
   global.indent++;
 
   for (i = 0; i < 3 * vararg_cnt; i += 3) {
-    if (! strcmp( vararg[i], "in")) {
+    if (STReq( vararg[i], "in")) {
       INDENT;
       fprintf( global.outfile, "SAC_MT_DECL_LOCAL_DESC( %s, %s)\n",
                         vararg[i+1], vararg[i+2]);
@@ -435,7 +434,7 @@ void ICMCompileMT_SYNCBLOCK_BEGIN( int barrier_id,
   fprintf( global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
   for (i = 0; i < 3 * vararg_cnt; i += 3) {
-    if (! strcmp( vararg[i], "in")) {
+    if (STReq( vararg[i], "in")) {
       int dim;
       int cnt = sscanf( vararg[i+2], "%d", &dim);
       if (cnt != 1) {
@@ -492,7 +491,7 @@ void ICMCompileMT_SYNCBLOCK_CLEANUP( int barrier_id,
 #undef MT_SYNCBLOCK_CLEANUP
 
   for (i = 0; i < 3 * vararg_cnt; i += 3) {
-    if (! strcmp( vararg[i], "in")) {
+    if (STReq( vararg[i], "in")) {
       INDENT;
       fprintf( global.outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n",
                         vararg[i+1], vararg[i+2]);
@@ -1107,8 +1106,8 @@ void ICMCompileMT_SPMD_SETUP( char *name, int vararg_cnt, char **vararg)
 #undef MT_SPMD_SETUP
 
   for (i = 0; i < 3 * vararg_cnt; i += 3) {
-    if ((! strcmp( vararg[i], "in")) ||
-        (! strcmp( vararg[i], "out"))) {
+    if ((STReq( vararg[i], "in")) ||
+        (STReq( vararg[i], "out"))) {
       INDENT;
       fprintf( global.outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n",
                         vararg[i], name, vararg[i+2]);

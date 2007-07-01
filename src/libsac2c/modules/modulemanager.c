@@ -16,8 +16,6 @@
 #include "tree_basic.h"
 #include "globals.h"
 
-#include <string.h>
-
 #undef MODM_UNLOAD_MODULES
 
 struct MODULE_T {
@@ -47,7 +45,7 @@ checkHasSameASTVersion (module_t *module)
 
     DBUG_ENTER ("checkHasSameASTVersion");
 
-    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 14));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
 
     astverfun = (astversionfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -95,7 +93,7 @@ checkWasBuildUsingSameFlags (module_t *module)
 
     DBUG_ENTER ("wasBuildUsingSameFlags");
 
-    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 13));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
 
     flagfun = (flagfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -125,7 +123,7 @@ addNamespaceMappings (module_t *module)
 
     DBUG_ENTER ("addNamespaceMappings");
 
-    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 19));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 19));
     sprintf (name, "__%s__MapConstructor", module->name);
 
     mapfun = (nsmapfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -152,7 +150,7 @@ LookupModuleInPool (const char *name)
     DBUG_ENTER ("LookupModuleInPool");
 
     while ((result == NULL) && (pos != NULL)) {
-        if (!strcmp (pos->name, name)) {
+        if (STReq (pos->name, name)) {
             result = pos;
             result->usecount++;
         }
@@ -174,7 +172,7 @@ AddModuleToPool (const char *name)
 
     result = MEMmalloc (sizeof (module_t));
 
-    tmp = MEMmalloc (sizeof (char) * (strlen (name) + 7));
+    tmp = MEMmalloc (sizeof (char) * (STRlen (name) + 7));
     sprintf (tmp, "lib%s.so", name);
 
     result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
@@ -279,7 +277,7 @@ GetSymbolTableFunction (module_t *module)
 
     DBUG_ENTER ("GetSymbolTableFunction");
 
-    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 11));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
 
     result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -318,7 +316,7 @@ GetDependencyTableFunction (module_t *module)
 
     DBUG_ENTER ("GetDependencyTableFunction");
 
-    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 11));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
 
     result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);

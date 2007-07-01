@@ -181,6 +181,75 @@ normalizePrf (prf prf)
 }
 
 static bool
+IsAddPrf (prf prf)
+{
+    bool res;
+
+    DBUG_ENTER ("IsAddPrf");
+
+    switch (prf) {
+    case F_add_SxS:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+IsMulPrf (prf prf)
+{
+    bool res;
+
+    DBUG_ENTER ("IsMulPrf");
+
+    switch (prf) {
+    case F_mul_SxS:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+YieldsScalar (prf prf)
+{
+    bool res;
+
+    DBUG_ENTER ("YieldsScalar");
+
+    switch (prf) {
+    case F_add_SxS:
+    case F_mul_SxS:
+        res = TRUE;
+        break;
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+        res = FALSE;
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "Illegal prf!");
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
 compatiblePrf (prf p1, prf p2)
 {
     bool res;
@@ -209,12 +278,12 @@ isScalar (node *n)
         break;
 
     case N_id:
-#if 0
-    /*
-     * This marking mechanism does not work. Since I haven't found
-     * the bug in reasonable time, we now ask the type system directly.
-     */
-    res = ID_ISSCLPRF( n);
+#if 1
+        /*
+         * This marking mechanism does not work. Since I haven't found
+         * the bug in reasonable time, we now ask the type system directly.
+         */
+        res = ID_ISSCLPRF (n);
 #else
         res = TUisScalar (ID_NTYPE (n));
 #endif
@@ -881,7 +950,7 @@ DISTRIBprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DISTRIBprf");
 
-    if (normalizePrf (PRF_PRF (arg_node)) == F_add_SxS) {
+    if (IsAddPrf (PRF_PRF (arg_node))) {
         ntype *ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
         if ((!global.enforce_ieee)
@@ -895,9 +964,9 @@ DISTRIBprf (node *arg_node, info *arg_info)
              * Collect operands into multi-operation (sum of prducts)
              */
             p = PRF_PRF (arg_node);
-            mop
-              = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)),
-                              isArg1Scl (p) && isArg2Scl (p), INFO_LOCALMASK (arg_info));
+            mop = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), YieldsScalar (p),
+                                INFO_LOCALMASK (arg_info));
+
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
                 DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
 

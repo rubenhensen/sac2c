@@ -1,27 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.12  2005/09/29 14:03:32  sah
- * fixed an ugly bug...
- * STcopy now really copies a symbol table...
- *
- * Revision 1.11  2005/06/16 10:00:44  sah
- * fixed continue on error problem
- *
- * Revision 1.10  2005/05/18 13:56:51  sah
- * enabled caching of symboltables which
- * leads to a huge speedup when analysing use and import
- * from big modules
- *
- * Revision 1.9  2004/11/27 01:06:38  cg
- * Functions renamed according to new naming conventions.
- *
- * Revision 1.8  2004/11/25 21:59:21  sah
- * COMPILES:
- *
- *
- * Revision 1.1  2004/09/22 11:37:27  sah
- * Initial revision
+ * $Id:$
  */
 
 #include "symboltable.h"
@@ -119,7 +97,7 @@ STentryEqual (stentry_t *one, stentry_t *two)
 
     DBUG_ENTER ("STentryEqual");
 
-    result = result && (!strcmp (one->name, two->name));
+    result = result && STReq (one->name, two->name);
     result = result && (one->type == two->type);
 
     DBUG_RETURN (result);
@@ -232,7 +210,7 @@ STlookupSymbol (const char *symbol, const sttable_t *table)
 
     result = table->head;
 
-    while ((result != NULL) && (strcmp (result->name, symbol))) {
+    while ((result != NULL) && !STReq (result->name, symbol)) {
         result = result->next;
     }
 
@@ -374,7 +352,7 @@ STcontainsEntry (const char *name, const sttable_t *table)
         entry = symbol->head;
 
         while ((entry != NULL) && (!result)) {
-            result = !strcmp (entry->name, name);
+            result = STReq (entry->name, name);
 
             entry = entry->next;
         }

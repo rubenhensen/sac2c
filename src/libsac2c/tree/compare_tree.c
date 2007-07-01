@@ -13,8 +13,6 @@
 
 #include "compare_tree.h"
 
-#include <string.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse_helper.h"
@@ -265,8 +263,7 @@ CMPTstr (node *arg_node, info *arg_info)
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
-                   strcmp (STR_STRING (arg_node), STR_STRING (INFO_TREE (arg_info)))
-                     == 0);
+                   STReq (STR_STRING (arg_node), STR_STRING (INFO_TREE (arg_info))));
 
     DBUG_RETURN (arg_node);
 }

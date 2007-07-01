@@ -46,8 +46,6 @@
  ***
  ***/
 
-#include <string.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str_buffer.h"
@@ -128,11 +126,13 @@ static node *
 SearchMain (node *fundef)
 {
     DBUG_ENTER ("SearchMain");
+
     while ((fundef != NULL)
            && ((FUNDEF_ISWRAPPERFUN (fundef) == TRUE)
-               || (strcmp (FUNDEF_NAME (fundef), "main") != 0))) {
+               || (!STReq (FUNDEF_NAME (fundef), "main")))) {
         fundef = FUNDEF_NEXT (fundef);
     }
+
     DBUG_RETURN (fundef);
 }
 

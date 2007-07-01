@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "print.h"
 
@@ -1372,7 +1371,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
             fprintf (global.outfile, "%s\n",
                      t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
-                              global.indent + strlen (FUNDEF_NAME (arg_node)) + 8));
+                              global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
         } else {
             fprintf (global.outfile, " ---\n");
         }
@@ -1638,14 +1637,14 @@ PRTannotate (node *arg_node, info *arg_info)
         if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
             sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
         } else {
-            strcpy (strbuffer1, strbuffer2);
+            sprintf (strbuffer1, "%s", strbuffer2);
         }
     } else {
-        strcpy (strbuffer2, strbuffer1);
+        sprintf (strbuffer2, "%s", strbuffer1);
         if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
             sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
         } else {
-            strcpy (strbuffer1, strbuffer2);
+            sprintf (strbuffer1, "%s", strbuffer2);
         }
     }
 
@@ -3048,7 +3047,7 @@ PRTicm (node *arg_node, info *arg_info)
     if (global.compiler_subphase == PH_cg_prt) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
-    if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
+    if (STReq (ICM_NAME (arg_node), #prf)) {                                             \
         if (last_assignment_icm == arg_node) {                                           \
             INDENT;                                                                      \
         }                                                                                \

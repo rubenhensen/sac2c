@@ -1,89 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.26  2004/11/25 10:26:46  jhb
- * compile SACdevCamp 2k4
- *
- * Revision 3.25  2004/11/24 15:49:38  jhb
- * removed include my_dbug.c
- *
- * Revision 3.24  2004/10/05 17:36:41  khf
- * MT_ADJUST_SCHEDULER__OFFSET removed
- *
- * Revision 3.23  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.22  2003/09/19 15:32:05  dkr
- * postfix _nt of varnames renamed into _NT
- *
- * Revision 3.21  2002/07/16 11:56:44  dkr
- * MT_ADJUST_SCHEDULER__OFFSET(): modification for new backend done
- *
- * Revision 3.20  2001/11/21 11:04:21  dkr
- * support for BEtest added
- *
- * Revision 3.19  2001/07/10 09:21:00  ben
- * SAC_MT_maxloadthread, SAC_MT_mintask are now local variables
- *
- * Revision 3.18  2001/07/06 10:16:19  ben
- * code beautified
- *
- * Revision 3.17  2001/07/04 10:34:47  ben
- * code beautiefied
- *
- * Revision 3.16  2001/06/27 14:33:39  ben
- * modified for cooperation with tasksel-pragma
- *
- * Revision 3.15  2001/06/27 08:56:06  ben
- * 2 compiler warnings for Self-Scheduling fixed
- *
- * Revision 3.14  2001/06/20 12:25:12  ben
- * Self modified for using parameter first_task
- *
- * Revision 3.13  2001/06/19 12:31:37  ben
- *  SCHEDULER_Self modified  with parameter first_task
- *
- * Revision 3.12  2001/06/15 12:32:43  ben
- * Taskselector gets now tasks_per_thread instead of num_tasks
- *
- * Revision 3.11  2001/06/12 11:04:59  ben
- * one minor bug removed
- *
- * Revision 3.10  2001/06/12 11:01:18  ben
- *  SAC_MT_SCHEDULER_Self called without tasks_per_thread now
- *
- * Revision 3.9  2001/06/05 09:53:22  ben
- * TaskSelector and Affinity_INIT modified
- *
- * Revision 3.8  2001/05/30 12:25:01  ben
- * TaskSelectorInit implemented
- * TaskSelector modified for using of Factoring
- *
- * Revision 3.7  2001/05/23 09:43:51  ben
- * some minor bugs in Self_INIT fixed
- *
- * Revision 3.6  2001/05/21 12:44:57  ben
- * SAC_MT_SCHEDULER_Self_INIT modified for discriminate between
- * FIRST_TASK_STATIC and FIRST_TASK_DYNAMIC
- *
- * Revision 3.5  2001/05/18 09:58:03  cg
- * #include <malloc.h> removed.
- *
- * Revision 3.4  2001/05/17 13:22:54  dkr
- * static strings instead of Malloc/Free used
- * (this is needed for BEtest!!!)
- *
- * Revision 3.3  2001/05/17 12:08:48  dkr
- * FREE, MALLOC eliminated
- *
- * Revision 3.2  2001/05/16 10:16:58  ben
- * SCHEDULER_Self modified, for dynamic or static choosen first task
- * depending on sched_id
- * Self_INIT and Affinity_INIT modified with the call of SET_TASKS
- *
- * Revision 3.1  2001/05/11 14:35:09  cg
- * Initial revision.
- *
+ * $Id:$
  */
 
 /*****************************************************************************
@@ -99,7 +15,6 @@
  *
  *****************************************************************************/
 
-#include <stdio.h>
 #include <string.h>
 
 #include "icm2c_basic.h"
@@ -184,7 +99,7 @@ TaskSelectorInit (int sched_id, char *ts_name, int ts_dims, int ts_arg_num,
 
     DBUG_ENTER ("TaskSelectorInit");
 
-    if (strcmp (ts_name, "Factoring") == 0) {
+    if (STReq (ts_name, "Factoring")) {
         tasks_on_dim = (-1);
         i = 0;
         while ((tasks_on_dim < 0) && (i < dim)) {
@@ -662,9 +577,9 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task, char *ts_name
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_BEGIN
 
-    DBUG_ASSERT (((strcmp (first_task, "SACl_FirstStatic") == 0)
-                  || (strcmp (first_task, "SACl_FirstDynamic") == 0)
-                  || (strcmp (first_task, "SACl_FirstAutomatic") == 0)),
+    DBUG_ASSERT ((STReq (first_task, "SACl_FirstStatic")
+                  || STReq (first_task, "SACl_FirstDynamic")
+                  || STReq (first_task, "SACl_FirstAutomatic")),
                  "Scheduler Self needs one of the following strategies"
                  " for his first task: FirstStatic, FirstDynamic,"
                  " FirstAutomatic");
@@ -672,7 +587,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task, char *ts_name
     INDENT;
     fprintf (global.outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
-    if (strcmp (first_task, "SACl_FirstAutomatic") == 0) {
+    if (STReq (first_task, "SACl_FirstAutomatic")) {
         if (sched_id > 0) {
             fprintf (global.outfile,
                      "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,SAC_MT_taskid);\n",
@@ -683,11 +598,11 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task, char *ts_name
                      sched_id);
         }
     }
-    if (strcmp (first_task, "SACl_FirstStatic") == 0)
+    if (STReq (first_task, "SACl_FirstStatic"))
         fprintf (global.outfile,
                  "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,SAC_MT_taskid);\n",
                  sched_id);
-    if (strcmp (first_task, "SACl_FirstDynamic") == 0)
+    if (STReq (first_task, "SACl_FirstDynamic"))
         fprintf (global.outfile,
                  "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,SAC_MT_taskid);\n",
                  sched_id);
@@ -739,18 +654,18 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task, char *ts_name,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_INIT
 
-    DBUG_ASSERT (((strcmp (first_task, "SACl_FirstStatic") == 0)
-                  || (strcmp (first_task, "SACl_FirstDynamic") == 0)
-                  || (strcmp (first_task, "SACl_FirstAutomatic") == 0)),
+    DBUG_ASSERT ((STReq (first_task, "SACl_FirstStatic")
+                  || STReq (first_task, "SACl_FirstDynamic")
+                  || STReq (first_task, "SACl_FirstAutomatic")),
                  "Scheduler Self needs one of the following strategies"
                  " for his first task: FirstStatic, FirstDynamic,"
                  " FirstAutomatic");
 
     INDENT;
-    if (strcmp (first_task, "SACl_FirstDynamic") == 0)
+    if (STReq (first_task, "SACl_FirstDynamic"))
         fprintf (global.outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d,0);\n", sched_id);
 
-    if (strcmp (first_task, "SACl_FirstAutomatic") == 0) {
+    if (STReq (first_task, "SACl_FirstAutomatic")) {
         if (sched_id == 0) {
             INDENT;
             fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
@@ -758,7 +673,7 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task, char *ts_name,
             fprintf (global.outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d,0);\n", sched_id);
         }
     }
-    if (strcmp (first_task, "SACl_FirstStatic") == 0) {
+    if (STReq (first_task, "SACl_FirstStatic") == 0) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
     }

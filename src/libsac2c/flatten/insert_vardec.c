@@ -1,4 +1,6 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 /*****************************************************************************
  *
@@ -31,8 +33,6 @@
  *   ...ARGS     holds the pointer to the argument chain of the actual fundef !
  *
  *****************************************************************************/
-
-#include <string.h>
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -112,7 +112,7 @@ SearchForNameInVardecs (char *name, node *vardecs)
 {
     DBUG_ENTER ("SearchForNameInVardecs");
 
-    while ((vardecs != NULL) && (strcmp (VARDEC_NAME (vardecs), name) != 0)) {
+    while ((vardecs != NULL) && (!STReq (VARDEC_NAME (vardecs), name))) {
         vardecs = VARDEC_NEXT (vardecs);
     }
     DBUG_RETURN (vardecs);
@@ -134,9 +134,9 @@ SearchForNameInArgs (char *name, node *args)
     DBUG_ENTER ("SearchForNameInArgs");
 
     while ((args != NULL)
-           && (((NODE_TYPE (args) == N_arg) && (strcmp (ARG_NAME (args), name) != 0))
+           && (((NODE_TYPE (args) == N_arg) && !STReq (ARG_NAME (args), name))
                || ((NODE_TYPE (args) == N_argtemplate)
-                   && (strcmp (ARGTEMPLATE_NAME (args), name) != 0)))) {
+                   && !STReq (ARGTEMPLATE_NAME (args), name)))) {
         args = (NODE_TYPE (args) == N_arg) ? ARG_NEXT (args) : ARGTEMPLATE_NEXT (args);
     }
     DBUG_RETURN (args);

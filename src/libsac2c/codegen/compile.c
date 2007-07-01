@@ -10,7 +10,6 @@
 #include "compile.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -519,7 +518,7 @@ COMPgetFoldCode (node *fundef)
      * remove declaration-ICMs ('ND_DECL_ARG') from code.
      */
     while ((NODE_TYPE (ASSIGN_INSTR (fold_code)) == N_icm)
-           && (!strcmp (ICM_NAME (ASSIGN_INSTR (fold_code)), "ND_DECL__MIRROR_PARAM"))) {
+           && (STReq (ICM_NAME (ASSIGN_INSTR (fold_code)), "ND_DECL__MIRROR_PARAM"))) {
         fold_code = FREEdoFreeNode (fold_code);
     }
 
@@ -533,8 +532,7 @@ COMPgetFoldCode (node *fundef)
         tmp = ASSIGN_NEXT (tmp);
     }
     DBUG_ASSERT (((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) == N_icm)
-                  && (!strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))),
-                               "ND_FUN_RET"))),
+                  && (STReq (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_FUN_RET"))),
                  "no ND_FUN_RET icm found in fold code!");
     ASSIGN_NEXT (tmp) = FREEdoFreeNode (ASSIGN_NEXT (tmp));
 
@@ -1774,7 +1772,7 @@ CheckAp (node *ap, info *arg_info)
                 for (ids_idx = 0; ids_idx < argtab->size; ids_idx++) {
                     let_ids = argtab->ptr_out[ids_idx];
                     if ((let_ids != NULL) && (ids_idx != arg_idx)
-                        && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+                        && (STReq (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
                         DBUG_ASSERT (global.argtag_is_in[argtab->tag[arg_idx]],
                                      "illegal tag found!");
 
@@ -2170,7 +2168,7 @@ COMPblock (node *arg_node, info *arg_info)
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         fun_name = FUNDEF_NAME (INFO_FUNDEF (arg_info));
-        cs_tag = (char *)MEMmalloc (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name)
+        cs_tag = (char *)MEMmalloc (STRlen (BLOCK_CACHESIM (arg_node)) + STRlen (fun_name)
                                     + 14);
         if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
             sprintf (cs_tag, "\"%s(...)\"", fun_name);
@@ -2725,7 +2723,7 @@ COMPid (node *arg_node, info *arg_info)
     /*
      * 'arg_node' and 'let_ids' are both non-unique or both unique
      */
-    if (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node))) {
+    if (!STReq (IDS_NAME (let_ids), ID_NAME (arg_node))) {
         ret_node
           = TCmakeAssignIcm2 ("ND_ASSIGN",
                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
@@ -4130,7 +4128,7 @@ COMPprfCat (node *arg_node, info *arg_info)
     copyfun1 = GenericFun (GF_copy, ID_TYPE (arg1));
     copyfun2 = GenericFun (GF_copy, ID_TYPE (arg2));
     DBUG_ASSERT ((((copyfun1 == NULL) && (copyfun2 == NULL))
-                  || (strcmp (copyfun1, copyfun2) == 0)),
+                  || STReq (copyfun1, copyfun2)),
                  "F_cat_VxV: different copyfuns found!");
 
     ret_node = TCmakeAssignIcm2 ("ND_PRF_CAT_VxV__DATA", DUPdoDupTree (icm_args),

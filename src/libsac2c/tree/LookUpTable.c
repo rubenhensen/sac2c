@@ -128,7 +128,6 @@
 
 #include "LookUpTable.h"
 
-#include <string.h>
 #include <math.h>
 
 #include "str.h"
@@ -292,13 +291,9 @@ IsEqual_Pointer (void *data1, void *data2)
 static bool
 IsEqual_String (void *data1, void *data2)
 {
-    bool ret;
-
     DBUG_ENTER ("IsEqual_String");
 
-    ret = (!strcmp ((char *)data1, (char *)data2));
-
-    DBUG_RETURN (ret);
+    DBUG_RETURN (STReq (data1, data2));
 }
 
 #ifndef DBUG_OFF
