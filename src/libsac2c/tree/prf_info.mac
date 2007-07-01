@@ -69,6 +69,34 @@
 #define SIMD TRUE
 #define NOSIMD FALSE
 
+/*
+ *  Outline of prf info table:
+ *
+ *   name                     arg_encoding
+ *   arity                    ccode                    simd
+ *   ntc_fun                  co_fun                   comp_fun
+ *   cf_scs_fun               cf_sccf_fun              cf_saa_fun
+ *   makedim_fun              make_shp_fun             alloc_fun
+ *
+ *  Explanation of table entries:
+ *
+ *   name           name of function, used to create enum type
+ *   arg_encoding   shape class of arguments
+ *   arity          arity as natural number (0 indicates variable arity)
+ *   ccode          function symbol used by the code generator (compile)
+ *   simd           flag indicating suitability for simd code generation
+ *   ntc_fun        function used for type inference
+ *   co_fun         function used for constant folding (constants module)
+ *   comp_fun       function used for code generation
+ *   cf_scs_fun     function used for symbolic constant simplification
+ *   cf_sccf_fun    function used for structural constant folding
+ *   cf_saa_fun     function used for symbolic array attribute based constant folding
+ *   cf_makedim_fun function used for creating dim expression (symbolic array attribs)
+ *   cf_makeshp_fun function used for creating shp expression (symbolic array attribs)
+ *   alloc_fun      function used for creating alloc statement (not yet implemented)
+ *
+ */
+
 /*******************************************************************************
  *
  *  Primitive compiler operations:
