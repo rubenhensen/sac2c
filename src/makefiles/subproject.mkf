@@ -12,14 +12,22 @@
 #    default    compile default code (subproject dependent)
 #    devel      compile developer code 
 #    prod       compile product code
-#    efence     compile efence debugging code
+#
 #    clean      cleanup derived files
 #    cleandevel cleanup compiled files (developer code only)
 #    cleanprod  cleanup compiled files (product code only)
 #
+#    efence     compile efence debugging code
+#
+#    refactor   refactor source code (requires parameters below)
+#
 #  Parameters:
 #    DEPS="no"  de-activate dependency checking meachanism
 #    HIDE=""    show important commands issued by make (debugging)
+#
+#  Refactor parameters:
+#    PATTERN="" pattern to look for in all source files
+#    OUTPUT=""  text to replace matched pattern
 #
 ###############################################################################
 

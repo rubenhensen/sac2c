@@ -13,13 +13,20 @@
 #               code
 #    devel      compile everything as developer code
 #    prod       compile everything as product code
+#
 #    clean      cleanup all derived files
 #    cleandevel cleanup only compiled files (developer code)
 #    cleanprod  cleanup only compiled files (product code)
 #
+#    refactor   refactor source code (requires parameters below)
+#
 #  Parameters:
 #    DEPS="no"  de-activate dependency checking meachanism 
 #    HIDE=""    show important commands issued by make (debugging)
+#
+#  Refactor parameters:
+#    PATTERN="" pattern to look for in all source files
+#    OUTPUT=""  text to replace matched pattern
 #
 ###############################################################################
 
