@@ -9,24 +9,28 @@
 # Calling conventions:
 #
 #  Start rules: 
-#    default    compile executables as developer code and libraries as product 
-#               code
-#    devel      compile everything as developer code
-#    prod       compile everything as product code
+#    default      compile executables as developer code and libraries as product 
+#                 code
+#    devel        compile everything as developer code
+#    prod         compile everything as product code
 #
-#    clean      cleanup all derived files
-#    cleandevel cleanup only compiled files (developer code)
-#    cleanprod  cleanup only compiled files (product code)
+#    clean        cleanup all derived files excluding make tools
+#    cleandevel   cleanup only developer compiled files excluding make tools 
+#    cleanprod    cleanup only product compiled files excluding make tools 
 #
-#    refactor   refactor source code (requires parameters below)
+#    cleaner      cleanup all derived files including make tools
+#    cleanerdevel cleanup only developer compiled files including make tools
+#    cleanerprod  cleanup only product compiled files including make tools
+#
+#    refactor     refactor source code (requires parameters below)
 #
 #  Parameters:
-#    DEPS="no"  de-activate dependency checking meachanism 
-#    HIDE=""    show important commands issued by make (debugging)
+#    DEPS="no"    de-activate dependency checking meachanism 
+#    HIDE=""      show important commands issued by make (debugging)
 #
 #  Refactor parameters:
-#    PATTERN="" pattern to look for in all source files
-#    OUTPUT=""  text to replace matched pattern
+#    PATTERN=""   pattern to look for in all source files
+#    OUTPUT=""    text to replace matched pattern
 #
 ###############################################################################
 
@@ -41,6 +45,8 @@ PROJECT_ROOT := .
 HIDE := @
 DEPS := yes
 
+CLEAN_MAKE_TOOLS := "no"
+
 MAKEFILE_DIR := $(PROJECT_ROOT)/src/makefiles
 
 -include $(MAKEFILE_DIR)/config.mkf   # config.mkf may not yet exist
@@ -52,7 +58,8 @@ include $(MAKEFILE_DIR)/settings.mkf
 # Dummy rules
 #
 
-.PHONY: default devel prod clean cleandevel cleanprod efence config
+.PHONY: default devel prod clean cleandevel cleanprod efence config \
+        cleaner cleanerdevel cleanerprod
 
 
 ###############################################################################
@@ -110,13 +117,25 @@ default devel prod: checks
 # Cleaning rules
 #
 
+cleaner:
+	$(MAKE) CLEAN_MAKE_TOOLS="yes" clean
+
+cleanerdevel:
+	$(MAKE) CLEAN_MAKE_TOOLS="yes" cleandevel
+
+cleanerprod:
+	$(MAKE) CLEAN_MAKE_TOOLS="yes" cleanprod 
+
+
 clean cleandevel cleanprod: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME)"
 	@$(ECHO) "************************************************************"
-	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
+	$(HIDE) if [ "$(CLEAN_MAKE_TOOLS)" = "yes" ]; then  \
+                  $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                          PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@ ; \
+                fi
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
