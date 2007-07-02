@@ -231,7 +231,6 @@ int charpos = 0;
 "all"                      { FILTER( ALL); }
 "except"                   { FILTER( EXCEPT); }
 "external"                 { FILTER( EXTERN); }
-"generic"                  { FILTER( GENERIC); }
 
 "#"                        { FILTER( HASH); }
 "pragma"                   { FILTER( PRAGMA); }

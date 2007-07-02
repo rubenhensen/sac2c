@@ -2369,19 +2369,6 @@
             </target>
           </targets>
         </son>
-        <son name="GenericFuns" default="NULL">
-          <description>
-            contains the definitions of templates for generic functions
-          </description>
-          <targets>
-            <target mandatory="no">
-              <node name="Fundef" />
-              <phases>
-                <range from="scp_prs" to="final" />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="SPMDStore" default="NULL" >
           <targets>
             <target mandatory="no">
@@ -2739,15 +2726,8 @@
           <targets>
             <target mandatory="no">
               <node name="Ret" />
-              <node name="RetTemplate" />
               <phases>
-                <range from="scp_loc" to="exp_rgd" />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="Ret" />
-              <phases>
-                <range from="exp_rgd" to="cg_frtr" />
+                <all />
               </phases>
             </target>
           </targets>
@@ -2756,15 +2736,8 @@
           <targets>
             <target mandatory="no">
               <node name="Arg" />
-              <node name="ArgTemplate" />
               <phases>
-                <range from="scp_loc" to="exp_rgd" />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="Arg" />
-              <phases>
-                <range from="exp_rgd" to="cg_frtr" />
+                <all />
               </phases>
             </target>
           </targets>
@@ -3142,15 +3115,8 @@
           <targets>
             <target mandatory="no">
               <node name="Arg" />
-              <node name="ArgTemplate" />
               <phases>
-                <range from="scp_loc" to="exp_rgd" />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="Arg" />
-              <phases>
-                <range from="exp_rgd" to="cg_frtr" />
+                <all />
               </phases>
             </target>
           </targets>
@@ -4316,140 +4282,6 @@
         </attribute>
       </attributes>
       <flags></flags>
-    </node>
-<!--
-  N_argtemplate :
--->
-    <node name="ArgTemplate">
-      <sons>
-        <son name="Avis">
-          <targets>
-            <target mandatory="yes">
-              <node name="Avis" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="ArgTemplate" />
-              <node name="Arg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-	</son>
-      </sons>
-      <attributes>
-        <attribute name="Outer">
-	  <description>contains the variable name for the outer type</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-        <attribute name="Inner">
-	  <description>contains the variable name for the inner (nested) type</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-        <attribute name="Shape">
-	  <description>contains the variable name for the inner (nested) shape</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-      </attributes>
-      <flags>
-        <flag name="DoDeNestInBody" />
-      </flags>
-    </node>
-<!--
-  N_rettemplate :
--->
-    <node name="RetTemplate">
-      <sons>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="RetTemplate" />
-              <node name="Ret" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-	</son>
-      </sons>
-      <attributes>
-        <attribute name="Outer">
-	  <description>contains the variable name for the outer type</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-        <attribute name="Inner">
-	  <description>contains the variable name for the inner (nested) type</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-        <attribute name="Shape">
-	  <description>contains the variable name for the inner (nested) shape</description>
-	  <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-	</attribute>
-      </attributes>
-      <flags>
-	<flag name="DoReNestInBody" />
-      </flags>
     </node>
 <!--
 
@@ -7980,15 +7812,8 @@
           <targets>
             <target mandatory="no">
               <node name="Ret" />
-              <node name="RetTemplate" />
               <phases>
-                <range from="scp_loc" to="exp_rgd" />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="Ret" />
-              <phases>
-                <range from="exp_rgd" to="cg_frtr" />
+                <all />
               </phases>
             </target>
           </targets>

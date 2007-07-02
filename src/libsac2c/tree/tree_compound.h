@@ -186,7 +186,7 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
 #define DECL_AVIS(n)                                                                     \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_AVIS (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : ARGTEMPLATE_AVIS (n)))
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : (node *)0x0))
 #define DECL_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
 
 /*--------------------------------------------------------------------------*/

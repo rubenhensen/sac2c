@@ -39,7 +39,7 @@
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *TEMPdoTemplateTraversal( node *syntax_tree)
+ * @fn node *RGDdoRemoveGenericDefinitions( node *syntax_tree)
  *
  *****************************************************************************/
 node *
@@ -49,11 +49,6 @@ RGDdoRemoveGenericDefinitions (node *syntax_tree)
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) = N_module),
                  "RGDdoRemoveGenericDefinitions expects a module node as argument!");
-
-    if (MODULE_GENERICFUNS (syntax_tree) != NULL) {
-        MODULE_GENERICFUNS (syntax_tree)
-          = FREEdoFreeTree (MODULE_GENERICFUNS (syntax_tree));
-    }
 
     DBUG_RETURN (syntax_tree);
 }

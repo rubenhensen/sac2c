@@ -186,10 +186,6 @@ FLATmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FLATmodule");
 
-    if (MODULE_GENERICFUNS (arg_node)) {
-        MODULE_GENERICFUNS (arg_node) = TRAVdo (MODULE_GENERICFUNS (arg_node), arg_info);
-    }
-
     if (MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }

@@ -151,8 +151,6 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %type <node> fundef  fundef1  fundef2  main
 %type <node> fundec fundec2
-%type <node> genericfun argtemplates rettemplates argtemplate
-%type <node> rettemplate argsortemplates retsortemplates 
 %type <node> mainargs  fundecargs fundefargs  args  arg varargs
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
@@ -337,16 +335,6 @@ def4: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def4
     | SPECIALIZE fundec def4
       { $$ = $3;
         MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
-      }
-    | GENERIC genericfun { pragma_type = PRAG_fundef; } pragmas def4
-      {
-        $$ = $5;
-        MODULE_GENERICFUNS( $$) = TCappendFundef( MODULE_GENERICFUNS( $$), $2);
-      }
-    | GENERIC genericfun def4
-      {
-        $$ = $3;
-        MODULE_GENERICFUNS( $$) = TCappendFundef( MODULE_GENERICFUNS( $$), $2);
       }
     | fundef { pragma_type = PRAG_fundef; } pragmas def4
       { $$ = $4;
@@ -704,115 +692,6 @@ mainargs: TYPE_VOID     { $$ = NULL; }
         | /* empty */   { $$ = NULL; }
         ;
 
-
-/*
-*********************************************************************
-*
-*  rules for genric fundefs
-*
-*********************************************************************
-*/
-
-genericfun: rettemplates ext_id BRACKET_L argtemplates BRACKET_R exprblock
-            {
-              $$ = TBmakeFundef( $2, NULL, $1, $4, $6, NULL);
-              FUNDEF_ISGENERIC( $$) = TRUE;
-            }
-          ;
-
-rettemplates: TYPE_VOID         { $$ = NULL; }
-            | retsortemplates   { $$ = $1; }
-            ;
-
-retsortemplates: ntype
-                 {
-                   $$ = TBmakeRet( $1, NULL);
-                 }
-               | ntype COMMA retsortemplates
-                 {
-                   $$ = TBmakeRet( $1, $3);
-                 }
-               | rettemplate 
-                 {
-                   $$ = $1;
-                 }
-               | rettemplate COMMA retsortemplates
-                 {
-                   $$ = $1;
-                   RETTEMPLATE_NEXT( $$) = $3;
-                 }
-               ;
-
-rettemplate: LT ID LEFTARROW ID SQBR_L ID SQBR_R GT
-             {
-               $$ = TBmakeRettemplate( STRcpy( $2),
-                                       STRcpy( $4),
-                                       STRcpy( $6),
-                                       NULL);
-
-               RETTEMPLATE_DORENESTINBODY( $$) = TRUE;
-             }
-           | LT ID LET ID SQBR_L ID SQBR_R GT
-             {
-               $$ = TBmakeRettemplate( STRcpy( $2),
-                                       STRcpy( $4),
-                                       STRcpy( $6),
-                                       NULL);
-             }
-
-argtemplates: TYPE_VOID      { $$ = NULL; }
-            | /* empty */    { $$ = NULL; }
-            | argsortemplates { $$ = $1; }
-            ;
-
-argsortemplates: arg 
-                 {
-                   $$ = $1;
-                 }
-               | arg COMMA argsortemplates
-                 {
-                   $$ = $1;
-                   ARG_NEXT( $$) = $3;
-                 }
-               | argtemplate
-                 {
-                   $$ = $1;
-                 }
-               | argtemplate COMMA argsortemplates
-                 {
-                   $$ = $1;
-                   ARGTEMPLATE_NEXT( $$) = $3;
-                 }
-               ;
-
-argtemplate: LT ID RIGHTARROW ID SQBR_L ID SQBR_R GT ID
-             {
-               $$ = TBmakeArgtemplate( STRcpy( $2),
-                                       STRcpy( $4),
-                                       STRcpy( $6),
-                                       TBmakeAvis( STRcpy( $9),
-                                         TYmakeAUD( 
-                                           TYmakeSimpleType( T_unknown))),
-                                       NULL);
-
-               AVIS_DECLTYPE( ARGTEMPLATE_AVIS( $$)) =
-                 TYcopyType( AVIS_TYPE( ARGTEMPLATE_AVIS( $$)));
-
-               ARGTEMPLATE_DODENESTINBODY( $$) = TRUE;
-             }
-           | LT ID LET ID SQBR_L ID SQBR_R GT ID
-             {
-               $$ = TBmakeArgtemplate( STRcpy( $2),
-                                       STRcpy( $4),
-                                       STRcpy( $6),
-                                       TBmakeAvis( STRcpy( $9),
-                                         TYmakeAUD( 
-                                           TYmakeSimpleType( T_unknown))),
-                                       NULL);
-
-               AVIS_DECLTYPE( ARGTEMPLATE_AVIS( $$)) =
-                 TYcopyType( AVIS_TYPE( ARGTEMPLATE_AVIS( $$)));
-             }
 
 
 /*

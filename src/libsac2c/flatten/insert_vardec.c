@@ -133,11 +133,8 @@ SearchForNameInArgs (char *name, node *args)
 {
     DBUG_ENTER ("SearchForNameInArgs");
 
-    while ((args != NULL)
-           && (((NODE_TYPE (args) == N_arg) && !STReq (ARG_NAME (args), name))
-               || ((NODE_TYPE (args) == N_argtemplate)
-                   && !STReq (ARGTEMPLATE_NAME (args), name)))) {
-        args = (NODE_TYPE (args) == N_arg) ? ARG_NEXT (args) : ARGTEMPLATE_NEXT (args);
+    while ((args != NULL) && (!STReq (ARG_NAME (args), name))) {
+        args = ARG_NEXT (args);
     }
     DBUG_RETURN (args);
 }
@@ -181,10 +178,6 @@ INSVDmodule (node *arg_node, info *arg_info)
 
     INFO_INSVD_MODULE (arg_info) = arg_node;
     INFO_INSVD_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
-
-    if (MODULE_GENERICFUNS (arg_node) != NULL) {
-        MODULE_GENERICFUNS (arg_node) = TRAVdo (MODULE_GENERICFUNS (arg_node), arg_info);
-    }
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);

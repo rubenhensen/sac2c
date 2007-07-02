@@ -47,8 +47,6 @@ extern node *PRTfundef (node *arg_node, info *arg_info);
 extern node *PRTannotate (node *arg_node, info *arg_info);
 extern node *PRTret (node *arg_node, info *arg_info);
 extern node *PRTarg (node *arg_node, info *arg_info);
-extern node *PRTargtemplate (node *arg_node, info *arg_info);
-extern node *PRTrettemplate (node *arg_node, info *arg_info);
 extern node *PRTvardec (node *arg_node, info *arg_info);
 extern node *PRTblock (node *arg_node, info *arg_info);
 extern node *PRTreturn (node *arg_node, info *arg_info);
