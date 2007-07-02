@@ -66,7 +66,7 @@ typedef int (*sacmain_p) (int, char **);
             exit (10);                                                                   \
         }                                                                                \
                                                                                          \
-        mainptr = dlsym (libsac2c, mainfun);                                             \
+        mainptr = (sacmain_p)dlsym (libsac2c, mainfun);                                  \
                                                                                          \
         if (libsac2c == NULL) {                                                          \
             printf ("ERROR: Cannot find symbol '%s' in shared library "                  \

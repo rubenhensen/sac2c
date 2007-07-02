@@ -27,12 +27,6 @@
 #include "DupTree.h"
 #include "free.h"
 
-/**
- * INFO structure
- */
-struct INFO {
-};
-
 /** <!--********************************************************************-->
  *
  * @fn node *EMSRdoStaticReuse( node *syntax_tree)

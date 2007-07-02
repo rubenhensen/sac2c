@@ -76,32 +76,6 @@ version="1.0">
 #include "str.h"
 #include "memory.h"
 
-
-
-struct INFO
-{
-};
-
-static info *MakeInfo()
-{
-  info *result;
-
-  DBUG_ENTER("MakeInfo");
-
-  result = MEMmalloc(sizeof(info));
-
-  DBUG_RETURN(result);
-} 
-
-static info *FreeInfo(info *info)
-{
-  DBUG_ENTER("FreeInfo");
-
-  info = MEMfree(info);
-
-  DBUG_RETURN(info);
-}
-
 /*****************************************************************************
  *
  * @fn node *CHKTSTdoTreeCheckTest( node *syntax_tree)
@@ -109,19 +83,13 @@ static info *FreeInfo(info *info)
  *****************************************************************************/
 node *CHKTSTdoTreeCheckTest( node *syntax_tree)
 {
-  info *info;
-
   DBUG_ENTER( "CHKTSTdoTreeCheckTest");
 
   DBUG_PRINT( "CHKTST", ("Starting the CheckTestmechanism"));
 
-  info = MakeInfo();
-
   TRAVpush( TR_chktst);
-  syntax_tree = TRAVdo( syntax_tree, info);
+  syntax_tree = TRAVdo( syntax_tree, NULL);
   TRAVpop();
-
-  info = FreeInfo( info);
 
   DBUG_PRINT( "CHKTST", ("CheckTestmechanism complete"));
 
