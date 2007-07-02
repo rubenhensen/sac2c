@@ -46,6 +46,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:text>
 #include "node_basic.h"
+#include "node_alloc.h"
 #include "tree_basic.h"
 #include "dbug.h"
 #include "check_mem.h"

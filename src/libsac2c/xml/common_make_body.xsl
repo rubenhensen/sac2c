@@ -32,6 +32,13 @@ version="1.0">
 <xsl:template match="node" mode="make-body">
   <xsl:value-of select="'{'"/>
   <!-- declarate variables -->
+  <xsl:value-of select="'struct NODE_ALLOC_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' *nodealloc;'" />
   <xsl:value-of select="'node *this;'" />
   <xsl:value-of select="'int size;'" />
   <!-- counter for for-loops -->
@@ -53,29 +60,46 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
-  <xsl:value-of select="'size = sizeof(node)'" />
-  <xsl:if test="sons/son">
-    <xsl:value-of select="' + sizeof( struct SONS_N_'" />
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" select="@name"/>
-    </xsl:call-template>
-    <xsl:value-of select="')'" />
-  </xsl:if>
-  <xsl:if test="attributes/attribute | flags/flag">
-    <xsl:value-of select="'+ sizeof( struct ATTRIBS_N_'" />
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" select="@name"/>
-    </xsl:call-template>
-    <xsl:value-of select="')'" />
-  </xsl:if>
-  <xsl:value-of select="';'" />
+  <xsl:value-of select="'size = sizeof( struct NODE_ALLOC_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
   <!-- 
       Part for Memorycheck START 
    -->
+  <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
-  <xsl:text>
-  </xsl:text>
-  <xsl:value-of select="'this = (node *) MEMmallocAt( size, file, line);'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'nodealloc = (struct NODE_ALLOC_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' *) MEMmallocAt( size, file, line);'" />
+  <xsl:value-of select="'#else '" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'nodealloc = (struct NODE_ALLOC_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' *) MEMmalloc( size);'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
+  <xsl:call-template name="newline" />
+  <!-- 
+      Part for Memorycheck END 
+   -->
+  <!-- set node structure -->
+  <xsl:value-of select="'this = (node *) &amp;(nodealloc->nodestructure);'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
+  <xsl:call-template name="newline" />
   <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
@@ -83,17 +107,9 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="');'" />
-  <xsl:text>
-  </xsl:text>
-  <xsl:value-of select="'#else '" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'this = (node *) MEMmalloc( size);'" />
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
   <xsl:call-template name="newline" />
-  <!-- 
-      Part for Memorycheck END 
-   -->
   <!-- set sons and attribs pointer -->
   <!-- only set sons if we have sons -->
   <xsl:if test="sons/son">
@@ -105,7 +121,7 @@ version="1.0">
     <xsl:call-template name="uppercase">
       <xsl:with-param name="string" select="@name"/>
     </xsl:call-template>
-    <xsl:value-of select="' *) ((char *) this + sizeof( node));'" />
+    <xsl:value-of select="' *) &amp;(nodealloc->sonstructure);'" />
   </xsl:if>
   <!-- only set attributes/flags if we have some -->
   <xsl:if test="attributes/attribute | flags/flag">
@@ -117,16 +133,7 @@ version="1.0">
     <xsl:call-template name="uppercase">
       <xsl:with-param name="string" select="@name"/>
     </xsl:call-template>
-    <xsl:value-of select="' *) ((char *) this + sizeof( node)'" />
-    <!-- if we had sons, we have to add the memory used by them, as well -->
-    <xsl:if test="sons/son">
-      <xsl:value-of select="'+ sizeof( struct SONS_N_'" />
-      <xsl:call-template name="uppercase">
-        <xsl:with-param name="string" select="@name"/>
-      </xsl:call-template>
-      <xsl:value-of select="')'" />
-    </xsl:if>
-    <xsl:value-of select="');'" />
+    <xsl:value-of select="' *) &amp;(nodealloc->attributestructure);'" />
   </xsl:if>
   <xsl:value-of select="'NODE_TYPE( this) = N_'" />
   <xsl:call-template name="lowercase" >

@@ -50,13 +50,13 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * (!((n)->nodetype - '" />
+  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * ((intptr_t) (!((n)->nodetype - '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="')))))->sons.'"/> 
+  <xsl:value-of select="'))))))->sons.'"/> 
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
@@ -122,13 +122,13 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <!-- generate right side of macro -->
-  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * (!((n)->nodetype - '" />
+  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * (((intptr_t) !((n)->nodetype - '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="')))))->attribs.'"/> 
+  <xsl:value-of select="'))))))->attribs.'"/> 
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
@@ -226,13 +226,13 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <!-- generate right side of macro -->
-  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * (!((n)->nodetype - '" />
+  <xsl:value-of select="'(((node *) (((intptr_t) n) &amp; (~((intptr_t) 0) * (((intptr_t) !((n)->nodetype - '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="')))))->attribs.'"/> 
+  <xsl:value-of select="'))))))->attribs.'"/> 
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
