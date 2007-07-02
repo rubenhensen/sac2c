@@ -341,6 +341,9 @@ WLLOMwith (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
+    if (INFO_WLLEVEL (arg_info) == 1) {
+        INFO_WB (arg_info) = FALSE;
+    }
     DBUG_PRINT ("WLLOM", ("<<<Leave WL-Level %i...", INFO_WLLEVEL (arg_info)));
     INFO_WLLEVEL (arg_info) = INFO_WLLEVEL (arg_info) - 1;
 
