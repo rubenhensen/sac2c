@@ -201,6 +201,8 @@ IsAddPrf (prf prf)
     DBUG_RETURN (res);
 }
 
+#ifdef TODO_REMOVE_IF_NOT_USED
+
 static bool
 IsMulPrf (prf prf)
 {
@@ -221,6 +223,8 @@ IsMulPrf (prf prf)
 
     DBUG_RETURN (res);
 }
+
+#endif
 
 static bool
 YieldsScalar (prf prf)
