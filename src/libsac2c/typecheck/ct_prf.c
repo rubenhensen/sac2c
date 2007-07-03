@@ -313,6 +313,33 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
     DBUG_RETURN (TYmakeProductType (1, res));
 }
 
+ntype *
+NTCCTprf_nested_shape (te_info *info, ntype *args)
+{
+    ntype *type;
+    usertype udt;
+    ntype *res;
+    shape *shp;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_type_conv");
+
+    type = TYgetProductMember (args, 0);
+
+    if (!TUisArrayOfUser (type)) {
+        TEhandleError (TEgetLine (info), "nested_shape applied to non user-type %s.",
+                       TYtype2String (type, FALSE, 0));
+        err_msg = TEfetchErrors ();
+        res = TYmakeBottomType (err_msg);
+    } else {
+        udt = TYgetUserType (TYgetScalar (type));
+        shp = TYgetShape (UTgetBaseType (udt));
+        res = TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromShape (shp));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
 /** <!--********************************************************************-->
  *
  * @fn ntype *NTCCTprf_saabind( te_info *info, ntype *args)

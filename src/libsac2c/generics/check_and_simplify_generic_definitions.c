@@ -73,6 +73,10 @@ struct INFO {
     node *current;
     enum { CSGD_normal, CSGD_checkarg, CSGD_checkret, CSGD_strip } mode;
     bool isgeneric;
+    int retno;
+    bool outerdefined;
+    bool innerdefined;
+    bool shapedefined;
 };
 
 /**
@@ -84,6 +88,10 @@ struct INFO {
 #define INFO_CURRENT(n) ((n)->current)
 #define INFO_MODE(n) ((n)->mode)
 #define INFO_ISGENERIC(n) ((n)->isgeneric)
+#define INFO_RETNO(n) ((n)->retno)
+#define INFO_OUTERDEFINED(n) ((n)->outerdefined)
+#define INFO_INNERDEFINED(n) ((n)->innerdefined)
+#define INFO_SHAPEDEFINED(n) ((n)->shapedefined)
 
 static info *
 MakeInfo ()
@@ -100,6 +108,10 @@ MakeInfo ()
     INFO_CURRENT (result) = NULL;
     INFO_MODE (result) = CSGD_normal;
     INFO_ISGENERIC (result) = FALSE;
+    INFO_RETNO (result) = 0;
+    INFO_OUTERDEFINED (result) = FALSE;
+    INFO_INNERDEFINED (result) = FALSE;
+    INFO_SHAPEDEFINED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -191,26 +203,22 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
             result = TRUE;
         } else if (TYisPolyUser (b)) {
             /*
-             * here a is not allowed to be used as inner or shape
+             * here a is not allowed to be used as shape in b
              */
-            result = !STReq (TYgetPolyName (a), TYgetPolyUserInner (b))
-                     && !STReq (TYgetPolyName (a), TYgetPolyUserShape (b));
+            result = !STReq (TYgetPolyName (a), TYgetPolyUserShape (b));
         }
     } else if (TYisPolyUser (a)) {
         if (TYisPoly (b)) {
             /*
-             * here a_inner and a_shape are not allowed to be b
+             * here a_shape is not allowed to be b
              */
-            result = !STReq (TYgetPolyUserInner (a), TYgetPolyName (b))
-                     && !STReq (TYgetPolyUserShape (a), TYgetPolyName (b));
+            result = !STReq (TYgetPolyUserShape (a), TYgetPolyName (b));
         } else if (TYisPolyUser (b)) {
             /*
-             * here each identifier in a is not allowed to occur anywhere
-             * in b apart from its use in a
+             * here a_outer and a_inner are not allowed to occur in b_shape
+             * and b_outer and b_inner is not allowed to occur in a_shape
              */
-            result = !STReq (TYgetPolyUserOuter (a), TYgetPolyUserInner (b))
-                     && !STReq (TYgetPolyUserOuter (a), TYgetPolyUserShape (b))
-                     && !STReq (TYgetPolyUserInner (a), TYgetPolyUserOuter (b))
+            result = !STReq (TYgetPolyUserOuter (a), TYgetPolyUserShape (b))
                      && !STReq (TYgetPolyUserInner (a), TYgetPolyUserShape (b))
                      && !STReq (TYgetPolyUserShape (a), TYgetPolyUserOuter (b))
                      && !STReq (TYgetPolyUserShape (a), TYgetPolyUserInner (b));
@@ -218,6 +226,58 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
     }
 
     DBUG_RETURN (result);
+}
+
+static info *
+AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
+{
+    DBUG_ENTER ("AnnotateDefinedVars");
+
+    if (TUisPolymorphic (def)) {
+        if (TYisArray (type)) {
+            type = TYgetScalar (type);
+        }
+
+        if (TYisArray (def)) {
+            def = TYgetScalar (def);
+        }
+
+        if (TYisPoly (type)) {
+            if (TYisPoly (def)) {
+                INFO_OUTERDEFINED (arg_info)
+                  = INFO_OUTERDEFINED (arg_info)
+                    || STReq (TYgetPolyName (type), TYgetPolyName (def));
+            } else if (TYisPolyUser (def)) {
+                INFO_OUTERDEFINED (arg_info)
+                  = INFO_OUTERDEFINED (arg_info)
+                    || STReq (TYgetPolyName (type), TYgetPolyUserOuter (def))
+                    || STReq (TYgetPolyName (type), TYgetPolyUserInner (def));
+            }
+        } else if (TYisPolyUser (type)) {
+            if (TYisPoly (def)) {
+                INFO_OUTERDEFINED (arg_info)
+                  = INFO_OUTERDEFINED (arg_info)
+                    || STReq (TYgetPolyUserOuter (type), TYgetPolyName (def));
+                INFO_INNERDEFINED (arg_info)
+                  = INFO_INNERDEFINED (arg_info)
+                    || STReq (TYgetPolyUserInner (type), TYgetPolyName (def));
+            } else if (TYisPolyUser (def)) {
+                INFO_OUTERDEFINED (arg_info)
+                  = INFO_OUTERDEFINED (arg_info)
+                    || STReq (TYgetPolyUserOuter (type), TYgetPolyUserOuter (def))
+                    || STReq (TYgetPolyUserOuter (type), TYgetPolyUserInner (def));
+                INFO_INNERDEFINED (arg_info)
+                  = INFO_INNERDEFINED (arg_info)
+                    || STReq (TYgetPolyUserInner (type), TYgetPolyUserOuter (def))
+                    || STReq (TYgetPolyUserInner (type), TYgetPolyUserInner (def));
+                INFO_SHAPEDEFINED (arg_info)
+                  = INFO_SHAPEDEFINED (arg_info)
+                    || STReq (TYgetPolyUserShape (type), TYgetPolyUserShape (def));
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_info);
 }
 
 /** <!--********************************************************************-->
@@ -334,11 +394,24 @@ CSGDarg (node *arg_node, info *arg_info)
          */
         if (!PolymorphicTypeComplies (ARG_NTYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerror ("In definition of %s: The type of polymorphic argument "
-                      "%s does not comply with the type of argument %s.",
+            CTIerror ("In definition of %s: type and shape variables cannot be "
+                      "mixed (in arguments %s and %s).",
                       CTIitemName (INFO_FUNDEF (arg_info)),
                       ARG_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
         }
+    } else if (INFO_MODE (arg_info) == CSGD_checkret) {
+        if (!PolymorphicTypeComplies (RET_TYPE (INFO_CURRENT (arg_info)),
+                                      ARG_NTYPE (arg_node))) {
+            CTIerror ("In definition of %s: type and shape variables cannot be "
+                      "mixed (in return type %d and argument %s).",
+                      CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info),
+                      ARG_NAME (arg_node));
+        }
+
+        arg_info = AnnotateDefinedVars (RET_TYPE (INFO_CURRENT (arg_info)),
+                                        ARG_NTYPE (arg_node), arg_info);
+    } else if (INFO_MODE (arg_info) == CSGD_strip) {
+        /* remove the de-/renest flags */
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -360,7 +433,47 @@ CSGDret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDret");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    INFO_RETNO (arg_info)++;
+
+    if (TUisPolymorphic (RET_TYPE (arg_node))) {
+        INFO_CURRENT (arg_info) = arg_node;
+        INFO_MODE (arg_info) = CSGD_checkret;
+        INFO_OUTERDEFINED (arg_info) = FALSE;
+        INFO_INNERDEFINED (arg_info) = FALSE;
+        INFO_SHAPEDEFINED (arg_info) = FALSE;
+
+        if (INFO_ARGS (arg_info) != NULL) {
+            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
+        }
+
+        if (!INFO_OUTERDEFINED (arg_info)) {
+            CTIerror ("In definition of %s: Type variable in polymorphic return "
+                      "type not bound by any argument (return value %d).",
+                      CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+        }
+
+        if (TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))) {
+            if (!INFO_INNERDEFINED (arg_info)) {
+                CTIerror ("In definition of %s: Inner type variable in polymorphic "
+                          "return type not bound by any argument (return value %d).",
+                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+            }
+
+            if (!INFO_SHAPEDEFINED (arg_info)) {
+                CTIerror ("In definition of %s: Shape variable in polymorphic return "
+                          "type not bound by any argument (return value %d).",
+                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+            }
+        }
+
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+    }
+
+    INFO_RETNO (arg_info)--;
 
     DBUG_RETURN (arg_node);
 }

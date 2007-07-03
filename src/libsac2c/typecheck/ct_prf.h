@@ -12,6 +12,7 @@ extern ntype *NTCCTprf_id (te_info *info, ntype *args);
 extern ntype *NTCCTprf_array (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_cast (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_type_conv (te_info *info, ntype *args);
+extern ntype *NTCCTprf_nested_shape (te_info *info, ntype *args);
 extern ntype *NTCCTprf_saabind (te_info *info, ntype *args);
 extern ntype *NTCCTprf_dim_A (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape_A (te_info *info, ntype *args);
