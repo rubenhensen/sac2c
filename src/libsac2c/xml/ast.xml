@@ -325,6 +325,18 @@
           <node name="SPId" />
         </travuser>
       </traversal>
+      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+          <node name="Avis" />
+          <node name="Cast" />
+          <node name="Return" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <travuser>
           <node name="Typedef" />

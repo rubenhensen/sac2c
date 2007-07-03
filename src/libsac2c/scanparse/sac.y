@@ -162,7 +162,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %type <id> reservedid  string ext_id
 
-%type <ntype> simplentype userntype basentype ntype
+%type <ntype> simplentype userntype polyntype basentype ntype
 
 /* pragmas */
 %type <id> pragmacachesim
@@ -1791,6 +1791,10 @@ basentype: simplentype
          | userntype
            { $$ = $1;
            }
+         | polyntype
+           {
+             $$ = $1;
+           }
          ;
 
 simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
@@ -1807,6 +1811,21 @@ userntype: ID
            { $$ = TYmakeSymbType( $3, NSgetNamespace( $1));
            }
          ;
+
+polyntype: LT ID LET ID SQBR_L ID SQBR_R GT
+           { $$ = TYmakePolyUserType( $2, $4, $6, FALSE, FALSE); 
+           }
+         | LT ID RIGHTARROW ID SQBR_L ID SQBR_R GT
+           { $$ = TYmakePolyUserType( $2, $4, $6, TRUE, FALSE); 
+           }
+         | LT ID LEFTARROW ID SQBR_L ID SQBR_R GT
+           { $$ = TYmakePolyUserType( $2, $4, $6, FALSE, TRUE); 
+           }
+         | LT ID GT
+           { $$ = TYmakePolyType( $2);
+           }
+         ;
+
 
 /******************************************************************************
  ******************************************************************************

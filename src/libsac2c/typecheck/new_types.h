@@ -207,6 +207,14 @@ extern char *TYgetBottomError (ntype *type);
 extern ntype *TYmakePolyType (char *name);
 extern char *TYgetPolyName (ntype *poly);
 
+extern ntype *TYmakePolyUserType (char *outer, char *inner, char *shape, bool denest,
+                                  bool renest);
+extern char *TYgetPolyUserOuter (ntype *poly);
+extern char *TYgetPolyUserInner (ntype *poly);
+extern char *TYgetPolyUserShape (ntype *poly);
+extern bool TYgetPolyUserDeNest (ntype *poly);
+extern bool TYgetPolyUserReNest (ntype *poly);
+
 /*
  * Function Types:
  */
@@ -239,6 +247,8 @@ extern bool TYcontainsAlpha (ntype *type);
  */
 extern bool TYisSimple (ntype *);
 extern bool TYisUser (ntype *);
+extern bool TYisPoly (ntype *);
+extern bool TYisPolyUser (ntype *);
 extern bool TYisSymb (ntype *);
 extern bool TYisScalar (ntype *);
 

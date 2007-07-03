@@ -126,7 +126,8 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
                         generate_object_initialiser strip_external_signatures \
                         manage_object_initialisers check_uniqueness spmdfun_fix
 
-libsac2c_generics    := remove_generic_definitions
+libsac2c_generics    := remove_generic_definitions \
+                        check_and_simplify_generic_definitions
 
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \

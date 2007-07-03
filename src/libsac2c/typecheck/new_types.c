@@ -116,6 +116,14 @@ typedef struct ATTR_IRES {
     int *poss;
 } attr_ires;
 
+typedef struct ATTR_POLYUSER {
+    char *outer;
+    char *inner;
+    char *shape;
+    bool denest : 1;
+    bool renest : 1;
+} attr_polyuser;
+
 typedef struct DFT_STATE {
     int max_funs;
     int cnt_funs;
@@ -149,6 +157,7 @@ typedef union {
     tvar *a_alpha;
     char *a_bottom;
     char *a_poly;
+    attr_polyuser a_polyuser;
 } typeattr;
 
 /*
@@ -203,7 +212,14 @@ struct NTYPE {
 #define ALPHA_SSI(n) (n->typeattr.a_alpha)
 
 #define BOTTOM_MSG(n) (n->typeattr.a_bottom)
+
 #define POLY_NAME(n) (n->typeattr.a_poly)
+
+#define POLYUSER_OUTER(n) (n->typeattr.a_polyuser.outer)
+#define POLYUSER_INNER(n) (n->typeattr.a_polyuser.inner)
+#define POLYUSER_SHAPE(n) (n->typeattr.a_polyuser.shape)
+#define POLYUSER_DENEST(n) (n->typeattr.a_polyuser.denest)
+#define POLYUSER_RENEST(n) (n->typeattr.a_polyuser.renest)
 
 /*
  * Macros for accessing the sons...
@@ -1017,6 +1033,142 @@ TYgetPolyName (ntype *type)
     DBUG_RETURN (POLY_NAME (type));
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   ntype * TYmakePolyUserType( char *outer, char *inner, char *shape,
+ *                               bool denest, bool renest)
+ *
+ * description:
+ *   Function for creating poly user types.
+ *
+ ******************************************************************************/
+
+ntype *
+TYmakePolyUserType (char *outer, char *inner, char *shape, bool denest, bool renest)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYmakePolyUserType");
+
+    DBUG_ASSERT ((!denest || !renest), "polyuser with de- and renest is illegal!");
+
+    res = MakeNtype (TC_polyuser, 0);
+    POLYUSER_OUTER (res) = outer;
+    POLYUSER_INNER (res) = inner;
+    POLYUSER_SHAPE (res) = shape;
+    POLYUSER_DENEST (res) = denest;
+    POLYUSER_RENEST (res) = renest;
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char * TYgetPolyUserOuter( ntype *type)
+ *
+ * description:
+ *  function for extracting the outer name of a polymorphic user type.
+ *
+ ******************************************************************************/
+
+char *
+TYgetPolyUserOuter (ntype *type)
+{
+    DBUG_ENTER ("TYgetPolyUserOuter");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+                 "TYgetPolyUserOuter applied to non polyuser type!");
+
+    DBUG_RETURN (POLYUSER_OUTER (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char * TYgetPolyUserInner( ntype *type)
+ *
+ * description:
+ *  function for extracting the inner (nested) name of a polymorphic user type.
+ *
+ ******************************************************************************/
+
+char *
+TYgetPolyUserInner (ntype *type)
+{
+    DBUG_ENTER ("TYgetPolyUserInner");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+                 "TYgetPolyUserInner applied to non polyuser type!");
+
+    DBUG_RETURN (POLYUSER_INNER (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char * TYgetPolyUserShape( ntype *type)
+ *
+ * description:
+ *  function for extracting the name of the shape of a polymorphic user type.
+ *
+ ******************************************************************************/
+
+char *
+TYgetPolyUserShape (ntype *type)
+{
+    DBUG_ENTER ("TYgetPolyUserShape");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+                 "TYgetPolyUserShape applied to non polyuser type!");
+
+    DBUG_RETURN (POLYUSER_SHAPE (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool TYgetPolyUserDeNest( ntype *type)
+ *
+ * description:
+ *  function for checking whether a polymorphic user type includes an implicit
+ *  denesting.
+ *
+ ******************************************************************************/
+
+bool
+TYgetPolyUserDeNest (ntype *type)
+{
+    DBUG_ENTER ("TYgetPolyUserDeNest");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+                 "TYgetPolyUserDeNest applied to non polyuser type!");
+
+    DBUG_RETURN (POLYUSER_DENEST (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool TYgetPolyUserReNest( ntype *type)
+ *
+ * description:
+ *  function for checking whether a polymorphic user type includes an implicit
+ *  renesting.
+ *
+ ******************************************************************************/
+
+bool
+TYgetPolyUserReNest (ntype *type)
+{
+    DBUG_ENTER ("TYgetPolyUserReNest");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+                 "TYgetPolyUserReNest applied to non polyuser type!");
+
+    DBUG_RETURN (POLYUSER_RENEST (type));
+}
 /** <!--********************************************************************-->
  *
  * @fn ntype *TYmakeBottomType( char *err_msg)
@@ -2986,6 +3138,8 @@ TYcontainsAlpha (ntype *type)
  *    bool TYisSimple( ntype *type)
  *    bool TYisUser( ntype *type)
  *    bool TYisSymb( ntype *type)
+ *    bool TYisPoly( ntype *type)
+ *    bool TYisPolyUser( ntype *type)
  *    bool TYisScalar( ntype *type)
  *    bool TYisBottom( ntype *type)
  *    bool TYisAlpha( ntype *type)
@@ -3020,6 +3174,20 @@ TYisUser (ntype *type)
 {
     DBUG_ENTER ("TYisUser");
     DBUG_RETURN (NTYPE_CON (type) == TC_user);
+}
+
+bool
+TYisPoly (ntype *type)
+{
+    DBUG_ENTER ("TYisPoly");
+    DBUG_RETURN (NTYPE_CON (type) == TC_poly);
+}
+
+bool
+TYisPolyUser (ntype *type)
+{
+    DBUG_ENTER ("TYisPolyUser");
+    DBUG_RETURN (NTYPE_CON (type) == TC_polyuser);
 }
 
 bool
@@ -4045,6 +4213,14 @@ TYfreeTypeConstructor (ntype *type)
     case TC_ishape:
         ISHAPE_SHAPE (type) = SHfreeShape (ISHAPE_SHAPE (type));
         break;
+    case TC_poly:
+        POLY_NAME (type) = MEMfree (POLY_NAME (type));
+        break;
+    case TC_polyuser:
+        POLYUSER_OUTER (type) = MEMfree (POLYUSER_OUTER (type));
+        POLYUSER_INNER (type) = MEMfree (POLYUSER_INNER (type));
+        POLYUSER_SHAPE (type) = MEMfree (POLYUSER_SHAPE (type));
+        break;
     case TC_alpha:
         /* type variables are never freed since they are used in sharing! */
     case TC_fun:
@@ -4440,6 +4616,12 @@ ScalarType2String (ntype *type)
         break;
     case TC_poly:
         buf = SBUFprintf (buf, "<%s>", POLY_NAME (type));
+        break;
+    case TC_polyuser:
+        buf = SBUFprintf (buf, "<%s%s%s[%s]>", POLYUSER_OUTER (type),
+                          POLYUSER_DENEST (type) ? "->"
+                                                 : (POLYUSER_RENEST (type) ? "<-" : "="),
+                          POLYUSER_INNER (type), POLYUSER_SHAPE (type));
         break;
     default:
         DBUG_ASSERT (0, "ScalarType2String called with non-scalar type!");
@@ -7127,6 +7309,18 @@ SerializePolyType (FILE *file, ntype *type)
 }
 
 static void
+SerializePolyUserType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializePolyUserType");
+
+    fprintf (file, "TYdeserializeType( %d, \"%s\", \"%s\", \"%s\", %d, %d)",
+             NTYPE_CON (type), POLYUSER_OUTER (type), POLYUSER_INNER (type),
+             POLYUSER_SHAPE (type), POLYUSER_DENEST (type), POLYUSER_RENEST (type));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 SerializeBottomType (FILE *file, ntype *type)
 {
     char *tmp;
@@ -7220,6 +7414,9 @@ TYserializeType (FILE *file, ntype *type)
             break;
         case TC_poly:
             SerializePolyType (file, type);
+            break;
+        case TC_polyuser:
+            SerializePolyUserType (file, type);
             break;
         case TC_bottom:
             SerializeBottomType (file, type);
@@ -7482,6 +7679,22 @@ TYdeserializeType (typeconstr con, ...)
         va_start (args, con);
 
         result = TYmakePolyType (STRcpy (va_arg (args, char *)));
+
+        va_end (args);
+    } break;
+    case TC_polyuser: {
+        char *outer, *inner, *shape;
+        bool denest, renest;
+
+        va_start (args, con);
+
+        outer = STRcpy (va_arg (args, char *));
+        inner = STRcpy (va_arg (args, char *));
+        shape = STRcpy (va_arg (args, char *));
+        denest = va_arg (args, bool);
+        renest = va_arg (args, bool);
+
+        result = TYmakePolyUserType (outer, inner, shape, denest, renest);
 
         va_end (args);
     } break;

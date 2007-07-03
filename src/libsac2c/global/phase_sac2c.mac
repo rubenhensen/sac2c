@@ -34,6 +34,9 @@ SUBPHASE (rpr, "Resolving pragma annotations", RSPdoResolvePragmas, ALWAYS, pre)
 
 SUBPHASE (obi, "Generating generic types and functions", OIdoObjectInit, ALWAYS, pre)
 
+SUBPHASE (csgd, "Checking and simplifying generic definitions",
+          CSGDdoCheckAndSimplifyGenericDefinitions, ALWAYS, pre)
+
 ENDPHASE (pre)
 
 /******************************************************************************/

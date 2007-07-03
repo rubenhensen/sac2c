@@ -543,6 +543,27 @@ TUisBoxed (ntype *type)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool TUisPolymorphic( ntype *type)
+ *
+ * @brief Checks whether type is polymorphic.
+ *
+ * @param type ntype structure
+ *
+ * @return true if type contains either a poly or a polyuser type
+ ******************************************************************************/
+bool
+TUisPolymorphic (ntype *type)
+{
+    DBUG_ENTER ("TUisPolymorphic");
+
+    if (TYisArray (type)) {
+        type = TYgetScalar (type);
+    }
+
+    DBUG_RETURN (TYisPoly (type) || TYisPolyUser (type));
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn bool SCIeqShapes ( ntype *a, ntype *b)
