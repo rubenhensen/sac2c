@@ -178,9 +178,6 @@ SUBPHASE (accu, "Introducing explicit accumulators", EAdoExplicitAccumulate, ALW
 
 SUBPHASE (adp, "Adding default partitions", WLDPdoWlDefaultPartition, ALWAYS, ewl)
 
-SUBPHASE (rtup, "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade,
-          global.optimize.dortup, ewl)
-
 SUBPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
           ALWAYS, ewl)
 
@@ -276,9 +273,6 @@ CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFun
 
 CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
                global.optimize.dotup, opt, cyc)
-
-CYCLEPHASEFUN (rtup, "Applying reverse type upgrade", RTUPdoReverseTypeUpgradeOneFundef,
-               global.optimize.dortup, opt, cyc)
 
 CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
                ALWAYS, opt, cyc)

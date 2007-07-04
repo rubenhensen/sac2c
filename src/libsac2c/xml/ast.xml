@@ -1215,18 +1215,6 @@
           <node name="Ids" />
    	</travuser>
       </traversal>     
-      <traversal id="RTUP" name="Reverse Type Upgrade" default="sons" include="reverse_type_upgrade.h" >
-	<travuser>
-	  <node name="Assign" />
-          <node name="Fundef" />
-	  <node name="With" />
-	  <node name="Let" />
-	  <node name="Generator" />
-	  <node name="Part" /> 
-          <node name="Ids" />
-          <node name="Id" />
-        </travuser>
-      </traversal>
       <traversal id="WLPROP" name="With-Loop Propagation" default="sons" include="wlpropagation.h" >
 	<travuser>
 	  <node name="Assign" />

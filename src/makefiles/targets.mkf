@@ -134,7 +134,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         deadcoderemoval SSACSE SSALIR \
                         SSALUR SSAInferLI SSAWLUnroll rmcasts \
                         ElimSubDiv wlpropagation UndoElimSubDiv \
-                        reverse_type_upgrade ConstVarPropagation DistributiveLaw \
+                        ConstVarPropagation DistributiveLaw \
                         signature_simplification inlining inferneedcounters \
                         associativity elimtypeconv liftoptflags \
                         wlsimplification copywlelim prfunroll wlselcount \
