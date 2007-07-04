@@ -71,7 +71,18 @@ struct INFO {
     node *rets;
     node *fundef;
     node *current;
-    enum { CSGD_normal, CSGD_checkarg, CSGD_checkret, CSGD_strip } mode;
+    node *preassigns;
+    node *retexprs;
+    enum {
+        CSGD_normal,
+        CSGD_checkarg,
+        CSGD_checkret,
+        CSGD_checkcast,
+        CSGD_checkavis,
+        CSGD_renest,
+        CSGD_denest,
+        CSGD_strip
+    } mode;
     bool isgeneric;
     int retno;
     bool outerdefined;
@@ -86,6 +97,8 @@ struct INFO {
 #define INFO_RETS(n) ((n)->rets)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_CURRENT(n) ((n)->current)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_RETEXPRS(n) ((n)->retexprs)
 #define INFO_MODE(n) ((n)->mode)
 #define INFO_ISGENERIC(n) ((n)->isgeneric)
 #define INFO_RETNO(n) ((n)->retno)
@@ -106,6 +119,8 @@ MakeInfo ()
     INFO_RETS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_CURRENT (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_RETEXPRS (result) = NULL;
     INFO_MODE (result) = CSGD_normal;
     INFO_ISGENERIC (result) = FALSE;
     INFO_RETNO (result) = 0;
@@ -228,6 +243,19 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn info *AnnotateDefinedVars( ntype *type, ntype *def, info *arg_info)
+ *
+ * @brief Checks whether the type variables in the polymorphic type type
+ *        are bound in the type def. If so, the corresponding flags in
+ *        the info structure are set to TRUE.
+ *
+ * @param type     type to check
+ * @param def      binding type
+ * @param arg_info info structure
+ *
+ * @return
+ ******************************************************************************/
 static info *
 AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
 {
@@ -348,14 +376,25 @@ CSGDfundef (node *arg_node, info *arg_info)
     }
 
     /*
-     * 3) process de-/renesting and check compliance of body
+     * 3) process denesting
+     */
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        INFO_MODE (arg_info) = CSGD_denest;
+
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
+
+    /*
+     * 4) process renesting and check compliance of body
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /*
-     * 4) next funef
+     * 5) next funef
      */
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -376,7 +415,8 @@ CSGDarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDarg");
 
-    if (INFO_MODE (arg_info) == CSGD_normal) {
+    switch (INFO_MODE (arg_info)) {
+    case CSGD_normal:
         if (TUisPolymorphic (ARG_NTYPE (arg_node))) {
             INFO_ISGENERIC (arg_info) = TRUE;
             INFO_CURRENT (arg_info) = arg_node;
@@ -387,31 +427,67 @@ CSGDarg (node *arg_node, info *arg_info)
             INFO_MODE (arg_info) = CSGD_normal;
             INFO_CURRENT (arg_info) = NULL;
         }
-    } else if (INFO_MODE (arg_info) == CSGD_checkarg) {
+        break;
+    case CSGD_checkarg:
         /*
          * check whether the argument stored in the info structure complies
          * with the current one
          */
         if (!PolymorphicTypeComplies (ARG_NTYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerror ("In definition of %s: type and shape variables cannot be "
-                      "mixed (in arguments %s and %s).",
-                      CTIitemName (INFO_FUNDEF (arg_info)),
-                      ARG_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
+            CTIerrorLine (NODE_LINE (INFO_CURRENT (arg_info)),
+                          "In definition of %s: type and shape variables cannot be "
+                          "mixed (in arguments %s and %s).",
+                          CTIitemName (INFO_FUNDEF (arg_info)),
+                          ARG_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
         }
-    } else if (INFO_MODE (arg_info) == CSGD_checkret) {
+        break;
+    case CSGD_checkret:
         if (!PolymorphicTypeComplies (RET_TYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerror ("In definition of %s: type and shape variables cannot be "
-                      "mixed (in return type %d and argument %s).",
-                      CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info),
-                      ARG_NAME (arg_node));
+            CTIerrorLine (NODE_LINE (INFO_CURRENT (arg_info)),
+                          "In definition of %s: type and shape variables cannot be "
+                          "mixed (in return type %d and argument %s).",
+                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info),
+                          ARG_NAME (arg_node));
         }
 
         arg_info = AnnotateDefinedVars (RET_TYPE (INFO_CURRENT (arg_info)),
                                         ARG_NTYPE (arg_node), arg_info);
-    } else if (INFO_MODE (arg_info) == CSGD_strip) {
+        break;
+    case CSGD_checkcast:
+        if (!PolymorphicTypeComplies (CAST_NTYPE (INFO_CURRENT (arg_info)),
+                                      ARG_NTYPE (arg_node))) {
+            CTIerrorLine (NODE_LINE (INFO_CURRENT (arg_info)),
+                          "In definition of %s: type and shape variables cannot be "
+                          "mixed (in cast type and argument %s).",
+                          CTIitemName (INFO_FUNDEF (arg_info)), ARG_NAME (arg_node));
+        }
+
+        arg_info = AnnotateDefinedVars (CAST_NTYPE (INFO_CURRENT (arg_info)),
+                                        ARG_NTYPE (arg_node), arg_info);
+        break;
+    case CSGD_checkavis:
+        if (!PolymorphicTypeComplies (AVIS_TYPE (INFO_CURRENT (arg_info)),
+                                      ARG_NTYPE (arg_node))) {
+            CTIerrorLine (NODE_LINE (INFO_CURRENT (arg_info)),
+                          "In definition of %s: type and shape variables cannot be "
+                          "mixed (in declared type of local variable %s and "
+                          "argument %s).",
+                          CTIitemName (INFO_FUNDEF (arg_info)),
+                          AVIS_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
+        }
+
+        arg_info = AnnotateDefinedVars (AVIS_TYPE (INFO_CURRENT (arg_info)),
+                                        ARG_NTYPE (arg_node), arg_info);
+    case CSGD_denest:
+        /* generate preassigns with denesting */
+        break;
+    case CSGD_strip:
         /* remove the de-/renest flags */
+        break;
+    default:
+        DBUG_ASSERT (0, "unknown traversal mode!");
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -435,38 +511,67 @@ CSGDret (node *arg_node, info *arg_info)
 
     INFO_RETNO (arg_info)++;
 
-    if (TUisPolymorphic (RET_TYPE (arg_node))) {
-        INFO_CURRENT (arg_info) = arg_node;
-        INFO_MODE (arg_info) = CSGD_checkret;
-        INFO_OUTERDEFINED (arg_info) = FALSE;
-        INFO_INNERDEFINED (arg_info) = FALSE;
-        INFO_SHAPEDEFINED (arg_info) = FALSE;
+    switch (INFO_MODE (arg_info)) {
+    case CSGD_normal:
+        if (TUisPolymorphic (RET_TYPE (arg_node))) {
+            INFO_CURRENT (arg_info) = arg_node;
+            INFO_MODE (arg_info) = CSGD_checkret;
+            INFO_OUTERDEFINED (arg_info) = FALSE;
+            INFO_INNERDEFINED (arg_info) = FALSE;
+            INFO_SHAPEDEFINED (arg_info) = FALSE;
 
-        if (INFO_ARGS (arg_info) != NULL) {
-            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
-        }
-
-        if (!INFO_OUTERDEFINED (arg_info)) {
-            CTIerror ("In definition of %s: Type variable in polymorphic return "
-                      "type not bound by any argument (return value %d).",
-                      CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
-        }
-
-        if (TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))) {
-            if (!INFO_INNERDEFINED (arg_info)) {
-                CTIerror ("In definition of %s: Inner type variable in polymorphic "
-                          "return type not bound by any argument (return value %d).",
-                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+            if (INFO_ARGS (arg_info) != NULL) {
+                INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
             }
 
-            if (!INFO_SHAPEDEFINED (arg_info)) {
-                CTIerror ("In definition of %s: Shape variable in polymorphic return "
-                          "type not bound by any argument (return value %d).",
-                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+            if (!INFO_OUTERDEFINED (arg_info)) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Type variable in polymorphic return "
+                              "type not bound by any argument (return value %d).",
+                              CTIitemName (INFO_FUNDEF (arg_info)),
+                              INFO_RETNO (arg_info));
             }
-        }
 
-        INFO_MODE (arg_info) = CSGD_normal;
+            if (TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))) {
+                if (!INFO_INNERDEFINED (arg_info)) {
+                    CTIerrorLine (NODE_LINE (arg_node),
+                                  "In definition of %s: Inner type variable in "
+                                  "polymorphic "
+                                  "return type not bound by any argument (return value "
+                                  "%d).",
+                                  CTIitemName (INFO_FUNDEF (arg_info)),
+                                  INFO_RETNO (arg_info));
+                }
+
+                if (!INFO_SHAPEDEFINED (arg_info)) {
+                    CTIerrorLine (NODE_LINE (arg_node),
+                                  "In definition of %s: Shape variable in polymorphic "
+                                  "return "
+                                  "type not bound by any argument (return value %d).",
+                                  CTIitemName (INFO_FUNDEF (arg_info)),
+                                  INFO_RETNO (arg_info));
+                }
+            }
+
+            INFO_MODE (arg_info) = CSGD_normal;
+        }
+        break;
+    case CSGD_renest:
+        if (TUisPolymorphic (RET_TYPE (arg_node))
+            && TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))
+            && TYgetPolyUserReNest (TYgetScalar (RET_TYPE (arg_node)))) {
+
+            /* TODO: generate assignment */
+        }
+        break;
+    case CSGD_strip:
+        /* remove the de-/renest flags */
+    default:
+        DBUG_ASSERT (0, "unknown traversal mode.");
+    }
+
+    if (INFO_RETEXPRS (arg_info) != NULL) {
+        INFO_RETEXPRS (arg_info) = EXPRS_NEXT (INFO_RETEXPRS (arg_info));
     }
 
     if (RET_NEXT (arg_node) != NULL) {
@@ -490,7 +595,58 @@ CSGDcast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDcast");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (TUisPolymorphic (CAST_NTYPE (arg_node))) {
+        INFO_CURRENT (arg_info) = arg_node;
+        INFO_MODE (arg_info) = CSGD_checkcast;
+        INFO_OUTERDEFINED (arg_info) = FALSE;
+        INFO_INNERDEFINED (arg_info) = FALSE;
+        INFO_SHAPEDEFINED (arg_info) = FALSE;
+
+        if (INFO_ARGS (arg_info) != NULL) {
+            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
+        }
+
+        if (!INFO_OUTERDEFINED (arg_info)) {
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "In definition of %s: Type variable in polymorphic cast "
+                          "type not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
+        }
+
+        if (TYisPolyUser (TYgetScalar (CAST_NTYPE (arg_node)))) {
+            if (!INFO_INNERDEFINED (arg_info)) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Inner type variable in polymorphic "
+                              "cast type not bound by any argument.",
+                              CTIitemName (INFO_FUNDEF (arg_info)));
+            }
+
+            if (!INFO_SHAPEDEFINED (arg_info)) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Shape variable in polymorphic cast "
+                              "type not bound by any argument.",
+                              CTIitemName (INFO_FUNDEF (arg_info)));
+            }
+
+            if (TYgetPolyUserDeNest (TYgetScalar (CAST_NTYPE (arg_node)))) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Implicit denesting of polymorphic "
+                              "user type not allowed in cast expressions.",
+                              CTIitemName (INFO_FUNDEF (arg_info)));
+            }
+
+            if (TYgetPolyUserReNest (TYgetScalar (CAST_NTYPE (arg_node)))) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Implicit renesting of polymorphic "
+                              "user type not allowed in cast expressions.",
+                              CTIitemName (INFO_FUNDEF (arg_info)));
+            }
+        }
+
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
+
+    CAST_EXPR (arg_node) = TRAVdo (CAST_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -507,7 +663,58 @@ CSGDavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDavis");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (TUisPolymorphic (AVIS_TYPE (arg_node))) {
+        INFO_CURRENT (arg_info) = arg_node;
+        INFO_MODE (arg_info) = CSGD_checkavis;
+        INFO_OUTERDEFINED (arg_info) = FALSE;
+        INFO_INNERDEFINED (arg_info) = FALSE;
+        INFO_SHAPEDEFINED (arg_info) = FALSE;
+
+        if (INFO_ARGS (arg_info) != NULL) {
+            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
+        }
+
+        if (!INFO_OUTERDEFINED (arg_info)) {
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "In definition of %s: Type variable in polymorphic cast "
+                          "type not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
+        }
+
+        if (TYisPolyUser (TYgetScalar (AVIS_TYPE (arg_node)))) {
+            if (!INFO_INNERDEFINED (arg_info)) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Inner type variable in polymorphic "
+                              "type of local variable %s not bound by any argument.",
+                              CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+            }
+
+            if (!INFO_SHAPEDEFINED (arg_info)) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Shape variable in polymorphic type "
+                              "of local variable %s not bound by any argument.",
+                              CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+            }
+
+            if (TYgetPolyUserDeNest (TYgetScalar (AVIS_TYPE (arg_node)))) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Implicit denesting of polymorphic "
+                              "user "
+                              "type not allowed in type declaration of local variable "
+                              "%s.",
+                              CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+            }
+
+            if (TYgetPolyUserReNest (TYgetScalar (AVIS_TYPE (arg_node)))) {
+                CTIerrorLine (NODE_LINE (arg_node),
+                              "In definition of %s: Implicit renesting of polymorphic "
+                              "user "
+                              "type not allowed in type declaration of local variable "
+                              "%s.",
+                              CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -524,7 +731,16 @@ CSGDreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDreturn");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+
+    if (INFO_RETS (arg_info) == NULL) {
+        INFO_RETEXPRS (arg_info) = RETURN_EXPRS (arg_node);
+        INFO_MODE (arg_info) = CSGD_denest;
+
+        INFO_RETS (arg_info) = TRAVdo (INFO_RETS (arg_info), arg_info);
+
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -539,9 +755,24 @@ CSGDreturn (node *arg_node, info *arg_info)
 node *
 CSGDassign (node *arg_node, info *arg_info)
 {
+    node *preassigns = NULL;
+
     DBUG_ENTER ("CSGDassign");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        preassigns = INFO_PREASSIGNS (arg_info);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    if (preassigns != NULL) {
+        arg_node = TCappendAssign (arg_node, preassigns);
+    }
 
     DBUG_RETURN (arg_node);
 }
