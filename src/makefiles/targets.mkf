@@ -111,7 +111,8 @@ libsac2c_typecheck   := new_typecheck new_types user_types create_wrappers \
                         split_wrappers dispatchfuncalls insert_type_conv \
                         update_wrapper_type free_dispatch_information \
                         elim_alpha_types elim_bottom_types extend_lac_funs \
-                        enforce_specialization
+                        enforce_specialization \
+                        specialization_oracle_static_shape_knowledge
 
 libsac2c_types       := 
 

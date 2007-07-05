@@ -84,6 +84,16 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
+        <travuser>
+          <node name="Const" />
+          <node name="Id" />
+          <node name="Prf" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="With" />
+        </travuser>
+      </traversal>
       <traversal id="WLLOM" name="Withloop lock optimization marking" default="sons" include="wl_lock_optimization_marking.h" >
         <travuser>
           <node name="With" />
@@ -3092,6 +3102,9 @@
         <flag name="WasUpgraded">
 	  <description>TRUE iff the return type has changed during the last run of type-upgrade</description>
 	</flag>
+        <flag name="iterate" default="TRUE">
+          <description>TRUE iff this function have to be iterated (again) due to a fixpoint-iteration in SOSSK</description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -5076,6 +5089,18 @@
                 <any />
                 <phases>
                   <phase name="unq" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="demand">
+          <type name="Constant">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>
