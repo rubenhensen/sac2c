@@ -12,13 +12,11 @@
 #include "dbug.h"
 #include "memory.h"
 
-typedef node *(*trav_p) (node *, info *);
-
 /**
  * INFO structure
  */
 struct INFO {
-    trav_p maptrav;
+    travfun_p maptrav;
     info *extinfo;
 };
 
@@ -78,7 +76,7 @@ MFTfundef (node *arg_node, info *arg_info)
  * traversal start function
  */
 node *
-MFTdoMapFunTrav (node *arg_node, info *extinfo, trav_p maptrav)
+MFTdoMapFunTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 {
     info *localinfo;
 

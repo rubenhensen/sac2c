@@ -1,9 +1,4 @@
-/*
- * $Log$
- * Revision 1.1  2005/09/04 12:10:57  ktr
- * Initial revision
- *
- */
+/* $Id$ */
 
 #ifndef _SAC_MAP_FUN_TRAV_H_
 #define _SAC_MAP_FUN_TRAV_H_
@@ -12,7 +7,6 @@
 
 extern node *MFTfundef (node *arg_node, info *arg_info);
 
-extern node *MFTdoMapFunTrav (node *fundef, info *arg_info,
-                              node *(*trav) (node *, info *));
+extern node *MFTdoMapFunTrav (node *fundef, info *arg_info, travfun_p trav);
 
-#endif /* _SAC_MAP_LAC_FUNS_H_ */
+#endif /* _SAC_MAP_FUN_TRAV_H_ */

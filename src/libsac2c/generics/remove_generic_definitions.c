@@ -29,7 +29,20 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "tree_basic.h"
+#include "map_fun_trav.h"
 #include "free.h"
+
+static node *
+RemoveGenericFun (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("RemoveGenericFun");
+
+    if (FUNDEF_ISGENERIC (fundef)) {
+        fundef = FREEdoFreeNode (fundef);
+    }
+
+    DBUG_RETURN (fundef);
+}
 
 /** <!--********************************************************************-->
  *
@@ -49,6 +62,9 @@ RGDdoRemoveGenericDefinitions (node *syntax_tree)
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) = N_module),
                  "RGDdoRemoveGenericDefinitions expects a module node as argument!");
+
+    MODULE_FUNS (syntax_tree)
+      = MFTdoMapFunTrav (MODULE_FUNS (syntax_tree), NULL, RemoveGenericFun);
 
     DBUG_RETURN (syntax_tree);
 }

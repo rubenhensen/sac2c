@@ -480,6 +480,7 @@ CSGDarg (node *arg_node, info *arg_info)
 
         arg_info = AnnotateDefinedVars (AVIS_TYPE (INFO_CURRENT (arg_info)),
                                         ARG_NTYPE (arg_node), arg_info);
+        break;
     case CSGD_denest:
         /* generate preassigns with denesting */
         break;
@@ -566,6 +567,7 @@ CSGDret (node *arg_node, info *arg_info)
         break;
     case CSGD_strip:
         /* remove the de-/renest flags */
+        break;
     default:
         DBUG_ASSERT (0, "unknown traversal mode.");
     }
@@ -731,11 +733,13 @@ CSGDreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSGDreturn");
 
-    RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+    }
 
-    if (INFO_RETS (arg_info) == NULL) {
+    if (INFO_RETS (arg_info) != NULL) {
         INFO_RETEXPRS (arg_info) = RETURN_EXPRS (arg_node);
-        INFO_MODE (arg_info) = CSGD_denest;
+        INFO_MODE (arg_info) = CSGD_renest;
 
         INFO_RETS (arg_info) = TRAVdo (INFO_RETS (arg_info), arg_info);
 
