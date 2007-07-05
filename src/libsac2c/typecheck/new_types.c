@@ -232,7 +232,9 @@ struct NTYPE {
 #define UNION_MEMBER(n, i) (n->sons[i])
 #define PROD_MEMBER(n, i) (n->sons[i])
 
-#define FUN_IBASE(n, i) (n->sons[i])
+#define FUN_POLY(n) (n->sons[0])
+#define FUN_UPOLY(n) (n->sons[1])
+#define FUN_IBASE(n, i) (n->sons[i + 2])
 
 #define IBASE_GEN(n) (n->sons[0])
 #define IBASE_SCAL(n) (n->sons[1])
@@ -1251,10 +1253,10 @@ TYgetBottomError (ntype *type)
  *  by means of a given argument type.
  *  In general, we have the following structure :
  *
- *                           TC_fun
- *                          /  ...
- *                         /
- *                  TC_ibase -- scalar type (e.g. INT)
+ *         TC_fun
+ *       /   |    \  ...
+ *      /<a> |<a=> \
+ *   {trees here!}  TC_ibase -- scalar type (e.g. INT)
  *                 /    |    \
  *                /[]   |[*]  \
  *                             TC_iarr
@@ -1386,8 +1388,14 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     IBASE_BASE (base) = TYgetScalar (arg);
     IBASE_IARR (base) = arr;
 
-    fun = MakeNtype (TC_fun, 1);
-    FUN_IBASE (fun, 0) = base;
+    fun = MakeNtype (TC_fun, 3);
+    if (TYisPoly (IBASE_BASE (base))) {
+        FUN_POLY (fun) = base;
+    } else if (TYisPolyUser (IBASE_BASE (base))) {
+        FUN_UPOLY (fun) = base;
+    } else {
+        FUN_IBASE (fun, 0) = base;
+    }
 
     /*
      * the only son of the arg type has been reused, now we free its constructor!
@@ -1444,7 +1452,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
     if (fun != NULL) {
         switch (NTYPE_CON (fun)) {
         case TC_fun:
-            for (i = 0; i < NTYPE_ARITY (fun);) {
+            for (i = 2; i < NTYPE_ARITY (fun);) {
                 NTYPE_SON (fun, i)
                   = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
                 if (NTYPE_SON (fun, i) == NULL) {
@@ -1870,7 +1878,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
         res = fun2;
         switch (NTYPE_CON (fun1)) {
         case TC_fun:
-            fun2 = FindAndMergeSons (fun1, fun2, 0, CmpIbase);
+            fun2 = FindAndMergeSons (fun1, fun2, 2, CmpIbase);
             break;
         case TC_ibase:
             AdjustSons (&fun1, &fun2, 1, 3);
@@ -2036,8 +2044,8 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
              * basetype.
              */
             for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
-                FUN_IBASE (type, cnt)
-                  = mapFunctionInstances (FUN_IBASE (type, cnt), mapfun, info);
+                NTYPE_SON (type, cnt)
+                  = mapFunctionInstances (NTYPE_SON (type, cnt), mapfun, info);
             }
             break;
 
@@ -2097,47 +2105,49 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
 
     DBUG_ENTER ("foldFunctionInstances");
 
-    switch (NTYPE_CON (type)) {
-    case TC_ires:
-        /*
-         * we want to walk down until we reach the leaf (which is
-         * a product type). Once we arrived there, we know that
-         * this IRES node contains all instances for the
-         * given basetype combination.
-         */
-        if (TYisProd (IRES_TYPE (type))) {
-            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                result = foldfun (IRES_FUNDEF (type, cnt), result);
+    if (type != NULL) {
+        switch (NTYPE_CON (type)) {
+        case TC_ires:
+            /*
+             * we want to walk down until we reach the leaf (which is
+             * a product type). Once we arrived there, we know that
+             * this IRES node contains all instances for the
+             * given basetype combination.
+             */
+            if (TYisProd (IRES_TYPE (type))) {
+                for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                    result = foldfun (IRES_FUNDEF (type, cnt), result);
+                }
+            } else {
+                result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
             }
-        } else {
-            result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
+            break;
+            break;
+
+        case TC_fun:
+            /*
+             * starting at a fun node, we walk down the tree for every
+             * basetype.
+             */
+            for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+                result = foldFunctionInstances (NTYPE_SON (type, cnt), foldfun, result);
+            }
+            break;
+
+        case TC_ibase:
+            /*
+             * we only walk down the [*] edge, as this will contain
+             * all instances
+             */
+            result = foldFunctionInstances (IBASE_GEN (type), foldfun, result);
+            break;
+
+        default:
+            DBUG_ASSERT (0, "foldFunctionInstances passed a typeconstructur it never was "
+                            "intended to pass!");
+
+            result = NULL;
         }
-        break;
-        break;
-
-    case TC_fun:
-        /*
-         * starting at a fun node, we walk down the tree for every
-         * basetype.
-         */
-        for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
-            result = foldFunctionInstances (FUN_IBASE (type, cnt), foldfun, result);
-        }
-        break;
-
-    case TC_ibase:
-        /*
-         * we only walk down the [*] edge, as this will contain
-         * all instances
-         */
-        result = foldFunctionInstances (IBASE_GEN (type), foldfun, result);
-        break;
-
-    default:
-        DBUG_ASSERT (0, "foldFunctionInstances passed a typeconstructur it never was "
-                        "intended to pass!");
-
-        result = NULL;
     }
 
     DBUG_RETURN (result);
@@ -2194,10 +2204,16 @@ TYgetArity (ntype *fun)
     DBUG_ENTER ("TYgetArity");
 
     DBUG_ASSERT (NTYPE_CON (fun) == TC_fun, "TYgetArity applied to non function type");
-    DBUG_ASSERT (NTYPE_ARITY (fun) >= 1, "TC_fun with (ARITY < 1) found!");
-    DBUG_ASSERT ((FUN_IBASE (fun, 0) != NULL), "TC_fun with (NTYPE_SON == NULL) found!");
-
-    next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
+    DBUG_ASSERT (NTYPE_ARITY (fun) >= 3, "TC_fun with (ARITY < 3) found!");
+    if (FUN_IBASE (fun, 0) != NULL) {
+        next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
+    } else if (FUN_POLY (fun) != NULL) {
+        next = IRES_TYPE (IBASE_GEN (FUN_POLY (fun)));
+    } else if (FUN_UPOLY (fun) != NULL) {
+        next = IRES_TYPE (IBASE_GEN (FUN_UPOLY (fun)));
+    } else {
+        DBUG_ASSERT (FALSE, "TC_fun without bases found!");
+    }
 
     if (NTYPE_CON (next) == TC_fun) {
         res = 1 + TYgetArity (next);
@@ -2695,11 +2711,11 @@ FindIbase (ntype *fun, ntype *scalar)
 
     DBUG_ENTER ("FindIbase");
 
-    while ((i < NTYPE_ARITY (fun))
+    while ((i < NTYPE_ARITY (fun) - 2)
            && !TYeqTypes (IBASE_BASE (FUN_IBASE (fun, i)), scalar)) {
         i++;
     }
-    if (i < NTYPE_ARITY (fun)) {
+    if (i < (NTYPE_ARITY (fun) - 2)) {
         res = FUN_IBASE (fun, i);
     }
 
@@ -3051,7 +3067,7 @@ TYcontainsAlpha (ntype *type)
         switch (NTYPE_CON (type)) {
         case TC_fun:
             for (cnt = 0; ((cnt < NTYPE_ARITY (type)) && !result); cnt++) {
-                result = TYcontainsAlpha (FUN_IBASE (type, cnt));
+                result = TYcontainsAlpha (NTYPE_SON (type, cnt));
             }
             break;
 
@@ -4711,6 +4727,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
     shape *empty_shape;
     int i;
     int scal_len = 0;
+    bool sep_needed = FALSE;
 
     DBUG_ENTER ("FunType2String");
 
@@ -4720,12 +4737,16 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         buf = SBUFprintf (buf, "{ ");
         offset += 2;
         for (i = 0; i < NTYPE_ARITY (type); i++) {
-            tmp_str = FunType2String (NTYPE_SON (type, i), scal_str, multiline, offset);
-            if (i > 0) {
-                buf = PrintFunSep (buf, multiline, offset);
+            if (NTYPE_SON (type, i) != NULL) {
+                tmp_str
+                  = FunType2String (NTYPE_SON (type, i), scal_str, multiline, offset);
+                if (sep_needed) {
+                    buf = PrintFunSep (buf, multiline, offset);
+                }
+                buf = SBUFprint (buf, tmp_str);
+                tmp_str = MEMfree (tmp_str);
+                sep_needed = TRUE;
             }
-            buf = SBUFprint (buf, tmp_str);
-            tmp_str = MEMfree (tmp_str);
         }
         buf = SBUFprintf (buf, "}");
         break;
@@ -5963,7 +5984,7 @@ FindBase (ntype *scalar, ntype *fun)
 
     DBUG_ENTER ("FindBase");
 
-    for (i = 0; i < NTYPE_ARITY (fun); i++) {
+    for (i = 2; i < NTYPE_ARITY (fun); i++) {
         if (TYeqTypes (scalar, IBASE_BASE (NTYPE_SON (fun, i)))) {
             res = i;
         }
@@ -6007,7 +6028,11 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
         switch (NTYPE_CON (type)) {
 
         case TC_fun:
-            DBUG_ASSERT ((NTYPE_ARITY (type) >= 1), "TC_fun with (ARITY < 1) found!");
+            DBUG_ASSERT ((NTYPE_ARITY (type) >= 3), "TC_fun with (ARITY < 3) found!");
+            DBUG_ASSERT ((FUN_POLY (type) == NULL),
+                         "SplitWrapperType called in the presence of poly version!");
+            DBUG_ASSERT ((FUN_UPOLY (type) == NULL),
+                         "SplitWrapperType called in the presence of poly-user version!");
 
             DBUG_EXECUTE ("NTY_SPLIT",
                           tmp_str = TYtype2DebugString (frame[level], FALSE, 0););
@@ -6030,15 +6055,17 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                                         pathes_remaining);
 
                 DBUG_PRINT ("NTY_SPLIT", ("--adding " F_PTR " to " F_PTR, son, new_type));
+                new_type = MakeNewSon (new_type, NULL);
+                new_type = MakeNewSon (new_type, NULL);
                 new_type = MakeNewSon (new_type, son);
 
                 if (*pathes_remaining == 1) {
-                    *pathes_remaining = NTYPE_ARITY (type);
+                    *pathes_remaining = NTYPE_ARITY (type) - 2;
                     DBUG_PRINT ("NTY_SPLIT", ("--deleting " F_PTR " from " F_PTR,
                                               NTYPE_SON (type, pos), type));
                     type = DeleteSon (type, pos);
                 } else {
-                    *pathes_remaining *= NTYPE_ARITY (type);
+                    *pathes_remaining *= NTYPE_ARITY (type) - 2;
                 }
             }
             break;
@@ -6173,7 +6200,7 @@ TYgetWrapperRetType (ntype *type)
     DBUG_ASSERT ((type != NULL), "no type found!");
 
     if (TYisFun (type)) {
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multiple FUN_IBASE found!");
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
         DBUG_ASSERT ((type != NULL), "IBASE_GEN not found!");
@@ -6204,7 +6231,7 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
     if (args != NULL) {
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
         DBUG_ASSERT ((TYisFun (type)), "no TC_fun found!");
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multiple FUN_IBASE found!");
 
         AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
 
@@ -6771,7 +6798,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
     switch (TYgetConstr (type)) {
     case TC_fun:
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multipe FUN_IBASE found!");
         assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, funname, arg,
                                      args, vardecs, new_vardecs);
         break;
@@ -7159,7 +7186,7 @@ SerializeFunType (FILE *file, ntype *type)
     for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
         fprintf (file, ", ");
 
-        TYserializeType (file, FUN_IBASE (type, cnt));
+        TYserializeType (file, NTYPE_SON (type, cnt));
     }
 
     fprintf (file, ")");
@@ -7589,7 +7616,7 @@ TYdeserializeType (typeconstr con, ...)
         result = MakeNtype (TC_fun, va_arg (args, int));
 
         for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
-            FUN_IBASE (result, cnt) = va_arg (args, ntype *);
+            NTYPE_SON (result, cnt) = va_arg (args, ntype *);
         }
 
         va_end (args);
