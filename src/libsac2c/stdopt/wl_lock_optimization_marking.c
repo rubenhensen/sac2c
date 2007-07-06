@@ -184,7 +184,7 @@ WLLOMids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLLOMids");
 
-    node *ids_avis = ID_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
+    node *ids_avis = IDS_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
 
     if (INFO_WB (arg_info) == FALSE) { /*On its way down...*/
         if (INFO_MARK_NUP (arg_info) == TRUE) {
