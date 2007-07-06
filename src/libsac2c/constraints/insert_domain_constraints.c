@@ -39,10 +39,16 @@ typedef enum { IDC_init, IDC_insert, IDC_finalize } trav_mode;
 struct INFO {
     bool all;
     trav_mode mode;
+    int counter;
+    node *post;
+    node *vardecs;
 };
 
 #define INFO_ALL(n) ((n)->all)
 #define INFO_MODE(n) ((n)->mode)
+#define INFO_COUNTER(n) ((n)->counter)
+#define INFO_POSTASSIGN(n) ((n)->post)
+#define INFO_VARDECS(n) ((n)->vardecs)
 
 static info *
 MakeInfo ()
@@ -55,6 +61,9 @@ MakeInfo ()
 
     INFO_ALL (result) = FALSE;
     INFO_MODE (result) = IDC_init;
+    INFO_COUNTER (result) = 0;
+    INFO_POSTASSIGN (result) = NULL;
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -100,6 +109,49 @@ FindAvisOfLastDefinition (node *exprs)
     DBUG_RETURN (last_avis);
 }
 
+node *
+CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
+{
+    node *avis;
+    DBUG_ENTER ("CreateNewVarAndInitiateRenaming");
+    avis = ID_AVIS (id);
+    DBUG_RETURN (avis);
+}
+
+info *
+BuildTypeConstraint (node *pavis, node *expr, info *arg_info)
+{
+    node *avis, *assign;
+
+    DBUG_ENTER ("BuildTypeConstraint");
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (pavis, INFO_VARDECS (arg_info));
+    avis = CreateNewVarAndInitiateRenaming (PRF_ARG2 (expr), arg_info);
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, TBmakeIds (pavis, NULL)), expr),
+                           INFO_POSTASSIGN (arg_info));
+    AVIS_SSAASSIGN (pavis) = assign;
+    AVIS_SSAASSIGN (avis) = assign;
+
+    INFO_POSTASSIGN (arg_info) = assign;
+
+    DBUG_RETURN (arg_info);
+}
+
+info *
+BuildPrfConstraint (node *pavis, node *expr, info *arg_info)
+{
+    DBUG_ENTER ("BuildPrfConstraint");
+    DBUG_RETURN (arg_info);
+}
+
+info *
+BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
+{
+    DBUG_ENTER ("BuildUdfConstraint");
+    DBUG_RETURN (arg_info);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn node *IDCfundef( node *arg_node, info *arg_info)
@@ -109,6 +161,15 @@ node *
 IDCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCfundef");
+
+    INFO_COUNTER (arg_info) = 1;
+
+    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+    if (INFO_ALL (arg_info) && (FUNDEF_NEXT (arg_node) != NULL)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -120,7 +181,78 @@ IDCfundef (node *arg_node, info *arg_info)
 node *
 IDCassign (node *arg_node, info *arg_info)
 {
+    node *post_assign;
+
     DBUG_ENTER ("IDCassign");
+
+    switch (INFO_MODE (arg_info)) {
+    case IDC_init:
+        ASSIGN_POS (arg_node) = INFO_COUNTER (arg_info);
+        INFO_COUNTER (arg_info)++;
+
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        break;
+    case IDC_finalize:
+        ASSIGN_POS (arg_node) = 0;
+
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        break;
+    default:
+        break;
+    }
+    post_assign = INFO_POSTASSIGN (arg_info);
+    INFO_POSTASSIGN (arg_info) = NULL;
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    if (post_assign != NULL) {
+        ASSIGN_NEXT (arg_node) = TCappendAssign (post_assign, ASSIGN_NEXT (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCids( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCids (node *arg_node, info *arg_info)
+{
+    node *expr, *avis, *constraint;
+
+    DBUG_ENTER ("IDCids");
+
+    if (INFO_MODE (arg_info) == IDC_insert) {
+
+        avis = IDS_AVIS (arg_node);
+        if (AVIS_CONSTRTYPE (avis) != NULL) {
+            expr = TCmakePrf2 (F_type_conv, TBmakeType (AVIS_CONSTRTYPE (avis)),
+                               TBmakeId (avis));
+            arg_info = BuildTypeConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
+        }
+
+        while (AVIS_CONSTRSET (avis) != NULL) {
+            constraint = AVIS_CONSTRSET (avis);
+            if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
+                arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                               CONSTRAINT_EXPR (constraint), arg_info);
+            } else {
+                arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                               CONSTRAINT_EXPR (constraint), arg_info);
+            }
+            AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
+            constraint = FREEdoFreeNode (constraint);
+        }
+
+        if (IDS_NEXT (arg_node) != NULL) {
+            IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+        }
+    }
+
     DBUG_RETURN (arg_node);
 }
 
