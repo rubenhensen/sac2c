@@ -3471,8 +3471,20 @@
       </attributes>
       <flags>
         <flag name="IsUnused" />
-        <flag name="Nup" default="FALSE" />
-        <flag name="Ndown" default="FALSE" />
+        <flag name="IsNotAllowedToBeMovedUp" default="FALSE">
+          <description>
+            This flag is used during the "Withloop Lock Optimization" process.
+            It indicates that certain assignments are not allowed to be moved
+            above the global object-lock.
+          </description>
+        </flag>
+        <flag name="IsNotAllowedToBeMovedDown" default="FALSE">
+          <description>
+            This flag is used during the "Withloop Lock Optimization" process.
+            It indicates that certain assignments are not allowed to be moved
+            below the global object-lock release.
+          </description>
+        </flag>
       </flags>
       <checks>
         <check name="CHKassignAvisSSAAssign" />
@@ -5159,8 +5171,20 @@
           selections.
           </description>
         </flag>
-        <flag name="Nup" default="FALSE" />
-        <flag name="Ndown" default="FALSE" />
+        <flag name="BelongingAssignmentIsNotAllowedToBeMovedUp" default="FALSE">
+          <description>
+            This flag is used during the "Withloop Lock Optimization" process.
+            It indicates that the belonging assignment is not allowed to be
+            moved above the global object-lock.
+          </description>
+        </flag>
+        <flag name="BelongingAssignmentIsNotAllowedToBeMovedDown" default="FALSE">
+          <description>
+            This flag is used during the "Withloop Lock Optimization" process.
+            It indicates that the belonging assignment is not allowed to be
+            moved below the global object-lock release.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--

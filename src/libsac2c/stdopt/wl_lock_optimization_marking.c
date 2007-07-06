@@ -148,14 +148,16 @@ WLLOMid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLLOMid");
 
+    node *id_avis = ID_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
+
     if (INFO_WB (arg_info) == FALSE) {
-        if (AVIS_NUP (ID_AVIS (arg_node)) == TRUE) {
+        if (AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDUP (id_avis) == TRUE) {
             INFO_FV (arg_info) = TRUE;
         }
     } else { /*WB == TRUE*/
         if (INFO_MARK_NDOWN (arg_info) == TRUE) {
             DBUG_PRINT ("WILLOM", ("Mark ID %s", ID_NAME (arg_node)));
-            AVIS_NDOWN (ID_AVIS (arg_node)) = TRUE;
+            AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDDOWN (id_avis) = TRUE;
         }
     }
 
@@ -182,13 +184,15 @@ WLLOMids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLLOMids");
 
+    node *ids_avis = ID_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
+
     if (INFO_WB (arg_info) == FALSE) { /*On its way down...*/
         if (INFO_MARK_NUP (arg_info) == TRUE) {
             DBUG_PRINT ("WLLOM", ("Mark IDS %s", IDS_NAME (arg_node)));
-            AVIS_NUP (IDS_AVIS (arg_node)) = TRUE;
+            AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDUP (ids_avis) = TRUE;
         }
     } else { /*WB == TRUE*/
-        if (AVIS_NDOWN (IDS_AVIS (arg_node)) == TRUE) {
+        if (AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDDOWN (ids_avis) == TRUE) {
             INFO_FV (arg_info) = TRUE;
         }
     }
@@ -222,7 +226,7 @@ WLLOMassign (node *arg_node, info *arg_info)
     /*If it is the right WL-level and the INSTR contains variables which depend
      * on an object in the right way, mark assignment as !UP*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NUP (arg_info) == TRUE)) {
-        ASSIGN_NUP (arg_node) = TRUE;
+        ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node) = TRUE;
         DBUG_PRINT ("WLLOM",
                     ("!!! Marked %s=... entirely (!UP)", ASSIGN_NAME (arg_node)));
 
@@ -245,7 +249,7 @@ WLLOMassign (node *arg_node, info *arg_info)
     /*If it is the right WL-level and the INSTR contains variables which depend
      * on an object in the right way, mark assignment as !DOWN*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NDOWN (arg_info) == TRUE)) {
-        ASSIGN_NDOWN (arg_node) = TRUE;
+        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node) = TRUE;
         DBUG_PRINT ("WLLOM",
                     ("!!! Marked %s=... entirely (!DOWN)", ASSIGN_NAME (arg_node)));
 

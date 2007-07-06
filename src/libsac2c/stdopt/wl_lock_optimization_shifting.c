@@ -176,13 +176,13 @@ WLLOSassign (node *arg_node, info *arg_info)
                              "There should be at least a prop_obj_out!");
                 ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
             } else if ((INFO_FOUND_LOCK (arg_info) == TRUE)
-                       && ((ASSIGN_NUP (arg_node) == FALSE)
-                           || (ASSIGN_NDOWN (arg_node) == FALSE))) {
+                       && ((ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node) == FALSE)
+                           || (ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node) == FALSE))) {
 
                 next_node = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = NULL;
 
-                if (ASSIGN_NUP (arg_node) == FALSE) {
+                if (ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node) == FALSE) {
                     DBUG_PRINT ("WLLOS", ("^^^Insert %s", ASSIGN_NAME (arg_node)));
                     INFO_BEFORE_LOCK (arg_info)
                       = TCappendAssign (INFO_BEFORE_LOCK (arg_info), arg_node);
