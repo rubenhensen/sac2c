@@ -741,16 +741,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   </xsl:template>
 
   <xsl:template match="any" mode="targets">
-    <xsl:if test="position() != 1">
-      <br />
-    </xsl:if>
     <xsl:value-of select="'Any'" />
+    <br />
   </xsl:template>
 
   <xsl:template match="set" mode="targets">
-    <xsl:if test="position() != 1">
-      <br />
-    </xsl:if>
     <xsl:element name="a">
       <xsl:attribute name="href">
         <xsl:value-of select="'#'" />
@@ -762,12 +757,10 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:with-param>
       </xsl:call-template>}
     </xsl:element>
+    <br />
   </xsl:template>
 
   <xsl:template match="node" mode="targets">
-    <xsl:if test="position() != 1">
-      <br />
-    </xsl:if>
     <xsl:element name="a">
       <xsl:attribute name="href">
         <xsl:value-of select="'#'" />
@@ -779,6 +772,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:with-param>
       </xsl:call-template>
     </xsl:element>
+    <br />
   </xsl:template>
 
   <!--
