@@ -3042,6 +3042,23 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="FixpointIterationCounter" default="0">
+          <description>
+            This counter counts which round of fixpoint iteration was the last
+            processed one during the specialization oracle for static shape
+            knowledge.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="tc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsExported">
@@ -3102,8 +3119,16 @@
         <flag name="WasUpgraded">
 	  <description>TRUE iff the return type has changed during the last run of type-upgrade</description>
 	</flag>
-        <flag name="iterate" default="TRUE">
-          <description>TRUE iff this function have to be iterated (again) due to a fixpoint-iteration in SOSSK</description>
+        <flag name="FixpointFound" default="FALSE">
+          <description>
+            TRUE iff the fixpoint of this function has been found in SOSSK.
+          </description>
+        </flag>
+        <flag name="HasChanged" default="FALSE">
+          <description>
+            TRUE if demand of the arguments have changed in the last iteration
+            round in SOSSK.
+          </description>
         </flag>
       </flags>
     </node>
@@ -5145,7 +5170,11 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="demand">
+        <attribute name="Demand">
+          <description>
+            This attribute constitutes the demand of a variable during the
+            specializing oracle for static shape knowledge.
+          </description>
           <type name="Constant">
             <targets>
               <target mandatory="no">
