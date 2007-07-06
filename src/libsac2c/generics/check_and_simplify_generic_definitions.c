@@ -380,10 +380,25 @@ CSGDfundef (node *arg_node, info *arg_info)
      */
     if (FUNDEF_ARGS (arg_node) != NULL) {
         INFO_MODE (arg_info) = CSGD_denest;
-
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-
         INFO_MODE (arg_info) = CSGD_normal;
+#if 0
+    if (INFO_PREASSIGNS( arg_info) != NULL) {
+      /*
+       * there needs to be a body here, as all real functions do have bodies!
+       * If this function is used and thus bodyless, the implicit denesting
+       * should have been handled already!
+       */
+      DBUG_ASSERT( (FUNDEF_BODY( arg_node) != NULL),
+          "found polymorphic args with implicit denesting in a bodyless "
+          "function!");
+
+      BLOCK_INSTR( FUNDEF_BODY( arg_node)) =
+        TCappendAssign( INFO_PREASSIGNS( arg_info),
+                        BLOCK_INSTR( FUNDEF_BODY( arg_node)));
+      INFO_PREASSIGNS( arg_info) = NULL;
+    }
+#endif
     }
 
     /*
@@ -392,6 +407,18 @@ CSGDfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
+
+    /*
+     * 5) strip nesting information from types
+     */
+    INFO_MODE (arg_info) = CSGD_strip;
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+    INFO_MODE (arg_info) = CSGD_normal;
 
     /*
      * 5) next funef
@@ -482,10 +509,26 @@ CSGDarg (node *arg_node, info *arg_info)
                                         ARG_NTYPE (arg_node), arg_info);
         break;
     case CSGD_denest:
-        /* generate preassigns with denesting */
+        if (TYisPolyUser (TYgetScalar (ARG_NTYPE (arg_node)))
+            && TYgetPolyUserDeNest (TYgetScalar (ARG_NTYPE (arg_node)))) {
+            ntype *poly = TYgetScalar (ARG_NTYPE (arg_node));
+
+            INFO_PREASSIGNS (arg_info) = TCappendAssign (
+              INFO_PREASSIGNS (arg_info),
+              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (ARG_NAME (arg_node)), NULL),
+                                       TBmakeCast (TYmakeAUD (TYmakePolyType (
+                                                     STRcpy (TYgetPolyUserInner (poly)))),
+                                                   TBmakeSpid (NULL, STRcpy (ARG_NAME (
+                                                                       arg_node))))),
+                            NULL));
+        }
         break;
     case CSGD_strip:
-        /* remove the de-/renest flags */
+        if (TUisPolymorphic (ARG_NTYPE (arg_node))) {
+            ntype *tmp = ARG_NTYPE (arg_node);
+            ARG_NTYPE (arg_node) = TUstripImplicitNestingOperations (tmp);
+            tmp = TYfreeType (tmp);
+        }
         break;
     default:
         DBUG_ASSERT (0, "unknown traversal mode!");
@@ -558,15 +601,29 @@ CSGDret (node *arg_node, info *arg_info)
         }
         break;
     case CSGD_renest:
-        if (TUisPolymorphic (RET_TYPE (arg_node))
-            && TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))
+        if (TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))
             && TYgetPolyUserReNest (TYgetScalar (RET_TYPE (arg_node)))) {
+            char *newvar = TRAVtmpVar ();
+            ntype *poly = TYgetScalar (RET_TYPE (arg_node));
 
-            /* TODO: generate assignment */
+            INFO_PREASSIGNS (arg_info) = TCappendAssign (
+              INFO_PREASSIGNS (arg_info),
+              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (newvar), NULL),
+                                       TBmakeCast (TYmakeAUD (TYmakePolyType (
+                                                     STRcpy (TYgetPolyUserOuter (poly)))),
+                                                   EXPRS_EXPR (
+                                                     INFO_RETEXPRS (arg_info)))),
+                            NULL));
+
+            EXPRS_EXPR (INFO_RETEXPRS (arg_info)) = TBmakeSpid (NULL, newvar);
         }
         break;
     case CSGD_strip:
-        /* remove the de-/renest flags */
+        if (TUisPolymorphic (RET_TYPE (arg_node))) {
+            ntype *tmp = RET_TYPE (arg_node);
+            RET_TYPE (arg_node) = TUstripImplicitNestingOperations (tmp);
+            tmp = TYfreeType (tmp);
+        }
         break;
     default:
         DBUG_ASSERT (0, "unknown traversal mode.");
@@ -775,7 +832,7 @@ CSGDassign (node *arg_node, info *arg_info)
     }
 
     if (preassigns != NULL) {
-        arg_node = TCappendAssign (arg_node, preassigns);
+        arg_node = TCappendAssign (preassigns, arg_node);
     }
 
     DBUG_RETURN (arg_node);

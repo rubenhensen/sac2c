@@ -564,6 +564,44 @@ TUisPolymorphic (ntype *type)
     DBUG_RETURN (TYisPoly (type) || TYisPolyUser (type));
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn ntype *TUstripImplicitNestingOperations( ntype *poly)
+ *
+ * @brief Removes implicit nesting operations from PolyUser types.
+ *
+ * @param poly a (possibly) polymorphic user type
+ *
+ * @return copy of that type with no implicit nesting/denesting.
+ ******************************************************************************/
+extern ntype *
+TUstripImplicitNestingOperations (ntype *poly)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TUstripImplicitNestingOperations");
+
+    if (TUisPolymorphic (poly)) {
+        if (TYisArray (poly)) {
+            res = TYcopyType (poly);
+            res
+              = TYsetScalar (res, TUstripImplicitNestingOperations (TYgetScalar (poly)));
+        } else {
+            if (TYisPolyUser (poly)) {
+                res
+                  = TYmakePolyUserType (STRcpy (TYgetPolyUserOuter (poly)),
+                                        STRcpy (TYgetPolyUserInner (poly)),
+                                        STRcpy (TYgetPolyUserShape (poly)), FALSE, FALSE);
+            } else {
+                res = TYcopyType (poly);
+            }
+        }
+    } else {
+        res = TYcopyType (poly);
+    }
+
+    DBUG_RETURN (res);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn bool SCIeqShapes ( ntype *a, ntype *b)
