@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  *
  */
 
@@ -9,9 +9,8 @@
 #include "types.h"
 
 extern node *IDCinit (node *fundef, bool all);
-extern node *IDCaddUserConstraint (node *expr);
 extern node *IDCaddTypeConstraint (ntype *type, node *avis);
-extern node *IDCaddPrfConstraint (node *expr, int num_rets);
+extern node *IDCaddFunConstraint (node *expr);
 extern node *IDCinsertConstraints (node *fundef, bool all);
 extern node *IDCfinalize (node *fundef, bool all);
 

@@ -23,6 +23,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "ctinfo.h"
 
 #include "insert_domain_constraints.h"
 
@@ -87,6 +88,33 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
+node *
+FindAvisOfLastDefinition (node *exprs)
+{
+    node *avis, *last_avis = NULL;
+    node *expr;
+
+    DBUG_ENTER ("FindAvisOfLastDefinition");
+
+    while (exprs != NULL) {
+        expr = EXPRS_EXPR (exprs);
+        if (NODE_TYPE (expr) == N_id) {
+            avis = ID_AVIS (expr);
+            DBUG_ASSERT (ASSIGN_POS (AVIS_SSAASSIGN (avis)) > 0,
+                         "IDCaddConstraint used before IDCinit()!");
+            if ((last_avis == NULL)
+                || (ASSIGN_POS (AVIS_SSAASSIGN (last_avis))
+                    < ASSIGN_POS (AVIS_SSAASSIGN (avis)))) {
+                last_avis = avis;
+            }
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (last_avis);
+}
+
 /** <!--******************************************************************-->
  *
  * @fn  node *IDCinitialize( node *fundef, bool all)
@@ -106,33 +134,6 @@ IDCinitialize (node *fundef, bool all)
 {
     DBUG_ENTER ("IDCinitialize");
     DBUG_RETURN (fundef);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn node *IDCaddUserConstraint( node *expr)
- *
- *  @brief add a constraint that by means of a call to IDCinsertConstraints()
- *     will lead to the following code:
- *         p = expr;
- *         a1`, ..., an` = _guard_( p, a1, ..., an);
- *     where a1, ..., an are the free vars of expr and p is the returned
- *     predicate.
- *     Issues a runtime error  in case IDCinit() has not been called yet.
- *
- *  @param expression that should evaluate to a boolean
- *
- *  @return N_avis node of the predicate
- *
- ***************************************************************************/
-
-node *
-IDCaddUserConstraint (node *expr)
-{
-    node *res;
-
-    DBUG_ENTER ("IDCaddUserConstraint");
-    DBUG_RETURN (res);
 }
 
 /** <!--******************************************************************-->
@@ -212,28 +213,59 @@ IDCaddTypeConstraint (ntype *type, node *avis)
 
 /** <!--******************************************************************-->
  *
- * @fn node *IDCaddPrfConstraint( node *expr, int num_rets);
+ * @fn node *IDCaddFunConstraint( node *expr);
  *
- *  @brief add a constraint that by means of a call to IDCinsertConstraints()
- *     will lead to the following code:
+ *  @brief add a function constraint expr to the free variables contained in
+ *     it. expr either is a (flattened) N_prf or an N_ap! By means of a call
+ *     to IDCinsertConstraints() this will either lead to:
  *         a1`, ..., am`, p = prf( a1, ..., an);
- *     where prf( a1, ..., an) is the expr provided, (m == num_rets), and
- *     p is the returned predicate.
- *     Issues a runtime error  in case IDCinit() has not been called yet.
+ *     or it will lead to:
+ *         p = udf( a1, ..., an);
+ *         a1`, ..., an` = _guard_( p, a1, ..., an);
+ *     depending on whether expr is  prf( a1, ..., an) or udf( a1, ..., an).
+ *     Requires IDCinit() to have been called on the function that the
+ *     expression is being located in.
  *
- *  @param expr: prf-expression that introduces a constraint to its args
- *         num_rets: number of args to be implicitly guarded.
+ *  @param expr: prf-expression or ap-expression that introduces a constraint
+ *               to its arguments.
  *
- *  @return N_avis node of the predicate
+ *  @return N_avis node of the predicate p
  *
  ***************************************************************************/
 
 node *
-IDCaddPrfConstraint (node *expr, int num_rets)
+IDCaddFunConstraint (node *expr)
 {
-    node *res;
+    node *args, *avis, *res;
 
     DBUG_ENTER ("IDCaddPrfConstraint");
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap),
+                 "illegal expr in IDCaddFunConstraint");
+
+    DBUG_PRINT ("IDC", ("constraint requested: %s",
+                        (NODE_TYPE (expr) == N_prf ? "prf" : "udf")));
+
+    args = AP_OR_PRF_ARGS (expr);
+    avis = FindAvisOfLastDefinition (args);
+
+    if (avis == NULL) {
+        CTIwarnLine (NODE_LINE (expr), "illegal requirement ignored!");
+        res = NULL;
+    } else {
+        res = TBmakeAvis (TRAVtmpVar (),
+                          TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
+        AVIS_CONSTRSET (avis) = TBmakeConstraint (res, expr, AVIS_CONSTRSET (avis));
+        /**
+         * for getting half-decent error-msgs, we copy the pos info
+         * into the  avis from where we will spread it upon code
+         * generation
+         */
+        NODE_LINE (res) = NODE_LINE (expr);
+        NODE_FILE (res) = NODE_FILE (expr);
+        DBUG_PRINT ("IDC", ("constraint added to %s", AVIS_NAME (avis)));
+    }
+
     DBUG_RETURN (res);
 }
 

@@ -3481,6 +3481,18 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="Pos">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="idc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Index">
           <type name="IndexInfo">
             <targets>
@@ -7925,10 +7937,11 @@
 -->
     <node name="Constraint">
       <sons>
-        <son name="Assigns">
+        <son name="Expr">
           <targets>
             <target mandatory="yes">
-              <node name="Assign" />
+              <node name="Prf" />
+              <node name="Ap" />
               <phases>
                 <all />
               </phases>
