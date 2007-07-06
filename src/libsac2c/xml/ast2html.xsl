@@ -109,13 +109,22 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
 	  .bold { font-weight: bold; }
         </style>
         <script type="text/javascript" language="JavaScript1.2">
-
+        <![CDATA[
           function toggle( id) {
             if (document.getElementById(id).style.display != "block") {
               document.getElementById(id).style.display = "block";
             } else {
               document.getElementById(id).style.display = "none";
             }
+          }
+          function hideNavTraversals() {
+            document.getElementById("NavTraversals").style.display = "none";
+          }
+          function hideNavSets() {
+            document.getElementById("NavSets").style.display = "none";
+          }
+          function hideNavNodes() {
+            document.getElementById("NavNodes").style.display = "none";
           }
           function showTOC() {
             document.getElementById("TOC").style.display = "block";
@@ -132,8 +141,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           function cleanup() {
             alert("pup");
           }
-
-        </script>
+        ]]></script>
       </head>
       <body>
         <div id="Nav">
@@ -179,6 +187,18 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                     </td></tr>
                   </table>
                 </div>
+              </td>
+              <td style="text-align: right;">
+                <a href="http://jigsaw.w3.org/css-validator/check/referer">
+                  <img style="border:0;height:1.2em"
+                       src="http://jigsaw.w3.org/css-validator/images/vcss" 
+                       alt="Valid CSS!" />
+                </a>
+                <a href="http://validator.w3.org/check?uri=referer">
+                  <img style="border:0;height:1.2em"
+                       src="http://www.w3.org/Icons/valid-xhtml10"
+                       alt="Valid XHTML 1.0 Transitional" />
+                </a>
               </td>
               <td>
                 <div style="text-align: right;">
@@ -229,6 +249,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <xsl:template match="nodeset" mode="list-of-tables">
     <li>
       <xsl:element name="a">
+        <xsl:attribute name="onclick">
+          <xsl:value-of select="'void (hideNavSets())'" />
+        </xsl:attribute>
         <xsl:attribute name="href">
           <xsl:value-of select="'#'" />
           <xsl:value-of select="@name" />
@@ -256,6 +279,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <xsl:template match="node" mode="list-of-tables">
     <li>
       <xsl:element name="a">
+        <xsl:attribute name="onclick">
+          <xsl:value-of select="'void (hideNavNodes())'" />
+        </xsl:attribute>
         <xsl:attribute name="href">
           <xsl:value-of select="'#'" />
           <xsl:value-of select="@name" />
@@ -278,24 +304,12 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </li>
   </xsl:template> 
 
-  <xsl:template match="traversal" mode="list-of-tables" >
-    <li>
-      <xsl:element name="a">
-        <xsl:attribute name="href">
-          <xsl:value-of select="'#TR_'" />
-          <xsl:value-of select="@id" />
-        </xsl:attribute>
-        <xsl:value-of select="@name" />
-      </xsl:element>
-      <ul>
-        <xsl:apply-templates mode="list-of-tables" />
-      </ul>
-    </li>
-  </xsl:template>
-
   <xsl:template match="traversal" mode="list-of-tables">
     <li>
       <xsl:element name="a">
+        <xsl:attribute name="onclick">
+          <xsl:value-of select="'void (hideNavTraversals())'" />
+        </xsl:attribute>
         <xsl:attribute name="href">
           <xsl:value-of select="'#TR_'" />
           <xsl:value-of select="@id" />
@@ -537,27 +551,29 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:value-of select="@name" />
       </td>
       <td class="bordertop">
-        <table class="hidden borderless">
-          <xsl:if test="description">
-            <tr>
-              <td colspan="2">
-                <xsl:value-of select="description" />
-              </td>
-            </tr>
-          </xsl:if>
-          <xsl:if test="@default">
-            <tr>
-              <td class="bold" style="width: 10%;">Default:</td>
-              <td class="ccode"><xsl:value-of select="@default" /></td>
-            </tr>
-          </xsl:if>
-          <xsl:if test="targets">
-            <tr>
-              <td class="bold" style="width: 10%;">Targets:</td>
-              <td><xsl:apply-templates select="targets" mode="targets" /></td>
-            </tr>
-          </xsl:if>
-        </table>
+      <xsl:if test="description|@default|targets">
+          <table class="hidden borderless">
+            <xsl:if test="description">
+              <tr>
+                <td colspan="2">
+                  <xsl:value-of select="description" />
+                </td>
+              </tr>
+            </xsl:if>
+            <xsl:if test="@default">
+              <tr>
+                <td class="bold" style="width: 10%;">Default:</td>
+                <td class="ccode"><xsl:value-of select="@default" /></td>
+              </tr>
+            </xsl:if>
+            <xsl:if test="targets">
+              <tr>
+                <td class="bold" style="width: 10%;">Targets:</td>
+                <td><xsl:apply-templates select="targets" mode="targets" /></td>
+              </tr>
+            </xsl:if>
+          </table>
+        </xsl:if>
       </td>
     </tr>
   </xsl:template>
@@ -714,41 +730,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:attribute>
       </xsl:if>
       <td style="width: 50%;">
-
-        <xsl:if test="any">
-	  <xsl:value-of select="'Any'" />
-	</xsl:if>
-
-	<xsl:if test="set">
-	  <xsl:element name="a">
-	    <xsl:attribute name="href">
-	      <xsl:value-of select="'#'" />
-	      <xsl:value-of select="set/@name" />
-	    </xsl:attribute>
-	    {<xsl:call-template name="uppercase">
-	      <xsl:with-param name="string">
-	        <xsl:value-of select="set/@name" />
-	      </xsl:with-param>
-	    </xsl:call-template>}
-	  </xsl:element>
-	  <xsl:if test="node">
-	    <br />
-	  </xsl:if>
-	</xsl:if>
-
-	<xsl:if test="node">
-	  <xsl:element name="a">
-	    <xsl:attribute name="href">
-	      <xsl:value-of select="'#'" />
-	      <xsl:value-of select="node/@name" />
-	    </xsl:attribute>
-	    <xsl:call-template name="name-to-nodeenum" >
-	      <xsl:with-param name="name" >
-	        <xsl:value-of select="node/@name" />
-	      </xsl:with-param>
-	    </xsl:call-template>
-	  </xsl:element>
-	</xsl:if>
+        <xsl:apply-templates select="any" mode="targets" />
+        <xsl:apply-templates select="set" mode="targets" />
+        <xsl:apply-templates select="node" mode="targets" />
       </td>
       <td style="width: 50%;">
         <xsl:apply-templates select="phases" mode="phase_list" />
@@ -756,7 +740,46 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </tr>
   </xsl:template>
 
+  <xsl:template match="any" mode="targets">
+    <xsl:if test="position() != 1">
+      <br />
+    </xsl:if>
+    <xsl:value-of select="'Any'" />
+  </xsl:template>
 
+  <xsl:template match="set" mode="targets">
+    <xsl:if test="position() != 1">
+      <br />
+    </xsl:if>
+    <xsl:element name="a">
+      <xsl:attribute name="href">
+        <xsl:value-of select="'#'" />
+        <xsl:value-of select="@name" />
+      </xsl:attribute>
+      {<xsl:call-template name="uppercase">
+        <xsl:with-param name="string">
+          <xsl:value-of select="@name" />
+        </xsl:with-param>
+      </xsl:call-template>}
+    </xsl:element>
+  </xsl:template>
+
+  <xsl:template match="node" mode="targets">
+    <xsl:if test="position() != 1">
+      <br />
+    </xsl:if>
+    <xsl:element name="a">
+      <xsl:attribute name="href">
+        <xsl:value-of select="'#'" />
+        <xsl:value-of select="@name" />
+      </xsl:attribute>
+      <xsl:call-template name="name-to-nodeenum" >
+        <xsl:with-param name="name" >
+          <xsl:value-of select="@name" />
+        </xsl:with-param>
+      </xsl:call-template>
+    </xsl:element>
+  </xsl:template>
 
   <!--
      - this template just shows all the phases. seperated by <br>.
