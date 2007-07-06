@@ -695,6 +695,8 @@ DUPid (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    ID_ISSCLPRF (new_node) = ID_ISSCLPRF (arg_node);
+
     DBUG_RETURN (new_node);
 }
 

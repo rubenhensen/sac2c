@@ -2590,6 +2590,10 @@ PRTid (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/* avis: %p */", ID_AVIS (arg_node));
     });
 
+    DBUG_EXECUTE ("DISTRIB", if (ID_ISSCLPRF (arg_node)) {
+        fprintf (global.outfile, " /* SCL */ ");
+    });
+
     DBUG_RETURN (arg_node);
 }
 
