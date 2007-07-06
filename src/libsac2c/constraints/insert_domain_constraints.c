@@ -33,25 +33,16 @@
  * @{
  *
  *****************************************************************************/
+
+typedef enum { IDC_init, IDC_insert, IDC_finalize } trav_mode;
+
 struct INFO {
-    node *fundef;
-    int level;
-    node *reccall;
-    node *extcall;
-    node *assigns;
-    node *vardecs;
-    node *lastassign;
-    node *precond;
+    bool all;
+    trav_mode mode;
 };
 
-#define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_LEVEL(n) ((n)->level)
-#define INFO_EXTCALL(n) ((n)->extcall)
-#define INFO_EXTASSIGNS(n) ((n)->assigns)
-#define INFO_EXTVARDECS(n) ((n)->vardecs)
-#define INFO_RECCALL(n) ((n)->reccall)
-#define INFO_LASTASSIGN(n) ((n)->lastassign)
-#define INFO_PRECONDASSIGN(n) ((n)->precond)
+#define INFO_ALL(n) ((n)->all)
+#define INFO_MODE(n) ((n)->mode)
 
 static info *
 MakeInfo ()
@@ -62,14 +53,8 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_FUNDEF (result) = NULL;
-    INFO_LEVEL (result) = 0;
-    INFO_EXTCALL (result) = NULL;
-    INFO_EXTASSIGNS (result) = NULL;
-    INFO_EXTVARDECS (result) = NULL;
-    INFO_RECCALL (result) = NULL;
-    INFO_LASTASSIGN (result) = NULL;
-    INFO_PRECONDASSIGN (result) = NULL;
+    INFO_ALL (result) = FALSE;
+    INFO_MODE (result) = IDC_init;
 
     DBUG_RETURN (result);
 }
@@ -115,6 +100,30 @@ FindAvisOfLastDefinition (node *exprs)
     DBUG_RETURN (last_avis);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCfundef");
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCassign");
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--******************************************************************-->
  *
  * @fn  node *IDCinitialize( node *fundef, bool all)
@@ -132,7 +141,23 @@ FindAvisOfLastDefinition (node *exprs)
 node *
 IDCinitialize (node *fundef, bool all)
 {
+    info *arg_info;
+
     DBUG_ENTER ("IDCinitialize");
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IDCinitialize called on nun-fundef!");
+
+    TRAVpush (TR_idc);
+
+    arg_info = MakeInfo ();
+    INFO_ALL (arg_info) = all;
+    INFO_MODE (arg_info) = IDC_init;
+
+    fundef = TRAVdo (fundef, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+    TRAVpop ();
+
     DBUG_RETURN (fundef);
 }
 
@@ -291,10 +316,25 @@ IDCaddFunConstraint (node *expr)
 node *
 IDCinsertConstraints (node *fundef, bool all)
 {
-    node *res;
+    info *arg_info;
 
     DBUG_ENTER ("IDCinsertConstraints");
-    DBUG_RETURN (res);
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "IDCinsertConstraints called on nun-fundef!");
+
+    TRAVpush (TR_idc);
+
+    arg_info = MakeInfo ();
+    INFO_ALL (arg_info) = all;
+    INFO_MODE (arg_info) = IDC_insert;
+
+    fundef = TRAVdo (fundef, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+    TRAVpop ();
+
+    DBUG_RETURN (fundef);
 }
 
 /** <!--******************************************************************-->
@@ -314,6 +354,22 @@ IDCinsertConstraints (node *fundef, bool all)
 node *
 IDCfinalize (node *fundef, bool all)
 {
+    info *arg_info;
+
     DBUG_ENTER ("IDCfinalize");
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IDCfinalize called on nun-fundef!");
+
+    TRAVpush (TR_idc);
+
+    arg_info = MakeInfo ();
+    INFO_ALL (arg_info) = all;
+    INFO_MODE (arg_info) = IDC_finalize;
+
+    fundef = TRAVdo (fundef, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+    TRAVpop ();
+
     DBUG_RETURN (fundef);
 }

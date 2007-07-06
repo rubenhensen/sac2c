@@ -897,7 +897,8 @@
         </travuser>
       </traversal>
       <traversal id="LS" name="Loop Scalarization" default="sons" include="loop_scalarization.h" >
-        <travuser>           <node name="Fundef" />
+        <travuser>
+          <node name="Fundef" />
           <node name="Arg" />
           <node name="Assign" />
           <node name="Ap" />
@@ -907,6 +908,12 @@
         <travnone>
           <node name="Withid" />
         </travnone>
+      </traversal>
+      <traversal id="IDC" name="Insert Domain Constraints" default="sons" include="insert_domain_constraints.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+        </travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
         <travuser>
