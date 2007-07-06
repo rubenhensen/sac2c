@@ -1388,12 +1388,14 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     IBASE_BASE (base) = TYgetScalar (arg);
     IBASE_IARR (base) = arr;
 
-    fun = MakeNtype (TC_fun, 3);
     if (TYisPoly (IBASE_BASE (base))) {
+        fun = MakeNtype (TC_fun, 2);
         FUN_POLY (fun) = base;
     } else if (TYisPolyUser (IBASE_BASE (base))) {
+        fun = MakeNtype (TC_fun, 2);
         FUN_UPOLY (fun) = base;
     } else {
+        fun = MakeNtype (TC_fun, 3);
         FUN_IBASE (fun, 0) = base;
     }
 
@@ -1878,6 +1880,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
         res = fun2;
         switch (NTYPE_CON (fun1)) {
         case TC_fun:
+            fun2 = MergeSons (fun1, fun2, 0, 2);
             fun2 = FindAndMergeSons (fun1, fun2, 2, CmpIbase);
             break;
         case TC_ibase:
