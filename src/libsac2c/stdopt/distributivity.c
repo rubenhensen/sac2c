@@ -181,79 +181,6 @@ normalizePrf (prf prf)
 }
 
 static bool
-IsAddPrf (prf prf)
-{
-    bool res;
-
-    DBUG_ENTER ("IsAddPrf");
-
-    switch (prf) {
-    case F_add_SxS:
-    case F_add_SxV:
-    case F_add_VxS:
-    case F_add_VxV:
-        res = TRUE;
-        break;
-    default:
-        res = FALSE;
-    }
-
-    DBUG_RETURN (res);
-}
-
-#ifdef TODO_REMOVE_IF_NOT_USED
-
-static bool
-IsMulPrf (prf prf)
-{
-    bool res;
-
-    DBUG_ENTER ("IsMulPrf");
-
-    switch (prf) {
-    case F_mul_SxS:
-    case F_mul_SxV:
-    case F_mul_VxS:
-    case F_mul_VxV:
-        res = TRUE;
-        break;
-    default:
-        res = FALSE;
-    }
-
-    DBUG_RETURN (res);
-}
-
-#endif
-
-static bool
-YieldsScalar (prf prf)
-{
-    bool res;
-
-    DBUG_ENTER ("YieldsScalar");
-
-    switch (prf) {
-    case F_add_SxS:
-    case F_mul_SxS:
-        res = TRUE;
-        break;
-    case F_add_SxV:
-    case F_add_VxS:
-    case F_add_VxV:
-    case F_mul_SxV:
-    case F_mul_VxS:
-    case F_mul_VxV:
-        res = FALSE;
-        break;
-    default:
-        DBUG_ASSERT (FALSE, "Illegal prf!");
-    }
-
-    DBUG_RETURN (res);
-}
-
-static bool
 compatiblePrf (prf p1, prf p2)
 {
     bool res;
@@ -282,16 +209,7 @@ isScalar (node *n)
         break;
 
     case N_id:
-#if 1
-        /*
-         * This marking mechanism does not work. Since I haven't found
-         * the bug in reasonable time, we now ask the type system directly.
-         */
         res = ID_ISSCLPRF (n);
-#else
-        res = TUisScalar (ID_NTYPE (n));
-#endif
-
         break;
 
     default:
@@ -317,15 +235,17 @@ getPrf (prf prf, node *e1, node *e2)
     case F_add_VxS:
     case F_add_VxV:
         if (s1) {
-            if (s2)
+            if (s2) {
                 prf = F_add_SxS;
-            else
+            } else {
                 prf = F_add_SxV;
+            }
         } else {
-            if (s2)
+            if (s2) {
                 prf = F_add_VxS;
-            else
+            } else {
                 prf = F_add_VxV;
+            }
         }
         break;
 
@@ -492,15 +412,16 @@ Mop2Ast (node *mop, info *arg_info)
 }
 
 static node *
-CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
+CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
 {
     node *res = NULL;
 
     DBUG_ENTER ("CollectExprs");
 
     res = TBmakeExprs (DUPdoDupNode (a), NULL);
+
     if (NODE_TYPE (EXPRS_EXPR (res)) == N_id) {
-        ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
+        ID_ISSCLPRF (EXPRS_EXPR (res)) = is_scalar_arg;
     }
 
     if ((NODE_TYPE (a) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)
@@ -513,7 +434,7 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
 
         case N_id:
             res = FREEdoFreeTree (res);
-            res = CollectExprs (prf, rhs, sclprf, localmask);
+            res = CollectExprs (prf, rhs, is_scalar_arg, localmask);
             AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
             break;
 
@@ -541,7 +462,7 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
 }
 
 static node *
-BuildMopTree (node *avis, bool sclavis, dfmask_t *localmask)
+BuildMopTree (node *avis, dfmask_t *localmask)
 {
     node *tmp, *exprs;
     node *res;
@@ -550,7 +471,7 @@ BuildMopTree (node *avis, bool sclavis, dfmask_t *localmask)
     DBUG_ENTER ("BuildMopTree");
 
     id = TBmakeId (avis);
-    exprs = CollectExprs (F_add_SxS, id, sclavis, localmask);
+    exprs = CollectExprs (F_add_SxS, id, FALSE, localmask);
     FREEdoFreeNode (id);
 
     tmp = exprs;
@@ -559,8 +480,7 @@ BuildMopTree (node *avis, bool sclavis, dfmask_t *localmask)
         node *summand;
 
         summand = EXPRS_EXPR (tmp);
-        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, isScalar (summand),
-                                                  localmask));
+        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, FALSE, localmask));
 
         EXPRS_EXPR (tmp) = FREEdoFreeNode (EXPRS_EXPR (tmp));
         EXPRS_EXPR (tmp) = mop;
@@ -826,6 +746,7 @@ EliminateEmptyProducts (node *mop, simpletype st)
  * prefix: DISTRIB
  *
  *****************************************************************************/
+
 node *
 DISTRIBfundef (node *arg_node, info *arg_info)
 {
@@ -952,24 +873,31 @@ DISTRIBids (node *arg_node, info *arg_info)
 node *
 DISTRIBprf (node *arg_node, info *arg_info)
 {
+    ntype *ltype;
+    int oldoptcounter;
+    node *mop;
+    prf prf;
+
     DBUG_ENTER ("DISTRIBprf");
 
-    if (IsAddPrf (PRF_PRF (arg_node))) {
-        ntype *ltype = IDS_NTYPE (INFO_LHS (arg_info));
+    prf = PRF_PRF (arg_node);
+
+    switch (prf) {
+    case F_add_SxS:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
+        ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
         if ((!global.enforce_ieee)
             || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
-            int oldoptcounter;
-            node *mop;
-            prf p;
 
             /*
              * Collect operands into multi-operation (sum of prducts)
              */
-            p = PRF_PRF (arg_node);
-            mop = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), YieldsScalar (p),
-                                INFO_LOCALMASK (arg_info));
+            mop
+              = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), INFO_LOCALMASK (arg_info));
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
                 DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
@@ -998,6 +926,10 @@ DISTRIBprf (node *arg_node, info *arg_info)
                 mop = FREEdoFreeNode (mop);
             }
         }
+        break;
+
+    default:
+        break;
     }
 
     DBUG_RETURN (arg_node);
