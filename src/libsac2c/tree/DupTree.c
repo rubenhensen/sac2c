@@ -646,6 +646,24 @@ DUPsetwl (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPconstraint (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPconstraint");
+
+    new_node = TBmakeConstraint (DUPTRAV (CONSTRAINT_PREDAVIS (arg_node)),
+                                 DUPTRAV (CONSTRAINT_ASSIGNS (arg_node)),
+                                 DUPCONT (CONSTRAINT_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPid (node *arg_node, info *arg_info)
 {
     node *new_node, *avis;
@@ -2420,6 +2438,9 @@ DUPavis (node *arg_node, info *arg_info)
       = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
 
     AVIS_DECLTYPE (new_node) = TYcopyType (AVIS_DECLTYPE (arg_node));
+    AVIS_CONSTRTYPE (new_node) = TYcopyType (AVIS_CONSTRTYPE (arg_node));
+    AVIS_CONSTRVAR (new_node) = DUPTRAV (AVIS_CONSTRVAR (arg_node));
+    AVIS_CONSTRSET (new_node) = DUPTRAV (AVIS_CONSTRSET (arg_node));
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));
 

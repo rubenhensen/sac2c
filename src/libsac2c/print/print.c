@@ -4566,6 +4566,22 @@ PRTavis (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+PRTconstraint (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTconstraint");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    if (CONSTRAINT_NEXT (arg_node) != NULL) {
+        CONSTRAINT_NEXT (arg_node) = TRAVdo (CONSTRAINT_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:

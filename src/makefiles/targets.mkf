@@ -64,7 +64,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
                               memory precompile codegen print \
-                              cinterface generics
+                              cinterface generics constraints
 
 ###############################################################################
 
@@ -192,6 +192,7 @@ libsac2c_print       := print convert
 libsac2c_cinterface  := load_module_contents construct_bundles \
                         create_wrapper_header
 
+libsac2c_constraints := insert_domain_constraints
 
 
 ###############################################################################

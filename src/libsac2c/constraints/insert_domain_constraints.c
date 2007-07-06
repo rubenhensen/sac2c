@@ -1,6 +1,6 @@
 /*
  *
- * $Id:$
+ * $Id$
  */
 
 /**
@@ -23,6 +23,8 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+
+#include "insert_domain_constraints.h"
 
 /** <!--********************************************************************-->
  *
@@ -99,7 +101,8 @@ FreeInfo (info *info)
  *
  ***************************************************************************/
 
-node *IDCinitialize (node *fundef, bool all);
+node *
+IDCinitialize (node *fundef, bool all)
 {
     DBUG_ENTER ("IDCinitialize");
     DBUG_RETURN (fundef);
@@ -153,11 +156,57 @@ IDCaddUserConstraint (node *expr)
  ***************************************************************************/
 
 node *
-IDCaddTypeConstraint (node *expr)
+IDCaddTypeConstraint (ntype *type, node *avis)
 {
     node *res;
+    ntype *act_type;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
     DBUG_ENTER ("IDCaddTypeConstraint");
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (type, FALSE, 0););
+    DBUG_PRINT ("IDC",
+                ("type constraint requested: %s for %s", tmp_str, AVIS_NAME (avis)));
+    DBUG_EXECUTE ("IDC", tmp_str = MEMfree (tmp_str););
+
+    act_type = AVIS_TYPE (avis);
+    if (TYleTypes (act_type, type)) {
+        DBUG_PRINT ("IDC", ("inferred type is precise enough"));
+    } else {
+        if (AVIS_CONSTRTYPE (avis) != NULL) {
+            if (TYleTypes (AVIS_CONSTRTYPE (avis), type)) {
+                DBUG_PRINT ("IDC", ("strong enough constraint exists already"));
+            } else {
+                AVIS_CONSTRTYPE (avis) = TYfreeType (AVIS_CONSTRTYPE (avis));
+                AVIS_CONSTRTYPE (avis) = type;
+                /**
+                 * for getting half-decent error-msgs, we copy the pos info
+                 * into the  avis from where we will spread it upon code
+                 * generation
+                 */
+                res = AVIS_CONSTRVAR (avis);
+                NODE_LINE (res) = NODE_LINE (avis);
+                NODE_FILE (res) = NODE_FILE (avis);
+                DBUG_PRINT ("IDC", ("replacing existing constraint"));
+            }
+        } else {
+            AVIS_CONSTRTYPE (avis) = type;
+            res = TBmakeAvis (TRAVtmpVar (),
+                              TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
+            AVIS_CONSTRVAR (avis) = res;
+            /**
+             * for getting half-decent error-msgs, we copy the pos info
+             * into the  avis from where we will spread it upon code
+             * generation
+             */
+            NODE_LINE (res) = NODE_LINE (avis);
+            NODE_FILE (res) = NODE_FILE (avis);
+            DBUG_PRINT ("IDC", ("constraint added"));
+        }
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -180,7 +229,7 @@ IDCaddTypeConstraint (node *expr)
  ***************************************************************************/
 
 node *
-IDCaddPrfConstraint (node *expr)
+IDCaddPrfConstraint (node *expr, int num_rets)
 {
     node *res;
 
@@ -230,7 +279,8 @@ IDCinsertConstraints (node *fundef, bool all)
 
  ***************************************************************************/
 
-node *IDCfinalize (node *fundef, bool all);
+node *
+IDCfinalize (node *fundef, bool all)
 {
     DBUG_ENTER ("IDCfinalize");
     DBUG_RETURN (fundef);
