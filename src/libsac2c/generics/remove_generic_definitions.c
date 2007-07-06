@@ -6,7 +6,7 @@
  *
  * @defgroup rgd remove generic defintions
  *
- * Removes all generic function definitions from the syntax tree
+ * Removes all generic function definitions from the syntax tree.
  *
  * @ingroup rgd
  *
@@ -32,6 +32,21 @@
 #include "map_fun_trav.h"
 #include "free.h"
 
+/** <!--********************************************************************-->
+ *
+ * @name Static helper funcions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!-- ****************************************************************** -->
+ * @brief Transforms function into a zombie if it was a generic function.
+ *
+ * @param fundef a function
+ * @param arg_info not used
+ *
+ * @return the possibly transformed function
+ ******************************************************************************/
 static node *
 RemoveGenericFun (node *fundef, info *arg_info)
 {
@@ -43,6 +58,10 @@ RemoveGenericFun (node *fundef, info *arg_info)
 
     DBUG_RETURN (fundef);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *

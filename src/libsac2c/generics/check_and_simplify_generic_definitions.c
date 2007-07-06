@@ -13,12 +13,6 @@
  *   types and the function body may only contain previously bound
  *   identifiers.
  *
- * - Identifiers can only be used for one kind of type, i.e. identifiers
- *   can either be used in
- *
- *   * a polymorphic type/as outer type of a polymorphic user type
- *   * as inner type of a polymorphic user type
- *
  * - Identifiers used for referencing the shape of a polymorphic user
  *   type may not be used in polymorphic types
  *
@@ -30,7 +24,8 @@
  * - Implicit renesting is allowed only in return position
  *
  * Furthermore, the de- and renesting operations are made explicit by
- * introducing appropriate casts.
+ * introducing appropriate casts and the shape variabled are bound
+ * to a call of F_nested_shape.
  *
  * @ingroup csgd
  *
@@ -56,6 +51,7 @@
 #include "tree_compound.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "shape.h"
 #include "str.h"
 #include "ctinfo.h"
 #include "memory.h"
@@ -81,6 +77,7 @@ struct INFO {
         CSGD_checkavis,
         CSGD_renest,
         CSGD_denest,
+        CSGD_bindshape,
         CSGD_strip
     } mode;
     bool isgeneric;
@@ -237,6 +234,15 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
                      && !STReq (TYgetPolyUserInner (a), TYgetPolyUserShape (b))
                      && !STReq (TYgetPolyUserShape (a), TYgetPolyUserOuter (b))
                      && !STReq (TYgetPolyUserShape (a), TYgetPolyUserInner (b));
+
+            /*
+             * if they both use the same shape variable, then the outer and
+             * inner types need to be the same
+             */
+            result = result
+                     && (!STReq (TYgetPolyUserShape (a), TYgetPolyUserShape (b))
+                         || (STReq (TYgetPolyUserOuter (a), TYgetPolyUserOuter (b))
+                             && STReq (TYgetPolyUserInner (a), TYgetPolyUserInner (b))));
         }
     }
 
@@ -376,40 +382,35 @@ CSGDfundef (node *arg_node, info *arg_info)
     }
 
     /*
-     * 3) process denesting
+     * 3) bind shape vars
+     *    !!  this needs to be done before we denest the type in   !!
+     *    !!  the body, as otherwise the call to nested_shape      !!
+     *    !!  will return the wrong result.                        !!
+     */
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        INFO_MODE (arg_info) = CSGD_bindshape;
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
+
+    /*
+     * 4) process denesting
      */
     if (FUNDEF_ARGS (arg_node) != NULL) {
         INFO_MODE (arg_info) = CSGD_denest;
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         INFO_MODE (arg_info) = CSGD_normal;
-#if 0
-    if (INFO_PREASSIGNS( arg_info) != NULL) {
-      /*
-       * there needs to be a body here, as all real functions do have bodies!
-       * If this function is used and thus bodyless, the implicit denesting
-       * should have been handled already!
-       */
-      DBUG_ASSERT( (FUNDEF_BODY( arg_node) != NULL),
-          "found polymorphic args with implicit denesting in a bodyless "
-          "function!");
-
-      BLOCK_INSTR( FUNDEF_BODY( arg_node)) =
-        TCappendAssign( INFO_PREASSIGNS( arg_info),
-                        BLOCK_INSTR( FUNDEF_BODY( arg_node)));
-      INFO_PREASSIGNS( arg_info) = NULL;
-    }
-#endif
     }
 
     /*
-     * 4) process renesting and check compliance of body
+     * 5) process renesting and check compliance of body
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /*
-     * 5) strip nesting information from types
+     * 6) strip nesting information from types
      */
     INFO_MODE (arg_info) = CSGD_strip;
     if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -421,7 +422,7 @@ CSGDfundef (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = CSGD_normal;
 
     /*
-     * 5) next funef
+     * 7) next funef
      */
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -507,6 +508,23 @@ CSGDarg (node *arg_node, info *arg_info)
 
         arg_info = AnnotateDefinedVars (AVIS_TYPE (INFO_CURRENT (arg_info)),
                                         ARG_NTYPE (arg_node), arg_info);
+        break;
+    case CSGD_bindshape:
+        if (TYisPolyUser (TYgetScalar (ARG_NTYPE (arg_node)))) {
+            ntype *poly = TYgetScalar (ARG_NTYPE (arg_node));
+
+            INFO_PREASSIGNS (arg_info) = TCappendAssign (
+              INFO_PREASSIGNS (arg_info),
+              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (TYgetPolyUserShape (poly)),
+                                                    NULL),
+                                       TCmakePrf1 (F_nested_shape,
+                                                   TBmakeType (
+                                                     TYmakeAKS (TYmakePolyType (STRcpy (
+                                                                  TYgetPolyUserOuter (
+                                                                    poly))),
+                                                                SHmakeShape (0))))),
+                            NULL));
+        }
         break;
     case CSGD_denest:
         if (TYisPolyUser (TYgetScalar (ARG_NTYPE (arg_node)))
