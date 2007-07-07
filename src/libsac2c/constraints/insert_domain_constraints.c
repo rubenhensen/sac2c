@@ -129,6 +129,8 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (old_avis)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
+    AVIS_SUBST (old_avis) = avis;
+
     DBUG_RETURN (avis);
 }
 
@@ -349,6 +351,27 @@ node *
 IDCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCid");
+
+    if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
+        ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCavis( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCavis");
+
+    if ((INFO_MODE (arg_info) == IDC_init) || (INFO_MODE (arg_info) == IDC_finalize)) {
+        AVIS_SUBST (arg_node) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }

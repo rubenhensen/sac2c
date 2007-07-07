@@ -18,5 +18,6 @@ extern node *IDCfundef (node *arg_node, info *arg_info);
 extern node *IDCassign (node *arg_node, info *arg_info);
 extern node *IDCids (node *arg_node, info *arg_info);
 extern node *IDCid (node *arg_node, info *arg_info);
+extern node *IDCavis (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_DOMAIN_CONSTRAINTS_H_ */

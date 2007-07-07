@@ -1111,6 +1111,45 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
+ * @fn void TEassureValMatchesVal( char *obj1, ntype *type1,
+ *                                   char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKV, type1
+ *           constitutes a legal index into type2.
+ *           It is assumed that shape type1 <= shape type2!
+ *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
+ *
+ ******************************************************************************/
+
+void
+TEassureValMatchesVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int i, dim1, dim2;
+    int *dv1, *dv2;
+
+    DBUG_ENTER ("TEassureValMatchesVal");
+
+    if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
+        dim1 = SHgetExtent (COgetShape (TYgetValue (type1)), 0);
+        dim2 = SHgetExtent (COgetShape (TYgetValue (type2)), 0);
+        dv1 = (int *)COgetDataVec (TYgetValue (type1));
+        dv2 = (int *)COgetDataVec (TYgetValue (type2));
+        for (i = 0; i < dim1; i++) {
+            if ((dv1[i] < 0) || (dv1[i] >= dv2[i])) {
+                TEhandleError (global.linenum,
+                               "%s should be legal index into %s;"
+                               " types found: %s  and  %s",
+                               obj1, obj2, TYtype2String (type1, FALSE, 0),
+                               TYtype2String (type2, FALSE, 0));
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn void TEassureValNonZero( char *obj1, ntype *type1)
  *
  *   @brief  makes shure, that if type1 is AKV, the value is neither

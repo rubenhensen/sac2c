@@ -915,6 +915,7 @@
           <node name="Assign" />
           <node name="Ids" />
           <node name="Id" />
+          <node name="Avis" />
         </travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
@@ -5085,6 +5086,7 @@
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
+                  <phase name="IDC" />
                   <phase name="opt_cyc_cse" />
                   <phase name="opt_lir" />
                   <phase name="pc_ussa" />

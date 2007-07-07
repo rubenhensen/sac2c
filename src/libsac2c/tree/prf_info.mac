@@ -493,7 +493,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
   PRF (prop_obj_in, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfPropObjIn, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL),
 
-  PRF (prop_obj_out, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+  PRF (prop_obj_out, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_id, NULL,
        COMPprfPropObjOut, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL),
 
   /*******************************************************************************
@@ -576,32 +576,33 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
    * Functions for implementing conformability constraints:
    */
 
-  PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL, NULL, NULL, NULL,
+  PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, NULL, NULL, NULL,
        NULL, NULL, NULL, NULL, 0, NULL, NULL),
 
-  PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL),
+  PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_afterguard, NULL, NULL,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL),
 
-  PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
-
-  PRF (same_shape_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL),
-
-  PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
-
-  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_dummy, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
-
-  PRF (val_matches_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
-
-  PRF (val_matches_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
-
-  PRF (prod_matches_prod_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy,
+  PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
+
+  PRF (same_shape_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL),
+
+  PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
+
+  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL, NULL,
+       NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
+
+  PRF (val_matches_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
+
+  PRF (val_matches_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL),
+
+  PRF (prod_matches_prod_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD,
+       NTCCTprf_prod_shape, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL,
+       NULL),
 
   /*******************************************************************************
    * Functions to definine generic functions on udts

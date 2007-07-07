@@ -1268,13 +1268,9 @@ NTCprf (node *arg_node, info *arg_info)
         args = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
-        if (prf == F_prop_obj_out) {
-            res = args;
-        } else {
-            info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf);
-            res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
-            TYfreeType (args);
-        }
+        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf);
+        res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
+        TYfreeType (args);
     }
     INFO_TYPE (arg_info) = res;
 
