@@ -913,6 +913,8 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Ids" />
+          <node name="Id" />
         </travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >

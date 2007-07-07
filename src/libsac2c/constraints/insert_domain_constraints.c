@@ -112,43 +112,112 @@ FindAvisOfLastDefinition (node *exprs)
 node *
 CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
 {
-    node *avis;
+    node *old_avis, *avis;
     DBUG_ENTER ("CreateNewVarAndInitiateRenaming");
-    avis = ID_AVIS (id);
+    old_avis = ID_AVIS (id);
+    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (old_avis)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
     DBUG_RETURN (avis);
 }
 
-info *
-BuildTypeConstraint (node *pavis, node *expr, info *arg_info)
+node *
+DupIdExprsWithoutDuplicates (node *exprs)
 {
-    node *avis, *assign;
+    node *args;
+    bool found;
+    node *tmp, *avis;
 
-    DBUG_ENTER ("BuildTypeConstraint");
+    DBUG_ENTER ("DupIdExprsWithoutDuplicates");
 
-    INFO_VARDECS (arg_info) = TBmakeVardec (pavis, INFO_VARDECS (arg_info));
-    avis = CreateNewVarAndInitiateRenaming (PRF_ARG2 (expr), arg_info);
+    if (exprs != NULL) {
+        args = DupIdExprsWithoutDuplicates (EXPRS_NEXT (exprs));
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id,
+                     "non N_id argument in requires expression found");
+        avis = ID_AVIS (EXPRS_EXPR (exprs));
+        tmp = args;
+        found = FALSE;
+        while (tmp != NULL) {
+            if (ID_AVIS (EXPRS_EXPR (tmp)) == avis) {
+                found = TRUE;
+                tmp = NULL;
+            } else {
+                tmp = EXPRS_NEXT (tmp);
+            }
+        }
+        if (!found) {
+            args = TBmakeExprs (TBmakeId (avis), args);
+        }
+    } else {
+        args = NULL;
+    }
 
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, TBmakeIds (pavis, NULL)), expr),
-                           INFO_POSTASSIGN (arg_info));
-    AVIS_SSAASSIGN (pavis) = assign;
-    AVIS_SSAASSIGN (avis) = assign;
+    DBUG_RETURN (args);
+}
 
-    INFO_POSTASSIGN (arg_info) = assign;
+node *
+BuildDataFlowHook (node *ids, node *expr, info *arg_info)
+{
+    node *exprs, *assign, *avis;
+    int i;
 
-    DBUG_RETURN (arg_info);
+    DBUG_ENTER ("BuildDataFlowHook");
+
+    exprs = PRF_ARGS (expr);
+
+    if (PRF_PRF (expr) == F_type_conv) {
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    assign = TBmakeAssign (NULL, NULL);
+
+    for (i = 0; i < 1; i++) {
+        avis = CreateNewVarAndInitiateRenaming (EXPRS_EXPR (exprs), arg_info);
+        ids = TBmakeIds (avis, ids);
+        AVIS_SSAASSIGN (avis) = assign;
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    ASSIGN_INSTR (assign) = TBmakeLet (ids, expr);
+
+    /**
+     * assign needs to be put at the very end due to potential data
+     * dependencies!
+     */
+    INFO_POSTASSIGN (arg_info) = TCappendAssign (INFO_POSTASSIGN (arg_info), assign);
+
+    DBUG_RETURN (assign);
 }
 
 info *
 BuildPrfConstraint (node *pavis, node *expr, info *arg_info)
 {
+    node *assign;
+
     DBUG_ENTER ("BuildPrfConstraint");
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (pavis, INFO_VARDECS (arg_info));
+    assign = BuildDataFlowHook (TBmakeIds (pavis, NULL), expr, arg_info);
+    AVIS_SSAASSIGN (pavis) = assign;
+
     DBUG_RETURN (arg_info);
 }
 
 info *
 BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
 {
+    node *assign;
+
     DBUG_ENTER ("BuildUdfConstraint");
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (pavis, NULL), expr), NULL);
+    AVIS_SSAASSIGN (pavis) = assign;
+
+    INFO_POSTASSIGN (arg_info) = TCappendAssign (INFO_POSTASSIGN (arg_info), assign);
+
+    expr = TBmakePrf (F_prop_obj_in, DupIdExprsWithoutDuplicates (AP_ARGS (expr)));
+    assign = BuildDataFlowHook (NULL, expr, arg_info);
+
     DBUG_RETURN (arg_info);
 }
 
@@ -232,11 +301,15 @@ IDCids (node *arg_node, info *arg_info)
         if (AVIS_CONSTRTYPE (avis) != NULL) {
             expr = TCmakePrf2 (F_type_conv, TBmakeType (AVIS_CONSTRTYPE (avis)),
                                TBmakeId (avis));
-            arg_info = BuildTypeConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
+            expr = TRAVdo (expr, arg_info);
+            arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
         }
 
         while (AVIS_CONSTRSET (avis) != NULL) {
             constraint = AVIS_CONSTRSET (avis);
+            CONSTRAINT_EXPR (constraint)
+              = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
+
             if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
                 arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
                                                CONSTRAINT_EXPR (constraint), arg_info);
@@ -252,6 +325,19 @@ IDCids (node *arg_node, info *arg_info)
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCid( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCid");
 
     DBUG_RETURN (arg_node);
 }
