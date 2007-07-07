@@ -653,7 +653,7 @@ DUPconstraint (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPconstraint");
 
     new_node = TBmakeConstraint (DUPTRAV (CONSTRAINT_PREDAVIS (arg_node)),
-                                 DUPTRAV (CONSTRAINT_ASSIGNS (arg_node)),
+                                 DUPTRAV (CONSTRAINT_EXPR (arg_node)),
                                  DUPCONT (CONSTRAINT_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
