@@ -27,6 +27,17 @@
 
 #include "insert_domain_constraints.h"
 
+/**
+ *
+ * Static global variables
+ *
+ */
+
+static const int ndf_rets[] = {
+#define PRFnum_dataflow_returns(ndf_rets) ndf_rets
+#include "prf_info.mac"
+};
+
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -165,13 +176,13 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
 
     exprs = PRF_ARGS (expr);
 
-    if (PRF_PRF (expr) == F_type_conv) {
+    if (PRF_PRF (expr) == F_type_constraint) {
         exprs = EXPRS_NEXT (exprs);
     }
 
     assign = TBmakeAssign (NULL, NULL);
 
-    for (i = 0; i < 1; i++) {
+    for (i = 0; i < ndf_rets[PRF_PRF (expr)]; i++) {
         avis = CreateNewVarAndInitiateRenaming (EXPRS_EXPR (exprs), arg_info);
         ids = TBmakeIds (avis, ids);
         AVIS_SSAASSIGN (avis) = assign;
@@ -215,7 +226,7 @@ BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
 
     INFO_POSTASSIGN (arg_info) = TCappendAssign (INFO_POSTASSIGN (arg_info), assign);
 
-    expr = TBmakePrf (F_prop_obj_in, DupIdExprsWithoutDuplicates (AP_ARGS (expr)));
+    expr = TBmakePrf (F_guard, DupIdExprsWithoutDuplicates (AP_ARGS (expr)));
     assign = BuildDataFlowHook (NULL, expr, arg_info);
 
     DBUG_RETURN (arg_info);
@@ -299,7 +310,7 @@ IDCids (node *arg_node, info *arg_info)
 
         avis = IDS_AVIS (arg_node);
         if (AVIS_CONSTRTYPE (avis) != NULL) {
-            expr = TCmakePrf2 (F_type_conv, TBmakeType (AVIS_CONSTRTYPE (avis)),
+            expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
                                TBmakeId (avis));
             expr = TRAVdo (expr, arg_info);
             arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
