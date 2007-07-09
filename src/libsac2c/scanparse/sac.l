@@ -222,7 +222,6 @@ int charpos = 0;
 
 "module"                   { FILTER( MODULE); }
 "class"                    { FILTER( CLASS); }
-"ModuleSpec"               { FILTER( MODSPEC); }
 
 "import"                   { FILTER( IMPORT); }
 "export"                   { FILTER( EXPORT); }
@@ -231,6 +230,7 @@ int charpos = 0;
 "all"                      { FILTER( ALL); }
 "except"                   { FILTER( EXCEPT); }
 "external"                 { FILTER( EXTERN); }
+"deprecated"               { FILTER( DEPRECATED); }
 
 "#"                        { FILTER( HASH); }
 "pragma"                   { FILTER( PRAGMA); }

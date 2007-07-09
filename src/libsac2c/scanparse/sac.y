@@ -97,8 +97,7 @@ COMMA  AMPERS  DOT  QUESTION  RIGHTARROW LEFTARROW
 INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
-MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT
-MODSPEC
+MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
 HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING 
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
@@ -179,8 +178,9 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 /*******************************************************************************
 * module implementations
 */
-%type <node> module class
+%type <node> module class 
 %type <ntype> classtype
+%type <id> deprecated
 %type <node> import use export provide interface
 %type <node> symbolset symbolsetentries
 
@@ -1840,20 +1840,30 @@ polyntype: LT ID LET ID SQBR_L ID SQBR_R GT
  ******************************************************************************
  ******************************************************************************/
 
-module: MODULE { file_kind = F_modimp; } ID SEMIC defs
-        { $$ = $5;
+module: MODULE { file_kind = F_modimp; } ID deprecated SEMIC defs
+        { $$ = $6;
           MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
           MODULE_FILETYPE( $$) = file_kind;
+          MODULE_DEPRECATED( $$) = $4;
         }
         ;
 
-class: CLASS { file_kind = F_classimp; } ID SEMIC classtype defs
-       { $$ = $6;
+class: CLASS { file_kind = F_classimp; } ID deprecated SEMIC classtype defs
+       { $$ = $7;
          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
          MODULE_FILETYPE( $$) = file_kind;
-         $$ = SetClassType( $$, $5);
+         MODULE_DEPRECATED( $$) = $4;
+         $$ = SetClassType( $$, $6);
        }
        ;
+
+deprecated: /* empty */
+            { $$ = NULL;
+            }
+          | DEPRECATED STR 
+            { $$ = $2;
+            }
+          ;
 
 classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
          | EXTERN CLASSTYPE SEMIC 
@@ -1863,35 +1873,6 @@ classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
                     SHmakeShape( 0)); }
          ;
 
-
-
-/******************************************************************************
- ******************************************************************************
- *
- *  rules for module specializations( C interface only)
- *
- *  module declaration rules reused:
- *   - modheader
- *   - expdesc
- *
- ******************************************************************************
- ******************************************************************************/
-/*
-modspec: modheader OWN COLON expdesc
-         { $$ = $1;
-           MODSPEC_OWN( $$) = $4;
-           MODSPEC_INTERFACE( $$) = NULL;
-           DBUG_PRINT( "PARSE",
-                       ("%s:"F_PTR" Id: %s , %s"F_PTR,
-                        global.mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        MODSPEC_NAME( $$),
-                        global.mdb_nodetype[ NODE_TYPE( MODSPEC_OWN( $$))],
-                        MODSPEC_OWN( $$)));
-         }
-       ;
-
-*/
 
 
 /*******************************************************************************

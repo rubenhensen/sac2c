@@ -2437,6 +2437,18 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="Deprecated">
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>

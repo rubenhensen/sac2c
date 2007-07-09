@@ -34,6 +34,7 @@ typedef stringset_t *(*deptabfun_p) ();
 typedef const char *(*astversionfun_p) ();
 typedef int (*serversionfun_p) ();
 typedef int (*flagfun_p) ();
+typedef const char *(*deprecatedfun_p) ();
 typedef void (*nsmapfun_p) ();
 
 static void
@@ -91,7 +92,7 @@ checkWasBuildUsingSameFlags (module_t *module)
     flagfun_p flagfun;
     char *name;
 
-    DBUG_ENTER ("wasBuildUsingSameFlags");
+    DBUG_ENTER ("checkWasBuildUsingSameFlags");
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
@@ -110,6 +111,35 @@ checkWasBuildUsingSameFlags (module_t *module)
                   "module using the current settings or switch the "
                   "settings used when compiling the module.",
                   module->name, module->sofile, GLOBALS_MODFLAGS_TEXT (flagfun ()));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+checkWhetherDeprecated (module_t *module)
+{
+    deprecatedfun_p dfun;
+    char *name;
+    const char *msg;
+
+    DBUG_ENTER ("checkWhetherDeprecated");
+
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
+    sprintf (name, "__%s_DEPRECATED", module->name);
+
+    dfun = (deprecatedfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (dfun == NULL) {
+        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+                  "file format.",
+                  module->name, module->sofile);
+    }
+
+    msg = dfun ();
+    if (msg != NULL) {
+        CTIwarn ("The module '%s' (%s) is deprecated: %s", module->name, module->sofile,
+                 msg);
     }
 
     DBUG_VOID_RETURN;
@@ -198,6 +228,7 @@ AddModuleToPool (const char *name)
     }
 
     checkHasSameASTVersion (result);
+    checkWhetherDeprecated (result);
 
     switch (global.tool) {
     case TOOL_sac2c:

@@ -134,9 +134,9 @@ GenerateSerFileHead (FILE *file, node *module)
 }
 
 static void
-GenerateSerFileVersionInfo (node *module, FILE *file)
+GenerateSerFileModuleInfo (node *module, FILE *file)
 {
-    DBUG_ENTER ("GenerateSerFileVersionInfo");
+    DBUG_ENTER ("GenerateSerFileModuleInfo");
 
     fprintf (file,
              "const char *__%s_ASTVERSION() {\n"
@@ -152,6 +152,18 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
              "int __%s_USEDFLAGS() {\n"
              "  return( %d); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), GLOBALS_MODFLAGS);
+
+    if (MODULE_DEPRECATED (module) == NULL) {
+        fprintf (file,
+                 "char * __%s_DEPRECATED() {\n"
+                 "  return( (char *) 0); \n}\n\n",
+                 NSgetName (MODULE_NAMESPACE (module)));
+    } else {
+        fprintf (file,
+                 "char * __%s_DEPRECATED() {\n"
+                 "  return( \"%s\"); \n}\n\n",
+                 NSgetName (MODULE_NAMESPACE (module)), MODULE_DEPRECATED (module));
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -569,7 +581,7 @@ SERdoSerialize (node *module)
 
     GenerateSerFileHead (INFO_SER_FILE (info), module);
 
-    GenerateSerFileVersionInfo (module, INFO_SER_FILE (info));
+    GenerateSerFileModuleInfo (module, INFO_SER_FILE (info));
 
     TRAVpush (TR_ser);
 
