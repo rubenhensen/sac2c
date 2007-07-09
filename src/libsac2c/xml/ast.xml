@@ -918,6 +918,14 @@
           <node name="Avis" />
         </travuser>
       </traversal>
+      <traversal id="ICC" name="Insert Conformity Checks" default="sons" include="insert_conformity_checks.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+          <node name="Let" />
+        </travuser>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
         <travuser>
           <node name="Fundef" />
@@ -5098,7 +5106,6 @@
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                  <phase name="IDC" />
                   <phase name="opt_cyc_cse" />
                   <phase name="opt_lir" />
                   <phase name="pc_ussa" />

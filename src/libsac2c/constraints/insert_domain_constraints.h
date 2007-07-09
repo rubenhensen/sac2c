@@ -8,7 +8,7 @@
 
 #include "types.h"
 
-extern node *IDCinit (node *fundef, bool all);
+extern node *IDCinitialize (node *fundef, bool all);
 extern node *IDCaddTypeConstraint (ntype *type, node *avis);
 extern node *IDCaddFunConstraint (node *expr);
 extern node *IDCinsertConstraints (node *fundef, bool all);

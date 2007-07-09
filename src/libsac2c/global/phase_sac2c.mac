@@ -170,6 +170,8 @@ SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls,
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
+SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks, ALWAYS, cwc)
+
 ENDPHASE (cwc)
 
 /******************************************************************************/
