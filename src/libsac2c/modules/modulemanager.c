@@ -125,7 +125,7 @@ checkWhetherDeprecated (module_t *module)
 
     DBUG_ENTER ("checkWhetherDeprecated");
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_DEPRECATED", module->name);
 
     dfun = (deprecatedfun_p)LIBMgetLibraryFunction (name, module->lib);
