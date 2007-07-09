@@ -53,6 +53,11 @@ specific implementation of a function should remain with the source code.
 #define OVRLD_FUN 0x0010
 /*--------------------------------------------------------------------------*/
 
+/* PRF ARGUMENT ENCODING */
+#define PRF_ARGENCODING(prf, arg) global.prf_arg_encoding[3 * prf + arg]
+
+/*--------------------------------------------------------------------------*/
+
 /***
  ***  SHPSEG :
  ***/

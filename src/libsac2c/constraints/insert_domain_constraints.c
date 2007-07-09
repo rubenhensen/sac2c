@@ -429,14 +429,14 @@ IDCinitialize (node *fundef, bool all)
  *  @param type: type constraint
  *         avis: variable that is to be constrained
  *
- *  @return N_avis node of the predicate
+ *  @return N_avis node of the predicate or NULL of none generated
  *
  ***************************************************************************/
 
 node *
 IDCaddTypeConstraint (ntype *type, node *avis)
 {
-    node *res;
+    node *res = NULL;
     ntype *act_type;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -458,7 +458,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
                 DBUG_PRINT ("IDC", ("strong enough constraint exists already"));
             } else {
                 AVIS_CONSTRTYPE (avis) = TYfreeType (AVIS_CONSTRTYPE (avis));
-                AVIS_CONSTRTYPE (avis) = type;
+                AVIS_CONSTRTYPE (avis) = TYcopyType (type);
                 /**
                  * for getting half-decent error-msgs, we copy the pos info
                  * into the  avis from where we will spread it upon code
@@ -470,7 +470,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
                 DBUG_PRINT ("IDC", ("replacing existing constraint"));
             }
         } else {
-            AVIS_CONSTRTYPE (avis) = type;
+            AVIS_CONSTRTYPE (avis) = TYcopyType (type);
             res = TBmakeAvis (TRAVtmpVar (),
                               TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
             AVIS_CONSTRVAR (avis) = res;

@@ -733,7 +733,7 @@ ASDprf (node *arg_node, info *arg_info)
         args = PRF_ARGS (arg_node);
         while (args != NULL) {
             arg = EXPRS_EXPR (args);
-            if ((global.prf_arg_encoding[3 * PRF_PRF (arg_node) + arg_cnt] == PA_S)
+            if ((PRF_ARGENCODING (PRF_PRF (arg_node), arg_cnt) == PA_S)
                 && (NODE_TYPE (arg) == N_id)) {
                 actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (arg));
                 if (actual_cls != C_scl) {

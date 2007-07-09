@@ -3,8 +3,12 @@
 /*
  * mapping of arguments and results
  */
-#define SAC4C_ARG(no) CAT0 (SACarg *arg, no)
-#define SAC4C_RET(no) CAT1 (SACarg **result, no)
+#define SAC4C_DECL_ARG(no) SACarg *SAC4C_ARG (no)
+#define SAC4C_DECL_RET(no) SACarg **SAC4C_RET (no)
+
+#define SAC4C_ARG(no) CAT0 (arg, no)
+#define SAC4C_RET(no) CAT1 (result, no)
+
 #define SAC4C_VOID void
 
 /*
@@ -16,6 +20,19 @@
  * mapping of extern directive
  */
 #define SAC4C_EXTERN extern
+
+/*
+ * wrapper decision tree
+ */
+#define SAC4C_DISPATCH_BLOCK_BEGIN
+
+#define SAC4C_DISPATCH_BLOCK_END
+
+#define SAC4C_DISPATCH(test, instance)
+
+#define SAC4C_ARG_MATCH_BASE(arg1, arg2)
+
+#define SAC4C_ARG_MATCH_UDT(arg1, arg2)
 
 /*
  * concatenation macros

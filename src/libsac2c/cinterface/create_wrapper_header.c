@@ -213,7 +213,9 @@ CWHfunbundle (node *arg_node, info *arg_info)
     safename = STRreplaceSpecialCharacters (FUNBUNDLE_NAME (arg_node));
     safens = STRreplaceSpecialCharacters (NSgetName (FUNBUNDLE_NS (arg_node)));
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_EXTERN SAC4C_FUNNAME( %d, %s, %s) ( ",
+    fprintf (INFO_FILE (arg_info),
+             "SAC4C_EXTERN void SAC4C_FUNNAME( %d, %s, %s)"
+             " ( ",
              FUNBUNDLE_ARITY (arg_node), safens, safename);
 
     safens = MEMfree (safens);
@@ -276,7 +278,7 @@ CWHarg (node *arg_node, info *arg_info)
 
     INFO_COUNTER (arg_info)++;
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_ARG( %d)", INFO_COUNTER (arg_info));
+    fprintf (INFO_FILE (arg_info), "SAC4C_DECL_ARG( %d)", INFO_COUNTER (arg_info));
 
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (INFO_FILE (arg_info), ", ");
@@ -302,7 +304,7 @@ CWHret (node *arg_node, info *arg_info)
 
     INFO_COUNTER (arg_info)++;
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_RET( %d)", INFO_COUNTER (arg_info));
+    fprintf (INFO_FILE (arg_info), "SAC4C_DECL_RET( %d)", INFO_COUNTER (arg_info));
 
     if (RET_NEXT (arg_node) != NULL) {
         fprintf (INFO_FILE (arg_info), ", ");
