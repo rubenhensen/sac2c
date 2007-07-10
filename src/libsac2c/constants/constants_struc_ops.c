@@ -259,6 +259,42 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
 }
 
 /******************************************************************************
+ *
+ * function:
+ *    bool incCounter(int *counter, int *upper_bounds, int depth)
+ *
+ * description:
+ *    internal function which imitates the behavior of nested for-loops with
+ *    unknown depth. Therefor it gets the counter-array in which every field
+ *    descripes one for-loop. The second arguments descripes the upper bound
+ *    of each single loop and the third argument indicates the number of
+ *    nested loops.
+ *    It returns TRUE iff all loops reached their upper bound.
+ *****************************************************************************/
+
+static bool
+incCounter (int *counter, int *upper_bounds, int depth)
+{
+    DBUG_ENTER ("incCounter");
+
+    int i = (depth - 1);
+    bool is_max = TRUE; /* TRUE to enter the loop initially*/
+
+    for (i = (depth - 1); i >= 0; i--) {
+        if (is_max == TRUE) {
+            if (counter[i] == (upper_bounds[i] - 1)) {
+                counter[i] = 0;
+            } else {
+                is_max = FALSE;
+                counter[i] += 1;
+            }
+        }
+    }
+
+    DBUG_RETURN (is_max);
+}
+
+/******************************************************************************
  ***
  *** Operations on constants:
  ***   Here, you will find those functions of the MOA stuff implemented that
@@ -415,6 +451,110 @@ COidxSel (constant *idx, constant *a)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    constant *COoverSel(constant *idx, constant *a)
+ *
+ * description:
+ *    Processes an APL-like overselection.
+ *****************************************************************************/
+
+constant *
+COoverSel (constant *idx, constant *a)
+{
+    DBUG_ENTER ("COoverSel");
+
+    /* Extract some informations about the arguments*/
+    int idx_dim = CONSTANT_DIM (idx);
+    int a_dim = CONSTANT_DIM (a);
+    shape *idx_shape = CONSTANT_SHAPE (idx);
+    shape *a_shape = CONSTANT_SHAPE (a);
+    simpletype a_type = CONSTANT_TYPE (a);
+
+    DBUG_ASSERT ((idx_dim > 0), "overSel: idx scalar!");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "overSel: idx not T_int!");
+
+    int *idx_elems = CONSTANT_ELEMS (idx);
+
+    /* Calculate the length of the IV*/
+    int iv_len = SHgetExtent (idx_shape, (idx_dim - 1));
+
+    DBUG_ASSERT ((iv_len <= a_dim), "overSel: dim(selection) > dim(array)!");
+
+    /* Construct shape of the result*/
+    shape *frame_shape = SHdropFromShape (-1, idx_shape);
+    shape *cell_shape = SHdropFromShape (iv_len, a_shape);
+    shape *res_shape = SHappendShapes (frame_shape, cell_shape);
+
+    /* Calculate the length of the result CV*/
+    int res_cv_len = SHgetUnrLen (res_shape);
+
+    /* Construct result CV*/
+    void *res_cv = COINTallocCV (a_type, res_cv_len);
+
+    /* Construct result const*/
+    constant *res = COINTmakeConstant (a_type, res_shape, res_cv, res_cv_len);
+
+    /* Compute element size*/
+    int elem_len = SHgetUnrLen (cell_shape);
+
+    /* Initialize counter and related vars*/
+    int i = 0;
+    int frame_shape_len = SHgetDim (frame_shape);
+    int idx_counter[frame_shape_len];
+    int idx_counter_upbound[frame_shape_len];
+    bool loop_done = FALSE;
+    int idx_pos = 0;
+    int to_offset = 0;
+    int from_offset = 0;
+    int row_length = 0;
+
+    for (i = 0; i < frame_shape_len; i++) {
+        idx_counter[i] = 0;
+        idx_counter_upbound[i] = SHgetExtent (frame_shape, i);
+    }
+
+    /* Copy selections*/
+    do {
+        idx_pos = 0;
+        from_offset = 0;
+
+        /* Compute the position in the idx constant to get the elements which
+         * indicate the pos which have to be selected in a*/
+        for (i = 0; i < frame_shape_len; i++) {
+            row_length = 1;
+            if (i < (frame_shape_len - 1)) {
+                row_length = SHgetExtent (frame_shape, (i + 1));
+            }
+            idx_pos += idx_counter[i] * row_length;
+        }
+        idx_pos *= iv_len;
+
+        /* Compute the offset of the elements of a which have to be taken*/
+        for (i = 0; i < iv_len; i++) {
+            row_length = 1;
+            if (i < (iv_len - 1)) {
+                row_length = SHgetExtent (a_shape, (i + 1));
+            }
+            from_offset += idx_elems[idx_pos + i] * row_length;
+        }
+        from_offset *= elem_len;
+
+        /* Copy related elements of a to the relating pos in the res constant*/
+        COINTcopyElemsFromCVToCV (a_type, CONSTANT_ELEMS (a), from_offset, elem_len,
+                                  CONSTANT_ELEMS (res), to_offset);
+
+        to_offset += elem_len;
+        loop_done = incCounter (idx_counter, idx_counter_upbound, frame_shape_len);
+    } while (loop_done == FALSE);
+
+    /* Free shapes*/
+    SHfreeShape (frame_shape);
+    SHfreeShape (cell_shape);
+
+    DBUG_RETURN (res);
+}
 /******************************************************************************
  *
  * function:
