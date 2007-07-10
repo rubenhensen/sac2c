@@ -459,7 +459,7 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
 ntype *
 NTCCTprf_same_shape (te_info *info, ntype *args)
 {
-    ntype *array1, *array2, *res, *pred;
+    ntype *array1, *array2, *res1, *res2, *pred;
     char *err_msg;
 
     DBUG_ENTER ("NTCCTprf_same_shape");
@@ -467,10 +467,10 @@ NTCCTprf_same_shape (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                             array2);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    res1 = TEassureSameShape (TEarg2Obj (1), array1,
+                              TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
     if (err_msg == NULL) {
         TEassureSameSimpleType (TEarg2Obj (1), array1,
@@ -478,19 +478,24 @@ NTCCTprf_same_shape (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
     }
     if (err_msg != NULL) {
-        res = TYfreeType (res);
-        res = TYmakeBottomType (err_msg);
-        pred = TYcopyType (res);
+        res1 = TYfreeType (res1);
+        res1 = TYmakeBottomType (err_msg);
+        res2 = TYcopyType (res1);
+        pred = TYcopyType (res1);
     } else {
 
         if (TUshapeKnown (array1) && TUshapeKnown (array2)) {
+            res1 = TYfreeType (res1);
+            res1 = TYcopyType (array1);
+            res2 = TYcopyType (array2);
             pred = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
         } else {
+            res2 = TYcopyType (res1);
             pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
         }
     }
 
-    DBUG_RETURN (TYmakeProductType (3, res, TYcopyType (res), pred));
+    DBUG_RETURN (TYmakeProductType (3, res1, res2, pred));
 }
 
 /******************************************************************************

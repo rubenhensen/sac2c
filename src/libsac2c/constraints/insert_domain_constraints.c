@@ -53,6 +53,8 @@ struct INFO {
     int counter;
     node *post;
     node *vardecs;
+    int level;
+    int code;
 };
 
 #define INFO_ALL(n) ((n)->all)
@@ -60,6 +62,8 @@ struct INFO {
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_POSTASSIGN(n) ((n)->post)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_LEVEL(n) ((n)->level)
+#define INFO_CODE(n) ((n)->code)
 
 static info *
 MakeInfo ()
@@ -75,6 +79,8 @@ MakeInfo ()
     INFO_COUNTER (result) = 0;
     INFO_POSTASSIGN (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_LEVEL (result) = 0;
+    INFO_CODE (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -127,6 +133,8 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     AVIS_SUBST (old_avis) = avis;
+    AVIS_SUBSTLVL (old_avis) = INFO_LEVEL (arg_info);
+    AVIS_SUBSTCD (old_avis) = INFO_CODE (arg_info);
 
     DBUG_RETURN (avis);
 }
@@ -406,9 +414,35 @@ IDCwith (node *arg_node, info *arg_info)
      * the generator variable obtain the right AVIS_POS, i.e., one
      * that is smaller than any variable defined in the code.
      */
+    INFO_LEVEL (arg_info)++;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    INFO_LEVEL (arg_info)--;
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCcode( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCcode");
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        INFO_CODE (arg_info)++;
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+        INFO_CODE (arg_info)--;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -423,7 +457,9 @@ IDCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCid");
 
-    while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
+    while ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
+           && (AVIS_SUBSTLVL (ID_AVIS (arg_node)) <= INFO_LEVEL (arg_info))
+           && (AVIS_SUBSTCD (ID_AVIS (arg_node)) == INFO_CODE (arg_info))) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
 

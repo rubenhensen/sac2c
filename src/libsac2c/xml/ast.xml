@@ -916,6 +916,7 @@
           <node name="Assign" />
           <node name="Ids" />
           <node name="With" />
+          <node name="Code" />
           <node name="Id" />
           <node name="Avis" />
         </travuser>
@@ -5128,6 +5129,30 @@
 		<phases>
 		  <phase name="pc_reso" />
 		</phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="SubstLvl">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="idc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="SubstCd">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="idc" />
+                </phases>
               </target>
             </targets>
           </type>
