@@ -97,9 +97,6 @@ need_ext_flags=yes)
 dnl check for C preprocessor
 AC_PROG_CPP()
 
-dnl check for libtool
-AC_PROG_LIBTOOL()
-
 dnl check for ranlib
 AC_PROG_RANLIB()
 if test "$RANLIB"; then
