@@ -928,9 +928,11 @@
           <node name="Let" />
           <node name="With" />
           <node name="Generator" />
+          <node name="Code" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
+          <node name="Propagate" />
           <node name="Block" />
         </travuser>
       </traversal>

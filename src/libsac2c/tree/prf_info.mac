@@ -653,7 +653,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
-  PRF (same_shape_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
+  PRF (same_shape_AxA, (PA_A, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
        NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, TEthree, NULL, NULL),
 
   PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,

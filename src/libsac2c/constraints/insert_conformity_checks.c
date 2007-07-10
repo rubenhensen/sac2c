@@ -49,6 +49,9 @@ struct INFO {
     node *vardecs;
     node *lhs;
     node *wlguardids;
+    node *generator;
+    node *withops;
+    node *cexprs;
 };
 
 /**
@@ -58,6 +61,9 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WLGUARDIDS(n) ((n)->wlguardids)
+#define INFO_GENERATOR(n) ((n)->generator)
+#define INFO_WITHOPS(n) ((n)->withops)
+#define INFO_CEXPRS(n) ((n)->cexprs)
 
 static info *
 MakeInfo ()
@@ -72,6 +78,9 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WLGUARDIDS (result) = NULL;
+    INFO_GENERATOR (result) = NULL;
+    INFO_WITHOPS (result) = NULL;
+    INFO_CEXPRS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -263,7 +272,7 @@ ICCsameShape (node *ids, node *args)
 {
     DBUG_ENTER ("ICCsameShape");
 
-    ids = EmitConstraint (ids, TBmakePrf (F_same_shape_VxV, DUPdoDupTree (args)));
+    ids = EmitConstraint (ids, TBmakePrf (F_same_shape_AxA, DUPdoDupTree (args)));
 
     DBUG_RETURN (ids);
 }
@@ -554,7 +563,31 @@ ICCwith (node *arg_node, info *arg_info)
     guardids = INFO_WLGUARDIDS (arg_info);
     INFO_WLGUARDIDS (arg_info) = NULL;
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * generate constraints for parts/generators/cexprs, including those
+     * that depend on withops
+     */
+    if (WITH_PART (arg_node) != NULL) {
+        INFO_WITHOPS (arg_info) = WITH_WITHOP (arg_node);
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        INFO_WITHOPS (arg_info) = NULL;
+    }
+
+    /*
+     * now the self contained constraints in withops
+     */
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    /*
+     * now go on with the code
+     */
+    if (WITH_CODE (arg_node) != NULL) {
+        INFO_WITHOPS (arg_info) = WITH_WITHOP (arg_node);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_WITHOPS (arg_info) = NULL;
+    }
 
     if (INFO_WLGUARDIDS (arg_info) != NULL) {
         DBUG_PRINT ("ICC", (" ...emitting wl-afterguard"));
@@ -647,7 +680,41 @@ ICCgenerator (node *arg_node, info *arg_info)
                                         DUPdoDupTree (GENERATOR_STEP (arg_node))));
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * now generate generate/withop constrains
+     */
+    if (INFO_WITHOPS (arg_info) != NULL) {
+        INFO_GENERATOR (arg_info) = arg_node;
+        INFO_WITHOPS (arg_info) = TRAVdo (INFO_WITHOPS (arg_info), arg_info);
+        INFO_GENERATOR (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCcode(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCcode");
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * emit withop/cexprs constraints
+     */
+    if (INFO_WITHOPS (arg_info) != NULL) {
+        INFO_CEXPRS (arg_info) = CODE_CEXPRS (arg_node);
+        INFO_WITHOPS (arg_info) = TRAVdo (INFO_WITHOPS (arg_info), arg_info);
+        DBUG_ASSERT ((INFO_CEXPRS (arg_info) == NULL),
+                     "not all cexprs handled by withops!");
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -662,9 +729,68 @@ ICCgenerator (node *arg_node, info *arg_info)
 node *
 ICCgenarray (node *arg_node, info *arg_info)
 {
+    ntype *constraint_type;
+
     DBUG_ENTER ("ICCgenarray");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (INFO_GENERATOR (arg_info) != NULL) {
+        /*
+         * emit generator dependent constraints
+         */
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_same_shape_AxA,
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND1 (INFO_GENERATOR (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_val_matches_val_VxV,
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND1 (INFO_GENERATOR (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_same_shape_AxA,
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_val_matches_val_VxV,
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+    } else if (INFO_CEXPRS (arg_info) != NULL) {
+        /*
+         * emit cexpr constraints
+         */
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_same_shape_AxA,
+                                        DUPdoDupTree (
+                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    } else {
+        /*
+         * emit withop-local constraints
+         */
+        constraint_type = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
+
+        INFO_WLGUARDIDS (arg_info)
+          = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENARRAY_SHAPE (arg_node),
+                                constraint_type);
+        constraint_type = TYfreeType (constraint_type);
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -681,7 +807,27 @@ ICCmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ICCmodarray");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (INFO_GENERATOR (arg_info) != NULL) {
+        /*
+         * emit generator dependent constraints
+         */
+        /* TODO */
+    } else if (INFO_CEXPRS (arg_info) != NULL) {
+        /*
+         * emit cexpr constraints
+         */
+        /* TODO */
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    } else {
+        /*
+         * emit withop-local constraints
+         */
+    }
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -698,7 +844,72 @@ ICCfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ICCfold");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (INFO_GENERATOR (arg_info) != NULL) {
+        /*
+         * emit generator dependent constraints
+         */
+    } else if (INFO_CEXPRS (arg_info) != NULL) {
+        /*
+         * emit cexpr constraints
+         */
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_same_shape_AxA,
+                                        DUPdoDupTree (
+                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
+                                        DUPdoDupTree (FOLD_NEUTRAL (arg_node))));
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    } else {
+        /*
+         * emit withop-local constraints
+         */
+    }
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCpropagate(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCpropagate");
+
+    if (INFO_GENERATOR (arg_info) != NULL) {
+        /*
+         * emit generator dependent constraints
+         */
+    } else if (INFO_CEXPRS (arg_info) != NULL) {
+        /*
+         * emit cexpr constraints
+         */
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_same_shape_AxA,
+                                        DUPdoDupTree (
+                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
+                                        DUPdoDupTree (PROPAGATE_DEFAULT (arg_node))));
+
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    } else {
+        /*
+         * emit withop-local constraints
+         */
+    }
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

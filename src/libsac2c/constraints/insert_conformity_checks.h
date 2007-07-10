@@ -21,9 +21,11 @@ extern node *ICClet (node *arg_node, info *arg_info);
 extern node *ICCprf (node *arg_node, info *arg_info);
 extern node *ICCwith (node *arg_node, info *arg_info);
 extern node *ICCgenerator (node *arg_node, info *arg_info);
+extern node *ICCcode (node *arg_node, info *arg_info);
 extern node *ICCgenarray (node *arg_node, info *arg_info);
 extern node *ICCmodarray (node *arg_node, info *arg_info);
 extern node *ICCfold (node *arg_node, info *arg_info);
+extern node *ICCpropagate (node *arg_node, info *arg_info);
 extern node *ICCblock (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_CONFORMITY_CHECKS_H_ */
