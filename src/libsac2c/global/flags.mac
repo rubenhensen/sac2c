@@ -154,6 +154,7 @@ CS (immediate, 'i', TRUE)
 #define RTC(flag, char, default) RTCflag (flag) RTCchar (char) RTCdefault (default)
 #endif
 
+RTC (conformity, 'c', FALSE)
 RTC (boundary, 'b', FALSE)
 RTC (type, 't', FALSE)
 RTC (malloc, 'm', FALSE)

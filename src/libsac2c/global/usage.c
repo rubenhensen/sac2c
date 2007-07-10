@@ -584,6 +584,7 @@ PrintRuntimeCheckOptions (void)
             "                    Incorporate runtime checks into executable program.\n"
             "                    The following flags are supported:\n"
             "                      a: Incorporate all available runtime checks.\n"
+            "                      c: Perform conformity checks.\n"
             "                      t: Check assignments for type violations.\n"
             "                      b: Check array accesses for boundary violations.\n"
             "                      m: Check success of memory allocations.\n"

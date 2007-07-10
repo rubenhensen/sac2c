@@ -937,6 +937,15 @@
           <node name="Block" />
         </travuser>
       </traversal>
+      <traversal id="SCC" name="Strip Conformity Checks" default="sons" include="strip_conformity_checks.h" >
+        <travuser>
+          <node name="Block" />
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Avis" />
+        </travuser>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
         <travuser>
           <node name="Fundef" />

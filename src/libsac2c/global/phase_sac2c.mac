@@ -170,7 +170,8 @@ SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls,
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
-SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks, ALWAYS, cwc)
+SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
+          global.insertconformitychecks, cwc)
 
 ENDPHASE (cwc)
 
@@ -517,8 +518,14 @@ SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVar
 SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
+SUBPHASE (scc, "Stripping conformity checks", SCCdoStripConformityChecks,
+          !global.runtimecheck.conformity, opt)
+
 SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
-          (global.optimize.dosaa || global.optimize.doive) && global.optimize.dodcr, opt)
+          (global.optimize.dosaa || global.optimize.doive
+           || !global.runtimecheck.conformity)
+            && global.optimize.dodcr,
+          opt)
 
 SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMarking,
           global.optimize.dowllo, opt)

@@ -99,6 +99,12 @@ CheckOptionConsistency ()
                  "Array padding disabled");
     }
 
+    if (global.runtimecheck.conformity && !global.insertconformitychecks) {
+        global.insertconformitychecks = TRUE;
+        CTIwarn ("Option -check c implies option -ecc.\n"
+                 "Insertion of explicit conformity checks has been enabled.");
+    }
+
 #ifdef DISABLE_MT
     if (global.mtmode != MT_none) {
         global.mtmode = MT_none;
@@ -324,7 +330,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
      */
 
-    ARGS_FLAG ("ecc", global.insertexplicitconstraints = TRUE);
+    ARGS_FLAG ("ecc", global.insertconformitychecks = TRUE);
     ARGS_FLAG ("elf", global.elf = TRUE);
 
     ARGS_OPTION_BEGIN ("E")

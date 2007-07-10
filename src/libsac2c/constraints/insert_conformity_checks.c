@@ -117,15 +117,13 @@ ICCdoInsertConformityChecks (node *syntax_tree)
 
     DBUG_ENTER ("ICCdoInsertConformityChecks");
 
-    if (global.insertexplicitconstraints) {
-        info = MakeInfo ();
+    info = MakeInfo ();
 
-        TRAVpush (TR_icc);
-        syntax_tree = TRAVdo (syntax_tree, info);
-        TRAVpop ();
+    TRAVpush (TR_icc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
-        info = FreeInfo (info);
-    }
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
