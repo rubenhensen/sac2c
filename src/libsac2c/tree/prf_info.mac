@@ -466,7 +466,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
 
   PRF (modarray_AxVxS, (PA_A, PA_V, PA_S), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxS,
        COmodarray, COMPprfModarray, NULL, SCCFprf_modarray, NULL, dim_of_arg1,
-       shp_of_arg1, NULL, 0, NULL, ICCmodarray, TEone, NULL, NULL),
+       shp_of_arg1, NULL, 0, NULL, ICCprfModarray, TEone, NULL, NULL),
 
   PRF (cat_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_cat_VxV, COcat, COMPprfCat,
        NULL, SCCFprf_cat_VxV, NULL, dim_is_1, shp_for_cat, NULL, 0, NULL, ICCnone, TEone,

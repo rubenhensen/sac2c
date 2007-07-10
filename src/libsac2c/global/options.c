@@ -324,6 +324,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
      */
 
+    ARGS_FLAG ("ecc", global.insertexplicitconstraints = TRUE);
     ARGS_FLAG ("elf", global.elf = TRUE);
 
     ARGS_OPTION_BEGIN ("E")

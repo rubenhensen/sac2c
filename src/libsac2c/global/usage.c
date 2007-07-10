@@ -578,6 +578,8 @@ PrintRuntimeCheckOptions (void)
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
+            "    -ecc            Insert explicit conformity checks at compiler time.\n"
+            "\n"
             "    -check [atbmeh]+\n"
             "                    Incorporate runtime checks into executable program.\n"
             "                    The following flags are supported:\n"

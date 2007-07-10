@@ -105,13 +105,15 @@ ICCdoInsertConformityChecks (node *syntax_tree)
 
     DBUG_ENTER ("ICCdoInsertConformityChecks");
 
-    info = MakeInfo ();
+    if (global.insertexplicitconstraints) {
+        info = MakeInfo ();
 
-    TRAVpush (TR_icc);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
+        TRAVpush (TR_icc);
+        syntax_tree = TRAVdo (syntax_tree, info);
+        TRAVpop ();
 
-    info = FreeInfo (info);
+        info = FreeInfo (info);
+    }
 
     DBUG_RETURN (syntax_tree);
 }
@@ -270,9 +272,9 @@ ICCsel (node *ids, node *args)
 }
 
 static node *
-ICCmodarray (node *ids, node *args)
+ICCprfModarray (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCmodarray");
+    DBUG_ENTER ("ICCprfModarray");
 
     ids = EmitConstraint (ids, TCmakePrf2 (F_shape_matches_dim_VxA,
                                            DUPdoDupTree (EXPRS_EXPR2 (args)),
@@ -387,7 +389,7 @@ ICCassign (node *arg_node, info *arg_info)
  *
  * @fn node *ICClet(node *arg_node, info *arg_info)
  *
- * @brief Performs a traversal of the fundef chain without entering the body
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -412,7 +414,7 @@ ICClet (node *arg_node, info *arg_info)
  *
  * @fn node *ICCprf(node *arg_node, info *arg_info)
  *
- * @brief Performs a traversal of the fundef chain without entering the body
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -487,6 +489,115 @@ ICCprf (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("ICC", ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCblock(node *arg_node, info *arg_info)
+ *
+ * @brief stacks the INFO_POSTASSIGNS chain
+ *
+ *****************************************************************************/
+node *
+ICCblock (node *arg_node, info *arg_info)
+{
+    node *postassigns;
+
+    DBUG_ENTER ("ICCblock");
+
+    postassigns = INFO_POSTASSIGNS (arg_info);
+    INFO_POSTASSIGNS (arg_info) = NULL;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_POSTASSIGNS (arg_info) = postassigns;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCwith(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCwith");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCgenerator(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCgenerator (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCgenerator");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCgenarray(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCgenarray");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCmodarray(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCmodarray");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ICCfold(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ICCfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ICCfold");
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
