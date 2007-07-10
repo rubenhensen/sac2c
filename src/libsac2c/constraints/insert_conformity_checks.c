@@ -771,12 +771,16 @@ ICCgenarray (node *arg_node, info *arg_info)
         /*
          * emit cexpr constraints
          */
-        INFO_WLGUARDIDS (arg_info)
-          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
-                            TCmakePrf2 (F_same_shape_AxA,
-                                        DUPdoDupTree (
-                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                                        DUPdoDupTree (GENARRAY_DEFAULT (arg_node))));
+        DBUG_PRINT ("ICC", ("...emitting F_same_shape_AxA CEXPR-constraint"));
+
+        /*
+         * we simply ignore the returned avis, as we do not propagate the
+         * boolean guard out of the withloop.
+         */
+        IDCaddFunConstraint (
+          TCmakePrf2 (F_same_shape_AxA,
+                      DUPdoDupTree (EXPRS_EXPR (INFO_CEXPRS (arg_info))),
+                      DUPdoDupTree (GENARRAY_DEFAULT (arg_node))));
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
@@ -857,12 +861,6 @@ ICCfold (node *arg_node, info *arg_info)
         /*
          * emit cexpr constraints
          */
-        INFO_WLGUARDIDS (arg_info)
-          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
-                            TCmakePrf2 (F_same_shape_AxA,
-                                        DUPdoDupTree (
-                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                                        DUPdoDupTree (FOLD_NEUTRAL (arg_node))));
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
@@ -899,12 +897,6 @@ ICCpropagate (node *arg_node, info *arg_info)
         /*
          * emit cexpr constraints
          */
-        INFO_WLGUARDIDS (arg_info)
-          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
-                            TCmakePrf2 (F_same_shape_AxA,
-                                        DUPdoDupTree (
-                                          EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                                        DUPdoDupTree (PROPAGATE_DEFAULT (arg_node))));
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
