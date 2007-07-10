@@ -204,24 +204,20 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
 }
 
 static node *
-ICCnone (node *ids, node *args)
-{
-    DBUG_ENTER ("ICCnone");
-
-    DBUG_RETURN (ids);
-}
-
-static node *
-ICCsameShape (node *ids, node *args)
+EmitConstraint (node *ids, node *constraint)
 {
     node *avis;
-    node *constraint;
 
-    DBUG_ENTER ("ICCsameShape");
+    DBUG_ENTER ("EmitConstraint");
 
-    DBUG_PRINT ("ICC", ("...emitting same shape constraint"));
+#ifndef DBUG_OFF
+    if (NODE_TYPE (constraint) == N_prf) {
+        DBUG_PRINT ("ICC", ("...emitting %s", PRF_NAME (PRF_PRF (constraint))));
+    } else {
+        DBUG_PRINT ("ICC", ("...emitting fun constraint"));
+    }
+#endif
 
-    constraint = TBmakePrf (F_same_shape_VxV, DUPdoDupTree (args));
     avis = IDCaddFunConstraint (constraint);
 
     if (avis != NULL) {
@@ -232,9 +228,30 @@ ICCsameShape (node *ids, node *args)
 }
 
 static node *
+ICCnone (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCnone");
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCsameShape (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCsameShape");
+
+    ids = EmitConstraint (ids, TBmakePrf (F_same_shape_VxV, DUPdoDupTree (args)));
+
+    DBUG_RETURN (ids);
+}
+
+static node *
 ICCreshape (node *ids, node *args)
 {
     DBUG_ENTER ("ICCreshape");
+
+    ids = EmitConstraint (ids,
+                          TBmakePrf (F_prod_matches_prod_shape_VxA, DUPdoDupTree (args)));
 
     DBUG_RETURN (ids);
 }
@@ -244,6 +261,11 @@ ICCsel (node *ids, node *args)
 {
     DBUG_ENTER ("ICCsel");
 
+    ids = EmitConstraint (ids, TBmakePrf (F_shape_matches_dim_VxA, DUPdoDupTree (args)));
+    ids = EmitConstraint (ids,
+                          TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (EXPRS_EXPR (args))));
+    ids = EmitConstraint (ids, TBmakePrf (F_val_matches_shape_VxA, DUPdoDupTree (args)));
+
     DBUG_RETURN (ids);
 }
 
@@ -251,6 +273,15 @@ static node *
 ICCmodarray (node *ids, node *args)
 {
     DBUG_ENTER ("ICCmodarray");
+
+    ids = EmitConstraint (ids, TCmakePrf2 (F_shape_matches_dim_VxA,
+                                           DUPdoDupTree (EXPRS_EXPR2 (args)),
+                                           DUPdoDupTree (EXPRS_EXPR (args))));
+    ids = EmitConstraint (ids, TCmakePrf1 (F_non_neg_val_V,
+                                           DUPdoDupTree (EXPRS_EXPR2 (args))));
+    ids = EmitConstraint (ids, TCmakePrf2 (F_val_matches_shape_VxA,
+                                           DUPdoDupTree (EXPRS_EXPR2 (args)),
+                                           DUPdoDupTree (EXPRS_EXPR (args))));
 
     DBUG_RETURN (ids);
 }
