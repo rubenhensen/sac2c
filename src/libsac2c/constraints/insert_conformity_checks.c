@@ -32,7 +32,11 @@
 #include "new_typecheck.h"
 #include "globals.h"
 #include "memory.h"
+#include "ctinfo.h"
+#include "DupTree.h"
 #include "insert_domain_constraints.h"
+
+typedef node *(*iccfun_p) (node *, node *);
 
 /** <!--********************************************************************-->
  *
@@ -189,8 +193,6 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
         result = TYmakeAKD (TYcopyType (scalartype), 1, SHmakeShape (0));
         break;
     case PA_A:
-        result = TYmakeAUD (TYcopyType (scalartype));
-        break;
     case PA_x:
         /* nothing to be done here */
         break;
@@ -200,6 +202,71 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
 
     DBUG_RETURN (result);
 }
+
+static node *
+ICCnone (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCnone");
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCsameShape (node *ids, node *args)
+{
+    node *avis;
+    node *constraint;
+
+    DBUG_ENTER ("ICCsameShape");
+
+    DBUG_PRINT ("ICC", ("...emitting same shape constraint"));
+
+    constraint = TBmakePrf (F_same_shape_VxV, DUPdoDupTree (args));
+    avis = IDCaddFunConstraint (constraint);
+
+    if (avis != NULL) {
+        ids = TBmakeExprs (TBmakeId (avis), ids);
+    }
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCreshape (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCreshape");
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCsel (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCsel");
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCmodarray (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCmodarray");
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+ICCvalMatchLen (node *ids, node *args)
+{
+    DBUG_ENTER ("ICCvalMatchLen");
+
+    DBUG_RETURN (ids);
+}
+
+static iccfun_p iccfuns[] = {
+#define PRFicc_fun(icc_fun) icc_fun
+#include "prf_info.mac"
+};
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -224,7 +291,7 @@ ICCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ICCfundef");
 
-    DBUG_PRINT ("ICC", ("traversing %s:", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("ICC", ("traversing %s:", CTIitemName (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         arg_node = IDCinitialize (arg_node, FALSE);
@@ -333,6 +400,8 @@ ICCprf (node *arg_node, info *arg_info)
     args = PRF_ARGS (arg_node);
     arg_cnt = 0;
 
+    DBUG_PRINT ("ICC", ("Beackering prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+
     while (args != NULL) {
         /*
          * we only act on N_id arguments with
@@ -345,6 +414,8 @@ ICCprf (node *arg_node, info *arg_info)
             constraint_type
               = ArgEncodingToTypeConstraint (PRF_PRF (arg_node), arg_cnt, scalartype);
             if (constraint_type != NULL) {
+                DBUG_PRINT ("ICC", (" ...emitting type constraint"));
+
                 cavis
                   = IDCaddTypeConstraint (constraint_type, ID_AVIS (EXPRS_EXPR (args)));
                 if (cavis != NULL) {
@@ -360,9 +431,17 @@ ICCprf (node *arg_node, info *arg_info)
     }
 
     /*
+     * now handle non-type constraints
+     */
+    if (iccfuns[PRF_PRF (arg_node)] != NULL) {
+        cids = iccfuns[PRF_PRF (arg_node)](cids, PRF_ARGS (arg_node));
+    }
+
+    /*
      * if we have collected any constraints, we emit an afterguard
      */
     if (cids != NULL) {
+        DBUG_PRINT ("ICC", (" ...emitting afterguard"));
         assign = TBmakeAssign (NULL, NULL);
 
         newlhs = GenerateIdsAndPrependArgs (INFO_LHS (arg_info), assign, &cids,
@@ -375,6 +454,8 @@ ICCprf (node *arg_node, info *arg_info)
 
         INFO_LHS (arg_info) = newlhs;
     }
+
+    DBUG_PRINT ("ICC", ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node))));
 
     DBUG_RETURN (arg_node);
 }

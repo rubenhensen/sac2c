@@ -51,10 +51,6 @@ specific implementation of a function should remain with the source code.
 #define INL_FUN 0x0004
 #define LIB_FUN 0x0008
 #define OVRLD_FUN 0x0010
-/*--------------------------------------------------------------------------*/
-
-/* PRF ARGUMENT ENCODING */
-#define PRF_ARGENCODING(prf, arg) global.prf_arg_encoding[3 * prf + arg]
 
 /*--------------------------------------------------------------------------*/
 
@@ -909,6 +905,12 @@ extern bool TCisPhiFun (node *id);
 
 #define MAKE_BIN_PRF(f, arg1, arg2)                                                      \
     TBmakePrf (f, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
+
+/* PRF ARGUMENT ENCODING */
+#define PRF_ARGENCODING(prf, arg) global.prf_arg_encoding[3 * prf + arg]
+
+/* PRF NAME from globals */
+#define PRF_NAME(prf) global.prf_name[prf]
 
 /*
  *  function declarations
