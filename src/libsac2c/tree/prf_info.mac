@@ -730,4 +730,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
 #undef PRFalloc_fun
 #undef PRFnum_dataflow_returns
 #undef PRFshape_oracle_fun
-#undef PRFunused
+#undef PRFicc_fun
+#undef PRFunused1
+#undef PRFunused2
+#undef PRFunused3
