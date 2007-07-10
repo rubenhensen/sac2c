@@ -70,8 +70,8 @@
 #define PRFicc_fun(icc_fun)
 #endif
 
-#ifndef PRFunused1
-#define PRFunused1(unused1)
+#ifndef PRFte_fun
+#define PRFte_fun(te_fun)
 #endif
 
 #ifndef PRFunused2
@@ -84,14 +84,14 @@
 
 #define PRF(name, arg_encoding, arity, ccode, simd, ntc_fun, co_fun, comp_fun,           \
             cf_scs_fun, cf_sccf_fun, cf_saa_fun, makedim_fun, makeshp_fun, alloc_fun,    \
-            ndf_rets, shape_oracle_fun, icc_fun, unused1, unused2, unused3)              \
+            ndf_rets, shape_oracle_fun, icc_fun, te_fun, unused2, unused3)               \
     PRFname (name) PRFarg_encoding (arg_encoding) PRFarity (arity) PRFccode (ccode)      \
       PRFsimd (simd) PRFntc_fun (ntc_fun) PRFco_fun (co_fun) PRFcomp_fun (comp_fun)      \
         PRFcf_scs_fun (cf_scs_fun) PRFcf_sccf_fun (cf_sccf_fun)                          \
           PRFcf_saa_fun (cf_saa_fun) PRFmakedim_fun (makedim_fun)                        \
             PRFmakeshp_fun (makeshp_fun) PRFalloc_fun (alloc_fun)                        \
               PRFnum_dataflow_returns (ndf_rets) PRFshape_oracle_fun (shape_oracle_fun)  \
-                PRFicc_fun (icc_fun) PRFunused1 (unused1) PRFunused2 (unused2)           \
+                PRFicc_fun (icc_fun) PRFte_fun (te_fun) PRFunused2 (unused2)             \
                   PRFunused3 (unused3)
 
 #define SIMD TRUE
@@ -645,32 +645,32 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
    */
 
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, NULL, NULL, NULL,
-       NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, 0, NULL, NULL, TEnMinusOne, NULL, NULL),
 
   PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_afterguard, NULL, NULL,
        NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (same_shape_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, TEthree, NULL, NULL),
 
   PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_matches_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_matches_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL, NULL),
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (prod_matches_prod_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD,
        NTCCTprf_prod_shape, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL,
-       TEone, NULL, NULL),
+       TEtwo, NULL, NULL),
 
   /*******************************************************************************
    * Functions to definine generic functions on udts
@@ -731,6 +731,6 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
 #undef PRFnum_dataflow_returns
 #undef PRFshape_oracle_fun
 #undef PRFicc_fun
-#undef PRFunused1
+#undef PRFte_fun
 #undef PRFunused2
 #undef PRFunused3

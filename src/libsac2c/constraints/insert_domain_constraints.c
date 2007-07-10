@@ -245,7 +245,7 @@ IDCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("IDCfundef");
 
     DBUG_PRINT ("IDC",
-                ("traversing function %s in %s mode", FUNDEF_NAME (arg_node),
+                ("----- %s ----- %s:", CTIitemName (arg_node),
                  (INFO_MODE (arg_info) == IDC_finalize
                     ? "IDC_finalize"
                     : (INFO_MODE (arg_info) == IDC_insert ? "IDC_insert" : "IDC_init"))));

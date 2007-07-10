@@ -336,11 +336,11 @@ NTCCTprf_guard (te_info *info, ntype *args)
     TEassureBoolS ("requires expression", pred);
     err_msg = TEfetchErrors ();
 
-    if (err_msg != NULL) {
-        res = TYmakeBottomType (err_msg);
-    } else {
-        res = TYmakeEmptyProductType (TYgetProductSize (args) - 1);
-        for (i = 1; i < TYgetProductSize (args); i++) {
+    res = TYmakeEmptyProductType (TYgetProductSize (args) - 1);
+    for (i = 1; i < TYgetProductSize (args); i++) {
+        if (err_msg != NULL) {
+            TYsetProductMember (res, i - 1, TYmakeBottomType (err_msg));
+        } else {
             TYsetProductMember (res, i - 1, TYcopyType (TYgetProductMember (args, i)));
         }
     }
@@ -376,16 +376,16 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
         if (err_msg != NULL) {
             res = TYmakeBottomType (err_msg);
         } else {
-            if (TYisAKV (pred) && COisTrue (TYgetValue (pred), TRUE)) {
+            if (TYisAKV (pred) && COisFalse (TYgetValue (pred), TRUE)) {
                 res = TYmakeBottomType (err_msg);
             }
         }
     }
     if (res == NULL) {
-        res == TYcopyType (arg);
+        res = TYeliminateAKV (arg);
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -416,11 +416,11 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
     if ((cmp == TY_eq) || (cmp == TY_gt)) {
         res = TYcopyType (arg);
         pred = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
-    } else if (cmp == TY_gt) {
+    } else if (cmp == TY_lt) {
         res = TYcopyType (type);
         pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
     } else {
-        TEhandleError (TEgetLine (info), "inferred type %s should match declared type %s",
+        TEhandleError (TEgetLine (info), "inferred type %s should match required type %s",
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);

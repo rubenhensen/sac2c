@@ -50,7 +50,12 @@ extern te_info *TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str,
                                const char *name_str, node *wrapper, node *assign,
                                te_info *parent);
 extern te_info *TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str,
-                               prf prf_no);
+                               prf prf_no, int num_rets);
+extern int TEone (int num_args);
+extern int TEtwo (int num_args);
+extern int TEthree (int num_args);
+extern int TEnMinusOne (int num_args);
+
 extern void TEfreeAllTypeErrorInfos ();
 
 extern void TEhandleError (int line, const char *format, ...);

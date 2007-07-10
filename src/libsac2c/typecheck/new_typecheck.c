@@ -159,6 +159,11 @@ static const ct_funptr prf_tc_funtab[] = {
 #include "prf_info.mac"
 };
 
+static const te_funptr prf_te_funtab[] = {
+#define PRFte_fun(te_fun) te_fun
+#include "prf_info.mac"
+};
+
 /**
  *
  * @name Entry functions for calling the type inference:
@@ -1268,7 +1273,8 @@ NTCprf (node *arg_node, info *arg_info)
         args = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
-        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf);
+        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf,
+                              prf_te_funtab[prf](TYgetProductSize (args)));
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
@@ -1379,7 +1385,7 @@ NTCarray (node *arg_node, info *arg_info)
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
          */
-        info = TEmakeInfoPrf (global.linenum, TE_prf, "array-constructor", 0);
+        info = TEmakeInfoPrf (global.linenum, TE_prf, "array-constructor", 0, 1);
         type = NTCCTcomputeType (NTCCTprf_array, info, elems);
 
         TYfreeType (elems);
@@ -1582,7 +1588,7 @@ NTCcast (node *arg_node, info *arg_info)
     }
     cast_t = CAST_NTYPE (arg_node);
 
-    info = TEmakeInfoPrf (global.linenum, TE_prf, "type-cast", 0);
+    info = TEmakeInfoPrf (global.linenum, TE_prf, "type-cast", 0, 1);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);

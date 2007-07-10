@@ -29,7 +29,8 @@ struct TE_INFO_UDF {
 };
 
 struct TE_INFO_PRF {
-    prf prf_no; /* pointer to the CF function of the prf */
+    prf prf_no;   /* pointer to the CF function of the prf */
+    int num_rets; /* number of return values (depends on #args!) */
 };
 
 struct TE_INFO {
@@ -50,6 +51,7 @@ struct TE_INFO {
 #define TI_ASSIGN(n) (n->info.udf.assign)
 #define TI_CHN(n) (n->info.udf.chn)
 #define TI_PRF(n) (n->info.prf.prf_no)
+#define TI_NUM_RETS(n) (n->info.prf.num_rets)
 
 #define TI_KIND_STR(n) (kind_str[TI_KIND (n)])
 
@@ -242,7 +244,8 @@ TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str, const char *nam
 }
 
 te_info *
-TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, prf prf_no)
+TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, prf prf_no,
+               int num_rets)
 {
     te_info *res;
 
@@ -250,6 +253,7 @@ TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, prf prf_no)
 
     res = TEmakeInfo (linenum, kind, name_str);
     TI_PRF (res) = prf_no;
+    TI_NUM_RETS (res) = num_rets;
 
     DBUG_RETURN (res);
 }
@@ -347,7 +351,7 @@ TEgetNumRets (te_info *info)
         num_res = TCcountRets (FUNDEF_RETS (wrapper));
         break;
     case TE_prf:
-        num_res = 1;
+        num_res = TI_NUM_RETS (info);
         break;
     case TE_cond:
         num_res = 0;
@@ -1478,4 +1482,37 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     }
 
     DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ * functions for computing the number of return values from the number of
+ * argument types (for prfs needed)
+ */
+
+int
+TEone (int num_args)
+{
+    DBUG_ENTER ("TEone");
+    DBUG_RETURN (1);
+}
+
+int
+TEtwo (int num_args)
+{
+    DBUG_ENTER ("TEtwo");
+    DBUG_RETURN (2);
+}
+
+int
+TEthree (int num_args)
+{
+    DBUG_ENTER ("TEtwo");
+    DBUG_RETURN (3);
+}
+
+int
+TEnMinusOne (int num_args)
+{
+    DBUG_ENTER ("TEtwo");
+    DBUG_RETURN (num_args - 1);
 }
