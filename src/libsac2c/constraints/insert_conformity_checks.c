@@ -224,6 +224,8 @@ ICCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ICCfundef");
 
+    DBUG_PRINT ("ICC", ("traversing %s:", FUNDEF_NAME (arg_node)));
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         arg_node = IDCinitialize (arg_node, FALSE);
 

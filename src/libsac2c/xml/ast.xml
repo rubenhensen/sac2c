@@ -912,6 +912,7 @@
       <traversal id="IDC" name="Insert Domain Constraints" default="sons" include="insert_domain_constraints.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Block" />
           <node name="Assign" />
           <node name="Ids" />
           <node name="Id" />

@@ -244,12 +244,44 @@ IDCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCfundef");
 
+    DBUG_PRINT ("IDC",
+                ("traversing function %s in %s mode", FUNDEF_NAME (arg_node),
+                 (INFO_MODE (arg_info) == IDC_finalize
+                    ? "IDC_finalize"
+                    : (INFO_MODE (arg_info) == IDC_insert ? "IDC_insert" : "IDC_init"))));
+
     INFO_COUNTER (arg_info) = 1;
 
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
     if (INFO_ALL (arg_info) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCblock( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCblock");
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDEC (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
+        DBUG_PRINT ("IDC", ("...inserting vardecs"));
     }
 
     DBUG_RETURN (arg_node);
@@ -271,17 +303,17 @@ IDCassign (node *arg_node, info *arg_info)
     case IDC_init:
         ASSIGN_POS (arg_node) = INFO_COUNTER (arg_info);
         INFO_COUNTER (arg_info)++;
-
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         break;
+
     case IDC_finalize:
         ASSIGN_POS (arg_node) = 0;
-
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         break;
+
     default:
         break;
     }
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
     post_assign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
 
@@ -291,6 +323,7 @@ IDCassign (node *arg_node, info *arg_info)
 
     if (post_assign != NULL) {
         ASSIGN_NEXT (arg_node) = TCappendAssign (post_assign, ASSIGN_NEXT (arg_node));
+        DBUG_PRINT ("IDC", ("...inserting assignments"));
     }
 
     DBUG_RETURN (arg_node);
@@ -316,6 +349,8 @@ IDCids (node *arg_node, info *arg_info)
                                TBmakeId (avis));
             expr = TRAVdo (expr, arg_info);
             arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
+            AVIS_CONSTRVAR (avis) = NULL;
+            AVIS_CONSTRTYPE (avis) = NULL;
         }
 
         while (AVIS_CONSTRSET (avis) != NULL) {
@@ -444,7 +479,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
 
     DBUG_ENTER ("IDCaddTypeConstraint");
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (type, FALSE, 0););
+    DBUG_EXECUTE ("IDC", tmp_str = TYtype2String (type, FALSE, 0););
     DBUG_PRINT ("IDC",
                 ("type constraint requested: %s for %s", tmp_str, AVIS_NAME (avis)));
     DBUG_EXECUTE ("IDC", tmp_str = MEMfree (tmp_str););
