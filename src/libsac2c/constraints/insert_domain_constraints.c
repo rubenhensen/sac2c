@@ -183,7 +183,7 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
 
     for (i = 0; i < ndf_rets[PRF_PRF (expr)]; i++) {
         avis = CreateNewVarAndInitiateRenaming (EXPRS_EXPR (exprs), arg_info);
-        ids = TBmakeIds (avis, ids);
+        ids = TCappendIds (ids, TBmakeIds (avis, NULL));
         AVIS_SSAASSIGN (avis) = assign;
         exprs = EXPRS_NEXT (exprs);
     }
@@ -385,6 +385,28 @@ IDCids (node *arg_node, info *arg_info)
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCwith");
+
+    /**
+     * part needs to be traversed BEFORE code so that the N_ids of
+     * the generator variable obtain the right AVIS_POS, i.e., one
+     * that is smaller than any variable defined in the code.
+     */
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

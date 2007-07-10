@@ -18,6 +18,7 @@ extern node *IDCfundef (node *arg_node, info *arg_info);
 extern node *IDCblock (node *arg_node, info *arg_info);
 extern node *IDCassign (node *arg_node, info *arg_info);
 extern node *IDCids (node *arg_node, info *arg_info);
+extern node *IDCwith (node *arg_node, info *arg_info);
 extern node *IDCid (node *arg_node, info *arg_info);
 extern node *IDCavis (node *arg_node, info *arg_info);
 
