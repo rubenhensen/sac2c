@@ -39,6 +39,7 @@
  */
 
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "constants.h"
 
@@ -372,6 +373,115 @@ COmakeConstantFromShape (shape *shp)
     CONSTANT_SHAPE (res) = SHcreateShape (1, vlen);
     CONSTANT_ELEMS (res) = SHshape2IntVec (shp);
     CONSTANT_VLEN (res) = vlen;
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ *
+ * @fn constant *COmakeConstantFromDynamicIntArguments(int dim, ...)
+ *
+ *   @brief  create a constant from dynamic list of integer arguments.
+ *           it should be able to handle:
+ *             T_int, T_short, T_long, T_uint, T_ulong, T_ushort, T_float,
+ *             T_double, T_longdbl, T_bool, T_char
+ *
+ *   @param int dim dimensionality of the constant.
+ *   @param ... shapevalues and initializationvalues
+ *
+ *   @return the freshly created constant.
+ *
+ ******************************************************************************/
+
+constant *
+COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
+{
+    DBUG_ENTER ("COmakeConstantFromDynamicArguments");
+    va_list Argp;
+    shape *res_shape = SHmakeShape (dim);
+    int i = 0;
+    int res_num_elems = 0;
+    int *res_elems = NULL;
+    constant *res = NULL;
+
+    if (dim > 0) {
+        va_start (Argp, dim);
+        for (i = 0; i < dim; i++) {
+            res_shape = SHsetExtent (res_shape, i, va_arg (Argp, int));
+            DBUG_PRINT ("SOSSK", ("res_shape[%i] = %i", i, SHgetExtent (res_shape, i)));
+        }
+
+        res_num_elems = SHgetUnrLen (res_shape);
+
+        if (res_num_elems > 0) {
+
+            res_elems = COINTallocCV (type, res_num_elems);
+
+            switch (type) {
+            case T_int:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, int);
+                }
+                break;
+            case T_short:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, int);
+                }
+                break;
+            case T_long:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, long);
+                }
+                break;
+            case T_uint:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, unsigned int);
+                }
+                break;
+            case T_ushort:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, unsigned int);
+                }
+                break;
+            case T_ulong:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, unsigned long);
+                }
+                break;
+            case T_float:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, double);
+                }
+                break;
+            case T_double:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, double);
+                }
+                break;
+            case T_longdbl:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, long double);
+                }
+                break;
+            case T_bool:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, bool);
+                }
+                break;
+            case T_char:
+                for (i = 0; i < res_num_elems; i++) {
+                    res_elems[i] = va_arg (Argp, int);
+                }
+                break;
+            default:
+                break;
+            }
+        }
+        va_end (Argp);
+    }
+
+    res = COmakeConstant (T_int, res_shape, res_elems);
 
     DBUG_RETURN (res);
 }

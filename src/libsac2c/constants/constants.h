@@ -46,6 +46,7 @@
 extern constant *COmakeConstant (simpletype type, shape *shp, void *elems);
 extern constant *COmakeConstantFromShape (shape *shp);
 extern constant *COmakeConstantFromInt (int val);
+extern constant *COmakeConstantFromDynamicArguments (simpletype type, int dim, ...);
 
 extern constant *COmakeZero (simpletype type, shape *shp);
 extern constant *COmakeOne (simpletype type, shape *shp);
