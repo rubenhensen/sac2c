@@ -114,7 +114,7 @@ SHmakeShape (int dim)
 shape *
 SHcreateShape (int dim, ...)
 {
-    a_list Argp;
+    va_list Argp;
     int i;
     shape *result;
 
@@ -128,7 +128,7 @@ SHcreateShape (int dim, ...)
         for (i = 0; i < dim; i++) {
             result = SHsetExtent (result, i, va_arg (Argp, int));
         }
-        va_end (Argp, dim);
+        va_end (Argp);
     }
 
     DBUG_RETURN (result);
