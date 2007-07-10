@@ -14,13 +14,13 @@
 #    devel        compile everything as developer code
 #    prod         compile everything as product code
 #
-#    clean        cleanup all derived files excluding make tools
-#    cleandevel   cleanup only developer compiled files excluding make tools 
-#    cleanprod    cleanup only product compiled files excluding make tools 
+#    clean        cleanup all derived files 
+#    cleandevel   cleanup only developer compiled files 
+#    cleanprod    cleanup only product compiled files 
 #
-#    cleaner      cleanup all derived files including make tools
-#    cleanerdevel cleanup only developer compiled files including make tools
-#    cleanerprod  cleanup only product compiled files including make tools
+#    tidy         cleanup all derived files excluding make tools
+#    tidydevel    cleanup only developer compiled files excluding make tools
+#    tidyprod     cleanup only product compiled files excluding make tools
 #
 #    refactor     refactor source code (requires parameters below)
 #
@@ -45,7 +45,7 @@ PROJECT_ROOT := .
 HIDE := @
 DEPS := yes
 
-CLEAN_MAKE_TOOLS := "no"
+CLEAN_MAKE_TOOLS := "yes"
 
 MAKEFILE_DIR := $(PROJECT_ROOT)/src/makefiles
 
@@ -59,7 +59,7 @@ include $(MAKEFILE_DIR)/settings.mkf
 #
 
 .PHONY: default devel prod clean cleandevel cleanprod efence config \
-        cleaner cleanerdevel cleanerprod
+        tidy tidydevel tidyprod
 
 
 ###############################################################################
@@ -117,16 +117,6 @@ default devel prod: checks
 # Cleaning rules
 #
 
-cleaner:
-	$(MAKE) CLEAN_MAKE_TOOLS="yes" clean
-
-cleanerdevel:
-	$(MAKE) CLEAN_MAKE_TOOLS="yes" cleandevel
-
-cleanerprod:
-	$(MAKE) CLEAN_MAKE_TOOLS="yes" cleanprod 
-
-
 clean cleandevel cleanprod: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
@@ -154,6 +144,17 @@ clean cleandevel cleanprod: checks
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) completed"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
+
+
+tidy:
+	$(MAKE) CLEAN_MAKE_TOOLS="no" clean
+
+tidydevel:
+	$(MAKE) CLEAN_MAKE_TOOLS="no" cleandevel
+
+tidyprod:
+	$(MAKE) CLEAN_MAKE_TOOLS="no" cleanprod 
+
 
 ###############################################################################
 #
