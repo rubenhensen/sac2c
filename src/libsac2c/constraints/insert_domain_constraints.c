@@ -105,11 +105,8 @@ FindAvisOfLastDefinition (node *exprs)
         expr = EXPRS_EXPR (exprs);
         if (NODE_TYPE (expr) == N_id) {
             avis = ID_AVIS (expr);
-            DBUG_ASSERT (ASSIGN_POS (AVIS_SSAASSIGN (avis)) > 0,
-                         "IDCaddConstraint used before IDCinit()!");
-            if ((last_avis == NULL)
-                || (ASSIGN_POS (AVIS_SSAASSIGN (last_avis))
-                    < ASSIGN_POS (AVIS_SSAASSIGN (avis)))) {
+            DBUG_ASSERT (AVIS_POS (avis) > 0, "IDCaddConstraint used before IDCinit()!");
+            if ((last_avis == NULL) || (AVIS_POS (last_avis) < AVIS_POS (avis))) {
                 last_avis = avis;
             }
         }
@@ -255,7 +252,13 @@ IDCfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
+
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+    if (INFO_VARDECS (arg_info) != NULL) {
+        arg_node = TCaddVardecs (arg_node, INFO_VARDECS (arg_info));
+        DBUG_PRINT ("IDC", ("...inserting vardecs"));
+    }
 
     if (INFO_ALL (arg_info) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -272,16 +275,20 @@ IDCfundef (node *arg_node, info *arg_info)
 node *
 IDCblock (node *arg_node, info *arg_info)
 {
+    node *post_assign;
     DBUG_ENTER ("IDCblock");
+
+    post_assign = INFO_POSTASSIGN (arg_info);
+    INFO_POSTASSIGN (arg_info) = NULL;
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (arg_node)
-          = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
-        DBUG_PRINT ("IDC", ("...inserting vardecs"));
+
+    if (post_assign != NULL) {
+        BLOCK_INSTR (arg_node) = TCappendAssign (post_assign, BLOCK_INSTR (arg_node));
+        DBUG_PRINT ("IDC", ("...inserting assignments at beginning of N_block"));
     }
 
     DBUG_RETURN (arg_node);
@@ -299,19 +306,6 @@ IDCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IDCassign");
 
-    switch (INFO_MODE (arg_info)) {
-    case IDC_init:
-        ASSIGN_POS (arg_node) = INFO_COUNTER (arg_info);
-        INFO_COUNTER (arg_info)++;
-        break;
-
-    case IDC_finalize:
-        ASSIGN_POS (arg_node) = 0;
-        break;
-
-    default:
-        break;
-    }
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     post_assign = INFO_POSTASSIGN (arg_info);
@@ -341,9 +335,16 @@ IDCids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IDCids");
 
-    if (INFO_MODE (arg_info) == IDC_insert) {
+    avis = IDS_AVIS (arg_node);
 
-        avis = IDS_AVIS (arg_node);
+    switch (INFO_MODE (arg_info)) {
+    case IDC_init:
+        AVIS_POS (avis) = INFO_COUNTER (arg_info);
+        INFO_COUNTER (arg_info)++;
+        break;
+
+    case IDC_insert:
+
         if (AVIS_CONSTRTYPE (avis) != NULL) {
             expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
                                TBmakeId (avis));
@@ -371,9 +372,18 @@ IDCids (node *arg_node, info *arg_info)
             constraint = FREEdoFreeNode (constraint);
         }
 
-        if (IDS_NEXT (arg_node) != NULL) {
-            IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-        }
+        break;
+
+    case IDC_finalize:
+        AVIS_POS (avis) = 0;
+        break;
+
+    default:
+        break;
+    }
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -406,8 +416,24 @@ IDCavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCavis");
 
-    if ((INFO_MODE (arg_info) == IDC_init) || (INFO_MODE (arg_info) == IDC_finalize)) {
+    switch (INFO_MODE (arg_info)) {
+    case IDC_init:
         AVIS_SUBST (arg_node) = NULL;
+        if (NODE_TYPE (AVIS_DECL (arg_node)) == N_arg) {
+            AVIS_POS (arg_node) = INFO_COUNTER (arg_info);
+            /**
+             * do NOT increment counter here as all args are tagged 1!
+             */
+        }
+        break;
+
+    case IDC_finalize:
+        AVIS_SUBST (arg_node) = NULL;
+        AVIS_POS (arg_node) = 0;
+        break;
+
+    default:
+        break;
     }
 
     DBUG_RETURN (arg_node);

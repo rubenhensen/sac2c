@@ -3518,18 +3518,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Pos">
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="idc" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Index">
           <type name="IndexInfo">
             <targets>
@@ -4970,6 +4958,18 @@
             </targets>
           </type>
 	</attribute>
+        <attribute name="Pos">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="idc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="SSAAssign">
           <description>
             provides a direct link to the N_assign node containing the definition of the identifier represented by this AVIS node. In SSA form, AVIS_SSAASSIGN must only be NULL for identifiers for function arguments and with-loop index variables.
