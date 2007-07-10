@@ -365,6 +365,8 @@ IDCids (node *arg_node, info *arg_info)
                 arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
                                                CONSTRAINT_EXPR (constraint), arg_info);
             }
+            CONSTRAINT_PREDAVIS (constraint) = NULL;
+            CONSTRAINT_EXPR (constraint) = NULL;
             AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
             constraint = FREEdoFreeNode (constraint);
         }
@@ -387,7 +389,7 @@ IDCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDCid");
 
-    if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
+    while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
 
