@@ -328,6 +328,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
     int i;
+    bool guard_true;
 
     DBUG_ENTER ("NTCCTprf_guard");
 
@@ -337,11 +338,18 @@ NTCCTprf_guard (te_info *info, ntype *args)
     err_msg = TEfetchErrors ();
 
     res = TYmakeEmptyProductType (TYgetProductSize (args) - 1);
+    guard_true = TYisAKV (pred) && COisTrue (TYgetValue (pred), TRUE);
     for (i = 1; i < TYgetProductSize (args); i++) {
         if (err_msg != NULL) {
             TYsetProductMember (res, i - 1, TYmakeBottomType (err_msg));
         } else {
-            TYsetProductMember (res, i - 1, TYcopyType (TYgetProductMember (args, i)));
+            if (guard_true) {
+                TYsetProductMember (res, i - 1,
+                                    TYcopyType (TYgetProductMember (args, i)));
+            } else {
+                TYsetProductMember (res, i - 1,
+                                    TYeliminateAKV (TYgetProductMember (args, i)));
+            }
         }
     }
 
@@ -364,6 +372,7 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
     ntype *res = NULL, *pred;
     char *err_msg;
     int i;
+    bool all_true = TRUE;
 
     DBUG_ENTER ("NTCCTprf_afterguard");
     arg = TYgetProductMember (args, 0);
@@ -376,13 +385,21 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
         if (err_msg != NULL) {
             res = TYmakeBottomType (err_msg);
         } else {
-            if (TYisAKV (pred) && COisFalse (TYgetValue (pred), TRUE)) {
-                res = TYmakeBottomType (err_msg);
+            if (TYisAKV (pred)) {
+                if (COisFalse (TYgetValue (pred), TRUE)) {
+                    res = TYmakeBottomType (err_msg);
+                }
+            } else {
+                all_true = FALSE;
             }
         }
     }
     if (res == NULL) {
-        res = TYeliminateAKV (arg);
+        if (all_true) {
+            res = TYcopyType (arg);
+        } else {
+            res = TYeliminateAKV (arg);
+        }
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
@@ -1630,7 +1647,6 @@ NTCCTprf_ari_op_VxV (te_info *info, ntype *args)
                                 TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
-    err_msg = TEfetchErrors ();
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_VxV) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
