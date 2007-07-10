@@ -346,7 +346,8 @@ static iccfun_p iccfuns[] = {
  *
  * @fn node *ICCfundef(node *arg_node, info *arg_info)
  *
- * @brief Performs a traversal of the fundef chain without entering the body
+ * @brief Performs a traversal of the fundef chain and inserts INFO_VARDECS
+ *        into the fundefs vardec chain.
  *
  *****************************************************************************/
 node *
@@ -384,7 +385,8 @@ ICCfundef (node *arg_node, info *arg_info)
  *
  * @fn node *ICCassign(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts INFO_POSTASSIGN after the current assign but does not
+ *        traverse the inserted assigns.
  *
  *****************************************************************************/
 node *
@@ -419,23 +421,20 @@ ICCassign (node *arg_node, info *arg_info)
  *
  * @fn node *ICClet(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Sets INFO_LHS before traversing the LET_EXPR and inserts
+ *        the (potentially) modified INFO_LHS back into the tree.
  *
  *****************************************************************************/
 node *
 ICClet (node *arg_node, info *arg_info)
 {
-    node *oldlhs;
-
     DBUG_ENTER ("ICClet");
 
-    oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     LET_IDS (arg_node) = INFO_LHS (arg_info);
-    INFO_LHS (arg_info) = oldlhs;
 
     DBUG_RETURN (arg_node);
 }
@@ -444,7 +443,7 @@ ICClet (node *arg_node, info *arg_info)
  *
  * @fn node *ICCprf(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Emits type and prf constraints for the given prf.
  *
  *****************************************************************************/
 node *
@@ -550,7 +549,7 @@ ICCblock (node *arg_node, info *arg_info)
  *
  * @fn node *ICCwith(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Starts multiple traversals of the withloop.
  *
  *****************************************************************************/
 node *
@@ -615,7 +614,9 @@ ICCwith (node *arg_node, info *arg_info)
  *
  * @fn node *ICCgenerator(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts constraints for the generator, Starts a traversal of
+ *        INFO_WITHOPS with INFO_GENERATOR set to the current node to
+ *        insert generator/operator constraints.
  *
  *****************************************************************************/
 node *
@@ -696,7 +697,8 @@ ICCgenerator (node *arg_node, info *arg_info)
  *
  * @fn node *ICCcode(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Traverses the code and inserts constraints for the cexprs by
+ *        traversing INFO_WITHOPS with INFO_CEXPRS set.
  *
  *****************************************************************************/
 node *
@@ -723,7 +725,8 @@ ICCcode (node *arg_node, info *arg_info)
  *
  * @fn node *ICCgenarray(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts constraints for genarray. For different modes see ICCcode
+ *        and ICCgenerator
  *
  *****************************************************************************/
 node *
@@ -773,7 +776,7 @@ ICCgenarray (node *arg_node, info *arg_info)
                             TCmakePrf2 (F_same_shape_AxA,
                                         DUPdoDupTree (
                                           EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+                                        DUPdoDupTree (GENARRAY_DEFAULT (arg_node))));
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
@@ -799,7 +802,8 @@ ICCgenarray (node *arg_node, info *arg_info)
  *
  * @fn node *ICCmodarray(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts constraints for modarray. For different modes see ICCcode
+ *        and ICCgenerator
  *
  *****************************************************************************/
 node *
@@ -836,7 +840,8 @@ ICCmodarray (node *arg_node, info *arg_info)
  *
  * @fn node *ICCfold(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts constraints for fold. For different modes see ICCcode
+ *        and ICCgenerator
  *
  *****************************************************************************/
 node *
@@ -877,7 +882,8 @@ ICCfold (node *arg_node, info *arg_info)
  *
  * @fn node *ICCpropagate(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Inserts constraints for propagate. For different modes see ICCcode
+ *        and ICCgenerator
  *
  *****************************************************************************/
 node *
