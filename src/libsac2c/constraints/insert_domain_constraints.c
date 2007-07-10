@@ -168,7 +168,8 @@ DupIdExprsWithoutDuplicates (node *exprs)
 node *
 BuildDataFlowHook (node *ids, node *expr, info *arg_info)
 {
-    node *exprs, *assign, *avis;
+    node *exprs, *assign, *avis, *new_ids = NULL;
+    ;
     int i;
 
     DBUG_ENTER ("BuildDataFlowHook");
@@ -183,10 +184,11 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
 
     for (i = 0; i < ndf_rets[PRF_PRF (expr)]; i++) {
         avis = CreateNewVarAndInitiateRenaming (EXPRS_EXPR (exprs), arg_info);
-        ids = TCappendIds (ids, TBmakeIds (avis, NULL));
+        new_ids = TCappendIds (new_ids, TBmakeIds (avis, NULL));
         AVIS_SSAASSIGN (avis) = assign;
         exprs = EXPRS_NEXT (exprs);
     }
+    ids = TCappendIds (new_ids, ids);
 
     ASSIGN_INSTR (assign) = TBmakeLet (ids, expr);
 
