@@ -48,6 +48,7 @@ struct INFO {
     node *postassigns;
     node *vardecs;
     node *lhs;
+    node *wlguardids;
 };
 
 /**
@@ -56,6 +57,7 @@ struct INFO {
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_WLGUARDIDS(n) ((n)->wlguardids)
 
 static info *
 MakeInfo ()
@@ -69,6 +71,7 @@ MakeInfo ()
     INFO_POSTASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
+    INFO_WLGUARDIDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -224,6 +227,24 @@ EmitConstraint (node *ids, node *constraint)
 
     if (avis != NULL) {
         ids = TBmakeExprs (TBmakeId (avis), ids);
+    }
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+EmitTypeConstraint (node *ids, node *arg, ntype *constraint)
+{
+    node *cavis;
+
+    DBUG_ENTER ("EmitTypeConstraint");
+
+    if (NODE_TYPE (arg) == N_id) {
+        cavis = IDCaddTypeConstraint (constraint, ID_AVIS (arg));
+
+        if (cavis != NULL) {
+            ids = TBmakeExprs (TBmakeId (cavis), ids);
+        }
     }
 
     DBUG_RETURN (ids);
@@ -421,7 +442,6 @@ node *
 ICCprf (node *arg_node, info *arg_info)
 {
     node *cids = NULL;
-    node *cavis;
     node *args;
     node *newlhs = NULL;
     node *assign;
@@ -449,11 +469,7 @@ ICCprf (node *arg_node, info *arg_info)
             if (constraint_type != NULL) {
                 DBUG_PRINT ("ICC", (" ...emitting type constraint"));
 
-                cavis
-                  = IDCaddTypeConstraint (constraint_type, ID_AVIS (EXPRS_EXPR (args)));
-                if (cavis != NULL) {
-                    cids = TBmakeExprs (TBmakeId (cavis), cids);
-                }
+                cids = EmitTypeConstraint (cids, EXPRS_EXPR (args), constraint_type);
 
                 constraint_type = TYfreeType (constraint_type);
             }
@@ -497,22 +513,26 @@ ICCprf (node *arg_node, info *arg_info)
  *
  * @fn node *ICCblock(node *arg_node, info *arg_info)
  *
- * @brief stacks the INFO_POSTASSIGNS chain
+ * @brief stacks the INFO_POSTASSIGNS and INFO_LHS chains
  *
  *****************************************************************************/
 node *
 ICCblock (node *arg_node, info *arg_info)
 {
     node *postassigns;
+    node *lhs;
 
     DBUG_ENTER ("ICCblock");
 
     postassigns = INFO_POSTASSIGNS (arg_info);
     INFO_POSTASSIGNS (arg_info) = NULL;
+    lhs = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = NULL;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     INFO_POSTASSIGNS (arg_info) = postassigns;
+    INFO_LHS (arg_info) = lhs;
 
     DBUG_RETURN (arg_node);
 }
@@ -527,9 +547,33 @@ ICCblock (node *arg_node, info *arg_info)
 node *
 ICCwith (node *arg_node, info *arg_info)
 {
+    node *guardids, *assign, *newlhs;
+
     DBUG_ENTER ("ICCwith");
 
+    guardids = INFO_WLGUARDIDS (arg_info);
+    INFO_WLGUARDIDS (arg_info) = NULL;
+
     arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_WLGUARDIDS (arg_info) != NULL) {
+        DBUG_PRINT ("ICC", (" ...emitting wl-afterguard"));
+        assign = TBmakeAssign (NULL, NULL);
+
+        newlhs = GenerateIdsAndPrependArgs (INFO_LHS (arg_info), assign,
+                                            &INFO_WLGUARDIDS (arg_info),
+                                            &INFO_VARDECS (arg_info));
+
+        ASSIGN_INSTR (assign)
+          = TBmakeLet (INFO_LHS (arg_info),
+                       TBmakePrf (F_afterguard, INFO_WLGUARDIDS (arg_info)));
+        ASSIGN_NEXT (assign) = INFO_POSTASSIGNS (arg_info);
+        INFO_POSTASSIGNS (arg_info) = assign;
+
+        INFO_LHS (arg_info) = newlhs;
+    }
+
+    INFO_WLGUARDIDS (arg_info) = guardids;
 
     DBUG_RETURN (arg_node);
 }
@@ -544,7 +588,64 @@ ICCwith (node *arg_node, info *arg_info)
 node *
 ICCgenerator (node *arg_node, info *arg_info)
 {
+    ntype *constraint_type;
+
     DBUG_ENTER ("ICCgenerator");
+
+    /*
+     * ensure all are int[.]
+     */
+    constraint_type = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
+
+    INFO_WLGUARDIDS (arg_info)
+      = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENERATOR_BOUND1 (arg_node),
+                            constraint_type);
+
+    INFO_WLGUARDIDS (arg_info)
+      = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENERATOR_BOUND2 (arg_node),
+                            constraint_type);
+
+    if (GENERATOR_WIDTH (arg_node) != NULL) {
+        INFO_WLGUARDIDS (arg_info)
+          = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENERATOR_WIDTH (arg_node),
+                                constraint_type);
+    }
+
+    if (GENERATOR_STEP (arg_node) != NULL) {
+        INFO_WLGUARDIDS (arg_info)
+          = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENERATOR_STEP (arg_node),
+                                constraint_type);
+    }
+
+    constraint_type = TYfreeType (constraint_type);
+
+    /*
+     * ensure bounds are non negative
+     */
+
+    INFO_WLGUARDIDS (arg_info)
+      = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                        TCmakePrf1 (F_non_neg_val_V,
+                                    DUPdoDupTree (GENERATOR_BOUND1 (arg_node))));
+
+    INFO_WLGUARDIDS (arg_info)
+      = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                        TCmakePrf1 (F_non_neg_val_V,
+                                    DUPdoDupTree (GENERATOR_BOUND2 (arg_node))));
+
+    if (GENERATOR_WIDTH (arg_node) != NULL) {
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf1 (F_non_neg_val_V,
+                                        DUPdoDupTree (GENERATOR_WIDTH (arg_node))));
+    }
+
+    if (GENERATOR_STEP (arg_node) != NULL) {
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf1 (F_non_neg_val_V,
+                                        DUPdoDupTree (GENERATOR_STEP (arg_node))));
+    }
 
     arg_node = TRAVcont (arg_node, arg_info);
 
