@@ -1008,3 +1008,120 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ *
+ *  Functions for removing array operation conformability checks
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_guard( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_guard (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_guard");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_afterguard( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_afterguard (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_afterguard");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_same_shape_AxA( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_same_shape_AxA");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_shape_matches_dim_VxA");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_non_neg_val_V( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_non_neg_val_V");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_val_matches_shape_VxA( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_val_matches_shape_VxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_val_matches_shape_VxA");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_val_matches_val_VxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_val_matches_val_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_val_matches_val_VxV");
+    DBUG_RETURN (res);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_prod_matches_prod_shape_VxA( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_prod_matches_prod_shape_VxA");
+    DBUG_RETURN (res);
+}

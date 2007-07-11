@@ -40,5 +40,13 @@ extern node *SCSprf_mod (node *arg_node, info *arg_info);
 extern node *SCSprf_lege (node *arg_node, info *arg_info);
 extern node *SCSprf_nlege (node *arg_node, info *arg_info);
 extern node *SCSprf_minmax (node *arg_node, info *arg_info);
+extern node *SCSprf_guard (node *arg_node, info *arg_info);
+extern node *SCSprf_afterguard (node *arg_node, info *arg_info);
+extern node *SCSprf_same_shape_AxA (node *arg_node, info *arg_info);
+extern node *SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_non_neg_val_V (node *arg_node, info *arg_info);
+extern node *SCSprf_val_matches_shape_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_val_matches_val_VxV (node *arg_node, info *arg_info);
+extern node *SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info);
 
 #endif /* symbolic_constant_simplification.h */
