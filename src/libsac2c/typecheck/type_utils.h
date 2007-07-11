@@ -15,6 +15,7 @@ extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
 extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
 extern ntype *TUtype2alphaMax (ntype *type);
+extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2alphaFix (node *rets);
 extern node *TUalphaRettypes2bottom (node *rets, const char *msg);
 extern node *TUrettypes2alphaMax (node *rets);

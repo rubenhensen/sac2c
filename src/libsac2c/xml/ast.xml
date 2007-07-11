@@ -914,6 +914,7 @@
           <node name="Fundef" />
           <node name="Block" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="Ids" />
           <node name="With" />
           <node name="Code" />

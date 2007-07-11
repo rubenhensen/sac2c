@@ -119,6 +119,7 @@ SUBPHASE (esp, "Enforcing Specializations", ESPdoEnforceSpecialization, ALWAYS, 
 
 SUBPHASE (sossk, "Specialization Oracle for Static Shape Knowledge",
           SOSSKdoSpecializationOracleSSK, ALWAYS, tc)
+
 SUBPHASE (ti, "Running type inference system", NTCdoNewTypeCheck, ALWAYS, tc)
 
 SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, tc)
@@ -165,13 +166,13 @@ SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS,
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
           SSATdoTransformAllowGOs, ALWAYS, cwc)
 
+SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
+          global.insertconformitychecks, cwc)
+
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           cwc)
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
-
-SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
-          global.insertconformitychecks, cwc)
 
 ENDPHASE (cwc)
 

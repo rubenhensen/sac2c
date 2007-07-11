@@ -241,6 +241,40 @@ BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
     DBUG_RETURN (arg_info);
 }
 
+info *
+HandleConstraints (node *avis, info *arg_info)
+{
+    node *expr, *constraint;
+
+    DBUG_ENTER ("HandleConstraints");
+
+    if (AVIS_CONSTRTYPE (avis) != NULL) {
+        expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
+                           TBmakeId (avis));
+        expr = TRAVdo (expr, arg_info);
+        arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
+        AVIS_CONSTRVAR (avis) = NULL;
+        AVIS_CONSTRTYPE (avis) = NULL;
+    }
+
+    while (AVIS_CONSTRSET (avis) != NULL) {
+        constraint = AVIS_CONSTRSET (avis);
+        CONSTRAINT_EXPR (constraint) = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
+        if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
+            arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                           CONSTRAINT_EXPR (constraint), arg_info);
+        } else {
+            arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                           CONSTRAINT_EXPR (constraint), arg_info);
+        }
+        CONSTRAINT_PREDAVIS (constraint) = NULL;
+        CONSTRAINT_EXPR (constraint) = NULL;
+        AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
+        constraint = FREEdoFreeNode (constraint);
+    }
+    DBUG_RETURN (arg_info);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn node *IDCfundef( node *arg_node, info *arg_info)
@@ -297,7 +331,12 @@ IDCblock (node *arg_node, info *arg_info)
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (post_assign != NULL) {
-        BLOCK_INSTR (arg_node) = TCappendAssign (post_assign, BLOCK_INSTR (arg_node));
+        if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_empty) {
+            BLOCK_INSTR (arg_node) = FREEdoFreeNode (BLOCK_INSTR (arg_node));
+            BLOCK_INSTR (arg_node) = post_assign;
+        } else {
+            BLOCK_INSTR (arg_node) = TCappendAssign (post_assign, BLOCK_INSTR (arg_node));
+        }
         DBUG_PRINT ("IDC", ("...inserting assignments at beginning of N_block"));
     }
 
@@ -335,13 +374,31 @@ IDCassign (node *arg_node, info *arg_info)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *IDClet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDClet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDClet");
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *IDCids( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
 IDCids (node *arg_node, info *arg_info)
 {
-    node *expr, *avis, *constraint;
+    node *avis;
 
     DBUG_ENTER ("IDCids");
 
@@ -354,34 +411,7 @@ IDCids (node *arg_node, info *arg_info)
         break;
 
     case IDC_insert:
-
-        if (AVIS_CONSTRTYPE (avis) != NULL) {
-            expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
-                               TBmakeId (avis));
-            expr = TRAVdo (expr, arg_info);
-            arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
-            AVIS_CONSTRVAR (avis) = NULL;
-            AVIS_CONSTRTYPE (avis) = NULL;
-        }
-
-        while (AVIS_CONSTRSET (avis) != NULL) {
-            constraint = AVIS_CONSTRSET (avis);
-            CONSTRAINT_EXPR (constraint)
-              = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
-
-            if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
-                arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
-                                               CONSTRAINT_EXPR (constraint), arg_info);
-            } else {
-                arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
-                                               CONSTRAINT_EXPR (constraint), arg_info);
-            }
-            CONSTRAINT_PREDAVIS (constraint) = NULL;
-            CONSTRAINT_EXPR (constraint) = NULL;
-            AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
-            constraint = FREEdoFreeNode (constraint);
-        }
-
+        arg_info = HandleConstraints (avis, arg_info);
         break;
 
     case IDC_finalize:
@@ -484,6 +514,12 @@ IDCavis (node *arg_node, info *arg_info)
             /**
              * do NOT increment counter here as all args are tagged 1!
              */
+        }
+        break;
+
+    case IDC_insert:
+        if (NODE_TYPE (AVIS_DECL (arg_node)) == N_arg) {
+            arg_info = HandleConstraints (arg_node, arg_info);
         }
         break;
 
@@ -594,7 +630,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
             }
         } else {
             AVIS_CONSTRTYPE (avis) = TYcopyType (type);
-            res = TBmakeAvis (TRAVtmpVar (),
+            res = TBmakeAvis (TRAVtmpVarName ("pred"),
                               TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
             AVIS_CONSTRVAR (avis) = res;
             /**
@@ -653,7 +689,7 @@ IDCaddFunConstraint (node *expr)
         CTIwarnLine (NODE_LINE (expr), "illegal requirement ignored!");
         res = NULL;
     } else {
-        res = TBmakeAvis (TRAVtmpVar (),
+        res = TBmakeAvis (TRAVtmpVarName ("pred"),
                           TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
         AVIS_CONSTRSET (avis) = TBmakeConstraint (res, expr, AVIS_CONSTRSET (avis));
         /**

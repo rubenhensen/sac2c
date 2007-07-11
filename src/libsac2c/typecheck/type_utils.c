@@ -307,6 +307,33 @@ TUrettypes2alphaMax (node *rets)
 
 /** <!--********************************************************************-->
  *
+ * @fn node  *TUrettypes2alpha( node *rets);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUrettypes2alpha (node *rets)
+{
+    node *tmp = rets;
+
+    DBUG_ENTER ("TUrettypes2alpha");
+
+    while (tmp != NULL) {
+
+        RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
+        RET_TYPE (tmp) = TYmakeAlphaType (NULL);
+        tmp = RET_NEXT (tmp);
+    }
+
+    DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node  *TUrettypes2alphaFix( node *rets);
  *
  *   @brief

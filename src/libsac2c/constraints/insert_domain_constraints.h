@@ -17,6 +17,7 @@ extern node *IDCfinalize (node *fundef, bool all);
 extern node *IDCfundef (node *arg_node, info *arg_info);
 extern node *IDCblock (node *arg_node, info *arg_info);
 extern node *IDCassign (node *arg_node, info *arg_info);
+extern node *IDClet (node *arg_node, info *arg_info);
 extern node *IDCids (node *arg_node, info *arg_info);
 extern node *IDCwith (node *arg_node, info *arg_info);
 extern node *IDCcode (node *arg_node, info *arg_info);
