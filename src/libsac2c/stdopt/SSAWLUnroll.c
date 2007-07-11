@@ -138,9 +138,15 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *cexpr, node *a
     exprs = TBmakeExprs (tmpn, TBmakeExprs (TBmakeId (IDS_AVIS (PART_VEC (partn))),
                                             TBmakeExprs (DUPdoDupTree (cexpr), NULL)));
 
-    letexpr = TBmakePrf (F_modarray_AxVxS, exprs);
+    DBUG_ASSERT (NODE_TYPE (cexpr) == N_id, "WLunroll found cexpr that is no N_id");
 
     /* append to body code */
+    if (TUisScalar (ID_NTYPE (cexpr))) {
+        letexpr = TBmakePrf (F_modarray_AxVxS, exprs);
+    } else {
+        letexpr = TBmakePrf (F_modarray_AxVxA, exprs);
+    }
+
     tmpn = TBmakeAssign (TBmakeLet (DUPdoDupNode (array), letexpr), NULL);
     bodycode = TCappendAssign (bodycode, tmpn);
 
