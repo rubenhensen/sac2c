@@ -99,7 +99,7 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
-node *
+static node *
 FindAvisOfLastDefinition (node *exprs)
 {
     node *avis, *last_avis = NULL;
@@ -123,13 +123,30 @@ FindAvisOfLastDefinition (node *exprs)
     DBUG_RETURN (last_avis);
 }
 
-node *
+/** <!-- ****************************************************************** -->
+ * @fn node *CreateNewVarAndInitiateRenaming( node *id, info *arg_info)
+ *
+ * @brief Creates a new variable, inserts the corresponding avis and marks
+ *        the avis of id to be substituted by the new variable. The type of
+ *        the new variable is the type of id lifted to AKS. This is
+ *        essential, as guards introduce the possibility of the new
+ *        variable evaluating to _|_, which would not be subtype of the
+ *        AKV but of the corresponding AKS!
+ *
+ * @param id       N_id node to create clone of
+ * @param arg_info info structure for vardecs etc.
+ *
+ * @return avis node of new variable
+ ******************************************************************************/
+static node *
 CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
 {
     node *old_avis, *avis;
+
     DBUG_ENTER ("CreateNewVarAndInitiateRenaming");
+
     old_avis = ID_AVIS (id);
-    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (old_avis)));
+    avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (old_avis)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     AVIS_SUBST (old_avis) = avis;
@@ -139,7 +156,7 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
     DBUG_RETURN (avis);
 }
 
-node *
+static node *
 DupIdExprsWithoutDuplicates (node *exprs)
 {
     node *args;
@@ -173,7 +190,7 @@ DupIdExprsWithoutDuplicates (node *exprs)
     DBUG_RETURN (args);
 }
 
-node *
+static node *
 BuildDataFlowHook (node *ids, node *expr, info *arg_info)
 {
     node *exprs, *assign, *avis, *new_ids = NULL;
@@ -209,7 +226,7 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
     DBUG_RETURN (assign);
 }
 
-info *
+static info *
 BuildPrfConstraint (node *pavis, node *expr, info *arg_info)
 {
     node *assign;
@@ -223,7 +240,7 @@ BuildPrfConstraint (node *pavis, node *expr, info *arg_info)
     DBUG_RETURN (arg_info);
 }
 
-info *
+static info *
 BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
 {
     node *assign;
@@ -241,7 +258,7 @@ BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
     DBUG_RETURN (arg_info);
 }
 
-info *
+static info *
 HandleConstraints (node *avis, info *arg_info)
 {
     node *expr, *constraint;
