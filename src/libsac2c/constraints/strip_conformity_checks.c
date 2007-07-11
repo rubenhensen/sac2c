@@ -31,6 +31,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "globals.h"
 #include "DupTree.h"
 #include "free.h"
 #include "memory.h"
@@ -256,13 +257,19 @@ SCCassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCCassign");
 
+    DBUG_ASSERT ((!INFO_SCRAPASSIGN (arg_info)), "SCRAPASSIGN already set!");
+
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_SCRAPASSIGN (arg_info)) {
+        DBUG_PRINT ("SCC", ("Scrapping assignment..."));
+
         arg_node = FREEdoFreeNode (arg_node);
     }
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
+        DBUG_PRINT ("SCC", ("Inserting preassigns..."));
+
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
@@ -295,6 +302,7 @@ SCClet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
+    LET_IDS (arg_node) = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -316,6 +324,8 @@ SCCprf (node *arg_node, info *arg_info)
     if (PRF_ARGS (arg_node) != NULL) {
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
+
+    DBUG_PRINT ("SCC", ("Looking at prf %s...", PRF_NAME (PRF_PRF (arg_node))));
 
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
