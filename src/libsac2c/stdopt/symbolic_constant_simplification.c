@@ -56,6 +56,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
+#include "free.h"
 #include "globals.h"
 #include "DupTree.h"
 #include "constants.h"
@@ -270,6 +271,29 @@ MatchEsdneg (node *prfarg1, node *prfarg2)
         }
     }
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *StripTrues( node *args)
+ * Takes N_exprs chain and returns same with TRUE predicates removed.
+ *****************************************************************************/
+
+static node *
+StripTrues (node *args)
+{
+    ntype *predtyp;
+
+    if (args != NULL) {
+        DBUG_ASSERT (N_exprs == NODE_TYPE (args), "StripTrues expected exprs chain");
+        EXPRS_NEXT (args) = StripTrues (EXPRS_NEXT (args));
+        /* Delete predicate if true */
+        predtyp = ID_NTYPE (EXPRS_EXPR (args));
+        if (TYisAKV (predtyp) && (COisTrue (TYgetValue (predtyp), TRUE))) {
+            args = FREEdoFreeNode (args); /* Pops one off the chain */
+        }
+    }
+    return (args);
 }
 
 /** <!--********************************************************************-->
@@ -1033,13 +1057,30 @@ SCSprf_guard (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_afterguard( node *arg_node, info *arg_info)
  *
+ * In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
+ * If all predicates are eventually removed, replace
+ * _afterguard(x, pred) by x if (true == pred)
+ *
  *****************************************************************************/
 node *
 SCSprf_afterguard (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *arg2up = NULL;
 
     DBUG_ENTER ("SCSprf_afterguard");
+
+    res = DUPdoDupTree (arg_node); /* Copy N_prf node and operate on the copy */
+    arg2up = EXPRS_NEXT (PRF_ARGS (res));
+    DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
+    arg2up = StripTrues (arg2up);
+    EXPRS_NEXT (PRF_ARGS (res)) = arg2up;
+
+    /* If no predicates remain, this is an identity */
+    if (NULL == arg2up) {
+        res = FREEdoFreeTree (res);
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
     DBUG_RETURN (res);
 }
 
