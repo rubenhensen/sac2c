@@ -533,11 +533,12 @@ NTCCTprf_shape_dim (te_info *info, ntype *args)
             res = TYmakeBottomType (err_msg);
             pred = TYcopyType (res);
         } else {
-            res = TYcopyType (idx);
             if (TUshapeKnown (idx) && TUdimKnown (array)) {
+                res = TYeliminateAKV (idx);
                 pred
                   = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
             } else {
+                res = TYcopyType (idx);
                 pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
             }
         }
@@ -629,11 +630,12 @@ NTCCTprf_val_shape (te_info *info, ntype *args)
                 res = TYmakeBottomType (err_msg);
                 pred = TYcopyType (res);
             } else {
-                res = TYcopyType (idx);
-                if (TYisAKV (idx)) {
+                if (TYisAKV (idx) && TUshapeKnown (array)) {
+                    res = TYcopyType (idx);
                     pred = TYmakeAKV (TYmakeSimpleType (T_bool),
                                       COmakeTrue (SHcreateShape (0)));
                 } else {
+                    res = TYeliminateAKV (idx);
                     pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
                 }
             }
@@ -686,11 +688,12 @@ NTCCTprf_val_val (te_info *info, ntype *args)
                 res = TYmakeBottomType (err_msg);
                 pred = TYcopyType (res);
             } else {
-                res = TYcopyType (iv1);
                 if (TYisAKV (iv1) && TYisAKV (iv2)) {
+                    res = TYcopyType (iv1);
                     pred = TYmakeAKV (TYmakeSimpleType (T_bool),
                                       COmakeTrue (SHcreateShape (0)));
                 } else {
+                    res = TYeliminateAKV (iv1);
                     pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
                 }
             }
@@ -736,11 +739,12 @@ NTCCTprf_prod_shape (te_info *info, ntype *args)
             res = TYmakeBottomType (err_msg);
             pred = TYcopyType (res);
         } else {
-            res = TYcopyType (new_shp);
             if (TYisAKV (new_shp) && TUshapeKnown (array)) {
+                res = TYcopyType (new_shp);
                 pred
                   = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
             } else {
+                res = TYeliminateAKV (new_shp);
                 pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
             }
         }
