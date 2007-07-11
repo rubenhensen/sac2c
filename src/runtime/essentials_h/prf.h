@@ -81,6 +81,11 @@
  * ND_PRF_MODARRAY_AxVxS__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
  *
+ * ND_PRF_MODARRAY_AxVxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                           idx_size, idx_NT, val_ANY, copyfun)
+ * ND_PRF_MODARRAY_AxVxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
+ *
  * ND_PRF_TAKE_SxV__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  * ND_PRF_TAKE_SxV__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
  *
@@ -124,6 +129,9 @@
 
 /* ND_PRF_MODARRAY_AxVxS__DATA_id( ...) is a C-ICM */
 /* ND_PRF_MODARRAY_AxVxS__DATA_arr( ...) is a C-ICM */
+
+/* ND_PRF_MODARRAY_AxVxA__DATA_id( ...) is a C-ICM */
+/* ND_PRF_MODARRAY_AxVxA__DATA_arr( ...) is a C-ICM */
 
 /* ND_PRF_TAKE_SxV__SHAPE( ...) is a C-ICM */
 /* ND_PRF_TAKE_SxV__DATA( ...) is a C-ICM */

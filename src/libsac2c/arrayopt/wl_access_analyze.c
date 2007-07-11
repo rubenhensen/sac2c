@@ -1035,6 +1035,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_modarray_AxVxS:
+            case F_modarray_AxVxA:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_modarray_AxVxS"));
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_MODA;
@@ -1412,7 +1413,8 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_idx_sel:
-            case F_idx_modarray:
+            case F_idx_modarray_AxSxS:
+            case F_idx_modarray_AxSxA:
                 /*
                  * These functions are only introduced by index vector elimination,
                  * however tile size inference must always be applied before index

@@ -465,7 +465,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        NULL, NULL),
 
   PRF (modarray_AxVxS, (PA_A, PA_V, PA_S), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxS,
-       COmodarray, COMPprfModarray, NULL, SCCFprf_modarray, NULL, dim_of_arg1,
+       COmodarray, COMPprfModarray_AxVxS, NULL, SCCFprf_modarray, NULL, dim_of_arg1,
        shp_of_arg1, NULL, 0, NULL, ICCprfModarray, TEone, NULL, NULL),
 
   PRF (cat_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_cat_VxV, COcat, COMPprfCat,
@@ -518,9 +518,13 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        COMPprfIdxSel, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL, 0, NULL, NULL,
        TEone, NULL, NULL),
 
-  PRF (idx_modarray, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       COMPprfIdxModarray, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
+  PRF (idx_modarray_AxSxS, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfIdxModarray_AxSxS, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL, 0, NULL,
+       NULL, TEone, NULL, NULL),
+
+  PRF (idx_modarray_AxSxA, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfIdxModarray_AxSxA, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL, 0, NULL,
+       NULL, TEone, NULL, NULL),
 
   PRF (idxs2offset, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfIdxs2Offset, NULL, NULL, NULL, dim_is_0, shp_is_empty, NULL, 0, NULL, NULL,
@@ -555,6 +559,14 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
   PRF (prop_obj_out, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_id, NULL,
        COMPprfPropObjOut, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),
+
+  /*******************************************************************************
+   * With-loop unrolling (WLUR)
+   */
+
+  PRF (modarray_AxVxA, (PA_A, PA_V, PA_A), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxA,
+       COmodarray, COMPprfModarray_AxVxA, NULL, SCCFprf_modarray, NULL, dim_of_arg1,
+       shp_of_arg1, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Memory management:

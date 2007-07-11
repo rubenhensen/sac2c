@@ -1227,10 +1227,14 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_modarray_AxVxS:
-    case F_idx_modarray:
+    case F_modarray_AxVxA:
+    case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
         /*
-         * modarray( A, iv, val);
-         * idx_modarray( A, idx, val);
+         * modarray_AxVxS( A, iv, val);
+         * modarray_AxVxA( A, iv, val);
+         * idx_modarray_AxSxS( A, idx, val);
+         * idx_modarray_AxSxA( A, idx, val);
          *
          * reuse( A);
          */

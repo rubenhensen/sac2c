@@ -243,8 +243,25 @@ IVESPLITprf (node *arg_node, info *arg_info)
                      "missing saa shape!");
 
         avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
-        new_node = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (arg_node), TBmakeId (avis),
+
+        new_node = TCmakePrf3 (F_idx_modarray_AxSxS, PRF_ARG1 (arg_node), TBmakeId (avis),
                                PRF_ARG3 (arg_node));
+
+        PRF_ARG1 (arg_node) = NULL;
+        PRF_ARG3 (arg_node) = NULL;
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = new_node;
+        break;
+
+    case F_modarray_AxVxA:
+        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
+                     "missing saa shape!");
+
+        avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+
+        new_node = TCmakePrf3 (F_idx_modarray_AxSxA, PRF_ARG1 (arg_node), TBmakeId (avis),
+                               PRF_ARG3 (arg_node));
+
         PRF_ARG1 (arg_node) = NULL;
         PRF_ARG3 (arg_node) = NULL;
         arg_node = FREEdoFreeTree (arg_node);

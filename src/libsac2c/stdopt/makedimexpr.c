@@ -376,8 +376,6 @@ MDEprf (node *arg_node, info *arg_info)
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
 
-#if 1
-
     if (makedim_funtab[PRF_PRF (arg_node)] != NULL) {
         rhsnode = makedim_funtab[PRF_PRF (arg_node)](arg_node, arg_info);
 
@@ -385,103 +383,6 @@ MDEprf (node *arg_node, info *arg_info)
 
         AVIS_SSAASSIGN (dimavis) = res;
     }
-
-#else
-
-    switch (PRF_PRF (arg_node)) {
-    case F_dim_A:
-    case F_idxs2offset:
-    case F_vect2offset:
-    case F_sel_VxA:
-    case F_idx_shape_sel:
-    case F_add_SxS:
-    case F_sub_SxS:
-    case F_mul_SxS:
-    case F_div_SxS:
-    case F_toi_S:
-    case F_tof_S:
-    case F_tod_S:
-    case F_not_S:
-    case F_mod_SxS:
-    case F_min_SxS:
-    case F_max_SxS:
-    case F_idx_sel:
-    case F_idx_modarray:
-    case F_eq_SxS:
-    case F_neq_SxS:
-    case F_gt_SxS:
-    case F_ge_SxS:
-    case F_lt_SxS:
-    case F_le_SxS:
-
-        rhsnode = TBmakeNum (0);
-        break;
-
-    case F_shape_A:
-    case F_drop_SxV:
-    case F_take_SxV:
-    case F_cat_VxV:
-        rhsnode = TBmakeNum (1);
-        break;
-
-    case F_modarray_AxVxS:
-    case F_copy:
-    case F_neg:
-    case F_not_V:
-    case F_abs:
-    case F_add_VxS:
-    case F_add_VxV:
-    case F_sub_VxS:
-    case F_sub_VxV:
-    case F_mul_VxS:
-    case F_mul_VxV:
-    case F_div_VxS:
-    case F_div_VxV:
-    case F_and_VxS:
-    case F_and_VxV:
-    case F_or_VxS:
-    case F_or_VxV:
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_neq:
-    case F_ge:
-    case F_gt:
-        rhsnode = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
-        break;
-
-    case F_add_SxV:
-    case F_sub_SxV:
-    case F_mul_SxV:
-    case F_div_SxV:
-    case F_and_SxV:
-    case F_or_SxV:
-        rhsnode = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
-        break;
-
-    case F_reshape_VxA:
-        rhsnode = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0),
-                              DUPdoDupNode (PRF_ARG1 (arg_node)));
-        break;
-
-    case F_saabind:
-        rhsnode = DUPdoDupNode (PRF_ARG1 (arg_node));
-        break;
-
-    case F_accu:
-        break;
-
-    default:
-        break;
-    }
-
-    if (rhsnode != NULL) {
-        res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
-
-        AVIS_SSAASSIGN (dimavis) = res;
-    }
-
-#endif
 
     DBUG_RETURN (res);
 }

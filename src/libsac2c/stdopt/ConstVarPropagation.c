@@ -1,6 +1,7 @@
 /*
  * $Id$
  */
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -353,7 +354,8 @@ CVPprf (node *arg_node, info *arg_info)
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
-    case F_idx_modarray:
+    case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
         DBUG_ASSERT (global.compiler_subphase >= PH_opt_ivesplit,
                      "F_idx_ operations are not allowed during the optimizer!");
         /*

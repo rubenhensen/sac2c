@@ -545,13 +545,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 /******************************************************************************
  *
  * Function:
- *   void PrfModarray_Data( char *to_NT, int to_sdim,
- *                          char *from_NT, int from_sdim,
- *                          bool idx_unrolled, void *idx, int idx_size,
- *                          void (*idx_size_fun)( void *),
- *                          void (*idx_read_fun)( void *, char *, int),
- *                          char *val_ANY,
- *                          char *copyfun)
+ *   void PrfModarrayScalarVal_Data( char *to_NT, int to_sdim,
+ *                                char *from_NT, int from_sdim,
+ *                                bool idx_unrolled, void *idx, int idx_size,
+ *                                void (*idx_size_fun)( void *),
+ *                                void (*idx_read_fun)( void *, char *, int),
+ *                                char *val_scalar,
+ *                                char *copyfun)
  *
  * Description:
  *   implements all the ND_PRF_..._MODARRAY__DATA_... ICMs.
@@ -559,62 +559,81 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
  ******************************************************************************/
 
 static void
-PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                  bool idx_unrolled, void *idx, int idx_size,
-                  void (*idx_size_fun) (void *),
-                  void (*idx_read_fun) (void *, char *, int), char *val_ANY,
-                  char *copyfun)
+PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                           bool idx_unrolled, void *idx, int idx_size,
+                           void (*idx_size_fun) (void *),
+                           void (*idx_read_fun) (void *, char *, int), char *val_scalar,
+                           char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("PrfModarray_Data");
+    DBUG_ENTER ("PrfModarrayScalarVal_Data");
 
-    /*
-     * CAUTION:
-     * 'val_ANY' is either a tagged identifier or a constant scalar!
-     */
+    INDENT;
+    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
+                   ,
+                   if (idx_unrolled) {
+                       INDENT;
+                       fprintf (global.outfile, "SAC_idx = ");
+                       idx_read_fun (idx, NULL, 0);
+                       fprintf (global.outfile, ";\n");
+                   } else {
+                       Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                    to_NT, to_dim);
+                   } INDENT;
+                   fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+                   ReadScalar (val_scalar, NULL, 0);
+                   fprintf (global.outfile, " , %s)\n", copyfun););
 
-    if ((val_ANY[0] != '(') || /* not a tagged id -> is a const scalar! */
-        (ICUGetShapeClass (val_ANY) == C_scl)) {
-        /* 'val_ANY' is scalar */
-        INDENT;
-        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
-                       ,
-                       if (idx_unrolled) {
-                           INDENT;
-                           fprintf (global.outfile, "SAC_idx = ");
-                           idx_read_fun (idx, NULL, 0);
-                           fprintf (global.outfile, ";\n");
-                       } else {
-                           Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                        idx_read_fun, to_NT, to_dim);
-                       } INDENT;
-                       fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ",
-                                to_NT);
-                       ReadScalar (val_ANY, NULL, 0);
-                       fprintf (global.outfile, " , %s)\n", copyfun););
-    } else {
-        /* 'val_ANY' is a tagged identifier representing a non-scalar array */
-        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
-                       ,
-                       if (idx_unrolled) {
-                           INDENT;
-                           fprintf (global.outfile, "SAC_idx = ");
-                           idx_read_fun (idx, NULL, 0);
-                           fprintf (global.outfile, ";\n");
-                       } else {
-                           Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                        idx_read_fun, to_NT, to_dim);
-                       } INDENT;
-                       FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
-                                 , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
-                                            val_ANY);
-                                 , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
-                                 fprintf (global.outfile,
-                                          "SAC_ND_WRITE_READ_COPY("
-                                          " %s, SAC_i, %s, SAC_j, %s)\n",
-                                          to_NT, val_ANY, copyfun);););
-    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PrfModarrayArrayVal_Data( char *to_NT, int to_sdim,
+ *                               char *from_NT, int from_sdim,
+ *                               bool idx_unrolled, void *idx, int idx_size,
+ *                               void (*idx_size_fun)( void *),
+ *                               void (*idx_read_fun)( void *, char *, int),
+ *                               char *val_array,
+ *                               char *copyfun)
+ *
+ * Description:
+ *   implements all the ND_PRF_..._MODARRAY__DATA_... ICMs.
+ *
+ ******************************************************************************/
+
+static void
+PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                          bool idx_unrolled, void *idx, int idx_size,
+                          void (*idx_size_fun) (void *),
+                          void (*idx_read_fun) (void *, char *, int), char *val_array,
+                          char *copyfun)
+{
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
+    DBUG_ENTER ("PrfModarrayArrayVal_Data");
+
+    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
+                   ,
+                   if (idx_unrolled) {
+                       INDENT;
+                       fprintf (global.outfile, "SAC_idx = ");
+                       idx_read_fun (idx, NULL, 0);
+                       fprintf (global.outfile, ";\n");
+                   } else {
+                       Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                    to_NT, to_dim);
+                   } INDENT;
+                   FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
+                             , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
+                                        val_array);
+                             , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
+                             fprintf (global.outfile,
+                                      "SAC_ND_WRITE_READ_COPY("
+                                      " %s, SAC_i, %s, SAC_j, %s)\n",
+                                      to_NT, val_array, copyfun);););
 
     DBUG_VOID_RETURN;
 }
@@ -625,7 +644,7 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
  *   void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id( char *to_NT, int to_sdim,
  *                                                  char *from_NT, int from_sdim,
  *                                                  char *idx_NT, int idx_size,
- *                                                  char *val_ANY, char *copyfun)
+ *                                                  char *val_scalar, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -638,7 +657,7 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 void
 ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_NT,
                                           int from_sdim, char *idx_NT, int idx_size,
-                                          char *val_ANY, char *copyfun)
+                                          char *val_scalar, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id");
 
@@ -656,7 +675,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_MODARRAY_AxVxS__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
-             to_NT, to_sdim, from_NT, from_sdim, val_ANY);
+             to_NT, to_sdim, from_NT, from_sdim, val_scalar);
 
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
@@ -666,8 +685,8 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
                                 global.prf_name[F_modarray_AxVxS]););
 
-    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size, SizeId,
-                      ReadId, val_ANY, copyfun);
+    PrfModarrayScalarVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT,
+                               idx_size, SizeId, ReadId, val_scalar, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -675,33 +694,33 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr( char *to_NT, int to_sdim,
  *                                                   char *from_NT, int from_sdim,
  *                                                   int idx_size, char **idxs_ANY,
- *                                                   char *val_ANY,
+ *                                                   char *val_array,
  *                                                   char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxS__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *   ND_PRF_MODARRAY_AxVxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                              idx_size, [ idxs_ANY ]* , val_ANY, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
+ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                                            int from_sdim, int idx_size, char **idxs_ANY,
-                                           char *val_ANY, char *copyfun)
+                                           char *val_array, char *copyfun)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr");
+    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr");
 
-#define ND_PRF_MODARRAY_AxVxS__DATA_arr
+#define ND_PRF_MODARRAY_AxVxA__DATA_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_MODARRAY_AxVxS__DATA_arr
+#undef ND_PRF_MODARRAY_AxVxA__DATA_arr
 
     /*
      * CAUTION:
@@ -714,8 +733,8 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_MODARRAY_AxVxS__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
-             to_NT, to_sdim, from_NT, from_sdim, val_ANY);
+             " (\"ND_PRF_MODARRAY_AxVxA__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, val_array);
 
     for (i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
@@ -723,16 +742,16 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
                                       idxs_ANY[i]);
                              , fprintf (global.outfile,
                                         "2nd argument of %s is not a vector",
-                                        global.prf_name[F_modarray_AxVxS]););
+                                        global.prf_name[F_modarray_AxVxA]););
         }
     }
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
                               idx_size);
                      , fprintf (global.outfile, "2nd argument of %s has illegal size!",
-                                global.prf_name[F_modarray_AxVxS]););
+                                global.prf_name[F_modarray_AxVxA]););
 
-    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY, idx_size, NULL,
-                      ReadConstArray_Str, val_ANY, copyfun);
+    PrfModarrayArrayVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY,
+                              idx_size, NULL, ReadConstArray_Str, val_array, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -981,30 +1000,30 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_IDX_MODARRAY__DATA( char *to_NT, int to_sdim,
- *                                             char *from_NT, int from_sdim,
- *                                             char *idx_ANY, char *val_ANY,
- *                                             char *copyfun)
+ *   void ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA( char *to_NT, int to_sdim,
+ *                                                   char *from_NT, int from_sdim,
+ *                                                   char *idx_ANY, char *val_ANY,
+ *                                                   char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_IDX_MODARRAY__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
- *                              copyfun)
+ *   ND_PRF_IDX_MODARRAY_AxSxS__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
+ *                                    copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
-                                     int from_sdim, char *idx_ANY, char *val_ANY,
-                                     char *copyfun)
+ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_NT,
+                                           int from_sdim, char *idx_ANY, char *val_scalar,
+                                           char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY__DATA");
+    DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA");
 
-#define ND_PRF_IDX_MODARRAY__DATA
+#define ND_PRF_IDX_MODARRAY_AxSxS__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_PRF_IDX_MODARRAY__DATA
+#undef ND_PRF_IDX_MODARRAY_AxSxS__DATA
 
     /*
      * CAUTION:
@@ -1017,17 +1036,71 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_IDX_MODARRAY__DATA( %s, %d, %s, %d, %s, %s)\"))\n",
-             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_ANY);
+             " (\"ND_PRF_IDX_MODARRAY_AxSxS__DATA( %s, %d, %s, %d, %s, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_scalar);
 
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
-                                    global.prf_name[F_modarray_AxVxS]););
+                                    global.prf_name[F_idx_modarray_AxSxS]););
     }
 
-    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
-                      ReadScalar, val_ANY, copyfun);
+    PrfModarrayScalarVal_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
+                               ReadScalar, val_scalar, copyfun);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA( char *to_NT, int to_sdim,
+ *                                                   char *from_NT, int from_sdim,
+ *                                                   char *idx_ANY, char *val_array,
+ *                                                   char *copyfun)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_IDX_MODARRAY_AxSxA__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
+ *                                    copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *from_NT,
+                                           int from_sdim, char *idx_ANY, char *val_array,
+                                           char *copyfun)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA");
+
+#define ND_PRF_IDX_MODARRAY_AxSxA__DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_IDX_MODARRAY_AxSxA__DATA
+
+    /*
+     * CAUTION:
+     * 'idx_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     * 'val_ANY' is either a tagged identifier (scalar or non-scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (global.outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_IDX_MODARRAY_AxSxA__DATA( %s, %d, %s, %d, %s, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_array);
+
+    if (idx_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+                         , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
+                                    global.prf_name[F_idx_modarray_AxSxA]););
+    }
+
+    PrfModarrayArrayVal_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
+                              ReadScalar, val_array, copyfun);
 
     DBUG_VOID_RETURN;
 }

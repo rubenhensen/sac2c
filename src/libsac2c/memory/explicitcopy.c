@@ -298,7 +298,9 @@ EMECprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_modarray_AxVxS:
-    case F_idx_modarray:
+    case F_modarray_AxVxA:
+    case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
         PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
         break;
 
