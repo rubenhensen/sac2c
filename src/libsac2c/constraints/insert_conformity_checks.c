@@ -768,26 +768,38 @@ ICCgenarray (node *arg_node, info *arg_info)
                                           GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
                                         DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
 
-        INFO_WLGUARDIDS (arg_info)
-          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
-                            TCmakePrf2 (F_val_matches_val_VxV,
-                                        DUPdoDupTree (
-                                          GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
-                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
+        /*
+         * TODO:
+         *
+         * This is wrong, as val_matches_val in fact is a val_lt_val and
+         * we need a val_le_val here. Up till then I disable this
+         *
+        INFO_WLGUARDIDS( arg_info) =
+          EmitConstraint( INFO_WLGUARDIDS( arg_info),
+                          TCmakePrf2( F_val_matches_val_VxV,
+                                      DUPdoDupTree(
+                                        GENERATOR_BOUND2(
+                                          INFO_GENERATOR( arg_info))),
+                                      DUPdoDupTree(
+                                        GENARRAY_SHAPE( arg_node))));
+         * TODO
+         */
     } else if (INFO_CEXPRS (arg_info) != NULL) {
         /*
-         * emit cexpr constraints
+         * emit cexpr constraints iff we have a default value
          */
-        DBUG_PRINT ("ICC", ("...emitting F_same_shape_AxA CEXPR-constraint"));
+        if (GENARRAY_DEFAULT (arg_node) != NULL) {
+            DBUG_PRINT ("ICC", ("...emitting F_same_shape_AxA CEXPR-constraint"));
 
-        /*
-         * we simply ignore the returned avis, as we do not propagate the
-         * boolean guard out of the withloop.
-         */
-        IDCaddFunConstraint (
-          TCmakePrf2 (F_same_shape_AxA,
-                      DUPdoDupTree (EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                      DUPdoDupTree (GENARRAY_DEFAULT (arg_node))));
+            /*
+             * we simply ignore the returned avis, as we do not propagate the
+             * boolean guard out of the withloop.
+             */
+            IDCaddFunConstraint (
+              TCmakePrf2 (F_same_shape_AxA,
+                          DUPdoDupTree (EXPRS_EXPR (INFO_CEXPRS (arg_info))),
+                          DUPdoDupTree (GENARRAY_DEFAULT (arg_node))));
+        }
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
