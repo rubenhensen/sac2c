@@ -519,7 +519,7 @@ SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
 SUBPHASE (scc, "Stripping conformity checks", SCCdoStripConformityChecks,
-          !global.runtimecheck.conformity, opt)
+          !global.runtimecheck.conformity && global.insertconformitychecks, opt)
 
 SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
           (global.optimize.dosaa || global.optimize.doive

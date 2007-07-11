@@ -34,6 +34,7 @@
 #include "memory.h"
 #include "ctinfo.h"
 #include "DupTree.h"
+#include "free.h"
 #include "insert_domain_constraints.h"
 
 typedef node *(*iccfun_p) (node *, node *);
@@ -55,7 +56,7 @@ struct INFO {
 };
 
 /**
- * A template entry in the template info structure
+  A template entry in the template info structure
  */
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
@@ -141,37 +142,52 @@ ICCdoInsertConformityChecks (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *GenerateIdsAndPrependArgs( node *lhs, node *assign, node **cids
- *                                      node **vardecs)
+ * @fn node *EmitAfterguards( node **lhs, node **assigns, node *cids
+ *                                       node **vardecs)
  *
- * @brief Given an N_ids chain, we generate a new N_ids chain of
- *        fresh variables of same length and prepend corresponding
- *        N_id nodes the the cids N_exprs chain.
+ * @brief Given an N_ids chain and an N_id chain of guards, this function
+ *        appends an afterguard assignment to assigns for each N_ids node
+ *        using the cids. The lhs and argument is consumed.
  *
  * @param lhs      lhs N_ids to use as template
- * @param assign   assign to use as SSA_ASSIGN for new avis nodes
- * @param *cids    N_id chain to prepend to
- * @param *vardecs resulting vardecs
+ * @param assigns  assign to use as SSA_ASSIGN for new avis nodes
+ * @param cids     N_id chain of guards
+ * @param vardecs  resulting vardecs
  *
  * @return new N_ids chain
  ******************************************************************************/
 static node *
-GenerateIdsAndPrependArgs (node *lhs, node *assign, node **cids, node **vardecs)
+EmitAfterguards (node **lhs, node **assigns, node *cids, node **vardecs)
 {
     node *result;
     node *avis;
 
-    DBUG_ENTER ("GenerateIdsAndPrependArgs");
+    DBUG_ENTER ("EmitAfterguards");
 
-    if (lhs != NULL) {
-        result = GenerateIdsAndPrependArgs (IDS_NEXT (lhs), assign, cids, vardecs);
+    if (*lhs != NULL) {
+        result = EmitAfterguards (&IDS_NEXT (*lhs), assigns, cids, vardecs);
 
-        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (lhs))));
-        AVIS_SSAASSIGN (avis) = assign;
+        DBUG_ASSERT ((IDS_NEXT (*lhs) == NULL), "N_ids has not been consumed!");
+
+        DBUG_PRINT ("ICC", (" ...emitting afterguard"));
+
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (*lhs))));
+        *vardecs = TBmakeVardec (avis, *vardecs);
+
+        *assigns
+          = TBmakeAssign (TBmakeLet (*lhs, TBmakePrf (F_afterguard,
+                                                      TBmakeExprs (TBmakeId (avis),
+                                                                   DUPdoDupTree (cids)))),
+                          *assigns);
+
+        /* swap SSAASSIGNS */
+        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (*lhs));
+        AVIS_SSAASSIGN (IDS_AVIS (*lhs)) = *assigns;
+
+        /* ids has been consumed */
+        *lhs = NULL;
 
         result = TBmakeIds (avis, result);
-        *cids = TBmakeExprs (TBmakeId (avis), *cids);
-        *vardecs = TBmakeVardec (avis, *vardecs);
     } else {
         result = NULL;
     }
@@ -215,6 +231,17 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *EmitConstraint( node *ids, node *constraint)
+ *
+ * @brief Emits the given constraint and appends the corresponding
+ *        guard expression, if any, to the Exprs chain ids.
+ *
+ * @param ids        chain of N_exprs node
+ * @param constraint the constraint (N_ap or N_prf)
+ *
+ * @return the amended N_exprs chain
+ ******************************************************************************/
 static node *
 EmitConstraint (node *ids, node *constraint)
 {
@@ -449,8 +476,6 @@ ICCprf (node *arg_node, info *arg_info)
 {
     node *cids = NULL;
     node *args;
-    node *newlhs = NULL;
-    node *assign;
     int arg_cnt;
     ntype *constraint_type, *scalartype;
 
@@ -496,18 +521,11 @@ ICCprf (node *arg_node, info *arg_info)
      * if we have collected any constraints, we emit an afterguard
      */
     if (cids != NULL) {
-        DBUG_PRINT ("ICC", (" ...emitting afterguard"));
-        assign = TBmakeAssign (NULL, NULL);
+        INFO_LHS (arg_info)
+          = EmitAfterguards (&INFO_LHS (arg_info), &INFO_POSTASSIGNS (arg_info), cids,
+                             &INFO_VARDECS (arg_info));
 
-        newlhs = GenerateIdsAndPrependArgs (INFO_LHS (arg_info), assign, &cids,
-                                            &INFO_VARDECS (arg_info));
-
-        ASSIGN_INSTR (assign)
-          = TBmakeLet (INFO_LHS (arg_info), TBmakePrf (F_afterguard, cids));
-        ASSIGN_NEXT (assign) = INFO_POSTASSIGNS (arg_info);
-        INFO_POSTASSIGNS (arg_info) = assign;
-
-        INFO_LHS (arg_info) = newlhs;
+        cids = FREEdoFreeTree (cids);
     }
 
     DBUG_PRINT ("ICC", ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node))));
@@ -553,7 +571,7 @@ ICCblock (node *arg_node, info *arg_info)
 node *
 ICCwith (node *arg_node, info *arg_info)
 {
-    node *guardids, *assign, *newlhs;
+    node *guardids;
 
     DBUG_ENTER ("ICCwith");
 
@@ -587,20 +605,11 @@ ICCwith (node *arg_node, info *arg_info)
     }
 
     if (INFO_WLGUARDIDS (arg_info) != NULL) {
-        DBUG_PRINT ("ICC", (" ...emitting wl-afterguard"));
-        assign = TBmakeAssign (NULL, NULL);
+        INFO_LHS (arg_info)
+          = EmitAfterguards (&INFO_LHS (arg_info), &INFO_POSTASSIGNS (arg_info),
+                             INFO_WLGUARDIDS (arg_info), &INFO_VARDECS (arg_info));
 
-        newlhs = GenerateIdsAndPrependArgs (INFO_LHS (arg_info), assign,
-                                            &INFO_WLGUARDIDS (arg_info),
-                                            &INFO_VARDECS (arg_info));
-
-        ASSIGN_INSTR (assign)
-          = TBmakeLet (INFO_LHS (arg_info),
-                       TBmakePrf (F_afterguard, INFO_WLGUARDIDS (arg_info)));
-        ASSIGN_NEXT (assign) = INFO_POSTASSIGNS (arg_info);
-        INFO_POSTASSIGNS (arg_info) = assign;
-
-        INFO_LHS (arg_info) = newlhs;
+        INFO_WLGUARDIDS (arg_info) = FREEdoFreeTree (INFO_WLGUARDIDS (arg_info));
     }
 
     INFO_WLGUARDIDS (arg_info) = guardids;

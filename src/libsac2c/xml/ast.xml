@@ -940,10 +940,11 @@
       <traversal id="SCC" name="Strip Conformity Checks" default="sons" include="strip_conformity_checks.h" >
         <travuser>
           <node name="Block" />
+          <node name="Assign" />
           <node name="Prf" />
           <node name="Let" />
           <node name="Id" />
-          <node name="Avis" />
+          <node name="Vardec" />
         </travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
@@ -5126,6 +5127,7 @@
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
+                  <phase name="opt_scc" />
                   <phase name="opt_cyc_cse" />
                   <phase name="opt_lir" />
                   <phase name="pc_ussa" />
