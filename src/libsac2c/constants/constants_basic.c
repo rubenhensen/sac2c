@@ -135,6 +135,28 @@ COINTallocCV (simpletype type, int length)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * function:
+ *    void *COINTcopyCVToMem(simpletype type, int length, void *cv)
+ *
+ * description:
+ *    internal function to copy a cv into a new mem area.
+ *
+ ******************************************************************************/
+
+static void *
+COINTcopyCVToMem (simpletype type, int length, void *cv)
+{
+    DBUG_ENTER ("COINTcopyCVToMem");
+
+    void *res;
+
+    res = MEMcopy ((global.basetype_size[type] * length), cv);
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
@@ -379,14 +401,11 @@ COmakeConstantFromShape (shape *shp)
 
 /** <!--********************************************************************-->
  *
+ * @fn constant *COmakeConstantFromDynamicArguments(int dim, ...)
  *
- * @fn constant *COmakeConstantFromDynamicIntArguments(int dim, ...)
+ *   @brief creates a constant from dynamic list of arguments.
  *
- *   @brief  create a constant from dynamic list of integer arguments.
- *           it should be able to handle:
- *             T_int, T_short, T_long, T_uint, T_ulong, T_ushort, T_float,
- *             T_double, T_longdbl, T_bool, T_char
- *
+ *   @param simpletype type type of the elements
  *   @param int dim dimensionality of the constant.
  *   @param ... shapevalues and initializationvalues
  *
@@ -398,90 +417,97 @@ constant *
 COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
 {
     DBUG_ENTER ("COmakeConstantFromDynamicArguments");
+
+    /* Pointer for dynamic arguments*/
     va_list Argp;
-    shape *res_shape = SHmakeShape (dim);
-    int i = 0;
-    int res_num_elems = 0;
-    int *res_elems = NULL;
+
+    /* constant parts*/
+    shape *res_shape = NULL;
+    void *res_elems = NULL;
     constant *res = NULL;
+
+    /* constant facilities*/
+    int res_elems_num = 0;
+
+    /* Counter*/
+    int i = 0;
+
+    /* Construct shape*/
+    res_shape = SHmakeShape (dim);
 
     if (dim > 0) {
         va_start (Argp, dim);
+
+        /* Set Shape*/
         for (i = 0; i < dim; i++) {
             res_shape = SHsetExtent (res_shape, i, va_arg (Argp, int));
-            DBUG_PRINT ("SOSSK", ("res_shape[%i] = %i", i, SHgetExtent (res_shape, i)));
         }
 
-        res_num_elems = SHgetUnrLen (res_shape);
+        res_elems_num = SHgetUnrLen (res_shape);
 
-        if (res_num_elems > 0) {
-
-            res_elems = COINTallocCV (type, res_num_elems);
-
-            switch (type) {
-            case T_int:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, int);
-                }
-                break;
-            case T_short:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, int);
-                }
-                break;
-            case T_long:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, long);
-                }
-                break;
-            case T_uint:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, unsigned int);
-                }
-                break;
-            case T_ushort:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, unsigned int);
-                }
-                break;
-            case T_ulong:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, unsigned long);
-                }
-                break;
-            case T_float:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, double);
-                }
-                break;
-            case T_double:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, double);
-                }
-                break;
-            case T_longdbl:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, long double);
-                }
-                break;
-            case T_bool:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, bool);
-                }
-                break;
-            case T_char:
-                for (i = 0; i < res_num_elems; i++) {
-                    res_elems[i] = va_arg (Argp, int);
-                }
-                break;
-            default:
-                break;
-            }
+        /* if #elems > 0 copy these elements into memory*/
+        if (res_elems_num > 0) {
+            res_elems = COINTcopyCVToMem (type, res_elems_num, Argp);
         }
         va_end (Argp);
     }
 
-    res = COmakeConstant (T_int, res_shape, res_elems);
+    /* Contruct constant*/
+    res = COINTmakeConstant (T_int, res_shape, res_elems, res_elems_num);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn constant *COmakeConstantFromArray(simpletype type, int dim, int *shp,
+ *                                       void *elems)
+ *
+ *    @brief creates a constant out of a given array of elems.
+ *
+ *    @param simpletype type type of the elemens
+ *    @param int dim dimensionality of the constant
+ *    @param int *shp shape of the constant
+ *    @param void *elems elems of the constant
+ *
+ *    @return the freshly created constant
+ ******************************************************************************/
+
+constant *
+COmakeConstantFromArray (simpletype type, int dim, int *shp, void *elems)
+{
+    DBUG_ENTER ("COmakeConstantFromArray");
+
+    /* constant parts*/
+    shape *res_shape = NULL;
+    void *res_elems = NULL;
+    constant *res = NULL;
+
+    /* constant facilities*/
+    int res_elems_num = 0;
+
+    /* counters*/
+    int i = 0;
+
+    /* construct shape*/
+    res_shape = SHmakeShape (dim);
+    if (dim > 0) {
+
+        /* set shape*/
+        for (i = 0; i < dim; i++) {
+            res_shape = SHsetExtent (res_shape, i, shp[i]);
+        }
+
+        res_elems_num = SHgetUnrLen (res_shape);
+
+        /* if #elems > 0 copy elems to mem*/
+        if (res_elems_num > 0) {
+            res_elems = COINTcopyCVToMem (type, res_elems_num, elems);
+        }
+    }
+
+    /* construct entire constant*/
+    res = COINTmakeConstant (type, res_shape, res_elems, res_elems_num);
 
     DBUG_RETURN (res);
 }
