@@ -134,6 +134,8 @@ ResetAvis (node *avis)
         AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
     }
 
+    AVIS_SUBST (avis) = NULL;
+
     DBUG_VOID_RETURN;
 }
 
