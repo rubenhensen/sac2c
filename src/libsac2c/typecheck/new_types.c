@@ -6711,17 +6711,23 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 }
 
 static node *
-BuildDispatchErrorAssign (char *funname, node *args, node *vardecs)
+BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 {
     node *assigns;
 
     DBUG_ENTER ("BuildDispatchErrorAssign");
 
-    assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
-                                       TBmakePrf (F_dispatch_error,
-                                                  TBmakeExprs (TCmakeStrCopy (funname),
-                                                               Args2Exprs (args)))),
-                            NULL);
+    assigns
+      = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
+                                 TBmakePrf (F_dispatch_error,
+                                            TBmakeExprs (TBmakeType (
+                                                           TUmakeProductTypeFromRets (
+                                                             rets)),
+                                                         TBmakeExprs (TCmakeStrCopy (
+                                                                        funname),
+                                                                      Args2Exprs (
+                                                                        args))))),
+                      NULL);
 
     DBUG_RETURN (assigns);
 }
@@ -6783,7 +6789,7 @@ IsRelevant (ntype *type)
 
 static node *
 CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node *arg,
-                   node *args, node *vardecs, node **new_vardecs)
+                   node *args, node *rets, node *vardecs, node **new_vardecs)
 {
     node *assigns;
     node *tmp_ass;
@@ -6804,7 +6810,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     case TC_fun:
         DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multipe FUN_IBASE found!");
         assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, funname, arg,
-                                     args, vardecs, new_vardecs);
+                                     args, rets, vardecs, new_vardecs);
         break;
 
     case TC_ibase:
@@ -6815,36 +6821,37 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             DBUG_ASSERT ((IBASE_SCAL (type) != NULL),
                          "fun without instance for scalar unique argument found");
             assigns = CreateWrapperCode (IBASE_SCAL (type), state, 0, funname, arg, args,
-                                         vardecs, new_vardecs);
+                                         rets, vardecs, new_vardecs);
         } else {
 
             DBUG_ASSERT ((IBASE_GEN (type) != NULL), "IBASE_GEN not found!");
             if (IBASE_IARR (type) != NULL) {
                 assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname,
-                                             arg, args, vardecs, new_vardecs);
+                                             arg, args, rets, vardecs, new_vardecs);
                 if (IsRelevant (IBASE_IARR (type))) {
                     /*
                      * this conditional is needed only iff an instance with type [+]
                      * exists
                      */
                     tmp_ass = BuildDimAssign (arg, new_vardecs);
-                    assigns = BuildCondAssign (tmp_ass, F_gt_SxS, TBmakeNum (0), assigns,
-                                               CreateWrapperCode (IBASE_GEN (type), state,
-                                                                  3, funname, arg, args,
-                                                                  vardecs, new_vardecs),
-                                               new_vardecs);
+                    assigns
+                      = BuildCondAssign (tmp_ass, F_gt_SxS, TBmakeNum (0), assigns,
+                                         CreateWrapperCode (IBASE_GEN (type), state, 3,
+                                                            funname, arg, args, rets,
+                                                            vardecs, new_vardecs),
+                                         new_vardecs);
                     assigns = TCappendAssign (tmp_ass, assigns);
                 }
             } else {
                 assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg,
-                                             args, vardecs, new_vardecs);
+                                             args, rets, vardecs, new_vardecs);
             }
             if (IBASE_SCAL (type) != NULL) {
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
                 assigns = BuildCondAssign (tmp_ass, F_eq_SxS, TBmakeNum (0),
                                            CreateWrapperCode (IBASE_SCAL (type), state, 0,
-                                                              funname, arg, args, vardecs,
-                                                              new_vardecs),
+                                                              funname, arg, args, rets,
+                                                              vardecs, new_vardecs),
                                            assigns, new_vardecs);
                 assigns = TCappendAssign (tmp_ass, assigns);
             }
@@ -6853,7 +6860,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
     case TC_iarr:
         DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
-        assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args,
+        assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args, rets,
                                      vardecs, new_vardecs);
 
         if (NTYPE_ARITY (type) >= 2) {
@@ -6865,7 +6872,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                                          TBmakeNum (IDIM_DIM (IARR_IDIM (type, i))),
                                          CreateWrapperCode (IARR_IDIM (type, i), state,
                                                             lower, funname, arg, args,
-                                                            vardecs, new_vardecs),
+                                                            rets, vardecs, new_vardecs),
                                          assigns, new_vardecs);
                 }
             }
@@ -6875,7 +6882,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
     case TC_idim:
         DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
-        assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args,
+        assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args, rets,
                                      vardecs, new_vardecs);
 
         if (NTYPE_ARITY (type) >= 2) {
@@ -6888,7 +6895,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                                            ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
                                          CreateWrapperCode (IDIM_ISHAPE (type, i), state,
                                                             lower, funname, arg, args,
-                                                            vardecs, new_vardecs),
+                                                            rets, vardecs, new_vardecs),
                                          assigns, new_vardecs);
                 }
             }
@@ -6899,7 +6906,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     case TC_ishape:
         DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
         assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, funname, arg, args,
-                                     vardecs, new_vardecs);
+                                     rets, vardecs, new_vardecs);
         break;
 
     case TC_ires:
@@ -6912,7 +6919,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         }
 
         if (state->cnt_funs <= 0) {
-            assigns = BuildDispatchErrorAssign (funname, args, vardecs);
+            assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs);
         } else if (TYisProd (IRES_TYPE (type))) {
             dft_res *res;
             node *fundef;
@@ -6930,7 +6937,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
 
             if (fundef == NULL) {
-                assigns = BuildDispatchErrorAssign (funname, args, vardecs);
+                assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs);
             } else if (FUNDEF_ISTYPEERROR (fundef)) {
                 ntype *bottom = TUcombineBottomsFromRets (FUNDEF_RETS (fundef));
 
@@ -6941,8 +6948,9 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
             res = TYfreeDft_res (res);
         } else {
-            assigns = CreateWrapperCode (IRES_TYPE (type), state, lower, funname,
-                                         ARG_NEXT (arg), args, vardecs, new_vardecs);
+            assigns
+              = CreateWrapperCode (IRES_TYPE (type), state, lower, funname,
+                                   ARG_NEXT (arg), args, rets, vardecs, new_vardecs);
         }
 
         state = freeDFT_state (state);
@@ -6982,8 +6990,8 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
         sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
-                                     FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef), vardecs,
-                                     new_vardecs);
+                                     FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
+                                     FUNDEF_RETS (fundef), vardecs, new_vardecs);
 
         tmp = MEMfree (tmp);
         funsig = MEMfree (funsig);

@@ -166,7 +166,7 @@ RCtype (node *arg_node, info *arg_info)
     DBUG_ENTER ("RCtype");
 
     type = TYPE_TYPE (arg_node);
-    if (TUisArrayOfUser (type)) {
+    if (TUcontainsUser (type)) {
         new_type = TYeliminateUser (type);
         type = TYfreeType (type);
         TYPE_TYPE (arg_node) = new_type;

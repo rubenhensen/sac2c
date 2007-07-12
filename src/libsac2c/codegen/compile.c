@@ -4549,7 +4549,7 @@ static node *
 COMPprfDispatchError (node *arg_node, info *arg_info)
 {
     node *let_ids;
-    node *head, *tail;
+    node *funname, *funargs;
     node *ret_node;
 
     DBUG_ENTER ("COMPprfDispatchError");
@@ -4558,13 +4558,22 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
                  "1st argument of F_dispatch_error not found!");
-    head = EXPRS_EXPR (PRF_ARGS (arg_node));
-    tail = EXPRS_NEXT (PRF_ARGS (arg_node));
 
-    ret_node
-      = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
-                          TCids2ExprsNt (let_ids), DUPdoDupNode (head),
-                          TBmakeNum (TCcountExprs (tail)), DUPdupExprsNt (tail), NULL);
+    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) != NULL),
+                 "2st argument of F_dispatch_error not found!");
+
+    /*
+     * ARG1 is the type of the results (ignored)
+     * ARG2 is the name of the function,
+     * ARG3 and following are the actual arguments
+     */
+    funname = PRF_ARG2 (arg_node);
+    funargs = PRF_EXPRS3 (arg_node);
+
+    ret_node = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
+                                 TCids2ExprsNt (let_ids), DUPdoDupNode (funname),
+                                 TBmakeNum (TCcountExprs (funargs)),
+                                 DUPdupExprsNt (funargs), NULL);
 
     DBUG_RETURN (ret_node);
 }

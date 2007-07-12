@@ -583,7 +583,40 @@ TUisArrayOfUser (ntype *type)
 
     DBUG_ENTER ("TUisArrayOfUser");
 
-    res = (!TYisBottom (type) && TYisUser (TYgetScalar (type)));
+    DBUG_ASSERT ((TYisArray (type)), "TUisArrayOfUser applied to non array type!");
+
+    res = (TYisArray (type) && TYisUser (TYgetScalar (type)));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUcontainsUser( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUcontainsUser (ntype *type)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("TUcontainsUser");
+
+    if (TYisArray (type)) {
+        res = TYisUser (TYgetScalar (type));
+    } else if (TYisProd (type)) {
+        int max = TYgetProductSize (type);
+        for (int cnt = 0; cnt < max; cnt++) {
+            res = res || TUcontainsUser (TYgetProductMember (type, cnt));
+        }
+    } else {
+        DBUG_ASSERT (0, "type not implemented yet");
+    }
 
     DBUG_RETURN (res);
 }
