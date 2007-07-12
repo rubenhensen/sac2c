@@ -251,10 +251,18 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
             new_type = TYmakeAlphaType (NULL);
         } else if (!TYisAlpha (old_type)) {
             new_type = TYmakeAlphaType (NULL);
-            if (TYisUser (TYgetScalar (old_type))
-                || TYgetSimpleType (TYgetScalar (old_type)) != T_unknown) {
-                ok = SSInewTypeRel (new_type, old_type);
-            }
+#if 0
+      /** 
+       * Do not use the existing type as upper limit as this leeds to
+       * problems after conformity constraint insertion (icc) which may have
+       * a type coarsenening effect!
+       * (cf. NTCdoNewTypeCheckOneFunction in new_typecheck.c !)
+       */
+      if( TYisUser( TYgetScalar( old_type))
+          || TYgetSimpleType( TYgetScalar( old_type)) != T_unknown) {
+        ok = SSInewTypeRel( new_type, old_type);
+      }
+#endif
             old_type = TYfreeType (old_type);
         } else {
             new_type = old_type;

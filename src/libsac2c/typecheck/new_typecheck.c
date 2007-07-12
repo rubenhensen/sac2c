@@ -340,11 +340,15 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
              */
             old_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
 
-            /**
-             * no alphaMax here, as icc may actually lead to less precise
-             * types!!!
-             */
+#if 0
+      /**
+       * no alphaMax here, as icc may actually lead to less precise
+       * types!!! (see also UpdateVarSignature in specialize.c!)
+       */
+      FUNDEF_RETS( arg_node) = TUrettypes2alphaMax( FUNDEF_RETS( arg_node));
+#else
             FUNDEF_RETS (arg_node) = TUrettypes2alpha (FUNDEF_RETS (arg_node));
+#endif
         }
 
         TRAVpush (TR_ntc);
