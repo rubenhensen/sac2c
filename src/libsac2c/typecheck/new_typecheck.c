@@ -261,7 +261,7 @@ ResetTCstatus (node *fundef, info *arg_info)
 {
     DBUG_ENTER ("ResetTCstatus");
 
-    if ((FUNDEF_BODY (fundef) != NULL)) {
+    if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_TCSTAT (fundef) = NTC_not_checked;
     }
 
@@ -320,19 +320,6 @@ ResetLacTypes (node *fundef, info *arg_info)
 }
 
 static node *
-ResetNonWrapperLacFuns (node *fundef, info *arg_info)
-{
-    DBUG_ENTER ("ResetNonWrapperLacFuns");
-
-    if (!FUNDEF_ISWRAPPERFUN (fundef) && !FUNDEF_ISLACFUN (fundef)
-        && (FUNDEF_BODY (fundef) != NULL)) {
-        MCGdoMapCallGraph (fundef, ResetLacTypes, NULL, MCGcontLacFun, NULL);
-    }
-
-    DBUG_RETURN (fundef);
-}
-
-static node *
 ResetWrapperTypes (node *fundef, info *arg_info)
 {
     ntype *type;
@@ -366,21 +353,8 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
                  "NTCdoNewReTypeCheckFromScratch() not called with "
                  "N_module node!");
 
-#if 0
-  /*
-   * reset all LAC function types to unknown[*] 
-   *
-   * TODO This is a rather expensive operations, as we have to ensure
-   *      that we do not touch the LAC functions of wrapper functions
-   *      as these will _NOT_ be typechecked again, as we cannot
-   *      typecheck the F_dispatch_error prf (due to its ugly design).
-   */
-  MODULE_FUNS( arg_node) = MFTdoMapFunTrav( MODULE_FUNS( arg_node), NULL,
-                                            ResetNonWrapperLacFuns);
-#else
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetLacTypes);
-#endif
 
     /*
      * open up all wrapper types

@@ -83,7 +83,7 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * set this instances return types to alpha[*]
      */
-    FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+    FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
 
     /*
      * add the fundef to the wrappertype
@@ -350,6 +350,77 @@ TUtype2alphaMax (ntype *type)
     }
 
     DBUG_RETURN (new);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype  *TUtype2alphaAUDMax( ntype *type);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+ntype *
+TUtype2alphaAUDMax (ntype *type)
+{
+    ntype *new, *scalar;
+    tvar *tv;
+
+    DBUG_ENTER ("TUtype2alphaAUDMax");
+
+    if (TYisAlpha (type)) {
+        tv = TYgetAlpha (type);
+        if (SSIgetMax (tv) != NULL) {
+            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMax (tv)))));
+        } else if (SSIgetMin (tv) != NULL) {
+            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+        } else {
+            new = TYmakeAlphaType (NULL);
+        }
+    } else if (TYisBottom (type)) {
+        new = TYmakeAlphaType (TYcopyType (type));
+    } else {
+        scalar = TYgetScalar (type);
+        if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
+            new = TYmakeAlphaType (NULL);
+        } else {
+            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
+        }
+    }
+
+    DBUG_RETURN (new);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node  *TUrettypes2alphaMax( node *rets);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUrettypes2alphaAUDMax (node *rets)
+{
+    node *tmp = rets;
+    ntype *new;
+
+    DBUG_ENTER ("TUrettypes2alphaAUDMax");
+
+    while (tmp != NULL) {
+
+        new = TUtype2alphaAUDMax (RET_TYPE (tmp));
+
+        RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
+        RET_TYPE (tmp) = new;
+        tmp = RET_NEXT (tmp);
+    }
+
+    DBUG_RETURN (rets);
 }
 
 /** <!--********************************************************************-->
