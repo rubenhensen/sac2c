@@ -193,6 +193,33 @@ TUmakeProductTypeFromRets (node *rets)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *TUmakeTypeExprsFromRets( node *rets)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUmakeTypeExprsFromRets (node *rets)
+{
+    node *exprs;
+
+    DBUG_ENTER ("TUmakeTypeExprsFromRets");
+
+    if (rets == NULL) {
+        exprs = NULL;
+    } else {
+        exprs = TUmakeTypeExprsFromRets (RET_NEXT (rets));
+        exprs = TBmakeExprs (TBmakeType (TYcopyType (RET_TYPE (rets))), exprs);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TUreplaceRetTypes( node *rets, ntype* prodt)
  *
  *   @brief

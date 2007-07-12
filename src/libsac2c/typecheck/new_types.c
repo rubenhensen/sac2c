@@ -6714,20 +6714,17 @@ static node *
 BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 {
     node *assigns;
+    node *exprs;
 
     DBUG_ENTER ("BuildDispatchErrorAssign");
 
-    assigns
-      = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
-                                 TBmakePrf (F_dispatch_error,
-                                            TBmakeExprs (TBmakeType (
-                                                           TUmakeProductTypeFromRets (
-                                                             rets)),
-                                                         TBmakeExprs (TCmakeStrCopy (
-                                                                        funname),
-                                                                      Args2Exprs (
-                                                                        args))))),
-                      NULL);
+    exprs = TBmakeExprs (TCmakeStrCopy (funname), Args2Exprs (args));
+    exprs = TCappendExprs (TUmakeTypeExprsFromRets (rets), exprs);
+    exprs = TBmakeExprs (TBmakeNum (1), exprs);
+
+    assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
+                                       TBmakePrf (F_dispatch_error, exprs)),
+                            NULL);
 
     DBUG_RETURN (assigns);
 }

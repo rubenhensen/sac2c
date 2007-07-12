@@ -1249,7 +1249,7 @@ TCappendArgs (node *arg_chain, node *arg)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendExprs");
+    DBUG_ENTER ("TCappendArgs");
 
     DBUG_ASSERT (((arg_chain == NULL) || (NODE_TYPE (arg_chain) == N_arg)),
                  ("First argument of TCappendArgs() has wrong node type."));
