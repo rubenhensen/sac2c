@@ -634,6 +634,7 @@
           <node name="Fold" />
           <node name="Break" />
           <node name="Propagate" />
+          <node name="Str" />
         </travuser>
       </traversal>
       <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h" >

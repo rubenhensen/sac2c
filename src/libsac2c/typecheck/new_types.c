@@ -6720,7 +6720,7 @@ BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 
     exprs = TBmakeExprs (TCmakeStrCopy (funname), Args2Exprs (args));
     exprs = TCappendExprs (TUmakeTypeExprsFromRets (rets), exprs);
-    exprs = TBmakeExprs (TBmakeNum (1), exprs);
+    exprs = TBmakeExprs (TBmakeNum (TCcountRets (rets)), exprs);
 
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
                                        TBmakePrf (F_dispatch_error, exprs)),
