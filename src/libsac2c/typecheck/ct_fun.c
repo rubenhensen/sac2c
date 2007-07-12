@@ -346,6 +346,7 @@ NTCCTudfDispatched (te_info *info, ntype *args)
     DBUG_ENTER ("NTCCTudfDispatched");
 
     fundef = TEgetWrapper (info);
+    fundef = NTCtriggerTypeCheck (fundef);
     res = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
 
     DBUG_RETURN (res);

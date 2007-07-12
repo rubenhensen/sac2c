@@ -265,7 +265,11 @@ NewMax (tvar *var, ntype *cmax, bool outer)
              * we did not have a maximum yet
              */
             TVAR_MAX (var) = TYcopyType (cmax);
-            res = TRUE;
+            if (TVAR_MIN (var) != NULL) {
+                res = TYleTypes (TVAR_MIN (var), TVAR_MAX (var));
+            } else {
+                res = TRUE;
+            }
         } else {
             /*
              * we do have a maximum
@@ -412,6 +416,10 @@ NewMin (tvar *var, ntype *cmin, bool outer)
             tmp = TYlubOfTypes (cmin, TVAR_MIN (var));
         }
 
+        DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (tmp, FALSE, 0););
+        DBUG_PRINT ("SSI", ("    is %s a legal min for #%d?", tmp_str, TVAR_NO (var)));
+        DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+
         /*
          * Now, we check whether tmp can be used as new minimum:
          */
@@ -434,6 +442,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
             }
             TYfreeType (tmp);
         } else {
+            DBUG_PRINT ("SSI", ("    no!"));
             res = FALSE;
         }
     }

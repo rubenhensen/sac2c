@@ -323,19 +323,24 @@ static node *
 ResetWrapperTypes (node *fundef, info *arg_info)
 {
     ntype *type;
+    node *impl;
 
     DBUG_ENTER ("ResetWrapperTypes");
 
-    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+    if (FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
         type = FUNDEF_WRAPPERTYPE (fundef);
 
         if (TYisFun (type)) {
             FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
+            FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
         } else {
-            node *fundef = FUNDEF_IMPL (fundef);
-            FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
-            FUNDEF_WRAPPERTYPE (fundef)
-              = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+            impl = FUNDEF_IMPL (fundef);
+            if (FUNDEF_BODY (impl) != NULL) {
+                FUNDEF_RETS (impl) = TUrettypes2alphaAUDMax (FUNDEF_RETS (impl));
+            } else {
+                FUNDEF_RETS (impl) = TUrettypes2alphaFix (FUNDEF_RETS (impl));
+            }
+            FUNDEF_WRAPPERTYPE (fundef) = TUmakeProductTypeFromRets (FUNDEF_RETS (impl));
         }
 
         type = TYfreeType (type);
@@ -362,6 +367,9 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
 
+#if 0
+  arg_node = PRTdoPrint( arg_node);
+#endif
     arg_node = NTCdoNewReTypeCheck (arg_node);
 
     DBUG_RETURN (arg_node);
@@ -594,7 +602,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (inf_type, FALSE, 0););
     DBUG_PRINT ("NTC",
-                ("inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef), tmp_str));
+                ("inferred return type of \"%s\" is %s", CTIitemName (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     spec_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
@@ -1338,7 +1346,7 @@ NTCprf (node *arg_node, info *arg_info)
         INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf,
-                              prf_te_funtab[prf](TYgetProductSize (args)));
+                              prf_te_funtab[prf](args));
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
@@ -2192,7 +2200,9 @@ NTCfold (node *arg_node, info *arg_info)
         info = TEmakeInfoUdf (global.linenum, TE_foldf, NSgetName (FUNDEF_NS (wrapper)),
                               FUNDEF_NAME (wrapper), wrapper, INFO_LAST_ASSIGN (arg_info),
                               NULL);
-        res = NTCCTcomputeType (NTCCTudf, info, args);
+        res = NTCCTcomputeType ((FUNDEF_ISWRAPPERFUN (wrapper) ? NTCCTudf
+                                                               : NTCCTudfDispatched),
+                                info, args);
 
         ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
     }

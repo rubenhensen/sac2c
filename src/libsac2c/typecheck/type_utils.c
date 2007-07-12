@@ -83,7 +83,12 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * set this instances return types to alpha[*]
      */
-    FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
+    DBUG_PRINT ("TU", ("opening return types of %s", CTIitemName (fundef)));
+    if (FUNDEF_BODY (fundef) != NULL) {
+        FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
+    } else {
+        FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+    }
 
     /*
      * add the fundef to the wrappertype

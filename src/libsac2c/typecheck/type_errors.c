@@ -1490,29 +1490,58 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  */
 
 int
-TEone (int num_args)
+TEone (ntype *args)
 {
     DBUG_ENTER ("TEone");
     DBUG_RETURN (1);
 }
 
 int
-TEtwo (int num_args)
+TEtwo (ntype *args)
 {
     DBUG_ENTER ("TEtwo");
     DBUG_RETURN (2);
 }
 
 int
-TEthree (int num_args)
+TEthree (ntype *args)
 {
-    DBUG_ENTER ("TEtwo");
+    DBUG_ENTER ("TEthree");
     DBUG_RETURN (3);
 }
 
 int
-TEnMinusOne (int num_args)
+TEnMinusOne (ntype *args)
 {
-    DBUG_ENTER ("TEtwo");
-    DBUG_RETURN (num_args - 1);
+    DBUG_ENTER ("TEnMinusOne");
+    DBUG_RETURN (TYgetProductSize (args) - 1);
+}
+
+int
+TEn (ntype *args)
+{
+    DBUG_ENTER ("TEn");
+    DBUG_RETURN (TYgetProductSize (args));
+}
+
+int
+TEval (ntype *args)
+{
+    ntype *num_rets_t;
+    constant *co;
+    int num_rets;
+
+    DBUG_ENTER ("TEval");
+
+    num_rets_t = TYgetProductMember (args, 0);
+    DBUG_ASSERT (TYisAKV (num_rets_t), "illegal construction of _dispatch_error_:"
+                                       " first argument not a constant");
+    co = TYgetValue (num_rets_t);
+    DBUG_ASSERT ((COgetType (co) == T_int), "illegal construction of _dispatch_error_:"
+                                            " first argument not an integer");
+    DBUG_ASSERT ((COgetDim (co) == 0), "illegal construction of _dispatch_error_:"
+                                       " first argument not a scalar");
+    num_rets = ((int *)COgetDataVec (co))[0];
+
+    DBUG_RETURN (num_rets);
 }
