@@ -20,9 +20,10 @@
 #include "new_types.h"
 #include "shape.h"
 #include "math_utils.h"
-
+#include "type_utils.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
+
 #include "SSAWLUnroll.h"
 
 /*
