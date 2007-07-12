@@ -316,6 +316,27 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_dispatch_error(te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_dispatch_error (te_info *info, ntype *args)
+{
+    ntype *type;
+
+    DBUG_ENTER ("NTCCTprf_dispatch_error");
+
+    type = TYgetProductMember (args, 0);
+
+    DBUG_RETURN (TYcopyType (type));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_guard( te_info *info, ntype *elems)
  *
  * description:

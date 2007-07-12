@@ -1338,22 +1338,6 @@ NTCprf (node *arg_node, info *arg_info)
 
             INFO_PROP_OBJS (arg_info) = TYcopyType (res);
         }
-    } else if (prf == F_type_error) {
-        /*
-         * for F_type_error prfs we return the types found at the argument
-         * positions.
-         */
-        argexprs = PRF_ARGS (arg_node);
-        pos = 0;
-
-        res = TYmakeEmptyProductType (TCcountExprs (argexprs));
-
-        while (argexprs != NULL) {
-            res = TYsetProductMember (res, pos,
-                                      TYcopyType (TYPE_TYPE (EXPRS_EXPR (argexprs))));
-            pos++;
-            argexprs = EXPRS_NEXT (argexprs);
-        }
     } else {
         /*
          * First we collect the argument types. NTCexprs puts them into a product type
