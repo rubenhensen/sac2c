@@ -270,8 +270,13 @@ TUargtypes2unknownAUD (node *args)
         ARG_NTYPE (tmp) = TYfreeType (ARG_NTYPE (tmp));
         ARG_NTYPE (tmp) = TYmakeAUD (TYmakeSimpleType (T_unknown));
 
-        AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (tmp)));
-        AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYcopyType (ARG_NTYPE (tmp));
+        /*
+         * update DECLTYPE if there is one
+         */
+        if (AVIS_DECLTYPE (ARG_AVIS (tmp)) != NULL) {
+            AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (tmp)));
+            AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYcopyType (ARG_NTYPE (tmp));
+        }
 
         tmp = ARG_NEXT (tmp);
     }

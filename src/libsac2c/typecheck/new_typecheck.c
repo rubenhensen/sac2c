@@ -182,12 +182,23 @@ static const te_funptr prf_te_funtab[] = {
  *
  ******************************************************************************/
 
+static node *
+MarkWrapperAsChecked (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("MarkWrapperAsChecked");
+
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+        FUNDEF_TCSTAT (fundef) = NTC_checked;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 NTCdoNewTypeCheck (node *arg_node)
 {
     info *arg_info;
     bool ok;
-    node *fundef;
 
     DBUG_ENTER ("NTCdoNewTypeCheck");
 
@@ -208,13 +219,8 @@ NTCdoNewTypeCheck (node *arg_node)
      * properly. This is done by the TBmakeFundef function and
      * the module system (for imported/used functions).
      */
-    fundef = MODULE_FUNS (arg_node);
-    while (fundef != NULL) {
-        if (FUNDEF_ISWRAPPERFUN (fundef)) {
-            FUNDEF_TCSTAT (fundef) = NTC_checked;
-        }
-        fundef = FUNDEF_NEXT (fundef);
-    }
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, MarkWrapperAsChecked);
 
     /*
      * Now we have to initialize the deserialisation unit, as
@@ -274,7 +280,9 @@ NTCdoNewReTypeCheck (node *arg_node)
                  "NTCdoNewReTypeCheck() not called with N_module node!");
 
     /*
-     * mark all functions that can be rechecked as not checked
+     * mark all functions that can be rechecked as not checked (this
+     * excludes wrapper functions, as these cannot be typechecked due
+     * to the semantics of F_dispatch_error!)
      */
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetTCstatus);
@@ -312,23 +320,39 @@ ResetLacTypes (node *fundef, info *arg_info)
 }
 
 static node *
+ResetNonWrapperLacFuns (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("ResetNonWrapperLacFuns");
+
+    if (!FUNDEF_ISWRAPPERFUN (fundef) && !FUNDEF_ISLACFUN (fundef)
+        && (FUNDEF_BODY (fundef) != NULL)) {
+        MCGdoMapCallGraph (fundef, ResetLacTypes, NULL, MCGcontLacFun, NULL);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+static node *
 ResetWrapperTypes (node *fundef, info *arg_info)
 {
     ntype *type;
 
     DBUG_ENTER ("ResetWrapperTypes");
 
-    type = FUNDEF_WRAPPERTYPE (fundef);
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+        type = FUNDEF_WRAPPERTYPE (fundef);
 
-    if (TYisFun (type)) {
-        FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
-    } else {
-        node *fundef = FUNDEF_IMPL (fundef);
-        FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
-        FUNDEF_WRAPPERTYPE (fundef) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+        if (TYisFun (type)) {
+            FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
+        } else {
+            node *fundef = FUNDEF_IMPL (fundef);
+            FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+            FUNDEF_WRAPPERTYPE (fundef)
+              = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+        }
+
+        type = TYfreeType (type);
     }
-
-    type = TYfreeType (type);
 
     DBUG_RETURN (fundef);
 }
@@ -344,9 +368,14 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
 
     /*
      * reset all LAC function types to unknown[*]
+     *
+     * TODO This is a rather expensive operations, as we have to ensure
+     *      that we do not touch the LAC functions of wrapper functions
+     *      as these will _NOT_ be typechecked again, as we cannot
+     *      typecheck the F_dispatch_error prf (due to its ugly design).
      */
     MODULE_FUNS (arg_node)
-      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetLacTypes);
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetNonWrapperLacFuns);
 
     /*
      * open up all wrapper types

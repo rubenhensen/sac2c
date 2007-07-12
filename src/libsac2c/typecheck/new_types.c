@@ -2216,6 +2216,7 @@ TYgetArity (ntype *fun)
         next = IRES_TYPE (IBASE_GEN (FUN_UPOLY (fun)));
     } else {
         DBUG_ASSERT (FALSE, "TC_fun without bases found!");
+        next = NULL;
     }
 
     if (NTYPE_CON (next) == TC_fun) {
