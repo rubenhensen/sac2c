@@ -1392,6 +1392,7 @@ NTCexprs (node *arg_node, info *arg_info)
     if (NULL != EXPRS_EXPR (arg_node)) {
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
         type = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
     }
     INFO_NUM_EXPRS_SOFAR (arg_info)++;
 
@@ -1624,6 +1625,24 @@ NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
 NTCBASIC (char, T_char)
 NTCBASIC (bool, T_bool)
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NTCnum( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCstr (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("NTCstr");
+    INFO_TYPE (arg_info) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *

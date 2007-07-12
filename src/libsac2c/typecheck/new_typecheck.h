@@ -35,6 +35,7 @@ extern node *NTCbool (node *arg_node, info *arg_info);
 extern node *NTCchar (node *arg_node, info *arg_info);
 extern node *NTCdouble (node *arg_node, info *arg_info);
 extern node *NTCfloat (node *arg_node, info *arg_info);
+extern node *NTCstr (node *arg_node, info *arg_info);
 
 extern node *NTCwith (node *arg_node, info *arg_info);
 extern node *NTCpart (node *arg_node, info *arg_info);
