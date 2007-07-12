@@ -23,7 +23,7 @@
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *TUrebuildWrapperType( ntype *)
+ * @fn ntype *TUrebuildWrapperTypeAlphaFix( ntype *)
  *
  *   @brief
  *   @param
@@ -32,12 +32,12 @@
  ******************************************************************************/
 
 static ntype *
-buildWrapper (node *fundef, ntype *type)
+buildWrapperAlphaFix (node *fundef, ntype *type)
 {
-    DBUG_ENTER ("buildWrapper");
+    DBUG_ENTER ("buildWrapperAlphaFix");
 
     /*
-     * set this instances return types to AUD[*]
+     * set this instances return types to alpha[*]
      */
     FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
 
@@ -50,16 +50,61 @@ buildWrapper (node *fundef, ntype *type)
 }
 
 ntype *
-TUrebuildWrapperType (ntype *type)
+TUrebuildWrapperTypeAlphaFix (ntype *type)
 {
     ntype *new_type;
 
-    DBUG_ENTER ("TUrebuildWrapperType");
+    DBUG_ENTER ("TUrebuildWrapperTypeAlphaFix");
 
     DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
 
     new_type
-      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapperAlphaFix,
+                                 NULL);
+
+    DBUG_RETURN (new_type);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TUrebuildWrapperTypeAlpha( ntype *)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+static ntype *
+buildWrapperAlpha (node *fundef, ntype *type)
+{
+    DBUG_ENTER ("buildWrapperAlpha");
+
+    /*
+     * set this instances return types to alpha[*]
+     */
+    FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+
+    /*
+     * add the fundef to the wrappertype
+     */
+    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+
+    DBUG_RETURN (type);
+}
+
+ntype *
+TUrebuildWrapperTypeAlpha (ntype *type)
+{
+    ntype *new_type;
+
+    DBUG_ENTER ("TUrebuildWrapperTypeAlpha");
+
+    DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
+
+    new_type
+      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapperAlpha,
+                                 NULL);
 
     DBUG_RETURN (new_type);
 }

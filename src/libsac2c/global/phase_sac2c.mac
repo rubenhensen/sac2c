@@ -169,6 +169,13 @@ SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
 SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
           global.insertconformitychecks, cwc)
 
+SUBPHASE (ti, "Running type inference system", NTCdoNewReTypeCheckFromScratch, ALWAYS,
+          cwc)
+
+SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, cwc)
+
+SUBPHASE (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes, ALWAYS, cwc)
+
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           cwc)
 

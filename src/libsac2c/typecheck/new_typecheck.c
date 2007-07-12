@@ -40,6 +40,7 @@
 #include "namespaces.h"
 #include "resolvesymboltypes.h"
 #include "map_call_graph.h"
+#include "map_fun_trav.h"
 
 /*
  * OPEN PROBLEMS:
@@ -249,12 +250,23 @@ NTCdoNewTypeCheck (node *arg_node)
  *
  ******************************************************************************/
 
+static node *
+ResetTCstatus (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("ResetTCstatus");
+
+    if (!FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
+        FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 NTCdoNewReTypeCheck (node *arg_node)
 {
     info *arg_info;
     int oldmaxspec;
-    node *fundef;
 
     DBUG_ENTER ("NTCdoNewTypeCheck");
 
@@ -264,13 +276,8 @@ NTCdoNewReTypeCheck (node *arg_node)
     /*
      * mark all functions that can be rechecked as not checked
      */
-    fundef = MODULE_FUNS (arg_node);
-    while (fundef != NULL) {
-        if (!FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
-            FUNDEF_TCSTAT (fundef) = NTC_not_checked;
-        }
-        fundef = FUNDEF_NEXT (fundef);
-    }
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetTCstatus);
 
     /*
      * De-activate specialising
@@ -287,6 +294,67 @@ NTCdoNewReTypeCheck (node *arg_node)
     TRAVpop ();
 
     global.maxspec = oldmaxspec;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ResetLacTypes (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("ResetLacTypes");
+
+    if (FUNDEF_ISLACFUN (fundef)) {
+        FUNDEF_ARGS (fundef) = TUargtypes2unknownAUD (FUNDEF_ARGS (fundef));
+        FUNDEF_RETS (fundef) = TUrettypes2unknownAUD (FUNDEF_RETS (fundef));
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+static node *
+ResetWrapperTypes (node *fundef, info *arg_info)
+{
+    ntype *type;
+
+    DBUG_ENTER ("ResetWrapperTypes");
+
+    type = FUNDEF_WRAPPERTYPE (fundef);
+
+    if (TYisFun (type)) {
+        FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
+    } else {
+        node *fundef = FUNDEF_IMPL (fundef);
+        FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+        FUNDEF_WRAPPERTYPE (fundef) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+    }
+
+    type = TYfreeType (type);
+
+    DBUG_RETURN (fundef);
+}
+
+node *
+NTCdoNewReTypeCheckFromScratch (node *arg_node)
+{
+    DBUG_ENTER ("NTCdoNewTypeCheckFromScratch");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "NTCdoNewReTypeCheckFromScratch() not called with "
+                 "N_module node!");
+
+    /*
+     * reset all LAC function types to unknown[*]
+     */
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetLacTypes);
+
+    /*
+     * open up all wrapper types
+     */
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
+
+    arg_node = NTCdoNewReTypeCheck (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -340,15 +408,11 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
              */
             old_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
 
-#if 0
-      /**
-       * no alphaMax here, as icc may actually lead to less precise
-       * types!!! (see also UpdateVarSignature in specialize.c!)
-       */
-      FUNDEF_RETS( arg_node) = TUrettypes2alphaMax( FUNDEF_RETS( arg_node));
-#else
-            FUNDEF_RETS (arg_node) = TUrettypes2alpha (FUNDEF_RETS (arg_node));
-#endif
+            /**
+             * no alphaMax here, as icc may actually lead to less precise
+             * types!!! (see also UpdateVarSignature in specialize.c!)
+             */
+            FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
         }
 
         TRAVpush (TR_ntc);

@@ -30,7 +30,7 @@ UWTfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         type = FUNDEF_WRAPPERTYPE (arg_node);
         if (TYisFun (type)) {
-            new_type = TUrebuildWrapperType (type);
+            new_type = TUrebuildWrapperTypeAlphaFix (type);
         } else {
             fundef = FUNDEF_IMPL (arg_node);
             FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));

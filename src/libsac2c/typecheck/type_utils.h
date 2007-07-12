@@ -7,7 +7,8 @@
 
 #include "types.h"
 
-extern ntype *TUrebuildWrapperType (ntype *);
+extern ntype *TUrebuildWrapperTypeAlphaFix (ntype *);
+extern ntype *TUrebuildWrapperTypeAlpha (ntype *);
 extern node *TUcreateTmpVardecsFromRets (node *rets);
 extern ntype *TUmakeProductTypeFromArgs (node *args);
 extern ntype *TUmakeProductTypeFromRets (node *rets);
