@@ -325,13 +325,28 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
 ntype *
 NTCCTprf_dispatch_error (te_info *info, ntype *args)
 {
-    ntype *type;
+    ntype *num_rets_t, *res;
+    constant *co;
+    int num_rets, i;
 
     DBUG_ENTER ("NTCCTprf_dispatch_error");
 
-    type = TYgetProductMember (args, 0);
+    num_rets_t = TYgetProductMember (args, 0);
+    DBUG_ASSERT (TYisAKV (num_rets_t), "illegal construction of _dispatch_error_:"
+                                       " first argument not a constant");
+    co = TYgetValue (num_rets_t);
+    DBUG_ASSERT ((COgetType (co) == T_int), "illegal construction of _dispatch_error_:"
+                                            " first argument not an integer");
+    DBUG_ASSERT ((COgetDim (co) == 0), "illegal construction of _dispatch_error_:"
+                                       " first argument not a scalar");
+    num_rets = ((int *)COgetDataVec (co))[0];
 
-    DBUG_RETURN (TYcopyType (type));
+    res = TYmakeEmptyProductType (num_rets);
+    for (i = 0; i < num_rets; i++) {
+        TYsetProductMember (res, i, TYcopyType (TYgetProductMember (args, i + 1)));
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
