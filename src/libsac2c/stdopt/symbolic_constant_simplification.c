@@ -1128,29 +1128,29 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_val_matches_shape_VxA( node *arg_node, info *arg_info)
+ * @fn node *SCSprf_val_lt_shape_VxA( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SCSprf_val_matches_shape_VxA (node *arg_node, info *arg_info)
+SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_val_matches_shape_VxA");
+    DBUG_ENTER ("SCSprf_val_lt_shape_VxA");
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_val_matches_val_VxV( node *arg_node, info *arg_info)
+ * @fn node *SCSprf_val_le_val_VxV( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SCSprf_val_matches_val_VxV (node *arg_node, info *arg_info)
+SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_val_matches_val_VxV");
+    DBUG_ENTER ("SCSprf_val_le_val_VxV");
     DBUG_RETURN (res);
 }
 /** <!--********************************************************************-->

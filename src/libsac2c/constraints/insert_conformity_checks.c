@@ -321,7 +321,7 @@ ICCsel (node *ids, node *args)
     ids = EmitConstraint (ids, TBmakePrf (F_shape_matches_dim_VxA, DUPdoDupTree (args)));
     ids = EmitConstraint (ids,
                           TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (EXPRS_EXPR (args))));
-    ids = EmitConstraint (ids, TBmakePrf (F_val_matches_shape_VxA, DUPdoDupTree (args)));
+    ids = EmitConstraint (ids, TBmakePrf (F_val_lt_shape_VxA, DUPdoDupTree (args)));
 
     DBUG_RETURN (ids);
 }
@@ -336,7 +336,7 @@ ICCprfModarray (node *ids, node *args)
                                            DUPdoDupTree (EXPRS_EXPR (args))));
     ids = EmitConstraint (ids, TCmakePrf1 (F_non_neg_val_V,
                                            DUPdoDupTree (EXPRS_EXPR2 (args))));
-    ids = EmitConstraint (ids, TCmakePrf2 (F_val_matches_shape_VxA,
+    ids = EmitConstraint (ids, TCmakePrf2 (F_val_lt_shape_VxA,
                                            DUPdoDupTree (EXPRS_EXPR2 (args)),
                                            DUPdoDupTree (EXPRS_EXPR (args))));
 
@@ -756,7 +756,7 @@ ICCgenarray (node *arg_node, info *arg_info)
 
         INFO_WLGUARDIDS (arg_info)
           = EmitConstraint (INFO_WLGUARDIDS (arg_info),
-                            TCmakePrf2 (F_val_matches_val_VxV,
+                            TCmakePrf2 (F_val_le_val_VxV,
                                         DUPdoDupTree (
                                           GENERATOR_BOUND1 (INFO_GENERATOR (arg_info))),
                                         DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
@@ -768,22 +768,12 @@ ICCgenarray (node *arg_node, info *arg_info)
                                           GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
                                         DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
 
-        /*
-         * TODO:
-         *
-         * This is wrong, as val_matches_val in fact is a val_lt_val and
-         * we need a val_le_val here. Up till then I disable this
-         *
-        INFO_WLGUARDIDS( arg_info) =
-          EmitConstraint( INFO_WLGUARDIDS( arg_info),
-                          TCmakePrf2( F_val_matches_val_VxV,
-                                      DUPdoDupTree(
-                                        GENERATOR_BOUND2(
-                                          INFO_GENERATOR( arg_info))),
-                                      DUPdoDupTree(
-                                        GENARRAY_SHAPE( arg_node))));
-         * TODO
-         */
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf2 (F_val_le_val_VxV,
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
     } else if (INFO_CEXPRS (arg_info) != NULL) {
         /*
          * emit cexpr constraints iff we have a default value

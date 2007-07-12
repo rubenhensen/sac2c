@@ -340,8 +340,8 @@ SCCprf (node *arg_node, info *arg_info)
     /* prfs with two identities on first args */
     case F_same_shape_AxA:
     case F_shape_matches_dim_VxA:
-    case F_val_matches_shape_VxA:
-    case F_val_matches_val_VxV:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
     case F_prod_matches_prod_shape_VxA:
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 2, INFO_LHS (arg_info), PRF_ARGS (arg_node),

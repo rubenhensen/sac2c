@@ -679,8 +679,8 @@ NTCCTprf_val_val (te_info *info, ntype *args)
             res = TYfreeType (res);
             res = TYmakeBottomType (err_msg);
         } else {
-            TEassureValMatchesVal (TEprfArg2Obj (TEgetNameStr (info), 1), iv1,
-                                   TEarg2Obj (2), iv2);
+            TEassureValLeVal (TEprfArg2Obj (TEgetNameStr (info), 1), iv1, TEarg2Obj (2),
+                              iv2);
 
             err_msg = TEfetchErrors ();
 
