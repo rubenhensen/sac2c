@@ -2,11 +2,7 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-/*#include "str.h"*/
 #include "memory.h"
-/*
-#include "shape.h"
-#include "new_types.h"*/
 #include "dbug.h"
 #include "traverse.h"
 #include "DupTree.h"
@@ -24,6 +20,7 @@
 /**
  * INFO structure
  */
+
 struct INFO {
     int wllevel;
     bool fv;
@@ -35,6 +32,7 @@ struct INFO {
 /**
  * INFO macros
  */
+
 #define INFO_WLLEVEL(n) ((n)->wllevel)
 #define INFO_FV(n) ((n)->fv)
 #define INFO_MARK_NUP(n) ((n)->mark_nup)
@@ -44,6 +42,7 @@ struct INFO {
 /**
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
@@ -72,21 +71,25 @@ FreeInfo (info *info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief If the traversal is on its way down this function traverses down the
- *        arguments to figure out if one contains a variable which depends on
- *        an object.
- *        If the function is a prop_obj_in, it is not necessary to look into
- *        the arguments.
- *        If the traversal is on its way up the tree and either the flag which
- *        indicates that all variables should be marked as !DOWN is set or the
- *        PRF is a prop_obj_out, this function traverses further into the
- *        arguments to mark them as !DOWN.
+ *
+ * @fn node *WLLOMprf(node *arg_node, info *arg_info)
+ *
+ *    @brief If the traversal is on its way down this function traverses down
+ *           the arguments to figure out if one contains a variable which
+ *           depends on an object.
+ *           If the function is a prop_obj_in, it is not necessary to look into
+ *           the arguments.
+ *           If the traversal is on its way up the tree and either the flag
+ *           which indicates that all variables should be marked as !DOWN is
+ *           set or the PRF is a prop_obj_out, this function traverses further
+ *           into the arguments to mark them as !DOWN.
  *
  * @param arg_node N_prf node
  * @param arg_info INFO structure
  *
  * @return N_prf node
- *******************************************************************************/
+ *****************************************************************************/
+
 node *
 WLLOMprf (node *arg_node, info *arg_info)
 {
@@ -113,13 +116,18 @@ WLLOMprf (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief This functions just resets the Way-Back flag in the INFO-structure.
  *
- * @param arg_node N_fundef node
- * @param arg_info INFO structure
+ * @fn node *WLLOMfundef(node *arg_node, info *arg_info)
  *
- * @return N_fundef node
- *******************************************************************************/
+ *    @brief This functions just resets the Way-Back flag in the
+ *           INFO-structure.
+ *
+ *    @param arg_node N_fundef node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_fundef node
+ *****************************************************************************/
+
 node *
 WLLOMfundef (node *arg_node, info *arg_info)
 {
@@ -132,17 +140,21 @@ WLLOMfundef (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief If the traversal is on its way down this function just sets the flag
- *         in the INFO-structure which shows that this ID depends on an object,
- *         if this ID depends on an object.
- *         If the traversal is on its way back this function marks the IDs as
- *         !DOWN if the corresponding INFO-flag is set.
  *
- * @param arg_node N_id node
- * @param arg_info INFO structure
+ * @fn node *WLLOMid(node *arg_node, info *arg_info)
  *
- * @return N_id node
- *******************************************************************************/
+ *    @brief If the traversal is on its way down this function just sets the
+ *           flag in the INFO-structure which shows that this ID depends on an
+ *           object,if this ID depends on an object.
+ *           If the traversal is on its way back this function marks the IDs as
+ *           !DOWN if the corresponding INFO-flag is set.
+ *
+ *    @param arg_node N_id node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_id node
+ *****************************************************************************/
+
 node *
 WLLOMid (node *arg_node, info *arg_info)
 {
@@ -167,18 +179,23 @@ WLLOMid (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief If the traversal is on its way down this function just marks the ids
- *        as !UP if the corresponding flag inside the INFO-structure is set.
- *        Afterwards it traverses further down the ids-chain.
- *        If the traversal is on its way back this functions checks if the
- *        IDS is marked as !DOWN and then sets the corresponding flag in the
- *        INFO-structure.
  *
- * @param arg_node N_ids node
- * @param arg_info INFO structure
+ * @fn node *WLLOMids(node *arg_node, info *arg_info)
  *
- * @return N_ids node
- *******************************************************************************/
+ *    @brief If the traversal is on its way down this function just marks the
+ *           ids as !UP if the corresponding flag inside the INFO-structure is
+ *           set.
+ *           Afterwards it traverses further down the ids-chain.
+ *           If the traversal is on its way back this functions checks if the
+ *           IDS is marked as !DOWN and then sets the corresponding flag in the
+ *           INFO-structure.
+ *
+ *    @param arg_node N_ids node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_ids node
+ *****************************************************************************/
+
 node *
 WLLOMids (node *arg_node, info *arg_info)
 {
@@ -203,16 +220,20 @@ WLLOMids (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief if the Traversal is on its way down this function just traverses into
- *        the instruction and if this includes a !UP marked variable, it markes
- *        the assignement as well.
- *        Same holds on the way back for the !DOWN marks.
  *
- * @param arg_node N_assign node
- * @param arg_info INFO structure
+ * @fn node *WLLOMassign(node *arg_node, info *arg_info)
  *
- * @return N_assign node
- *******************************************************************************/
+ *    @brief if the Traversal is on its way down this function just traverses
+ *           into the instruction and if this includes a !UP marked variable,
+ *           it markes the assignement as well.
+ *           Same holds on the way back for the !DOWN marks.
+ *
+ *    @param arg_node N_assign node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_assign node
+ *****************************************************************************/
+
 node *
 WLLOMassign (node *arg_node, info *arg_info)
 {
@@ -259,21 +280,26 @@ WLLOMassign (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief This function is twofold. If it traverses down the assignment chain
- *        it traversals down the RHS. If the RHS includes an variable
- *        which is marked as not beeing allowd to be moved upon the lock, all
- *        variables on the LHS are marked to be not allowed to be moved upon
- *        this lock.
- *        Additional if this is the last assignment in the assignment-Chain,
- *        this circumstance is marked within the INFO-structure.
- *        If the Traversal is on its way back it traverses into the LHS. If the
- *        LHS contains any variable which is not allowed to be moved beneath
- *        the unlock all variables in the RHS are marked as well.
- * @param arg_node N_let node
- * @param arg_info INFO structure
  *
- * @return unchanged N_let node
- *******************************************************************************/
+ * @fn node *WLLOMlet(node *arg_node, info *arg_info)
+ *
+ *    @brief This function is twofold. If it traverses down the assignment
+ *           chain it traversals down the RHS. If the RHS includes an variable
+ *           which is marked as not beeing allowd to be moved upon the lock,
+ *           all variables on the LHS are marked to be not allowed to be moved
+ *           upon this lock.
+ *           Additional if this is the last assignment in the assignment-Chain,
+ *           this circumstance is marked within the INFO-structure.
+ *           If the Traversal is on its way back it traverses into the LHS. If
+ *           the LHS contains any variable which is not allowed to be moved
+ *           beneath the unlock all variables in the RHS are marked as well.
+ *
+ *    @param arg_node N_let node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_let node
+ *****************************************************************************/
+
 node *
 WLLOMlet (node *arg_node, info *arg_info)
 {
@@ -321,15 +347,19 @@ WLLOMlet (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief  this function just increases the with-loop level counter in the
- *         INFO-structure when entering this node, continues traversing and
- *         decreases wl level counter afterwards.
  *
- * @param arg_node N_with node
- * @param arg_info INFO structure
+ * @fn node *WLLOMwith(node *arg_node, info *arg_info)
  *
- * @return unchanged N_with node
- *******************************************************************************/
+ *    @brief  this function just increases the with-loop level counter in the
+ *            INFO-structure when entering this node, continues traversing and
+ *            decreases wl level counter afterwards.
+ *
+ *    @param arg_node N_with node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_with node
+ *****************************************************************************/
+
 node *
 WLLOMwith (node *arg_node, info *arg_info)
 {
@@ -355,12 +385,17 @@ WLLOMwith (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief function triggering the marking of the not free movable assignments
  *
- * @param syntax_tree N_module node
+ * @fn node *WLLOMdoLockOptimizationMarking(node *syntax_tree)
  *
- * @return transformed syntax tree
- *******************************************************************************/
+ *    @brief function triggering the marking of the not free movable
+ *           assignments
+ *
+ *    @param syntax_tree N_module node
+ *
+ *    @return transformed syntax tree
+ *****************************************************************************/
+
 node *
 WLLOMdoLockOptimizationMarking (node *syntax_tree)
 {

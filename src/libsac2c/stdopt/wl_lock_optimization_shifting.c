@@ -20,6 +20,7 @@
 /**
  ** INFO structure
  **/
+
 struct INFO {
     int wllevel;
     bool is_prop_obj;
@@ -35,6 +36,7 @@ struct INFO {
 /**
  ** INFO macros
  **/
+
 #define INFO_WLLEVEL(n) ((n)->wllevel)
 #define INFO_IS_PROP_OBJ(n) ((n)->is_prop_obj)
 #define INFO_IS_PROP_OBJ_IN(n) ((n)->is_prop_obj_in)
@@ -48,6 +50,7 @@ struct INFO {
 /**
  ** INFO functions
  **/
+
 static info *
 MakeInfo ()
 {
@@ -80,13 +83,17 @@ FreeInfo (info *info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief This function tests if the prf is a prop_obj_in or a prop_obj_out.
  *
- * @param arg_node N_prf node
- * @param arg_info INFO structure
+ * @fn node *WLLOSprf(node *arg_node, info *arg_info)
  *
- * @return unchanged N_prf node
- *******************************************************************************/
+ *    @brief This function tests if the prf is a prop_obj_in or a prop_obj_out.
+ *
+ *    @param arg_node N_prf node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_prf node
+ *****************************************************************************/
+
 node *
 WLLOSprf (node *arg_node, info *arg_info)
 {
@@ -107,20 +114,24 @@ WLLOSprf (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief This function is twofold. If it is on its way down it sorts the
- *        assignments which can be moved up in one assignment chain and the
- *        assignments which can be moved down (and cant be moved up) into a
- *        second assignment chain.
- *        If the traversal is on its way back, it inserts the second chain
- *        behind the unlock and the first chain before the lock. The insertion
- *        before the lock is done directly if the node before is an assignment,
- *        otherwise indirectly by setting a flag.
  *
- * @param arg_node N_assign node
- * @param arg_info INFO structure
+ * @fn node *WLLOSassign(node *arg_node, info *arg_info)
  *
- * @return N_assign node
- *******************************************************************************/
+ *    @brief This function is twofold. If it is on its way down it sorts the
+ *           assignments which can be moved up in one assignment chain and the
+ *           assignments which can be moved down (and cant be moved up) into a
+ *           second assignment chain.
+ *           If the traversal is on its way back, it inserts the second chain
+ *           behind the unlock and the first chain before the lock. The
+ *           insertion before the lock is done directly if the node before is
+ *           an assignment, otherwise indirectly by setting a flag.
+ *
+ *    @param arg_node N_assign node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_assign node
+ *****************************************************************************/
+
 node *
 WLLOSassign (node *arg_node, info *arg_info)
 {
@@ -224,15 +235,19 @@ WLLOSassign (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief This function inserts the assignment-chain which contains the
- *        assignments which can be moved before the lock if it is the first
- *        node before the lock and if we are on the way back.
  *
- * @param arg_node N_block node
- * @param arg_info INFO structure
+ * @fn node *WLLOSblock(node *arg_node, info arg_info)
  *
- * @return N_block node
- *******************************************************************************/
+ *    @brief This function inserts the assignment-chain which contains the
+ *           assignments which can be moved before the lock if it is the first
+ *           node before the lock and if we are on the way back.
+ *
+ *    @param arg_node N_block node
+ *    @param arg_info INFO structure
+ *
+ *    @return N_block node
+ *****************************************************************************/
+
 node *
 WLLOSblock (node *arg_node, info *arg_info)
 {
@@ -255,15 +270,19 @@ WLLOSblock (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief this function just increases the with-loop level counter in the
- *        INFO-structure when entering this node, continues traversing if on
- *        the right wl-level and decreases wl level counter afterwards.
  *
- * @param arg_node N_with node
- * @param arg_info INFO structure
+ * @fn node *WLLOSwith(node *arg_node, info *arg_info)
  *
- * @return unchanged N_with node
- *******************************************************************************/
+ *    @brief this function just increases the with-loop level counter in the
+ *           INFO-structure when entering this node, continues traversing if on
+ *           the right wl-level and decreases wl level counter afterwards.
+ *
+ *    @param arg_node N_with node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_with node
+ *****************************************************************************/
+
 node *
 WLLOSwith (node *arg_node, info *arg_info)
 {
@@ -280,13 +299,16 @@ WLLOSwith (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief function triggering the shifting of the up or down movable
- *        assignments
  *
- * @param syntax_tree N_module node
+ * @fn node *WLLOSdoLockOptimizationShifting(node *syntax_tree)
  *
- * @return transformed syntax tree
- ********************************************************************************/
+ *    @brief function triggering the shifting of the up or down movable
+ *           assignments
+ *
+ *    @param syntax_tree N_module node
+ *
+ *    @return transformed syntax tree
+ *****************************************************************************/
 
 node *
 WLLOSdoLockOptimizationShifting (node *syntax_tree)
