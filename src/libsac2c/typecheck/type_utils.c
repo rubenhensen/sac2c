@@ -371,19 +371,21 @@ ntype *
 TUtype2alphaAUDMax (ntype *type)
 {
     ntype *new, *scalar;
+#ifndef DBUG_OFF
     tvar *tv;
+#endif
 
     DBUG_ENTER ("TUtype2alphaAUDMax");
 
     if (TYisAlpha (type)) {
+        new = TYcopyType (type);
+#ifndef DBUG_OFF
         tv = TYgetAlpha (type);
-        if (SSIgetMax (tv) != NULL) {
-            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMax (tv)))));
-        } else if (SSIgetMin (tv) != NULL) {
-            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
-        } else {
-            new = TYmakeAlphaType (NULL);
-        }
+#endif
+        DBUG_ASSERT ((SSIgetMax (tv) != NULL),
+                     "trying to TUtype2alphaAUDMax alpha without max!");
+        DBUG_ASSERT (TYisAUD (SSIgetMax (tv)),
+                     "trying to TUtype2alphaAUDMax alpha with non-AUD max!");
     } else if (TYisBottom (type)) {
         new = TYmakeAlphaType (TYcopyType (type));
     } else {
