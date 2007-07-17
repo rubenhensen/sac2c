@@ -367,7 +367,7 @@ CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimS
 CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                global.optimize.doas, opt, cyc)
 
-CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
 
 CYCLEPHASEFUN (dl, "Applying distributive law",

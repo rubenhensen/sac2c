@@ -137,7 +137,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         ElimSubDiv wlpropagation UndoElimSubDiv \
                         ConstVarPropagation \
                         signature_simplification inlining inferneedcounters \
-                        associativity elimtypeconv liftoptflags \
+                        associative_law elimtypeconv liftoptflags \
                         wlsimplification copywlelim prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
                         makeshapeexpr distributivity remove_vardecs \

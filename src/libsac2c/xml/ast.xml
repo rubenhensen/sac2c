@@ -877,7 +877,7 @@
 	  <node name="Prf" />
 	</travuser>
       </traversal>
-      <traversal id="ASSOC" name="Associativity Optimization" default="sons" include="associativity.h" >
+      <traversal id="AL" name="Associative Law Optimization" default="sons" include="associative_law.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Block" />

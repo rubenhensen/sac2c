@@ -15,7 +15,8 @@
 #include "DataFlowMask.h"
 #include "DupTree.h"
 #include "inferneedcounters.h"
-#include "associativity.h"
+
+#include "associative_law.h"
 
 /*
  * INFO structure
@@ -79,7 +80,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ASSOCdoAssociativityOptimization( node *arg_node)
+ * @fn node *ALdoAssocLawOptimization( node *arg_node)
  *
  * @brief starting point of associativity optimization
  *
@@ -88,16 +89,17 @@ FreeInfo (info *info)
  * @return
  *
  *****************************************************************************/
+
 node *
-ASSOCdoAssociativityOptimization (node *syntax_tree)
+ALdoAssocLawOptimization (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ASSOCdoAssociativityOptimization");
+    DBUG_ENTER ("ALdoAssocLawOptimization");
 
     info = MakeInfo ();
 
-    TRAVpush (TR_assoc);
+    TRAVpush (TR_al);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -108,7 +110,7 @@ ASSOCdoAssociativityOptimization (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ASSOCdoAssociativityOptimizationOneFundef( node *arg_node)
+ * @fn node *ALdoAssocLawOptimizationOneFundef( node *arg_node)
  *
  * @brief starting point of associativity optimization
  *
@@ -117,17 +119,18 @@ ASSOCdoAssociativityOptimization (node *syntax_tree)
  * @return
  *
  *****************************************************************************/
+
 node *
-ASSOCdoAssociativityOptimizationOneFundef (node *syntax_tree)
+ALdoAssocLawOptimizationOneFundef (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ASSOCdoAssociativityOptimization");
+    DBUG_ENTER ("ALdoAssocLawOptimization");
 
     info = MakeInfo ();
     INFO_ONEFUNDEF (info) = TRUE;
 
-    TRAVpush (TR_assoc);
+    TRAVpush (TR_al);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -607,13 +610,13 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
  *
  * Associativiy optimization traversal (assoc_tab)
  *
- * prefix: ASSOC
+ * prefix: AL
  *
  *****************************************************************************/
 node *
-ASSOCfundef (node *arg_node, info *arg_info)
+ALfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSOCfundef");
+    DBUG_ENTER ("ALfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /*
@@ -640,11 +643,11 @@ ASSOCfundef (node *arg_node, info *arg_info)
 }
 
 node *
-ASSOCblock (node *arg_node, info *arg_info)
+ALblock (node *arg_node, info *arg_info)
 {
     dfmask_t *oldmask;
 
-    DBUG_ENTER ("ASSOCblock");
+    DBUG_ENTER ("ALblock");
 
     oldmask = INFO_LOCALMASK (arg_info);
     INFO_LOCALMASK (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
@@ -658,9 +661,9 @@ ASSOCblock (node *arg_node, info *arg_info)
 }
 
 node *
-ASSOCassign (node *arg_node, info *arg_info)
+ALassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSOCassign");
+    DBUG_ENTER ("ALassign");
 
     /*
      * Traverse LHS identifiers to mark them as local in the current block
@@ -690,9 +693,9 @@ ASSOCassign (node *arg_node, info *arg_info)
 }
 
 node *
-ASSOClet (node *arg_node, info *arg_info)
+ALlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSOClet");
+    DBUG_ENTER ("ALlet");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         if (LET_IDS (arg_node) != NULL) {
@@ -713,9 +716,9 @@ ASSOClet (node *arg_node, info *arg_info)
 }
 
 node *
-ASSOCids (node *arg_node, info *arg_info)
+ALids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSOCids");
+    DBUG_ENTER ("ALids");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (arg_node));
@@ -733,10 +736,10 @@ ASSOCids (node *arg_node, info *arg_info)
 }
 
 node *
-ASSOCprf (node *arg_node, info *arg_info)
+ALprf (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("ASSOCprf");
+    DBUG_ENTER ("ALprf");
 
     if (isAssociativeAndCommutativePrf (PRF_PRF (arg_node))) {
         ntype *ltype = IDS_NTYPE (INFO_LHS (arg_info));

@@ -107,7 +107,7 @@ DISTRIBdoDistributivityOptimization (node *syntax_tree)
 
     info = MakeInfo ();
 
-    TRAVpush (TR_assoc);
+    TRAVpush (TR_distrib);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
