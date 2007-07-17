@@ -819,7 +819,7 @@ TUstripImplicitNestingOperations (ntype *poly)
 
 /** <!--*******************************************************************-->
  *
- * @fn bool SCIeqShapes ( ntype *a, ntype *b)
+ * @fn bool TUeqShapes ( ntype *a, ntype *b)
  * @brief Predicate to tell if two AKS arrays have the same shape
  *
  *****************************************************************************/
