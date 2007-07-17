@@ -370,9 +370,8 @@ CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
 
-CYCLEPHASEFUN (dl, "Applying distributive law",
-               DISTRIBdoDistributivityOptimizationOneFundef, global.optimize.dodl, opt,
-               cyc)
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,
+               global.optimize.dodl, opt, cyc)
 
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                UESDdoUndoElimSubDiv,

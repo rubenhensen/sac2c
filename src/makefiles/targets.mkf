@@ -137,10 +137,10 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         ElimSubDiv wlpropagation UndoElimSubDiv \
                         ConstVarPropagation \
                         signature_simplification inlining inferneedcounters \
-                        associative_law elimtypeconv liftoptflags \
+                        associative_law  distributive_law elimtypeconv liftoptflags \
                         wlsimplification copywlelim prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
-                        makeshapeexpr distributivity remove_vardecs \
+                        makeshapeexpr remove_vardecs \
                         statistics arithmetic_simplification \
                         saa_constant_folding \
                         constant_folding \

@@ -21,7 +21,7 @@
 #include "shape.h"
 #include "print.h"
 
-#include "distributivity.h"
+#include "distributive_law.h"
 
 /*
  * INFO structure
@@ -88,7 +88,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DISTRIBdoDistributivityOptimization( node *arg_node)
+ * @fn node *DLdoDistribLawOptimization( node *arg_node)
  *
  * @brief starting point of distributivity optimization
  *
@@ -99,15 +99,15 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 node *
-DISTRIBdoDistributivityOptimization (node *syntax_tree)
+DLdoDistribLawOptimization (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DISTRIBdoDistributivityOptimization");
+    DBUG_ENTER ("DLdoDistribLawOptimization");
 
     info = MakeInfo ();
 
-    TRAVpush (TR_distrib);
+    TRAVpush (TR_dl);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -118,7 +118,7 @@ DISTRIBdoDistributivityOptimization (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DISTRIBdoDistributivityOptimizationOneFundef( node *arg_node)
+ * @fn node *DLdoDistribLawOptimizationOneFundef( node *arg_node)
  *
  * @brief starting point of distributivity optimization
  *
@@ -129,16 +129,16 @@ DISTRIBdoDistributivityOptimization (node *syntax_tree)
  *****************************************************************************/
 
 node *
-DISTRIBdoDistributivityOptimizationOneFundef (node *syntax_tree)
+DLdoDistribLawOptimizationOneFundef (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DISTRIBdoDistributivityOptimization");
+    DBUG_ENTER ("DLdoDistribLawOptimization");
 
     info = MakeInfo ();
     INFO_ONEFUNDEF (info) = TRUE;
 
-    TRAVpush (TR_distrib);
+    TRAVpush (TR_dl);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -681,7 +681,7 @@ OptimizeMop (node *mop)
                     mop = newmop;
                 }
 
-                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
                 global.optcounters.dl_expr++;
                 mop = OptimizeMop (mop);
             }
@@ -704,7 +704,7 @@ OptimizeMop (node *mop)
             }
 
             if (optimized) {
-                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
                 mop = OptimizeMop (mop);
             }
         }
@@ -743,14 +743,14 @@ EliminateEmptyProducts (node *mop, simpletype st)
  *
  * Distributiviy optimization traversal (assoc_tab)
  *
- * prefix: DISTRIB
+ * prefix: DL
  *
  *****************************************************************************/
 
 node *
-DISTRIBfundef (node *arg_node, info *arg_info)
+DLfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DISTRIBfundef");
+    DBUG_ENTER ("DLfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /*
@@ -778,11 +778,11 @@ DISTRIBfundef (node *arg_node, info *arg_info)
 }
 
 node *
-DISTRIBblock (node *arg_node, info *arg_info)
+DLblock (node *arg_node, info *arg_info)
 {
     dfmask_t *oldmask;
 
-    DBUG_ENTER ("DISTRIBblock");
+    DBUG_ENTER ("DLblock");
 
     oldmask = INFO_LOCALMASK (arg_info);
     INFO_LOCALMASK (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
@@ -796,9 +796,9 @@ DISTRIBblock (node *arg_node, info *arg_info)
 }
 
 node *
-DISTRIBassign (node *arg_node, info *arg_info)
+DLassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DISTRIBassign");
+    DBUG_ENTER ("DLassign");
 
     /*
      * Traverse LHS identifiers to mark them as local in the current block
@@ -828,9 +828,9 @@ DISTRIBassign (node *arg_node, info *arg_info)
 }
 
 node *
-DISTRIBlet (node *arg_node, info *arg_info)
+DLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DISTRIBlet");
+    DBUG_ENTER ("DLlet");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         if (LET_IDS (arg_node) != NULL) {
@@ -851,9 +851,9 @@ DISTRIBlet (node *arg_node, info *arg_info)
 }
 
 node *
-DISTRIBids (node *arg_node, info *arg_info)
+DLids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DISTRIBids");
+    DBUG_ENTER ("DLids");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (arg_node));
@@ -871,14 +871,14 @@ DISTRIBids (node *arg_node, info *arg_info)
 }
 
 node *
-DISTRIBprf (node *arg_node, info *arg_info)
+DLprf (node *arg_node, info *arg_info)
 {
     ntype *ltype;
     int oldoptcounter;
     node *mop;
     prf prf;
 
-    DBUG_ENTER ("DISTRIBprf");
+    DBUG_ENTER ("DLprf");
 
     prf = PRF_PRF (arg_node);
 
@@ -900,7 +900,7 @@ DISTRIBprf (node *arg_node, info *arg_info)
               = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), INFO_LOCALMASK (arg_info));
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
-                DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
 
                 /*
                  * Optimize multi-operation
@@ -918,7 +918,7 @@ DISTRIBprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_EXECUTE ("DISTRIB", PRTdoPrint (mop););
+                    DBUG_EXECUTE ("DL", PRTdoPrint (mop););
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
                 }

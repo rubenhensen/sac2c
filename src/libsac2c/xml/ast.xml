@@ -887,7 +887,7 @@
 	  <node name="Prf" />
 	</travuser>
       </traversal>
-      <traversal id="DISTRIB" name="Distributivity Optimization" default="sons" include="distributivity.h" >
+      <traversal id="DL" name="Distributive Law Optimization" default="sons" include="distributive_law.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Block" />
