@@ -1059,15 +1059,6 @@
           <node name="Code" />
 	</travuser>
       </traversal>
-      <traversal id="DL" name="DistributiveLaw" default="sons" include="DistributiveLaw.h" >
-	<travuser>
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Prf" />
-	  <node name="Ap" />
-	</travuser>
-      </traversal>
       <traversal id="ESD" name="ElimSubDiv" default="sons" include="ElimSubDiv.h" >
 	<travuser>
 	  <node name="Block" />
