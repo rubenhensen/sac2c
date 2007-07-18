@@ -851,6 +851,12 @@ typedef struct TASKSEL_T tasksel_t;
 typedef struct SERSTACK_T serstack_t;
 
 /******************************************************************************
+ * tyedef for specialization_oracle_static_shape_knowledge
+ */
+
+typedef constant *(*shape_oracle_funptr) (int n);
+
+/******************************************************************************
  * N_avis attributes
  */
 

@@ -86,8 +86,11 @@
     -->
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
+          <node name="ap" />
+          <node name="args" />
           <node name="Const" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Prf" />
           <node name="Fundef" />
           <node name="Let" />
