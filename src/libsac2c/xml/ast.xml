@@ -3104,7 +3104,7 @@
           </type>
         </attribute>
         <attribute name="LastIterationRound" default="0">
-          <desciption>
+          <description>
             This attribute indicates in which iteration round this function was
             the last time "iterated" (fully or partially) during the
             specialization oracle for static shape knowledge
