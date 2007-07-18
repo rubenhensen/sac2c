@@ -570,11 +570,11 @@ NTCCTprf_shape_dim (te_info *info, ntype *args)
             pred = TYcopyType (res);
         } else {
             if (TUshapeKnown (idx) && TUdimKnown (array)) {
-                res = TYeliminateAKV (idx);
+                res = TYcopyType (idx);
                 pred
                   = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
             } else {
-                res = TYcopyType (idx);
+                res = TYeliminateAKV (idx);
                 pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
             }
         }
