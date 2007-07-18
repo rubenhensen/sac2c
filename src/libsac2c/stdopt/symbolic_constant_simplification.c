@@ -26,6 +26,15 @@
  *    tob(boolean)  -> Boolean and other coercion identities (int->int, char->char,
  *                     float->float, double->double
  *
+ *  Conformability checking CF:
+ *
+ *    In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
+ *    If all predicates are removed, replace
+ *     _afterguard(x) by x
+ *
+ *
+ *
+ *
  * TODO: Most of the optimizations could be extended to operate
  *       on VxV data, when we can detect that the array shapes
  *       must match. Perhaps I should go try to pull this stuff
@@ -1058,8 +1067,8 @@ SCSprf_guard (node *arg_node, info *arg_info)
  * @fn node *SCSprf_afterguard( node *arg_node, info *arg_info)
  *
  * In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
- * If all predicates are eventually removed, replace
- * _afterguard(x, pred) by x if (true == pred)
+ * If all predicates are removed, replace
+ *     _afterguard(x) by x
  *
  *****************************************************************************/
 node *
@@ -1088,13 +1097,35 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_same_shape_AxA( node *arg_node, info *arg_info)
  *
+ * If arguments B and C are same shape, replace:
+ *   b', c', pred = prf_same_shape_AxA_(B,C)
+ * by:
+ *   b', c', pred = B,C,TRUE;
+ *
+ * CFassign will turn this into:
+ *   b' = b;
+ *   c' = c;
+ *   pred = TRUE;
+ *
  *****************************************************************************/
 node *
 SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *X = NULL;
+    ntype *arg1type;
+    ntype *arg2type;
 
     DBUG_ENTER ("SCSprf_same_shape_AxA");
+    arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
+    arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
+    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X) || /* same_shape(X, X) */
+        (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
+         && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
+        res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (DUPdoDupTree (PRF_ARG2 (arg_node)),
+                                        TBmakeExprs (TBmakeBool (TRUE), NULL)));
+    }
     DBUG_RETURN (res);
 }
 
