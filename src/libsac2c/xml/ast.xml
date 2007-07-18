@@ -3086,11 +3086,28 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="FixpointIterationCounter" default="0">
+        <attribute name="LastChange" default="0">
           <description>
-            This counter counts which round of fixpoint iteration was the last
-            processed one during the specialization oracle for static shape
-            knowledge.
+            This attribute indicates in which iteration round the PV of the
+            function itself was changed the last time during the specialization
+            oracle for static shape knowledge.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="tc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="LastIterationRound" default="0">
+          <desciption>
+            This attribute indicates in which iteration round this function was
+            the last time "iterated" (fully or partially) during the
+            specialization oracle for static shape knowledge
           </description>
           <type name="Integer">
             <targets>
@@ -3166,12 +3183,6 @@
         <flag name="FixpointFound" default="FALSE">
           <description>
             TRUE iff the fixpoint of this function has been found in SOSSK.
-          </description>
-        </flag>
-        <flag name="HasChanged" default="FALSE">
-          <description>
-            TRUE if demand of the arguments have changed in the last iteration
-            round in SOSSK.
           </description>
         </flag>
       </flags>
