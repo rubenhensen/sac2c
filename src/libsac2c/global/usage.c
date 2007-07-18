@@ -888,7 +888,8 @@ PrintAuthors (void)
             "      Jan-Henrik Baumgarten\n"
             "      Robert Bernecky\n"
             "      Theo van Klaveren\n"
-            "      Florian Buether\n");
+            "      Florian Buether\n"
+            "      Torben Gerhards\n");
 
     DBUG_VOID_RETURN;
 }
