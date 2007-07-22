@@ -27,6 +27,7 @@ struct INFO {
     stringset_t *ids;
     bool insidemop;
     bool insideobjlist;
+    bool checkimport;
 };
 
 /*
@@ -38,6 +39,7 @@ struct INFO {
 #define INFO_IDS(info) ((info)->ids)
 #define INFO_INSIDEMOP(info) ((info)->insidemop)
 #define INFO_INSIDEOBJLIST(info) ((info)->insideobjlist)
+#define INFO_CHECKIMPORT(info) ((info)->checkimport)
 
 /*
  * INFO functions
@@ -57,6 +59,7 @@ MakeInfo ()
     INFO_IDS (result) = NULL;
     INFO_INSIDEMOP (result) = FALSE;
     INFO_INSIDEOBJLIST (result) = FALSE;
+    INFO_CHECKIMPORT (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -107,6 +110,29 @@ CheckUseUnique (sttable_t *table)
     }
 
     iterator = STsymbolIteratorRelease (iterator);
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
+{
+    stentryiterator_t *iterator;
+
+    DBUG_ENTER ("CheckImportNameClash");
+
+    if (STcontains (symbol, table)) {
+        iterator = STentryIteratorGet (symbol, table);
+
+        CTIerror ("Symbol `%s' imported from module '%s' and", symbol, module);
+
+        while (STentryIteratorHasMore (iterator)) {
+            CTIerrorContinued ("...used from module '%s'",
+                               STentryName (STentryIteratorNext (iterator)));
+        }
+
+        iterator = STentryIteratorRelease (iterator);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -209,8 +235,13 @@ ANSsymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSsymbol");
 
-    STadd (SYMBOL_ID (arg_node), SVT_local, INFO_CURRENT (arg_info), SET_namespace,
-           INFO_SYMBOLS (arg_info));
+    if (INFO_CHECKIMPORT (arg_info)) {
+        CheckImportNameClash (SYMBOL_ID (arg_node), INFO_CURRENT (arg_info),
+                              INFO_SYMBOLS (arg_info));
+    } else {
+        STadd (SYMBOL_ID (arg_node), SVT_local, INFO_CURRENT (arg_info), SET_namespace,
+               INFO_SYMBOLS (arg_info));
+    }
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
@@ -251,12 +282,28 @@ ANSimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSimport");
 
-    /* imports are ignored in this traversal as imported
-       functions are treated like local functions         */
+    /*
+     * we do not add imports to the symbol list as
+     * they are not needed for namespace annotation.
+     */
 
     if (IMPORT_NEXT (arg_node) != NULL) {
         IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
     }
+
+    /*
+     * on the way up, we check whether we have common symbols in
+     * use and import statements.
+     */
+    INFO_CHECKIMPORT (arg_info) = TRUE;
+    INFO_CURRENT (arg_info) = IMPORT_MOD (arg_node);
+
+    if (IMPORT_SYMBOL (arg_node) != NULL) {
+        IMPORT_SYMBOL (arg_node) = TRAVdo (IMPORT_SYMBOL (arg_node), arg_info);
+    }
+
+    INFO_CHECKIMPORT (arg_info) = FALSE;
+    INFO_CURRENT (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
