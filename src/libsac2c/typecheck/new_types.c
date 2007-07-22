@@ -2898,8 +2898,9 @@ TYdispatchFunType (ntype *fun, ntype *args)
                 CTIabortLine (global.linenum,
                               "No definition found for a function \"%s\" that"
                               " accepts an argument of type \"%s\" as parameter"
-                              " no %d",
-                              FUNDEF_NAME (fundef), TYtype2String (arg, FALSE, 0), i + 1);
+                              " no %d. Full argument types are \"%s\".",
+                              CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
+                              TYtype2String (args, FALSE, 0));
             }
 
             DBUG_EXECUTE ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0););
