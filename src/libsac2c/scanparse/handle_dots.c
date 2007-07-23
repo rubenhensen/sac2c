@@ -1323,7 +1323,7 @@ BuildWLShape (idtable *table, idtable *end)
             shpchain *handle = table->shapes;
 
             if (handle == NULL) {
-                CTIerrorLine (global.linenum, "No shape information found for %s",
+                CTIerrorLine (global.linenum, "No shape information found for '%s'",
                               table->id);
             } else {
                 shape = handle->shape;
@@ -2016,9 +2016,19 @@ HDspap (node *arg_node, info *arg_info)
                 arg_node = FREEdoFreeTree (arg_node);
             } else if (type == ID_scalar) {
                 CTIerrorLine (NODE_LINE (SPAP_ARG2 (arg_node)),
-                              "identifier %s defined as vector in set notation cannot "
-                              "be used as scalar in selection!",
-                              SPID_NAME (SPAP_ARG2 (arg_node)));
+                              "identifier '%s' defined as scalar in set notation is "
+                              "used as an index vector in a selection or the selection "
+                              "operates on a scalar index. To disambiguate, "
+                              "use '[%s]' instead.",
+                              SPID_NAME (SPAP_ARG1 (arg_node)),
+                              SPID_NAME (SPAP_ARG1 (arg_node)));
+
+                /*
+                 * we create some dummy code here, just to go on
+                 * an look for errors
+                 */
+                arg_node = FREEdoFreeTree (arg_node);
+                result = TBmakeNum (0);
             }
         }
     }
@@ -2242,7 +2252,7 @@ HDspid (node *arg_node, info *arg_info)
 
         if (type == ID_scalar) {
             CTIwarnLine (NODE_LINE (arg_node),
-                         "Cannot infer default for %s as it is used as argument to"
+                         "Cannot infer default for '%s' as it is used as argument to"
                          " a non-selection operation, using 0 as fallback",
                          SPID_NAME (arg_node));
 
@@ -2250,7 +2260,7 @@ HDspid (node *arg_node, info *arg_info)
             arg_node = TBmakeNum (0);
         } else if (type == ID_vector) {
             CTIwarnLine (NODE_LINE (arg_node),
-                         "Cannot infer default for %s as it is used as argument to"
+                         "Cannot infer default for '%s' as it is used as argument to"
                          " a non-selection operation, using 0-vector as fallback",
                          SPID_NAME (arg_node));
 
