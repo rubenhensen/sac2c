@@ -688,8 +688,6 @@ TUisArrayOfUser (ntype *type)
 
     DBUG_ENTER ("TUisArrayOfUser");
 
-    DBUG_ASSERT ((TYisArray (type)), "TUisArrayOfUser applied to non array type!");
-
     res = (TYisArray (type) && TYisUser (TYgetScalar (type)));
 
     DBUG_RETURN (res);
