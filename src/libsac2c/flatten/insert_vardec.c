@@ -26,7 +26,7 @@
  *
  *
  *
- * usage of arg_info (INFO_INSVD_...):
+ * usage of arg_info (INFO_...):
  *
  *   ...OBJDEFS  holds the pointer to the objdefs chain of the actual module !
  *   ...VARDECS  holds the pointer to the vardec chain of the actual fundef !
@@ -63,10 +63,10 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_INSVD_VARDECS(n) ((n)->vardecs)
-#define INFO_INSVD_ARGS(n) ((n)->args)
-#define INFO_INSVD_OBJDEFS(n) ((n)->objdefs)
-#define INFO_INSVD_MODULE(n) ((n)->module)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ARGS(n) ((n)->args)
+#define INFO_OBJDEFS(n) ((n)->objdefs)
+#define INFO_MODULE(n) ((n)->module)
 
 /*
  * INFO functions
@@ -80,9 +80,9 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_INSVD_VARDECS (result) = NULL;
-    INFO_INSVD_ARGS (result) = NULL;
-    INFO_INSVD_OBJDEFS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_ARGS (result) = NULL;
+    INFO_OBJDEFS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -176,8 +176,8 @@ INSVDmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDmodule");
 
-    INFO_INSVD_MODULE (arg_info) = arg_node;
-    INFO_INSVD_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
+    INFO_MODULE (arg_info) = arg_node;
+    INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -201,11 +201,11 @@ INSVDfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("INSVDfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_INSVD_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
-        INFO_INSVD_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
+        INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_VARDEC (arg_node) = INFO_INSVD_VARDECS (arg_info);
+        FUNDEF_VARDEC (arg_node) = INFO_VARDECS (arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -281,12 +281,10 @@ INSVDspid (node *arg_node, info *arg_info)
     DBUG_ENTER ("INSVDspid");
 
     if (SPID_NS (arg_node) == NULL) {
-        vardec
-          = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+        vardec = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_VARDECS (arg_info));
 
         if (vardec == NULL) {
-            vardec
-              = SearchForNameInArgs (SPID_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
+            vardec = SearchForNameInArgs (SPID_NAME (arg_node), INFO_ARGS (arg_info));
         }
 
         if (vardec == NULL) {
@@ -295,9 +293,8 @@ INSVDspid (node *arg_node, info *arg_info)
              * maybe its a global object!
              */
 
-            vardec
-              = SearchForNameInObjs (MODULE_NAMESPACE (INFO_INSVD_MODULE (arg_info)),
-                                     SPID_NAME (arg_node), INFO_INSVD_OBJDEFS (arg_info));
+            vardec = SearchForNameInObjs (MODULE_NAMESPACE (INFO_MODULE (arg_info)),
+                                          SPID_NAME (arg_node), INFO_OBJDEFS (arg_info));
 
             if (vardec == NULL) {
                 CTIerrorLine (global.linenum,
@@ -325,11 +322,22 @@ INSVDspid (node *arg_node, info *arg_info)
          */
 
         vardec = SearchForNameInObjs (SPID_NS (arg_node), SPID_NAME (arg_node),
-                                      INFO_INSVD_OBJDEFS (arg_info));
+                                      INFO_OBJDEFS (arg_info));
 
         if (vardec == NULL) {
-            CTIerrorLine (global.linenum, "No definition for global object %s:%s found",
-                          NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
+            if (NSequals (SPID_NS (arg_node),
+                          MODULE_NAMESPACE (INFO_MODULE (arg_info)))) {
+                /*
+                 * this is most likely a reference to an undefined variable
+                 */
+                CTIerrorLine (global.linenum,
+                              "Variable '%s' used without previous definition",
+                              SPID_NAME (arg_node));
+            } else {
+                CTIerrorLine (global.linenum,
+                              "No definition for global object '%s:%s' found",
+                              NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
+            }
         } else {
             /*
              * we have to unalias it first!
@@ -359,10 +367,9 @@ INSVDspids (node *arg_node, info *arg_info)
     node *vardec, *avis, *new_ids;
     DBUG_ENTER ("INSVDspids");
 
-    vardec
-      = SearchForNameInVardecs (SPIDS_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+    vardec = SearchForNameInVardecs (SPIDS_NAME (arg_node), INFO_VARDECS (arg_info));
     if (vardec == NULL) {
-        vardec = SearchForNameInArgs (SPIDS_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
+        vardec = SearchForNameInArgs (SPIDS_NAME (arg_node), INFO_ARGS (arg_info));
     }
 
     if (vardec == NULL) {
@@ -374,9 +381,9 @@ INSVDspids (node *arg_node, info *arg_info)
         avis = TBmakeAvis (STRcpy (SPIDS_NAME (arg_node)),
                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
 
-        vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
+        vardec = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
-        INFO_INSVD_VARDECS (arg_info) = vardec;
+        INFO_VARDECS (arg_info) = vardec;
 
         DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
                             SPIDS_NAME (arg_node)));
