@@ -480,6 +480,11 @@ COoverSel (constant *idx, constant *a)
     /* Calculate the length of the IV*/
     int iv_len = SHgetExtent (idx_shape, (idx_dim - 1));
 
+    char *cnst = NULL;
+    cnst = COconstant2String (idx);
+    DBUG_PRINT ("CO", ("idx: %s", cnst));
+    cnst = COconstant2String (a);
+    DBUG_PRINT ("CO", ("Matrix: %s", cnst));
     DBUG_ASSERT ((iv_len <= a_dim), "overSel: dim(selection) > dim(array)!");
 
     /* Construct shape of the result*/
