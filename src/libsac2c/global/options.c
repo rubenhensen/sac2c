@@ -576,7 +576,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("target", global.target_name = ARG);
 
-    ARGS_OPTION ("tog", global.dotogstuff = TRUE);
+    ARGS_FLAG ("tog", global.dotogstuff = TRUE);
 
     ARGS_OPTION_BEGIN ("trace")
     {
