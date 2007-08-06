@@ -110,11 +110,11 @@ MakeScalarAvis (char *name)
  */
 
 static node *
-dim_is_0 (node *arg_node, info *arg_info)
+SAAdim_is_0 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("dim_is_0");
+    DBUG_ENTER ("SAAdim_is_0");
 
     dim_expr = TBmakeNum (0);
 
@@ -122,11 +122,11 @@ dim_is_0 (node *arg_node, info *arg_info)
 }
 
 static node *
-dim_is_1 (node *arg_node, info *arg_info)
+SAAdim_is_1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("dim_is_1");
+    DBUG_ENTER ("SAAdim_is_1");
 
     dim_expr = TBmakeNum (1);
 
@@ -134,11 +134,11 @@ dim_is_1 (node *arg_node, info *arg_info)
 }
 
 static node *
-dim_of_arg1 (node *arg_node, info *arg_info)
+SAAdim_of_arg1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("dim_of_arg1");
+    DBUG_ENTER ("SAAdim_of_arg1");
 
     dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
 
@@ -150,11 +150,11 @@ dim_of_arg1 (node *arg_node, info *arg_info)
  * Currently unused, but kept for completeness.
  */
 static
-node *dim_of_arg2( node *arg_node, info *arg_info) 
+node *SAAdim_of_arg2( node *arg_node, info *arg_info) 
 {
   node *dim_expr;
   
-  DBUG_ENTER("dim_of_arg2");
+  DBUG_ENTER("SAAdim_of_arg2");
   
   dim_expr = DUPdoDupNode( AVIS_DIM( ID_AVIS( PRF_ARG2( arg_node))));
   
@@ -163,11 +163,23 @@ node *dim_of_arg2( node *arg_node, info *arg_info)
 #endif
 
 static node *
-dim_is_arg1_0 (node *arg_node, info *arg_info)
+SAAprf_same_shape_AxA_dim (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("dim_is_arg1_0");
+    DBUG_ENTER ("SAAprf_same_shape_AxA_dim");
+
+    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ("SAAdim_is_arg1_0");
 
     dim_expr
       = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupNode (PRF_ARG1 (arg_node)));
@@ -176,11 +188,11 @@ dim_is_arg1_0 (node *arg_node, info *arg_info)
 }
 
 static node *
-dim_is_arg1 (node *arg_node, info *arg_info)
+SAAdim_is_arg1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("dim_is_arg1");
+    DBUG_ENTER ("SAAdim_is_arg1");
 
     dim_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -357,11 +369,6 @@ MDEap (node *arg_node, info *arg_info)
  * @fn node *MDEprf( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
-
-/*
- * CAUTION: This code should be rewritten using a proper function table
- *          initialised through prf_info.mac.
- */
 
 node *
 MDEprf (node *arg_node, info *arg_info)

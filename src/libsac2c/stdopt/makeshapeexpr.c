@@ -169,11 +169,11 @@ MakeVectAvis (char *name, node *dim)
  */
 
 static node *
-shp_is_empty (node *arg_node, info *arg_info)
+SAAshp_is_empty (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("shp_is_empty");
+    DBUG_ENTER ("SAAshp_is_empty");
 
     shp_expr = TCmakeIntVector (NULL);
 
@@ -181,11 +181,11 @@ shp_is_empty (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_is_arg1 (node *arg_node, info *arg_info)
+SAAshp_is_arg1 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("shp_is_arg1");
+    DBUG_ENTER ("SAAshp_is_arg1");
 
     shp_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -193,11 +193,11 @@ shp_is_arg1 (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_is_arg2 (node *arg_node, info *arg_info)
+SAAshp_is_arg2 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("shp_is_arg2");
+    DBUG_ENTER ("SAAshp_is_arg2");
 
     shp_expr = DUPdoDupNode (PRF_ARG2 (arg_node));
 
@@ -205,11 +205,11 @@ shp_is_arg2 (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_of_arg1 (node *arg_node, info *arg_info)
+SAAshp_of_arg1 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("shp_of_arg1");
+    DBUG_ENTER ("SAAshp_of_arg1");
 
     shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))));
 
@@ -217,11 +217,11 @@ shp_of_arg1 (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_of_arg2 (node *arg_node, info *arg_info)
+SAAshp_of_arg2 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("shp_of_arg2");
+    DBUG_ENTER ("SAAshp_of_arg2");
 
     shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
 
@@ -229,11 +229,11 @@ shp_of_arg2 (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_for_shape (node *arg_node, info *arg_info)
+SAAshp_for_shape (node *arg_node, info *arg_info)
 {
     node *shp_expr = NULL;
 
-    DBUG_ENTER ("shp_for_shape");
+    DBUG_ENTER ("SAAshp_for_shape");
 
     if (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
         node *adim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
@@ -244,13 +244,13 @@ shp_for_shape (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_for_cat (node *arg_node, info *arg_info)
+SAAshp_for_cat (node *arg_node, info *arg_info)
 {
     node *shp_expr;
     node *v1savis, *v2savis;
     node *preass = NULL;
 
-    DBUG_ENTER ("shp_for_cat");
+    DBUG_ENTER ("SAAshp_for_cat");
 
     v1savis = MakeAssignForIdShape (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
@@ -264,7 +264,7 @@ shp_for_cat (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_for_take (node *arg_node, info *arg_info)
+SAAshp_for_take (node *arg_node, info *arg_info)
 {
     node *shp_expr;
     node *scalar;
@@ -272,7 +272,7 @@ shp_for_take (node *arg_node, info *arg_info)
     node *absavis;
     node *preass = NULL;
 
-    DBUG_ENTER ("shp_for_take");
+    DBUG_ENTER ("SAAshp_for_take");
 
     if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
         scalar = TBmakeNum (abs (NUM_VAL (PRF_ARG1 (arg_node))));
@@ -305,7 +305,7 @@ shp_for_take (node *arg_node, info *arg_info)
 }
 
 static node *
-shp_for_drop (node *arg_node, info *arg_info)
+SAAshp_for_drop (node *arg_node, info *arg_info)
 {
     node *shp_expr;
     node *scalar;
@@ -314,7 +314,7 @@ shp_for_drop (node *arg_node, info *arg_info)
     node *absavis;
     node *preass = NULL;
 
-    DBUG_ENTER ("shp_for_drop");
+    DBUG_ENTER ("SAAshp_for_drop");
 
     vsavis = MakeAssignForIdShape (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
@@ -749,5 +749,5 @@ MSECONST (num)
  *****************************************************************************/
 
 /** <!--********************************************************************-->
- * @}  <!-- Make Dim Expression -->
+ * @}  <!-- Make Shape Expression -->
  *****************************************************************************/

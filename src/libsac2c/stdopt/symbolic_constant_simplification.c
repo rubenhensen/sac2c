@@ -1052,6 +1052,7 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_guard( node *arg_node, info *arg_info)
  *
+ * FIXME: I think TC should handle all of these cases.
  *****************************************************************************/
 node *
 SCSprf_guard (node *arg_node, info *arg_info)
@@ -1078,7 +1079,6 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
     node *arg2up = NULL;
 
     DBUG_ENTER ("SCSprf_afterguard");
-
     res = DUPdoDupTree (arg_node); /* Copy N_prf node and operate on the copy */
     arg2up = EXPRS_NEXT (PRF_ARGS (res));
     DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
@@ -1107,7 +1107,17 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
  *   c' = c;
  *   pred = TRUE;
  *
+ * There are 3 ways to detect matching shapes:
+ *  1. Both arrays are AKS.
+ *  2. B and C are the same array.
+ *  3. SAA tells us so. But SAA is broken today.
+ *
+ *
  *****************************************************************************/
+/*
+FIXME: saa
+*/
+
 node *
 SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
 {
@@ -1133,6 +1143,18 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
  *
+ * description:
+ *  This primitive is check that shape(iv)== dim(M) in M[iv].
+ *  If so, this code replaces:
+ *
+ *   iv', pred = _shape_matches_dim_VxA_( iv, M)
+ *  by
+ *   iv', pred = iv, TRUE;
+ *  CFassign will turn this into:
+ *   iv' = iv;
+ *   pred = TRUE;
+ *
+ *
  *****************************************************************************/
 node *
 SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
@@ -1147,6 +1169,17 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_non_neg_val_V( node *arg_node, info *arg_info)
  *
+ * description:
+ *  This primitive is check that iv is all non-negative in M[iv].
+ *  If so, this code replaces:
+ *
+ *   iv', pred = prf_non_neg_val_V( iv, M)
+ *  by
+ *   iv', pred = iv, TRUE;
+ *  CFassign will turn this into:
+ *   iv' = iv;
+ *   pred = TRUE;
+ *
  *****************************************************************************/
 node *
 SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
@@ -1160,6 +1193,17 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_val_lt_shape_VxA( node *arg_node, info *arg_info)
+ *
+ * description:
+ *  This primitive is check that iv is less than the shape of M in M[iv].
+ *  If so, this code replaces:
+ *
+ *   iv', pred = prf_val_lt_shape_VxA( iv, M)
+ *  by
+ *   iv', pred = iv, TRUE;
+ *  CFassign will turn this into:
+ *   iv' = iv;
+ *   pred = TRUE;
  *
  *****************************************************************************/
 node *
@@ -1187,6 +1231,15 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_prod_matches_prod_shape_VxA( node *arg_node, info *arg_info)
+ *
+ * description:
+ *  This primitive checks that prod(shp) == prod(shape(C)) in:
+ *    shp', pred = prod_matches_prod_shape_VxA_(SHP, C);
+ *  If so, this code replaces it by:
+ *   shp', pred = SHP, TRUE;
+ *  CFassign will turn this into:
+ *   shp' = shp;
+ *   pred = TRUE;
  *
  *****************************************************************************/
 node *
