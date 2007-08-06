@@ -15,7 +15,9 @@ extern node *SOSSKret (node *arg_node, info *arg_info);
 extern node *SOSSKprf (node *arg_node, info *arg_info);
 extern node *SOSSKfundef (node *arg_node, info *arg_info);
 extern node *SOSSKlet (node *arg_node, info *arg_info);
+extern node *SOSSKcode (node *arg_node, info *arg_info);
 extern node *SOSSKpart (node *arg_node, info *arg_info);
+extern node *SOSSKwithid (node *arg_node, info *arg_info);
 extern node *SOSSKwith (node *arg_node, info *arg_info);
 extern node *SOSSKdoSpecializationOracleSSK (node *syntax_tree);
 

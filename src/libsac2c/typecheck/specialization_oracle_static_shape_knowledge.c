@@ -69,6 +69,7 @@ MakeInfo ()
     info *result;
 
     DBUG_ENTER ("MakeInfo");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER MakeInfo"));
 
     result = MEMmalloc (sizeof (info));
 
@@ -88,6 +89,7 @@ MakeInfo ()
     INFO_AP_CALL (result) = FALSE;
     INFO_PRF_NAME (result) = 0;
 
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE MakeInfo"));
     DBUG_RETURN (result);
 }
 
@@ -95,9 +97,11 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER FreeInfo"));
 
     info = MEMfree (info);
 
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE FreeInfo"));
     DBUG_RETURN (info);
 }
 
@@ -132,7 +136,7 @@ static constant *
 computeDemand (node *ids, node *fundef_arg, int num_rets)
 {
     DBUG_ENTER ("computeDemand");
-    DBUG_PRINT ("SOSSK", (">>> ENTER computeDemand"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER computeDemand"));
 
     int i = 0;
     int j = 0;
@@ -226,7 +230,7 @@ computeDemand (node *ids, node *fundef_arg, int num_rets)
         current_fundef_arg_demand = COfreeConstant (current_fundef_arg_demand);
     }
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE computeDemand"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE computeDemand"));
     DBUG_RETURN (new_demand);
 }
 
@@ -247,31 +251,136 @@ static constant *
 doOverSel (constant *idx, constant *matrix)
 {
     DBUG_ENTER ("doOverSel");
-    DBUG_PRINT ("SOSSK", (">>> ENTER doOverSel"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER doOverSel"));
 
     shape *shape_extent = NULL;
     shape *oversel_shape = NULL;
     constant *oversel_shape_constant = NULL;
-    constant *reshaped_matrix = NULL;
+    constant *reshaped_idx = NULL;
     constant *result = NULL;
 
-    /* First reshape the matrix*/
+    /* First reshape the idx*/
     shape_extent = SHcreateShape (1, 1);
-    oversel_shape = SHappendShapes (COgetShape (matrix), shape_extent);
+    oversel_shape = SHappendShapes (COgetShape (idx), shape_extent);
     oversel_shape_constant = COmakeConstantFromShape (oversel_shape);
-    reshaped_matrix = COreshape (oversel_shape_constant, matrix);
+    reshaped_idx = COreshape (oversel_shape_constant, idx);
 
     /* execute Overselection*/
-    result = COoverSel (reshaped_matrix, idx);
+    result = COoverSel (reshaped_idx, matrix);
 
     /* Free reshape constants and shapes*/
-    reshaped_matrix = COfreeConstant (reshaped_matrix);
+    reshaped_idx = COfreeConstant (reshaped_idx);
     oversel_shape_constant = COfreeConstant (oversel_shape_constant);
     oversel_shape = SHfreeShape (oversel_shape);
     shape_extent = SHfreeShape (shape_extent);
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE doOverSel"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE doOverSel"));
     DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn constant *doOverSelMatrix(constant *idx_matrix, constant *sel_matrix)
+ *
+ *    @brief This function gets two demand-matrixes. It then applies a
+ *           row-wise overselection.
+ *
+ *    @param idx_matrix The matrix which contains the index-vectors
+ *    @param sel_matrix The matrix on which the oversel is applied
+ *
+ *    @return a matrix which contains the results of the row-wise oversel
+ ******************************************************************************/
+
+constant *
+doOverSelMatrix (constant *idx_matrix, constant *sel_matrix)
+{
+    DBUG_ENTER ("doOverSelMatrix");
+    DBUG_PRINT ("SOSSK_PATH", (">>> doOverSelMatrix"));
+
+    constant *res_matrix = NULL;
+    constant *sel_idx_matrix = NULL;
+    constant *sel_sel_matrix = NULL;
+    constant *idx = NULL;
+    constant *tmp_demand = NULL;
+    constant *tmp2_demand = NULL;
+    constant *shape_constant = NULL;
+    int rows = SHgetExtent (COgetShape (idx_matrix), 0);
+    int i = 0;
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
+
+    DBUG_ASSERT (COgetDim (idx_matrix) == COgetDim (sel_matrix),
+                 "Demands have different dimensions!");
+    shape_constant = COmakeConstantFromDynamicArguments (T_int, 1, 2, 1, 4);
+
+    /* Compute the new demand-matrix*/
+    for (i = 0; i < rows; i++) {
+        int idx_elems[1];
+        int idx_shape[1];
+
+        idx_elems[0] = i;
+        idx_shape[0] = 1;
+        constant *reshaped_sel_idx_matrix = NULL;
+
+        /* Get a single row*/
+        idx = COmakeConstantFromArray (T_int, 1, idx_shape, idx_elems);
+
+        sel_idx_matrix = COsel (idx, idx_matrix);
+        sel_sel_matrix = COsel (idx, sel_matrix);
+
+        /* Reshape the selected idx-row to [1,4]*/
+        reshaped_sel_idx_matrix = COreshape (shape_constant, sel_idx_matrix);
+
+        tmp_demand = doOverSel (reshaped_sel_idx_matrix, sel_sel_matrix);
+
+        DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+        DBUG_PRINT ("SOSSK_DEMAND", ("<<---->>"));
+        DBUG_EXECUTE ("SOSSK_DEMAND",
+                      string = COconstant2String (reshaped_sel_idx_matrix););
+        DBUG_PRINT ("SOSSK_DEMAND", ("reshaped_sel_idx_matrix: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (sel_sel_matrix););
+        DBUG_PRINT ("SOSSK_DEMAND", ("sel_sel_matrix: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (tmp_demand););
+        DBUG_PRINT ("SOSSK_DEMAND", ("doOverSel: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+
+        /* Concatenate the rows to get the whole demand-matrix*/
+        if (res_matrix == NULL) {
+            res_matrix = COcopyConstant (tmp_demand);
+        } else {
+            tmp2_demand = COcat (res_matrix, tmp_demand);
+            res_matrix = COfreeConstant (res_matrix);
+            res_matrix = tmp2_demand;
+            tmp2_demand = NULL;
+        }
+
+        DBUG_PRINT ("SOSSK_DEMAND", ("<----Whole View---->"));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (idx_matrix););
+        DBUG_PRINT ("SOSSK_DEMAND", ("idx_matrix: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (sel_matrix););
+        DBUG_PRINT ("SOSSK_DEMAND", ("sel_matrix: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (res_matrix););
+        DBUG_PRINT ("SOSSK_DEMAND", ("doOverSel(rows): %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+
+        tmp_demand = COfreeConstant (tmp_demand);
+        reshaped_sel_idx_matrix = COfreeConstant (reshaped_sel_idx_matrix);
+        sel_sel_matrix = COfreeConstant (sel_sel_matrix);
+        sel_idx_matrix = COfreeConstant (sel_idx_matrix);
+        idx = COfreeConstant (idx);
+    }
+
+    DBUG_ASSERTF (COgetDim (res_matrix) == 2,
+                  ("Dim should be 2! BUT IS %i", COgetDim (res_matrix)));
+    shape_constant = COfreeConstant (shape_constant);
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE doOverSelMatrix"));
+    DBUG_RETURN (res_matrix);
 }
 
 /** <!-- ****************************************************************** -->
@@ -291,7 +400,7 @@ node *
 SOSSKap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKap");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKap"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKap"));
 
     INFO_ARGS (arg_info) = AP_ARGS (arg_node);
     INFO_AP_CALL (arg_info) = TRUE;
@@ -301,7 +410,7 @@ SOSSKap (node *arg_node, info *arg_info)
     INFO_AP_CALL (arg_info) = FALSE;
     INFO_ARGS (arg_info) = NULL;
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKap"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKap"));
     DBUG_RETURN (arg_node);
 }
 
@@ -322,11 +431,15 @@ node *
 SOSSKarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKarg");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKarg"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKarg"));
 
     constant *new_demand = NULL;
     node *current_ap_args = INFO_ARGS (arg_info);
     constant *current_ap_arg_demand = NULL;
+
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
 
     /* This Part figures out the new demand*/
     if (INFO_COPY_DEMAND (arg_info) == TRUE) {
@@ -334,20 +447,35 @@ SOSSKarg (node *arg_node, info *arg_info)
         current_ap_arg_demand = AVIS_DEMAND (ID_AVIS (EXPRS_EXPR (current_ap_args)));
         new_demand
           = computeDemand (INFO_IDS (arg_info), arg_node, INFO_NUM_RETS (arg_info));
-        DBUG_PRINT ("SOSSK", ("Dimension: %i\n", COgetDim (new_demand)));
-        DBUG_ASSERT (COgetDim (new_demand) == 2, "Dimension have to be 2!");
+        DBUG_ASSERTF (COgetDim (new_demand) == 2,
+                      ("Dimension have to be 2! But is %i", COgetDim (new_demand)));
+        DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (new_demand););
+        DBUG_PRINT ("SOSSK_DEMAND", ("new_demand:    %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
 
         if (current_ap_arg_demand == NULL) {
             AVIS_DEMAND (ID_AVIS (EXPRS_EXPR (current_ap_args))) = new_demand;
             INFO_DEMAND_HAS_CHANGED (arg_info) = TRUE;
         } else {
-            char *s = NULL;
             constant *tmp_constant = NULL;
-            s = COconstant2String (current_ap_arg_demand);
-            DBUG_PRINT ("SOSSK", ("current_ap_arg_demand: %s", s));
-            s = COconstant2String (new_demand);
-            DBUG_PRINT ("SOSSK", ("new_demand:            %s", s));
+
+            DBUG_ASSERTF (SHcompareShapes (COgetShape (current_ap_arg_demand),
+                                           COgetShape (new_demand))
+                            == TRUE,
+                          ("shape(current_ap_arg) %s not equal shape(new_demand) %s!",
+                           SHshape2String (0, COgetShape (current_ap_arg_demand)),
+                           SHshape2String (0, COgetShape (new_demand))));
+
             tmp_constant = COmax (current_ap_arg_demand, new_demand);
+
+            DBUG_EXECUTE ("SOSSK_DEMAND",
+                          string = COconstant2String (current_ap_arg_demand););
+            DBUG_PRINT ("SOSSK_DEMAND", ("ap_arg_demand: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (tmp_constant););
+            DBUG_PRINT ("SOSSK_DEMAND", ("demand(tmp_constant): %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
 
             if (COcompareConstants (tmp_constant, current_ap_arg_demand) != TRUE) {
                 INFO_DEMAND_HAS_CHANGED (arg_info) = TRUE;
@@ -382,7 +510,7 @@ SOSSKarg (node *arg_node, info *arg_info)
             ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
         }
     }
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKarg"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKarg"));
     DBUG_RETURN (arg_node);
 }
 
@@ -404,7 +532,7 @@ node *
 SOSSKassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKassign");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKassign"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKassign"));
 
     constant *old_demand = INFO_DEMAND (arg_info);
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
@@ -414,6 +542,9 @@ SOSSKassign (node *arg_node, info *arg_info)
     int i = 0;
     int j = 0;
     int pos = 0;
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
 
     /* Constuct the demand [0,1,2,3] for the lamda app.*/
     for (i = 0; i < num_rets; i++) {
@@ -425,6 +556,11 @@ SOSSKassign (node *arg_node, info *arg_info)
 
     INFO_DEMAND (arg_info) = COmakeConstantFromArray (T_int, dim, new_shape, elems);
 
+    DBUG_PRINT ("SOSSK_DEMAND", ("-------------------"));
+    DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (INFO_DEMAND (arg_info)););
+    DBUG_PRINT ("SOSSK_DEMAND", ("INFO_DEMAND: %s", string));
+    DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+
     /* Go on to the next assignment first to compute the demands*/
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -435,7 +571,7 @@ SOSSKassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKassign"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKassign"));
     DBUG_RETURN (arg_node);
 }
 
@@ -456,19 +592,35 @@ node *
 SOSSKexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKexprs");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKexprs"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKexprs"));
 
     constant *arg_constant = NULL;
     constant *old_demand = INFO_DEMAND (arg_info);
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
 
     /* If this function was called from a prf get the demand*/
     if (INFO_PRF_NAME (arg_info) > 0) {
         arg_constant = prf_shape_oracle_funtab[INFO_PRF_NAME (arg_info)](
           INFO_POS_PRF_ARG (arg_info));
 
+        DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (arg_constant););
+        DBUG_PRINT ("SOSSK_DEMAND", ("prf_demand: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+
         /* If there exists a demand, do Overselection*/
         if (arg_constant != NULL) {
             INFO_DEMAND (arg_info) = doOverSel (old_demand, arg_constant);
+
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (old_demand););
+            DBUG_PRINT ("SOSSK_DEMAND", ("old_demand: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            DBUG_EXECUTE ("SOSSK_DEMAND",
+                          string = COconstant2String (INFO_DEMAND (arg_info)););
+            DBUG_PRINT ("SOSSK_DEMAND", ("doOverSel: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
         } else {
             arg_node = TRAVcont (arg_node, arg_info);
         }
@@ -486,7 +638,51 @@ SOSSKexprs (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
     }
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKexprs"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKexprs"));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SOSSKfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKfold");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKfold"));
+
+    constant *old_demand = INFO_DEMAND (arg_info);
+    constant *new_demand = NULL;
+    int num_rets = SHgetExtent (COgetShape (old_demand), 0);
+    int dim = SHgetDim (COgetShape (old_demand));
+    int new_shape[2] = {num_rets, 4};
+    int elems[dim];
+    int i = 0;
+    int offset = 0;
+
+    /* construct demand [0,2,3,3]*/
+    for (i = 0; i < num_rets; i++) {
+        offset = 4 * i;
+        elems[offset] = 0;
+        elems[offset + 1] = 1;
+        elems[offset + 2] = 2;
+        elems[offset + 3] = 3;
+    }
+
+    new_demand = COmakeConstantFromArray (T_int, dim, new_shape, elems);
+
+    /* compute shape-demand*/
+    INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, new_demand);
+
+    new_demand = COfreeConstant (new_demand);
+
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+
+    INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+    INFO_DEMAND (arg_info) = old_demand;
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKfold"));
     DBUG_RETURN (arg_node);
 }
 
@@ -508,7 +704,7 @@ node *
 SOSSKgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKgenarray");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKgenarray"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKgenarray"));
 
     constant *old_demand = INFO_DEMAND (arg_info);
     constant *new_demand = NULL;
@@ -531,7 +727,7 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     new_demand = COmakeConstantFromArray (T_int, dim, new_shape, elems);
 
     /* compute shape-demand*/
-    INFO_DEMAND (arg_info) = doOverSel (old_demand, new_demand);
+    INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, new_demand);
 
     new_demand = COfreeConstant (new_demand);
 
@@ -541,9 +737,56 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = old_demand;
 
     GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKgenarray"));
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKgenarray"));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SOSSKmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKmodarray");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKmodarray"));
+
+    constant *old_demand = INFO_DEMAND (arg_info);
+    constant *new_demand = NULL;
+    int num_rets = SHgetExtent (COgetShape (old_demand), 0);
+    int dim = SHgetDim (COgetShape (old_demand));
+    int new_shape[2] = {num_rets, 4};
+    int elems[dim];
+    int i = 0;
+    int offset = 0;
+
+    /* construct demand [0,2,3,3]*/
+    for (i = 0; i < num_rets; i++) {
+        offset = 4 * i;
+        elems[offset] = 0;
+        elems[offset + 1] = 1;
+        elems[offset + 2] = 2;
+        elems[offset + 3] = 3;
+    }
+
+    new_demand = COmakeConstantFromArray (T_int, dim, new_shape, elems);
+
+    /* compute shape-demand*/
+    INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, new_demand);
+
+    new_demand = COfreeConstant (new_demand);
+
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+    INFO_DEMAND (arg_info) = old_demand;
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKmodarray"));
     DBUG_RETURN (arg_node);
 }
 
@@ -563,8 +806,9 @@ node *
 SOSSKgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKgenarray");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKgenerator"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKgenerator"));
 
+    DBUG_ASSERT (INFO_DEMAND (arg_info) != NULL, "Generator reached without demand!");
     constant *old_demand = COcopyConstant (INFO_DEMAND (arg_info));
 
     GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
@@ -579,7 +823,7 @@ SOSSKgenerator (node *arg_node, info *arg_info)
 
     old_demand = NULL;
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKgenerator"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKgenerator"));
     DBUG_RETURN (arg_node);
 }
 
@@ -599,23 +843,49 @@ node *
 SOSSKid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKid");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKid"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKid %s", ID_NAME (arg_node)));
 
     constant *tmp_constant = NULL;
     constant *id_demand = AVIS_DEMAND (ID_AVIS (arg_node));
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
 
-    /* If there exists a demand, compute the maximum demand of the current
-     * demand and the old demand.*/
-    if (id_demand != NULL) {
-        tmp_constant = COmax (id_demand, INFO_DEMAND (arg_info));
-        id_demand = COfreeConstant (id_demand);
-        AVIS_DEMAND (ID_AVIS (arg_node)) = tmp_constant;
-        tmp_constant = NULL;
-    } else {
-        AVIS_DEMAND (ID_AVIS (arg_node)) = COcopyConstant (INFO_DEMAND (arg_info));
-    }
+    if (INFO_DEMAND (arg_info) != NULL) {
+        /* If there exists a demand, compute the maximum demand of the current
+         * demand and the old demand.*/
+        if (id_demand != NULL) {
+            DBUG_ASSERTF (SHcompareShapes (COgetShape (id_demand),
+                                           COgetShape (INFO_DEMAND (arg_info)))
+                            == TRUE,
+                          ("shape(id_demand) %s not equal shape(info_demand) %s!",
+                           SHshape2String (0, COgetShape (id_demand)),
+                           SHshape2String (0, COgetShape (INFO_DEMAND (arg_info)))));
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKid"));
+            tmp_constant = COmax (id_demand, INFO_DEMAND (arg_info));
+            DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (id_demand););
+            DBUG_PRINT ("SOSSK_DEMAND", ("id_demand: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            DBUG_EXECUTE ("SOSSK_DEMAND",
+                          string = COconstant2String (INFO_DEMAND (arg_info)););
+            DBUG_PRINT ("SOSSK_DEMAND", ("INFO_DEMAND: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (tmp_constant););
+            DBUG_PRINT ("SOSSK_DEMAND", ("COmax: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            id_demand = COfreeConstant (id_demand);
+            AVIS_DEMAND (ID_AVIS (arg_node)) = tmp_constant;
+            tmp_constant = NULL;
+        } else {
+            DBUG_EXECUTE ("SOSSK", string = COconstant2String (INFO_DEMAND (arg_info)););
+            DBUG_PRINT ("SOSSK", ("Add %s to %s", string, ID_NAME (arg_node)));
+            DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
+            AVIS_DEMAND (ID_AVIS (arg_node)) = COcopyConstant (INFO_DEMAND (arg_info));
+        }
+    } /* if(INFO_DEMAND(arg_info) != NULL)*/
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKid"));
     DBUG_RETURN (arg_node);
 }
 
@@ -636,70 +906,19 @@ node *
 SOSSKids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKids");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKids"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKids %s", IDS_NAME (arg_node)));
 
     constant *old_demand = INFO_DEMAND (arg_info);
     constant *ids_demand = AVIS_DEMAND (IDS_AVIS (arg_node));
-    constant *sel_old_demand = NULL;
-    constant *sel_ids_demand = NULL;
-    constant *idx = NULL;
-    constant *tmp_demand = NULL;
-    constant *tmp2_demand = NULL;
-    constant *shape_constant = NULL;
-    int rows = SHgetExtent (COgetShape (old_demand), 0);
-    int i = 0;
-
-    DBUG_ASSERT (COgetDim (old_demand) == COgetDim (ids_demand),
-                 "Demand have different dimensions!");
-
-    INFO_DEMAND (arg_info) = NULL;
-    shape_constant = COmakeConstantFromDynamicArguments (T_int, 1, 2, 1, 4);
-
-    /* Compute the new demand*/
-    for (i = 0; i < rows; i++) {
-        int idx_elems[1];
-        int idx_shape[1];
-
-        idx_elems[0] = i;
-        idx_shape[0] = 1;
-        constant *reshaped_sel_old_demand = NULL;
-        constant *reshaped_sel_ids_demand = NULL;
-
-        /* Get a single row*/
-        idx = COmakeConstantFromArray (T_int, 1, idx_shape, idx_elems);
-
-        sel_old_demand = COsel (idx, old_demand);
-        sel_ids_demand = COsel (idx, ids_demand);
-
-        /* Reshape the selected row to [1,4]*/
-        reshaped_sel_ids_demand = COreshape (shape_constant, sel_ids_demand);
-
-        tmp_demand = doOverSel (sel_old_demand, reshaped_sel_ids_demand);
-
-        /* Concatenate the rows to get the whole demand-matrix*/
-        if (INFO_DEMAND (arg_info) == NULL) {
-            INFO_DEMAND (arg_info) = COcopyConstant (tmp_demand);
-        } else {
-            tmp2_demand = COcat (INFO_DEMAND (arg_info), tmp_demand);
-            INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
-            INFO_DEMAND (arg_info) = tmp2_demand;
-            tmp2_demand = NULL;
-        }
-
-        tmp_demand = COfreeConstant (tmp_demand);
-        reshaped_sel_ids_demand = COfreeConstant (reshaped_sel_ids_demand);
-        sel_ids_demand = COfreeConstant (sel_ids_demand);
-        sel_old_demand = COfreeConstant (sel_old_demand);
-        idx = COfreeConstant (idx);
+    if (ids_demand != NULL) {
+        INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, ids_demand);
+    } /* IDS_DEMAND != NULL*/
+    else {
+        INFO_DEMAND (arg_info) = NULL;
     }
-
-    DBUG_ASSERTF (COgetDim (INFO_DEMAND (arg_info)) == 2,
-                  ("Dim should be 2! BUT IS %i", COgetDim (INFO_DEMAND (arg_info))));
-
-    shape_constant = COfreeConstant (shape_constant);
     old_demand = COfreeConstant (old_demand);
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKids"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKids"));
     DBUG_RETURN (arg_node);
 }
 
@@ -719,7 +938,7 @@ node *
 SOSSKret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKret");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKret"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKret"));
 
     INFO_NUM_RETS (arg_info) = INFO_NUM_RETS (arg_info) + 1;
 
@@ -727,7 +946,7 @@ SOSSKret (node *arg_node, info *arg_info)
         RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKret"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKret"));
     DBUG_RETURN (arg_node);
 }
 
@@ -748,13 +967,13 @@ node *
 SOSSKprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKprf");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKprf"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKprf"));
 
     prf prf;
 
     prf = PRF_PRF (arg_node);
 
-    DBUG_PRINT ("SOSSK", (">>>> enter PRF: %s", PRF_NAME (prf)));
+    DBUG_PRINT ("SOSSK_FCT", (">>>> enter PRF: %s", PRF_NAME (prf)));
 
     /* If there exists a demand-function for this prf, compute the demands*/
     if (prf_shape_oracle_funtab[prf] != NULL) {
@@ -771,8 +990,8 @@ SOSSKprf (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
     }
 
-    DBUG_PRINT ("SOSSK", ("<<<< leave PRF: %s", PRF_NAME (prf)));
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKprf"));
+    DBUG_PRINT ("SOSSK_FCT", ("<<<< leave PRF: %s", PRF_NAME (prf)));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKprf"));
     DBUG_RETURN (arg_node);
 }
 
@@ -795,7 +1014,7 @@ node *
 SOSSKfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKfundef");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKfundef"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKfundef"));
 
     int last_iteration_round = FUNDEF_LASTITERATIONROUND (arg_node);
     int i = 0;
@@ -807,13 +1026,15 @@ SOSSKfundef (node *arg_node, info *arg_info)
     arg_info = MakeInfo ();
     INFO_ITERATION_ROUND (arg_info) = INFO_ITERATION_ROUND (old_info);
 
-    DBUG_PRINT ("SOSSK", (">>>> Enter Function: %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("SOSSK_FCT", (">>>> Enter Function: %s", FUNDEF_NAME (arg_node)));
 
     FUNDEF_LASTITERATIONROUND (arg_node) = INFO_ITERATION_ROUND (old_info);
 
     /* Count the number of return values and numbers of arguments*/
     FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
 
     /* If the function has no arguments, there is nothing to do*/
     if (INFO_NUM_ARGS (arg_info) != 0) {
@@ -829,6 +1050,9 @@ SOSSKfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("SOSSK", (" IF fixpoint not found AND not handled yet"));
             int elems[INFO_NUM_RETS (arg_info) * 4];
             int shape[2] = {INFO_NUM_RETS (arg_info), 4};
+#ifndef DBUG_OFF
+            char *string = NULL;
+#endif
 
             for (i = 0; i < INFO_NUM_RETS (arg_info); i++) {
                 pos = i * 4;
@@ -837,6 +1061,13 @@ SOSSKfundef (node *arg_node, info *arg_info)
                 }
             }
             INFO_DEMAND (arg_info) = COmakeConstantFromArray (T_int, 2, shape, elems);
+
+            DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+            DBUG_EXECUTE ("SOSSK_DEMAND",
+                          string = COconstant2String (INFO_DEMAND (arg_info)););
+            DBUG_PRINT ("DBUG_PRINT", ("INFO_DEMAND: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
             INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
         }
@@ -889,8 +1120,8 @@ SOSSKfundef (node *arg_node, info *arg_info)
         }
     }
 
-    DBUG_PRINT ("SOSSK", ("<<<< Leave Function %s", FUNDEF_NAME (arg_node)));
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKfundef"));
+    DBUG_PRINT ("SOSSK_FCT", ("<<<< Leave Function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKfundef"));
     DBUG_RETURN (arg_node);
 }
 
@@ -913,13 +1144,55 @@ node *
 SOSSKlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKlet");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKlet"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKlet"));
 
     INFO_IDS (arg_info) = LET_IDS (arg_node);
 
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKlet"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKlet"));
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SOSSKcode(node *arg_node, info *arg_info)
+ *
+ *    @brief Just orders the way of traversing.
+ *
+ *    @param arg_node N_code node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_code node
+ ******************************************************************************/
+
+node *
+SOSSKcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKcode");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKcode"));
+
+    constant *old_demand = COcopyConstant (INFO_DEMAND (arg_info));
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into the next CODE"));
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+
+        INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+        INFO_DEMAND (arg_info) = COcopyConstant (old_demand);
+    }
+
+    DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into the CEXPRS"));
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+
+    INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+    INFO_DEMAND (arg_info) = old_demand;
+    old_demand = NULL;
+
+    DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into the CBLOCK"));
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKcode"));
     DBUG_RETURN (arg_node);
 }
 
@@ -940,10 +1213,13 @@ node *
 SOSSKpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKpart");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKpart"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKpart"));
+
     constant *old_demand = COcopyConstant (INFO_DEMAND (arg_info));
 
+    DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into WITHID"));
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+    DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into GENERATOR"));
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
@@ -951,10 +1227,55 @@ SOSSKpart (node *arg_node, info *arg_info)
     old_demand = NULL;
 
     if (PART_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("SOSSK_WITH", ("--> Traverse to the next PART"));
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKpart"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKpart"));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SOSSKwithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKwithid");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKwithid"));
+
+    constant *old_demand = COcopyConstant (INFO_DEMAND (arg_info));
+    constant *ids_demand = NULL;
+    constant *vec_demand = NULL;
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
+    WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
+
+    if (WITHID_IDS (arg_node) != NULL) {
+        vec_demand = INFO_DEMAND (arg_info);
+        INFO_DEMAND (arg_info) = COcopyConstant (old_demand);
+        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
+        ids_demand = INFO_DEMAND (arg_info);
+
+        if ((vec_demand != NULL) && (ids_demand != NULL)) {
+            DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (vec_demand););
+            DBUG_PRINT ("SOSSK_DEMAND", ("vec_demand: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (ids_demand););
+            DBUG_PRINT ("SOSSK_DEMAND", ("ids_demand: %s", string));
+            DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            INFO_DEMAND (arg_info) = COmax (vec_demand, ids_demand);
+
+            COfreeConstant (vec_demand);
+            COfreeConstant (ids_demand);
+        } else if (vec_demand != NULL) {
+            INFO_DEMAND (arg_info) = vec_demand;
+            vec_demand = NULL;
+        }
+    }
+
+    old_demand = COfreeConstant (old_demand);
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKwithid"));
     DBUG_RETURN (arg_node);
 }
 
@@ -977,23 +1298,26 @@ node *
 SOSSKwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKwith");
-    DBUG_PRINT ("SOSSK", (">>> ENTER SOSSKwith"));
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKwith"));
     constant *old_demand = COcopyConstant (INFO_DEMAND (arg_info));
 
+    DBUG_PRINT ("SOSSK_WITH", ("-> Traverse into the WITHOP"));
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
 
     INFO_DEMAND (arg_info) = COcopyConstant (old_demand);
+    DBUG_PRINT ("SOSSK_WITH", ("-> Traverse into the CODE"));
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
 
     INFO_DEMAND (arg_info) = COcopyConstant (old_demand);
+    DBUG_PRINT ("SOSSK_WITH", ("-> Traverse into the PART"));
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     old_demand = COfreeConstant (old_demand);
-    DBUG_PRINT ("SOSSK", ("<<< LEAVE SOSSKwith"));
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKwith"));
     DBUG_RETURN (arg_node);
 }
 
