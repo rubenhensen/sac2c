@@ -118,7 +118,7 @@ PHASE (tc, "Running type inference system", ALWAYS)
 SUBPHASE (esp, "Enforcing Specializations", ESPdoEnforceSpecialization, ALWAYS, tc)
 
 SUBPHASE (sossk, "Specialization Oracle for Static Shape Knowledge",
-          SOSSKdoSpecializationOracleSSK, ALWAYS, tc)
+          SOSSKdoSpecializationOracleSSK, global.dotogstuff, tc)
 
 SUBPHASE (ti, "Running type inference system", NTCdoNewTypeCheck, ALWAYS, tc)
 
