@@ -4,7 +4,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "sig_deps.h"
 #include "dbug.h"
 #include "str.h"

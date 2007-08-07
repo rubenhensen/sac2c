@@ -32,8 +32,6 @@
 #include "type_utils.h"
 #include "shape.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */

@@ -31,7 +31,7 @@ STRcpy (const char *source)
     DBUG_ENTER ("STRcpy");
 
     if (source != NULL) {
-        ret = (char *)MEMmalloc (sizeof (char) * (strlen (source) + 1));
+        ret = (char *)MEMmalloc (sizeof (char) * (STRlen (source) + 1));
         strcpy (ret, source);
     } else {
         ret = NULL;
@@ -61,7 +61,7 @@ STRncpy (const char *source, int maxlen)
     DBUG_ENTER ("STRncpy");
 
     if (source != NULL) {
-        max = strlen (source);
+        max = STRlen (source);
         if (max > maxlen) {
             max = maxlen;
         }
@@ -101,7 +101,7 @@ STRcat (const char *first, const char *second)
     } else if (second == NULL) {
         result = STRcpy (first);
     } else {
-        result = (char *)MEMmalloc (strlen (first) + strlen (second) + 1);
+        result = (char *)MEMmalloc (STRlen (first) + STRlen (second) + 1);
 
         strcpy (result, first);
         strcat (result, second);
@@ -141,7 +141,7 @@ STRcatn (int n, ...)
     for (i = 0; i < n; ++i) {
         ptr = va_arg (arg_list, const char *);
         if (ptr != NULL) {
-            length += strlen (ptr);
+            length += STRlen (ptr);
         }
     }
 
@@ -258,7 +258,39 @@ STRprefix (const char *prefix, const char *str)
         if (str == NULL) {
             res = FALSE;
         } else {
-            res = (0 == strncmp (prefix, str, strlen (prefix)));
+            res = (0 == strncmp (prefix, str, STRlen (prefix)));
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
+ * Description: Checks if prefix is prefix of str
+ *
+ * Parameters: - sub, first string to compare
+ *             - str, second string to compare
+ *
+ * Return: - TRUE, sub is substring of str
+ *         - FALSE, otherwise
+ *
+ *******************************************************************************/
+
+bool
+STRsub (const char *sub, const char *str)
+{
+    bool res;
+
+    DBUG_ENTER ("STRsub");
+
+    if (sub == NULL) {
+        res = TRUE;
+    } else {
+        if (str == NULL) {
+            res = FALSE;
+        } else {
+            res = (NULL != strstr (str, sub));
         }
     }
 
@@ -284,7 +316,7 @@ STRlen (const char *s)
     if (s == NULL) {
         len = 0;
     } else {
-        len = strlen (s);
+        len = STRlen (s);
     }
 
     DBUG_RETURN (len);
@@ -556,135 +588,135 @@ STRreplaceSpecialCharacters (const char *name)
         new_name = NULL;
     } else {
 
-        new_name = MEMmalloc ((3 * strlen (name)) * sizeof (char));
+        new_name = MEMmalloc ((3 * STRlen (name)) * sizeof (char));
         new_name[0] = '\0';
 
-        for (i = 0, j = 0; (size_t)i < strlen (name); i++, j++) {
+        for (i = 0, j = 0; (size_t)i < STRlen (name); i++, j++) {
             switch (name[i]) {
             case '.':
                 tmp = "_DO";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case ',':
                 tmp = "_CM";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '+':
                 tmp = "_PL";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '-':
                 tmp = "_MI";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '*':
                 tmp = "_ST";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '/':
                 tmp = "_DI";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '%':
                 tmp = "_PR";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '<':
                 tmp = "_LT";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '>':
                 tmp = "_GT";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '=':
                 tmp = "_EQ";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '&':
                 tmp = "_AM";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '|':
                 tmp = "_VE";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '!':
                 tmp = "_EX";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '[':
                 tmp = "_BL";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case ']':
                 tmp = "_BR";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '~':
                 tmp = "_TI";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '@':
                 tmp = "_AT";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '#':
                 tmp = "_HA";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '$':
                 tmp = "_DO";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '^':
                 tmp = "_PO";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '\\':
                 tmp = "_BS";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case ':':
                 tmp = "_CL";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case ' ':
                 tmp = "_SP";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '{':
                 tmp = "_CO";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             case '}':
                 tmp = "_CC";
                 strcat (&(new_name[j]), tmp);
-                j += strlen (tmp) - 1;
+                j += STRlen (tmp) - 1;
                 break;
             default:
                 new_name[j] = name[i];
@@ -720,7 +752,7 @@ STRstring2SafeCEncoding (const char *string)
     if (string == NULL) {
         result = NULL;
     } else {
-        len = strlen (string);
+        len = STRlen (string);
 
         result = MEMmalloc (len * 2 + 1);
         tmp = result;

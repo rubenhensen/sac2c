@@ -18,8 +18,6 @@
 #include "stringset.h"
 #include "filemgr.h"
 
-#include <string.h>
-
 static char *
 GetCCCall ()
 {
@@ -218,7 +216,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         /*
          * lookup lib<lib>.a
          */
-        libname = MEMmalloc (sizeof (char) * (strlen (lib) + 6));
+        libname = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
         result = STRcpy (FMGRfindFile (PK_lib_path, libname));
 
@@ -231,12 +229,12 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         libname = MEMfree (libname);
         break;
     case STRS_extlib:
-        result = MEMmalloc (sizeof (char) * (strlen (lib) + 3));
+        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
         sprintf (result, "-l%s", lib);
 
         break;
     case STRS_objfile:
-        result = MEMmalloc (sizeof (char) * (strlen (lib) + 3));
+        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
         sprintf (result, "%s", lib);
         break;
     default:
@@ -246,7 +244,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 
     if (rest != NULL) {
         char *temp
-          = MEMmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = MEMmalloc (sizeof (char) * (STRlen ((char *)rest) + STRlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 

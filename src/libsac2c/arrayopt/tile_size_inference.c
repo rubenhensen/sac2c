@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 #include <limits.h>
-#include <string.h>
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"

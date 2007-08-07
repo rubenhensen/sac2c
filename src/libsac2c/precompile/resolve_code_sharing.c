@@ -10,8 +10,6 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-
 #include "resolve_code_sharing.h"
 #include "tree_basic.h"
 #include "DupTree.h"

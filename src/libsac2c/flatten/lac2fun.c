@@ -21,7 +21,6 @@
  *****************************************************************************/
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "LookUpTable.h"
 #include "types.h"
@@ -107,7 +106,7 @@ CreateLacFunName (char *funname, char *suffix)
     DBUG_ENTER ("CreateLacFunName");
 
     name
-      = (char *)MEMmalloc ((strlen (funname) + strlen (suffix) + 20 + 3) * sizeof (char));
+      = (char *)MEMmalloc ((STRlen (funname) + STRlen (suffix) + 20 + 3) * sizeof (char));
     sprintf (name, "%s__%s_%i", funname, suffix, number);
     number++;
 

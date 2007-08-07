@@ -1,12 +1,5 @@
 /*
  * $Id$
- *
- */
-
-/*
- * Revision 1.1  1994/12/05  13:20:47  hw
- * Initial revision
- *
  */
 
 #define TYPE_LENGTH 256      /* dimension of array of char */
@@ -26,9 +19,9 @@ static char *rename_type[] = {
 #include "type_info.mac"
 };
 
-#include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "convert.h"
 

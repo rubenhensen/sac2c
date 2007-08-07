@@ -216,7 +216,7 @@ CTIgetErrorMessageVA (int line, const char *format, va_list arg_p)
 
     DBUG_ENTER ("CTIgetErrorMessageVA");
     Format2Buffer (format, arg_p);
-    ProcessMessage (message_buffer, message_line_length - strlen (error_message_header));
+    ProcessMessage (message_buffer, message_line_length - STRlen (error_message_header));
 
     first_line = (char *)MEMmalloc (32 * sizeof (char));
     sprintf (first_line, "line %d @", line);
@@ -253,7 +253,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 
     Format2Buffer (format, arg_p);
 
-    ProcessMessage (message_buffer, message_line_length - strlen (header));
+    ProcessMessage (message_buffer, message_line_length - STRlen (header));
 
     line = strtok (message_buffer, "@");
 
@@ -616,7 +616,7 @@ CTIgetErrorMessageLineLength ()
 {
     DBUG_ENTER ("CTIgetErrorMessageLineLength");
 
-    DBUG_RETURN (message_line_length - strlen (error_message_header));
+    DBUG_RETURN (message_line_length - STRlen (error_message_header));
 }
 
 /** <!--********************************************************************-->
@@ -885,7 +885,7 @@ CTIgetWarnMessageLineLength ()
 {
     DBUG_ENTER ("CTIgetWarnMessageLineLength");
 
-    DBUG_RETURN (message_line_length - strlen (warn_message_header));
+    DBUG_RETURN (message_line_length - STRlen (warn_message_header));
 }
 
 /** <!--********************************************************************-->
@@ -1139,7 +1139,7 @@ CTIfunParams (node *fundef)
         while ((arg != NULL) && (buffer_space > 5)) {
 
             tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
-            tmp_str_size = strlen (tmp_str);
+            tmp_str_size = STRlen (tmp_str);
 
             if ((tmp_str_size + 3) <= buffer_space) {
                 strcat (argtype_buffer, tmp_str);

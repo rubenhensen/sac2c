@@ -7,8 +7,6 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-
 #include "renameidentifiers.h"
 #include "tree_basic.h"
 #include "dbug.h"
@@ -92,7 +90,7 @@ BuildTypesRenaming (const char *mod, const char *name)
 
     DBUG_ENTER ("BuildTypesRenaming");
 
-    result = (char *)MEMmalloc (sizeof (char) * (strlen (name) + strlen (mod) + 8));
+    result = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + STRlen (mod) + 8));
     sprintf (result, "SACt_%s__%s", mod, name);
 
     DBUG_RETURN (result);
@@ -377,8 +375,8 @@ RIDobjdef (node *arg_node, info *arg_info)
 
         new_name
           = (char *)MEMmalloc (sizeof (char)
-                               * (strlen (OBJDEF_NAME (arg_node))
-                                  + strlen (NSgetName (OBJDEF_NS (arg_node))) + 8));
+                               * (STRlen (OBJDEF_NAME (arg_node))
+                                  + STRlen (NSgetName (OBJDEF_NS (arg_node))) + 8));
 
         sprintf (new_name, "SACo_%s__%s", NSgetName (OBJDEF_NS (arg_node)),
                  OBJDEF_NAME (arg_node));
@@ -709,7 +707,7 @@ RIDrenameLocalIdentifier (char *id)
     }
 
     new_name
-      = (char *)MEMmalloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+      = (char *)MEMmalloc (sizeof (char) * (STRlen (id) + STRlen (name_prefix) + 1));
     sprintf (new_name, "%s%s", name_prefix, id);
 
     id = MEMfree (id);

@@ -219,7 +219,7 @@ FMGRappendPath (pathkind_t p, const char *path)
 
     DBUG_ENTER ("FMGRappendPath");
 
-    len = strlen (path) + 1;
+    len = STRlen (path) + 1;
     if (len + bufsize[p] >= MAX_PATH_LEN) {
         CTIabort ("MAX_PATH_LEN too low");
     } else {
@@ -256,7 +256,7 @@ AppendEnvVar (pathkind_t p, const char *var)
 
     buffer = getenv (var);
     if (buffer != NULL) {
-        len = (strlen (buffer) + 1);
+        len = (STRlen (buffer) + 1);
         if (len + bufsize[p] >= MAX_PATH_LEN) {
             CTIabort ("MAX_PATH_LEN too low");
         } else {
@@ -311,7 +311,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
                     FMGRappendPath (pathkind, envvar);
                 }
             } else {
-                envvar_length = strlen (pathentry + 1) - strlen (envvar_end);
+                envvar_length = STRlen (pathentry + 1) - STRlen (envvar_end);
                 strncpy (buffer, pathentry + 1, envvar_length);
                 buffer[envvar_length] = '\0';
                 envvar = getenv (buffer);
@@ -636,7 +636,7 @@ FMGRcreateTmpDir ()
     /* mkdtemp is safer than tempnam and recommended */
     /* on linux/bsd platforms.                       */
 
-    global.tmp_dirname = (char *)MEMmalloc (strlen (global.config.mkdir) + 12);
+    global.tmp_dirname = (char *)MEMmalloc (STRlen (global.config.mkdir) + 12);
     global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
     global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
 

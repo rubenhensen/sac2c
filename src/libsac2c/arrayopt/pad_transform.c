@@ -143,7 +143,7 @@ PadName (char *unpadded_name)
 
     DBUG_ENTER ("PadName");
 
-    padded_name = (char *)MEMmalloc (strlen (unpadded_name) + 6 * sizeof (char));
+    padded_name = (char *)MEMmalloc (STRlen (unpadded_name) + 6 * sizeof (char));
     strcpy (padded_name, unpadded_name);
     strcat (padded_name, "__PAD");
 

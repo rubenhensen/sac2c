@@ -17,6 +17,7 @@ extern char *STRtok (char *str, char *tok);
 extern bool STReq (const char *first, const char *second);
 extern bool STRprefix (const char *prefix, const char *str);
 extern bool STReqn (const char *first, const char *second, int n);
+extern bool STRsub (const char *sub, const char *str);
 extern int STRlen (const char *str);
 extern char *STRonNull (char *alt, char *str);
 

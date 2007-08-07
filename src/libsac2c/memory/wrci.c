@@ -31,8 +31,6 @@
 #include "reusewithoffset.h"
 #include "compare_tree.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */

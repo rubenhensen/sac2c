@@ -64,7 +64,7 @@
  */
 
 #include <stdarg.h>
-#include <string.h>
+
 #include <limits.h>
 
 #include "new_types.h"
@@ -4762,7 +4762,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
                      "FunType2String called on ibase with non NULL scal_str!");
 
         scal_str = ScalarType2String (IBASE_BASE (type));
-        scal_len = strlen (scal_str);
+        scal_len = STRlen (scal_str);
 
         /*
          * print "<scal_str>[*]" instance:
@@ -4802,7 +4802,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
          * print "<scal_str>[+]" instance:
          */
         if (IARR_GEN (type)) {
-            scal_len = strlen (scal_str);
+            scal_len = STRlen (scal_str);
             tmp_str = FunType2String (IBASE_GEN (type), scal_str, multiline,
                                       offset + scal_len + 3);
             buf = PrintFunSep (buf, multiline, offset);
@@ -4833,7 +4833,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             empty_shape = SHfreeShape (empty_shape);
 
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
-                                      offset + strlen (scal_str) + strlen (shp_str));
+                                      offset + STRlen (scal_str) + STRlen (shp_str));
             buf = PrintFunSep (buf, multiline, offset);
             buf = SBUFprintf (buf, "%s%s", scal_str, shp_str);
             buf = SBUFprint (buf, tmp_str);
@@ -4861,7 +4861,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             shp_str = SHshape2String (0, ISHAPE_SHAPE (type));
 
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
-                                      offset + strlen (scal_str) + strlen (shp_str));
+                                      offset + STRlen (scal_str) + STRlen (shp_str));
             buf = PrintFunSep (buf, multiline, offset);
             buf = SBUFprintf (buf, "%s%s", scal_str, shp_str);
             buf = SBUFprint (buf, tmp_str);
@@ -6984,7 +6984,7 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
         tmp = TUtypeSignature2String (fundef);
         funsig = MEMmalloc (sizeof (char)
-                            * (strlen (CTIitemName (fundef)) + strlen (tmp) + 5));
+                            * (STRlen (CTIitemName (fundef)) + STRlen (tmp) + 5));
         sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
@@ -7005,6 +7005,8 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 static void
 SerializeSimpleType (FILE *file, ntype *type)
 {
+    char *funname;
+
     DBUG_ENTER ("SerializeSimpleType");
 
     if (SIMPLE_HIDDEN_UDT (type) != UT_NOT_DEFINED) {
@@ -7012,8 +7014,12 @@ SerializeSimpleType (FILE *file, ntype *type)
 
         tdef = UTgetTdef (SIMPLE_HIDDEN_UDT (type));
 
+        funname = SERgenerateSerFunName (SET_typedef, tdef);
+
         fprintf (file, "TYdeserializeType( %d, %d, 1, \"%s\", ", NTYPE_CON (type),
-                 SIMPLE_TYPE (type), SERgenerateSerFunName (SET_typedef, tdef));
+                 SIMPLE_TYPE (type), funname);
+
+        MEMfree (funname);
 
         NSserializeNamespace (file, UTgetNamespace (SIMPLE_HIDDEN_UDT (type)));
 
@@ -7041,6 +7047,7 @@ static void
 SerializeUserType (FILE *file, ntype *type)
 {
     node *tdef;
+    char *funname;
 
     DBUG_ENTER ("SerializeUserType");
 
@@ -7052,8 +7059,11 @@ SerializeUserType (FILE *file, ntype *type)
      */
     tdef = UTgetTdef (USER_TYPE (type));
 
-    fprintf (file, "TYdeserializeType( %d, \"%s\", ", NTYPE_CON (type),
-             SERgenerateSerFunName (SET_typedef, tdef));
+    funname = SERgenerateSerFunName (SET_typedef, tdef);
+
+    fprintf (file, "TYdeserializeType( %d, \"%s\", ", NTYPE_CON (type), funname);
+
+    MEMfree (funname);
 
     NSserializeNamespace (file, UTgetNamespace (USER_TYPE (type)));
 

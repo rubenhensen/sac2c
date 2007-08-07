@@ -8,7 +8,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <string.h> /* for memcpy */
+#include <string.h>
+/* for memcpy */
 
 #include "dbug.h"
 #include "memory.h"

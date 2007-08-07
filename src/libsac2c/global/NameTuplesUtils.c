@@ -4,8 +4,6 @@
  *
  */
 
-#include <string.h>
-
 #include "dbug.h"
 #include "str.h"
 #include "memory.h"
@@ -160,9 +158,9 @@ NTUcreateNtTag (const char *name, types *type)
     hc = NTUgetHiddenClassFromTypes (type);
     uc = NTUgetUniqueClassFromTypes (type);
 
-    res = (char *)MEMmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
-                              + strlen (global.nt_hidden_string[hc])
-                              + strlen (global.nt_unique_string[uc]) + 16)
+    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
+                              + STRlen (global.nt_hidden_string[hc])
+                              + STRlen (global.nt_unique_string[uc]) + 16)
                              * sizeof (char));
 
     sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
@@ -380,9 +378,9 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     hc = NTUgetHiddenClassFromNType (ntype);
     uc = NTUgetUniqueClassFromNType (ntype);
 
-    res = (char *)MEMmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
-                              + strlen (global.nt_hidden_string[hc])
-                              + strlen (global.nt_unique_string[uc]) + 16)
+    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
+                              + STRlen (global.nt_hidden_string[hc])
+                              + STRlen (global.nt_unique_string[uc]) + 16)
                              * sizeof (char));
 
     sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],

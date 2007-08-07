@@ -1,9 +1,5 @@
 /*
  * $Id$
- *
- * Revision 1.1  1998/04/25 16:21:33  sbs
- * Initial revision
- *
  */
 
 #include "icm2c_basic.h"
@@ -16,8 +12,6 @@
 #include "tree_compound.h"
 #include "tree_basic.h"
 #include "convert.h"
-
-#include <string.h>
 
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
@@ -71,7 +65,7 @@ GetNextIcm (char **ret, node *exprs)
     node *expr;
     int cnt, len;
     int i;
-    char **v;
+    char **v, *tmp;
 
     DBUG_ENTER ("GetNextIcm");
 
@@ -86,23 +80,18 @@ GetNextIcm (char **ret, node *exprs)
     cnt = TCcountExprs (ICM_ARGS (expr));
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
-    len += strlen (ICM_NAME (expr));
-    len += 8 + 2 * cnt;
 
-    (*ret) = (char *)MEMmalloc (len * sizeof (char));
-    (*ret)[0] = '\0';
-    strcat ((*ret), "SAC_");
-    strcat ((*ret), ICM_NAME (expr));
-    strcat ((*ret), "( ");
-    if (cnt > 0) {
-        strcat ((*ret), v[0]);
-    }
+    *ret = STRcatn (4, "SAC_", ICM_NAME (expr), "( ", cnt > 0 ? v[0] : "");
+
     for (i = 1; i < cnt; i++) {
-        strcat ((*ret), ", ");
-        strcat ((*ret), v[i]);
-        v[i] = MEMfree (v[i]);
+        tmp = STRcatn (3, *ret, ", ", v[i]);
+        *ret = MEMfree (*ret);
+        *ret = tmp;
     }
-    strcat ((*ret), ")");
+
+    tmp = STRcat (*ret, ")");
+    *ret = MEMfree (*ret);
+    *ret = tmp;
 
     v = MEMfree (v);
 
@@ -140,18 +129,11 @@ node *GetNextPrf( char **ret, node *exprs)
   DBUG_ASSERT( (cnt == 2), "icm-arg N_prf: only infix notation implemented!");
 
   GetNextVarAny( &v, &len, cnt, PRF_ARGS( expr));
-  len += strlen( prf_symbol[ PRF_PRF( expr)]);
-  len += 5;
 
-  (*ret) = (char *) MEMmalloc( len * sizeof( char));
-  (*ret)[0] = '\0';
-  strcat( (*ret), "(");
-  strcat( (*ret), v[0]);
-  strcat( (*ret), " ");
-  strcat( (*ret), prf_string[ PRF_PRF( expr)]);
-  strcat( (*ret), " ");
-  strcat( (*ret), v[1]);
-  strcat( (*ret), ")");
+  *ret = STRcatn( 7, "(", v[0], " ", prf_string[ PRF_PRF( expr)], " ", v[1], ")");
+
+  len += STRlen( prf_symbol[ PRF_PRF( expr)]);
+  len += 5;
 
   v = MEMfree( v);
 
@@ -264,7 +246,7 @@ GetNextString (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_str), "wrong icm-arg: N_str expected");
-    (*ret) = MEMmalloc (strlen (STR_STRING (expr)) + 3);
+    (*ret) = MEMmalloc (STRlen (STR_STRING (expr)) + 3);
     sprintf ((*ret), "\"%s\"", STR_STRING (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
@@ -476,7 +458,7 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
     len = 0;
     for (i = 0; i < cnt; i++) {
         exprs = GetNextAny (&((*ret)[i]), exprs);
-        len += strlen ((*ret)[i]);
+        len += STRlen ((*ret)[i]);
     }
 
     if (ret_len != NULL) {

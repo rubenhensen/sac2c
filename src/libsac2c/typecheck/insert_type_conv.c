@@ -22,8 +22,6 @@
  *
  *****************************************************************************/
 
-#include <string.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"

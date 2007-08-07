@@ -3,7 +3,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "dbug.h"
 #include "ctinfo.h"
 

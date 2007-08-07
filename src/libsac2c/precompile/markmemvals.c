@@ -76,8 +76,6 @@
 #include "new_types.h"
 #include "dbug.h"
 
-#include <string.h>
-
 /**
  * INFO structure
  */

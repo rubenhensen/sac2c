@@ -34,7 +34,6 @@
 #include "user_types.h"
 #include "str.h"
 #include "memory.h"
-#include <string.h>
 
 /**
  * CONTEXT enumeration: aa_context

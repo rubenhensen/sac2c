@@ -1,9 +1,9 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #define STR_DUP(buffer, name)                                                            \
-    name = (char *)malloc ((strlen (buffer) + 1) * sizeof (char));                       \
+    name = (char *)malloc ((STRlen (buffer) + 1) * sizeof (char));                       \
     strcpy (name, buffer)
 
 #define ICM_DEF(prf, trf)                                                                \

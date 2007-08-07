@@ -53,8 +53,6 @@
  *
  *****************************************************************************/
 
-#include <string.h>
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -318,6 +316,8 @@ UsedVar (info *arg_info, node *avis)
     DBUG_RETURN (arg_info);
 }
 
+#if 0
+
 /******************************************************************************
  *
  * function:
@@ -328,17 +328,19 @@ UsedVar (info *arg_info, node *avis)
  *
  ******************************************************************************/
 
-static info *
-UsedId (info *arg_info, node *arg_id)
+static
+info *UsedId( info *arg_info, node *arg_id)
 {
-    DBUG_ENTER ("UsedId");
+  DBUG_ENTER( "UsedId");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+  DBUG_ASSERT( (NODE_TYPE( arg_id) == N_id), "no N_id node found!");
 
-    arg_info = UsedVar (arg_info, ID_AVIS (arg_id));
+  arg_info = UsedVar( arg_info, ID_AVIS( arg_id));
 
-    DBUG_RETURN (arg_info);
+  DBUG_RETURN( arg_info);
 }
+
+#endif
 
 /******************************************************************************
  *
@@ -431,6 +433,8 @@ DefinedIds (info *arg_info, node *arg_ids)
     DBUG_RETURN (arg_info);
 }
 
+#if 0
+
 /******************************************************************************
  *
  * function:
@@ -441,17 +445,19 @@ DefinedIds (info *arg_info, node *arg_ids)
  *
  ******************************************************************************/
 
-static info *
-DefinedId (info *arg_info, node *arg_id)
+static
+info *DefinedId( info *arg_info, node *arg_id)
 {
-    DBUG_ENTER ("DefinedId");
+  DBUG_ENTER( "DefinedId");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+  DBUG_ASSERT( (NODE_TYPE( arg_id) == N_id), "no N_id node found!");
 
-    arg_info = DefinedVar (arg_info, ID_AVIS (arg_id));
+  arg_info = DefinedVar( arg_info, ID_AVIS( arg_id));
 
-    DBUG_RETURN (arg_info);
+  DBUG_RETURN( arg_info);
 }
+
+#endif
 
 /******************************************************************************
  *
@@ -1728,60 +1734,71 @@ INFDFMSdo (node *arg_node, info *arg_info)
 node *
 INFDFMSicm (node *arg_node, info *arg_info)
 {
-    char *name;
+#if 0
+  char *name;
+#endif
 
     DBUG_ENTER ("INFDFMSicm");
 
     DBUG_PRINT ("INFDFMS", ("icm %s found", ICM_NAME (arg_node)));
 
-    name = ICM_NAME (arg_node);
-    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
-        /*
-         * USE_GENVAR_OFFSET( off_nt, wl_nt):
-         *   off_nt = wl_nt__destptr;
-         *
-         * def: 1st arg
-         * use: ---
-         */
-        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-    } else if (strstr (name, "VECT2OFFSET") != NULL) {
-        /*
-         * VECT2OFFSET( off_nt, ., from_nt, ., ...):
-         *   off_nt = ... from_nt ...;
-         *
-         * def: 1st arg
-         * use: 3nd arg
-         */
-        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-        arg_info = UsedId (arg_info, ICM_ARG3 (arg_node));
-    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
-        /*
-         * IDXS2OFFSET( off_nt, i, idxs_nt, ., ...):
-         *   off_nt = ... idxs_nt[0] ... idxs_nt[i-1] ...;
-         *
-         * def: 1st arg
-         * use: 3nd arg (var-arg!!)
-         */
-        node *exprs;
-        int cnt;
+    DBUG_ASSERT (FALSE, "There should be no ICMs before code generation any more");
 
-        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-        DBUG_ASSERT (((NODE_TYPE (ICM_ARG2 (arg_node)) == N_num)
-                      && (NUM_VAL (ICM_ARG2 (arg_node)) >= 0)),
-                     "illegal counter for var-arg of IDXS2OFFSET found!");
-        cnt = NUM_VAL (ICM_ARG2 (arg_node));
-        exprs = ICM_EXPRS3 (arg_node);
-        while (cnt > 0) {
-            DBUG_ASSERT ((exprs != NULL), "var-arg of IDXSOFFSET is inconsistant!");
-            arg_info = UsedId (arg_info, EXPRS_EXPR (exprs));
-            cnt--;
-            exprs = EXPRS_NEXT (exprs);
-        }
-        DBUG_ASSERT (((exprs != NULL) && (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num)),
-                     "var-arg of IDXSOFFSET is inconsistant!");
-    } else {
-        DBUG_ASSERT ((0), "unknown ICM found!");
+#if 0
+  name = ICM_NAME( arg_node);
+  if (strstr( name, "USE_GENVAR_OFFSET") != NULL) {
+    /*
+     * USE_GENVAR_OFFSET( off_nt, wl_nt):
+     *   off_nt = wl_nt__destptr;
+     *
+     * def: 1st arg
+     * use: ---
+     */
+    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
+  }
+  else if (strstr( name, "VECT2OFFSET") != NULL) {
+    /*
+     * VECT2OFFSET( off_nt, ., from_nt, ., ...):
+     *   off_nt = ... from_nt ...;
+     *
+     * def: 1st arg
+     * use: 3nd arg
+     */
+    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
+    arg_info = UsedId( arg_info, ICM_ARG3( arg_node));    
+  }
+  else if (strstr( name, "IDXS2OFFSET") != NULL) {
+    /*
+     * IDXS2OFFSET( off_nt, i, idxs_nt, ., ...):
+     *   off_nt = ... idxs_nt[0] ... idxs_nt[i-1] ...;
+     *
+     * def: 1st arg
+     * use: 3nd arg (var-arg!!)
+     */
+    node *exprs;
+    int cnt;
+
+    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
+    DBUG_ASSERT( ((NODE_TYPE( ICM_ARG2( arg_node)) == N_num) &&
+                  (NUM_VAL( ICM_ARG2( arg_node)) >= 0)),
+                 "illegal counter for var-arg of IDXS2OFFSET found!");
+    cnt = NUM_VAL( ICM_ARG2( arg_node));
+    exprs = ICM_EXPRS3( arg_node);
+    while (cnt > 0) {
+      DBUG_ASSERT( (exprs != NULL), "var-arg of IDXSOFFSET is inconsistant!");
+      arg_info = UsedId( arg_info, EXPRS_EXPR( exprs));
+      cnt--;
+      exprs = EXPRS_NEXT( exprs);
     }
+    DBUG_ASSERT( ((exprs != NULL) &&
+                  (NODE_TYPE( EXPRS_EXPR( exprs)) == N_num)),
+                 "var-arg of IDXSOFFSET is inconsistant!");
+  }
+  else {
+    DBUG_ASSERT( (0), "unknown ICM found!");
+  }
+
+#endif
 
     DBUG_RETURN (arg_node);
 }

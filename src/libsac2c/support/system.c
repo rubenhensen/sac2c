@@ -4,7 +4,6 @@
  *
  */
 
-#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -221,24 +220,27 @@ int
 SYStest (char *format, ...)
 {
     va_list arg_p;
-    static char syscall[MAX_SYSCALL];
+    static char buffer[MAX_SYSCALL];
     int exit_code;
+    char *extended_format;
 
     DBUG_ENTER ("SYStest");
 
-    strcpy (syscall, "test ");
+    extended_format = STRcat ("test ", format);
 
     va_start (arg_p, format);
-    vsprintf (syscall + 5 * sizeof (char), format, arg_p);
+    vsprintf (buffer, extended_format, arg_p);
     va_end (arg_p);
 
-    exit_code = system (syscall);
+    exit_code = system (buffer);
 
     if (exit_code == 0) {
         exit_code = 1;
     } else {
         exit_code = 0;
     }
+
+    extended_format = MEMfree (extended_format);
 
     DBUG_PRINT ("SYSCALL", ("test returns %d", exit_code));
 

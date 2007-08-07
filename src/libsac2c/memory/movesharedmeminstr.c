@@ -25,8 +25,6 @@
 #include "free.h"
 #include "new_types.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */

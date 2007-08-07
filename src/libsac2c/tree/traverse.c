@@ -4,8 +4,6 @@
  *
  */
 
-#include <string.h>
-
 #include "traverse.h"
 
 #include "traverse_tables.h"
@@ -204,7 +202,7 @@ TRAVtmpVar (void)
     DBUG_ENTER ("TRAVtmpVar");
 
     prefix = TRAVgetName ();
-    result = (char *)MEMmalloc ((strlen (prefix) + MATHnumDigits (counter) + 3)
+    result = (char *)MEMmalloc ((STRlen (prefix) + MATHnumDigits (counter) + 3)
                                 * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;
@@ -234,9 +232,9 @@ TRAVtmpVarName (char *postfix)
     /* avoid chains of same prefixes */
     tmp = TRAVgetName ();
 
-    if ((strlen (postfix) > (strlen (tmp) + 1)) && (postfix[0] == '_')
-        && (strncmp ((postfix + 1), tmp, strlen (tmp)) == 0)) {
-        postfix = postfix + strlen (tmp) + 2;
+    if ((STRlen (postfix) > (STRlen (tmp) + 1)) && (postfix[0] == '_')
+        && STRprefix (tmp, postfix + 1)) {
+        postfix = postfix + STRlen (tmp) + 2;
         while (postfix[0] != '_') {
             postfix++;
         }

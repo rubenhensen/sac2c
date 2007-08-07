@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "extend_lac_funs.h"
 
 #include "dbug.h"

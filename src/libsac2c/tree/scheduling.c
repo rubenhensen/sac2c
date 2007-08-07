@@ -24,7 +24,6 @@
  *
  *****************************************************************************/
 
-#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -988,10 +987,10 @@ CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, cha
 
     if (sched != NULL) {
         name = (char *)MEMmalloc (sizeof (char)
-                                  * (strlen (sched->discipline) + strlen (suffix) + 15));
+                                  * (STRlen (sched->discipline) + STRlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)MEMmalloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char) * (STRlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
@@ -1648,10 +1647,10 @@ CompileSchedulingWithTasksel (int seg_id, node *wl_ids, sched_t *sched,
 
     if (sched != NULL) {
         name = (char *)MEMmalloc (sizeof (char)
-                                  * (strlen (sched->discipline) + strlen (suffix) + 15));
+                                  * (STRlen (sched->discipline) + STRlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)MEMmalloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char) * (STRlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 

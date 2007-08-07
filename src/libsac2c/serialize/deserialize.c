@@ -26,8 +26,6 @@
 #include "dbug.h"
 #include "globals.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */
@@ -354,9 +352,9 @@ HeadSymbol2BodySymbol (const char *symbol)
     DBUG_ASSERT (((symbol[0] == 'S') && (symbol[1] == 'H') && (symbol[2] == 'D')),
                  "given symbol is not a function header symbol!");
 
-    result = MEMmalloc (strlen (symbol) + 2);
+    result = MEMmalloc (STRlen (symbol) + 2);
 
-    snprintf (result, strlen (symbol) + 2, "S%s", symbol);
+    snprintf (result, STRlen (symbol) + 2, "S%s", symbol);
 
     result[1] = 'B';
     result[2] = 'D';

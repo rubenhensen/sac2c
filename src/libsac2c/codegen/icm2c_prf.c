@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include <string.h>
 
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
@@ -249,7 +248,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -350,7 +349,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -931,7 +930,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -1271,7 +1270,7 @@ ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
                                 global.prf_name[F_take_SxV]););
 
     shp = (char **)MEMmalloc (sizeof (char *));
-    shp[0] = (char *)MEMmalloc ((strlen (cnt_ANY) + 30) * sizeof (char));
+    shp[0] = (char *)MEMmalloc ((STRlen (cnt_ANY) + 30) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ABS( SAC_ND_A_FIELD( %s))", cnt_ANY);
     } else {
@@ -1401,7 +1400,7 @@ ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
 
     shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]
-      = (char *)MEMmalloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
+      = (char *)MEMmalloc ((STRlen (from_NT) + STRlen (cnt_ANY) + 50) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( SAC_ND_A_FIELD( %s))", from_NT,
                  cnt_ANY);
@@ -1531,7 +1530,7 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
 
     shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]
-      = (char *)MEMmalloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
+      = (char *)MEMmalloc ((STRlen (from1_NT) + STRlen (from2_NT) + 40) * sizeof (char));
     sprintf (shp[0], "SAC_ND_A_SIZE( %s) + SAC_ND_A_SIZE( %s)", from1_NT, from2_NT);
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
     shp[0] = MEMfree (shp[0]);

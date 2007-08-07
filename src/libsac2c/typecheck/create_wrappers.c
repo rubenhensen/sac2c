@@ -1,7 +1,7 @@
 /* $Id$ */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "create_wrappers.h"
 #include "dbug.h"
 #include "ctinfo.h"

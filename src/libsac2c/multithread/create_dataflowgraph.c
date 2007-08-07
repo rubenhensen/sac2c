@@ -35,8 +35,6 @@
 #include "dbug.h"
 #include "globals.h"
 
-#include <string.h>
-
 #define CDFG_DEBUG 0
 
 /*

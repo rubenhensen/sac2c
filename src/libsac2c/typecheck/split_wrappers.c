@@ -269,7 +269,7 @@ SplitWrapper (node *fundef, info *arg_info)
          */
         if (!FUNDEF_ISLOCAL (new_fundef)) {
             FUNDEF_SYMBOLNAME (new_fundef)
-              = STRcpy (SERgenerateSerFunName (SET_wrapperhead, new_fundef));
+              = SERgenerateSerFunName (SET_wrapperhead, new_fundef);
 
             DBUG_PRINT ("SWR",
                         ("generated symbolname is %s", FUNDEF_SYMBOLNAME (new_fundef)));

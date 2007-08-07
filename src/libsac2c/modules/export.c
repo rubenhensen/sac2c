@@ -18,8 +18,6 @@
 #include "ctinfo.h"
 #include "namespaces.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */

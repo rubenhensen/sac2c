@@ -34,8 +34,6 @@
 #include "free.h"
 #include "new_types.h"
 
-#include <string.h>
-
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -149,7 +147,7 @@ EMDRap (node *arg_node, info *arg_info)
      */
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
 
-        if (strstr (FUNDEF_NAME (AP_FUNDEF (arg_node)), "ReuseCond") != NULL) {
+        if (STRsub ("ReuseCond", FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
             /*
              * Transform predavis, memavis and rcavis before traversing REUSECOND
              */

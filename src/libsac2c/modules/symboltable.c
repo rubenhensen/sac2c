@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #include "symboltable.h"
@@ -7,7 +7,6 @@
 #include "str.h"
 #include "memory.h"
 #include "types.h"
-#include <string.h>
 
 struct ST_SYMBOLITERATOR_T {
     stsymbol_t *head;

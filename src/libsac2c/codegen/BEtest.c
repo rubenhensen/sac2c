@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
 #include "dbug.h"
 
 #include "globals.h"
@@ -57,8 +57,8 @@ main (int argc, char *argv[])
     printf ("#include \"../runtime/sac.h\"\n");
     scanf_res = scanf ("%s", buffer);
     while (scanf_res > 0) {
-        if (buffer[strlen (buffer) - 1] == '(') {
-            buffer[strlen (buffer) - 1] = '\0';
+        if (buffer[STRlen (buffer) - 1] == '(') {
+            buffer[STRlen (buffer) - 1] = '\0';
         }
 
         DBUG_PRINT ("BEtest", ("icm found: %s\n", buffer));

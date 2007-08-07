@@ -15,8 +15,6 @@
  *
  *****************************************************************************/
 
-#include <string.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "multithread_lib.h"
@@ -44,15 +42,11 @@ node *
 MUTHLIBexpandFundefName (node *fundef, char *prefix)
 {
     char *old_name;
-    char *new_name;
 
     DBUG_ENTER ("MUTHLIBexpandFundefName");
 
     old_name = FUNDEF_NAME (fundef);
-    new_name = MEMmalloc (strlen (old_name) + strlen (prefix) + 1);
-    strcpy (new_name, prefix);
-    strcat (new_name, old_name);
-    FUNDEF_NAME (fundef) = new_name;
+    FUNDEF_NAME (fundef) = STRcat (prefix, old_name);
     old_name = MEMfree (old_name);
 
     DBUG_RETURN (fundef);

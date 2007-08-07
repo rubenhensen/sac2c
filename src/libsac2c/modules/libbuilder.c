@@ -4,8 +4,6 @@
  *
  */
 
-#include <string.h>
-
 #include "libbuilder.h"
 #include "dbug.h"
 #include "ctinfo.h"
@@ -35,7 +33,7 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 
     if (rest != NULL) {
         char *temp
-          = MEMmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = MEMmalloc (sizeof (char) * (STRlen ((char *)rest) + STRlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 

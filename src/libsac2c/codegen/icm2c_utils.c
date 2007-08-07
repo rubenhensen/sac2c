@@ -1,45 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.8  2004/11/25 10:26:46  jhb
- * compile SACdevCamp 2k4
- *
- * Revision 3.7  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.6  2003/09/19 15:32:11  dkr
- * postfix _nt of varnames renamed into _NT
- *
- * Revision 3.5  2002/07/31 15:37:19  dkr
- * new hidden tag added
- *
- * Revision 3.4  2002/06/04 08:35:45  dkr
- * C_unknownc renamed into C_unknownd
- *
- * Revision 3.3  2002/06/02 21:36:56  dkr
- * functions renamed
- *
- * Revision 3.2  2002/05/31 17:21:29  dkr
- * functions renamed
- *
- * Revision 3.1  2000/11/20 18:01:19  sacbase
- * new release made
- *
- * Revision 1.6  2000/10/23 12:46:15  dkr
- * FindParen(): In the 2nd DBUG_ASSERT 'NULL' is replaced by '\0'.
- *
- * Revision 1.5  2000/09/13 15:05:09  dkr
- * C_last? renamed into C_unknown?
- *
- * Revision 1.4  2000/08/17 10:19:10  dkr
- * all the NT stuff is now in a separate modul (NameTuples.[ch])
- *
- * Revision 1.2  1999/06/25 14:52:25  rob
- * Introduce definitions and utility infrastructure for tagged array support.
- *
- * Revision 1.1  1999/06/16 17:18:13  rob
- * Initial revision
- *
+ * $Id$
  */
 
 /*****************************************************************************
@@ -53,10 +13,9 @@
  *
  *****************************************************************************/
 
-#include <string.h>
-
 #include "globals.h"
 #include "types.h"
+#include "str.h"
 #include "icm2c_utils.h"
 #include "dbug.h"
 
@@ -116,7 +75,7 @@ ICUGetShapeClass (char *var_NT)
     i = 0;
     z = C_unknowns;
     while ((i != C_unknowns) && (z == C_unknowns)) {
-        if (!strncmp (var_NT + nc, global.nt_shape_string[i], 3)) {
+        if (STReqn (var_NT + nc, global.nt_shape_string[i], 3)) {
             z = i;
         }
         i++;
@@ -149,7 +108,7 @@ ICUGetHiddenClass (char *var_NT)
     i = 0;
     z = C_unknownh;
     while ((i != C_unknownh) && (z == C_unknownh)) {
-        if (!strncmp (var_NT + nc, global.nt_hidden_string[i], 3)) {
+        if (STReqn (var_NT + nc, global.nt_hidden_string[i], 3)) {
             z = i;
         }
         i++;
@@ -182,7 +141,7 @@ ICUGetUniqueClass (char *var_NT)
     i = 0;
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
-        if (!strncmp (var_NT + nc, global.nt_unique_string[i], 3)) {
+        if (STReqn (var_NT + nc, global.nt_unique_string[i], 3)) {
             z = i;
         }
         i++;

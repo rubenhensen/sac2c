@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "scnprs.h"
 #include "dbug.h"

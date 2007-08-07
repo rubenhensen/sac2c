@@ -34,8 +34,6 @@
 #include "new_types.h"
 #include "shape.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */
@@ -153,7 +151,7 @@ CreateLacFunName (char *root_funname)
 
     DBUG_ENTER ("CreateLacFunName");
 
-    name = (char *)MEMmalloc ((strlen (root_funname) + 10 + 20 + 3) * sizeof (char));
+    name = (char *)MEMmalloc ((STRlen (root_funname) + 10 + 20 + 3) * sizeof (char));
     sprintf (name, "%s__ReuseCond_%i", root_funname, number);
     number++;
 

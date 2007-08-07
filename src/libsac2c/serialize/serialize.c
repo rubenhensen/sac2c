@@ -24,8 +24,6 @@
 #include "serialize_filenames.h"
 #include "dbug.h"
 
-#include <string.h>
-
 #define MAX_FUN_NAME_LEN 255
 
 /*
@@ -177,7 +175,7 @@ AppendSerFunType (char *funname, ntype *type, int size)
 
     DBUG_ENTER ("AppendSerFunType");
 
-    pos = &funname[strlen (funname)];
+    pos = &funname[STRlen (funname)];
 
     DBUG_ASSERT ((size > 1), "fundef name buffer to small!");
 
@@ -267,7 +265,7 @@ AppendSerFunArgType (char *funname, node *arg, int size)
 
     DBUG_ASSERT ((size > 2), "funname buffer to small");
 
-    pos = &funname[strlen (funname)];
+    pos = &funname[STRlen (funname)];
 
     if (ARG_ISARTIFICIAL (arg)) {
         size -= snprintf (pos, size, "_A");
@@ -299,12 +297,12 @@ AppendSerFunTypeSignature (char *funname, node *fundef, int size)
     DBUG_RETURN (size);
 }
 
-const char *
+char *
 SERgenerateSerFunName (stentrytype_t type, node *arg_node)
 {
-    static char result[MAX_FUN_NAME_LEN + 1];
+    static char buffer[MAX_FUN_NAME_LEN + 1];
     int size = MAX_FUN_NAME_LEN;
-    char *tmp;
+    char *result;
 
     DBUG_ENTER ("SERgenerateSerFunName");
 
@@ -312,26 +310,26 @@ SERgenerateSerFunName (stentrytype_t type, node *arg_node)
     case SET_funbody:
     case SET_wrapperbody:
         size
-          -= snprintf (result, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
+          -= snprintf (buffer, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
                        FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
 
-        size = AppendSerFunTypeSignature (result, arg_node, size);
+        size = AppendSerFunTypeSignature (buffer, arg_node, size);
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        size -= snprintf (result, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
+        size -= snprintf (buffer, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
                           FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
 
-        size = AppendSerFunTypeSignature (result, arg_node, size);
+        size = AppendSerFunTypeSignature (buffer, arg_node, size);
 
         break;
     case SET_typedef:
-        size -= snprintf (result, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (arg_node)),
+        size -= snprintf (buffer, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (arg_node)),
                           TYPEDEF_NAME (arg_node));
         break;
     case SET_objdef:
-        size -= snprintf (result, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (arg_node)),
+        size -= snprintf (buffer, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (arg_node)),
                           OBJDEF_NAME (arg_node));
         break;
     default:
@@ -339,14 +337,11 @@ SERgenerateSerFunName (stentrytype_t type, node *arg_node)
         break;
     }
 
-    DBUG_ASSERT ((size > 0), "internak buffer in SERgenerateSerFunName too small!");
+    DBUG_ASSERT ((size > 0), "internal buffer in SERgenerateSerFunName too small!");
 
-    DBUG_PRINT ("SER", ("Generated new function name: %s", result));
+    DBUG_PRINT ("SER", ("Generated new function name: %s", buffer));
 
-    tmp = STRreplaceSpecialCharacters (result);
-    strcpy (result, tmp);
-
-    tmp = MEMfree (tmp);
+    result = STRreplaceSpecialCharacters (buffer);
 
     DBUG_PRINT ("SER", ("Final function name: %s", result));
 
@@ -356,13 +351,19 @@ SERgenerateSerFunName (stentrytype_t type, node *arg_node)
 static void
 GenerateSerFunHead (node *elem, stentrytype_t type, info *info)
 {
+    char *funname;
+
     DBUG_ENTER ("GenerateSerFunHead");
 
-    fprintf (INFO_SER_FILE (info), "void *%s()", SERgenerateSerFunName (type, elem));
+    funname = SERgenerateSerFunName (type, elem);
+
+    fprintf (INFO_SER_FILE (info), "void *%s()", funname);
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
     fprintf (INFO_SER_FILE (info), "void *stack;\n");
     fprintf (INFO_SER_FILE (info), "result = DROP( x");
+
+    MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -435,7 +436,7 @@ SerializeFundefHead (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (fundef);
 
-    FUNDEF_SYMBOLNAME (fundef) = STRcpy (SERgenerateSerFunName (SET_funhead, fundef));
+    FUNDEF_SYMBOLNAME (fundef) = SERgenerateSerFunName (SET_funhead, fundef);
 
     /*
      * we do not store special funs (cond/loop)
@@ -489,7 +490,7 @@ SerializeTypedef (node *tdef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (tdef);
 
-    TYPEDEF_SYMBOLNAME (tdef) = STRcpy (SERgenerateSerFunName (SET_typedef, tdef));
+    TYPEDEF_SYMBOLNAME (tdef) = SERgenerateSerFunName (SET_typedef, tdef);
 
     if (TYPEDEF_ISEXPORTED (tdef)) {
         vis = SVT_exported;
@@ -532,7 +533,7 @@ SerializeObjdef (node *objdef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (objdef);
 
-    OBJDEF_SYMBOLNAME (objdef) = STRcpy (SERgenerateSerFunName (SET_objdef, objdef));
+    OBJDEF_SYMBOLNAME (objdef) = SERgenerateSerFunName (SET_objdef, objdef);
 
     if (OBJDEF_ISEXPORTED (objdef)) {
         vis = SVT_exported;
@@ -699,10 +700,16 @@ SERobjdef (node *arg_node, info *arg_info)
 void
 SERserializeFundefLink (node *fundef, FILE *file)
 {
+    char *funname;
+
     DBUG_ENTER ("SERserializeFundefLink");
 
+    funname = SERgenerateSerFunName (SET_funhead, fundef);
+
     fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", NSgetModule (FUNDEF_NS (fundef)),
-             SERgenerateSerFunName (SET_funhead, fundef));
+             funname);
+
+    MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -710,10 +717,16 @@ SERserializeFundefLink (node *fundef, FILE *file)
 void
 SERserializeObjdefLink (node *objdef, FILE *file)
 {
+    char *funname;
+
     DBUG_ENTER ("SERserializeObjdefLink");
 
+    funname = SERgenerateSerFunName (SET_objdef, objdef);
+
     fprintf (file, "DSlookupObject( \"%s\", \"%s\")", NSgetModule (OBJDEF_NS (objdef)),
-             SERgenerateSerFunName (SET_objdef, objdef));
+             funname);
+
+    MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }

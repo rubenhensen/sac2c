@@ -30,8 +30,6 @@
 #include "str.h"
 #include "memory.h"
 
-#include <string.h>
-
 /**
  * traversal modes
  */

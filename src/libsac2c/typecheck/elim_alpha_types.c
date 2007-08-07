@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "elim_alpha_types.h"
 
 #include "dbug.h"

@@ -4,7 +4,6 @@
 
 #include "dependencies.h"
 
-#include <string.h>
 #include <libgen.h>
 
 #include "globals.h"
@@ -164,7 +163,7 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
         char *libname;
         char *libfile;
 
-        libname = MEMmalloc (sizeof (char) * (strlen (entry) + 5));
+        libname = MEMmalloc (sizeof (char) * (STRlen (entry) + 5));
         sprintf (libname, "%s.sac", entry);
 
         libfile = STRcpy (FMGRfindFile (PK_imp_path, libname));
@@ -228,7 +227,7 @@ PrintSACLib (const char *name)
      * first try to find the .so file
      */
 
-    filename = MEMmalloc (sizeof (char) * (strlen (name) + 7));
+    filename = MEMmalloc (sizeof (char) * (STRlen (name) + 7));
     sprintf (filename, "lib%s.so", name);
 
     result = STRcpy (FMGRfindFile (PK_lib_path, filename));
@@ -240,7 +239,7 @@ PrintSACLib (const char *name)
          * now try to find the .sac file
          */
 
-        filename = MEMmalloc (sizeof (char) * (strlen (name) + 5));
+        filename = MEMmalloc (sizeof (char) * (STRlen (name) + 5));
         sprintf (filename, "%s.sac", name);
 
         result = STRcpy (FMGRfindFile (PK_imp_path, filename));
@@ -253,7 +252,7 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = MEMmalloc (sizeof (char) * (strlen (name) + 7));
+        result = MEMmalloc (sizeof (char) * (STRlen (name) + 7));
         sprintf (result, "lib%s.so", name);
     }
 

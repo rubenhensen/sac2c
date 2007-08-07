@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "ct_basic.h"
 #include "dbug.h"

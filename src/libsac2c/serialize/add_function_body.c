@@ -17,8 +17,6 @@
 #include "dbug.h"
 #include "ctinfo.h"
 
-#include <string.h>
-
 /*
  * INFO structure
  */

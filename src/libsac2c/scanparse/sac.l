@@ -319,7 +319,7 @@ int charpos = 0;
 
 
 \"([^"\n]|(\\\"))*\"       { yylval.id = STRcpy( yytext + sizeof( char));
-                             yylval.id[ strlen( yylval.id) - 1] = '\0';
+                             yylval.id[ STRlen( yylval.id) - 1] = '\0';
                              FILTER( STR);
                            }
 
@@ -393,13 +393,13 @@ int charpos = 0;
                            }
 
 [0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
-                             yytext[strlen(yytext)]='\0';
+                             yytext[STRlen(yytext)]='\0';
                              yylval.cfloat=atof(yytext);
                              FILTER( FLOAT);
                            }
 
 [0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
-                             yytext[strlen(yytext)]='\0';
+                             yytext[STRlen(yytext)]='\0';
                              yylval.cdbl=atof(yytext);
                              FILTER( DOUBLE);
                            }
@@ -423,13 +423,13 @@ int charpos = 0;
 \n.*                       { global.linenum++;
                              charpos = 0;
                              if (yyleng <= LINEBUF_SIZE) {
-                               strncpy( linebuf, yytext+1,yyleng);
+                               strncpy( linebuf, yytext+1, yyleng);
                                linebuf_ptr = linebuf;
                              }
                              else {
                                MEMfree( tmp_buf);
                                tmp_buf = MEMmalloc( (yyleng) * sizeof(char));
-                               strncpy( tmp_buf, yytext+1,yyleng);
+                               strncpy( tmp_buf, yytext+1, yyleng);
                                linebuf_ptr = tmp_buf;
                              }
                              yyless(1);

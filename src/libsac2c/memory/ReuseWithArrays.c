@@ -55,8 +55,6 @@
 #include "memory.h"
 #include "new_types.h"
 
-#include <string.h>
-
 /** <!--********************************************************************-->
  *
  * @name INFO structure

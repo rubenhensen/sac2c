@@ -32,7 +32,6 @@
 #include "dbug.h"
 #include "NumLookUpTable.h"
 #include "DataFlowMask.h"
-#include <string.h>
 
 /** <!--********************************************************************-->
  *

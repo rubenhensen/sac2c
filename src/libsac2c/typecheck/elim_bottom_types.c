@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+
 #include "elim_bottom_types.h"
 
 #include "dbug.h"
