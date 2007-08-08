@@ -90,15 +90,19 @@
           <node name="Arg" />
           <node name="Assign" />
           <node name="Exprs" />
-          <node name="genarray" />
-          <node name="generator" />
+          <node name="Fold" />
+          <node name="Genarray" />
+          <node name ="Modarray" />
+          <node name="Generator" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Ret" />
           <node name="Prf" />
           <node name="Fundef" />
           <node name="Let" />
+          <node name="Code" />
           <node name="Part" />
+          <node name="Withid" />
           <node name="With" />
         </travuser>
       </traversal>

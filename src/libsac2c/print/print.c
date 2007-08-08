@@ -511,6 +511,65 @@ TSIprintInfo (node *arg_node, info *arg_info)
 }
 #endif /* ! TSI_DEACTIVATED */
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn void printSOSSKdemand(node *arg_node, info *arg_info)
+ *
+ *    @brief This function prints the demands of each argument of a fundef if
+ *           DBUG PRINT_DEMAND is given
+ *
+ *    @param arg_node the N_fundef node
+ *    @param arg_info the info structure
+ ******************************************************************************/
+
+static void
+printSOSSKdemand (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("printSOSSKdemand");
+
+#ifndef DBUG_OFF
+    node *fundef_current_arg = NULL;
+    constant *demand = NULL;
+    char *demand_string = NULL;
+#endif
+
+    /* If the function has no arguments, there is nothing to be printed*/
+    fundef_current_arg = FUNDEF_ARGS (arg_node);
+    if (fundef_current_arg != NULL) {
+
+        /* First print the name of the function*/
+        fprintf (global.outfile, "/*\n");
+        fprintf (global.outfile, " * ");
+        fprintf (global.outfile, FUNDEF_NAME (arg_node));
+        fprintf (global.outfile, "\n");
+        fprintf (global.outfile, " * -------------------------\n");
+
+        while (fundef_current_arg != NULL) {
+            /* print the name of the argument*/
+            demand = AVIS_DEMAND (ARG_AVIS (fundef_current_arg));
+            fprintf (global.outfile, " * ");
+            fprintf (global.outfile, ARG_NAME (fundef_current_arg));
+            fprintf (global.outfile, ":\n");
+            if (demand != NULL) {
+                /* print the demand*/
+                demand_string = COconstant2String (demand);
+                fprintf (global.outfile, " *   ");
+                fprintf (global.outfile, demand_string);
+                fprintf (global.outfile, "\n");
+                demand_string = MEMfree (demand_string);
+            } else {
+                fprintf (global.outfile, " *   -- NO DEMAND --\n");
+            }
+
+            /* go to the next argument*/
+            fundef_current_arg = ARG_NEXT (fundef_current_arg);
+        }
+        fprintf (global.outfile, " */\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * Function:
@@ -1241,6 +1300,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
+    /*
+     * Print SOSSK demand if wanted
+     */
+    DBUG_EXECUTE ("PRINT_DEMAND", printSOSSKdemand (arg_node, arg_info););
 
     if (FUNDEF_ARGTAB (arg_node) != NULL) {
         print_sac = FALSE;
@@ -1453,6 +1516,7 @@ PRTfundef (node *arg_node, info *arg_info)
         PrintFunctionHeader (arg_node, arg_info, FALSE);
         fprintf (global.outfile, ";\n\n");
     } else if (INFO_PROTOTYPE (arg_info)) {
+
         /*
          * print function declaration
          */
