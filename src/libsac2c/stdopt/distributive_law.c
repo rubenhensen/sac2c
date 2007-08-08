@@ -467,6 +467,7 @@ BuildMopTree (node *avis, dfmask_t *localmask)
     node *tmp, *exprs;
     node *res;
     node *id;
+    bool sclprf;
 
     DBUG_ENTER ("BuildMopTree");
 
@@ -480,7 +481,13 @@ BuildMopTree (node *avis, dfmask_t *localmask)
         node *summand;
 
         summand = EXPRS_EXPR (tmp);
-        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, FALSE, localmask));
+        if (NODE_TYPE (summand) == N_id) {
+            sclprf = ID_ISSCLPRF (summand);
+        } else {
+            sclprf = TRUE;
+        }
+
+        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, sclprf, localmask));
 
         EXPRS_EXPR (tmp) = FREEdoFreeNode (EXPRS_EXPR (tmp));
         EXPRS_EXPR (tmp) = mop;
@@ -894,7 +901,7 @@ DLprf (node *arg_node, info *arg_info)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
 
             /*
-             * Collect operands into multi-operation (sum of prducts)
+             * Collect operands into multi-operation (sum of products)
              */
             mop
               = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), INFO_LOCALMASK (arg_info));
