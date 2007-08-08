@@ -316,7 +316,7 @@ STRlen (const char *s)
     if (s == NULL) {
         len = 0;
     } else {
-        len = STRlen (s);
+        len = strlen (s);
     }
 
     DBUG_RETURN (len);
