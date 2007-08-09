@@ -201,11 +201,12 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
                     elems[pos + j] = 0;
                 }
             }
-        } else { /* ... if not external function use id demand instead*/
+        } else { /* ... if not external function use also demand (0, 0, 0, 0)*/
+            DBUG_PRINT ("SOSSK", ("Non-external function without fundef_arg_demand"));
             for (i = 0; i < num_rets; i++) {
                 pos = i * 4;
                 for (j = 0; j < 4; j++) {
-                    elems[pos + j] = j;
+                    elems[pos + j] = 0;
                 }
             }
         }
@@ -437,30 +438,37 @@ doOverSelMatrix (constant *idx_matrix, constant *sel_matrix)
  *           maximum demand over all functions which belong to the wrapper.
  *
  *    @param fundef a N_fundef node
- *    @param args the first N_arg of the N_arg argument chain of the wrapper
+ *    @param wrapper the N_fundef node of the wrapper
  *
- *    @return the first N_arg of the N_arg argument chain of the wrapper
+ *    @return the N_fundef node of the wrapper
  ******************************************************************************/
 
 static node *
-wrapperMax (node *fundef, node *args)
+wrapperMax (node *fundef, node *wrapper)
 {
     DBUG_ENTER ("wrapperMax");
     DBUG_PRINT ("SOSSK_PATH", (">>> ENTER wrapperMax"));
     DBUG_PRINT ("SOSSK_WRAPPER", ("!###ENTER WRAPPERMAX %s###!", FUNDEF_NAME (fundef)));
 
-    node *cur_args_arg = args;
+    node *cur_wrapper_arg = FUNDEF_ARGS (wrapper);
     node *cur_fundef_arg = FUNDEF_ARGS (fundef);
 
-    constant *cur_args_arg_dem = AVIS_DEMAND (ARG_AVIS (cur_args_arg));
-    constant *cur_fundef_arg_dem = AVIS_DEMAND (ARG_AVIS (cur_fundef_arg));
+    constant *cur_wrapper_arg_dem = NULL;
+    constant *cur_fundef_arg_dem = NULL;
 
 #ifndef DBUG_OFF
     char *string = NULL;
 #endif
 
+    /* Reset the flag of the wrapper if fixpoint has not been found yet*/
+    FUNDEF_FIXPOINTFOUND (wrapper)
+      = FUNDEF_FIXPOINTFOUND (wrapper) && FUNDEF_FIXPOINTFOUND (fundef);
+
     /* Handle all arguments*/
-    while (cur_args_arg != NULL) {
+    while (cur_wrapper_arg != NULL) {
+
+        cur_wrapper_arg_dem = AVIS_DEMAND (ARG_AVIS (cur_wrapper_arg));
+        cur_fundef_arg_dem = AVIS_DEMAND (ARG_AVIS (cur_fundef_arg));
 
         /* If the current fundef is NULL, there is no need to change the args_arg*/
         if (cur_fundef_arg_dem != NULL) {
@@ -469,11 +477,12 @@ wrapperMax (node *fundef, node *args)
 
             /* if the current args argument has no demand, just copy the one from
              * the fundef*/
-            if (cur_args_arg_dem != NULL) {
+            if (cur_wrapper_arg_dem != NULL) {
                 constant *tmp_demand = NULL;
-                tmp_demand = COmax (cur_args_arg_dem, cur_fundef_arg_dem);
+                tmp_demand = COmax (cur_wrapper_arg_dem, cur_fundef_arg_dem);
 
-                DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (cur_args_arg_dem););
+                DBUG_EXECUTE ("SOSSK_DEMAND",
+                              string = demand2String (cur_wrapper_arg_dem););
                 DBUG_PRINT ("SOSSK_DEMAND", ("cur_args_arg_dem: %s", string));
                 DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
                 DBUG_EXECUTE ("SOSSK_DEMAND",
@@ -484,37 +493,36 @@ wrapperMax (node *fundef, node *args)
                 DBUG_PRINT ("SOSSK_DEMAND", ("COmax: %s", string));
                 DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
 
-                AVIS_DEMAND (ARG_AVIS (cur_args_arg))
-                  = COfreeConstant (AVIS_DEMAND (ARG_AVIS (cur_fundef_arg)));
-                cur_args_arg_dem = NULL;
-                AVIS_DEMAND (ARG_AVIS (cur_args_arg)) = tmp_demand;
+                cur_wrapper_arg_dem = COfreeConstant (cur_wrapper_arg_dem);
+                AVIS_DEMAND (ARG_AVIS (cur_wrapper_arg)) = tmp_demand;
                 tmp_demand = NULL;
             } else {
-                AVIS_DEMAND (ARG_AVIS (cur_args_arg))
+                AVIS_DEMAND (ARG_AVIS (cur_wrapper_arg))
                   = COcopyConstant (cur_fundef_arg_dem);
                 DBUG_EXECUTE ("SOSSK_DEMAND",
                               string = demand2String (cur_fundef_arg_dem););
                 DBUG_PRINT ("SOSSK_DEMAND", ("cur_fundef_arg_demand: %s", string));
                 DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
             }
-        } else {
+        } /* if(cur_fundef_arg_dem != NULL)*/
+        else {
             DBUG_PRINT ("SOSSK_DEMAND", ("FUNDEF_ARG CONTAINS NO DEMAND!"));
         }
 
-        DBUG_ASSERT (((ARG_NEXT (cur_args_arg) != NULL)
+        DBUG_ASSERT (((ARG_NEXT (cur_wrapper_arg) != NULL)
                       && (ARG_NEXT (cur_fundef_arg) != NULL))
-                       || ((ARG_NEXT (cur_args_arg) == NULL)
+                       || ((ARG_NEXT (cur_wrapper_arg) == NULL)
                            && (ARG_NEXT (cur_fundef_arg) == NULL)),
                      "Wrapper fun and funct. have different number of arguments!");
 
         /* Go on with the next argument*/
-        cur_args_arg = ARG_NEXT (cur_args_arg);
+        cur_wrapper_arg = ARG_NEXT (cur_wrapper_arg);
         cur_fundef_arg = ARG_NEXT (cur_fundef_arg);
     } /* while*/
 
     DBUG_PRINT ("SOSSK_WRAPPER", ("!###LEAVE WRAPPERMAX###!"));
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE wrapperMax"));
-    DBUG_RETURN (args);
+    DBUG_RETURN (wrapper);
 }
 
 /** <!-- ****************************************************************** -->
@@ -718,6 +726,67 @@ SOSSKassign (node *arg_node, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node * SOSSKcond(node *arg_node, info *arg_info)
+ *
+ *    @brief This function handles a conditional. It therefor first traverses
+ *           into the THEN and ELSE part. Afterwards it does a selection
+ *           from [0, 0, 0, 3] into the demand
+ *
+ *    @param arg_node N_cond node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_cond node
+ ******************************************************************************/
+
+node *
+SOSSKcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKcond");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKcond"));
+
+    constant *old_demand = NULL;
+
+    constant *new_demand = NULL;
+    int num_rets = SHgetExtent (COgetShape (old_demand), 0);
+    int dim = SHgetDim (COgetShape (old_demand));
+    int new_shape[2] = {num_rets, 4};
+    int elems[dim];
+    int i = 0;
+    int offset = 0;
+
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+
+    old_demand = INFO_DEMAND (arg_info);
+
+    /* construct demand [0,2,3,3]*/
+    for (i = 0; i < num_rets; i++) {
+        offset = 4 * i;
+        elems[offset] = 0;
+        elems[offset + 1] = 0;
+        elems[offset + 2] = 0;
+        elems[offset + 3] = 3;
+    }
+
+    new_demand = COmakeConstantFromArray (T_int, dim, new_shape, elems);
+
+    /* compute shape-demand*/
+    INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, new_demand);
+
+    new_demand = COfreeConstant (new_demand);
+
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+
+    INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+    INFO_DEMAND (arg_info) = old_demand;
+    old_demand = NULL;
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKcond"));
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *SOSSKexprs(node *arg_node, info *arg_info)
  *
  *    @brief If this function is called from a prf-node, get demand for the
@@ -737,6 +806,7 @@ SOSSKexprs (node *arg_node, info *arg_info)
 
     constant *arg_constant = NULL;
     constant *old_demand = INFO_DEMAND (arg_info);
+    bool new_demand = FALSE;
 #ifndef DBUG_OFF
     char *string = NULL;
 #endif
@@ -756,6 +826,8 @@ SOSSKexprs (node *arg_node, info *arg_info)
 
         /* If there exists a demand, do Overselection*/
         if ((arg_constant != NULL) && (old_demand != NULL)) {
+            new_demand = TRUE;
+
             INFO_DEMAND (arg_info) = doOverSel (old_demand, arg_constant);
 
             DBUG_EXECUTE ("SOSSK_DEMAND",
@@ -766,13 +838,15 @@ SOSSKexprs (node *arg_node, info *arg_info)
 
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
 
-        if (INFO_DEMAND (arg_info) != NULL) {
+        if ((INFO_DEMAND (arg_info) != NULL) && (new_demand == TRUE)) {
             INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+
+            INFO_DEMAND (arg_info) = old_demand;
+            old_demand = NULL;
         }
-        INFO_DEMAND (arg_info) = old_demand;
-        old_demand = NULL;
 
         if (EXPRS_NEXT (arg_node) != NULL) {
+            INFO_POS_PRF_ARG (arg_info) = INFO_POS_PRF_ARG (arg_info) + 1;
             EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
         }
     } else {
@@ -782,6 +856,19 @@ SOSSKexprs (node *arg_node, info *arg_info)
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKexprs"));
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SOSSKfold(node *arg_node, info *arg_info)
+ *
+ *    @brief Works like genarray, just with [0, 1, 2 ,3] instead of
+ *           [0, 2, 3, 3].
+ *
+ *    @param arg_node N_fold node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_fold node
+ ******************************************************************************/
 
 node *
 SOSSKfold (node *arg_node, info *arg_info)
@@ -798,7 +885,7 @@ SOSSKfold (node *arg_node, info *arg_info)
     int i = 0;
     int offset = 0;
 
-    /* construct demand [0,2,3,3]*/
+    /* construct demand [0,1,2,3]*/
     for (i = 0; i < num_rets; i++) {
         offset = 4 * i;
         elems[offset] = 0;
@@ -1229,16 +1316,18 @@ SOSSKfundef (node *arg_node, info *arg_info)
                 DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
 
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-                INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+                if (INFO_DEMAND (arg_info) != NULL) {
+                    INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+                }
             } else { /* Fundef is Wrapper*/
                 FUNDEF_WRAPPERTYPE (arg_node)
                   = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node), SOSSKfundef,
                                             arg_info);
 
-                FUNDEF_ARGS (arg_node)
-                  = TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
-                                             (void *(*)(node *, void *))wrapperMax,
-                                             (void *)FUNDEF_ARGS (arg_node));
+                arg_node = (node *)TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
+                                                            (void *(*)(node *,
+                                                                       void *))wrapperMax,
+                                                            (void *)arg_node);
             }
         }
         /* If there are ap-args, compute demand*/
@@ -1263,13 +1352,26 @@ SOSSKfundef (node *arg_node, info *arg_info)
 
         /* If the demand has changed during this iteration, maybe the fixpoint
          * has not been found yet. Otherwise if the demand has not changed for
-         * two iteration-rounds, the fixpoint has been found.*/
-        if (INFO_DEMAND_HAS_CHANGED (arg_info) == TRUE) {
-            FUNDEF_LASTCHANGE (arg_node) = INFO_ITERATION_ROUND (arg_info);
-            INFO_DEMAND_HAS_CHANGED (old_info) = TRUE;
-        } else if (((FUNDEF_LASTCHANGE (arg_node) - INFO_ITERATION_ROUND (arg_info)) >= 2)
-                   || (INFO_AP_FOUND (arg_info) == FALSE)) {
+         * two iteration-rounds, the fixpoint has been found.
+         * If this is a wrapperfun, this is done in the folding-fun because of
+         * the fact that the folding fun changes the demand but the info-struct
+         * is not availible there.
+         */
+        if (FUNDEF_ISWRAPPERFUN (arg_node) != TRUE) {
+
+            /* Set this flag here. If this is not true, it will be reseted in the
+             * fold function*/
             FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
+
+            if (INFO_DEMAND_HAS_CHANGED (arg_info) == TRUE) {
+                FUNDEF_LASTCHANGE (arg_node) = INFO_ITERATION_ROUND (arg_info);
+                INFO_DEMAND_HAS_CHANGED (old_info) = TRUE;
+            } else if (((FUNDEF_LASTCHANGE (arg_node) - INFO_ITERATION_ROUND (arg_info))
+                        >= 2)
+                       || (INFO_AP_FOUND (arg_info) == FALSE)) {
+                FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
+                DBUG_PRINT ("SOSSK", ("FIXPOINT FOUND"));
+            }
         }
     }
 
@@ -1289,7 +1391,7 @@ SOSSKfundef (node *arg_node, info *arg_info)
         }
     }
 
-    DBUG_PRINT ("SOSSK_FCT", ("<<<< Leave Function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("SOSSK_FCT", ("<<<< Leave Function: %s", FUNDEF_NAME (arg_node)));
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKfundef"));
     DBUG_RETURN (arg_node);
 }
@@ -1358,8 +1460,10 @@ SOSSKcode (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = old_demand;
     old_demand = NULL;
 
-    DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into the CBLOCK"));
-    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        DBUG_PRINT ("SOSSK_WITH", ("--> Traverse into the CBLOCK"));
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
 
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKcode"));
     DBUG_RETURN (arg_node);
@@ -1405,6 +1509,18 @@ SOSSKpart (node *arg_node, info *arg_info)
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKpart"));
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ * @fn node *SOSSKwithid(node *arg_node, info *arg_info)
+ *
+ *    @brief extracts the demand out of the withid. If needed, it also
+ *           computes the maximum of the id demand and the vec demand
+ *
+ *    @param arg_node N_withid node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_withid node
+ ******************************************************************************/
 
 node *
 SOSSKwithid (node *arg_node, info *arg_info)

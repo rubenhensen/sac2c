@@ -753,6 +753,8 @@ COfreeConstant (constant *a)
 {
     DBUG_ENTER ("COfreeConstant");
 
+    DBUG_ASSERT (a != NULL, "Constant is NULL!");
+
     CONSTANT_SHAPE (a) = SHfreeShape (CONSTANT_SHAPE (a));
     CONSTANT_ELEMS (a) = MEMfree (CONSTANT_ELEMS (a));
     a = MEMfree (a);

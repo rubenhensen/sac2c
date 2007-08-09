@@ -2454,6 +2454,10 @@ DUPavis (node *arg_node, info *arg_info)
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
 
+    if (AVIS_DEMAND (arg_node) != NULL) {
+        AVIS_DEMAND (new_node) = COcopyConstant (AVIS_DEMAND (arg_node));
+    }
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);

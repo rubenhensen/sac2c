@@ -6,6 +6,7 @@
 extern node *SOSSKap (node *arg_node, info *arg_info);
 extern node *SOSSKarg (node *arg_node, info *arg_info);
 extern node *SOSSKassign (node *arg_node, info *arg_info);
+extern node *SOSSKcond (node *arg_node, info *arg_info);
 extern node *SOSSKexprs (node *arg_node, info *arg_info);
 extern node *SOSSKfold (node *arg_node, info *arg_info);
 extern node *SOSSKgenarray (node *arg_node, info *arg_info);

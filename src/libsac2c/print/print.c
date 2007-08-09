@@ -527,11 +527,9 @@ printSOSSKdemand (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("printSOSSKdemand");
 
-#ifndef DBUG_OFF
     node *fundef_current_arg = NULL;
     constant *demand = NULL;
     char *demand_string = NULL;
-#endif
 
     /* If the function has no arguments, there is nothing to be printed*/
     fundef_current_arg = FUNDEF_ARGS (arg_node);
@@ -4630,6 +4628,11 @@ PRTavis (node *arg_node, info *arg_info)
 
       fprintf (global.outfile, " SSAASSIGN = %p ", AVIS_SSAASSIGN (arg_node));
       fprintf (global.outfile, " */ "););
+    DBUG_EXECUTE ("PRINT_DEMAND",
+                  fprintf (global.outfile, " /* DEMAND = %s */ ",
+                           (AVIS_DEMAND (arg_node) == NULL
+                              ? "NO DEMAND"
+                              : COconstant2String (AVIS_DEMAND (arg_node)))););
 
     DBUG_RETURN (arg_node);
 }

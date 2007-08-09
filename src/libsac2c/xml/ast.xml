@@ -89,6 +89,7 @@
           <node name="Ap" />
           <node name="Arg" />
           <node name="Assign" />
+          <node name ="Cond" />
           <node name="Exprs" />
           <node name="Fold" />
           <node name="Genarray" />
