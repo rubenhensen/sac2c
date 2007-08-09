@@ -3053,7 +3053,8 @@
               <target mandatory="no">
                 <node name="Fundef" />
                 <phases>
-                  <range from="mt_cmtf" to="final" /> 
+                  <!-- <range from="mt_cmtf" to="final" /> -->
+                  <!-- Deactivated range spec due to moving mt stuff into precompile -->
                 </phases>
               </target>
             </targets>
