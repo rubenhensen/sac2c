@@ -526,6 +526,17 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("prsc", global.print_resources = TRUE);
 
+    ARGS_OPTION_BEGIN ("print")
+    {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', global.print = global.print_all; global.doprint = TRUE);
+#define PRINT(flag, char, default)                                                       \
+    ARG_FLAGMASK (char, global.print.flag = TRUE; global.doprint = TRUE);
+#include "flags.mac"
+        ARG_FLAGMASK_END ();
+    }
+    ARGS_OPTION_END ("print");
+
     ARGS_OPTION_BEGIN ("profile")
     {
         ARG_FLAGMASK_BEGIN ();

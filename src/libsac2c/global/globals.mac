@@ -437,6 +437,12 @@ GLOBAL (runtimecheck_flags_t, runtimecheck, runtimecheck_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_all, runtimecheck_all_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_none, runtimecheck_none_init)
 
+GLOBAL (bool, doprint, FALSE)
+
+GLOBAL (print_flags_t, print, print_init)
+GLOBAL (print_flags_t, print_all, print_all_init)
+GLOBAL (print_flags_t, print_none, print_none_init)
+
 GLOBAL (bool, doprofile, FALSE)
 
 GLOBAL (profile_flags_t, profile, profile_init)

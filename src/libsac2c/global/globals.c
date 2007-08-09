@@ -378,6 +378,25 @@ static cachesim_flags_t cachesim_none_init = {
 };
 
 /*
+ * Initialize print flags from flags.mac
+ */
+
+static print_flags_t print_init = {
+#define PRINTdefault(default) default,
+#include "flags.mac"
+};
+
+static print_flags_t print_all_init = {
+#define PRINTdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static print_flags_t print_none_init = {
+#define PRINTdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
  * Initialize profile flags from flags.mac
  */
 

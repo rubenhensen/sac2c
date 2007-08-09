@@ -516,7 +516,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
  * @fn void printSOSSKdemand(node *arg_node, info *arg_info)
  *
  *    @brief This function prints the demands of each argument of a fundef if
- *           DBUG PRINT_DEMAND is given
+ *           -print d  is given
  *
  *    @param arg_node the N_fundef node
  *    @param arg_info the info structure
@@ -810,9 +810,11 @@ PRTids (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
-        DBUG_EXECUTE ("PRINT_AVIS", if (IDS_AVIS (arg_node) != NULL) {
-            fprintf (global.outfile, "/* avis: %p */", IDS_AVIS (arg_node));
-        });
+        if (global.print.avis) {
+            if (IDS_AVIS (arg_node) != NULL) {
+                fprintf (global.outfile, "/* avis: %p */", IDS_AVIS (arg_node));
+            }
+        }
 
         if (NULL != IDS_NEXT (arg_node)) {
             fprintf (global.outfile, ", ");
@@ -1301,7 +1303,9 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     /*
      * Print SOSSK demand if wanted
      */
-    DBUG_EXECUTE ("PRINT_DEMAND", printSOSSKdemand (arg_node, arg_info););
+    if (global.print.demand) {
+        printSOSSKdemand (arg_node, arg_info);
+    }
 
     if (FUNDEF_ARGTAB (arg_node) != NULL) {
         print_sac = FALSE;
@@ -1830,10 +1834,10 @@ PRTvardec (node *arg_node, info *arg_info)
             type_str = MEMfree (type_str);
         }
 
-        DBUG_EXECUTE ("PRINT_AVIS",
-                      fprintf (global.outfile, "/* avis %p  SSA assign: %p */",
-                               VARDEC_AVIS (arg_node),
-                               AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))););
+        if (global.print.avis) {
+            fprintf (global.outfile, "/* avis %p  SSA assign: %p */",
+                     VARDEC_AVIS (arg_node), AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)));
+        }
 
         TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
@@ -2007,8 +2011,9 @@ PRTassign (node *arg_node, info *arg_info)
         }
         TRAVdo (instr, arg_info);
 
-        DBUG_EXECUTE ("PRINT_AVIS",
-                      fprintf (global.outfile, "/* addr: %p */", arg_node););
+        if (global.print.avis) {
+            fprintf (global.outfile, "/* addr: %p */", arg_node);
+        }
 
         fprintf (global.outfile, "\n");
     }
@@ -2648,9 +2653,11 @@ PRTid (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "%s", text);
 
-    DBUG_EXECUTE ("PRINT_AVIS", if (ID_AVIS (arg_node) != NULL) {
-        fprintf (global.outfile, "/* avis: %p */", ID_AVIS (arg_node));
-    });
+    if (global.print.avis) {
+        if (ID_AVIS (arg_node) != NULL) {
+            fprintf (global.outfile, "/* avis: %p */", ID_AVIS (arg_node));
+        }
+    };
 
     DBUG_EXECUTE ("DL", if (ID_ISSCLPRF (arg_node)) {
         fprintf (global.outfile, " /* SCL */ ");
@@ -4611,28 +4618,31 @@ PRTavis (node *arg_node, info *arg_info)
 
     /* to be implemented */
 
-    DBUG_EXECUTE (
-      "PRINT_AVIS", fprintf (global.outfile, " /* AVIS:");
+    if (global.print.avis) {
+        fprintf (global.outfile, " /* AVIS:");
 
-      fprintf (global.outfile, " TYPE   = %s,",
-               TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
-      fprintf (global.outfile, " SSACNT = ");
-      PRINT_POINTER_BRACKETS (global.outfile, AVIS_SSACOUNT (arg_node));
+        fprintf (global.outfile, " TYPE   = %s,",
+                 TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
+        fprintf (global.outfile, " SSACNT = ");
+        PRINT_POINTER_BRACKETS (global.outfile, AVIS_SSACOUNT (arg_node));
 
-      if (global.valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
-          node *cnt = AVIS_SSACOUNT (arg_node);
+        if (global.valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
+            node *cnt = AVIS_SSACOUNT (arg_node);
 
-          fprintf (global.outfile, " (baseid = %s, counter = %d)", SSACNT_BASEID (cnt),
-                   SSACNT_COUNT (cnt));
-      }
+            fprintf (global.outfile, " (baseid = %s, counter = %d)", SSACNT_BASEID (cnt),
+                     SSACNT_COUNT (cnt));
+        }
 
-      fprintf (global.outfile, " SSAASSIGN = %p ", AVIS_SSAASSIGN (arg_node));
-      fprintf (global.outfile, " */ "););
-    DBUG_EXECUTE ("PRINT_DEMAND",
-                  fprintf (global.outfile, " /* DEMAND = %s */ ",
-                           (AVIS_DEMAND (arg_node) == NULL
-                              ? "NO DEMAND"
-                              : COconstant2String (AVIS_DEMAND (arg_node)))););
+        fprintf (global.outfile, " SSAASSIGN = %p ", AVIS_SSAASSIGN (arg_node));
+        fprintf (global.outfile, " */ ");
+    }
+
+    if (global.print.demand) {
+        fprintf (global.outfile, " /* DEMAND = %s */ ",
+                 (AVIS_DEMAND (arg_node) == NULL
+                    ? "NO DEMAND"
+                    : COconstant2String (AVIS_DEMAND (arg_node))));
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -621,6 +621,24 @@ PrintRuntimeTraceOptions (void)
 }
 
 static void
+PrintPrintingOptions (void)
+{
+    DBUG_ENTER ("PrintPrintingOptions");
+
+    printf (
+      "\n\nPRINTING OPTIONS:\n\n"
+
+      "    -print [adv]+\n"
+      "               Add internal AST information as comments to the program output.\n"
+      "               The following flags are supported:\n"
+      "                 a: Print all (same as dv).\n"
+      "                 d: Print specialization demand.\n"
+      "                 v: Print avis information.\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 PrintRuntimeProfilingOptions (void)
 {
     DBUG_ENTER ("PrintRuntimeProfilingOptions");
@@ -932,6 +950,7 @@ USGprintUsage ()
         PrintGeneralOptions ();
         PrintBreakOptions ();
         PrintBreakoptionSpecifierSac2c ();
+        PrintPrintingOptions ();
         PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
         PrintMultithreadOptions ();

@@ -770,6 +770,11 @@ typedef struct TRACE_FLAGS_T {
 #include "flags.mac"
 } trace_flags_t;
 
+typedef struct PRINT_FLAGS_T {
+#define PRINTflag(flag) unsigned int flag : 1;
+#include "flags.mac"
+} print_flags_t;
+
 typedef struct PROFILE_FLAGS_T {
 #define PROFILEflag(flag) unsigned int flag : 1;
 #include "flags.mac"

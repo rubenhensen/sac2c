@@ -1,31 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.7  2005/04/20 20:45:12  sah
- * renamed errno to checkerrno as the identifier
- * errno is reserved (cf. ISO C Standard) and may
- * not be used for own definitions!
- * the use of errno results in compilation failures
- * with GNU libc version 6!
- *
- * Revision 1.6  2004/11/24 16:01:13  cg
- * some renamings
- *
- * Revision 1.5  2004/11/23 21:51:49  cg
- * Added genlib flags.
- *
- * Revision 1.4  2004/11/23 20:29:03  cg
- * Added profile flags.
- *
- * Revision 1.3  2004/11/23 19:43:26  cg
- * Added flags for triggering tracing, cache simulation and runtime checks.
- *
- * Revision 1.2  2004/11/23 17:54:05  cg
- * Added default values.
- *
- * Revision 1.1  2004/11/23 17:34:23  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -63,6 +38,37 @@ TRACE (cenv, 'c', FALSE)
 #undef TRACEchar
 #undef TRACEdefault
 #undef TRACE
+
+/*************************************************************/
+
+/*
+ * Print flags
+ */
+
+#ifndef PRINTflag
+#define PRINTflag(flag)
+#endif
+
+#ifndef PRINTchar
+#define PRINTchar(char)
+#endif
+
+#ifndef PRINTdefault
+#define PRINTdefault(default)
+#endif
+
+#ifndef PRINT
+#define PRINT(flag, char, default)                                                       \
+    PRINTflag (flag) PRINTchar (char) PRINTdefault (default)
+#endif
+
+PRINT (demand, 'd', FALSE)
+PRINT (avis, 'v', FALSE)
+
+#undef PRINTflag
+#undef PRINTchar
+#undef PRINTdefault
+#undef PRINT
 
 /*************************************************************/
 
