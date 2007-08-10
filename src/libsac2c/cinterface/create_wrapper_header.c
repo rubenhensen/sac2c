@@ -34,6 +34,9 @@
 #include "stringset.h"
 #include "str_buffer.h"
 #include "namespaces.h"
+#include "new_types.h"
+#include "type_utils.h"
+#include "ctinfo.h"
 #include "str.h"
 
 /** <!--********************************************************************-->
@@ -46,14 +49,16 @@ struct INFO {
     bool inbundle;
     FILE *file;
     int counter;
+    bool comment;
 };
 
 /**
- * A template entry in the template info structure
+ * INFO macros
  */
 #define INFO_INBUNDLE(n) ((n)->inbundle)
 #define INFO_FILE(n) ((n)->file)
 #define INFO_COUNTER(n) ((n)->counter)
+#define INFO_COMMENT(n) ((n)->comment)
 
 static info *
 MakeInfo ()
@@ -67,6 +72,7 @@ MakeInfo ()
     INFO_INBUNDLE (result) = FALSE;
     INFO_FILE (result) = NULL;
     INFO_COUNTER (result) = 0;
+    INFO_COMMENT (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -210,13 +216,35 @@ CWHfunbundle (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((FUNBUNDLE_FUNDEF (arg_node) != NULL), "empty funbundle found!");
 
+    /*
+     * first print the descriptive comment
+     */
+    INFO_COMMENT (arg_info) = TRUE;
+
+    fprintf (INFO_FILE (arg_info),
+             "/**************************************************************************"
+             "***\n"
+             " * C declaration of function %s.\n"
+             " *\n"
+             " * defined instances:\n"
+             " *\n",
+             CTIitemName (FUNBUNDLE_FUNDEF (arg_node)));
+
+    FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
+
+    fprintf (INFO_FILE (arg_info), " ****************************************************"
+                                   "*************************/\n"
+                                   "\n");
+    INFO_COMMENT (arg_info) = FALSE;
+
+    /*
+     * next the function declaration
+     */
     safename = STRreplaceSpecialCharacters (FUNBUNDLE_NAME (arg_node));
     safens = STRreplaceSpecialCharacters (NSgetName (FUNBUNDLE_NS (arg_node)));
 
-    fprintf (INFO_FILE (arg_info),
-             "SAC4C_EXTERN void SAC4C_FUNNAME( %d, %s, %s)"
-             " ( ",
-             FUNBUNDLE_ARITY (arg_node), safens, safename);
+    fprintf (INFO_FILE (arg_info), "extern void %s__%s%d(", safens, safename,
+             FUNBUNDLE_ARITY (arg_node));
 
     safens = MEMfree (safens);
     safename = MEMfree (safename);
@@ -241,21 +269,72 @@ CWHfunbundle (node *arg_node, info *arg_info)
  * @brief
  *
  *****************************************************************************/
+
+static str_buf *
+FunctionToComment (node *fundef, str_buf *buffer)
+{
+    ntype *rets, *args;
+    char *retstr, *argstr;
+
+    DBUG_ENTER ("FunctionToComment");
+
+    rets = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+    args = TUmakeProductTypeFromArgs (FUNDEF_ARGS (fundef));
+    retstr = TYtype2String (rets, FALSE, 0);
+    argstr = TYtype2String (args, FALSE, 0);
+
+    SBUFprintf (buffer, " * %s -> %s\n", argstr, retstr);
+
+    rets = TYfreeType (rets);
+    args = TYfreeType (args);
+    retstr = MEMfree (retstr);
+    argstr = MEMfree (argstr);
+
+    DBUG_RETURN (buffer);
+}
+
 node *
 CWHfundef (node *arg_node, info *arg_info)
 {
+    str_buf *buffer = NULL;
+    char *str;
+
     DBUG_ENTER ("CWHfundef");
 
     if (INFO_INBUNDLE (arg_info)) {
-        if (FUNDEF_RETS (arg_node) != NULL) {
-            FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            fprintf (INFO_FILE (arg_info), ", ");
-        }
+        if (INFO_COMMENT (arg_info)) {
+            buffer = SBUFcreate (255);
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+            if (TYisFun (FUNDEF_WRAPPERTYPE (arg_node))) {
+                buffer
+                  = TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
+                                             (void *(*)(node *, void *))FunctionToComment,
+                                             buffer);
+
+            } else {
+                buffer = FunctionToComment (FUNDEF_IMPL (arg_node), buffer);
+            }
+
+            str = SBUF2str (buffer);
+            fprintf (INFO_FILE (arg_info), "%s *\n", str);
+            str = MEMfree (str);
+            buffer = SBUFfree (buffer);
+
+            if (FUNDEF_NEXT (arg_node) != NULL) {
+                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+            }
         } else {
-            fprintf (INFO_FILE (arg_info), "SAC4C_VOID");
+            if (FUNDEF_RETS (arg_node) != NULL) {
+                FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+            }
+
+            if ((FUNDEF_RETS (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)) {
+                fprintf (INFO_FILE (arg_info), ", ");
+            }
+
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+            }
         }
     } else if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -278,7 +357,7 @@ CWHarg (node *arg_node, info *arg_info)
 
     INFO_COUNTER (arg_info)++;
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_DECL_ARG( %d)", INFO_COUNTER (arg_info));
+    fprintf (INFO_FILE (arg_info), "SACarg *arg%d", INFO_COUNTER (arg_info));
 
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (INFO_FILE (arg_info), ", ");
@@ -304,7 +383,7 @@ CWHret (node *arg_node, info *arg_info)
 
     INFO_COUNTER (arg_info)++;
 
-    fprintf (INFO_FILE (arg_info), "SAC4C_DECL_RET( %d)", INFO_COUNTER (arg_info));
+    fprintf (INFO_FILE (arg_info), "SACarg **ret%d", INFO_COUNTER (arg_info));
 
     if (RET_NEXT (arg_node) != NULL) {
         fprintf (INFO_FILE (arg_info), ", ");

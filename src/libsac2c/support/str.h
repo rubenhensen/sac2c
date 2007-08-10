@@ -13,7 +13,7 @@ extern char *STRcpy (const char *source);
 extern char *STRncpy (const char *source, int maxlen);
 extern char *STRcat (const char *first, const char *second);
 extern char *STRcatn (int n, ...);
-extern char *STRtok (char *str, char *tok);
+extern char *STRtok (const char *str, const char *tok);
 extern bool STReq (const char *first, const char *second);
 extern bool STRprefix (const char *prefix, const char *str);
 extern bool STReqn (const char *first, const char *second, int n);
@@ -28,6 +28,7 @@ extern char *STRbytes2Hex (int len, unsigned char *array);
 
 extern char *STRreplaceSpecialCharacters (const char *name);
 extern char *STRstring2SafeCEncoding (const char *string);
+extern char *STRcommentify (const char *string);
 
 /*********************************
  * macro definitions

@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "dbug.h"
 #include "math_utils.h"
+#include "str_buffer.h"
 
 /*******************************************************************************
  *
@@ -340,7 +341,7 @@ STRlen (const char *s)
  *******************************************************************************/
 
 static bool
-CharInString (char c, char *str)
+CharInString (char c, const char *str)
 {
     int i;
     bool res;
@@ -361,7 +362,7 @@ CharInString (char c, char *str)
 }
 
 char *
-STRtok (char *first, char *sep)
+STRtok (const char *first, const char *sep)
 {
     static char *keep_string = NULL;
     static char *current = NULL;
@@ -767,6 +768,32 @@ STRstring2SafeCEncoding (const char *string)
         }
 
         *tmp = '\0';
+    }
+
+    DBUG_RETURN (result);
+}
+
+char *
+STRcommentify (const char *string)
+{
+    char *result = NULL;
+    char *split = NULL;
+    str_buf *buffer = NULL;
+
+    DBUG_ENTER ("STRcommentify");
+
+    if (string != NULL) {
+        buffer = SBUFcreate (STRlen (string) + 42);
+        split = STRtok (string, "\n");
+
+        while (split != NULL) {
+            SBUFprintf (buffer, "%s\n * ", split);
+            split = MEMfree (split);
+            split = STRtok (NULL, "\n");
+        }
+
+        result = SBUF2str (buffer);
+        buffer = SBUFfree (buffer);
     }
 
     DBUG_RETURN (result);
