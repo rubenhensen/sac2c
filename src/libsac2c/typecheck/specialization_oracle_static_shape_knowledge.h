@@ -15,6 +15,7 @@ extern node *SOSSKgenerator (node *arg_node, info *arg_info);
 extern node *SOSSKid (node *arg_node, info *arg_info);
 extern node *SOSSKids (node *arg_node, info *arg_info);
 extern node *SOSSKret (node *arg_node, info *arg_info);
+extern node *SOSSKreturn (node *arg_node, info *arg_info);
 extern node *SOSSKprf (node *arg_node, info *arg_info);
 extern node *SOSSKfundef (node *arg_node, info *arg_info);
 extern node *SOSSKlet (node *arg_node, info *arg_info);

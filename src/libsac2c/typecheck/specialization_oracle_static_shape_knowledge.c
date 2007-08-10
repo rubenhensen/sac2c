@@ -30,6 +30,7 @@ struct INFO {
     int num_rets;
     int num_args;
     int pos_prf_arg;
+    int pos_ret;
     node *args;
     node *ids;
     constant *demand;
@@ -51,6 +52,7 @@ struct INFO {
 #define INFO_NUM_RETS(n) (n->num_rets)
 #define INFO_NUM_ARGS(n) (n->num_args)
 #define INFO_POS_PRF_ARG(n) (n->pos_prf_arg)
+#define INFO_POS_RET(n) (n->pos_ret)
 #define INFO_ARGS(n) (n->args)
 #define INFO_IDS(n) (n->ids)
 #define INFO_DEMAND(n) (n->demand)
@@ -81,6 +83,7 @@ MakeInfo ()
     INFO_NUM_RETS (result) = 0;
     INFO_NUM_ARGS (result) = 0;
     INFO_POS_PRF_ARG (result) = -1;
+    INFO_POS_RET (result) = -1;
     INFO_ARGS (result) = NULL;
     INFO_IDS (result) = NULL;
     INFO_DEMAND (result)
@@ -747,8 +750,8 @@ SOSSKcond (node *arg_node, info *arg_info)
     constant *old_demand = NULL;
 
     constant *new_demand = NULL;
-    int num_rets = SHgetExtent (COgetShape (old_demand), 0);
-    int dim = SHgetDim (COgetShape (old_demand));
+    int num_rets = SHgetExtent (COgetShape (INFO_DEMAND (arg_info)), 0);
+    int dim = SHgetDim (COgetShape (INFO_DEMAND (arg_info)));
     int new_shape[2] = {num_rets, 4};
     int elems[dim];
     int i = 0;
@@ -1191,6 +1194,19 @@ SOSSKret (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+SOSSKreturn (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SOSSKreturn");
+    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKret"));
+
+    INFO_POS_RET (arg_info) = 0;
+    RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+    INFO_POS_RET (arg_info) = -1;
+
+    DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKret"));
+    DBUG_RETURN (arg_node);
+}
 /** <!-- ****************************************************************** -->
  *
  * @fn node *SOSSKprf(node *arg_node, info *arg_info)

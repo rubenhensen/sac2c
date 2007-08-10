@@ -98,6 +98,7 @@
           <node name="Id" />
           <node name="Ids" />
           <node name="Ret" />
+          <node name="Return" />
           <node name="Prf" />
           <node name="Fundef" />
           <node name="Let" />
