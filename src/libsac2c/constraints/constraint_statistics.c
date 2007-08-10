@@ -1,6 +1,6 @@
 /*
  *
- * $Id:$
+ * $Id$
  *
  */
 
@@ -156,7 +156,7 @@ CSdoPrintConstraintStatistics (node *arg_node)
 
     DBUG_ENTER ("CSdoPrintConstraintStatistics");
 
-    TRAVpush (TR_ts);
+    TRAVpush (TR_cs);
 
     arg_info = MakeInfo ();
 

@@ -1148,6 +1148,12 @@
 	  <node name="With" />
 	</travuser>
       </traversal>
+      <traversal id="CS" name="Print Constraint Statistics" default="sons" include="constraint_statistics.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
         <travuser>
           <node name="Fundef" />

@@ -36,6 +36,7 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "type_statistics.h"
+#include "constraint_statistics.h"
 
 /** <!--********************************************************************-->
  *
@@ -167,6 +168,10 @@ STATdoPrintStatistics (node *syntax_tree)
     CTInote ("***********************************************************");
 
     syntax_tree = TSdoPrintTypeStatistics (syntax_tree);
+
+    CTInote ("***********************************************************");
+
+    syntax_tree = CSdoPrintConstraintStatistics (syntax_tree);
 
     CTInote ("***********************************************************");
 
