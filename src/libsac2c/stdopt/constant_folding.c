@@ -376,6 +376,7 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
             postass = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (curlhs), NULL),
                                                EXPRS_EXPR (currhs)),
                                     NULL);
+            AVIS_SSAASSIGN (IDS_AVIS (curlhs)) = postass;
             INFO_POSTASSIGN (arg_info)
               = TCappendAssign (INFO_POSTASSIGN (arg_info), postass);
             IDS_AVIS (curlhs) = NULL;
