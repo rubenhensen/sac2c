@@ -1932,6 +1932,7 @@
           <node name="Fold" />
         </travuser>
       </traversal>
+
        <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
         <travuser>
           <node name="Module" />
@@ -1941,8 +1942,12 @@
           <node name="Spmd" />
           <node name="With2" />
           <node name="Let" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Withid" />
         </travuser>
       </traversal>
+
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
           <node name="Fundef" />
@@ -1959,6 +1964,7 @@
           <node name="Spmd" />
         </travuser>
       </traversal>
+
       <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
         <travuser>
           <node name="Ap" />
