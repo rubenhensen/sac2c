@@ -156,7 +156,7 @@ demand2String (constant *demand)
  * @fn constant *computeDemand(node *ids, node *ap_arg, node *fundef_arg,
  *                             int num_rets)
  *
- *    @brief this function computes the demand of an fundef.
+ *    @brief this function computes the demand of a fundef.
  *
  *    @param ids ids of the let which was leading to this fundef
  *    @param fundef_arg args of the fundef
@@ -270,6 +270,7 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
 
         arg_dem_sel = COfreeConstant (arg_dem_sel);
         arg_dem_sel_constant = COfreeConstant (arg_dem_sel_constant);
+        i = i + 1;
     } /* while*/
 
     /* free constants and shapes*/
@@ -530,6 +531,66 @@ wrapperMax (node *fundef, node *wrapper)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn constant *getReturnDemand(constant *demand, int row)
+ *
+ *    @brief This function returns a demand matrix where every row except the
+ *           in "row" indicated one is zero
+ *           This is needed to set the initial demand of the return arguments
+ *           right
+ *
+ *    @param demand the actual demand matrix
+ *    @param row the needed row
+ *
+ *    @return demand matrix for the return argumen at position "row"
+ ******************************************************************************/
+
+static constant *
+getReturnDemand (constant *demand, int row)
+{
+    DBUG_ENTER ("getReturnDemand");
+
+    constant *idx = COmakeConstantFromDynamicArguments (T_int, 1, 1, row);
+    constant *res_row = COsel (idx, demand);
+    constant *res = NULL;
+
+    int *res_row_int = COgetDataVec (res_row);
+    int num_rets = SHgetExtent (COgetShape (demand), 0);
+    int dim = SHgetDim (COgetShape (demand));
+    int new_shape[2] = {num_rets, 4};
+    int elems[num_rets * 4];
+    int i = 0;
+    int j = 0;
+    int pos = 0;
+
+#ifndef DBUG_OFF
+    char *string = NULL;
+#endif
+
+    for (i = 0; i < num_rets; i++) {
+        pos = i * 4;
+        for (j = 0; j < 4; j++) {
+            if (i == row) {
+                elems[pos + j] = res_row_int[j];
+            } else {
+                elems[pos + j] = 0;
+            }
+        }
+    }
+
+    res = COmakeConstantFromArray (T_int, dim, new_shape, elems);
+
+    DBUG_PRINT ("SOSSK_DEMAND", ("<--getReturnDemand-->"));
+    DBUG_EXECUTE ("SOSSK_DEMAND", string = COconstant2String (res););
+    DBUG_PRINT ("SOSSK_DEMAND", ("demand res %i: %s", row, string));
+    DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+    DBUG_PRINT ("SOSSK_DEMAND", (">-------------------<"));
+    COfreeConstant (idx);
+    COfreeConstant (res_row);
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *SOSSKap(node *arg_node, info *arg_info)
  *
  *    @brief This function ap first inserts the arguments into the INFO
@@ -552,6 +613,7 @@ SOSSKap (node *arg_node, info *arg_info)
 
     AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
+    INFO_AP_FOUND (arg_info) = TRUE;
     INFO_AP_CALL (arg_info) = FALSE;
     INFO_ARGS (arg_info) = NULL;
 
@@ -640,17 +702,17 @@ SOSSKarg (node *arg_node, info *arg_info)
 
                 if (INFO_EXT_FUN (arg_info) != TRUE) {
                     ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-                } else { /* if fundef is ext. funct. the same demand is jused an maybe*/
+                } else { /* if fundef is ext. funct. the same demand is used an maybe*/
                          /* there exists dot-args, so use just the same argument*/
                     arg_node = TRAVdo (arg_node, arg_info);
                 }
-            } else if (EXPRS_NEXT (current_ap_args) != NULL) {
-                INFO_NUM_ARGS_EQ_NUM_ARGS (arg_info) = FALSE;
             }
-        } /* (current_ap_args != NULL)*/
-        else if (INFO_EXT_FUN (arg_info) != TRUE) {
-            INFO_NUM_ARGS_EQ_NUM_ARGS (arg_info) = FALSE;
-        }
+            /*
+            else if(EXPRS_NEXT(current_ap_args) != NULL) {
+              INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) = FALSE;
+            }
+            */
+        }  /* (current_ap_args != NULL)*/
     }      /* (INFO_COPY_DEMAND(arg_info) == TRUE)*/
     else { /* Count number of arguments*/
         INFO_NUM_ARGS (arg_info) = INFO_NUM_ARGS (arg_info) + 1;
@@ -688,7 +750,7 @@ SOSSKassign (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[dim];
+    int elems[num_rets * 4];
     int i = 0;
     int j = 0;
     int pos = 0;
@@ -753,7 +815,7 @@ SOSSKcond (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (INFO_DEMAND (arg_info)), 0);
     int dim = SHgetDim (COgetShape (INFO_DEMAND (arg_info)));
     int new_shape[2] = {num_rets, 4};
-    int elems[dim];
+    int elems[num_rets * 4];
     int i = 0;
     int offset = 0;
 
@@ -852,6 +914,22 @@ SOSSKexprs (node *arg_node, info *arg_info)
             INFO_POS_PRF_ARG (arg_info) = INFO_POS_PRF_ARG (arg_info) + 1;
             EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
         }
+    }                                        // if(INFO_PRF_NAME(arg_info) > 0)
+    else if (INFO_POS_RET (arg_info) >= 0) { /* Call from return-statement*/
+        if (old_demand != NULL) {
+            INFO_DEMAND (arg_info)
+              = getReturnDemand (old_demand, INFO_POS_RET (arg_info));
+        }
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+        if (INFO_DEMAND (arg_info) != NULL) {
+            INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
+        }
+        INFO_DEMAND (arg_info) = old_demand;
+        old_demand = NULL;
+        if (EXPRS_NEXT (arg_node) != NULL) {
+            INFO_POS_RET (arg_info) = INFO_POS_RET (arg_info) + 1;
+            EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
+        }
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -884,7 +962,7 @@ SOSSKfold (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[dim];
+    int elems[num_rets * 4];
     int i = 0;
     int offset = 0;
 
@@ -942,7 +1020,7 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[dim];
+    int elems[num_rets * 4];
     int i = 0;
     int offset = 0;
 
@@ -988,7 +1066,7 @@ SOSSKmodarray (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[dim];
+    int elems[num_rets * 4];
     int i = 0;
     int offset = 0;
 
@@ -1118,6 +1196,9 @@ SOSSKid (node *arg_node, info *arg_info)
             DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (tmp_constant););
             DBUG_PRINT ("SOSSK_DEMAND", ("COmax: %s", string));
             DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+            if (COcompareConstants (tmp_constant, id_demand) != TRUE) {
+                INFO_DEMAND_HAS_CHANGED (arg_info) = TRUE;
+            }
             id_demand = COfreeConstant (id_demand);
             AVIS_DEMAND (ID_AVIS (arg_node)) = tmp_constant;
             tmp_constant = NULL;
@@ -1126,6 +1207,7 @@ SOSSKid (node *arg_node, info *arg_info)
             DBUG_PRINT ("SOSSK", ("Add %s to %s", string, ID_NAME (arg_node)));
             DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
             AVIS_DEMAND (ID_AVIS (arg_node)) = COcopyConstant (INFO_DEMAND (arg_info));
+            INFO_DEMAND_HAS_CHANGED (arg_info) = TRUE;
         }
     } /* if(INFO_DEMAND(arg_info) != NULL)*/
 
@@ -1297,8 +1379,10 @@ SOSSKfundef (node *arg_node, info *arg_info)
 
     /* If the function has no arguments, there is nothing to do*/
     if (INFO_NUM_ARGS (arg_info) != 0) {
-        /* If this function is extern, the demand is known*/
-        if (FUNDEF_ISEXTERN (arg_node) == TRUE) {
+        /* If this function has no body, the demand is known (except for wrapper
+         * funs)
+         */
+        if (!FUNDEF_ISWRAPPERFUN (arg_node) && (FUNDEF_BODY (arg_node) == NULL)) {
             FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
             INFO_EXT_FUN (arg_info) = TRUE;
         }
@@ -1311,12 +1395,11 @@ SOSSKfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("SOSSK", (" IF fixpoint not found AND not handled yet"));
 
             if (FUNDEF_ISWRAPPERFUN (arg_node) != TRUE) {
-                int elems[INFO_NUM_RETS (arg_info) * 4];
-                int shape[2] = {INFO_NUM_RETS (arg_info), 4};
 #ifndef DBUG_OFF
                 char *string = NULL;
 #endif
-
+                int elems[INFO_NUM_RETS (arg_info) * 4];
+                int shape[2] = {INFO_NUM_RETS (arg_info), 4};
                 for (i = 0; i < INFO_NUM_RETS (arg_info); i++) {
                     pos = i * 4;
                     for (j = 0; j < 4; j++) {
@@ -1325,7 +1408,7 @@ SOSSKfundef (node *arg_node, info *arg_info)
                 }
                 INFO_DEMAND (arg_info) = COmakeConstantFromArray (T_int, 2, shape, elems);
 
-                DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+                DBUG_PRINT ("SOSSK_DEMAND", ("---Fresh Demand---"));
                 DBUG_EXECUTE ("SOSSK_DEMAND",
                               string = demand2String (INFO_DEMAND (arg_info)););
                 DBUG_PRINT ("DBUG_PRINT", ("INFO_DEMAND: %s", string));
@@ -1335,7 +1418,21 @@ SOSSKfundef (node *arg_node, info *arg_info)
                 if (INFO_DEMAND (arg_info) != NULL) {
                     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
                 }
+                if (INFO_DEMAND_HAS_CHANGED (arg_info) == TRUE) {
+                    FUNDEF_LASTCHANGE (arg_node) = INFO_ITERATION_ROUND (arg_info);
+                    INFO_DEMAND_HAS_CHANGED (old_info) = TRUE;
+                } else if (((FUNDEF_LASTCHANGE (arg_node)
+                             - INFO_ITERATION_ROUND (arg_info))
+                            >= 2)
+                           || (INFO_AP_FOUND (arg_info) == FALSE)) {
+                    FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
+                    DBUG_PRINT ("SOSSK", ("FIXPOINT FOUND"));
+                }
             } else { /* Fundef is Wrapper*/
+                /* Set flag, if fixpoint is not found, this will be reseted in the
+                 * fold-fun*/
+                FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
+
                 FUNDEF_WRAPPERTYPE (arg_node)
                   = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node), SOSSKfundef,
                                             arg_info);
@@ -1358,36 +1455,15 @@ SOSSKfundef (node *arg_node, info *arg_info)
 
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            } else if (INFO_IDS (arg_info) != NULL) {
-                INFO_NUM_ARGS_EQ_NUM_ARGS (arg_info) = TRUE;
+            }
+            /*
+            else if((INFO_IDS(arg_info) != NULL) &&(INFO_EXT_FUN(arg_info))){
+              INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) = FALSE;
             }
 
-            DBUG_ASSERT (INFO_NUM_ARGS_EQ_NUM_ARGS (arg_info) == TRUE,
-                         "#fundef args != #ap args in SOSSKfundef!");
-        }
-
-        /* If the demand has changed during this iteration, maybe the fixpoint
-         * has not been found yet. Otherwise if the demand has not changed for
-         * two iteration-rounds, the fixpoint has been found.
-         * If this is a wrapperfun, this is done in the folding-fun because of
-         * the fact that the folding fun changes the demand but the info-struct
-         * is not availible there.
-         */
-        if (FUNDEF_ISWRAPPERFUN (arg_node) != TRUE) {
-
-            /* Set this flag here. If this is not true, it will be reseted in the
-             * fold function*/
-            FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
-
-            if (INFO_DEMAND_HAS_CHANGED (arg_info) == TRUE) {
-                FUNDEF_LASTCHANGE (arg_node) = INFO_ITERATION_ROUND (arg_info);
-                INFO_DEMAND_HAS_CHANGED (old_info) = TRUE;
-            } else if (((FUNDEF_LASTCHANGE (arg_node) - INFO_ITERATION_ROUND (arg_info))
-                        >= 2)
-                       || (INFO_AP_FOUND (arg_info) == FALSE)) {
-                FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
-                DBUG_PRINT ("SOSSK", ("FIXPOINT FOUND"));
-            }
+           DBUG_ASSERT(INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) == FALSE,
+                           "#fundef args != #ap args in SOSSKfundef!");
+            */
         }
     }
 
@@ -1395,13 +1471,17 @@ SOSSKfundef (node *arg_node, info *arg_info)
     INFO_IDS (arg_info) = NULL;
     INFO_ARGS (arg_info) = NULL;
 
+    if (INFO_DEMAND_HAS_CHANGED (arg_info)) {
+        INFO_DEMAND_HAS_CHANGED (old_info) = TRUE;
+    }
+
     arg_info = FreeInfo (arg_info);
     arg_info = old_info;
     old_info = NULL;
 
     /* If this is NOT an ap-link, follow the fundef-chain*/
     if (INFO_AP_CALL (arg_info) != TRUE) {
-        DBUG_PRINT ("SOSSK", ("Follow FUNDEF-chain"));
+        DBUG_PRINT ("SOSSK", ("Follow FUNDEF-chain (%s -> ?)", FUNDEF_NAME (arg_node)));
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
@@ -1655,7 +1735,8 @@ SOSSKdoSpecializationOracleSSK (node *syntax_tree)
     do {
         INFO_DEMAND_HAS_CHANGED (info) = FALSE;
         INFO_ITERATION_ROUND (info) = INFO_ITERATION_ROUND (info) + 1;
-
+        DBUG_PRINT ("SOSSK",
+                    ("##### Iteration Round: %i #####", INFO_ITERATION_ROUND (info)));
         syntax_tree = TRAVdo (syntax_tree, info);
     } while (INFO_DEMAND_HAS_CHANGED (info) == TRUE);
 
