@@ -9,7 +9,7 @@
 
 #include "types.h"
 
-extern node *CSdoPrintTypeStatistics (node *arg_node);
+extern node *CSdoPrintConstraintStatistics (node *arg_node);
 extern node *CSfundef (node *arg_node, info *arg_info);
 extern node *CSprf (node *arg_node, info *arg_info);
 
