@@ -431,7 +431,7 @@ case "$target_os" in
     ;;
   *darwin*)      
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
-    LD_DYNAMIC=["ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"]
+    LD_DYNAMIC=["gcc -undefined suppress -flat_namespace -bundle"]
     LD_PATH=["-install_name"]
     AC_MSG_RESULT([OS X settings])
     ;;
