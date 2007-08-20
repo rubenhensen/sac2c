@@ -19,7 +19,7 @@
  * Prefix: CCW
  *
  *****************************************************************************/
-#include "create_wrapper_header.h"
+#include "create_c_wrapper.h"
 
 /*
  * Other includes go here
@@ -120,7 +120,7 @@ CCWdoCreateCWrapper (node *syntax_tree)
 
     info = MakeInfo ();
 
-    TRAVpush (TR_cwh);
+    TRAVpush (TR_ccw);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
