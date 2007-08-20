@@ -176,7 +176,8 @@ libsac2c_memory      := rcopt filterrc alloc referencecounting \
                         interfaceanalysis loopreuseopt datareuse explicitcopy \
                         reusebranching ReuseWithArrays inplacecomp audscldist \
                         rcminimize NumLookUpTable wrci reusewithoffset \
-                        movesharedmeminstr scoperce show_alias
+                        movesharedmeminstr scoperce show_alias \
+                        rm_alias_results_cc
 
 libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign \

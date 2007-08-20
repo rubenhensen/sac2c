@@ -1631,6 +1631,18 @@
           <node name="Block" />
         </travsons>
       </traversal>
+      <traversal id="EMRACC" name="Remove Alias Results from Conformity Checks" default="sons" include="rm_alias_results_cc.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Id" />
+        </travuser>
+      </traversal>
       <traversal id="SRCE" name="Scope-based reuse-candidate elimination" default="sons" include="scoperce.h" >
         <travuser>
           <node name="Fundef" />
@@ -5164,6 +5176,7 @@
                   <phase name="pc_ussa" />
                   <phase name="wlt_ussa" />
 		  <phase name="pc_rera" />
+                  <phase name="mem_racc" />
                 </phases>
               </target>
 	      <target mandatory="no">

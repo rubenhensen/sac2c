@@ -1400,6 +1400,54 @@ EMALprf (node *arg_node, info *arg_info)
         INFO_MUSTFILL (arg_info) = FALSE;
         break;
 
+    case F_guard:
+        /*
+         * v1,...,vn = guard(p,a1,...,an)
+         * - consumes p
+         * - each v_i is an alias of a_i
+         */
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+
+        INFO_MUSTFILL (arg_info) = FALSE;
+        break;
+
+    case F_afterguard:
+        /*
+         * v = guard(a,p1,...,pn)
+         * - consumes p1...pn
+         * - v is an alias of a_i
+         */
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+
+        INFO_MUSTFILL (arg_info) = FALSE;
+        break;
+
+    case F_type_constraint:
+        /*
+         * p = type_constraint( t, a)
+         * - t is a type argument which has no runtime representation
+         * - a is consumed
+         * - p is a boolean scalarresult
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_same_shape_AxA:
+    case F_shape_matches_dim_VxA:
+    case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
+    case F_prod_matches_prod_shape_VxA:
+        /*
+         * p = constraint(a1,..,an)
+         * - a_i are consumed
+         * - p is a boolean result
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
     case F_alloc:
     case F_suballoc:
     case F_fill:
