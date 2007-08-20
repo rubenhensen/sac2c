@@ -2295,7 +2295,7 @@
           <node name="Module" />
         </travuser>
       </traversal>
-      <traversal id="CWH" name="Create wrapper header" default="sons"
+      <traversal id="CCW" name="Create C wrapper" default="sons"
                  include="create_wrapper_header.h">
         <travuser>
           <node name="FunBundle" />

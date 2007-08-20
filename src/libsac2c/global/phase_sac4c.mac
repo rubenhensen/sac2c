@@ -16,7 +16,7 @@ ENDPHASE (ami)
 
 PHASE (gwv, "Generating wrapper code", ALWAYS)
 
-SUBPHASE (chd, "Creating header file", CWHdoCreateWrapperHeader, ALWAYS, gwv)
+SUBPHASE (chd, "Creating source files", CWHdoCreateCWrapper, ALWAYS, gwv)
 
 ENDPHASE (gwv)
 

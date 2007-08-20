@@ -1,16 +1,16 @@
 /* $Id$ */
 
-#ifndef _SAC_CREATE_WRAPPER_HEADER_H_
-#define _SAC_CREATE_WRAPPER_HEADER_H_
+#ifndef _SAC_CREATE_C_WRAPPER_H_
+#define _SAC_CREATE_C_WRAPPER_H_
 
 #include "types.h"
 
-extern node *CWHdoCreateWrapperHeader (node *syntax_tree);
+extern node *CCWdoCreateCWrapper (node *syntax_tree);
 
-extern node *CWHfunbundle (node *arg_node, info *arg_info);
-extern node *CWHfundef (node *arg_node, info *arg_info);
-extern node *CWHarg (node *arg_node, info *arg_info);
-extern node *CWHret (node *arg_node, info *arg_info);
-extern node *CWHmodule (node *arg_node, info *arg_info);
+extern node *CCWfunbundle (node *arg_node, info *arg_info);
+extern node *CCWfundef (node *arg_node, info *arg_info);
+extern node *CCWarg (node *arg_node, info *arg_info);
+extern node *CCWret (node *arg_node, info *arg_info);
+extern node *CCWmodule (node *arg_node, info *arg_info);
 
-#endif /* _SAC_CREATE_WRAPPER_HEADER_H_ */
+#endif /* _SAC_CREATE_C_WRAPPER_H_ */
