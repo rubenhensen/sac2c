@@ -1413,7 +1413,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_afterguard:
         /*
-         * v = guard(a,p1,...,pn)
+         * v = afterguard(a,p1,...,pn)
          * - consumes p1...pn
          * - v is an alias of a_i
          */

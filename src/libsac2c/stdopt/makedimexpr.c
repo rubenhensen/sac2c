@@ -163,18 +163,6 @@ node *SAAdim_of_arg2( node *arg_node, info *arg_info)
 #endif
 
 static node *
-SAAprf_same_shape_AxA_dim (node *arg_node, info *arg_info)
-{
-    node *dim_expr;
-
-    DBUG_ENTER ("SAAprf_same_shape_AxA_dim");
-
-    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
-
-    DBUG_RETURN (dim_expr);
-}
-
-static node *
 SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
@@ -195,6 +183,131 @@ SAAdim_is_arg1 (node *arg_node, info *arg_info)
     DBUG_ENTER ("SAAdim_is_arg1");
 
     dim_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_guard (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+    node *lhsavis;
+    node *ids;
+    node *exprs;
+
+    DBUG_ENTER ("SAAdim_guard");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+    exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+
+    while (IDS_AVIS (ids) != lhsavis) {
+        ids = IDS_NEXT (ids);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (EXPRS_EXPR (exprs))));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_type_constraint (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAdim_type_constraint");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        if (TUdimKnown (TYPE_TYPE (PRF_ARG1 (arg_node)))) {
+            dim_expr = TBmakeNum (TYgetDim (TYPE_TYPE (PRF_ARG1 (arg_node))));
+        } else {
+            dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
+        }
+    } else {
+        /* We are dealing with the boolean result */
+        dim_expr = TBmakeNum (0);
+    }
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_same_shape_AxA (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAdim_same_shape_AxA");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if ((lhsavis == IDS_AVIS (ids)) || (lhsavis == IDS_AVIS (IDS_NEXT (ids)))) {
+        /* We are dealing with the first two return values */
+        dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
+    } else {
+        /* We are dealing with the boolean result */
+        dim_expr = TBmakeNum (0);
+    }
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_shape_matches_dim_VxA (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAdim_shape_matches_dim_VxA");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        dim_expr = TBmakeNum (1);
+    } else {
+        /* We are dealing with the boolean result */
+        dim_expr = TBmakeNum (0);
+    }
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
+SAAdim_cc_inherit (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAdim_cc_inherit");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
+    } else {
+        /* We are dealing with the boolean result */
+        dim_expr = TBmakeNum (0);
+    }
 
     DBUG_RETURN (dim_expr);
 }

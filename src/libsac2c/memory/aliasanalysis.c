@@ -723,6 +723,22 @@ EMAAprf (node *arg_node, info *arg_info)
         MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
         break;
 
+    case F_afterguard:
+        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
+        break;
+
+    case F_guard:
+        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        {
+            node *exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+            while (exprs != NULL) {
+                MarkIdAliasing (EXPRS_EXPR (exprs), INFO_MASK (arg_info));
+                exprs = EXPRS_NEXT (exprs);
+            }
+        }
+        break;
+
     default:
         break;
     }

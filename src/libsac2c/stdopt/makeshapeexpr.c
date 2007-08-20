@@ -348,6 +348,132 @@ SAAshp_for_drop (node *arg_node, info *arg_info)
     DBUG_RETURN (shp_expr);
 }
 
+static node *
+SAAshp_guard (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+    node *lhsavis;
+    node *ids;
+    node *exprs;
+
+    DBUG_ENTER ("SAAshp_guard");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+    exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+
+    while (IDS_AVIS (ids) != lhsavis) {
+        ids = IDS_NEXT (ids);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (EXPRS_EXPR (exprs))));
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
+SAAshp_type_constraint (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAshp_type_constraint");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        if (TUshapeKnown (TYPE_TYPE (PRF_ARG1 (arg_node)))) {
+            shp_expr = SHshape2Array (TYgetShape (TYPE_TYPE (PRF_ARG1 (arg_node))));
+        } else {
+            shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
+        }
+    } else {
+        /* We are dealing with the boolean result */
+        shp_expr = TCmakeIntVector (NULL);
+    }
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
+SAAshp_same_shape_AxA (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAshp_same_shape_AxA");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if ((lhsavis == IDS_AVIS (ids)) || (lhsavis == IDS_AVIS (IDS_NEXT (ids)))) {
+        /* We are dealing with the first two return values */
+        shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))));
+    } else {
+        /* We are dealing with the boolean result */
+        shp_expr = TCmakeIntVector (NULL);
+    }
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
+SAAshp_shape_matches_dim_VxA (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAshp_shape_matches_dim_VxA");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        shp_expr
+          = TCmakeIntVector (DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node)))));
+    } else {
+        /* We are dealing with the boolean result */
+        shp_expr = TCmakeIntVector (NULL);
+    }
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
+SAAshp_cc_inherit (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+    node *lhsavis;
+    node *ids;
+
+    DBUG_ENTER ("SAAshp_cc_inherit");
+
+    lhsavis = INFO_AVIS (arg_info);
+
+    ids = INFO_ALLIDS (arg_info);
+
+    if (lhsavis == IDS_AVIS (ids)) {
+        /* We are dealing with the first return value */
+        shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))));
+    } else {
+        /* We are dealing with the boolean result */
+        shp_expr = TCmakeIntVector (NULL);
+    }
+
+    DBUG_RETURN (shp_expr);
+}
+
 static const travfun_p makeshp_funtab[] = {
 #define PRFmakeshp_fun(makeshp_fun) makeshp_fun
 #include "prf_info.mac"
