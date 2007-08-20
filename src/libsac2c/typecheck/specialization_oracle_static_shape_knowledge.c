@@ -245,15 +245,14 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
 
         current_ids_demand = AVIS_DEMAND (IDS_AVIS (current_ids));
 
-        /* construct shape for the selection array (only once)*/
-        if (new_demand == NULL) {
-            shape_extent = SHcreateShape (1, 1);
-            oversel_shape
-              = SHappendShapes (COgetShape (current_ids_demand), shape_extent);
-            oversel_shape_constant = COmakeConstantFromShape (oversel_shape);
-        }
-
         if (current_ids_demand != NULL) {
+            /* construct shape for the selection array (only once)*/
+            if (oversel_shape_constant == NULL) {
+                shape_extent = SHcreateShape (1, 1);
+                oversel_shape
+                  = SHappendShapes (COgetShape (current_ids_demand), shape_extent);
+                oversel_shape_constant = COmakeConstantFromShape (oversel_shape);
+            }
             /* reshape ids demand to the right selection-vector-shape*/
             reshaped_ids_demand = COreshape (oversel_shape_constant, current_ids_demand);
 
@@ -286,10 +285,18 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
     } /* while*/
 
     /* free constants and shapes*/
-    reshaped_ids_demand = COfreeConstant (reshaped_ids_demand);
-    oversel_shape_constant = COfreeConstant (oversel_shape_constant);
-    oversel_shape = SHfreeShape (oversel_shape);
-    shape_extent = SHfreeShape (shape_extent);
+    if (reshaped_ids_demand != NULL) {
+        reshaped_ids_demand = COfreeConstant (reshaped_ids_demand);
+    }
+    if (oversel_shape_constant != NULL) {
+        oversel_shape_constant = COfreeConstant (oversel_shape_constant);
+    }
+    if (oversel_shape != NULL) {
+        oversel_shape = SHfreeShape (oversel_shape);
+    }
+    if (shape_extent != NULL) {
+        shape_extent = SHfreeShape (shape_extent);
+    }
     if (AVIS_DEMAND (ARG_AVIS (fundef_arg)) == NULL) {
         current_fundef_arg_demand = COfreeConstant (current_fundef_arg_demand);
     }
@@ -650,8 +657,6 @@ node *
 SOSSKarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SOSSKarg");
-    DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKarg %s", ARG_NAME (arg_node)));
-
     constant *new_demand = NULL;
     node *current_ap_args = INFO_ARGS (arg_info);
     constant *current_ap_arg_demand = NULL;
@@ -662,6 +667,8 @@ SOSSKarg (node *arg_node, info *arg_info)
 
     /* This Part figures out the new demand*/
     if (INFO_COPY_DEMAND (arg_info) == TRUE) {
+        DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKarg %s (COPY)", ARG_NAME (arg_node)));
+
         current_ap_arg_demand = AVIS_DEMAND (ID_AVIS (EXPRS_EXPR (current_ap_args)));
         new_demand = computeDemand (INFO_IDS (arg_info), arg_node,
                                     INFO_NUM_RETS (arg_info), INFO_EXT_FUN (arg_info));
@@ -706,7 +713,7 @@ SOSSKarg (node *arg_node, info *arg_info)
         }
 
         /* There are ap_args left*/
-        if (current_ap_args != NULL) {
+        if (EXPRS_NEXT (current_ap_args) != NULL) {
 
             if ((ARG_NEXT (arg_node) != NULL) || (INFO_EXT_FUN (arg_info) == TRUE)) {
 
@@ -722,6 +729,9 @@ SOSSKarg (node *arg_node, info *arg_info)
         }  /* (current_ap_args != NULL)*/
     }      /* (INFO_COPY_DEMAND(arg_info) == TRUE)*/
     else { /* Count number of arguments*/
+        DBUG_PRINT ("SOSSK_PATH",
+                    (">>> ENTER SOSSKarg %s (COUNTING)", ARG_NAME (arg_node)));
+
         INFO_NUM_ARGS (arg_info) = INFO_NUM_ARGS (arg_info) + 1;
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -1052,7 +1062,9 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
     INFO_DEMAND (arg_info) = old_demand;
 
-    GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
@@ -1252,12 +1264,36 @@ SOSSKids (node *arg_node, info *arg_info)
 
     constant *old_demand = INFO_DEMAND (arg_info);
     constant *ids_demand = AVIS_DEMAND (IDS_AVIS (arg_node));
-    if (ids_demand != NULL) {
-        INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, ids_demand);
-    } /* IDS_DEMAND != NULL*/
-    else {
-        INFO_DEMAND (arg_info) = NULL;
+
+    /* If the demand is NULL, the variable is not used below. So demand is
+     * (0, 0, 0, 0)*/
+    if (ids_demand == NULL) {
+        int elems[INFO_NUM_RETS (arg_info) * 4];
+        int shape[2] = {INFO_NUM_RETS (arg_info), 4};
+        int i = 0;
+        int j = 0;
+        int pos = 0;
+#ifndef DBUG_OFF
+        char *string = NULL;
+#endif
+
+        for (i = 0; i < INFO_NUM_RETS (arg_info); i++) {
+            pos = i * 4;
+            for (j = 0; j < 4; j++) {
+                elems[pos + j] = j;
+            }
+        }
+        AVIS_DEMAND (IDS_AVIS (arg_node))
+          = COmakeConstantFromArray (T_int, 2, shape, elems);
+        ids_demand = AVIS_DEMAND (IDS_AVIS (arg_node));
+        DBUG_PRINT ("SOSSK_DEMAND", ("------------------"));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (ids_demand););
+        DBUG_PRINT ("SOSSK_DEMAND",
+                    ("Add demand %s to ids %s", string, IDS_NAME (arg_node)));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
     }
+
+    INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, ids_demand);
     old_demand = COfreeConstant (old_demand);
 
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKids"));
@@ -1503,8 +1539,9 @@ SOSSKfundef (node *arg_node, info *arg_info)
 
     /* If this is NOT an ap-link, follow the fundef-chain*/
     if (INFO_AP_CALL (arg_info) != TRUE) {
-        DBUG_PRINT ("SOSSK", ("Follow FUNDEF-chain (%s -> ?)", FUNDEF_NAME (arg_node)));
         if (FUNDEF_NEXT (arg_node) != NULL) {
+            DBUG_PRINT ("SOSSK",
+                        ("Follow FUNDEF-chain (%s -> ?)", FUNDEF_NAME (arg_node)));
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
