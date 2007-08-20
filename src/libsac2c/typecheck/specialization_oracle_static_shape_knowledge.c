@@ -126,6 +126,18 @@ static const shape_oracle_funptr prf_shape_oracle_funtab[] = {
  * HELPER functions
  */
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn char *demand2String(constant *demand)
+ *
+ *    @brief This function converts the given demand into a string. The
+ *           the difference to COconstant2String is that this function
+ *           returns " " if the demand is NULL.
+ *
+ *    @param demand the demand to be converted
+ *
+ *    @return the string which represents the demand
+ ******************************************************************************/
 static char *
 demand2String (constant *demand)
 {
@@ -707,11 +719,6 @@ SOSSKarg (node *arg_node, info *arg_info)
                     arg_node = TRAVdo (arg_node, arg_info);
                 }
             }
-            /*
-            else if(EXPRS_NEXT(current_ap_args) != NULL) {
-              INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) = FALSE;
-            }
-            */
         }  /* (current_ap_args != NULL)*/
     }      /* (INFO_COPY_DEMAND(arg_info) == TRUE)*/
     else { /* Count number of arguments*/
@@ -824,7 +831,7 @@ SOSSKcond (node *arg_node, info *arg_info)
 
     old_demand = INFO_DEMAND (arg_info);
 
-    /* construct demand [0,2,3,3]*/
+    /* construct demand [0,0,0,3], which is an approximation*/
     for (i = 0; i < num_rets; i++) {
         offset = 4 * i;
         elems[offset] = 0;
@@ -1055,6 +1062,19 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SOSSKmodarray(node *arg_node, info *arg_info)
+ *
+ *    @brief constructs the demand for the shape-argument and traverses
+ *           into the different arguments of modarray
+ *
+ *    @param arg_node N_modarray node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_modarray node
+ ******************************************************************************/
+
 node *
 SOSSKmodarray (node *arg_node, info *arg_info)
 {
@@ -1119,10 +1139,6 @@ SOSSKgenerator (node *arg_node, info *arg_info)
 
     constant *old_demand = NULL;
 
-    /*
-    DBUG_ASSERT(INFO_DEMAND(arg_info) != NULL,
-                "Generator reached without demand!");
-    */
     if (INFO_DEMAND (arg_info) != NULL) {
         old_demand = COcopyConstant (INFO_DEMAND (arg_info));
     }
@@ -1275,6 +1291,20 @@ SOSSKret (node *arg_node, info *arg_info)
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKret"));
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SOSSKreturn(node *arg_node, info *arg_info)
+ *
+ *    @brief This function sets a flag which indicates that the further
+ *           traversal was indicated by a N_return node.
+ *           It then traverses further and resets the flag afterwards.
+ *
+ *    @param arg_node N_return node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_return node
+ ******************************************************************************/
 
 node *
 SOSSKreturn (node *arg_node, info *arg_info)
@@ -1456,14 +1486,6 @@ SOSSKfundef (node *arg_node, info *arg_info)
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
             }
-            /*
-            else if((INFO_IDS(arg_info) != NULL) &&(INFO_EXT_FUN(arg_info))){
-              INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) = FALSE;
-            }
-
-           DBUG_ASSERT(INFO_NUM_ARGS_EQ_NUM_ARGS(arg_info) == FALSE,
-                           "#fundef args != #ap args in SOSSKfundef!");
-            */
         }
     }
 
