@@ -12,6 +12,7 @@
 #include "shape.h"
 #include "prf_pvs_info.h"
 #include "new_types.h"
+#include "map_avis_trav.h"
 
 /**
  *
@@ -128,25 +129,40 @@ static const shape_oracle_funptr prf_shape_oracle_funtab[] = {
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *SOSSKresetFundefFlags(node *fundef_node)
+ * @fn node *SOSSKresetFundefDemand(node *fundef_node)
  *
  *    @brief is a function which can be called from the outside. It resets the
- *           flags and attributes of the fiven function.
+ *           flags and attributes of the given function. Furthermore, all
+ *           annotations of demands at avis nodes are freed.
  *
  *    @param N_fundef fundef_node
  *
  *    @return N_fundef node
  ******************************************************************************/
-node *
-SOSSKresetFundefFlags (node *fundef_node)
+static node *
+FreeAvisDemand (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SOSSKresetFundefFlags");
+    DBUG_ENTER ("FreeAvisDemand");
+
+    if (AVIS_DEMAND (arg_node) != NULL) {
+        AVIS_DEMAND (arg_node) = COfreeConstant (AVIS_DEMAND (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SOSSKresetFundefDemand (node *fundef_node)
+{
+    DBUG_ENTER ("SOSSKresetFundefDemand");
     DBUG_ASSERT ((NODE_TYPE (fundef_node) == N_fundef),
                  "SOSSKresetFundefFlags is intended to run only on N_fundef nodes");
 
     FUNDEF_FIXPOINTFOUND (fundef_node) = FALSE;
     FUNDEF_LASTCHANGE (fundef_node) = 0;
     FUNDEF_LASTITERATIONROUND (fundef_node) = 0;
+
+    fundef_node = MATdoMapAvisTravOneFundef (fundef_node, NULL, FreeAvisDemand);
 
     DBUG_RETURN (fundef_node);
 }

@@ -13,6 +13,7 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "globals.h"
+#include "specialization_oracle_static_shape_knowledge.h"
 
 /*
  * INFO structure
@@ -96,6 +97,7 @@ CreateObjectWrapper (node *fundef)
               FUNDEF_WASIMPORTED (result) = FALSE;
     FUNDEF_WASUSED (result) = FALSE;
     FUNDEF_ISLOCAL (result) = TRUE;
+    result = SOSSKresetFundefDemand (result);
 
     /*
      * add body again
