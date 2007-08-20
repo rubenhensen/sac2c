@@ -274,8 +274,12 @@ HandleConstraints (node *avis, info *arg_info)
         AVIS_CONSTRTYPE (avis) = NULL;
     }
 
-    while (AVIS_CONSTRSET (avis) != NULL) {
+    if (AVIS_CONSTRSET (avis) != NULL) {
         constraint = AVIS_CONSTRSET (avis);
+        AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
+
+        arg_info = HandleConstraints (avis, arg_info);
+
         CONSTRAINT_EXPR (constraint) = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
         if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
             arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
@@ -286,7 +290,6 @@ HandleConstraints (node *avis, info *arg_info)
         }
         CONSTRAINT_PREDAVIS (constraint) = NULL;
         CONSTRAINT_EXPR (constraint) = NULL;
-        AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
         constraint = FREEdoFreeNode (constraint);
     }
     DBUG_RETURN (arg_info);
