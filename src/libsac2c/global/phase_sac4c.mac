@@ -14,11 +14,11 @@ SUBPHASE (cbl, "Constructing function bundles", CBLdoConstructBundles, ALWAYS, a
 
 ENDPHASE (ami)
 
-PHASE (gwv, "Generating wrapper code", ALWAYS)
+PHASE (gwc, "Generating wrapper code", ALWAYS)
 
-SUBPHASE (chd, "Creating source files", CWHdoCreateCWrapper, ALWAYS, gwv)
+SUBPHASE (ccw, "Creating source files", CCWdoCreateCWrapper, ALWAYS, gwc)
 
-ENDPHASE (gwv)
+ENDPHASE (gwc)
 
 PHASE (cwm, "Compiling wrapper module", ALWAYS)
 

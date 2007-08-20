@@ -2296,7 +2296,7 @@
         </travuser>
       </traversal>
       <traversal id="CCW" name="Create C wrapper" default="sons"
-                 include="create_wrapper_header.h">
+                 include="create_c_wrapper.h">
         <travuser>
           <node name="FunBundle" />
           <node name="Fundef" />
