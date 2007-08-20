@@ -154,6 +154,13 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="MAT" name="Map Traversal on Avis nodes" default="sons" include="map_avis_trav.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Avis" />
+          <node name="Block" />
+        </travuser>
+      </traversal>
       <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
         <travuser>
           <node name="Fundef" />
