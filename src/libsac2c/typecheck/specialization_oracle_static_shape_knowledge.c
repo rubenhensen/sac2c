@@ -128,6 +128,31 @@ static const shape_oracle_funptr prf_shape_oracle_funtab[] = {
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *SOSSKresetFundefFlags(node *fundef_node)
+ *
+ *    @brief is a function which can be called from the outside. It resets the
+ *           flags and attributes of the fiven function.
+ *
+ *    @param N_fundef fundef_node
+ *
+ *    @return N_fundef node
+ ******************************************************************************/
+node *
+SOSSKresetFundefFlags (node *fundef_node)
+{
+    DBUG_ENTER ("SOSSKresetFundefFlags");
+    DBUG_ASSERT ((NODE_TYPE (fundef_node) == N_fundef),
+                 "SOSSKresetFundefFlags is intended to run only on N_fundef nodes");
+
+    FUNDEF_FIXPOINTFOUND (fundef_node) = FALSE;
+    FUNDEF_LASTCHANGE (fundef_node) = 0;
+    FUNDEF_LASTITERATIONROUND (fundef_node) = 0;
+
+    DBUG_RETURN (fundef_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn char *demand2String(constant *demand)
  *
  *    @brief This function converts the given demand into a string. The
@@ -200,35 +225,22 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
 #ifndef DBUG_OFF
     char *string;
 #endif
-
-    /* get demands*/
-    if (AVIS_DEMAND (ARG_AVIS (fundef_arg)) != NULL) {
-        current_fundef_arg_demand = AVIS_DEMAND (ARG_AVIS (fundef_arg));
-    } else { /* if no demand exists, ...*/
+    if (AVIS_DEMAND (ARG_AVIS (fundef_arg)) == NULL) { /* if no demand exists, ...*/
         int elems[num_rets * 4];
         int shape[2] = {num_rets, 4};
 
-        /* ... if fundef is external function, use demand (0, 0, 0, 0)*/
-        if (is_ext_fun == TRUE) {
-            for (i = 0; i < num_rets; i++) {
-                pos = i * 4;
-                for (j = 0; j < 4; j++) {
-                    elems[pos + j] = 0;
-                }
-            }
-        } else { /* ... if not external function use also demand (0, 0, 0, 0)*/
-            DBUG_PRINT ("SOSSK", ("Non-external function without fundef_arg_demand"));
-            for (i = 0; i < num_rets; i++) {
-                pos = i * 4;
-                for (j = 0; j < 4; j++) {
-                    elems[pos + j] = 0;
-                }
+        for (i = 0; i < num_rets; i++) {
+            pos = i * 4;
+            for (j = 0; j < 4; j++) {
+                elems[pos + j] = 0;
             }
         }
-
-        current_fundef_arg_demand = COmakeConstantFromArray (T_int, 2, shape, elems);
+        AVIS_DEMAND (ARG_AVIS (fundef_arg))
+          = COmakeConstantFromArray (T_int, 2, shape, elems);
     }
 
+    /* get demands*/
+    current_fundef_arg_demand = AVIS_DEMAND (ARG_AVIS (fundef_arg));
     i = 0;
     while (current_ids != NULL) {
         /* Get right fundef-argument-demand-vector*/
@@ -237,8 +249,16 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
         constant *arg_dem_sel_constant = NULL;
         constant *arg_dem_sel = NULL;
 
+        /* If i >= #returnValues, than the returns of the fundef contains dotted
+         * returnvals. As it is a ext.fun., every returnval has the same demand,
+         * so use the last one.*/
+        if (i >= num_rets) {
+            i = num_rets - 1;
+        }
+
         shape_arg_dem[0] = 1;
         elem_arg_dem[0] = i;
+
         arg_dem_sel_constant
           = COmakeConstantFromArray (T_int, 1, shape_arg_dem, elem_arg_dem);
         arg_dem_sel = COsel (arg_dem_sel_constant, current_fundef_arg_demand);
@@ -527,6 +547,11 @@ wrapperMax (node *fundef, node *wrapper)
                 DBUG_PRINT ("SOSSK_DEMAND", ("cur_fundef_arg_demand: %s", string));
                 DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
             }
+            DBUG_EXECUTE ("SOSSK", string = demand2String (
+                                     AVIS_DEMAND (ARG_AVIS (cur_wrapper_arg))););
+            DBUG_PRINT ("SOSSK",
+                        ("Add demand %s to %s", string, ARG_NAME (cur_wrapper_arg)));
+            DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
         } /* if(cur_fundef_arg_dem != NULL)*/
         else {
             DBUG_PRINT ("SOSSK_DEMAND", ("FUNDEF_ARG CONTAINS NO DEMAND!"));
@@ -675,6 +700,9 @@ SOSSKarg (node *arg_node, info *arg_info)
         DBUG_ASSERTF (COgetDim (new_demand) == 2,
                       ("Dimension have to be 2! But is %i", COgetDim (new_demand)));
         DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (current_ap_arg_demand););
+        DBUG_PRINT ("SOSSK_DEMAND", ("ap_arg_demand: %s", string));
+        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
         DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (new_demand););
         DBUG_PRINT ("SOSSK_DEMAND", ("new_demand:    %s", string));
         DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
@@ -688,9 +716,10 @@ SOSSKarg (node *arg_node, info *arg_info)
             DBUG_ASSERTF (SHcompareShapes (COgetShape (current_ap_arg_demand),
                                            COgetShape (new_demand))
                             == TRUE,
-                          ("shape(current_ap_arg) %s != shape(new_demand) %s!",
+                          ("shape(current_ap_arg) %s != shape(new_demand) %s! (%s)",
                            SHshape2String (0, COgetShape (current_ap_arg_demand)),
-                           SHshape2String (0, COgetShape (new_demand))));
+                           SHshape2String (0, COgetShape (new_demand)),
+                           ID_NAME (EXPRS_EXPR (current_ap_args))));
 
             tmp_constant = COmax (current_ap_arg_demand, new_demand);
 
@@ -712,6 +741,12 @@ SOSSKarg (node *arg_node, info *arg_info)
             tmp_constant = NULL;
         }
 
+        DBUG_EXECUTE ("SOSSK", string = demand2String (
+                                 AVIS_DEMAND (ID_AVIS (EXPRS_EXPR (current_ap_args)))););
+        DBUG_PRINT ("SOSSK", ("Add demand %s to %s", string,
+                              ID_NAME (EXPRS_EXPR (current_ap_args))));
+        DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
+
         /* There are ap_args left*/
         if (EXPRS_NEXT (current_ap_args) != NULL) {
 
@@ -719,11 +754,13 @@ SOSSKarg (node *arg_node, info *arg_info)
 
                 INFO_ARGS (arg_info) = EXPRS_NEXT (INFO_ARGS (arg_info));
 
-                if (INFO_EXT_FUN (arg_info) != TRUE) {
-                    ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-                } else { /* if fundef is ext. funct. the same demand is used an maybe*/
-                         /* there exists dot-args, so use just the same argument*/
+                /* if fundef is ext. funct. the same demand is used an maybe*/
+                /* there exists dot-args, so use just the same argument*/
+
+                if ((INFO_EXT_FUN (arg_info) == TRUE) && (ARG_NEXT (arg_node) == NULL)) {
                     arg_node = TRAVdo (arg_node, arg_info);
+                } else {
+                    ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
                 }
             }
         }  /* (current_ap_args != NULL)*/
@@ -1228,6 +1265,9 @@ SOSSKid (node *arg_node, info *arg_info)
                 INFO_DEMAND_HAS_CHANGED (arg_info) = TRUE;
             }
             id_demand = COfreeConstant (id_demand);
+            DBUG_EXECUTE ("SOSSK", string = demand2String (tmp_constant););
+            DBUG_PRINT ("SOSSK", ("Add %s to %s", string, ID_NAME (arg_node)));
+            DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
             AVIS_DEMAND (ID_AVIS (arg_node)) = tmp_constant;
             tmp_constant = NULL;
         } else {
@@ -1286,11 +1326,10 @@ SOSSKids (node *arg_node, info *arg_info)
         AVIS_DEMAND (IDS_AVIS (arg_node))
           = COmakeConstantFromArray (T_int, 2, shape, elems);
         ids_demand = AVIS_DEMAND (IDS_AVIS (arg_node));
-        DBUG_PRINT ("SOSSK_DEMAND", ("------------------"));
-        DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (ids_demand););
-        DBUG_PRINT ("SOSSK_DEMAND",
-                    ("Add demand %s to ids %s", string, IDS_NAME (arg_node)));
-        DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
+        DBUG_PRINT ("SOSSK", ("------------------"));
+        DBUG_EXECUTE ("SOSSK", string = demand2String (ids_demand););
+        DBUG_PRINT ("SOSSK", ("Add demand %s to ids %s", string, IDS_NAME (arg_node)));
+        DBUG_EXECUTE ("SOSSK", string = MEMfree (string););
     }
 
     INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, ids_demand);
@@ -1540,7 +1579,7 @@ SOSSKfundef (node *arg_node, info *arg_info)
     /* If this is NOT an ap-link, follow the fundef-chain*/
     if (INFO_AP_CALL (arg_info) != TRUE) {
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            DBUG_PRINT ("SOSSK",
+            DBUG_PRINT ("SOSSK_FCT",
                         ("Follow FUNDEF-chain (%s -> ?)", FUNDEF_NAME (arg_node)));
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }

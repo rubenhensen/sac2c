@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+extern node *SOSSKresetFundefFlags (node *fundef_node);
 extern node *SOSSKap (node *arg_node, info *arg_info);
 extern node *SOSSKarg (node *arg_node, info *arg_info);
 extern node *SOSSKassign (node *arg_node, info *arg_info);
