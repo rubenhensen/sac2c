@@ -1070,9 +1070,7 @@ ISAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISAAfundef");
 
-    /*
-    DBUG_PRINT( "ISAA", ("entering function %s", FUNDEF_NAME( arg_node ) ) );
-    */
+    DBUG_PRINT ("ISAA", ("entering function %s", FUNDEF_NAME (arg_node)));
 
     if ((NULL != FUNDEF_BODY (arg_node))
 

@@ -440,8 +440,8 @@ SAAshp_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 
     if (lhsavis == IDS_AVIS (ids)) {
         /* We are dealing with the first return value */
-        shp_expr
-          = TCmakeIntVector (DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node)))));
+        shp_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
+        shp_expr = TCmakeIntVector (TBmakeExprs (shp_expr, NULL));
     } else {
         /* We are dealing with the boolean result */
         shp_expr = TCmakeIntVector (NULL);
