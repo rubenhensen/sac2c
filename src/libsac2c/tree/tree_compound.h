@@ -406,6 +406,7 @@ extern int TCcountVardecs (node *vardecs);
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 
 extern int TCcountArgs (node *args);
+extern int TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
 
 /*--------------------------------------------------------------------------*/
@@ -427,6 +428,7 @@ extern node *TCappendArgs (node *arg_chain, node *arg);
  ***/
 
 extern int TCcountRets (node *rets);
+extern int TCcountRetsIgnoreArtificials (node *rets);
 extern node *TCappendRet (node *chain, node *item);
 extern node *TCcreateIdsFromRets (node *rets, node **vardecs);
 extern node *TCcreateExprsFromArgs (node *args);

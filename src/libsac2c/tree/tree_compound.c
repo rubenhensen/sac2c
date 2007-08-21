@@ -1237,6 +1237,35 @@ TCcountArgs (node *args)
 /******************************************************************************
  *
  * function:
+ *   int TCcountArgsIgnoreArtificials( node *args)
+ *
+ * description:
+ *   Counts the number of N_arg nodes, ignoring those that are marked
+ *   as artificial.
+ *
+ ******************************************************************************/
+
+int
+TCcountArgsIgnoreArtificials (node *args)
+{
+    int count = 0;
+
+    DBUG_ENTER ("TCcountArgsIgnoreArtificials");
+
+    while (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
+        if (!ARG_ISARTIFICIAL (args)) {
+            count++;
+        }
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN (count);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *TCappendArgs( node *exprs1, node *exprs2)
  *
  * description:
@@ -1314,6 +1343,35 @@ TCcountRets (node *rets)
     while (rets != NULL) {
         DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
         count++;
+        rets = RET_NEXT (rets);
+    }
+
+    DBUG_RETURN (count);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int TCcountRetsIgnoreArtificials( node *rets)
+ *
+ * description:
+ *   Counts the number of N_arg nodes, ignoring those that are marked as
+ *   artificial.
+ *
+ ******************************************************************************/
+
+int
+TCcountRetsIgnoreArtificials (node *rets)
+{
+    int count = 0;
+
+    DBUG_ENTER ("TCcountRetsIgnoreArtificials");
+
+    while (rets != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
+        if (!RET_ISARTIFICIAL (rets)) {
+            count++;
+        }
         rets = RET_NEXT (rets);
     }
 

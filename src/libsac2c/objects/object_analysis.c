@@ -14,6 +14,7 @@
 #include "dbug.h"
 #include "globals.h"
 #include "specialization_oracle_static_shape_knowledge.h"
+#include "strip_external_signatures.h"
 
 /*
  * INFO structure
@@ -98,6 +99,7 @@ CreateObjectWrapper (node *fundef)
     FUNDEF_WASUSED (result) = FALSE;
     FUNDEF_ISLOCAL (result) = TRUE;
     result = SOSSKresetFundefDemand (result);
+    result = SESstripOneFunction (result);
 
     /*
      * add body again

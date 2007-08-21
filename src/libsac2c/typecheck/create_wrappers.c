@@ -122,8 +122,14 @@ RefArgMatch (node *arg1, node *arg2)
 
     DBUG_ENTER ("RefArgMatch");
 
-    if ((arg1 != NULL) && (arg2 != NULL)) {
-        result = result && (ARG_ISREFERENCE (arg1) == ARG_ISREFERENCE (arg2))
+    if ((arg1 != NULL) && ARG_ISARTIFICIAL (arg1)) {
+        result = RefArgMatch (ARG_NEXT (arg1), arg2);
+    } else if ((arg2 != NULL) && ARG_ISARTIFICIAL (arg2)) {
+        result = RefArgMatch (arg1, ARG_NEXT (arg2));
+    } else if ((arg1 != NULL) && (arg2 != NULL)) {
+        result = result
+                 && ((ARG_ISREFERENCE (arg1) || ARG_WASREFERENCE (arg1))
+                     == (ARG_ISREFERENCE (arg2) || ARG_WASREFERENCE (arg2)))
                  && RefArgMatch (ARG_NEXT (arg1), ARG_NEXT (arg2));
     } else {
         result = (arg1 == arg2);
@@ -178,8 +184,8 @@ FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut
         wrapper = *wrapper_p;
         last_parm_is_dots = FUNDEF_HASDOTARGS (wrapper);
         last_res_is_dots = FUNDEF_HASDOTRETS (wrapper);
-        num_parms = TCcountArgs (FUNDEF_ARGS (wrapper));
-        num_res = TCcountRets (FUNDEF_RETS (wrapper));
+        num_parms = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper));
+        num_res = TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper));
         DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
                                FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
@@ -246,12 +252,10 @@ CreateWrapperFor (node *fundef, info *info)
     node *body, *wrapper;
 
     DBUG_ENTER ("CreateWrapperFor");
-    DBUG_PRINT ("CRTWRP",
-                ("Creating wrapper for %s %s%d args %d rets", CTIitemName (fundef),
-                 (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
-                 (FUNDEF_HASDOTARGS (fundef) ? TCcountArgs (FUNDEF_ARGS (fundef)) - 1
-                                             : TCcountArgs (FUNDEF_ARGS (fundef))),
-                 TCcountRets (FUNDEF_RETS (fundef))));
+    DBUG_PRINT ("CRTWRP", ("Creating wrapper for %s %s%d args %d rets",
+                           CTIitemName (fundef), (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
+                           TCcountArgsIgnoreArtificials (FUNDEF_ARGS (fundef)),
+                           TCcountRetsIgnoreArtificials (FUNDEF_RETS (fundef))));
 
     /*
      * if we have a wrapper function of a used function
@@ -338,16 +342,16 @@ CreateWrapperFor (node *fundef, info *info)
     DBUG_RETURN (wrapper);
 }
 
-node *
-CRTWRPspecFundef (node *arg_node, info *arg_info)
+static node *
+SpecFundef (node *arg_node, info *arg_info)
 {
     int num_args, num_rets;
     node *wrapper;
 
-    DBUG_ENTER ("CRTWRPspecFundef");
+    DBUG_ENTER ("SpecFundef");
 
-    num_args = TCcountArgs (FUNDEF_ARGS (arg_node));
-    num_rets = TCcountRets (FUNDEF_RETS (arg_node));
+    num_args = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (arg_node));
+    num_rets = TCcountRetsIgnoreArtificials (FUNDEF_RETS (arg_node));
 
     wrapper = FindWrapper (FUNDEF_NS (arg_node), FUNDEF_NAME (arg_node), num_args,
                            num_rets, INFO_WRAPPERFUNS (arg_info));
@@ -417,7 +421,7 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      * Now, we set the FUNDEF_IMPL nodes for the forced specializations:
      */
     MODULE_FUNSPECS (arg_node)
-      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), arg_info, CRTWRPspecFundef);
+      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), arg_info, SpecFundef);
     /**
      * Finally, we insert the wrapper functions into the fundef chain:
      */
@@ -449,8 +453,8 @@ CRTWRPfundef (node *arg_node, info *arg_info)
 
     dot_args = FUNDEF_HASDOTARGS (arg_node);
     dot_rets = FUNDEF_HASDOTRETS (arg_node);
-    num_args = TCcountArgs (FUNDEF_ARGS (arg_node));
-    num_rets = TCcountRets (FUNDEF_RETS (arg_node));
+    num_args = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (arg_node));
+    num_rets = TCcountRetsIgnoreArtificials (FUNDEF_RETS (arg_node));
 
     DBUG_PRINT ("CRTWRP",
                 ("----- Processing function %s: -----", CTIitemName (arg_node)));
@@ -524,10 +528,11 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                               "and %s %d return value(s)",
                               CTIitemName (wrapper),
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
-                              TCcountArgs (FUNDEF_ARGS (wrapper)),
+                              TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
                               (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
-                              TCcountRets (FUNDEF_RETS (wrapper)), (dot_args ? ">=" : ""),
-                              num_args, (dot_rets ? ">=" : ""), num_rets);
+                              TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper)),
+                              (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""),
+                              num_rets);
             }
         }
 
@@ -540,8 +545,9 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                           "argument(s) "
                           "and %d return value(s) with a version that has a signature "
                           "differing in the number or position of reference args only.",
-                          CTIitemName (wrapper), TCcountArgs (FUNDEF_ARGS (wrapper)),
-                          TCcountRets (FUNDEF_RETS (wrapper)));
+                          CTIitemName (wrapper),
+                          TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
+                          TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper)));
         }
 
         if (FUNDEF_ISLOCAL (arg_node) && !(FUNDEF_ISEXTERN (arg_node))) {

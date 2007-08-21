@@ -10,6 +10,8 @@ PHASE (ami, "Analyzing module information", ALWAYS)
 
 SUBPHASE (lm, "Loading module contents", LMCdoLoadModuleContents, ALWAYS, ami)
 
+SUBPHASE (ses, "Stripping external signatures", SESdoStripExternalSignatures, ALWAYS, ami)
+
 SUBPHASE (cbl, "Constructing function bundles", CBLdoConstructBundles, ALWAYS, ami)
 
 ENDPHASE (ami)

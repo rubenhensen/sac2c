@@ -87,8 +87,6 @@ SUBPHASE (ivd, "Inserting variable declarations", INSVDdoInsertVardec, ALWAYS, p
 SUBPHASE (itc, "Converting type decls into type conversions", INSTCdoInsertTypeConv,
           ALWAYS, ptc)
 
-SUBPHASE (ses, "Stripping external signatures", SESdoStripExternalSignatures, ALWAYS, ptc)
-
 SUBPHASE (cwf, "Creating wrapper functions", CRTWRPdoCreateWrappers, ALWAYS, ptc)
 
 SUBPHASE (gon, "Running global object analysis", OANdoObjectAnalysis, ALWAYS, ptc)

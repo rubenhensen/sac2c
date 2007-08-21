@@ -624,23 +624,29 @@ RSOfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSOfundef");
 
-    DBUG_PRINT ("RSO", ("processing fundef %s...", CTIitemName (arg_node)));
+    /*
+     * for used and imported functions, the objects already have been
+     * annotated, so we ignore these here.
+     */
+    if (!FUNDEF_WASUSED (arg_node) && !FUNDEF_WASIMPORTED (arg_node)) {
+        DBUG_PRINT ("RSO", ("processing fundef %s...", CTIitemName (arg_node)));
 
-    FUNDEF_ARGS (arg_node)
-      = AppendObjdefsToArgs (FUNDEF_ARGS (arg_node), FUNDEF_OBJECTS (arg_node));
+        FUNDEF_ARGS (arg_node)
+          = AppendObjdefsToArgs (FUNDEF_ARGS (arg_node), FUNDEF_OBJECTS (arg_node));
 
-    INFO_FUNDEF (arg_info) = arg_node;
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+        INFO_FUNDEF (arg_info) = NULL;
+
+        FUNDEF_OBJECTS (arg_node) = CleanUpObjlist (FUNDEF_OBJECTS (arg_node));
+        if (INFO_OBJECTS (arg_info) != NULL) {
+            INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
+        }
+
+        DBUG_PRINT ("RSO", ("leaving fundef %s...", CTIitemName (arg_node)));
     }
-    INFO_FUNDEF (arg_info) = NULL;
-
-    FUNDEF_OBJECTS (arg_node) = CleanUpObjlist (FUNDEF_OBJECTS (arg_node));
-    if (INFO_OBJECTS (arg_info) != NULL) {
-        INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
-    }
-
-    DBUG_PRINT ("RSO", ("leaving fundef %s...", CTIitemName (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
