@@ -41,15 +41,24 @@ StripRets (node *rets)
     DBUG_RETURN (rets);
 }
 
+node *
+SESstripOneFunction (node *fundef)
+{
+    DBUG_ENTER ("SESstripOneFunction");
+
+    FUNDEF_ARGS (fundef) = StripArgs (FUNDEF_ARGS (fundef));
+    FUNDEF_RETS (fundef) = StripRets (FUNDEF_RETS (fundef));
+
+    DBUG_RETURN (fundef);
+}
+
 static node *
 StripFuns (node *funs)
 {
     DBUG_ENTER ("StripFuns");
 
     if (funs != NULL) {
-        FUNDEF_ARGS (funs) = StripArgs (FUNDEF_ARGS (funs));
-        FUNDEF_RETS (funs) = StripRets (FUNDEF_RETS (funs));
-
+        funs = SESstripOneFunction (funs);
         FUNDEF_NEXT (funs) = StripFuns (FUNDEF_NEXT (funs));
     }
 

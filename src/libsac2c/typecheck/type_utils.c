@@ -24,6 +24,7 @@
 /** <!--********************************************************************-->
  *
  * @fn ntype *TUcreateFuntype( node *fundef)
+ * @fn ntype *TUcreateFuntypeIgnoreArtificials( node *fundef)
  *
  *   @brief creates a function type from the given arg/return types.
  *   @param
@@ -32,13 +33,15 @@
  ******************************************************************************/
 
 static ntype *
-FuntypeFromArgs (ntype *res, node *args, node *fundef)
+FuntypeFromArgs (ntype *res, node *args, node *fundef, bool all)
 {
     DBUG_ENTER ("FuntypeFromArgs");
 
     if (args != NULL) {
-        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
-        res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
+        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef, all);
+        if (all || !ARG_ISARTIFICIAL (args)) {
+            res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
+        }
     }
 
     DBUG_RETURN (res);
@@ -55,7 +58,23 @@ TUcreateFuntype (node *fundef)
                  "TUcreateFuntype applied to non-fundef node!");
 
     res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
-                           FUNDEF_ARGS (fundef), fundef);
+                           FUNDEF_ARGS (fundef), fundef, TRUE);
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+TUcreateFuntypeIgnoreArtificials (node *fundef)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TUPcreateFuntypeIgnoreArtificials");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "TUcreateFuntypeIgnoreArtificials applied to non-fundef node!");
+
+    res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
+                           FUNDEF_ARGS (fundef), fundef, FALSE);
 
     DBUG_RETURN (res);
 }

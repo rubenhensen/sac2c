@@ -8,6 +8,7 @@
 #include "types.h"
 
 extern ntype *TUcreateFuntype (node *fundef);
+extern ntype *TUcreateFuntypeIgnoreArtificials (node *fundef);
 
 extern ntype *TUrebuildWrapperTypeAlphaFix (ntype *);
 extern ntype *TUrebuildWrapperTypeAlpha (ntype *);

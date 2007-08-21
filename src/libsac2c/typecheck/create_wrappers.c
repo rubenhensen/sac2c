@@ -22,6 +22,7 @@
 #include "type_utils.h"
 #include "deserialize.h"
 #include "map_fun_trav.h"
+#include "strip_external_signatures.h"
 
 /*******************************************************************************
  *
@@ -284,6 +285,8 @@ CreateWrapperFor (node *fundef, info *info)
         FUNDEF_BODY (fundef) = NULL;
         wrapper = DUPdoDupNode (fundef);
         FUNDEF_BODY (fundef) = body;
+
+        wrapper = SESstripOneFunction (wrapper);
 
         FUNDEF_ISWRAPPERFUN (wrapper) = TRUE;
         FUNDEF_ISLOCAL (wrapper) = TRUE;
@@ -548,7 +551,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
 
         FUNDEF_WRAPPERTYPE (wrapper)
-          = TYmakeOverloadedFunType (TUcreateFuntype (arg_node),
+          = TYmakeOverloadedFunType (TUcreateFuntypeIgnoreArtificials (arg_node),
                                      FUNDEF_WRAPPERTYPE (wrapper));
     }
 
