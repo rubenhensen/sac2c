@@ -481,6 +481,11 @@ doOverSelMatrix (constant *idx_matrix, constant *sel_matrix)
         idx = COfreeConstant (idx);
     }
 
+    /*If res_matrix is NULL, the idx-matrix has the shape (0,4). Therefor
+     * the result is the same.*/
+    if (res_matrix == NULL) {
+        res_matrix = COcopyConstant (idx_matrix);
+    }
     DBUG_ASSERTF (COgetDim (res_matrix) == 2,
                   ("Dim should be 2! BUT IS %i", COgetDim (res_matrix)));
     shape_constant = COfreeConstant (shape_constant);
@@ -1403,9 +1408,11 @@ SOSSKreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ("SOSSKreturn");
     DBUG_PRINT ("SOSSK_PATH", (">>> ENTER SOSSKret"));
 
-    INFO_POS_RET (arg_info) = 0;
-    RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    INFO_POS_RET (arg_info) = -1;
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        INFO_POS_RET (arg_info) = 0;
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+        INFO_POS_RET (arg_info) = -1;
+    }
 
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE SOSSKret"));
     DBUG_RETURN (arg_node);
@@ -1598,6 +1605,8 @@ SOSSKfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("SOSSK_FCT",
                         ("Follow FUNDEF-chain (%s -> ?)", FUNDEF_NAME (arg_node)));
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+            DBUG_PRINT ("SOSSK_FCTR",
+                        ("^^^^^ Back in Function %s", FUNDEF_NAME (arg_node)));
         }
     }
 

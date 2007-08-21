@@ -520,39 +520,42 @@ COoverSel (constant *idx, constant *a)
         idx_counter_upbound[i] = SHgetExtent (frame_shape, i);
     }
 
-    /* Copy selections*/
-    do {
-        idx_pos = 0;
-        from_offset = 0;
+    /*If the idx is empty, the result is empty as well*/
+    if (idx_elems != NULL) {
+        /* Copy selections*/
+        do {
+            idx_pos = 0;
+            from_offset = 0;
 
-        /* Compute the position in the idx constant to get the elements which
-         * indicate the pos which have to be selected in a*/
-        for (i = 0; i < frame_shape_len; i++) {
-            row_length = 1;
-            if (i < (frame_shape_len - 1)) {
-                row_length = SHgetExtent (frame_shape, (i + 1));
+            /* Compute the position in the idx constant to get the elements which
+             * indicate the pos which have to be selected in a*/
+            for (i = 0; i < frame_shape_len; i++) {
+                row_length = 1;
+                if (i < (frame_shape_len - 1)) {
+                    row_length = SHgetExtent (frame_shape, (i + 1));
+                }
+                idx_pos += idx_counter[i] * row_length;
             }
-            idx_pos += idx_counter[i] * row_length;
-        }
-        idx_pos *= iv_len;
+            idx_pos *= iv_len;
 
-        /* Compute the offset of the elements of a which have to be taken*/
-        for (i = 0; i < iv_len; i++) {
-            row_length = 1;
-            if (i < (iv_len - 1)) {
-                row_length = SHgetExtent (a_shape, (i + 1));
+            /* Compute the offset of the elements of a which have to be taken*/
+            for (i = 0; i < iv_len; i++) {
+                row_length = 1;
+                if (i < (iv_len - 1)) {
+                    row_length = SHgetExtent (a_shape, (i + 1));
+                }
+                from_offset += idx_elems[idx_pos + i] * row_length;
             }
-            from_offset += idx_elems[idx_pos + i] * row_length;
-        }
-        from_offset *= elem_len;
+            from_offset *= elem_len;
 
-        /* Copy related elements of a to the relating pos in the res constant*/
-        COINTcopyElemsFromCVToCV (a_type, CONSTANT_ELEMS (a), from_offset, elem_len,
-                                  CONSTANT_ELEMS (res), to_offset);
+            /* Copy related elements of a to the relating pos in the res constant*/
+            COINTcopyElemsFromCVToCV (a_type, CONSTANT_ELEMS (a), from_offset, elem_len,
+                                      CONSTANT_ELEMS (res), to_offset);
 
-        to_offset += elem_len;
-        loop_done = incCounter (idx_counter, idx_counter_upbound, frame_shape_len);
-    } while (loop_done == FALSE);
+            to_offset += elem_len;
+            loop_done = incCounter (idx_counter, idx_counter_upbound, frame_shape_len);
+        } while (loop_done == FALSE);
+    } /* if(idx_elems != NULL)*/
 
     /* Free shapes*/
     SHfreeShape (frame_shape);
