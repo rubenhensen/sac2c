@@ -445,7 +445,7 @@ SPMDLid (node *arg_node, info *arg_info)
             }
 #endif
 
-            alloc = TCmakePrf2 (F_alloc, dim, shape);
+            alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);
 
             INFO_ALLOCASSIGNS (arg_info)
               = TBmakeAssign (TBmakeLet (ids, alloc), INFO_ALLOCASSIGNS (arg_info));
@@ -500,6 +500,9 @@ SPMDLids (node *arg_node, info *arg_info)
             INFO_RETTYPES (arg_info)
               = TCappendTypes (TYtype2OldType (AVIS_TYPE (new_avis)),
                                INFO_RETTYPES (arg_info));
+
+            INFO_PARAMS (arg_info)
+              = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
         }
     }
 
