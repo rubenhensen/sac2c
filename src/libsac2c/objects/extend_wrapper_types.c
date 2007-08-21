@@ -88,7 +88,7 @@ buildWrapper (node *fundef, ntype *type)
     /*
      * add the fundef to the wrappertype
      */
-    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+    type = TYmakeOverloadedFunType (TUcreateFuntype (fundef), type);
 
     DBUG_RETURN (type);
 }
@@ -196,7 +196,7 @@ EWTfundef (node *arg_node, info *arg_info)
                     FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
                 }
 
-                new_type = CRTWRPcreateFuntype (fundef);
+                new_type = TUcreateFuntype (fundef);
             }
         } else {
             if (TYisFun (type)) {

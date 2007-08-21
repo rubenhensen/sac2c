@@ -23,6 +23,45 @@
 
 /** <!--********************************************************************-->
  *
+ * @fn ntype *TUcreateFuntype( node *fundef)
+ *
+ *   @brief creates a function type from the given arg/return types.
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+static ntype *
+FuntypeFromArgs (ntype *res, node *args, node *fundef)
+{
+    DBUG_ENTER ("FuntypeFromArgs");
+
+    if (args != NULL) {
+        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
+        res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
+    }
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+TUcreateFuntype (node *fundef)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TUPcreateFuntype");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "TUcreateFuntype applied to non-fundef node!");
+
+    res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
+                           FUNDEF_ARGS (fundef), fundef);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn ntype *TUrebuildWrapperTypeAlphaFix( ntype *)
  *
  *   @brief
@@ -44,7 +83,7 @@ buildWrapperAlphaFix (node *fundef, ntype *type)
     /*
      * add the fundef to the wrappertype
      */
-    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+    type = TYmakeOverloadedFunType (TUcreateFuntype (fundef), type);
 
     DBUG_RETURN (type);
 }
@@ -93,7 +132,7 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * add the fundef to the wrappertype
      */
-    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+    type = TYmakeOverloadedFunType (TUcreateFuntype (fundef), type);
 
     DBUG_RETURN (type);
 }

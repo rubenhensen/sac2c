@@ -10,7 +10,6 @@
 #include "types.h"
 
 extern node *CRTWRPdoCreateWrappers (node *arg_node);
-extern ntype *CRTWRPcreateFuntype (node *fundef);
 
 extern node *CRTWRPmodule (node *arg_node, info *arg_info);
 extern node *CRTWRPfundef (node *arg_node, info *arg_info);

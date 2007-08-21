@@ -483,7 +483,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 
     /* insert the new type signature into the wrapper */
     FUNDEF_WRAPPERTYPE (wrapper)
-      = TYmakeOverloadedFunType (CRTWRPcreateFuntype (res), FUNDEF_WRAPPERTYPE (wrapper));
+      = TYmakeOverloadedFunType (TUcreateFuntype (res), FUNDEF_WRAPPERTYPE (wrapper));
 
     FUNDEF_SPECS (fundef)++;
 

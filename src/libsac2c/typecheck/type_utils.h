@@ -7,6 +7,8 @@
 
 #include "types.h"
 
+extern ntype *TUcreateFuntype (node *fundef);
+
 extern ntype *TUrebuildWrapperTypeAlphaFix (ntype *);
 extern ntype *TUrebuildWrapperTypeAlpha (ntype *);
 extern node *TUcreateTmpVardecsFromRets (node *rets);

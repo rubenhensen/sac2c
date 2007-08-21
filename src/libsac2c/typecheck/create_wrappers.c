@@ -335,45 +335,6 @@ CreateWrapperFor (node *fundef, info *info)
     DBUG_RETURN (wrapper);
 }
 
-/******************************************************************************
- *
- * function:
- *    ntype *CRTWRPcreateFuntype( node *fundef)
- *
- * description:
- *    creates a function type from the given arg/return types.
- *
- ******************************************************************************/
-
-static ntype *
-FuntypeFromArgs (ntype *res, node *args, node *fundef)
-{
-    DBUG_ENTER ("FuntypeFromArgs");
-
-    if (args != NULL) {
-        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
-        res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
-    }
-
-    DBUG_RETURN (res);
-}
-
-ntype *
-CRTWRPcreateFuntype (node *fundef)
-{
-    ntype *res;
-
-    DBUG_ENTER ("CRTWRPcreateFuntype");
-
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "CRTWRPcreateFuntype applied to non-fundef node!");
-
-    res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
-                           FUNDEF_ARGS (fundef), fundef);
-
-    DBUG_RETURN (res);
-}
-
 node *
 CRTWRPspecFundef (node *arg_node, info *arg_info)
 {
@@ -587,7 +548,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
 
         FUNDEF_WRAPPERTYPE (wrapper)
-          = TYmakeOverloadedFunType (CRTWRPcreateFuntype (arg_node),
+          = TYmakeOverloadedFunType (TUcreateFuntype (arg_node),
                                      FUNDEF_WRAPPERTYPE (wrapper));
     }
 
