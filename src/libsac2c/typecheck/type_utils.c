@@ -67,14 +67,21 @@ ntype *
 TUcreateFuntypeIgnoreArtificials (node *fundef)
 {
     ntype *res;
+    node *rets;
 
     DBUG_ENTER ("TUPcreateFuntypeIgnoreArtificials");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "TUcreateFuntypeIgnoreArtificials applied to non-fundef node!");
 
-    res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
-                           FUNDEF_ARGS (fundef), fundef, FALSE);
+    rets = FUNDEF_RETS (fundef);
+
+    while ((rets != NULL) && RET_ISARTIFICIAL (rets)) {
+        rets = RET_NEXT (rets);
+    }
+
+    res = FuntypeFromArgs (TUmakeProductTypeFromRets (rets), FUNDEF_ARGS (fundef), fundef,
+                           FALSE);
 
     DBUG_RETURN (res);
 }
