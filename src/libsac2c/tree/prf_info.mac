@@ -657,41 +657,43 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
    * Functions for implementing conformability constraints:
    */
 
-  PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, NULL,
+  PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, COMPprfGuard,
        SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL, NULL,
        TEnMinusOne, NULL, NULL),
 
-  PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_afterguard, NULL, NULL,
-       SCSprf_afterguard, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
+  PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_afterguard, NULL,
+       COMPprfNoop, SCSprf_afterguard, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL,
+       0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
-       NULL, NULL, NULL, NULL, NULL, SAAdim_type_constraint, SAAshp_type_constraint, NULL,
-       1, NULL, NULL, TEtwo, NULL, NULL),
+       NULL, COMPprfTypeConstraint, NULL, NULL, NULL, SAAdim_type_constraint,
+       SAAshp_type_constraint, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (same_shape_AxA, (PA_A, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
-       NULL, SCSprf_same_shape_AxA, NULL, NULL, SAAdim_same_shape_AxA,
+       COMPprfSameShape, SCSprf_same_shape_AxA, NULL, NULL, SAAdim_same_shape_AxA,
        SAAshp_same_shape_AxA, NULL, 2, NULL, NULL, TEthree, NULL, NULL),
 
   PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,
-       NULL, NULL, SCSprf_shape_matches_dim_VxA, NULL, NULL, SAAdim_shape_matches_dim_VxA,
-       SAAshp_shape_matches_dim_VxA, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+       NULL, COMPprfShapeMatchesDim, SCSprf_shape_matches_dim_VxA, NULL, NULL,
+       SAAdim_shape_matches_dim_VxA, SAAshp_shape_matches_dim_VxA, NULL, 1, NULL, NULL,
+       TEtwo, NULL, NULL),
 
-  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL, NULL,
-       SCSprf_non_neg_val_V, NULL, NULL, SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1,
-       NULL, NULL, TEtwo, NULL, NULL),
+  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL,
+       COMPprfNonNegVal, SCSprf_non_neg_val_V, NULL, NULL, SAAdim_cc_inherit,
+       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_lt_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape, NULL,
-       NULL, SCSprf_val_lt_shape_VxA, NULL, NULL, SAAdim_cc_inherit, SAAshp_cc_inherit,
-       NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+       COMPprfValLtShape, SCSprf_val_lt_shape_VxA, NULL, NULL, SAAdim_cc_inherit,
+       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
-  PRF (val_le_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL, NULL,
-       SCSprf_val_le_val_VxV, NULL, NULL, SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1,
-       NULL, NULL, TEtwo, NULL, NULL),
+  PRF (val_le_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
+       COMPprfValLeVal, SCSprf_val_le_val_VxV, NULL, NULL, SAAdim_cc_inherit,
+       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (prod_matches_prod_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD,
-       NTCCTprf_prod_shape, NULL, NULL, SCSprf_prod_matches_prod_shape_VxA, NULL, NULL,
-       SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+       NTCCTprf_prod_shape, NULL, COMPprfProdMatchesProdShape,
+       SCSprf_prod_matches_prod_shape_VxA, NULL, NULL, SAAdim_cc_inherit,
+       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   /*******************************************************************************
    * Functions to definine generic functions on udts

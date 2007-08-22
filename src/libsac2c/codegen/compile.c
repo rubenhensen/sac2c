@@ -4791,30 +4791,209 @@ COMPprfRunMtFold (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
-#if 0
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfGuard( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+static node *
+COMPprfGuard (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfGuard");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_GUARD",
+                                 DupExpr_NT_AddReadIcms (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPprfAccu( node *arg_node, info *arg_info)
+ * @fn node *COMPprfTypeConstraint( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_accu into Noop.
- *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPLet.
- *
- * Remarks:
- *
- ******************************************************************************/
-
-static
-node *COMPprfAccu( node *arg_node, info *arg_info, char *icm_name)
+ *****************************************************************************/
+node *
+COMPprfTypeConstraint (node *arg_node, info *arg_info)
 {
-  DBUG_ENTER( "COMPprfAccu");
-  
-  ret_node = TCmakeAssignIcm0( "NOOP", NULL);
+    node *ret_node;
+    node *let_ids;
+    ntype *arg_type;
 
-  DBUG_RETURN( ret_node);
+    DBUG_ENTER ("COMPprfTypeConstraint");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg_type = TYPE_TYPE (PRF_ARG1 (arg_node));
+
+    if (TYisAKV (arg_type)) {
+        DBUG_ASSERT (FALSE, "Type constraint with AKV type not implemented");
+    } else if (TYisAKS (arg_type)) {
+        ret_node = SHshape2Array (TYgetShape (arg_type));
+        ret_node
+          = TCmakeAssignIcm4 ("ND_PRF_TYPE_CONSTRAINT_AKS", DUPdupIdsIdNt (let_ids),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)),
+                              MakeSizeArg (ret_node, TRUE), ARRAY_AELEMS (ret_node),
+                              NULL);
+    } else if (TYisAKD (arg_type)) {
+        ret_node
+          = TCmakeAssignIcm3 ("ND_PRF_TYPE_CONSTRAINT_AKD", DUPdupIdsIdNt (let_ids),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)),
+                              TBmakeNum (TYgetDim (arg_type)), NULL);
+    } else if (TYisAUDGZ (arg_type)) {
+        ret_node
+          = TCmakeAssignIcm2 ("ND_PRF_TYPE_CONSTRAINT_AUDGZ", DUPdupIdsIdNt (let_ids),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    } else {
+        /* TYisAUD is always true */
+        ret_node = TCmakeAssignIcm2 ("ND_CREATE__SCALAR", DUPdupIdsIdNt (let_ids),
+                                     TBmakeBool (TRUE), NULL);
+    }
+
+    DBUG_RETURN (ret_node);
 }
-#endif
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfSameShape( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfSameShape (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfSameShape");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node
+      = TCmakeAssignIcm5 ("ND_PRF_SAME_SHAPE", DUPdupIdsIdNt (let_ids),
+                          DUPdupIdNt (PRF_ARG1 (arg_node)),
+                          TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node)))),
+                          DUPdupIdNt (PRF_ARG2 (arg_node)),
+                          TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node)))),
+                          NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfShapeMatchesDim( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfShapeMatchesDim (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfShapeMatchesDim");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_SHAPE_MATCHES_DIM", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfNonNegVal( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfNonNegVal (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfNonNegVal");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm2 ("ND_PRF_NON_NEG_VAL", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfValLtShape( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfValLtShape (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfValLtShape");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_VAL_LT_SHAPE", DUPdupIdsIdNt (let_ids),
+                          DUPdupIdNt (PRF_ARG1 (arg_node)),
+                          DUPdupIdNt (PRF_ARG2 (arg_node)),
+                          TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node)))),
+                          NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfValLeVal( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfValLeVal (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfValLeVal");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LT_VAL", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfProdMatchesShape( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfProdMatchesProdShape");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_PROD_MATCHES_PROD_SHAPE", DUPdupIdsIdNt (let_ids),
+                          DUPdupIdNt (PRF_ARG1 (arg_node)),
+                          DUPdupIdNt (PRF_ARG2 (arg_node)),
+                          TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node)))),
+                          NULL);
+
+    DBUG_RETURN (ret_node);
+}
 
 /******************************************************************************
  *

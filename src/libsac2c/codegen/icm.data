@@ -493,6 +493,43 @@ ICM_END( ND_PRF_CAT_VxV__SHAPE, (to_NT, to_sdim,
                                    from1_NT, from1_sdim, from2_NT, from2_sdim))
 #endif
 
+#if defined(ND_PRF_TYPE_CONSTRAINT_AKS) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_TYPE_CONSTRAINT_AKS, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+  ICM_INT( dim)
+  ICM_VARINT( dim, shp)  
+ICM_END( ND_PRF_TYPE_CONSTRAINT_AKS, (to_NT, from_NT, dim, shp))
+#endif
+
+#if defined(ND_PRF_SAME_SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SAME_SHAPE, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_NT( from2_NT)
+  ICM_INT( from2_sdim)
+ICM_END( ND_PRF_SAME_SHAPE, (to_NT, from_NT, from_sdim, from2_NT, from2_sdim))
+#endif
+
+#if defined(ND_PRF_VAL_LT_SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_VAL_LT_SHAPE, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+  ICM_NT( from2_NT)
+  ICM_INT( from2_sdim)
+ICM_END( ND_PRF_VAL_LT_SHAPE, (to_NT, from_NT, from2_NT, from2_sdim))
+#endif
+
+#if defined(ND_PRF_PROD_MATCHES_PROD_SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_PROD_MATCHES_PROD_SHAPE, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+  ICM_NT( from2_NT)
+  ICM_INT( from2_sdim)
+ICM_END( ND_PRF_PROD_MATCHES_PROD_SHAPE, (to_NT, from_NT, from2_NT, from2_sdim))
+#endif
+
 
 #if defined(ND_VECT2OFFSET_arr) || defined(ICM_ALL)
 ICM_DEF( ND_VECT2OFFSET_arr, ICM_TRACE(prf))

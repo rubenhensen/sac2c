@@ -1612,3 +1612,217 @@ ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg)
 
     DBUG_VOID_RETURN;
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn void ICMCompileND_PRF_TYPE_CONSTRAINT_AKS
+ *
+ *****************************************************************************/
+void
+ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *shp)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_PRF_TYPE_CONSTRAINT_AKS");
+
+    COND1 (
+      fprintf (global.outfile, "(SAC_ND_A_DIM(%s) != %d)", from_NT, dim);
+      for (i = 0; i < dim; i++) {
+          fprintf (global.outfile, "|| (SAC_ND_A_SHAPE(%s,%d) != %d)", from_NT, i,
+                   shp[i]);
+      },
+      fprintf (global.outfile, "SAC_RuntimeError(\"Array does not adhere "
+                               "to type constraint\");\n"););
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void ICMCompileND_PRF_SAME_SHAPE
+ *
+ *****************************************************************************/
+void
+ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *from2_NT,
+                             int from2_sdim)
+{
+    int i;
+    int dim = ARRAY_OR_SCALAR;
+
+    DBUG_ENTER ("ICMCompileND_PRF_SAME_SHAPE");
+
+    if (KNOWN_DIMENSION (from_sdim)) {
+        dim = DIM_NO_OFFSET (from_sdim);
+    } else if (KNOWN_DIMENSION (from2_sdim)) {
+        dim = DIM_NO_OFFSET (from2_sdim);
+    }
+
+    if (dim != ARRAY_OR_SCALAR) {
+        /*
+         * At least one array has a known number of axes:
+         * access shape vectors using compile-time constants, thereby
+         * potentially accessing mirrors
+         */
+        COND1 (
+          fprintf (global.outfile, "(SAC_ND_A_DIM(%s) != SAC_ND_A_DIM(%s))", from_NT,
+                   from2_NT);
+          for (i = 0; i < dim; i++) {
+              fprintf (global.outfile,
+                       "|| (SAC_ND_A_SHAPE(%s,%d) != SAC_ND_A_SHAPE(%s,%d))", from_NT, i,
+                       from2_NT, i);
+          },
+          fprintf (global.outfile, "SAC_RuntimeError(\"Arrays do not adhere "
+                                   "to same shape constraint\");\n"););
+    } else {
+        /*
+         * Both arrays are AUD:
+         * Compare descriptor contents using a run-time for-loop
+         */
+        COND1 (fprintf (global.outfile, "SAC_ND_A_DIM(%s) != SAC_ND_A_DIM(%s)", from_NT,
+                        from2_NT);
+               , fprintf (global.outfile, "SAC_RuntimeError(\"Arrays do not adhere "
+                                          "to same shape constraint\");\n"););
+        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                             , fprintf (global.outfile, "0");
+                             , fprintf (global.outfile, "SAC_ND_A_DIM(%s)", from_NT);
+                             ,
+                             COND1 (fprintf (global.outfile,
+                                             "SAC_ND_A_SHAPE(%s,SAC_i) != "
+                                             "SAC_ND_A_SHAPE(%s,SAC_i)",
+                                             from_NT, from2_NT);
+                                    , fprintf (global.outfile,
+                                               "SAC_RuntimeError(\"Arrays do not adhere "
+                                               "to same shape constraint\");\n");););
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+
+    DBUG_VOID_RETURN;
+}
+
+#if 0
+/** <!--********************************************************************-->
+ *
+ * @fn void ICMCompileND_PRF_SHAPE_MATCHES_DIM
+ *
+ *****************************************************************************/
+void ICMCompileND_PRF_SHAPE_MATCHES_DIM( char *to_NT, char *from_NT, 
+                                         char *from2_NT)
+{
+  DBUG_ENTER( "ICMCompileND_PRF_SHAPE_MATCHES_DIM");
+
+  COND1(
+    fprintf( global.outfile,
+             "(SAC_ND_A_DIM(%s) != 1) || "
+             "(SAC_ND_A_SHAPE(%s,0) != SAC_ND_A_DIM(%s))",
+             from_NT, from_NT, from2_NT);
+  ,
+    fprintf( global.outfile, 
+             "SAC_RuntimeError(\"Arrays do not adhere "
+             "to shape matches dim constraint\");\n");
+  );
+
+  INDENT;
+  fprintf( global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+
+  DBUG_VOID_RETURN;
+}
+#endif
+
+/** <!--********************************************************************-->
+ *
+ * @fn void ICMCompileND_PRF_VAL_LT_SHAPE
+ *
+ *****************************************************************************/
+void
+ICMCompileND_PRF_VAL_LT_SHAPE (char *to_NT, char *from_NT, char *from2_NT, int from2_sdim)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_PRF_VAL_LT_SHAPE");
+
+    COND1 (fprintf (global.outfile,
+                    "(SAC_ND_A_DIM(%s) != 1) &&"
+                    "(SAC_ND_A_SHAPE(%s,0) != SAC_ND_A_DIM(%s))",
+                    from_NT, from_NT, from2_NT);
+           , fprintf (global.outfile, "SAC_RuntimeError(\"Arrays do not adhere "
+                                      "to val less than shape constraint\");\n"););
+
+    if (KNOWN_DIMENSION (from2_sdim)) {
+        COND1 (
+          fprintf (global.outfile, "(0)");
+          for (i = 0; i < DIM_NO_OFFSET (from2_sdim); i++) {
+              fprintf (global.outfile, "|| (SAC_ND_READ(%s,%d) >= SAC_ND_A_SHAPE(%s,%d))",
+                       from_NT, i, from2_NT, i);
+          },
+          fprintf (global.outfile, "SAC_RuntimeError(\"Arrays do not adhere "
+                                   "to val less than shape constraint\");\n"););
+    } else {
+        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                             , fprintf (global.outfile, "0");
+                             , fprintf (global.outfile, "SAC_ND_A_DIM(%s)", from2_NT);
+                             ,
+                             COND1 (fprintf (global.outfile,
+                                             "SAC_ND_READ(%s,SAC_i) >= "
+                                             "SAC_ND_A_SHAPE(%s,SAC_i)",
+                                             from_NT, from2_NT);
+                                    , fprintf (global.outfile,
+                                               "SAC_RuntimeError(\"Arrays do not adhere "
+                                               "to val less than shape "
+                                               "constraint\");\n");););
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE
+ *
+ *****************************************************************************/
+void
+ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from2_NT,
+                                          int from2_sdim)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE");
+
+    BLOCK_VARDECS (
+      fprintf (global.outfile, "int SAC_p1 = 1; int SAC_p2 = 1;");
+      , FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                             , fprintf (global.outfile, "0");
+                             , fprintf (global.outfile, "SAC_ND_A_SHAPE(%s,0)", from_NT);
+                             , fprintf (global.outfile,
+                                        "SAC_p1 *= SAC_ND_READ(%s,SAC_i);", from_NT););
+
+      if (KNOWN_DIMENSION (from2_sdim)) {
+          int i;
+          for (i = 0; i < DIM_NO_OFFSET (from2_sdim); i++) {
+              fprintf (global.outfile, "SAC_p2 *= SAC_ND_A_SHAPE(%s,%d);\n", from2_NT, i);
+              INDENT;
+          }
+      } else {
+          FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                               , fprintf (global.outfile, "0");
+                               , fprintf (global.outfile, "SAC_ND_A_DIM(%s)", from2_NT);
+                               , fprintf (global.outfile,
+                                          "SAC_p2 *= SAC_ND_A_SHAPE(%s,SAC_i);",
+                                          from2_NT););
+      }
+
+      COND1 (fprintf (global.outfile, "SAC_p1 != SAC_p2");
+             , fprintf (global.outfile, "SAC_RuntimeError(\"Arrays do not adhere "
+                                        "to prod matches prod shape constraint\");\n");
+
+      ););
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+
+    DBUG_VOID_RETURN;
+}

@@ -1,6 +1,6 @@
 /*
  *
- * $Id:$
+ * $Id$
  *
  */
 
@@ -92,5 +92,17 @@ extern void ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char
 extern void ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg);
 
 extern void ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg);
+
+extern void ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim,
+                                                  int *shp);
+
+extern void ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim,
+                                         char *from2_NT, int from2_sdim);
+
+extern void ICMCompileND_PRF_VAL_LT_SHAPE (char *to_NT, char *from_NT, char *from2_NT,
+                                           int from2_sdim);
+
+extern void ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT,
+                                                      char *from2_NT, int from2_sdim);
 
 #endif /* _SAC_ICM2C_PRF_H_ */

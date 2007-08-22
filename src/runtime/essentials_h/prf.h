@@ -226,4 +226,45 @@
     SAC_TR_PRF_PRINT (("ND_PRF_SINGLETHREAD__...( %s, %d)\n", NT_STR (to_NT), to_sdim)); \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_not_yet_parallel)
 
+#define SAC_ND_PRF_GUARD(scl)                                                            \
+    if (!scl)                                                                            \
+        SAC_RuntimeError ("Conditions not met at guard");
+
+#define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(to_NT, from_NT, scl)                              \
+    if (SAC_ND_A_DIM (from_NT) != scl)                                                   \
+        SAC_RuntimeError ("Array does not adhere to type constraint");                   \
+    SAC_ND_A_FIELD (to_NT) = 1;
+
+#define SAC_ND_PRF_TYPE_CONSTRAINT_AUDGZ(to_NT, from_NT)                                 \
+    if (SAC_ND_A_DIM (from_NT) == 0)                                                     \
+        SAC_Runtime_Error ("Array does not adhere to type constraint");                  \
+    SAC_ND_A_FIELD (to_NT) = 1;
+
+#define SAC_ND_PRF_SHAPE_MATCHES_DIM(to_NT, from_NT, from2_NT)                           \
+    if ((SAC_ND_A_DIM (from_NT) != 1)                                                    \
+        || (SAC_ND_A_SHAPE (from_NT, 0) != SAC_ND_A_DIM (from2_NT))) {                   \
+        SAC_RuntimeError ("Arrays do not adhere to shape matches "                       \
+                          "dim constraint.");                                            \
+    }
+
+#define SAC_ND_PRF_NON_NEG_VAL(to_NT, from_NT)                                           \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
+            if (SAC_ND_READ (from_NT, SAC_i) < 0)                                        \
+                SAC_RuntimeError ("Non-negativity constraint violated");                 \
+        }                                                                                \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
+
+#define SAC_ND_PRF_VAL_LE_VAL(to_NT, from_NT, from2_NT)                                  \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
+            if (SAC_ND_READ (from_NT, SAC_i) > SAC_ND_READ (from2_NT, SAC_i))            \
+                SAC_RuntimeError ("Constraint violated");                                \
+        }                                                                                \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
+
 #endif /* _SAC_PRF_H_ */

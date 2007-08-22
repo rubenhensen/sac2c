@@ -699,6 +699,69 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *MMVprfGuard( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+static node *
+MMVprfGuard (node *arg_node, info *arg_info)
+{
+    node *v;
+    node *as;
+
+    DBUG_ENTER ("MMVprfGuard");
+
+    /*
+     * v1,...,vn = guard(p,a1,..an);
+     *
+     * 1. rename p,a1,..,an
+     * 2. Insert (vi,ai) into LUT
+     */
+    PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+
+    v = INFO_LHS (arg_info);
+    as = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+    while (as != NULL) {
+        node *a = EXPRS_EXPR (as);
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (v), ID_NAME (a));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (v), ID_AVIS (a));
+        v = IDS_NEXT (v);
+        as = EXPRS_NEXT (as);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MMVprfAfterGuard( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+static node *
+MMVprfAfterGuard (node *arg_node, info *arg_info)
+{
+    node *v;
+    node *a;
+
+    DBUG_ENTER ("MMVprfAfterGuard");
+
+    /*
+     * v = guard(a,p1,..pn);
+     *
+     * 1. rename a,p1,..,pn
+     * 2. Insert (v,a) into LUT
+     */
+    PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+
+    v = INFO_LHS (arg_info);
+    a = PRF_ARG1 (arg_node);
+    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (v), ID_NAME (a));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (v), ID_AVIS (a));
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--******************************************************************-->
  *
  * @fn MMVprf
@@ -742,6 +805,14 @@ MMVprf (node *arg_node, info *arg_info)
 
     case F_prop_obj_out:
         arg_node = MMVprfPropObjOut (arg_node, arg_info);
+        break;
+
+    case F_guard:
+        arg_node = MMVprfGuard (arg_node, arg_info);
+        break;
+
+    case F_afterguard:
+        arg_node = MMVprfAfterGuard (arg_node, arg_info);
         break;
 
     default:
