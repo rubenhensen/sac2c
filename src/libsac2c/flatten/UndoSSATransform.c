@@ -405,7 +405,7 @@ IdGivenByFillOperation (node *idavis)
 
         switch (NODE_TYPE (expr)) {
         case N_prf: {
-            res = (PRF_PRF (expr) == F_fill);
+            res = ((PRF_PRF (expr) == F_fill) || (PRF_PRF (expr) == F_afterguard));
         } break;
 
         case N_with:
@@ -489,6 +489,9 @@ USSATfuncond (node *arg_node, info *arg_info)
      *  - t,e are not given by fill-operations (after memory management)
      *    The renaming scheme applied by PREC:MMV for good reasons relies on the
      *    presence of a subsequent copy assignment
+     *
+     *  - t,e are not be given by an afterguard for the same reasons
+     *    see IdGivenByFillOperation
      *
      *  - t,e are not given by genarray oder modarray with-loops
      *    for the same reason they must not be given by fill operations.

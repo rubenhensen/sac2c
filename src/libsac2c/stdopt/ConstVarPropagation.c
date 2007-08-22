@@ -289,6 +289,15 @@ CVPprf (node *arg_node, info *arg_info)
     case F_dispatch_error:
     case F_sel_VxA:
     case F_copy:
+    case F_guard:
+    case F_afterguard:
+    case F_type_constraint:
+    case F_same_shape_AxA:
+    case F_shape_matches_dim_VxA:
+    case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
+    case F_prod_matches_prod_shape_VxA:
         /*
          * Only propagate variables here
          */

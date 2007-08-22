@@ -4963,7 +4963,7 @@ COMPprfValLeVal (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LT_VAL", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LE_VAL", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
 
