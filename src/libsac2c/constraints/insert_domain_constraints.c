@@ -277,6 +277,7 @@ HandleConstraints (node *avis, info *arg_info)
     if (AVIS_CONSTRSET (avis) != NULL) {
         constraint = AVIS_CONSTRSET (avis);
         AVIS_CONSTRSET (avis) = CONSTRAINT_NEXT (constraint);
+        CONSTRAINT_NEXT (constraint) = NULL;
 
         arg_info = HandleConstraints (avis, arg_info);
 
