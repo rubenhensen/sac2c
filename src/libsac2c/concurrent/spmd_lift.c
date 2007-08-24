@@ -417,19 +417,25 @@ SPMDLid (node *arg_node, info *arg_info)
     DBUG_PRINT ("SPMDL", ("ENTER id %s", ID_NAME (arg_node)));
 
     if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), arg_node) == arg_node) {
+        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
             DBUG_PRINT ("SPMDL", ("  Not handled before..."));
             new_avis = DUPdoDupNode (avis);
-            INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
-            INFO_PARAMS (arg_info)
-              = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+
+            if (!INFO_WITHID (arg_info)) {
+                INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
+                INFO_PARAMS (arg_info)
+                  = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+            }
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
         }
 
         if (INFO_WITHID (arg_info)) {
             DBUG_PRINT ("SPMDL", ("...is Withid-id"));
             if (new_avis == NULL) {
-                new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), arg_node);
+                new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+            } else {
+                INFO_VARDECS (arg_info)
+                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             }
             /*Mem*/
             /*Build memory allocation for withid*/
@@ -479,18 +485,24 @@ SPMDLids (node *arg_node, info *arg_info)
 
     node *avis = IDS_AVIS (arg_node);
     node *new_avis = NULL;
+    DBUG_PRINT ("SPMDL", ("ENTER ids %s", IDS_NAME (arg_node)));
 
     if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), arg_node) == NULL) {
+        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
             new_avis = DUPdoDupNode (avis);
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+            DBUG_PRINT ("SPMDL", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
         }
     } else {
+        /* If INFO_LIFT is true, we are on the LHS of the assignment which has the
+         * MT-Withloop on the RHS.*/
         if (INFO_LIFT (arg_info)) {
             new_avis = DUPdoDupNode (avis);
-            INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
-
+            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+            /*
+             INFO_ARGS(arg_info) = TBmakeArg(new_avis, INFO_ARGS(arg_info));
+            */
             INFO_RETS (arg_info)
               = TBmakeRet (TYeliminateAKV (AVIS_TYPE (new_avis)), INFO_RETS (arg_info));
 
@@ -500,9 +512,11 @@ SPMDLids (node *arg_node, info *arg_info)
             INFO_RETTYPES (arg_info)
               = TCappendTypes (TYtype2OldType (AVIS_TYPE (new_avis)),
                                INFO_RETTYPES (arg_info));
-
-            INFO_PARAMS (arg_info)
-              = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+            /*
+             INFO_PARAMS(arg_info) = TBmakeExprs(TBmakeId(avis),
+                                                 INFO_PARAMS(arg_info));
+            */
+            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
         }
     }
 

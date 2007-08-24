@@ -12,7 +12,7 @@
 
 include(`icm.m4')
 
-#ifdef _SAC_MT_GEN_H_
+#ifndef _SAC_MT_GEN_H_
 #define _SAC_MT_GEN_H_
 
 #ifndef SAC_SIMD_COMPILATION

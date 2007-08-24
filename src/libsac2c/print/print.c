@@ -1930,7 +1930,8 @@ PRTblock (node *arg_node, info *arg_info)
                           ("Indentation unbalanced while printing function '%s`.\n"
                            " Indentation at beginning of function: %i.\n"
                            " Indentation at end of function: %i\n",
-                           FUNDEF_NAME (arg_node), old_indent, global.indent));
+                           FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent,
+                           global.indent));
         }
     }
 

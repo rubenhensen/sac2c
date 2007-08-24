@@ -744,6 +744,12 @@ SUBPHASE (cmtf, "Creating MT variants of exported and provided functions",
 SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift,
           (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
 
+SUBPHASE (sched, "Annotating scheduling informations", SCHEDdoScheduleTrav,
+          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+
+SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
+          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+
 #endif /*  BEMT */
 
 SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)

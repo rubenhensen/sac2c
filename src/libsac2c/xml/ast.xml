@@ -1975,6 +1975,23 @@
           <node name="WLseg" />
         </travuser>
       </traversal>
+      <traversal id="SSPMDLS" name="Set SPMD linksign" default="sons" include="set_spmd_linksign.h">
+        <travuser>
+          <node name="Arg" />
+          <node name="Id" />
+          <node name="Exprs" />
+          <node name="Return" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Break" />
+          <node name="With2" />
+          <node name="Let" />
+          <node name="Ret" />
+          <node name="Fundef" />
+          <node name="Module" />
+        </travuser>
+      </traversal>
+<!--
       <traversal id="RMSPMD" name="Remove Spmd blocks traversal"  default="sons" include="removespmd.h">
         <travuser>
           <node name="Module" />
@@ -1983,7 +2000,7 @@
           <node name="Spmd" />
         </travuser>
       </traversal>
-
+-->
       <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
         <travuser>
           <node name="Ap" />
