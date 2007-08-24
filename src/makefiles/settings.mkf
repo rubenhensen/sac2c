@@ -28,14 +28,16 @@ SETTINGS_DEVEL         := -DSHOW_MALLOC \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED \
-                          -DCLEANMEM -DCHECK_NODE_ACCESS
+                          -DCLEANMEM -DCHECK_NODE_ACCESS \
+                          -DBEMT
 
 SETTINGS_PROD          := -DDBUG_OFF \
                           -DPRODUCTION \
                           -DWLAA_DEACTIVATED \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \
-                          -DPADT_DEACTIVATED 
+                          -DPADT_DEACTIVATED \
+                          -DBEMT
 
 SETTINGS_MT            := -DMT 
 
