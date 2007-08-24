@@ -416,6 +416,22 @@ RESOlet (node *arg_node, info *arg_info)
         }
     }
 
+    /*
+     * detect assignments of the form
+     *
+     * <ids> = F_afterguard( <globobj>, ...);
+     *
+     * and delete lhs as it is
+     * and identity assignment.
+     */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
+        && (PRF_PRF (LET_EXPR (arg_node)) == F_afterguard)
+        && (NODE_TYPE (PRF_ARG1 (LET_EXPR (arg_node))) == N_globobj)) {
+        AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node)))
+          = GLOBOBJ_OBJDEF (PRF_ARG1 (LET_EXPR (arg_node)));
+
+        INFO_DELETE (arg_info) = TRUE;
+    }
     DBUG_RETURN (arg_node);
 }
 
