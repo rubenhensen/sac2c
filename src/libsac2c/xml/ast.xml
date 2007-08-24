@@ -1981,6 +1981,7 @@
           <node name="Id" />
           <node name="Exprs" />
           <node name="Return" />
+          <node name="Propagate" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Break" />
@@ -1991,16 +1992,6 @@
           <node name="Module" />
         </travuser>
       </traversal>
-<!--
-      <traversal id="RMSPMD" name="Remove Spmd blocks traversal"  default="sons" include="removespmd.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Spmd" />
-        </travuser>
-      </traversal>
--->
       <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
         <travuser>
           <node name="Ap" />

@@ -187,6 +187,35 @@ SSPMDLSreturn (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
+SSPMDLSpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SSPMDLSpropagate");
+
+    INFO_MEM (arg_info) = TRUE;
+
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
+
+    INFO_MEM (arg_info) = FALSE;
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        INFO_WITH_RETS (arg_info) = IDS_NEXT (INFO_WITH_RETS (arg_info));
+        DBUG_ASSERT (INFO_WITH_RETS (arg_info) != NULL, "#ids != #with-returns!");
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ ******************************************************************************/
+
+node *
 SSPMDLSgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSPMDLSgenarray");
