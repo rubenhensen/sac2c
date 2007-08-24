@@ -498,28 +498,33 @@ SPMDLids (node *arg_node, info *arg_info)
         /* If INFO_LIFT is true, we are on the LHS of the assignment which has the
          * MT-Withloop on the RHS.*/
         if (INFO_LIFT (arg_info)) {
-            new_avis = DUPdoDupNode (avis);
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            /*
-             INFO_ARGS(arg_info) = TBmakeArg(new_avis, INFO_ARGS(arg_info));
-            */
+            new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+
+            if (new_avis == avis) {
+                new_avis = DUPdoDupNode (avis);
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+                INFO_VARDECS (arg_info)
+                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+            }
+
             INFO_RETS (arg_info)
-              = TBmakeRet (TYeliminateAKV (AVIS_TYPE (new_avis)), INFO_RETS (arg_info));
+              = TCappendRet (INFO_RETS (arg_info),
+                             TBmakeRet (TYeliminateAKV (AVIS_TYPE (new_avis)), NULL));
 
             INFO_RETEXPRS (arg_info)
-              = TBmakeExprs (TBmakeId (new_avis), INFO_RETEXPRS (arg_info));
+              = TCappendExprs (INFO_RETEXPRS (arg_info),
+                               TBmakeExprs (TBmakeId (new_avis), NULL));
 
             INFO_RETTYPES (arg_info)
-              = TCappendTypes (TYtype2OldType (AVIS_TYPE (new_avis)),
-                               INFO_RETTYPES (arg_info));
-            /*
-             INFO_PARAMS(arg_info) = TBmakeExprs(TBmakeId(avis),
-                                                 INFO_PARAMS(arg_info));
-            */
-            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+              = TCappendTypes (INFO_RETTYPES (arg_info),
+                               TYtype2OldType (AVIS_TYPE (new_avis)));
         }
     }
 
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 

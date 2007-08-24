@@ -576,33 +576,6 @@ ENDPHASE (wlt)
 
 PHASE (mt, "Generating annotations for multithreaded execution", global.mtmode != MT_none)
 
-#ifndef BEMT
-
-SUBPHASE (spmdi, "Building SPMD blocks around with-loops", SPMDIdoSpmdInit,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (cmtf, "Creating MT variants of exported and provided functions",
-          CMTFdoCreateMtFuns,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (sched, "Annotating scheduling informations", SCHEDdoScheduleTrav,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (rmspmd, "Removing SPMD blocks", RMSPMDdoRemoveSpmdBlocks,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (l2f, "Lifting SPMD conditionals", L2FdoLac2Fun,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-SUBPHASE (ssa, "Establishing static single assignment form in SPMD conditionals",
-          SSATdoTransform,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mt)
-
-#endif /* BEMT */
-
 #ifndef PRODUCTION
 
 SUBPHASE (tem, "Tagging execution modes", TEMdoTagExecutionmode,
@@ -732,8 +705,6 @@ SUBPHASE (rera, "Restoring reference arguments", RERAdoRestoreReferenceArguments
 
 SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS, pc)
 
-#ifdef BEMT
-
 SUBPHASE (spmdi, "Building SPMD blocks around with-loops", SPMDIdoSpmdInit,
           (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
 
@@ -749,8 +720,6 @@ SUBPHASE (sched, "Annotating scheduling informations", SCHEDdoScheduleTrav,
 
 SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
           (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
-
-#endif /*  BEMT */
 
 SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
 

@@ -113,12 +113,19 @@ SSPMDLSid (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSPMDLSid");
 
     if (INFO_MEM (arg_info)) {
+        DBUG_PRINT ("SSPMDLS",
+                    ("Insert %s->%s into LUT (id)", IDS_NAME (INFO_WITH_RETS (arg_info)),
+                     ID_NAME (arg_node)));
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_WITH_RETS (arg_info)),
                                ID_AVIS (arg_node));
     } else if (INFO_RETURNS (arg_info)) {
         node *avis = NULL;
+        DBUG_PRINT ("SSPMDLS",
+                    ("Looking up arg for retexpr %s", AVIS_NAME (ID_AVIS (arg_node))));
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+
+        DBUG_PRINT ("SSPMDLS", ("...found %s", AVIS_NAME (avis)));
 
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, INFO_FUN_RETS (arg_info));
