@@ -155,7 +155,6 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
      */
 
     fundef = INFO_FUNDEF (arg_info);
-    INFO_FUNDEF (arg_info) = NULL;
 
     retexprs = INFO_RETEXPRS (arg_info);
     INFO_RETEXPRS (arg_info) = NULL;

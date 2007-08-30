@@ -15,6 +15,7 @@
 
 extern node *SPMDIdoSpmdInit (node *syntax_tree);
 
+extern node *SPMDIblock (node *arg_node, info *arg_info);
 extern node *SPMDImodule (node *arg_node, info *arg_info);
 extern node *SPMDIfundef (node *arg_node, info *arg_info);
 extern node *SPMDIassign (node *arg_node, info *arg_info);
@@ -22,6 +23,7 @@ extern node *SPMDIlet (node *arg_node, info *arg_info);
 extern node *SPMDIids (node *arg_node, info *arg_info);
 extern node *SPMDIid (node *arg_node, info *arg_info);
 extern node *SPMDIwith2 (node *arg_node, info *arg_info);
+extern node *SPMDIwith (node *arg_node, info *arg_info);
 extern node *SPMDIfold (node *arg_node, info *arg_info);
 extern node *SPMDIgenarray (node *arg_node, info *arg_info);
 extern node *SPMDImodarray (node *arg_node, info *arg_info);

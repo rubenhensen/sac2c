@@ -87,6 +87,9 @@ struct INFO {
     node *condition;
     node *sequential;
     int withopmode;
+    node *vardecs;
+    node *topmostblock;
+    bool iswith;
 
     dfmask_t *in_mask;
     dfmask_t *out_mask;
@@ -107,6 +110,9 @@ struct INFO {
 #define INFO_CONDITION(n) (n->condition)
 #define INFO_SEQUENTIAL(n) (n->sequential)
 #define INFO_WITHOPMODE(n) (n->withopmode)
+#define INFO_VARDECS(n) (n->vardecs)
+#define INFO_TOPMOSTBLOCK(n) (n->topmostblock)
+#define INFO_ISWITH(n) (n->iswith)
 
 #define INFO_IN_MASK(n) (n->in_mask)
 #define INFO_OUT_MASK(n) (n->out_mask)
@@ -135,6 +141,9 @@ MakeInfo ()
     INFO_CONDITION (result) = NULL;
     INFO_SEQUENTIAL (result) = NULL;
     INFO_WITHOPMODE (result) = WITHOPMODE_DECIDE;
+    INFO_VARDECS (result) = NULL;
+    INFO_TOPMOSTBLOCK (result) = NULL;
+    INFO_ISWITH (result) = FALSE;
 
     INFO_IN_MASK (result) = NULL;
     INFO_OUT_MASK (result) = NULL;
@@ -217,6 +226,36 @@ SPMDImodule (node *arg_node, info *arg_info)
 /*****************************************************************************/
 /*****************************************************************************/
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SPMDIblock(node *arg_node, info *arg_info)
+
+ ******************************************************************************/
+
+node *
+SPMDIblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIblock");
+
+    if (INFO_TOPMOSTBLOCK (arg_info) == NULL) {
+        INFO_TOPMOSTBLOCK (arg_info) = arg_node;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_TOPMOSTBLOCK (arg_info) == arg_node) {
+        if (INFO_VARDECS (arg_info) != NULL) {
+            BLOCK_VARDEC (arg_node)
+              = TCappendVardec (BLOCK_VARDEC (arg_node), INFO_VARDECS (arg_info));
+
+            INFO_VARDECS (arg_info) = NULL;
+        }
+        INFO_TOPMOSTBLOCK (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SPMDIfundef( node *arg_node, info *arg_info)
@@ -255,19 +294,34 @@ SPMDIfundef (node *arg_node, info *arg_info)
 node *
 SPMDIassign (node *arg_node, info *arg_info)
 {
+    node *new_avis;
+    node *preassign;
     node *new_instr;
+    node *new_node = arg_node;
 
     DBUG_ENTER ("SPMDIassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_CONDITION (arg_info) != NULL) {
+        new_avis = TBmakeAvis (TRAVtmpVar (),
+                               TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+
         new_instr
-          = TBmakeCond (INFO_CONDITION (arg_info),
+          = TBmakeCond (TBmakeId (new_avis),
                         TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL),
                         TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL),
                                      NULL));
+
+        preassign = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                             INFO_CONDITION (arg_info)),
+                                  NULL);
+
         ASSIGN_INSTR (arg_node) = new_instr;
+
+        new_node = TCappendAssign (preassign, arg_node);
 
         INFO_CONDITION (arg_info) = NULL;
         INFO_SEQUENTIAL (arg_info) = NULL;
@@ -277,7 +331,7 @@ SPMDIassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (new_node);
 }
 
 /** <!--********************************************************************-->
@@ -368,6 +422,22 @@ SPMDIwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SPMDIwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIwith");
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SPMDIfold( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -422,76 +492,79 @@ SPMDIgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SPMDIgenarray");
 
-    size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
+    if (INFO_LETIDS (arg_info) != NULL) {
+        size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
-    if (size_static) {
-        size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
-        if (size >= global.min_parallel_size) {
-            /*
-             * We statically know the size of the result array and its beyond the
-             * threshold. We parallelize unconditionally and eliminate a condition
-             * created before.
-             */
-            INFO_ISWORTH (arg_info) = TRUE;
-            if (INFO_CONDITION (arg_info) != NULL) {
-                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
-            }
-        } else {
-            /*
-             * We statically know the size of the result array and its *not* beyond
-             * the threshold.
-             */
-            if (INFO_ISWORTH (arg_info)) {
+        if (size_static) {
+            size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+            if (size >= global.min_parallel_size) {
                 /*
-                 * We previously considered the with-loop to be worth parallelization.
-                 * We stick to this initial decision.
+                 * We statically know the size of the result array and its beyond the
+                 * threshold. We parallelize unconditionally and eliminate a condition
+                 * created before.
                  */
-            } else {
-                /*
-                 * We now know that the with-loop is not worth parallelization.
-                 * So, we eliminate a potential condition.
-                 */
+                INFO_ISWORTH (arg_info) = TRUE;
                 if (INFO_CONDITION (arg_info) != NULL) {
                     INFO_CONDITION (arg_info)
                       = FREEdoFreeTree (INFO_CONDITION (arg_info));
                 }
+            } else {
+                /*
+                 * We statically know the size of the result array and its *not* beyond
+                 * the threshold.
+                 */
+                if (INFO_ISWORTH (arg_info)) {
+                    /*
+                     * We previously considered the with-loop to be worth parallelization.
+                     * We stick to this initial decision.
+                     */
+                } else {
+                    /*
+                     * We now know that the with-loop is not worth parallelization.
+                     * So, we eliminate a potential condition.
+                     */
+                    if (INFO_CONDITION (arg_info) != NULL) {
+                        INFO_CONDITION (arg_info)
+                          = FREEdoFreeTree (INFO_CONDITION (arg_info));
+                    }
+                }
             }
-        }
-    } else {
-        /*
-         * We do not know the size statically.
-         * Nevertheless, we do not construct a condition here. We first continue
-         * the with-op traversal because we may find a modarray with-loop, which
-         * allows us to build a simpler condition.
-         */
-    }
-
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
-
-    if (!size_static && (INFO_CONDITION (arg_info) == NULL)) {
-        /*
-         * We would like to give this with-loop a try and obviously there have been
-         * no modarray with-ops. So we must build a genarray parallelization criterion.
-         */
-
-        if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
-            arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
         } else {
-            arg1 = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
+            /*
+             * We do not know the size statically.
+             * Nevertheless, we do not construct a condition here. We first continue
+             * the with-op traversal because we may find a modarray with-loop, which
+             * allows us to build a simpler condition.
+             */
         }
 
-        if (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id) {
-            arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
-        } else {
-            arg2 = DUPdoDupNode (GENARRAY_DEFAULT (arg_node));
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
         }
 
-        INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
+        if (!size_static && (INFO_CONDITION (arg_info) == NULL)) {
+            /*
+             * We would like to give this with-loop a try and obviously there have been
+             * no modarray with-ops. So we must build a genarray parallelization
+             * criterion.
+             */
+
+            if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
+                arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
+            } else {
+                arg1 = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
+            }
+
+            if (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id) {
+                arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
+            } else {
+                arg2 = DUPdoDupNode (GENARRAY_DEFAULT (arg_node));
+            }
+
+            INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
+        }
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -573,6 +646,22 @@ SPMDImodarray (node *arg_node, info *arg_info)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *SPMDIblock(node *arg_node, info *arg_info)
+
+ ******************************************************************************/
+
+node *
+SPMDIblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIblock");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--********************************************************************-->
  *
@@ -809,6 +898,22 @@ SPMDIwith2 (node *arg_node, info *arg_info)
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIwith");
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

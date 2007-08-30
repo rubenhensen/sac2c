@@ -2048,11 +2048,11 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
  * following SPMD block sequentially or parallel.
  */
 
-#define SAC_ND_PRF_RUNMTGENARRAY__DATA(var_NT, args) SAC_NOOP ()
+#define SAC_ND_PRF_RUNMT_GENARRAY__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
 
-#define SAC_ND_PRF_RUNMTMODARRAY__DATA(var_NT, args) SAC_NOOP ()
+#define SAC_ND_PRF_RUNMT_MODARRAY__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
 
-#define SAC_ND_PRF_RUNMTFOLD__DATA(var_NT, args) SAC_NOOP ()
+#define SAC_ND_PRF_RUNMT_FOLD__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
 
 /*****************************************************************************/
 
