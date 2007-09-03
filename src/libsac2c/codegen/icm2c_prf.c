@@ -1631,8 +1631,11 @@ ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *
           fprintf (global.outfile, "|| (SAC_ND_A_SHAPE(%s,%d) != %d)", from_NT, i,
                    shp[i]);
       },
-      fprintf (global.outfile, "SAC_RuntimeError(\"Array does not adhere "
-                               "to type constraint\");\n"););
+      fprintf (global.outfile,
+               "SAC_RuntimeErrorLine(%d, \"Array '\" TO_STR( NT_NAME( %s)) \"' does not "
+               "adhere "
+               "to type constraint\");\n",
+               global.linenum, from_NT););
 
     INDENT;
     fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);

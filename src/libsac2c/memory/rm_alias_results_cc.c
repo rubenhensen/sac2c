@@ -18,6 +18,9 @@
  *   - val_lt_shape_VxA
  *   - val_le_val_VxV
  *   - prod_matches_prod_shape_VxA
+ * However, as the LHS-alias might have a more precise type, we introduce
+ * aliasing assignments to trigger a conversion of the data representation
+ * in the backend.
  *
  * @ingroup mm
  *
@@ -39,6 +42,7 @@
  */
 #include "dbug.h"
 #include "traverse.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
@@ -52,12 +56,14 @@
  *****************************************************************************/
 struct INFO {
     node *let;
+    node *postassign;
 };
 
 /**
  * A pointer to the last LET node
  */
-#define INFO_LET(n) (n->let)
+#define INFO_LET(n) ((n)->let)
+#define INFO_POSTASSIGN(n) ((n)->postassign)
 
 static info *
 MakeInfo ()
@@ -69,6 +75,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_LET (result) = NULL;
+    INFO_POSTASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -121,6 +128,41 @@ EMRACCdoRemoveAliasResultsFromConformityChecks (node *syntax_tree)
 
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Local helper functions
+ * @{
+ *
+ *****************************************************************************/
+
+info *
+Substitute (node **ids, node *avis, info *arg_info)
+{
+    DBUG_ENTER ("Substitute");
+
+    if (TYeqTypes (AVIS_TYPE (IDS_AVIS (*ids)), AVIS_TYPE (avis))) {
+        /*
+         * substitute
+         */
+        AVIS_SUBST (IDS_AVIS (*ids)) = avis;
+    } else {
+        /*
+         * emit assignment
+         */
+        INFO_POSTASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL), TBmakeId (avis)),
+                          INFO_POSTASSIGN (arg_info));
+    }
+
+    *ids = FREEdoFreeNode (*ids);
+
+    DBUG_RETURN (arg_info);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Local helper functions -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -226,6 +268,12 @@ EMRACCassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
+    if (INFO_POSTASSIGN (arg_info) != NULL) {
+        ASSIGN_NEXT (arg_node)
+          = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGN (arg_info) = NULL;
+    }
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
@@ -270,9 +318,8 @@ EMRACCprf (node *arg_node, info *arg_info)
          * v,p = type_constraint( t, a); R
          * => p = type_constraint( t, a); R[v\a]
          */
-        AVIS_SUBST (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))
-          = ID_AVIS (PRF_ARG2 (arg_node));
-        LET_IDS (INFO_LET (arg_info)) = FREEdoFreeNode (LET_IDS (INFO_LET (arg_info)));
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               ID_AVIS (PRF_ARG2 (arg_node)), arg_info);
         break;
 
     case F_same_shape_AxA:
@@ -280,12 +327,10 @@ EMRACCprf (node *arg_node, info *arg_info)
          * va,vb,p = same_shape_AxA(a,b); R
          * => p = same_shape_AxA(a,b); R[va\a][vb\b]
          */
-        AVIS_SUBST (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))
-          = ID_AVIS (PRF_ARG1 (arg_node));
-        LET_IDS (INFO_LET (arg_info)) = FREEdoFreeNode (LET_IDS (INFO_LET (arg_info)));
-        AVIS_SUBST (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))
-          = ID_AVIS (PRF_ARG2 (arg_node));
-        LET_IDS (INFO_LET (arg_info)) = FREEdoFreeNode (LET_IDS (INFO_LET (arg_info)));
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               ID_AVIS (PRF_ARG1 (arg_node)), arg_info);
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               ID_AVIS (PRF_ARG2 (arg_node)), arg_info);
         break;
 
     case F_shape_matches_dim_VxA:
@@ -297,9 +342,8 @@ EMRACCprf (node *arg_node, info *arg_info)
          * v,p = constraint(a,b); R
          * => p = constraint(a,b) R[v\a]
          */
-        AVIS_SUBST (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))
-          = ID_AVIS (PRF_ARG1 (arg_node));
-        LET_IDS (INFO_LET (arg_info)) = FREEdoFreeNode (LET_IDS (INFO_LET (arg_info)));
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               ID_AVIS (PRF_ARG1 (arg_node)), arg_info);
         break;
 
     default:; /* do nothing */
