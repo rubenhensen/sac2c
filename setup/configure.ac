@@ -413,13 +413,13 @@ OSFLAGS=""
 case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
-    LD_DYNAMIC=["-dy -G"]
+    LD_DYNAMIC=["-dy"]
     LD_PATH=["-R"]
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
-    LD_DYNAMIC=["-G -dy -shared -allow-shlib-undefined"]
+    LD_DYNAMIC=["-dy -shared -allow-shlib-undefined"]
     LD_PATH=["-Wl,-rpath,"]
     AC_MSG_RESULT([linux settings])
     ;;
