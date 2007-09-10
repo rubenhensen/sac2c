@@ -413,13 +413,13 @@ OSFLAGS=""
 case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
-    LD_DYNAMIC=["ld -dy -G"]
+    LD_DYNAMIC=["-dy -G"]
     LD_PATH=["-R"]
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
-    LD_DYNAMIC=["ld -G -dy -shared -allow-shlib-undefined"]
+    LD_DYNAMIC=["-G -dy -shared -allow-shlib-undefined"]
     LD_PATH=["-Wl,-rpath,"]
     AC_MSG_RESULT([linux settings])
     ;;
@@ -431,7 +431,7 @@ case "$target_os" in
     ;;
   *darwin*)      
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
-    LD_DYNAMIC=["gcc -undefined suppress -flat_namespace -bundle"]
+    LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
     LD_PATH=["-install_name"]
     AC_MSG_RESULT([OS X settings])
     ;;
