@@ -413,7 +413,7 @@ OSFLAGS=""
 case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
-    LD_DYNAMIC=["-dy"]
+    LD_DYNAMIC=["-G -dy"]
     LD_PATH=["-R"]
     AC_MSG_RESULT([solaris settings])
     ;;
