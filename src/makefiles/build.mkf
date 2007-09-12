@@ -281,7 +281,7 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"
 	$(HIDE) $(LD) $(LDFLAGS) -o $@ \
                       $(filter $*/%,$^) \
-                      $(LIBDIRS) $(LIB_TOOLS)
+                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 

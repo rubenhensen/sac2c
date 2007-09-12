@@ -49,8 +49,38 @@ version="1.0">
 #ifndef _SAC_NODE_BASIC_H_
 #define _SAC_NODE_BASIC_H_
 
-#include "types.h"
+#ifndef _SAC_TREE_BASIC_H_
+#error "node_basic.h should only be included as part of tree_basic.h!"
+#endif
 
+#ifdef INLINE_MACRO_CHECKS
+/**
+ * This function is inlined at each macro call to check whether the 
+ * nodetype matches. To allow us to print elaborate error messages
+ * instead of a segfault, we make use of the nodeenum to nodename 
+ * mapping. As this is a header file, and as header files are only
+ * allowed to reference types.h, we add an explicit declaration
+ * of the globals data type. For the same reason, we cannot use 
+ * DBUG_ASSERT directly, but need to mimic it.
+ */
+
+extern global_t global;
+
+static inline
+node *NBMacroMatchesType( node *node, nodetype type)
+{
+#ifndef DBUG_OFF
+  if ((node != NULL) &amp;&amp; (node->nodetype != type)) {
+    printf( "TRAVERSE ERROR: node of type %s found where %s was expected!\n\n",
+            global.mdb_nodetype[node->nodetype],
+            global.mdb_nodetype[type]);
+    *((int *) 0) = 1; /* segfault */
+  }
+#endif
+
+  return( node);
+}
+#endif /* INLINE_MACRO_CHECKS */
   </xsl:text>
   <xsl:apply-templates select="/definition/@version"/>
   <xsl:apply-templates select="//syntaxtree/node"/>

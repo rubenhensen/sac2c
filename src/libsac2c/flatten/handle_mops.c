@@ -6,7 +6,6 @@
 
 #include "handle_mops.h"
 #include "traverse.h"
-#include "node_basic.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
