@@ -43,6 +43,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
@@ -151,9 +152,18 @@ Substitute (node **ids, node *avis, info *arg_info)
         /*
          * emit assignment
          */
-        INFO_POSTASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL), TBmakeId (avis)),
-                          INFO_POSTASSIGN (arg_info));
+        if ((!TUisScalar (AVIS_TYPE (IDS_AVIS (*ids))))
+            && (!TUisScalar (AVIS_TYPE (avis)))) {
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL),
+                                         TBmakeId (avis)),
+                              INFO_POSTASSIGN (arg_info));
+        } else {
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL),
+                                         TCmakePrf1 (F_copy, TBmakeId (avis))),
+                              INFO_POSTASSIGN (arg_info));
+        }
     }
 
     *ids = FREEdoFreeNode (*ids);
