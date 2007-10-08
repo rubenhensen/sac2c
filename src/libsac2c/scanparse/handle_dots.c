@@ -1330,7 +1330,7 @@ BuildWLShape (idtable *table, idtable *end)
                 handle = handle->next;
 
                 while (handle != NULL) {
-                    shape = MAKE_BIN_PRF (F_min_VxV, shape, handle->shape);
+                    shape = MAKE_BIN_PRF (F_min_SxS, shape, handle->shape);
                     handle = handle->next;
                 }
             }
