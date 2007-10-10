@@ -29,7 +29,8 @@ SETTINGS_DEVEL         := -DSHOW_MALLOC \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED \
                           -DCLEANMEM -DCHECK_NODE_ACCESS \
-                          -DBEMT
+                          -DBEMT \
+                          -DINLINE_MACRO_CHECKS
 
 SETTINGS_PROD          := -DDBUG_OFF \
                           -DPRODUCTION \
