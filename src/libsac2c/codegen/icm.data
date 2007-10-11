@@ -433,7 +433,7 @@ ICM_DEF( ND_PRF_IDX_MODARRAY_AxSxA__DATA, ICM_TRACE_NONE)
   ICM_ANY( idx_ANY)
   ICM_NT( val_array)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_IDX_MODARRAY_AxSxS__DATA, (to_NT, to_sdim, from_NT, from_sdim,
+ICM_END( ND_PRF_IDX_MODARRAY_AxSxA__DATA, (to_NT, to_sdim, from_NT, from_sdim,
                                            idx_ANY, val_array, copyfun))
 #endif
 
