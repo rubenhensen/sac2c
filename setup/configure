@@ -5240,7 +5240,7 @@ echo "${ECHO_T}OSF settings" >&6; }
   *darwin*)
     OSFLAGS="-no-cpp-precomp -Wno-long-double"
     LD_DYNAMIC="-undefined suppress -flat_namespace -bundle"
-    LD_PATH="-install_name"
+    LD_PATH="-L"
     { echo "$as_me:$LINENO: result: OS X settings" >&5
 echo "${ECHO_T}OS X settings" >&6; }
     ;;
