@@ -67,7 +67,7 @@ OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
 OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
 #ifndef DISABLE_PHM
-OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
+OPTIMIZE ("phm", phm, FALSE, FALSE, "private heap management")
 OPTIMIZE ("aps", aps, TRUE, TRUE, "arena preselection (for PHM)")
 OPTIMIZE ("dao", dao, TRUE, TRUE, "descriptor allocation opt. (for PHM)")
 OPTIMIZE ("msca", msca, TRUE, TRUE, "memory size cache adjustment (for PHM)")

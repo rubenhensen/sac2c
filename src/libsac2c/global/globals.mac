@@ -65,7 +65,7 @@ GLOBAL (int, start_token, 0)
  *  Version control
  */
 
-GLOBAL (const char *, version_id, "v1.00-beta (Codename Wooden Shoes)")
+GLOBAL (const char *, version_id, "v1.00-beta (Live CD Edition)")
 /*
  * version string
  */
@@ -418,6 +418,7 @@ GLOBAL (const arg_encoding_t *, prf_arg_encoding, prf_arg_encoding_init)
 GLOBAL (bool, print_after_break, TRUE)
 
 GLOBAL (bool, dotrace, FALSE)
+GLOBAL (bool, dousertrace, FALSE)
 
 /*
  * whether to enable the stuff tog does (-:

@@ -615,7 +615,10 @@ PrintRuntimeTraceOptions (void)
       "                      s: Trace array accesses.\n"
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
-      "                         using SAC libraries in C programs.\n");
+      "                         using SAC libraries in C programs.\n"
+      "\n"
+      "    -utrace\n"
+      "                    Introduce user tracing calls.");
 
     DBUG_VOID_RETURN;
 }

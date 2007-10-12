@@ -603,6 +603,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_END ("trace");
 
     /*
+     * Options starting with uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+     */
+
+    ARGS_FLAG ("utrace", global.dousertrace = TRUE);
+
+    /*
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
      */
 

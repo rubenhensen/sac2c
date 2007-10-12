@@ -20,6 +20,9 @@ ENDPHASE (scp)
 
 PHASE (pre, "Preprocessing SAC program", ALWAYS)
 
+SUBPHASE (iotc, "Introducing user-tracing calls", IUTCdoIntroduceUserTraceCalls,
+          global.dousertrace, pre)
+
 SUBPHASE (zgwl, "Handling zero-generator with-loops", HZGWLdoHandleZeroGeneratorWithLoops,
           ALWAYS, pre)
 
