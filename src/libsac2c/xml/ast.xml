@@ -342,10 +342,15 @@
       <traversal id="IUTC" name="Introduce User Trace Calls" default="sons" include="introduce_user_tracing_calls.h">
         <travuser>
           <node name="Fundef" />
-          <node name="Let" />
+          <node name="Arg" />
+          <node name="SPIds" />
           <node name="Assign" />
           <node name="Return" />
+          <node name="Block" />
         </travuser>
+	<travnone>
+	  <node name="Withid" />
+	</travnone>
       </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <travuser>

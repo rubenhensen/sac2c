@@ -29,6 +29,7 @@ extern char *STRbytes2Hex (int len, unsigned char *array);
 extern char *STRreplaceSpecialCharacters (const char *name);
 extern char *STRstring2SafeCEncoding (const char *string);
 extern char *STRcommentify (const char *string);
+extern node *STRstring2Array (const char *string);
 
 /*********************************
  * macro definitions

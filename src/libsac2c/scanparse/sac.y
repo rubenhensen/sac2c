@@ -61,7 +61,6 @@ static int yyparse();
 static void CleanUpParser();
 static node *MakeIncDecLet( char *name, char *op);
 static node *MakeOpOnLet( char *name, node *name2, char *op);
-static node *String2Array( char *str);
 static ntype *Exprs2NType( ntype *basetype, node *exprs);
 static node *ConstructMop( node *, node *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
@@ -1184,7 +1183,7 @@ expr: qual_ext_id                { $$ = $1;                   }
     | FLOAT                      { $$ = TBmakeFloat( $1);     }
     | DOUBLE                     { $$ = TBmakeDouble( $1);    }
     | CHAR                       { $$ = TBmakeChar( $1);      }
-    | string                     { $$ = String2Array( $1);    }
+    | string                     { $$ = STRstring2Array( $1); MEMfree( $1);  }
     | TRUETOKEN                  { $$ = TBmakeBool( 1);       }
     | FALSETOKEN                 { $$ = TBmakeBool( 0);       }
     | expr LAZYAND expr          { $$ = TBmakeFuncond( $1, $3, TBmakeBool(0)); }
@@ -2044,95 +2043,6 @@ void CleanUpParser()
   }
 
   DBUG_VOID_RETURN;
-}
-
-
-
-/******************************************************************************
- *
- * Function:
- *   node *String2Array(char *str)
- *
- * Description:
- *   
- *
- ******************************************************************************/
-
-static
-node *String2Array(char *str)
-{
-  node *new_exprs;
-  int i, cnt;
-  node *array;
-  node *len_expr;
-  node *res;
-
-  DBUG_ENTER( "String2Array");
-
-  new_exprs = TBmakeExprs( TBmakeChar( '\0'), NULL);
-
-  cnt=0;
-  
-  for (i=STRlen(str)-1; i>=0; i--) {
-    if ((i>0) && (str[i-1]=='\\')) {
-      switch (str[i]) {
-      case 'n':
-        new_exprs = TBmakeExprs(TBmakeChar('\n'), new_exprs);
-        i-=1;
-        break;
-      case 't':
-        new_exprs = TBmakeExprs(TBmakeChar('\t'), new_exprs);
-        i-=1;
-        break;
-      case 'v':
-        new_exprs = TBmakeExprs(TBmakeChar('\v'), new_exprs);
-        i-=1;
-        break;
-      case 'b':
-        new_exprs = TBmakeExprs(TBmakeChar('\b'), new_exprs);
-        i-=1;
-        break;
-      case 'r':
-        new_exprs = TBmakeExprs(TBmakeChar('\r'), new_exprs);
-        i-=1;
-        break;
-      case 'f':
-        new_exprs = TBmakeExprs(TBmakeChar('\f'), new_exprs);
-        i-=1;
-        break;
-      case 'a':
-        new_exprs = TBmakeExprs(TBmakeChar('\a'), new_exprs);
-        i-=1;
-        break;
-      case '"':
-        new_exprs = TBmakeExprs(TBmakeChar('"'), new_exprs);
-        i-=1;
-        break;
-      default:
-        new_exprs = TBmakeExprs(TBmakeChar(str[i]), new_exprs);
-        break;
-      }
-    }
-    else {
-      new_exprs = TBmakeExprs(TBmakeChar(str[i]), new_exprs);
-    }
-    
-    cnt+=1;
-  }
-
-  len_expr = TBmakeNum( cnt);
-  array = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_char),
-                                   SHmakeShape( 0)), 
-                        new_exprs);
-
-#ifndef CHAR_ARRAY_NOT_AS_STRING
-  ARRAY_STRING(array)=str;
-#endif  /* CHAR_ARRAY_AS_STRING */
-
-  res = TCmakeSpap2( NSgetNamespace( "String") , STRcpy( "to_string"), 
-                    array, len_expr);
-
-  DBUG_RETURN( res); 
 }
 
 

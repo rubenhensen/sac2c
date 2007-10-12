@@ -13,6 +13,11 @@
 #include "dbug.h"
 #include "math_utils.h"
 #include "str_buffer.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "new_types.h"
+#include "shape.h"
+#include "namespaces.h"
 
 /*******************************************************************************
  *
@@ -797,4 +802,86 @@ STRcommentify (const char *string)
     }
 
     DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Converts the given string into the corresponding synatx tree
+ *        from.
+ *
+ * @param str a string
+ *
+ * @return non-flattened syntax tree.
+ ******************************************************************************/
+node *
+STRstring2Array (const char *str)
+{
+    node *new_exprs;
+    int i, cnt;
+    node *array;
+    node *len_expr;
+    node *res;
+
+    DBUG_ENTER ("STRstring2Array");
+
+    new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
+
+    cnt = 0;
+
+    for (i = STRlen (str) - 1; i >= 0; i--) {
+        if ((i > 0) && (str[i - 1] == '\\')) {
+            switch (str[i]) {
+            case 'n':
+                new_exprs = TBmakeExprs (TBmakeChar ('\n'), new_exprs);
+                i -= 1;
+                break;
+            case 't':
+                new_exprs = TBmakeExprs (TBmakeChar ('\t'), new_exprs);
+                i -= 1;
+                break;
+            case 'v':
+                new_exprs = TBmakeExprs (TBmakeChar ('\v'), new_exprs);
+                i -= 1;
+                break;
+            case 'b':
+                new_exprs = TBmakeExprs (TBmakeChar ('\b'), new_exprs);
+                i -= 1;
+                break;
+            case 'r':
+                new_exprs = TBmakeExprs (TBmakeChar ('\r'), new_exprs);
+                i -= 1;
+                break;
+            case 'f':
+                new_exprs = TBmakeExprs (TBmakeChar ('\f'), new_exprs);
+                i -= 1;
+                break;
+            case 'a':
+                new_exprs = TBmakeExprs (TBmakeChar ('\a'), new_exprs);
+                i -= 1;
+                break;
+            case '"':
+                new_exprs = TBmakeExprs (TBmakeChar ('"'), new_exprs);
+                i -= 1;
+                break;
+            default:
+                new_exprs = TBmakeExprs (TBmakeChar (str[i]), new_exprs);
+                break;
+            }
+        } else {
+            new_exprs = TBmakeExprs (TBmakeChar (str[i]), new_exprs);
+        }
+
+        cnt += 1;
+    }
+
+    len_expr = TBmakeNum (cnt);
+    array
+      = TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_char), SHmakeShape (0)), new_exprs);
+
+#ifndef CHAR_ARRAY_NOT_AS_STRING
+    ARRAY_STRING (array) = STRcpy (str);
+#endif /* CHAR_ARRAY_AS_STRING */
+
+    res = TCmakeSpap2 (NSgetNamespace ("String"), STRcpy ("to_string"), array, len_expr);
+
+    DBUG_RETURN (res);
 }
