@@ -80,9 +80,11 @@ GLOBAL (const char *, target_platform, OS "_" ARCH)
  */
 
 GLOBAL (const char *, preludename, SAC_PRELUDE_NAME)
+
 /*
- * version string
+ *  Flag to enable/disable loading of prelude
  */
+GLOBAL (bool, loadprelude, TRUE)
 
 /*
  *  File handling

@@ -806,8 +806,10 @@ PrintLibraryOptions (void)
             "executable.\n"
             "\n"
             "                     NOTE:\n"
-            "                     Multithreading is not yet available for C libraries.\n",
-            global.linksetsize == INT_MAX ? 0 : global.linksetsize);
+            "                     Multithreading is not yet available for C libraries.\n"
+            "\n"
+            "    -noprelude       Do not load the standard prelude library `%s'.\n",
+            global.linksetsize == INT_MAX ? 0 : global.linksetsize, global.preludename);
 
     DBUG_VOID_RETURN;
 }

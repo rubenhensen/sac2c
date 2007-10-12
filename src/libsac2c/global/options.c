@@ -479,6 +479,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("nofoldparallel", global.no_fold_parallel = TRUE);
 
+    ARGS_FLAG ("noprelude", global.loadprelude = FALSE);
+
     ARGS_OPTION_BEGIN ("numthreads")
     {
         ARG_RANGE (store_num_threads, 1, global.max_threads);

@@ -36,7 +36,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
      * unless we currently compile the sac prelude
      */
 
-    if (!STReq (global.preludename, NSgetModule (MODULE_NAMESPACE (syntaxtree)))) {
+    if (global.loadprelude) {
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
@@ -44,8 +44,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
     } else {
-        CTInote ("compiling module `%s', no prelude functions loaded",
-                 global.preludename);
+        CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
     }
 
     DSfinishDeserialize (syntaxtree);
