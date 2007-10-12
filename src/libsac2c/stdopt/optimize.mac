@@ -30,6 +30,10 @@
 #define OPTCOUNTERtext(text)
 #endif
 
+#ifndef OPTCOUNTERredo
+#define OPTCOUNTERredo(redo)
+#endif
+
 #ifndef OPTIMIZE
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     OPTIMIZEstr (str) OPTIMIZEabbr (abbr) OPTIMIZEdevl (devl) OPTIMIZEprod (prod)        \
@@ -37,7 +41,8 @@
 #endif
 
 #ifndef OPTCOUNTER
-#define OPTCOUNTER(id, text) OPTCOUNTERid (id) OPTCOUNTERtext (text)
+#define OPTCOUNTER(id, redo, text)                                                       \
+    OPTCOUNTERid (id) OPTCOUNTERredo (redo) OPTCOUNTERtext (text)
 #endif
 
 OPTIMIZE ("ls", ls, TRUE, TRUE, "loop scalarization")
@@ -97,32 +102,32 @@ OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
 OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
 OPTIMIZE ("wllo", wllo, TRUE, TRUE, "run withloop lock optimization")
 
-OPTCOUNTER (dead_expr, "dead assignment(s) removed")
-OPTCOUNTER (dead_var, "dead variable declaration(s) removed")
-OPTCOUNTER (dead_fun, "dead function(s) removed")
-OPTCOUNTER (cf_expr, "primitive function application(s) eliminated")
-OPTCOUNTER (lir_expr, "loop invariant expression(s) moved")
-OPTCOUNTER (wlir_expr, "with-loop invariant expression(s) moved")
-OPTCOUNTER (inl_fun, "function(s) inlined")
-OPTCOUNTER (elim_arrays, "array(s) eliminated")
-OPTCOUNTER (lunr_expr, "loop(s) unrolled")
-OPTCOUNTER (wlunr_expr, "with-loop(s) unrolled")
-OPTCOUNTER (cse_expr, "common subexpression(s) eliminated")
-OPTCOUNTER (wlf_expr, "with-loop(s) folded")
-OPTCOUNTER (swlf_expr, "symbolic with-loop(s) folded")
-OPTCOUNTER (wlt_expr, "with-loop(s) transformed")
-OPTCOUNTER (wls_expr, "with-loop(s) scalarized")
-OPTCOUNTER (wlfs_expr, "with-loop(s) fused")
-OPTCOUNTER (al_expr, "associative law optimization(s)")
-OPTCOUNTER (dl_expr, "distributive law optimization(s)")
-OPTCOUNTER (etc_expr, "type conversions eliminated")
-OPTCOUNTER (ap_padded, "array type(s) padded")
-OPTCOUNTER (ap_unsupported, "array type(s) unsupported by padding")
-OPTCOUNTER (cvp_expr, "value(s) and variable(s) propagated")
-OPTCOUNTER (tup_upgrades, "type(s) upgraded")
-OPTCOUNTER (tup_rtu_expr, "type(s) upgraded reversely")
-OPTCOUNTER (sisi_expr, "unused or constant function argument(s) removed")
-OPTCOUNTER (wlprop_expr, "withloop(s) propagated")
+OPTCOUNTER (dead_expr, FALSE, "dead assignment(s) removed")
+OPTCOUNTER (dead_var, FALSE, "dead variable declaration(s) removed")
+OPTCOUNTER (dead_fun, FALSE, "dead function(s) removed")
+OPTCOUNTER (cf_expr, TRUE, "primitive function application(s) eliminated")
+OPTCOUNTER (lir_expr, TRUE, "loop invariant expression(s) moved")
+OPTCOUNTER (wlir_expr, TRUE, "with-loop invariant expression(s) moved")
+OPTCOUNTER (inl_fun, TRUE, "function(s) inlined")
+OPTCOUNTER (elim_arrays, TRUE, "array(s) eliminated")
+OPTCOUNTER (lunr_expr, TRUE, "loop(s) unrolled")
+OPTCOUNTER (wlunr_expr, TRUE, "with-loop(s) unrolled")
+OPTCOUNTER (cse_expr, TRUE, "common subexpression(s) eliminated")
+OPTCOUNTER (wlf_expr, TRUE, "with-loop(s) folded")
+OPTCOUNTER (swlf_expr, TRUE, "symbolic with-loop(s) folded")
+OPTCOUNTER (wlt_expr, TRUE, "with-loop(s) transformed")
+OPTCOUNTER (wls_expr, TRUE, "with-loop(s) scalarized")
+OPTCOUNTER (wlfs_expr, TRUE, "with-loop(s) fused")
+OPTCOUNTER (al_expr, TRUE, "associative law optimization(s)")
+OPTCOUNTER (dl_expr, TRUE, "distributive law optimization(s)")
+OPTCOUNTER (etc_expr, TRUE, "type conversions eliminated")
+OPTCOUNTER (ap_padded, TRUE, "array type(s) padded")
+OPTCOUNTER (ap_unsupported, TRUE, "array type(s) unsupported by padding")
+OPTCOUNTER (cvp_expr, TRUE, "value(s) and variable(s) propagated")
+OPTCOUNTER (tup_upgrades, TRUE, "type(s) upgraded")
+OPTCOUNTER (tup_rtu_expr, TRUE, "type(s) upgraded reversely")
+OPTCOUNTER (sisi_expr, TRUE, "unused or constant function argument(s) removed")
+OPTCOUNTER (wlprop_expr, TRUE, "withloop(s) propagated")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

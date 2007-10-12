@@ -58,6 +58,22 @@ STATclearCounters (optimize_counter_t *oc)
     DBUG_VOID_RETURN;
 }
 
+static void
+WhyItsDone (optimize_counter_t *oc)
+{
+    DBUG_ENTER ("WhyItsDone");
+
+#define OPTCOUNTER(id, redo, text)                                                       \
+    if (redo && (oc->id != 0)) {                                                         \
+        CTInote ("Will redo because of %s.", text);                                      \
+    }
+
+#include "optimize.mac"
+#undef OPTCOUNTER
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn bool STATdidSomething( optimize_counter_t oc)
@@ -74,10 +90,12 @@ STATdidSomething (optimize_counter_t *oc)
     DBUG_ENTER ("STATdidSomething");
 
     res = (FALSE
-#define OPTCOUNTERid(id) || (oc->id != 0)
+#define OPTCOUNTER(id, redo, text) || (redo && (oc->id != 0))
 #include "optimize.mac"
-#undef OPTCOUNTERid
+#undef OPTCOUNTER
     );
+
+    DBUG_EXECUTE ("STAT_WHY", WhyItsDone (oc););
 
     DBUG_RETURN (res);
 }
@@ -137,7 +155,7 @@ STATprint (optimize_counter_t *oc)
 {
     DBUG_ENTER ("STATprint");
 
-#define OPTCOUNTER(id, text)                                                             \
+#define OPTCOUNTER(id, redo, text)                                                       \
     if (oc->id > 0) {                                                                    \
         CTInote ("  %d %s", oc->id, text);                                               \
     }

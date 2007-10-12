@@ -424,6 +424,10 @@ CCWarg (node *arg_node, info *arg_info)
 
     if (INFO_DECL (arg_info)) {
         fprintf (INFO_FILE (arg_info), "SACarg *arg%d", INFO_COUNTER (arg_info));
+
+        if (ARG_NEXT (arg_node) != NULL) {
+            fprintf (INFO_FILE (arg_info), ", ");
+        }
     } else if (INFO_BODY (arg_info)) {
         type = AVIS_TYPE (ARG_AVIS (arg_node));
         if (TUisArrayOfUser (type)) {
@@ -442,7 +446,6 @@ CCWarg (node *arg_node, info *arg_info)
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
-        fprintf (INFO_FILE (arg_info), ", ");
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
