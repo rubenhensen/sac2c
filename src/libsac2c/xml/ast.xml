@@ -3310,7 +3310,7 @@
           </type>
         </attribute>
         <attribute name="Objdef">
-          <type name="Link">
+          <type name="ExtLink">
             <targets>
               <target mandatory="no">
                 <node name="Objdef" />
