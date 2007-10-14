@@ -268,13 +268,13 @@ libsac_extraclean_all    :=
 libsac_extraclean_devel  := 
 libsac_extraclean_prod   := 
 
-libsac_sourcedirs        := essentials mt phm cachesim # interface
+libsac_sourcedirs        := essentials mt phm cachesim interface
 
 ###############################################################################
 
 libsac_essentials   := commandline message misc profile trace
 
-libsac_interface    := sac_arg
+libsac_interface    := sacarg sacargconvert
 
 libsac_mt           := mt_std mt_trace
 
