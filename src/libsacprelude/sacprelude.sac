@@ -1,6 +1,12 @@
 module sacprelude;
 
-provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape};
+provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
+         SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
+         unwrapChar, isInt, isBool, isFloat, isDouble, isChar, wrap};
+
+external typedef SACarg;
+  #pragma freefun "SACARGfreeSacArg"
+  #pragma copyfun "SACARGnewReference"
 
 #define BUILT_IN( fun)    \
 fun( int)                 \
@@ -73,4 +79,75 @@ int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
   return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
             i : i[iv]));
 }
+
+external int[*] unwrapInt( SACarg arg);
+  #pragma linkname "SACARGunwrapInt"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external float[*] unwrapFloat( SACarg arg);
+  #pragma linkname "SACARGunwrapFloat"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external double[*] unwrapDouble( SACarg arg);
+  #pragma linkname "SACARGunwrapDouble"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external bool[*] unwrapBool( SACarg arg);
+  #pragma linkname "SACARGunwrapBool"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external char[*] unwrapChar( SACarg arg);
+  #pragma linkname "SACARGunwrapChar"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( int[*] a);
+  #pragma linkname "SACARGwrapInt"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( float[*] a);
+  #pragma linkname "SACARGwrapFloat"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( double[*] a);
+  #pragma linkname "SACARGwrapDouble"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( bool[*] a);
+  #pragma linkname "SACARGwrapBool"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( char[*] a);
+  #pragma linkname "SACARGwrapChar"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external bool isInt( SACarg a);
+  #pragma linkname "SACARGisInt"
+  #pragma linksign [0,1]
+  
+external bool isFloat( SACarg a);
+  #pragma linkname "SACARGisFloat"
+  #pragma linksign [0,1]
+  
+external bool isDouble( SACarg a);
+  #pragma linkname "SACARGisDouble"
+  #pragma linksign [0,1]
+  
+external bool isBool( SACarg a);
+  #pragma linkname "SACARGisBool"
+  #pragma linksign [0,1]
+  
+external bool isChar( SACarg a);
+  #pragma linkname "SACARGisChar"
+  #pragma linksign [0,1]
+  
 

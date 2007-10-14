@@ -102,8 +102,11 @@ SACARGmakeSacArg (basetype btype, SAC_array_descriptor_t desc, void *data)
     return (result);
 }
 
+/**
+ * Functions for handling references to SACargs
+ */
 void
-SACARGfreeSacArg (SACarg *arg, bool freedata)
+SACARGfreeSacArg (SACarg *arg)
 {
     /*
      * we will free one reference to the array, so decrement its RC
@@ -115,9 +118,7 @@ SACARGfreeSacArg (SACarg *arg, bool freedata)
          * last reference freed, so free the contained data
          */
         SAC_FREE (SACARG_DESC (arg));
-        if (freedata) {
-            SAC_FREE (SACARG_DATA (arg));
-        }
+        SAC_FREE (SACARG_DATA (arg));
     }
 
     /*
@@ -139,17 +140,21 @@ SACARGextractData (SACarg *arg)
 
     if (SACARG_RC (arg) == 1) {
         result = SACARG_DATA (arg);
-        SACARGfreeSacArg (arg, false);
+        SAC_FREE (SACARG_DESC (arg));
+        SAC_FREE (arg);
     } else {
         result = SAC_MALLOC (basetype_to_size[SACARG_BTYPE (arg)] * SACARG_SIZE (arg));
         result = memcpy (result, SACARG_DATA (arg),
                          basetype_to_size[SACARG_BTYPE (arg)] * SACARG_SIZE (arg));
-        SACARGfreeSacArg (arg, true);
+        SACARGfreeSacArg (arg);
     }
 
     return (result);
 }
 
+/**
+ * Accessor functions
+ */
 int
 SACARGgetDim (SACarg *arg)
 {
@@ -167,3 +172,75 @@ SACARGgetBasetype (SACarg *arg)
 {
     return (SACARG_BTYPE (arg));
 }
+
+/**
+ * Functions used to unwrap/wrap SACargs within SAC
+ */
+
+#define UNWRAP(name, ctype, btype)                                                       \
+    void SACARGunwrap##name (void **data, SAC_array_descriptor_t *desc, SACarg *arg,     \
+                             SAC_array_descriptor_t arg_desc)                            \
+    {                                                                                    \
+        /*                                                                               \
+         * we create a new reference to the data here, so we need to                     \
+         * increment its reference counter!                                              \
+         */                                                                              \
+        SACARG_RC (arg)++;                                                               \
+                                                                                         \
+        *data = SACARG_DATA (arg);                                                       \
+        *desc = SACARG_DESC (arg);                                                       \
+                                                                                         \
+        /*                                                                               \
+         * we consume one reference to the outer shell. If that counter drops            \
+         * to 0, we can free it! (ONLY the outer shell)                                  \
+         * Note that this removes one reference to the inner data!                       \
+         */                                                                              \
+        DESC_RC (arg_desc)--;                                                            \
+        if (DESC_RC (arg_desc) == 0) {                                                   \
+            SACARG_RC (arg)--;                                                           \
+            SAC_FREE (arg_desc);                                                         \
+            SAC_FREE (arg);                                                              \
+        }                                                                                \
+    }
+
+UNWRAP (Int, int, T_int)
+UNWRAP (Bool, bool, T_bool)
+UNWRAP (Float, float, T_float)
+UNWRAP (Double, double, T_double)
+UNWRAP (Char, char, T_char)
+
+#define WRAP(name, ctype, btype)                                                         \
+    void SACARGwrap##name (SACarg **arg, SAC_array_descriptor_t *desc, void *data,       \
+                           SAC_array_descriptor_t data_desc)                             \
+    {                                                                                    \
+        /*                                                                               \
+         * we simply wrap it. As we consume one reference but create one,                \
+         * no refcounting ops needed here!                                               \
+         */                                                                              \
+        *arg = SACARGmakeSacArg (btype, data_desc, data);                                \
+        /*                                                                               \
+         * now we need a descriptor! As SACargs use standard SAC descriptors,            \
+         * we can use those functions to build one. However, we have to                  \
+         * manually increment the RC by 1!                                               \
+         */                                                                              \
+        *desc = SACARGmakeDescriptorVect (0, NULL);                                      \
+        DESC_RC ((*desc))++;                                                             \
+    }
+
+WRAP (Int, int, T_int)
+WRAP (Bool, bool, T_bool)
+WRAP (Float, float, T_float)
+WRAP (Double, double, T_double)
+WRAP (Char, char, T_char)
+
+#define HASTYPE(name, ctype, btype)                                                      \
+    bool SACARGis##name (SACarg *arg)                                                    \
+    {                                                                                    \
+        return (SACARG_BTYPE (arg) == btype);                                            \
+    }
+
+HASTYPE (Int, int, T_int)
+HASTYPE (Bool, bool, T_bool)
+HASTYPE (Float, float, T_float)
+HASTYPE (Double, double, T_double)
+HASTYPE (Char, char, T_char)
