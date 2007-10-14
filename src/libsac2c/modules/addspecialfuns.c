@@ -31,12 +31,17 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
 
     DSinitDeserialize (syntaxtree);
 
-    /*
-     * add functions from sac prelude
-     * unless we currently compile the sac prelude
-     */
-
     if (global.loadprelude) {
+        /*
+         * add functions from sac prelude
+         * if we currently compile a module of the same name,
+         * give an error!
+         */
+        if (STReq (global.modulename, global.preludename)) {
+            CTIabort ("Cannot load `%s' when compiling a module of the same "
+                      "name. Try compiling with option -noprelude!");
+        }
+
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
