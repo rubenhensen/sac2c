@@ -2347,6 +2347,13 @@
           <node name="Module" />
         </travuser>
       </traversal>
+      <traversal id="BTF" name="Bundle to Fundef" default="sons"
+                 include="bundle_to_fundef.h">
+        <travuser>
+          <node name="FunBundle" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
    </traversals>
   <nodesets>
     <nodeset name="Expr">

@@ -18,7 +18,10 @@ ENDPHASE (ami)
 
 PHASE (gwc, "Generating wrapper code", ALWAYS)
 
-SUBPHASE (ccw, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
+SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
+
+SUBPHASE (btf, "Transforming bundles to wrapper functions", BTFdoBundleToFundef, ALWAYS,
+          gwc)
 
 ENDPHASE (gwc)
 
