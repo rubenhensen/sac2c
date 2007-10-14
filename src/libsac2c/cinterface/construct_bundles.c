@@ -28,6 +28,7 @@
 #include "tree_compound.h"
 #include "memory.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "namespaces.h"
 #include "ctinfo.h"
 
@@ -110,6 +111,27 @@ CBLdoConstructBundles (node *syntax_tree)
  *
  *****************************************************************************/
 
+static char *
+GenerateFunbundleName (char *name, namespace_t *ns, int arity)
+{
+    char *result, *safens, *safename;
+    str_buf *buffer;
+
+    DBUG_ENTER ("GenerateFunbundleName");
+
+    buffer = SBUFcreate (128);
+
+    safename = STRreplaceSpecialCharacters (name);
+    safens = STRreplaceSpecialCharacters (NSgetName (ns));
+
+    buffer = SBUFprintf (buffer, "%s__%s%d", safens, safename, arity);
+    result = SBUF2str (buffer);
+
+    buffer = SBUFfree (buffer);
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *InsertIntoBundles( node *fundef, int arity, node *bundles)
@@ -127,9 +149,11 @@ InsertIntoBundles (node *fundef, int arity, node *bundles)
                  "FUNDEF_NEXT needs to be NULL before InsertIntoBundles is called!");
 
     if (bundles == NULL) {
-        bundles
-          = TBmakeFunbundle (STRcpy (FUNDEF_NAME (fundef)),
-                             NSdupNamespace (FUNDEF_NS (fundef)), arity, fundef, NULL);
+        bundles = TBmakeFunbundle (STRcpy (FUNDEF_NAME (fundef)),
+                                   NSdupNamespace (FUNDEF_NS (fundef)),
+                                   GenerateFunbundleName (FUNDEF_NAME (fundef),
+                                                          FUNDEF_NS (fundef), arity),
+                                   arity, fundef, NULL);
     } else {
         if ((arity == FUNBUNDLE_ARITY (bundles))
             && NSequals (FUNDEF_NS (fundef), FUNBUNDLE_NS (bundles))

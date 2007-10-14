@@ -319,6 +319,20 @@ NSgetInitNamespace ()
 }
 
 namespace_t *
+NSgetCWrapperNamespace ()
+{
+    static namespace_t *result;
+
+    DBUG_ENTER ("NSgetCWrapperNamespace");
+
+    if (result == NULL) {
+        result = NSgetNamespace ("_CWRAPPER");
+    }
+
+    DBUG_RETURN (NSdupNamespace (result));
+}
+
+namespace_t *
 NSgetMTNamespace (const namespace_t *orig)
 {
     namespace_t *result;

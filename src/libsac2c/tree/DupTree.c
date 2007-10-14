@@ -2558,6 +2558,7 @@ DUPfunbundle (node *arg_node, info *arg_info)
 
     new_node = TBmakeFunbundle (STRcpy (FUNBUNDLE_NAME (arg_node)),
                                 NSdupNamespace (FUNBUNDLE_NS (arg_node)),
+                                STRcpy (FUNBUNDLE_EXTNAME (arg_node)),
                                 FUNBUNDLE_ARITY (arg_node),
                                 DUPTRAV (FUNBUNDLE_FUNDEF (arg_node)), NULL);
 

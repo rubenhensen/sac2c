@@ -16,6 +16,7 @@
 extern namespace_t *NSgetNamespace (const char *module);
 extern namespace_t *NSgetRootNamespace ();
 extern namespace_t *NSgetInitNamespace ();
+extern namespace_t *NSgetCWrapperNamespace ();
 extern namespace_t *NSgetMTNamespace (const namespace_t *orig);
 
 extern namespace_t *NSdupNamespace (const namespace_t *ns);

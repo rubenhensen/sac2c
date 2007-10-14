@@ -2337,8 +2337,8 @@
           <node name="Module" />
         </travuser>
       </traversal>
-      <traversal id="CCW" name="Create C wrapper" default="sons"
-                 include="create_c_wrapper.h">
+      <traversal id="CCWH" name="Create C wrapper header" default="sons"
+                 include="create_c_wrapper_header.h">
         <travuser>
           <node name="FunBundle" />
           <node name="Fundef" />
@@ -8465,8 +8465,20 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="NS">
+        <attribute name="Ns">
           <type name="Namespace">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="ExtName">
+          <type name="String">
             <targets>
               <target mandatory="yes">
                 <any />

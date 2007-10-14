@@ -18,7 +18,7 @@ ENDPHASE (ami)
 
 PHASE (gwc, "Generating wrapper code", ALWAYS)
 
-SUBPHASE (ccw, "Creating source files", CCWdoCreateCWrapper, ALWAYS, gwc)
+SUBPHASE (ccw, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
 
 ENDPHASE (gwc)
 
