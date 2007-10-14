@@ -16,6 +16,8 @@ SUBPHASE (cbl, "Constructing function bundles", CBLdoConstructBundles, ALWAYS, a
 
 ENDPHASE (ami)
 
+/******************************************************************************/
+
 PHASE (gwc, "Generating wrapper code", ALWAYS)
 
 SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
@@ -25,9 +27,100 @@ SUBPHASE (btf, "Transforming bundles to wrapper functions", BTFdoBundleToFundef,
 
 ENDPHASE (gwc)
 
-PHASE (cwm, "Compiling wrapper module", ALWAYS)
+/******************************************************************************/
 
-ENDPHASE (cwm)
+PHASE (ssc, "Simplyfying source code", ALWAYS)
+
+SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, ssc)
+
+SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransformAllowGOs,
+          ALWAYS, ssc)
+
+SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
+          ssc)
+
+SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, ssc)
+
+SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, ssc)
+
+ENDPHASE (ssc)
+
+/******************************************************************************/
+
+PHASE (cmem, "Introducing explicit memory management instructions", ALWAYS)
+
+SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, cmem)
+
+SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS, cmem)
+
+SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, cmem)
+
+SUBPHASE (dcr2, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
+          cmem)
+
+SUBPHASE (rc, "Reference counting", RCIdoReferenceCounting, ALWAYS, cmem)
+
+SUBPHASE (rcm, "Reference counting minimization", RCMdoRefcountMinimization, ALWAYS, cmem)
+
+SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, cmem)
+
+ENDPHASE (cmem)
+
+/******************************************************************************/
+
+PHASE (cpc, "Preparing C code generation", ALWAYS)
+
+SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, cpc)
+
+SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, cpc)
+
+SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, cpc)
+
+SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, cpc)
+
+SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, cpc)
+
+SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, cpc)
+
+/*
+ * WARNING: no phases that duplicate code below this line!
+ *          FPC builds the argtabs which CANNOT be maintained
+ *          by duptree!
+ */
+
+SUBPHASE (fpc, "Reorganizing function prototypes", FPCdoFunctionPrecompile, ALWAYS, cpc)
+
+SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, cpc)
+
+SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, cpc)
+
+ENDPHASE (cpc)
+
+/******************************************************************************/
+
+PHASE (ccg, "Generating Code", ALWAYS)
+
+SUBPHASE (tot, "Converting to old type representation", TOTdoToOldTypes, ALWAYS, ccg)
+
+SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, ccg)
+
+SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, ccg)
+
+SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, ccg)
+
+ENDPHASE (ccg)
+
+/******************************************************************************/
+
+PHASE (cicc, "Creating binary code", ALWAYS)
+
+SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, cicc)
+
+SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, cicc)
+
+SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != F_prog, cicc)
+
+ENDPHASE (cicc)
 
 /******************************************************************************/
 

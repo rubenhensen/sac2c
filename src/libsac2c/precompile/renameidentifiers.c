@@ -221,21 +221,21 @@ RenameFun (node *fun)
 
     DBUG_ENTER ("RenameFun");
 
-    if (FUNDEF_ISEXTERN (fun)) {
-        if (FUNDEF_LINKNAME (fun) != NULL) {
-            /*
-             * C functions with additional pragma 'linkname'
-             */
+    if (FUNDEF_LINKNAME (fun) != NULL) {
+        /*
+         * A name has been preset, so we rename the function
+         * accordingly. This happens usually because of
+         *  - the LINKNAME pragme for external functions
+         *  - sac4c setting the LINKNAME
+         */
 
-            DBUG_PRINT ("PREC", ("renaming C function %s to %s", FUNDEF_NAME (fun),
-                                 FUNDEF_LINKNAME (fun)));
+        DBUG_PRINT ("PREC", ("renaming C function %s to %s", FUNDEF_NAME (fun),
+                             FUNDEF_LINKNAME (fun)));
 
-            FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
-            FUNDEF_NAME (fun) = STRcpy (FUNDEF_LINKNAME (fun));
-        } else {
-            DBUG_PRINT ("PREC",
-                        ("C function %s has not been renamed", FUNDEF_NAME (fun)));
-        }
+        FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
+        FUNDEF_NAME (fun) = STRcpy (FUNDEF_LINKNAME (fun));
+    } else if (FUNDEF_ISEXTERN (fun)) {
+        DBUG_PRINT ("PREC", ("C function %s has not been renamed", FUNDEF_NAME (fun)));
     } else {
         /*
          * SAC functions which may be overloaded
