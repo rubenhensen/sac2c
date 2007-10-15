@@ -32,4 +32,10 @@ extern SACarg *SACARGconvertFromFloatPointerVect (float *data, int dim, int *sha
 extern SACarg *SACARGconvertFromBoolPointerVect (int *data, int dim, int *shape);
 extern SACarg *SACARGconvertFromCharPointerVect (char *data, int dim, int *shape);
 
+extern SACarg *SACARGconvertFromIntScalar (int value);
+extern SACarg *SACARGconvertFromDoubleScalar (double value);
+extern SACarg *SACARGconvertFromFloatScalar (float value);
+extern SACarg *SACARGconvertFromBoolScalar (int value);
+extern SACarg *SACARGconvertFromCharScalar (char value);
+
 #endif /* _SAC_SACINTERFACE_H_ */

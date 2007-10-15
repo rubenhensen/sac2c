@@ -22,12 +22,6 @@
         return (result);                                                                 \
     }
 
-SACARG2C (Int, T_int, int)
-SACARG2C (Double, T_double, double)
-SACARG2C (Float, T_float, float)
-SACARG2C (Bool, T_bool, int)
-SACARG2C (Char, T_char, char)
-
 #define SACARGFROMC(name, btype, ctype)                                                  \
     SACarg *SACARGconvertFrom##name##Pointer (ctype *data, int dim, ...)                 \
     {                                                                                    \
@@ -51,14 +45,28 @@ SACARG2C (Char, T_char, char)
         return (result);                                                                 \
     }
 
-SACARGFROMC (Int, T_int, int)
-SACARGFROMC (Double, T_double, double)
-SACARGFROMC (Float, T_float, float)
-SACARGFROMC (Bool, T_bool, int)
-SACARGFROMC (Char, T_char, char)
+#define SACARGFROMCSCALAR(name, btype, ctype)                                            \
+    SACarg *SACARGconvertFrom##name##Scalar (ctype value)                                \
+    {                                                                                    \
+        ctype *data;                                                                     \
+        SACarg *result;                                                                  \
+                                                                                         \
+        data = SAC_MALLOC (sizeof (ctype));                                              \
+        *data = value;                                                                   \
+                                                                                         \
+        result = SACARGconvertFrom##name##Pointer (data, 0);                             \
+                                                                                         \
+        return (result);                                                                 \
+    }
 
-SACARGFROMCVECT (Int, T_int, int)
-SACARGFROMCVECT (Double, T_double, double)
-SACARGFROMCVECT (Float, T_float, float)
-SACARGFROMCVECT (Bool, T_bool, int)
-SACARGFROMCVECT (Char, T_char, char)
+#define CONVERTER(name, btype, ctype)                                                    \
+    SACARG2C (name, btype, ctype)                                                        \
+    SACARGFROMC (name, btype, ctype)                                                     \
+    SACARGFROMCVECT (name, btype, ctype)                                                 \
+    SACARGFROMCSCALAR (name, btype, ctype)
+
+CONVERTER (Int, T_int, int)
+CONVERTER (Double, T_double, double)
+CONVERTER (Float, T_float, float)
+CONVERTER (Bool, T_bool, int)
+CONVERTER (Char, T_char, char)
