@@ -78,15 +78,14 @@ PrintDescriptionSac4c (void)
 
       "    The sac4c tools generates C headers and a corresponding wrapper library\n"
       "    for a given set of SAC libraries.\n"
-      "    When generating these headers, sac4c will default to the two files\n"
-      "    a.out.h and a.out.c, where the former contains the C external\n"
+      "    When generating the wrapper, sac4c will default to the two files\n"
+      "    sacwrapper.h and libsacwrapper.a, where the former contains the C external\n"
       "    declarations, and the later contains the corresponding wrapper\n"
       "    code. This default name can be overidden by using the -o option as\n"
       "    described below.\n\n"
 
-      "    To ease compilation of the wrapper code and linking of the final\n"
-      "    application, sac4c provides the two flags -ldflags and -ccflags, which\n"
-      "    print appropriate linker and compiler flags that need to be used for\n"
+      "    To ease linking of the final application, sac4c provides the flag\n"
+      "    -ldflags, which prints appropriate linker flags that need to be used for\n"
       "    linking and compiling the wrapper.\n\n");
 
     DBUG_VOID_RETURN;
@@ -976,6 +975,7 @@ USGprintUsage ()
     case TOOL_sac4c:
         PrintDescriptionSac4c ();
         PrintOptionsSac4c ();
+        PrintGeneralDebugOptions ();
 #ifndef DBUG_OFF
         PrintInternalDBUGOptions ();
 #endif /* DBUG_OFF */

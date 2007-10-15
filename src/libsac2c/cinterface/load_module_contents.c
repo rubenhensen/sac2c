@@ -10,6 +10,7 @@
 #include "deserialize.h"
 #include "modulemanager.h"
 #include "symboltable.h"
+#include "stringset.h"
 
 node *
 LoadModule (const char *name, strstype_t kind, node *syntax_tree)
@@ -40,6 +41,8 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
     iterator = STsymbolIteratorRelease (iterator);
     module = MODMunLoadModule (module);
 
+    global.dependencies = STRSadd (name, STRS_saclib, global.dependencies);
+
     DBUG_RETURN (syntax_tree);
 }
 
@@ -53,7 +56,7 @@ LMCdoLoadModuleContents (node *syntax_tree)
                  "has been created!");
 
     syntax_tree
-      = TBmakeModule (NSgetCWrapperNamespace (), F_modimp, NULL, NULL, NULL, NULL, NULL);
+      = TBmakeModule (NSgetCWrapperNamespace (), F_cmod, NULL, NULL, NULL, NULL, NULL);
 
     DSinitDeserialize (syntax_tree);
 

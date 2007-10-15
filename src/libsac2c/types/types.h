@@ -128,7 +128,7 @@ typedef enum {
 
 typedef enum { TOOL_sac2c, TOOL_sac4c } tool_t;
 
-typedef enum { F_prog, F_modimp, F_classimp, F_unknown } file_type;
+typedef enum { F_prog, F_modimp, F_classimp, F_cmod, F_unknown } file_type;
 
 typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 

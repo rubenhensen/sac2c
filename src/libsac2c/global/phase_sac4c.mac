@@ -25,6 +25,10 @@ SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
 SUBPHASE (btf, "Transforming bundles to wrapper functions", BTFdoBundleToFundef, ALWAYS,
           gwc)
 
+SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, gwc)
+
+SUBPHASE (pldf, "Printing LD Flags", PLDFdoPrintLDFlags, global.printldflags, gwc)
+
 ENDPHASE (gwc)
 
 /******************************************************************************/
@@ -114,11 +118,9 @@ ENDPHASE (ccg)
 
 PHASE (cicc, "Creating binary code", ALWAYS)
 
-SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, cicc)
-
 SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, cicc)
 
-SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != F_prog, cicc)
+SUBPHASE (crl, "Creating wrapper library", LIBBcreateWrapperLibrary, ALWAYS, cicc)
 
 ENDPHASE (cicc)
 

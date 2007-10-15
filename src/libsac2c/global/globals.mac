@@ -145,6 +145,11 @@ GLOBAL (stringset_t *, exported_modules, NULL)
  * list of modules that will be exported by sac4c
  */
 
+GLOBAL (bool, printldflags, FALSE)
+/*
+ * enables printing of ldflags in sac4c
+ */
+
 /*
  * Command line arguments
  */

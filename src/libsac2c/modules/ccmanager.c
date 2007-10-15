@@ -293,6 +293,16 @@ InvokeCCModule (char *cccall, char *ccflags)
     DBUG_VOID_RETURN;
 }
 
+static void
+InvokeCCWrapper (char *cccall, char *ccflags)
+{
+    DBUG_ENTER ("InvokeCCWrapper");
+
+    SYScall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall, ccflags);
+
+    DBUG_VOID_RETURN;
+}
+
 node *
 CCMinvokeCC (node *syntax_tree)
 {
@@ -316,6 +326,8 @@ CCMinvokeCC (node *syntax_tree)
 
     if (global.filetype == F_prog) {
         InvokeCCProg (cccall, ccflags, libs, deps);
+    } else if (global.filetype == F_cmod) {
+        InvokeCCWrapper (cccall, ccflags);
     } else {
         InvokeCCModule (cccall, ccflags);
     }
@@ -332,4 +344,25 @@ CCMinvokeCC (node *syntax_tree)
     }
 
     DBUG_RETURN (syntax_tree);
+}
+
+char *
+CCMgetLinkerFlags (node *syntax_tree)
+{
+    char *libs;
+    char *deplibs;
+    char *result;
+
+    DBUG_ENTER ("CCMgetLinkerFlags");
+
+    libs = GetLibs ();
+    deplibs
+      = (char *)STRSfold (&BuildDepLibsStringProg, global.dependencies, STRcpy (""));
+
+    result = STRcatn (3, libs, " ", deplibs);
+
+    libs = MEMfree (libs);
+    deplibs = MEMfree (deplibs);
+
+    DBUG_RETURN (result);
 }

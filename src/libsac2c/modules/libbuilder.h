@@ -18,5 +18,6 @@
  *****************************************************************************/
 
 extern node *LIBBcreateLibrary (node *syntax_tree);
+extern node *LIBBcreateWrapperLibrary (node *syntax_tree);
 
 #endif /* _SAC_LIBBUILDER_H_ */

@@ -117,6 +117,8 @@ BuildDepClosFoldFun (const char *entry, strstype_t kind, void *rest)
 
     DBUG_ENTER ("BuildDepClosFoldFun");
 
+    DBUG_PRINT ("DEP", ("Adding dependencies for %s...", entry));
+
     if (kind == STRS_saclib) {
         module = MODMloadModule (entry);
         result = MODMgetDependencyTable (module);
@@ -361,7 +363,7 @@ DEPdoHandleDependencies (node *syntax_tree)
 {
     DBUG_ENTER ("DEPdoHandleDependencies");
 
-    if (global.filetype != F_prog) {
+    if ((global.filetype == F_modimp) || (global.filetype == F_classimp)) {
         /*
          * finally generate the dependency table.
          * we do this here as new dependencies may be introduced

@@ -700,13 +700,21 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
 
-    ARGS_FLAG ("ccflags", exit (10));
-
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
+
+    ARGS_OPTION_BEGIN ("d")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
+        ARG_CHOICE ("syscall", global.show_syscall = TRUE);
+        ARG_CHOICE ("cccall", global.gen_cccall = TRUE; global.cleanup = FALSE);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("d");
 
     /*
      * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
@@ -743,7 +751,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with lllllllllllllllllllllllllllllllllllllllllll
      */
 
-    ARGS_FLAG ("ldflags", exit (10));
+    ARGS_FLAG ("ldflags", global.printldflags = TRUE;);
 
     ARGS_OPTION_BEGIN ("L")
     {
@@ -828,7 +836,12 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * set defaults not altered by arguments
      */
     if (global.outfilename == NULL) {
-        global.outfilename = STRcpy ("a.out");
+        global.outfilename = STRcpy ("cwrapper");
+    }
+    global.optimize.dophm = FALSE;
+    global.filetype = F_cmod;
+    if (global.printldflags) {
+        global.verbose_level = 0;
     }
 
     DBUG_VOID_RETURN;

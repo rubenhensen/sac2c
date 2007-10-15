@@ -18,5 +18,6 @@
  *****************************************************************************/
 
 extern node *CCMinvokeCC (node *syntax_tree);
+extern char *CCMgetLinkerFlags (node *syntax_tree);
 
 #endif /* _SAC_CCMANAGER_H_ */

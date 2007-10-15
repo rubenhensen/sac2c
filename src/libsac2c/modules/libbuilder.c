@@ -92,3 +92,34 @@ LIBBcreateLibrary (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+node *
+LIBBcreateWrapperLibrary (node *syntax_tree)
+{
+    char *deplibs;
+    stringset_t *deps = global.dependencies;
+
+    DBUG_ENTER ("LIBBcreateWrapperLibrary");
+
+    CTInote ("Creating static wrapper library `lib%s.a'", global.outfilename);
+
+    if (global.gen_cccall) {
+        /*
+         * enable system call tracking
+         */
+        SYSstartTracking ();
+    }
+
+    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
+
+    SYScall ("%s lib%s.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
+             global.outfilename, global.tmp_dirname, global.tmp_dirname, deplibs);
+
+    if (global.config.ranlib[0] != '\0') {
+        SYScall ("%s lib%s.a", global.config.ranlib, global.outfilename);
+    }
+
+    deplibs = MEMfree (deplibs);
+
+    DBUG_RETURN (syntax_tree);
+}
