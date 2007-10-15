@@ -24,9 +24,10 @@ typedef enum {
 extern SAC_array_descriptor_t SACARGmakeDescriptor (int dim, va_list args);
 extern SAC_array_descriptor_t SACARGmakeDescriptorVect (int dim, int *shape);
 extern SACarg *SACARGmakeSacArg (basetype btype, SAC_array_descriptor_t desc, void *data);
-extern void SACARGfreeSacArg (SACarg *arg);
 
 extern SACarg *SACARGnewReference (SACarg *arg);
+extern SACarg *SACARGcopy (SACarg *arg);
+extern void SACARGfree (SACarg *arg);
 
 extern void *SACARGextractData (SACarg *arg);
 extern int SACARGgetDim (SACarg *arg);

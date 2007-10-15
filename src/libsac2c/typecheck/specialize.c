@@ -168,6 +168,7 @@ UpdateFixSignature (node *fundef, ntype *arg_ts, ntype *ret_ts)
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
+        DBUG_ASSERT ((!ARG_ISARTIFICIAL (args) || (ARG_OBJDEF (args) != NULL)), "BOOM!");
         type = TYgetProductMember (arg_ts, i);
         old_type = ARG_NTYPE (args);
         DBUG_ASSERT (old_type != NULL,
@@ -245,6 +246,7 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
+        DBUG_ASSERT ((!ARG_ISARTIFICIAL (args) || (ARG_OBJDEF (args) != NULL)), "BOOM!");
         type = TYgetProductMember (arg_ts, i);
         old_type = ARG_NTYPE (args);
         if (old_type == NULL) {

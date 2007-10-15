@@ -300,6 +300,8 @@ InvokeCCWrapper (char *cccall, char *ccflags)
 
     SYScall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall, ccflags);
 
+    SYScall ("cd %s; %s -c interface.c", global.tmp_dirname, cccall);
+
     DBUG_VOID_RETURN;
 }
 

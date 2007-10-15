@@ -6,6 +6,8 @@
 
 #include "types.h"
 
+#define CWRAPPER_PREFIX "SACcw_"
+
 /** <!--********************************************************************-->
  *
  * Bundle to fundef traversal ( btf_tab)

@@ -112,8 +112,9 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
 
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
-    SYScall ("%s lib%s.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
-             global.outfilename, global.tmp_dirname, global.tmp_dirname, deplibs);
+    SYScall ("%s lib%s.a %s/fun*.o %s/globals.o %s/interface.o %s",
+             global.config.ar_create, global.outfilename, global.tmp_dirname,
+             global.tmp_dirname, global.tmp_dirname, deplibs);
 
     if (global.config.ranlib[0] != '\0') {
         SYScall ("%s lib%s.a", global.config.ranlib, global.outfilename);

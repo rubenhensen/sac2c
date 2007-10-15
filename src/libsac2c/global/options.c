@@ -727,6 +727,12 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_END ("E");
 
     /*
+     * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
+     */
+
+    ARGS_FLAG ("g", global.cc_debug = TRUE);
+
+    /*
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
@@ -772,6 +778,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      */
 
     ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
+
+    ARGS_OPTION ("O", ARG_RANGE (global.cc_optimize, 0, 3));
 
     /*
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp

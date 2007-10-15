@@ -5,8 +5,8 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          unwrapChar, isInt, isBool, isFloat, isDouble, isChar, wrap};
 
 external typedef SACarg;
-  #pragma freefun "SACARGfreeSacArg"
-  #pragma copyfun "SACARGnewReference"
+  #pragma freefun "SACARGfree"
+  #pragma copyfun "SACARGcopy"
 
 #define BUILT_IN( fun)    \
 fun( int)                 \

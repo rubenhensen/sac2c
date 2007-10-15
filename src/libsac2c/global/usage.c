@@ -980,6 +980,7 @@ USGprintUsage ()
         PrintInternalDBUGOptions ();
 #endif /* DBUG_OFF */
         PrintBreakoptionSpecifierSac4c ();
+        PrintCCompilerOptions ();
         break;
     }
 

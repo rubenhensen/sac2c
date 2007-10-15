@@ -551,10 +551,9 @@ BTFfunbundle (node *arg_node, info *arg_info)
                            NSdupNamespace (FUNBUNDLE_NS (arg_node)), rets, args, block,
                            FUNBUNDLE_FUNDEF (arg_node));
 
-    FUNDEF_LINKNAME (result) = FUNBUNDLE_EXTNAME (arg_node);
+    FUNDEF_LINKNAME (result) = STRcat (CWRAPPER_PREFIX, FUNBUNDLE_EXTNAME (arg_node));
     FUNDEF_RETURN (result) = retassign;
 
-    FUNBUNDLE_EXTNAME (arg_node) = NULL;
     FUNBUNDLE_FUNDEF (arg_node) = NULL;
 
     result = TCappendFundef (result, FUNBUNDLE_NEXT (arg_node));

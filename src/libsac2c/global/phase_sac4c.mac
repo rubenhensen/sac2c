@@ -22,6 +22,8 @@ PHASE (gwc, "Generating wrapper code", ALWAYS)
 
 SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, ALWAYS, gwc)
 
+SUBPHASE (cwb, "Creating interface stub files", CCWBdoCreateCWrapperBody, ALWAYS, gwc)
+
 SUBPHASE (btf, "Transforming bundles to wrapper functions", BTFdoBundleToFundef, ALWAYS,
           gwc)
 

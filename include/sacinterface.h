@@ -12,6 +12,8 @@ extern int SACARGgetDim (SACarg *arg);
 extern int SACARGgetShape (SACarg *arg, int pos);
 extern int SACARGgetBasetype (SACarg *arg);
 
+extern SACarg *SACARGnewReference (SACarg *arg);
+
 extern int *SACARGconvertToIntArray (SACarg *arg);
 extern double *SACARGconvertToDoubleArray (SACarg *arg);
 extern float *SACARGconvertToFloatArray (SACarg *arg);

@@ -2347,6 +2347,12 @@
           <node name="Module" />
         </travuser>
       </traversal>
+      <traversal id="CCWB" name="Create C wrapper body" default="sons"
+                 include="create_c_wrapper_body.h">
+        <travuser>
+          <node name="FunBundle" />
+        </travuser>
+      </traversal>
       <traversal id="BTF" name="Bundle to Fundef" default="sons"
                  include="bundle_to_fundef.h">
         <travuser>
