@@ -700,6 +700,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
 
+    ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
+
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     /*
@@ -743,6 +745,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
      */
 
+    ARGS_OPTION ("incdir", global.inc_dirname = STRcpy (ARG););
+
     ARGS_OPTION_BEGIN ("I")
     {
         FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
@@ -758,6 +762,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("ldflags", global.printldflags = TRUE;);
+
+    ARGS_OPTION ("libdir", global.lib_dirname = STRcpy (ARG););
 
     ARGS_OPTION_BEGIN ("L")
     {
@@ -848,8 +854,16 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     }
     global.optimize.dophm = FALSE;
     global.filetype = F_cmod;
-    if (global.printldflags) {
+    if (global.printldflags || global.printccflags) {
         global.verbose_level = 0;
+    }
+
+    if (global.exported_modules == NULL) {
+        CTIabort ("No modules given as argument. See sac4c -h for details.");
+    }
+
+    if (global.printldflags && global.printccflags) {
+        CTIabort ("-ldflags and -ccflags cannot be used simultaneously.");
     }
 
     DBUG_VOID_RETURN;

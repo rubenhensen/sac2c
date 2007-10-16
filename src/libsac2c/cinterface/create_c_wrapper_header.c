@@ -414,7 +414,8 @@ CCWHmodule (node *arg_node, info *arg_info)
     /*
      * ROUND 1: create the header file
      */
-    INFO_FILE (arg_info) = FMGRwriteOpen ("%s.h", global.outfilename);
+    INFO_FILE (arg_info) = FMGRwriteOpen ("%s/%s.h", STRonNull (".", global.inc_dirname),
+                                          global.outfilename);
 
     PrintFileHeader (arg_info);
 

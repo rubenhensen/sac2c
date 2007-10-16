@@ -185,7 +185,7 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
              * alldeps rules, in particular, the empty rule in
              * doPrintLibDependencies
              */
-            printf ("%s :\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
+            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree.so)\n\n", entry, libdir, entry);
         }
 
         libfile = MEMfree (libfile);
@@ -229,8 +229,8 @@ PrintSACLib (const char *name)
      * first try to find the .so file
      */
 
-    filename = MEMmalloc (sizeof (char) * (STRlen (name) + 7));
-    sprintf (filename, "lib%s.so", name);
+    filename = MEMmalloc (sizeof (char) * (STRlen (name) + 11));
+    sprintf (filename, "lib%sTree.so", name);
 
     result = STRcpy (FMGRfindFile (PK_lib_path, filename));
 
@@ -254,8 +254,8 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = MEMmalloc (sizeof (char) * (STRlen (name) + 7));
-        sprintf (result, "lib%s.so", name);
+        result = MEMmalloc (sizeof (char) * (STRlen (name) + 11));
+        sprintf (result, "lib%sTree.so", name);
     }
 
     printf (" \\\n  %s", result);
@@ -305,7 +305,8 @@ PrintTargetName (node *tree)
         break;
     case F_modimp:
     case F_classimp:
-        printf ("%slib%s.so %slib%s.a:", global.targetdir,
+        printf ("%slib%sTree.so %slib%sMod.a %slib%sMod.so:", global.targetdir,
+                NSgetName (MODULE_NAMESPACE (tree)), global.targetdir,
                 NSgetName (MODULE_NAMESPACE (tree)), global.targetdir,
                 NSgetName (MODULE_NAMESPACE (tree)));
         break;

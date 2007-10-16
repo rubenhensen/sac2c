@@ -8,6 +8,8 @@
 
 PHASE (ami, "Analyzing module information", ALWAYS)
 
+SUBPHASE (pccf, "Printing CC Flags", PCCFdoPrintCCFlags, global.printccflags, ami)
+
 SUBPHASE (lm, "Loading module contents", LMCdoLoadModuleContents, ALWAYS, ami)
 
 SUBPHASE (ses, "Stripping external signatures", SESdoStripExternalSignatures, ALWAYS, ami)

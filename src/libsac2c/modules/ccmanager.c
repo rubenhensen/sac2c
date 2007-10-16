@@ -177,9 +177,9 @@ GetLibs ()
 }
 
 static str_buf *
-AddExtLib (const char *path, str_buf *buf)
+AddLibPath (const char *path, str_buf *buf)
 {
-    DBUG_ENTER ("AddExtLibPath");
+    DBUG_ENTER ("AddLibPath");
 
     buf = SBUFprintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
 
@@ -187,15 +187,18 @@ AddExtLib (const char *path, str_buf *buf)
 }
 
 static char *
-GetExtLibPath ()
+GetLibPath ()
 {
     char *result;
     str_buf *buffer = SBUFcreate (255);
 
-    DBUG_ENTER ("GetExtLibPath");
+    DBUG_ENTER ("GetLibPath");
+
+    buffer = (str_buf *)FMGRmapPath (PK_lib_path,
+                                     (void *(*)(const char *, void *))AddLibPath, buffer);
 
     buffer = (str_buf *)FMGRmapPath (PK_extlib_path,
-                                     (void *(*)(const char *, void *))AddExtLib, buffer);
+                                     (void *(*)(const char *, void *))AddLibPath, buffer);
 
     result = SBUF2str (buffer);
     buffer = SBUFfree (buffer);
@@ -207,26 +210,14 @@ static void *
 BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
-    char *libname;
 
     DBUG_ENTER ("BuildDepLibsStringProg");
 
     switch (kind) {
     case STRS_saclib:
-        /*
-         * lookup lib<lib>.a
-         */
-        libname = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
-        sprintf (libname, "lib%s.a", lib);
-        result = STRcpy (FMGRfindFile (PK_lib_path, libname));
+        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
+        sprintf (result, "-l%sMod", lib);
 
-        if (result == NULL) {
-            CTIabort ("Cannot find static library '%s'. The module '%s' "
-                      "seems to be corrupted.",
-                      libname, lib);
-        }
-
-        libname = MEMfree (libname);
         break;
     case STRS_extlib:
         result = MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
@@ -259,19 +250,19 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 static void
 InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 {
-    char *extpath;
+    char *libpath;
     char *deplibs;
 
     DBUG_ENTER ("InvokeCCProg");
 
-    extpath = GetExtLibPath ();
+    libpath = GetLibPath ();
 
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
 
     SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
-             global.cfilename, extpath, deplibs, libs);
+             global.cfilename, libpath, deplibs, libs);
 
-    extpath = MEMfree (extpath);
+    libpath = MEMfree (libpath);
     deplibs = MEMfree (deplibs);
 
     DBUG_VOID_RETURN;
@@ -352,18 +343,21 @@ char *
 CCMgetLinkerFlags (node *syntax_tree)
 {
     char *libs;
+    char *paths;
     char *deplibs;
     char *result;
 
     DBUG_ENTER ("CCMgetLinkerFlags");
 
     libs = GetLibs ();
+    paths = GetLibPath ();
     deplibs
       = (char *)STRSfold (&BuildDepLibsStringProg, global.dependencies, STRcpy (""));
 
-    result = STRcatn (3, libs, " ", deplibs);
+    result = STRcatn (5, paths, " ", deplibs, " ", libs);
 
     libs = MEMfree (libs);
+    paths = MEMfree (paths);
     deplibs = MEMfree (deplibs);
 
     DBUG_RETURN (result);

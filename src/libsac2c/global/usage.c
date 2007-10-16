@@ -79,14 +79,16 @@ PrintDescriptionSac4c (void)
       "    The sac4c tools generates C headers and a corresponding wrapper library\n"
       "    for a given set of SAC libraries.\n"
       "    When generating the wrapper, sac4c will default to the two files\n"
-      "    sacwrapper.h and libsacwrapper.a, where the former contains the C external\n"
-      "    declarations, and the later contains the corresponding wrapper\n"
-      "    code. This default name can be overidden by using the -o option as\n"
-      "    described below.\n\n"
+      "    sacwrapper.h, libsacwrapper.so  and libsacwrapper.a, where the former\n"
+      "    contains the C external declarations, and the later two files contain\n"
+      "    the corresponding wrapper code. This default name can be overidden by\n"
+      "    using the -o option as described below.\n\n"
 
       "    To ease linking of the final application, sac4c provides the flag\n"
       "    -ldflags, which prints appropriate linker flags that need to be used for\n"
-      "    linking and compiling the wrapper.\n\n");
+      "    linking the wrapper library. To compiler code that uses the wrapper,\n"
+      "    add the flags printed by using the -ccflags option to the c compiler\n"
+      "    call.\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -134,10 +136,15 @@ PrintOptionsSac4c (void)
             "    -E <path>       Specify additional C library file path.\n"
             "\n"
             "    -o <name>       Write external declarations to file <name>.h and\n"
-            "                    wrapper code to file <name>.c.\n"
+            "                    wrapper library to file lib<name>.a/lib<name>/so.\n"
             "\n"
             "    -ldflags        Print linker flags to stdout\n"
             "    -ccflags        Print C compiler flags to stdout\n"
+            "\n"
+            "    -incdir         Specify the directory where the include file is "
+            "written.\n"
+            "    -libdir         Specify the directory where the library files are "
+            "written.\n"
             "\n"
             "    -v <n>          Specify verbose level:\n"
             "                      0: error messages only\n"

@@ -1,46 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.11  2005/06/02 19:14:11  sah
- * extended error messages
- *
- * Revision 1.10  2005/05/25 20:27:45  sah
- * modified error propagation
- *
- * Revision 1.9  2005/04/26 17:11:46  sah
- * errors are now propagated from libmanager to modmanager
- * and handele there. This allows for more precise error
- * messages.
- *
- * Revision 1.8  2005/01/14 08:44:39  cg
- * Beautified layout of error messages.
- *
- * Revision 1.7  2005/01/11 12:32:52  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.6  2004/11/26 20:01:01  sah
- * *** empty log message ***
- *
- * Revision 1.5  2004/11/08 19:43:37  sah
- * should work using dlcompat for Mac OS X now as well
- *
- * Revision 1.4  2004/11/04 14:56:27  sah
- * removed link.h as it seems not to be needed
- * and creates problems on some platforms.
- *
- * Revision 1.3  2004/09/30 20:02:59  sah
- * added some DBUG_PRINTs
- *
- * Revision 1.2  2004/09/23 21:15:39  sah
- * interface complete and
- * working implementation for Solaris
- *
- * Revision 1.1  2004/09/21 17:54:00  sah
- * Initial revision
- *
- *
- *
- */
+/* $Id$ */
 
 #include "libmanager.h"
 #include "dbug.h"
