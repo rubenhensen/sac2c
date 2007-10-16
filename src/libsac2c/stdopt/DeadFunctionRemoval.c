@@ -402,9 +402,10 @@ DFRfundef (node *arg_node, info *arg_info)
         /*
          * remark: main is always tagged as provided
          */
-        if (FUNDEF_ISPROVIDED (arg_node)) {
-            DBUG_PRINT ("DFR", (">>> %s is provided",
-                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef")));
+        if (FUNDEF_ISSTICKY (arg_node) || FUNDEF_ISPROVIDED (arg_node)) {
+            DBUG_PRINT ("DFR", (">>> %s is %s",
+                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                                (FUNDEF_ISSTICKY (arg_node) ? "sticky" : "provided")));
 
             if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                 arg_node = tagWrapperAsNeeded (arg_node, arg_info);

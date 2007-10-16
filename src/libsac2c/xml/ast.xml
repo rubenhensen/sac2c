@@ -3219,6 +3219,9 @@
         <flag name="IsLocal" default="TRUE">
           <description>This function is defined locally in the current namespace. That is, it was defined locally or imported.</description>
         </flag>
+        <flag name="IsSticky" default="FALSE">
+          <description>This function should not be removed by DeadFunctionRemoval. This is mainly used by the module system to ensure that for all exported functions code is generated. Furthermore, it is used to ensure that the prelude functions are not removed during compilation.</description>
+        </flag>
         <flag name="IsNeeded">
           <description>This flag is used in multiple phases, usually to tag functions that are referenced in some sense. It has always to be reset to FALSE at the end of each phase.</description>
         </flag>

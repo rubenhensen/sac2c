@@ -14,12 +14,14 @@
 #include "traverse.h"
 #include "globals.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "filemgr.h"
 #include "convert.h"
 #include "namespaces.h"
 #include "user_types.h"
 #include "new_types.h"
 #include "shape.h"
+#include "map_fun_trav.h"
 #include "serialize_symboltable.h"
 #include "serialize_filenames.h"
 #include "dbug.h"
@@ -567,12 +569,33 @@ SerializeObjdef (node *objdef, info *info)
     DBUG_VOID_RETURN;
 }
 
+static node *
+TagLocalAsSticky (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ("TagLocalAsSticky");
+
+    if ((!FUNDEF_ISLACFUN (fundef)) && FUNDEF_ISLOCAL (fundef)) {
+        FUNDEF_ISSTICKY (fundef) = TRUE;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 SERdoSerialize (node *module)
 {
     info *info;
 
     DBUG_ENTER ("SERdoSerialize");
+
+    /*
+     * we have to disable DFR now, as for modules every function that
+     * has been serialised, has to be present in the binary module
+     * as well. Especially when specialising one instance from this
+     * module in a later context, all dependent functions need to be
+     * present! To do so, we tag all local functions as sticky.
+     */
+    MODULE_FUNS (module) = MFTdoMapFunTrav (MODULE_FUNS (module), NULL, TagLocalAsSticky);
 
     DBUG_PRINT ("SER", ("Starting serialization run"));
 

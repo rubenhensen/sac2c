@@ -5,7 +5,6 @@
 #include "dbug.h"
 
 #include "export.h"
-#include "DeadFunctionRemoval.h"
 #include "serialize.h"
 #include "traverse.h"
 #include "types.h"
@@ -454,27 +453,14 @@ EXPdoExport (node *syntax_tree)
 {
     DBUG_ENTER ("EXPdoExport");
 
-    syntax_tree = StartExpTraversal (syntax_tree);
-
     if (MODULE_FILETYPE (syntax_tree) != F_prog) {
-        if (global.optimize.dodfr) {
-            syntax_tree = DFRdoDeadFunctionRemoval (syntax_tree);
-        } else {
+        if (!global.optimize.dodfr) {
             CTIwarn ("Dead Function Removal is disabled. This will lead to "
                      "bigger modules.");
         }
-
-        /*
-         * we have to disable DFR now, as for modules every function that
-         * has been serialised, has to be present in the binary module
-         * as well. Especially when specialising one instance from this
-         * module in a later context, all dependent functions need to be
-         * present!
-         */
-        global.optimize.dodfr = FALSE;
-
-        SERdoSerialize (syntax_tree);
     }
+
+    syntax_tree = StartExpTraversal (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

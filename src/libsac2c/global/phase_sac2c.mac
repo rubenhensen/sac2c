@@ -137,6 +137,11 @@ PHASE (exp, "Processing exports", ALWAYS)
 
 SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 
+SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
+          exp)
+
+SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize, ALWAYS, exp)
+
 SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
           ALWAYS, exp)
 

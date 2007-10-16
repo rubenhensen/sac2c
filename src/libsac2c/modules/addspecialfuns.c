@@ -20,6 +20,37 @@
 #include "ctinfo.h"
 #include "str.h"
 #include "globals.h"
+#include "map_fun_trav.h"
+
+static node *
+TagNamespaceAsSticky (node *fundef, namespace_t *ns)
+{
+    DBUG_ENTER ("TagNamespaceAsSticky");
+
+    if (NSequals (FUNDEF_NS (fundef), ns)) {
+        FUNDEF_ISSTICKY (fundef) = TRUE;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+static node *
+TagPreludeAsSticky (node *syntax_tree)
+{
+    namespace_t *prelude;
+
+    DBUG_ENTER ("TagPreludeAsSticky");
+
+    prelude = NSgetNamespace (global.preludename);
+
+    MODULE_FUNS (syntax_tree)
+      = MFTdoMapFunTrav (MODULE_FUNS (syntax_tree), (info *)prelude,
+                         (travfun_p)TagNamespaceAsSticky);
+
+    prelude = NSfreeNamespace (prelude);
+
+    DBUG_RETURN (syntax_tree);
+}
 
 node *
 ASFdoAddSpecialFunctions (node *syntaxtree)
@@ -48,6 +79,11 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
+
+        /*
+         * prevent prelude functions from being deleted
+         */
+        syntaxtree = TagPreludeAsSticky (syntaxtree);
     } else {
         CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
     }

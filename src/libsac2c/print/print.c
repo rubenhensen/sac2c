@@ -1332,6 +1332,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         fprintf (global.outfile, "/* lacinline */\n");
     }
 
+    if (FUNDEF_ISSTICKY (arg_node)) {
+        fprintf (global.outfile, "/* sticky */\n");
+    }
+
     if (FUNDEF_ISINLINE (arg_node)) {
         fprintf (global.outfile, "inline\n");
     }
