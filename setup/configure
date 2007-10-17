@@ -5074,7 +5074,7 @@ if  test "$GCC" = yes ; then
 
   RCLDFLAGS=""
 
-  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -fPIC -DPIC"
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -fPIC -DPIC -std-c99"
 
   MKCCFLAGS="-Wall -g -std=c99"
 
@@ -5157,9 +5157,9 @@ elif  test "$MACC" = yes ; then
 
   RCCCFLAGS="-Wall -no-cpp-precomp -Wno-unused -fno-builtin"
 
-  MKCCFLAGS="-g -Wall -std=c99"
+  MKCCFLAGS="-Wall -std=c99"
 
-  PDCCFLAGS="-g -std=c99"
+  PDCCFLAGS="-std=c99"
 
   DEPSFLAG="-M"
 
