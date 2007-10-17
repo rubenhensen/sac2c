@@ -4,6 +4,7 @@
 
 #include "dbug.h"
 #include "free.h"
+#include "map_fun_trav.h"
 #include "tree_basic.h"
 
 static node *
@@ -41,10 +42,10 @@ StripRets (node *rets)
     DBUG_RETURN (rets);
 }
 
-node *
-SESstripOneFunction (node *fundef)
+static node *
+StripFunction (node *fundef, info *info)
 {
-    DBUG_ENTER ("SESstripOneFunction");
+    DBUG_ENTER ("StripFunction");
 
     FUNDEF_ARGS (fundef) = StripArgs (FUNDEF_ARGS (fundef));
     FUNDEF_RETS (fundef) = StripRets (FUNDEF_RETS (fundef));
@@ -52,17 +53,14 @@ SESstripOneFunction (node *fundef)
     DBUG_RETURN (fundef);
 }
 
-static node *
-StripFuns (node *funs)
+node *
+SESstripOneFunction (node *fundef)
 {
-    DBUG_ENTER ("StripFuns");
+    DBUG_ENTER ("SESstripOneFunction");
 
-    if (funs != NULL) {
-        funs = SESstripOneFunction (funs);
-        FUNDEF_NEXT (funs) = StripFuns (FUNDEF_NEXT (funs));
-    }
+    fundef = StripFunction (fundef, NULL);
 
-    DBUG_RETURN (funs);
+    DBUG_RETURN (fundef);
 }
 
 node *
@@ -70,13 +68,8 @@ SESdoStripExternalSignatures (node *syntax_tree)
 {
     DBUG_ENTER ("SESdoStripExternalSignatures");
 
-    if (MODULE_FUNS (syntax_tree) != NULL) {
-        MODULE_FUNS (syntax_tree) = StripFuns (MODULE_FUNS (syntax_tree));
-    }
-
-    if (MODULE_FUNDECS (syntax_tree) != NULL) {
-        MODULE_FUNDECS (syntax_tree) = StripFuns (MODULE_FUNDECS (syntax_tree));
-    }
+    MFTdoMapFunTrav (MODULE_FUNS (syntax_tree), NULL, StripFunction);
+    MFTdoMapFunTrav (MODULE_FUNDECS (syntax_tree), NULL, StripFunction);
 
     DBUG_RETURN (syntax_tree);
 }

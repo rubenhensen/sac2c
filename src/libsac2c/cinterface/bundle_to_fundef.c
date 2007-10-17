@@ -559,7 +559,9 @@ BTFfunbundle (node *arg_node, info *arg_info)
     result = TCappendFundef (result, FUNBUNDLE_NEXT (arg_node));
     arg_node = FREEdoFreeNode (arg_node);
 
-    INFO_RETS (arg_info) = FREEdoFreeTree (INFO_RETS (arg_info));
+    if (INFO_RETS (arg_info) != NULL) {
+        INFO_RETS (arg_info) = FREEdoFreeTree (INFO_RETS (arg_info));
+    }
     INFO_ARGS (arg_info) = NULL;
 
     DBUG_RETURN (result);

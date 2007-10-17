@@ -11,6 +11,7 @@
 #include "modulemanager.h"
 #include "symboltable.h"
 #include "stringset.h"
+#include "ctinfo.h"
 
 node *
 LoadModule (const char *name, strstype_t kind, node *syntax_tree)
@@ -64,6 +65,16 @@ LMCdoLoadModuleContents (node *syntax_tree)
       = STRSfold ((strsfoldfun_p)&LoadModule, global.exported_modules, syntax_tree);
 
     DSfinishDeserialize (syntax_tree);
+
+    if (MODULE_OBJS (syntax_tree) != NULL) {
+        CTIerror ("Global objects are not yet supported.");
+    }
+
+    if (MODULE_TYPES (syntax_tree) != NULL) {
+        CTIerror ("User defined types are not yet supported.");
+    }
+
+    CTIabortOnError ();
 
     DBUG_RETURN (syntax_tree);
 }
