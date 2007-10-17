@@ -588,15 +588,6 @@ SERdoSerialize (node *module)
 
     DBUG_ENTER ("SERdoSerialize");
 
-    /*
-     * we have to disable DFR now, as for modules every function that
-     * has been serialised, has to be present in the binary module
-     * as well. Especially when specialising one instance from this
-     * module in a later context, all dependent functions need to be
-     * present! To do so, we tag all local functions as sticky.
-     */
-    MODULE_FUNS (module) = MFTdoMapFunTrav (MODULE_FUNS (module), NULL, TagLocalAsSticky);
-
     DBUG_PRINT ("SER", ("Starting serialization run"));
 
     info = MakeInfo ();
@@ -622,6 +613,15 @@ SERdoSerialize (node *module)
     SFNgenerateFilenameTable ();
 
     info = FreeInfo (info);
+
+    /*
+     * we have to disable DFR now, as for modules every function that
+     * has been serialised, has to be present in the binary module
+     * as well. Especially when specialising one instance from this
+     * module in a later context, all dependent functions need to be
+     * present! To do so, we tag all local functions as sticky.
+     */
+    MODULE_FUNS (module) = MFTdoMapFunTrav (MODULE_FUNS (module), NULL, TagLocalAsSticky);
 
     DBUG_RETURN (module);
 }
