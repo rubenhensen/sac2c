@@ -4828,6 +4828,8 @@ COMPprfTypeConstraint (node *arg_node, info *arg_info)
 
     if (TYisAKV (arg_type)) {
         DBUG_ASSERT (FALSE, "Type constraint with AKV type not implemented");
+
+        ret_node = NULL;
     } else if (TYisAKS (arg_type)) {
         ret_node = SHshape2Array (TYgetShape (arg_type));
         ret_node

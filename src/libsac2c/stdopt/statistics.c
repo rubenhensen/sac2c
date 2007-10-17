@@ -58,6 +58,14 @@ STATclearCounters (optimize_counter_t *oc)
     DBUG_VOID_RETURN;
 }
 
+#ifndef DBUG_OFF
+
+/** <!-- ****************************************************************** -->
+ * @brief prints, given an optimisation counter, why a function will be
+ *        reoptimized in the next cycle round.
+ *
+ * @param oc optimisation counter of a function
+ ******************************************************************************/
 static void
 WhyItsDone (optimize_counter_t *oc)
 {
@@ -73,6 +81,8 @@ WhyItsDone (optimize_counter_t *oc)
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* DBUG_OFF */
 
 /** <!--********************************************************************-->
  *

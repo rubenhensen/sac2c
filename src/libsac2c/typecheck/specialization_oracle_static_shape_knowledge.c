@@ -167,6 +167,8 @@ SOSSKresetFundefDemand (node *fundef_node)
     DBUG_RETURN (fundef_node);
 }
 
+#ifndef DBUG_OFF
+
 /** <!-- ****************************************************************** -->
  *
  * @fn char *demand2String(constant *demand)
@@ -185,24 +187,19 @@ demand2String (constant *demand)
     DBUG_ENTER ("demand2String");
     DBUG_PRINT ("SOSSK_PATH", (">>> ENTER demand2String"));
 
-    static str_buf *buf = NULL;
     char *res = NULL;
 
     if (demand != NULL) {
         res = COconstant2String (demand);
     } else {
-        if (buf == NULL) {
-            buf = SBUFcreate (64);
-        }
-        buf = SBUFprintf (buf, " ");
-
-        res = SBUF2str (buf);
-        SBUFflush (buf);
+        res = STRcpy (" ");
     }
 
     DBUG_PRINT ("SOSSK_PATH", ("<<< LEAVE demand2String"));
     DBUG_RETURN (res);
 }
+
+#endif /* DBUG_OFF */
 
 /** <!-- ****************************************************************** -->
  *

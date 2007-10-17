@@ -467,7 +467,9 @@ COoverSel (constant *idx, constant *a)
 
     /* Extract some informations about the arguments*/
     int idx_dim = CONSTANT_DIM (idx);
+#ifndef DBUG_OFF
     int a_dim = CONSTANT_DIM (a);
+#endif
     shape *idx_shape = CONSTANT_SHAPE (idx);
     shape *a_shape = CONSTANT_SHAPE (a);
     simpletype a_type = CONSTANT_TYPE (a);

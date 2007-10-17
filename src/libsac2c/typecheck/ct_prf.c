@@ -714,6 +714,7 @@ NTCCTprf_val_val (te_info *info, ntype *args)
         if (err_msg != NULL) {
             res = TYfreeType (res);
             res = TYmakeBottomType (err_msg);
+            pred = TYcopyType (res);
         } else {
             TEassureValLeVal (TEprfArg2Obj (TEgetNameStr (info), 1), iv1, TEarg2Obj (2),
                               iv2);
