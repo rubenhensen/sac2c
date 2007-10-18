@@ -324,11 +324,16 @@ InvokeCCModule (char *cccall, char *ccflags)
                  (void (*) (const char *, const char *, void *))CompileOneFilePIC);
     CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
 
-    SYScall ("cd %s; %s -c serialize.c", global.tmp_dirname, cccall);
-    SYScall ("cd %s; %s -c filenames.c", global.tmp_dirname, cccall);
-    SYScall ("cd %s; %s -c namespacemap.c", global.tmp_dirname, cccall);
-    SYScall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
-    SYScall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s %s -c serialize.c", global.tmp_dirname, cccall,
+             global.config.genpic);
+    SYScall ("cd %s; %s %s -c filenames.c", global.tmp_dirname, cccall,
+             global.config.genpic);
+    SYScall ("cd %s; %s %s -c namespacemap.c", global.tmp_dirname, cccall,
+             global.config.genpic);
+    SYScall ("cd %s; %s %s -c symboltable.c", global.tmp_dirname, cccall,
+             global.config.genpic);
+    SYScall ("cd %s; %s %s -c dependencytable.c", global.tmp_dirname, cccall,
+             global.config.genpic);
 
     callstring = MEMfree (callstring);
 
