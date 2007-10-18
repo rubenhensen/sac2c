@@ -238,6 +238,7 @@ TAR_EXTRACT      :=  "tar xf"
 AR_CREATE        :=  "ar cr"
 LD_DYNAMIC       :=  "@CC@ @LD_DYNAMIC@"
 LD_PATH          :=  "@LD_PATH@"
+GENPIC           :=  "@GENPIC@"
 RANLIB           :=  "@RANLIB@"
 MKDIR            :=  mkdir
 RMDIR            :=  "rm -rf"

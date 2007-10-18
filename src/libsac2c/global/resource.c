@@ -106,6 +106,7 @@ static struct {
   {"TAR_EXTRACT", str, &global.config.tar_extract},
   {"AR_CREATE", str, &global.config.ar_create},
   {"LD_DYNAMIC", str, &global.config.ld_dynamic},
+  {"GENPIC", str, &global.config.genpic},
   {"LD_PATH", str, &global.config.ld_path},
   {"RANLIB", str, &global.config.ranlib},
   {"MKDIR", str, &global.config.mkdir},

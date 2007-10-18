@@ -64,9 +64,9 @@ LIBBcreateLibrary (node *syntax_tree)
 
     CTInote ("Creating static SAC library `lib%sMod.a'", global.modulename);
 
-    SYScall ("%s %slib%sMod.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
-             global.targetdir, global.modulename, global.tmp_dirname, global.tmp_dirname,
-             deplibs);
+    SYScall ("%s %slib%sMod.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
+             global.config.ar_create, global.targetdir, global.modulename,
+             global.tmp_dirname, global.tmp_dirname, deplibs);
 
     if (global.config.ranlib[0] != '\0') {
         SYScall ("%s %slib%sMod.a", global.config.ranlib, global.targetdir,
@@ -75,9 +75,9 @@ LIBBcreateLibrary (node *syntax_tree)
 
     CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
 
-    SYScall ("%s -o %slib%sMod.so %s/fun*.o %s/globals.o %s", global.config.ld_dynamic,
-             global.targetdir, global.modulename, global.tmp_dirname, global.tmp_dirname,
-             deplibs);
+    SYScall ("%s -o %slib%sMod.so %s/fun*_pic.o %s/globals_pic.o %s",
+             global.config.ld_dynamic, global.targetdir, global.modulename,
+             global.tmp_dirname, global.tmp_dirname, deplibs);
 
     deplibs = MEMfree (deplibs);
 
@@ -118,7 +118,8 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
 
     CTInote ("Creating static wrapper library `lib%s.a'", global.outfilename);
 
-    SYScall ("%s %s/lib%s.a %s/fun*.o %s/globals.o %s/interface.o %s",
+    SYScall ("%s %s/lib%s.a %s/fun*_nonpic.o %s/globals_nonpic.o "
+             "%s/interface_nonpic.o %s",
              global.config.ar_create, STRonNull (".", global.lib_dirname),
              global.outfilename, global.tmp_dirname, global.tmp_dirname,
              global.tmp_dirname, deplibs);
@@ -130,7 +131,8 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
 
     CTInote ("Creating shared wrapper library `lib%s.so'", global.outfilename);
 
-    SYScall ("%s -o %s/lib%s.so %s/fun*.o %s/globals.o %s/interface.o %s",
+    SYScall ("%s -o %s/lib%s.so %s/fun*_pic.o %s/globals_pic.o "
+             "%s/interface_pic.o %s",
              global.config.ld_dynamic, STRonNull (".", global.lib_dirname),
              global.outfilename, global.tmp_dirname, global.tmp_dirname,
              global.tmp_dirname, deplibs);

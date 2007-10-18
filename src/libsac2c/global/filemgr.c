@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <regex.h>
 
 #include "dbug.h"
 #include "system.h"
@@ -662,6 +664,48 @@ FMGRcreateTmpDir ()
     /* Failure of the system call is detected in SYScall */
 
 #endif /* HAVE_MKDTEMP */
+
+    DBUG_VOID_RETURN;
+}
+
+void
+FMGRforEach (const char *path, const char *filterexpr, void *funargs,
+             void(fun) (const char *path, const char *file, void *params))
+{
+    DIR *currdir;
+    struct dirent *direntry;
+    regex_t regexpr;
+    int error;
+    char *fullpattern;
+
+    DBUG_ENTER ("FMGRforEach");
+
+    /*
+     * ensure the pattern only matches entire lines
+     */
+    fullpattern = STRcatn (3, "^", filterexpr, "$");
+
+    currdir = opendir (path);
+
+    if (currdir == NULL) {
+        CTIabort ("Cannot read directory `%s'.", path);
+    }
+
+    error = regcomp (&regexpr, fullpattern, REG_NOSUB);
+    DBUG_ASSERT ((error == 0), "Illegal regular expression!");
+
+    direntry = readdir (currdir);
+    while (direntry != NULL) {
+        if (regexec (&regexpr, direntry->d_name, 0, NULL, 0) == 0) {
+            fun (path, direntry->d_name, funargs);
+        }
+        direntry = readdir (currdir);
+    }
+
+    regfree (&regexpr);
+
+    closedir (currdir);
+    fullpattern = MEMfree (fullpattern);
 
     DBUG_VOID_RETURN;
 }

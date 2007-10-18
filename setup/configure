@@ -696,6 +696,7 @@ RCLDFLAGS
 RCCCFLAGS
 MKCCFLAGS
 PDCCFLAGS
+GENPIC
 DEPSFLAG
 CPPFILE
 CCMTLINK
@@ -5074,11 +5075,13 @@ if  test "$GCC" = yes ; then
 
   RCLDFLAGS=""
 
-  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -fPIC -DPIC -std-c99"
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99"
 
   MKCCFLAGS="-Wall -g -std=c99"
 
   PDCCFLAGS="-Wall -g -O3 -std=c99"
+
+  GENPIC="-fPIC -DPIC"
 
   DEPSFLAG="-M"
 
@@ -5103,9 +5106,11 @@ elif  test "$SUNC" = yes ; then
 
   RCCCFLAGS="-dalign -fsimple -xsafe=mem"
 
-  MKCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all -KPIC"
+  MKCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all"
 
   PDCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC"
+
+  GENPIC="-KPIC"
 
   DEPSFLAG="-xM"
 
@@ -5134,6 +5139,8 @@ elif  test "$DECC" = yes ; then
 
   PDCCFLAGS="-g3"
 
+  GENPIC=""
+
   DEPSFLAG="-M"
 
   CPPFILE="cc -E -C -x c"
@@ -5161,6 +5168,8 @@ elif  test "$MACC" = yes ; then
 
   PDCCFLAGS="-std=c99"
 
+  GENPIC=""
+
   DEPSFLAG="-M"
 
   CPPFILE="gcc -E -C -x c"
@@ -5187,6 +5196,8 @@ else
   MKCCFLAGS=""
 
   PDCCFLAGS=""
+
+  GENPIC=""
 
   DEPSFLAG="-M"
 
@@ -5998,10 +6009,10 @@ RCLDFLAGS!$RCLDFLAGS$ac_delim
 RCCCFLAGS!$RCCCFLAGS$ac_delim
 MKCCFLAGS!$MKCCFLAGS$ac_delim
 PDCCFLAGS!$PDCCFLAGS$ac_delim
+GENPIC!$GENPIC$ac_delim
 DEPSFLAG!$DEPSFLAG$ac_delim
 CPPFILE!$CPPFILE$ac_delim
 CCMTLINK!$CCMTLINK$ac_delim
-OSFLAGS!$OSFLAGS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 85; then
@@ -6059,13 +6070,14 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+OSFLAGS!$OSFLAGS$ac_delim
 LD_DYNAMIC!$LD_DYNAMIC$ac_delim
 LD_PATH!$LD_PATH$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 4; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 5; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

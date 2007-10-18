@@ -269,11 +269,60 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 }
 
 static void
+CompileOneFile (const char *dir, const char *file, const char *callstring)
+{
+    char *basename;
+
+    DBUG_ENTER ("CompileOneFile");
+
+    basename = STRtok (file, ".");
+
+    SYScall ("cd %s; %s -c %s -o %s_nonpic.o", dir, callstring, file, basename);
+
+    basename = MEMfree (basename);
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
+{
+    char *basename;
+
+    DBUG_ENTER ("CompileOneFilePIC");
+
+    basename = STRtok (file, ".");
+
+    SYScall ("cd %s; %s %s -c %s -o%s_pic.o", dir, callstring, global.config.genpic, file,
+             basename);
+
+    basename = MEMfree (basename);
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 InvokeCCModule (char *cccall, char *ccflags)
 {
+    char *callstring;
+
     DBUG_ENTER ("InvokeCCModule");
 
-    SYScall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall, ccflags);
+    callstring = STRcat (cccall, ccflags);
+
+    /*
+     * compile non-PIC code
+     */
+    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                 (void (*) (const char *, const char *, void *))CompileOneFile);
+    CompileOneFile (global.tmp_dirname, "globals.c", callstring);
+
+    /*
+     * compile PIC code
+     */
+    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                 (void (*) (const char *, const char *, void *))CompileOneFilePIC);
+    CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
 
     SYScall ("cd %s; %s -c serialize.c", global.tmp_dirname, cccall);
     SYScall ("cd %s; %s -c filenames.c", global.tmp_dirname, cccall);
@@ -281,17 +330,37 @@ InvokeCCModule (char *cccall, char *ccflags)
     SYScall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
     SYScall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
 
+    callstring = MEMfree (callstring);
+
     DBUG_VOID_RETURN;
 }
 
 static void
 InvokeCCWrapper (char *cccall, char *ccflags)
 {
+    char *callstring;
+
     DBUG_ENTER ("InvokeCCWrapper");
 
-    SYScall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall, ccflags);
+    callstring = STRcat (cccall, ccflags);
 
-    SYScall ("cd %s; %s -c interface.c", global.tmp_dirname, cccall);
+    /*
+     * compile non-PIC code
+     */
+    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                 (void (*) (const char *, const char *, void *))CompileOneFile);
+    CompileOneFile (global.tmp_dirname, "globals.c", callstring);
+    CompileOneFile (global.tmp_dirname, "interface.c", callstring);
+
+    /*
+     * compile PIC code
+     */
+    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                 (void (*) (const char *, const char *, void *))CompileOneFilePIC);
+    CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
+    CompileOneFilePIC (global.tmp_dirname, "interface.c", callstring);
+
+    callstring = MEMfree (callstring);
 
     DBUG_VOID_RETURN;
 }

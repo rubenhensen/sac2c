@@ -38,5 +38,7 @@ extern bool FMGRcheckSystemLibrary (const char *name);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRdeleteTmpDir ();
 extern void FMGRcreateTmpDir ();
+extern void FMGRforEach (const char *path, const char *fileexpr, void *funargs,
+                         void(const char *path, const char *file, void *params));
 
 #endif /* _SAC_FILEMGR_H_ */
