@@ -82,8 +82,10 @@ MFTdoMapFunTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 
     DBUG_ENTER ("MFTdoMapFunTrav");
 
-    DBUG_ASSERT (((arg_node == NULL) || (NODE_TYPE (arg_node) == N_fundef)),
-                 "MLFdoMapFunTrav called on non fundef node");
+    DBUG_ASSERT (((arg_node == NULL)
+                  || ((NODE_TYPE (arg_node) == N_fundef)
+                      || (NODE_TYPE (arg_node) == N_module))),
+                 "MLFdoMapFunTrav called on non fundef/module node");
 
     localinfo = MakeInfo ();
 

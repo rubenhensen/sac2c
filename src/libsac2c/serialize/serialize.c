@@ -621,7 +621,7 @@ SERdoSerialize (node *module)
      * module in a later context, all dependent functions need to be
      * present! To do so, we tag all local functions as sticky.
      */
-    MODULE_FUNS (module) = MFTdoMapFunTrav (MODULE_FUNS (module), NULL, TagLocalAsSticky);
+    module = MFTdoMapFunTrav (module, NULL, TagLocalAsSticky);
 
     DBUG_RETURN (module);
 }

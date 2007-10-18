@@ -43,9 +43,8 @@ TagPreludeAsSticky (node *syntax_tree)
 
     prelude = NSgetNamespace (global.preludename);
 
-    MODULE_FUNS (syntax_tree)
-      = MFTdoMapFunTrav (MODULE_FUNS (syntax_tree), (info *)prelude,
-                         (travfun_p)TagNamespaceAsSticky);
+    syntax_tree
+      = MFTdoMapFunTrav (syntax_tree, (info *)prelude, (travfun_p)TagNamespaceAsSticky);
 
     prelude = NSfreeNamespace (prelude);
 
@@ -60,8 +59,6 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
     DBUG_ASSERT ((NODE_TYPE (syntaxtree) == N_module),
                  "ASFdoAddSpecialFunctions is designed for use on module nodes!");
 
-    DSinitDeserialize (syntaxtree);
-
     if (global.loadprelude) {
         /*
          * add functions from sac prelude
@@ -73,12 +70,16 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
                       "name. Try compiling with option -noprelude!");
         }
 
+        DSinitDeserialize (syntaxtree);
+
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
+
+        DSfinishDeserialize (syntaxtree);
 
         /*
          * prevent prelude functions from being deleted
@@ -87,8 +88,6 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
     } else {
         CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
     }
-
-    DSfinishDeserialize (syntaxtree);
 
     DBUG_RETURN (syntaxtree);
 }
