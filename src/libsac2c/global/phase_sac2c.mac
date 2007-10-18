@@ -140,7 +140,8 @@ SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
           exp)
 
-SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize, ALWAYS, exp)
+SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
+          ((global.filetype == F_modimp) || (global.filetype == F_classimp)), exp)
 
 SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
           ALWAYS, exp)
