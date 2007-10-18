@@ -384,7 +384,7 @@ ConvertOutputs (node *aprets, node *wrapretids, node **vardecs, node **assigns)
 
     if (aprets != NULL) {
         result
-          = ConvertInputs (RET_NEXT (aprets), IDS_NEXT (wrapretids), vardecs, assigns);
+          = ConvertOutputs (RET_NEXT (aprets), IDS_NEXT (wrapretids), vardecs, assigns);
 
         avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (aprets)));
         *vardecs = TBmakeVardec (avis, *vardecs);
