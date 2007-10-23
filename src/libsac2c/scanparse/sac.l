@@ -323,10 +323,11 @@ int charpos = 0;
                              FILTER( STR);
                            }
 
-[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
+[A-Za-z](_?[A-Za-z0-9])*_? {
                              yylval.id = STRcpy( yytext);
                              FILTER( ID);
                            }
+
 [|&>!%=-]+                 { yylval.id = STRcpy(yytext);
                              FILTER( ID);
                            }
