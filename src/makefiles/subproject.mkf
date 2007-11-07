@@ -17,8 +17,6 @@
 #    cleandevel cleanup compiled files (developer code only)
 #    cleanprod  cleanup compiled files (product code only)
 #
-#    efence     compile efence debugging code
-#
 #    refactor   refactor source code (requires parameters below)
 #
 #  Parameters:
@@ -65,7 +63,7 @@ TARGETS          := $(addprefix $(TARGETDIR)/,\
 # Dummy rules
 #
 
-.PHONY: default devel prod efence make_%
+.PHONY: default devel prod make_%
 .PHONY: clean clean_% refactor
 
 
@@ -79,8 +77,6 @@ default: make_$($(SUBPROJECT)_defaultstyle)
 devel: make_devel
 
 prod: make_prod
-
-efence: make_efence
 
 
 ###############################################################################

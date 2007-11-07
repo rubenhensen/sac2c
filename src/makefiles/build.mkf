@@ -190,16 +190,13 @@ $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STY
 #	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
 	$(HIDE) $(LD_DYNAMIC) -o $@ \
                 $(SUBTARGETS) $< \
-                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_LEX)
 
-$(PROJECT_ROOT)/bin/sac2c.efence: $(PROJECT_ROOT)/src/tools/sac2c/sac2c.d.o
-	@$(ECHO) ""
-	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
-	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
-          $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o \
-          $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
-	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
+
+################################################################################
+#
+# Building HTML documentation of abstract syntax tree
+#
 
 $(PROJECT_ROOT)/src/html/%.html: xml/%2html.xsl xml/%.xml
 	@$(ECHO) ""

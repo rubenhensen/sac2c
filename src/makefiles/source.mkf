@@ -58,7 +58,7 @@ SUBPROJECT     := $(notdir $(patsubst %/$(notdir $(CURDIR)),%,$(CURDIR)))
 # Dummy rules
 #
 
-.PHONY: default devel prod efence clean checkxml refactor
+.PHONY: default devel prod clean checkxml refactor
 .PHONY: make_% clean_% %.html
 
 
@@ -72,8 +72,6 @@ default: make_$($(SUBPROJECT)_defaultstyle)
 devel: make_devel
 
 prod: make_prod
-
-efence: make_efence
 
 
 ###############################################################################

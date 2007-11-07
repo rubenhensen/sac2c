@@ -58,7 +58,7 @@ include $(MAKEFILE_DIR)/settings.mkf
 # Dummy rules
 #
 
-.PHONY: default devel prod clean cleandevel cleanprod efence config \
+.PHONY: default devel prod clean cleandevel cleanprod config \
         tidy tidydevel tidyprod
 
 
@@ -154,18 +154,6 @@ tidydevel:
 
 tidyprod:
 	$(MAKE) CLEAN_MAKE_TOOLS="no" cleanprod 
-
-
-###############################################################################
-#
-# Efence rules
-#
-# Adjustment to new makefile system postponed until libsac2c becomes a real
-# library.
-#
-
-efence:
-	$(HIDE) $(MAKE) -C src/compiler  DEPS="$(DEPS)" HIDE="$(HIDE)" $@
 
 
 ###############################################################################
