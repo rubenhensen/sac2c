@@ -381,6 +381,12 @@
           <node name="Assign" />
         </travuser>
       </traversal>
+      <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons" include="generate_generic_type_conversions.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Typedef" />
+        </travuser>
+      </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <travuser>
           <node name="Typedef" />

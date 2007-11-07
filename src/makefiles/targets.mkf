@@ -128,7 +128,8 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
                         manage_object_initialisers check_uniqueness spmdfun_fix
 
 libsac2c_generics    := remove_generic_definitions \
-                        check_and_simplify_generic_definitions
+                        check_and_simplify_generic_definitions \
+                        generate_generic_type_conversions
 
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
