@@ -14,6 +14,9 @@
  * Prefix: OI
  *
  *****************************************************************************/
+extern node *OIobjdef (node *arg_node, info *arg_info);
+extern node *OImodule (node *arg_node, info *arg_info);
+
 extern node *OIdoObjectInit (node *syntax_tree);
 
 #endif /* _SAC_OBJECT_INIT_H_  */

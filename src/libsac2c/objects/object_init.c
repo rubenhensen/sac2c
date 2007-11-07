@@ -8,121 +8,58 @@
 
 #include "types.h"
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "dbug.h"
-#include "str.h"
 #include "memory.h"
-#include "free.h"
 #include "new_types.h"
-#include "shape.h"
+#include "str.h"
 #include "namespaces.h"
-#include "DupTree.h"
+#include "traverse.h"
 
-/*
- * helper functions
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
+struct INFO {
+    node *fundefs;
+};
+
+/**
+ * A template entry in the template info structure
  */
+#define INFO_FUNDEFS(n) ((n)->fundefs)
 
-/** <!-- ****************************************************************** -->
- * @brief builds a type conversion fun converting from type from to type to.
- *
- * @param name    name of function to be built
- * @param ns      ns of function to be built
- * @param from    type to convert from
- * @param to      type to convert to
- * @param prf     primitive function to stick in
- *
- * @return N_fundef node representing the type conversion
- ******************************************************************************/
-static node *
-BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to,
-                     prf prf)
+static info *
+MakeInfo ()
 {
-    node *result;
-    node *avisarg;
-    node *assign;
-    node *block;
+    info *result;
 
-    DBUG_ENTER ("BuildTypeConversion");
+    DBUG_ENTER ("MakeInfo");
 
-    avisarg = TBmakeAvis (STRcpy ("from"), TYcopyType (from));
-    AVIS_DECLTYPE (avisarg) = TYcopyType (AVIS_TYPE (avisarg));
+    result = MEMmalloc (sizeof (info));
 
-    /*
-     * return( res);
-     */
-    assign = TBmakeAssign (TBmakeReturn (
-                             TBmakeExprs (TBmakeSpid (NULL, STRcpy ("result")), NULL)),
-                           NULL);
-    /*
-     * res = prf( (:restype) arg);
-     */
-    assign = TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy ("result"), NULL),
-                                      TBmakeCast (TYcopyType (to), TBmakeId (avisarg))),
-                           assign);
-
-    /*
-     * create the fundef body block
-     */
-    block = TBmakeBlock (assign, NULL);
-
-    /*
-     * create the fundef node
-     */
-    result = TBmakeFundef (STRcpy (name), NSdupNamespace (ns),
-                           TBmakeRet (TYcopyType (to), NULL), TBmakeArg (avisarg, NULL),
-                           block, NULL);
+    INFO_FUNDEFS (result) = NULL;
 
     DBUG_RETURN (result);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *CreateTypeConversions( node *typedefs, node *funs)
- *
- * @brief creates type conversion funs for all local class typedefs in chain
- *
- * @param typedefs typedef chain
- * @param funs fundef chain
- *
- * @return fundef chain with new funs appended in front
- ******************************************************************************/
-static node *
-CreateTypeConversions (node *typedefs, node *funs)
+static info *
+FreeInfo (info *info)
 {
-    DBUG_ENTER ("CreateTypeConversions");
+    DBUG_ENTER ("FreeInfo");
 
-    if (TYPEDEF_NEXT (typedefs) != NULL) {
-        funs = CreateTypeConversions (TYPEDEF_NEXT (typedefs), funs);
-    }
+    info = MEMfree (info);
 
-    if (TYPEDEF_ISUNIQUE (typedefs) && TYPEDEF_ISLOCAL (typedefs)) {
-        node *to_fun, *from_fun;
-        char *to_name, *from_name;
-        ntype *tdef_type;
-
-        to_name = STRcat ("to_", TYPEDEF_NAME (typedefs));
-        from_name = STRcat ("from_", TYPEDEF_NAME (typedefs));
-
-        tdef_type = TYmakeAKS (TYmakeSymbType (STRcpy (TYPEDEF_NAME (typedefs)),
-                                               NSdupNamespace (TYPEDEF_NS (typedefs))),
-                               SHmakeShape (0));
-
-        to_fun = BuildTypeConversion (to_name, TYPEDEF_NS (typedefs),
-                                      TYPEDEF_NTYPE (typedefs), tdef_type, F_to_unq);
-
-        from_fun = BuildTypeConversion (from_name, TYPEDEF_NS (typedefs), tdef_type,
-                                        TYPEDEF_NTYPE (typedefs), F_from_unq);
-
-        FUNDEF_NEXT (to_fun) = funs;
-        FUNDEF_NEXT (from_fun) = to_fun;
-        funs = from_fun;
-
-        tdef_type = TYfreeType (tdef_type);
-        to_name = MEMfree (to_name);
-        from_name = MEMfree (from_name);
-    }
-
-    DBUG_RETURN (funs);
+    DBUG_RETURN (info);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+/*
+ * helper functions
+ */
 
 /** <!-- ****************************************************************** -->
  * @fn node *BuildInitFun( char *name, namespace_t *ns,
@@ -173,31 +110,58 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
     DBUG_RETURN (result);
 }
 
-static node *
-CreateInitFuns (node *objdefs, node *funs)
+/** <!-- ****************************************************************** -->
+ * @brief Traverses all objdefs and creates corresponding init functions.
+ *        The init functions are stored in the info field for later insertion
+ *        into the tree.
+ *
+ * @param arg_node objdef node
+ * @param arg_info info structure
+ *
+ * @return objdef node with added initfun
+ ******************************************************************************/
+node *
+OIobjdef (node *arg_node, info *arg_info)
 {
     node *initfun;
 
-    DBUG_ENTER ("CreateInitFuns");
+    DBUG_ENTER ("OIobjdef");
 
-    if (OBJDEF_NEXT (objdefs) != NULL) {
-        funs = CreateInitFuns (OBJDEF_NEXT (objdefs), funs);
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
 
-    if (OBJDEF_ISLOCAL (objdefs) && !OBJDEF_ISEXTERN (objdefs)
-        && !OBJDEF_ISALIAS (objdefs)) {
+    if (OBJDEF_ISLOCAL (arg_node) && !OBJDEF_ISEXTERN (arg_node)
+        && !OBJDEF_ISALIAS (arg_node)) {
         initfun
-          = BuildInitFun (STRcat ("init_", OBJDEF_NAME (objdefs)), NSgetInitNamespace (),
-                          TYcopyType (OBJDEF_TYPE (objdefs)), OBJDEF_EXPR (objdefs));
+          = BuildInitFun (STRcat ("init_", OBJDEF_NAME (arg_node)), NSgetInitNamespace (),
+                          TYcopyType (OBJDEF_TYPE (arg_node)), OBJDEF_EXPR (arg_node));
 
-        OBJDEF_EXPR (objdefs) = NULL;
-        OBJDEF_INITFUN (objdefs) = initfun;
+        OBJDEF_EXPR (arg_node) = NULL;
+        OBJDEF_INITFUN (arg_node) = initfun;
 
-        FUNDEF_NEXT (initfun) = funs;
-        funs = initfun;
+        FUNDEF_NEXT (initfun) = INFO_FUNDEFS (arg_info);
+        INFO_FUNDEFS (arg_info) = initfun;
     }
 
-    DBUG_RETURN (funs);
+    DBUG_RETURN (arg_node);
+}
+
+node *
+OImodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("OImodule");
+
+    INFO_FUNDEFS (arg_info) = MODULE_FUNS (arg_node);
+
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
+    }
+
+    MODULE_FUNS (arg_node) = INFO_FUNDEFS (arg_info);
+    INFO_FUNDEFS (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!-- ****************************************************************** -->
@@ -205,10 +169,9 @@ CreateInitFuns (node *objdefs, node *funs)
  *
  * @brief starter function of object initialisation.
  *
- * During object initialisation, the special conversion funs to_XXX and
- * from_XXX are built and inserted into the AST. Firthermore, the init
- * expression of every local objdef is lifted into a special init function
- * to allow for arbitraty expressions in object init expressions.
+ * During object initialisation, the init expression of every local objdef is
+ * lifted into a special init function to allow for arbitraty expressions in
+ * object init expressions.
  *
  * @param syntax_tree the entire syntaxtree, thus the N_module node.
  *
@@ -217,17 +180,17 @@ CreateInitFuns (node *objdefs, node *funs)
 node *
 OIdoObjectInit (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("OIdoObjectInit");
 
-    if (MODULE_TYPES (syntax_tree) != NULL) {
-        MODULE_FUNS (syntax_tree)
-          = CreateTypeConversions (MODULE_TYPES (syntax_tree), MODULE_FUNS (syntax_tree));
-    }
+    info = MakeInfo ();
 
-    if (MODULE_OBJS (syntax_tree) != NULL) {
-        MODULE_FUNS (syntax_tree)
-          = CreateInitFuns (MODULE_OBJS (syntax_tree), MODULE_FUNS (syntax_tree));
-    }
+    TRAVpush (TR_oi);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

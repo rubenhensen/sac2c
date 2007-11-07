@@ -595,6 +595,12 @@
           <node name="Cast" />
         </travuser>
       </traversal>
+      <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Objdef" />
+        </travuser>
+      </traversal>
       <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
         <travuser>
           <node name="Module" />
