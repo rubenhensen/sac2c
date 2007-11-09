@@ -129,11 +129,7 @@ FindPropagateGoalExpr (node *prop, info *arg_info)
     wlexpr = CODE_CEXPRS (WITH_CODE (INFO_WL (arg_info)));
     wlop = WITH_WITHOP (INFO_WL (arg_info));
 
-    while (wlop != NULL) {
-        if (wlop == prop) {
-            return wlexpr;
-        }
-
+    while ((wlop != NULL) && (wlop != prop)) {
         wlop = WITHOP_NEXT (wlop);
         wlexpr = EXPRS_NEXT (wlexpr);
     }

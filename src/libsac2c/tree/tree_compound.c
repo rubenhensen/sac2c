@@ -2429,6 +2429,22 @@ TCisPhiFun (node *id)
     DBUG_RETURN (result);
 }
 
+node *
+TCsetSSAAssignForIdsChain (node *ids, node *assign)
+{
+    DBUG_ENTER ("TCsetSSAAssignForIdsChain");
+
+    if (ids != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (ids) == N_ids), "N_ids expected!");
+
+        IDS_NEXT (ids) = TCsetSSAAssignForIdsChain (IDS_NEXT (ids), assign);
+
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = assign;
+    }
+
+    DBUG_RETURN (ids);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

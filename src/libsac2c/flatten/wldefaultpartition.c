@@ -39,16 +39,24 @@ struct INFO {
     node *module;
     node *fundef;
     node *defexpr;
-    node *defass;
+    node *wlpreass;
+    node *propobjinargs;
+    node *propobjinres;
+    node *propobjoutargs;
+    node *propobjoutres;
     node *selwrapper;
 };
 
-#define INFO_WL(n) (n->wl)
-#define INFO_MODULE(n) (n->module)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_DEFEXPR(n) (n->defexpr)
-#define INFO_DEFASS(n) (n->defass)
-#define INFO_SELWRAPPER(n) (n->selwrapper)
+#define INFO_WL(n) ((n)->wl)
+#define INFO_MODULE(n) ((n)->module)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_DEFEXPR(n) ((n)->defexpr)
+#define INFO_WLPREASS(n) ((n)->wlpreass)
+#define INFO_PROPOBJINARGS(n) ((n)->propobjinargs)
+#define INFO_PROPOBJINRES(n) ((n)->propobjinres)
+#define INFO_PROPOBJOUTARGS(n) ((n)->propobjoutargs)
+#define INFO_PROPOBJOUTRES(n) ((n)->propobjoutres)
+#define INFO_SELWRAPPER(n) ((n)->selwrapper)
 
 /**
  * INFO functions
@@ -66,7 +74,11 @@ MakeInfo ()
     INFO_MODULE (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_DEFEXPR (result) = NULL;
-    INFO_DEFASS (result) = NULL;
+    INFO_WLPREASS (result) = NULL;
+    INFO_PROPOBJINARGS (result) = NULL;
+    INFO_PROPOBJINRES (result) = NULL;
+    INFO_PROPOBJOUTARGS (result) = NULL;
+    INFO_PROPOBJOUTRES (result) = NULL;
     INFO_SELWRAPPER (result) = NULL;
 
     DBUG_RETURN (result);
@@ -339,10 +351,10 @@ WLDPassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_DEFASS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_DEFASS (arg_info)) = arg_node;
-        arg_node = INFO_DEFASS (arg_info);
-        INFO_DEFASS (arg_info) = NULL;
+    if (INFO_WLPREASS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_WLPREASS (arg_info)) = arg_node;
+        arg_node = INFO_WLPREASS (arg_info);
+        INFO_WLPREASS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -431,12 +443,12 @@ WLDPgenarray (node *arg_node, info *arg_info)
 
             INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
 
-            INFO_DEFASS (arg_info)
+            INFO_WLPREASS (arg_info)
               = TBmakeAssign (TBmakeLet (ids, CreateZeros (array_type,
                                                            INFO_FUNDEF (arg_info))),
                               NULL);
             /* set correct backref to defining assignment */
-            AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_DEFASS (arg_info);
+            AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_WLPREASS (arg_info);
 
             INFO_DEFEXPR (arg_info)
               = TBmakeExprs (TBmakeId (avis), INFO_DEFEXPR (arg_info));
@@ -512,24 +524,56 @@ WLDPmodarray (node *arg_node, info *arg_info)
  *
  * @fn node *WLDPpropagate( node *arg_node, info *arg_info)
  *
- *   @brief  generates default expression.
+ * @brief  generates default expression.
  *
- *   @param  node *arg_node:  N_propagate
- *           info *arg_info:  N_info
- *   @return node *        :  N_propagate
+ * @param  arg_node propagate node
+ * @param  arg_info info structure
+ * @return unchanged propagate node
  ******************************************************************************/
 
 node *
 WLDPpropagate (node *arg_node, info *arg_info)
 {
+    node *inres, *outres;
+    ntype *type;
+
     DBUG_ENTER ("WLDPpropagate");
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
-    INFO_DEFEXPR (arg_info) = TBmakeExprs (DUPdoDupTree (PROPAGATE_DEFAULT (arg_node)),
-                                           INFO_DEFEXPR (arg_info));
+    DBUG_ASSERT ((NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_id),
+                 "N_id node expected as propagate default");
+
+    /*
+     * construct the argument and result chains for
+     * prop_obj_in and prop_obj_out
+     */
+    type = AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node)));
+
+    inres = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
+    outres = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (inres,
+                      TBmakeVardec (outres, FUNDEF_VARDEC (INFO_FUNDEF (arg_info))));
+
+    INFO_PROPOBJINARGS (arg_info)
+      = TBmakeExprs (DUPdoDupTree (PROPAGATE_DEFAULT (arg_node)),
+                     INFO_PROPOBJINARGS (arg_info));
+
+    INFO_PROPOBJINRES (arg_info) = TBmakeIds (inres, INFO_PROPOBJINRES (arg_info));
+
+    INFO_PROPOBJOUTARGS (arg_info)
+      = TBmakeExprs (TBmakeId (inres), INFO_PROPOBJOUTARGS (arg_info));
+
+    INFO_PROPOBJOUTRES (arg_info) = TBmakeIds (outres, INFO_PROPOBJOUTRES (arg_info));
+
+    /*
+     * the result of prop_obj_out is the default expression
+     */
+    INFO_DEFEXPR (arg_info) = TBmakeExprs (TBmakeId (outres), INFO_DEFEXPR (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -561,16 +605,49 @@ WLDPpart (node *arg_node, info *arg_info)
     vardec = NULL;
     idniter = NULL;
     expriter = INFO_DEFEXPR (arg_info);
+    INFO_DEFEXPR (arg_info) = NULL;
 
+    /*
+     * 1) construct prop_obj_out
+     */
+    if (INFO_PROPOBJOUTARGS (arg_info) != NULL) {
+        nassign = TBmakeAssign (TBmakeLet (INFO_PROPOBJOUTRES (arg_info),
+                                           TBmakePrf (F_prop_obj_out,
+                                                      INFO_PROPOBJOUTARGS (arg_info))),
+                                nassign);
+
+        INFO_PROPOBJOUTRES (arg_info)
+          = TCsetSSAAssignForIdsChain (INFO_PROPOBJOUTRES (arg_info), nassign);
+
+        INFO_PROPOBJOUTRES (arg_info) = NULL;
+        INFO_PROPOBJOUTARGS (arg_info) = NULL;
+    }
+
+    /*
+     * construct default expression assignments if
+     * the expression is not an identifier
+     * already
+     */
     while (expriter != NULL) {
-        _ids = TBmakeIds (TBmakeAvis (TRAVtmpVar (),
-                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (
-                                        EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))))))),
-                          NULL);
+        if (NODE_TYPE (EXPRS_EXPR (expriter)) != N_id) {
+            _ids = TBmakeIds (TBmakeAvis (TRAVtmpVar (),
+                                          TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (
+                                            WITH_CEXPRS (INFO_WL (arg_info))))))),
+                              NULL);
 
-        vardec = TBmakeVardec (IDS_AVIS (_ids), vardec);
+            vardec = TBmakeVardec (IDS_AVIS (_ids), vardec);
 
-        temp = TBmakeExprs (DUPdupIdsId (_ids), NULL);
+            temp = TBmakeExprs (DUPdupIdsId (_ids), NULL);
+
+            /* create new N_assign node  */
+            nassign = TBmakeAssign (TBmakeLet (_ids, EXPRS_EXPR (expriter)), nassign);
+
+            /* set correct backref to defining assignment */
+            AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
+        } else {
+            temp = TBmakeExprs (EXPRS_EXPR (expriter), NULL);
+        }
+
         if (idn == NULL) {
             idn = temp;
             idniter = idn;
@@ -579,20 +656,41 @@ WLDPpart (node *arg_node, info *arg_info)
             idniter = temp;
         }
 
-        /* create new N_code node  */
-        nassign = TBmakeAssign (TBmakeLet (_ids, EXPRS_EXPR (expriter)), nassign);
-
-        /* set correct backref to defining assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
-
-        expriter = EXPRS_NEXT (expriter);
+        /*
+         * free shell and move on to next
+         */
+        EXPRS_EXPR (expriter) = NULL;
+        expriter = FREEdoFreeNode (expriter);
     }
 
     INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
 
-    code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
+    /*
+     * 3) construct prop_obj_in
+     */
+    if (INFO_PROPOBJINARGS (arg_info) != NULL) {
+        nassign
+          = TBmakeAssign (TBmakeLet (INFO_PROPOBJINRES (arg_info),
+                                     TBmakePrf (F_prop_obj_in,
+                                                TBmakeExprs (TBmakeId (IDS_AVIS (
+                                                               WITHID_VEC (PART_WITHID (
+                                                                 arg_node)))),
+                                                             INFO_PROPOBJINARGS (
+                                                               arg_info)))),
+                          nassign);
 
-    INFO_DEFEXPR (arg_info) = NULL;
+        INFO_PROPOBJINRES (arg_info)
+          = TCsetSSAAssignForIdsChain (INFO_PROPOBJINRES (arg_info), nassign);
+
+        INFO_PROPOBJINRES (arg_info) = NULL;
+        INFO_PROPOBJINARGS (arg_info) = NULL;
+    }
+
+    if (nassign == NULL) {
+        nassign = TBmakeEmpty ();
+    }
+
+    code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
 
     PART_NEXT (arg_node)
       = TBmakePart (code, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
