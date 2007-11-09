@@ -10,6 +10,7 @@ extern node *WLLOMids (node *arg_node, info *arg_info);
 extern node *WLLOMassign (node *arg_node, info *arg_info);
 extern node *WLLOMlet (node *arg_node, info *arg_info);
 extern node *WLLOMwith (node *arg_node, info *arg_info);
+extern node *WLLOMcode (node *arg_node, info *arg_info);
 extern node *WLLOMdoLockOptimizationMarking (node *syntax_tree);
 
 #endif /*_WL_LOCK_OPTIMIZATION_MARKING_H_*/

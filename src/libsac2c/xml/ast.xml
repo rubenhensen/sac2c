@@ -111,6 +111,7 @@
       <traversal id="WLLOM" name="Withloop lock optimization marking" default="sons" include="wl_lock_optimization_marking.h" >
         <travuser>
           <node name="With" />
+          <node name="Code" />
           <node name="Assign" />
           <node name="Let" />
           <node name="Ids" />

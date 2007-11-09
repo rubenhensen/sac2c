@@ -97,6 +97,8 @@ WLLOMprf (node *arg_node, info *arg_info)
 
     if (INFO_WB (arg_info) == FALSE) { /*Traverses down the tree...*/
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
+            DBUG_PRINT ("WLLOM", ("Found prop_obj_in!"));
+
             INFO_FV (arg_info) = TRUE;
         } else {
             arg_node = TRAVcont (arg_node, arg_info);
@@ -373,13 +375,37 @@ WLLOMwith (node *arg_node, info *arg_info)
         INFO_WB (arg_info) = FALSE;
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * we are only interested in the CODE blocks
+     */
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         INFO_WB (arg_info) = FALSE;
     }
     DBUG_PRINT ("WLLOM", ("<<<Leave WL-Level %i...", INFO_WLLEVEL (arg_info)));
     INFO_WLLEVEL (arg_info) = INFO_WLLEVEL (arg_info) - 1;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+WLLOMcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLLOMcode");
+
+    /*
+     * new code block, new game! So we start with !UP again
+     */
+    INFO_WB (arg_info) = FALSE;
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
