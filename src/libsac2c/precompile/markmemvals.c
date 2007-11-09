@@ -274,10 +274,16 @@ MMVids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVids");
 
+    /*
+     * We rename the LHS ids here. As there might be multiply nested
+     * WLs on the RHS, we can get renaming chains! Therefore, we have
+     * to rename until we have reached the final renaming.
+     */
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
-    if (newavis != IDS_AVIS (arg_node)) {
+    while (newavis != IDS_AVIS (arg_node)) {
         AVIS_ISDEAD (IDS_AVIS (arg_node)) = TRUE;
         IDS_AVIS (arg_node) = newavis;
+        newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
@@ -307,10 +313,17 @@ MMVid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVid");
 
+    /*
+     * Due to nested WLs, we might have renaming chains! So we
+     * need to keep renaming until we reach a fixpoint.
+     */
+
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
-    if (newavis != ID_AVIS (arg_node)) {
+    while (newavis != ID_AVIS (arg_node)) {
         ID_AVIS (arg_node) = newavis;
+
+        newavis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -636,6 +649,10 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
     }
 
     INFO_PROP_IN (arg_info) = arg_node;
+
+    if (PRF_ARGS (arg_node) != NULL) {
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1082,6 +1099,8 @@ node *
 MMVpropagate (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVpropagate");
+
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
