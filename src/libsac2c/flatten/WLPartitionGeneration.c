@@ -345,59 +345,62 @@ WLPGnormalizeStepWidth (node **step, node **width)
 
     if ((*width) != NULL && (*step) == NULL) {
         error = 3;
-    } else if ((*step) != NULL) {
+    } else {
+        if ((*step) != NULL) {
 
-        if ((*width) == NULL) {
-            /*  create width with constant 1 */
-            veclen = TCcountExprs (ARRAY_AELEMS ((*step)));
+            if ((*width) == NULL) {
+                /*  create width with constant 1 */
+                veclen = TCcountExprs (ARRAY_AELEMS ((*step)));
 
-            (*width) = CreateEntryFlatArray (1, veclen);
-        }
+                (*width) = CreateEntryFlatArray (1, veclen);
+            }
 
-        stp = ARRAY_AELEMS ((*step));
-        wth = ARRAY_AELEMS ((*width));
+            stp = ARRAY_AELEMS ((*step));
+            wth = ARRAY_AELEMS ((*width));
 
-        while (stp && !error) {
-            DBUG_ASSERT ((wth != NULL), "dimensionality differs in step and width!");
+            while (stp && !error) {
+                DBUG_ASSERT ((wth != NULL), "dimensionality differs in step and width!");
 
-            if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_num)
-                && (NODE_TYPE (EXPRS_EXPR (wth)) == N_num)) {
+                if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_num)
+                    && (NODE_TYPE (EXPRS_EXPR (wth)) == N_num)) {
 
-                stpnum = NUM_VAL (EXPRS_EXPR (stp));
-                wthnum = NUM_VAL (EXPRS_EXPR (wth));
+                    stpnum = NUM_VAL (EXPRS_EXPR (stp));
+                    wthnum = NUM_VAL (EXPRS_EXPR (wth));
 
-                if (wthnum > stpnum)
-                    error = 1;
-                else if (1 > wthnum)
-                    error = 2;
-                else if (wthnum == stpnum && stpnum != 1)
-                    NUM_VAL (EXPRS_EXPR (stp)) = NUM_VAL (EXPRS_EXPR (wth)) = stpnum = 1;
+                    if (wthnum > stpnum)
+                        error = 1;
+                    else if (1 > wthnum)
+                        error = 2;
+                    else if (wthnum == stpnum && stpnum != 1)
+                        NUM_VAL (EXPRS_EXPR (stp)) = NUM_VAL (EXPRS_EXPR (wth)) = stpnum
+                          = 1;
 
-                is_1 = is_1 && 1 == stpnum;
-            } else if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_id)
-                       && (NODE_TYPE (EXPRS_EXPR (wth)) == N_id)) {
-                if (STReq (ID_NAME (EXPRS_EXPR (stp)), ID_NAME (EXPRS_EXPR (wth)))) {
-                    EXPRS_EXPR (stp) = FREEdoFreeTree (EXPRS_EXPR (stp));
-                    EXPRS_EXPR (stp) = TBmakeNum (1);
-                    EXPRS_EXPR (wth) = FREEdoFreeTree (EXPRS_EXPR (wth));
-                    EXPRS_EXPR (wth) = TBmakeNum (1);
-                    is_1 = is_1 && TRUE;
+                    is_1 = is_1 && 1 == stpnum;
+                } else if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_id)
+                           && (NODE_TYPE (EXPRS_EXPR (wth)) == N_id)) {
+                    if (STReq (ID_NAME (EXPRS_EXPR (stp)), ID_NAME (EXPRS_EXPR (wth)))) {
+                        EXPRS_EXPR (stp) = FREEdoFreeTree (EXPRS_EXPR (stp));
+                        EXPRS_EXPR (stp) = TBmakeNum (1);
+                        EXPRS_EXPR (wth) = FREEdoFreeTree (EXPRS_EXPR (wth));
+                        EXPRS_EXPR (wth) = TBmakeNum (1);
+                        is_1 = is_1 && TRUE;
+                    } else {
+                        is_1 = FALSE;
+                    }
                 } else {
                     is_1 = FALSE;
                 }
-            } else {
-                is_1 = FALSE;
+
+                stp = EXPRS_NEXT (stp);
+                wth = EXPRS_NEXT (wth);
             }
 
-            stp = EXPRS_NEXT (stp);
-            wth = EXPRS_NEXT (wth);
-        }
+            /* if both vectors are 1 this is equivalent to no grid */
 
-        /* if both vectors are 1 this is equivalent to no grid */
-
-        if (!error && is_1) {
-            (*step) = FREEdoFreeTree (*step);
-            (*width) = FREEdoFreeTree (*width);
+            if (!error && is_1) {
+                (*step) = FREEdoFreeTree (*step);
+                (*width) = FREEdoFreeTree (*width);
+            }
         }
     }
 
