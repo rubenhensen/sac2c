@@ -959,7 +959,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
         set_shape
           = TCmakeIcm2 ("ND_SET__SHAPE_arr", DUPdupIdsIdNt (let_ids),
                         TBmakeExprs (TBmakeNum (TCcountExprs (ARRAY_AELEMS (arg_node))),
-                                     DUPdoDupTree (ARRAY_AELEMS (arg_node))));
+                                     DupExprs_NT_AddReadIcms (ARRAY_AELEMS (arg_node))));
         break;
 
     case N_prf:
@@ -994,8 +994,9 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     shp = ARRAY_SHAPE (arg_node);
                     dim = SHgetDim (shp);
 
-                    icm_args = TBmakeExprs (MakeSizeArg (arg_node, TRUE),
-                                            DUPdupExprsNt (ARRAY_AELEMS (arg_node)));
+                    icm_args
+                      = TBmakeExprs (MakeSizeArg (arg_node, TRUE),
+                                     DupExprs_NT_AddReadIcms (ARRAY_AELEMS (arg_node)));
 
                     icm_args2 = NULL;
                     for (i = dim - 1; i >= 0; i--) {
@@ -1125,13 +1126,12 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
 
                             icm_args = MakeTypeArgs (
                               IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                              MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                            FALSE,
-                                            TBmakeExprs (MakeSizeArg (arg1, TRUE),
-                                                         TCappendExprs (DUPdupExprsNt (
-                                                                          ARRAY_AELEMS (
-                                                                            arg1)),
-                                                                        NULL))));
+                              MakeTypeArgs (
+                                ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                                TBmakeExprs (MakeSizeArg (arg1, TRUE),
+                                             TCappendExprs (DupExprs_NT_AddReadIcms (
+                                                              ARRAY_AELEMS (arg1)),
+                                                            NULL))));
 
                             set_shape
                               = TCmakeIcm1 ("ND_PRF_SEL_VxA__SHAPE_arr", icm_args);
@@ -1215,7 +1215,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                       FALSE,
                                                       TBmakeExprs (MakeSizeArg (arg1,
                                                                                 TRUE),
-                                                                   DUPdupExprsNt (
+                                                                   DupExprs_NT_AddReadIcms (
                                                                      ARRAY_AELEMS (
                                                                        arg1)))));
                         break;
@@ -1275,7 +1275,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                       IDS_TYPE (let_ids), FALSE, TRUE,
                                                       FALSE, NULL),
                                         MakeSizeArg (arg1, TRUE),
-                                        DUPdupExprsNt (ARRAY_AELEMS (arg1)),
+                                        DupExprs_NT_AddReadIcms (ARRAY_AELEMS (arg1)),
                                         MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
                                                       FALSE, TRUE, FALSE, NULL));
                         break;
@@ -1330,7 +1330,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                               FALSE, TRUE, FALSE, NULL),
                                 DUPdupIdNt (arg1), MakeSizeArg (arg2, TRUE),
-                                DUPdupExprsNt (ARRAY_AELEMS (arg2)));
+                                DupExprs_NT_AddReadIcms (ARRAY_AELEMS (arg2)));
                 break;
 
             case N_array:
@@ -1342,9 +1342,9 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                 TBmakeExprs (TBmakeNum (
                                                TCcountExprs (ARRAY_AELEMS (arg1))
                                                + TCcountExprs (ARRAY_AELEMS (arg2))),
-                                             TCappendExprs (DUPdoDupTree (
+                                             TCappendExprs (DupExprs_NT_AddReadIcms (
                                                               ARRAY_AELEMS (arg1)),
-                                                            DUPdoDupTree (
+                                                            DupExprs_NT_AddReadIcms (
                                                               ARRAY_AELEMS (arg2)))));
                 break;
 
@@ -4636,7 +4636,7 @@ COMPprfIdxs2Offset (node *arg_node, info *arg_info)
           = TCmakeIcm5 ("ND_IDXS2OFFSET_arr", DUPdupIdsIdNt (let_ids),
                         TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
                         MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
-                        DUPdoDupTree (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
+                        DupExprs_NT_AddReadIcms (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
     } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
         icm
           = TCmakeIcm5 ("ND_IDXS2OFFSET_id", DUPdupIdsIdNt (let_ids),
@@ -4680,7 +4680,7 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
         icm = TCmakeIcm5 ("ND_VECT2OFFSET_arr", DUPdupIdsIdNt (let_ids),
                           TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
                           DUPdupIdNt (iv_vect), MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
-                          DUPdoDupTree (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
+                          DupExprs_NT_AddReadIcms (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
     } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
         icm = TCmakeIcm5 ("ND_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
                           TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
