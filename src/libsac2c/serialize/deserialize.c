@@ -48,19 +48,19 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_DS_RETURN(n) ((n)->ret)
-#define INFO_DS_SSACOUNTER(n) ((n)->ssacounter)
-#define INFO_DS_MODULE(n) ((n)->module)
-#define INFO_DS_FUNDEFS(n) ((n)->fundefs)
-#define INFO_DS_FUNDECS(n) ((n)->fundecs)
-#define INFO_DS_TYPEDEFS(n) ((n)->typedefs)
-#define INFO_DS_OBJDEFS(n) ((n)->objdefs)
-#define INFO_DS_VARDECS(n) ((n)->vardecs)
-#define INFO_DS_ARGS(n) ((n)->args)
-#define INFO_DS_FUNHEAD(n) ((n)->funhead)
-#define INFO_DS_LASTASSIGN(n) ((n)->lastassign)
-#define INFO_DS_IMPORTMODE(n) ((n)->importmode)
-#define INFO_DS_DEPS(n) ((n)->dependencies)
+#define INFO_RETURN(n) ((n)->ret)
+#define INFO_SSACOUNTER(n) ((n)->ssacounter)
+#define INFO_MODULE(n) ((n)->module)
+#define INFO_FUNDEFS(n) ((n)->fundefs)
+#define INFO_FUNDECS(n) ((n)->fundecs)
+#define INFO_TYPEDEFS(n) ((n)->typedefs)
+#define INFO_OBJDEFS(n) ((n)->objdefs)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ARGS(n) ((n)->args)
+#define INFO_FUNHEAD(n) ((n)->funhead)
+#define INFO_LASTASSIGN(n) ((n)->lastassign)
+#define INFO_IMPORTMODE(n) ((n)->importmode)
+#define INFO_DEPS(n) ((n)->dependencies)
 
 /*
  * INFO functions
@@ -74,19 +74,19 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_DS_RETURN (result) = NULL;
-    INFO_DS_SSACOUNTER (result) = NULL;
-    INFO_DS_MODULE (result) = NULL;
-    INFO_DS_FUNDEFS (result) = NULL;
-    INFO_DS_FUNDECS (result) = NULL;
-    INFO_DS_TYPEDEFS (result) = NULL;
-    INFO_DS_OBJDEFS (result) = NULL;
-    INFO_DS_VARDECS (result) = NULL;
-    INFO_DS_ARGS (result) = NULL;
-    INFO_DS_FUNHEAD (result) = NULL;
-    INFO_DS_LASTASSIGN (result) = NULL;
-    INFO_DS_IMPORTMODE (result) = FALSE;
-    INFO_DS_DEPS (result) = NULL;
+    INFO_RETURN (result) = NULL;
+    INFO_SSACOUNTER (result) = NULL;
+    INFO_MODULE (result) = NULL;
+    INFO_FUNDEFS (result) = NULL;
+    INFO_FUNDECS (result) = NULL;
+    INFO_TYPEDEFS (result) = NULL;
+    INFO_OBJDEFS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_ARGS (result) = NULL;
+    INFO_FUNHEAD (result) = NULL;
+    INFO_LASTASSIGN (result) = NULL;
+    INFO_IMPORTMODE (result) = FALSE;
+    INFO_DEPS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -169,9 +169,9 @@ InsertIntoState (node *item)
         FUNDEF_WASIMPORTED (item) = FALSE;
 
         if (FUNDEF_ISEXTERN (item)) {
-            INFO_DS_FUNDECS (DSstate) = TCappendFundef (INFO_DS_FUNDECS (DSstate), item);
+            INFO_FUNDECS (DSstate) = TCappendFundef (INFO_FUNDECS (DSstate), item);
         } else {
-            INFO_DS_FUNDEFS (DSstate) = TCappendFundef (INFO_DS_FUNDEFS (DSstate), item);
+            INFO_FUNDEFS (DSstate) = TCappendFundef (INFO_FUNDEFS (DSstate), item);
         }
         break;
     case N_typedef:
@@ -209,7 +209,7 @@ InsertIntoState (node *item)
          */
         TUcheckUdtAndSetBaseType (udt, NULL);
 
-        INFO_DS_TYPEDEFS (DSstate) = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
+        INFO_TYPEDEFS (DSstate) = TCappendTypedef (INFO_TYPEDEFS (DSstate), item);
         break;
     case N_objdef:
         /*
@@ -222,7 +222,7 @@ InsertIntoState (node *item)
         /*
          * now insert it
          */
-        INFO_DS_OBJDEFS (DSstate) = TCappendObjdef (INFO_DS_OBJDEFS (DSstate), item);
+        INFO_OBJDEFS (DSstate) = TCappendObjdef (INFO_OBJDEFS (DSstate), item);
         break;
     default:
         DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
@@ -239,10 +239,10 @@ getCurrentFundefHead ()
 
     DBUG_ASSERT ((DSstate != NULL), "called getCurrentFundefHead without starting DS...");
 
-    DBUG_ASSERT ((INFO_DS_FUNHEAD (DSstate) != NULL),
+    DBUG_ASSERT ((INFO_FUNHEAD (DSstate) != NULL),
                  "called getCurrentFundefHead but there is none!");
 
-    DBUG_RETURN (INFO_DS_FUNHEAD (DSstate));
+    DBUG_RETURN (INFO_FUNHEAD (DSstate));
 }
 
 static void
@@ -252,7 +252,7 @@ SetCurrentFundefHead (node *fundef)
 
     DBUG_ASSERT ((DSstate != NULL), "called SetCurrentFundefHead without starting DS...");
 
-    INFO_DS_FUNHEAD (DSstate) = fundef;
+    INFO_FUNHEAD (DSstate) = fundef;
 
     DBUG_VOID_RETURN;
 }
@@ -267,7 +267,7 @@ DSinitDeserialize (node *module)
 
     DSstate = MakeInfo ();
 
-    INFO_DS_MODULE (DSstate) = module;
+    INFO_MODULE (DSstate) = module;
 
     DBUG_VOID_RETURN;
 }
@@ -279,19 +279,17 @@ DSfinishDeserialize (node *module)
 
     DBUG_ASSERT ((DSstate != NULL), "called DSfinishDeserialize without starting DS...");
 
-    MODULE_FUNS (module)
-      = TCappendFundef (MODULE_FUNS (module), INFO_DS_FUNDEFS (DSstate));
+    MODULE_FUNS (module) = TCappendFundef (MODULE_FUNS (module), INFO_FUNDEFS (DSstate));
 
     MODULE_FUNDECS (module)
-      = TCappendFundef (MODULE_FUNDECS (module), INFO_DS_FUNDECS (DSstate));
+      = TCappendFundef (MODULE_FUNDECS (module), INFO_FUNDECS (DSstate));
 
     MODULE_TYPES (module)
-      = TCappendTypedef (MODULE_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
+      = TCappendTypedef (MODULE_TYPES (module), INFO_TYPEDEFS (DSstate));
 
-    MODULE_OBJS (module)
-      = TCappendObjdef (MODULE_OBJS (module), INFO_DS_OBJDEFS (DSstate));
+    MODULE_OBJS (module) = TCappendObjdef (MODULE_OBJS (module), INFO_OBJDEFS (DSstate));
 
-    global.dependencies = STRSjoin (global.dependencies, INFO_DS_DEPS (DSstate));
+    global.dependencies = STRSjoin (global.dependencies, INFO_DEPS (DSstate));
 
     DSstate = FreeInfo (DSstate);
 
@@ -313,7 +311,7 @@ updateContextInformation (node *entry)
          * we have to update the WASUSED/WASIMPORTED
          * information for fundefs
          */
-        if (INFO_DS_IMPORTMODE (DSstate)) {
+        if (INFO_IMPORTMODE (DSstate)) {
             /*
              * this is a hack somehow, but for the time
              * being the best solution. We never mark
@@ -552,41 +550,35 @@ FindSymbolInAst (const char *symbol)
 #endif
 
     if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
+        result = FindSymbolInFundefChain (symbol, INFO_FUNDEFS (DSstate));
     }
 
     if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDECS (DSstate));
+        result = FindSymbolInFundefChain (symbol, INFO_FUNDECS (DSstate));
     }
 
     if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
+        result = FindSymbolInFundefChain (symbol, MODULE_FUNS (INFO_MODULE (DSstate)));
     }
 
     if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, MODULE_FUNS (INFO_DS_MODULE (DSstate)));
+        result = FindSymbolInFundefChain (symbol, MODULE_FUNDECS (INFO_MODULE (DSstate)));
     }
 
     if (result == NULL) {
-        result
-          = FindSymbolInFundefChain (symbol, MODULE_FUNDECS (INFO_DS_MODULE (DSstate)));
+        result = FindSymbolInTypedefChain (symbol, INFO_TYPEDEFS (DSstate));
     }
 
     if (result == NULL) {
-        result = FindSymbolInTypedefChain (symbol, INFO_DS_TYPEDEFS (DSstate));
+        result = FindSymbolInTypedefChain (symbol, MODULE_TYPES (INFO_MODULE (DSstate)));
     }
 
     if (result == NULL) {
-        result
-          = FindSymbolInTypedefChain (symbol, MODULE_TYPES (INFO_DS_MODULE (DSstate)));
+        result = FindSymbolInObjdefChain (symbol, INFO_OBJDEFS (DSstate));
     }
 
     if (result == NULL) {
-        result = FindSymbolInObjdefChain (symbol, INFO_DS_OBJDEFS (DSstate));
-    }
-
-    if (result == NULL) {
-        result = FindSymbolInObjdefChain (symbol, MODULE_OBJS (INFO_DS_MODULE (DSstate)));
+        result = FindSymbolInObjdefChain (symbol, MODULE_OBJS (INFO_MODULE (DSstate)));
     }
 
     DBUG_RETURN (result);
@@ -746,7 +738,7 @@ DSimportInstancesByName (const char *name, const char *module)
         symbol = STentryIteratorNext (it);
 
         if (STentryType (symbol) == SET_wrapperhead) {
-            INFO_DS_IMPORTMODE (DSstate) = TRUE;
+            INFO_IMPORTMODE (DSstate) = TRUE;
 
             DBUG_PRINT ("DS", ("fetching instances for '%s:%s'...", module,
                                STentryName (symbol)));
@@ -759,7 +751,7 @@ DSimportInstancesByName (const char *name, const char *module)
             /*
              * fetch wrapper: as the instances are encoded within the wrapper type,
              *                we will automatically get all instances as well.
-             *                as we have set INFO_DS_IMPORTMODE, those will be
+             *                as we have set INFO_IMPORTMODE, those will be
              *                even imported.
              */
             entryp = serfun (DSstate);
@@ -773,7 +765,7 @@ DSimportInstancesByName (const char *name, const char *module)
              */
             entryp = FREEdoFreeTree (entryp);
 
-            INFO_DS_IMPORTMODE (DSstate) = FALSE;
+            INFO_IMPORTMODE (DSstate) = FALSE;
         }
     }
 
@@ -815,11 +807,11 @@ DSimportTypedefByName (const char *name, const char *module)
          * on.
          */
         exist_tdef = TCsearchTypedef (TYPEDEF_NAME (orig_tdef), global.modulenamespace,
-                                      INFO_DS_TYPEDEFS (DSstate));
+                                      INFO_TYPEDEFS (DSstate));
         if (exist_tdef == NULL) {
             exist_tdef
               = TCsearchTypedef (TYPEDEF_NAME (orig_tdef), global.modulenamespace,
-                                 MODULE_TYPES (INFO_DS_MODULE (DSstate)));
+                                 MODULE_TYPES (INFO_MODULE (DSstate)));
         }
 
         /*
@@ -858,8 +850,7 @@ DSimportTypedefByName (const char *name, const char *module)
              * have created a new local typedef and InsertIntoState is meant for
              * adding non-local items to the AST only.
              */
-            INFO_DS_TYPEDEFS (DSstate)
-              = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), new_tdef);
+            INFO_TYPEDEFS (DSstate) = TCappendTypedef (INFO_TYPEDEFS (DSstate), new_tdef);
         }
     }
 
@@ -901,8 +892,7 @@ DSimportObjdefByName (const char *name, const char *module)
          * have created a new local objdef and InsertIntoState is meant for
          * adding non-local items to the AST only.
          */
-        INFO_DS_OBJDEFS (DSstate)
-          = TCappendObjdef (INFO_DS_OBJDEFS (DSstate), new_objdef);
+        INFO_OBJDEFS (DSstate) = TCappendObjdef (INFO_OBJDEFS (DSstate), new_objdef);
     }
 
     DBUG_VOID_RETURN;
@@ -1013,18 +1003,18 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
 
     argtypes = TUactualArgs2Ntype (args);
 
-    fundef = doDispatchFunCall (INFO_DS_FUNDECS (DSstate), ns, name, argtypes);
+    fundef = doDispatchFunCall (INFO_FUNDECS (DSstate), ns, name, argtypes);
 
     if (fundef == NULL) {
-        fundef = doDispatchFunCall (INFO_DS_FUNDEFS (DSstate), ns, name, argtypes);
+        fundef = doDispatchFunCall (INFO_FUNDEFS (DSstate), ns, name, argtypes);
 
         if (fundef == NULL) {
-            fundef = doDispatchFunCall (MODULE_FUNDECS (INFO_DS_MODULE (DSstate)), ns,
-                                        name, argtypes);
+            fundef = doDispatchFunCall (MODULE_FUNDECS (INFO_MODULE (DSstate)), ns, name,
+                                        argtypes);
 
             if (fundef == NULL) {
-                fundef = doDispatchFunCall (MODULE_FUNS (INFO_DS_MODULE (DSstate)), ns,
-                                            name, argtypes);
+                fundef = doDispatchFunCall (MODULE_FUNS (INFO_MODULE (DSstate)), ns, name,
+                                            argtypes);
             }
         }
     }
@@ -1038,8 +1028,8 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
          */
         result = TBmakeAp (fundef, args);
 
-        INFO_DS_DEPS (DSstate)
-          = STRSadd (NSgetModule (ns), STRS_saclib, INFO_DS_DEPS (DSstate));
+        INFO_DEPS (DSstate)
+          = STRSadd (NSgetModule (ns), STRS_saclib, INFO_DEPS (DSstate));
     }
 
     DBUG_RETURN (result);
