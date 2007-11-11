@@ -53,6 +53,8 @@
   <xsl:template match="traversals" >
     <xsl:value-of select="'typedef enum { TR_undefined = 0'" />
     <xsl:apply-templates select="./traversal" />
+    <xsl:value-of select="', TR_anonymous = '" />
+    <xsl:value-of select="count( ./traversal) + 1" />
     <xsl:value-of select="'} trav_t; '" />
   </xsl:template>
 

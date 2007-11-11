@@ -60,21 +60,24 @@ preposttable_t pretable = {
     NULL
     </xsl:text>
     <xsl:apply-templates select="/definition/traversals/traversal" mode="pretable" />
-    <xsl:text>
+    <xsl:text>,
+    NULL
 };
 
 preposttable_t posttable = {
     NULL
     </xsl:text>
     <xsl:apply-templates select="/definition/traversals/traversal" mode="posttable" />
-    <xsl:text>
+    <xsl:text>,
+    NULL
 };
 
-const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traversals/traversal) + 1"/><xsl:text>] = {
+const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traversals/traversal) + 2"/><xsl:text>] = {
     "unknown"
     </xsl:text>
     <xsl:apply-templates select="/definition/traversals/traversal" mode="travnames" />
-    <xsl:text>
+    <xsl:text>,
+    "anonymous"
 };
 
     </xsl:text>

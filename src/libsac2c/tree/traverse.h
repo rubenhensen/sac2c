@@ -9,9 +9,12 @@
 
 #include "types.h"
 
+#include "traverse_helper.h"
+
 extern node *TRAVdo (node *arg_node, info *arg_info);
 extern node *TRAVcont (node *arg_node, info *arg_info);
 extern void TRAVpush (trav_t traversal);
+extern void TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun);
 extern trav_t TRAVpop ();
 extern const char *TRAVgetName ();
 extern void TRAVsetPreFun (trav_t traversal, travfun_p prefun);

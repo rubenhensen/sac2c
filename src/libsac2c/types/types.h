@@ -802,6 +802,14 @@ typedef struct GENLIB_FLAGS_T {
 typedef node *(*travfun_p) (node *, info *);
 
 /*
+ * type for anonymous traversal definitions
+ */
+typedef struct {
+    nodetype node;
+    travfun_p travfun;
+} anontrav_t;
+
+/*
  * Read in global variables from globals.mac
  */
 

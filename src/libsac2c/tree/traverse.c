@@ -38,7 +38,7 @@ TRAVdo (node *arg_node, info *arg_info)
     char *old_filename = global.filename;
 
 #ifdef SANITYCHECKS
-    if (global.sancheck) {
+    if (global.sancheck && (travstack->traversal != TR_anonymous)) {
         SANCHKdoSanityChecksPreTraversal (arg_node, arg_info, travstack);
     }
 #endif
@@ -68,7 +68,8 @@ TRAVdo (node *arg_node, info *arg_info)
     global.linenum = old_linenum;
     global.filename = old_filename;
 
-    if ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_module)) {
+    if ((arg_node != NULL) && (travstack->traversal != TR_anonymous)
+        && (NODE_TYPE (arg_node) == N_module)) {
         /*
          * arg_node may have become NULL during traversal.
          */
@@ -90,7 +91,7 @@ TRAVdo (node *arg_node, info *arg_info)
 
 #ifdef SANITYCHECKS
     if (arg_node != NULL) {
-        if (global.sancheck) {
+        if (global.sancheck && (travstack->traversal != TR_anonymous)) {
             SANCHKdoSanityChecksPostTraversal (arg_node, arg_info, travstack);
         }
     }
@@ -125,6 +126,38 @@ TRAVpush (trav_t traversal)
     DBUG_VOID_RETURN;
 }
 
+void
+TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
+{
+    travfun_p *travmap;
+    travstack_t *new;
+    int pos;
+
+    DBUG_ENTER ("TRAVpushAnonymous");
+
+    DBUG_ASSERT ((anontraversal != NULL), "empty anonymous traversal!");
+
+    travmap = MEMmalloc (sizeof (travfun_p) * (MAX_NODES + 1));
+
+    for (pos = 0; pos <= MAX_NODES; pos++) {
+        travmap[pos] = deffun;
+    }
+
+    for (pos = 0; anontraversal[pos].node != 0; pos++) {
+        travmap[anontraversal[pos].node] = anontraversal[pos].travfun;
+    }
+
+    new = MEMmalloc (sizeof (travstack_t));
+
+    new->next = travstack;
+    new->traversal = TR_anonymous;
+    new->funs = travmap;
+
+    travstack = new;
+
+    DBUG_VOID_RETURN;
+}
+
 trav_t
 TRAVpop ()
 {
@@ -139,6 +172,9 @@ TRAVpop ()
     travstack = tmp->next;
     result = tmp->traversal;
 
+    if (tmp->traversal == TR_anonymous) {
+        tmp->funs = MEMfree (tmp->funs);
+    }
     tmp = MEMfree (tmp);
 
     DBUG_RETURN (result);
