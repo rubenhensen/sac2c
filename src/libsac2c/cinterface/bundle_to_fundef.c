@@ -449,20 +449,11 @@ node *
 BTFdoBundleToFundef (node *syntax_tree)
 {
     info *info;
-    node *fundefs;
 
     DBUG_ENTER ("BTFdoBundleToFundef");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "BTFdoBundleToFundef operates on modules only!");
-
-    /*
-     * we take the current fundef chain
-     * out of the module to hide the functions
-     * from the module system!
-     */
-    fundefs = MODULE_FUNS (syntax_tree);
-    MODULE_FUNS (syntax_tree) = NULL;
 
     DSinitDeserialize (syntax_tree);
 
@@ -474,17 +465,12 @@ BTFdoBundleToFundef (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_btf);
-    fundefs = TRAVdo (fundefs, info);
+    MODULE_FUNS (syntax_tree) = TRAVdo (MODULE_FUNS (syntax_tree), info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
     DSfinishDeserialize (syntax_tree);
-
-    /*
-     * and back in they go
-     */
-    MODULE_FUNS (syntax_tree) = TCappendFundef (MODULE_FUNS (syntax_tree), fundefs);
 
     DBUG_RETURN (syntax_tree);
 }

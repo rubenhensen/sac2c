@@ -43,6 +43,8 @@ struct INFO {
     node *lastassign;
     bool importmode;
     stringset_t *dependencies;
+    const char *search_symbol;
+    node *search_result;
 };
 
 /*
@@ -61,6 +63,9 @@ struct INFO {
 #define INFO_LASTASSIGN(n) ((n)->lastassign)
 #define INFO_IMPORTMODE(n) ((n)->importmode)
 #define INFO_DEPS(n) ((n)->dependencies)
+
+#define INFO_SEARCH_SYMBOL(n) ((n)->search_symbol)
+#define INFO_SEARCH_RESULT(n) ((n)->search_result)
 
 /*
  * INFO functions
@@ -87,6 +92,9 @@ MakeInfo ()
     INFO_LASTASSIGN (result) = NULL;
     INFO_IMPORTMODE (result) = FALSE;
     INFO_DEPS (result) = NULL;
+
+    INFO_SEARCH_SYMBOL (result) = NULL;
+    INFO_SEARCH_RESULT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -477,109 +485,127 @@ getAliasing (const char *symbol)
  */
 
 static node *
-FindSymbolInFundefChain (const char *symbol, node *fundefs)
+FindSymbolInFundefChain (node *arg_node, info *arg_info)
 {
-    node *result = NULL;
-
     DBUG_ENTER ("FindSymbolInFundefChain");
 
-    while ((result == NULL) && (fundefs != NULL)) {
-        if (FUNDEF_SYMBOLNAME (fundefs) != NULL) {
-            if (STReq (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
-                result = fundefs;
-            }
+    if (FUNDEF_SYMBOLNAME (arg_node) != NULL) {
+        if (STReq (FUNDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
+            INFO_SEARCH_RESULT (arg_info) = arg_node;
         }
-        fundefs = FUNDEF_NEXT (fundefs);
     }
 
-    DBUG_RETURN (result);
+    if ((INFO_SEARCH_RESULT (arg_info) == NULL) && (FUNDEF_NEXT (arg_node) != NULL)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 static node *
-FindSymbolInTypedefChain (const char *symbol, node *typedefs)
+FindSymbolInTypedefChain (node *arg_node, info *arg_info)
 {
-    node *result = NULL;
-
     DBUG_ENTER ("FindSymbolInTypedefChain");
 
-    while ((result == NULL) && (typedefs != NULL)) {
-        if (TYPEDEF_SYMBOLNAME (typedefs) != NULL) {
-            if (STReq (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
-                result = typedefs;
-            }
+    if (TYPEDEF_SYMBOLNAME (arg_node) != NULL) {
+        if (STReq (TYPEDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
+            INFO_SEARCH_RESULT (arg_info) = arg_node;
         }
-        typedefs = TYPEDEF_NEXT (typedefs);
     }
 
-    DBUG_RETURN (result);
+    if ((INFO_SEARCH_RESULT (arg_info) == NULL) && (TYPEDEF_NEXT (arg_node) != NULL)) {
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 static node *
-FindSymbolInObjdefChain (const char *symbol, node *objdefs)
+FindSymbolInObjdefChain (node *arg_node, info *arg_info)
 {
-    node *result = NULL;
-
     DBUG_ENTER ("FindSymbolInObjdefChain");
 
-    while ((result == NULL) && (objdefs != NULL)) {
-        if (OBJDEF_SYMBOLNAME (objdefs) != NULL) {
-            if (STReq (OBJDEF_SYMBOLNAME (objdefs), symbol)) {
-                result = objdefs;
-            }
+    if (OBJDEF_SYMBOLNAME (arg_node) != NULL) {
+        if (STReq (OBJDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
+            INFO_SEARCH_RESULT (arg_info) = arg_node;
         }
-        objdefs = OBJDEF_NEXT (objdefs);
     }
 
-    DBUG_RETURN (result);
+    if ((INFO_SEARCH_RESULT (arg_info) == NULL) && (OBJDEF_NEXT (arg_node) != NULL)) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 static node *
 FindSymbolInAst (const char *symbol)
 {
     node *result = NULL;
+    anontrav_t searchtrav[4] = {{N_fundef, FindSymbolInFundefChain},
+                                {N_typedef, FindSymbolInTypedefChain},
+                                {N_objdef, FindSymbolInObjdefChain},
+                                {0, NULL}};
+    info *local_info;
 
     DBUG_ENTER ("FindSymbolInAst");
 
-    result = getAliasing (symbol);
+    local_info = MakeInfo ();
+    INFO_SEARCH_SYMBOL (local_info) = symbol;
+    TRAVpushAnonymous (searchtrav, &TRAVsons);
+
+    INFO_SEARCH_RESULT (local_info) = getAliasing (symbol);
 
 #ifndef DBUG_OFF
-    if (result != NULL) {
-        DBUG_PRINT ("DS_ALIAS",
-                    ("using alias %s for symbol %s.", CTIitemName (result), symbol));
+    if (INFO_SEARCH_RESULT (local_info) != NULL) {
+        DBUG_PRINT ("DS_ALIAS", ("using alias %s for symbol %s.",
+                                 CTIitemName (INFO_SEARCH_RESULT (local_info)), symbol));
     }
 #endif
 
-    if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, INFO_FUNDEFS (DSstate));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL) && (INFO_FUNDEFS (DSstate) != NULL)) {
+        INFO_FUNDEFS (DSstate) = TRAVdo (INFO_FUNDEFS (DSstate), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, INFO_FUNDECS (DSstate));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL) && (INFO_FUNDECS (DSstate) != NULL)) {
+        INFO_FUNDECS (DSstate) = TRAVdo (INFO_FUNDECS (DSstate), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, MODULE_FUNS (INFO_MODULE (DSstate)));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL)
+        && (MODULE_FUNS (INFO_MODULE (DSstate)) != NULL)) {
+        MODULE_FUNS (INFO_MODULE (DSstate))
+          = TRAVdo (MODULE_FUNS (INFO_MODULE (DSstate)), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, MODULE_FUNDECS (INFO_MODULE (DSstate)));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL)
+        && (MODULE_FUNDECS (INFO_MODULE (DSstate)) != NULL)) {
+        MODULE_FUNDECS (INFO_MODULE (DSstate))
+          = TRAVdo (MODULE_FUNDECS (INFO_MODULE (DSstate)), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInTypedefChain (symbol, INFO_TYPEDEFS (DSstate));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL) && (INFO_TYPEDEFS (DSstate) != NULL)) {
+        INFO_TYPEDEFS (DSstate) = TRAVdo (INFO_TYPEDEFS (DSstate), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInTypedefChain (symbol, MODULE_TYPES (INFO_MODULE (DSstate)));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL)
+        && (MODULE_TYPES (INFO_MODULE (DSstate)) != NULL)) {
+        MODULE_TYPES (INFO_MODULE (DSstate))
+          = TRAVdo (MODULE_TYPES (INFO_MODULE (DSstate)), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInObjdefChain (symbol, INFO_OBJDEFS (DSstate));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL) && (INFO_OBJDEFS (DSstate) != NULL)) {
+        INFO_OBJDEFS (DSstate) = TRAVdo (INFO_OBJDEFS (DSstate), local_info);
     }
 
-    if (result == NULL) {
-        result = FindSymbolInObjdefChain (symbol, MODULE_OBJS (INFO_MODULE (DSstate)));
+    if ((INFO_SEARCH_RESULT (local_info) == NULL)
+        && (MODULE_OBJS (INFO_MODULE (DSstate)) != NULL)) {
+        MODULE_OBJS (INFO_MODULE (DSstate))
+          = TRAVdo (MODULE_OBJS (INFO_MODULE (DSstate)), local_info);
     }
+
+    result = INFO_SEARCH_RESULT (local_info);
+    TRAVpop ();
+    local_info = FreeInfo (local_info);
 
     DBUG_RETURN (result);
 }
