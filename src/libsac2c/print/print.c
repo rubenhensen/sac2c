@@ -5067,7 +5067,12 @@ PRTexport (node *arg_node, info *arg_info)
 
     if (EXPORT_ALL (arg_node)) {
         fprintf (global.outfile, "all");
-    } else {
+        if (EXPORT_SYMBOL (arg_node) != NULL) {
+            fprintf (global.outfile, " except ");
+        }
+    }
+
+    if (EXPORT_SYMBOL (arg_node) != NULL) {
         fprintf (global.outfile, "{ ");
         EXPORT_SYMBOL (arg_node) = TRAVdo (EXPORT_SYMBOL (arg_node), arg_info);
         fprintf (global.outfile, "}");
@@ -5143,7 +5148,13 @@ PRTprovide (node *arg_node, info *arg_info)
 
     if (PROVIDE_ALL (arg_node)) {
         fprintf (global.outfile, "all");
-    } else {
+
+        if (PROVIDE_SYMBOL (arg_node) != NULL) {
+            fprintf (global.outfile, " except ");
+        }
+    }
+
+    if (PROVIDE_SYMBOL (arg_node) != NULL) {
         fprintf (global.outfile, "{ ");
         PROVIDE_SYMBOL (arg_node) = TRAVdo (PROVIDE_SYMBOL (arg_node), arg_info);
         fprintf (global.outfile, "}");
