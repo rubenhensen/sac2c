@@ -386,6 +386,9 @@
         <travuser>
           <node name="Module" />
           <node name="Typedef" />
+          <node name="Export" />
+          <node name="Provide" />
+          <node name="Symbol" />
         </travuser>
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">

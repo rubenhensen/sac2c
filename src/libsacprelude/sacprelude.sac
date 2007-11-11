@@ -150,4 +150,8 @@ external bool isChar( SACarg a);
   #pragma linkname "SACARGisChar"
   #pragma linksign [0,1]
   
+external bool isUdt( int base, SACarg a);
+  #pragma linkname "SACARGisUdt"
+  #pragma linksign [0,1,2]
+
 

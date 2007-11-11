@@ -35,10 +35,10 @@ SUBPHASE (acn, "Resolving axis control and dot notation", HDdoEliminateSelDots, 
 
 SUBPHASE (rpr, "Resolving pragma annotations", RSPdoResolvePragmas, ALWAYS, pre)
 
+SUBPHASE (obi, "Generating object initializers", OIdoObjectInit, ALWAYS, pre)
+
 SUBPHASE (ggtc, "Generating generic type conversion functions",
           GGTCdoGenerateGenericTypeConversions, ALWAYS, pre)
-
-SUBPHASE (obi, "Generating object initializers", OIdoObjectInit, ALWAYS, pre)
 
 SUBPHASE (csgd, "Checking and simplifying generic definitions",
           CSGDdoCheckAndSimplifyGenericDefinitions, ALWAYS, pre)

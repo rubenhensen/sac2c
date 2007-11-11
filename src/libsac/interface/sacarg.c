@@ -220,6 +220,32 @@ UNWRAP (Float, float, T_float)
 UNWRAP (Double, double, T_double)
 UNWRAP (Char, char, T_char)
 
+void
+SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
+                 SAC_array_descriptor_t arg_desc)
+{
+    /*
+     * we create a new reference to the data here, so we need to
+     * increment its reference counter!
+     */
+    SACARG_RC (arg)++;
+
+    *data = SACARG_DATA (arg);
+    *desc = SACARG_DESC (arg);
+
+    /*
+     * we consume one reference to the outer shell. If that counter drops
+     * to 0, we can free it! (ONLY the outer shell)
+     * Note that this removes one reference to the inner data!
+     */
+    DESC_RC (arg_desc)--;
+    if (DESC_RC (arg_desc) == 0) {
+        SACARG_RC (arg)--;
+        SAC_FREE (arg_desc);
+        SAC_FREE (arg);
+    }
+}
+
 #define WRAP(name, ctype, btype)                                                         \
     void SACARGwrap##name (SACarg **arg, SAC_array_descriptor_t *desc, void *data,       \
                            SAC_array_descriptor_t data_desc)                             \
@@ -244,6 +270,24 @@ WRAP (Float, float, T_float)
 WRAP (Double, double, T_double)
 WRAP (Char, char, T_char)
 
+void
+SACARGwrapUdt (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype, void *data,
+               SAC_array_descriptor_t data_desc)
+{
+    /*
+     * we simply wrap it. As we consume one reference but create one,
+     * no refcounting ops needed here!
+     */
+    *arg = SACARGmakeSacArg (btype, data_desc, data);
+    /*
+     * now we need a descriptor! As SACargs use standard SAC descriptors,
+     * we can use those functions to build one. However, we have to
+     * manually increment the RC by 1!
+     */
+    *desc = SACARGmakeDescriptorVect (0, NULL);
+    DESC_RC ((*desc))++;
+}
+
 #define HASTYPE(name, ctype, btype)                                                      \
     bool SACARGis##name (SACarg *arg)                                                    \
     {                                                                                    \
@@ -255,3 +299,9 @@ HASTYPE (Bool, bool, T_bool)
 HASTYPE (Float, float, T_float)
 HASTYPE (Double, double, T_double)
 HASTYPE (Char, char, T_char)
+
+bool
+SACARGisUdt (basetype btype, SACarg *arg)
+{
+    return (SACARG_BTYPE (arg) == btype);
+}
