@@ -43,6 +43,7 @@
 #include "tree_basic.h"
 #include "shape.h"
 #include "deserialize.h"
+#include "globals.h"
 
 /** <!--********************************************************************-->
  *
