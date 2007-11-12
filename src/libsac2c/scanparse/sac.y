@@ -64,7 +64,7 @@ static node *MakeOpOnLet( char *name, node *name2, char *op);
 static ntype *Exprs2NType( ntype *basetype, node *exprs);
 static node *ConstructMop( node *, node *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
-static node *SetClassType( node *module, ntype *type);
+static node *SetClassType( node *module, ntype *type, node *pragmas);
 
 static int prf_arity[] = {
   #define PRFarity( arity) arity
@@ -165,7 +165,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 /* pragmas */
 %type <id> pragmacachesim
 %type <node> wlcomp_pragma_global  wlcomp_pragma_local
-%type <node> pragmas pragma pragmalist
+%type <node> pragmas pragma pragmalist classpragmas
 /*
 %type <node> pragmas 
 */
@@ -1847,14 +1847,23 @@ module: MODULE { file_kind = F_modimp; } ID deprecated SEMIC defs
         }
         ;
 
-class: CLASS { file_kind = F_classimp; } ID deprecated SEMIC classtype defs
-       { $$ = $7;
+class: CLASS { file_kind = F_classimp; } ID deprecated SEMIC classtype 
+       classpragmas defs
+       { $$ = $8;
          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
          MODULE_FILETYPE( $$) = file_kind;
          MODULE_DEPRECATED( $$) = $4;
-         $$ = SetClassType( $$, $6);
+         $$ = SetClassType( $$, $6, $7);
        }
        ;
+
+classpragmas: /* empty */
+              { $$ = NULL;
+              }
+            | { pragma_type = PRAG_typedef; } pragmas
+              { $$ = $2;
+              }
+            ;
 
 deprecated: /* empty */
             { $$ = NULL;
@@ -1869,7 +1878,8 @@ classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
            { 
              $$ = TYmakeAKS(
                     TYmakeHiddenSimpleType( UT_NOT_DEFINED),
-                    SHmakeShape( 0)); }
+                    SHmakeShape( 0)); 
+           }
          ;
 
 
@@ -2387,7 +2397,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 }
 
 static
-node *SetClassType( node *module, ntype *type)
+node *SetClassType( node *module, ntype *type, node *pragmas)
 {
   node *tdef;
 
@@ -2400,6 +2410,7 @@ node *SetClassType( node *module, ntype *type)
            MODULE_TYPES( module));
 
   TYPEDEF_ISUNIQUE( tdef) = TRUE;
+  TYPEDEF_PRAGMA( tdef) = pragmas;
   MODULE_TYPES( module) = tdef;
 
   DBUG_RETURN( module);
