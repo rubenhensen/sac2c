@@ -2,7 +2,8 @@ module sacprelude;
 
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
-         unwrapChar, isInt, isBool, isFloat, isDouble, isChar, wrap};
+         unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, 
+         wrap};
 
 external typedef SACarg;
   #pragma freefun "SACARGfree"
