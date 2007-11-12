@@ -11,7 +11,24 @@
 #include "modulemanager.h"
 #include "symboltable.h"
 #include "stringset.h"
+#include "traverse.h"
 #include "ctinfo.h"
+
+static node *
+CheckForUniqueTypes (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CheckForUniqueTypes");
+
+    if (TYPEDEF_ISUNIQUE (arg_node)) {
+        CTIerror ("Unique type `%s' is not supported.", CTIitemName (arg_node));
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 LoadModule (const char *name, strstype_t kind, node *syntax_tree)
@@ -50,6 +67,8 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
 node *
 LMCdoLoadModuleContents (node *syntax_tree)
 {
+    anontrav_t checktypes[2] = {{N_typedef, &CheckForUniqueTypes}, {0, NULL}};
+
     DBUG_ENTER ("LMCdoLoadModuleContents");
 
     DBUG_ASSERT ((syntax_tree == NULL),
@@ -66,12 +85,14 @@ LMCdoLoadModuleContents (node *syntax_tree)
 
     DSfinishDeserialize (syntax_tree);
 
-    if (MODULE_OBJS (syntax_tree) != NULL) {
-        CTIerror ("Global objects are not yet supported.");
+    if (MODULE_TYPES (syntax_tree) != NULL) {
+        TRAVpushAnonymous (checktypes, &TRAVsons);
+        MODULE_TYPES (syntax_tree) = TRAVdo (MODULE_TYPES (syntax_tree), NULL);
+        TRAVpop ();
     }
 
-    if (MODULE_TYPES (syntax_tree) != NULL) {
-        CTIerror ("User defined types are not yet supported.");
+    if (MODULE_OBJS (syntax_tree) != NULL) {
+        CTIerror ("Global objects are not supported.");
     }
 
     CTIabortOnError ();

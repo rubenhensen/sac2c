@@ -130,4 +130,26 @@ extern SACarg *SACARGconvertFromFloatScalar (float value);
 extern SACarg *SACARGconvertFromBoolScalar (int value);
 extern SACarg *SACARGconvertFromCharScalar (char value);
 
+/** <!-- ****************************************************************** -->
+ * @brief Converts the given void pointer into an external SACarg with
+ *        the given basetype. The valid basetypes are defined in the
+ *        corresponding header file.
+ *
+ * @param basetype basetype of SACarg
+ * @param data     actual data
+ *
+ * @return
+ ******************************************************************************/
+extern SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
+
+/** <!-- ****************************************************************** -->
+ * @brief Converts an external SACarg with the given basetype into a
+ *        void pointer.
+ *
+ * @param basetype the basetype of the contained data
+ * @param arg      an external SACarg
+ *
+ * @return
+ ******************************************************************************/
+extern void *SACARGconvertToVoidPointer (int basetype, SACarg *arg);
 #endif /* _SAC_SACINTERFACE_H_ */

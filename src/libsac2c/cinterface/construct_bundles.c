@@ -196,7 +196,8 @@ CBLfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CBLfundef");
 
-    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+    if (FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_HASDOTRETS (arg_node)
+        && !FUNDEF_HASDOTARGS (arg_node)) {
         temp = arg_node;
         arg_node = FUNDEF_NEXT (arg_node);
         FUNDEF_NEXT (temp) = NULL;

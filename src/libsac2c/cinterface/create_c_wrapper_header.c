@@ -401,6 +401,46 @@ CCWHret (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CCWHtypedef(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CCWHtypedef (node *arg_node, info *arg_info)
+{
+    usertype udt;
+
+    DBUG_ENTER ("CCWHtypedef");
+
+    /*
+     * we filter out prelude types
+     */
+    if (!NSequals (TYPEDEF_NS (arg_node), NSgetNamespace (global.preludename))) {
+        udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
+
+        DBUG_ASSERT ((udt != UT_NOT_DEFINED), "cannot find udt!");
+
+        udt = UTgetUnAliasedType (udt);
+
+        if (TUisHidden (UTgetBaseType (udt))) {
+            fprintf (INFO_FILE (arg_info), "\n#define SACTYPE_%s_%s %d",
+                     NSgetName (TYPEDEF_NS (arg_node)), TYPEDEF_NAME (arg_node),
+                     udt + global.sac4c_udt_offset);
+        }
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    } else {
+        fprintf (INFO_FILE (arg_info), "\n\n");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CCWHmodule(node *arg_node, info *arg_info)
  *
  * @brief
@@ -412,17 +452,30 @@ CCWHmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("CCWHmodule");
 
     /*
-     * ROUND 1: create the header file
+     * 1) create the file header
      */
     INFO_FILE (arg_info) = FMGRwriteOpen ("%s/%s.h", STRonNull (".", global.inc_dirname),
                                           global.outfilename);
 
     PrintFileHeader (arg_info);
 
+    /*
+     * 2) print udt defines
+     */
+    if (MODULE_TYPES (arg_node) != NULL) {
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
+    }
+
+    /*
+     * 3) print function headers
+     */
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
+    /*
+     * 4) close files
+     */
     INFO_FILE (arg_info) = FMGRclose (INFO_FILE (arg_info));
 
     DBUG_RETURN (arg_node);

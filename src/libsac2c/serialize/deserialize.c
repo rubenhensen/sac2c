@@ -43,8 +43,14 @@ struct INFO {
     node *lastassign;
     bool importmode;
     stringset_t *dependencies;
+
     const char *search_symbol;
     node *search_result;
+
+    const char *dispatch_name;
+    const namespace_t *dispatch_ns;
+    ntype *dispatch_args;
+    node *dispatch_result;
 };
 
 /*
@@ -67,6 +73,10 @@ struct INFO {
 #define INFO_SEARCH_SYMBOL(n) ((n)->search_symbol)
 #define INFO_SEARCH_RESULT(n) ((n)->search_result)
 
+#define INFO_DISPATCH_NAME(n) ((n)->dispatch_name)
+#define INFO_DISPATCH_NS(n) ((n)->dispatch_ns)
+#define INFO_DISPATCH_ARGS(n) ((n)->dispatch_args)
+#define INFO_DISPATCH_RESULT(n) ((n)->dispatch_result)
 /*
  * INFO functions
  */
@@ -95,6 +105,11 @@ MakeInfo ()
 
     INFO_SEARCH_SYMBOL (result) = NULL;
     INFO_SEARCH_RESULT (result) = NULL;
+
+    INFO_DISPATCH_NAME (result) = NULL;
+    INFO_DISPATCH_NS (result) = NULL;
+    INFO_DISPATCH_ARGS (result) = NULL;
+    INFO_DISPATCH_RESULT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -970,26 +985,52 @@ DSloadFunctionBody (node *fundef)
  */
 
 static node *
+FindFunction (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FindFunction");
+
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+        if (NSequals (FUNDEF_NS (arg_node), INFO_DISPATCH_NS (arg_info))
+            && STReq (FUNDEF_NAME (arg_node), INFO_DISPATCH_NAME (arg_info))) {
+            if (TUsignatureMatches (FUNDEF_ARGS (arg_node), INFO_DISPATCH_ARGS (arg_info),
+                                    FALSE)) {
+                INFO_DISPATCH_RESULT (arg_info) = arg_node;
+            }
+        }
+    }
+
+    if ((INFO_DISPATCH_RESULT (arg_info) == NULL) && (FUNDEF_NEXT (arg_node) != NULL)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
 doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
                    ntype *argtypes)
 {
     node *result = NULL;
+    info *local_info;
+    anontrav_t searchtrav[2] = {{N_fundef, &FindFunction}, {0, NULL}};
 
     DBUG_ENTER ("doDispatchFunCall");
 
-    while ((fundefs != NULL) && (result == NULL)) {
+    local_info = MakeInfo ();
 
-        if (FUNDEF_ISWRAPPERFUN (fundefs)) {
-            if (NSequals (FUNDEF_NS (fundefs), ns)
-                && STReq (FUNDEF_NAME (fundefs), name)) {
-                if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes, FALSE)) {
-                    result = fundefs;
-                }
-            }
-        }
+    INFO_DISPATCH_NAME (local_info) = name;
+    INFO_DISPATCH_NS (local_info) = ns;
+    INFO_DISPATCH_ARGS (local_info) = argtypes;
 
-        fundefs = FUNDEF_NEXT (fundefs);
+    TRAVpushAnonymous (searchtrav, &TRAVsons);
+    if (fundefs != NULL) {
+        fundefs = TRAVdo (fundefs, local_info);
     }
+    TRAVpop ();
+
+    result = INFO_DISPATCH_RESULT (local_info);
+
+    local_info = FreeInfo (local_info);
 
     DBUG_RETURN (result);
 }

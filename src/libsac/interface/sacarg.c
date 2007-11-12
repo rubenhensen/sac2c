@@ -1,6 +1,7 @@
 /* $Id$ */
 
 #include "sacarg.h"
+#include "sac.h"
 #include "string.h"
 
 /**
@@ -154,6 +155,16 @@ SACARGextractData (SACarg *arg)
         SAC_FREE (SACARG_DESC (arg));
         SAC_FREE (arg);
     } else {
+        if ((SACARG_BTYPE (arg) != T_int) && (SACARG_BTYPE (arg) != T_float)
+            && (SACARG_BTYPE (arg) != T_char) && (SACARG_BTYPE (arg) != T_bool)) {
+            /*
+             * we cannot yet copy external types, so we emit an error here
+             */
+            SAC_RuntimeError ("External arguments can only be extracted if "
+                              "the contained data is not shared, i.e., "
+                              "its reference counter is 0!");
+        }
+
         result = SAC_MALLOC (basetype_to_size[SACARG_BTYPE (arg)] * SACARG_SIZE (arg));
         result = memcpy (result, SACARG_DATA (arg),
                          basetype_to_size[SACARG_BTYPE (arg)] * SACARG_SIZE (arg));
@@ -251,10 +262,12 @@ SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
                            SAC_array_descriptor_t data_desc)                             \
     {                                                                                    \
         /*                                                                               \
-         * we simply wrap it. As we consume one reference but create one,                \
-         * no refcounting ops needed here!                                               \
+         * we simply wrap it. As we consume one reference, we have                       \
+         * to decrement the rc. However, SACARGmakeSacArg holds a                        \
+         * new reference, so the RC cannot be 0.                                         \
          */                                                                              \
         *arg = SACARGmakeSacArg (btype, data_desc, data);                                \
+        DESC_RC (data_desc)--;                                                           \
         /*                                                                               \
          * now we need a descriptor! As SACargs use standard SAC descriptors,            \
          * we can use those functions to build one. However, we have to                  \
@@ -275,10 +288,12 @@ SACARGwrapUdt (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype, void 
                SAC_array_descriptor_t data_desc)
 {
     /*
-     * we simply wrap it. As we consume one reference but create one,
-     * no refcounting ops needed here!
+     * we simply wrap it. As we consume one reference, we have
+     * to decrement the rc. However, SACARGmakeSacArg holds a
+     * new reference, so the RC cannot be 0.
      */
     *arg = SACARGmakeSacArg (btype, data_desc, data);
+    DESC_RC (data_desc)--;
     /*
      * now we need a descriptor! As SACargs use standard SAC descriptors,
      * we can use those functions to build one. However, we have to

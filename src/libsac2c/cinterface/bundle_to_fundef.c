@@ -225,34 +225,58 @@ MakeDispatchError (node *fundef, info *arg_info)
 }
 
 static node *
-PickPredFun (simpletype type, node *args)
+PickPredFun (ntype *type, node *args, node **preassign, node **vardecs)
 {
     char *name = NULL;
     node *result;
+    node *avis;
 
     DBUG_ENTER ("PickPredFun");
 
-    switch (type) {
-    case T_int:
-        name = "isInt";
-        break;
-    case T_bool:
-        name = "isBool";
-        break;
-    case T_float:
-        name = "isFloat";
-        break;
-    case T_double:
-        name = "isDouble";
-        break;
-    case T_char:
-        name = "isChar";
-        break;
-    default:
-        DBUG_ASSERT (0, "unhandled built-in type");
+    if (TYisSimple (TYgetScalar (type))) {
+        switch (TYgetSimpleType (TYgetScalar (type))) {
+        case T_int:
+            name = "isInt";
+            break;
+        case T_bool:
+            name = "isBool";
+            break;
+        case T_float:
+            name = "isFloat";
+            break;
+        case T_double:
+            name = "isDouble";
+            break;
+        case T_char:
+            name = "isChar";
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled built-in type");
+        }
+    } else if (TYisUser (TYgetScalar (type))) {
+        /*
+         * we call the corresponding isUdt function. To do so,
+         * we have to add the UDT number as first argument.
+         */
+        name = "isUdt";
+
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        *vardecs = TBmakeVardec (avis, *vardecs);
+
+        *preassign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                     TBmakeNum (UTgetUnAliasedType (
+                                                  TYgetUserType (TYgetScalar (type)))
+                                                + global.sac4c_udt_offset)),
+                          *preassign);
+
+        args = TBmakeExprs (TBmakeId (avis), args);
     }
 
     result = DSdispatchFunCall (NSgetNamespace (global.preludename), name, args);
+
+    DBUG_ASSERT ((result != NULL), "cannot find prediacte function for type!");
 
     DBUG_RETURN (result);
 }
@@ -265,17 +289,13 @@ BuildPredicateForArgs (node *apargs, node *wrapargs, node **precond, node **vard
     node *andavis;
     node *args;
     node *assigns;
-    simpletype argtype;
+    node *preassigns = NULL;
 
     DBUG_ENTER ("BuildPredicateForArgs");
 
     if (apargs != NULL) {
         result = BuildPredicateForArgs (ARG_NEXT (apargs), ARG_NEXT (wrapargs), precond,
                                         vardecs);
-
-        DBUG_ASSERT (TYisSimple (TYgetScalar (AVIS_TYPE (ARG_AVIS (apargs)))),
-                     "only built in types are supported!");
-        argtype = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ARG_AVIS (apargs))));
 
         predavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
@@ -294,9 +314,12 @@ BuildPredicateForArgs (node *apargs, node *wrapargs, node **precond, node **vard
         args = TBmakeExprs (TBmakeId (ARG_AVIS (wrapargs)), NULL);
 
         assigns = TBmakeAssign (TBmakeLet (TBmakeIds (predavis, NULL),
-                                           PickPredFun (argtype, args)),
+                                           PickPredFun (AVIS_TYPE (ARG_AVIS (apargs)),
+                                                        args, &preassigns, vardecs)),
                                 assigns);
-
+        if (preassigns != NULL) {
+            assigns = TCappendAssign (preassigns, assigns);
+        }
         *precond = TCappendAssign (*precond, assigns);
     } else {
         result = TBmakeBool (TRUE);
@@ -306,37 +329,93 @@ BuildPredicateForArgs (node *apargs, node *wrapargs, node **precond, node **vard
 }
 
 static node *
-PickInputConversion (simpletype type, node *args)
+PickInputConversion (ntype *type, node *args)
 {
     char *name = NULL;
+    const namespace_t *ns = NULL;
     node *result;
 
     DBUG_ENTER ("PickInputConversion");
 
-    switch (type) {
-    case T_int:
-        name = "unwrapInt";
-        break;
-    case T_bool:
-        name = "unwrapBool";
-        break;
-    case T_float:
-        name = "unwrapFloat";
-        break;
-    case T_double:
-        name = "unwrapDouble";
-        break;
-    case T_char:
-        name = "unwrapChar";
-        break;
-    default:
-        DBUG_ASSERT (0, "unhandled built-in type");
+    if (TYisSimple (TYgetScalar (type))) {
+        switch (TYgetSimpleType (TYgetScalar (type))) {
+        case T_int:
+            name = STRcpy ("unwrapInt");
+            break;
+        case T_bool:
+            name = STRcpy ("unwrapBool");
+            break;
+        case T_float:
+            name = STRcpy ("unwrapFloat");
+            break;
+        case T_double:
+            name = STRcpy ("unwrapDouble");
+            break;
+        case T_char:
+            name = STRcpy ("unwrapChar");
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled built-in type");
+        }
+        ns = NSgetNamespace (global.preludename);
+    } else if (TYisUser (TYgetScalar (type))) {
+        name = STRcat ("unwrap", UTgetName (TYgetUserType (TYgetScalar (type))));
+        ns = UTgetNamespace (TYgetUserType (TYgetScalar (type)));
+#ifndef DBUG_OFF
+    } else {
+        DBUG_ASSERT (0, "unhandled type found!");
+#endif
     }
 
-    result = DSdispatchFunCall (NSgetNamespace (global.preludename), name, args);
+    result = DSdispatchFunCall (ns, name, args);
 
-    DBUG_ASSERT ((result != NULL),
-                 "Cannot find matching instance for sacprelude::unwrapXXX!");
+    DBUG_ASSERT ((result != NULL), "Cannot find matching instance for unwrapXXX!");
+
+    name = MEMfree (name);
+
+    DBUG_RETURN (result);
+}
+
+static node *
+PickOutputConversion (ntype *type, node *args, node **vardecs, node **preassign)
+{
+    char *name = NULL;
+    const namespace_t *ns = NULL;
+    node *result;
+    node *avis;
+
+    DBUG_ENTER ("OutputConversion");
+
+    if (TYisSimple (TYgetScalar (type))) {
+        name = STRcpy ("wrap");
+        ns = NSgetNamespace (global.preludename);
+    } else if (TYisUser (TYgetScalar (type))) {
+        name = STRcat ("wrap", UTgetName (TYgetUserType (TYgetScalar (type))));
+        ns = UTgetNamespace (TYgetUserType (TYgetScalar (type)));
+
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        *vardecs = TBmakeVardec (avis, *vardecs);
+
+        *preassign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                     TBmakeNum (UTgetUnAliasedType (
+                                                  TYgetUserType (TYgetScalar (type)))
+                                                + global.sac4c_udt_offset)),
+                          *preassign);
+
+        args = TBmakeExprs (TBmakeId (avis), args);
+#ifndef DBUG_OFF
+    } else {
+        DBUG_ASSERT (0, "unhandled type found!");
+#endif
+    }
+
+    result = DSdispatchFunCall (ns, name, args);
+
+    DBUG_ASSERT ((result != NULL), "Cannot find matching instance for wrapXXX!");
+
+    name = MEMfree (name);
 
     DBUG_RETURN (result);
 }
@@ -346,7 +425,6 @@ ConvertInputs (node *apargs, node *wrapargs, node **vardecs, node **assigns)
 {
     node *result = NULL;
     node *avis;
-    simpletype argtype;
     node *args;
 
     DBUG_ENTER ("ConvertInputs");
@@ -357,15 +435,13 @@ ConvertInputs (node *apargs, node *wrapargs, node **vardecs, node **assigns)
         avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (apargs))));
         *vardecs = TBmakeVardec (avis, *vardecs);
 
-        DBUG_ASSERT (TYisSimple (TYgetScalar (AVIS_TYPE (ARG_AVIS (apargs)))),
-                     "only built in types are supported!");
-        argtype = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ARG_AVIS (apargs))));
-
         args = TBmakeExprs (TBmakeId (ARG_AVIS (wrapargs)), NULL);
 
-        *assigns = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                            PickInputConversion (argtype, args)),
-                                 *assigns);
+        *assigns
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                     PickInputConversion (AVIS_TYPE (ARG_AVIS (apargs)),
+                                                          args)),
+                          *assigns);
 
         result = TBmakeExprs (TBmakeId (avis), result);
     }
@@ -379,6 +455,7 @@ ConvertOutputs (node *aprets, node *wrapretids, node **vardecs, node **assigns)
     node *result = NULL;
     node *avis;
     node *wrapinstance;
+    node *preassigns = NULL;
 
     DBUG_ENTER ("ConvertOutputs");
 
@@ -391,15 +468,17 @@ ConvertOutputs (node *aprets, node *wrapretids, node **vardecs, node **assigns)
 
         result = TBmakeIds (avis, result);
 
-        wrapinstance = DSdispatchFunCall (NSgetNamespace (global.preludename), "wrap",
-                                          TBmakeExprs (TBmakeId (avis), NULL));
-
-        DBUG_ASSERT ((wrapinstance != NULL),
-                     "Cannot find matching instance of sacprelude::wrap!");
+        wrapinstance
+          = PickOutputConversion (AVIS_TYPE (avis), TBmakeExprs (TBmakeId (avis), NULL),
+                                  vardecs, &preassigns);
 
         *assigns = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (wrapretids), NULL),
                                             wrapinstance),
                                  *assigns);
+
+        if (preassigns != NULL) {
+            *assigns = TCappendAssign (preassigns, *assigns);
+        }
     }
 
     DBUG_RETURN (result);

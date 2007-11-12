@@ -257,7 +257,7 @@ BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Inserts a fundec for <ns>::unwrap into the funs chain and
+ * @brief Inserts a fundec for <ns>::unwrap<name> into the funs chain and
  *        adds a symbol for that type to the symbols chain.
  *
  * @param ns          namespace of type
@@ -279,7 +279,7 @@ BuildUnWrap (namespace_t *ns, const char *name, node **symbols, node **notexport
 
     DBUG_ENTER ("BuildUnWrap");
 
-    funname = STRcpy ("unwrap");
+    funname = STRcat ("unwrap", name);
 
     destret = TBmakeRet (TYmakeAKS (TYmakeSymbType (STRcpy (name), NSdupNamespace (ns)),
                                     SHmakeShape (0)),

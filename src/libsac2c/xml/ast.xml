@@ -2360,6 +2360,7 @@
           <node name="Fundef" />
           <node name="Arg" />
           <node name="Ret" />
+          <node name="Typedef" />
           <node name="Module" />
         </travuser>
       </traversal>

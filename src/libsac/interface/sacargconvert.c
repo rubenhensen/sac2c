@@ -70,3 +70,27 @@ CONVERTER (Double, T_double, double)
 CONVERTER (Float, T_float, float)
 CONVERTER (Bool, T_bool, int)
 CONVERTER (Char, T_char, char)
+
+void *
+SACARGconvertToVoidPointer (int btype, SACarg *arg)
+{
+    void *result = (void *)0;
+
+    if (SACARGgetBasetype (arg) != btype) {
+        SAC_RuntimeError ("Types do not match in conversion!");
+    } else {
+        result = (void *)SACARGextractData (arg);
+    }
+
+    return (result);
+}
+
+SACarg *
+SACARGconvertFromVoidPointer (int btype, void *data)
+{
+    SACarg *result;
+
+    result = SACARGmakeSacArg (btype, SACARGmakeDescriptorVect (0, (int *)0), data);
+
+    return (result);
+}
