@@ -15,16 +15,15 @@
 #include "ctinfo.h"
 
 static node *
-CheckForUniqueTypes (node *arg_node, info *arg_info)
+CheckForObjdefs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CheckForUniqueTypes");
+    DBUG_ENTER ("CheckForObjdefs");
 
-    if (TYPEDEF_ISUNIQUE (arg_node)) {
-        CTIerror ("Unique type `%s' is not supported.", CTIitemName (arg_node));
-    }
+    CTIerror ("Wrapper cannot be built due to global object `%s'.",
+              CTIitemName (arg_node));
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -67,7 +66,7 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
 node *
 LMCdoLoadModuleContents (node *syntax_tree)
 {
-    anontrav_t checktypes[2] = {{N_typedef, &CheckForUniqueTypes}, {0, NULL}};
+    anontrav_t checktypes[2] = {{N_objdef, &CheckForObjdefs}, {0, NULL}};
 
     DBUG_ENTER ("LMCdoLoadModuleContents");
 
@@ -85,14 +84,10 @@ LMCdoLoadModuleContents (node *syntax_tree)
 
     DSfinishDeserialize (syntax_tree);
 
-    if (MODULE_TYPES (syntax_tree) != NULL) {
-        TRAVpushAnonymous (checktypes, &TRAVsons);
-        MODULE_TYPES (syntax_tree) = TRAVdo (MODULE_TYPES (syntax_tree), NULL);
-        TRAVpop ();
-    }
-
     if (MODULE_OBJS (syntax_tree) != NULL) {
-        CTIerror ("Global objects are not supported.");
+        TRAVpushAnonymous (checktypes, &TRAVsons);
+        MODULE_OBJS (syntax_tree) = TRAVdo (MODULE_OBJS (syntax_tree), NULL);
+        TRAVpop ();
     }
 
     CTIabortOnError ();

@@ -544,7 +544,9 @@ BTFdoBundleToFundef (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_btf);
-    MODULE_FUNS (syntax_tree) = TRAVdo (MODULE_FUNS (syntax_tree), info);
+    if (MODULE_FUNS (syntax_tree) != NULL) {
+        MODULE_FUNS (syntax_tree) = TRAVdo (MODULE_FUNS (syntax_tree), info);
+    }
     TRAVpop ();
 
     info = FreeInfo (info);

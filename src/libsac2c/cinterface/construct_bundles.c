@@ -196,19 +196,22 @@ CBLfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CBLfundef");
 
-    if (FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_HASDOTRETS (arg_node)
-        && !FUNDEF_HASDOTARGS (arg_node)) {
-        temp = arg_node;
-        arg_node = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (temp) = NULL;
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+        if (!FUNDEF_HASDOTRETS (arg_node) && !FUNDEF_HASDOTARGS (arg_node)) {
+            temp = arg_node;
+            arg_node = FUNDEF_NEXT (arg_node);
+            FUNDEF_NEXT (temp) = NULL;
 
-        arity = TCcountArgs (FUNDEF_ARGS (temp));
+            arity = TCcountArgs (FUNDEF_ARGS (temp));
 
-        DBUG_PRINT ("CBL",
-                    ("Adding function %s (%d) to bundle.", CTIitemName (temp), arity));
+            DBUG_PRINT ("CBL", ("Adding function %s (%d) to bundle.", CTIitemName (temp),
+                                arity));
 
-        INFO_BUNDLES (arg_info)
-          = InsertIntoBundles (temp, arity, INFO_BUNDLES (arg_info));
+            INFO_BUNDLES (arg_info)
+              = InsertIntoBundles (temp, arity, INFO_BUNDLES (arg_info));
+        } else {
+            CTIwarn ("%s is not exported as it uses varargs.", CTIitemName (arg_node));
+        }
     }
 
     if (arg_node == NULL) {
