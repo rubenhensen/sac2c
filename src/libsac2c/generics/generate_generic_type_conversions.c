@@ -25,6 +25,7 @@
  *****************************************************************************/
 #include "generate_generic_type_conversions.h"
 
+#define SACARG_NAME "SACarg"
 /*
  * Other includes go here
  */
@@ -214,15 +215,16 @@ BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
     char *funname;
     node *udtarg, *sourcearg;
     node *sacargret;
-    usertype sacarg;
 
     DBUG_ENTER ("BuildWrap");
 
     funname = STRcat ("wrap", name);
 
-    sacarg = UTfindUserType ("SACarg", NSgetNamespace (global.preludename));
-    DBUG_ASSERT ((sacarg != UT_NOT_DEFINED), "cannot find SACarg udt in prelude!");
-    sacargret = TBmakeRet (TYmakeAKS (TYmakeUserType (sacarg), SHmakeShape (0)), NULL);
+    sacargret
+      = TBmakeRet (TYmakeAKS (TYmakeSymbType (STRcpy (SACARG_NAME),
+                                              NSgetNamespace (global.preludename)),
+                              SHmakeShape (0)),
+                   NULL);
 
     sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
                                        TYmakeAKS (TYmakeSymbType (STRcpy (name),
@@ -274,7 +276,6 @@ BuildUnWrap (namespace_t *ns, const char *name, node **symbols, node **notexport
     char *funname;
     node *udtarg;
     node *destret;
-    usertype sacarg;
 
     DBUG_ENTER ("BuildUnWrap");
 
@@ -284,10 +285,11 @@ BuildUnWrap (namespace_t *ns, const char *name, node **symbols, node **notexport
                                     SHmakeShape (0)),
                          NULL);
 
-    sacarg = UTfindUserType ("SACarg", NSgetNamespace (global.preludename));
-    DBUG_ASSERT ((sacarg != UT_NOT_DEFINED), "cannot find SACarg udt in prelude!");
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
-                                    TYmakeAKS (TYmakeUserType (sacarg), SHmakeShape (0))),
+                                    TYmakeAKS (TYmakeSymbType (STRcpy (SACARG_NAME),
+                                                               NSgetNamespace (
+                                                                 global.preludename)),
+                                               SHmakeShape (0))),
                         NULL);
 
     RET_LINKSIGN (destret) = 1;
@@ -332,11 +334,13 @@ GGTCmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("GGTCmodule");
 
     /*
-     * load SACarg type
+     * load SACarg type if not compiling prelude
      */
-    DSinitDeserialize (arg_node);
-    DSaddSymbolByName ("SACarg", SET_typedef, global.preludename);
-    DSfinishDeserialize (arg_node);
+    if (global.loadprelude) {
+        DSinitDeserialize (arg_node);
+        DSaddSymbolByName ("SACarg", SET_typedef, global.preludename);
+        DSfinishDeserialize (arg_node);
+    }
 
     INFO_FUNDEFS (arg_info) = MODULE_FUNS (arg_node);
     INFO_FUNDECS (arg_info) = MODULE_FUNDECS (arg_node);
