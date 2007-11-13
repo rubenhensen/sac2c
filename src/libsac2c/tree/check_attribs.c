@@ -1,5 +1,5 @@
 /*
- * $Id: check_attribs.c 14508 2006-01-04 16:21:06Z ktr $
+ * $Id$
  */
 
 #include "check_attribs.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: symb_wlf.h dpa $
+ * $Id$
  */
 #ifndef _SAC_SYMB_WLF_H_
 #define _SAC_SYMB_WLF_H_

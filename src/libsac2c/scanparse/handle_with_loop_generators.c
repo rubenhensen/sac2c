@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id$
  */
 
 #include "dbug.h"

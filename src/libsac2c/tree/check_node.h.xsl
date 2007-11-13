@@ -37,7 +37,7 @@ version="1.0">
       <xsl:value-of select="'Functions to free node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: free_check.h.xsl 14593 2006-01-31 17:09:55Z cg $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>

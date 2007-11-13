@@ -1,5 +1,5 @@
 /*
- * $Id: symb_wlf.c dpa $
+ * $Id$
  */
 
 // #define DAOEN

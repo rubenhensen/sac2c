@@ -60,7 +60,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by chkm traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: check_node.c.xsl 14673 2006-04-04 13:26:01Z jhb $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">

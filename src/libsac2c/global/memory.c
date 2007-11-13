@@ -1,5 +1,5 @@
 /*
- * $Id: memory.c 14619 2006-03-01 17:08:03Z jhb $
+ * $Id$
  */
 
 #include "memory.h"

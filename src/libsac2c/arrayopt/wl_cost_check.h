@@ -1,5 +1,5 @@
 /*
- * $Id: wl_cost_check.h dpa $
+ * $Id$
  */
 
 #ifndef _SAC_WL_COST_CHECK_H_

@@ -1,5 +1,5 @@
 /*
- * $Id: show_wl_cost.h dpa $
+ * $Id$
  */
 
 #ifndef _SAC_SHOW_WL_COST_H_

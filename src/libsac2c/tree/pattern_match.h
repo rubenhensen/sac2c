@@ -1,6 +1,6 @@
 /*
  *
- * $Id:$
+ * $Id$
  */
 
 #ifndef _SAC_PATTERN_MATCH_H_

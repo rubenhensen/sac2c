@@ -5,7 +5,7 @@
 
 /******************************************************************************
  *
- * $Id: explicitcopy.h 14536 2006-01-13 14:39:57Z ktr $
+ * $Id$
  *
  * Scope-based reuse candidate elimination traversal (srce_tab)
  *
