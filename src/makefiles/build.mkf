@@ -224,12 +224,12 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 
 $(PROJECT_ROOT)/lib/libsacpreludeTree.so \
 $(PROJECT_ROOT)/lib/libsacpreludeMod.so \
-$(PROJECT_ROOT)/lib/libsacpreludeMod.a: $(SUBTARGETS) $(FINGERPRINT_FILE)
+$(PROJECT_ROOT)/lib/libsacpreludeMod.a: sacprelude.sac $(FINGERPRINT_FILE)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacpreludeTree.so " 
 	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.so " 
 	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.a"
-	$(HIDE) $(SAC2C) $(SAC2CFLAGS) -noprelude -o $(TARGETDIR) sacprelude.sac
+	$(HIDE) $(SAC2C) $(SAC2CFLAGS) -noprelude -o $(TARGETDIR) $<
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
