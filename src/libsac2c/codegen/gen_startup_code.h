@@ -24,5 +24,6 @@ extern void GSCprintDefines ();
 extern void GSCprintMain ();
 extern void GSCprintMainBegin ();
 extern void GSCprintMainEnd ();
+extern void GSCprintSACargCopyFreeStubs ();
 
 #endif /* _SAC_GEN_STARTUP_CODE_H_ */

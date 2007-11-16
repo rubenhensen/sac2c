@@ -1371,3 +1371,28 @@ TUisScalar (ntype *ty)
 
     DBUG_RETURN (TUdimKnown (ty) && (TYgetDim (ty) == 0));
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief Returns the simpletype of the innermost basetype of a typedef
+ *        chain
+ *
+ * @param type type to start search with
+ *
+ * @return the types innermost basetype
+ ******************************************************************************/
+simpletype
+UTgetBaseSimpleType (ntype *type)
+{
+    usertype udt;
+
+    DBUG_ENTER ("GetBaseSimpleType");
+    while (TUisArrayOfUser (type)) {
+        udt = TYgetUserType (TYgetScalar (type));
+        udt = UTgetUnAliasedType (udt);
+        type = UTgetBaseType (udt);
+    }
+
+    DBUG_ASSERT ((TYisArray (type)), "Non array type found!");
+    DBUG_ASSERT ((TYisSimple (TYgetScalar (type))), "non simple type as base!");
+    DBUG_RETURN (TYgetSimpleType (TYgetScalar (type)));
+}

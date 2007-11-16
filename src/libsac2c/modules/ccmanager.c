@@ -356,6 +356,8 @@ InvokeCCWrapper (char *cccall, char *ccflags)
                  (void (*) (const char *, const char *, void *))CompileOneFile);
     CompileOneFile (global.tmp_dirname, "globals.c", callstring);
     CompileOneFile (global.tmp_dirname, "interface.c", callstring);
+    CompileOneFile (global.tmp_dirname, "sacargcopy.c", callstring);
+    CompileOneFile (global.tmp_dirname, "sacargfree.c", callstring);
 
     /*
      * compile PIC code
@@ -364,6 +366,8 @@ InvokeCCWrapper (char *cccall, char *ccflags)
                  (void (*) (const char *, const char *, void *))CompileOneFilePIC);
     CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
     CompileOneFilePIC (global.tmp_dirname, "interface.c", callstring);
+    CompileOneFilePIC (global.tmp_dirname, "sacargcopy.c", callstring);
+    CompileOneFilePIC (global.tmp_dirname, "sacargfree.c", callstring);
 
     callstring = MEMfree (callstring);
 
@@ -428,7 +432,7 @@ CCMgetLinkerFlags (node *syntax_tree)
     deplibs
       = (char *)STRSfold (&BuildDepLibsStringProg, global.dependencies, STRcpy (""));
 
-    result = STRcatn (5, paths, " ", deplibs, " ", libs);
+    result = STRcatn (5, paths, " ", libs, " ", deplibs);
 
     libs = MEMfree (libs);
     paths = MEMfree (paths);

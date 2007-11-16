@@ -23,9 +23,6 @@
  *****************************************************************************/
 #include "create_c_wrapper_body.h"
 
-/*
- * Other includes go here
- */
 #include "dbug.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -47,7 +44,7 @@ struct INFO {
 };
 
 /**
- * A template entry in the template info structure
+ * The info structure
  */
 #define INFO_FILE(n) ((n)->file)
 

@@ -197,9 +197,106 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
 }
 
 /** <!-- ****************************************************************** -->
+ * @brief Returns the name of the innermost simpletype of a user
+ *        defined type.
+ *
+ * @param ns    namespace of type
+ * @param name  name of type
+ *
+ * @return      appropriate string for that type
+ ******************************************************************************/
+static const char *
+GetInnerTypeName (namespace_t *ns, const char *name)
+{
+    const char *result;
+    ntype *base;
+    usertype udt;
+
+    DBUG_ENTER ("GetInnerTypeName");
+
+    udt = UTfindUserType (name, ns);
+
+    DBUG_ASSERT ((udt != UT_NOT_DEFINED), "cannot find usertype for typedef!");
+
+    udt = UTgetUnAliasedType (udt);
+
+    do {
+        base = UTgetBaseType (udt);
+    } while (TUisArrayOfUser (base));
+
+    switch (TYgetSimpleType (TYgetScalar (base))) {
+    case T_int:
+        result = "Int";
+        break;
+    case T_bool:
+        result = "Bool";
+        break;
+    case T_float:
+        result = "Float";
+        break;
+    case T_double:
+        result = "Double";
+        break;
+    case T_char:
+        result = "Char";
+        break;
+    case T_hidden:
+        result = "";
+        break;
+    default:
+        DBUG_ASSERT (0, "unhandled simple type");
+        result = "Unknown";
+        break;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Constructs the apropriate linkname for a wrap function.
+ *
+ * @param ns   namespace of type
+ * @param name name of type
+ *
+ * @return     a matching linksign name
+ ******************************************************************************/
+static char *
+GetWrapUdtLinkName (namespace_t *ns, const char *name)
+{
+    char *result;
+
+    DBUG_ENTER ("GetWrapUdtLinkName");
+
+    result = STRcat ("SACARGwrapUdt", GetInnerTypeName (ns, name));
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Constructs the apropriate linkname for an unwrap function.
+ *
+ * @param ns   namespace of type
+ * @param name name of type
+ *
+ * @return     a matching linksign name
+ ******************************************************************************/
+static char *
+GetUnwrapUdtLinkName (namespace_t *ns, const char *name)
+{
+    char *result;
+
+    DBUG_ENTER ("GetUnwrapUdtLinkName");
+
+    result = STRcat ("SACARGunwrapUdt", GetInnerTypeName (ns, name));
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
  * @brief Inserts a fundec for <ns>::unwrap<name> into the funs chain and
  *        adds a symbol for that type to the symbols chain.
  *
+ * @param type        the actual type
  * @param ns          namespace of type
  * @param name        type name
  * @param *symbols    chain of provided symbols
@@ -209,29 +306,26 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
  * @return modified funs chain
  ******************************************************************************/
 static node *
-BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
-           node *funs)
+BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
+           node **notexports, node *funs)
 {
     node *result;
     char *funname;
     node *udtarg, *sourcearg;
     node *sacargret;
+    usertype sacargudt;
 
     DBUG_ENTER ("BuildWrap");
 
     funname = STRcat ("wrap", name);
 
-    sacargret
-      = TBmakeRet (TYmakeAKS (TYmakeSymbType (STRcpy (SACARG_NAME),
-                                              NSgetNamespace (global.preludename)),
-                              SHmakeShape (0)),
-                   NULL);
+    sacargudt = UTfindUserType (SACARG_NAME, NSgetNamespace (global.preludename));
 
-    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
-                                       TYmakeAKS (TYmakeSymbType (STRcpy (name),
-                                                                  NSdupNamespace (ns)),
-                                                  SHmakeShape (0))),
-                           NULL);
+    DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
+
+    sacargret = TBmakeRet (TYmakeAKS (TYmakeUserType (sacargudt), SHmakeShape (0)), NULL);
+
+    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYcopyType (type)), NULL);
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHmakeShape (0))),
                         sourcearg);
@@ -248,8 +342,9 @@ BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
     result = TBmakeFundef (STRcpy (funname), NSdupNamespace (ns), sacargret, udtarg, NULL,
                            funs);
 
-    FUNDEF_LINKNAME (result) = STRcpy ("SACARGwrapUdt");
+    FUNDEF_LINKNAME (result) = GetWrapUdtLinkName (ns, name);
     FUNDEF_ISEXTERN (result) = TRUE;
+    FUNDEF_ISSACARGCONVERSION (result) = TRUE;
 
     *symbols = TBmakeSymbol (STRcpy (funname), *symbols);
     *notexports = TBmakeSymbol (funname, *notexports);
@@ -261,6 +356,7 @@ BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
  * @brief Inserts a fundec for <ns>::unwrap<name> into the funs chain and
  *        adds a symbol for that type to the symbols chain.
  *
+ * @param type        the actual type
  * @param ns          namespace of type
  * @param name        type name
  * @param *symbols    chain of provided symbols
@@ -270,27 +366,27 @@ BuildWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
  * @return
  ******************************************************************************/
 static node *
-BuildUnWrap (namespace_t *ns, const char *name, node **symbols, node **notexports,
-             node *funs)
+BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
+             node **notexports, node *funs)
 {
     node *result;
     char *funname;
     node *udtarg;
     node *destret;
+    usertype sacargudt;
 
     DBUG_ENTER ("BuildUnWrap");
 
     funname = STRcat ("unwrap", name);
 
-    destret = TBmakeRet (TYmakeAKS (TYmakeSymbType (STRcpy (name), NSdupNamespace (ns)),
-                                    SHmakeShape (0)),
-                         NULL);
+    sacargudt = UTfindUserType (SACARG_NAME, NSgetNamespace (global.preludename));
 
-    udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
-                                    TYmakeAKS (TYmakeSymbType (STRcpy (SACARG_NAME),
-                                                               NSgetNamespace (
-                                                                 global.preludename)),
-                                               SHmakeShape (0))),
+    DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
+
+    destret = TBmakeRet (TYcopyType (type), NULL);
+
+    udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeUserType (sacargudt),
+                                                              SHmakeShape (0))),
                         NULL);
 
     RET_LINKSIGN (destret) = 1;
@@ -302,8 +398,9 @@ BuildUnWrap (namespace_t *ns, const char *name, node **symbols, node **notexport
     result
       = TBmakeFundef (STRcpy (funname), NSdupNamespace (ns), destret, udtarg, NULL, funs);
 
-    FUNDEF_LINKNAME (result) = STRcpy ("SACARGunwrapUdt");
+    FUNDEF_LINKNAME (result) = GetUnwrapUdtLinkName (ns, name);
     FUNDEF_ISEXTERN (result) = TRUE;
+    FUNDEF_ISSACARGCONVERSION (result) = TRUE;
 
     *symbols = TBmakeSymbol (STRcpy (funname), *symbols);
     *notexports = TBmakeSymbol (funname, *notexports);
@@ -390,51 +487,54 @@ GGTCmodule (node *arg_node, info *arg_info)
 node *
 GGTCtypedef (node *arg_node, info *arg_info)
 {
+    node *to_fun, *from_fun;
+    char *to_name, *from_name;
+    ntype *tdef_type;
+    usertype udt;
+
     DBUG_ENTER ("GGTCtypedef");
 
-    if (TYPEDEF_ISUNIQUE (arg_node) && TYPEDEF_ISLOCAL (arg_node)) {
-        node *to_fun, *from_fun;
-        char *to_name, *from_name;
-        ntype *tdef_type;
+    if (TYPEDEF_ISLOCAL (arg_node)) {
+        udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
-        to_name = STRcat ("to_", TYPEDEF_NAME (arg_node));
-        from_name = STRcat ("from_", TYPEDEF_NAME (arg_node));
+        DBUG_ASSERT ((udt != UT_NOT_DEFINED), "Cannot find user type!");
 
-        tdef_type = TYmakeAKS (TYmakeSymbType (STRcpy (TYPEDEF_NAME (arg_node)),
-                                               NSdupNamespace (TYPEDEF_NS (arg_node))),
-                               SHmakeShape (0));
+        tdef_type = TYmakeAKS (TYmakeUserType (udt), SHmakeShape (0));
 
-        to_fun = BuildTypeConversion (to_name, TYPEDEF_NS (arg_node),
-                                      TYPEDEF_NTYPE (arg_node), tdef_type, F_to_unq);
+        if (TYPEDEF_ISUNIQUE (arg_node)) {
+            to_name = STRcat ("to_", TYPEDEF_NAME (arg_node));
+            from_name = STRcat ("from_", TYPEDEF_NAME (arg_node));
 
-        from_fun = BuildTypeConversion (from_name, TYPEDEF_NS (arg_node), tdef_type,
-                                        TYPEDEF_NTYPE (arg_node), F_from_unq);
+            to_fun = BuildTypeConversion (to_name, TYPEDEF_NS (arg_node),
+                                          TYPEDEF_NTYPE (arg_node), tdef_type, F_to_unq);
 
-        FUNDEF_NEXT (to_fun) = INFO_FUNDEFS (arg_info);
-        FUNDEF_NEXT (from_fun) = to_fun;
-        INFO_FUNDEFS (arg_info) = from_fun;
+            from_fun = BuildTypeConversion (from_name, TYPEDEF_NS (arg_node), tdef_type,
+                                            TYPEDEF_NTYPE (arg_node), F_from_unq);
 
-        INFO_NOTPROVIDEDSYMBOLS (arg_info)
-          = TBmakeSymbol (STRcpy (to_name), INFO_NOTPROVIDEDSYMBOLS (arg_info));
-        INFO_NOTEXPORTEDSYMBOLS (arg_info)
-          = TBmakeSymbol (to_name, INFO_NOTEXPORTEDSYMBOLS (arg_info));
-        INFO_NOTPROVIDEDSYMBOLS (arg_info)
-          = TBmakeSymbol (STRcpy (from_name), INFO_NOTPROVIDEDSYMBOLS (arg_info));
-        INFO_NOTEXPORTEDSYMBOLS (arg_info)
-          = TBmakeSymbol (from_name, INFO_NOTEXPORTEDSYMBOLS (arg_info));
+            FUNDEF_NEXT (to_fun) = INFO_FUNDEFS (arg_info);
+            FUNDEF_NEXT (from_fun) = to_fun;
+            INFO_FUNDEFS (arg_info) = from_fun;
 
-        tdef_type = TYfreeType (tdef_type);
-    }
+            INFO_NOTPROVIDEDSYMBOLS (arg_info)
+              = TBmakeSymbol (STRcpy (to_name), INFO_NOTPROVIDEDSYMBOLS (arg_info));
+            INFO_NOTEXPORTEDSYMBOLS (arg_info)
+              = TBmakeSymbol (to_name, INFO_NOTEXPORTEDSYMBOLS (arg_info));
+            INFO_NOTPROVIDEDSYMBOLS (arg_info)
+              = TBmakeSymbol (STRcpy (from_name), INFO_NOTPROVIDEDSYMBOLS (arg_info));
+            INFO_NOTEXPORTEDSYMBOLS (arg_info)
+              = TBmakeSymbol (from_name, INFO_NOTEXPORTEDSYMBOLS (arg_info));
+        }
 
-    if (TYPEDEF_ISLOCAL (arg_node) && !TYPEDEF_ISUNIQUE (arg_node)) {
         INFO_FUNDEFS (arg_info)
-          = BuildWrap (TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
+          = BuildWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
                        &INFO_PROVIDEDSYMBOLS (arg_info),
                        &INFO_NOTEXPORTEDSYMBOLS (arg_info), INFO_FUNDEFS (arg_info));
         INFO_FUNDEFS (arg_info)
-          = BuildUnWrap (TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
+          = BuildUnWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
                          &INFO_PROVIDEDSYMBOLS (arg_info),
                          &INFO_NOTEXPORTEDSYMBOLS (arg_info), INFO_FUNDEFS (arg_info));
+
+        tdef_type = TYfreeType (tdef_type);
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {

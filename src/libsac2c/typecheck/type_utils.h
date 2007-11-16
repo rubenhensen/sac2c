@@ -49,5 +49,6 @@ extern ntype *TUcombineBottoms (ntype *prod);
 extern ntype *TUcombineBottomsFromRets (node *rets);
 extern ntype *TUspreadBottoms (ntype *prod);
 extern ntype *TUcheckUdtAndSetBaseType (usertype udt, int *visited);
+extern simpletype UTgetBaseSimpleType (ntype *type);
 
 #endif /* _SAC_TYPE_UTILS_H_*/

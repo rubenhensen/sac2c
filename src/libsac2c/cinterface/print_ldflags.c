@@ -21,11 +21,11 @@ PLDFdoPrintLDFlags (node *syntax_tree)
     DBUG_ENTER ("PLDFdoPrintLDFlags");
 
     flags = CCMgetLinkerFlags (syntax_tree);
-    printf ("-L%s/lib/ %s%s/lib/ -L%s %s%s -l%s %s",
+    printf ("-L%s/lib/ %s%s/lib/ -L%s %s%s %s -l%s",
             STRonNull (".", getenv (SAC2CBASEENV)), global.config.ld_path,
             STRonNull (".", getenv (SAC2CBASEENV)), STRonNull (".", global.lib_dirname),
-            global.config.ld_path, STRonNull (".", global.lib_dirname),
-            global.outfilename, flags);
+            global.config.ld_path, STRonNull (".", global.lib_dirname), flags,
+            global.outfilename);
     flags = MEMfree (flags);
 
     CTIterminateCompilation (syntax_tree);

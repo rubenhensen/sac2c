@@ -191,33 +191,44 @@ InsertIntoBundles (node *fundef, int arity, node *bundles)
 node *
 CBLfundef (node *arg_node, info *arg_info)
 {
-    node *temp;
+    node *old_node = NULL;
     int arity;
 
     DBUG_ENTER ("CBLfundef");
 
-    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+    if (FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISSACARGCONVERSION (arg_node)) {
         if (!FUNDEF_HASDOTRETS (arg_node) && !FUNDEF_HASDOTARGS (arg_node)) {
-            temp = arg_node;
+            old_node = arg_node;
             arg_node = FUNDEF_NEXT (arg_node);
-            FUNDEF_NEXT (temp) = NULL;
+            FUNDEF_NEXT (old_node) = NULL;
 
-            arity = TCcountArgs (FUNDEF_ARGS (temp));
+            arity = TCcountArgs (FUNDEF_ARGS (old_node));
 
-            DBUG_PRINT ("CBL", ("Adding function %s (%d) to bundle.", CTIitemName (temp),
-                                arity));
+            DBUG_PRINT ("CBL", ("Adding function %s (%d) to bundle.",
+                                CTIitemName (old_node), arity));
 
             INFO_BUNDLES (arg_info)
-              = InsertIntoBundles (temp, arity, INFO_BUNDLES (arg_info));
+              = InsertIntoBundles (old_node, arity, INFO_BUNDLES (arg_info));
         } else {
             CTIwarn ("%s is not exported as it uses varargs.", CTIitemName (arg_node));
         }
     }
 
-    if (arg_node == NULL) {
-        arg_node = INFO_BUNDLES (arg_info);
-        INFO_BUNDLES (arg_info) = NULL;
+    if (old_node != NULL) {
+        /*
+         * we moved a fundef into a bundle so the current
+         * node actually already is the next node
+         */
+        if (arg_node == NULL) {
+            arg_node = INFO_BUNDLES (arg_info);
+            INFO_BUNDLES (arg_info) = NULL;
+        } else {
+            arg_node = TRAVdo (arg_node, arg_info);
+        }
     } else {
+        /*
+         * we did not do anything, so go on as usual
+         */
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         } else {

@@ -152,4 +152,5 @@ extern SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
  * @return
  ******************************************************************************/
 extern void *SACARGconvertToVoidPointer (int basetype, SACarg *arg);
+
 #endif /* _SAC_SACINTERFACE_H_ */

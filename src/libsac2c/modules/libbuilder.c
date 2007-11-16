@@ -119,10 +119,11 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
     CTInote ("Creating static wrapper library `lib%s.a'", global.outfilename);
 
     SYScall ("%s %s/lib%s.a %s/fun*_nonpic.o %s/globals_nonpic.o "
-             "%s/interface_nonpic.o %s",
+             "%s/interface_nonpic.o %s/sacargcopy_nonpic.o "
+             "%s/sacargfree_nonpic.o %s",
              global.config.ar_create, STRonNull (".", global.lib_dirname),
              global.outfilename, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, deplibs);
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, deplibs);
 
     if (global.config.ranlib[0] != '\0') {
         SYScall ("%s %s/lib%s.a", global.config.ranlib,
@@ -132,10 +133,11 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
     CTInote ("Creating shared wrapper library `lib%s.so'", global.outfilename);
 
     SYScall ("%s -o %s/lib%s.so %s/fun*_pic.o %s/globals_pic.o "
-             "%s/interface_pic.o %s",
+             "%s/interface_pic.o %s/sacargcopy_pic.o "
+             "%s/sacargfree_pic.o %s",
              global.config.ld_dynamic, STRonNull (".", global.lib_dirname),
              global.outfilename, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, deplibs);
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, deplibs);
 
     deplibs = MEMfree (deplibs);
 

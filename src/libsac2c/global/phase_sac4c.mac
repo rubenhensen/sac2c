@@ -12,8 +12,6 @@ SUBPHASE (pccf, "Printing CC Flags", PCCFdoPrintCCFlags, global.printccflags, am
 
 SUBPHASE (lm, "Loading module contents", LMCdoLoadModuleContents, ALWAYS, ami)
 
-SUBPHASE (ses, "Stripping external signatures", SESdoStripExternalSignatures, ALWAYS, ami)
-
 SUBPHASE (uwt, "Updating dispatch information", EWTdoExtendWrapperTypes, ALWAYS, ami)
 
 SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, ami)
@@ -30,6 +28,8 @@ SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, !global.prin
           gwc)
 
 SUBPHASE (cwb, "Creating interface stub files", CCWBdoCreateCWrapperBody, ALWAYS, gwc)
+
+SUBPHASE (gcf, "Creating copy and free functions", GCFdoGenerateCopyAndFree, ALWAYS, gwc)
 
 SUBPHASE (btf, "Transforming bundles to wrapper functions", BTFdoBundleToFundef, ALWAYS,
           gwc)
@@ -90,6 +90,11 @@ SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, cpc
 SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, cpc)
 
 SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, cpc)
+
+SUBPHASE (rera, "Restoring reference arguments", RERAdoRestoreReferenceArguments, ALWAYS,
+          cpc)
+
+SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS, cpc)
 
 SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, cpc)
 

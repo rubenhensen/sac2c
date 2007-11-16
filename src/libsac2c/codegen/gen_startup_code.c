@@ -472,34 +472,6 @@ GSCprintFileHeader (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   void GSCprintInternalInitFileHeader( node *syntax_tree)
- *
- * description:
- *   generates header part of internal_runtime_init.c
- *   used when compiling a c library
- *   code contains part of the startup code from a "real" SAC-executeable
- *
- ******************************************************************************/
-
-void
-GSCprintInternalInitFileHeader (node *syntax_tree)
-{
-    DBUG_ENTER ("GSCprintCWrapperFileHeader");
-
-    PrintGlobalSwitches ();
-    PrintGlobalSettings (syntax_tree);
-
-    fprintf (global.outfile, "#undef SAC_DO_COMPILE_MODULE\n");
-    fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE 0\n");
-
-    PrintIncludes ();
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   void GSCprintDefines()
  *
  * description:
@@ -633,6 +605,26 @@ GSCprintMain ()
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Used to print stubs for SACARGfreeDataUdt and SACARGcopyDataUdt
+ *        when compiling programs to circumvent linker errors.
+ ******************************************************************************/
+void
+GSCprintSACargCopyFreeStubs ()
+{
+    DBUG_ENTER ("GSCprintSACargCopyFreeStubs");
+
+    fprintf (global.outfile, "/*\n"
+                             " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                             " */\n"
+                             "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                             "void *SACARGcopyDataUdt( int type, int size, void *data) { "
+                             "return ((void *) 0x0); } \n"
+                             "\n");
 
     DBUG_VOID_RETURN;
 }

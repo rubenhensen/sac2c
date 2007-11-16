@@ -2364,6 +2364,13 @@
           <node name="Module" />
         </travuser>
       </traversal>
+      <traversal id="GCF" name="Generate Copy And Free" default="sons"
+                 include="generate_copy_and_free.h">
+        <travuser>
+          <node name="Typedef" />
+          <node name="Module" />
+        </travuser>
+      </traversal>
       <traversal id="CCWB" name="Create C wrapper body" default="sons"
                  include="create_c_wrapper_body.h">
         <travuser>
@@ -3238,6 +3245,9 @@
         </flag>
         <flag name="IsSticky" default="FALSE">
           <description>This function should not be removed by DeadFunctionRemoval. This is mainly used by the module system to ensure that for all exported functions code is generated. Furthermore, it is used to ensure that the prelude functions are not removed during compilation.</description>
+        </flag>
+        <flag name="IsSACargConversion" default="FALSE">
+          <description>This function is a special SACarg conversion function used by the C interface. This tag is mainly used to ensure that these functions do not turn up in the resulting C header file.</description>
         </flag>
         <flag name="IsNeeded">
           <description>This flag is used in multiple phases, usually to tag functions that are referenced in some sense. It has always to be reset to FALSE at the end of each phase.</description>

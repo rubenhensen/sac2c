@@ -37,9 +37,6 @@ SUBPHASE (rpr, "Resolving pragma annotations", RSPdoResolvePragmas, ALWAYS, pre)
 
 SUBPHASE (obi, "Generating object initializers", OIdoObjectInit, ALWAYS, pre)
 
-SUBPHASE (ggtc, "Generating generic type conversion functions",
-          GGTCdoGenerateGenericTypeConversions, ALWAYS, pre)
-
 SUBPHASE (csgd, "Checking and simplifying generic definitions",
           CSGDdoCheckAndSimplifyGenericDefinitions, ALWAYS, pre)
 
@@ -80,13 +77,16 @@ SUBPHASE (moe, "Handling multiple operator expressions", HMdoHandleMops, ALWAYS,
 
 SUBPHASE (flt, "Flattening nested expressions", FLATdoFlatten, ALWAYS, sim)
 
+SUBPHASE (udt, "Processing user defined types", RSTdoResolveSymbolTypes, ALWAYS, sim)
+
+SUBPHASE (ggtc, "Generating generic type conversion functions",
+          GGTCdoGenerateGenericTypeConversions, ALWAYS, sim)
+
 ENDPHASE (sim)
 
 /******************************************************************************/
 
 PHASE (ptc, "Converting to static single assignment form", ALWAYS)
-
-SUBPHASE (udt, "Processing user defined types", RSTdoResolveSymbolTypes, ALWAYS, ptc)
 
 SUBPHASE (ivd, "Inserting variable declarations", INSVDdoInsertVardec, ALWAYS, ptc)
 

@@ -4735,6 +4735,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
 
             GSCprintFileHeader (syntax_tree);
             syntax_tree = TRAVdo (syntax_tree, arg_info);
+            GSCprintSACargCopyFreeStubs ();
             GSCprintMain ();
 
             fclose (global.outfile);
