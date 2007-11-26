@@ -404,6 +404,15 @@ RSPfundef (node *arg_node, info *arg_info)
             PRAGMA_REFCOUNTING (pragma) = FREEdoFreeTree (PRAGMA_REFCOUNTING (pragma));
         }
 
+        if (PRAGMA_REFCOUNTDOTS (pragma)) {
+            if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
+                FUNDEF_REFCOUNTDOTS (arg_node) = PRAGMA_REFCOUNTDOTS (pragma);
+            } else {
+                CTIwarnLine (NODE_LINE (arg_node),
+                             "Pragma 'refcountdots' has no effect on function");
+            }
+        }
+
         /*
          * if this function needs an external module, add it to
          * the external dependencies of this module.

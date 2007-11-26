@@ -511,15 +511,23 @@ RCIap (node *arg_node, info *arg_info)
         /*
          * Some parameters of external functions must be externally refcounted
          * Furthermore, reference arguments are not refcounted at all.
+         * For ... arguments, the reference counting is determined by the
+         * refcountdots pragma.
          */
         funargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
         apargs = AP_ARGS (arg_node);
 
         while (apargs != NULL) {
 
-            if ((funargs == NULL)
-                || ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
-                    && (!ARG_ISREFCOUNTED (funargs)) && (!ARG_WASREFERENCE (funargs)))) {
+            if (funargs == NULL) {
+                if (FUNDEF_REFCOUNTDOTS (AP_FUNDEF (arg_node))) {
+                    INFO_MODE (arg_info) = rc_apuse;
+                } else {
+                    INFO_MODE (arg_info) = rc_prfuse;
+                }
+            } else if ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
+                       && (!ARG_ISREFCOUNTED (funargs))
+                       && (!ARG_WASREFERENCE (funargs))) {
                 INFO_MODE (arg_info) = rc_prfuse;
             } else {
                 INFO_MODE (arg_info) = rc_apuse;

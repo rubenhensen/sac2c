@@ -98,7 +98,7 @@ INC  DEC  ADDON  SUBON  MULON  DIVON  MODON
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
-HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING 
+HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING  REFCOUNTDOTS
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
@@ -850,6 +850,15 @@ pragma: hash_pragma LINKNAME string
                          "Conflicting definitions of pragma 'refcounting`");
           }
           PRAGMA_REFCOUNTING( store_pragma) = $4;
+        }
+      | hash_pragma REFCOUNTDOTS
+        { if( pragma_type != PRAG_fundec) {
+            yyerror( "pragma \"refcountdots\" not allowed here");
+          }
+          if (store_pragma == NULL) {
+            store_pragma = TBmakePragma();
+          }
+          PRAGMA_REFCOUNTDOTS( store_pragma) = TRUE;
         }
       | hash_pragma EFFECT qual_ext_ids
         { if( pragma_type != PRAG_fundec)  {

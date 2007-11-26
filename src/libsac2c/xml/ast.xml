@@ -3279,6 +3279,7 @@
         <flag name="AllowsInfix" />
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
+	<flag name="RefcountDots" default="FALSE" />
         <flag name="IsSpecialisation" />
         <flag name="IsTypeError">
 	  <description>TRUE if the given function is a bodyless type error and thus has at least one bottom return type</description>
@@ -4851,7 +4852,9 @@
           </type>
         </attribute>
        </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="RefcountDots" default="FALSE" />
+      </flags>
     </node>
 <!--
 

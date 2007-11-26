@@ -729,7 +729,15 @@ FPClet (node *arg_node, info *arg_info)
             if (dots_offset == 0) {
                 ap_argtab->tag[idx] = argtab->tag[idx];
             } else {
-                ap_argtab->tag[idx + dots_offset] = ATG_out_nodesc;
+                /*
+                 * for ... results we only declare a descripto (ATG_out)
+                 * if the function has the refcountdots pragma set
+                 */
+                if (FUNDEF_REFCOUNTDOTS (fundef)) {
+                    ap_argtab->tag[idx + dots_offset] = ATG_out;
+                } else {
+                    ap_argtab->tag[idx + dots_offset] = ATG_out_nodesc;
+                }
             }
 
             ids = IDS_NEXT (ids);
@@ -768,7 +776,15 @@ FPClet (node *arg_node, info *arg_info)
             if (dots_offset == 0) {
                 ap_argtab->tag[idx] = argtab->tag[idx];
             } else {
-                ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
+                /*
+                 * for ... arguments we have to add descriptors (ATG_in) only
+                 * if this function has the refcountdots pragma
+                 */
+                if (FUNDEF_REFCOUNTDOTS (fundef)) {
+                    ap_argtab->tag[idx + dots_offset] = ATG_in;
+                } else {
+                    ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
+                }
             }
 
             exprs = EXPRS_NEXT (exprs);

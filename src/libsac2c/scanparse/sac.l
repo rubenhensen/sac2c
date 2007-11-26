@@ -238,6 +238,7 @@ int charpos = 0;
 "linksign"                 { FILTER( LINKSIGN); }
 "effect"                   { FILTER( EFFECT); }
 "refcounting"              { FILTER( REFCOUNTING); }
+"refcountdots"             { FILTER( REFCOUNTDOTS); }
 "copyfun"                  { FILTER( COPYFUN); }
 "freefun"                  { FILTER( FREEFUN); }
 "initfun"                  { FILTER( INITFUN); }
