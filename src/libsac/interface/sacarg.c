@@ -137,8 +137,6 @@ SACARGfree (SACarg *arg)
         } else {
             SACARGfreeDataInternal (SACARG_BTYPE (arg), SACARG_DATA (arg));
         }
-
-        SAC_FREE (SACARG_DATA (arg));
     }
 
     /*
