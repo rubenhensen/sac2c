@@ -20,8 +20,10 @@
 #ifndef _SAC_BOOL_H
 #define _SAC_BOOL_H
 
+#ifndef SAC_SIMD_COMPILATION
 #ifndef _sac_types_h
 typedef int bool;
+#endif
 #endif
 
 #define true 1
