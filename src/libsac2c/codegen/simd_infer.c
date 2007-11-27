@@ -1,8 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.1  2005/09/27 17:23:16  sbs
- * Initial revision
+ * $Id$
  *
  *
  *
@@ -15,6 +13,35 @@
 #include "memory.h"
 #include "traverse.h"
 #include "simd_infer.h"
+
+/**
+ *
+ * @file simd_infer.c
+ *
+ * This file contains a simple inference which tags N_code blocks
+ * either as SIMD suitable or non-suitable.
+ *
+ * The inference mechanism is rather crude. When called via
+ *       SIMDdoInferSIMD( syntax_tree)
+ *
+ * it traverses syntax_tree and tags all those N_code nodes <code>
+ * contained in it as  CODE_ISSIMDSUITABLE( <code> ) = TRUE
+ * which do not contain:
+ *
+ *   a) any N_ap nodes
+ *   b) any N_prf nodes whose prf is marked as NOSIMD
+ *   c) any N_array node
+ *
+ * Then, it tags all N_WLstride nodes <wlstride> as
+ * WLSTRIDE_ISSIMDSUITABLE( <wlstride>) = TRUE, iff.
+ *
+ *   a) The innermost N_Wlgrid is a singleton and has suitable <code>
+ *   b) and the stride is bigger or equal to 2.
+ *
+ *
+ * In compile, WLSTRIDE_ISSIMDSUITABLE is being used to create extra code!
+ *
+ */
 
 /*
  * INFO structure
