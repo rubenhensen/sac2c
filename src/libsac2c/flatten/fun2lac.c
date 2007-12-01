@@ -708,7 +708,8 @@ ArgIsReturnValue (node *ext_arg, node *ret_args)
 
 static void
 BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3,
-                           node *ext_args, node *int_args, node *ret_args)
+                           node **epilogue, node *ext_args, node *int_args,
+                           node *ret_args)
 {
     node *int_expr;
     char *new_name;
@@ -731,8 +732,8 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                  "illegal parameter found!");
 
     if (ext_args != NULL) {
-        BuildRenamingAssignsForDo (vardecs, ass1, ass2, ass3, ARG_NEXT (ext_args),
-                                   EXPRS_NEXT (int_args), ret_args);
+        BuildRenamingAssignsForDo (vardecs, ass1, ass2, ass3, epilogue,
+                                   ARG_NEXT (ext_args), EXPRS_NEXT (int_args), ret_args);
 
         DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
         DBUG_ASSERT ((NODE_TYPE (ext_args) == N_arg), "illegal parameter found!");
@@ -774,6 +775,17 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 *ass3 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (*vardecs), NULL),
                                                  DUPdoDupNode (int_expr)),
                                       *ass3);
+
+                if (*epilogue != NULL) {
+                    lut_t *lut = LUTgenerateLut ();
+                    node *etmp = *epilogue;
+
+                    LUTinsertIntoLutP (lut, ID_AVIS (int_expr), DECL_AVIS (*vardecs));
+                    *epilogue = DUPdoDupTreeLut (etmp, lut);
+                    etmp = FREEdoFreeTree (etmp);
+
+                    lut = LUTremoveLut (lut);
+                }
             } else {
                 /*
                  * a_i = A_i;
@@ -781,6 +793,17 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 *ass3 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (ext_args), NULL),
                                                  DUPdoDupNode (int_expr)),
                                       *ass3);
+
+                if (*epilogue != NULL) {
+                    lut_t *lut = LUTgenerateLut ();
+                    node *etmp = *epilogue;
+
+                    LUTinsertIntoLutP (lut, ID_AVIS (int_expr), DECL_AVIS (ext_args));
+                    *epilogue = DUPdoDupTreeLut (etmp, lut);
+                    etmp = FREEdoFreeTree (etmp);
+
+                    lut = LUTremoveLut (lut);
+                }
             }
         }
     } else {
@@ -1049,8 +1072,8 @@ TransformIntoDoLoop (node *fundef, info *arg_info)
          */
 
         BuildRenamingAssignsForDo (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
-                                   FUNDEF_ARGS (fundef), AP_ARGS (ASSIGN_RHS (int_call)),
-                                   RETURN_EXPRS (ret));
+                                   &epilogue, FUNDEF_ARGS (fundef),
+                                   AP_ARGS (ASSIGN_RHS (int_call)), RETURN_EXPRS (ret));
 
         loop_body = TCappendAssign (ass2, TCappendAssign (loop_body, ass3));
 
