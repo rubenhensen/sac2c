@@ -65,7 +65,7 @@ GLOBAL (int, start_token, 0)
  *  Version control
  */
 
-GLOBAL (const char *, version_id, "v1.00-beta (Jolly Good Fellow)")
+GLOBAL (const char *, version_id, "v1.00-beta (Buchette d'Anjou)")
 /*
  * version string
  */

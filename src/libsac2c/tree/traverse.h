@@ -20,6 +20,10 @@ extern const char *TRAVgetName ();
 extern void TRAVsetPreFun (trav_t traversal, travfun_p prefun);
 extern void TRAVsetPostFun (trav_t traversal, travfun_p postfun);
 
+#ifndef DBUG_OFF
+extern void TRAVprintStack ();
+#endif
+
 extern char *TRAVtmpVar (void);
 extern char *TRAVtmpVarName (char *postfix);
 

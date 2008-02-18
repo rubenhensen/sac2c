@@ -284,3 +284,28 @@ TRAVtmpVarName (char *postfix)
 
     DBUG_RETURN (result);
 }
+
+#ifndef DBUG_OFF
+/** <!-- ****************************************************************** -->
+ * @fn void TRAVprintStack()
+ *
+ * @brief Prints the current traversal stack, iff -#d,TRAVSTACK is set.
+ *        Mainly useful in debuggers...
+ ******************************************************************************/
+void
+TRAVprintStack ()
+{
+    travstack_t *tmp = travstack;
+
+    DBUG_ENTER ("TRAVprintStack");
+
+    DBUG_PRINT ("TRAVSTACK", ("Current traversal stack:"));
+    while (tmp != NULL) {
+        DBUG_PRINT ("TRAVSTACK", ("  %s", travnames[tmp->traversal]));
+        tmp = tmp->next;
+    }
+    DBUG_PRINT ("TRAVSTACK", ("End of traversal stack"));
+
+    DBUG_VOID_RETURN;
+}
+#endif /* DBUG_OFF */

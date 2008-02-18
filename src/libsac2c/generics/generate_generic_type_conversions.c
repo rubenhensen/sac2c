@@ -293,7 +293,7 @@ GetUnwrapUdtLinkName (namespace_t *ns, const char *name)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Inserts a fundec for <ns>::unwrap<name> into the funs chain and
+ * @brief Inserts a fundec for <ns>::wrap<name> into the funs chain and
  *        adds a symbol for that type to the symbols chain.
  *
  * @param type        the actual type
@@ -325,7 +325,9 @@ BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
 
     sacargret = TBmakeRet (TYmakeAKS (TYmakeUserType (sacargudt), SHmakeShape (0)), NULL);
 
-    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYcopyType (type)), NULL);
+    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
+                                       TYmakeAUD (TYcopyType (TYgetScalar (type)))),
+                           NULL);
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHmakeShape (0))),
                         sourcearg);
@@ -383,7 +385,7 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
 
     DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
 
-    destret = TBmakeRet (TYcopyType (type), NULL);
+    destret = TBmakeRet (TYmakeAUD (TYcopyType (TYgetScalar (type))), NULL);
 
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeUserType (sacargudt),
                                                               SHmakeShape (0))),
