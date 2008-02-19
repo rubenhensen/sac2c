@@ -517,7 +517,7 @@ StructOpSel (constant *idx, node *expr)
              *
              * 1. Perform partial selection
              */
-            DBUG_ASSERT (FALSE, "Dead code walks again: StructOpSel");
+            // DBUG_ASSERT( FALSE, "Dead code walks again: StructOpSel");
             take_vec = COmakeConstantFromInt (structdim);
             tmp_idx = COtake (take_vec, idx);
 
