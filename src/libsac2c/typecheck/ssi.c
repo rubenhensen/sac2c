@@ -216,6 +216,7 @@ SSImakeVariable ()
     TVAR_HANDS (res) = NULL;
 
     DBUG_PRINT ("SSI", ("new type var generated: #%d", var_cntr - 1));
+    DBUG_PRINT ("SSIMEM", ("type var #%d allocated at %p", var_cntr - 1, res));
 
     DBUG_RETURN (res);
 }

@@ -4033,8 +4033,11 @@ TYfixAndEliminateAlpha (ntype *t1)
     } else if (TYisAlpha (t1)) {
         if (SSIgetMin (TYgetAlpha (t1)) != NULL) {
             res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
+            DBUG_PRINT ("SSIMEM", ("fixing var at %p", TYgetAlpha (t1)));
         } else {
             res = TYcopyType (t1);
+            DBUG_PRINT ("SSIMEM",
+                        ("copying var at %p to %p", TYgetAlpha (t1), TYgetAlpha (res)));
         }
     } else {
         int cnt;
@@ -4082,8 +4085,11 @@ TYliftBottomFixAndEliminateAlpha (ntype *t1)
             } else {
                 res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
             }
+            DBUG_PRINT ("SSIMEM", ("fixing var at %p", TYgetAlpha (t1)));
         } else {
             res = TYcopyType (t1);
+            DBUG_PRINT ("SSIMEM",
+                        ("copying var at %p to %p", TYgetAlpha (t1), TYgetAlpha (res)));
         }
     } else {
         int cnt;
