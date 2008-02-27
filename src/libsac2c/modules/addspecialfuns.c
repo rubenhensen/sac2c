@@ -15,6 +15,7 @@
 #include "addspecialfuns.h"
 #include "dbug.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "deserialize.h"
 #include "namespaces.h"
 #include "ctinfo.h"
@@ -27,7 +28,7 @@ TagNamespaceAsSticky (node *fundef, namespace_t *ns)
 {
     DBUG_ENTER ("TagNamespaceAsSticky");
 
-    if (NSequals (FUNDEF_NS (fundef), ns)) {
+    if (!FUNDEF_ISLACFUN (fundef) && NSequals (FUNDEF_NS (fundef), ns)) {
         FUNDEF_ISSTICKY (fundef) = TRUE;
     }
 
