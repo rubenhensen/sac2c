@@ -29,10 +29,25 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
-#include "structural_constant_constant_folding.h"
 #include "WLPartitionGeneration.h"
 #include "wlanalysis.h"
 #include "ctinfo.h"
+
+/*
+ * I have added an alternative implementation that works
+ * without requiring structural constants. I leave the old
+ * version here to be able to check for differences between
+ * the two versions. To enable the old code, uncomment the
+ * following line.
+ *
+
+#define STRUCT_CONSTANTS
+
+ */
+
+#ifdef STRUCT_CONSTANTS
+#include "structural_constant_constant_folding.h"
+#endif /* STRUCT_CONSTANTS */
 
 typedef enum {
     GV_constant = 0,
@@ -162,11 +177,44 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
     DBUG_RETURN (nassigns);
 }
 
+#ifndef STRUCT_CONSTANTS
+
+static node *
+PropagateConstArrayIdentifier (node *expr)
+{
+    node *result = expr;
+    node *assign;
+    node *defexpr;
+
+    DBUG_ENTER ("PropagateConstArrayIdentifier");
+
+    if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
+        assign = AVIS_SSAASSIGN (ID_AVIS (expr));
+
+        if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let) {
+            defexpr = LET_EXPR (ASSIGN_INSTR (assign));
+
+            if (NODE_TYPE (defexpr) == N_array) {
+                expr = FREEdoFreeTree (expr);
+                result = DUPdoDupTree (defexpr);
+            } else if (NODE_TYPE (defexpr) == N_id) {
+                expr = FREEdoFreeTree (expr);
+                result = DUPdoDupTree (defexpr);
+                result = PropagateConstArrayIdentifier (result);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+#endif
+
 /** <!--********************************************************************-->
  *
- * @fn gen_shape_t PropagateArrayConstants( node **expr)
+ * @fn gen_shape_t PropagateVectorConstants( node **expr)
  *
- *   @brief expects (*expr) to point either to a scalar constant, to an array,
+ *   @brief expects (*expr) to point either to a scalar constant, to an N_array,
  *          or to an identifyer.
  *          If (**expr) is constant or structural constant, the according node
  *          (N_array / scalar) is freshly generated and (*expr) is modified to
@@ -181,14 +229,12 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
  *                           GV_unknown_shape
  ******************************************************************************/
 static gen_shape_t
-PropagateArrayConstants (node **expr)
+PropagateVectorConstants (node **expr)
 {
     constant *const_expr;
-    struct_constant *sco_expr;
-    node *tmp;
     gen_shape_t gshape;
 
-    DBUG_ENTER ("PropagateArrayConstants");
+    DBUG_ENTER ("PropagateVectorConstants");
 
     gshape = GV_unknown_shape;
 
@@ -201,6 +247,22 @@ PropagateArrayConstants (node **expr)
             const_expr = COfreeConstant (const_expr);
 
         } else {
+#ifndef STRUCT_CONSTANTS
+            if ((NODE_TYPE (*expr) == N_id)
+                && TUisIntVect (AVIS_TYPE (ID_AVIS (*expr)))) {
+                /*
+                 * type-wise this is an int-vector, so lets see
+                 * whether we can find an N_array node for it
+                 */
+                *expr = PropagateConstArrayIdentifier (*expr);
+            }
+
+            if (NODE_TYPE (*expr) == N_array) {
+                gshape = GV_struct_constant;
+#else
+            node *tmp;
+            struct_constant *sco_expr;
+
             sco_expr = SCCFexpr2StructConstant ((*expr));
             if (sco_expr != NULL) {
                 gshape = GV_struct_constant;
@@ -212,7 +274,7 @@ PropagateArrayConstants (node **expr)
                 (*expr) = FREEdoFreeTree (*expr);
                 (*expr) = tmp;
                 sco_expr = SCCFfreeStructConstant (sco_expr);
-
+#endif /* STRUCT_CONSTANTS */
             } else {
                 if (TUshapeKnown (ID_NTYPE (*expr))) {
                     gshape = GV_known_shape;
@@ -510,7 +572,7 @@ WLAgenerator (node *arg_node, info *arg_info)
     /*
      * First, we try to propagate (structural) constants into all sons:
      */
-    current_shape = PropagateArrayConstants (&(GENERATOR_BOUND1 (arg_node)));
+    current_shape = PropagateVectorConstants (&(GENERATOR_BOUND1 (arg_node)));
     if (current_shape >= GV_known_shape) {
         nassigns = VectVar2StructConst (&(GENERATOR_BOUND1 (arg_node)), f_def,
                                         INFO_SHPEXT (arg_info));
@@ -520,7 +582,7 @@ WLAgenerator (node *arg_node, info *arg_info)
         gshape = current_shape;
     }
 
-    current_shape = PropagateArrayConstants (&(GENERATOR_BOUND2 (arg_node)));
+    current_shape = PropagateVectorConstants (&(GENERATOR_BOUND2 (arg_node)));
     if (current_shape >= GV_known_shape) {
         nassigns = VectVar2StructConst (&GENERATOR_BOUND2 (arg_node), f_def,
                                         INFO_SHPEXT (arg_info));
@@ -532,7 +594,7 @@ WLAgenerator (node *arg_node, info *arg_info)
     }
     check_bounds = (gshape == GV_constant);
 
-    current_shape = PropagateArrayConstants (&(GENERATOR_STEP (arg_node)));
+    current_shape = PropagateVectorConstants (&(GENERATOR_STEP (arg_node)));
     if (current_shape >= GV_known_shape) {
         nassigns = VectVar2StructConst (&GENERATOR_STEP (arg_node), f_def,
                                         INFO_SHPEXT (arg_info));
@@ -545,7 +607,7 @@ WLAgenerator (node *arg_node, info *arg_info)
 
     check_stepwidth = (current_shape <= GV_struct_constant);
 
-    current_shape = PropagateArrayConstants (&(GENERATOR_WIDTH (arg_node)));
+    current_shape = PropagateVectorConstants (&(GENERATOR_WIDTH (arg_node)));
     if (current_shape >= GV_known_shape) {
         nassigns = VectVar2StructConst (&GENERATOR_WIDTH (arg_node), f_def,
                                         INFO_SHPEXT (arg_info));
@@ -632,7 +694,7 @@ WLAgenarray (node *arg_node, info *arg_info)
         GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     }
 
-    current_shape = PropagateArrayConstants (&(GENARRAY_SHAPE (arg_node)));
+    current_shape = PropagateVectorConstants (&(GENARRAY_SHAPE (arg_node)));
 
     if (current_shape >= GV_known_shape) {
         nassigns = VectVar2StructConst (&GENARRAY_SHAPE (arg_node), f_def,
