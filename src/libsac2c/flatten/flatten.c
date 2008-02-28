@@ -100,6 +100,12 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/*
+ * NODE_IS_ID is a helper macro which returns true if the corresponding
+ * node is an identifier, i.e. an N_id node or an N_spid node
+ */
+#define NODE_IS_ID(n) ((NODE_TYPE (n) == N_id) || (NODE_TYPE (n) == N_spid))
+
 /******************************************************************************
  *
  * function:
@@ -718,7 +724,7 @@ FLATgenarray (node *arg_node, info *arg_info)
 
     expr = GENARRAY_SHAPE (arg_node);
 
-    if (NODE_TYPE (expr) != N_id) {
+    if (!NODE_IS_ID (expr)) {
         GENARRAY_SHAPE (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
         DBUG_ASSERT ((expr == expr2),
@@ -727,7 +733,7 @@ FLATgenarray (node *arg_node, info *arg_info)
 
     expr = GENARRAY_DEFAULT (arg_node);
 
-    if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
+    if ((expr != NULL) && (!NODE_IS_ID (expr))) {
         GENARRAY_DEFAULT (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
         DBUG_ASSERT ((expr == expr2),
@@ -799,7 +805,7 @@ FLATspfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("FLATspfold");
 
     expr = SPFOLD_NEUTRAL (arg_node);
-    if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
+    if ((expr != NULL) && (!NODE_IS_ID (expr))) {
         SPFOLD_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
 
@@ -808,7 +814,7 @@ FLATspfold (node *arg_node, info *arg_info)
     }
 
     expr = SPFOLD_GUARD (arg_node);
-    if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
+    if ((expr != NULL) && (!NODE_IS_ID (expr))) {
         SPFOLD_GUARD (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
 
@@ -965,7 +971,7 @@ FLATgenerator (node *arg_node, info *arg_info)
         act_son_expr = *act_son;
 
         if ((act_son_expr != NULL) && (!DOT_ISSINGLE (act_son_expr))) {
-            if (N_id != NODE_TYPE (act_son_expr)) {
+            if (!NODE_IS_ID (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = TRAVdo (act_son_expr, arg_info);
             } else {
