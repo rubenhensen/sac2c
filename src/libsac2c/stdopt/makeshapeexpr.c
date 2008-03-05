@@ -684,14 +684,21 @@ MSEprf (node *arg_node, info *arg_info)
 
     if (makeshp_funtab[PRF_PRF (arg_node)] != NULL) {
         rhsnode = makeshp_funtab[PRF_PRF (arg_node)](arg_node, arg_info);
-        preass = INFO_PREASS (arg_info);
-        INFO_PREASS (arg_info) = NULL;
 
-        res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), rhsnode), NULL);
+        /*
+         * there are some primitive functions where the shape
+         * might not be known!
+         */
+        if (rhsnode != NULL) {
+            preass = INFO_PREASS (arg_info);
+            INFO_PREASS (arg_info) = NULL;
 
-        AVIS_SSAASSIGN (shpavis) = res;
+            res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), rhsnode), NULL);
 
-        res = TCappendAssign (preass, res);
+            AVIS_SSAASSIGN (shpavis) = res;
+
+            res = TCappendAssign (preass, res);
+        }
     }
 
     DBUG_RETURN (res);

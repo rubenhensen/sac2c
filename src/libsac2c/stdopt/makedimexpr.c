@@ -499,9 +499,14 @@ MDEprf (node *arg_node, info *arg_info)
     if (makedim_funtab[PRF_PRF (arg_node)] != NULL) {
         rhsnode = makedim_funtab[PRF_PRF (arg_node)](arg_node, arg_info);
 
-        res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
+        /*
+         * the dimensionality might not be known!
+         */
+        if (rhsnode != NULL) {
+            res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
 
-        AVIS_SSAASSIGN (dimavis) = res;
+            AVIS_SSAASSIGN (dimavis) = res;
+        }
     }
 
     DBUG_RETURN (res);
