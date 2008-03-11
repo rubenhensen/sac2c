@@ -62,8 +62,8 @@ CODE_BEAUTIFIER := @CB@
 # library setup:
 #
 
-LIBS            := -ldl -lm
-LIBS_LEX        := @LIBS@@LEXLIB@
+LIBS            := @LIBS@
+LIBS_LEX        := @LEXLIB@
 
 
 ################################################################################
