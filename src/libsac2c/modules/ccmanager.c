@@ -293,8 +293,8 @@ CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
 
     basename = STRtok (file, ".");
 
-    SYScall ("cd %s; %s %s -c %s -o%s_pic.o", dir, callstring, global.config.genpic, file,
-             basename);
+    SYScall ("cd %s; %s %s -c %s -o %s_pic.o", dir, callstring, global.config.genpic,
+             file, basename);
 
     basename = MEMfree (basename);
 
