@@ -33,15 +33,15 @@ version="1.0">
   <xsl:call-template name="newline"/>
   <xsl:value-of select="'#ifdef INLINE_MACRO_CHECKS'" />
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="son" mode="accessor-macros-check-inline" />
+  <xsl:apply-templates select="son" mode="accessor-macros-check-inline" />
   <xsl:value-of select="'#else /* not INLINE_MACRO_CHECKS */'" />
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="son" mode="accessor-macros-check-ptr" />
+  <xsl:apply-templates select="son" mode="accessor-macros-check-ptr" />
   <xsl:value-of select="'#endif /* INLINE_MACRO_CHECKS */'" />
   <xsl:call-template name="newline"/>
   <xsl:value-of select="'#else /* not CHECK_NODE_ACCESS */'" />
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="son" mode="accessor-macros-nocheck" />
+  <xsl:apply-templates select="son" mode="accessor-macros-nocheck" />
   <xsl:value-of select="'#endif /* CHECK_NODE_ACCESS */'" />
   <xsl:call-template name="newline"/>
 </xsl:template>
@@ -133,15 +133,15 @@ version="1.0">
   <xsl:call-template name="newline"/>
   <xsl:value-of select="'#ifdef INLINE_MACRO_CHECKS'"/>
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="attibute" mode="accessor-macros-check-inline" />
+  <xsl:apply-templates select="attribute" mode="accessor-macros-check-inline" />
   <xsl:value-of select="'#else /* not INLINE_MACRO_CHECKS */'" />
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="attibute" mode="accessor-macros-check-ptr" />
+  <xsl:apply-templates select="attribute" mode="accessor-macros-check-ptr" />
   <xsl:value-of select="'#endif /* INLINE_MACRO_CHECKS */'" />
   <xsl:call-template name="newline"/>
   <xsl:value-of select="'#else /* not CHECK_NODE_ACCESS */'" />
   <xsl:call-template name="newline"/>
-  <xsl:apply-templates match="attibute" mode="accessor-macros-nocheck" />
+  <xsl:apply-templates select="attribute" mode="accessor-macros-nocheck" />
   <xsl:value-of select="'#endif /* CHECK_NODE_ACCESS */'" />
   <xsl:call-template name="newline"/>
 </xsl:template>
