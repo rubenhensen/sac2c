@@ -350,6 +350,8 @@ SpecFundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SpecFundef");
 
+    DBUG_PRINT ("ESP", ("processing specialisation %s", CTIitemName (arg_node)));
+
     num_args = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (arg_node));
     num_rets = TCcountRetsIgnoreArtificials (FUNDEF_RETS (arg_node));
 
@@ -363,6 +365,8 @@ SpecFundef (node *arg_node, info *arg_info)
                       num_rets);
 
     } else {
+        DBUG_PRINT ("ESP", ("assigned wrapper %s", CTIitemName (wrapper)));
+
         FUNDEF_IMPL (arg_node) = wrapper;
     }
 
