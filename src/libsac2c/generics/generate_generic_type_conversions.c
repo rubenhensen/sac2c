@@ -314,6 +314,7 @@ BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
     node *udtarg, *sourcearg;
     node *sacargret;
     usertype sacargudt;
+    ntype *argtype;
 
     DBUG_ENTER ("BuildWrap");
 
@@ -325,9 +326,21 @@ BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
 
     sacargret = TBmakeRet (TYmakeAKS (TYmakeUserType (sacargudt), SHmakeShape (0)), NULL);
 
-    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
-                                       TYmakeAUD (TYcopyType (TYgetScalar (type)))),
-                           NULL);
+    /*
+     * External user defined types only occur as scalars and that's
+     * how the backend likes it. So we better build a scalar version here.
+     * The underlying problem is that non-scalar versions would
+     * trigger a copy to create the AUD which is not neccessary.
+     * One fine day, somebody might want to extend the backend, though.
+     */
+    if (TUisArrayOfUser (type)) {
+        argtype = TYmakeAKS (TYcopyType (TYgetScalar (type)), SHmakeShape (0));
+    } else {
+        argtype = TYmakeAUD (TYcopyType (TYgetScalar (type)));
+    }
+
+    sourcearg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), argtype), NULL);
+
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHmakeShape (0))),
                         sourcearg);
@@ -376,6 +389,7 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
     node *udtarg;
     node *destret;
     usertype sacargudt;
+    ntype *rettype;
 
     DBUG_ENTER ("BuildUnWrap");
 
@@ -385,7 +399,18 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
 
     DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
 
-    destret = TBmakeRet (TYmakeAUD (TYcopyType (TYgetScalar (type))), NULL);
+    /*
+     * we have to ensure that the return is a scalar type for
+     * external udts as array types of externals are not
+     * supported properly by the backend.
+     */
+    if (TUisArrayOfUser (type)) {
+        rettype = TYmakeAKS (TYcopyType (TYgetScalar (type)), SHmakeShape (0));
+    } else {
+        rettype = TYmakeAUD (TYcopyType (TYgetScalar (type)));
+    }
+
+    destret = TBmakeRet (rettype, NULL);
 
     udtarg = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeUserType (sacargudt),
                                                               SHmakeShape (0))),
