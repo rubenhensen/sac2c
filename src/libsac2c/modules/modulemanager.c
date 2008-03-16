@@ -68,7 +68,7 @@ checkHasSameASTVersion (module_t *module)
 
     serverfun = (serversionfun_p)LIBMgetLibraryFunction (name, module->lib);
 
-    if (astverfun == NULL) {
+    if (serverfun == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
