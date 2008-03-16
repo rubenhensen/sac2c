@@ -333,7 +333,7 @@ BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
      * trigger a copy to create the AUD which is not neccessary.
      * One fine day, somebody might want to extend the backend, though.
      */
-    if (TUisArrayOfUser (type)) {
+    if (TUisHidden (type)) {
         argtype = TYmakeAKS (TYcopyType (TYgetScalar (type)), SHmakeShape (0));
     } else {
         argtype = TYmakeAUD (TYcopyType (TYgetScalar (type)));
@@ -404,7 +404,7 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
      * external udts as array types of externals are not
      * supported properly by the backend.
      */
-    if (TUisArrayOfUser (type)) {
+    if (TUisHidden (type)) {
         rettype = TYmakeAKS (TYcopyType (TYgetScalar (type)), SHmakeShape (0));
     } else {
         rettype = TYmakeAUD (TYcopyType (TYgetScalar (type)));
