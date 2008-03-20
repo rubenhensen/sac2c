@@ -16,6 +16,7 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "free.h"
+#include "ctinfo.h"
 
 /*
  * OPEN PROBLEMS:
@@ -27,6 +28,13 @@
  * III) to be fixed somewhere else:
  *
  */
+
+/*
+ * set WARN_MISSING_SAA to generate a warning when
+ * splitting is not possible due to missing SAA
+ * shape information
+ */
+#define WARN_MISSING_SAA
 
 /**
  *
@@ -227,45 +235,57 @@ IVESPLITprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
-        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL),
-                     "missing saa shape!");
+        if ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL)) {
+            avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
+            new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
+            PRF_ARG2 (arg_node) = NULL;
 
-        avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
-        new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
-        PRF_ARG2 (arg_node) = NULL;
-
-        arg_node = FREEdoFreeTree (arg_node);
-        arg_node = new_node;
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = new_node;
+#ifdef WARN_MISSING_SAA
+        } else {
+            CTIwarn ("Cannot split selection due to missing symbolic "
+                     "information");
+#endif
+        }
         break;
 
     case F_modarray_AxVxS:
-        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
-                     "missing saa shape!");
+        if (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
+            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
 
-        avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+            new_node = TCmakePrf3 (F_idx_modarray_AxSxS, PRF_ARG1 (arg_node),
+                                   TBmakeId (avis), PRF_ARG3 (arg_node));
 
-        new_node = TCmakePrf3 (F_idx_modarray_AxSxS, PRF_ARG1 (arg_node), TBmakeId (avis),
-                               PRF_ARG3 (arg_node));
-
-        PRF_ARG1 (arg_node) = NULL;
-        PRF_ARG3 (arg_node) = NULL;
-        arg_node = FREEdoFreeTree (arg_node);
-        arg_node = new_node;
+            PRF_ARG1 (arg_node) = NULL;
+            PRF_ARG3 (arg_node) = NULL;
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = new_node;
+#ifdef WARN_MISSING_SAA
+        } else {
+            CTIwarn ("Cannot split modarray due to missing symbolic "
+                     "information");
+#endif
+        }
         break;
 
     case F_modarray_AxVxA:
-        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
-                     "missing saa shape!");
+        if (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
+            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
 
-        avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+            new_node = TCmakePrf3 (F_idx_modarray_AxSxA, PRF_ARG1 (arg_node),
+                                   TBmakeId (avis), PRF_ARG3 (arg_node));
 
-        new_node = TCmakePrf3 (F_idx_modarray_AxSxA, PRF_ARG1 (arg_node), TBmakeId (avis),
-                               PRF_ARG3 (arg_node));
-
-        PRF_ARG1 (arg_node) = NULL;
-        PRF_ARG3 (arg_node) = NULL;
-        arg_node = FREEdoFreeTree (arg_node);
-        arg_node = new_node;
+            PRF_ARG1 (arg_node) = NULL;
+            PRF_ARG3 (arg_node) = NULL;
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = new_node;
+#ifdef WARN_MISSING_SAA
+        } else {
+            CTIwarn ("Cannot split modarray due to missing symbolic "
+                     "information");
+#endif
+        }
         break;
 
     default:
