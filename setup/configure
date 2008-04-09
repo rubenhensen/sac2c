@@ -3802,6 +3802,12 @@ done
 test -n "$XSLT" || XSLT="!fail"
 
 
+if  test "$XSLT" = "!fail" ; then
+  { { echo "$as_me:$LINENO: error: Cannot find a usable xslt processor." >&5
+echo "$as_me: error: Cannot find a usable xslt processor." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 for ac_prog in gm4 m4
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -3845,6 +3851,12 @@ fi
 done
 test -n "$M4" || M4="!fail"
 
+
+if  test "$M4" = "!fail" ; then
+  { { echo "$as_me:$LINENO: error: Cannot find a usable m4 processor." >&5
+echo "$as_me: error: Cannot find a usable m4 processor." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 { echo "$as_me:$LINENO: checking for ANSI C header files" >&5
 echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6; }

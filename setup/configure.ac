@@ -174,8 +174,16 @@ AC_PROG_LEX()
 dnl search for xlst engine
 AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
 
+if [ test "$XSLT" = "!fail" ]; then
+  AC_MSG_ERROR( [Cannot find a usable xslt processor.])
+fi
+
 dnl search for m4 macro processor
 AC_CHECK_PROGS(M4, [gm4 m4], [!fail])
+
+if [ test "$M4" = "!fail" ]; then
+  AC_MSG_ERROR( [Cannot find a usable m4 processor.])
+fi
 
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
