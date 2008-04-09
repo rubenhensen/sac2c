@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "config.h"
 #include "types_nodetype.h"
@@ -24,11 +25,19 @@
  * bool values
  */
 
+#ifdef __bool_true_false_are_defined
+
+#define FALSE false
+#define TRUE true
+
+#else
+
 typedef int bool;
 
 #define FALSE 0
 #define TRUE 1
 
+#endif /* __bool_true_false_are_defined */
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other

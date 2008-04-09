@@ -20,13 +20,15 @@
 #ifndef _SAC_BOOL_H
 #define _SAC_BOOL_H
 
+#ifndef __bool_true_false_are_defined /* C99 standard */
+
 #ifndef SAC_SIMD_COMPILATION
-#ifndef _sac_types_h
 typedef int bool;
-#endif
 #endif
 
 #define true 1
 #define false 0
+
+#endif /*  __bool_true_false_are_defined */
 
 #endif /* _SAC_BOOL_H */

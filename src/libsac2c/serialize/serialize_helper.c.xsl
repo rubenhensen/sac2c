@@ -274,6 +274,13 @@ version="1.0">
   <xsl:value-of select="'(float) va_arg( args, double)'" />
 </xsl:template>
 
+<!-- special treatment for bool types beeing passed through ...
+     because they are promoted to int by the c compiler
+-->
+<xsl:template match="@ctype[. = &quot;bool&quot;]" mode="gen-fill-fun">
+  <xsl:value-of select="'(bool) va_arg( args, int)'" />
+</xsl:template>
+
 <xsl:template match="@ctype" mode="gen-fill-fun">
   <xsl:value-of select="'va_arg( args, '" />
   <xsl:value-of select="." />

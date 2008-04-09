@@ -7511,7 +7511,7 @@ TYdeserializeType (typeconstr con, ...)
         va_start (args, con);
 
         st = va_arg (args, int);
-        has_hidden = va_arg (args, bool);
+        has_hidden = (bool)va_arg (args, int);
 
         if (has_hidden) {
             DBUG_ASSERT ((st == T_hidden), "Found hidden udt in non hidden type!");
@@ -7744,8 +7744,8 @@ TYdeserializeType (typeconstr con, ...)
         outer = STRcpy (va_arg (args, char *));
         inner = STRcpy (va_arg (args, char *));
         shape = STRcpy (va_arg (args, char *));
-        denest = va_arg (args, bool);
-        renest = va_arg (args, bool);
+        denest = (bool)va_arg (args, int);
+        renest = (bool)va_arg (args, int);
 
         result = TYmakePolyUserType (outer, inner, shape, denest, renest);
 
