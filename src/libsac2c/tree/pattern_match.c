@@ -101,7 +101,7 @@
  * ===========================
  *
  * Their are two main difficulties in this implementation:
- * a) how to maintain a stack of expressions WITHOUT fiddeling
+ * a) how to maintain a stack of expressions WITHOUT fiddling
  *    around with the existing exprs chains in the AST?
  * b) how to return a modified stack AND a boolean matching flag
  *    without using a global variable and an "out-argument"?
@@ -131,6 +131,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "constants.h"
 
 static char *FAIL = "";
 
@@ -283,7 +284,7 @@ PM (node *stack)
  * @brief tries to match against a variable. If *var is NULL, the top of
  *        the stack is bound to it (provided it is an N_id).
  *        If *var is bound already, it only matches if both N_id nodes
- *        point top the same N_avis.
+ *        point to the same N_avis.
  * @param *var: bound N_id (if any)
  *        stack: "stack" of exprs.
  * @return shortened stack.
@@ -337,19 +338,147 @@ PMprf (prf fun, node *stack)
 
     DBUG_ENTER ("PMprf");
 
-    DBUG_PRINT ("PM", ("trying to match prf \"%s\"...", global.prf_name[fun]));
+    DBUG_PRINT ("PM", ("PMprf trying to match prf \"%s\"...", global.prf_name[fun]));
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
         arg = FollowId (arg);
         if ((NODE_TYPE (arg) == N_prf) && (PRF_PRF (arg) == fun)) {
-            DBUG_PRINT ("PM", ("matched!"));
+            DBUG_PRINT ("PM", ("PMprf matched!"));
             stack = PushArgs (stack, PRF_ARGS (arg));
         } else {
             stack = FailMatch (stack);
         }
     } else {
-        DBUG_PRINT ("PM", ("passing on FAIL!"));
+        DBUG_PRINT ("PM", ("PMprf passing on FAIL!"));
+    }
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMconst( node **var, node *stack)
+ *
+ * @brief tries to match against a constant. If *var is NULL, the top of
+ *        the stack is bound to it (provided it is a constant).
+ *        If *var is bound already, it only matches if both nodes
+ *        point to the same node. [FIXME: Perhaps we should do
+ *                                [ a proper compare here, but CSE should
+ *                                [ do the trick already, eh?
+ * @param *var: bound node that is constant (if any)
+ *        stack: "stack" of exprs.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMconst (node **var, node *stack)
+{
+    node *arg;
+    constant *co;
+
+    DBUG_ENTER ("PMconst");
+    if (*var == NULL) {
+        DBUG_PRINT ("PM", ("PMconst trying to match unbound variable..."));
+    } else {
+        DBUG_PRINT ("PM", ("PMconst trying to match bound variable..."));
+    }
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, &arg);
+        co = COaST2Constant (arg);
+        if (NULL != co) {
+            co = COfreeConstant (co);
+            if (*var == NULL) {
+                DBUG_PRINT ("PM", ("PMconst binding variable"));
+                *var = arg;
+            } else if ((*var) == arg) {
+                DBUG_PRINT ("PM", ("PMconst found variable matches."));
+            } else {
+                stack = FailMatch (stack);
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMconst passing on FAIL"));
+    }
+    DBUG_RETURN (stack);
+}
+
+static node *
+FindConstArray (node *expr)
+{
+    node *result = NULL;
+    node *assign;
+    node *defexpr;
+
+    DBUG_ENTER ("FindConstArray");
+
+    // This code stolen from sah's PropagateConstArrayIdentifier
+    if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
+        assign = AVIS_SSAASSIGN (ID_AVIS (expr));
+
+        if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let) {
+            defexpr = LET_EXPR (ASSIGN_INSTR (assign));
+
+            if (NODE_TYPE (defexpr) == N_array) {
+                result = defexpr;
+            } else if (NODE_TYPE (defexpr) == N_id) {
+                result = defexpr;
+                result = FindConstArray (result);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMarray( node **var, node *stack)
+ *
+ * @brief tries to match against an array . If *var is NULL, the top of
+ *        the stack is bound to it (provided it is an N_array).
+ *        If *var is bound already, it only matches if both N_array nodes
+ *        are identical.
+ * @param *var: bound N_array (if any)
+ *        stack: "stack" of exprs.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMarray (node **var, node *stack)
+{
+    node *arg;
+
+    DBUG_ENTER ("PMarray");
+    if (*var == NULL) {
+        DBUG_PRINT ("PM", ("PMarray trying to match unbound variable..."));
+    } else {
+        DBUG_PRINT ("PM", ("PMarray trying to match bound variable..."));
+    }
+
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, &arg);
+        switch
+            NODE_TYPE (arg)
+            {
+            case N_id:
+                arg = FindConstArray (arg);
+                // Fall into N_array case
+            case N_array:
+                if (*var == NULL) {
+                    DBUG_PRINT ("PM", ("PMarray binding variable"));
+                    *var = arg;
+                } else if ((*var) == arg) {
+                    DBUG_PRINT ("PM", ("PMarray found variable match"));
+                } else {
+                    stack = FailMatch (stack);
+                }
+                break;
+            default:
+                stack = FailMatch (stack);
+                break;
+            }
+    } else {
+        DBUG_PRINT ("PM", ("PMarray passing on FAIL"));
     }
     DBUG_RETURN (stack);
 }
