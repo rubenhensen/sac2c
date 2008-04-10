@@ -355,8 +355,8 @@ CMPTarray (node *arg_node, info *arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
                    TYeqTypes (ARRAY_ELEMTYPE (arg_node),
                               ARRAY_ELEMTYPE (INFO_TREE (arg_info)))
-                     && SHcompareShapes (ARRAY_SHAPE (arg_node),
-                                         ARRAY_SHAPE (INFO_TREE (arg_info))));
+                     && SHcompareShapes (ARRAY_FRAMESHAPE (arg_node),
+                                         ARRAY_FRAMESHAPE (INFO_TREE (arg_info))));
 
     /* traverse ArrayElements (the real son) */
     arg_node = TravLocal (arg_node, arg_info);

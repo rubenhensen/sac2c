@@ -4252,7 +4252,8 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Shape">
+        <attribute name="FrameShape">
+	  <description>The frameshape of the array.</description>
           <type name="Shape">
             <targets>
               <target mandatory="yes">

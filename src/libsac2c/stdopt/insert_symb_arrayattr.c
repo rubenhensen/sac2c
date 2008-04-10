@@ -1491,7 +1491,7 @@ ISAApart (node *arg_node, info *arg_info)
             node *lb = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
 
             if (NODE_TYPE (lb) == N_array) {
-                AVIS_SHAPE (ivavis) = SHshape2Array (ARRAY_SHAPE (lb));
+                AVIS_SHAPE (ivavis) = SHshape2Array (ARRAY_FRAMESHAPE (lb));
             } else {
                 AVIS_SHAPE (ivavis) = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (lb)));
             }

@@ -472,7 +472,7 @@ EATarray (node *arg_node, info *arg_info)
         elemtype = nested;
     } else {
         outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
-                           SHcopyShape (ARRAY_SHAPE (arg_node)));
+                           SHcopyShape (ARRAY_FRAMESHAPE (arg_node)));
         arrayelem = ARRAY_ELEMTYPE (arg_node);
 
         elemtype = TYdeNestTypeFromOuter (nested, outer);

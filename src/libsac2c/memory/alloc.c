@@ -335,7 +335,7 @@ MakeDimArg (node *arg)
         break;
 
     case N_array:
-        arg = TBmakeNum (SHgetDim (ARRAY_SHAPE (arg)));
+        arg = TBmakeNum (SHgetDim (ARRAY_FRAMESHAPE (arg)));
         break;
 
     case N_id:
@@ -375,7 +375,7 @@ MakeShapeArg (node *arg)
         break;
 
     case N_array:
-        arg = SHshape2Array (ARRAY_SHAPE (arg));
+        arg = SHshape2Array (ARRAY_FRAMESHAPE (arg));
         break;
 
     case N_id:
@@ -417,7 +417,7 @@ MakeSizeArg (node *arg)
         break;
 
     case N_array:
-        arg = TBmakeNum (SHgetUnrLen (ARRAY_SHAPE (arg)));
+        arg = TBmakeNum (SHgetUnrLen (ARRAY_FRAMESHAPE (arg)));
         break;
 
     case N_id:
@@ -515,7 +515,7 @@ EMALarray (node *arg_node, info *arg_info)
                          "assignment  A = [:basetype];  found, "
                          "where basetype has non-constant shape!");
 
-            sh = SHappendShapes (ARRAY_SHAPE (arg_node),
+            sh = SHappendShapes (ARRAY_FRAMESHAPE (arg_node),
                                  TYgetShape (ARRAY_ELEMTYPE (arg_node)));
 
             als->dim = TBmakeNum (SHgetDim (sh));

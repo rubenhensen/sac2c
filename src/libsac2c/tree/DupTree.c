@@ -1431,7 +1431,7 @@ DUParray (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUParray");
 
     new_node = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg_node)),
-                            SHcopyShape (ARRAY_SHAPE (arg_node)),
+                            SHcopyShape (ARRAY_FRAMESHAPE (arg_node)),
                             DUPTRAV (ARRAY_AELEMS (arg_node)));
 
     ARRAY_STRING (new_node) = STRcpy (ARRAY_STRING (arg_node));

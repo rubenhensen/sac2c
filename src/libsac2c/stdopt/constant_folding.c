@@ -877,8 +877,8 @@ CFarray (node *arg_node, info *arg_info)
                 oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
 
                 if (shp == NULL)
-                    shp = ARRAY_SHAPE (oldelems);
-                else if (!SHcompareShapes (shp, ARRAY_SHAPE (oldelems)))
+                    shp = ARRAY_FRAMESHAPE (oldelems);
+                else if (!SHcompareShapes (shp, ARRAY_FRAMESHAPE (oldelems)))
                     break;
 
                 tmp = EXPRS_NEXT (tmp);
@@ -900,7 +900,7 @@ CFarray (node *arg_node, info *arg_info)
                 }
 
                 basetype = TYcopyType (ARRAY_ELEMTYPE (first_inner_array));
-                newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
+                newshp = SHappendShapes (ARRAY_FRAMESHAPE (arg_node), shp);
 
                 arg_node = FREEdoFreeNode (arg_node);
 

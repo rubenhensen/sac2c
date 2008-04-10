@@ -433,11 +433,11 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
         node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
 
         if ((NODE_TYPE (rhs) == N_array)
-            && (SHgetUnrLen (ARRAY_SHAPE (rhs)) <= global.wlunrnum)) {
+            && (SHgetUnrLen (ARRAY_FRAMESHAPE (rhs)) <= global.wlunrnum)) {
             /*
              * array is given by an array, unroll at most the array dimensionality
              */
-            int arraydim = SHgetDim (ARRAY_SHAPE (rhs));
+            int arraydim = SHgetDim (ARRAY_FRAMESHAPE (rhs));
 
             unrdim = (dim < arraydim) ? dim : arraydim;
         }

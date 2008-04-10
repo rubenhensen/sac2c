@@ -2535,11 +2535,11 @@ PRTarray (node *arg_node, info *arg_info)
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
 
-        INFO_DIM (arg_info) = ARRAY_DIM (arg_node);
-        INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_SHAPE (arg_node));
+        INFO_DIM (arg_info) = ARRAY_FRAMEDIM (arg_node);
+        INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_FRAMESHAPE (arg_node));
         INFO_ISARRAY (arg_info) = TRUE;
 
-        shpcounter = TCcreateZeroVector (ARRAY_DIM (arg_node), T_int);
+        shpcounter = TCcreateZeroVector (ARRAY_FRAMEDIM (arg_node), T_int);
         INFO_SHAPE_COUNTER (arg_info) = TCarray2Shpseg (shpcounter, NULL);
         shpcounter = FREEdoFreeTree (shpcounter);
 

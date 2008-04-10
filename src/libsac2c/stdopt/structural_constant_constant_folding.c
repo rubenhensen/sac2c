@@ -164,7 +164,7 @@ SCCFarray2StructConstant (node *array)
     if (TUshapeKnown (atype)) {
         /* alloc hidden vector */
         realshape = SHcopyShape (TYgetShape (atype));
-        ashape = SHcopyShape (ARRAY_SHAPE (array));
+        ashape = SHcopyShape (ARRAY_FRAMESHAPE (array));
 
         elem_count = SHgetUnrLen (ashape);
         node_vec = (node **)MEMmalloc (elem_count * sizeof (node *));

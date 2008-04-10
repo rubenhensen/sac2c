@@ -991,7 +991,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     shape *shp;
                     node *icm_args, *icm_args2;
 
-                    shp = ARRAY_SHAPE (arg_node);
+                    shp = ARRAY_FRAMESHAPE (arg_node);
                     dim = SHgetDim (shp);
 
                     icm_args

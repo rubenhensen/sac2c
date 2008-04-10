@@ -1420,13 +1420,14 @@ NTCarray (node *arg_node, info *arg_info)
          * "on the fly"!
          *
          * ATTENTION!!
-         * We need to have the ARRAY_SHAPE in order to compute proper result types!
+         * We need to have the ARRAY_FRAMESHAPE in order to compute proper result
+         * types!
          * In the initial type check, this is always an int[n] shape which means
          * that it can be ignored. However, later, i.e., in TUP, this
          * information may have changed (compare bug 111!).
          * To cope with that situation properly, we add an artificial type
-         *   int[ARRAY_SHAPE]  which in NTCCTprf_array is combined with the element
-         * type by TYnestTypes.
+         *   int[ARRAY_FRAMESHAPE]  which in NTCCTprf_array is combined with
+         * the element type by TYnestTypes.
          */
         /**
          * INFO_NUM_EXPRS_SOFAR needs to be stacked here, as N_arrays may
@@ -1443,13 +1444,13 @@ NTCarray (node *arg_node, info *arg_info)
                      "NTCexprs did not create a product type");
 
         /**
-         * Now, we create the type    int[ARRAY_SHAPE]:
+         * Now, we create the type    int[ARRAY_FRAMESHAPE]:
          */
         INFO_NUM_EXPRS_SOFAR (arg_info)--;
         INFO_TYPE (arg_info)
           = TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
                                 TYmakeAKS (TYmakeSimpleType (T_int),
-                                           SHcopyShape (ARRAY_SHAPE (arg_node))));
+                                           SHcopyShape (ARRAY_FRAMESHAPE (arg_node))));
         elems = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
@@ -1484,7 +1485,7 @@ NTCarray (node *arg_node, info *arg_info)
          * the the time being, we only build AKV empty arrays
          * for user defined types!
          */
-        DBUG_EXECUTE ("NTC", tmp_str1 = SHshape2String (0, ARRAY_SHAPE (arg_node));
+        DBUG_EXECUTE ("NTC", tmp_str1 = SHshape2String (0, ARRAY_FRAMESHAPE (arg_node));
                       tmp_str2 = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0););
         DBUG_PRINT ("NTC", ("computing type of empty array-constructor with outer "
                             "shape %s and element type %s",
@@ -1495,13 +1496,13 @@ NTCarray (node *arg_node, info *arg_info)
         if (TYisSimple (scalar)) {
             type = TYmakeAKV (TYcopyType (scalar),
                               COmakeConstant (TYgetSimpleType (scalar),
-                                              SHappendShapes (ARRAY_SHAPE (arg_node),
+                                              SHappendShapes (ARRAY_FRAMESHAPE (arg_node),
                                                               TYgetShape (ARRAY_ELEMTYPE (
                                                                 arg_node))),
                                               NULL));
         } else {
             type = TYmakeAKS (TYcopyType (scalar),
-                              SHappendShapes (ARRAY_SHAPE (arg_node),
+                              SHappendShapes (ARRAY_FRAMESHAPE (arg_node),
                                               TYgetShape (ARRAY_ELEMTYPE (arg_node))));
         }
 

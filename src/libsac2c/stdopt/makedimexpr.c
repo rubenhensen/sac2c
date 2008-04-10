@@ -441,15 +441,15 @@ MDEarray (node *arg_node, info *arg_info)
         DBUG_ASSERT (TUshapeKnown (ARRAY_ELEMTYPE (arg_node)),
                      "Empty array without AKS elements encountered!");
 
-        rhsnode = TBmakeNum (SHgetDim (ARRAY_SHAPE (arg_node))
+        rhsnode = TBmakeNum (SHgetDim (ARRAY_FRAMESHAPE (arg_node))
                              + TYgetDim (ARRAY_ELEMTYPE (arg_node)));
     } else if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) != N_id) {
-        rhsnode = TBmakeNum (SHgetDim (ARRAY_SHAPE (arg_node)));
+        rhsnode = TBmakeNum (SHgetDim (ARRAY_FRAMESHAPE (arg_node)));
     } else {
         node *framedim;
         node *celldim;
 
-        framedim = TBmakeNum (SHgetDim (ARRAY_SHAPE (arg_node)));
+        framedim = TBmakeNum (SHgetDim (ARRAY_FRAMESHAPE (arg_node)));
         celldim = AVIS_DIM (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
 
         rhsnode = TCmakePrf2 (F_add_SxS, framedim, DUPdoDupNode (celldim));

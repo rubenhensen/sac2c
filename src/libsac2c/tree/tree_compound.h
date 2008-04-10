@@ -823,7 +823,7 @@ extern node *TCnodeBehindCast (node *arg_node);
  *  compound access macros
  */
 
-#define ARRAY_DIM(n) (SHgetDim (ARRAY_SHAPE (n)))
+#define ARRAY_FRAMEDIM(n) (SHgetDim (ARRAY_FRAMESHAPE (n)))
 
 /*
  *  function declarations
