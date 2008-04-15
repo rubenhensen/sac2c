@@ -981,6 +981,7 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
         res = TYmakeBottomType (err_msg);
     } else {
 
+        TEassureNonNegativeValues (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
         TEassureProdValMatchesProdShape (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp,
                                          TEarg2Obj (2), array);
         err_msg = TEfetchErrors ();

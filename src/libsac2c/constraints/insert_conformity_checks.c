@@ -308,6 +308,8 @@ ICCreshape (node *ids, node *args)
     DBUG_ENTER ("ICCreshape");
 
     ids = EmitConstraint (ids,
+                          TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (EXPRS_EXPR (args))));
+    ids = EmitConstraint (ids,
                           TBmakePrf (F_prod_matches_prod_shape_VxA, DUPdoDupTree (args)));
 
     DBUG_RETURN (ids);
