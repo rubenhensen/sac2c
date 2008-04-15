@@ -133,6 +133,8 @@
  *   INFO_FUNDEF      - pointer to current fundef to prevent infinite recursion
  *   INFO_TYPEERROR   - indicates that the rhs of a let is to be transformed
  *                      into this type error
+ *   INFO_DROPASSIGN  - true if we decide within the ASSIGN_INSTR that this
+ *                      assign needs to be removed
  */
 
 /**
@@ -144,6 +146,7 @@ struct INFO {
     bool onefunction;
     node *fundef;
     node *type_error;
+    bool dropassign;
 };
 
 /**
@@ -154,6 +157,7 @@ struct INFO {
 #define INFO_ONEFUNCTION(n) ((n)->onefunction)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_TYPEERROR(n) ((n)->type_error)
+#define INFO_DROPASSIGN(n) ((n)->dropassign)
 
 /**
  * INFO functions
@@ -172,6 +176,7 @@ MakeInfo ()
     INFO_ONEFUNCTION (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_TYPEERROR (result) = NULL;
+    INFO_DROPASSIGN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -476,6 +481,11 @@ EBTassign (node *arg_node, info *arg_info)
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
+    if (INFO_DROPASSIGN (arg_info)) {
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_DROPASSIGN (arg_info) = FALSE;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -506,6 +516,14 @@ EBTlet (node *arg_node, info *arg_info)
         LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
         LET_EXPR (arg_node) = INFO_TYPEERROR (arg_info);
         INFO_TYPEERROR (arg_info) = NULL;
+    }
+
+    /*
+     * we might potentially have removed all LHS ids. In that case,
+     * we drop the entire assign.
+     */
+    if (LET_IDS (arg_node) != NULL) {
+        INFO_DROPASSIGN (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);
