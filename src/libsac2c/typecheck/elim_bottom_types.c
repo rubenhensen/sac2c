@@ -522,7 +522,7 @@ EBTlet (node *arg_node, info *arg_info)
      * we might potentially have removed all LHS ids. In that case,
      * we drop the entire assign.
      */
-    if (LET_IDS (arg_node) != NULL) {
+    if (LET_IDS (arg_node) == NULL) {
         INFO_DROPASSIGN (arg_info) = TRUE;
     }
 

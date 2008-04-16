@@ -1,32 +1,4 @@
-/*
- * $Log$
- * Revision 1.5  2004/11/26 23:58:18  khf
- * names adjusted
- *
- * Revision 1.4  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.3  2001/04/30 12:30:20  nmw
- * COCv2CvHidden() added
- *
- * Revision 1.2  2001/04/04 09:59:47  nmw
- *  missing convert functions for basetype char added
- *
- * Revision 1.1  2001/03/02 14:32:59  sbs
- * Initial revision
- *
- * Revision 3.1  2000/11/20 18:00:03  sacbase
- * new release made
- *
- * Revision 1.2  1999/10/22 14:15:19  sbs
- * commented and added versions for almost all simpletypes...
- *
- * Revision 1.1  1999/10/19 13:02:59  sacbase
- * Initial revision
- *
- *
- *
- */
+/* $Id$ */
 
 /*
  * This module provides a set of functions for copying elements of constant vectors
@@ -71,7 +43,7 @@
 
 COcv2CvTEMPLATE (unsigned short, UShort) COcv2CvTEMPLATE (unsigned int, UInt)
   COcv2CvTEMPLATE (unsigned long, ULong) COcv2CvTEMPLATE (short, Short)
-    COcv2CvTEMPLATE (int, Int) COcv2CvTEMPLATE (long, Long)
+    COcv2CvTEMPLATE (int, Int) COcv2CvTEMPLATE (bool, Bool) COcv2CvTEMPLATE (long, Long)
 
       COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (double, Double)
         COcv2CvTEMPLATE (long double, LongDouble)

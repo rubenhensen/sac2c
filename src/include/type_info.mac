@@ -163,7 +163,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
           COcv2CvLongDouble, COcv2StrLongDouble, sizeof (long double), COzipCvLongDouble,
           CObaseCvLongDouble, unused, unused),
 
-  TYP_IF (T_bool, "bool", "bool", "b", COcv2Bool, COcv2CvInt, COcv2StrInt, sizeof (int),
+  TYP_IF (T_bool, "bool", "bool", "b", COcv2Bool, COcv2CvBool, COcv2StrInt, sizeof (bool),
           COzipCvBool, CObaseCvBool, unused, unused),
 
   TYP_IF (T_str, "string", "string", "st", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy,

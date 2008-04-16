@@ -51,12 +51,12 @@ typedef int (*sacmain_p) (int, char **);
           * (strlen (library) + ((sac2cbase == NULL) ? 0 : strlen (sac2cbase)) + 1));    \
                                                                                          \
         if (sac2cbase != NULL) {                                                         \
-            strcpy (libname, sac2cbase);                                                 \
+            libname = strcpy (libname, sac2cbase);                                       \
         } else {                                                                         \
             printf ("WARNING: SAC2CBASE is not set.\n");                                 \
             libname[0] = '\0';                                                           \
         }                                                                                \
-        strcat (libname, library);                                                       \
+        libname = strcat (libname, library);                                             \
                                                                                          \
         libsac2c = dlopen (libname, DLOPEN_FLAGS);                                       \
                                                                                          \
@@ -68,7 +68,7 @@ typedef int (*sacmain_p) (int, char **);
                                                                                          \
         mainptr = (sacmain_p)dlsym (libsac2c, mainfun);                                  \
                                                                                          \
-        if (libsac2c == NULL) {                                                          \
+        if (mainptr == NULL) {                                                           \
             printf ("ERROR: Cannot find symbol '%s' in shared library "                  \
                     "'%s'... aborting.\n",                                               \
                     mainfun, libname);                                                   \
