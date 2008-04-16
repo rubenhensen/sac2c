@@ -465,11 +465,34 @@ IDCwith (node *arg_node, info *arg_info)
      * the generator variable obtain the right AVIS_POS, i.e., one
      * that is smaller than any variable defined in the code.
      */
-    INFO_LEVEL (arg_info)++;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    INFO_LEVEL (arg_info)++;
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     INFO_LEVEL (arg_info)--;
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCwithid( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IDCwithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IDCwithid");
+
+    /**
+     * for proper renaming of upper and lower bounds, we need to make sure
+     * the INFO_LEVEL in the parts need to reflect the outer level.
+     * However, the withid(s) should be traversed with the inner level!!
+     * see bug 417 for details.
+     */
+    INFO_LEVEL (arg_info)++;
+    arg_node = TRAVcont (arg_node, arg_info);
+    INFO_LEVEL (arg_info)--;
 
     DBUG_RETURN (arg_node);
 }
