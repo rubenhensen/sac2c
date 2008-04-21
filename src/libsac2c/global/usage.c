@@ -94,6 +94,19 @@ PrintDescriptionSac4c (void)
 }
 
 static void
+PrintDescriptionSac2tex (void)
+{
+    DBUG_ENTER ("PrintDescriptionSac2tex");
+
+    printf ("\n\nDESCRIPTION:\n\n"
+
+            "    The sac2tex tool generates tex code from sac code\n"
+            "    .\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 PrintSpecialOptions (void)
 {
     DBUG_ENTER ("PrintSpecialOptions");
@@ -988,6 +1001,14 @@ USGprintUsage ()
 #endif /* DBUG_OFF */
         PrintBreakoptionSpecifierSac4c ();
         PrintCCompilerOptions ();
+        break;
+    case TOOL_sac2tex:
+        PrintDescriptionSac2tex ();
+        PrintGeneralOptions ();
+        PrintGeneralDebugOptions ();
+#ifndef DBUG_OFF
+        PrintInternalDBUGOptions ();
+#endif /* DBUG_OFF */
         break;
     }
 

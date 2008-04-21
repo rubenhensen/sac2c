@@ -26,6 +26,7 @@
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
+#include "phase_sac2tex.mac"
 
 #undef SUBPHASEfun
 #undef CYCLEPHASEfun
@@ -65,6 +66,8 @@ PHIphaseFun (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                             DummyPhaseFun,
 #include "phase_sac4c.mac"
+                                            DummyPhaseFun,
+#include "phase_sac2tex.mac"
                                             DummyPhaseFun};
 
     DBUG_RETURN (phase_fun[phase]);
@@ -95,6 +98,8 @@ PHIphaseText (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                        "final",
 #include "phase_sac4c.mac"
+                                       "final",
+#include "phase_sac2tex.mac"
                                        "final"};
 
     DBUG_RETURN (phase_text[phase]);
@@ -125,6 +130,8 @@ PHIphaseType (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                         PHT_dummy,
 #include "phase_sac4c.mac"
+                                        PHT_dummy,
+#include "phase_sac2tex.mac"
                                         PHT_dummy};
 
     DBUG_RETURN (phase_type[phase]);
@@ -155,6 +162,8 @@ PHIphaseName (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                        "final",
 #include "phase_sac4c.mac"
+                                       "final",
+#include "phase_sac2tex.mac"
                                        "final"};
 
     DBUG_RETURN (phase_name[phase]);
@@ -190,7 +199,9 @@ PHIphaseParent (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                               PH_final,
 #include "phase_sac4c.mac"
-                                              PH_final_sac4c};
+                                              PH_final_sac4c,
+#include "phase_sac2tex.mac"
+                                              PH_final_sac2tex};
 
     DBUG_RETURN (phase_parent[phase]);
 }
@@ -225,6 +236,8 @@ PHIphaseIdent (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                         "",
 #include "phase_sac4c.mac"
+                                        "",
+#include "phase_sac2tex.mac"
                                         ""};
 
     DBUG_RETURN (phase_ident[phase]);
@@ -255,6 +268,8 @@ PHIisFunBased (compiler_phase_t phase)
 #include "phase_sac2c.mac"
                                       FALSE,
 #include "phase_sac4c.mac"
+                                      FALSE,
+#include "phase_sac2tex.mac"
                                       FALSE};
 
     DBUG_RETURN (phase_isfunbased[phase]);
@@ -281,6 +296,9 @@ PHIfirstPhase ()
     case TOOL_sac4c:
         result = PH_final;
         break;
+    case TOOL_sac2tex:
+        result = PH_final_sac4c;
+        break;
     }
 
     DBUG_RETURN (result);
@@ -299,6 +317,9 @@ PHIlastPhase ()
         break;
     case TOOL_sac4c:
         result = PH_final_sac4c;
+        break;
+    case TOOL_sac2tex:
+        result = PH_final_sac2tex;
         break;
     }
 

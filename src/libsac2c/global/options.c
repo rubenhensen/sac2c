@@ -869,6 +869,142 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     DBUG_VOID_RETURN;
 }
 
+static void
+AnalyseCommandlineSac2tex (int argc, char *argv[])
+{
+    DBUG_ENTER ("AnalyseCommandlineSac2tex");
+
+    ARGS_BEGIN (argc, argv);
+
+    /*
+     * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     */
+
+    ARGS_OPTION ("b", PHOinterpretBreakOption (ARG))
+
+    /*
+     * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
+     */
+
+    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+
+    /*
+     * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+     */
+
+    ARGS_FLAG ("h", USGprintUsage (); exit (0));
+    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+
+    /*
+     * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+     */
+
+    ARGS_OPTION ("incdir", global.inc_dirname = STRcpy (ARG););
+
+    ARGS_OPTION_BEGIN ("I")
+    {
+        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("I");
+
+    /*
+     * Options starting with kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+     */
+
+    /*
+     * Options starting with lllllllllllllllllllllllllllllllllllllllllll
+     */
+
+    ARGS_FLAG ("ldflags", global.printldflags = TRUE;);
+
+    ARGS_OPTION ("libdir", global.lib_dirname = STRcpy (ARG););
+
+    ARGS_OPTION_BEGIN ("L")
+    {
+        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("L");
+
+    /*
+     * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
+     */
+
+    ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
+
+    /*
+     * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     */
+
+    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
+
+    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+
+    /*
+     * DBUG options ####################################################
+     */
+
+#ifndef DBUG_OFF
+
+    ARGS_OPTION_BEGIN ("#")
+    {
+        if (NULL == strchr (ARG, '/')) {
+            global.my_dbug = TRUE;
+            global.my_dbug_from = PHIfirstPhase ();
+            global.my_dbug_to = PHIlastPhase ();
+            global.my_dbug_str = STRcpy (ARG);
+        } else {
+            PHOinterpretDbugOption (ARG);
+        }
+
+        if (global.my_dbug_from == PHIfirstPhase ()) {
+            DBUG_PUSH (global.my_dbug_str);
+            global.my_dbug_active = TRUE;
+        }
+    }
+    ARGS_OPTION_END ("#");
+
+#endif /* DBUG_OFF */
+
+    /*
+     * arguments
+     */
+
+    ARGS_ARGUMENT ({
+        if (global.sacfilename == NULL) {
+            global.sacfilename = STRcpy (ARG);
+
+            global.puresacfilename = strrchr (global.sacfilename, '/');
+
+            if (global.puresacfilename == NULL) {
+                global.puresacfilename = global.sacfilename;
+            } else {
+                global.puresacfilename += 1;
+            }
+        } else {
+            ARGS_ERROR ("Too many source files specified");
+        }
+    });
+
+    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
+
+    ARGS_END ();
+
+    /*
+     * set defaults not altered by arguments
+     */
+    if (global.outfilename == NULL) {
+        global.outfilename = STRcpy ("doc");
+    }
+    global.optimize.dophm = FALSE;
+    if (global.printldflags || global.printccflags) {
+        global.verbose_level = 0;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 void
 OPTanalyseCommandline (int argc, char *argv[])
 {
@@ -880,6 +1016,9 @@ OPTanalyseCommandline (int argc, char *argv[])
         break;
     case TOOL_sac4c:
         AnalyseCommandlineSac4c (argc, argv);
+        break;
+    case TOOL_sac2tex:
+        AnalyseCommandlineSac2tex (argc, argv);
         break;
     }
 

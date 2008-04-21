@@ -1,0 +1,31 @@
+/*
+ * $Id:$
+ */
+
+#include "phase_initialise_defs.mac"
+
+/******************************************************************************/
+
+PHASE (texscp, "Loading SAC program", ALWAYS)
+
+SUBPHASE (loc, "Locating source code", SPdoLocateSource, ALWAYS, texscp)
+
+SUBPHASE (cpp, "Running C preprocessor", SPdoRunPreProcessor, ALWAYS, texscp)
+
+SUBPHASE (prs, "Parsing input file", SPdoScanParse, ALWAYS, texscp)
+
+ENDPHASE (texscp)
+
+/******************************************************************************/
+
+PHASE (tex, "Generating Code", ALWAYS)
+
+SUBPHASE (prt, "Generating TeX file", PRTdoPrint, ALWAYS, tex)
+
+SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, tex)
+
+ENDPHASE (tex)
+
+/******************************************************************************/
+
+#include "phase_undefine_defs.mac"

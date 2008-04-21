@@ -91,3 +91,23 @@ SACrunSac4c (int argc, char *argv[])
 
     DBUG_RETURN (0);
 }
+
+/*
+ *  And now, the main function which triggers the whole compilation.
+ */
+
+int
+SACrunSac2tex (int argc, char *argv[])
+{
+    node *syntax_tree;
+
+    DBUG_ENTER ("SACrunSac2tex");
+
+    syntax_tree = SetupCompiler (argc, argv, TOOL_sac2tex, "sac2tex");
+
+    syntax_tree = PHDdriveSac2tex (syntax_tree);
+
+    CTIterminateCompilation (syntax_tree);
+
+    DBUG_RETURN (0);
+}

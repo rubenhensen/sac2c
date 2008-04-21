@@ -28,6 +28,7 @@
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
+#include "phase_sac2tex.mac"
 
 #undef FUNBEGINname
 #undef CYCLEPHASEFUN
@@ -54,6 +55,7 @@
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
+#include "phase_sac2tex.mac"
 
 #undef CYCLEname
 #undef CYCLEPHASE
@@ -81,6 +83,7 @@
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
+#include "phase_sac2tex.mac"
 
 #undef PHASEname
 #undef SUBPHASE
@@ -122,6 +125,25 @@ PHDdriveSac4c (node *syntax_tree)
   cond);
 
 #include "phase_sac4c.mac"
+
+#undef PHASEname
+#undef PHASEcond
+
+    DBUG_RETURN (syntax_tree);
+}
+
+node *
+PHDdriveSac2tex (node *syntax_tree)
+{
+    DBUG_ENTER ("PHDdriveSac2tex");
+
+#define PHASEname(name)                                                                  \
+  syntax_tree = PHrunPhase( PH_##name, syntax_tree,
+
+#define PHASEcond(cond)                                                                  \
+  cond);
+
+#include "phase_sac2tex.mac"
 
 #undef PHASEname
 #undef PHASEcond

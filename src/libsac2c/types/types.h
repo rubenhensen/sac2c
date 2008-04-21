@@ -124,6 +124,8 @@ typedef enum {
     PH_final,
 #include "phase_sac4c.mac"
     PH_final_sac4c,
+#include "phase_sac2tex.mac"
+    PH_final_sac2tex,
     PH_undefined
 } compiler_phase_t;
 
@@ -134,7 +136,7 @@ typedef enum {
 #undef FUNBEGIN
 #undef CYCLEPHASEFUN
 
-typedef enum { TOOL_sac2c, TOOL_sac4c } tool_t;
+typedef enum { TOOL_sac2c, TOOL_sac4c, TOOL_sac2tex } tool_t;
 
 typedef enum { F_prog, F_modimp, F_classimp, F_cmod, F_unknown } file_type;
 
