@@ -900,7 +900,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
 
-        GSCprintDefines ();
+        /*
+         * The following conditional is a cruel hack to get sac2tex
+         * going; a much better solution should be adopted once print.c
+         * is rewritten!!!! (sbs)
+         */
+        if (global.tool != TOOL_sac2tex) {
+            GSCprintDefines ();
+        }
 
         if (NULL != MODULE_FUNDECS (arg_node)) {
             fprintf (global.outfile, "\n\n");
@@ -1025,7 +1032,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
 
-        GSCprintDefines ();
+        /*
+         * The following conditional is a cruel hack to get sac2tex
+         * going; a much better solution should be adopted once print.c
+         * is rewritten!!!! (sbs)
+         */
+        if (global.tool != TOOL_sac2tex) {
+            GSCprintDefines ();
+        }
 
         if (MODULE_FUNDECS (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
@@ -1049,15 +1063,22 @@ PRTmodule (node *arg_node, info *arg_info)
             INFO_SPECIALIZATION (arg_info) = FALSE;
         }
 
-        if (MODULE_FUNS (arg_node) != NULL) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  prototypes for locals (FUNDEFS)\n"
-                                     " */\n\n");
-            INFO_PROTOTYPE (arg_info) = TRUE;
-            /* print function declarations */
-            TRAVdo (MODULE_FUNS (arg_node), arg_info);
-            INFO_PROTOTYPE (arg_info) = FALSE;
+        /*
+         * The following conditional is a cruel hack to get sac2tex
+         * going; a much better solution should be adopted once print.c
+         * is rewritten!!!! (sbs)
+         */
+        if (global.tool != TOOL_sac2tex) {
+            if (MODULE_FUNS (arg_node) != NULL) {
+                fprintf (global.outfile, "\n\n"
+                                         "/*\n"
+                                         " *  prototypes for locals (FUNDEFS)\n"
+                                         " */\n\n");
+                INFO_PROTOTYPE (arg_info) = TRUE;
+                /* print function declarations */
+                TRAVdo (MODULE_FUNS (arg_node), arg_info);
+                INFO_PROTOTYPE (arg_info) = FALSE;
+            }
         }
 
         if (MODULE_OBJS (arg_node) != NULL) {
@@ -1424,27 +1445,35 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         }
     }
 
-    /* Now, we print the new type signature, iff present */
-    fprintf (global.outfile, "\n");
-    INDENT;
-    fprintf (global.outfile, (in_comment) ? " *\n" : "/*\n");
-    fprintf (global.outfile, " *  ");
-    if (FUNDEF_NAME (arg_node) != NULL) {
-        fprintf (global.outfile, "%s :: ", FUNDEF_NAME (arg_node));
-        if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
-            char *(*t2s_fun) (ntype *, bool, int);
-            t2s_fun = TYtype2String;
-            DBUG_EXECUTE ("PRINT_NTY", t2s_fun = TYtype2DebugString;);
+    /*
+     * The following conditional is a cruel hack to get sac2tex
+     * going; a much better solution should be adopted once print.c
+     * is rewritten!!!! (sbs)
+     */
+    if (global.tool != TOOL_sac2tex) {
 
-            fprintf (global.outfile, "%s\n",
-                     t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
-                              global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
-        } else {
-            fprintf (global.outfile, " ---\n");
+        /* Now, we print the new type signature, iff present */
+        fprintf (global.outfile, "\n");
+        INDENT;
+        fprintf (global.outfile, (in_comment) ? " *\n" : "/*\n");
+        fprintf (global.outfile, " *  ");
+        if (FUNDEF_NAME (arg_node) != NULL) {
+            fprintf (global.outfile, "%s :: ", FUNDEF_NAME (arg_node));
+            if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+                char *(*t2s_fun) (ntype *, bool, int);
+                t2s_fun = TYtype2String;
+                DBUG_EXECUTE ("PRINT_NTY", t2s_fun = TYtype2DebugString;);
+
+                fprintf (global.outfile, "%s\n",
+                         t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
+                                  global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
+            } else {
+                fprintf (global.outfile, " ---\n");
+            }
         }
+        INDENT;
+        fprintf (global.outfile, (in_comment) ? " *" : " */");
     }
-    INDENT;
-    fprintf (global.outfile, (in_comment) ? " *" : " */");
 
     DBUG_VOID_RETURN;
 }
@@ -1633,8 +1662,15 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, "\n");
 
-                /* traverse function body */
-                TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+                /*
+                 * The following conditional is a cruel hack to get sac2tex
+                 * going; a much better solution should be adopted once print.c
+                 * is rewritten!!!! (sbs)
+                 */
+                if (global.tool != TOOL_sac2tex) {
+                    /* traverse function body */
+                    TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+                }
 
                 if ((global.compiler_subphase != PH_cg_prt)
                     && (global.compiler_subphase != PH_ccg_prt)) {
