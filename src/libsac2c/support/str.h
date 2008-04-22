@@ -15,13 +15,16 @@ extern char *STRcat (const char *first, const char *second);
 extern char *STRcatn (int n, ...);
 extern char *STRtok (const char *str, const char *tok);
 extern bool STReq (const char *first, const char *second);
+extern bool STReqci (const char *first, const char *second);
 extern bool STRprefix (const char *prefix, const char *str);
 extern bool STReqn (const char *first, const char *second, int n);
 extern bool STRsub (const char *sub, const char *str);
 extern int STRlen (const char *str);
 extern char *STRonNull (char *alt, char *str);
 
-extern char *STRitoa (long number);
+extern char *STRitoa (int number);
+extern char *STRitoa_oct (int number);
+extern char *STRitoa_hex (int number);
 
 extern unsigned char *STRhex2Bytes (unsigned char *array, const char *string);
 extern char *STRbytes2Hex (int len, unsigned char *array);

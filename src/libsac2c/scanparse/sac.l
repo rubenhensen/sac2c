@@ -385,7 +385,43 @@ int charpos = 0;
                              FILTER( CHAR);
                            }
 
-[0-9]+                     { yylval.cint=atoi(yytext);
+[1-9][0-9]*                { char *str;
+                             sscanf( yytext, "%i", &yylval.cint);
+                             str = STRitoa( yylval.cint);
+                             if (!STReqci( str, yytext)) {
+                               CTIerrorLine( global.linenum,
+                                             "Decimal constant not representable as integer: %s",
+                                             yytext);
+                             }
+                             MEMfree( str);
+                             FILTER( NUM);
+                           }
+
+"0"                        { yylval.cint = 0;
+                             FILTER( NUM);
+                           }
+
+[0][1-7][0-7]*             { char *str;
+                             sscanf( yytext, "%i", &yylval.cint);
+                             str = STRitoa_oct( yylval.cint);
+                             if (!STReqci( str, yytext)) {
+                               CTIerrorLine( global.linenum,
+                                             "Octal constant not representable as integer: %s",
+                                             yytext);
+                             }
+                             MEMfree( str);
+                             FILTER( NUM);
+                           }
+
+0[xX][0-9a-fA-F]+          { char *str;
+                             sscanf( yytext, "%i", &yylval.cint);
+                             str = STRitoa_hex( yylval.cint);
+                             if (!STReqci( str, yytext)) {
+                               CTIerrorLine( global.linenum,
+                                             "Hexadecimal constant not representable as integer: %s",
+                                             yytext);
+                             }
+                             MEMfree( str);
                              FILTER( NUM);
                            }
 

@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "str.h"
 
@@ -199,6 +200,46 @@ STReq (const char *first, const char *second)
         res = FALSE;
     } else {
         res = (0 == strcmp (first, second));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
+ * Description: Compare two strings in a case insensitive way.
+ *
+ * Parameters: - first, first string to compare
+ *             - second, second string to compare
+ *
+ * Return: - TRUE, string contents are equal
+ *         - FALSE, string contents are not equal
+ *
+ *******************************************************************************/
+
+bool
+STReqci (const char *first, const char *second)
+{
+    bool res;
+    int i;
+
+    DBUG_ENTER ("STReqci");
+
+    if ((first == NULL) && (second == NULL)) {
+        res = TRUE;
+    } else if ((first == NULL) || (second == NULL)) {
+        res = FALSE;
+    } else {
+        i = 0;
+        while ((first[i] != '\0') && (second[i] != '\0')
+               && (tolower (first[i]) == tolower (second[i]))) {
+            i += 1;
+        }
+        if ((first[i] == '\0') && (second[i] == '\0')) {
+            res = TRUE;
+        } else {
+            res = FALSE;
+        }
     }
 
     DBUG_RETURN (res);
@@ -435,37 +476,102 @@ STRonNull (char *alt, char *str)
 
 /*******************************************************************************
  *
- * Description: Convert long to string.
+ * Description: Convert integer to string in decimal representation.
  *
- * Parameters: - number, number to convert
+ * Parameters: - number to convert
  *
  * Return: - new allocated string representation of number
  *
  *******************************************************************************/
 
 char *
-STRitoa (long number)
+STRitoa (int number)
 {
     char *str;
     int tmp;
-    int length, i;
+    int length;
+    int base = 10;
 
     DBUG_ENTER ("STRitoa");
 
     tmp = number;
     length = 1;
-    while (9 < tmp) {
-        tmp /= 10;
+    while (tmp >= base) {
+        tmp /= base;
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 1);
-    str[length] = atoi ("\0");
+    str = (char *)MEMmalloc (sizeof (char) * length + 3);
 
-    for (i = 0; i < length; i++) {
-        str[i] = ((int)'0') + (number / MATHipow (10, (length - 1)));
-        number = number % MATHipow (10, (length - 1));
+    sprintf (str, "%d", number);
+
+    DBUG_RETURN (str);
+}
+
+/*******************************************************************************
+ *
+ * Description: Convert integer to string in octal representation.
+ *
+ * Parameters: - number to convert
+ *
+ * Return: - new allocated string representation of number
+ *
+ *******************************************************************************/
+
+char *
+STRitoa_oct (int number)
+{
+    char *str;
+    int tmp;
+    int length;
+    int base = 8;
+
+    DBUG_ENTER ("STRitoa_oct");
+
+    tmp = number;
+    length = 1;
+    while (tmp >= base) {
+        tmp /= base;
+        length++;
     }
+
+    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+
+    sprintf (str, "0%o", number);
+
+    DBUG_RETURN (str);
+}
+
+/*******************************************************************************
+ *
+ * Description: Convert integer to string in hexadecimal representation.
+ *
+ * Parameters: - number to convert
+ *
+ * Return: - new allocated string representation of number
+ *
+ *******************************************************************************/
+
+char *
+STRitoa_hex (int number)
+{
+    char *str;
+    int tmp;
+    int length;
+    int base = 16;
+
+    DBUG_ENTER ("STRitoa_hex");
+
+    tmp = number;
+    length = 1;
+    while (tmp >= base) {
+        tmp /= base;
+        length++;
+    }
+
+    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+
+    sprintf (str, "0x%x", number);
 
     DBUG_RETURN (str);
 }
