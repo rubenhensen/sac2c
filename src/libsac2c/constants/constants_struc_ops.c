@@ -56,12 +56,68 @@
 
 #include "constants.h"
 #include "constants_internal.h"
+#include "tree_basic.h"
 
 /******************************************************************************
  ***
  *** local helper functions:
  ***
  ******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *    int Idx2OffsetArray( constant *idx, node *a)
+ *
+ * description:
+ *    function for computing the element offset in the ravel of N_array a
+ *    for element a[idx].
+ *
+ ******************************************************************************/
+
+int
+Idx2OffsetArray (constant *idx, node *a)
+{
+    int offset;
+    int *cvidx;
+    int lenidx;
+    shape *shp;
+    int lenshp;
+    int i;
+
+    DBUG_ENTER ("Idx2OffsetArray");
+    DBUG_ASSERT ((N_array == NODE_TYPE (a)), "Idx2offsetArray arg2 not N_array");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int),
+                 "Idx2OffsetArray called with non-int index");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1),
+                 "Idx2OffsetArray called with non-vector index");
+
+    cvidx = (int *)CONSTANT_ELEMS (idx);
+    lenidx = SHgetExtent (CONSTANT_SHAPE (idx), 0);
+
+    shp = ARRAY_FRAMESHAPE (a);
+    lenshp = SHgetDim (shp);
+
+    DBUG_ASSERT ((lenshp >= lenidx), "Idx2Offset called with longer idx than array dim");
+
+    if (lenidx > 0) {
+        DBUG_ASSERT (cvidx[0] < SHgetExtent (shp, 0),
+                     "Idx2Offset called with idx out of range");
+        offset = cvidx[0];
+    } else {
+        offset = 0;
+    }
+    for (i = 1; i < lenidx; i++) {
+        DBUG_ASSERT (cvidx[i] < SHgetExtent (shp, i),
+                     "Idx2Offset called with idx out of range");
+        offset = offset * SHgetExtent (shp, i) + cvidx[i];
+    }
+    for (; i < lenshp; i++) {
+        offset *= SHgetExtent (shp, i);
+    }
+
+    DBUG_RETURN (offset);
+}
 
 /******************************************************************************
  *

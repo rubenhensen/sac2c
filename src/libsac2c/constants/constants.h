@@ -160,4 +160,9 @@ extern constant *COabs (constant *a);
 extern constant *COneg (constant *a);
 extern constant *COrec (constant *a);
 
+// Not sure where this one belongs, really. Neither fish nor fowl
+
+extern int Idx2OffsetArray (constant *idx, node *a);
+extern int Idx2Offset (constant *idx, constant *a);
+
 #endif /* _SAC_CONSTANTS_H_ */
