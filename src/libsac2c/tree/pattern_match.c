@@ -462,7 +462,10 @@ PMarray (node **var, node *stack)
             {
             case N_id:
                 arg = FindConstArray (arg);
-                // Fall into N_array case
+                if (NULL == arg) {
+                    stack = FailMatch (stack);
+                    break;
+                } // If constant, fall into N_array case
             case N_array:
                 if (*var == NULL) {
                     DBUG_PRINT ("PM", ("PMarray binding variable"));
