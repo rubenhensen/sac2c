@@ -4067,6 +4067,9 @@
 
 -->
     <node name="Ap">
+	    <description>
+            Application of a user-defined function.
+            </description>
       <sons>
         <son name="Args">
           <targets>
