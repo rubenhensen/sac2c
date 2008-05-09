@@ -175,7 +175,7 @@ PrintCopyHead (FILE *file)
 
     fprintf (file, "void *SACARGcopyDataUdt( int btype, int size, void *data)\n"
                    "{\n"
-                   "  void *result;\n"
+                   "  void *result = (void *) 0;\n"
                    "\n"
                    "  switch( btype) {\n");
 
