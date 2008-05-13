@@ -1236,3 +1236,22 @@ COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, 
 
     DBUG_RETURN (accu);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn: int COconst2Int( constant *c)
+ *
+ * @brief: Create integer from scalar constant c
+ *
+ ******************************************************************************/
+
+int
+COconst2Int (constant *c)
+{
+    int res;
+
+    DBUG_ENTER ("COconst2Int");
+    res = ((int *)CONSTANT_ELEMS (c))[0];
+
+    DBUG_RETURN (res);
+}

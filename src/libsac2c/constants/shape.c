@@ -826,36 +826,60 @@ SHshape2Array (shape *shp)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool *SHvalidArrayIntvector( node *array)
+ *
+ * @brief Predicate to test N_array for validity as shape vector
+ *
+ ******************************************************************************/
+bool
+SHvalidArrayIntVector (node *array)
+{
+    bool result = TRUE;
+    node *exprs;
+    int cnt;
+
+    DBUG_ENTER ("SHvalidArrayIntVector");
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_array),
+                 "SHvalidArrayIntVector called on non array node");
+    exprs = ARRAY_AELEMS (array);
+
+    for (cnt = 0; cnt < TCcountExprs (ARRAY_AELEMS (array)); cnt++) {
+        /* shape vectors must be  constant int vectors only */
+        result = result & (N_num == NODE_TYPE (EXPRS_EXPR (exprs)));
+        exprs = EXPRS_NEXT (exprs);
+    }
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn shape *SHarray2Shape( node *array)
  *
- * @brief creates a shape vector from a given simple int vector
+ * @brief creates a shape vector from a given simple int vector.
+ *        Result is NULL if purported int vector is not one.
  *
  ******************************************************************************/
 shape *
 SHarray2Shape (node *array)
 {
-    shape *result;
+    shape *result = NULL;
     node *exprs;
     int cnt;
 
     DBUG_ENTER ("SHarray2Shape");
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_array),
-                 "SHarray2Shape called on non array node");
+    if (SHvalidArrayIntVector (array)) {
+        exprs = ARRAY_AELEMS (array);
+        result = SHmakeShape (TCcountExprs (exprs));
 
-    exprs = ARRAY_AELEMS (array);
-
-    result = SHmakeShape (TCcountExprs (exprs));
-
-    for (cnt = 0; cnt < SHAPE_DIM (result); cnt++) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_num),
-                     "SHarray2Shape can handle constant int vectors only!");
-
-        SHAPE_EXT (result, cnt) = NUM_VAL (EXPRS_EXPR (exprs));
-
-        exprs = EXPRS_NEXT (exprs);
+        for (cnt = 0; cnt < SHAPE_DIM (result); cnt++) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_num),
+                         "SHarray2Shape can handle constant int vectors only!");
+            SHAPE_EXT (result, cnt) = NUM_VAL (EXPRS_EXPR (exprs));
+            exprs = EXPRS_NEXT (exprs);
+        }
     }
-
     DBUG_RETURN (result);
 }
 

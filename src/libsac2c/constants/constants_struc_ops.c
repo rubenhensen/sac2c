@@ -368,7 +368,7 @@ incCounter (int *counter, int *upper_bounds, int depth)
 /******************************************************************************
  *
  * function:
- *    constant *COReshape( constant *new_shp, constant *a)
+ *    constant *COreshape( constant *new_shp, constant *a)
  *
  * description:
  *    returns a constant with shape new_shp and elemnts from a, provided
@@ -385,8 +385,8 @@ COreshape (constant *new_shp, constant *a)
     constant *res;
 
     DBUG_ENTER ("COreshape");
-    DBUG_ASSERT ((CONSTANT_TYPE (new_shp) == T_int), "new_shp for COReshape not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (new_shp) == 1), "new_shp for COReshape not vector!");
+    DBUG_ASSERT ((CONSTANT_TYPE (new_shp) == T_int), "new_shp for COreshape not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (new_shp) == 1), "new_shp for COreshape not vector!");
 
     /*
      * First, we create the result shape:
@@ -402,7 +402,7 @@ COreshape (constant *new_shp, constant *a)
     res_vlen = SHgetUnrLen (res_shp);
 
     DBUG_ASSERT ((CONSTANT_VLEN (a)) == res_vlen,
-                 "new_shp does not match length of the unrolling of a in COReshape!");
+                 "new_shp does not match length of the unrolling of a in COreshape!");
 
     /*
      * Now, we copy the elems CV:
@@ -413,7 +413,7 @@ COreshape (constant *new_shp, constant *a)
      */
     res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
 
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COReshape", new_shp, a, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COreshape", new_shp, a, res););
 
     DBUG_RETURN (res);
 }

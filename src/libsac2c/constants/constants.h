@@ -164,5 +164,6 @@ extern constant *COrec (constant *a);
 
 extern int Idx2OffsetArray (constant *idx, node *a);
 extern int Idx2Offset (constant *idx, constant *a);
+extern int COconst2Int (constant *c);
 
 #endif /* _SAC_CONSTANTS_H_ */
