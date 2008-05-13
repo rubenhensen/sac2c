@@ -5180,7 +5180,7 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
       TBmakeExprs (
         DUPdupIdNt (WITH2_VEC (wlnode)),
         TBmakeExprs (
-          DUPdupIdNt (TCgetNthExpr (dim + 1, WITH2_IDS (wlnode))),
+          DUPdupIdNt (TCgetNthExpr (dim, WITH2_IDS (wlnode))),
           TBmakeExprs (WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
                                               WLNODE_GET_ADDR (arg_node, BOUND1), dim,
                                               wlids),

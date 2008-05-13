@@ -403,7 +403,7 @@ PMconst (node **var, node *stack)
     DBUG_RETURN (stack);
 }
 
-static node *
+node *
 FindConstArray (node *expr)
 {
     node *result = NULL;

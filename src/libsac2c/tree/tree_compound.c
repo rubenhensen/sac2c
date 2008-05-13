@@ -21,6 +21,7 @@
 #include "memory.h"
 #include "namespaces.h"
 #include "traverse.h"
+#include "math_utils.h"
 
 /*
  * macro template for append functions
@@ -2056,6 +2057,52 @@ TCcreateExprsFromArgs (node *args)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthExprsNext(int n, node *args)
+ *
+ * @brief Given an N_exprs chain, return the nTH item
+ *        in the chain. If 0==n, return the argument.
+ *        If n > chain length, return NULL.
+ *        This differs from TCgetNthExpr slightly, but
+ *        I didn't want to change the semantics of TCgetNthExpr.
+ *        It is handy for getting to a specific N_exprs node,
+ *        rather than to its EXPRS_EXPRS.
+ *
+ * @param N_exprs chain
+ *
+ * @return N_exprs node
+ ******************************************************************************/
+node *
+TCgetNthExprsNext (int n, node *exprs)
+{
+    int cnt;
+    node *result;
+
+    DBUG_ENTER ("TCgetNthExprsNext");
+
+    for (cnt = 0; cnt < n; cnt++) {
+        if (exprs == NULL) {
+            break;
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    result = exprs;
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthExpr(int n, node *args)
+ *
+ * @brief Given an N_exprs chain, return the nTH item
+ *        in the chain. If 0==n, return the argument.
+ *        If n > chain length, return NULL.
+ *
+ * @param N_exprs chain
+ *
+ * @return N_exprs node
+ ******************************************************************************/
 node *
 TCgetNthExpr (int n, node *exprs)
 {
@@ -2064,7 +2111,7 @@ TCgetNthExpr (int n, node *exprs)
 
     DBUG_ENTER ("TCgetNthExpr");
 
-    for (cnt = 1; cnt < n; cnt++) {
+    for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             break;
         }
@@ -2077,6 +2124,41 @@ TCgetNthExpr (int n, node *exprs)
     }
 
     DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetExprsSection(int offset, int cnt , node *exprs)
+ * @brief Given an N_exprs chain, return items "offset + iota cnt",
+ *        (or subset thereof, if the chain isn't long enough).
+ *        This is basically: take(cnt, drop (offset, exprs)).
+ *        Both offset and cnt are assumed to be >=0, only because I'm lazy.
+ *        It might be handy to extend both offset and cnt to
+ *        take/drop counts.
+ *
+ * @param offset: index of first element of result
+ *        cnt:    number of elements in result
+ *        exprs:  N_exprs chain
+ *
+ * @return: N_exprs chain
+ ******************************************************************************/
+node *
+TCgetExprsSection (int offset, int cnt, node *exprs)
+{
+    node *res;
+    node *tail;
+
+    DBUG_ENTER ("TCgetExprsSection");
+    DBUG_ASSERT ((offset >= 0) && (cnt >= 0), ("TCgetExprsSection offset or cnt < 0"));
+
+    /* This does too much work, but I'm not sure of a nice way to fix it. */
+    res = DUPdoDupTree (TCgetNthExprsNext (offset, exprs)); /* do the drop */
+
+    tail = TCgetNthExprsNext (MATHmax (0, cnt - 1), res); /* do the take */
+    if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
+        FREEdoFreeTree (EXPRS_NEXT (tail));
+        EXPRS_NEXT (tail) = NULL;
+    }
+    DBUG_RETURN (res);
 }
 
 node *
