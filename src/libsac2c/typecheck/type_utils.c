@@ -681,6 +681,27 @@ TUisIntVect (ntype *ty)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisEmptyVect( ntype *ty)
+ *
+ *   @brief Predicate for empty (integer) vector.
+ *   @param an ntype
+ *   @return boolean true if argument is empty integer vector.
+ *
+ ******************************************************************************/
+
+bool
+TUisEmptyVect (ntype *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("TUisEmptyVect");
+    res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int) && (TUshapeKnown (ty))
+           && (TYgetDim (ty) == 1) && (0 == SHgetExtent (TYgetShape (ty), 0)));
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUisUniqueUserType( ntype *ty)
  *
  *   @brief
