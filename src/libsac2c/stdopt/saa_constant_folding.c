@@ -244,7 +244,7 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
 
         shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
         if ((shp != NULL) && (NODE_TYPE (shp) == N_array)) {
-            shpel = TCgetNthExpr (shape_elem + 1, ARRAY_AELEMS (shp));
+            shpel = TCgetNthExpr (shape_elem, ARRAY_AELEMS (shp));
             res = DUPdoDupNode (shpel);
         }
     }
