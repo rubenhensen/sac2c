@@ -4228,7 +4228,9 @@
     <description>Constant array of array elements. In early phases, 
      the elements are exprs; after the array flattening phase, the
      elements are either N_id nodes or scalar constant nodes.
-     The shapes of all elements must match.</description>
+     The shapes of all elements must match. The shape of the array
+     represented by the N_array is the catenation of the ARRAY_FRAMESHAPE
+     and the shape specified by the ELEMTYPE.</description>
       <sons>
         <son name="AElems">
           <targets>
@@ -4257,7 +4259,12 @@
           </type>
         </attribute>
         <attribute name="FrameShape">
-	  <description>The frameshape of the array.</description>
+		<description>The frameshape of the array. 
+			The frameshape may NOT be an empty vector, 
+			with one simple scalar (e.g., N_num) hanging from
+			AELEMS. Simple scalars must be represented directly
+			as themselves, or via an N_id node.
+		 </description>
           <type name="Shape">
             <targets>
               <target mandatory="yes">
