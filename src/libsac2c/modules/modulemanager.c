@@ -105,13 +105,15 @@ checkWasBuildUsingSameFlags (module_t *module)
                   module->name, module->sofile);
     }
 
-    if (!(flagfun () == GLOBALS_MODFLAGS)) {
-        CTIabort ("The module '%s' (%s) was built using incompatible compiler "
-                  "settings. The settings were [%s]. Please recompile the "
-                  "module using the current settings or switch the "
-                  "settings used when compiling the module.",
-                  module->name, module->sofile, GLOBALS_MODFLAGS_TEXT (flagfun ()));
-    }
+#if 0
+  if (!(flagfun() == GLOBALS_MODFLAGS)) {
+    CTIabort( "The module '%s' (%s) was built using incompatible compiler "
+              "settings. The settings were [%s]. Please recompile the "
+              "module using the current settings or switch the "
+              "settings used when compiling the module.",
+              module->name, module->sofile, GLOBALS_MODFLAGS_TEXT( flagfun()));
+  }
+#endif
 
     DBUG_VOID_RETURN;
 }
