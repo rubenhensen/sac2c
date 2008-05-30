@@ -183,8 +183,8 @@ ESPfundef (node *arg_node, info *arg_info)
              * no match at all!
              */
             CTIerrorLine (global.linenum,
-                          "No matching definition found for the application "
-                          " of \"%s\" to arguments %s",
+                          "No matching definition found for the specialization "
+                          " of \"%s\" for arguments %s",
                           CTIitemName (arg_node), TYtype2String (args, FALSE, 0));
         }
 
