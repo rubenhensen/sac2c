@@ -170,17 +170,48 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                            == CountSpecializations (dft_res->num_deriveable_partials,
                                                     dft_res->deriveable_partials))) {
                 /*
-                 * static dispatch possible
+                 * static dispatch possible!!
+                 *
+                 * We now know, that EITHER dft_res->def OR dft_res->deriveable
+                 * are the only "definition" that matches here. However, there MAY
+                 * still be specialisations of that function in  dft_res->partials or in
+                 * dft_res->num_deriveable_partials that suit the given arguments
+                 * better.
+                 * If we would dispatch to the definition here, we might loose such
+                 * specializations due to DFR. If we do not dispatch here, we may
+                 * a) inhibit inlining (and thus further optimization)
+                 * b) create additional runtime overhead (when we and not
+                 *    dispatching this call statically at all)
+                 * To make the best of this situation, we decide to dipatch, iff
+                 * i) there do not exist further specializations   OR
+                 * ii) the definition is declared as inline.
+                 * That way, we do not loose specializations that might be used
+                 * in a later stage of optimization  AND
+                 * we avoid problem (a) mentioned above.
+                 *
+                 * NB: maybe one would want to have something like a "final dispatch"
+                 * which would enforce such a dispatch anyways because it is clear
+                 * that the inferred argument types will not improve any further,
+                 * i.e., we would avoid (b) from above.
+                 * But that would require a new mode and a new call to this traversal.
+                 * For the time being (May 2008) we simply consider the potential
+                 * overhead due to (b) negligible.
                  */
                 if (dft_res->def != NULL) {
                     DBUG_ASSERT ((dft_res->deriveable == NULL),
                                  "def and deriveable found!");
                     new_fundef = dft_res->def;
-
-                    DBUG_PRINT ("DFC",
-                                ("  dispatched statically %s", CTIitemName (new_fundef)));
-                } else {
+                } else if (dft_res->deriveable != NULL) {
                     new_fundef = dft_res->deriveable;
+                }
+                if (new_fundef != NULL) {
+                    if (((dft_res->num_partials + dft_res->num_deriveable_partials) > 0)
+                        && !FUNDEF_ISINLINE (new_fundef)) {
+                        new_fundef = NULL;
+                    } else {
+                        DBUG_PRINT ("DFC", ("  dispatched statically %s",
+                                            CTIitemName (new_fundef)));
+                    }
                 }
             } else if (!CWChasWrapperCode (fundef)) {
                 /*
