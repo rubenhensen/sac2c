@@ -15,6 +15,7 @@
 #include "globals.h"
 #include "specialization_oracle_static_shape_knowledge.h"
 #include "strip_external_signatures.h"
+#include "map_fun_trav.h"
 
 /*
  * INFO structure
@@ -279,6 +280,16 @@ AddAffectedObjects (node **exprs, node *list, info *info)
     DBUG_RETURN (list);
 }
 
+static node *
+ProjectObjectsToFunSpecs (node *spec, info *arg_info)
+{
+    DBUG_ENTER ("ProjectObjectsToFunSpecs");
+
+    FUNDEF_OBJECTS (spec) = DUPdoDupTree (FUNDEF_OBJECTS (FUNDEF_IMPL (spec)));
+
+    DBUG_RETURN (spec);
+}
+
 /*
  * start of traversal
  */
@@ -369,6 +380,12 @@ OANmodule (node *arg_node, info *arg_info)
           = TCappendFundef (MODULE_FUNS (arg_node), INFO_FUNDEFS (arg_info));
         INFO_FUNDEFS (arg_info) = NULL;
     }
+
+    /*
+     * project object information on funspecs
+     */
+    MODULE_FUNSPECS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), NULL, ProjectObjectsToFunSpecs);
 
     DBUG_RETURN (arg_node);
 }

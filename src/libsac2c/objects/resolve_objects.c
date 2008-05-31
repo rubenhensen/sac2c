@@ -612,6 +612,10 @@ RSOmodule (node *arg_node, info *arg_info)
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
+    if (MODULE_FUNSPECS (arg_node) != NULL) {
+        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
