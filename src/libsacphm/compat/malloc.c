@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <malloc.h>
+#include <errno.h>
 
 #include "heapmgr.h"
 
@@ -373,6 +375,36 @@ memalign (size_t alignment, size_t size)
     free (prefixp + 2);
 
     return ((void *)(freep + 2));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int posix_memalign( void **memptr, size_t alignment, size_t size)
+ *
+ * description:
+ *
+ *   SAC heap manager specific implementation of posix_memalign().
+ *
+ ******************************************************************************/
+
+int
+posix_memalign (void **memptr, size_t alignment, size_t size)
+{
+    DIAG_INC_LOCK (SAC_HM_call_posix_memalign);
+    DIAG_DEC_LOCK (SAC_HM_call_memalign);
+
+    if ((alignment % sizeof (void *) != 0) || ((alignment & (alignment - 1)) != 0)) {
+        return (EINVAL);
+    }
+
+    *memptr = memalign (alignment, size);
+
+    if (*memptr == NULL) {
+        return (ENOMEM);
+    } else {
+        return (0);
+    }
 }
 
 /******************************************************************************

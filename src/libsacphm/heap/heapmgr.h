@@ -315,6 +315,7 @@ extern unsigned long int SAC_HM_call_realloc;
 extern unsigned long int SAC_HM_call_calloc;
 extern unsigned long int SAC_HM_call_valloc;
 extern unsigned long int SAC_HM_call_memalign;
+extern unsigned long int SAC_HM_call_posix_memalign;
 extern unsigned long int SAC_HM_heapsize;
 
 extern void SAC_HM_ClearDiagCounters (SAC_HM_arena_t *arena);

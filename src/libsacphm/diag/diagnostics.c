@@ -45,6 +45,7 @@ unsigned long int SAC_HM_call_realloc = 0;
 unsigned long int SAC_HM_call_calloc = 0;
 unsigned long int SAC_HM_call_valloc = 0;
 unsigned long int SAC_HM_call_memalign = 0;
+unsigned long int SAC_HM_call_posix_memalign = 0;
 unsigned long int SAC_HM_acquire_top_arena_lock = 0;
 
 /*
@@ -388,16 +389,18 @@ SAC_HM_ShowDiagnostics ()
              SAC_HM_call_sbrk, SAC_HM_heapsize, ((float)SAC_HM_heapsize) / MB);
 
     fprintf (stderr,
-             "calls to malloc()    :  %lu\n"
-             "calls to calloc()    :  %lu\n"
-             "calls to realloc()   :  %lu\n"
-             "calls to valloc()    :  %lu\n"
-             "calls to memalign()  :  %lu\n"
-             "locks acquired       :  %lu\n"
+             "calls to malloc()         :  %lu\n"
+             "calls to calloc()         :  %lu\n"
+             "calls to realloc()        :  %lu\n"
+             "calls to valloc()         :  %lu\n"
+             "calls to memalign()       :  %lu\n"
+             "calls to posix_memalign() :  %lu\n"
+             "locks acquired            :  %lu\n"
              "==========================================================================="
              "\n",
              SAC_HM_call_malloc, SAC_HM_call_calloc, SAC_HM_call_realloc,
-             SAC_HM_call_valloc, SAC_HM_call_memalign, SAC_HM_acquire_top_arena_lock);
+             SAC_HM_call_valloc, SAC_HM_call_memalign, SAC_HM_call_posix_memalign,
+             SAC_HM_acquire_top_arena_lock);
 
     if (num_threads > 1) {
         fprintf (stderr, "\n"
