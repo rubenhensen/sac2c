@@ -188,6 +188,13 @@ SAC_HM_SetupMaster ()
         }
     }
 #endif
+
+    SAC_HM_SetInitialized ();
+    /*
+     * Mark heap manager as initialised.
+     * This function call also enforces linking with the standard heap
+     * mangement API compatibility mayer.
+     */
 }
 
 /******************************************************************************
@@ -309,3 +316,17 @@ SAC_HM_ShowDiagnostics ()
 }
 
 #endif /* DIAG */
+
+void
+SAC_HM_Setup (unsigned int threads)
+{
+    if (SAC_HM_GetInitialized ()) {
+        SAC_HM_SetupMaster ();
+    }
+
+#ifdef MT
+    if (threads) {
+        SAC_HM_SetupWorkers (threads);
+    }
+#endif /* MT */
+}

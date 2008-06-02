@@ -304,6 +304,10 @@ extern SAC_HM_header_t *SAC_HM_ExtendTopArenaWilderness (SAC_HM_size_unit_t unit
 
 extern SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];
 
+extern void SAC_HM_SetInitialized (void);
+extern int SAC_HM_GetInitialized (void);
+extern void SAC_HM_SetupMaster (void);
+
 #ifdef DIAG
 extern unsigned long int SAC_HM_call_sbrk;
 extern unsigned long int SAC_HM_call_malloc;

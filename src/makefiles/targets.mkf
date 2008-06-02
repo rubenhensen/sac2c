@@ -313,7 +313,7 @@ libsacphm_diag      := diagnostics
 
 libsacphm_opt       := placement
 
-libsacphm_compat    := malloc calloc realloc memalign
+libsacphm_compat    := malloc 
 
 
 

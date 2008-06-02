@@ -288,8 +288,7 @@ extern unsigned long int SAC_HM_acquire_top_arena_lock;
  * Declaration of SAC heap management functions.
  */
 
-extern void SAC_HM_SetupMaster ();
-extern void SAC_HM_SetupWorkers (unsigned int num_threads);
+extern void SAC_HM_Setup (unsigned int threads);
 
 extern void *SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena);
 extern void *SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena);
@@ -322,19 +321,12 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_MULTITHREAD
 #define SAC_HM_SETUP()                                                                   \
     {                                                                                    \
-        if (SAC_HM_not_yet_initialized) {                                                \
-            SAC_HM_SetupMaster ();                                                       \
-            SAC_HM_not_yet_initialized = 0;                                              \
-        }                                                                                \
-        SAC_HM_SetupWorkers (SAC_MT_THREADS ());                                         \
+        SAC_HM_Setup (SAC_MT_THREADS ());                                                \
     }
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_HM_SETUP()                                                                   \
     {                                                                                    \
-        if (SAC_HM_not_yet_initialized) {                                                \
-            SAC_HM_SetupMaster ();                                                       \
-            SAC_HM_not_yet_initialized = 0;                                              \
-        }                                                                                \
+        SAC_HM_Setup (0);                                                                \
     }
 #endif /* SAC_DO_MULTITHREAD */
 

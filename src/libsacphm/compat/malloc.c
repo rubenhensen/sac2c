@@ -12,21 +12,34 @@
  *
  * description:
  *
- *   This file provides general interface functions for the heap manager,
- *   i.e. basically specific implementations of malloc() and free() which
- *   themselves call the arena-specific functions of the heap manager API.
+ *   This file provides the necessary compatibility layer for calls to the
+ *   SAC Private Heap Manager from outside compiled SAC code, i.e. from
+ *   external modules and classes or generally from the outsode world in case
+ *   of the SAC-from-C scenario.
+ *
+ *   More precisely, we provide custom implementations of the following
+ *   functions from the standard dynamic heap management API:
+ *    - malloc
+ *    - free
+ *    - calloc
+ *    - realloc
+ *    - valloc
+ *    - memalign
+ *    - posix_memalign
  *
  *
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "heapmgr.h"
 
 /******************************************************************************
  *
  * global variable:
- *   int SAC_HM_not_yet_initialized
+ *   static int not_yet_initialized
  *
  * description:
  *
@@ -37,7 +50,7 @@
  *
  ******************************************************************************/
 
-int SAC_HM_not_yet_initialized = 1;
+static int not_yet_initialized = 1;
 
 /******************************************************************************
  *
@@ -68,9 +81,8 @@ malloc (size_t sz)
 
     DIAG_INC_LOCK (SAC_HM_call_malloc);
 
-    if (SAC_HM_not_yet_initialized) {
+    if (not_yet_initialized) {
         SAC_HM_SetupMaster ();
-        SAC_HM_not_yet_initialized = 0;
     }
 
 #ifdef MT
@@ -200,4 +212,223 @@ free (void *addr)
 #endif /* MT */
         }
     }
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   void *calloc(size_t nelem, size_t elsize)
+ *
+ * description:
+ *
+ *   SAC heap manager specific implementation of calloc().
+ *
+ *****************************************************************************/
+
+void *
+calloc (size_t nelem, size_t elsize)
+{
+    void *res;
+
+    DIAG_INC_LOCK (SAC_HM_call_calloc);
+    DIAG_DEC_LOCK (SAC_HM_call_malloc);
+
+    res = malloc (nelem * elsize);
+
+    res = memset (res, 0, nelem * elsize);
+
+    return (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void *realloc(void *ptr, size_t size)
+ *
+ * description:
+ *
+ *   SAC heap manager specific implementation of realloc().
+ *
+ ******************************************************************************/
+
+void *
+realloc (void *ptr, size_t size)
+{
+    void *mem;
+    SAC_HM_size_unit_t old_size_units;
+    SAC_HM_arena_t *arena;
+
+    DIAG_INC_LOCK (SAC_HM_call_realloc);
+
+    if (ptr == NULL) {
+        DIAG_DEC_LOCK (SAC_HM_call_malloc);
+        return (malloc (size));
+    }
+
+    if (size == 0) {
+        free (ptr);
+        return (NULL);
+    }
+
+    if (not_yet_initialized) {
+        SAC_HM_SetupMaster ();
+    }
+
+    arena = SAC_HM_ADDR_ARENA (ptr);
+
+    if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
+        old_size_units = arena->min_chunk_size;
+        if (size <= (size_t)old_size_units) {
+            /*
+             * The given memory location is in a small chunk arena and the requested
+             * new memory size is less than the old one.
+             *  -> do nothing
+             */
+            return (ptr);
+        }
+    } else {
+        old_size_units = SAC_HM_LARGECHUNK_SIZE (((SAC_HM_header_t *)ptr) - 2);
+    }
+
+    DIAG_DEC_LOCK (SAC_HM_call_malloc);
+    mem = malloc (size);
+
+    mem = memcpy (mem, ptr, SAC_MIN (old_size_units * SAC_HM_UNIT_SIZE, size));
+
+    free (ptr);
+
+    return (mem);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void *memalign(size_t alignment, size_t size)
+ *
+ * description:
+ *
+ *   SAC heap manager specific implementation of memalign().
+ *
+ ******************************************************************************/
+
+void *
+memalign (size_t alignment, size_t size)
+{
+    void *mem;
+    size_t misalign, size_needed;
+    SAC_HM_header_t *freep, *prefixp;
+    SAC_HM_arena_t *arena;
+    SAC_HM_size_unit_t offset_units;
+
+    DIAG_INC_LOCK (SAC_HM_call_memalign);
+
+    if (alignment <= SAC_HM_UNIT_SIZE) {
+        /* automatic alignment */
+        DIAG_DEC_LOCK (SAC_HM_call_malloc);
+        return (malloc (size));
+    }
+
+    /* worst case allocation for a posteriori alignment */
+    size_needed = SAC_MAX (size + alignment + (SAC_HM_UNIT_SIZE + SAC_HM_UNIT_SIZE),
+                           SAC_HM_ARENA_5_MINCS * SAC_HM_UNIT_SIZE);
+
+    DIAG_DEC_LOCK (SAC_HM_call_malloc);
+    mem = malloc (size_needed);
+
+    misalign = ((size_t)mem) % alignment;
+
+    if (misalign == 0) {
+        /* Memory is already correctly aligned. */
+        return (mem);
+    }
+
+    offset_units = (alignment - misalign) / SAC_HM_UNIT_SIZE;
+
+    if (offset_units < 2) {
+        /*
+         * Offset is too small to host administration info for free prefix.
+         */
+        offset_units += alignment / SAC_HM_UNIT_SIZE;
+    }
+
+    prefixp = ((SAC_HM_header_t *)mem) - 2;
+    arena = SAC_HM_LARGECHUNK_ARENA (prefixp);
+    freep = prefixp + offset_units;
+
+    /*
+     * Setup memory location to be returned.
+     */
+
+    SAC_HM_LARGECHUNK_SIZE (freep) = SAC_HM_LARGECHUNK_SIZE (prefixp) - offset_units;
+    SAC_HM_LARGECHUNK_ARENA (freep) = arena;
+    SAC_HM_LARGECHUNK_PREVSIZE (freep) = offset_units;
+
+    /*
+     * Setup memory location returned by malloc();
+     * this will now be de-allocated again using free().
+     */
+
+    SAC_HM_LARGECHUNK_SIZE (prefixp) = offset_units;
+
+    free (prefixp + 2);
+
+    return ((void *)(freep + 2));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void *valloc(size_t size)
+ *
+ * description:
+ *
+ *   SAC heap manager specific implementation of valloc().
+ *
+ ******************************************************************************/
+
+void *
+valloc (size_t size)
+{
+    DIAG_INC_LOCK (SAC_HM_call_valloc);
+    DIAG_DEC_LOCK (SAC_HM_call_memalign);
+
+    return (memalign (getpagesize (), size));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_HM_SetInitialized(void)
+ *
+ * description:
+ *
+ * This function also enforces linking with the standard heap
+ * mangement API compatibility mayer because this function is called from
+ * SAC_HM_SetupMaster() in setup.c.
+ *
+ ******************************************************************************/
+
+void
+SAC_HM_SetInitialized (void)
+{
+    not_yet_initialized = 0;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_HM_GetInitialized(void)
+ *
+ * description:
+ *
+ * This function also enforces linking with the standard heap
+ * mangement API compatibility mayer because this function is called from
+ * SAC_HM_SetupMaster() in setup.c.
+ *
+ ******************************************************************************/
+
+int
+SAC_HM_GetInitialized (void)
+{
+    return (not_yet_initialized);
 }

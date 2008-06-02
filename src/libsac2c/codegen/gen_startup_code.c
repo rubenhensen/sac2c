@@ -106,7 +106,7 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_DO_APS             %d\n",
              (global.optimize.doaps) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_DAO             %d\n",
-             (global.optimize.dodao) ? 1 : 0);
+             (global.optimize.dodpa) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_MSCA            %d\n",
              (global.optimize.domsca) ? 1 : 0);
     fprintf (global.outfile, "\n");
