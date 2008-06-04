@@ -2093,9 +2093,9 @@ TCgetNthExprsNext (int n, node *exprs)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *TCgetNthExpr(int n, node *args)
+ * @fn node *TCgetNthExprs(int n, node *args)
  *
- * @brief Given an N_exprs chain, return the nTH item
+ * @brief Given an N_exprs chain, return the nTH N_exprs node
  *        in the chain. If 0==n, return the argument.
  *        If n > chain length, return NULL.
  *
@@ -2104,12 +2104,12 @@ TCgetNthExprsNext (int n, node *exprs)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExpr (int n, node *exprs)
+TCgetNthExprs (int n, node *exprs)
 {
     int cnt;
     node *result = NULL;
 
-    DBUG_ENTER ("TCgetNthExpr");
+    DBUG_ENTER ("TCgetNthExprs");
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
@@ -2118,6 +2118,32 @@ TCgetNthExpr (int n, node *exprs)
 
         exprs = EXPRS_NEXT (exprs);
     }
+
+    result = exprs;
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthExprsExpr(int n, node *args)
+ *
+ * @brief Given an N_exprs chain, return the nTH EXPRS_EXPR
+ *        in the chain. If 0==n, return the argument.
+ *        If n > chain length, return NULL.
+ *
+ * @param N_exprs chain
+ *
+ * @return N_node of some sort
+ ******************************************************************************/
+node *
+TCgetNthExprsExpr (int n, node *exprs)
+{
+    int cnt;
+    node *result = NULL;
+
+    DBUG_ENTER ("TCgetNthExprsExpr");
+
+    exprs = TCgetNthExprs (n, exprs);
 
     if (exprs != NULL) {
         result = EXPRS_EXPR (exprs);

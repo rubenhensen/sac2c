@@ -15,6 +15,7 @@ struct INFO {
     node *preassign;
     node *postassign;
     node *vardecs;
+    node *topblock;
 };
 
 #define INFO_REMASSIGN(n) (n->remassign)
@@ -23,3 +24,4 @@ struct INFO {
 #define INFO_PREASSIGN(n) (n->preassign)
 #define INFO_POSTASSIGN(n) (n->postassign)
 #define INFO_VARDECS(n) (n->vardecs)
+#define INFO_TOPBLOCK(n) (n->topblock)

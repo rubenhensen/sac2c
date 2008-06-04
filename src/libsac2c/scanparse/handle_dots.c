@@ -711,7 +711,8 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
                                                 DUPdoDupTree (iv)),
                                   result);
         } else {
-            result = TBmakeExprs (DUPdoDupTree (TCgetNthExpr (cnt - 1, args)), result);
+            result
+              = TBmakeExprs (DUPdoDupTree (TCgetNthExprsExpr (cnt - 1, args)), result);
         }
     }
 
@@ -789,8 +790,9 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
                 DUPdoDupTree (iv)),
               result);
         } else {
-            result = TBmakeExprs (DUPdoDupTree (TCgetNthExpr (info->selcnt - cnt, args)),
-                                  result);
+            result
+              = TBmakeExprs (DUPdoDupTree (TCgetNthExprsExpr (info->selcnt - cnt, args)),
+                             result);
         }
     }
 

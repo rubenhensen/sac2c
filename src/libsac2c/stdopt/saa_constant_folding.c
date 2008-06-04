@@ -95,7 +95,7 @@ SAACF_ids (node *arg_node, info *arg_info)
             ntype *ty = TYmakeAKS (TYcopyType (TYgetScalar (IDS_NTYPE (arg_node))),
                                    SHmakeShape (0));
 
-            INFO_PREASSIGN (arg_info) = TBmakeAssign (TBmakeLet (DUPdoDupNode (arg_node),
+            INFO_PREASSIGN (arg_info) = TBmakeAssign (TBmakeLet (DUPdoDupTree (arg_node),
                                                                  TCmakeVector (ty, NULL)),
                                                       INFO_PREASSIGN (arg_info));
         }
@@ -142,7 +142,7 @@ SAACFprf_reshape (node *arg_node, info *arg_info)
              == CMPTdoCompareTree (ASSIGN_RHS (
                                      AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))),
                                    AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))))))) {
-        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+        res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -174,7 +174,7 @@ SAACFprf_dim (node *arg_node, info *arg_info)
 
     dim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != dim) {
-        res = DUPdoDupNode (dim);
+        res = DUPdoDupTree (dim);
     }
     DBUG_RETURN (res);
 }
@@ -204,7 +204,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
                  "SAACF_shape_ expected N_id node");
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != shp) {
-        res = DUPdoDupNode (shp);
+        res = DUPdoDupTree (shp);
     }
     DBUG_RETURN (res);
 }
@@ -244,8 +244,8 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
 
         shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
         if ((shp != NULL) && (NODE_TYPE (shp) == N_array)) {
-            shpel = TCgetNthExpr (shape_elem, ARRAY_AELEMS (shp));
-            res = DUPdoDupNode (shpel);
+            shpel = TCgetNthExprsExpr (shape_elem, ARRAY_AELEMS (shp));
+            res = DUPdoDupTree (shpel);
         }
     }
     DBUG_RETURN (res);

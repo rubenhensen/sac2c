@@ -936,13 +936,11 @@ CFprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
 
     /* Bog-standard constant-folding is all handled by typechecker now */
-
     /* Try symbolic constant simplification */
     fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
-
     /* If that doesn't help, try structural constant constant folding */
     fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
