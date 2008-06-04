@@ -491,8 +491,14 @@ GGTCmodule (node *arg_node, info *arg_info)
     }
 
     if (INFO_PROVIDEDSYMBOLS (arg_info) != NULL) {
-        MODULE_INTERFACE (arg_node)
-          = TBmakeProvide (MODULE_INTERFACE (arg_node), INFO_PROVIDEDSYMBOLS (arg_info));
+        /*
+         * add provides only if we are not in the top
+         * namespace, i.e., compiling a program.
+         */
+        if (global.filetype != F_prog) {
+            MODULE_INTERFACE (arg_node) = TBmakeProvide (MODULE_INTERFACE (arg_node),
+                                                         INFO_PROVIDEDSYMBOLS (arg_info));
+        }
         INFO_PROVIDEDSYMBOLS (arg_info) = NULL;
     }
 
