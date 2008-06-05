@@ -2124,7 +2124,6 @@ TCgetNthExprs (int n, node *exprs)
 }
 
 /** <!-- ****************************************************************** -->
-/** <!-- ****************************************************************** -->
  * @fn node *TCgetNthExprsExpr(int n, node *args)
  *
  * @brief Given an N_exprs chain, return the nTH EXPRS_EXPR
@@ -2138,7 +2137,6 @@ TCgetNthExprs (int n, node *exprs)
 node *
 TCgetNthExprsExpr (int n, node *exprs)
 {
-    int cnt;
     node *result = NULL;
 
     DBUG_ENTER ("TCgetNthExprsExpr");
