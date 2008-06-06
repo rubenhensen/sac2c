@@ -32,7 +32,9 @@
  *    If all predicates are removed, replace
  *     _afterguard(x) by x
  *
- *
+ *    In:  iv', p1 = _non_neg_val_V_( iv), replace by
+ *         iv', p1 = iv, TRUE;
+ *         if we can know that all elements of iv are >= 0.
  *
  *
  * TODO: Most of the optimizations could be extended to operate
@@ -62,6 +64,7 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
+#include "traverse.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
@@ -73,6 +76,7 @@
 #include "compare_tree.h"
 #include "ctinfo.h"
 #include "pattern_match.h"
+#include "constant_folding_info.h"
 
 /* local used helper functions */
 
@@ -1170,23 +1174,61 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
  * @fn node *SCSprf_non_neg_val_V( node *arg_node, info *arg_info)
  *
  * description:
- *  This primitive is check that iv is all non-negative in M[iv].
+ *  This primitive is check that iv is all non-negative.
  *  If so, this code replaces:
  *
- *   iv', pred = prf_non_neg_val_V( iv, M)
+ *   iv', pred = prf_non_neg_val_V( iv)
  *  by
- *   iv', pred = iv, TRUE;
- *  CFassign will turn this into:
+ *   p = TRUE;
+ *   iv', pred = iv, p;
+ *  SplitMultipleAssigns will turn this into:
  *   iv' = iv;
- *   pred = TRUE;
+ *   pred = p;
  *
  *****************************************************************************/
 node *
 SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-
+    node *arg1 = NULL;
+    node *tmpivavis;
+    node *tmpivid;
+    constant *arg1c;
+    constant *scalarp;
     DBUG_ENTER ("SCSprf_non_neg_val_V");
+    if (PM (PMarray (&arg1, PMprf (F_non_neg_val_V, arg_node)))) {
+        arg1c = COaST2Constant (arg1);
+        if ((NULL != arg1c) && COisNonNeg (arg1c, TRUE)) {
+            DBUG_PRINT ("CF", ("SCSprf_non_neg_val removed guard"));
+            scalarp = COmakeTrue (SHmakeShape (0));
+            tmpivavis
+              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                            TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
+
+            AVIS_DIM (tmpivavis) = TBmakeNum (0);
+            AVIS_SHAPE (tmpivavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
+            INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
+            /* See SplitMultipleAssigns to see why this is INFO_POSTASSIGN rather than
+             * INFO_PREASSIGN. Basically, the assigns are in the wrong order,
+             * otherwise
+             */
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
+                                         COconstant2AST (scalarp)),
+                              INFO_POSTASSIGN (arg_info));
+
+            AVIS_SSAASSIGN (tmpivavis) = INFO_POSTASSIGN (arg_info);
+            DBUG_PRINT ("CF", ("SCSprf_non_neg_val_V(%s) created TRUE pred %s",
+                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                               AVIS_NAME (tmpivavis)));
+            tmpivid = TBmakeId (tmpivavis);
+            res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (tmpivid, NULL));
+        }
+        if (NULL != arg1c) {
+            arg1c = COfreeConstant (arg1c);
+        }
+    }
     DBUG_RETURN (res);
 }
 

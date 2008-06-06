@@ -130,6 +130,7 @@
 #include "free.h"
 #include "traverse.h"
 #include "tree_basic.h"
+#include "new_types.h"
 #include "tree_compound.h"
 #include "constants.h"
 
@@ -212,30 +213,38 @@ PushArgs (node *stack, node *args)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *FollowId( node * arg)
+ * @fn node *PMfollowId( node * arg_node)
  *
- * @brief looks behind the definitions of N_id nodes if possible
+ * @brief looks behind the definitions of N_id nodes, if possible
+ *        to find the definition point of a value. For example,
+ *          a = [5,6];
+ *          b = a;
+ *          c = b;
+ *
+ *        If we do PMfollowId(c), the result is the N_array [5,6].
+ *
  * @param arg: potential N_id node to be followed after
  * @return defining expression iff available; unmodified arg otherwise
  *****************************************************************************/
-static node *
-FollowId (node *arg)
+node *
+PMfollowId (node *arg_node)
 {
 #ifndef DBUG_OFF
     FILE *mem_outfile;
 #endif
 
-    DBUG_ENTER ("FollowId");
+    DBUG_ENTER ("PMfollowId");
 
     DBUG_PRINT ("PM", ("trying to look up the variable definition "));
-    while ((NODE_TYPE (arg) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (arg)) != NULL)) {
+    while ((NODE_TYPE (arg_node) == N_id)
+           && (AVIS_SSAASSIGN (ID_AVIS (arg_node)) != NULL)) {
         DBUG_PRINT ("PM", ("looking up definition of the variable"));
-        arg = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg))));
+        arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
         DBUG_PRINT ("PM", ("definition found:"));
         DBUG_EXECUTE ("PM", mem_outfile = global.outfile; global.outfile = stderr;
-                      PRTdoPrint (arg); global.outfile = mem_outfile;);
+                      PRTdoPrint (arg_node); global.outfile = mem_outfile;);
     }
-    DBUG_RETURN (arg);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--*******************************************************************-->
@@ -342,7 +351,7 @@ PMprf (prf fun, node *stack)
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
-        arg = FollowId (arg);
+        arg = PMfollowId (arg);
         if ((NODE_TYPE (arg) == N_prf) && (PRF_PRF (arg) == fun)) {
             DBUG_PRINT ("PM", ("PMprf matched!"));
             stack = PushArgs (stack, PRF_ARGS (arg));
@@ -383,6 +392,7 @@ PMconst (node **var, node *stack)
     }
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
+        arg = PMfollowId (arg);
         co = COaST2Constant (arg);
         if (NULL != co) {
             co = COfreeConstant (co);
@@ -403,34 +413,6 @@ PMconst (node **var, node *stack)
     DBUG_RETURN (stack);
 }
 
-node *
-FindConstArray (node *expr)
-{
-    node *result = NULL;
-    node *assign;
-    node *defexpr;
-
-    DBUG_ENTER ("FindConstArray");
-
-    // This code stolen from sah's PropagateConstArrayIdentifier
-    if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
-        assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-
-        if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let) {
-            defexpr = LET_EXPR (ASSIGN_INSTR (assign));
-
-            if (NODE_TYPE (defexpr) == N_array) {
-                result = defexpr;
-            } else if (NODE_TYPE (defexpr) == N_id) {
-                result = defexpr;
-                result = FindConstArray (result);
-            }
-        }
-    }
-
-    DBUG_RETURN (result);
-}
-
 /** <!--*******************************************************************-->
  *
  * @fn node *PMarray( node **var, node *stack)
@@ -439,6 +421,7 @@ FindConstArray (node *expr)
  *        the stack is bound to it (provided it is an N_array).
  *        If *var is bound already, it only matches if both N_array nodes
  *        are identical.
+ *        The function searches for the definition of the value.
  * @param *var: bound N_array (if any)
  *        stack: "stack" of exprs.
  * @return shortened stack.
@@ -455,23 +438,79 @@ PMarray (node **var, node *stack)
         DBUG_PRINT ("PM", ("PMarray trying to match bound variable..."));
     }
 
+    if (stack == (node *)FAIL) {
+        DBUG_PRINT ("PM", ("PMarray passing on FAIL"));
+    } else {
+        stack = ExtractOneArg (stack, &arg);
+        arg = PMfollowId (arg);
+        if (N_array == NODE_TYPE (arg)) {
+            if (*var == NULL) {
+                DBUG_PRINT ("PM", ("PMarray binding variable"));
+                *var = arg;
+            } else if ((*var) == arg) {
+                DBUG_PRINT ("PM", ("PMarray found variable match"));
+            } else {
+                stack = FailMatch (stack);
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    }
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMintConst( node **var, node *stack)
+ *
+ * @brief tries to match an integer constant.
+ *        If *var is NULL, the top of the stack is bound to it
+ *        (provided it is such a constant).
+ *        If *var is bound already, it only matches if both nodes
+ *        are identical.
+ * @param *var: bound constant (if any)
+ *        stack: "stack" of exprs.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMintConst (node **var, node *stack)
+{
+    node *arg;
+    constant *argconst;
+
+    DBUG_ENTER ("PMintConst");
+    if (*var == NULL) {
+        DBUG_PRINT ("PM", ("PMintConst trying to match unbound variable."));
+    } else {
+        DBUG_PRINT ("PM", ("PMintConst trying to match bound variable."));
+    }
+
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
+        arg = PMfollowId (arg);
         switch
             NODE_TYPE (arg)
             {
-            case N_id:
-                arg = FindConstArray (arg);
-                if (NULL == arg) {
+            case N_array:
+                /* Must be legal constant */
+                if ((NULL == arg) || (0 != TYgetDim (ARRAY_ELEMTYPE (arg)))) {
                     stack = FailMatch (stack);
                     break;
-                } // If constant, fall into N_array case
-            case N_array:
+                } // If integer constant, fall PMinto N_array case
+                argconst = COaST2Constant (arg);
+                if ((NULL == argconst) || (T_int != COgetType (argconst))) {
+                    stack = FailMatch (stack);
+                    break;
+                }
+                if (NULL != argconst) {
+                    argconst = COfreeConstant (argconst);
+                }
+
                 if (*var == NULL) {
-                    DBUG_PRINT ("PM", ("PMarray binding variable"));
+                    DBUG_PRINT ("PM", ("PMintConst binding variable"));
                     *var = arg;
                 } else if ((*var) == arg) {
-                    DBUG_PRINT ("PM", ("PMarray found variable match"));
+                    DBUG_PRINT ("PM", ("PMintConst found variable match"));
                 } else {
                     stack = FailMatch (stack);
                 }
@@ -481,7 +520,7 @@ PMarray (node **var, node *stack)
                 break;
             }
     } else {
-        DBUG_PRINT ("PM", ("PMarray passing on FAIL"));
+        DBUG_PRINT ("PM", ("PMintConst passing on FAIL"));
     }
     DBUG_RETURN (stack);
 }

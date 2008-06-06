@@ -149,26 +149,7 @@
 #include "saa_constant_folding.h"
 #include "symbolic_constant_simplification.h"
 #include "structural_constant_constant_folding.h"
-
-/** <!--********************************************************************-->
- *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
-struct INFO {
-    bool remassign;
-    bool onefundef;
-    node *fundef;
-    node *preassign;
-    node *postassign;
-};
-
-#define INFO_REMASSIGN(n) (n->remassign)
-#define INFO_ONEFUNDEF(n) (n->onefundef)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_PREASSIGN(n) (n->preassign)
-#define INFO_POSTASSIGN(n) (n->postassign)
+#include "constant_folding_info.h"
 
 static info *
 MakeInfo ()
@@ -184,6 +165,8 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_TOPBLOCK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -197,9 +180,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -235,40 +215,41 @@ static const travfun_p prf_cfsaa_funtab[] = {
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node* CFdoConstantFolding(node* fundef)
+ * @fn node* CFdoConstantFolding(node* arg_node)
  *
  *****************************************************************************/
 
 node *
-CFdoConstantFolding (node *fundef)
+CFdoConstantFolding (node *arg_node)
 {
+
     info *arg_info;
 
     DBUG_ENTER ("CFdoConstantFolding");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "CFdoConstantFolding called for non-fundef node");
 
     /* do not start traversal in special functions */
     arg_info = MakeInfo ();
 
     TRAVpush (TR_cf);
-    fundef = TRAVdo (fundef, arg_info);
+    arg_node = TRAVdo (arg_node, (info *)arg_info);
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node* CFdoConstantFoldingModule(node* syntax_tree)
+ * @fn node* CFdoConstantFoldingModule(node* arg_node)
  *
  *****************************************************************************/
 
 node *
-CFdoConstantFoldingModule (node *syntax_tree)
+CFdoConstantFoldingModule (node *arg_node)
 {
     info *arg_info;
 
@@ -276,16 +257,15 @@ CFdoConstantFoldingModule (node *syntax_tree)
 
     /* do not start traversal in special functions */
     arg_info = MakeInfo ();
-
     INFO_ONEFUNDEF (arg_info) = FALSE;
 
     TRAVpush (TR_cf);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    arg_node = TRAVdo (arg_node, (info *)arg_info);
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -366,7 +346,6 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
     DBUG_ASSERT (N_let == NODE_TYPE (arg_node),
                  "SplitMultipleAssigns expected N_let node");
     if (N_exprs == NODE_TYPE (LET_EXPR (arg_node))) {
-        DBUG_PRINT ("CF", ("SplitMultipleAssigns found EXPRS. Goody.")); /* TEMP */
 
         /* Build new N_assign nodes for all but first lhs, rhs */
         curlhs = IDS_NEXT (LET_IDS (arg_node));
@@ -414,7 +393,7 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CFfundef(node *arg_node, info *arg_info)
+ *   node* CFfundef(node *arg_node, fundefinfo *arg_info)
  *
  * description:
  *   traverses args and block in this order.
@@ -461,13 +440,25 @@ CFfundef (node *arg_node, info *arg_info)
 node *
 CFblock (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("CFblock");
+
+    if (NULL == INFO_TOPBLOCK (arg_info)) {
+        INFO_TOPBLOCK (arg_info) = arg_node;
+        INFO_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
+    }
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert at least the N_empty node in an empty block */
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    }
+
+    /* New vardecs go only at top level block */
+    if (INFO_TOPBLOCK (arg_info) == arg_node) {
+        INFO_TOPBLOCK (arg_info) = NULL;
+        BLOCK_VARDEC (arg_node) = INFO_VARDECS (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -522,7 +513,7 @@ CFassign (node *arg_node, info *arg_info)
 
     if (remassign) {
         /* skip this assignment and free it */
-        DBUG_PRINT ("CF", ("remove dead assignment"));
+        DBUG_PRINT ("CF", ("CFassign removed dead assignment"));
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -934,13 +925,14 @@ CFprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFprf");
 
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
-
     /* Bog-standard constant-folding is all handled by typechecker now */
+
     /* Try symbolic constant simplification */
     fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
+
     /* If that doesn't help, try structural constant constant folding */
     fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
@@ -1209,8 +1201,7 @@ CFprf_shape (node *arg_node, info *arg_info)
             avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PRF_ARG1 (arg_node))),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
             INFO_PREASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
