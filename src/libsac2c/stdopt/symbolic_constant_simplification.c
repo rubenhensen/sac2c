@@ -25,6 +25,7 @@
  *    not(x)        -> TRUE  iFF (FALSE == x), FALSE IFF (TRUE == x)
  *    tob(boolean)  -> Boolean and other coercion identities (int->int, char->char,
  *                     float->float, double->double
+ *    _idx_sel(iv, _shape_A_(X)) ->  _idx_shape_sel(iv, X)
  *
  *  Conformability checking CF:
  *
@@ -1043,6 +1044,24 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_ge_VxS");
     /* Could be supported with ISMOP */
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_idx_sel_VxA( node *arg_node, info *arg_info)
+ *
+ * @brief: Replace _idx_sel_VxA_(iv, _shape_A_(X)) by
+ *                 _idx_shape_sel_SxA_(iv, X)
+ *
+ *****************************************************************************/
+node *
+SCSprf_idx_sel_VxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_idx_sel_VxA");
+    /* FIXME pattern match for (iv, _shape_A_(x)) */
     DBUG_RETURN (res);
 }
 
