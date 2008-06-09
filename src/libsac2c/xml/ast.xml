@@ -2386,6 +2386,7 @@
         </travuser>
       </traversal>
    </traversals>
+
   <nodesets>
     <nodeset name="Expr">
       <target>
@@ -2413,6 +2414,7 @@
         <node name="Globobj" />
       </target>
     </nodeset>
+
     <nodeset name="Instr">
       <target>
         <node name="Let" />
@@ -2424,6 +2426,7 @@
         <node name="Icm" />
       </target>
     </nodeset>
+
     <nodeset name="Interface">
       <target>
         <node name="Import" />
@@ -2432,6 +2435,7 @@
 	<node name="Provide" />
       </target>
     </nodeset>
+
     <nodeset name="WithOp">
       <target>
         <node name="Genarray" />
@@ -2441,7 +2445,16 @@
         <node name="Break" />
         <node name="Propagate" />
       </target>
-    </nodeset>
+     </nodeset>
+
+     <nodeset name="IntValue">
+      <target>
+        <node name="Num" />
+        <node name="Array" />
+        <node name="Id" />
+      </target>
+     </nodeset>
+
   </nodesets>
   <syntaxtree version="1.0">
 <!--
@@ -2506,7 +2519,7 @@
         </son>
         <son name="FunSpecs" default="NULL">
           <description>
-            contains the signatures of forced specilizations
+            contains the signatures of forced specializations
           </description>
           <targets>
             <target mandatory="no">
@@ -5006,6 +5019,51 @@
             </target>
           </targets>
         </son>        
+
+        <son name="MinVal" default="NULL">
+          <description>
+          This field represents the minimum value that this
+          variable can have. It is valid only for integer-like
+          types, i.e., it does not apply to doubles, etc.
+          The value may be an N_num, an N_array, or an N_id.
+          If an N_id, the N_id must have an associated SSAASSIGN
+          giving the origin of the value. For example, the
+          MinVal of the lower bound of a WL index vector might be
+          an N_array with value [0,0,0], or it might be an N_id
+          with SSASSIGN value of "_shape_A_(X) - 1". 
+
+          A typical use of MinVal is to allow constant folding to
+          to eliminate a prf_non_neg_val_V_ call.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <set name="IntValue" />
+              <phases>
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+
+        <son name="MaxVal" default="NULL">
+          <description>
+         See MinVal description, but represents maxima instead
+         of minima. 
+         A typical use is to allow constant folding to eliminate
+         a prf_val_le_val_VxV_ call.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <set name="IntValue" />
+              <phases>
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+
       </sons>
       <attributes>
         <attribute name="Decl" default="NULL">
