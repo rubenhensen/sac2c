@@ -326,7 +326,7 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
 target intelcc:
 
 CC             := icc
-CCFLAGS        := -static
+CCFLAGS        := -shared-intel
 
 target intelcc_sse2::intelcc:
 
