@@ -5048,9 +5048,10 @@
 
         <son name="MaxVal" default="NULL">
           <description>
-         See MinVal description, but represents maxima instead
-         of minima. 
-         A typical use is to allow constant folding to eliminate
+         See MinVal description; MAXVAL represents the maximum, instead
+         of minimum, ALMOST: Like WL index vectors, MAXVAL is
+         part of a semi-closed interval; MAXVAL(X) is 1+maxreduce(X).
+         A typical use of MAXVAL is to allow constant folding to eliminate
          a prf_val_le_val_VxV_ call.
           </description>
           <targets>
