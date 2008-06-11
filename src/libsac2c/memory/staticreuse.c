@@ -26,6 +26,7 @@
 #include "print.h"
 #include "DupTree.h"
 #include "free.h"
+#include "type_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -107,6 +108,14 @@ EMSRprf (node *arg_node, info *arg_info)
                 break;
             }
             rcexprs = EXPRS_NEXT (rcexprs);
+        }
+
+        if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
+            rcexprs = PRF_EXPRS3 (arg_node);
+            if (TUisScalar (ID_NTYPE (EXPRS_EXPR (rcexprs)))) {
+                PRF_PRF (arg_node) = F_alloc;
+                PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
+            }
         }
     }
 
