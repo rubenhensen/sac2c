@@ -34,9 +34,7 @@
 
 #include "LookUpTable.h"
 
-#define NEW 0
-
-#if NEW
+#ifdef BUG110_FIXED
 
 /*
  * Here, we retransform (tail-end recursive) loop functions into do-loops.
@@ -457,7 +455,9 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#else
+/******************************************************************************/
+#else /* BUG110_FIXED */
+/******************************************************************************/
 
 /*
  * INFO structure
@@ -1114,7 +1114,9 @@ TransformIntoDoLoop (node *fundef, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
-#endif
+/******************************************************************************/
+#endif /* BUG110_FIXED */
+/******************************************************************************/
 
 /******************************************************************************
  *
