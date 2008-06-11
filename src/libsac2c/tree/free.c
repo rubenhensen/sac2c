@@ -468,6 +468,39 @@ FREEzombify (node *arg_node)
                  "Only N_fundef nodes may be zombified.");
 
     FUNDEF_ISZOMBIE (arg_node) = TRUE;
+
+    FUNDEF_ISEXPORTED (arg_node) = FALSE;
+    FUNDEF_ISPROVIDED (arg_node) = FALSE;
+    FUNDEF_WASIMPORTED (arg_node) = FALSE;
+    FUNDEF_WASUSED (arg_node) = FALSE;
+    FUNDEF_ISLOCAL (arg_node) = FALSE;
+    FUNDEF_ISSTICKY (arg_node) = FALSE;
+    FUNDEF_ISSACARGCONVERSION (arg_node) = FALSE;
+    FUNDEF_ISNEEDED (arg_node) = FALSE;
+    FUNDEF_ISCONDFUN (arg_node) = FALSE;
+    FUNDEF_ISDOFUN (arg_node) = FALSE;
+    FUNDEF_ISSPMDFUN (arg_node) = FALSE;
+    FUNDEF_ISMTFUN (arg_node) = FALSE;
+    FUNDEF_ISSTFUN (arg_node) = FALSE;
+    FUNDEF_ISWRAPPERFUN (arg_node) = FALSE;
+    FUNDEF_ISEXTERN (arg_node) = FALSE;
+    FUNDEF_ISGENERIC (arg_node) = FALSE;
+    FUNDEF_ISINLINE (arg_node) = FALSE;
+    FUNDEF_ISINLINECOMPLETED (arg_node) = FALSE;
+    FUNDEF_ISLACINLINE (arg_node) = FALSE;
+    FUNDEF_ALLOWSINFIX (arg_node) = FALSE;
+    FUNDEF_HASDOTARGS (arg_node) = FALSE;
+    FUNDEF_HASDOTRETS (arg_node) = FALSE;
+    FUNDEF_ISSPECIALISATION (arg_node) = FALSE;
+    FUNDEF_ISOBJECTWRAPPER (arg_node) = FALSE;
+    FUNDEF_WASOPTIMIZED (arg_node) = FALSE;
+    FUNDEF_WASUPGRADED (arg_node) = FALSE;
+    FUNDEF_FIXPOINTFOUND (arg_node) = FALSE;
+    /*
+     * It would be quite handy here to use an XML generated
+     * function to clear all existing flags at once.
+     */
+
     zombies_exist += 1;
 
     DBUG_RETURN (arg_node);

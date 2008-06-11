@@ -144,6 +144,14 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="REN" name="Rename identifiers" default="sons" include="rename.h" >
+        <travuser>
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Id" />
+          <node name="Ids" />
+        </travuser>
+      </traversal>
       <traversal id="MCG" name="Map Call Graph" default="sons" include="map_call_graph.h" >
         <travuser>
           <node name="Fundef" />
