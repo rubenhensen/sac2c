@@ -31,8 +31,8 @@
 #include "DupTree.h"
 #include "print.h"
 #include "globals.h"
-
 #include "LookUpTable.h"
+#include "rename.h"
 
 #ifdef BUG110_FIXED
 
@@ -310,9 +310,6 @@ Arg2Var (node *arg, info *arg_info)
 
     INFO_NEW_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_NEW_VARDECS (arg_info));
 
-    VARDEC_TYPE (INFO_NEW_VARDECS (arg_info)) = DUPdupAllTypes (ARG_TYPE (arg));
-    /* This must be legacy code, probably superfluous. */
-
     DBUG_RETURN (new_avis);
 }
 
@@ -392,34 +389,38 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    body_assigns = DUPdoDupTreeLut (FUNDEF_INSTR (arg_node), f2l_lut);
+    body_assigns = RENdoRenameLut (FUNDEF_INSTR (arg_node), f2l_lut);
+    FUNDEF_INSTR (arg_node) = NULL;
 
-    return_assign = DUPdoDupTreeLut (INFO_RETURN (arg_info), f2l_lut);
+    return_assign = RENdoRenameLut (INFO_RETURN (arg_info), f2l_lut);
+    INFO_RETURN (arg_info) = NULL;
 
-    loop_pred
-      = DUPdoDupTreeLut (COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))), f2l_lut);
+    loop_pred = RENdoRenameLut (COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))), f2l_lut);
+    COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))) = NULL;
 
     then_assigns = BLOCK_INSTR (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info))));
+    BLOCK_INSTR (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+
     if ((then_assigns != NULL) && (NODE_TYPE (then_assigns) == N_assign)) {
-        then_assigns = DUPdoDupTreeLut (then_assigns, f2l_lut);
+        then_assigns = RENdoRenameLut (then_assigns, f2l_lut);
     } else {
         then_assigns = NULL;
     }
 
     else_assigns = BLOCK_INSTR (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info))));
+    BLOCK_INSTR (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+
     if ((else_assigns != NULL) && (NODE_TYPE (else_assigns) == N_assign)) {
-        else_assigns = DUPdoDupTreeLut (else_assigns, f2l_lut);
+        else_assigns = RENdoRenameLut (else_assigns, f2l_lut);
     } else {
         else_assigns = NULL;
     }
 
     /*
-     * The above strane code is necessary because empty assign chains are represented
+     * The above strange code is necessary because empty assign chains are represented
      * by the N_empty node rather than a NULL pointer. This should be changed!
      */
 
-    FUNDEF_INSTR (arg_node) = FREEdoFreeTree (FUNDEF_INSTR (arg_node));
-    INFO_RETURN (arg_info) = FREEdoFreeTree (INFO_RETURN (arg_info));
     INFO_COND (arg_info) = FREEdoFreeTree (INFO_COND (arg_info));
     INFO_RECAP (arg_info) = FREEdoFreeTree (INFO_RECAP (arg_info));
 
@@ -434,7 +435,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     loop = TBmakeDo (loop_pred, TBmakeBlock (loop_body, NULL));
 
-    DO_SKIP (loop) = then_assigns;
+    DO_SKIP (loop) = TBmakeBlock (then_assigns, NULL);
 
     if (DO_SKIP (loop) != NULL) {
         DO_LABEL (loop) = TRAVtmpVarName ("label");
@@ -443,6 +444,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     fun_body = TBmakeAssign (loop, TCappendAssign (else_assigns, return_assign));
 
     FUNDEF_INSTR (arg_node) = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), fun_body);
+
+    FUNDEF_RETURN (arg_node) = ASSIGN_INSTR (return_assign);
 
     INFO_NEW_TOPASSIGNS (arg_info) = NULL;
 
@@ -1200,7 +1203,7 @@ F2LdoFun2Lac (node *syntax_tree)
 
     info = MakeInfo ();
 
-#if NEW
+#ifdef BUG110_FIXED
     f2l_lut = LUTgenerateLut ();
 #endif
 
@@ -1208,7 +1211,7 @@ F2LdoFun2Lac (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-#if NEW
+#ifdef BUG110_FIXED
     f2l_lut = LUTremoveLut (f2l_lut);
 #endif
     FreeInfo (info);

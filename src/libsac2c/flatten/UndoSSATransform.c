@@ -495,14 +495,25 @@ USSATfuncond (node *arg_node, info *arg_info)
      *
      *  - t,e are not given by genarray oder modarray with-loops
      *    for the same reason they must not be given by fill operations.
+     *
+     *  If the new implementation of fun2lac (bug fix for bug 110) is in
+     *  effect, we can be more moderate with loops because the subsequent
+     *  fun2lac conversion will introduce the required copy assignments
+     *  anyways.
      */
 
     /*
      * Try to trigger replacement of t with r
      */
     rhsavis = ID_AVIS (FUNCOND_THEN (arg_node));
+#ifdef BUG110_FIXED
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
+        || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
+        || (AVIS_SUBST (rhsavis) != NULL)) {
+#else
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
+#endif
 
         /*
          * At least one criterium is not met => insert copy assignment
@@ -518,8 +529,14 @@ USSATfuncond (node *arg_node, info *arg_info)
      * Try to trigger replacement of e with r
      */
     rhsavis = ID_AVIS (FUNCOND_ELSE (arg_node));
+#ifdef BUG110_FIXED
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
+        || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
+        || (AVIS_SUBST (rhsavis) != NULL)) {
+#else
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
+#endif
 
         /*
          * At least one criterium is not met => insert copy assignment
