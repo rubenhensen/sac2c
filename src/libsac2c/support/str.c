@@ -207,6 +207,86 @@ STReq (const char *first, const char *second)
 
 /*******************************************************************************
  *
+ * Description: Compare two strings for referring to the same hexadecimal number
+ *
+ * Parameters: - first, first string to compare
+ *             - second, second string to compare
+ *
+ * Return: - TRUE, string contents are equal
+ *         - FALSE, string contents are not equal
+ *
+ *******************************************************************************/
+
+bool
+STReqhex (const char *first, const char *second)
+{
+    bool res;
+    int i, j;
+
+    DBUG_ENTER ("STReqnum");
+
+    if ((first == NULL) && (second == NULL)) {
+        res = TRUE;
+    } else if ((first == NULL) || (second == NULL)) {
+        res = FALSE;
+    } else {
+        first = first + 2;
+        while (*first == '0') {
+            first++;
+        }
+
+        second = second + 2;
+        while (*second == '0') {
+            second++;
+        }
+
+        res = STReqci (first, second);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
+ * Description: Compare two strings for referring to the same octal number
+ *
+ * Parameters: - first, first string to compare
+ *             - second, second string to compare
+ *
+ * Return: - TRUE, string contents are equal
+ *         - FALSE, string contents are not equal
+ *
+ *******************************************************************************/
+
+bool
+STReqoct (const char *first, const char *second)
+{
+    bool res;
+    int i, j;
+
+    DBUG_ENTER ("STReqnum");
+
+    if ((first == NULL) && (second == NULL)) {
+        res = TRUE;
+    } else if ((first == NULL) || (second == NULL)) {
+        res = FALSE;
+    } else {
+        while (*first == '0') {
+            first++;
+        }
+
+        while (*second == '0') {
+            second++;
+        }
+
+        res = STReq (first, second);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
  * Description: Compare two strings in a case insensitive way.
  *
  * Parameters: - first, first string to compare

@@ -389,7 +389,7 @@ int charpos = 0;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {
                                str = STRitoa( yylval.cint);
-                               if (!STReqci( str, yytext)) {
+                               if (!STReq( str, yytext)) {
                                  CTIerrorLine( global.linenum,
                                                "Decimal constant not representable as integer: %s",
                                                yytext);
@@ -403,11 +403,11 @@ int charpos = 0;
                              FILTER( NUM);
                            }
 
-[0][1-7][0-7]*             { char *str;
+[0][0-7]*                  { char *str;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {
                                str = STRitoa_oct( yylval.cint);
-                               if (!STReqci( str, yytext)) {
+                               if (!STReqoct( str, yytext)) {
                                  CTIerrorLine( global.linenum,
                                                "Octal constant not representable as integer: %s",
                                                yytext);
@@ -421,7 +421,7 @@ int charpos = 0;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {
                                str = STRitoa_hex( yylval.cint);
-                               if (!STReqci( str, yytext)) {
+                               if (!STReqhex( str, yytext)) {
                                  CTIerrorLine( global.linenum,
                                                "Hexadecimal constant not representable as integer: %s",
                                                yytext);
