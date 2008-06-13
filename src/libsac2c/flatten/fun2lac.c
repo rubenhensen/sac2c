@@ -435,9 +435,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     loop = TBmakeDo (loop_pred, TBmakeBlock (loop_body, NULL));
 
-    DO_SKIP (loop) = TBmakeBlock (then_assigns, NULL);
-
-    if (DO_SKIP (loop) != NULL) {
+    if (then_assigns != NULL) {
+        DO_SKIP (loop) = TBmakeBlock (then_assigns, NULL);
         DO_LABEL (loop) = TRAVtmpVarName ("label");
     }
 
@@ -1098,11 +1097,10 @@ TransformIntoDoLoop (node *fundef, info *arg_info)
         ASSIGN_INSTR (cond_assign) = FREEdoFreeTree (ASSIGN_INSTR (cond_assign));
         ASSIGN_INSTR (cond_assign) = TBmakeDo (loop_pred, loop_body);
 
-        if (skip == NULL) {
-            skip = TBmakeEmpty ();
+        if (skip != NULL) {
+            DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
+            DO_LABEL (ASSIGN_INSTR (cond_assign)) = TRAVtmpVar ();
         }
-        DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
-        DO_LABEL (ASSIGN_INSTR (cond_assign)) = TRAVtmpVar ();
     }
 
     /* Insert epilogue */

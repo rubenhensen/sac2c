@@ -5107,11 +5107,11 @@ COMPdo (node *arg_node, info *arg_info)
     /*
      * Insert code from DO_SKIP containing DEC_RCs into body
      */
-    if (NODE_TYPE (BLOCK_INSTR (DO_SKIP (arg_node))) != N_empty) {
+    if (DO_SKIP (arg_node) != NULL) {
         BLOCK_INSTR (body)
           = TCappendAssign (BLOCK_INSTR (DO_SKIP (arg_node)), BLOCK_INSTR (body));
 
-        BLOCK_INSTR (DO_SKIP (arg_node)) = NULL;
+        DO_SKIP (arg_node) = NULL;
     }
 
     /*
