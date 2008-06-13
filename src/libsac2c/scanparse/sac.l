@@ -293,7 +293,7 @@ int charpos = 0;
                              }
                            }
 
-[-/][_A-Za-z0-9]*          { if( global.compiler_phase == PH_initial) {
+[-/][-_A-Za-z0-9]*          { if( global.compiler_phase == PH_initial) {
                                yylval.id = STRcpy( yytext);
                                FILTER( OPTION);
                              } else {
