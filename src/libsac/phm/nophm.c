@@ -111,6 +111,19 @@ SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
     return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
+void *
+SAC_HM_MallocDesc (SAC_HM_header_t *addr, SAC_HM_size_byte_t size,
+                   SAC_HM_size_byte_t desc_size)
+{
+    return (malloc (desc_size));
+}
+
+void
+SAC_HM_FreeDesc (SAC_HM_header_t *addr)
+{
+    free (addr);
+}
+
 void
 SAC_HM_ShowDiagnostics ()
 {

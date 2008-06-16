@@ -305,8 +305,13 @@ extern void *SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num
 extern void *SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units);
 extern void *SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units);
 
+extern void *SAC_HM_MallocDesc (SAC_HM_header_t *addr, SAC_HM_size_byte_t size,
+                                SAC_HM_size_byte_t desc_size);
+
 extern void SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr);
 extern void SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr);
+
+extern void SAC_HM_FreeDesc (SAC_HM_header_t *addr);
 
 extern void SAC_HM_ShowDiagnostics ();
 extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
@@ -593,6 +598,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #if SAC_DO_DAO
 
+#if 0
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + BYTE_SIZE_OF_DESC (dim)                 \
@@ -602,6 +608,16 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
                                              + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
         SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
     }
+#else
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + BYTE_SIZE_OF_DESC (dim)                 \
+                                        + 2 * SAC_HM_UNIT_SIZE))                         \
+                                                                                         \
+        var_desc                                                                         \
+          = SAC_HM_MallocDesc ((SAC_HM_header_t *)var, size, BYTE_SIZE_OF_DESC (dim));   \
+    }
+#endif
 
 #else /* SAC_DO_DAO */
 
@@ -628,9 +644,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #define SAC_HM_FREE_DESC(addr)                                                           \
     {                                                                                    \
-        if (SAC_HM_ADDR_ARENA (addr) != NULL) {                                          \
-            SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr, SAC_HM_ADDR_ARENA (addr));   \
-        }                                                                                \
+        SAC_HM_FreeDesc ((SAC_HM_header_t *)addr);                                       \
     }
 
 #define SAC_HM_FREE_FIXED_SIZE(addr, size)                                               \
