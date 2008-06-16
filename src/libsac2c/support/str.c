@@ -221,7 +221,6 @@ bool
 STReqhex (const char *first, const char *second)
 {
     bool res;
-    int i, j;
 
     DBUG_ENTER ("STReqnum");
 
@@ -262,7 +261,6 @@ bool
 STReqoct (const char *first, const char *second)
 {
     bool res;
-    int i, j;
 
     DBUG_ENTER ("STReqnum");
 
