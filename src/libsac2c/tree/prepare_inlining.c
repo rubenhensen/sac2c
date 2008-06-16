@@ -38,7 +38,8 @@
 #include "LookUpTable.h"
 #include "globals.h"
 
-#ifndef BUG110_FIXED
+#if BUG110_FIXED
+#else
 #include "new_types.h"
 #endif
 
@@ -133,7 +134,7 @@ PINLfundef (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
     if (FUNDEF_VARDEC (arg_node) != NULL) {
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
         INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut);
 #else
         INFO_VARDECS (arg_info)
@@ -175,15 +176,13 @@ PINLfundef (node *arg_node, info *arg_info)
 node *
 PINLarg (node *arg_node, info *arg_info)
 {
-    node *avis;
-
     DBUG_ENTER ("PINLarg");
 
     DBUG_PRINT ("PINL", ("formal parameter %s linked to argument %s",
                          AVIS_NAME (ARG_AVIS (arg_node)),
                          AVIS_NAME (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))));
 
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node),
                                     ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
 #else
@@ -194,6 +193,8 @@ PINLarg (node *arg_node, info *arg_info)
         /*
          * we simply insert a renaming here
          */
+        node *avis;
+
         avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ARG_AVIS (arg_node))),
                            TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
 
@@ -241,7 +242,8 @@ PINLarg (node *arg_node, info *arg_info)
 node *
 PINLblock (node *arg_node, info *arg_info)
 {
-#ifndef BUG110_FIXED
+#if BUG110_FIXED
+#else
     node *assigns;
 #endif
 
@@ -251,7 +253,7 @@ PINLblock (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
     }
 
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_INSTR (arg_node), inline_lut);
 #else
     assigns = INFO_ASSIGNS (arg_info);
@@ -271,7 +273,8 @@ PINLblock (node *arg_node, info *arg_info)
      * return-statement and to append renaming assignments created beforehand.
      */
 
-#ifndef BUG110_FIXED
+#if BUG110_FIXED
+#else
     INFO_ASSIGNS (arg_info) = TCappendAssign (assigns, INFO_ASSIGNS (arg_info));
 #endif
 

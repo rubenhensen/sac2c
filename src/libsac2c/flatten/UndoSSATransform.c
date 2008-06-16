@@ -506,7 +506,7 @@ USSATfuncond (node *arg_node, info *arg_info)
      * Try to trigger replacement of t with r
      */
     rhsavis = ID_AVIS (FUNCOND_THEN (arg_node));
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
         || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
         || (AVIS_SUBST (rhsavis) != NULL)) {
@@ -529,7 +529,7 @@ USSATfuncond (node *arg_node, info *arg_info)
      * Try to trigger replacement of e with r
      */
     rhsavis = ID_AVIS (FUNCOND_ELSE (arg_node));
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
         || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
         || (AVIS_SUBST (rhsavis) != NULL)) {

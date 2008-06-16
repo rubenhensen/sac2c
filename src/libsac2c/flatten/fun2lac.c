@@ -34,7 +34,7 @@
 #include "LookUpTable.h"
 #include "rename.h"
 
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
 
 /*
  * Here, we retransform (tail-end recursive) loop functions into do-loops.
@@ -1201,7 +1201,7 @@ F2LdoFun2Lac (node *syntax_tree)
 
     info = MakeInfo ();
 
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     f2l_lut = LUTgenerateLut ();
 #endif
 
@@ -1209,7 +1209,7 @@ F2LdoFun2Lac (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-#ifdef BUG110_FIXED
+#if BUG110_FIXED
     f2l_lut = LUTremoveLut (f2l_lut);
 #endif
     FreeInfo (info);
