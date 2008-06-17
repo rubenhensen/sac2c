@@ -25,6 +25,8 @@
 extern node *PRTdoPrint (node *syntax_tree);
 extern node *PRTdoPrintNode (node *node);
 
+extern node *PRTdoPrintNodeFile (FILE *fd, node *arg_node);
+
 /*
  * Functions for printing non-node parts of the AST
  */
