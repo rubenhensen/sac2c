@@ -127,7 +127,7 @@ PRF_NOT_S  PRF_NOT_V
 PRF_TOI_S  PRF_TOF_S  PRF_TOD_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
-%token <id> ID  STR  OPTION
+%token <id> ID  STR
 
 %token <types> TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
        TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID
@@ -1926,18 +1926,6 @@ resources: ID COLON LET string resources
            { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON string resources
-           { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
-           }
-         | ID COLON LET OPTION resources
-           { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
-           }
-         | ID ADDON OPTION resources
-           { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
-           }
-         | ID COLON LET ID resources
-           { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
-           }
-         | ID ADDON ID resources
            { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET NUM resources

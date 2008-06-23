@@ -220,7 +220,7 @@ STReq (const char *first, const char *second)
 bool
 STReqhex (const char *first, const char *second)
 {
-    bool res;
+    bool res = TRUE;
 
     DBUG_ENTER ("STReqnum");
 
@@ -229,17 +229,27 @@ STReqhex (const char *first, const char *second)
     } else if ((first == NULL) || (second == NULL)) {
         res = FALSE;
     } else {
-        first = first + 2;
-        while (*first == '0') {
-            first++;
+        if ((*first == '-') && (*second == '-')) {
+            first += 3;
+            second += 3;
+        } else if ((*first != '-') && (*second != '-')) {
+            first += 2;
+            second += 2;
+        } else {
+            res = FALSE;
         }
 
-        second = second + 2;
-        while (*second == '0') {
-            second++;
-        }
+        if (res) {
+            while (*first == '0') {
+                first++;
+            }
 
-        res = STReqci (first, second);
+            while (*second == '0') {
+                second++;
+            }
+
+            res = STReqci (first, second);
+        }
     }
 
     DBUG_RETURN (res);
@@ -260,7 +270,7 @@ STReqhex (const char *first, const char *second)
 bool
 STReqoct (const char *first, const char *second)
 {
-    bool res;
+    bool res = TRUE;
 
     DBUG_ENTER ("STReqnum");
 
@@ -269,15 +279,27 @@ STReqoct (const char *first, const char *second)
     } else if ((first == NULL) || (second == NULL)) {
         res = FALSE;
     } else {
-        while (*first == '0') {
-            first++;
-        }
-
-        while (*second == '0') {
+        if ((*first == '-') && (*second == '-')) {
+            first += 2;
+            second += 2;
+        } else if ((*first != '-') && (*second != '-')) {
             second++;
+            first++;
+        } else {
+            res = FALSE;
         }
 
-        res = STReq (first, second);
+        if (res) {
+            while (*first == '0') {
+                first++;
+            }
+
+            while (*second == '0') {
+                second++;
+            }
+
+            res = STReq (first, second);
+        }
     }
 
     DBUG_RETURN (res);
@@ -566,22 +588,13 @@ char *
 STRitoa (int number)
 {
     char *str;
-    int tmp;
-    int length;
-    int base = 10;
+    int num;
 
     DBUG_ENTER ("STRitoa");
 
-    tmp = number;
-    length = 1;
-    while (tmp >= base) {
-        tmp /= base;
-        length++;
-    }
-
-    str = (char *)MEMmalloc (sizeof (char) * length + 3);
-
-    sprintf (str, "%d", number);
+    str = (char *)MEMmalloc (sizeof (int) * 4);
+    num = snprintf (str, (sizeof (int) * 4) - 1, "%d", number);
+    DBUG_ASSERT (num < (sizeof (int) * 4) - 1, "Trouble in STRitoa");
 
     DBUG_RETURN (str);
 }

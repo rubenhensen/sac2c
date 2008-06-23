@@ -293,32 +293,6 @@ int charpos = 0;
                              }
                            }
 
-[-/][-_A-Za-z0-9]*          { if( global.compiler_phase == PH_initial) {
-                               yylval.id = STRcpy( yytext);
-                               FILTER( OPTION);
-                             } else {
-                               switch (yytext[0]) {
-                                 case '-':
-                                   yyless( 1);
-                                   FILTER( MINUS);
-                                   break;
-                                 case '/':
-                                   yyless( 1);
-                                   yylval.id = STRcpy( yytext);
-                                   FILTER( ID);
-                                   break;
-                                 case '_':
-                                   yylval.id = STRcpy( yytext);
-                                   FILTER( ID);
-                                   break;
-                                 default:
-                                   yylval.id = STRcpy( yytext);
-                                   FILTER( ID);
-                               }
-                             }
-                           }
-
-
 \"([^"\n]|(\\\"))*\"       { yylval.id = STRcpy( yytext + sizeof( char));
                              yylval.id[ STRlen( yylval.id) - 1] = '\0';
                              FILTER( STR);
@@ -399,11 +373,11 @@ int charpos = 0;
                              FILTER( NUM);
                            }
 
-"0"                        { yylval.cint = 0;
+0                          { yylval.cint = 0;
                              FILTER( NUM);
                            }
 
-[0][0-7]*                  { char *str;
+0[0-7]*                    { char *str;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {
                                str = STRitoa_oct( yylval.cint);
