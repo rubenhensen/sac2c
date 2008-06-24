@@ -157,9 +157,6 @@ static node *
 ExtractOneArg (node *stack, node **arg)
 {
     node *next;
-#ifndef DBUG_OFF
-    FILE *mem_outfile;
-#endif
 
     DBUG_ENTER ("ExtractOneArg");
     DBUG_ASSERT (stack != NULL, ("ExtractOneArg called with NULL stack!"));
@@ -180,8 +177,7 @@ ExtractOneArg (node *stack, node **arg)
             stack = NULL;
         }
         DBUG_PRINT ("PM", ("argument found:"));
-        DBUG_EXECUTE ("PM", mem_outfile = global.outfile; global.outfile = stderr;
-                      PRTdoPrint (*arg); global.outfile = mem_outfile;);
+        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *arg););
     }
     DBUG_RETURN (stack);
 }
@@ -229,9 +225,6 @@ PushArgs (node *stack, node *args)
 node *
 PMfollowId (node *arg_node)
 {
-#ifndef DBUG_OFF
-    FILE *mem_outfile;
-#endif
 
     DBUG_ENTER ("PMfollowId");
 
@@ -241,8 +234,7 @@ PMfollowId (node *arg_node)
         DBUG_PRINT ("PM", ("looking up definition of the variable"));
         arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
         DBUG_PRINT ("PM", ("definition found:"));
-        DBUG_EXECUTE ("PM", mem_outfile = global.outfile; global.outfile = stderr;
-                      PRTdoPrint (arg_node); global.outfile = mem_outfile;);
+        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, arg_node););
     }
     DBUG_RETURN (arg_node);
 }

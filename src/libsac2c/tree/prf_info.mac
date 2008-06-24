@@ -453,7 +453,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        TEone, NULL, NULL),
 
   PRF (shape_A, (PA_A, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_shape_A, COshape,
-       COMPprfShape, CFprf_shape, NULL, SAACFprf_shape, SAAdim_is_1, SAAshp_for_shape,
+       COMPprfShape, SCSprf_shape, NULL, SAACFprf_shape, SAAdim_is_1, SAAshp_for_shape,
        NULL, 0, PPIgetPVShape, ICCnone, TEone, NULL, NULL),
 
   PRF (reshape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_reshape_VxA, COreshape,
@@ -465,8 +465,9 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCsel, TEone, NULL, NULL),
 
   PRF (modarray_AxVxS, (PA_A, PA_V, PA_S), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxS,
-       COmodarray, COMPprfModarray_AxVxS, NULL, SCCFprf_modarray, NULL, SAAdim_of_arg1,
-       SAAshp_of_arg1, NULL, 0, PPIgetPVModarray, ICCprfModarray, TEone, NULL, NULL),
+       COmodarray, COMPprfModarray_AxVxS, NULL, SCCFprf_modarray_AxVxS, NULL,
+       SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, PPIgetPVModarray, ICCprfModarray, TEone,
+       NULL, NULL),
 
   PRF (cat_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_cat_VxV, COcat, COMPprfCat,
        NULL, SCCFprf_cat_VxV, NULL, SAAdim_is_1, SAAshp_for_cat, NULL, 0, PPIgetPVVxV,
@@ -565,8 +566,8 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
    */
 
   PRF (modarray_AxVxA, (PA_A, PA_V, PA_A), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxA,
-       COmodarray, COMPprfModarray_AxVxA, NULL, SCCFprf_modarray, NULL, SAAdim_of_arg1,
-       SAAshp_of_arg1, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+       COmodarray, COMPprfModarray_AxVxA, NULL, SCCFprf_modarray_AxVxA, NULL,
+       SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Memory management:

@@ -1807,7 +1807,7 @@ TCgetCompoundNode (node *arg_node)
  *   node *TCappendAssign( node *assign_chain, node *assign)
  *
  * description:
- *   Appends 'assign' to 'assing_chain' and returns the new chain.
+ *   Appends 'assign' to 'assign_chain' and returns the new chain.
  *   If 'assign_chain' was a N_empty node, this node is removed first.
  *
  ******************************************************************************/

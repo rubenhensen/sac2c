@@ -1311,3 +1311,74 @@ SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCSprf_prod_matches_prod_shape_VxA");
     DBUG_RETURN (res);
 }
+
+/**<!--*************************************************************-->
+ *
+ * @fn node *SCSprf_shape(node *arg_node, info *arg_info)
+ *
+ * @brief: performs symbolic constant-folding on shape primitive
+ *
+ * @param arg_node, arg_info
+ *
+ * @result new arg_node if shape() operation could be replaced
+ *         by a set of shape_sel operations, else NULL
+ *
+ ********************************************************************/
+
+node *
+SCSprf_shape (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *avis;
+    node *resid = NULL;
+    node *resavis;
+    node *resassign;
+    int arg1dim;
+    int i;
+
+    DBUG_ENTER ("SCSprf_shape");
+    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
+                 "SCSprf_shape_ expected N_id node");
+    /* If AKD, replace the shape() operation by a list of idx_shape_sel() ops */
+    if (TUdimKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
+        arg1dim = TYgetDim (ID_NTYPE (PRF_ARG1 (arg_node)));
+        i = arg1dim;
+
+        for (i = arg1dim - 1; i >= 0; i--) {
+            avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PRF_ARG1 (arg_node))),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+            INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                         TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
+                                                     DUPdoDupNode (PRF_ARG1 (arg_node)))),
+                              INFO_PREASSIGN (arg_info));
+            AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
+
+            AVIS_DIM (avis) = TBmakeNum (0); /* each shape element is an int. */
+            AVIS_SHAPE (avis) = TCmakeIntVector (NULL);
+
+            res = TBmakeExprs (TBmakeId (avis), res);
+        }
+        /* At this point, we have an N_exprs chain of idx_shape_sel ops.
+         * Make this an N_array and give it a name.
+         */
+        res = TCmakeIntVector (res);
+        resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                        SHcreateShape (1, arg1dim)));
+        AVIS_DIM (resavis) = TBmakeNum (1);
+        AVIS_SHAPE (resavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (arg1dim), NULL));
+        ;
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+
+        resid = TBmakeId (resavis);
+        resassign = TBmakeAssign (TBmakeLet (TBmakeIds (resavis, NULL), res), NULL);
+        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), resassign);
+
+        AVIS_SSAASSIGN (resavis) = resassign;
+    }
+    DBUG_RETURN (resid);
+}

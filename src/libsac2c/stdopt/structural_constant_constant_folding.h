@@ -16,7 +16,8 @@
 
 extern node *SCCFprf_reshape (node *arg_node, info *arg_info);
 extern node *SCCFprf_sel (node *arg_node, info *arg_info);
-extern node *SCCFprf_modarray (node *arg_node, info *arg_info);
+extern node *SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info);
+extern node *SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info);
 extern node *SCCFprf_idx_modarray (node *arg_node, info *arg_info);
 extern node *SCCFprf_cat_VxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_take_SxV (node *arg_node, info *arg_info);

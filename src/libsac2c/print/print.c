@@ -4926,6 +4926,30 @@ PRTdoPrintNodeFile (FILE *fd, node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *PRTdoPrintFile(FILE *fd, node *arg_node)
+ *
+ *
+ * description:
+ *   Prints the given arg_node to fd, typically stderr
+ *
+ ******************************************************************************/
+
+node *
+PRTdoPrintFile (FILE *fd, node *arg_node)
+{
+    FILE *globalfd;
+
+    DBUG_ENTER ("PRTdoPrintFile");
+    globalfd = global.outfile;
+    global.outfile = fd;
+    PRTdoPrint (arg_node);
+    global.outfile = globalfd;
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************->>
  *
  * @fn node *PrintDataflowgraph(node *arg_node, info *arg_info)

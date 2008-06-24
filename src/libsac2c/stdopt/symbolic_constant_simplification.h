@@ -40,6 +40,7 @@ extern node *SCSprf_mod (node *arg_node, info *arg_info);
 extern node *SCSprf_lege (node *arg_node, info *arg_info);
 extern node *SCSprf_nlege (node *arg_node, info *arg_info);
 extern node *SCSprf_minmax (node *arg_node, info *arg_info);
+extern node *SCSprf_shape (node *arg_node, info *arg_info);
 extern node *SCSprf_guard (node *arg_node, info *arg_info);
 extern node *SCSprf_afterguard (node *arg_node, info *arg_info);
 extern node *SCSprf_same_shape_AxA (node *arg_node, info *arg_info);

@@ -8,30 +8,13 @@
  *
  * This module implements Constant Folding on Structural Constants.
  *
- *   each computed constant expression is stored in the AVIS_SSACONST(avis)
- *   attribute of the assigned identifier for later access.
+ * By "Structural Constant", we mean anything represented by an N_array node.
  *
- *   when traversing into a special fundef we propagate constant information
- *   for all args (in loops only the loop-invariant ones) by storing the
- *   AVIS_SSACONST() in the corresponding args. constant results are propagted
- *   back in the calling context by inserting a assignment to the constant
- *   value. The removal of unused function args and result values is done
- *   later by the dead code removal.
- *
- *     structural constant, with full constant iv (array with ids as values):
- *       reshape, sel, take, drop, modarray
- *
- *     shape constant (array with known shape, scalar id):
- *       shape, sub
- *
- *     dim constants (expression with known dimension):
- *       dim, eq
- *
- *
- *  special sel-modarray optimization:
- *    looking up in a modarray chain for setting the sel referenced value
- *
- *  not yet implemented: cat, rotate
+ * Description:
+ *   The code here assumes that the compiler is running with -ecc.
+ *   Therefore, it does not make any error checks that will have been
+ *   made by various guards.
+ *   E.g., the modarray code assumes that arg3 is always a scalar.
  *
  *  @ingroup opt
  *
@@ -67,598 +50,141 @@
 #include "compare_tree.h"
 #include "namespaces.h"
 #include "remove_vardecs.h"
-
-/** <!--********************************************************************-->
- *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
-struct INFO {
-    bool remassign;
-    bool onefundef;
-    node *fundef;
-    node *preassign;
-};
-
-#define INFO_REMASSIGN(n) (n->remassign)
-#define INFO_ONEFUNDEF(n) (n->onefundef)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_PREASSIGN(n) (n->preassign)
-
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/* structural constant (SCO) should be integrated in constants.[ch] in future */
-/* special constant version used for structural constants */
-struct STRUCT_CONSTANT {
-    simpletype simpletype;      /* basetype of struct constant */
-    char *name;                 /* only used for T_user !! */
-    const namespace_t *name_ns; /* namespace belonging to 'name' */
-    shape *shape;               /* shape of struct constant */
-    constant *hidden_co;        /* pointer to constant of pointers */
-    node *tmpast;               /* pointer to temporary ast representation */
-};
-
-/* access macros for structural constant type */
-#define SCO_BASETYPE(n) (n->simpletype)
-#define SCO_NAME(n) (n->name)
-#define SCO_NS(n) (n->name_ns)
-#define SCO_SHAPE(n) (n->shape)
-#define SCO_HIDDENCO(n) (n->hidden_co)
-#define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
-#define SCO_TMPAST(n) (n->tmpast)
-
-/* local used helper functions */
-
-/*
- * primitive functions for non full-constant expressions like:
- *   dimension constant
- *   shape constant
- *   structural constant
- *
- * they have to be implemented seperatly as long as there is no constant type
- * that can handle all these cases internally
- */
-
-static node *StructOpSel (constant *idx, node *expr);
-static node *SCCFStructOpReshape (constant *idx, node *expr);
-static node *StructOpTake (constant *idx, node *expr);
-static node *StructOpDrop (constant *idx, node *expr);
+#include "constant_folding_info.h"
+#include "pattern_match.h"
 
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCCFarray2StructConstant(node *array)
+ *    node *CFsel( constant *idx, node *a)
  *
  * description:
- *   converts an N_array node from AST to a structural constant.
- *   To convert an array to a structural constant, all array elements must be
- *   scalars!
- *
- *****************************************************************************/
-static struct_constant *
-SCCFarray2StructConstant (node *array)
-{
-    struct_constant *struc_co;
-    ntype *atype;
-    shape *realshape;
-    shape *ashape;
-    node **node_vec;
-    node *tmp;
-    bool valid_const;
-    int elem_count;
-    int i;
-
-    DBUG_ENTER ("SCCFarray2StructConstant");
-
-    DBUG_ASSERT ((array != NULL) && (NODE_TYPE (array) == N_array),
-                 "SCCFarray2StructConstant supports only N_array nodes");
-
-    /* shape of the given array */
-    atype = NTCnewTypeCheck_Expr (array);
-
-    /* build an abstract structural constant of type (void*) T_hidden */
-    /* Perhaps some or all of the following can be replaced with COaST2Constant??? */
-    if (TUshapeKnown (atype)) {
-        /* alloc hidden vector */
-        realshape = SHcopyShape (TYgetShape (atype));
-        ashape = SHcopyShape (ARRAY_FRAMESHAPE (array));
-
-        elem_count = SHgetUnrLen (ashape);
-        node_vec = (node **)MEMmalloc (elem_count * sizeof (node *));
-
-        /* copy element pointers from array to vector */
-        valid_const = TRUE;
-        tmp = ARRAY_AELEMS (array);
-        for (i = 0; i < elem_count; i++) {
-            if (tmp == NULL) {
-                /* array contains too few elements - there must be non scalar elements */
-                valid_const = FALSE;
-                DBUG_ASSERT ((tmp == NULL),
-                             "bad dog  == array contains too few elements");
-            } else {
-                node_vec[i] = EXPRS_EXPR (tmp);
-                tmp = EXPRS_NEXT (tmp);
-            }
-        }
-        DBUG_ASSERT ((tmp == NULL), "array contains too many elements");
-
-        /* create struct_constant */
-        struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
-        SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (atype));
-        if (TYisUser (atype)) {
-            SCO_NAME (struc_co) = TYgetName (atype);
-            SCO_NS (struc_co) = TYgetNamespace (atype);
-        } else {
-            SCO_NAME (struc_co) = NULL;
-            SCO_NS (struc_co) = NULL;
-        }
-        SCO_SHAPE (struc_co) = realshape;
-
-        SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, ashape, node_vec);
-        SCO_TMPAST (struc_co) = NULL;
-
-        /* remove invalid structural arrays */
-        if (!valid_const) {
-            struc_co = SCCFfreeStructConstant (struc_co);
-        }
-    } else {
-        /* no array with known elements */
-        struc_co = NULL;
-    }
-
-    atype = TYfreeType (atype);
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   struct_constant *SCCFscalar2StructConstant(node *expr)
- *
- * description:
- *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
+ *    selects a single element from N_array a.
  *
  ******************************************************************************/
-static struct_constant *
-SCCFscalar2StructConstant (node *expr)
-{
-    struct_constant *struc_co = NULL;
-    shape *cshape;
-    ntype *ctype;
-    node **elem;
-    nodetype nt;
-
-    DBUG_ENTER ("SCCFscalar2StructConstant");
-
-    nt = NODE_TYPE (expr);
-
-    switch (nt) {
-    case N_num:
-    case N_float:
-    case N_double:
-    case N_bool:
-    case N_char:
-        /* determin type */
-        ctype = NTCnewTypeCheck_Expr (expr);
-
-        /* alloc hidden vector */
-        cshape = SHmakeShape (0);
-        elem = (node **)MEMmalloc (sizeof (node *));
-
-        /* copy element pointers from array to vector */
-        *elem = expr;
-
-        /* create struct_constant */
-        struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
-        SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
-        SCO_NAME (struc_co) = NULL;
-        SCO_NS (struc_co) = NULL;
-
-        SCO_SHAPE (struc_co) = SHcopyShape (cshape);
-        SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
-        SCO_TMPAST (struc_co) = NULL;
-
-        ctype = TYfreeType (ctype);
-        break;
-
-    case N_id:
-        if ((TUdimKnown (ID_NTYPE (expr))) && (TYgetDim (ID_NTYPE (expr)) == 0)) {
-            /* create structural constant as scalar */
-            ctype = ID_NTYPE (expr);
-
-            /* alloc hidden vector */
-            cshape = SHmakeShape (0);
-            elem = (node **)MEMmalloc (sizeof (node *));
-
-            /* copy element pointers from array to vector */
-            *elem = expr;
-
-            /* create struct_constant */
-            struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
-            SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
-            if (TYisUser (ctype)) {
-                SCO_NAME (struc_co) = TYgetName (ctype);
-                SCO_NS (struc_co) = TYgetNamespace (ctype);
-            } else {
-                SCO_NAME (struc_co) = NULL;
-                SCO_NS (struc_co) = NULL;
-            }
-            SCO_SHAPE (struc_co) = SHcopyShape (cshape);
-            SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
-            SCO_TMPAST (struc_co) = NULL;
-        }
-        break;
-
-    default:
-        break;
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   struct_constant *SCCFexpr2StructConstant(node *expr)
- *
- * description:
- *   builds an constant of type T_hidden from an array or scalar in the AST.
- *   this allows to operate on structural constants like full constants.
- *
- *   this should later be integrated in a more powerful constants module.
- *
- *   be careful:
- *     the created structural constant contain pointers to elements of the
- *     array, so you MUST NEVER FREE the original expression before you
- *     have dupped the structural constant into a array!
- *
- *****************************************************************************/
-
-struct_constant *
-SCCFexpr2StructConstant (node *expr)
-{
-    struct_constant *struc_co;
-
-    DBUG_ENTER ("SCCFexpr2StructConstant");
-
-    struc_co = NULL;
-
-    switch (NODE_TYPE (expr)) {
-    case N_array:
-        /* expression is an array */
-        struc_co = SCCFarray2StructConstant (expr);
-        break;
-
-    case N_bool:
-    case N_char:
-    case N_float:
-    case N_double:
-    case N_num:
-        struc_co = SCCFscalar2StructConstant (expr);
-        break;
-
-    case N_id:
-        if ((TUdimKnown (ID_NTYPE (expr))) && /* AKS Scalar */
-            (TYgetDim (ID_NTYPE (expr)) == 0)) {
-            struc_co = SCCFscalar2StructConstant (expr);
-        } else {
-            if (TYisAKV (ID_NTYPE (expr))) { /* Value known */
-                node *array = COconstant2AST (TYgetValue (ID_NTYPE (expr)));
-                struc_co = SCCFexpr2StructConstant (array);
-                SCO_TMPAST (struc_co) = array;
-            } else {
-                node *ass = AVIS_SSAASSIGN (ID_AVIS (expr));
-                if (ass != NULL) {
-                    struc_co = SCCFexpr2StructConstant (ASSIGN_RHS (ass));
-                }
-            }
-        }
-        break;
-    default:
-        break;
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SCCFdupStructConstant2Expr(struct_constant *struc_co)
- *
- * description:
- *   builds an array of the given strucural constant and duplicate
- *   elements in it. therfore the original array must not be freed before
- *   the target array is build up from the elements of the original array.
- *
- *****************************************************************************/
-
-node *
-SCCFdupStructConstant2Expr (struct_constant *struc_co)
-{
-    node *expr;
-    node *aelems;
-    int i;
-    int elems_count;
-    node **node_vec;
-
-    DBUG_ENTER ("SCCFdupStructConstant2Expr");
-
-    /* build up elements chain */
-    node_vec = (node **)COgetDataVec (SCO_HIDDENCO (struc_co));
-
-    if (COgetDim (SCO_HIDDENCO (struc_co)) == 0) {
-        /* result is a single node */
-        expr = DUPdoDupNode (node_vec[0]);
-    } else {
-        /* result is a new array */
-        elems_count = SHgetUnrLen (COgetShape (SCO_HIDDENCO (struc_co)));
-
-        aelems = NULL;
-        for (i = elems_count - 1; i >= 0; i--) {
-            aelems = TBmakeExprs (DUPdoDupNode (node_vec[i]), aelems);
-        }
-
-        /* build array node */
-        expr = TBmakeArray (TYmakeAKS (TYmakeSimpleType (SCO_BASETYPE (struc_co)),
-                                       SHmakeShape (0)),
-                            SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
-    }
-    DBUG_RETURN (expr);
-}
-
-/******************************************************************************
- *
- * function:
- *   struct_constant *SCCFfreeStructConstant(struct_constant *struc_co)
- *
- * description:
- *   frees the struct_constant data structure and the internal constant element.
- *
- *****************************************************************************/
-
-struct_constant *
-SCCFfreeStructConstant (struct_constant *struc_co)
-{
-    DBUG_ENTER ("SCCFfreeStructConstant");
-
-    DBUG_ASSERT ((struc_co != NULL), "SCCFfreeStructConstant: NULL pointer");
-
-    DBUG_ASSERT ((SCO_SHAPE (struc_co) != NULL),
-                 "SCCFfreeStructConstant: SCO_SHAPE is NULL");
-
-    /* free temporary ast representation */
-    if (SCO_TMPAST (struc_co) != NULL) {
-        SCO_TMPAST (struc_co) = FREEdoFreeTree (SCO_TMPAST (struc_co));
-    }
-
-    /* free shape */
-    SCO_SHAPE (struc_co) = SHfreeShape (SCO_SHAPE (struc_co));
-
-    /* free substructure */
-    SCO_HIDDENCO (struc_co) = COfreeConstant (SCO_HIDDENCO (struc_co));
-
-    /* free structure */
-    struc_co = MEMfree (struc_co);
-
-    DBUG_RETURN ((struct_constant *)NULL);
-}
-
-/** <!--********************************************************************-->
- *
- * @name Static helper funcions
- * @{
- *
- *****************************************************************************/
-
-/******************************************************************************
- *
- * function:
- *   node *StructOpSel(constant *idx, node *arg_expr)
- *
- * description:
- *   computes sel on array expressions with constant structural constant
- *   arguments, as follows:
- *
- *      z = sel (structconstant idx, structconstant X)
- *
- *   If (shape(idx) == frame_dim(X)),  it replaces the sel() by:
- *
- *      z = X[idx]
- *
- *   If (shape(idx) > frame_dim(X)), it replaces the sel() by:
- *
- *      tmp = X[take([frame_dim(X)], idx)];   NB. Compile time
- *      z   = tmp[drop([frame_dim(X)], idx)]; NB. run time
- *
- *   If (shape(idx) < dim(X)), it does the appropriate partial selection:
- *
- *      z = X[idx];
- *
- *
- *****************************************************************************/
-
 static node *
-StructOpSel (constant *idx, node *expr)
+CFsel (constant *idx, node *a)
 {
-    struct_constant *struc_co;
-    constant *old_hidden_co;
+    node *result;
+    int offset;
 
-    node *result = NULL;
+    DBUG_ENTER ("CFsel");
+    DBUG_ASSERT ((N_array == NODE_TYPE (a)), "CFsel arg2 not N_array");
 
-    int idxlen;
-    int structdim;
-
-    shape *tmp_shape;
-
-    constant *take_vec;
-    constant *tmp_idx;
-
-    DBUG_ENTER ("StructOpSel");
-
-    /* Try to convert expr(especially arrays) into a structural constant */
-    struc_co = SCCFexpr2StructConstant (expr);
-
-    if (struc_co != NULL) {
-        /* save internal hidden input constant */
-        old_hidden_co = SCO_HIDDENCO (struc_co);
-
-        idxlen = SHgetUnrLen (COgetShape (idx));
-
-        structdim = COgetDim (SCO_HIDDENCO (struc_co));
-
-        if (structdim < idxlen) {
-            /*
-             * Selection vector has more elements than there are array dimensions
-             *
-             * 1. Perform partial selection
-             */
-            // DBUG_ASSERT( FALSE, "Dead code walks again: StructOpSel");
-            take_vec = COmakeConstantFromInt (structdim);
-            tmp_idx = COtake (take_vec, idx);
-
-            SCO_HIDDENCO (struc_co) = COsel (tmp_idx, SCO_HIDDENCO (struc_co));
-            tmp_idx = COfreeConstant (tmp_idx);
-
-            /*
-             * 2. return selection on the remaining array element
-             */
-            tmp_idx = COdrop (take_vec, idx);
-            take_vec = COfreeConstant (take_vec);
-
-            result = TCmakePrf2 (F_sel_VxA, COconstant2AST (tmp_idx),
-                                 SCCFdupStructConstant2Expr (struc_co));
-            tmp_idx = COfreeConstant (tmp_idx);
-        } else {
-            /*
-             * Perform selection
-             */
-            SCO_HIDDENCO (struc_co) = COsel (idx, SCO_HIDDENCO (struc_co));
-
-            if (structdim > idxlen) {
-                /*
-                 * Selection vector is too short, selection yields subarray
-                 */
-                DBUG_ASSERT (FALSE, "Son of Dead code walks again: StructOpSel");
-                tmp_shape = SCO_SHAPE (struc_co);
-                SCO_SHAPE (struc_co) = SHdropFromShape (idxlen, tmp_shape);
-                SHfreeShape (tmp_shape);
-            }
-            result = SCCFdupStructConstant2Expr (struc_co);
-        }
-
-        /*
-         * free tmp. struct constant
-         */
-        struc_co = SCCFfreeStructConstant (struc_co);
-
-        /*
-         * free internal input constant
-         */
-        old_hidden_co = COfreeConstant (old_hidden_co);
-    }
-
+    offset = Idx2OffsetArray (idx, a);
+    result = TCgetNthExprsExpr (offset, ARRAY_AELEMS (a));
     DBUG_RETURN (result);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *SCCFStructOpReshape(constant *shp, node *arg_expr)
+ *   node *StructOpSel(node *arg_node, info *arg_info)
  *
  * description:
- *   computes structural reshape on array expressions with
- *   constant index vector:
+ *   computes sel on array expressions with constant structural constant
+ *   arguments, as follows:
  *
- *     z = reshape(shp, X);
+ *      z = _sel_VxA_ (constant iv, structconstant X)
+ *   E.g.,
+ *      a = [0,1,2];
+ *      b = [3,4,5];
+ *      c = [6,7,8];
+ *      X   = [a,b,c,d];
  *
- * In the following, the frame shape is the shape of X, and
- * the cell shape is the shape of any of the elements of X.
+ * Case 1:  (shape(iv) == frame_dim(X)):
  *
- * Conditions:
- *   ( dim(cell) <= shape(shp))
- *   ( take((-dim(cell), shp)) <==> cell_shape)
- *   ( prod(drop(-dim(cell), shp) = prod(frame_shape)))
- *   The last of these is performed by TC, so is ignored here.
+ *      z = sel([2], X);
+ *
+ *   CF performs the select, producing:
+ *
+ *      z = c;
+ *
+ * Case 2: (shape(iv) > frame_dim(X)):
+ *
+ *      z = sel([2,1], X);
+ *
+ *    CF performs a partial selection:
+ *
+ *      tmpX   = c;
+ *      tmpiv = [1];
+ *      z = sel(tmpiv, tmpX);
+ *
+ * Case 3: (shape(iv) < frame_dim(X):
+ *
+ *    Illegal.
  *
  *****************************************************************************/
+
 static node *
-SCCFStructOpReshape (constant *shp, node *arg2)
+StructOpSel (node *arg_node, info *arg_info)
 {
-    struct_constant *struc_co;
-    constant *old_hidden_co;
+    node *result = NULL;
 
-    node *res = NULL;
+    int iv_len;
+    int X_dim;
 
-    int frame_rank;
+    constant *take_vec;
+    constant *iv_co;
 
-    shape *shp_shape = NULL;
-    shape *shp_shape_postfix = NULL;
-    shape *cell_shape = NULL;
-    int cell_dim;
-    int shp_dim;
+    node *tmpivid;
+    node *tmpivval;
+    node *tmpivavis;
+    node *tmpXid;
 
-    constant *drop_vec;
-    constant *tmp_idx;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
 
-    DBUG_ENTER ("SCCFStructOpReshape");
+    DBUG_ENTER ("StructOpSel");
+    // Match for _sel_VxA_( constant, N_array)
+    if (PM (PMarray (&arg2, PMconst (&arg1, PMprf (F_sel_VxA, arg_node))))) {
+        iv_co = COaST2Constant (arg1);
+        iv_len = SHgetUnrLen (COgetShape (iv_co));
+        X_dim = SHgetDim (ARRAY_FRAMESHAPE (arg2));
+        DBUG_ASSERT ((iv_len >= X_dim), ("shape(iv) <  dim(X)"));
+        take_vec = COmakeConstantFromInt (X_dim);
 
-    /* Try to convert expr(especially arrays) into a structual constant */
-    struc_co = SCCFexpr2StructConstant (arg2);
+        // Select the N_array element we want w/iv prefix
+        tmpXid = DUPdoDupTree ((node *)CFsel (COtake (take_vec, iv_co), arg2));
 
-    if (struc_co != NULL) {
+        if (iv_len == X_dim) {
+            // Case 1 : Exact selection: do the sel operation now.
+            result = tmpXid;
+        } else {
+            // Case 2: Selection vector has more elements than frame_dim(X):
+            // Perform partial selection on X now; build new selection for
+            // run-time.
 
-        frame_rank = COgetDim (SCO_HIDDENCO (struc_co));
-        cell_shape = SHdropFromShape (frame_rank, SCO_SHAPE (struc_co));
-        cell_dim = SHgetDim (cell_shape);
-        shp_shape = COconstant2Shape (shp);
-        shp_dim = SHgetDim (shp_shape);
+            DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "StructOpSel X element not N_id");
+            iv_co = COdrop (take_vec, iv_co); // iv suffix
+            take_vec = COfreeConstant (take_vec);
+            tmpivavis
+              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                            TYmakeAKS (TYmakeSimpleType (T_int),
+                                       SHcreateShape (1, iv_len - X_dim)));
+            AVIS_DIM (tmpivavis) = TBmakeNum (1);
+            // Following is really GenIntVector call
+            AVIS_SHAPE (tmpivavis)
+              = TCmakeIntVector (TBmakeExprs (TBmakeNum (iv_len - X_dim), NULL));
+            tmpivval = COconstant2AST (iv_co);
+            INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
+            tmpivid = TBmakeId (tmpivavis);
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL), tmpivval),
+                              INFO_PREASSIGN (arg_info));
 
-        if (cell_dim <= shp_dim) { /* Avoid overtake in next line */
-            shp_shape_postfix = SHtakeFromShape (-1 * cell_dim, shp_shape);
-            shp_shape = SHfreeShape (shp_shape);
+            AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
+            DBUG_PRINT ("CF", ("StructOpSel sel(iv,X) created new iv: old: %s; new: %s",
+                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                               AVIS_NAME (tmpivavis)));
 
-            /*
-             * If the shp_shape_postfix equals the element shape,
-             * the reshape operation can be performed
-             */
-            if (SHcompareShapes (cell_shape, shp_shape_postfix)) {
-
-                /* save internal hidden input constant */
-                old_hidden_co = SCO_HIDDENCO (struc_co);
-
-                drop_vec = COmakeConstantFromInt (-1 * SHgetDim (cell_shape));
-                tmp_idx = COdrop (drop_vec, shp);
-                drop_vec = COfreeConstant (drop_vec);
-
-                shp_shape = COconstant2Shape (tmp_idx);
-                SCO_HIDDENCO (struc_co) = COreshape (tmp_idx, SCO_HIDDENCO (struc_co));
-                tmp_idx = COfreeConstant (tmp_idx);
-
-                SCO_SHAPE (struc_co) = SHfreeShape (SCO_SHAPE (struc_co));
-                SCO_SHAPE (struc_co) = SHappendShapes (shp_shape, cell_shape);
-                shp_shape = SHfreeShape (shp_shape);
-
-                res = SCCFdupStructConstant2Expr (struc_co);
-
-                /* free internal hidden input constant */
-                old_hidden_co = COfreeConstant (old_hidden_co);
-            }
+            // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
+            result = TCmakePrf2 (F_sel_VxA, tmpivid, tmpXid);
         }
-        cell_shape = SHfreeShape (cell_shape);
-        shp_shape_postfix = SHfreeShape (shp_shape_postfix);
-
-        /*
-         * free tmp. struct constant
-         */
-        struc_co = SCCFfreeStructConstant (struc_co);
+        iv_co = COfreeConstant (iv_co);
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -670,87 +196,52 @@ SCCFStructOpReshape (constant *shp, node *arg2)
  *   Eliminates structural constant reshape expression
  *      reshape( shp, arr)
 
- *   when it can determine that and that shp is a constant.
- *      shape(arr) <==>  shp
- *
+ *   when it can determine that shp is a constant,
+ *   and that ( times reduce shp) == times reduce shape(arr)
  *
  *****************************************************************************/
 node *
 SCCFprf_reshape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    constant *arg1;
+    shape *resshape;
+    constant *arg1const;
+    node *arg1 = NULL;
+    node *arg2Narray = NULL;
+    int timesrhoarg2;
+    int prodarg1;
 
     DBUG_ENTER ("SCCFprf_reshape");
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-
-    /* CF handles const/const case */
-    if ((NULL != arg1)) {
-        /* constant shp, non-constant arr */
-        res = SCCFStructOpReshape (arg1, PRF_ARG2 (arg_node));
-        arg1 = COfreeConstant (arg1);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *StructOpTake(constant *arg1, node *arg2)
- *
- * description:
- *   Attempts to eliminate under-take on array expressions when
- *   arg1 is constant and arg2 is structural constant.
- *
- *****************************************************************************/
-
-static node *
-StructOpTake (constant *arg1, node *arg2)
-{
-    struct_constant *struc_co;
-    constant *old_hidden_co;
-    node *res = NULL;
-    int idxlen;
-    int structdim;
-    shape *sco_shape;
-    shape *dropped_shape;
-
-    DBUG_ENTER ("StructOpTake");
-
-    /* Try to convert arg2 (especially arrays) into a structural constant */
-    struc_co = SCCFexpr2StructConstant (arg2);
-
-    /* given expression was converted to struct_constant */
-    if (struc_co != NULL) {
-
-        idxlen = SHgetUnrLen (COgetShape (arg1));
-        structdim = COgetDim (SCO_HIDDENCO (struc_co));
-
-        if (idxlen <= structdim) {
-            /* save internal hidden input constant */
-            old_hidden_co = SCO_HIDDENCO (struc_co);
-
-            SCO_HIDDENCO (struc_co) = COtake (arg1, SCO_HIDDENCO (struc_co));
-
-            sco_shape = SCO_SHAPE (struc_co);
-            dropped_shape = SHdropFromShape (structdim, sco_shape);
-            sco_shape = SHfreeShape (sco_shape);
-            SCO_SHAPE (struc_co)
-              = SHappendShapes (COgetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
-            dropped_shape = SHfreeShape (dropped_shape);
-
-            /* return modified array */
-            res = SCCFdupStructConstant2Expr (struc_co);
-
-            /* free tmp. struct constant */
-            struc_co = SCCFfreeStructConstant (struc_co);
-
-            /* free internal input constant */
-            old_hidden_co = COfreeConstant (old_hidden_co);
+    /*  reshape(shp, arr):
+     *    constant shp, non-constant arr, with
+     *    arr having same element count prod(shp)
+     *    and rank-0 ELEMTYPE
+     */
+    if (PM (PMarray (&arg2Narray, PMintConst (&arg1, PMprf (F_reshape_VxA, arg_node))))) {
+        if ((NULL != arg1) && (0 == TYgetDim (ARRAY_ELEMTYPE (arg2Narray)))) {
+            arg1const = COaST2Constant (arg1);
+            if (NULL != arg1const) {
+                resshape = COconstant2Shape (arg1const);
+                prodarg1 = SHgetUnrLen (resshape);
+                timesrhoarg2 = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray));
+                if (prodarg1 == timesrhoarg2) {
+                    /* If the result is a scalar, return that. Otherwise,
+                     * create an N_array.
+                     */
+                    if (0 == SHgetDim (resshape)) {
+                        res = DUPdoDupTree (
+                          TCgetNthExprsExpr (0, ARRAY_AELEMS (arg2Narray)));
+                    } else {
+                        res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
+                                           resshape,
+                                           DUPdoDupTree (ARRAY_AELEMS (arg2Narray)));
+                    }
+                    DBUG_PRINT ("CF", ("SCCFprf_reshape performed "));
+                }
+                arg1const = COfreeConstant (arg1const);
+            }
         }
     }
-
     DBUG_RETURN (res);
 }
 
@@ -761,99 +252,46 @@ StructOpTake (constant *arg1, node *arg2)
  *
  * description:
  *   computes structural undertake on array expressions with constant arg1.
- *
+ *   Implements take for constants
+ *   If both arguments are constant, CF was done by the typechecker.
+ *   This handles the case where arg1 is constant, and arg2 is
+ *   an N_array.
  *
  *****************************************************************************/
 node *
 SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *tail;
+    node *arg2Narray;
     constant *arg1;
-    constant *arg2;
-    constant *tmp;
+    int takecount;
+    int resshape;
+    int argshape;
+    int offset;
 
     DBUG_ENTER ("SCCFprf_take_SxV");
     arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-    arg2 = COaST2Constant (PRF_ARG2 (arg_node));
+    arg2Narray = PMfollowId (PRF_ARG2 (arg_node));
 
-    if (NULL != arg1) { /* If arg1 isn't constant, we're stuck */
-        if (NULL != arg2) {
-            /* Both args are constants. Piece of cake. */
-            DBUG_ASSERT (FALSE, "SCCF:: SCCFprf_take dead code path executed!");
-            tmp = COtake (arg1, arg2);
-            res = COconstant2AST (tmp);
-            tmp = COfreeConstant (tmp);
+    if ((NULL != arg1) && (NULL != arg2Narray) && (N_array == NODE_TYPE (arg2Narray))) {
+        takecount = COconst2Int (arg1);
+        resshape = abs (takecount);
+        argshape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray));
+        DBUG_ASSERT ((resshape <= argshape), ("SCCFprf_take_SxV attempted overtake"));
+        if (argshape == takecount) {
+            res = DUPdoDupTree (arg2Narray);
         } else {
-            /* See if we can make arg2 a structural constant and do it that way. */
-            res = StructOpTake (arg1, PRF_ARG2 (arg_node));
+            offset = (takecount >= 0) ? 0 : argshape - takecount;
+
+            tail = TCgetExprsSection (offset, resshape, ARRAY_AELEMS (arg2Narray));
+            DBUG_PRINT ("CF", ("SCCFprf_take performed "));
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
+                               SHcreateShape (1, resshape), tail);
         }
-    }
-    if (NULL != arg1) {
-        arg1 = COfreeConstant (arg1);
-    }
-    if (NULL != arg2) {
-        arg2 = COfreeConstant (arg2);
-    }
 
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *StructOpDrop(constant *arg1, node *arg2)
- *
- * description:
- *   computes structural drop on array expressions with constant arg1.
- *
- *****************************************************************************/
-
-static node *
-StructOpDrop (constant *arg1, node *arg2)
-{
-    struct_constant *struc_co;
-    constant *old_hidden_co;
-
-    node *res = NULL;
-    int idxlen;
-    int structdim;
-    shape *sco_shape;
-    shape *dropped_shape;
-
-    DBUG_ENTER ("StructOpDrop");
-
-    /* Try to convert expr(especially arrays) into a structural constant */
-    struc_co = SCCFexpr2StructConstant (arg2);
-
-    /* given expression could be converted to struct_constant */
-    if (struc_co != NULL) {
-
-        idxlen = SHgetUnrLen (COgetShape (arg1));
-        structdim = COgetDim (SCO_HIDDENCO (struc_co));
-
-        if (idxlen <= structdim) {
-            /*
-             * save internal hidden input constant
-             */
-            old_hidden_co = SCO_HIDDENCO (struc_co);
-
-            SCO_HIDDENCO (struc_co) = COdrop (arg1, SCO_HIDDENCO (struc_co));
-
-            sco_shape = SCO_SHAPE (struc_co);
-            dropped_shape = SHdropFromShape (structdim, sco_shape);
-            sco_shape = SHfreeShape (sco_shape);
-            SCO_SHAPE (struc_co)
-              = SHappendShapes (COgetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
-            dropped_shape = SHfreeShape (dropped_shape);
-
-            /* return modified array */
-            res = SCCFdupStructConstant2Expr (struc_co);
-
-            /* free tmp. struct constant */
-            struc_co = SCCFfreeStructConstant (struc_co);
-
-            /* free internal input constant */
-            old_hidden_co = COfreeConstant (old_hidden_co);
+        if (NULL != arg1) {
+            arg1 = COfreeConstant (arg1);
         }
     }
 
@@ -866,40 +304,42 @@ StructOpDrop (constant *arg1, node *arg2)
  *   node *SCCFprf_drop_SxV(node *arg_node, info *arg_info)
  *
  * description:
- *   Implements drop for structural constants
- *
+ *   Implements drop for constants
+ *   If both arguments are constant, CF was done by the typechecker.
+ *   This handles the case where arg1 is constant, and arg2 is
+ *   an N_array.
  *
  *****************************************************************************/
 node *
 SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *tail;
+    node *arg2Narray;
     constant *arg1;
-    constant *arg2;
-    constant *tmp;
+    int dropcount;
+    int resxrho;
+    int offset;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
-
     arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-    arg2 = COaST2Constant (PRF_ARG2 (arg_node));
-
-    if (NULL != arg1) {     /* If arg1 isn't constant, we're stuck */
-        if (NULL != arg2) { /* Both args are constants. Piece of cake. */
-            DBUG_ASSERT (FALSE, "Dead code is not dead, in SCCFprf_drop_SxV");
-            tmp = COdrop (arg1, arg2);
-            res = COconstant2AST (tmp);
-            tmp = COfreeConstant (tmp);
+    arg2Narray = PMfollowId (PRF_ARG2 (arg_node));
+    if ((NULL != arg1) && (NULL != arg2Narray) && (N_array == NODE_TYPE (arg2Narray))) {
+        dropcount = COconst2Int (arg1);
+        if (0 == dropcount) {
+            res = DUPdoDupTree (arg2Narray);
         } else {
-            /* See if we can make arg2 a structural constant and do it that way. */
-            res = StructOpDrop (arg1, PRF_ARG2 (arg_node));
+            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray)) - dropcount;
+            resxrho = (resxrho < 0) ? 0 : resxrho;
+            offset = (dropcount < 0) ? 0 : dropcount;
+            tail = TCgetExprsSection (offset, resxrho, ARRAY_AELEMS (arg2Narray));
+            DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
+                               SHcreateShape (1, resxrho), tail);
         }
-    }
-
-    if (NULL != arg1) {
-        arg1 = COfreeConstant (arg1);
-    }
-    if (NULL != arg2) {
-        arg2 = COfreeConstant (arg2);
+        if (NULL != arg1) {
+            arg1 = COfreeConstant (arg1);
+        }
     }
 
     DBUG_RETURN (res);
@@ -908,90 +348,92 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *StructOpModarray( node *arg1, constant *arg2, node *arg3)
+ *   node * ARmodarray( node *X, constant *iv, node *val)
  *
  * description:
- *   implement modarray on structural constant arrays with
- *   constant index vector arg2.
+ *   Implements modarray for structural constant:  X[iv] = val;
+ *   X is expected to be an N_array.
+ *   iv is expected to be a constant integer vector.
+ *   val is expected to be a scalar.
  *
- ******************************************************************************/
-
+ * @param: _modarray_AxVxS( X, iv, val)
+ * @result:
+ *****************************************************************************/
 static node *
-StructOpModarray (node *arg1, constant *arg2, node *arg3)
+ARmodarray (node *arg1, constant *iv, node *val)
 {
     node *res = NULL;
-    struct_constant *struc_a;
-    struct_constant *struc_arg3;
-    constant *old_hidden_co;
-    ntype *atype;
+    node *oldval;
+    node *newval;
+    int offset;
+    int framexrho;
 
-    DBUG_ENTER ("StructOpModarray");
+    DBUG_ENTER ("ARmodarray");
+    DBUG_ASSERT ((N_array == NODE_TYPE (arg1)), "ARmodarray expected N_array as arg1");
+    framexrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg1));
+    offset = Idx2OffsetArray (iv, arg1);
+    /* If -ecc is active, we should not be able to get
+     * index error here, so we don't check for it.
+     */
 
+    res = DUPdoDupTree (arg1);
+    newval = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+    oldval = FREEdoFreeTree (EXPRS_EXPR (newval));
+    EXPRS_EXPR (newval) = DUPdoDupTree (val);
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ * static  node *prf_modarray(node *arg_node, info *arg_info, node *arg1Nid,
+ *                            node *arg2Narray)
+ *
+ * description:
+ *   Implements modarray for structural constant X.
+ *   z = _modarray_AxVxS_(X, iv, val)
+ *
+ *****************************************************************************/
+static node *
+prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
+{
+    node *res = NULL;
+    constant *arg2const;
+    node *arg1;
+    node *arg1Narray;
+
+    DBUG_ENTER ("prf_modarray");
+    arg1 = PRF_ARG1 (arg_node);
+
+    /* Attempt to find non-empty iv N_array for arg2const. */
     /**
-     * if the index is an empty vector, we simply replace the entire
-     * expression by the arg3 value!
+     * if iv is an empty vector, we simply replace the entire
+     * expression by val!
      * Well, not quite!!! This is only valid, iff
-     *      shape( arg3) ==  shape(arg1)
+     *      shape( val) ==  shape(X)
      * If we do not know this, then the only thing we can do is
      * to replace the modarray by
-     *      _type_conv_( type(arg1), arg3)
-     * iff a is AKS! * cf bug246 !!! */
+     *      _type_conv_( type(X), val))
+     * iff a is AKS! * cf bug246 !!!
+     *
+     * 2008-05-09: We can ignore all the above, because the
+     * inclusion of guards via "sac2c -ecc" ensures this can never happen.
+     * It also ensures that iv is valid.
+     * Hence, we can blindly do this replacement. */
 
-    if (COisEmptyVect (arg2)) {
-        DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
-                     "non id found in array-arg position of F_modarray");
-        DBUG_ASSERT ((NODE_TYPE (arg3) == N_id),
-                     "non id found in arg3-arg position of F_modarray");
-        if (AVIS_SHAPE (ID_AVIS (arg1)) != NULL) {
-            DBUG_ASSERT (FALSE, "Bingo1");
-            if (CMPTdoCompareTree (AVIS_SHAPE (ID_AVIS (arg1)),
-                                   AVIS_SHAPE (ID_AVIS (arg3)))
-                == CMPT_EQ) {
-                DBUG_ASSERT (FALSE, "Bingo2");
-                res = DUPdoDupTree (arg3);
+    arg2const = COaST2Constant (arg2Narray);
+    if (NULL != arg2const) {
+        if (COisEmptyVect (arg2const)) {              /*  modarray(X, [], 42) */
+            res = DUPdoDupTree (PRF_ARG3 (arg_node)); /* X and val are scalar */
+            arg2const = COfreeConstant (arg2const);
+        } else {
+            /* arg2 non-empty constant */
+            arg1Narray = PMfollowId (arg1Nid);
+            if ((NULL != arg1Narray) && (N_array == NODE_TYPE (arg1Narray))) {
+                DBUG_ASSERT ((N_array == NODE_TYPE (arg1Narray)),
+                             "SCCFprf_modarray unable to find arg1 N_array");
+                res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
             }
-        }
-        atype = AVIS_TYPE (ID_AVIS (arg1));
-        if ((res == NULL) && TUshapeKnown (atype)) {
-            res = TCmakePrf2 (F_type_conv, TBmakeType (TYeliminateAKV (atype)),
-                              DUPdoDupTree (arg3));
-        }
-    } else {
-        /**
-         * as we are not dealing with the degenerate case (arg2 == []),
-         * we need arg1 and arg3 to be structural constants in order to be
-         * able to do anything!
-         */
-        struc_a = SCCFexpr2StructConstant (arg1);
-        struc_arg3 = SCCFexpr2StructConstant (arg3);
-
-        /* given expressession could be converted to struct_constant */
-        if ((struc_a != NULL) && (struc_arg3 != NULL)) {
-            if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_arg3)) {
-                /* save internal hidden constant */
-                old_hidden_co = SCO_HIDDENCO (struc_a);
-
-                /* perform modarray operation on structural constant */
-                SCO_HIDDENCO (struc_a)
-                  = COmodarray (SCO_HIDDENCO (struc_a), arg2, SCO_HIDDENCO (struc_arg3));
-
-                /* return modified array */
-                res = SCCFdupStructConstant2Expr (struc_a);
-
-                DBUG_PRINT ("CF", ("op computed on structural constant"));
-
-                /* free internal constant */
-                old_hidden_co = COfreeConstant (old_hidden_co);
-            }
-        }
-
-        /* free struct constants */
-        if (struc_a != NULL) {
-            struc_a = SCCFfreeStructConstant (struc_a);
-        }
-
-        if (struc_arg3 != NULL) {
-            struc_arg3 = SCCFfreeStructConstant (struc_arg3);
         }
     }
 
@@ -1001,23 +443,24 @@ StructOpModarray (node *arg1, constant *arg2, node *arg3)
 /******************************************************************************
  *
  * function:
- *   node *SCCFprf_modarray(node *arg_node, info *arg_info)
+ *   node *SCCFprf_modarray_AxVxS(node *arg_node, info *arg_info)
  *
  * description:
- *   Implements modarray for structural constants
+ *   Implements modarray for structural constant X.
+ *   z = _modarray_AxVxS_(X, iv, scalaral)
  *
  *****************************************************************************/
 node *
-SCCFprf_modarray (node *arg_node, info *arg_info)
+SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    constant *arg2;
+    node *arg1Nid = NULL;
+    node *arg2Narray = NULL;
 
-    DBUG_ENTER ("SCCFprf_modarray");
-    arg2 = COaST2Constant (PRF_ARG2 (arg_node));
-    if (NULL != arg2) {
-        res = StructOpModarray (PRF_ARG1 (arg_node), arg2, PRF_ARG3 (arg_node));
-        arg2 = COfreeConstant (arg2);
+    DBUG_ENTER ("SCCFprf_modarray_AxVxS");
+    if (PM (
+          PMarray (&arg2Narray, PMvar (&arg1Nid, PMprf (F_modarray_AxVxS, arg_node))))) {
+        res = prf_modarray (arg_node, arg_info, arg1Nid, arg2Narray);
     }
     DBUG_RETURN (res);
 }
@@ -1025,57 +468,25 @@ SCCFprf_modarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *StructOpCat(node *arg1, node *arg2)
+ *   node *SCCFprf_modarray_AxVxA(node *arg_node, info *arg_info)
  *
  * description:
- *   tries to concatenate the given vectors as struct constants
- *   Handles:
- *      vec   ++ vec
- *      vec   ++ empty
- *      empty ++ vec
+ *   Implements modarray for structural constant X.
+ *   z = _modarray_AxVxS_(X, iv, array)
  *
  *****************************************************************************/
-
-static node *
-StructOpCat (node *arg1, node *arg2)
+node *
+SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    struct_constant *sc_vec1;
-    struct_constant *sc_vec2;
+    node *arg1Nid = NULL;
+    node *arg2Narray = NULL;
 
-    DBUG_ENTER ("StructOpCat");
-
-    sc_vec1 = SCCFexpr2StructConstant (arg1);
-    sc_vec2 = SCCFexpr2StructConstant (arg2);
-
-    if ((sc_vec1 != NULL) && (sc_vec2 != NULL)) {
-        constant *vec2_hidden_co;
-
-        /* if both vectors are structural constants, we can catenate them */
-        vec2_hidden_co = SCO_HIDDENCO (sc_vec2);
-        SCO_HIDDENCO (sc_vec2) = COcat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
-
-        res = SCCFdupStructConstant2Expr (sc_vec2);
-
-        vec2_hidden_co = COfreeConstant (vec2_hidden_co);
-    } else if (sc_vec1 != NULL) {
-        /* arg1 is empty vector, so result is arg2 */
-        if (SHgetUnrLen (COgetShape (SCO_HIDDENCO (sc_vec1))) == 0) {
-            res = DUPdoDupNode (arg2);
-        }
-    } else if (sc_vec2 != NULL) {
-        /* arg2 is empty vector, so result is arg1 */
-        if (SHgetUnrLen (COgetShape (SCO_HIDDENCO (sc_vec2))) == 0) {
-            res = DUPdoDupNode (arg1);
-        }
+    DBUG_ENTER ("SCCFprf_modarray_AxVxA");
+    if (PM (
+          PMarray (&arg2Narray, PMvar (&arg1Nid, PMprf (F_modarray_AxVxA, arg_node))))) {
+        res = prf_modarray (arg_node, arg_info, arg1Nid, arg2Narray);
     }
-
-    if (sc_vec1 != NULL)
-        sc_vec1 = SCCFfreeStructConstant (sc_vec1);
-
-    if (sc_vec2 != NULL)
-        sc_vec2 = SCCFfreeStructConstant (sc_vec2);
-
     DBUG_RETURN (res);
 }
 
@@ -1085,167 +496,240 @@ StructOpCat (node *arg1, node *arg2)
  *   node *SCCFprf_cat_VxV(node *arg_node, info *arg_info)
  *
  * description:
- *   Implements vector catenate for structural constants
+ *   Implements vector catenate
+ *
  *
  *****************************************************************************/
 node *
 SCCFprf_cat_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    constant *arg1;
-    constant *arg2;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *arg1aelems;
+    node *arg2aelems;
+    node *tail;
+    int arg1shape;
+    int arg2shape;
+    int frameshape;
 
     DBUG_ENTER ("SCCFprf_cat_VxV");
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-    arg2 = COaST2Constant (PRF_ARG2 (arg_node));
 
-    /* V++empty or empty++V */
-    if ((NULL != arg1) && (0 == SHgetUnrLen (COgetShape (arg1)))) {
-        res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if ((NULL != arg2) && (0 == SHgetUnrLen (COgetShape (arg2)))) {
-        res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else {
-        /* Try structural constants */
-        res = StructOpCat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
+    DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG1 (arg_node))),
+                 ("SCCFprf_cat_VxV arg1 not N_id"));
+    DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG2 (arg_node))),
+                 ("SCCFprf_cat_VxV arg2 not N_id"));
+
+    /* This catches the empty-vector case when one argument is not an N_array */
+    if (TUisEmptyVect (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))))) {
+        DBUG_PRINT ("CF", ("SCCFprf_cat (1) removed []++var"));
+        res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
-    if (NULL != arg1) {
-        arg1 = COfreeConstant (arg1);
-    }
-    if (NULL != arg2) {
-        arg2 = COfreeConstant (arg2);
+    if (TUisEmptyVect (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))) {
+        DBUG_PRINT ("CF", ("SCCFprf_cat (1) removed var++[]"));
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
 
+    if ((NULL == res)
+        && PM (PMarray (&arg2, PMarray (&arg1, PMprf (F_cat_VxV, arg_node))))) {
+        /* Both arguments are constants or structure constants */
+        arg1shape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg1));
+        arg2shape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
+        frameshape = arg1shape + arg2shape;
+
+        /* Perform the actual element catenation */
+        if (0 == arg1shape) { /* []++arg2 */
+            DBUG_PRINT ("CF", ("SCCFprf_cat (2)removed []++var"));
+            res = DUPdoDupTree (arg2);
+        } else if (0 == arg2shape) { /* arg2++[] */
+            DBUG_PRINT ("CF", ("SCCFprf_cat (2) removed var++[]"));
+            res = DUPdoDupTree (arg1);
+        } else { /* arg1++arg2 */
+            arg1aelems = DUPdoDupTree (ARRAY_AELEMS (arg1));
+            arg2aelems = DUPdoDupTree (ARRAY_AELEMS (arg2));
+            tail = TCgetNthExprs (arg1shape - 1, arg1aelems);
+            DBUG_ASSERT ((NULL == EXPRS_NEXT (tail)), "SCCFprf_cat_VxV missed arg1 tail");
+            EXPRS_NEXT (tail) = arg2aelems;
+            DBUG_PRINT ("CF", ("SCCFprf_cat replaced const1++const2"));
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg1)),
+                               SHcreateShape (1, frameshape), arg1aelems);
+        }
+    }
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *Sel(node *idx_expr, node *array_expr)
+ *   bool isValueMatch(node *arg1, node *arg2)
  *
- * description:
- *   tries a special sel-modarray optimization for the following cases:
+ * description: Compares two N_id nodes for the same value
+ *
+ *****************************************************************************/
+static bool
+isValueMatch (node *arg1, node *arg2)
+{
+    bool res = FALSE;
+    constant *arg1c;
+    constant *arg2c;
+
+    DBUG_ENTER ("isValueMatch");
+    arg1 = PMfollowId (arg1); /* Follow the streams to their source */
+    arg2 = PMfollowId (arg2);
+
+    if (arg1 == arg2) {
+        res = TRUE; /* If CSE has done its job, this is all we need */
+    } else {
+
+        arg1c = COaST2Constant (arg1);
+        arg2c = COaST2Constant (arg2);
+        if ((NULL != arg1c) && (NULL != arg2c)) {
+            res = COcompareConstants (arg1c, arg2c);
+        }
+        if (NULL != arg1c) {
+            arg1c = COfreeConstant (arg1c);
+        }
+        if (NULL != arg2c) {
+            arg2c = COfreeConstant (arg2c);
+        }
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @function:
+ *   node *SelModarray(node *arg_node)
+ *
+ * @param: arg_node is a _sel_ N_prf.
+ *
+ * @result: if the selection can be folded, the result is the
+ * val from in the earlier modarray. Otherwise, NULL.
+ *
+ * @brief:
+ *   tries a sel-modarray optimization for the following cases:
  *
  *   1. iv is an unknown expression:
- *      b = modarray(arr, iv, value)
- *      x = sel(iv, b)    ->   x = value;
+ *      b = modarray(arr, iv, val)
+ *      c = b;              NB. Perhaps a few assigns in the way
+ *      x = sel(iv, c)    ->   x = val;
  *
- *   2. iv is an expression with known constant value:
- *      b = modarray(arr, [5], val5);
+ *      I do not know if other facilities (e.g., WLF) perform this
+ *      optimization. If they do not, this opt is important for loop fusion
+ *      and array contraction. Consider the example of vector-vector
+ *      operations in:  Z = B + C * D;
+ *
+ *        for (i=0; i<shape(C); i++) {
+ *          t1     = C[i] * D[i];
+ *          tmp[i] = t1;
+ *        }
+ *        for (i=0; i<shape(B); i++) {
+ *          t2     = B[i] + tmp[i];
+ *          Z[i]   = t2;
+ *        }
+ *
+ *      Loop fusion will (assuming B and C have same shape)  turn this into:
+ *        for (i=0; i<shape(C); i++) {
+ *          t1     = C[i] * D[i];
+ *          tmp[i] = t1;
+ *          tmp2   = tmp;              NB. Just to complicate things a bit:
+ *                                     NB. Hence, the N_array search in PM.
+ *          t2     = B[i] + tmp2[i];
+ *          Z[i]   = t2;
+ *        }
+ *
+ *      Next, this case of SelModArray will turn the code into:
+ *
+ *        for (i=0; i<shape(C); i++) {
+ *          t1     = C[i] * D[i];
+ *          tmp[i] = t1;
+ *          t2     = B[i] + t1;
+ *          Z[i]   = t2;
+ *        }
+ *      After this point, tmp is likely dead, so DCR will remove it
+ *      sometime later.
+ *
+ *   2. ivc is a constant:
+ *      b = modarray(arr, ivc, val5);
  *      c = modarray(b, [3], val3);
  *      d = modarray(c, [2], val2);
- *      x = sel([5], d)   ->  x = val5;
+ *      x = sel(ivc, d)   ->  x = val5;
  *
- *   maybe this allows elimination of some arrays.
- *   HOWEVER, we still need to ensure that iv is a valid index for arr.
- *   As of 2007-06-18, this check is NOT done!
+ *      In the above, if the statements setting c or d contain
+ *      non-constants as ivc, then we must NOT perform the
+ *      optimization, because we are unable to assert that
+ *      the constant is not [5].
+ *
+ *   3. Essentially the inverse of case (2): iv is not a constant:
+ *      b = modarray(arr, iv, val5);
+ *      c = modarray(b, constantiv val3);
+ *      x = sel(iv, c)
+ *
+ *      Since we do not know the value of iv, we must not make
+ *      any assertions about its relationship to constantiv.
+ *      Hence, this case must not be optimized.
+ *
+ *
+ *   We still need to ensure that iv is a valid index for arr.
+ *   I think -ecc should now handle that check properly.
  *
  *****************************************************************************/
 
+/* FIXME: As of 2008-06-19, caes 2 and 3 of above are likely not implemented */
+
 static node *
-Sel (node *idx_expr, node *array_expr)
+SelModarray (node *arg_node)
 {
-    node *result;
-    node *prf_mod;
-    node *prf_sel;
-    node *concat;
-    node *mod_arr_expr;
-    node *mod_idx_expr;
-    node *mod_elem_expr;
-    constant *idx_co;
-    constant *mod_idx_co;
+    node *res = NULL;
+    node *iv = NULL;
+    node *X = NULL;
 
-    DBUG_ENTER ("Sel");
-
-    result = NULL;
-
-    /*
-     * checks if array_expr is an array identifier defined by a primitive
-     * modarray operation
-     */
-    if ((NODE_TYPE (array_expr) == N_id)
-        && (AVIS_SSAASSIGN (ID_AVIS (array_expr)) != NULL)
-        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == N_prf)) {
-
-        switch (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))) {
-
-        case F_modarray_AxVxS:
-            prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
-
-            /* get parameter of modarray */
-            DBUG_ASSERT ((PRF_ARGS (prf_mod) != NULL), "missing 1. arg for modarray");
-            mod_arr_expr = EXPRS_EXPR (PRF_ARGS (prf_mod));
-
-            DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (prf_mod)) != NULL),
-                         "missing 2. arg for modarray");
-            mod_idx_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_mod)));
-
-            DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))) != NULL),
-                         "missing 3. arg for modarray");
-            mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
-
-            /* try to build up constants from index vectors */
-            idx_co = COaST2Constant (idx_expr);
-            mod_idx_co = COaST2Constant (mod_idx_expr);
-
-            if ((CMPTdoCompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
-                || ((idx_co != NULL) && (mod_idx_co != NULL)
-                    && (COcompareConstants (idx_co, mod_idx_co)))) {
-                /*
-                 * idx vectors in sel and modarray are equal
-                 * - replace sel() with element
-                 */
-                result = DUPdoDupTree (mod_elem_expr);
-
-                DBUG_PRINT ("CF", ("sel-modarray optimization done"));
-
-            } else {
-                /* index vector does not match, but if both are constant, we can try
-                 * to look up futher in a modarray chain to find a matching one.
-                 * to avoid wrong decisions we need constant vectors in both idx
-                 * expressions.
-                 */
-                if ((idx_co != NULL) && (mod_idx_co != NULL)) {
-                    result = Sel (idx_expr, mod_arr_expr);
-                } else {
-                    /* no further analysis possible, because of non-constant idx expr */
-                    result = NULL;
-                }
+    DBUG_ENTER ("SelModarray");
+    if (PM (PMvar (&X, PMvar (&iv, PMprf (F_sel_VxA, arg_node))))) {
+        X = PMfollowId (X);
+        if ((NULL != X) && (N_prf == NODE_TYPE (X))
+            && ((F_modarray_AxVxS == PRF_PRF (X)) || (F_idx_modarray_AxSxS == PRF_PRF (X))
+                || (F_modarray_AxVxA == PRF_PRF (X)))) {
+            if (isValueMatch (iv, PRF_ARG2 (X))) {
+                res = DUPdoDupTree (PRF_ARG3 (X));
             }
-
-            /* free local constants */
-            if (idx_co != NULL) {
-                idx_co = COfreeConstant (idx_co);
-            }
-            if (mod_idx_co != NULL) {
-                mod_idx_co = COfreeConstant (mod_idx_co);
-            }
-
-            break;
-
-        case F_sel_VxA:
-            /* This code is probably dead by 2007-06-21, because _sel_ must produce
-             * scalar result now, but sah suggests that it may still be possible
-             * to get here when z = _sel_VxA_([], scalar).
-             */
-            DBUG_ASSERT (FALSE, "SCCF::Sel F_sel dead code path executed!");
-
-            prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
-            concat = StructOpCat (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
-
-            if (concat != NULL) {
-                result = TCmakePrf2 (F_sel_VxA, concat,
-                                     DUPdoDupTree (
-                                       EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
-            }
-            break;
-
-        default:
-            break;
         }
     }
+    DBUG_RETURN (res);
+}
 
-    DBUG_RETURN (result);
+/******************************************************************************
+ *
+ * function:
+ *   node * SelEmptyScalar(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Detects:                  z = sel([], scalar);
+ *     and converts it into:   z = scalar;
+ *
+ *
+ *****************************************************************************/
+static node *
+SelEmptyScalar (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *arg1;
+    node *arg2;
+
+    DBUG_ENTER ("SelEmptyScalar");
+
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    DBUG_ASSERT ((N_id == NODE_TYPE (arg1)), ("arg1 not N_id"));
+    DBUG_ASSERT ((N_id == NODE_TYPE (arg2)), ("arg2 not N_id"));
+
+    if (TUisScalar (AVIS_TYPE (ID_AVIS (arg2)))
+        && TUisEmptyVect (AVIS_TYPE (ID_AVIS (arg1)))) {
+        DBUG_PRINT ("CF", ("SelEmptyScalar removed sel([], scalar)"));
+        res = DUPdoDupTree (arg2);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -1261,20 +745,15 @@ Sel (node *idx_expr, node *array_expr)
 node *
 SCCFprf_sel (node *arg_node, info *arg_info)
 {
-    node *res = NULL;
-    constant *arg1;
+    node *res;
 
     DBUG_ENTER ("SCCFprf_sel");
-
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-
-    if (NULL != arg1) { /* z = sel (constant, arg2) */
-        res = StructOpSel (arg1, PRF_ARG2 (arg_node));
-        arg1 = COfreeConstant (arg1);
-    }
-
+    res = SelEmptyScalar (arg_node, arg_info);
     if (NULL == res) {
-        res = Sel (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
+        res = SelModarray (arg_node);
+    }
+    if (NULL == res) {
+        res = StructOpSel (arg_node, arg_info);
     }
     DBUG_RETURN (res);
 }
