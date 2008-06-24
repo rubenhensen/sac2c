@@ -761,7 +761,10 @@ SCSprf_tob_S (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_tob_S");
-    if (T_bool == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))) {
+    if ((N_bool == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_bool
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -779,7 +782,10 @@ SCSprf_toc_S (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_toc_S");
-    if (T_char == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))) {
+    if ((N_char == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_char
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -797,7 +803,10 @@ SCSprf_toi_S (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_toi_S");
-    if (T_int == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))) {
+    if ((N_num == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_int
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -815,7 +824,10 @@ SCSprf_tof_S (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_tof_S");
-    if (T_float == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))) {
+    if ((N_float == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_float
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -833,7 +845,10 @@ SCSprf_tod_S (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_tod_S");
-    if (T_double == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))) {
+    if ((N_double == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_double
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1108,7 +1123,7 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
     arg2up = StripTrues (arg2up);
     EXPRS_NEXT (PRF_ARGS (res)) = arg2up;
 
-    /* If no predicates remain, this is an identity */
+    /* If no predicates remain, the afterguard becomes an identity */
     if (NULL == arg2up) {
         res = FREEdoFreeTree (res);
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
