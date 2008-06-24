@@ -303,7 +303,7 @@ int charpos = 0;
                              FILTER( ID);
                            }
 
-[|&>!%=-]+                 { yylval.id = STRcpy(yytext);
+[|&>!%=/-]+                { yylval.id = STRcpy(yytext);
                              FILTER( ID);
                            }
 
