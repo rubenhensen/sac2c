@@ -71,7 +71,12 @@ OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
 OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
 OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
-#ifndef DISABLE_PHM
+#ifdef DISABLE_PHM
+OPTIMIZE ("phm", phm, FALSE, FALSE, "private heap management")
+OPTIMIZE ("aps", aps, FALSE, FALSE, "arena preselection (requires -dophm)")
+OPTIMIZE ("dpa", dpa, FALSE, FALSE, "descriptor preallocation (requires -dophm)")
+OPTIMIZE ("msca", msca, FALSE, FALSE, "memory size cache adjustment (requires -dophm)")
+#else
 OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
 OPTIMIZE ("aps", aps, TRUE, TRUE, "arena preselection (requires -dophm)")
 OPTIMIZE ("dpa", dpa, TRUE, TRUE, "descriptor preallocation (requires -dophm)")
