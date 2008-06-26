@@ -392,6 +392,8 @@ ARmodarray (node *arg1, constant *iv, node *val)
  * description:
  *   Implements modarray for structural constant X.
  *   z = _modarray_AxVxS_(X, iv, val)
+ *   z = _modarray_AxVxA_(X, iv, arr)
+ *   and
  *
  *****************************************************************************/
 static node *
@@ -432,11 +434,12 @@ prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
             if ((NULL != arg1Narray) && (N_array == NODE_TYPE (arg1Narray))) {
                 DBUG_ASSERT ((N_array == NODE_TYPE (arg1Narray)),
                              "SCCFprf_modarray unable to find arg1 N_array");
+#ifdef CRUD // FIXME this breaks sudoku_jfp. Not sure why yet...
                 res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
+#endif // CRUD
             }
         }
     }
-
     DBUG_RETURN (res);
 }
 
@@ -447,7 +450,7 @@ prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
  *
  * description:
  *   Implements modarray for structural constant X.
- *   z = _modarray_AxVxS_(X, iv, scalaral)
+ *   z = _modarray_AxVxS_(X, iv, scalarval)
  *
  *****************************************************************************/
 node *
