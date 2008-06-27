@@ -148,13 +148,18 @@ StructOpSel (node *arg_node, info *arg_info)
         tmpXid = DUPdoDupTree ((node *)CFsel (COtake (take_vec, iv_co), arg2));
 
         if (iv_len == X_dim) {
-            // Case 1 : Exact selection: do the sel operation now.
-            result = tmpXid;
+            if (N_id == NODE_TYPE (tmpXid)) {
+                // FIXME: tvd2d gets wrong answers if we return an N_num
+                //        or an N_double (not sure if it's either or both...)
+                //        2008-06-27
+                // Case 1 : Exact selection: do the sel operation now.
+                DBUG_PRINT ("CF", ("StructOpSel exact selection."));
+                result = tmpXid;
+            }
         } else {
             // Case 2: Selection vector has more elements than frame_dim(X):
             // Perform partial selection on X now; build new selection for
             // run-time.
-
             DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "StructOpSel X element not N_id");
             iv_co = COdrop (take_vec, iv_co); // iv suffix
             take_vec = COfreeConstant (take_vec);
@@ -434,9 +439,20 @@ prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
             if ((NULL != arg1Narray) && (N_array == NODE_TYPE (arg1Narray))) {
                 DBUG_ASSERT ((N_array == NODE_TYPE (arg1Narray)),
                              "SCCFprf_modarray unable to find arg1 N_array");
-#ifdef CRUD // FIXME this breaks sudoku_jfp. Not sure why yet...
+#ifdef SUDUKOBUG
                 res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
-#endif // CRUD
+
+                ****Optimization cycle pass : 5
+                  * *****Optimizing wrapper function
+                    : ******_MAIN::main (hidden (12), hidden (13), hidden (11))
+                    : ...
+                  * *****Optimizing regular function
+                    : ******_MAIN::main (hidden (12), hidden (13), hidden (11))
+                    : ... ERROR : line 110 ERROR : argument #2 of
+                                                   "_and_SxS_" should be of type bool;
+                type found : ERROR : bool[9] 2008 - 06 - 27
+
+#endif //  SUDUKOBUG - fails in opt cycle pass 5,
             }
         }
     }
@@ -748,13 +764,15 @@ SelEmptyScalar (node *arg_node, info *arg_info)
 node *
 SCCFprf_sel (node *arg_node, info *arg_info)
 {
-    node *res;
+    node *res = NULL;
 
     DBUG_ENTER ("SCCFprf_sel");
     res = SelEmptyScalar (arg_node, arg_info);
+
     if (NULL == res) {
         res = SelModarray (arg_node);
     }
+
     if (NULL == res) {
         res = StructOpSel (arg_node, arg_info);
     }
