@@ -452,6 +452,10 @@ prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
                                                    "_and_SxS_" should be of type bool;
                 type found : ERROR : bool[9] 2008 - 06 - 27
 
+#else //  SUDUKOBUG - fails in opt cycle pass 5,
+
+                res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
+
 #endif //  SUDUKOBUG - fails in opt cycle pass 5,
             }
         }
@@ -502,6 +506,9 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     node *arg2Narray = NULL;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
+    /* FIXME  if enabled, bug437 happens. (sudoku_jfp)
+     */
+    return (NULL); /* FIXME */
     if (PM (
           PMarray (&arg2Narray, PMvar (&arg1Nid, PMprf (F_modarray_AxVxA, arg_node))))) {
         res = prf_modarray (arg_node, arg_info, arg1Nid, arg2Narray);
