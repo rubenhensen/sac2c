@@ -43,7 +43,8 @@ typedef enum { AA_undef, AA_begin, AA_end, AA_let, AA_ap } aa_context;
 /**
  * Convergence counter
  */
-int unaliased;
+
+static int unaliased = 0;
 
 /** <!--********************************************************************-->
  *
@@ -131,7 +132,6 @@ EMAAdoAliasAnalysis (node *syntax_tree)
 
     DBUG_PRINT ("EMAA", ("Starting alias analysis..."));
 
-    unaliased = 0;
     TRAVpush (TR_emaa);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();

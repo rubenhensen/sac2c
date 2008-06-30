@@ -1555,6 +1555,7 @@
         <travsons>
           <node name="Module" />
           <node name="Block" />
+          <node name="Exprs" />
         </travsons>
       </traversal>
       <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
