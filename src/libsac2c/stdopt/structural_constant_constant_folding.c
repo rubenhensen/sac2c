@@ -709,8 +709,21 @@ SelModarray (node *arg_node)
     node *res = NULL;
     node *iv = NULL;
     node *X = NULL;
+    node *Y = NULL;
+    node *val = NULL;
 
     DBUG_ENTER ("SelModarray");
+#ifdef RBECRAPOLAWAY
+    /* We are looking for one of:
+     *    sel_VxA( iv, modarray_AxVxS_( Y, iv, val)), or
+     *    sel_VxA( iv, modarray_AxVxA_( Y, iv, val)), or
+     *    sel_VxA( iv, idx_modarray_AxSxS_( Y, iv, val))
+     *
+     * NB: these ||'s do only work here as the execution order of these
+     *    is guaranteed to be left to right AND as PMvar( &val, ...)
+     *    is guaranteed not to be executed if PMprf does not match!!
+     */
+
     if (PM (PMvar (&X, PMvar (&iv, PMprf (F_sel_VxA, arg_node))))) {
         X = PMfollowId (X);
         if ((NULL != X) && (N_prf == NODE_TYPE (X))
@@ -721,6 +734,14 @@ SelModarray (node *arg_node)
             }
         }
     }
+#else  // RBECRAPOLAWAY
+    if (PM (PMvar (&X, PMvar (&iv, PMprf (F_sel_VxA, arg_node))))
+        && (PM (PMvar (&val, PMvar (&iv, PMvar (&Y, PMprf (F_modarray_AxVxS, X)))))
+            || PM (PMvar (&val, PMvar (&iv, PMvar (&Y, PMprf (F_modarray_AxVxS, X)))))
+            || PM (PMvar (&val, PMvar (&iv, PMvar (&Y, PMprf (F_modarray_AxVxS, X))))))) {
+        res = DUPdoDupTree (val);
+    }
+#endif // RBECRAPOLAWAY
     DBUG_RETURN (res);
 }
 
