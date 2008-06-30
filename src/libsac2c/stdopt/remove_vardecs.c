@@ -151,16 +151,12 @@ RMVblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RMVblock");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
+    if ((BLOCK_VARDEC (arg_node) != NULL) && (BLOCK_INSTR (arg_node) != NULL)) {
         INFO_TRAVMODE (arg_info) = TM_init;
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
         INFO_TRAVMODE (arg_info) = TM_delete;
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
