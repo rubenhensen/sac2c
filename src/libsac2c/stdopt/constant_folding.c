@@ -133,6 +133,7 @@
 #include "symbolic_constant_simplification.h"
 #include "structural_constant_constant_folding.h"
 #include "constant_folding_info.h"
+#include "pattern_match.h"
 
 static info *
 MakeInfo ()
@@ -819,85 +820,47 @@ CFids (node *arg_node, info *arg_info)
  *   traverses array elements to propagate constant identifiers
  *
  ******************************************************************************/
+static node *
+ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
+{
+    node *array;
+
+    if (exprs != NULL) {
+        *ok = *ok && PM (PMarray_new (fs, &array, EXPRS_EXPR (exprs)));
+        exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
+        if (*ok) {
+            exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);
+            *etype = ARRAY_ELEMTYPE (array);
+        }
+    }
+    return (exprs);
+}
 
 node *
 CFarray (node *arg_node, info *arg_info)
 {
-    node *newelems = NULL;
-    node *oldelems, *tmp, *first_inner_array;
-    shape *shp = NULL, *newshp;
-    ntype *basetype;
-    ntype *atype;
+    constant *fs = NULL;
+    shape *fshp;
+    ntype *etype;
+    node *exprs, *res;
+    bool ok = TRUE;
 
     DBUG_ENTER ("CFarray");
 
-    /*
-     * Test whether whole array can be replaced with an array constant
-     */
-    atype = NTCnewTypeCheck_Expr (arg_node);
-
-    if (TYisAKV (atype)) {
-        /*
-         * replace it
-         */
+    exprs = ARRAY_AELEMS (arg_node);
+    exprs = ScalarizeArray (exprs, &ok, &fs, &etype);
+    if (ok && (exprs != NULL)) { /* arg_node == [] => exprs == NULL! */
+        fshp = COconstant2Shape (fs);
+        res = TBmakeArray (TYcopyType (etype),
+                           SHappendShapes (ARRAY_FRAMESHAPE (arg_node), fshp), exprs);
+        fs = COfreeConstant (fs);
+        fshp = SHfreeShape (fshp);
         arg_node = FREEdoFreeNode (arg_node);
-        arg_node = COconstant2AST (TYgetValue (atype));
     } else {
-        /*
-         * Try to merge subarrays in
-         */
-        if (ARRAY_AELEMS (arg_node) != NULL) {
-            /*
-             * All elements need to be id nodes defined by N_array nodes.
-             * Furthermore, they must all add the same dimensionality to
-             * the dimension of their children
-             */
-            tmp = ARRAY_AELEMS (arg_node);
-            while (tmp != NULL) {
-                if ((NODE_TYPE (EXPRS_EXPR (tmp)) != N_id)
-                    || (ID_SSAASSIGN (EXPRS_EXPR (tmp)) == NULL)
-                    || (NODE_TYPE (ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp))))
-                        != N_array)) {
-                    break;
-                }
-                oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
-
-                if (shp == NULL)
-                    shp = ARRAY_FRAMESHAPE (oldelems);
-                else if (!SHcompareShapes (shp, ARRAY_FRAMESHAPE (oldelems)))
-                    break;
-
-                tmp = EXPRS_NEXT (tmp);
-            }
-            if (tmp == NULL) {
-                /*
-                 * Merge subarrays into this arrays
-                 */
-                oldelems = ARRAY_AELEMS (arg_node);
-                DBUG_ASSERT (oldelems != NULL,
-                             "Trying to merge subarrays into an empty array!");
-                first_inner_array = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (oldelems)));
-                tmp = oldelems;
-                while (tmp != NULL) {
-                    newelems
-                      = TCappendExprs (newelems, DUPdoDupTree (ARRAY_AELEMS (ASSIGN_RHS (
-                                                   ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
-                    tmp = EXPRS_NEXT (tmp);
-                }
-
-                basetype = TYcopyType (ARRAY_ELEMTYPE (first_inner_array));
-                newshp = SHappendShapes (ARRAY_FRAMESHAPE (arg_node), shp);
-
-                arg_node = FREEdoFreeNode (arg_node);
-
-                arg_node = TBmakeArray (basetype, newshp, newelems);
-            }
-        }
+        res = arg_node;
     }
 
-    atype = TYfreeType (atype);
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
