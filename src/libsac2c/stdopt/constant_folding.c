@@ -221,6 +221,7 @@ CFdoConstantFoldingOneFundef (node *arg_node)
     /**
      *  INFO_LACFUNOK should be initialized FALSE
      *  Unfortunately, in rev 15745 this leads to a bad crash....
+     *  see bug 444 for details...
      */
     INFO_LACFUNOK (arg_info) = TRUE;
 
