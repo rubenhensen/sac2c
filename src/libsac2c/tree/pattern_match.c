@@ -358,6 +358,150 @@ PMprf (prf fun, node *stack)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *PMarray_new( constant ** frameshape, node **array, node *stack)
+ *
+ * @brief tries to match against an N_array. If *frameshape is NULL, any
+ *        array on the top of the stack matches, its AST representation is bound
+ *        to array and the frameshape found is converted into a constant which
+ *        is bound to *frameshape.
+ *        If *frameshape is not NULL, it only matches if the top of the stack is
+ *        an N_array with the given frameshape. In that case only array is bound
+ *        to the respective part of the AST.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMarray_new (constant **frameshape, node **array, node *stack)
+{
+    node *arg;
+    constant *shpfound = NULL;
+
+    DBUG_ENTER ("PMarray");
+
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, &arg);
+        arg = PMfollowId (arg);
+        if (NODE_TYPE (arg) == N_array) {
+            DBUG_PRINT ("PM", ("PMarray matched!"));
+            shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
+            if (*frameshape == NULL) {
+                *frameshape = shpfound;
+                *array = arg;
+                stack = PushArgs (stack, ARRAY_AELEMS (arg));
+            } else {
+                if (COcompareConstants (shpfound, *frameshape)) {
+                    DBUG_PRINT ("PM", ("PMarray frameshape matched!"));
+                    shpfound = COfreeConstant (shpfound);
+                    *array = arg;
+                    stack = PushArgs (stack, ARRAY_AELEMS (arg));
+                } else {
+                    stack = FailMatch (stack);
+                }
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMprf passing on FAIL!"));
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMconst_new( constant ** co, node **conode, node *stack)
+ *
+ * @brief tries to match against a constant. If *co is NULL, any constant
+ *        on the top of the stack matches, its AST representation is bound
+ *        to conode and (a copy of (!)) the constant value is bound to co.
+ *        If *co is not NULL, it only matches if the top of the stack is
+ *        a constant of the same value. In that case only conode is bound
+ *        to the respective part of the AST.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMconst_new (constant **co, node **conode, node *stack)
+{
+    node *arg;
+    ntype *type;
+    constant *cofound = NULL;
+
+    DBUG_ENTER ("PMconst");
+
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, &arg);
+        if (NODE_TYPE (arg) == N_id) {
+            type = AVIS_TYPE (ID_AVIS (arg));
+            if (TYisAKV (type)) {
+                cofound = COcopyConstant (TYgetValue (type));
+                arg = PMfollowId (arg); /* needed for conode! */
+            }
+        } else {
+            cofound = COaST2Constant (arg);
+        }
+        if (cofound != NULL) {
+            DBUG_PRINT ("PM", ("PMconst matched constant!"));
+            if (*co == NULL) {
+                *co = cofound;
+                *conode = arg;
+            } else {
+                if (COcompareConstants (*co, cofound)) {
+                    DBUG_PRINT ("PM", ("PMconst matched value!"));
+                    *conode = arg;
+                } else {
+                    stack = FailMatch (stack);
+                }
+                cofound = COfreeConstant (cofound);
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMconst passing on FAIL!"));
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMintConst_new( constant ** co, node **conode, node *stack)
+ *
+ * @brief tries to match against an integer constant. If *co is NULL, any
+ *        constant on the top of the stack matches, its AST representation
+ *        is bound
+ *        to conode and (a copy of (!)) the constant value is bound to co.
+ *        If *co is not NULL, it only matches if the top of the stack is
+ *        a constant of the same value. In that case only co node is bound
+ *        to the respective pasrt of the AST.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMintConst_new (constant **co, node **conode, node *stack)
+{
+    constant *co_in;
+    DBUG_ENTER ("PMconst");
+
+    if (stack != (node *)FAIL) {
+        co_in = *co;
+        stack = PMconst_new (co, conode, stack);
+        if (stack != (node *)FAIL) {
+            if (COgetType (*co) != T_int) {
+                stack = FailMatch (stack);
+                if (co_in == NULL) {
+                    *co = COfreeConstant (*co);
+                }
+            }
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMconst passing on FAIL!"));
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *PMconst( node **var, node *stack)
  *
  * @brief tries to match against a constant. If *var is NULL, the top of
