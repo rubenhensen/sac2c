@@ -16,6 +16,8 @@ struct INFO {
     node *topblock;
     bool remassign;
     bool onefundef;
+    bool lacfunok;
+    bool travinlac;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -25,3 +27,5 @@ struct INFO {
 #define INFO_TOPBLOCK(n) (n->topblock)
 #define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_ONEFUNDEF(n) (n->onefundef)
+#define INFO_LACFUNOK(n) (n->lacfunok)
+#define INFO_TRAVINLAC(n) (n->travinlac)

@@ -8,8 +8,70 @@
  *
  *   Module constant_folding.c implements constant folding.
  *
- *   This driver module performs AST traversal, invoking four
- *   distinct sets of constant-folding functions, via function tables:
+ *   IMPORTANT: this optimization ensures LaC-function traversal to happen
+ *              "inline", i.e., LaC funs will be traversed when coming across
+ *              their application and NOT when traversing the fundef-spine!!!
+ *
+ *   This module does serve two purposes:
+ *   1) it performs some standard constant folding
+ *   2) it serves as a driver module for running several advanced
+ *      constant folding techniques on N_prf nodes.
+ *
+ *   ad 1) Bog-standard Constant Folding
+ *   -----------------------------------
+ *   This module performs the following 4 transformations:
+ *
+ *   a. "classical" constant folding, e.g. replacement of
+ *      "x = 2 + 3" by " x = 5"
+ *       here, we make use of the typechecker, which has already done the
+ *       actual addition by inferring AKV types.
+ *       IMPORTANT: Making CF dependent on AKV types rather than constant
+ *       rguments is a VERY important design decision. Only this way we prevent
+ *       CF to be called with arguments that may violate the prf's domain
+ *       restrictions (cf. bug 61).
+ *   b. array "scalarization"i, e.g.:
+ *      t1 = [a,b];
+ *      t2 = [t1, t1];
+ *
+ *      is replaced by
+ *
+ *      t1 = [a,b];
+ *      t2 = [[a,b],[a,b]];       * the nesting is encoded as FRAMESHAPE! *
+ *
+ *   c. Conditional-function constant-predicate constant folding, e.g:
+ *      replacement of a conditional function body, when its predicate
+ *      is known to be true/false, by the condfn's appropriate clause, e.g.:
+ *
+ *       if ( pred ) {
+ *           z = exprt;
+ *       } else {
+ *           z = exprf;
+ *       }
+ *
+ *          will, if "false == pred", be transformed to:
+ *
+ *       z = exprf;
+ *   d. with-loop improvements for generators of size 1, e.g.:
+ *
+ *      with {
+ *        ( [0] <= [i] < [1])  : i;
+ *      } : genarray( shp, def)
+ *
+ *         is transformed into:
+ *      with {
+ *        ( [0] <= [i] < [1])  : 0;
+ *      } : genarray( shp, def)
+ *
+ *      This is triggered by GENERATOR_GENWIDTH being 1 and CODE_USE being 1.
+ *      The actual transformation is enabled by temporarily(!) upgrading
+ *      the type of "i" to int{1} !!
+ *
+ *
+ *   as 2) advanced N_prf based optimizations:
+ *   -----------------------------------------
+ *   This driver module performs AST traversal on N_prf nodes, invoking four
+ *   distinct sets of constant-folding functions, via N_prf based function
+ *   ables:
  *
  *    1. SCS: Symbolic Constant Simplification, e.g. replacement of:
  *          z = M + 0;
@@ -27,89 +89,10 @@
  *      SCCF uses function table prf_sccf, defined
  *      in structural_constant_constant_folding.c
  *
- *    3. CF: Bog-standard Constant Folding, e.g.:
- *       a. Conditional-function constant-predicate constant folding, e.g:
- *          replacement of a conditional function body, when its predicate
- *          is known to be true/false, by the condfn's appropriate clause, e.g.:
- *
- *       if ( pred ) {
- *           z = exprt;
- *       } else {
- *           z = exprf;
- *       }
- *
- *          will, if "false == pred", be transformed to:
- *
- *       z = exprf;
- *
- *       b. Replacement of "x = 2 + 3" by " x = 5", where the value "5"
- *          is known to the typechecker, which has already done the actual
- *          addition.
- *
- *    4. SAACF: SAA Constant Folding,
+ *    3. SAACF: SAA Constant Folding,
  *
  *      SAACF uses function table prf_saacf, defined
  *      in saa_constant_folding.c
- *
- *   For constant expressions,  we compute primitive functions at compile time
- *   so we need not to compute them at runtime. This simplifies code
- *   and allows further optimizations.
- *
- *
- *   IMPORTANT: Making CF dependent on AKV types rather than constant arguments
- *   is a VERY important design decision. Only this way we prevent CF
- *   to be called with arguments that may violate the prf's domain restrictions
- *   (cf. bug 61).
- *
- *   Each computed constant expression is stored in the AVIS_SSACONST(avis)
- *   attribute of the assigned identifier for later access.
- *
- *   When traversing into a special fundef, we propagate constant information
- *   for all args (in loops only the loop-invariant ones) by storing the
- *   AVIS_SSACONST() in the corresponding args. constant results are propagted
- *   back in the calling context by inserting a assignment to the constant
- *   value. The removal of unused function args and result values is done
- *   later by the dead code removal.
- *
- *   At this time, the following primitive operations are implemented:
-
- *     for full constants (scalar value, arrays with known values):
- *       tob, toc, toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
- *       mod, and, le, lt, eq, ge, neq, reshape, sel, take_SxV, drop_SxV,
- *       cat_VxV, modarray
- *       Any folding on full constants (i.e., ALL function arguments constants)
- *       is performed by the type-checker.
- *
- *     structural constant, with full constant iv (array with ids as values):
- *       reshape, sel, take, drop, modarray
- *
- *     shape constant (array with known shape, scalar id):
- *       shape, sub
- *
- *     dim constants (expression with known dimension):
- *       dim, eq
- *
- *  arithmetic optimizations:
- *    add (x+0->x, 0+x->x),
- *    sub (x-0->x)
- *    mul (x*0->0, 0*x->0, x*1->x, 1*x->x),
- *    div (x/0->error, 0/x->0, x/1->x),
- *    and (x&&1->x, 1&&x->x, x&&0->0, 0&&x->0), x&&x -> x
- *    or  (x||1->1, 1||x->1, x||0->x, 0||x->x,  x||x -> x
- *    mod (x,0) -> error
- *    min (x,x) -> x
- *    max (x,x) -> x
- *
- *  relationals:
- *    x==x, x<=x, x>=x  -> genarray(shape(x),true),  if x is AKS or better
- *    x!=x, x<x,  x>x   -> genarray(shape(x),false), if x is AKS or better
- *
- *
- *
- *  special sel-modarray optimization:
- *    looking up in a modarray chain for setting the sel referenced value
- *
- *  not yet implemented: rotate
  *
  *  @ingroup opt
  *
@@ -160,8 +143,11 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
+    INFO_LACFUNOK (result) = TRUE;
+    INFO_TRAVINLAC (result) = FALSE;
+
     INFO_REMASSIGN (result) = FALSE;
-    INFO_ONEFUNDEF (result) = TRUE;
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
@@ -215,23 +201,28 @@ static const travfun_p prf_cfsaa_funtab[] = {
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node* CFdoConstantFolding(node* arg_node)
+ * @fn node* CFdoConstantFoldingOneFundef(node* arg_node)
  *
  *****************************************************************************/
 
 node *
-CFdoConstantFolding (node *arg_node)
+CFdoConstantFoldingOneFundef (node *arg_node)
 {
 
     info *arg_info;
 
-    DBUG_ENTER ("CFdoConstantFolding");
+    DBUG_ENTER ("CFdoConstantFoldingOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "CFdoConstantFolding called for non-fundef node");
+                 "CFdoConstantFoldingOneFundef called for non-fundef node");
 
-    /* do not start traversal in special functions */
     arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+    /**
+     *  INFO_LACFUNOK should be initialized FALSE
+     *  Unfortunately, in rev 15745 this leads to a bad crash....
+     */
+    INFO_LACFUNOK (arg_info) = TRUE;
 
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
@@ -244,20 +235,18 @@ CFdoConstantFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node* CFdoConstantFoldingModule(node* arg_node)
+ * @fn node* CFdoConstantFolding(node* arg_node)
  *
  *****************************************************************************/
 
 node *
-CFdoConstantFoldingModule (node *arg_node)
+CFdoConstantFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CFdoConstantFoldingModule");
+    DBUG_ENTER ("CFdoConstantFolding");
 
-    /* do not start traversal in special functions */
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = FALSE;
 
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
@@ -312,10 +301,6 @@ IsFullyConstantNode (node *arg_node)
 
     DBUG_RETURN (res);
 }
-
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
- *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -384,6 +369,10 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @name Traversal functions
  * @{
@@ -405,23 +394,28 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
 node *
 CFfundef (node *arg_node, info *arg_info)
 {
+    node *old_fundef;
+
     DBUG_ENTER ("CFfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
+    if ((FUNDEF_BODY (arg_node) != NULL)
+        && (!FUNDEF_ISLACFUN (arg_node) || INFO_LACFUNOK (arg_info)
+            || INFO_TRAVINLAC (arg_info))) {
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        /* traverse block of fundef */
+        old_fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_FUNDEF (arg_info) = old_fundef;
 
         if (FUNDEF_ISLACINLINE (arg_node)) {
             RMVdoRemoveVardecsOneFundef (arg_node);
         }
     }
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+    if (!INFO_ONEFUNDEF (arg_info) && !INFO_TRAVINLAC (arg_info)
+        && FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -952,6 +946,31 @@ CFprf (node *arg_node, info *arg_info)
 
         /* increment constant folding counter */
         global.optcounters.cf_expr++;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CFap( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+CFap (node *arg_node, info *arg_info)
+{
+    bool old_til;
+
+    DBUG_ENTER ("CFap");
+
+    if (!INFO_LACFUNOK (arg_info)
+        && (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
+            || (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+                && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))))) {
+        old_til = INFO_TRAVINLAC (arg_info);
+        INFO_TRAVINLAC (arg_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        INFO_TRAVINLAC (arg_info) = old_til;
     }
 
     DBUG_RETURN (arg_node);

@@ -245,8 +245,8 @@ CYCLEPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
 CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
             global.optimize.dotup, opt, saacyc1)
 
-CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFoldingModule,
-            global.optimize.docf, opt, saacyc1)
+CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+            opt, saacyc1)
 
 CYCLEPHASE (cse, "Elimininating common subexpressions",
             CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt,
@@ -305,8 +305,8 @@ CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, o
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, cyc)
 
-CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
-               opt, cyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
+               global.optimize.docf, opt, cyc)
 
 CYCLEPHASEFUN (cvp, "Propagating constants and variables",
                CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, cyc)
@@ -460,8 +460,8 @@ CYCLEPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
 CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
             global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFoldingModule,
-            global.optimize.docf, opt, saacyc)
+CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+            opt, saacyc)
 
 CYCLEPHASE (cse, "Elimininating common subexpressions",
             CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt, saacyc)
