@@ -815,6 +815,11 @@ CFids (node *arg_node, info *arg_info)
  *
  * description:
  *   traverses array elements to propagate constant identifiers
+ *   E.g., if we have:
+ *     b = [one, two];
+ *     c = [b,b,b];
+ *   CFarray will expand that into:
+ *     c = [[one,two], [one,two], [one,two]];
  *
  ******************************************************************************/
 static node *
