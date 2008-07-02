@@ -148,10 +148,14 @@ MakeInfo ()
     INFO_LACFUNOK (result) = TRUE;
     INFO_TRAVINLAC (result) = FALSE;
 
+    INFO_NUM_IDS_SOFAR (result) = 0;
+
+    INFO_LHSTYPE (result) = NULL;
     INFO_REMASSIGN (result) = FALSE;
-    INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
+
+    INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_TOPBLOCK (result) = NULL;
 
@@ -265,6 +269,9 @@ CFdoConstantFolding (node *arg_node)
  *
  * @fn bool IsFullyConstantNode( node *arg_node)
  *
+ * @brief in contrast to COisConstant, this function ensures a "minimal"
+ *        AST representation of the argument!
+ *
  *****************************************************************************/
 static bool
 IsFullyConstantNode (node *arg_node)
@@ -283,6 +290,8 @@ IsFullyConstantNode (node *arg_node)
         break;
 
     case N_array: {
+        DBUG_ASSERT (TUisScalar (ARRAY_ELEMTYPE (arg_node)),
+                     "non-flattened array met in IsFullyConstantNode");
         node *elems = ARRAY_AELEMS (arg_node);
         res = TRUE;
         while (res && (elems != NULL)) {
@@ -301,68 +310,67 @@ IsFullyConstantNode (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * function:
- * @fn node* SplitMultipleAssigns( node *arg_node, info *arg_info)
- * description: Split an N_let node of the form:
- *   A,B,C = a,b,c;
- *  into
- *   A = a;
- *   B = b;
- *   C = b;
- *  This part of the code replaces the N_let node by:
- *   A = a;
- *  and leaves the other assigns in the arg_info INFO_POSTASSIGN node
- *  for later processing by CFassign.
+ * @fn node* CreateConstExprsFromType( ntype *type)
+ *
+ * @brief
  *
  *****************************************************************************/
 static node *
-SplitMultipleAssigns (node *arg_node, info *arg_info)
+CreateConstExprsFromType (ntype *type)
 {
-    node *id;
-    node *expr;
-    node *curlhs;
-    node *currhs;
-    node *postass;
+    node *res = NULL;
+    int i;
+    DBUG_ENTER ("CreateConstExprsFromType");
 
-    DBUG_ENTER ("SplitMultipleAssigns");
-    DBUG_ASSERT (N_let == NODE_TYPE (arg_node),
-                 "SplitMultipleAssigns expected N_let node");
-    if (N_exprs == NODE_TYPE (LET_EXPR (arg_node))) {
-
-        /* Build new N_assign nodes for all but first lhs, rhs */
-        curlhs = IDS_NEXT (LET_IDS (arg_node));
-        currhs = EXPRS_NEXT (LET_EXPR (arg_node));
-        while (NULL != curlhs) {
-            DBUG_ASSERT ((NULL != currhs), "lhs<rhs count mismatch");
-            postass = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (curlhs), NULL),
-                                               EXPRS_EXPR (currhs)),
-                                    NULL);
-            AVIS_SSAASSIGN (IDS_AVIS (curlhs)) = postass;
-            INFO_POSTASSIGN (arg_info)
-              = TCappendAssign (INFO_POSTASSIGN (arg_info), postass);
-            IDS_AVIS (curlhs) = NULL;
-            EXPRS_EXPR (currhs) = NULL;
-            curlhs = IDS_NEXT (curlhs);
-            currhs = EXPRS_NEXT (currhs);
+    if (TYisProd (type)) {
+        for (i = TYgetProductSize (type) - 1; i >= 0; i--) {
+            res = TBmakeExprs (CreateConstExprsFromType (TYgetProductMember (type, i)),
+                               res);
         }
-        DBUG_ASSERT ((NULL == currhs), "lhs>rhs count mismatch");
-
-        /* Now replace current assign with the first lhs, rhs */
-        /* do rhs first */
-        expr = LET_EXPR (arg_node);
-        id = EXPRS_EXPR (expr);
-        EXPRS_EXPR (expr) = NULL;
-        DBUG_ASSERT (N_id == NODE_TYPE (id), "SplitMultipleAssigns Expected N_id");
-        LET_EXPR (arg_node) = id;
-        FREEdoFreeTree (expr);
-
-        /* now do lhs */
-        id = LET_IDS (arg_node);
-        expr = IDS_NEXT (id);
-        IDS_NEXT (id) = NULL;
-        FREEdoFreeTree (expr);
+    } else {
+        res = COconstant2AST (TYgetValue (type));
     }
-    DBUG_RETURN (arg_node);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node* node* CreateAssignsFromIdsExprs( node *ids, node *exprs)
+ *
+ * @brief recylcles all ids and all expressions while creating an
+ *        assignment chain left-to-right, ie.
+ *        A call with ids: A,B,C and exprs: a,b,c
+ *        is transformed into
+ *        A = a;
+ *        B = b;
+ *        C = b;
+ *        The N_exprs nodes are being freed!
+ *
+ *****************************************************************************/
+static node *
+CreateAssignsFromIdsExprs (node *ids, node *exprs)
+{
+    node *res = NULL;
+    node *expr;
+
+    DBUG_ENTER ("CreateAssignsFromIdsExprs");
+
+    if (ids != NULL) {
+        DBUG_ASSERT ((exprs != NULL),
+                     "ids chain longer than exprs chain in CreateAssignsFromIdsExprs");
+        expr = EXPRS_EXPR (exprs);
+        EXPRS_EXPR (exprs) = NULL;
+        res = TBmakeAssign (TBmakeLet (ids, expr),
+                            CreateAssignsFromIdsExprs (IDS_NEXT (ids),
+                                                       FREEdoFreeNode (exprs)));
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = res;
+        IDS_NEXT (ids) = NULL;
+    } else {
+        DBUG_ASSERT ((exprs == NULL),
+                     "exprs chain longer than ids chain in CreateAssignsFromIdsExprs");
+    }
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -392,6 +400,7 @@ node *
 CFfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef, *old_topblock, *old_vardecs;
+    ntype *old_lhstype;
 
     DBUG_ENTER ("CFfundef");
 
@@ -402,15 +411,18 @@ CFfundef (node *arg_node, info *arg_info)
         old_fundef = INFO_FUNDEF (arg_info);
         old_topblock = INFO_TOPBLOCK (arg_info);
         old_vardecs = INFO_VARDECS (arg_info);
+        old_lhstype = INFO_LHSTYPE (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
         INFO_TOPBLOCK (arg_info) = NULL;
         INFO_VARDECS (arg_info) = NULL;
+        INFO_LHSTYPE (arg_info) = NULL;
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         INFO_FUNDEF (arg_info) = old_fundef;
         INFO_TOPBLOCK (arg_info) = old_topblock;
         INFO_VARDECS (arg_info) = old_vardecs;
+        INFO_LHSTYPE (arg_info) = old_lhstype;
 
         if (FUNDEF_ISLACINLINE (arg_node)) {
             RMVdoRemoveVardecsOneFundef (arg_node);
@@ -718,59 +730,50 @@ CFlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFlet");
 
     /*
-     * Try to replace the rhs with a constant (given by the lhs type) if
-     * - RHS node IS NOT an N_funcond node (this would violate fun-form
-     * - RHS is not yet constant
-     *
      * What's intended here is that the typechecker may determine
      * that the lhs is of of type AKV, so it knows the value of the lhs.
      * Hence, it can discard the RHS and replace it by the now-known lhs value.
      */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)
-        && (!IsFullyConstantNode (LET_EXPR (arg_node)))) {
+    DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "empty LHS of let found in CF");
+    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "empty RHS of let found in CF");
 
-        /*
-         * Traverse into LHS
-         * This yields an assignment for each ids node with constant type
-         */
-        if (LET_IDS (arg_node) != NULL) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-        }
-
-        /*
-         * If ALL ids nodes are constant, the current assignment can be eliminated
-         */
-        if (TCcountIds (LET_IDS (arg_node))
-            == TCcountAssigns (INFO_PREASSIGN (arg_info))) {
-
-            /*
-             * Set all AVIS_SSAASSIGN links
-             */
-            node *preass = INFO_PREASSIGN (arg_info);
-            while (preass != NULL) {
-                AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (preass))) = preass;
-                preass = ASSIGN_NEXT (preass);
-            }
-
-            global.optcounters.cf_expr += TCcountIds (LET_IDS (arg_node));
-            INFO_REMASSIGN (arg_info) = TRUE;
-        } else {
-            if (INFO_PREASSIGN (arg_info) != NULL) {
-                INFO_PREASSIGN (arg_info) = FREEdoFreeTree (INFO_PREASSIGN (arg_info));
-            }
-        }
-    }
-
-    /*
-     * Traverse rhs only if it has not been replaced by constants
+    /**
+     *  First, we collect the INFO_LHSTYPE!
      */
-    if (INFO_PREASSIGN (arg_info) == NULL) {
+    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+
+    if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))) {
+
+        if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
+            LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
+            if (TYgetProductSize (INFO_LHSTYPE (arg_info)) == 1) {
+                LET_EXPR (arg_node) = CreateConstExprsFromType (
+                  TYgetProductMember (INFO_LHSTYPE (arg_info), 0));
+            } else {
+                LET_EXPR (arg_node) = CreateConstExprsFromType (INFO_LHSTYPE (arg_info));
+            }
+            global.optcounters.cf_expr += TYgetProductSize (INFO_LHSTYPE (arg_info));
+        }
+
+    } else {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
-    /* If CF introduced multiple results for an N_prf, break them
-     * up now */
-    arg_node = SplitMultipleAssigns (arg_node, arg_info);
+    INFO_LHSTYPE (arg_info) = TYfreeTypeConstructor (INFO_LHSTYPE (arg_info));
+
+    /**
+     *  If CF has replaced the RHS by an N_exprs chain, we have to break this
+     *  up now!
+     */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_exprs) {
+        INFO_POSTASSIGN (arg_info)
+          = TCappendAssign (CreateAssignsFromIdsExprs (LET_IDS (arg_node),
+                                                       LET_EXPR (arg_node)),
+                            INFO_POSTASSIGN (arg_info));
+        LET_EXPR (arg_node) = NULL;
+        LET_IDS (arg_node) = NULL;
+        INFO_REMASSIGN (arg_info) = TRUE;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -791,25 +794,19 @@ CFids (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CFids");
-    if (TYisAKV (IDS_NTYPE (arg_node))) {
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (DUPdoDupNode (arg_node),
-                                     COconstant2AST (TYgetValue (IDS_NTYPE (arg_node)))),
-                          INFO_PREASSIGN (arg_info));
-        /*
-         * Do not yet set AVIS_SSAASSIGN to the new assignment
-         * this is done in CFlet iff it turns out the assignment chain is
-         * in fact required
-         */
 
-    } else { /* Typechecker was no help; see if SAA can do any better */
-        SAACF_ids (arg_node, arg_info);
-    }
+    INFO_NUM_IDS_SOFAR (arg_info)++;
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    } else {
+        INFO_LHSTYPE (arg_info) = TYmakeEmptyProductType (INFO_NUM_IDS_SOFAR (arg_info));
     }
+    INFO_NUM_IDS_SOFAR (arg_info)--;
 
+    INFO_LHSTYPE (arg_info)
+      = TYsetProductMember (INFO_LHSTYPE (arg_info), INFO_NUM_IDS_SOFAR (arg_info),
+                            IDS_NTYPE (arg_node));
     DBUG_RETURN (arg_node);
 }
 
@@ -957,8 +954,12 @@ node *
 CFwith (node *arg_node, info *arg_info)
 {
     node *vecassign = NULL;
+    ntype *old_lhstype;
 
     DBUG_ENTER ("CFwith");
+
+    old_lhstype = INFO_LHSTYPE (arg_info);
+    INFO_LHSTYPE (arg_info) = NULL;
 
     /*
      * Create a fake assignment for the index vector in case the variables
@@ -986,6 +987,8 @@ CFwith (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = NULL;
         vecassign = FREEdoFreeTree (vecassign);
     }
+
+    INFO_LHSTYPE (arg_info) = old_lhstype;
 
     DBUG_RETURN (arg_node);
 }
