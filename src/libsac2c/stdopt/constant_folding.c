@@ -219,12 +219,7 @@ CFdoConstantFoldingOneFundef (node *arg_node)
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
-    /**
-     *  INFO_LACFUNOK should be initialized FALSE
-     *  Unfortunately, in rev 15745 this leads to a bad crash....
-     *  see bug 444 for details...
-     */
-    INFO_LACFUNOK (arg_info) = TRUE;
+    INFO_LACFUNOK (arg_info) = FALSE;
 
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
@@ -396,7 +391,7 @@ SplitMultipleAssigns (node *arg_node, info *arg_info)
 node *
 CFfundef (node *arg_node, info *arg_info)
 {
-    node *old_fundef;
+    node *old_fundef, *old_topblock, *old_vardecs;
 
     DBUG_ENTER ("CFfundef");
 
@@ -405,11 +400,17 @@ CFfundef (node *arg_node, info *arg_info)
             || INFO_TRAVINLAC (arg_info))) {
 
         old_fundef = INFO_FUNDEF (arg_info);
+        old_topblock = INFO_TOPBLOCK (arg_info);
+        old_vardecs = INFO_VARDECS (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
+        INFO_TOPBLOCK (arg_info) = NULL;
+        INFO_VARDECS (arg_info) = NULL;
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         INFO_FUNDEF (arg_info) = old_fundef;
+        INFO_TOPBLOCK (arg_info) = old_topblock;
+        INFO_VARDECS (arg_info) = old_vardecs;
 
         if (FUNDEF_ISLACINLINE (arg_node)) {
             RMVdoRemoveVardecsOneFundef (arg_node);
@@ -455,6 +456,7 @@ CFblock (node *arg_node, info *arg_info)
     if (INFO_TOPBLOCK (arg_info) == arg_node) {
         INFO_TOPBLOCK (arg_info) = NULL;
         BLOCK_VARDEC (arg_node) = INFO_VARDECS (arg_info);
+        INFO_VARDECS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -885,23 +887,29 @@ CFprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
     /* Bog-standard constant-folding is all handled by typechecker now */
 
+#if 1
     /* Try symbolic constant simplification */
     fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
+#endif
 
+#if 1
     /* If that doesn't help, try structural constant constant folding */
     fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
+#endif
 
+#if 1
     /* If that doesn't help, try SAA constant folding */
     fn = prf_cfsaa_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
+#endif
 
     if (res != NULL) {
         /* free this primitive function and replace it by new node */
