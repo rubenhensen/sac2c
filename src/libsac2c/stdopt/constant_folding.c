@@ -290,8 +290,6 @@ IsFullyConstantNode (node *arg_node)
         break;
 
     case N_array: {
-        DBUG_ASSERT (TUisScalar (ARRAY_ELEMTYPE (arg_node)),
-                     "non-flattened array met in IsFullyConstantNode");
         node *elems = ARRAY_AELEMS (arg_node);
         res = TRUE;
         while (res && (elems != NULL)) {
