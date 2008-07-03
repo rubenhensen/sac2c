@@ -1215,7 +1215,7 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
  *  by
  *   p = TRUE;
  *   iv', pred = iv, p;
- *  SplitMultipleAssigns will turn this into:
+ *  CFassign will turn this into:
  *   iv' = iv;
  *   pred = p;
  *
@@ -1229,11 +1229,16 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     node *tmpivid;
     constant *arg1c;
     constant *scalarp;
+    constant *arg1frameshape = NULL;
+
     DBUG_ENTER ("SCSprf_non_neg_val_V");
-    if (PM (PMarray (&arg1, PMprf (F_non_neg_val_V, arg_node)))) {
+    if (PM (PMarray_new (&arg1frameshape, &arg1, PMprf (F_non_neg_val_V, arg_node)))) {
         arg1c = COaST2Constant (arg1);
+        arg1frameshape = COfreeConstant (arg1frameshape);
         if ((NULL != arg1c) && COisNonNeg (arg1c, TRUE)) {
             DBUG_PRINT ("CF", ("SCSprf_non_neg_val removed guard"));
+
+            /* Generate   p = TRUE; */
             scalarp = COmakeTrue (SHmakeShape (0));
             tmpivavis
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
@@ -1242,16 +1247,12 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
             AVIS_DIM (tmpivavis) = TBmakeNum (0);
             AVIS_SHAPE (tmpivavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
             INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
-            /* See SplitMultipleAssigns to see why this is INFO_POSTASSIGN rather than
-             * INFO_PREASSIGN. Basically, the assigns are in the wrong order,
-             * otherwise
-             */
-            INFO_POSTASSIGN (arg_info)
+            INFO_PREASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
                                          COconstant2AST (scalarp)),
-                              INFO_POSTASSIGN (arg_info));
+                              INFO_PREASSIGN (arg_info));
 
-            AVIS_SSAASSIGN (tmpivavis) = INFO_POSTASSIGN (arg_info);
+            AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
             DBUG_PRINT ("CF", ("SCSprf_non_neg_val_V(%s) created TRUE pred %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (tmpivavis)));
