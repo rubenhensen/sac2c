@@ -502,6 +502,7 @@ CFassign (node *arg_node, info *arg_info)
     bool remassign;
     node *preassign;
     node *postassign;
+    node *succ;
 
     DBUG_ENTER ("CFassign");
 
@@ -519,19 +520,26 @@ CFassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
+    /**
+     * First, we separate the current assignments from its successors:
+     */
+    succ = ASSIGN_NEXT (arg_node);
+    ASSIGN_NEXT (arg_node) = NULL;
+
+    /**
+     * Delete the current one if needed.
+     */
     if (remassign) {
-        /* skip this assignment and free it */
         DBUG_PRINT ("CF", ("CFassign removed dead assignment"));
         arg_node = FREEdoFreeNode (arg_node);
     }
 
-    if (preassign != NULL) {
-        arg_node = TCappendAssign (preassign, arg_node);
-    }
-
-    if (postassign != NULL) {
-        arg_node = TCappendAssign (postassign, arg_node);
-    }
+    /**
+     *  Then construct the final chain, back to front:
+     */
+    postassign = TCappendAssign (postassign, succ);
+    arg_node = TCappendAssign (arg_node, postassign);
+    arg_node = TCappendAssign (preassign, arg_node);
 
     DBUG_RETURN (arg_node);
 }
