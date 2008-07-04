@@ -283,12 +283,33 @@ CleanUp ()
         global.cleanup = FALSE;
 
         FMGRdeleteTmpDir ();
-        global.dependencies = STRSfree (global.dependencies);
-        /*
-         * This is somewhat inconsistent as the other global variables are not
-         * de-allocated. However, this piece of code was moved from phase_drivers.c
-         * to this place rather than being just deleted.
-         */
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static void CleanUpInterrupted()
+ *
+ *   @brief  does som clean up upon termination
+ *           This function is used by interrupt signal handlers.
+ *           In contrast to CleanUp() above it avoids calling the usual
+ *           function and aims at terminating as quickly as possible.
+ *
+ ******************************************************************************/
+
+static void
+CleanUpInterrupted ()
+{
+    DBUG_ENTER ("CleanUpInterrupted");
+
+    if (global.cleanup) {
+        global.cleanup = FALSE;
+
+        if (global.system_cleanup != NULL) {
+            system (global.system_cleanup);
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -356,7 +377,13 @@ InternalCompilerErrorBreak (int sig)
                              " *\n"
                              " * automatically generated on ");
         fclose (error_file);
-        SYScallNoErr ("date >> SACbugreport");
+        system ("date >> SACbugreport");
+        /*
+         * We use system() here directly rather than the appropriate function
+         * from support/system.c in order to avoid complex program execution
+         * in an inconsistent program state.
+         */
+
         error_file = fopen ("SACbugreport", "a");
 
         fprintf (error_file, " *\n");
@@ -400,9 +427,9 @@ InternalCompilerErrorBreak (int sig)
         fprintf (stderr, "Sorry, sac2c is unable to create a bug report file.\n");
     }
 
-    CleanUp ();
+    CleanUpInterrupted ();
 
-    exit (1);
+    abort ();
 }
 
 /** <!--********************************************************************-->
@@ -424,8 +451,8 @@ InternalCompilerErrorBreak (int sig)
 static void
 UserForcedBreak (int sig)
 {
-    CleanUp ();
-    exit (0);
+    CleanUpInterrupted ();
+    abort ();
 }
 
 /** <!--********************************************************************-->

@@ -665,6 +665,13 @@ FMGRcreateTmpDir ()
 
 #endif /* HAVE_MKDTEMP */
 
+    global.system_cleanup = STRcat ("rm -rf ", global.tmp_dirname);
+    /*
+     * We set this variable already here to avoid the associated string and memory
+     * handling at a later stage when the compiler is in an inconistent state
+     * signalled via an interrupt.
+     */
+
     DBUG_VOID_RETURN;
 }
 
