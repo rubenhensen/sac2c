@@ -298,6 +298,9 @@ CVPprf (node *arg_node, info *arg_info)
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
     case F_prod_matches_prod_shape_VxA:
+    case F_modarray_AxVxA:
+    case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
         /*
          * Only propagate variables here
          */
@@ -333,7 +336,7 @@ CVPprf (node *arg_node, info *arg_info)
     case F_modarray_AxVxS:
         /*
          * The first two arguments of modarray must be variable
-         * the other one can as well be constant scalars
+         * the other one can as well be a constant scalar
          */
         INFO_PROPMODE (arg_info) = PROP_variable;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
@@ -363,6 +366,7 @@ CVPprf (node *arg_node, info *arg_info)
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
+#ifdef BUG437
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
         DBUG_ASSERT (global.compiler_subphase >= PH_opt_ivesplit,
@@ -378,6 +382,7 @@ CVPprf (node *arg_node, info *arg_info)
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
+#endif // BUG437
 
     default:
         /*
