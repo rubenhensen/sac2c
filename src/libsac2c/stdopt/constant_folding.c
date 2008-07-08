@@ -570,12 +570,13 @@ CFfuncond (node *arg_node, info *arg_info)
         if (COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)) {
             res = DUPdoDupTree (FUNCOND_THEN (arg_node));
             arg_node = FREEdoFreeTree (arg_node);
+            DBUG_PRINT ("CF", ("CFfuncond found TRUE condition"));
         } else {
             res = DUPdoDupTree (FUNCOND_ELSE (arg_node));
             arg_node = FREEdoFreeTree (arg_node);
+            DBUG_PRINT ("CF", ("CFfuncond found FALSE condition"));
         }
     }
-
     DBUG_RETURN (res);
 }
 
@@ -596,10 +597,13 @@ CFcondThen (node *arg_node, info *arg_info)
     if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     }
+    DBUG_PRINT ("CF", ("CFcondThen found TRUE condition"));
 
     /* select then-part for later insertion in assignment chain */
     pre = BLOCK_INSTR (COND_THEN (arg_node));
     if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
+        DBUG_ASSERT ((NULL == INFO_PREASSIGN (arg_info)),
+                     ("CFcondThen preassign confusion"));
         INFO_PREASSIGN (arg_info) = pre;
         /*
          * delete pointer to codeblock to preserve assignments from
@@ -629,10 +633,13 @@ CFcondElse (node *arg_node, info *arg_info)
     if (COND_ELSE (arg_node) != NULL) {
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
+    DBUG_PRINT ("CF", ("CFcondElse found FALSE condition"));
 
     /* select else-part for later insertion in assignment chain */
     pre = BLOCK_INSTR (COND_ELSE (arg_node));
     if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
+        DBUG_ASSERT ((NULL == INFO_PREASSIGN (arg_info)),
+                     ("CFcondElse preassign confusion"));
         INFO_PREASSIGN (arg_info) = pre;
         /*
          * delete pointer to codeblock to preserve assignments from
@@ -836,7 +843,7 @@ ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
     node *array;
 
     if (exprs != NULL) {
-        *ok = *ok && PM (PMarray_new (fs, &array, EXPRS_EXPR (exprs)));
+        *ok = *ok && PM (PMarray (fs, &array, EXPRS_EXPR (exprs)));
         exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
         if (*ok) {
             exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);
@@ -895,29 +902,23 @@ CFprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
     /* Bog-standard constant-folding is all handled by typechecker now */
 
-#if 1
     /* Try symbolic constant simplification */
     fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
-#endif
 
-#if 1
     /* If that doesn't help, try structural constant constant folding */
     fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
-#endif
 
-#if 1
     /* If that doesn't help, try SAA constant folding */
     fn = prf_cfsaa_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
     }
-#endif
 
     if (res != NULL) {
         /* free this primitive function and replace it by new node */
