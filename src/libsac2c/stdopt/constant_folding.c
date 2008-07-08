@@ -755,7 +755,14 @@ CFlet (node *arg_node, info *arg_info)
      */
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
-    if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))) {
+    if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))
+        && (NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)) {
+        /**
+         * NB: we MUST not throw away funconds UNLESS we know the predicate!
+         *     otherwise, we come into an inconsistent state which is not
+         *     being dealt with in SAA insertion (cf bug 466).
+         *     Therefore we HAVE TO traverse the RHS if these are funconds.
+         */
 
         if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
@@ -843,7 +850,7 @@ ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
     node *array;
 
     if (exprs != NULL) {
-        *ok = *ok && PM (PMarray (fs, &array, EXPRS_EXPR (exprs)));
+        *ok = *ok && PM (PMarray_new (fs, &array, EXPRS_EXPR (exprs)));
         exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
         if (*ok) {
             exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);
