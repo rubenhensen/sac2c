@@ -760,7 +760,7 @@ CFlet (node *arg_node, info *arg_info)
         /**
          * NB: we MUST not throw away funconds UNLESS we know the predicate!
          *     otherwise, we come into an inconsistent state which is not
-         *     being dealt with in SAA insertion (cf bug 466).
+         *     being dealt with in SAA insertion (cf bug 446).
          *     Therefore we HAVE TO traverse the RHS if these are funconds.
          */
 
@@ -850,7 +850,7 @@ ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
     node *array;
 
     if (exprs != NULL) {
-        *ok = *ok && PM (PMarray_new (fs, &array, EXPRS_EXPR (exprs)));
+        *ok = *ok && PM (PMarray (fs, &array, EXPRS_EXPR (exprs)));
         exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
         if (*ok) {
             exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);
@@ -905,7 +905,6 @@ CFprf (node *arg_node, info *arg_info)
     travfun_p fn;
 
     DBUG_ENTER ("CFprf");
-
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
     /* Bog-standard constant-folding is all handled by typechecker now */
 

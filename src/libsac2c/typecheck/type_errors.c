@@ -1028,9 +1028,9 @@ TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
             if (SHgetExtent (TYgetShape (type1), i)
                 != SHgetExtent (TYgetShape (type2), i + offset)) {
                 TEhandleError (global.linenum,
-                               "the shape of %s should be a postfix of the shape of %s;"
-                               " types found: %s  and  %s",
-                               obj1, obj2, TYtype2String (type1, FALSE, 0),
+                               "the shape of %s (%s) should be a postfix of the shape of "
+                               "%s (%s)",
+                               obj1, TYtype2String (type1, FALSE, 0), obj2,
                                TYtype2String (type2, FALSE, 0));
 
                 i = TYgetDim (type1); /* skip the remainder */
@@ -1469,9 +1469,8 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
     if (res == NULL) {
         TEhandleError (global.linenum,
-                       "%s and %s should have identical shapes;"
-                       " types found: %s  and  %s",
-                       obj1, obj2, TYtype2String (type1, FALSE, 0),
+                       "%s (shape: %s) and %s (shape: %s) must have identical shapes.",
+                       obj1, TYtype2String (type1, FALSE, 0), obj2,
                        TYtype2String (type2, FALSE, 0));
         /**
          * In case of a non-aborting error handling, we need some usefull value

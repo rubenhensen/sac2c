@@ -56,29 +56,6 @@
 /******************************************************************************
  *
  * function:
- *    node *CFsel( constant *idx, node *a)
- *
- * description:
- *    selects a single element from N_array a.
- *
- ******************************************************************************/
-static node *
-CFsel (constant *idx, node *a)
-{
-    node *result;
-    int offset;
-
-    DBUG_ENTER ("CFsel");
-    DBUG_ASSERT ((N_array == NODE_TYPE (a)), "CFsel arg2 not N_array");
-
-    offset = Idx2OffsetArray (idx, a);
-    result = TCgetNthExprsExpr (offset, ARRAY_AELEMS (a));
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *StructOpSel(node *arg_node, info *arg_info)
  *
  * description:
@@ -125,34 +102,36 @@ StructOpSel (node *arg_node, info *arg_info)
     int X_dim;
 
     constant *take_vec;
-    constant *iv_co;
-
+    constant *con1 = NULL;
+    constant *con2 = NULL;
+    constant *arg2fs = NULL;
+    int offset;
     node *tmpivid;
     node *tmpivval;
     node *tmpivavis;
     node *tmpXid;
-    constant *frameshape = NULL;
-
     node *arg1 = NULL;
     node *arg2 = NULL;
 
     DBUG_ENTER ("StructOpSel");
     // Match for _sel_VxA_( constant, N_array)
-    if (PM (PMarray_new (&frameshape, &arg2,
-                         PMconst (&arg1, PMprf (F_sel_VxA, arg_node))))) {
-        frameshape = COfreeConstant (frameshape);
-        iv_co = COaST2Constant (arg1);
-        iv_len = SHgetUnrLen (COgetShape (iv_co));
-        X_dim = SHgetDim (ARRAY_FRAMESHAPE (arg2));
+    if (PM (
+          PMarrayConstructor (&arg2fs, &arg2,
+                              PMintConst (&con1, &arg1, PMprf (F_sel_VxA, arg_node))))) {
+        X_dim = SHgetExtent (COgetShape (arg2fs), 0);
+        arg2fs = COfreeConstant (arg2fs);
+        iv_len = SHgetUnrLen (COgetShape (con1));
         DBUG_ASSERT ((iv_len >= X_dim), ("shape(iv) <  dim(X)"));
         take_vec = COmakeConstantFromInt (X_dim);
 
         // Select the N_array element we want w/iv prefix
-        tmpXid = DUPdoDupTree ((node *)CFsel (COtake (take_vec, iv_co), arg2));
-
+        con2 = COtake (take_vec, con1);
+        offset = Idx2OffsetArray (con2, arg2);
+        con2 = COfreeConstant (con2);
+        tmpXid = DUPdoDupTree ((node *)TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
         if (iv_len == X_dim) {
             if (N_id == NODE_TYPE (tmpXid)) {
-                // FIXME: tvd2d gets wrong answers if we return an N_num
+                // FIXME: tvd2d gets wrong answers if we allow the return of an N_num
                 //        or an N_double (not sure if it's either or both...)
                 //        2008-06-27
                 // Case 1 : Exact selection: do the sel operation now.
@@ -164,7 +143,7 @@ StructOpSel (node *arg_node, info *arg_info)
             // Perform partial selection on X now; build new selection for
             // run-time.
             DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "StructOpSel X element not N_id");
-            iv_co = COdrop (take_vec, iv_co); // iv suffix
+            con1 = COdrop (take_vec, con1); // iv suffix
             take_vec = COfreeConstant (take_vec);
             tmpivavis
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
@@ -174,7 +153,7 @@ StructOpSel (node *arg_node, info *arg_info)
             // Following is really GenIntVector call
             AVIS_SHAPE (tmpivavis)
               = TCmakeIntVector (TBmakeExprs (TBmakeNum (iv_len - X_dim), NULL));
-            tmpivval = COconstant2AST (iv_co);
+            tmpivval = COconstant2AST (con1);
             INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
             tmpivid = TBmakeId (tmpivavis);
             INFO_PREASSIGN (arg_info)
@@ -189,9 +168,8 @@ StructOpSel (node *arg_node, info *arg_info)
             // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
             result = TCmakePrf2 (F_sel_VxA, tmpivid, tmpXid);
         }
-        iv_co = COfreeConstant (iv_co);
+        con1 = COfreeConstant (con1);
     }
-
     DBUG_RETURN (result);
 }
 
@@ -213,10 +191,10 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     shape *resshape;
-    constant *arg1const;
+    constant *con1 = NULL;
+    constant *fs2 = NULL;
     node *arg1 = NULL;
-    node *arg2Narray = NULL;
-    constant *arg2frameshape = NULL;
+    node *arg2 = NULL;
     int timesrhoarg2;
     int prodarg1;
 
@@ -226,30 +204,26 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
      *    arr having same element count prod(shp)
      *    and rank-0 ELEMTYPE
      */
-    if (PM (PMarray_new (&arg2frameshape, &arg2Narray,
-                         PMintConst (&arg1, PMprf (F_reshape_VxA, arg_node))))) {
-        if ((NULL != arg1) && (0 == TYgetDim (ARRAY_ELEMTYPE (arg2Narray)))) {
-            arg1const = COaST2Constant (arg1);
-            if (NULL != arg1const) {
-                resshape = COconstant2Shape (arg1const);
-                prodarg1 = SHgetUnrLen (resshape);
-                timesrhoarg2 = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray));
-                if (prodarg1 == timesrhoarg2) {
-                    /* If the result is a scalar, return that. Otherwise,
-                     * create an N_array.
-                     */
-                    if (0 == SHgetDim (resshape)) {
-                        res = DUPdoDupTree (
-                          TCgetNthExprsExpr (0, ARRAY_AELEMS (arg2Narray)));
-                    } else {
-                        res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
-                                           resshape,
-                                           DUPdoDupTree (ARRAY_AELEMS (arg2Narray)));
-                    }
-                    DBUG_PRINT ("CF", ("SCCFprf_reshape performed "));
+    if (PM (PMarrayConstructor (&fs2, &arg2,
+                                PMintConst (&con1, &arg1,
+                                            PMprf (F_reshape_VxA, arg_node))))) {
+        if (0 == TYgetDim (ARRAY_ELEMTYPE (arg2))) {
+            resshape = COconstant2Shape (con1);
+            prodarg1 = SHgetUnrLen (resshape);
+            timesrhoarg2 = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
+            if (prodarg1 == timesrhoarg2) {
+                /* If the result is a scalar, return that. Otherwise,
+                 * create an N_array.
+                 */
+                if (0 == SHgetDim (resshape)) {
+                    res = DUPdoDupTree (TCgetNthExprsExpr (0, ARRAY_AELEMS (arg2)));
+                } else {
+                    res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)), resshape,
+                                       DUPdoDupTree (ARRAY_AELEMS (arg2)));
                 }
-                arg1const = COfreeConstant (arg1const);
+                DBUG_PRINT ("CF", ("SCCFprf_reshape performed "));
             }
+            con1 = COfreeConstant (con1);
         }
     }
     DBUG_RETURN (res);
@@ -273,42 +247,38 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *tail;
-    node *arg2Narray;
-    constant *arg1;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    constant *con1 = NULL;
+    constant *fs2 = NULL;
     int takecount;
     int resshape;
     int argshape;
     int offset;
 
     DBUG_ENTER ("SCCFprf_take_SxV");
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-    arg2Narray = PMfollowId (PRF_ARG2 (arg_node));
-
-    if ((NULL != arg1) && (NULL != arg2Narray) && (N_array == NODE_TYPE (arg2Narray))) {
-        takecount = COconst2Int (arg1);
+    if (PM (
+          PMarrayConstructor (&fs2, &arg2,
+                              PMintConst (&con1, &arg1, PMprf (F_take_SxV, arg_node))))) {
+        takecount = COconst2Int (con1);
         resshape = abs (takecount);
-        argshape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray));
+        argshape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
         DBUG_ASSERT ((resshape <= argshape), ("SCCFprf_take_SxV attempted overtake"));
         if (argshape == takecount) {
-#ifdef FIXME
-            res = arg2Narray; /* intentional bug to test ACV */
-#else                         // FIXME
-            res = DUPdoDupTree (arg2Narray);
-#endif                        // FIXME
+            res = DUPdoDupTree (arg2);
         } else {
             offset = (takecount >= 0) ? 0 : argshape - takecount;
 
-            tail = TCgetExprsSection (offset, resshape, ARRAY_AELEMS (arg2Narray));
+            tail = TCgetExprsSection (offset, resshape, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_take performed "));
-            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resshape), tail);
         }
 
-        if (NULL != arg1) {
-            arg1 = COfreeConstant (arg1);
+        if (NULL != con1) {
+            con1 = COfreeConstant (con1);
         }
     }
-
     DBUG_RETURN (res);
 }
 
@@ -329,46 +299,47 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *tail;
-    node *arg2Narray;
-    constant *arg1;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    constant *con1 = NULL;
+    constant *arg2fs = NULL;
     int dropcount;
     int resxrho;
     int offset;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
-    arg1 = COaST2Constant (PRF_ARG1 (arg_node));
-    arg2Narray = PMfollowId (PRF_ARG2 (arg_node));
-    if ((NULL != arg1) && (NULL != arg2Narray) && (N_array == NODE_TYPE (arg2Narray))) {
-        dropcount = COconst2Int (arg1);
+    if (PM (
+          PMarrayConstructor (&arg2fs, &arg2,
+                              PMintConst (&con1, &arg1, PMprf (F_drop_SxV, arg_node))))) {
+        dropcount = COconst2Int (con1);
         if (0 == dropcount) {
-            res = DUPdoDupTree (arg2Narray);
+            res = DUPdoDupTree (arg2);
         } else {
-            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2Narray)) - dropcount;
+            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2)) - dropcount;
             resxrho = (resxrho < 0) ? 0 : resxrho;
             offset = (dropcount < 0) ? 0 : dropcount;
-            tail = TCgetExprsSection (offset, resxrho, ARRAY_AELEMS (arg2Narray));
+            tail = TCgetExprsSection (offset, resxrho, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
-            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2Narray)),
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
         }
-        if (NULL != arg1) {
-            arg1 = COfreeConstant (arg1);
+        if (NULL != con1) {
+            con1 = COfreeConstant (con1);
         }
     }
-
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *   node * ARmodarray( node *X, constant *iv, node *val)
+ *   node * ARmodarray( node *arg_node, constant *iv)
  *
  * description:
  *   Implements modarray for structural constant:  X[iv] = val;
- *   X is expected to be an N_array.
- *   iv is expected to be a constant integer vector.
- *   val is expected to be a scalar.
+ *   X must be an N_array.
+ *   iv must be a constant integer vector.
+ *   val must be a scalar.
  *
  * @param: _modarray_AxVxS( X, iv, val)
  * @result:
@@ -380,95 +351,16 @@ ARmodarray (node *arg1, constant *iv, node *val)
     node *oldval;
     node *newval;
     int offset;
-    int framexrho;
 
     DBUG_ENTER ("ARmodarray");
-    DBUG_ASSERT ((N_array == NODE_TYPE (arg1)), "ARmodarray expected N_array as arg1");
-    framexrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg1));
     offset = Idx2OffsetArray (iv, arg1);
     /* If -ecc is active, we should not be able to get
      * index error here, so we don't check for it.
      */
-
     res = DUPdoDupTree (arg1);
     newval = TCgetNthExprs (offset, ARRAY_AELEMS (res));
     oldval = FREEdoFreeTree (EXPRS_EXPR (newval));
     EXPRS_EXPR (newval) = DUPdoDupTree (val);
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- * static  node *prf_modarray(node *arg_node, info *arg_info, node *arg1Nid,
- *                            node *arg2Narray)
- *
- * description:
- *   Implements modarray for structural constant X.
- *   z = _modarray_AxVxS_(X, iv, val)
- *   z = _modarray_AxVxA_(X, iv, arr)
- *   and
- *
- *****************************************************************************/
-static node *
-prf_modarray (node *arg_node, info *arg_info, node *arg1Nid, node *arg2Narray)
-{
-    node *res = NULL;
-    constant *arg2const;
-    node *arg1;
-    node *arg1Narray;
-
-    DBUG_ENTER ("prf_modarray");
-    arg1 = PRF_ARG1 (arg_node);
-
-    /* Attempt to find non-empty iv N_array for arg2const. */
-    /**
-     * if iv is an empty vector, we simply replace the entire
-     * expression by val!
-     * Well, not quite!!! This is only valid, iff
-     *      shape( val) ==  shape(X)
-     * If we do not know this, then the only thing we can do is
-     * to replace the modarray by
-     *      _type_conv_( type(X), val))
-     * iff a is AKS! * cf bug246 !!!
-     *
-     * 2008-05-09: We can ignore all the above, because the
-     * inclusion of guards via "sac2c -ecc" ensures this can never happen.
-     * It also ensures that iv is valid.
-     * Hence, we can blindly do this replacement. */
-
-    arg2const = COaST2Constant (arg2Narray);
-    if (NULL != arg2const) {
-        if (COisEmptyVect (arg2const)) {              /*  modarray(X, [], 42) */
-            res = DUPdoDupTree (PRF_ARG3 (arg_node)); /* X and val are scalar */
-            arg2const = COfreeConstant (arg2const);
-        } else {
-            /* arg2 non-empty constant */
-            arg1Narray = PMfollowId (arg1Nid);
-            if ((NULL != arg1Narray) && (N_array == NODE_TYPE (arg1Narray))) {
-                DBUG_ASSERT ((N_array == NODE_TYPE (arg1Narray)),
-                             "SCCFprf_modarray unable to find arg1 N_array");
-#ifdef SUDUKOBUG
-                res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
-
-                ****Optimization cycle pass : 5
-                  * *****Optimizing wrapper function
-                    : ******_MAIN::main (hidden (12), hidden (13), hidden (11))
-                    : ...
-                  * *****Optimizing regular function
-                    : ******_MAIN::main (hidden (12), hidden (13), hidden (11))
-                    : ... ERROR : line 110 ERROR : argument #2 of
-                                                   "_and_SxS_" should be of type bool;
-                type found : ERROR : bool[9] 2008 - 06 - 27
-
-#else //  SUDUKOBUG - fails in opt cycle pass 5,
-
-                res = ARmodarray (arg1Narray, arg2const, PRF_ARG3 (arg_node));
-
-#endif //  SUDUKOBUG - fails in opt cycle pass 5,
-            }
-        }
-    }
     DBUG_RETURN (res);
 }
 
@@ -486,15 +378,44 @@ node *
 SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg1Nid = NULL;
-    node *arg2Narray = NULL;
-    constant *frameshape = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    constant *fs1 = NULL;
+    constant *fs2 = NULL;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
-    if (PM (PMarray_new (&frameshape, &arg2Narray,
-                         PMvar (&arg1Nid, PMprf (F_modarray_AxVxS, arg_node))))) {
-        frameshape = COfreeConstant (frameshape);
-        res = prf_modarray (arg_node, arg_info, arg1Nid, arg2Narray);
+    /**
+     * if iv is an empty vector, we simply replace the entire
+     * expression by val!
+     * Well, not quite!!! This is only valid, iff
+     *      shape( val) ==  shape(X)
+     * If we do not know this, then the only thing we can do is
+     * to replace the modarray by
+     *      _type_conv_( type(X), val))
+     * iff a is AKS! * cf bug246 !!!
+     *
+     * 2008-05-09: We can ignore all the above, because the
+     * inclusion of guards via "sac2c -ecc" ensures this can never happen.
+     * It ensures that iv is valid, and that val is scalar.
+     */
+    if (PM (PMintConst (&fs2, &arg2, PMvar (&arg1, PMprf (F_modarray_AxVxS, arg_node))))
+        && (COisEmptyVect (fs2))) {               /* z = modarray(X, [], 42) */
+        res = DUPdoDupTree (PRF_ARG3 (arg_node)); /* val is scalar */
+        fs2 = COfreeConstant (fs2);
+
+        /* Attempt to find non-empty iv N_array for arg2const. */
+    } else {
+        fs1 = NULL;
+        fs2 = NULL;
+        arg1 = NULL;
+        arg2 = NULL;
+        if (PM (PMintConst (&fs2, &arg2,
+                            PMarrayConstructor (&fs1, &arg1,
+                                                PMprf (F_modarray_AxVxS, arg_node))))) {
+            res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
+            fs1 = COfreeConstant (fs1);
+            fs2 = COfreeConstant (fs2);
+        }
     }
     DBUG_RETURN (res);
 }
@@ -506,24 +427,37 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
  *
  * description:
  *   Implements modarray for structural constant X.
- *   z = _modarray_AxVxS_(X, iv, array)
+ *   z = _modarray_AxVxA_(X, iv, array)
  *
  *****************************************************************************/
 node *
 SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg1Nid = NULL;
-    node *arg2Narray = NULL;
-    constant *frameshape = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    constant *fs1 = NULL;
+    constant *fs2 = NULL;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
-    /* FIXME  if enabled, bug437 happens. (sudoku_jfp)
-     */
-    if (PM (PMarray_new (&frameshape, &arg2Narray,
-                         PMvar (&arg1Nid, PMprf (F_modarray_AxVxA, arg_node))))) {
-        frameshape = COfreeConstant (frameshape);
-        res = prf_modarray (arg_node, arg_info, arg1Nid, arg2Narray);
+    if (PM (PMintConst (&fs2, &arg2,
+                        PMarrayConstructor (&fs1, &arg1,
+                                            PMprf (F_modarray_AxVxA, arg_node))))) {
+        res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
+        fs1 = COfreeConstant (fs1);
+        fs2 = COfreeConstant (fs2);
+    } else {
+        fs1 = NULL;
+        fs2 = NULL;
+        arg1 = NULL;
+        arg2 = NULL;
+        if (PM (PMintConst (&fs2, &arg2,
+                            PMarrayConstructor (&fs1, &arg1,
+                                                PMprf (F_modarray_AxVxA, arg_node))))) {
+            res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
+            fs1 = COfreeConstant (fs1);
+            fs2 = COfreeConstant (fs2);
+        }
     }
     DBUG_RETURN (res);
 }
@@ -546,15 +480,15 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
     node *arg2 = NULL;
     node *arg1aelems;
     node *arg2aelems;
-    node *tail;
-    constant *frameshape1 = NULL;
-    constant *frameshape2 = NULL;
-    int arg1shape;
-    int arg2shape;
-    int frameshape;
+    node *els;
+    constant *fs1 = NULL;
+    constant *fs2 = NULL;
+    constant *frameshape;
+    shape *frameshaperes;
+    int arg1xrho;
+    int arg2xrho;
 
     DBUG_ENTER ("SCCFprf_cat_VxV");
-
     DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG1 (arg_node))),
                  ("SCCFprf_cat_VxV arg1 not N_id"));
     DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG2 (arg_node))),
@@ -571,32 +505,53 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && PM (PMarray_new (&frameshape2, &arg2,
-                            PMarray_new (&frameshape1, &arg1,
-                                         PMprf (F_cat_VxV, arg_node))))) {
+        && PM (PMarrayConstructor (&fs2, &arg2,
+                                   PMarrayConstructor (&fs1, &arg1,
+                                                       PMprf (F_cat_VxV, arg_node))))) {
+
+        DBUG_ASSERT ((1 == SHgetDim (ARRAY_FRAMESHAPE (arg1))),
+                     "SCCFprf_cat expected vector arg1 frameshape");
+        DBUG_ASSERT ((1 == SHgetDim (ARRAY_FRAMESHAPE (arg2))),
+                     "SCCFprf_cat expected vector arg2 frameshape");
+
+        DBUG_ASSERT (TUeqShapes (ARRAY_ELEMTYPE (arg1), ARRAY_ELEMTYPE (arg2)),
+                     ("SCCFprf_cat args have different element types"));
+
         /* Both arguments are constants or structure constants */
-        arg1shape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg1));
-        arg2shape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
-        frameshape = arg1shape + arg2shape;
-        frameshape1 = COfreeConstant (frameshape1);
-        frameshape2 = COfreeConstant (frameshape2);
+        arg1xrho = COconst2Int (fs1);
+        arg2xrho = COconst2Int (fs2);
+        frameshape = COadd (fs1, fs2);
+        frameshaperes = COconstant2Shape (frameshape);
+        frameshape = COfreeConstant (frameshape);
+        fs1 = COfreeConstant (fs1);
+        fs2 = COfreeConstant (fs2);
 
         /* Perform the actual element catenation */
-        if (0 == arg1shape) { /* []++arg2 */
+        if (0 == arg1xrho) { /* []++arg2 */
             DBUG_PRINT ("CF", ("SCCFprf_cat (2)removed []++var"));
             res = DUPdoDupTree (arg2);
-        } else if (0 == arg2shape) { /* arg2++[] */
+        } else if (0 == arg2xrho) { /* arg2++[] */
             DBUG_PRINT ("CF", ("SCCFprf_cat (2) removed var++[]"));
             res = DUPdoDupTree (arg1);
         } else { /* arg1++arg2 */
             arg1aelems = DUPdoDupTree (ARRAY_AELEMS (arg1));
             arg2aelems = DUPdoDupTree (ARRAY_AELEMS (arg2));
-            tail = TCgetNthExprs (arg1shape - 1, arg1aelems);
-            DBUG_ASSERT ((NULL == EXPRS_NEXT (tail)), "SCCFprf_cat_VxV missed arg1 tail");
-            EXPRS_NEXT (tail) = arg2aelems;
-            DBUG_PRINT ("CF", ("SCCFprf_cat replaced const1++const2"));
-            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg1)),
-                               SHcreateShape (1, frameshape), arg1aelems);
+            els = TCappendExprs (arg1aelems, arg2aelems);
+#define CRUD
+#ifdef CRUD // FIXME
+            /* FIXME: KLUDGE to avoid catenating N_num and N_id */
+            if (((N_id == NODE_TYPE (EXPRS_EXPR (arg1aelems)))
+                 & (N_id == NODE_TYPE (EXPRS_EXPR (arg2aelems))))
+                || ((N_id != NODE_TYPE (EXPRS_EXPR (arg1aelems)))
+                    & (N_id != NODE_TYPE (EXPRS_EXPR (arg2aelems))))) {
+                DBUG_PRINT ("CF", ("SCCFprf_cat performed const1++const2"));
+                res
+                  = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg1)), frameshaperes, els);
+            }
+#else  // CRUD
+            DBUG_PRINT ("CF", ("SCCFprf_cat performed const1++const2"));
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg1)), frameshaperes, els);
+#endif // CRUD // FIXME sudoku bug
         }
     }
     DBUG_RETURN (res);
@@ -615,7 +570,7 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  * @brief:
  *   tries a sel-modarray optimization for the following cases:
  *
- *   1. iv is an unknown expression:
+ *  Case 1. iv is an unknown expression:
  *      b = modarray(arr, iv, val)
  *      c = b;              NB. Perhaps a few assigns in the way
  *      x = sel(iv, c)    ->   x = val;
@@ -655,7 +610,70 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *      After this point, tmp is likely dead, so DCR will remove it
  *      sometime later.
  *
- *   2. ivc is a constant:
+ *  Case 2. See below.
+ *
+ *  Case 3. Essentially the inverse of case (2): iv is not a constant:
+ *      b = modarray(arr, iv, val5);
+ *      c = modarray(b, constantiv, val3);
+ *      x = sel(iv, c)
+ *
+ *      Since we do not know the value of iv, we must not make
+ *      any assertions about its relationship to constantiv.
+ *      Hence, this case must not be optimized.
+ *
+ *
+ *****************************************************************************/
+
+static node *
+SelModarray (node *arg_node)
+{
+    node *res = NULL;
+    node *iv = NULL;
+    node *X = NULL;
+    node *M = NULL;
+    node *val = NULL;
+
+    DBUG_ENTER ("SelModarray");
+    /* We are looking for one of:
+     *
+     *    X = modarray_AxVxS_( M, iv, val);
+     *     or
+     *    X = modarray_AxVxA_( M, iv, val);
+     *    sel_VxA( iv, X);
+     *     or
+     *    X = idx_modarray_AxVxS_( M, iv, val);
+     *    idx_sel_VxA( iv, X);
+     *
+     * NB: these ||'s do only work here as the execution order of these
+     *    is guaranteed to be left to right AND as PMvar( &val, ...)
+     *    is guaranteed not to be executed if PMprf does not match!!
+     */
+
+    if (PM (PMvar (&X, /* _sel_VxA_( iv, X) */
+                   PMvar (&iv, PMprf (F_sel_VxA, arg_node))))
+        &&
+
+        (PM (PMvar (&val, /* _modarray_AxVxS_( M, iv, val) */
+                    PMvar (&iv, PMvar (&M, PMprf (F_modarray_AxVxS, X)))))
+         || PM (PMvar (&val, /* _modarray_AxSxA_( M, iv, val) */
+                       PMvar (&iv, PMvar (&M, PMprf (F_modarray_AxVxA, X))))))) {
+        res = DUPdoDupTree (val);
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @function:
+ *   node *SelModarrayCase2(node *arg_node)
+ *
+ * @param: arg_node is a _sel_ N_prf.
+ *
+ * @result: if the selection can be folded, the result is the
+ * val from in the earlier modarray. Otherwise, NULL.
+ *
+ * @brief:
+ *  Case 2. ivc is a constant:
  *      b = modarray(arr, ivc, val5);
  *      c = modarray(b, [3], val3);
  *      d = modarray(c, [2], val2);
@@ -666,68 +684,42 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *      optimization, because we are unable to assert that
  *      the constant is not [5].
  *
- *   3. Essentially the inverse of case (2): iv is not a constant:
- *      b = modarray(arr, iv, val5);
- *      c = modarray(b, constantiv val3);
- *      x = sel(iv, c)
- *
- *      Since we do not know the value of iv, we must not make
- *      any assertions about its relationship to constantiv.
- *      Hence, this case must not be optimized.
- *
- *
- *   We still need to ensure that iv is a valid index for arr.
- *   I think -ecc should now handle that check properly.
- *
  *****************************************************************************/
-
-/* FIXME: As of 2008-06-19, caes 2 and 3 of above are likely not implemented */
-
 static node *
-SelModarray (node *arg_node)
+SelModarrayCase2 (node *arg_node)
 {
     node *res = NULL;
-    node *iv = NULL;
-    node *Y = NULL;
+    constant *iv1c = NULL;
+    constant *iv2c = NULL;
+    node *iv1 = NULL;
+    node *iv2 = NULL;
     node *val = NULL;
+    node *X2 = NULL;
+    node *X = NULL;
 
-    DBUG_ENTER ("SelModarray");
-    /* We are looking for one of:
-     *    sel_VxA( iv, modarray_AxVxS_( Y, iv, val)), or
-     *    sel_VxA( iv, modarray_AxVxA_( Y, iv, val)), or
-     *    sel_VxA( iv, idx_modarray_AxSxS_( Y, iv, val))
-     *    idx_sel_( iv, idx_modarray_AxSxS_( Y, iv, val))
-     *
-     * NB: these ||'s do only work here as the execution order of these
-     *    is guaranteed to be left to right AND as PMvar( &val, ...)
-     *    is guaranteed not to be executed if PMprf does not match!!
-     */
+    DBUG_ENTER ("SelModarrayCase2");
 
-    if (PM (PMvar (&Y, /* _sel_VxA_( iv, X) */
-                   PMvar (&iv, PMprf (F_sel_VxA, arg_node))))
-        &&
+    if (PM (PMvar (&X, /* _sel_VxA_( iv1, X) */
+                   PMintConst (&iv1c, &iv1, PMprf (F_sel_VxA, arg_node))))) {
 
-        (PM (PMvar (&val, /* _modarray_AxVxS_( X, iv, val) */
-                    PMvar (&iv, PMvar (&Y, PMprf (F_modarray_AxVxS, Y)))))
-         || PM (PMvar (&val, /* _modarray_AxSxA_( X, iv, val) */
-                       PMvar (&iv, PMvar (&Y, PMprf (F_modarray_AxVxA, Y))))))) {
-        res = DUPdoDupTree (val);
-    }
-#ifdef CRUD
-    /* FIXME  all this stuff may be crap because IVE don't run yet! */
-    if (NULL == res) {
-        X = NULL;
-        iv = NULL;
-        val = NULL;
-        if (PM (PMvar (&X, /* _idx_sel( iv, X) */
-                       PMvar (&iv, PMprf (F_idx_sel, arg_node))))
-            && PM (PMvar (&val, /* _idx_modarray_AxSxS_( X, iv, val) */
-                          PMvar (&iv, PMvar (&Y, PMprf (F_idx_modarray_AxSxS, X)))))) {
+        while (PM (
+          PMvar (&val, /* X = _modarray_AxVxS_( X2, iv2, val)  */
+                 PMintConst (&iv2c, &iv2, PMvar (&X2, PMprf (F_modarray_AxVxS, X)))))) {
+            /* FIXME: Bodo: Does this need an F_modarray_AxVxA case ?? */
+            if (COcompareConstants (iv1c, iv2c)) {
+                break;
+            } else { /* Chase the modarray chain */
+                val = NULL;
+                iv2c = NULL;
+                iv2 = NULL;
+                X = X2;
+                X2 = NULL;
+            }
+        }
+        if (NULL != val) {
             res = DUPdoDupTree (val);
         }
     }
-#endif // CRUD
-
     DBUG_RETURN (res);
 }
 
@@ -785,6 +777,10 @@ SCCFprf_sel (node *arg_node, info *arg_info)
 
     if (NULL == res) {
         res = SelModarray (arg_node);
+    }
+
+    if (NULL == res) {
+        res = SelModarrayCase2 (arg_node);
     }
 
     if (NULL == res) {

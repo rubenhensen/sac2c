@@ -1232,7 +1232,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     constant *arg1frameshape = NULL;
 
     DBUG_ENTER ("SCSprf_non_neg_val_V");
-    if (PM (PMarray_new (&arg1frameshape, &arg1, PMprf (F_non_neg_val_V, arg_node)))) {
+    if (PM (PMarray (&arg1frameshape, &arg1, PMprf (F_non_neg_val_V, arg_node)))) {
         arg1c = COaST2Constant (arg1);
         arg1frameshape = COfreeConstant (arg1frameshape);
         if ((NULL != arg1c) && COisNonNeg (arg1c, TRUE)) {
