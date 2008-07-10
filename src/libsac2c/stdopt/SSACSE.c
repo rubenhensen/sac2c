@@ -146,8 +146,12 @@ FindCSE (cseinfo *layer, node *let)
         node *brhs = LET_EXPR (layer->lets[i]);
         nodetype ant = NODE_TYPE (arhs);
         nodetype bnt = NODE_TYPE (brhs);
+        /**
+         *   excluded CSE on F_type_error here as that caused bug 416!
+         */
         if ((ant == bnt)
-            && (((ant == N_prf) && (PRF_PRF (arhs) == PRF_PRF (brhs)))
+            && (((ant == N_prf) && (PRF_PRF (arhs) == PRF_PRF (brhs))
+                 && (PRF_PRF (arhs) != F_type_error))
                 || (ant != N_prf))) {
             if (CMPTdoCompareTree (arhs, brhs) == CMPT_EQ) {
                 res = layer->lets[i];
