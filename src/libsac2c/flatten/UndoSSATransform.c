@@ -11,6 +11,7 @@
  *****************************************************************************/
 
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -480,7 +481,12 @@ USSATfuncond (node *arg_node, info *arg_info)
      *
      * This can only be performed iff
      *
-     *  - t,e are not function arguments
+     *  - the types of t,e are in fact subtypes of the type of r.
+     *    Due to -noOPT we may face a situation like this:
+     *    int res = ( bool{true} p ? int x : int[2] y);
+     *    Here, type(e) !<= type(r) (cf. bug 441)
+     *
+     *  - t,e are not function arguments (RET_HASLINKSIGNINFO!!)
      *    They must thus be defined in the conditional itself
      *
      *  - t,e have not already been replaced
@@ -509,18 +515,33 @@ USSATfuncond (node *arg_node, info *arg_info)
 #if BUG110_FIXED
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
         || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
+        || !TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 #else
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
+        || !TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 #endif
 
         /*
          * At least one criterium is not met => insert copy assignment
          */
-        INFO_THENASS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
-                          INFO_THENASS (arg_info));
+        if (TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))) {
+            INFO_THENASS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
+                              INFO_THENASS (arg_info));
+        } else {
+            INFO_THENASS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+                                         TCmakePrf1 (F_type_error,
+                                                     TBmakeType (
+                                                       TYmakeBottomType (STRcpy (
+                                                         "The typechecker guaranteed the "
+                                                         "first branch of"
+                                                         " the conditional never to be "
+                                                         "executed"))))),
+                              INFO_THENASS (arg_info));
+        }
     } else {
         AVIS_SUBST (rhsavis) = lhsavis;
     }
@@ -532,18 +553,33 @@ USSATfuncond (node *arg_node, info *arg_info)
 #if BUG110_FIXED
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
         || (IdGivenByFillOperation (rhsavis) && FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
+        || !TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 #else
     if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
+        || !TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 #endif
 
         /*
          * At least one criterium is not met => insert copy assignment
          */
-        INFO_ELSEASS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
-                          INFO_ELSEASS (arg_info));
+        if (TYleTypes (AVIS_TYPE (rhsavis), AVIS_TYPE (lhsavis))) {
+            INFO_ELSEASS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
+                              INFO_ELSEASS (arg_info));
+        } else {
+            INFO_ELSEASS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+                                         TCmakePrf1 (F_type_error,
+                                                     TBmakeType (
+                                                       TYmakeBottomType (STRcpy (
+                                                         "The typechecker guaranteed the "
+                                                         "second branch of"
+                                                         " the conditional never to be "
+                                                         "executed"))))),
+                              INFO_ELSEASS (arg_info));
+        }
     } else {
         AVIS_SUBST (rhsavis) = lhsavis;
     }
