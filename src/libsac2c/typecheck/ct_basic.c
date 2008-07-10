@@ -179,6 +179,7 @@ NTCCTfuncond (te_info *err_info, ntype *args)
     ntype *res = NULL;
     char *err_msg;
     constant *pred_val;
+    ntype *non_alpha = NULL;
 
     DBUG_ENTER ("NTCCTfuncond");
 
@@ -196,9 +197,15 @@ NTCCTfuncond (te_info *err_info, ntype *args)
 
         if (TYisAlpha (rhs1)) {
             rhs1 = TYmakeBottomType ("then branch computation does not terminate");
+            non_alpha = rhs2;
         }
         if (TYisAlpha (rhs2)) {
             rhs2 = TYmakeBottomType ("else branch computation does not terminate");
+            if (non_alpha == NULL) {
+                non_alpha = rhs1;
+            } else {
+                non_alpha = NULL;
+            }
         }
         if (TYisArray (rhs1) && TYisArray (rhs2)) {
             TEassureSameScalarType ("then branch", rhs1, "else branch", rhs2);
@@ -225,7 +232,18 @@ NTCCTfuncond (te_info *err_info, ntype *args)
                 res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
             }
         } else {
-            res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+            /**
+             *  As bug 445 shows, we cannot just take the lub of rhs1 and rhs2 here!
+             *  The problem is that lub( bottom, int{2}) = int, i.e., the value
+             *  information gets lost!
+             *  Hence, we have to return the non-alpha type in case exactly one
+             *  had been alpha!
+             */
+            if (non_alpha == NULL) {
+                res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+            } else {
+                res = TYmakeProductType (1, TYcopyType (non_alpha));
+            }
         }
 
     } else if (TYisBottom (pred)) {
