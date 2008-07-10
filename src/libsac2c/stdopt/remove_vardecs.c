@@ -151,14 +151,18 @@ RMVblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RMVblock");
 
-    if ((BLOCK_VARDEC (arg_node) != NULL) && (BLOCK_INSTR (arg_node) != NULL)) {
-        INFO_TRAVMODE (arg_info) = TM_init;
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        if (BLOCK_VARDEC (arg_node) != NULL) {
+            INFO_TRAVMODE (arg_info) = TM_init;
+            BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
 
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+            BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-        INFO_TRAVMODE (arg_info) = TM_delete;
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+            INFO_TRAVMODE (arg_info) = TM_delete;
+            BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+        } else {
+            BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -181,10 +185,12 @@ RMVvardec (node *arg_node, info *arg_info)
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_init:
         AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
+        DBUG_PRINT ("RMV", ("marking %s as dead!", VARDEC_NAME (arg_node)));
         break;
 
     case TM_delete:
         if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
+            DBUG_PRINT ("RMV", ("deleting %s !", VARDEC_NAME (arg_node)));
             arg_node = FREEdoFreeNode (arg_node);
         }
         break;
@@ -204,6 +210,7 @@ RMVids (node *arg_node, info *arg_info)
     DBUG_ENTER ("RMVids");
 
     AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
+    DBUG_PRINT ("RMV", ("marking %s as alive!", IDS_NAME (arg_node)));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);

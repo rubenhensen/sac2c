@@ -532,6 +532,7 @@ CFassign (node *arg_node, info *arg_info)
     if (remassign) {
         DBUG_PRINT ("CF", ("CFassign removed dead assignment"));
         arg_node = FREEdoFreeNode (arg_node);
+        INFO_REMASSIGN (arg_info) = FALSE;
     }
 
     /**
