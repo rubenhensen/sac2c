@@ -405,6 +405,7 @@ node *
 SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *resex;
     node *arg1 = NULL;
     node *arg2 = NULL;
     node *arg3 = NULL;
@@ -435,14 +436,17 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
         arg3xrho = TCcountExprs (ARRAY_AELEMS (arg3));
         ptc = Idx2OffsetArray (fs2, arg1);
         /* Maybe should check here for ptc too big? */
-        prefix = TCtakeDropExprs (ptc, 0, arg1);
+        prefix = TCtakeDropExprs (ptc, 0, ARRAY_AELEMS (arg1));
         sdc = ptc + arg3xrho;
         stc = arg1xrho - sdc;
-        suffix = TCtakeDropExprs (stc, sdc, arg1);
-        res = TCappendExprs (prefix, DUPdoDupTree (arg3));
-        res = TCappendExprs (res, suffix);
+        suffix = TCtakeDropExprs (stc, sdc, ARRAY_AELEMS (arg1));
+        resex = TCappendExprs (prefix, DUPdoDupTree (ARRAY_AELEMS (arg3)));
+        resex = TCappendExprs (resex, suffix);
         fs1 = COfreeConstant (fs1);
         fs2 = COfreeConstant (fs2);
+        res = DUPdoDupTree (arg1);
+        FREEdoFreeTree (ARRAY_AELEMS (res));
+        ARRAY_AELEMS (res) = resex;
     }
     DBUG_RETURN (res);
 }

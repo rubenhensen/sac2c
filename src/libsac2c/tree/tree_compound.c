@@ -2166,18 +2166,22 @@ TCgetNthExprsExpr (int n, node *exprs)
 node *
 TCtakeDropExprs (int takecount, int dropcount, node *exprs)
 {
-    node *res;
+    node *res = NULL;
     node *tail;
 
     DBUG_ENTER ("TCtakeDropExprs");
     DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
                  ("TCtakeDropExprs take or drop count < 0"));
-    /* This does too much work, but I'm not sure of a nice way to fix it. */
-    res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do the drop */
-    tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do the take */
-    if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
-        FREEdoFreeTree (EXPRS_NEXT (tail));
-        EXPRS_NEXT (tail) = NULL;
+    DBUG_ASSERT ((N_exprs == NODE_TYPE (exprs)),
+                 "TCtakeDropExprs disappointed at not getting N_exprs");
+    if (0 != takecount) {
+        /* This does too much work, but I'm not sure of a nice way to fix it. */
+        res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do drop */
+        tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do take */
+        if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
+            FREEdoFreeTree (EXPRS_NEXT (tail));
+            EXPRS_NEXT (tail) = NULL;
+        }
     }
     DBUG_RETURN (res);
 }
