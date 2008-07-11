@@ -136,6 +136,18 @@
 
 static char *FAIL = "";
 
+typedef union {
+    prf *a_prf;
+    node **a_node;
+    constant **a_const;
+} attrib_t;
+
+#define REF_PRF(n) ((n).a_prf)
+#define REF_NODE(n) ((n).a_node)
+#define REF_CONST(n) ((n).a_const)
+
+typedef bool (*checkFun_ptr) (node *, int, attrib_t *);
+
 /** <!--*********************************************************************-->
  *
  * local helper functions:
@@ -143,6 +155,7 @@ static char *FAIL = "";
 
 /** <!--*******************************************************************-->
  *
+ * 1;5A
  * @fn node *ExtractOneArg( node *stack, node * args)
  *
  * @brief extracts the first argument from the exprs stack.
@@ -294,6 +307,70 @@ FailMatch (node *stack)
     DBUG_RETURN ((node *)FAIL);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *MatchNode( nodetype nt, checkFun_ptr matchAttribsFun,
+ *                      int numAttribs, attrib_t *attribRefs,
+ *                      node **matched_node,
+ *                      bool pushSons, node *stack)
+ *
+ * @brief generic matching function. It follows the top of the stack
+ *        expression through variable definitions until the specified
+ *        node type is found.
+ *        If so, matched_node is being set appropriately.
+ *        Then, it matches the attributes by means of  matchAttribsFun
+ *        and the presented arguments in attribRefs. Generally, this
+ *        function should match in case the given attributes are NULL
+ *        and compare if they are not.
+ *        The parameter pushSons decides whether or not the son nodes
+ *        are being pushed on the stack
+ * @return potentially extended stack
+ *****************************************************************************/
+static node *
+MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
+           attrib_t *attribRefs, node **matched_node, bool pushSons, node *stack)
+{
+    DBUG_ENTER ("MatchNode");
+
+    DBUG_PRINT ("PM", ("MatchNode trying to match node of type \"%s\"...",
+                       global.mdb_nodetype[nt]));
+
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, matched_node);
+        *matched_node = followId (*matched_node);
+        if ((NODE_TYPE (*matched_node) == nt)
+            && ((numAttribs == 0)
+                || matchAttribsFun (*matched_node, numAttribs, attribRefs))) {
+            DBUG_PRINT ("PM", ("MatchNode( %s, _, %d, _, _, %d, _) matched!",
+                               global.mdb_nodetype[nt], numAttribs, pushSons));
+            if (pushSons) {
+                switch (nt) {
+                case N_prf:
+                    stack = PushArgs (stack, PRF_ARGS (*matched_node));
+                    break;
+                case N_array:
+                    stack = PushArgs (stack, ARRAY_AELEMS (*matched_node));
+                    break;
+                case N_id:
+                case N_num:
+                case N_char:
+                case N_bool:
+                    break;
+                default:
+                    DBUG_ASSERT ((FALSE), "pushSons not yet fully implemented!");
+                    break;
+                }
+            }
+        } else {
+            stack = FailMatch (stack);
+            DBUG_PRINT ("PM", ("failed!"));
+        }
+    } else {
+        DBUG_PRINT ("PM", ("MatchNode passing on FAIL!"));
+    }
+    DBUG_RETURN (stack);
+}
+
 /** <!--*********************************************************************-->
  *
  * Exported functions for pattern matching:
@@ -415,84 +492,21 @@ PMlastVar (node **var, node *stack)
  *        stack: stack of exprs
  * @return potentially extended stack
  *****************************************************************************/
+static bool
+MatchPrfAttribs (node *prf_node, int num, attrib_t *arefs)
+{
+    return (PRF_PRF (prf_node) == *REF_PRF (arefs[0]));
+}
+
 node *
 PMprf (prf fun, node *stack)
 {
-    node *arg;
-
+    node *prf_node;
+    attrib_t arefs[1];
     DBUG_ENTER ("PMprf");
 
-    DBUG_PRINT ("PM", ("PMprf trying to match prf \"%s\"...", global.prf_name[fun]));
-
-    if (stack != (node *)FAIL) {
-        stack = ExtractOneArg (stack, &arg);
-        arg = followId (arg);
-        if ((NODE_TYPE (arg) == N_prf) && (PRF_PRF (arg) == fun)) {
-            DBUG_PRINT ("PM", ("PMprf matched!"));
-            stack = PushArgs (stack, PRF_ARGS (arg));
-        } else {
-            stack = FailMatch (stack);
-        }
-    } else {
-        DBUG_PRINT ("PM", ("PMprf passing on FAIL!"));
-    }
-    DBUG_RETURN (stack);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn static node *PMarray( constant ** frameshape, node **array,
- *                               node *stack, bool boolexprs)
- *
- * @brief tries to match against an N_array. If *frameshape is NULL, any
- *        array on the top of the stack matches, its AST representation is bound
- *        to array and the frameshape found is converted into a constant which
- *        is bound to *frameshape.
- *        If *frameshape is not NULL, it only matches if the top of the stack is
- *        an N_array with the given frameshape. In that case only array is bound
- *        to the respective part of the AST.
- * @return shortened stack; if boolexprs is true, the ARRAY_AELEMS of
- *        the N_array is stacked; otherwise not.
- *
- *****************************************************************************/
-static node *
-pmarray (constant **frameshape, node **array, node *stack, bool boolexprs)
-{
-    node *arg;
-    constant *shpfound = NULL;
-
-    DBUG_ENTER ("pmarray");
-
-    if (stack != (node *)FAIL) {
-        stack = ExtractOneArg (stack, &arg);
-        arg = followId (arg);
-        if (NODE_TYPE (arg) == N_array) {
-            DBUG_PRINT ("PM", ("pmarray matched!"));
-            shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
-            if (*frameshape == NULL) {
-                *frameshape = shpfound;
-                *array = arg;
-                if (boolexprs) {
-                    stack = PushArgs (stack, ARRAY_AELEMS (arg));
-                }
-            } else {
-                if (COcompareConstants (shpfound, *frameshape)) {
-                    DBUG_PRINT ("PM", ("pmarray frameshape matched!"));
-                    shpfound = COfreeConstant (shpfound);
-                    *array = arg;
-                    if (boolexprs) {
-                        stack = PushArgs (stack, ARRAY_AELEMS (arg));
-                    }
-                } else {
-                    stack = FailMatch (stack);
-                }
-            }
-        } else {
-            stack = FailMatch (stack);
-        }
-    } else {
-        DBUG_PRINT ("PM", ("pmarray passing on FAIL!"));
-    }
+    REF_PRF (arefs[0]) = &fun;
+    stack = MatchNode (N_prf, MatchPrfAttribs, 1, arefs, &prf_node, TRUE, stack);
 
     DBUG_RETURN (stack);
 }
@@ -500,29 +514,6 @@ pmarray (constant **frameshape, node **array, node *stack, bool boolexprs)
 /** <!--*******************************************************************-->
  *
  * @fn node *PMarray( constant ** frameshape, node **array, node *stack)
- *
- * @brief tries to match against an N_array. If *frameshape is NULL, any
- *        array on the top of the stack matches, its AST representation is bound
- *        to array and the frameshape found is converted into a constant which
- *        is bound to *frameshape.
- *        If *frameshape is not NULL, it only matches if the top of the stack is
- *        an N_array with the given frameshape. In that case only array is bound
- *        to the respective part of the AST.
- * @return shortened stack. The ARRAY_AELEMS are pushed onto the stack
- *        before returning.
- *****************************************************************************/
-node *
-PMarray (constant **frameshape, node **array, node *stack)
-{
-    node *res;
-
-    DBUG_ENTER ("PMarray");
-    res = pmarray (frameshape, array, stack, TRUE);
-    DBUG_RETURN (res);
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn node *PMarrayConstructor( constant ** frameshape, node **array, node *stack)
  *
  * @brief tries to match against an N_array. If *frameshape is NULL, any
@@ -532,16 +523,50 @@ PMarray (constant **frameshape, node **array, node *stack)
  *        If *frameshape is not NULL, it only matches if the top of the stack is
  *        an N_array with the given frameshape. In that case only array is bound
  *        to the respective part of the AST.
- * @return shortened stack. The ARRAY_AELEMS are NOT pushed onto the stack.
+ * @return shortened stack. In PMarray, the ARRAY_AELEMS are pushed onto the
+ *        stackbefore returning, in PMarrayConstructor NOT!
  *****************************************************************************/
+static bool
+MatchArrayAttribs (node *array_node, int num, attrib_t *arefs)
+{
+    bool match;
+    constant *shpfound;
+
+    shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (array_node));
+    if (*REF_CONST (arefs[0]) == NULL) {
+        *REF_CONST (arefs[0]) = shpfound;
+        match = TRUE;
+    } else if (COcompareConstants (shpfound, *REF_CONST (arefs[0]))) {
+        shpfound = COfreeConstant (shpfound);
+        match = TRUE;
+    } else {
+        match = FALSE;
+    }
+    return (match);
+}
+
+node *
+PMarray (constant **frameshape, node **array, node *stack)
+{
+    attrib_t arefs[1];
+    DBUG_ENTER ("PMarray");
+
+    REF_CONST (arefs[0]) = frameshape;
+    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, TRUE, stack);
+
+    DBUG_RETURN (stack);
+}
+
 node *
 PMarrayConstructor (constant **frameshape, node **array, node *stack)
 {
-    node *res;
+    attrib_t arefs[1];
+    DBUG_ENTER ("PMarray");
 
-    DBUG_ENTER ("PMarrayConstructor");
-    res = pmarray (frameshape, array, stack, FALSE);
-    DBUG_RETURN (res);
+    REF_CONST (arefs[0]) = frameshape;
+    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack);
+
+    DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
