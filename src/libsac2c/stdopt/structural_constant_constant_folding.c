@@ -421,14 +421,20 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     int arg3xrho;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
+
+    /**
+     *   matching   F_modarray_AxVxA( arg1 = [...], arg2 = int[*], arg3 = [...])
+     */
     if (PM (PMarrayConstructor (&fs3, &arg3,
                                 PMintConst (&fs2, &arg2,
                                             PMarrayConstructor (&fs1, &arg1,
                                                                 PMprf (F_modarray_AxVxA,
                                                                        arg_node)))))) {
 
-        /* If -ecc is active, we should not be able to get
-         * index error here, so we don't check for it.
+        /**
+         *  The only way to get this version of modarray is by means
+         *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <= dim(X)!
+         *  So we DBUG_ASSERT rather than checking for it!
          */
 
         /* We could do xrho frameshape here... */
