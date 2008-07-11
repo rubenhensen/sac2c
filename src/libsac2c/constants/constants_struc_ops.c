@@ -1,52 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.15  2004/11/26 23:42:53  khf
- * corrected function names
- *
- * Revision 1.14  2004/11/26 16:23:52  jhb
- * compile
- *
- * Revision 1.13  2004/11/26 14:35:31  sbs
- * compiles
- *
- * Revision 1.12  2004/07/29 15:36:41  khf
- * IdxSel: free on shape removed (caused pointer sharing)
- *
- * Revision 1.11  2004/05/30 13:03:43  khf
- * COIdxSel added
- *
- * Revision 1.10  2003/12/12 08:06:37  sbs
- * Idx2Offset now asserts index compatibility!
- *
- * Revision 1.9  2003/06/11 22:05:36  ktr
- * Added support for multidimensional arrays
- *
- * Revision 1.8  2003/04/07 14:27:36  sbs
- * COCat added.
- * drop and take extended for accepting scalar arguments also 8-)
- *
- * Revision 1.7  2002/06/21 12:28:18  dkr
- * no changes done
- *
- * Revision 1.6  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by MEMmalloc/Free, using result of MEMfree()
- *
- * Revision 1.4  2001/05/07 07:40:00  nmw
- * dbug output corrected
- *
- * Revision 1.3  2001/05/03 16:54:49  nmw
- * COModarray implemented
- *
- * Revision 1.2  2001/03/23 12:49:53  nmw
- * CODim/COShape implemented
- *
- * Revision 1.1  2001/03/02 14:32:58  sbs
- * Initial revision
- *
+ * $Id:$
  */
 
 #include <stdlib.h>
@@ -974,4 +927,50 @@ COmodarray (constant *a, constant *idx, constant *elem)
                               Idx2Offset (idx, res));              /* offset */
 
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn: int COvect2offset( constant *shp, constant *iv)
+ *
+ * @brief: implements F_vect2offset !
+ *
+ *****************************************************************************/
+int
+COvect2offset (constant *shp, constant *iv)
+{
+    int *cviv, *cvshp;
+    int leniv, lenshp;
+    int i;
+    int offset;
+
+    DBUG_ENTER ("COvect2offset");
+    DBUG_ASSERT ((CONSTANT_TYPE (iv) == T_int),
+                 "COvect2offset called with non-int index");
+    DBUG_ASSERT ((CONSTANT_DIM (iv) == 1), "COvect2offset called with non-vector index");
+
+    DBUG_ASSERT ((CONSTANT_TYPE (shp) == T_int),
+                 "COvect2offset called with non-int shape");
+    DBUG_ASSERT ((CONSTANT_DIM (shp) == 1), "COvect2offset called with non-vector shape");
+
+    cviv = (int *)CONSTANT_ELEMS (iv);
+    leniv = SHgetExtent (CONSTANT_SHAPE (iv), 0);
+
+    cvshp = (int *)CONSTANT_ELEMS (shp);
+    lenshp = SHgetExtent (CONSTANT_SHAPE (shp), 0);
+
+    DBUG_ASSERT ((lenshp == leniv), "COvect2offset called with incompatible shp/iv");
+
+    if (leniv > 0) {
+        DBUG_ASSERT (cviv[0] < cvshp[0], "COvect2offset called with iv out of range");
+        offset = cviv[0];
+    } else {
+        offset = 0;
+    }
+    for (i = 1; i < leniv; i++) {
+        DBUG_ASSERT (cviv[i] < cvshp[i], "COvect2offset called with idx out of range");
+        offset = offset * cvshp[i] + cviv[i];
+    }
+
+    DBUG_RETURN (offset);
 }

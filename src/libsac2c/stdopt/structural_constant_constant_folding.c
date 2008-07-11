@@ -330,19 +330,21 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
  *
  * description:
  *   Implements modarray for structural constant X.
- *   z = _modarray_AxVxS_(X, iv, scalarval)
+ *   z = _modarray_AxVxS_(X, iv, val)
  *
  *****************************************************************************/
 node *
 SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *oldval;
-    node *newval;
-    constant *fs1 = NULL;
-    constant *fs2 = NULL;
+
+    node *X = NULL;
+    node *iv = NULL;
+    node *val = NULL;
+    node *exprs;
+    constant *emptyVec;
+    constant *coiv = NULL;
+    constant *fsX = NULL;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
@@ -360,30 +362,31 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      * inclusion of guards via "sac2c -ecc" ensures this can never happen.
      * It ensures that iv is valid, and that val is scalar.
      */
-    if (PM (PMintConst (&fs2, &arg2, PMvar (&arg1, PMprf (F_modarray_AxVxS, arg_node))))
-        && (COisEmptyVect (fs2))) {               /* z = modarray(X, [], 42) */
-        res = DUPdoDupTree (PRF_ARG3 (arg_node)); /* val is scalar */
-        fs2 = COfreeConstant (fs2);
-
-        /* Attempt to find non-empty iv N_array for arg2const. */
+    /**
+     * match F_modarray_AxVxS( X, [], val)
+     */
+    emptyVec = COmakeConstant (T_int, SHmakeShape (0), NULL);
+    if (PM (PMvar (&val, PMconst (&emptyVec, &iv,
+                                  PMvar (&X, PMprf (F_modarray_AxVxS, arg_node)))))) {
+        res = DUPdoDupTree (val);
+        emptyVec = COfreeConstant (emptyVec);
     } else {
-        fs1 = NULL;
-        fs2 = NULL;
-        arg1 = NULL;
-        arg2 = NULL;
-        if (PM (PMintConst (&fs2, &arg2,
-                            PMarrayConstructor (&fs1, &arg1,
-                                                PMprf (F_modarray_AxVxS, arg_node))))) {
-            offset = Idx2OffsetArray (fs2, arg1);
-            /* If -ecc is active, we should not be able to get
-             * index error here, so we don't check for it.
-             */
-            res = DUPdoDupTree (arg1);
-            newval = TCgetNthExprs (offset, ARRAY_AELEMS (res));
-            oldval = FREEdoFreeTree (EXPRS_EXPR (newval));
-            EXPRS_EXPR (newval) = DUPdoDupTree (PRF_ARG3 (arg_node));
-            fs1 = COfreeConstant (fs1);
-            fs2 = COfreeConstant (fs2);
+        /**
+         * match F_modarray_AxVxS( X = [...], iv = [c0,...,cn], val)
+         */
+        if (PM (PMvar (&val, PMconst (&coiv, &iv,
+                                      PMarrayConstructor (&fsX, &X,
+                                                          PMprf (F_modarray_AxVxS,
+                                                                 arg_node)))))) {
+            if (SHcompareShapes (COgetShape (fsX), COgetShape (coiv))) {
+                offset = COvect2offset (coiv, fsX);
+                res = DUPdoDupTree (X);
+                exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+                EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
+                EXPRS_EXPR (exprs) = DUPdoDupTree (val);
+            }
+            fsX = COfreeConstant (fsX);
+            coiv = COfreeConstant (coiv);
         }
     }
     DBUG_RETURN (res);

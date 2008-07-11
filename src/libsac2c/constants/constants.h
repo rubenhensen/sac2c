@@ -88,6 +88,7 @@ extern constant *COcopyScalar2OneElementVector (constant *a);
 extern char *COconstantData2String (int max_char, constant *a);
 extern char *COconstant2String (constant *a);
 extern shape *COconstant2Shape (constant *a);
+extern int COconst2Int (constant *a);
 extern void COprintConstant (FILE *file, constant *a);
 extern constant *COfreeConstant (constant *a);
 extern void COtouchConstant (constant *a, info *arg_info);
@@ -124,6 +125,9 @@ extern constant *COcat (constant *a, constant *b);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
+
+/* special ops */
+extern int COvect2offset (constant *v, constant *s);
 
 /***
  ***
@@ -162,9 +166,9 @@ extern constant *COneg (constant *a);
 extern constant *COrec (constant *a);
 
 // Not sure where this stuff belongs, really. Neither fish nor fowl
+// These should go!!! please use COvect2offset instead!!!
 
 extern int Idx2OffsetArray (constant *idx, node *a);
 extern int Idx2Offset (constant *idx, constant *a);
-extern int COconst2Int (constant *c);
 
 #endif /* _SAC_CONSTANTS_H_ */
