@@ -252,32 +252,28 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
     constant *con1 = NULL;
     constant *fs2 = NULL;
     int takecount;
-    int resshape;
-    int argshape;
-    int offset;
+    int dropcount;
+    int argxrho;
+    int resxrho;
 
     DBUG_ENTER ("SCCFprf_take_SxV");
     if (PM (
           PMarrayConstructor (&fs2, &arg2,
                               PMintConst (&con1, &arg1, PMprf (F_take_SxV, arg_node))))) {
         takecount = COconst2Int (con1);
-        resshape = abs (takecount);
-        argshape = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
-        DBUG_ASSERT ((resshape <= argshape), ("SCCFprf_take_SxV attempted overtake"));
-        if (argshape == takecount) {
+        resxrho = abs (takecount);
+        argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
+        DBUG_ASSERT ((resxrho <= argxrho), ("SCCFprf_take_SxV attempted overtake"));
+        if (argxrho == resxrho) {
             res = DUPdoDupTree (arg2);
         } else {
-            offset = (takecount >= 0) ? 0 : argshape - takecount;
-
-            tail = TCgetExprsSection (offset, resshape, ARRAY_AELEMS (arg2));
+            dropcount = (takecount >= 0) ? 0 : argxrho - takecount;
+            tail = TCtakeDropExprs (takecount, dropcount, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_take performed "));
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
-                               SHcreateShape (1, resshape), tail);
+                               SHcreateShape (1, resxrho), tail);
         }
-
-        if (NULL != con1) {
-            con1 = COfreeConstant (con1);
-        }
+        con1 = COfreeConstant (con1);
     }
     DBUG_RETURN (res);
 }
@@ -304,63 +300,26 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     constant *con1 = NULL;
     constant *arg2fs = NULL;
     int dropcount;
+    int dc;
     int resxrho;
-    int offset;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
     if (PM (
           PMarrayConstructor (&arg2fs, &arg2,
                               PMintConst (&con1, &arg1, PMprf (F_drop_SxV, arg_node))))) {
-        dropcount = COconst2Int (con1);
-        if (0 == dropcount) {
+        dc = COconst2Int (con1);
+        if (0 == dc) {
             res = DUPdoDupTree (arg2);
         } else {
+            dropcount = (dc < 0) ? 0 : dc;
             resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2)) - dropcount;
-            resxrho = (resxrho < 0) ? 0 : resxrho;
-            offset = (dropcount < 0) ? 0 : dropcount;
-            tail = TCgetExprsSection (offset, resxrho, ARRAY_AELEMS (arg2));
+            tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
         }
-        if (NULL != con1) {
-            con1 = COfreeConstant (con1);
-        }
+        con1 = COfreeConstant (con1);
     }
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   node * ARmodarray( node *arg_node, constant *iv)
- *
- * description:
- *   Implements modarray for structural constant:  X[iv] = val;
- *   X must be an N_array.
- *   iv must be a constant integer vector.
- *   val must be a scalar.
- *
- * @param: _modarray_AxVxS( X, iv, val)
- * @result:
- *****************************************************************************/
-static node *
-ARmodarray (node *arg1, constant *iv, node *val)
-{
-    node *res = NULL;
-    node *oldval;
-    node *newval;
-    int offset;
-
-    DBUG_ENTER ("ARmodarray");
-    offset = Idx2OffsetArray (iv, arg1);
-    /* If -ecc is active, we should not be able to get
-     * index error here, so we don't check for it.
-     */
-    res = DUPdoDupTree (arg1);
-    newval = TCgetNthExprs (offset, ARRAY_AELEMS (res));
-    oldval = FREEdoFreeTree (EXPRS_EXPR (newval));
-    EXPRS_EXPR (newval) = DUPdoDupTree (val);
     DBUG_RETURN (res);
 }
 
@@ -380,8 +339,11 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     node *res = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *oldval;
+    node *newval;
     constant *fs1 = NULL;
     constant *fs2 = NULL;
+    int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
     /**
@@ -412,7 +374,14 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
         if (PM (PMintConst (&fs2, &arg2,
                             PMarrayConstructor (&fs1, &arg1,
                                                 PMprf (F_modarray_AxVxS, arg_node))))) {
-            res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
+            offset = Idx2OffsetArray (fs2, arg1);
+            /* If -ecc is active, we should not be able to get
+             * index error here, so we don't check for it.
+             */
+            res = DUPdoDupTree (arg1);
+            newval = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+            oldval = FREEdoFreeTree (EXPRS_EXPR (newval));
+            EXPRS_EXPR (newval) = DUPdoDupTree (PRF_ARG3 (arg_node));
             fs1 = COfreeConstant (fs1);
             fs2 = COfreeConstant (fs2);
         }
@@ -428,6 +397,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
  * description:
  *   Implements modarray for structural constant X.
  *   z = _modarray_AxVxA_(X, iv, array)
+ *   shape(iv) <= dim(X). This makes things a bit harder
+ *   than the _modarray_AxVxS case.
  *
  *****************************************************************************/
 node *
@@ -436,28 +407,42 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     node *res = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *arg3 = NULL;
+    node *prefix;
+    node *suffix;
     constant *fs1 = NULL;
     constant *fs2 = NULL;
+    constant *fs3 = NULL;
+    int ptc; /* Prefix take count */
+    int stc; /* Suffix take count */
+    int sdc; /* Suffix drop count */
+    int arg1xrho;
+    int arg3xrho;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
-    if (PM (PMintConst (&fs2, &arg2,
-                        PMarrayConstructor (&fs1, &arg1,
-                                            PMprf (F_modarray_AxVxA, arg_node))))) {
-        res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
+    if (PM (PMarrayConstructor (&fs3, &arg3,
+                                PMintConst (&fs2, &arg2,
+                                            PMarrayConstructor (&fs1, &arg1,
+                                                                PMprf (F_modarray_AxVxA,
+                                                                       arg_node)))))) {
+
+        /* If -ecc is active, we should not be able to get
+         * index error here, so we don't check for it.
+         */
+
+        /* We could do xrho frameshape here... */
+        arg1xrho = TCcountExprs (ARRAY_AELEMS (arg1));
+        arg3xrho = TCcountExprs (ARRAY_AELEMS (arg3));
+        ptc = Idx2OffsetArray (fs2, arg1);
+        /* Maybe should check here for ptc too big? */
+        prefix = TCtakeDropExprs (ptc, 0, arg1);
+        sdc = ptc + arg3xrho;
+        stc = arg1xrho - sdc;
+        suffix = TCtakeDropExprs (stc, sdc, arg1);
+        res = TCappendExprs (prefix, DUPdoDupTree (arg3));
+        res = TCappendExprs (res, suffix);
         fs1 = COfreeConstant (fs1);
         fs2 = COfreeConstant (fs2);
-    } else {
-        fs1 = NULL;
-        fs2 = NULL;
-        arg1 = NULL;
-        arg2 = NULL;
-        if (PM (PMintConst (&fs2, &arg2,
-                            PMarrayConstructor (&fs1, &arg1,
-                                                PMprf (F_modarray_AxVxA, arg_node))))) {
-            res = ARmodarray (arg1, fs2, PRF_ARG3 (arg_node));
-            fs1 = COfreeConstant (fs1);
-            fs2 = COfreeConstant (fs2);
-        }
     }
     DBUG_RETURN (res);
 }

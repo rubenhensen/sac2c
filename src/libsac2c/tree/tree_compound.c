@@ -2151,33 +2151,30 @@ TCgetNthExprsExpr (int n, node *exprs)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *TCgetExprsSection(int offset, int cnt , node *exprs)
- * @brief Given an N_exprs chain, return items "offset + iota cnt",
+ * @fn node *TCtakeDropExprs(int takecount, int dropcount offset, node *exprs)
+ * @brief Given an N_exprs chain, return items "dropcount + iota takecount",
  *        (or subset thereof, if the chain isn't long enough).
- *        This is basically: take(cnt, drop (offset, exprs)).
+ *        I.e., take(takecount, drop (dropcount, exprs)).
  *        Both offset and cnt are assumed to be >=0, only because I'm lazy.
- *        It might be handy to extend both offset and cnt to
- *        take/drop counts.
  *
- * @param offset: index of first element of result
- *        cnt:    number of elements in result
+ * @param dropcount: index into exprs of first element of result
+ *        takecount:    number of elements in result
  *        exprs:  N_exprs chain
  *
  * @return: N_exprs chain
  ******************************************************************************/
 node *
-TCgetExprsSection (int offset, int cnt, node *exprs)
+TCtakeDropExprs (int takecount, int dropcount, node *exprs)
 {
     node *res;
     node *tail;
 
-    DBUG_ENTER ("TCgetExprsSection");
-    DBUG_ASSERT ((offset >= 0) && (cnt >= 0), ("TCgetExprsSection offset or cnt < 0"));
-
+    DBUG_ENTER ("TCtakeDropExprs");
+    DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
+                 ("TCtakeDropExprs take or drop count < 0"));
     /* This does too much work, but I'm not sure of a nice way to fix it. */
-    res = DUPdoDupTree (TCgetNthExprsNext (offset, exprs)); /* do the drop */
-
-    tail = TCgetNthExprsNext (MATHmax (0, cnt - 1), res); /* do the take */
+    res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do the drop */
+    tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do the take */
     if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
         FREEdoFreeTree (EXPRS_NEXT (tail));
         EXPRS_NEXT (tail) = NULL;

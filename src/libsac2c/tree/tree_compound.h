@@ -695,7 +695,7 @@ extern int TCcountExprs (node *exprs);
 
 extern node *TCgetNthExprs (int n, node *exprs);
 extern node *TCgetNthExprsExpr (int n, node *exprs);
-extern node *TCgetExprsSection (int offset, int cnt, node *exprs);
+extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
 
 extern node *TCcreateExprsFromIds (node *ids);
 
