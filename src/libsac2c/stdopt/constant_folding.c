@@ -274,33 +274,33 @@ CFdoConstantFolding (node *arg_node)
  *
  *****************************************************************************/
 static bool
+IsScalarConstantNode (node *arg_node)
+{
+    DBUG_ENTER ("IsScalarConstantNode");
+
+    DBUG_RETURN (PM (PMbool (arg_node)) || PM (PMchar (arg_node)) || PM (PMnum (arg_node))
+                 || PM (PMfloat (arg_node)) || PM (PMdouble (arg_node)));
+}
+
+static bool
 IsFullyConstantNode (node *arg_node)
 {
     bool res;
+    constant *frameshape = NULL;
 
     DBUG_ENTER ("IsFullyConstantNode");
 
-    switch (NODE_TYPE (arg_node)) {
-    case N_bool:
-    case N_char:
-    case N_num:
-    case N_float:
-    case N_double:
+    if (IsScalarConstantNode (arg_node)) {
         res = TRUE;
-        break;
-
-    case N_array: {
-        node *elems = ARRAY_AELEMS (arg_node);
+    } else if (PM (PMarrayConstructor (&frameshape, &arg_node, arg_node))) {
+        arg_node = ARRAY_AELEMS (arg_node);
         res = TRUE;
-        while (res && (elems != NULL)) {
-            res = res && IsFullyConstantNode (EXPRS_EXPR (elems));
-            elems = EXPRS_NEXT (elems);
+        while (res && (arg_node != NULL)) {
+            res = res && IsScalarConstantNode (EXPRS_EXPR (arg_node));
+            arg_node = EXPRS_NEXT (arg_node);
         }
-    } break;
-
-    default:
+    } else {
         res = FALSE;
-        break;
     }
 
     DBUG_RETURN (res);

@@ -155,7 +155,6 @@ typedef bool (*checkFun_ptr) (node *, int, attrib_t *);
 
 /** <!--*******************************************************************-->
  *
- * 1;5A
  * @fn node *ExtractOneArg( node *stack, node * args)
  *
  * @brief extracts the first argument from the exprs stack.
@@ -481,6 +480,32 @@ PMlastVar (node **var, node *stack)
     stack = pmvar (var, stack, TRUE);
     DBUG_RETURN (stack);
 }
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMbool( node *stack)
+ * @fn node *PMchar( node *stack)
+ * @fn node *PMnum( node *stack)
+ * @fn node *PMfloat( node *stack)
+ * @fn node *PMdouble( node *stack)
+ *
+ *****************************************************************************/
+#define MATCH_SCALAR_CONST(kind)                                                         \
+    node *PM##kind (node *stack)                                                         \
+    {                                                                                    \
+        node *kind##_node;                                                               \
+        DBUG_ENTER ("PM##kind");                                                         \
+                                                                                         \
+        stack = MatchNode (N_##kind, NULL, 0, NULL, &kind##_node, FALSE, stack);         \
+                                                                                         \
+        DBUG_RETURN (stack);                                                             \
+    }
+
+MATCH_SCALAR_CONST (bool)
+MATCH_SCALAR_CONST (char)
+MATCH_SCALAR_CONST (num)
+MATCH_SCALAR_CONST (float)
+MATCH_SCALAR_CONST (double)
 
 /** <!--*******************************************************************-->
  *
