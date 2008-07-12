@@ -379,7 +379,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
                                                           PMprf (F_modarray_AxVxS,
                                                                  arg_node)))))) {
             if (SHcompareShapes (COgetShape (fsX), COgetShape (coiv))) {
-                offset = COvect2offset (coiv, fsX);
+                offset = COvect2offset (fsX, coiv);
                 res = DUPdoDupTree (X);
                 exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
                 EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
