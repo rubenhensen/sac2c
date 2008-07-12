@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #include <stdlib.h>
@@ -959,7 +959,7 @@ COvect2offset (constant *shp, constant *iv)
     cvshp = (int *)CONSTANT_ELEMS (shp);
     lenshp = SHgetExtent (CONSTANT_SHAPE (shp), 0);
 
-    DBUG_ASSERT ((lenshp == leniv), "COvect2offset called with incompatible shp/iv");
+    DBUG_ASSERT ((lenshp >= leniv), "COvect2offset called with incompatible shp/iv");
 
     if (leniv > 0) {
         DBUG_ASSERT (cviv[0] < cvshp[0], "COvect2offset called with iv out of range");
@@ -970,6 +970,9 @@ COvect2offset (constant *shp, constant *iv)
     for (i = 1; i < leniv; i++) {
         DBUG_ASSERT (cviv[i] < cvshp[i], "COvect2offset called with idx out of range");
         offset = offset * cvshp[i] + cviv[i];
+    }
+    for (; i < lenshp; i++) {
+        offset *= cvshp[i];
     }
 
     DBUG_RETURN (offset);

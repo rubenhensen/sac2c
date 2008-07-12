@@ -549,6 +549,16 @@ COgetShape (constant *a)
     DBUG_RETURN (CONSTANT_SHAPE (a));
 }
 
+int
+COgetExtent (constant *a, int i)
+{
+    DBUG_ENTER ("COgetExtent");
+
+    DBUG_ASSERT (i < CONSTANT_DIM (a), "COgetExtent called with illegal dim spec");
+
+    DBUG_RETURN (SHgetExtent (CONSTANT_SHAPE (a), i));
+}
+
 void *
 COgetDataVec (constant *a)
 {

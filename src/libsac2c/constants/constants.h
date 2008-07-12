@@ -73,6 +73,7 @@ extern constant *COdeserializeConstant (simpletype type, shape *shp, int vlen, c
 extern simpletype COgetType (constant *a);
 extern int COgetDim (constant *a);
 extern shape *COgetShape (constant *a);
+extern int COgetExtent (constant *a, int i);
 extern void *COgetDataVec (constant *a);
 
 /*
@@ -127,7 +128,7 @@ extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
 
 /* special ops */
-extern int COvect2offset (constant *v, constant *s);
+extern int COvect2offset (constant *shp, constant *iv);
 
 /***
  ***
@@ -169,6 +170,5 @@ extern constant *COrec (constant *a);
 // These should go!!! please use COvect2offset instead!!!
 
 extern int Idx2OffsetArray (constant *idx, node *a);
-extern int Idx2Offset (constant *idx, constant *a);
 
 #endif /* _SAC_CONSTANTS_H_ */

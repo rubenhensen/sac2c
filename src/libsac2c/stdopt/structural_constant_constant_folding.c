@@ -365,11 +365,10 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     /**
      * match F_modarray_AxVxS( X, [], val)
      */
-    emptyVec = COmakeConstant (T_int, SHmakeShape (0), NULL);
+    emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
     if (PM (PMvar (&val, PMconst (&emptyVec, &iv,
                                   PMvar (&X, PMprf (F_modarray_AxVxS, arg_node)))))) {
         res = DUPdoDupTree (val);
-        emptyVec = COfreeConstant (emptyVec);
     } else {
         /**
          * match F_modarray_AxVxS( X = [...], iv = [c0,...,cn], val)
@@ -387,8 +386,16 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
             }
             fsX = COfreeConstant (fsX);
             coiv = COfreeConstant (coiv);
+        } else {
+            if (fsX != NULL) {
+                fsX = COfreeConstant (fsX);
+                if (coiv != NULL) {
+                    coiv = COfreeConstant (coiv);
+                }
+            }
         }
     }
+    emptyVec = COfreeConstant (emptyVec);
     DBUG_RETURN (res);
 }
 
@@ -399,7 +406,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
  *
  * description:
  *   Implements modarray for structural constant X.
- *   z = _modarray_AxVxA_(X, iv, array)
+ *   z = _modarray_AxVxA_(X, iv, val)
  *   shape(iv) <= dim(X). This makes things a bit harder
  *   than the _modarray_AxVxS case.
  *
@@ -408,55 +415,125 @@ node *
 SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *resex;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *arg3 = NULL;
-    node *prefix;
-    node *suffix;
-    constant *fs1 = NULL;
-    constant *fs2 = NULL;
-    constant *fs3 = NULL;
-    int ptc; /* Prefix take count */
-    int stc; /* Suffix take count */
-    int sdc; /* Suffix drop count */
-    int arg1xrho;
-    int arg3xrho;
+
+    node *X = NULL;
+    node *iv = NULL;
+    node *val = NULL;
+    node *exprs, *val_exprs;
+    constant *emptyVec;
+    constant *coiv = NULL;
+    constant *fsX = NULL;
+    constant *fsval = NULL;
+    constant *ivlen = NULL;
+    constant *fsX_tail = NULL;
+    int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
 
     /**
-     *   matching   F_modarray_AxVxA( arg1 = [...], arg2 = int[*], arg3 = [...])
+     * match F_modarray_AxVxA( X, [], val)
      */
-    if (PM (PMarrayConstructor (&fs3, &arg3,
-                                PMintConst (&fs2, &arg2,
-                                            PMarrayConstructor (&fs1, &arg1,
-                                                                PMprf (F_modarray_AxVxA,
-                                                                       arg_node)))))) {
-
+    emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
+    if (PM (PMvar (&val, PMconst (&emptyVec, &iv,
+                                  PMvar (&X, PMprf (F_modarray_AxVxS, arg_node)))))) {
+        res = DUPdoDupTree (val);
+    } else {
         /**
-         *  The only way to get this version of modarray is by means
-         *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <= dim(X)!
-         *  So we DBUG_ASSERT rather than checking for it!
+         *   match F_modarray_AxVxA( X = [...], iv = [c0,...,cn], val = [...])
          */
+        if (PM (PMarrayConstructor (&fsval, &val,
+                                    PMconst (&coiv, &iv,
+                                             PMarrayConstructor (&fsX, &X,
+                                                                 PMprf (F_modarray_AxVxA,
+                                                                        arg_node)))))) {
 
-        /* We could do xrho frameshape here... */
-        arg1xrho = TCcountExprs (ARRAY_AELEMS (arg1));
-        arg3xrho = TCcountExprs (ARRAY_AELEMS (arg3));
-        ptc = Idx2OffsetArray (fs2, arg1);
-        /* Maybe should check here for ptc too big? */
-        prefix = TCtakeDropExprs (ptc, 0, ARRAY_AELEMS (arg1));
-        sdc = ptc + arg3xrho;
-        stc = arg1xrho - sdc;
-        suffix = TCtakeDropExprs (stc, sdc, ARRAY_AELEMS (arg1));
-        resex = TCappendExprs (prefix, DUPdoDupTree (ARRAY_AELEMS (arg3)));
-        resex = TCappendExprs (resex, suffix);
-        fs1 = COfreeConstant (fs1);
-        fs2 = COfreeConstant (fs2);
-        res = DUPdoDupTree (arg1);
-        FREEdoFreeTree (ARRAY_AELEMS (res));
-        ARRAY_AELEMS (res) = resex;
+            /**
+             *  The only way to get this version of modarray is by means
+             *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <= dim(X)!
+             *  However, this does not guarantee that shape(iv) <= shape( frameshape( X))!
+             *  Example:
+             *    foo( int[2,2] a)
+             *    {
+             *      X = [a,a];
+             *      ...
+             *    }
+             *  => frameshape( X) = [2]  but shape(X) = [2,2,2] !!
+             */
+            DBUG_ASSERT ((COgetDim (fsX) == 1),
+                         "illegal frameshape on first arg to modarray");
+            if ((COgetDim (coiv) == 1)
+                && (COgetExtent (coiv, 0) <= COgetExtent (fsX, 0))) {
+                DBUG_ASSERT ((COgetDim (fsval) == 1),
+                             "illegal frameshape on last arg to modarray");
+                /**
+                 * we have to distinguish 3 cases here:
+                 * a) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
+                 *     == COgetExtent( fsX, 0)) :
+                 *     this is the trivial case. All we need to do is to replace
+                 *     the correct elements in X by the elements of val
+                 * b) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
+                 *    < COgetExtent( fsX, 0)) :
+                 *    i.e. "we know more more about the array X than needed".
+                 *    Example:
+                 *       X = [[[a,b],[c,d]], [[a,b],[c,d]]]
+                 *       iv = [1]
+                 *       val = [q,r]
+                 *    Here we want to adjust the level of X by 2 PREASSIGNS:
+                 *       A = [a,b]
+                 *       B = [c,d]
+                 *    and then replace with:
+                 *       res = [ [A, B], [q,r] ]
+                 * c) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
+                 *    > COgetExtent( fsX, 0)) :
+                 *    i.e., "we know more avout the value than needed".
+                 *    Example:
+                 *       X = [[a,b], [c,d]]
+                 *       iv = [1]
+                 *       val = [[e,f], [g,h]]
+                 *    Here we want to adjust the level of val by 2 PREASSSIGNS:
+                 *       A = [e,f]
+                 *       B = [g,h]
+                 *    and then replace with
+                 *       res = [ [a,b], [A,B]]
+                 *
+                 * HOWEVER, currently we have implemented case a) only!
+                 */
+                if ((COgetExtent (coiv, 0) + COgetExtent (fsval, 0))
+                    == COgetExtent (fsX, 0)) {
+                    ivlen = COmakeConstantFromInt (COgetExtent (coiv, 0));
+                    fsX_tail = COdrop (ivlen, fsX);
+                    if (COcompareConstants (fsval, fsX_tail)) {
+                        offset = COvect2offset (fsX, coiv);
+                        res = DUPdoDupTree (X);
+                        exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+                        val_exprs = ARRAY_AELEMS (val);
+                        while (val_exprs != NULL) {
+                            EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
+                            EXPRS_EXPR (exprs) = DUPdoDupTree (EXPRS_EXPR (val_exprs));
+                            exprs = EXPRS_NEXT (exprs);
+                            val_exprs = EXPRS_NEXT (val_exprs);
+                        }
+                    }
+                    ivlen = COfreeConstant (ivlen);
+                    fsX_tail = COfreeConstant (fsX_tail);
+                }
+            }
+            fsX = COfreeConstant (fsX);
+            coiv = COfreeConstant (coiv);
+            fsval = COfreeConstant (fsval);
+        } else {
+            if (fsX != NULL) {
+                fsX = COfreeConstant (fsX);
+                if (coiv != NULL) {
+                    coiv = COfreeConstant (coiv);
+                    if (fsval != NULL) {
+                        fsval = COfreeConstant (fsval);
+                    }
+                }
+            }
+        }
     }
+    emptyVec = COfreeConstant (emptyVec);
     DBUG_RETURN (res);
 }
 
