@@ -135,7 +135,7 @@ StructOpSel (node *arg_node, info *arg_info)
                 //        or an N_double (not sure if it's either or both...)
                 //        2008-06-27
                 // Case 1 : Exact selection: do the sel operation now.
-                DBUG_PRINT ("CF", ("StructOpSel exact selection."));
+                DBUG_PRINT ("CF", ("StructOpSel exact selection performed."));
                 result = tmpXid;
             }
         } else {
@@ -161,7 +161,7 @@ StructOpSel (node *arg_node, info *arg_info)
                               INFO_PREASSIGN (arg_info));
 
             AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-            DBUG_PRINT ("CF", ("StructOpSel sel(iv,X) created new iv: old: %s; new: %s",
+            DBUG_PRINT ("CF", ("StructOpSel sel(iv,X) replaced iv: old: %s; new: %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (tmpivavis)));
 
@@ -312,7 +312,8 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
             res = DUPdoDupTree (arg2);
         } else {
             dropcount = (dc < 0) ? 0 : dc;
-            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2)) - dropcount;
+            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2)) - abs (dc);
+            DBUG_ASSERT ((0 <= resxrho), ("SCCFprf_dropSxV attempted overdrop"));
             tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),

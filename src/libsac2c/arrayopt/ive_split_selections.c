@@ -49,16 +49,16 @@
  *
  *  The following transformations are performed:
  *
- *	   x = sel(iv,B)            ->      iv_B = vect2offset(iv, $SHPEXPR$ );
+ *     x = sel(iv,B)            ->      iv_B = vect2offset($SHPEXPR$, iv);
  *	                                    x = _idx_sel(iv_B,B);
  *
  *
- *     X = modarray(B, iv, v);  ->      iv_B = vect2offset(iv,iv, $SHPEXPR$ );
+ *     x = modarray(B, iv, v);  ->      iv_B = vect2offset($SHPEXPR$, iv);
  *                                      X = idx_modarray(iv_B, B, v);
  *
  *     NB. Note different argument order in modarray vs idx_modarray!
  *
- *  $SHPEXPR$ thereby refers to the ACIS_SHAPE expression annotated by
+ *  $SHPEXPR$ thereby refers to the AVIS_SHAPE expression annotated by
  *  the SAA inference.
  *
  * @{
