@@ -1182,10 +1182,10 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
  * @fn node *SCSprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
  *
  * description:
- *  This primitive is check that shape(iv)== dim(M) in M[iv].
+ *  This primitive is check that shape(iv)== dim(arr) in arr[iv].
  *  If so, this code replaces:
  *
- *   iv', pred = _shape_matches_dim_VxA_( iv, M)
+ *   iv', pred = _shape_matches_dim_VxA_( iv, arr)
  *  by
  *   iv', pred = iv, TRUE;
  *  CFassign will turn this into:
@@ -1198,8 +1198,21 @@ node *
 SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *iv = NULL;
+    node *arr = NULL;
+    ntype *ivtype;
+    ntype *arrtype;
 
     DBUG_ENTER ("SCSprf_shape_matches_dim_VxA");
+
+    if (PM (PMvar (&arr, PMvar (&iv, PMprf (F_shape_matches_dim_VxA, arg_node))))) {
+        ivtype = ID_NTYPE (iv);
+        arrtype = ID_NTYPE (arr);
+        if (TUshapeKnown (ivtype) && TUdimKnown (arrtype)
+            && SHgetExtent (TYgetShape (ivtype), 0) == TYgetDim (arrtype)) {
+            res = TBmakeExprs (DUPdoDupTree (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        }
+    }
     DBUG_RETURN (res);
 }
 

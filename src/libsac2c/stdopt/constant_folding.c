@@ -908,7 +908,6 @@ CFprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFprf");
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
     /* Bog-standard constant-folding is all handled by typechecker now */
-
     /* Try symbolic constant simplification */
     fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
     if ((NULL == res) && (NULL != fn)) {
