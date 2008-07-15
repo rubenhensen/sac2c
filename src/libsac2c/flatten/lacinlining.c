@@ -81,7 +81,7 @@ void
 AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 {
     ntype *ftype, *ctype;
-    node *newavis;
+    node *newavis, *oldavis;
 #ifndef DBUG_OFF
     char *tmp_str;
     char *tmp_str2;
@@ -166,17 +166,20 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 newavis
                   = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
 
+                oldavis = ARG_AVIS (form_arg);
+
                 FUNDEF_INSTR (fundef)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (oldavis, NULL),
                                              TCmakePrf2 (F_type_conv,
                                                          TBmakeType (TYcopyType (ftype)),
                                                          TBmakeId (newavis))),
                                   FUNDEF_INSTR (fundef));
 
-                FUNDEF_VARDEC (fundef)
-                  = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
+                FUNDEF_VARDEC (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDEC (fundef));
 
                 ARG_AVIS (form_arg) = newavis;
+
+                AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
             }
         }
 
