@@ -64,9 +64,13 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
             ids = LET_IDS (ASSIGN_INSTR (arg_node));
 
             while (ids != NULL) {
-                if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
+                if (AVIS_SSAASSIGN (IDS_AVIS (ids)) == NULL) {
                     CTIerrorInternal ("Pre Traversal Sanity Check:\n"
-                                      "Broken SSAASSIGN link for variable %s!",
+                                      "Missing SSA_ASSIGN link for variable %s!",
+                                      AVIS_NAME (IDS_AVIS (ids)));
+                } else if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
+                    CTIerrorInternal ("Pre Traversal Sanity Check:\n"
+                                      "Broken SSA_ASSIGN link for variable %s!",
                                       AVIS_NAME (IDS_AVIS (ids)));
                 }
 
@@ -117,9 +121,13 @@ SANCHKdoSanityChecksPostTraversal (node *arg_node, info *arg_info, void *travsta
         ids = LET_IDS (ASSIGN_INSTR (arg_node));
 
         while (ids != NULL) {
-            if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
+            if (AVIS_SSAASSIGN (IDS_AVIS (ids)) == NULL) {
                 CTIerrorInternal ("Post Traversal Sanity Check:\n"
-                                  "Broken SSAASSIGN link for variable %s!",
+                                  "Missing SSA_ASSIGN link for variable %s!",
+                                  AVIS_NAME (IDS_AVIS (ids)));
+            } else if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
+                CTIerrorInternal ("Post Traversal Sanity Check:\n"
+                                  "Broken SSA_ASSIGN link for variable %s!",
                                   AVIS_NAME (IDS_AVIS (ids)));
             }
 
