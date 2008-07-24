@@ -671,13 +671,14 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        SAAshp_type_constraint, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (same_shape_AxA, (PA_A, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_same_shape, NULL,
-       COMPprfSameShape, SCSprf_same_shape_AxA, NULL, NULL, SAAdim_same_shape_AxA,
-       SAAshp_same_shape_AxA, NULL, 2, NULL, NULL, TEthree, NULL, NULL),
+       COMPprfSameShape, SCSprf_same_shape_AxA, NULL, SAACFprf_same_shape_AxA,
+       SAAdim_same_shape_AxA, SAAshp_same_shape_AxA, NULL, 2, NULL, NULL, TEthree, NULL,
+       NULL),
 
   PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,
        NULL, COMPprfShapeMatchesDim, SCSprf_shape_matches_dim_VxA, NULL, NULL,
-       SAAdim_shape_matches_dim_VxA, SAAshp_shape_matches_dim_VxA, NULL, 1, NULL, NULL,
-       TEtwo, NULL, NULL),
+       SAAdim_shape_matches_dim_VxA, SAAshp_shape_matches_dim_VxA,
+       SAACFprf_shape_matches_dim_VxA, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL,
        COMPprfNonNegVal, SCSprf_non_neg_val_V, NULL, NULL, SAAdim_cc_inherit,

@@ -52,6 +52,7 @@
 #include "constants.h"
 #include "shape.h"
 #include "ctinfo.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -248,5 +249,93 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
             res = DUPdoDupTree (shpel);
         }
     }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_same_shape_AxA( node *arg_node, info *arg_info)
+ *
+ * If arguments B and C are same shape, replace:
+ *   b', c', pred = prf_same_shape_AxA_(B,C)
+ * by:
+ *   b', c', pred = B,C,TRUE;
+ *
+ * CFassign will turn this into:
+ *   b' = b;
+ *   c' = c;
+ *   pred = TRUE;
+ *
+ * This code catches the SAA case.
+ *
+ *
+ *****************************************************************************/
+
+node *
+SAACFprf_same_shape_AxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *shp = NULL;
+
+    DBUG_ENTER ("SAACFprf_same_shape_AxA");
+    if (PM (PMsaashape (&shp, &arg1,
+                        PMsaashape (&shp, &arg2,
+                                    PMvar (&arg1, PMvar (&arg2, PMprf (F_same_shape_AxA,
+                                                                       arg_node))))))) {
+        /* See if saa shapes match */
+
+        res = TBmakeExprs (DUPdoDupTree (arg1),
+                           TBmakeExprs (DUPdoDupTree (arg2),
+                                        TBmakeExprs (TBmakeBool (TRUE), NULL)));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
+ *
+ * If shape(B) matches dim(C), replace:
+ *   b', c', pred = prf_shape_matches_dim_VxS(B,C)
+ * by:
+ *   b', c', pred = B,C,TRUE;
+ *
+ * CFassign will turn this into:
+ *   b' = b;
+ *   c' = c;
+ *   pred = TRUE;
+ *
+ * This code catches the SAA case.
+ *
+ *****************************************************************************/
+
+node *
+SAACFprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *shp = NULL;
+
+    DBUG_ENTER ("SAACFshape_matches_dim_VxA");
+#ifdef CRUD
+
+    FIXME
+      - write this.if (PM (PMsaashape (&shp, &arg1,
+                                       PMsaashape (&shp, &arg2,
+                                                   PMvar (&arg1,
+                                                          PMvar (&arg2,
+                                                                 PMprf (F_same_shape_AxA,
+                                                                        arg_node)))))))
+    {
+        /* See if saa shapes match */
+
+        res = TBmakeExprs (DUPdoDupTree (arg1),
+                           TBmakeExprs (DUPdoDupTree (arg2),
+                                        TBmakeExprs (TBmakeBool (TRUE), NULL)));
+    }
+#endif // CRUD
     DBUG_RETURN (res);
 }

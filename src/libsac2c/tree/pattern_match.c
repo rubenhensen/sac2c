@@ -686,3 +686,49 @@ PMintConst (constant **co, node **conode, node *stack)
 
     DBUG_RETURN (stack);
 }
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMsaashape( node **shp, node **arg, node *stack)
+ *
+ * @brief tries to match against an AVIS_SHAPE.
+ *        If *shp is NULL, the AVIS_SHAPE(*array) is bound to shp.
+ *        If *shp is bound already, it only matches if both N_id nodes
+ *        have the same AVIS_SHAPE.
+ * @param *shp: AVIS_SHAPE( ID_AVIS(*array), if any
+ *        stack: "stack" of exprs.
+ * @return stack is unchanged.
+ *****************************************************************************/
+node *
+PMsaashape (node **shp, node **array, node *stack)
+{
+    node *arg;
+    DBUG_ENTER ("PMsaashape");
+    if (*shp == NULL) {
+        DBUG_PRINT ("PM", ("PMsaashape trying to match unbound variable."));
+    } else {
+        DBUG_PRINT ("PM", ("PMsaashape trying to match bound variable."));
+    }
+
+    if (stack != (node *)FAIL) {
+        arg = AVIS_SHAPE (ID_AVIS (*array));
+        if (NULL != arg) {
+            arg = lastId (arg);
+        }
+        if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
+            if (*shp == NULL) {
+                DBUG_PRINT ("PM", ("PMsaashape binding AVIS_SHAPE"));
+                *shp = AVIS_SHAPE (ID_AVIS (arg));
+            } else if (*shp == AVIS_SHAPE (ID_AVIS (arg))) {
+                DBUG_PRINT ("PM", ("PMsaashape found matching AVIS_SHAPE"));
+            } else {
+                stack = FailMatch (stack);
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMsaashape passing-on FAIL."));
+    }
+    DBUG_RETURN (stack);
+}

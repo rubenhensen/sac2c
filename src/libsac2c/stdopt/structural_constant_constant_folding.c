@@ -302,6 +302,7 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     int dropcount;
     int dc;
     int resxrho;
+    int arg2xrho;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
     if (PM (
@@ -312,8 +313,15 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
             res = DUPdoDupTree (arg2);
         } else {
             dropcount = (dc < 0) ? 0 : dc;
-            resxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2)) - abs (dc);
-            DBUG_ASSERT ((0 <= resxrho), ("SCCFprf_dropSxV attempted overdrop"));
+            arg2xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
+            resxrho = arg2xrho - abs (dc);
+            if (resxrho < 0) {
+                CTIerrorLine (global.linenum,
+                              "SCCFprf_drop_SxV attempted overdrop of size %d on vector "
+                              "of shape %d",
+                              resxrho, arg2xrho);
+                CTIabort ("Compilation terminated");
+            }
             tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
