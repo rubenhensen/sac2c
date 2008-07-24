@@ -267,8 +267,8 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
         if (argxrho == resxrho) {
             res = DUPdoDupTree (arg2);
         } else {
-            dropcount = (takecount >= 0) ? 0 : argxrho - takecount;
-            tail = TCtakeDropExprs (takecount, dropcount, ARRAY_AELEMS (arg2));
+            dropcount = (takecount >= 0) ? 0 : argxrho + takecount;
+            tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
             DBUG_PRINT ("CF", ("SCCFprf_take performed "));
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
