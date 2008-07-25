@@ -409,8 +409,6 @@ CreateNewResult (node *avis, info *arg_info)
     /* add vardec to chain of vardecs (ext. fundef) */
     FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)) = new_ext_vardec;
 
-    DBUG_PRINT ("LIR", ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
-
     /* 2. add [avis -> new_ext_avis] to RESULTMAP nodelist */
     INFO_RESULTMAP (arg_info)
       = TCnodeListAppend (INFO_RESULTMAP (arg_info), avis, VARDEC_AVIS (new_ext_vardec));
@@ -431,6 +429,11 @@ CreateNewResult (node *avis, info *arg_info)
                                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_pct_vardec;
+
+    DBUG_PRINT ("LIR",
+                ("create external vardec %s for %s, local vardec %s, and pct %s",
+                 new_name, AVIS_NAME (avis), AVIS_NAME (VARDEC_AVIS (new_int_vardec)),
+                 AVIS_NAME (VARDEC_AVIS (new_pct_vardec))));
 
     /* 5. modify functions signature (AddResult) */
     /* recursive call */
@@ -567,6 +570,11 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
                                            TYcopyType (IDS_NTYPE (result_chain)));
                     new_vardec
                       = TBmakeVardec (new_avis, BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)));
+                    DBUG_PRINT (
+                      "LIR",
+                      ("AdjustExternalResult created dummy external fn result vardec %s",
+                       AVIS_NAME (VARDEC_AVIS (new_vardec))));
+
                     BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)) = new_vardec;
 
                     /* rename ids */
