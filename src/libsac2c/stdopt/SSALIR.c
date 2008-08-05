@@ -579,6 +579,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
 
                     /* rename ids */
                     IDS_AVIS (result_chain) = new_avis;
+                    AVIS_SSAASSIGN (new_avis) = ext_assign;
 
                     /* stop searching */
                     result_chain = NULL;
