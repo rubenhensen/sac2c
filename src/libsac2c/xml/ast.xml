@@ -150,6 +150,7 @@
           <node name="Vardec" />
           <node name="Id" />
           <node name="Ids" />
+          <node name="WLsegVar" />
         </travuser>
       </traversal>
       <traversal id="MCG" name="Map Call Graph" default="sons" include="map_call_graph.h" >

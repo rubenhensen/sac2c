@@ -128,6 +128,23 @@ RENids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+RENwlsegvar (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RENwlsegvar");
+
+    if (*WLSEGVAR_IDX_MIN (arg_node) != NULL) {
+        *WLSEGVAR_IDX_MIN (arg_node) = TRAVdo (*WLSEGVAR_IDX_MIN (arg_node), arg_info);
+    }
+    if (*WLSEGVAR_IDX_MAX (arg_node) != NULL) {
+        *WLSEGVAR_IDX_MAX (arg_node) = TRAVdo (*WLSEGVAR_IDX_MAX (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /*
  * Startup function
  */

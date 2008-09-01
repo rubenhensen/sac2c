@@ -26,5 +26,6 @@ extern node *RENarg (node *arg_node, info *arg_info);
 extern node *RENvardec (node *arg_node, info *arg_info);
 extern node *RENid (node *arg_node, info *arg_info);
 extern node *RENids (node *arg_node, info *arg_info);
+extern node *RENwlsegvar (node *arg_node, info *arg_info);
 
 #endif /* _SAC_RENAME_H_ */
