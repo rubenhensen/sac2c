@@ -1121,8 +1121,6 @@ SSATpart (node *arg_node, info *arg_info)
  *
  * @fn node *SSATwithid(node *arg_node, info *arg_info)
  *
-#define RBE
-#undef  RBE
 #ifdef RBE
  *  @brief withids are treated as LHS, so introduce new variables
  *         just as any other ids. See notes at top of this
@@ -1151,7 +1149,8 @@ SSATwithid (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = NULL;
 
     if (INFO_FIRST_WITHID (arg_info) == NULL) {
-#ifndef RBE
+#ifdef RBE
+#else  // RBE
         /**
          * This is the first withid. Therefore, we have to treat it as LHS.
          */
@@ -1159,20 +1158,27 @@ SSATwithid (node *arg_node, info *arg_info)
 #endif // RBE
 
         if (WITHID_VEC (arg_node) != NULL) {
+            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_VEC: %s",
+                                AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node)))));
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
+            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_IDS: %s",
+                                AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node)))));
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
         }
 
         if (WITHID_IDXS (arg_node) != NULL) {
+            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_IDXS: %s",
+                                AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node)))));
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
         }
     } else {
 
 #ifdef RBE
         /* This code should all be dead now */
+        DBUG_PRINT ("SSA", ("RBE dead code walking"));
 #endif // RBE
         /**
          * There have been prior partitions in this WL. INFO_FIRST_WITHID
