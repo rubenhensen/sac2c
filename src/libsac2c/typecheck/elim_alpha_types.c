@@ -619,18 +619,16 @@ EATwithid (node *arg_node, info *arg_info)
                                     IDS_NAME (WITHID_VEC (arg_node))));
             }
         } else {
-            /* save WLIDS for below */
-#define RBE
-#undef RBE
-#ifndef RBE
-            INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
-#endif // RBE
+            if (!global.dorbestuff) {
+                /* save WLIDS for below */
+                INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
+            }
         }
     } else {
         if (WITHID_IDS (arg_node) == NULL) {
-#ifdef RBE
-            DBUG_ASSERT (FALSE, "EAT Booboo");
-#endif // RBE
+            if (global.dorbestuff) {
+                DBUG_ASSERT (FALSE, "EAT Booboo");
+            }
             /**
              * we are dealing with a default partition here
              *  => Duplicate those of the real one!

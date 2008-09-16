@@ -453,6 +453,11 @@ GLOBAL (bool, dotrace, FALSE)
 GLOBAL (bool, dousertrace, FALSE)
 
 /*
+ * whether to enable the stuff rbe does (-:
+ */
+GLOBAL (bool, dorbestuff, FALSE)
+
+/*
  * whether to enable the stuff tog does (-:
  */
 GLOBAL (bool, dotogstuff, FALSE)

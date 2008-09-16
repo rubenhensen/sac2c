@@ -553,6 +553,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_END ("profile");
 
     /*
+     * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+     */
+
+    ARGS_FLAG ("rbe", global.dorbestuff = TRUE);
+
+    /*
      * Options starting with sssssssssssssssssssssssssssssssssssssssssss
      */
 

@@ -1121,7 +1121,7 @@ SSATpart (node *arg_node, info *arg_info)
  *
  * @fn node *SSATwithid(node *arg_node, info *arg_info)
  *
-#ifdef RBE
+#if global.dorbestuff
  *  @brief withids are treated as LHS, so introduce new variables
  *         just as any other ids. See notes at top of this
  *         file to see earlier treatment, now disabled.
@@ -1149,37 +1149,37 @@ SSATwithid (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = NULL;
 
     if (INFO_FIRST_WITHID (arg_info) == NULL) {
-#ifdef RBE
-#else  // RBE
-        /**
-         * This is the first withid. Therefore, we have to treat it as LHS.
-         */
-        INFO_FIRST_WITHID (arg_info) = arg_node;
-#endif // RBE
+        if (!global.dorbestuff) {
+            /**
+             * This is the first withid. Therefore, we have to treat it as LHS.
+             */
+            INFO_FIRST_WITHID (arg_info) = arg_node;
+        }
 
         if (WITHID_VEC (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_VEC: %s",
+            DBUG_PRINT ("SSA", ("renaming:WITHID_VEC: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node)))));
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_IDS: %s",
+            DBUG_PRINT ("SSA", ("renaming:WITHID_IDS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node)))));
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
         }
 
         if (WITHID_IDXS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("RBE renaming:WITHID_IDXS: %s",
+            DBUG_PRINT ("SSA", ("renaming:WITHID_IDXS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node)))));
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
         }
     } else {
 
-#ifdef RBE
-        /* This code should all be dead now */
-        DBUG_PRINT ("SSA", ("RBE dead code walking"));
-#endif // RBE
+        if (global.dorbestuff) {
+            /* This code should all be dead now */
+            DBUG_PRINT ("SSA", ("RBE dead code walking"));
+        }
+
         /**
          * There have been prior partitions in this WL. INFO_FIRST_WITHID
          * points to the topmost one (in renamed form). => treat as RHS!
