@@ -1801,7 +1801,8 @@ node *
 NTCpart (node *arg_node, info *arg_info)
 {
     node *idxs;
-    ntype *idx;
+    ntype *idx, *this_idx, *remaining_idx;
+    te_info *info;
     int num_ids;
 
     DBUG_ENTER ("NTCpart");
@@ -1822,7 +1823,7 @@ NTCpart (node *arg_node, info *arg_info)
      * Then, we infer the best possible type of the generator specification
      * and from the idx information gained from the Nwithid node:
      */
-    INFO_TYPE (arg_info) = idx;
+    INFO_TYPE (arg_info) = TYmakeProductType (1, idx);
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     /*
@@ -1830,12 +1831,34 @@ NTCpart (node *arg_node, info *arg_info)
      * we attach the generator type to the generator variable(s).
      */
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+    DBUG_ASSERT (INFO_TYPE (arg_info) != NULL,
+                 "inferred generator type corrupted in NTCNwithid");
+
+    /*
+     * Now, we check the other parts:
+     */
+
+    if (global.dorbestuff) {
+        if (PART_NEXT (arg_node) != NULL) {
+            this_idx = TYgetProductMember (INFO_TYPE (arg_info), 0);
+            INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));
+
+            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+            remaining_idx = TYgetProductMember (INFO_TYPE (arg_info), 0);
+            INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));
+
+            info = TEmakeInfo (global.linenum, TE_with, "multi generator");
+            idx = TYmakeProductType (2, this_idx, remaining_idx);
+            INFO_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multipart, info, idx);
+            ;
+        }
+    }
 
     /*
      * AND (!!) we hand the type back to NTCNwith!
      */
     DBUG_ASSERT (INFO_TYPE (arg_info) != NULL,
-                 "inferred generator type corrupted in NTCNwithid");
+                 "inferred generator type corrupted in multigenerator WL");
 
     DBUG_RETURN (arg_node);
 }
@@ -1861,8 +1884,8 @@ NTCgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCgenerator");
 
-    idx = INFO_TYPE (arg_info); /* generated in NTCNpart !*/
-    INFO_TYPE (arg_info) = NULL;
+    idx = TYgetProductMember (INFO_TYPE (arg_info), 0); /* generated in NTCNpart !*/
+    INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));
 
     GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
     lb = INFO_TYPE (arg_info);

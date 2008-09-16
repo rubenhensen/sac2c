@@ -18,6 +18,7 @@
 #include "new_types.h"
 
 extern ntype *NTCCTwl_idx (te_info *info, ntype *args);
+extern ntype *NTCCTwl_multipart (te_info *info, ntype *args);
 extern ntype *NTCCTwl_multicode (te_info *info, ntype *args);
 extern ntype *NTCCTwl_gen (te_info *info, ntype *args);
 extern ntype *NTCCTwl_mod (te_info *info, ntype *args);
