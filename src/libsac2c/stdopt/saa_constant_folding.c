@@ -315,9 +315,11 @@ node *
 SAACFprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+#ifdef CRUD
     node *arg1 = NULL;
     node *arg2 = NULL;
     node *shp = NULL;
+#endif // CRUD
 
     DBUG_ENTER ("SAACFshape_matches_dim_VxA");
 #ifdef CRUD
