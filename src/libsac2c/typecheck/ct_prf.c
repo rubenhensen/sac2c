@@ -1002,8 +1002,14 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
                 }
                 break;
             case TC_aks:
-                res = TYmakeAKD (TYcopyType (scalar),
-                                 SHgetExtent (TYgetShape (new_shp), 0), SHmakeShape (0));
+                if (SHgetUnrLen (TYgetShape (new_shp)) == 0) {
+                    res = TYmakeAKS (TYcopyType (scalar), SHmakeShape (0));
+
+                } else {
+                    res = TYmakeAKD (TYcopyType (scalar),
+                                     SHgetExtent (TYgetShape (new_shp), 0),
+                                     SHmakeShape (0));
+                }
                 break;
             case TC_akd:
             case TC_audgz:

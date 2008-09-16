@@ -703,6 +703,8 @@ TYmakeAKD (ntype *scalar, int dots, shape *shp)
 
     DBUG_ENTER ("TYmakeAKD");
 
+    DBUG_ASSERT (dots != 0, "attempting to create AKD scalar; "
+                            "should create AKS instead!");
     res = MakeNtype (TC_akd, 1);
     AKD_DOTS (res) = dots;
     AKD_SHP (res) = shp;
