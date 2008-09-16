@@ -576,6 +576,9 @@ EATpart (node *arg_node, info *arg_info)
  *   node *EATwithid( node *arg_node, info *arg_info)
  *
  * description:
+ *  1. If iv is AKS (i.e., res is AKD, AKS, or AKV),
+ *     build WITHID_IDS unless it already exists.
+ *     [Obviously, for AUD, we do not know shape of iv.]
  *
  *
  ******************************************************************************/
@@ -616,10 +619,18 @@ EATwithid (node *arg_node, info *arg_info)
                                     IDS_NAME (WITHID_VEC (arg_node))));
             }
         } else {
+            /* save WLIDS for below */
+#define RBE
+#undef RBE
+#ifndef RBE
             INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
+#endif // RBE
         }
     } else {
         if (WITHID_IDS (arg_node) == NULL) {
+#ifdef RBE
+            DBUG_ASSERT (FALSE, "EAT Booboo");
+#endif // RBE
             /**
              * we are dealing with a default partition here
              *  => Duplicate those of the real one!

@@ -71,7 +71,24 @@
  *
  *    2) With-Loops:
  *    --------------
- *    < to be inserted; any volunteers??? > (SBS Thu Aug  5 21:12:55 MEST 2004)
+ *    With-loop are now (2008-09-09) treated in the same way as
+ *    any other variables. Later phases, such as code generation
+ *    and wltransform assume different treatment, namely that
+ *    all WL generators have the same names for their index
+ *    variables and IDXS variables (Do these things have a proper name?).
+ *
+ *    However, in order to support AVIS_MINVAL and AVIS_MAXVAL, we
+ *    must have distinct names for the index variables in each
+ *    WL generator. Hence, we have a conflict between distinct vs.
+ *    common names. The cleaner solution, adopted here, is to
+ *    enforce strict SSA at this point, giving each generator
+ *    index variable its own name. We will then go and deal with
+ *    the downstream code and either bring each problem
+ *    area case into conformance with the distinct names
+ *    in the AST, or else rename the AST fields back into non-SSA
+ *    form. As of this writing, the approach taken remains
+ *    unresolved.
+ *
  *
  *
  * implementation:
@@ -734,7 +751,7 @@ SSATassign (node *arg_node, info *arg_info)
  *
  * @fn node *SSATlet( node *arg_node, info *arg_info)
  *
- *   @brief travereses in expression and assigned ids.
+ *   @brief traverses an expression and assigned ids.
  *
  ******************************************************************************/
 node *
@@ -1104,12 +1121,21 @@ SSATpart (node *arg_node, info *arg_info)
  *
  * @fn node *SSATwithid(node *arg_node, info *arg_info)
  *
+#define RBE
+#undef  RBE
+#ifdef RBE
+ *  @brief withids are treated as LHS, so introduce new variables
+ *         just as any other ids. See notes at top of this
+ *         file to see earlier treatment, now disabled.
+ *
+#else //RBE
  *   @brief In principle, the withids have to be treated as LHS, as they
  *          introduce new variables. However, if we do have multi generator
  *          with loops, we expect all withids to be identical. Therefore,
  *          we only have to treat the very first one as LHS, all others as
  *          RHS. To distinguish these cases, we use INFO_FIRST_WITHID,
  *          which is reset in SSAwith.
+#endif //RBE
  *
  ******************************************************************************/
 node *
@@ -1125,10 +1151,12 @@ SSATwithid (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = NULL;
 
     if (INFO_FIRST_WITHID (arg_info) == NULL) {
+#ifndef RBE
         /**
          * This is the first withid. Therefore, we have to treat it as LHS.
          */
         INFO_FIRST_WITHID (arg_info) = arg_node;
+#endif // RBE
 
         if (WITHID_VEC (arg_node) != NULL) {
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
@@ -1142,6 +1170,10 @@ SSATwithid (node *arg_node, info *arg_info)
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
         }
     } else {
+
+#ifdef RBE
+        /* This code should all be dead now */
+#endif // RBE
         /**
          * There have been prior partitions in this WL. INFO_FIRST_WITHID
          * points to the topmost one (in renamed form). => treat as RHS!
