@@ -30,6 +30,7 @@
 #include "namespaces.h"
 #include "wldefaultpartition.h"
 #include "ctinfo.h"
+#include "LookUpTable.h"
 
 /**
  * INFO structure
@@ -592,8 +593,10 @@ WLDPpropagate (node *arg_node, info *arg_info)
 node *
 WLDPpart (node *arg_node, info *arg_info)
 {
-    node *_ids, *vardec, *idn, *code, *nassign;
+    node *_ids, *vardec, *idn, *nassign;
+    node *code = NULL;
     node *expriter, *temp, *idniter;
+    lut_t *lut;
 
     DBUG_ENTER ("WLDPpart");
 
@@ -606,7 +609,22 @@ WLDPpart (node *arg_node, info *arg_info)
     idniter = NULL;
     expriter = INFO_DEFEXPR (arg_info);
     INFO_DEFEXPR (arg_info) = NULL;
-
+    /*
+     * Rename default partition WITHID vars.
+     * We generate the default partition first, but with NULL code
+     * which we will correct after the renames are done.
+     */
+    lut = LUTgenerateLut ();
+    if (!global.dorbestuff) {
+        PART_NEXT (arg_node)
+          = TBmakePart (code, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
+    } else {
+        PART_NEXT (arg_node)
+          = TBmakePart (code,
+                        DUPdoDupTreeLutSsa (PART_WITHID (arg_node), lut,
+                                            INFO_FUNDEF (arg_info)),
+                        TBmakeDefault ());
+    }
     /*
      * 1) construct prop_obj_out
      */
@@ -674,7 +692,7 @@ WLDPpart (node *arg_node, info *arg_info)
                                      TBmakePrf (F_prop_obj_in,
                                                 TBmakeExprs (TBmakeId (IDS_AVIS (
                                                                WITHID_VEC (PART_WITHID (
-                                                                 arg_node)))),
+                                                                 PART_NEXT (arg_node))))),
                                                              INFO_PROPOBJINARGS (
                                                                arg_info)))),
                           nassign);
@@ -691,12 +709,12 @@ WLDPpart (node *arg_node, info *arg_info)
     }
 
     code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
+    PART_CODE (PART_NEXT (arg_node)) = code;
 
-    PART_NEXT (arg_node)
-      = TBmakePart (code, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
     CODE_USED (code) = 1;
 
     CODE_NEXT (WITH_CODE (INFO_WL (arg_info))) = code;
+    LUTremoveLut (lut);
 
     DBUG_RETURN (arg_node);
 }
