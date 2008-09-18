@@ -23,4 +23,10 @@ extern node *PMsaashape (node **shp, node **array, node *stack);
 extern node *PMconst (constant **co, node **conode, node *arg_node);
 extern node *PMintConst (constant **co, node **conode, node *arg_node);
 
+extern node *PMforEachI (node *(*pattern) (int, node *stack), node *stack);
+extern node *PMexprsEqual (node *exprs, node *stack);
+
+extern node *PManyExpr (node *stack);
+extern node *PManyExprs (node *stack);
+
 #endif /* _SAC_TREE_BASIC_H_ */

@@ -133,6 +133,7 @@
 #include "new_types.h"
 #include "tree_compound.h"
 #include "constants.h"
+#include "compare_tree.h"
 
 static char *FAIL = "";
 
@@ -141,6 +142,13 @@ typedef union {
     node **a_node;
     constant **a_const;
 } attrib_t;
+
+#define REF_ISUNDEFINED(n) ((n == NULL) || (*n == NULL))
+#define REF_SET(n, val)                                                                  \
+    {                                                                                    \
+        if (n != NULL)                                                                   \
+            *n = val;                                                                    \
+    }
 
 #define REF_PRF(n) ((n).a_prf)
 #define REF_NODE(n) ((n).a_node)
@@ -155,14 +163,14 @@ typedef bool (*checkFun_ptr) (node *, int, attrib_t *);
 
 /** <!--*******************************************************************-->
  *
- * @fn node *ExtractOneArg( node *stack, node * args)
+ * @fn node *ExtractOneArg( node *stack, node **arg)
  *
  * @brief extracts the first argument from the exprs stack.
  *        Note here, that stack can either be N_set (stack), an N_exprs or
  *        any other expression! N_set nodes that become redundant
  *        are being freed!
  * @param stack: stack of exprs
- * @return via args the first expression in the chain and the rest of the
+ * @return via arg the first expression in the chain and the rest of the
  *         stack via the normal return value.
  *****************************************************************************/
 static node *
@@ -191,6 +199,45 @@ ExtractOneArg (node *stack, node **arg)
         DBUG_PRINT ("PM", ("argument found:"));
         DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *arg););
     }
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *ExtractTopFrame( node *stack, node **top)
+ *
+ * @brief extracts the top frame from the stack, i.e., the topmost
+ *        N_exprs chain. If none such exists, NULL is returned.
+ *        Note here, that stack can either be N_set (stack), an N_exprs or
+ *        any other expression! N_set nodes that become redundant
+ *        are being freed!
+ * @param stack: stack of exprs
+ * @return via top the top frame of the chain and the rest of the
+ *         stack via the normal return value.
+ *****************************************************************************/
+static node *
+ExtractTopFrame (node *stack, node **top)
+{
+    DBUG_ENTER ("ExtractTopFrame");
+    DBUG_ASSERT (stack != NULL, ("ExtractTopFrame called with NULL stack!"));
+
+    if ((NODE_TYPE (stack) == N_set) && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
+        *top = SET_MEMBER (stack);
+        stack = FREEdoFreeNode (stack);
+    } else if (NODE_TYPE (stack) == N_exprs) {
+        *top = stack;
+        stack = NULL;
+    } else {
+        *top = NULL;
+    }
+
+#ifndef DBUG_OFF
+    if (*top != NULL) {
+        DBUG_PRINT ("PM", ("frame found:"));
+        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *top););
+    }
+#endif
+
     DBUG_RETURN (stack);
 }
 
@@ -558,8 +605,8 @@ MatchArrayAttribs (node *array_node, int num, attrib_t *arefs)
     constant *shpfound;
 
     shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (array_node));
-    if (*REF_CONST (arefs[0]) == NULL) {
-        *REF_CONST (arefs[0]) = shpfound;
+    if (REF_ISUNDEFINED (REF_CONST (arefs[0]))) {
+        REF_SET (REF_CONST (arefs[0]), shpfound);
         match = TRUE;
     } else if (COcompareConstants (shpfound, *REF_CONST (arefs[0]))) {
         shpfound = COfreeConstant (shpfound);
@@ -695,8 +742,9 @@ PMintConst (constant **co, node **conode, node *stack)
  *        If *shp is NULL, the AVIS_SHAPE(*array) is bound to shp.
  *        If *shp is bound already, it only matches if both N_id nodes
  *        have the same AVIS_SHAPE.
- * @param *shp: AVIS_SHAPE( ID_AVIS(*array), if any
- *        stack: "stack" of exprs.
+ * @param shp AVIS_SHAPE( ID_AVIS(*array), if any
+ * @param stack "stack" of exprs.
+ *
  * @return stack is unchanged.
  *****************************************************************************/
 node *
@@ -716,9 +764,9 @@ PMsaashape (node **shp, node **array, node *stack)
             arg = lastId (arg);
         }
         if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
-            if (*shp == NULL) {
+            if (REF_ISUNDEFINED (shp)) {
                 DBUG_PRINT ("PM", ("PMsaashape binding AVIS_SHAPE"));
-                *shp = AVIS_SHAPE (ID_AVIS (arg));
+                REF_SET (shp, AVIS_SHAPE (ID_AVIS (arg)));
             } else if (*shp == AVIS_SHAPE (ID_AVIS (arg))) {
                 DBUG_PRINT ("PM", ("PMsaashape found matching AVIS_SHAPE"));
             } else {
@@ -730,5 +778,104 @@ PMsaashape (node **shp, node **array, node *stack)
     } else {
         DBUG_PRINT ("PM", ("PMsaashape passing-on FAIL."));
     }
+    DBUG_RETURN (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Matches the given pattern against each subexpression of the
+ *        top-most stack frame, i.e., N_exprs chain. For each match,
+ *        additionally to the expression to match on, the position
+ *        within the exprs chain starting with 0 is passed to the
+ *
+ * @param pattern pattern matching function used for each element
+ * @param stack the current stack
+ * @return shortened stack
+ ******************************************************************************/
+node *
+PMforEachI (node *(*pattern) (int, node *stack), node *stack)
+{
+    node *exprs;
+    bool success = TRUE;
+    int pos = 0;
+
+    DBUG_ENTER ("PMforEachI");
+
+    stack = ExtractTopFrame (stack, &exprs);
+
+    DBUG_ASSERT ((exprs != NULL), "No exprs on top of stack");
+
+    do {
+        success = PM (pattern (pos, EXPRS_EXPR (exprs)));
+
+        exprs = EXPRS_NEXT (exprs);
+        pos++;
+    } while ((exprs != NULL) && success);
+
+    if (!success) {
+        stack = FailMatch (stack);
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Matches any single expression. If any is non-NULL, it fails if the
+ *        expressions are non-equal. If any points to an empty  memory
+ *        location, the matched expression is stored.
+ *
+ * @param any   expression to match against or NULL
+ * @param stack the stack
+ *
+ * @return modified stack
+ ******************************************************************************/
+node *
+PMany (node **any, node *stack)
+{
+    node *actual;
+
+    DBUG_ENTER ("PMany");
+
+    if (stack != (node *)FAIL) {
+        stack = ExtractOneArg (stack, &actual);
+
+        if (REF_ISUNDEFINED (any)) {
+            REF_SET (any, actual);
+        } else if (CMPTdoCompareTree (actual, *any) == CMPT_NEQ) {
+            stack = FailMatch (stack);
+        }
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Matches any chain of expression. If exprs is non-NULL, it fails if
+ *        the expressions are non-equal. If any points to an empty  memory
+ *        location, the matched expression is stored.
+ *
+ * @param any   expressions to match against or NULL
+ * @param stack the stack
+ *
+ * @return modified stack
+ ******************************************************************************/
+node *
+PMexprs (node **exprs, node *stack)
+{
+    node *top;
+
+    DBUG_ENTER ("PManyExprs");
+
+    stack = ExtractTopFrame (stack, &top);
+
+    if (top == NULL) {
+        stack = FailMatch (stack);
+    } else {
+        if (REF_ISUNDEFINED (exprs)) {
+            REF_SET (exprs, top);
+        } else if (CMPTdoCompareTree (top, *exprs) == CMPT_NEQ) {
+            stack = FailMatch (stack);
+        }
+    }
+
     DBUG_RETURN (stack);
 }
