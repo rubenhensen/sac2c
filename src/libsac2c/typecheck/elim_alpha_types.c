@@ -9,6 +9,7 @@
 #include "elim_alpha_types.h"
 
 #include "dbug.h"
+#include "types.h"
 #include "ctinfo.h"
 #include "str.h"
 #include "str_buffer.h"
