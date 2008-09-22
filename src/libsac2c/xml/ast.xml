@@ -4251,7 +4251,8 @@
     <node name="Array">
     <description>Constant array of array elements. In early phases, 
      the elements are exprs; after the array flattening phase, the
-     elements are either N_id nodes or scalar constant nodes.
+     elements may be an arbitrary mixture of N_id nodes and/or 
+     scalar constant nodes.
      The shapes of all elements must match. The shape of the array
      represented by the N_array is the catenation of the ARRAY_FRAMESHAPE
      and the shape specified by the ELEMTYPE.</description>
