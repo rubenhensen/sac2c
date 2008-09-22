@@ -130,7 +130,12 @@ StructOpSel (node *arg_node, info *arg_info)
         con2 = COfreeConstant (con2);
         tmpXid = DUPdoDupTree ((node *)TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
         if (iv_len == X_dim) {
-            if (N_id == NODE_TYPE (tmpXid)) {
+            if (FALSE ||
+
+                N_id == NODE_TYPE (tmpXid)) {
+                /*
+                if ( TRUE || N_id == NODE_TYPE( tmpXid)) {
+                */
                 // FIXME: tvd2d gets wrong answers if we allow the return of an N_num
                 //        or an N_double (not sure if it's either or both...)
                 //        2008-06-27
@@ -622,6 +627,8 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
             arg2aelems = DUPdoDupTree (ARRAY_AELEMS (arg2));
             els = TCappendExprs (arg1aelems, arg2aelems);
 #define CRUD
+
+#undef CRUD
 #ifdef CRUD // FIXME
             /* FIXME: KLUDGE to avoid catenating N_num and N_id */
             if (((N_id == NODE_TYPE (EXPRS_EXPR (arg1aelems)))
