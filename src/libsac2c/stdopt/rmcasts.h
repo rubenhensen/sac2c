@@ -20,6 +20,7 @@
 #include "types.h"
 
 extern node *RCdoRemoveCasts (node *ast);
+extern node *RClet (node *arg_node, info *arg_info);
 extern node *RCcast (node *arg_node, info *arg_info);
 extern node *RCavis (node *arg_node, info *arg_info);
 extern node *RCarray (node *arg_node, info *arg_info);

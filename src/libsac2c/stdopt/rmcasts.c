@@ -30,6 +30,72 @@
 
 /** <!--********************************************************************-->
  *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
+struct INFO {
+    node *lhs;
+};
+
+/**
+ * A template entry in the template info structure
+ */
+#define INFO_LHS(n) ((n)->lhs)
+
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = MEMmalloc (sizeof (info));
+
+    INFO_LHS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RClet( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RClet (node *arg_node, info *arg_info)
+{
+    node *lhs;
+
+    DBUG_ENTER ("RClet");
+
+    lhs = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_LHS (arg_info) = lhs;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *RCcast( node *arg_node, info *arg_info )
  *
  ******************************************************************************/
@@ -43,7 +109,10 @@ RCcast (node *arg_node, info *arg_info)
 
     expr = TRAVdo (CAST_EXPR (arg_node), arg_info);
 
-    type = TBmakeType (TYeliminateUser (CAST_NTYPE (arg_node)));
+    DBUG_ASSERT ((INFO_LHS (arg_info) != NULL), "I lost my left hand side");
+    DBUG_ASSERT ((IDS_NEXT (INFO_LHS (arg_info)) == NULL), "too much left hand side");
+
+    type = TBmakeType (TYeliminateUser (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)))));
     expr = TCmakePrf2 (F_type_conv, type, expr);
 
     CAST_EXPR (arg_node) = NULL;
@@ -189,14 +258,19 @@ RCtype (node *arg_node, info *arg_info)
 node *
 RCdoRemoveCasts (node *syntax_tree)
 {
+    info *info;
 
     DBUG_ENTER ("RemoveCasts");
 
     DBUG_PRINT ("OPT", ("starting remove casts traversal"));
 
+    info = MakeInfo ();
+
     TRAVpush (TR_rc);
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
+
+    info = FreeInfo (info);
 
     syntax_tree = UWTdoUpdateWrapperType (syntax_tree);
 

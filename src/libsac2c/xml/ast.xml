@@ -1217,6 +1217,7 @@
       </traversal>
       <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
         <travuser>
+          <node name="Let" />
           <node name="Cast" />
           <node name="Avis" />
           <node name="Array" />
