@@ -17,6 +17,7 @@
 
 #include "dbug.h"
 #include "types.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
