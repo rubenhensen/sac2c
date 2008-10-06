@@ -1269,7 +1269,7 @@ LIRlet (node *arg_node, info *arg_info)
         LET_LIRFLAG (arg_node) = LIRMOVE_NONE;
     }
 
-    /* detect withloop independend expression, will be moved up */
+    /* detect withloop-independent expression, will be moved up */
     if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (arg_node)))
@@ -1568,10 +1568,10 @@ LIRwith (node *arg_node, info *arg_info)
     /* create new InsertListFrame */
     INFO_INSLIST (arg_info) = InsListPushFrame (INFO_INSLIST (arg_info));
 
-    /* traverse partition */
+    /* traverse partitions */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-    /* travserse code blocks */
+    /* traverse code blocks */
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* traverse withop */
@@ -1601,13 +1601,18 @@ LIRwith (node *arg_node, info *arg_info)
  *   node* LIRwithid(node *arg_node, info *arg_info)
  *
  * description:
- *   mark index vetor as local variable to allow a code moving
+ *   mark index vectors as local variables to allow code moving
  *
  *****************************************************************************/
 node *
 LIRwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LIRNwithid");
+    DBUG_ENTER ("LIRwithid");
+
+    /*
+    DBUG_PRINT("LIR", ("withid is"));
+    PRTdoPrint(arg_node);
+    */
 
     /* traverse all local definitions to mark their depth in withloops */
     INFO_FLAG (arg_info) = LIR_MOVELOCAL;
@@ -1677,7 +1682,7 @@ LIRids (node *arg_ids, info *arg_info)
     /* set current withloop depth as definition depth */
     AVIS_DEFDEPTH (avis) = INFO_SETDEPTH (arg_info);
 
-    /* propagte the currect FLAG to the ids */
+    /* propagate the currect FLAG to the ids */
     switch (INFO_FLAG (arg_info)) {
     case LIR_MOVEUP:
         DBUG_PRINT ("LIR", ("mark: moving up vardec %s", IDS_NAME (arg_ids)));

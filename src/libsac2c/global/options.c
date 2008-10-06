@@ -455,6 +455,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (global.max_replication_size));
 
+    ARGS_FLAG ("extremaanalysis", global.extremaanalysis = TRUE);
+
     ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
 
     ARGS_OPTION_BEGIN ("minarrayrep")
@@ -556,7 +558,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
      */
 
-    ARGS_FLAG ("rbe", global.dorbestuff = TRUE);
+    ARGS_FLAG ("ssaiv", global.ssaiv = TRUE);
 
     /*
      * Options starting with sssssssssssssssssssssssssssssssssssssssssss

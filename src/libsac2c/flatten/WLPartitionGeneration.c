@@ -11,7 +11,7 @@
  *
  * Ex. of AKS withloop:
  *    A = with(iv)
- *         ([3] < iv <= [6])
+ *         ([3] <= iv < [6])
  *         {res = ...;
  *         }: res
  *        genarray([9]);
@@ -19,13 +19,13 @@
  * is transformed into
  *
  *    A = with(iv)
- *         ([3] < iv <= [6])
+ *         ([3] <= iv < [6])
  *         {res = ...;
  *         }: res
- *         ([0] < iv <= [3])
+ *         ([0] <= iv < [3])
  *         {res = 0;
  *         }: res
- *         ([7] < iv <= [9])
+ *         ([7] <= iv < [9])
  *         {res = 0;
  *         }: res
  *        genarray([9]);
@@ -46,13 +46,13 @@
  * is transformed into
  *
  *    A = with(iv)
- *         ([a[0]] < iv <= [b[0]])
+ *         ([a[0]] <= iv < [b[0]])
  *         {res = ...;
  *         }: res
- *         ([0] < iv <= [a[0]])
+ *         ([0] <= iv < [a[0]])
  *         {res = 0;
  *         }: res
- *         ([b[0]] < iv <= [c[0]])
+ *         ([b[0]] <= iv < [c[0]])
  *         {res = 0;
  *         }: res
  *        genarray([c[0]]);
@@ -75,8 +75,8 @@
 #include "traverse.h"
 #include "constants.h"
 #include "wlanalysis.h"
+#include "LookUpTable.h"
 #include "wldefaultpartition.h"
-
 #include "WLPartitionGeneration.h"
 
 typedef enum { SP_mod, SP_func } sub_phase_t;
@@ -94,7 +94,7 @@ struct INFO {
 
 /*******************************************************************************
  *  Usage of arg_info:
- *  - node : WL      : reference to base node of current WL (N_Nwith)
+ *  - node : WL      : reference to base node of current WL (N_with)
  *  - node : FUNDEF  : pointer to last fundef node. needed to access vardecs.
  *  - node : LET     : pointer to N_let node of current WL.
  *                     LET_EXPR(ID) == INFO_WL.
@@ -278,30 +278,50 @@ CreateEntryFlatArray (int entry, int number)
 /** <!--********************************************************************-->
  *
  * @fn node *CreateNewPart(node * lb, node *ub, node * step, node *width,
- *                        node *withid, node *coden)
+ *                        node *withid, node *coden, info *arg_info)
  *
- *   @brief creates a new N_Npart
+ *   @brief creates a new N_part.
+ *
+ *   If the compiler is operating in ssaiv mode, the
+ *   withids will be renamed into SSA form, and any references
+ *   in the code block will be changed appropriately.
  *
  *   @param  node *lb,*ub       : bound of new part
  *           node *step, *width : step, width of new part
  *           node *withid       : withid of new part
  *           node *coden        : Pointer of N_Ncode node where the
  *                                new generator shall point to.
- *   @return node *             : N_Npart
+ *           info *arg_info     : local information block
+ *   @return node *             : N_part
  ******************************************************************************/
 
 static node *
-CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *coden)
+CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *coden,
+               info *arg_info)
 {
     node *genn, *partn;
+    node *newwithid;
+    node *newcoden;
+    lut_t *lut;
 
     DBUG_ENTER ("CreateNewPart");
 
     /* create tree structures */
     genn = TBmakeGenerator (F_wl_le, F_wl_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
                             DUPdoDupTree (step), DUPdoDupTree (width));
-    partn = TBmakePart (coden, DUPdoDupTree (withid), genn);
-    CODE_INC_USED (coden);
+    if (global.ssaiv) {
+        lut = LUTgenerateLut ();
+        newwithid = DUPdoDupTreeLutSsa (withid, lut, INFO_FUNDEF (arg_info));
+        newcoden = DUPdoDupTreeLutSsa (coden, lut, INFO_FUNDEF (arg_info));
+        LUTremoveLut (lut);
+        partn = TBmakePart (newcoden, newwithid, genn);
+        CODE_NEXT (newcoden) = WITH_CODE (INFO_WL (arg_info));
+        WITH_CODE (INFO_WL (arg_info)) = newcoden;
+        CODE_INC_USED (newcoden);
+    } else {
+        partn = TBmakePart (coden, DUPdoDupTree (withid), genn);
+        CODE_INC_USED (coden);
+    }
 
     DBUG_RETURN (partn);
 }
@@ -411,12 +431,12 @@ WLPGnormalizeStepWidth (node **step, node **width)
  *
  * @fn node *AppendPart2WL(node * wln, node *partn)
  *
- *   @brief append N_Npart npart to the existing parts of
- *          the N_Nwith node wln
+ *   @brief append N_part npart to the existing parts of
+ *          the N_with node wln
  *
- *   @param  node *wln    : N_Nwith
- *           node *npart  : N_Npart
- *   @return node *       : modified N_Nwith
+ *   @param  node *wln    : N_with
+ *           node *npart  : N_part
+ *   @return node *       : modified N_with
  ******************************************************************************/
 
 static node *
@@ -446,33 +466,36 @@ AppendPart2WL (node *wln, node *partn)
 /** <!--********************************************************************-->
  *
  * @fn node *CutSlices( node *ls, node *us, node *l, node *u, int dim,
- *                       node *wln, node *coden)
+ *                       node *wln, node *coden, info *arg_info,
+ *                       node *withid)
  *
  *   @brief  Creates a (full) partition by adding new N_Ngenerator nodes
- *           to the N_Nwith node.
+ *           to the N_with node.
  *           If the known part is a grid, this is ignored here (so the
- *           resulting N_Nwith node may still not be a full partition,
+ *           resulting N_with node may still not be a full partition,
  *           see CompleteGrid()).
  *
  *   @param  node *ls, *us : bounds of the whole array
  *           node *l, *u   : bounds of the given part
  *           int dim       : number of elements of ls, us, l, u
- *           node *wln     : Pointer of N_Nwith node where the new generators
+ *           node *wln     : Pointer of N_with node where the new generators
  *                           shall be inserted.
  *           node *coden   : Pointer of N_Ncode node where the new generators
  *                           shall point to.
- *   @return node *        : modified N_Nwith
+ *           info *arg_info: local information block
+ *   @return node *        : modified N_with
  ******************************************************************************/
 
 static node *
-CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden)
+CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden,
+           info *arg_info, node *withid)
 {
-    node *lsc, *usc, *le, *ue, *lsce, *usce, *partn, *withidn, *ubn, *lbn;
+    node *lsc, *usc, *le, *ue, *lsce, *usce, *partn, *ubn, *lbn;
     int i, d, lnum, lscnum, unum, uscnum;
 
     DBUG_ENTER ("CutSlices");
 
-    /* create local copies of the arrays which atr modified here*/
+    /* create local copies of the arrays which are modified here*/
     lsc = DUPdoDupTree (ls);
     usc = DUPdoDupTree (us);
 
@@ -481,8 +504,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
     ue = ARRAY_AELEMS (u);
     usce = ARRAY_AELEMS (usc);
 
-    withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
-
     for (d = 0; d < dim; d++) {
         /* Check whether there is a cuboid above (below) the given one. */
 
@@ -490,7 +511,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             lnum = NUM_VAL (EXPRS_EXPR (le));
             lscnum = NUM_VAL (EXPRS_EXPR (lsce));
             if (lnum > lscnum) {
-                partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
+                partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
                 ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
                 for (i = 0; i < d; i++) {
                     ubn = EXPRS_NEXT (ubn);
@@ -504,7 +525,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
                 wln = AppendPart2WL (wln, partn);
             }
         } else {
-            partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
+            partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
             ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
             for (i = 0; i < d; i++) {
                 ubn = EXPRS_NEXT (ubn);
@@ -519,7 +540,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             unum = NUM_VAL (EXPRS_EXPR (ue));
             uscnum = NUM_VAL (EXPRS_EXPR (usce));
             if (unum < uscnum) {
-                partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
+                partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
                 lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
                 for (i = 0; i < d; i++) {
                     lbn = EXPRS_NEXT (lbn);
@@ -528,7 +549,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
                 wln = AppendPart2WL (wln, partn);
             }
         } else {
-            partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
+            partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
             lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
             for (i = 0; i < d; i++) {
                 lbn = EXPRS_NEXT (lbn);
@@ -538,7 +559,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             wln = AppendPart2WL (wln, partn);
         }
 
-        /* and modifiy array bounds to continue with next dimension */
+        /* and modify array bounds to continue with next dimension */
         if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
             NUM_VAL (EXPRS_EXPR (lsce)) = NUM_VAL (EXPRS_EXPR (le));
         } else {
@@ -562,7 +583,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
 
     lsc = FREEdoFreeTree (lsc);
     usc = FREEdoFreeTree (usc);
-    withidn = FREEdoFreeTree (withidn);
 
     if (WITH_PARTS (wln) == -1) {
         /**
@@ -579,13 +599,13 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
  * @fn node *CompleteGrid( node *ls, node *us, node *step, node *width,
  *                         int dim, node *wln, node *coden, info *arg_info)
  *
- *   @brief  adds new parts to N_Nwith which specify the elements
+ *   @brief  adds new parts to N_with which specify the elements
  *           left out by a grid.
  *
  *   @param  node *ls,*us       : bounds of the given part
  *           node *step, *width :
  *           int dim            : number of elements of ls, us
- *           node *wln          : N_Nwith where to add the new parts.
+ *           node *wln          : N_with where to add the new parts.
  *                                If ig != NULL, the same pointer is returned.
  *           node *coden        : Pointer of N_Ncode node where the new
  *                                generators shall point to.
@@ -603,7 +623,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
     DBUG_ENTER ("CompleteGrid");
 
-    /* create local copies of the arrays which atr modified here*/
+    /* create local copies of the arrays which are modified here*/
     nw = DUPdoDupTree (step);
 
     stpe = ARRAY_AELEMS (step);
@@ -621,7 +641,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
             if (stpnum > wthnum) { /* create new grids */
 
-                partn = CreateNewPart (ls, us, step, nw, withidn, coden);
+                partn = CreateNewPart (ls, us, step, nw, withidn, coden, arg_info);
                 lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
                 wthn = ARRAY_AELEMS (PART_WIDTH (partn));
 
@@ -660,7 +680,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 wln = AppendPart2WL (wln, partn);
             }
         } else {
-            partn = CreateNewPart (ls, us, step, nw, withidn, coden);
+            partn = CreateNewPart (ls, us, step, nw, withidn, coden, arg_info);
             lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
             wthn = ARRAY_AELEMS (PART_WIDTH (partn));
 
@@ -727,7 +747,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             wln = AppendPart2WL (wln, partn);
         }
 
-        /* and modifiy array bounds to continue with next dimension */
+        /* and modify array bounds to continue with next dimension */
         if ((NODE_TYPE (EXPRS_EXPR (nwe)) == N_num)
             && (NODE_TYPE (EXPRS_EXPR (wthe)) == N_num)) {
             NUM_VAL (EXPRS_EXPR (nwe)) = NUM_VAL (EXPRS_EXPR (wthe));
@@ -751,7 +771,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
  * @fn  node *CreateFullPartition( node *wln, info *arg_info)
  *
  *   @brief  generates full partition if possible:
- *           - if withop is genarray and index vector has as much elements as
+ *           - if withop is genarray and index vector has as many elements as
  *             dimension of resulting WL (withloop on scalars).
  *           - if withop is modarray: always (needed for compilation phase).
  *           Returns wln.
@@ -768,6 +788,7 @@ CreateFullPartition (node *wln, info *arg_info)
     node *coden, *array_shape = NULL, *array_null;
     ntype *array_type;
     shape *shape, *mshape;
+    node *withid;
     int gen_shape = 0;
     bool do_create;
 
@@ -778,7 +799,8 @@ CreateFullPartition (node *wln, info *arg_info)
                        == N_default),
                  "Second partition is no default partition!");
 
-    /* recycle default code for all new parts*/
+    /* recycle default code for all new parts */
+    withid = DUPdoDupTree (PART_WITHID (PART_NEXT (WITH_PART (wln))));
     coden = DUPdoDupNode (PART_CODE (PART_NEXT (WITH_PART (wln))));
     /* delete default partition */
     PART_NEXT (WITH_PART (wln)) = FREEdoFreeTree (PART_NEXT (WITH_PART (wln)));
@@ -834,7 +856,7 @@ CreateFullPartition (node *wln, info *arg_info)
 
         /* create surrounding cuboids */
         wln = CutSlices (array_null, array_shape, WITH_BOUND1 (wln), WITH_BOUND2 (wln),
-                         gen_shape, wln, coden);
+                         gen_shape, wln, coden, arg_info, withid);
 
         /* the original part can still be found at first position in wln.
            Now create grids. */
@@ -855,6 +877,7 @@ CreateFullPartition (node *wln, info *arg_info)
     if (array_shape != NULL) {
         array_shape = FREEdoFreeTree (array_shape);
     }
+    withid = FREEdoFreeTree (withid);
 
     DBUG_RETURN (wln);
 }

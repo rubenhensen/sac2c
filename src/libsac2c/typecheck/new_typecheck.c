@@ -1838,7 +1838,7 @@ NTCpart (node *arg_node, info *arg_info)
      * Now, we check the other parts:
      */
 
-    if (global.dorbestuff) {
+    if (global.ssaiv) {
         if (PART_NEXT (arg_node) != NULL) {
             this_idx = TYgetProductMember (INFO_TYPE (arg_info), 0);
             INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));

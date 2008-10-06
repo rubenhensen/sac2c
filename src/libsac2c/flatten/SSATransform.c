@@ -1149,7 +1149,7 @@ SSATwithid (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = NULL;
 
     if (INFO_FIRST_WITHID (arg_info) == NULL) {
-        if (!global.dorbestuff) {
+        if (!global.ssaiv) {
             /**
              * This is the first withid. Therefore, we have to treat it as LHS.
              */
@@ -1175,7 +1175,7 @@ SSATwithid (node *arg_node, info *arg_info)
         }
     } else {
 
-        if (global.dorbestuff) {
+        if (global.ssaiv) {
             /* This code should all be dead now */
             DBUG_PRINT ("SSA", ("RBE dead code walking"));
         }

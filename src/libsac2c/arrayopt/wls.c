@@ -7,20 +7,20 @@
  * @defgroup wls With-Loop Scalarization
  *
  * @brief With-Loop Scalarization is a high-level optimization which composes
- *        a single withloop from nested ones in order to minimize memory-
+ *        a single withloop from nested ones, in order to minimize memory
  *        transactions and thereby improving program efficiency.
  *
  * A bottom-up traversal of the SAC-program is performed.
  * When a with-loop is met, its codes are traversed first in order to
  * scalarize nested with-loops inside of these codes.
  *
- * Scalarization is then performed by means of three seperate traversals:
+ * Scalarization is then performed by means of three separate traversals:
  *
  *  - WLSCheck checks whether all criteria are met to scalarize the current WL.
  *    These criteria are described in wlscheck.c
  *
- *  - WLSWithloopifification modifies a with-loop's codes in order to create
- *    the pattern of perferctly nested with-loops as seen in the example above.
+ *  - WLSWdoWithloopify modifies a with-loop's codes in order to create
+ *    the pattern of perfectly nested with-loops, as seen in the example above.
  *
  *  - WLSBuild then finally replaces the with-loop nesting with a new,
  *    scalarized version of that with-loop
@@ -41,7 +41,7 @@
  *   is transformed into
  *
  * <pre>
- *   A = with ( lb_1++lb_2 <= kv < ub_1++ub_2) {
+ *   A = with ( (lb_1++lb_2) <= kv < (ub_1++ub_2)) {
  *         iv = take( shape( lb_1), kv);
  *         jv = drop( shape( lb_1), kv);
  *         val = expr( iv, jv);
@@ -228,7 +228,7 @@ WLSfundef (node *arg_node, info *arg_info)
  *        After that it is checked whether WLS is applicable using the
  *        WLSCheck traversal.
  *        If it is, the base case of scalarization (perfectly nested
- *        with-loops) is created using WLSWithloopification.
+ *        with-loops) is created using WLSWdoWithloopify.
  *        Thereafter, a new with-loop is built using the WLSBuild traversal.
  *
  *****************************************************************************/

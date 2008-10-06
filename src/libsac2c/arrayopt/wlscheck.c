@@ -239,7 +239,7 @@ WLSCblock (node *arg_node, info *arg_info)
 
     /*
      * To enhance applicability of WLS, we allow empty code blocks
-     * This means, the CEXPR is defined outside the block
+     * This means that the CEXPR is defined outside the block
      */
     if (NODE_TYPE (BLOCK_INSTR (arg_node)) != N_empty) {
         /*
@@ -451,14 +451,14 @@ WLSCid (node *arg_node, info *arg_info)
     ids = WITHID_VEC (INFO_OUTERWITHID (arg_info));
     if (ID_AVIS (arg_node) == IDS_AVIS (ids)) {
         INFO_POSSIBLE (arg_info) = FALSE;
-        DBUG_PRINT ("WLS", ("Dependecy of with-loop constructs detected!!!"));
+        DBUG_PRINT ("WLS", ("Dependency of with-loop vec constructs detected"));
     }
 
     ids = WITHID_IDS (INFO_OUTERWITHID (arg_info));
     while (ids != NULL) {
         if (ID_AVIS (arg_node) == IDS_AVIS (ids)) {
             INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("WLS", ("Dependecy of with-loop constructs detected!!!"));
+            DBUG_PRINT ("WLS", ("Dependency of with-loop ids constructs detected"));
         }
         ids = IDS_NEXT (ids);
     }
@@ -558,7 +558,7 @@ WLSCwith (node *arg_node, info *arg_info)
         if ((WITH_TYPE (arg_node) != N_genarray)
             && (WITH_TYPE (arg_node) != N_modarray)) {
             INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("WLS", ("Outer with-loop is no genarray/modarray with-loop!"));
+            DBUG_PRINT ("WLS", ("Outer with-loop is not genarray/modarray with-loop"));
         }
 
         /*
@@ -566,7 +566,7 @@ WLSCwith (node *arg_node, info *arg_info)
          */
         if (WITHOP_NEXT (WITH_WITHOP (arg_node)) != NULL) {
             INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("WLS", ("Outer with-loop is multi-operator with-loop!"));
+            DBUG_PRINT ("WLS", ("Outer with-loop is multi-operator with-loop"));
         }
 
         /*
@@ -575,7 +575,7 @@ WLSCwith (node *arg_node, info *arg_info)
         if (INFO_POSSIBLE (arg_info)) {
             if (WITH_PARTS (arg_node) < 0) {
                 INFO_POSSIBLE (arg_info) = FALSE;
-                DBUG_PRINT ("WLS", ("Outer with-loop has no full partition!"));
+                DBUG_PRINT ("WLS", ("Outer with-loop has no full partition"));
             }
         }
 
@@ -654,7 +654,7 @@ WLSCwithid (node *arg_node, info *arg_info)
  *
  * @fn node *WLSCgenarray(node *arg_node, info *arg_info)
  *
- * @brief ensures the inner shape has no depencies to the outer generator.
+ * @brief ensures the inner shape has no dependencies on the outer generator.
  *
  * @param arg_node
  * @param arg_info
@@ -704,7 +704,7 @@ WLSCmodarray (node *arg_node, info *arg_info)
  *
  * @fn node *WLSCfold(node *arg_node, info *arg_info)
  *
- * @brief ensures the inner shape has no depencies to the outer generator.
+ * @brief ensures the inner shape has no dependencies on the outer generator.
  *
  * @param arg_node
  * @param arg_info
@@ -718,7 +718,7 @@ WLSCfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSCfold");
 
     INFO_POSSIBLE (arg_info) = FALSE;
-    DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));
+    DBUG_PRINT ("WLS", ("Inner with-loop is not a genarray or modarray with-loop"));
 
     DBUG_RETURN (arg_node);
 }
@@ -741,7 +741,7 @@ WLSCpropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSCpropagate");
 
     INFO_POSSIBLE (arg_info) = FALSE;
-    DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));
+    DBUG_PRINT ("WLS", ("Inner with-loop is not a genarray/modarray with-loop"));
 
     DBUG_RETURN (arg_node);
 }

@@ -620,15 +620,15 @@ EATwithid (node *arg_node, info *arg_info)
                                     IDS_NAME (WITHID_VEC (arg_node))));
             }
         } else {
-            if (!global.dorbestuff) {
+            if (!global.ssaiv) {
                 /* save WLIDS for below */
                 INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
             }
         }
     } else {
         if (WITHID_IDS (arg_node) == NULL) {
-            if (global.dorbestuff) {
-                DBUG_ASSERT (FALSE, "EAT Booboo");
+            if (global.ssaiv) {
+                DBUG_PRINT ("EAT", ("Default partition found"));
             }
             /**
              * we are dealing with a default partition here

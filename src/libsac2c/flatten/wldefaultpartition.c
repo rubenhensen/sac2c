@@ -30,7 +30,6 @@
 #include "namespaces.h"
 #include "wldefaultpartition.h"
 #include "ctinfo.h"
-#include "LookUpTable.h"
 
 /**
  * INFO structure
@@ -46,6 +45,7 @@ struct INFO {
     node *propobjoutargs;
     node *propobjoutres;
     node *selwrapper;
+    node *defaultwithid;
 };
 
 #define INFO_WL(n) ((n)->wl)
@@ -58,6 +58,7 @@ struct INFO {
 #define INFO_PROPOBJOUTARGS(n) ((n)->propobjoutargs)
 #define INFO_PROPOBJOUTRES(n) ((n)->propobjoutres)
 #define INFO_SELWRAPPER(n) ((n)->selwrapper)
+#define INFO_DEFAULTWITHID(n) ((n)->defaultwithid)
 
 /**
  * INFO functions
@@ -81,6 +82,7 @@ MakeInfo ()
     INFO_PROPOBJOUTARGS (result) = NULL;
     INFO_PROPOBJOUTRES (result) = NULL;
     INFO_SELWRAPPER (result) = NULL;
+    INFO_DEFAULTWITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -377,12 +379,21 @@ WLDPassign (node *arg_node, info *arg_info)
 node *
 WLDPwith (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("WLDPwith");
 
     /*
      * Visit with-loop body recursively before transforming
      * current with-loop.
      */
+    if (global.ssaiv) {
+        /* Copy first withid to serve as default partition withid. */
+        INFO_DEFAULTWITHID (arg_info)
+          = DUPdoDupTreeSsa (WITH_WITHID (arg_node), INFO_FUNDEF (arg_info));
+    } else {
+        INFO_DEFAULTWITHID (arg_info) = DUPdoDupTree (WITH_WITHID (arg_node));
+    }
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     if ((WITH_TYPE (arg_node) == N_genarray) || (WITH_TYPE (arg_node) == N_modarray)) {
@@ -491,7 +502,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
-    sel_vec = WITHID_VEC (WITH_WITHID (INFO_WL (arg_info)));
+    sel_vec = WITHID_VEC (INFO_DEFAULTWITHID (arg_info));
     sel_array = MODARRAY_ARRAY (arg_node);
 
 #if 0  
@@ -594,9 +605,10 @@ node *
 WLDPpart (node *arg_node, info *arg_info)
 {
     node *_ids, *vardec, *idn, *nassign;
-    node *code = NULL;
+    node *code;
     node *expriter, *temp, *idniter;
-    lut_t *lut;
+    node *newpart;
+    node *newavis;
 
     DBUG_ENTER ("WLDPpart");
 
@@ -609,22 +621,6 @@ WLDPpart (node *arg_node, info *arg_info)
     idniter = NULL;
     expriter = INFO_DEFEXPR (arg_info);
     INFO_DEFEXPR (arg_info) = NULL;
-    /*
-     * Rename default partition WITHID vars.
-     * We generate the default partition first, but with NULL code
-     * which we will correct after the renames are done.
-     */
-    lut = LUTgenerateLut ();
-    if (!global.dorbestuff) {
-        PART_NEXT (arg_node)
-          = TBmakePart (code, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
-    } else {
-        PART_NEXT (arg_node)
-          = TBmakePart (code,
-                        DUPdoDupTreeLutSsa (PART_WITHID (arg_node), lut,
-                                            INFO_FUNDEF (arg_info)),
-                        TBmakeDefault ());
-    }
     /*
      * 1) construct prop_obj_out
      */
@@ -686,16 +682,14 @@ WLDPpart (node *arg_node, info *arg_info)
     /*
      * 3) construct prop_obj_in
      */
+    newavis = IDS_AVIS (WITHID_VEC (INFO_DEFAULTWITHID (arg_info)));
     if (INFO_PROPOBJINARGS (arg_info) != NULL) {
-        nassign
-          = TBmakeAssign (TBmakeLet (INFO_PROPOBJINRES (arg_info),
-                                     TBmakePrf (F_prop_obj_in,
-                                                TBmakeExprs (TBmakeId (IDS_AVIS (
-                                                               WITHID_VEC (PART_WITHID (
-                                                                 PART_NEXT (arg_node))))),
-                                                             INFO_PROPOBJINARGS (
-                                                               arg_info)))),
-                          nassign);
+        nassign = TBmakeAssign (TBmakeLet (INFO_PROPOBJINRES (arg_info),
+                                           TBmakePrf (F_prop_obj_in,
+                                                      TBmakeExprs (TBmakeId (newavis),
+                                                                   INFO_PROPOBJINARGS (
+                                                                     arg_info)))),
+                                nassign);
 
         INFO_PROPOBJINRES (arg_info)
           = TCsetSSAAssignForIdsChain (INFO_PROPOBJINRES (arg_info), nassign);
@@ -707,14 +701,11 @@ WLDPpart (node *arg_node, info *arg_info)
     if (nassign == NULL) {
         nassign = TBmakeEmpty ();
     }
-
     code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
-    PART_CODE (PART_NEXT (arg_node)) = code;
-
+    PART_NEXT (arg_node)
+      = TBmakePart (code, INFO_DEFAULTWITHID (arg_info), TBmakeDefault ());
     CODE_USED (code) = 1;
-
-    CODE_NEXT (WITH_CODE (INFO_WL (arg_info))) = code;
-    LUTremoveLut (lut);
+    CODE_NEXT (WITH_CODE (INFO_WL (arg_info))) = PART_CODE (PART_NEXT (arg_node));
 
     DBUG_RETURN (arg_node);
 }

@@ -1009,6 +1009,17 @@
           <node name="Vardec" />
         </travuser>
       </traversal>
+      <traversal id="UFL" name="Unflatten WL Partitions" default="sons" include="unflatten.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="With" />
+	  <node name="Withid" />
+	  <node name="Block" />
+	  <node name="Vardec" />
+	  <node name="Part" />
+	  <node name="Id" />
+	</travuser>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
         <travuser>
           <node name="Fundef" />
@@ -1171,7 +1182,7 @@
           <node name="Exprs" />
 	</travuser>
       </traversal>
-      <traversal id="LIRMOV" name="Loop Inveriants Move Traversal" default="sons" include="SSALIR.h" >
+      <traversal id="LIRMOV" name="Loop Invariants Move Traversal" default="sons" include="SSALIR.h" >
 	<travuser>
 	  <node name="Id" />
 	  <node name="Withid" />
@@ -5718,6 +5729,9 @@
     <node name="With">
       <sons>
         <son name="Part">
+          <description>
+	    Definition of one partition of a with-loop.
+	  </description>
           <targets>
             <target mandatory="yes">
               <node name="Part" />
@@ -5728,6 +5742,12 @@
           </targets>
         </son>
         <son name="Code">
+          <description>
+	    Chain of codes associated with one or more partitions 
+	    in the WL. Codes may be shared by more than one partition:
+	    each partition has an attribute, PART_CODE, that points to
+	    a WITH_CODE block. 
+	  </description>
           <targets>
             <target mandatory="yes">
               <node name="Code" />
@@ -5937,8 +5957,10 @@
       </sons>
       <attributes>
         <attribute name="Code">
-          <description>if present, the used counter for the code
-            needs to be increased</description>
+          <description>
+	  A pointer to the WITH_CODE block that contains the code
+	  for this partition.  if present, the used counter for the code
+            needs to be increased.</description>
           <type name="CodeLink">
             <targets>
               <target mandatory="yes">
@@ -6156,6 +6178,11 @@
     <node name="Code">
       <sons>
         <son name="CBlock">
+	<description> 
+	 A list of N_assigns that correspond to the set
+	 of expressions that appear within the curly braces
+	 that (may) follow a WL generator specification.
+	</description> 
           <targets>
             <target mandatory="no">
               <node name="Block" />
@@ -6166,6 +6193,11 @@
           </targets>
         </son>
         <son name="CExprs">
+	<description> 
+	 A list of N_exprs that represent the expressions
+	 that create the result elements associated with
+	 each WL partition generator.
+	</description> 
           <targets>
             <target mandatory="no">
               <node name="Exprs" />
@@ -6188,6 +6220,9 @@
       </sons>
       <attributes>
         <attribute name="Used" default="0"> mandatory="yes">
+	<description> Reference count - the number of PART_CODE
+	 entries that point to this code block.
+	</description>
           <type name="Integer">
             <targets>
               <target mandatory="no">

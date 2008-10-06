@@ -376,8 +376,7 @@ GLOBAL (ivetype_t, ive, IVE_all)
 
 GLOBAL (iveotype_t, iveo, IVEO_all)
 /*
- * IVEO_all: do all ive optimisations
- * This is the normal setting.
+ * IVEO_all: do all ive optimisations (default)
  * IVEO_wlidx: do wlidx only
  * IVEO_idxs: use idxs2offset
  * IVEO_copt: optimize computations
@@ -453,9 +452,20 @@ GLOBAL (bool, dotrace, FALSE)
 GLOBAL (bool, dousertrace, FALSE)
 
 /*
- * whether to enable the stuff rbe does (-:
+ * whether to enable renaming of WL IVs into SSA form
+ * This option is intended to be transitory;
+ * We eventually want to do WL IV renaming all the time.
+ * However, we expect problems from doing this, including:
+ *   - code generator assumes no renaming
+ *   - other optimizations (e.g., SSALIR) make the assumption
+ *     that all partitions in WL have identical IV names.
  */
-GLOBAL (bool, dorbestuff, FALSE)
+GLOBAL (bool, ssaiv, FALSE)
+
+/*
+ * whether to enable MAXVAL/MINVAL analysis for guard removal
+ */
+GLOBAL (bool, extremaanalysis, FALSE)
 
 /*
  * whether to enable the stuff tog does (-:
