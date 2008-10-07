@@ -607,7 +607,6 @@ WLDPpart (node *arg_node, info *arg_info)
     node *_ids, *vardec, *idn, *nassign;
     node *code;
     node *expriter, *temp, *idniter;
-    node *newpart;
     node *newavis;
 
     DBUG_ENTER ("WLDPpart");
