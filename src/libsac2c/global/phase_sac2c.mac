@@ -529,6 +529,9 @@ SUBPHASE (ivecse, "Eliminating common subexpression (for IVE)",
 SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
           IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
 
+SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
+          WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
+
 SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
 

@@ -1520,6 +1520,20 @@
 	  <node name="Code" />
         </travuser>
       </traversal>
+      <traversal id="WLFLT" name="Flattening multi-dimensional withloops" default="sons" include="withloop_flattening.h">
+        <travuser>
+	  <node name="Id" />
+	  <node name="Avis" />
+	  <node name="With" />
+	  <node name="Genarray" />
+	  <node name="Assign" />
+	  <node name="Block" />
+	  <node name="Fundef" />
+	  <node name="WithId" />
+	  <node name="Generator" />
+	  <node name="Ids" />
+        </travuser>
+      </traversal>
       <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
         <travuser>
           <node name="Fundef" />
@@ -2940,7 +2954,7 @@
         </son>
         <son name="Body">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <node name="Block" />
               <phases>
                 <all />

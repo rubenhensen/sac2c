@@ -1158,6 +1158,9 @@ extern int TCcountParts (node *parts);
 
 extern int TCcountWithops (node *withop);
 
+/*
+ * DON'T USE THE FOLLOWING MACROS
+ */
 #define WITHOP_NEXT(n)                                                                   \
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_NEXT (n)                                                               \
