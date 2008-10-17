@@ -379,8 +379,14 @@ WLDPassign (node *arg_node, info *arg_info)
 node *
 WLDPwith (node *arg_node, info *arg_info)
 {
+    node *lastdefwithid;
 
     DBUG_ENTER ("WLDPwith");
+
+    /*
+     * We have to stack the withloop info here to cater for nested withloops
+     */
+    lastdefwithid = INFO_DEFAULTWITHID (arg_info);
 
     /*
      * Visit with-loop body recursively before transforming
@@ -417,6 +423,8 @@ WLDPwith (node *arg_node, info *arg_info)
                          "Second partition is no default partition!");
         }
     }
+
+    INFO_DEFAULTWITHID (arg_info) = lastdefwithid;
 
     DBUG_RETURN (arg_node);
 }
