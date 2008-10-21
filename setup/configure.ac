@@ -4,6 +4,9 @@ dnl
 
 dnl configure script for building sac2c compiler 
 dnl on different hosts and operating systems
+dnl the general layout is to first to the platform
+dnl independent checks for programs and then have
+dnl one big check for different operating systems
 
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
@@ -83,6 +86,11 @@ AC_TRY_COMPILE(,
 )
   
 
+
+dnl
+dnl Check For Darwin 9+ for linker rpath support
+dnl
+
 dnl
 dnl check whether popen is an extension
 dnl
@@ -99,17 +107,6 @@ AC_PROG_CPP()
 
 dnl check for ranlib
 AC_PROG_RANLIB()
-if test "$RANLIB"; then
-  AC_MSG_CHECKING([whether ranlibs needs extra argument])
-  case "$target_os" in
-    *darwin*) RANLIB="$RANLIB -c"
-    AC_MSG_RESULT([adding -c flag for OS X])
-    ;;
-    *)
-    AC_MSG_RESULT([no])
-    ;;
-  esac
-fi
 
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
@@ -244,14 +241,6 @@ AC_DEFINE(DISABLE_PHM, 1, set to disable private heapmanagement)
 AC_SUBST(DISABLE_PHM, yes)
 ])
 
-dnl hack, as we don't know why phm doesn't work
-dnl on macs. just disable it there
-case "$target_os" in
-    *darwin*) AC_DEFINE(DISABLE_PHM, 1)
-              AC_SUBST(DISABLE_PHM, yes)
-esac
-
-
 dnl
 dnl check if printf generates leading 0x for pointers
 dnl
@@ -377,7 +366,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -no-cpp-precomp -Wno-unused -fno-builtin"])
-  AC_SUBST(MKCCFLAGS, ["-Wall -std=c99"])
+  AC_SUBST(MKCCFLAGS, ["-Wall -std=c99 -g"])
   AC_SUBST(PDCCFLAGS, ["-std=c99"])
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
@@ -443,10 +432,25 @@ case "$target_os" in
     AC_MSG_RESULT([OSF settings])
     ;;
   *darwin*)      
+    dnl darwin needs some extra flags
+    AC_DEFINE(DISABLE_PHM, 1)
+    AC_SUBST(DISABLE_PHM, yes)
+    RANLIB="$RANLIB -c"
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
-    LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
-    LD_PATH=["-L"]
-    AC_MSG_RESULT([OS X settings])
+    case "$target_os" in
+      *darwin9\.*)
+        LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
+        LD_PATH=["-Wl,-rpath,"]
+        AC_MSG_RESULT([darwin 9.x settings])
+        ;;
+      [*darwin[6-8]\.*)]
+        LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
+        LD_PATH=["-L"]
+        AC_MSG_RESULT([darwin 7.x/8.x settings])
+      ;;
+      *)
+        AC_MSG_RESULT([unknown darwin system])
+    esac
     ;;
   *bsd*)
     OSFLAGS=["-fpic"]

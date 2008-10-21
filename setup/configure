@@ -2812,6 +2812,8 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 
 
+
+
 { echo "$as_me:$LINENO: checking need of _EXTENSIONS_ flag" >&5
 echo $ECHO_N "checking need of _EXTENSIONS_ flag... $ECHO_C" >&6; }
 cat >conftest.$ac_ext <<_ACEOF
@@ -3187,20 +3189,6 @@ else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
 
-if test "$RANLIB"; then
-  { echo "$as_me:$LINENO: checking whether ranlibs needs extra argument" >&5
-echo $ECHO_N "checking whether ranlibs needs extra argument... $ECHO_C" >&6; }
-  case "$target_os" in
-    *darwin*) RANLIB="$RANLIB -c"
-    { echo "$as_me:$LINENO: result: adding -c flag for OS X" >&5
-echo "${ECHO_T}adding -c flag for OS X" >&6; }
-    ;;
-    *)
-    { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-    ;;
-  esac
-fi
 
 
 { echo "$as_me:$LINENO: checking for grep that handles long lines and -e" >&5
@@ -4932,16 +4920,6 @@ DISABLE_PHM=yes
 fi
 
 
-case "$target_os" in
-    *darwin*) cat >>confdefs.h <<\_ACEOF
-#define DISABLE_PHM 1
-_ACEOF
-
-              DISABLE_PHM=yes
-
-esac
-
-
 
 { echo "$as_me:$LINENO: checking for 0x prefix when printing pointers" >&5
 echo $ECHO_N "checking for 0x prefix when printing pointers... $ECHO_C" >&6; }
@@ -5176,7 +5154,7 @@ elif  test "$MACC" = yes ; then
 
   RCCCFLAGS="-Wall -no-cpp-precomp -Wno-unused -fno-builtin"
 
-  MKCCFLAGS="-Wall -std=c99"
+  MKCCFLAGS="-Wall -std=c99 -g"
 
   PDCCFLAGS="-std=c99"
 
@@ -5261,11 +5239,31 @@ echo "${ECHO_T}linux settings" >&6; }
 echo "${ECHO_T}OSF settings" >&6; }
     ;;
   *darwin*)
+        cat >>confdefs.h <<\_ACEOF
+#define DISABLE_PHM 1
+_ACEOF
+
+    DISABLE_PHM=yes
+
+    RANLIB="$RANLIB -c"
     OSFLAGS="-no-cpp-precomp -Wno-long-double"
-    LD_DYNAMIC="-undefined suppress -flat_namespace -bundle"
-    LD_PATH="-L"
-    { echo "$as_me:$LINENO: result: OS X settings" >&5
-echo "${ECHO_T}OS X settings" >&6; }
+    case "$target_os" in
+      *darwin9\.*)
+        LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
+        LD_PATH="-Wl,-rpath,"
+        { echo "$as_me:$LINENO: result: darwin 9.x settings" >&5
+echo "${ECHO_T}darwin 9.x settings" >&6; }
+        ;;
+      *darwin[6-8]\.*)
+        LD_DYNAMIC="-undefined suppress -flat_namespace -bundle"
+        LD_PATH="-L"
+        { echo "$as_me:$LINENO: result: darwin 7.x/8.x settings" >&5
+echo "${ECHO_T}darwin 7.x/8.x settings" >&6; }
+      ;;
+      *)
+        { echo "$as_me:$LINENO: result: unknown darwin system" >&5
+echo "${ECHO_T}unknown darwin system" >&6; }
+    esac
     ;;
   *bsd*)
     OSFLAGS="-fpic"

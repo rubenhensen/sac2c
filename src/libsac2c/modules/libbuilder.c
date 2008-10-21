@@ -49,6 +49,8 @@ node *
 LIBBcreateLibrary (node *syntax_tree)
 {
     char *deplibs;
+    char *libraryName;
+    char *ldCmd;
     stringset_t *deps = global.dependencies;
 
     DBUG_ENTER ("LIBBcreateLibrary");
@@ -75,19 +77,30 @@ LIBBcreateLibrary (node *syntax_tree)
 
     CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
 
-    SYScall ("%s -o %slib%sMod.so %s/fun*_pic.o %s/globals_pic.o %s",
-             global.config.ld_dynamic, global.targetdir, global.modulename,
-             global.tmp_dirname, global.tmp_dirname, deplibs);
+    libraryName = STRcatn (3, "lib", global.modulename, "Mod.so");
+    ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
 
+    DBUG_PRINT ("LIBB", ("linker command: %s", ldCmd));
+
+    SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
+             libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
+
+    libraryName = MEMfree (libraryName);
+    ldCmd = MEMfree (ldCmd);
     deplibs = MEMfree (deplibs);
 
     CTInote ("Creating shared SAC library `lib%sTree.so'", global.modulename);
 
-    SYScall ("%s -o %slib%sTree.so %s/serialize.o %s/symboltable.o"
+    libraryName = STRcatn (3, "lib", global.modulename, "Tree.so");
+    ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
+
+    SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
              " %s/dependencytable.o %s/namespacemap.o %s/filenames.o",
-             global.config.ld_dynamic, global.targetdir, global.modulename,
-             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, global.tmp_dirname);
+             ldCmd, global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname);
+
+    libraryName = MEMfree (libraryName);
+    ldCmd = MEMfree (ldCmd);
 
     if (global.gen_cccall) {
         /*
@@ -103,6 +116,8 @@ node *
 LIBBcreateWrapperLibrary (node *syntax_tree)
 {
     char *deplibs;
+    char *libraryName;
+    char *ldCmd;
     stringset_t *deps = global.dependencies;
 
     DBUG_ENTER ("LIBBcreateWrapperLibrary");
@@ -132,13 +147,18 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
 
     CTInote ("Creating shared wrapper library `lib%s.so'", global.outfilename);
 
-    SYScall ("%s -o %s/lib%s.so %s/fun*_pic.o %s/globals_pic.o "
+    libraryName = STRcatn (3, "lib", global.outfilename, ".so");
+    ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
+
+    SYScall ("%s -o %s/%s %s/fun*_pic.o %s/globals_pic.o "
              "%s/interface_pic.o %s/sacargcopy_pic.o "
              "%s/sacargfree_pic.o %s",
-             global.config.ld_dynamic, STRonNull (".", global.lib_dirname),
-             global.outfilename, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, deplibs);
+             ldCmd, STRonNull (".", global.lib_dirname), libraryName, global.tmp_dirname,
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname,
+             global.tmp_dirname, deplibs);
 
+    libraryName = MEMfree (libraryName);
+    ldCmd = MEMfree (ldCmd);
     deplibs = MEMfree (deplibs);
 
     DBUG_RETURN (syntax_tree);

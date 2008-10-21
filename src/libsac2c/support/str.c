@@ -405,7 +405,13 @@ STRprefix (const char *prefix, const char *str)
         if (str == NULL) {
             res = FALSE;
         } else {
-            res = (0 == strncmp (prefix, str, STRlen (prefix)));
+            int plen = STRlen (prefix);
+
+            if (STRlen (str) < plen) {
+                res = FALSE;
+            } else {
+                res = (0 == strncmp (prefix, str, STRlen (prefix)));
+            }
         }
     }
 
@@ -1081,4 +1087,53 @@ STRstring2Array (const char *str)
     res = TCmakeSpap2 (NSgetNamespace ("String"), STRcpy ("to_string"), array, len_expr);
 
     DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Substitute all occurrences of token in str with subst
+ *
+ * @param str The string in which to make substitutions
+ * @param token a string to substitute occurrences of in str
+ * @param subst a string to substitute tokens with
+ *
+ * @return A new String or NULL if str is NULL
+ ******************************************************************************/
+char *
+STRsubstToken (const char *str, const char *token, const char *subst)
+{
+    int occurrences, tlen, slen;
+    const char *found;
+    char *pos;
+    char *result;
+
+    DBUG_ENTER ("STRsubstToken");
+
+    /* Find number of occurrences of token in str */
+    occurrences = 0;
+    tlen = STRlen (token);
+    slen = STRlen (subst);
+    found = strstr (str, token);
+
+    while (found != NULL) {
+        occurrences++;
+        found = strstr (found + tlen, token);
+    }
+
+    /* Make substitutions */
+    result = MEMmalloc ((STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1)
+                        * sizeof (char));
+
+    pos = result;
+    while (*str != '\0') {
+        if (STRprefix (token, str)) {
+            strncpy (pos, subst, slen);
+            pos += slen;
+            str += tlen;
+        } else {
+            *(pos++) = *(str++);
+        }
+    }
+    *pos = '\0';
+
+    DBUG_RETURN (result);
 }

@@ -64,6 +64,10 @@
  *                  C compiler (specified in CC) expects them to be, e.g., in
  *                  case of gcc :   "-Wl,-multiple_defines,supress"
  *                  instead of      "-multiple_defines supress"        .
+ * 
+ *  LD_DYNAMIC      Linker call required to build a dynamic library. The 
+ *                  compiler replaces all occurences of %libname% with the
+ *                  filename of the library.
  *                  
  *  CCLINK          CCLINK specifies the libraries an executable always has to
  *                  be linked with. 
