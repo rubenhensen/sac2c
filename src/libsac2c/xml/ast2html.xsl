@@ -72,7 +72,8 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                        bold; font-size: small }
           tr.footnote { font-size: small }
           #Nav { position:fixed; top:0px; left:0px; padding:0px; 
-                 margin:0px; font-size: smaller; background-color: #AAAAAA; }
+                 margin:0px; font-size: smaller; background-color: #AAAAAA; 
+                 width:100%;}
           #miniNav { position:fixed; top:0px; right:0px; padding:0px; 
                      margin:0px; font-size: smaller; 
                      background-color: #AAAAAA; display: none; }
