@@ -417,7 +417,7 @@ case "$target_os" in
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
     LD_DYNAMIC=["-G -dy"]
     LD_PATH=["-R"]
-    LD_FLAGS=""
+    LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      

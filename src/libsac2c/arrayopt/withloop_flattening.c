@@ -234,7 +234,7 @@ static node *
 createUpperBound (node *bound, info *arg_info)
 {
     DBUG_ENTER ("createUpperBound");
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /** <!--********************************************************************-->
