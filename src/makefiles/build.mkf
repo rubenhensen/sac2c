@@ -169,7 +169,8 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$* ($($(STYLE)_long) version)"
 	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
                 $(filter $*/%,$^) \
-                $(LIBDIRS) $(LIB_MAKETOOLS)
+                $(LIBDIRS) $(LIB_MAKETOOLS) \
+                $(addprefix $(LD_PATH),$(realpath $(subst -L,,$(LIBDIRS))))
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
@@ -187,9 +188,9 @@ $(PROJECT_ROOT)/lib/libsac2c.so: $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).
 $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
-#	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LD_DYNAMIC) -o $@ \
-                $(SUBTARGETS) $< \
+#	@$(ECHO) "Linking $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ \
+                $(SUBTARGETS) $^ \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_LEX)
 
 
@@ -247,11 +248,25 @@ $(PROJECT_ROOT)/lib/lib%_mt_diag.a: $(SUBTARGETS_MT_DIAG)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
+$(PROJECT_ROOT)/lib/lib%_mt_diag.so: $(SUBTARGETS_MT_DIAG) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt_diag.so ($($(STYLE)_long) version)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ $^
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
 $(PROJECT_ROOT)/lib/lib%_seq_diag.a: $(SUBTARGETS_DIAG) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq_diag.a ($($(STYLE)_long) version)"
 	$(HIDE) $(AR) $@ $^
 	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%_seq_diag.so: $(SUBTARGETS_DIAG) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq_diag.so ($($(STYLE)_long) version)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ $^ 
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
@@ -263,11 +278,25 @@ $(PROJECT_ROOT)/lib/lib%_mt.a: $(SUBTARGETS_MT)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
+$(PROJECT_ROOT)/lib/lib%_mt.so: $(SUBTARGETS_MT) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.so ($($(STYLE)_long) version)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ $^
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
 $(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq.a ($($(STYLE)_long) version)"
 	$(HIDE) $(AR) $@ $^
 	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%_seq.so: $(SUBTARGETS) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq.so ($($(STYLE)_long) version)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ $^
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
@@ -280,9 +309,11 @@ $(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS)
 $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"
+	echo $(realpath $(subst -L,,$(LIBDIRS)))
 	$(HIDE) $(LD) $(LDFLAGS) -o $@ \
                       $(filter $*/%,$^) \
-                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
+                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS) \
+                      $(addprefix $(LD_PATH),$(realpath $(subst -L,,$(LIBDIRS))))
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 

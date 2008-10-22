@@ -31,6 +31,7 @@ CC_FLAGS_YY     := -DYYLMAX=8192
 LD              := @CC@
 LD_FLAGS        := 
 LD_DYNAMIC      := @CC@ @LD_DYNAMIC@
+LD_PATH         := @LD_PATH@
 
 
 ################################################################################

@@ -260,7 +260,8 @@ libsacprelude_sourcedirs        :=
 #
 ###############################################################################
 
-libsac_targets           := libsac_seq.a libsac_mt.a
+libsac_targets           := libsac_seq.a libsac_seq.so \
+                            libsac_mt.a libsac_mt.so
 libsac_targetdir         := lib
 
 libsac_subtarget_suffix  := .o
@@ -292,8 +293,10 @@ libsac_cachesim     := basic access_simple access_detailed
 #
 ###############################################################################
 
-libsacphm_targets           := libsacphm_seq.a libsacphm_seq_diag.a \
-                               libsacphm_mt.a libsacphm_mt_diag.a
+libsacphm_targets           := libsacphm_seq.a libsacphm_seq.so \
+                               libsacphm_seq_diag.a libsacphm_seq_diag.so \
+                               libsacphm_mt.a libsacphm_mt.so \
+                               libsacphm_mt_diag.a libsacphm_mt_diag.so
 libsacphm_targetdir         := lib
 
 libsacphm_subtarget_suffix  := .o
