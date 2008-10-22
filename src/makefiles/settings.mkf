@@ -54,7 +54,7 @@ SETTINGS_DIAG          := -DDIAG
 
 LIBDIRS                := -L../../lib
 LIB_MAKETOOLS          := 
-LIB_TOOLS              := -lsac_seq # -lsac2c
+LIB_TOOLS              := -lsac_seq
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
