@@ -1527,6 +1527,7 @@
 	  <node name="With" />
 	  <node name="Genarray" />
 	  <node name="Assign" />
+	  <node name="Let" />
 	  <node name="Block" />
 	  <node name="Fundef" />
 	  <node name="WithId" />

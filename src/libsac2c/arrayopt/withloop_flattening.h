@@ -20,6 +20,7 @@ extern node *WLFLTavis (node *arg_node, info *arg_info);
 extern node *WLFLTwith (node *arg_node, info *arg_info);
 extern node *WLFLTgenarray (node *arg_node, info *arg_info);
 extern node *WLFLTassign (node *arg_node, info *arg_info);
+extern node *WLFLTlet (node *arg_node, info *arg_info);
 extern node *WLFLTblock (node *arg_node, info *arg_info);
 extern node *WLFLTfundef (node *arg_node, info *arg_info);
 extern node *WLFLTwithid (node *arg_node, info *arg_info);

@@ -78,25 +78,35 @@
 #include "shape.h"
 #include "constants.h"
 #include "tree_compound.h"
+#include "deserialize.h"
+#include "namespaces.h"
+#include "DupTree.h"
 
 /** <!--********************************************************************-->
  *
  * @name INFO structure
  * @{
  *
- *     GENARRAYS : counts the number of N_genarray operators of the
- *                 current WL ( if any) NB: it does ONLY count those
- *                 N_genarray nodes whose shapes are identical to the
- *                 shape of the first N_genarray found.
- *     SHAPE     : points to the N_avis of the shape descrition used
- *                 in the first N_genarray found.
- *     IDSUSED   : communicates from WLFLTwithid to WLFLTwith how many
- *                 WL identifiers are being used.
+ *     GENARRAYS  : counts the number of N_genarray operators of the
+ *                  current WL ( if any) NB: it does ONLY count those
+ *                  N_genarray nodes whose shapes are identical to the
+ *                  shape of the first N_genarray found.
+ *     SHAPE      : points to the N_avis of the shape description used
+ *                  in the first N_genarray found.
+ *     IDSUSED    : communicates from WLFLTwithid to WLFLTwith how many
+ *                  WL identifiers are being used.
  *     ISFULLPARTITION : communicates from WLFLTgenerator to WLFLTwith
  *                       whether *all* partitions are full.
  *
- *     VARDECS   : accumulates vardec chain created on the fly
- *     PREASSIGN : accumulates assign chain created on the fly
+ *     VARDECS    : accumulates vardec chain created on the fly
+ *     PREASSIGNS : accumulates assign chain created on the fly to be
+ *                  inserted before the current assign
+ *     POSTASSIGNS : accumulates assign chain created on the fly to be
+ *                   inserted after the current assign
+ *     NEWSHP     : communicates the avis of the new upper bound from
+ *                  WLFLTMgenerator to WLFLTMgenarray.
+ *     LHS        : stores the lhs ids for the current expression
+ *
  *****************************************************************************/
 struct INFO {
     int genarrays;
@@ -104,7 +114,10 @@ struct INFO {
     int idsused;
     bool isfullpartition;
     node *vardecs;
-    node *assigns;
+    node *preassigns;
+    node *postassigns;
+    node *newshp;
+    node *lhs;
 };
 
 /**
@@ -115,7 +128,10 @@ struct INFO {
 #define INFO_IDSUSED(n) ((n)->idsused)
 #define INFO_ISFULLPARTITION(n) ((n)->isfullpartition)
 #define INFO_VARDECS(n) ((n)->vardecs)
-#define INFO_PREASSIGN(n) ((n)->assigns)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_NEWSHP(n) ((n)->newshp)
+#define INFO_LHS(n) ((n)->lhs)
 
 static info *
 MakeInfo ()
@@ -131,7 +147,10 @@ MakeInfo ()
     INFO_IDSUSED (result) = 0;
     INFO_ISFULLPARTITION (result) = FALSE;
     INFO_VARDECS (result) = NULL;
-    INFO_PREASSIGN (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_POSTASSIGNS (result) = NULL;
+    INFO_NEWSHP (result) = NULL;
+    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -171,6 +190,8 @@ WLFLTdoWithloopFlattening (node *syntax_tree)
                  "WLFLTdoWithloopFlattening can only be called on entire "
                  "modules!");
 
+    DSinitDeserialize (syntax_tree);
+
     info = MakeInfo ();
 
     DBUG_PRINT ("WLFLT", ("Starting withloop flattening traversal."));
@@ -182,6 +203,8 @@ WLFLTdoWithloopFlattening (node *syntax_tree)
     DBUG_PRINT ("WLFLT", ("Withloop flattening complete."));
 
     info = FreeInfo (info);
+
+    DSfinishDeserialize (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -207,11 +230,11 @@ equalShapes (node *shp1, node *shp2)
 static node *
 createLowerBound (info *arg_info)
 {
-    DBUG_ENTER ("createLowerBound");
-
     node *lb_avis;
-    constant *lb_const;
     node *lb_assign;
+    constant *lb_const;
+
+    DBUG_ENTER ("createLowerBound");
 
     lb_const = COmakeZero (T_int, SHcreateShape (1, 1));
     lb_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_int), lb_const));
@@ -222,8 +245,8 @@ createLowerBound (info *arg_info)
                                                                  SHcreateShape (0)),
                                                       SHcreateShape (1, 1),
                                                       TBmakeExprs (TBmakeNum (0), NULL))),
-                              INFO_PREASSIGN (arg_info));
-    INFO_PREASSIGN (arg_info) = lb_assign;
+                              INFO_PREASSIGNS (arg_info));
+    INFO_PREASSIGNS (arg_info) = lb_assign;
 
     AVIS_SSAASSIGN (lb_avis) = lb_assign;
 
@@ -233,8 +256,30 @@ createLowerBound (info *arg_info)
 static node *
 createUpperBound (node *bound, info *arg_info)
 {
+    node *ub_avis;
+    node *ub_assign;
+    node *ap_node;
+
     DBUG_ENTER ("createUpperBound");
-    DBUG_RETURN ((node *)NULL);
+
+    ub_avis = TBmakeAvis (TRAVtmpVar (),
+                          TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (ub_avis, INFO_VARDECS (arg_info));
+
+    INFO_NEWSHP (arg_info) = ub_avis;
+
+    ap_node = DSdispatchFunCall (NSgetNamespace (SAC_PRELUDE_NAME), "prod",
+                                 TBmakeExprs (DUPdoDupNode (bound), NULL));
+
+    DBUG_ASSERT ((ap_node != NULL), "cannot find `" SAC_PRELUDE_NAME "::prod'.");
+
+    ub_assign = TBmakeAssign (TBmakeLet (TBmakeIds (ub_avis, NULL), ap_node),
+                              INFO_PREASSIGNS (arg_info));
+    INFO_PREASSIGNS (arg_info) = ub_assign;
+
+    AVIS_SSAASSIGN (ub_avis) = ub_assign;
+
+    DBUG_RETURN (TBmakeId (ub_avis));
 }
 
 /** <!--********************************************************************-->
@@ -243,6 +288,86 @@ createUpperBound (node *bound, info *arg_info)
  * @{
  *
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFLTMgenerator(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+static node *
+WLFLTMgenerator (node *arg_node, info *arg_info)
+{
+    node *lb_id, *ub_id;
+
+    DBUG_ENTER ("WLFLTMgenerator");
+
+    lb_id = createLowerBound (arg_info);
+    ub_id = createUpperBound (GENERATOR_BOUND2 (arg_node), arg_info);
+
+    arg_node = FREEdoFreeTree (arg_node);
+
+    arg_node = TBmakeGenerator (F_wl_le, F_wl_lt, lb_id, ub_id, NULL, NULL);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFLTMgenarray(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+static node *
+WLFLTMgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLFLTMgenarray");
+
+    GENARRAY_SHAPE (arg_node) = FREEdoFreeTree (GENARRAY_SHAPE (arg_node));
+    GENARRAY_SHAPE (arg_node) = TBmakeId (INFO_NEWSHP (arg_info));
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    } else {
+        INFO_NEWSHP (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFLTMwithid(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+static node *
+WLFLTMwithid (node *arg_node, info *arg_info)
+{
+    node *ids_avis, *vec_avis;
+
+    DBUG_ENTER ("WLFLTMwithid");
+
+    if (WITHID_IDS (arg_node) != NULL) {
+        WITHID_IDS (arg_node) = FREEdoFreeTree (WITHID_IDS (arg_node));
+    }
+
+    ids_avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (ids_avis, INFO_VARDECS (arg_info));
+    WITHID_IDS (arg_node) = TBmakeIds (ids_avis, NULL);
+
+    WITHID_VEC (arg_node) = FREEdoFreeNode (WITHID_VEC (arg_node));
+    vec_avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (vec_avis, INFO_VARDECS (arg_info));
+    WITHID_VEC (arg_node) = TBmakeIds (vec_avis, NULL);
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--********************************************************************-->
  *
@@ -368,6 +493,7 @@ node *
 WLFLTwith (node *arg_node, info *arg_info)
 {
     int wlopsno;
+    node *oldlhs;
 
     DBUG_ENTER ("WLFLTwith");
 
@@ -376,8 +502,13 @@ WLFLTwith (node *arg_node, info *arg_info)
     /*
      * For the use analysis, we have to always traverse the entire tree,
      * regardless of whether we do the actual optimisation or not.
+     * we have to stack the lhs here, as the code may contain an
+     * assignments chain with further let nodes.
      */
+    oldlhs = INFO_LHS (arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    INFO_LHS (arg_info) = oldlhs;
+
     /*
      * Now, we infer INFO_GENARRAYS and INFO_SHAPE
      */
@@ -400,36 +531,24 @@ WLFLTwith (node *arg_node, info *arg_info)
     wlopsno = TCcountWithops (WITH_WITHOP (arg_node));
     if ((INFO_GENARRAYS (arg_info) == wlopsno) && (INFO_IDSUSED (arg_info) == 0)
         && (INFO_ISFULLPARTITION (arg_info))) {
+        anontrav_t modtrav[4] = {{N_generator, &WLFLTMgenerator},
+                                 {N_genarray, &WLFLTMgenarray},
+                                 {N_withid, &WLFLTMwithid},
+                                 {0, NULL}};
+
         DBUG_PRINT ("WLFLT", ("Found victim!"));
+
+        TRAVpushAnonymous (modtrav, &TRAVsons);
+
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+        TRAVpop ();
     }
 
     INFO_GENARRAYS (arg_info) = 0;
     INFO_ISFULLPARTITION (arg_info) = FALSE;
     INFO_SHAPE (arg_info) = NULL;
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLFLTMgenerator(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-WLFLTMgenerator (node *arg_node, info *arg_info)
-{
-    node *lb_id, *ub_id;
-
-    DBUG_ENTER ("WLFLTMgenerator");
-
-    lb_id = createLowerBound (arg_info);
-    ub_id = createUpperBound (GENERATOR_BOUND2 (arg_node), arg_info);
-
-    arg_node = FREEdoFreeTree (arg_node);
-
-    arg_node = TBmakeGenerator (F_wl_le, F_wl_lt, lb_id, ub_id, NULL, NULL);
 
     DBUG_RETURN (arg_node);
 }
@@ -577,10 +696,37 @@ WLFLTassign (node *arg_node, info *arg_info)
     }
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_PREASSIGN (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
-        INFO_PREASSIGN (arg_info) = NULL;
+    if (INFO_POSTASSIGNS (arg_info) != NULL) {
+        ASSIGN_NEXT (arg_node)
+          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGNS (arg_info) = NULL;
     }
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFLTlet(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+WLFLTlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLFLTlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    LET_IDS (arg_node) = INFO_LHS (arg_info);
 
     DBUG_RETURN (arg_node);
 }

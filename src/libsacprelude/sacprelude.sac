@@ -3,7 +3,7 @@ module sacprelude;
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
          unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, 
-         wrap};
+         wrap, prod};
 
 external typedef SACarg;
   #pragma freefun "SACARGfree"
@@ -68,6 +68,19 @@ bool eq( a[*] A, a[*] B)                                             \
 
 BUILT_IN( EQ)
 
+int (*) (int a, int b)
+{
+  return( _mul_SxS_( a, b));
+}
+
+int prod( int[.] v)
+{
+  res = with {
+          ([0] <= [i] < _shape_A_( v)) : _sel_VxA_( [i], v);
+        } : fold( *, 1);
+
+  return( res);
+}
 
 int[*] adjustLacFunParamsReshape( bool[*] p, int[*] i, int[.] iv, int[.] shp)
 {
