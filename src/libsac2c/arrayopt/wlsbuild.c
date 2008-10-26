@@ -7,25 +7,46 @@
  * @defgroup wlsb WLSBuild
  *
  * @brief replaces a with-loop with an equivalent scalarized with-loop.
+ *        The term "scalarized" is somewhat misleading. Basically,
+ *        the index ranges of the two WLs are merged into a single
+ *        range via catenation of their bounds. Take and drop on
+ *        the extended index vectors restores the original two
+ *        index vectors. Other existing optimizations eliminate those
+ *        take and drop operations, so the resulting code actually
+ *        performs better than one might think.
+ *
+ *        Example of WLS using option -ssaiv:
  *
  * <pre>
- *
- *   A = with ( lb_1 <= iv < ub_1 ) {
- *         B = with ( lb_2 <= jv < ub_2 ) {
+ *   A = with
+ *       ( ivl <= iv < ivu ) {
+ *         B = with
+ *             ( jvl <= jv < jvu ) {
  *               val = expr( iv, jv);
- *             } : val
+ *             } : val;
+ *
+ *             ( kvl <= kv < kvu) {
+ *               val' = expr(iv, kv);
+ *             } : val';
  *             genarray( shp_2);
  *       } : B
  *       genarray( shp_1);
  * </pre>
+ *
  *   is transformed into
  *
  * <pre>
- *   A = with ( lb_1++lb_2 <= kv < ub_1++ub_2) {
- *         iv = take( shape( lb_1), kv);
- *         jv = drop( shape( lb_1), kv);
- *         val = expr( iv, jv);
- *       } : val
+ *   A = with
+ *     ( (ivl++jvl) <= mv < (ivu++jvu)) {
+ *         iv' = take( shape( ivl), mv);
+ *         jv' = drop( shape( ivl), mv);
+ *         val = expr( iv', jv');
+ *       } : val;
+ *     ( (ivl++kvl) <= nv < (ivu++kvu)) {
+ *         iv'' = take( shape( ivl), nv);
+ *         kv'' = drop( shape( ivl), nv);
+ *         val = expr( iv'', kv'');
+ *       } : val;
  *       genarray( shp_1++shp_2);
  * </pre>
  *

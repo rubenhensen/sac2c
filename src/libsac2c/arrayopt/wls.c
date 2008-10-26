@@ -49,6 +49,46 @@
  *       genarray( shp_1++shp_2);
  * </pre>
  *
+ *
+ *
+ * An example for with-loop scalarization when -ssaiv is
+ * active is given below. NB the behavior of the
+ * multiple generators.
+ *
+ * <pre>
+ *   A = with
+ *       ( ivl <= iv < ivu ) {
+ *         B = with
+ *             ( jvl <= jv < jvu ) {
+ *               val = expr( iv, jv);
+ *             } : val;
+ *
+ *             ( kvl <= kv < kvu) {
+ *               val' = expr(iv, kv);
+ *             } : val';
+ *             genarray( shp_2);
+ *       } : B
+ *       genarray( shp_1);
+ * </pre>
+ *
+ *   is transformed into
+ *
+ * <pre>
+ *   A = with
+ *     ( (ivl++jvl) <= mv < (ivu++jvu)) {
+ *         iv' = take( shape( ivl), mv);
+ *         jv' = drop( shape( ivl), mv);
+ *         val = expr( iv', jv');
+ *       } : val;
+ *     ( (ivl++kvl) <= nv < (ivu++kvu)) {
+ *         iv'' = take( shape( ivl), nv);
+ *         kv'' = drop( shape( ivl), nv);
+ *         val = expr( iv'', kv'');
+ *       } : val;
+ *       genarray( shp_1++shp_2);
+ * </pre>
+ *
+ *
  * @ingroup opt
  *
  * @{
