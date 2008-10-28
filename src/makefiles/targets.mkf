@@ -159,7 +159,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         wl_cost_check wl_needcount show_wl_cost \
                         loop_scalarization withloop_flattening
 
-libsac2c_wltransform := wlpragma_funs wltransform wlidxs 
+libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
 
 libsac2c_concurrent  := create_mtfuns spmd_init  spmd_lift \
                         schedule set_spmd_linksign

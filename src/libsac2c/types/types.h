@@ -806,6 +806,8 @@ typedef struct GENLIB_FLAGS_T {
 #include "flags.mac"
 } genlib_flags_t;
 
+typedef enum { BE_c99, BE_mutc } backend_t;
+
 /*
  * type of traversal functions
  */

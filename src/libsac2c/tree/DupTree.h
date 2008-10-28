@@ -154,6 +154,10 @@ extern node *DUPwlstridevar (node *arg_node, info *arg_info);
 extern node *DUPwlgrid (node *arg_node, info *arg_info);
 extern node *DUPwlgridvar (node *arg_node, info *arg_info);
 
+/* with-loop (mutc) */
+extern node *DUPwith3 (node *arg_node, info *arg_info);
+extern node *DUPrange (node *arg_node, info *arg_info);
+
 /* pre- and post-processing during traversal */
 extern node *DUPtreeTravPre (node *arg_node, info *arg_info);
 extern node *DUPtreeTravPost (node *arg_node, info *arg_info);

@@ -587,6 +587,9 @@ SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
 
+SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
+          global.backend == BE_mutc, wlt)
+
 ENDPHASE (wlt)
 
 /******************************************************************************/

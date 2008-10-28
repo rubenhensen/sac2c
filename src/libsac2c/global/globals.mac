@@ -192,6 +192,11 @@ GLOBAL (char *, target_name, "default")
  */
 
 /*
+ * Backend option
+ */
+GLOBAL (backend_t, backend, BE_c99)
+
+/*
  * Dynamic-sized arrays option
  */
 

@@ -876,16 +876,23 @@ PrintCustomisationOptions (void)
 {
     DBUG_ENTER ("PrintCustomisationOptions");
 
-    printf ("\n\nCUSTOMIZATION OPTIONS:\n\n"
+    printf (
+      "\n\nCUSTOMIZATION OPTIONS:\n\n"
 
-            "    -target <name>  Specify a particular compilation target.\n"
-            "                    Compilation targets are used to customize sac2c for\n"
-            "                    various target architectures, operating systems, and C\n"
-            "                    compilers.\n"
-            "                    The target description is either read from the\n"
-            "                    installation specific file $SACBASE/runtime/sac2crc or\n"
-            "                    from a file named .sac2crc within the user's home\n"
-            "                    directory.\n");
+      "    -target <name>  Specify a particular compilation target.\n"
+      "                    Compilation targets are used to customize sac2c for\n"
+      "                    various target architectures, operating systems, and C\n"
+      "                    compilers.\n"
+      "                    The target description is either read from the\n"
+      "                    installation specific file $SACBASE/runtime/sac2crc or\n"
+      "                    from a file named .sac2crc within the user's home\n"
+      "                    directory.\n"
+      "\n"
+      "    -B <name>       Selects one of the different backends to use. Currently \n"
+      "                    sac2c supports the following backends: \n"
+      "\n"
+      "                      c99       default backend that produces c99 code\n"
+      "                      mutc      backend for the mutc extension to C\n");
 
     DBUG_VOID_RETURN;
 }

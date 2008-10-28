@@ -89,7 +89,6 @@ extern node *PRTst (node *arg_node, info *arg_info);
 extern node *PRTssacnt (node *arg_node, info *arg_info);
 extern node *PRTavis (node *arg_node, info *arg_info);
 extern node *PRTconstraint (node *arg_node, info *arg_info);
-extern node *PRTinfo (node *arg_node, info *arg_info);
 extern node *PRTfuncond (node *arg_node, info *arg_info);
 extern node *PRTdataflowgraph (node *arg_node, info *arg_info);
 extern node *PRTdataflownode (node *arg_node, info *arg_info);
@@ -120,6 +119,10 @@ extern node *PRTwlstride (node *arg_node, info *arg_info);
 extern node *PRTwlstridevar (node *arg_node, info *arg_info);
 extern node *PRTwlgrid (node *arg_node, info *arg_info);
 extern node *PRTwlgridvar (node *arg_node, info *arg_info);
+
+/* with-loop (mutc) */
+extern node *PRTwith3 (node *arg_node, info *arg_info);
+extern node *PRTrange (node *arg_node, info *arg_info);
 
 /* pre- and post-processing during traversal */
 extern node *PRTtravPre (node *arg_node, info *arg_info);

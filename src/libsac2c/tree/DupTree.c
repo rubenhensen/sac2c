@@ -1,4 +1,5 @@
 /*
+ * new_node = TBmakeRange(
  * $Id$
  */
 
@@ -2094,7 +2095,7 @@ DUPwith2 (node *arg_node, info *arg_info)
 
     /*
      * very important: duplicate codes before parts! Otherwise the code
-     * references of the parts can not set correctly!
+     * references of the parts cannot be set correctly!
      */
     id = DUPTRAV (WITH2_WITHID (arg_node));
     code = DUPTRAV (WITH2_CODE (arg_node));
@@ -2560,11 +2561,65 @@ DUPfunbundle (node *arg_node, info *arg_info)
                                 NSdupNamespace (FUNBUNDLE_NS (arg_node)),
                                 STRcpy (FUNBUNDLE_EXTNAME (arg_node)),
                                 FUNBUNDLE_ARITY (arg_node),
-                                DUPTRAV (FUNBUNDLE_FUNDEF (arg_node)), NULL);
+                                DUPTRAV (FUNBUNDLE_FUNDEF (arg_node)),
+                                DUPCONT (FUNBUNDLE_NEXT (arg_node)));
 
-    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
-        FUNBUNDLE_NEXT (new_node) = DUPCONT (FUNBUNDLE_NEXT (arg_node));
-    }
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DUPwith3( node *arg_node, info *arg_info)
+ *
+ * @brief Duplicates a with3 node.
+ *
+ * @param arg_node with3 node
+ * @param arg_info info structure
+ *
+ * @return copy of with3 node
+ ******************************************************************************/
+node *
+DUPwith3 (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPwith3");
+
+    new_node = TBmakeWith3 (DUPTRAV (WITH3_RANGES (arg_node)),
+                            DUPTRAV (WITH3_OPERATIONS (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DUPrange( node *arg_node, info *arg_info)
+ *
+ * @brief Duplicates a range node.
+ *
+ * @param arg_node range node
+ * @param arg_info info structure
+ *
+ * @return copy of range node
+ ******************************************************************************/
+node *
+DUPrange (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPrange");
+
+    new_node
+      = TBmakeRange (DUPTRAV (RANGE_INDEX (arg_node)),
+                     DUPTRAV (RANGE_LOWERBOUND (arg_node)),
+                     DUPTRAV (RANGE_UPPERBOUND (arg_node)),
+                     DUPTRAV (RANGE_CHUNKSIZE (arg_node)),
+                     DUPTRAV (RANGE_BODY (arg_node)), DUPTRAV (RANGE_RESULTS (arg_node)),
+                     DUPCONT (RANGE_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }

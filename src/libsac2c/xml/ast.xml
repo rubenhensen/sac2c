@@ -1530,7 +1530,7 @@
 	  <node name="Let" />
 	  <node name="Block" />
 	  <node name="Fundef" />
-	  <node name="WithId" />
+	  <node name="Withid" />
 	  <node name="Generator" />
 	  <node name="Ids" />
         </travuser>
@@ -1543,13 +1543,32 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-  <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
+      <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
         <travuser>
           <node name="Assign" />
           <node name="Code" />
           <node name="Let" />
           <node name="With" />
         </travuser>
+      </traversal>
+      <traversal id="WLSD" name="With-Loop Split Dimensions" default="sons" include="wl_split_dimensions.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="With2" />
+	  <node name="Withid" />
+	  <node name="WLseg" />
+	  <node name="WLsegVar" />
+	  <node name="WLstride" />
+	  <node name="WLstrideVar" />
+	  <node name="WLgrid" />
+	  <node name="WLgridVar" />
+	</travuser>
+	<traverror>
+	  <!-- blocking is not supported for now. -->
+	  <node name="WLblock" />
+	  <node name="WLublock" />
+	</traverror>
       </traversal>
       <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
         <travuser> 
@@ -2437,6 +2456,7 @@
         <node name="SPId" />
         <node name="With" />
         <node name="With2" />
+        <node name="With3" />
         <node name="Array" />
         <node name="Ap" />
         <node name="SPAp" />
@@ -8682,6 +8702,125 @@
           </type>
         </attribute>
       </attributes>
+    </node>
+<!--
+
+  N_with3 :
+
+-->
+    <node name="With3">
+      <sons>
+        <son name="Ranges">
+          <targets>
+            <target mandatory="yes">
+              <node name="Range" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Operations">
+          <targets>
+            <target mandatory="yes">
+              <set name="WithOp" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+      </attributes>
+      <flags>
+      </flags>
+    </node>
+<!--
+
+  N_range :
+
+-->
+    <node name="Range">
+      <sons>
+        <son name="Index">
+          <targets>
+            <target mandatory="yes">
+              <node name="Ids" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="LowerBound">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="UpperBound">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="ChunkSize">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Body">
+          <targets>
+            <target mandatory="yes">
+              <node name="Block" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Results">
+          <targets>
+            <target mandatory="yes">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Range" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+	</son>
+      </sons>
+      <attributes>
+      </attributes>
+      <flags>
+      </flags>
     </node>
   </syntaxtree>
 </definition>

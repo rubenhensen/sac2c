@@ -4717,26 +4717,42 @@ PRTconstraint (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTwith3( node *arg_node, node *arg_info)
  *
- * function:
- *   node *PRTinfo( node *arg_node, info *arg_info)
+ * @brief prints the 1-dimensional with3.
  *
- * description:
- *   N_info node found -> ERROR!!
+ * @param arg_node with3 node
+ * @param arg_info info structure
  *
+ * @return unchanged with3 node
  ******************************************************************************/
-
 node *
-PRTinfo (node *arg_node, info *arg_info)
+PRTwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTinfo");
+    DBUG_ENTER ("PRTwith3");
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    DBUG_ASSERT (FALSE, "implement me please!");
 
-    DBUG_ASSERT ((0), "N_info node found for printing!!");
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *PRTrange( node *arg_node, node *arg_info)
+ *
+ * @brief Prints the range component of the with3.
+ *
+ * @param arg_node range node
+ * @param arg_info info structure
+ *
+ * @return unchanged range node
+ ******************************************************************************/
+node *
+PRTrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTrange");
+
+    DBUG_ASSERT (FALSE, "implement me please!");
 
     DBUG_RETURN (arg_node);
 }
