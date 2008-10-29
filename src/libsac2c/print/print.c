@@ -4734,6 +4734,26 @@ PRTwith3 (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (FALSE, "implement me please!");
 
+    fprintf (global.outfile, " with3 {\n");
+
+    global.indent++;
+
+    TRAVdo (WITH3_RANGES (arg_node), arg_info);
+
+    global.indent--;
+
+    INDENT;
+    fprintf (global.outfile, "} : \n");
+
+    global.indent++;
+    if (WITH3_OPERATIONS (arg_node) != NULL) {
+        TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (global.outfile, "void ");
+    }
+    global.indent--;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -4753,6 +4773,25 @@ PRTrange (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTrange");
 
     DBUG_ASSERT (FALSE, "implement me please!");
+
+    INDENT;
+
+    fprintf (global.outfile, "(");
+    TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    fprintf (global.outfile, " <= ");
+    TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    fprintf (global.outfile, " in ");
+    TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
+    fprintf (global.outfile, ") ");
+
+    TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    fprintf (global.outfile, " : ");
+    TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+
+    if (RANGE_NEXT (arg_node) != NULL) {
+        TRAVdo (RANGE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
