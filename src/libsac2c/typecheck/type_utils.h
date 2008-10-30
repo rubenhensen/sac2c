@@ -31,6 +31,7 @@ extern bool TUshapeKnown (ntype *ty);
 extern bool TUisIntVect (ntype *ty);
 extern bool TUisEmptyVect (ntype *ty);
 extern bool TUisScalar (ntype *ty);
+extern bool TUhasBasetype (ntype *ty, simpletype smpl);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
 extern bool TUcontainsUser (ntype *type);
@@ -50,6 +51,6 @@ extern ntype *TUcombineBottoms (ntype *prod);
 extern ntype *TUcombineBottomsFromRets (node *rets);
 extern ntype *TUspreadBottoms (ntype *prod);
 extern ntype *TUcheckUdtAndSetBaseType (usertype udt, int *visited);
-extern simpletype UTgetBaseSimpleType (ntype *type);
+extern simpletype TUgetBaseSimpleType (ntype *type);
 
 #endif /* _SAC_TYPE_UTILS_H_*/

@@ -226,7 +226,7 @@ GCFtypedef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("GCFtypedef");
 
-    inner = UTgetBaseSimpleType (TYPEDEF_NTYPE (arg_node));
+    inner = TUgetBaseSimpleType (TYPEDEF_NTYPE (arg_node));
     udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "udt for typedef not found!");

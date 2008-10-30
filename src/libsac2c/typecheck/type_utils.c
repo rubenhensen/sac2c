@@ -1385,7 +1385,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
  * @return boolean
  ******************************************************************************/
 
-extern bool
+bool
 TUisScalar (ntype *ty)
 {
     DBUG_ENTER ("TUisScalar");
@@ -1394,6 +1394,32 @@ TUisScalar (ntype *ty)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn bool TUhasBasetype( ntype *ty, simpletype smpl)
+ *
+ * @brief Checks whether the given type is an array type with the given
+ *        basetype
+ *
+ * @param ty    array type to check
+ * @param smpl  basetype to check against
+ *
+ * @return true if array is an arraytype with given basetype
+ ******************************************************************************/
+bool
+TUhasBasetype (ntype *ty, simpletype smpl)
+{
+    bool result;
+
+    DBUG_ENTER ("TUhasBasetype");
+
+    result = TYisArray (ty) && TYisSimple (TYgetScalar (ty))
+             && (TYgetSimpleType (TYgetScalar (ty)) == smpl);
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn simpletype TUgetBaseSimpleType( ntype *type)
+ *
  * @brief Returns the simpletype of the innermost basetype of a typedef
  *        chain
  *
@@ -1402,11 +1428,11 @@ TUisScalar (ntype *ty)
  * @return the types innermost basetype
  ******************************************************************************/
 simpletype
-UTgetBaseSimpleType (ntype *type)
+TUgetBaseSimpleType (ntype *type)
 {
     usertype udt;
 
-    DBUG_ENTER ("GetBaseSimpleType");
+    DBUG_ENTER ("TUgetBaseSimpleType");
     while (TUisArrayOfUser (type)) {
         udt = TYgetUserType (TYgetScalar (type));
         udt = UTgetUnAliasedType (udt);
