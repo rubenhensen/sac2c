@@ -640,7 +640,8 @@ static bool
 MustExecuteExclusive (node *assign, info *arg_info)
 {
     bool exclusive;
-    DBUG_ENTER (MustExecuteExclusive);
+    DBUG_ENTER ("MustExecuteExclusive");
+
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "MustExecuteExclusive expects a N_assign");
 
@@ -678,7 +679,8 @@ static bool
 CouldExecuteMulti (node *assign, info *arg_info)
 {
     bool multi;
-    DBUG_ENTER (CouldExecuteMulti);
+    DBUG_ENTER ("CouldExecuteMulti");
+
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "CouldExecuteMulti expects a N_assign");
 
@@ -719,7 +721,8 @@ static bool
 MustExecuteSingle (node *assign, info *arg_info)
 {
     bool single;
-    DBUG_ENTER (MustExecuteSingle);
+    DBUG_ENTER ("MustExecuteSingle");
+
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "MustExecuteSingle expects a N_assign");
 

@@ -51,6 +51,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "config.h"
 #include "dbug.h"
@@ -697,9 +698,13 @@ char *key2;
  *
  */
 
-VOID _db_ldoprnt_ (format, ARGLIST) char *format;
-long ARGLIST;
+VOID
+_db_ldoprnt_ (char *format, ...)
 {
+    va_list args;
+
+    va_start (args, format);
+
     if ((_db_keyword_ (u_keyword)) && (_db_keyword_ (u_keyword2))) {
 #if SHM
         (VOID) fprintf (_db_fp_, "m%2d: ", processid);
@@ -711,11 +716,12 @@ long ARGLIST;
             (VOID) fprintf (_db_fp_, "%12.12s: ", func);
         }
         (VOID) fprintf (_db_fp_, "%s(%s): ", u_keyword, u_keyword2);
-        (VOID) fprintf (_db_fp_, format, ARGLIST);
+        (VOID) vfprintf (_db_fp_, format, args);
         (VOID) fprintf (_db_fp_, "\n");
         (VOID) fflush (_db_fp_);
         (VOID) Delay (stack->delay);
     }
+    va_end (format);
 }
 
 VOID _db_doprnt_assert_1_ (file, line, text) char *file;
@@ -730,13 +736,19 @@ char *text;
     }
 }
 
-VOID _db_doprnt_assert_2_ (format, ARGLIST) char *format;
-long ARGLIST;
+VOID
+_db_doprnt_assert_2_ (char *format, ...)
 {
-    fprintf (_db_fp_, format, ARGLIST);
+    va_list args;
+
+    va_start (args, format);
+
+    vfprintf (_db_fp_, format, args);
     fprintf (_db_fp_, "\n");
     fprintf (_db_fp_, "EXECUTION TERMINATED\n");
     fflush (_db_fp_);
+
+    va_end (format);
 }
 
 /*
@@ -804,9 +816,13 @@ char *keyword;
  */
 
 /*VARARGS1*/
-VOID _db_doprnt_ (format, ARGLIST) char *format;
-long ARGLIST;
+VOID
+_db_doprnt_ (char *format, ...)
 {
+    va_list args;
+
+    va_start (args, format);
+
     if (_db_keyword_ (u_keyword)) {
 #if SHM
         (VOID) fprintf (_db_fp_, "m%2d: ", processid);
@@ -818,11 +834,13 @@ long ARGLIST;
             (VOID) fprintf (_db_fp_, "%12.12s: ", func);
         }
         (VOID) fprintf (_db_fp_, "%s: ", u_keyword);
-        (VOID) fprintf (_db_fp_, format, ARGLIST);
+        (VOID) vfprintf (_db_fp_, format, args);
         (VOID) fprintf (_db_fp_, "\n");
         (VOID) fflush (_db_fp_);
         (VOID) Delay (stack->delay);
     }
+
+    va_end (format);
 }
 
 /*
