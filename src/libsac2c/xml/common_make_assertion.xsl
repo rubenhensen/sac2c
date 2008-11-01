@@ -33,9 +33,15 @@ version="1.0">
 <!-- templates for generating assertions for a correct node type -->
 <xsl:template match="son" mode="make-assertion">
   <xsl:param name="self"/>
+  <!--
+     This is disabled for now as it still uses the non phase-sensitive
+     mandatory information. It could be extended to a phase sensitive
+     version by checking the right flag depending on the global phase
+     information.
   <xsl:apply-templates select="." mode="make-assertion-nonnull">
     <xsl:with-param name="self"><xsl:value-of select="$self"/></xsl:with-param>
   </xsl:apply-templates>
+  -->
   <xsl:apply-templates select="." mode="make-assertion-target">
     <xsl:with-param name="self"><xsl:value-of select="$self"/></xsl:with-param>
   </xsl:apply-templates>

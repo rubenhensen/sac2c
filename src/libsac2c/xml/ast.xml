@@ -4564,7 +4564,7 @@
     <node name="Str">
       <sons></sons>
       <attributes>
-        <attribute name="String" inconstructor="no" >
+        <attribute name="String" inconstructor="yes" >
           <description>
             The value of this string. Note that the string needs to be
             in an encoding which is safe for printing in C code, e.g.
@@ -4592,7 +4592,7 @@
     <node name="Type">
       <sons></sons>
       <attributes>
-        <attribute name="Type" inconstructor="no" >
+        <attribute name="Type" inconstructor="yes" >
 	  <type name="NewType">
             <targets>
               <target mandatory="yes">

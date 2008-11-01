@@ -41,9 +41,9 @@ version="1.0">
   <xsl:value-of select="'At'" />
   <xsl:value-of select="'( '"/>
   <!-- permanent attributes without default value first -->
-  <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]" mode="make-head"/>
+  <xsl:apply-templates select="attributes/attribute[@inconstructor = &quot;yes&quot;]" mode="make-head"/>
   <!-- add a , if needed -->
-  <xsl:if test="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]">
+  <xsl:if test="attributes/attribute[@inconstructor = &quot;yes&quot;]">
     <xsl:value-of select="' ,'"/>
   </xsl:if>
   <!-- sons without default value are last parameters -->
@@ -71,9 +71,9 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="'('"/>
   <!-- permanent attributes without default value first -->
-  <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]" mode="make-head-checkmem"/>
+  <xsl:apply-templates select="attributes/attribute[@inconstructor = &quot;yes&quot;]" mode="make-head-checkmem"/>
   <!-- add a , if needed -->
-  <xsl:if test="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]">
+  <xsl:if test="attributes/attribute[@inconstructor = &quot;yes&quot;]">
     <xsl:if test="sons/son[ not( @default)]">
       <xsl:value-of select="' ,'"/>
     </xsl:if>
@@ -153,3 +153,4 @@ version="1.0">
 </xsl:variable>
 
 </xsl:stylesheet>
+

@@ -302,10 +302,9 @@ version="1.0">
   <xsl:value-of select="../@default"/>
 </xsl:template>
 
-<!-- no default and beeing a permanent attribute implies that this 
-     attribute is passed as an argument thus the r-value is the 
-     argument -->
-<xsl:template match="@name[not(../@default)][../type/targets/target/phases/all][../type/targets/target/@mandatory = &quot;yes&quot;]" mode="make-body">
+<!-- the inconstructor attribute defines whether the attribute is a 
+     constructor argument -->
+<xsl:template match="@name[../@inconstructor = &quot;yes&quot;]" mode="make-body">
   <xsl:value-of select="."/>
   <!-- if its an array, we have to add the selector -->
   <xsl:if test="key(&quot;arraytypes&quot;, ../type/@name)">
