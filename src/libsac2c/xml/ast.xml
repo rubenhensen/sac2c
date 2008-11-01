@@ -3849,7 +3849,7 @@
       <sons>
         <son name="Exprs">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="yes" >
               <node name="Exprs" />
               <phases>
                 <all />
@@ -3859,7 +3859,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="CRet">
+        <attribute name="CRet" inconstructor="yes">
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -3874,8 +3874,7 @@
       </attributes>
       <flags></flags>
     </node>
-<!--
-
+<!-- 
   N_cond :
 
 -->
@@ -3913,7 +3912,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="In_Mask">
+        <attribute name="In_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -3926,7 +3925,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Out_Mask">
+        <attribute name="Out_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -3939,7 +3938,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Local_Mask">
+        <attribute name="Local_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -3994,7 +3993,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Label">
+        <attribute name="Label" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -4006,7 +4005,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="In_Mask">
+        <attribute name="In_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -4021,7 +4020,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Out_Mask">
+        <attribute name="Out_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -4036,7 +4035,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Local_Mask">
+        <attribute name="Local_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -4117,7 +4116,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="FunApNumber">
+        <attribute name="FunApNumber" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -4154,7 +4153,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Fundef">
+        <attribute name="Fundef" inconstructor="yes" >
           <type name="ExtLink">
             <targets>
               <target mandatory="yes">
@@ -4166,7 +4165,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="ArgTab">
+        <attribute name="ArgTab" inconstructor="yes" >
           <type name="ArgTab">
             <targets>
               <target mandatory="yes">
@@ -4316,7 +4315,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Elemtype">
+        <attribute name="Elemtype" inconstructor="yes" >
           <description> The type of all array elements. The Elemtype may be used
            to deduce the common shape of those elements.</description>
           <type name="NewType">
@@ -4330,7 +4329,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="FrameShape">
+        <attribute name="FrameShape" inconstructor="yes" >
 		<description>The frameshape of the array. 
 			The frameshape may NOT be an empty vector, 
 			with one simple scalar (e.g., N_num) hanging from
@@ -4348,7 +4347,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="String" default="NULL">
+        <attribute name="String" default="NULL" inconstructor="yes" >
           <description>In case of constant character arrays defined
             as strings, this attribute holds the original
             definition. The definition needs to be safe for printing as
@@ -4378,7 +4377,7 @@
     <node name="Id">
       <sons></sons>
       <attributes>
-        <attribute name="Avis">
+        <attribute name="Avis" inconstructor="yes">
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -4390,7 +4389,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="WL">
+        <attribute name="WL" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -4402,7 +4401,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="ICMtext" default="NULL">
+        <attribute name="ICMtext" default="NULL" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4417,7 +4416,7 @@
             Deprecated. Still used in the compiler backend until major redesign of backend node structure.
           </description>
         </attribute>
-        <attribute name="NT_Tag" default="NULL">
+        <attribute name="NT_Tag" default="NULL" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4450,7 +4449,7 @@
      <description>  Integer scalar </description>
       <sons></sons>
       <attributes>
-        <attribute name="Val">
+        <attribute name="Val" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -4473,7 +4472,7 @@
     <node name="Char">
       <sons></sons>
       <attributes>
-        <attribute name="Val">
+        <attribute name="Val" inconstructor="yes" >
           <type name="Char">
             <targets>
               <target mandatory="yes">
@@ -4496,7 +4495,7 @@
     <node name="Float">
       <sons></sons>
       <attributes>
-        <attribute name="Val">
+        <attribute name="Val" inconstructor="yes" >
           <type name="Float">
             <targets>
               <target mandatory="yes">
@@ -4519,7 +4518,7 @@
     <node name="Double">
       <sons></sons>
       <attributes>
-        <attribute name="Val">
+        <attribute name="Val" inconstructor="yes" >
           <type name="Double">
             <targets>
               <target mandatory="yes">
@@ -4542,7 +4541,7 @@
     <node name="Bool">
       <sons></sons>
       <attributes>
-        <attribute name="Val">
+        <attribute name="Val" inconstructor="yes" >
           <type name="Bool">
             <targets>
               <target mandatory="yes">
@@ -4565,7 +4564,7 @@
     <node name="Str">
       <sons></sons>
       <attributes>
-        <attribute name="String">
+        <attribute name="String" inconstructor="yes" >
           <description>
             The value of this string. Note that the string needs to be
             in an encoding which is safe for printing in C code, e.g.
@@ -4593,7 +4592,7 @@
     <node name="Type">
       <sons></sons>
       <attributes>
-        <attribute name="Type">
+        <attribute name="Type" inconstructor="yes" >
 	  <type name="NewType">
             <targets>
               <target mandatory="yes">
@@ -4626,7 +4625,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Prf">
+        <attribute name="Prf" inconstructor="yes" >
           <description>
             Describes the type of function this node
             represents. A list of possible values is
@@ -4654,7 +4653,7 @@
     <node name="Dot">
       <sons></sons>
       <attributes>
-        <attribute name="Num">
+        <attribute name="Num" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -4735,7 +4734,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name">
+        <attribute name="Name" inconstructor="yes" >
           <type name="SharedString">
             <targets>
               <target mandatory="yes">
@@ -4747,7 +4746,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Indent_Before" default="0">
+        <attribute name="Indent_Before" default="0" inconstructor="yes" >
           <description>the default value has to be fixed!</description>
           <type name="Integer">
             <targets>
@@ -4760,7 +4759,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Indent_After" default="0">
+        <attribute name="Indent_After" default="0" inconstructor="yes" >
           <description>the default value has to be fixed!</description>
           <type name="Integer">
             <targets>
@@ -4827,7 +4826,7 @@
 	</son>
       </sons>
       <attributes>
-        <attribute name="LinkName" default="NULL">
+        <attribute name="LinkName" default="NULL" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4839,7 +4838,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="LinkMod" default="NULL">
+        <attribute name="LinkMod" default="NULL" inconstructor="yes" >
           <type name="StringSet">
             <targets>
               <target mandatory="no">
@@ -4851,7 +4850,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="LinkObj" default="NULL">
+        <attribute name="LinkObj" default="NULL" inconstructor="yes" >
           <type name="StringSet">
             <targets>
               <target mandatory="no">
@@ -4863,7 +4862,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="WLComp_APS" default="NULL">
+        <attribute name="WLComp_APS" default="NULL" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -4875,7 +4874,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="APL" default="NULL">
+        <attribute name="APL" default="NULL" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -4887,7 +4886,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="NumParams" default="0">
+        <attribute name="NumParams" default="0" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -4899,7 +4898,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="InitFun">
+        <attribute name="InitFun" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4911,7 +4910,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="CopyFun">
+        <attribute name="CopyFun" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4923,7 +4922,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="FreeFun">
+        <attribute name="FreeFun" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -4959,7 +4958,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Count">
+        <attribute name="Count" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -4971,7 +4970,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="BaseId">
+        <attribute name="BaseId" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -5005,7 +5004,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Avis">
+        <attribute name="Avis" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -5017,7 +5016,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="NestLevel">
+        <attribute name="NestLevel" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -5126,7 +5125,7 @@
 
       </sons>
       <attributes>
-        <attribute name="Decl" default="NULL">
+        <attribute name="Decl" default="NULL" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -5144,7 +5143,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Name">
+        <attribute name="Name" inconstructor="yes" >
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -5156,7 +5155,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Type">
+        <attribute name="Type" inconstructor="yes" >
 	  <description>the inferred type, which may be more precise than DeclType.</description>
           <type name="NewType">
             <targets>
@@ -5169,7 +5168,7 @@
             </targets>
           </type>
         </attribute>
-	<attribute name="DeclType" default="NULL">
+	<attribute name="DeclType" default="NULL" inconstructor="yes" >
 	  <description>the declared type, iff present.</description>
 	  <type name="NewType">
             <targets>
@@ -5182,7 +5181,7 @@
             </targets>
           </type>
 	</attribute>
-	<attribute name="ConstrType" default="NULL">
+	<attribute name="ConstrType" default="NULL" inconstructor="yes" >
 	  <description>type constraint as imposed by the applied use of the variable, iff present.</description>
 	  <type name="NewType">
             <targets>
@@ -5195,7 +5194,7 @@
             </targets>
           </type>
 	</attribute>
-	<attribute name="ConstrVar" default="NULL">
+	<attribute name="ConstrVar" default="NULL" inconstructor="yes" >
 	  <description>pointer to the avis of the predicat that results from the type constraint in ConstrType, iff present</description>
 	  <type name="Link">
             <targets>
@@ -5208,7 +5207,7 @@
             </targets>
           </type>
 	</attribute>
-	<attribute name="ConstrSet" default="NULL">
+	<attribute name="ConstrSet" default="NULL" inconstructor="yes" >
 	  <description>pointer to set of non-type constraints  as imposed by the applied use of the variable, iff present</description>
 	  <type name="Link">
             <targets>
@@ -5221,7 +5220,7 @@
             </targets>
           </type>
 	</attribute>
-        <attribute name="Pos">
+        <attribute name="Pos" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5233,7 +5232,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAAssign">
+        <attribute name="SSAAssign" inconstructor="yes" >
           <description>
             provides a direct link to the N_assign node containing the definition of the identifier represented by this AVIS node. In SSA form, AVIS_SSAASSIGN must only be NULL for identifiers for function arguments and with-loop index variables.
           </description>
@@ -5249,7 +5248,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SSACount">
+        <attribute name="SSACount" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5263,7 +5262,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAstack">
+        <attribute name="SSAstack" inconstructor="yes" >
           <type name="Node">
             <targets>
               <target mandatory="no">
@@ -5277,7 +5276,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAThen">
+        <attribute name="SSAThen" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5291,7 +5290,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAElse">
+        <attribute name="SSAElse" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5305,7 +5304,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="NeedCount">
+        <attribute name="NeedCount" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5318,7 +5317,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="WL_NeedCount">
+        <attribute name="WL_NeedCount" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5330,7 +5329,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Counting_WL">
+        <attribute name="Counting_WL" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5342,7 +5341,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="VarNo">
+        <attribute name="VarNo" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5355,7 +5354,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="BotRT" default="NULL">
+        <attribute name="BotRT" default="NULL" inconstructor="yes" >
           <type name="NewType">
             <targets>
               <target mandatory="no">
@@ -5370,7 +5369,7 @@
             Used in order to memorize a replacement type for bottom funcond variables.
           </description>
         </attribute>
-        <attribute name="Subst">
+        <attribute name="Subst" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5394,7 +5393,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SubstLvl">
+        <attribute name="SubstLvl" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5406,7 +5405,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SubstCd">
+        <attribute name="SubstCd" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5418,7 +5417,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Alt">
+        <attribute name="Alt" inconstructor="yes" >
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5432,7 +5431,7 @@
             Used by CompareTree to remember alpha conversion
           </description>
         </attribute>
-        <attribute name="DefDepth">
+        <attribute name="DefDepth" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5445,7 +5444,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="LirMove">
+        <attribute name="LirMove" inconstructor="yes" >
           <type name="BitField">
             <targets>
               <target mandatory="no">
@@ -5457,7 +5456,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="ExpResult">
+        <attribute name="ExpResult" inconstructor="yes" >
           <type name="Bool">
             <targets>
               <target mandatory="no">
@@ -5469,7 +5468,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="AliasMask">
+        <attribute name="AliasMask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="no">
@@ -5483,7 +5482,7 @@
           <description>Used by Interface Analysis in order to 
             obtain the transitive hull of variable aliases.</description>
         </attribute>
-	<attribute name="UniqueRef">
+	<attribute name="UniqueRef" inconstructor="yes" >
 	  <description>First reference to this unique object declaration. Used to generate useful error messages in case of uniqueness violation.</description>
 	  <type name="Link">
 	    <targets>
@@ -5496,7 +5495,7 @@
 	    </targets>
 	  </type>
 	</attribute>
-        <attribute name="WithLoopLevel">
+        <attribute name="WithLoopLevel" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5508,7 +5507,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Demand">
+        <attribute name="Demand" inconstructor="yes" >
           <description>
             This attribute constitutes the demand of a variable during the
             specializing oracle for static shape knowledge.
@@ -5636,7 +5635,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="In" default="NULL">
+        <attribute name="In" default="NULL" inconstructor="yes" >
           <description>Variables that go into the contained withloop. Used later on to build SPMD functions.</description>
           <type name="DFMask">
             <targets>
@@ -5649,7 +5648,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Out" default="NULL">
+        <attribute name="Out" default="NULL" inconstructor="yes" >
           <description>Variables that go out of the contained withloop. Used later on to build SPMD functions.</description>
           <type name="DFMask">
             <targets>
@@ -5662,7 +5661,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Local" default="NULL">
+        <attribute name="Local" default="NULL" inconstructor="yes" >
           <description>Variables that are only locally used within the contained withloop.</description>
           <type name="DFMask">
             <targets>
@@ -5697,7 +5696,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Fundef">
+        <attribute name="Fundef" inconstructor="yes" >
           <type name="ExtLink">
             <targets>
               <target mandatory="yes">
@@ -5804,7 +5803,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Parts" default="-1">
+        <attribute name="Parts" default="-1" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -5816,7 +5815,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Pragma">
+        <attribute name="Pragma" inconstructor="yes" >
           <type name="Node">
             <targets>
               <target mandatory="yes">
@@ -5828,7 +5827,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="In_Mask">
+        <attribute name="In_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="no">
@@ -5843,7 +5842,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Out_Mask">
+        <attribute name="Out_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="no">
@@ -5858,7 +5857,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Local_Mask">
+        <attribute name="Local_Mask" inconstructor="yes" >
           <type name="DFMask">
             <targets>
               <target mandatory="no">
@@ -5873,7 +5872,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Referenced">
+        <attribute name="Referenced" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -5885,7 +5884,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Referenced_Fold">
+        <attribute name="Referenced_Fold" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -5897,7 +5896,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="References_Folded">
+        <attribute name="References_Folded" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -5909,7 +5908,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SelMax">
+        <attribute name="SelMax" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -5921,7 +5920,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="isSWLFFoldable">
+        <attribute name="isSWLFFoldable" inconstructor="yes" >
           <type name="Bool">
             <targets>
               <target mandatory="no">
@@ -5933,7 +5932,7 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Cost">
+        <attribute name="Cost" inconstructor="yes" >
           <type name="Integer">
             <targets>
               <target mandatory="no">
