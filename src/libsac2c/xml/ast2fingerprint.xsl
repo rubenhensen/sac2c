@@ -23,8 +23,9 @@ version="1.0">
 <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
 <xsl:strip-space elements="*"/>
 
-<!-- This stylesheet generates a node_basic.c file implementing all
-     the make functions for nodes                                    -->
+<!-- This stylesheet generates a reduced xml file that only holds 
+     information that is cruical and critical for the layout of
+     modules -->
 
 <xsl:template match="/">
   <xsl:apply-templates select="definition/syntaxtree" />
@@ -32,6 +33,12 @@ version="1.0">
 
 <!-- filter away descriptions -->
 <xsl:template match="description" />
+
+<!-- filter away range information -->
+<xsl:template match="targets" />
+
+<!-- filter away comments -->
+<xsl:template match="comment()" />
 
 <!-- generic template matching all elements and attributes -->
 <xsl:template match="node() | @*">
