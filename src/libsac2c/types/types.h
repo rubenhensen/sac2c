@@ -58,6 +58,11 @@ typedef struct NODE node;
 typedef struct INFO info;
 
 /*
+ * information structure for the lac-function traversal
+ */
+typedef struct LAC_INFO lac_info_t;
+
+/*
  * the namespace_t structure is used for namespaces (formerly represented
  * by module name strings). See namespace.[ch] for details
  */

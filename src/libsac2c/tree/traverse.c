@@ -19,6 +19,7 @@
 #include "phase.h"
 #include "math_utils.h"
 #include "sanity_checks.h"
+#include "memory.h"
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
@@ -29,6 +30,14 @@ struct TRAVSTACK_T {
 typedef struct TRAVSTACK_T travstack_t;
 
 static travstack_t *travstack = NULL;
+
+struct LAC_INFO {
+    bool lacfunok;
+    bool travinlac;
+};
+
+#define LAC_INFO_LACFUNOK(n) ((n)->lacfunok)
+#define LAC_INFO_TRAVINLAC(n) ((n)->travinlac)
 
 node *
 TRAVdo (node *arg_node, info *arg_info)
@@ -101,11 +110,99 @@ TRAVdo (node *arg_node, info *arg_info)
 }
 
 node *
+TRAVopt (node *arg_node, info *arg_info)
+{
+    if (arg_node != NULL) {
+        arg_node = TRAVdo (arg_node, arg_info);
+    }
+
+    return (arg_node);
+}
+
+node *
 TRAVcont (node *arg_node, info *arg_info)
 {
     arg_node = TRAVsons (arg_node, arg_info);
 
     return (arg_node);
+}
+
+lac_info_t *
+TRAVlacNewInfo (bool lacfunok)
+{
+    lac_info_t *result;
+
+    DBUG_ENTER ("TRAVlacNewInfo");
+
+    result = MEMmalloc (sizeof (lac_info_t));
+
+    LAC_INFO_LACFUNOK (result) = lacfunok;
+    LAC_INFO_TRAVINLAC (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+lac_info_t *
+TRAVlacFreeInfo (lac_info_t *lac_info)
+{
+    DBUG_ENTER ("TRAVlacFreeInfo");
+
+    lac_info = MEMfree (lac_info);
+
+    DBUG_RETURN (lac_info);
+}
+
+node *
+TRAVlacDoFun (node *fundef, info *arg_info, lac_info_t *lac_info)
+{
+    bool wasinlac;
+
+    DBUG_ENTER ("TRAVlacDoFun");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "TRAVlacDoFun called on non-fundef node");
+
+    if (FUNDEF_ISLACFUN (fundef) && !LAC_INFO_LACFUNOK (lac_info)) {
+        wasinlac = LAC_INFO_TRAVINLAC (lac_info);
+        LAC_INFO_TRAVINLAC (lac_info) = TRUE;
+
+        fundef = TRAVdo (fundef, arg_info);
+
+        LAC_INFO_TRAVINLAC (lac_info) = wasinlac;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+node *
+TRAVlacContBody (node *fundef, info *arg_info, lac_info_t *lac_info)
+{
+    DBUG_ENTER ("TRAVlacContBody");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "TRAVlacContBody called on non-fundef node");
+
+    if (!FUNDEF_ISLACFUN (fundef) || LAC_INFO_LACFUNOK (lac_info)
+        || LAC_INFO_TRAVINLAC (lac_info)) {
+        TRAVopt (FUNDEF_BODY (fundef), arg_info);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+node *
+TRAVlacOptNext (node *fundef, info *arg_info, lac_info_t *lac_info)
+{
+    DBUG_ENTER ("TRAVlacOptNext");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "TRAVlacOptNext called on non-fundef node");
+
+    if (!LAC_INFO_TRAVINLAC (lac_info)) {
+        TRAVopt (FUNDEF_NEXT (fundef), arg_info);
+    }
+
+    DBUG_RETURN (fundef);
 }
 
 void
