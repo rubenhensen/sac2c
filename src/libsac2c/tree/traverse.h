@@ -17,9 +17,9 @@ extern node *TRAVcont (node *arg_node, info *arg_info);
 
 extern lac_info_t *TRAVlacNewInfo ();
 extern lac_info_t *TRAVlacFreeInfo (lac_info_t *lac_info);
-extern node *TRAVlacContFun (node *fundef, info *arg_info, lac_info_t *lac_info);
-extern node *TRAVlacContBody (node *block, info *arg_info, lac_info_t *lac_info);
-extern node *TRAVlacOptNext (node *fundef, info *arg_info, lac_info_t *lac_info);
+extern bool TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info);
+extern node *TRAVlacDo (node *arg_node, info *arg_info, lac_info_t *lac_info);
+extern node *TRAVlacOpt (node *arg_node, info *arg_info, lac_info_t *lac_info);
 
 extern void TRAVpush (trav_t traversal);
 extern void TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun);

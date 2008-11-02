@@ -33,11 +33,11 @@ static travstack_t *travstack = NULL;
 
 struct LAC_INFO {
     bool lacfunok;
-    bool travinlac;
+    int blocklevel;
 };
 
 #define LAC_INFO_LACFUNOK(n) ((n)->lacfunok)
-#define LAC_INFO_TRAVINLAC(n) ((n)->travinlac)
+#define LAC_INFO_BLOCKLEVEL(n) ((n)->blocklevel)
 
 node *
 TRAVdo (node *arg_node, info *arg_info)
@@ -150,7 +150,7 @@ TRAVlacNewInfo (bool lacfunok)
     result = MEMmalloc (sizeof (lac_info_t));
 
     LAC_INFO_LACFUNOK (result) = lacfunok;
-    LAC_INFO_TRAVINLAC (result) = FALSE;
+    LAC_INFO_BLOCKLEVEL (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -175,106 +175,101 @@ TRAVlacFreeInfo (lac_info_t *lac_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *TRAVlacContFun( node *ap, info *arg_info, lac_info_t *lac_info)
+ * @fn bool TRAVlacIsSuccOf( node *succ, node *parent, lac_info_t *lac_info)
  *
- * @brief This function is to be used to continue traversal into N_ap's fundef
- *        attribute. Depending on the traversal mode, it either continues
- *        with the LAC function (if not in top-level mode) or directly
- *        returns. Furthermore, the function correctly handles the recursive
- *        call in loop functions.
+ * @brief Returns true if succ is a child of parent in the spanning tree of
+ *        the syntax graph. Depending on the lac traversal mode, lac functions
+ *        are either sons in the top-level N_fundef chain or children of the
+ *        corresponding N_ap node.
  *
- * @param ap N_ap node to start traversal from
- * @param arg_info info structure to be passed along
- * @param lac_info lac info structure
+ * @param succ      node to be checked for successor
+ * @param parent    potential parent node
+ * @param lac_info  lac information structure
  *
- * @return node N_ap node with fundef attribute updated by traversal
+ * @return true if succ is a child of parent, false otherwise
  ******************************************************************************/
-node *
-TRAVlacContFun (node *ap, info *arg_info, lac_info_t *lac_info)
+bool
+TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
 {
-    bool wasinlac;
+    bool result;
 
-    DBUG_ENTER ("TRAVlacDoFun");
+    DBUG_ENTER ("TRAVlacIsSuccOf");
 
-    DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "TRAVlacContFun called on non-ap node");
+    DBUG_ASSERT ((((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_ap))
+                  || ((NODE_TYPE (succ) == N_block) && (NODE_TYPE (parent) == N_fundef))
+                  || ((NODE_TYPE (succ) == N_fundef)
+                      && (NODE_TYPE (parent) == N_fundef))),
+                 "TRAVlacIsSuccOf called with illegal succ/parent combination");
 
-    DBUG_ASSERT ((AP_FUNDEF (ap) != NULL),
-                 "TRAVlacContFun called with null fundef attribute");
-
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (ap)) && !LAC_INFO_LACFUNOK (lac_info)
-        && !AP_ISRECURSIVEDOFUNCALL (ap)) {
-        wasinlac = LAC_INFO_TRAVINLAC (lac_info);
-        LAC_INFO_TRAVINLAC (lac_info) = TRUE;
-
-        AP_FUNDEF (ap) = TRAVdo (AP_FUNDEF (ap), arg_info);
-
-        LAC_INFO_TRAVINLAC (lac_info) = wasinlac;
+    if ((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
+        /* called in N_ap node to decide whether to traverse into fundef */
+        result = (FUNDEF_ISLACFUN (succ) && !LAC_INFO_LACFUNOK (lac_info)
+                  && !AP_ISRECURSIVEDOFUNCALL (parent));
+    } else if ((NODE_TYPE (succ) == N_block) && (NODE_TYPE (parent) == N_fundef)) {
+        /* called in N_fundef to decide whether to traverse the body */
+        result = (!FUNDEF_ISLACFUN (parent) || LAC_INFO_LACFUNOK (lac_info)
+                  || (LAC_INFO_BLOCKLEVEL (lac_info) != 0));
+    } else if ((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_fundef)) {
+        /* called in N_fundef to decide whether to follow the next */
+        result = (LAC_INFO_BLOCKLEVEL (lac_info) == 0);
+    } else {
+        result = FALSE;
     }
 
-    DBUG_RETURN (ap);
+    DBUG_RETURN (result);
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *TRAVlacContBody( node *fundef, info *arg_info,
- *                            lac_info_t *lac_info)
+ * @fn node *TRAVlacDo( node *arg_node, info *arg_info, lac_info_t *lac_info)
  *
- * @brief This function is to be used to continue traversal into the body
- *        son of a N_fundef node. If in top-level mode, the function
- *        continues into every non-null body. Otherwise, it continues only
- *        into non-lac functions.
+ * @brief Special version of TRAVdo to be used in lac traversals, at least
+ *        in N_fundef nodes to traverse the body. Note that arg_node may not
+ *        be NULL.
  *
- * @param fundef N_fundef node whose body is to be traversed
- * @param arg_info info structure to be passed on
- * @param lac_info lac info structure
+ * @param arg_node node to traverse into
+ * @param arg_info info structure to pass along
+ * @param lac_info lac information structure
  *
- * @return N_fundef node with updated body son
+ * @return the result of the traversal.
  ******************************************************************************/
 node *
-TRAVlacContBody (node *fundef, info *arg_info, lac_info_t *lac_info)
+TRAVlacDo (node *arg_node, info *arg_info, lac_info_t *lac_info)
 {
-    DBUG_ENTER ("TRAVlacContBody");
+    DBUG_ASSERT ((arg_node != NULL), "TRAVlacDo called with null as node");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "TRAVlacContBody called on non-fundef node");
-
-    if (!FUNDEF_ISLACFUN (fundef) || LAC_INFO_LACFUNOK (lac_info)
-        || LAC_INFO_TRAVINLAC (lac_info)) {
-        TRAVopt (FUNDEF_BODY (fundef), arg_info);
+    if (NODE_TYPE (arg_node) == N_block) {
+        LAC_INFO_BLOCKLEVEL (lac_info)++;
     }
 
-    DBUG_RETURN (fundef);
+    arg_node = TRAVdo (arg_node, arg_info);
+
+    if (NODE_TYPE (arg_node) == N_block) {
+        LAC_INFO_BLOCKLEVEL (lac_info)--;
+    }
+
+    return (arg_node);
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *TRAVlacOptNext( node *fundef, info *arg_info,
- *                           lac_info_t *lac_info)
+ * @fn node *TRAVlacOpt( node *arg_node, info *arg_info, lac_info_t *lac_info)
  *
- * @brief This function has to be used to continue to the next fundef when
- *        using the lac traversal functions. Depending on whether currently
- *        a lac function or a top-level function is traversed, this function
- *        either returns directly or continues with the next son of the
- *        N_fundef argument.
+ * @brief Special version of TRAVdo to be used in lac traversals, at least
+ *        in N_fundef nodes to traverse the body.
  *
+ * @param arg_node node to traverse into
+ * @param arg_info info structure to pass along
+ * @param lac_info lac information structure
  *
- * @param fundef N_fundef node whose next son is to be traversed
- * @param arg_info info structure to be passed on
- * @param lac_info lac info structure
- *
- * @return N_fundef node with updated next son.
+ * @return the result of the traversal.
  ******************************************************************************/
 node *
-TRAVlacOptNext (node *fundef, info *arg_info, lac_info_t *lac_info)
+TRAVlacOpt (node *arg_node, info *arg_info, lac_info_t *lac_info)
 {
-    DBUG_ENTER ("TRAVlacOptNext");
-
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "TRAVlacOptNext called on non-fundef node");
-
-    if (!LAC_INFO_TRAVINLAC (lac_info)) {
-        TRAVopt (FUNDEF_NEXT (fundef), arg_info);
+    if (arg_node != NULL) {
+        arg_node = TRAVlacDo (arg_node, arg_info, lac_info);
     }
 
-    DBUG_RETURN (fundef);
+    return (arg_node);
 }
 
 void
