@@ -17,7 +17,7 @@ extern node *TRAVcont (node *arg_node, info *arg_info);
 
 extern lac_info_t *TRAVlacNewInfo ();
 extern lac_info_t *TRAVlacFreeInfo (lac_info_t *lac_info);
-extern node *TRAVlacDoFun (node *fundef, info *arg_info, lac_info_t *lac_info);
+extern node *TRAVlacContFun (node *fundef, info *arg_info, lac_info_t *lac_info);
 extern node *TRAVlacContBody (node *block, info *arg_info, lac_info_t *lac_info);
 extern node *TRAVlacOptNext (node *fundef, info *arg_info, lac_info_t *lac_info);
 
