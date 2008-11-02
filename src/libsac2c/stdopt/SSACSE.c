@@ -181,12 +181,15 @@ struct INFO {
     node *assign;
     node *withid;
     bool recfunap;
+    bool onefundef;
     nodelist *resultarg;
+    lac_info_t *lacinfo;
 };
 
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_EXT_ASSIGN(n) (n->ext_assign)
 #define INFO_CSE(n) (n->cse)
@@ -194,6 +197,7 @@ struct INFO {
 #define INFO_WITHID(n) (n->withid)
 #define INFO_RECFUNAP(n) (n->recfunap)
 #define INFO_RESULTARG(n) (n->resultarg)
+#define INFO_LACINFO(n) (n->lacinfo)
 
 /*
  * INFO functions
@@ -214,6 +218,8 @@ MakeInfo ()
     INFO_WITHID (result) = NULL;
     INFO_RECFUNAP (result) = FALSE;
     INFO_RESULTARG (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
+    INFO_LACINF (result) = TRAVlacNewInfo ();
 
     DBUG_RETURN (result);
 }
@@ -716,7 +722,7 @@ CSEfundef (node *arg_node, info *arg_info)
         node *n;
 
         /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        arg_node = TRAVlacContBody (arg_node, arg_info, INFO_LACINFO (arg_info));
 
         /*
          * Reset AVIS_SUBST
@@ -732,6 +738,11 @@ CSEfundef (node *arg_node, info *arg_info)
             AVIS_SUBST (VARDEC_AVIS (n)) = NULL;
             n = VARDEC_NEXT (n);
         }
+    }
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node)
+          = TRAVlacOptNext (FUNDEF_NEXT (arg_node), arg_info, INFO_LACINFO (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1252,27 +1263,22 @@ CSEcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CSEdoCommonSubexpressionElimination (node *fundef)
+CSEdoCommonSubexpressionEliminationOneFundef (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CSEdoCommonSubexpressionElimination");
+    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "CSE called for non-fundef node");
 
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (fundef))) {
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
 
-        arg_info = MakeInfo ();
+    TRAVpush (TR_cse);
+    fundef = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
-        INFO_CSE (arg_info) = NULL;
-
-        TRAVpush (TR_cse);
-        fundef = TRAVdo (fundef, arg_info);
-        TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
-    }
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }
@@ -1282,18 +1288,21 @@ CSEdoCommonSubexpressionElimination (node *fundef)
  * @fn node *CSEdoCommonSubexpressionEliminationModule( node *arg_node)
  *
  *****************************************************************************/
-static node *
-WrapCSECall (node *arg_node, info *arg_info)
-{
-    return (CSEdoCommonSubexpressionElimination (arg_node));
-}
 
 node *
-CSEdoCommonSubexpressionEliminationModule (node *arg_node)
+CSEdoCommonSubexpressionElimination (node *arg_node)
 {
-    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationModule");
+    info *arg_info;
 
-    MODULE_FUNS (arg_node) = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, WrapCSECall);
+    DBUG_ENTER ("CSEdoCommonSubexpressionElimination");
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_cse);
+    fundef = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
