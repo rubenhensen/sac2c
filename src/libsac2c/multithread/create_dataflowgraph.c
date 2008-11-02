@@ -224,7 +224,7 @@ CDFGblock (node *arg_node, info *arg_info)
      * PH_mt_cdfg. In principle, the whole code in subdirectory multithread
      * should be put behind an ifndef PRODUCTION.
      */
-    if (global.break_after_subphase == PH_mt_cdfg) {
+    if (global.break_after_subphase == PH_mt3_cdfg) {
         fprintf (stdout, "A N_block...\n");
         PRTdoPrintNode (arg_node);
         fprintf (stdout, "...and its dataflowgraph:\n");

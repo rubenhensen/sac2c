@@ -55,11 +55,11 @@ SUBPHASE (gdp, "Gathering dependencies", GDPdoGatherDependencies, ALWAYS, mod)
 
 SUBPHASE (pdp, "Printing dependencies", DEPdoPrintDependencies, global.makedeps, mod)
 
-SUBPHASE (imp, "Getting imported symbols", IMPdoImportSymbols, ALWAYS, mod)
+SUBPHASE (imp, "Retrieving imported symbols", IMPdoImportSymbols, ALWAYS, mod)
 
-SUBPHASE (uss, "Getting used symbols", USSdoUseSymbols, ALWAYS, mod)
+SUBPHASE (uss, "Retrieving used symbols", USSdoUseSymbols, ALWAYS, mod)
 
-SUBPHASE (asf, "Loading sac2c prelude functions", ASFdoAddSpecialFunctions, ALWAYS, mod)
+SUBPHASE (asf, "Loading prelude functions", ASFdoAddSpecialFunctions, ALWAYS, mod)
 
 ENDPHASE (mod)
 
@@ -97,12 +97,12 @@ SUBPHASE (cwf, "Creating wrapper functions", CRTWRPdoCreateWrappers, ALWAYS, ptc
 
 SUBPHASE (gon, "Running global object analysis", OANdoObjectAnalysis, ALWAYS, ptc)
 
-SUBPHASE (goi, "Generating object initialiser", GOIdoGenerateObjectInitialiser, ALWAYS,
-          ptc)
+SUBPHASE (goi, "Generating global object initialiser", GOIdoGenerateObjectInitialiser,
+          ALWAYS, ptc)
 
 SUBPHASE (rso, "Resolving global objects", RSOdoResolveObjects, ALWAYS, ptc)
 
-SUBPHASE (rrp, "Resolving reference paramters", RRAdoResolveReferenceArgs, ALWAYS, ptc)
+SUBPHASE (rrp, "Resolving reference parameters", RRAdoResolveReferenceArgs, ALWAYS, ptc)
 
 SUBPHASE (ewt, "Extending dispatch information", EWTdoExtendWrapperTypes, ALWAYS, ptc)
 
@@ -594,49 +594,40 @@ ENDPHASE (wlt)
 
 /******************************************************************************/
 
-PHASE (mt, "Generating annotations for multithreaded execution", global.mtmode != MT_none)
-
 #ifndef PRODUCTION
 
-SUBPHASE (tem, "Tagging execution modes", TEMdoTagExecutionmode,
-          global.mtmode == MT_mtstblock, mt)
+PHASE (mt3, "Running 3rd generation multithreading", NEVER)
 
-SUBPHASE (crwiw, "Creating with in with", CRWIWdoCreateWithinwith,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (tem, "Tagging execution modes", TEMdoTagExecutionmode, ALWAYS, mt3)
 
-SUBPHASE (pem, "Propagating execution modes", PEMdoPropagateExecutionmode,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (crwiw, "Creating with in with", CRWIWdoCreateWithinwith, ALWAYS, mt3)
 
-SUBPHASE (cdfg, "Creating data flow graph", CDFGdoCreateDataflowgraph,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (pem, "Propagating execution modes", PEMdoPropagateExecutionmode, ALWAYS, mt3)
 
-SUBPHASE (asmra, "Rearringing assignments", ASMRAdoAssignmentsRearrange,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (cdfg, "Creating data flow graph", CDFGdoCreateDataflowgraph, ALWAYS, mt3)
 
-SUBPHASE (crece, "Creating execution mode cells", CRECEdoCreateCells,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (asmra, "Rearringing assignments", ASMRAdoAssignmentsRearrange, ALWAYS, mt3)
 
-SUBPHASE (cegro, "Extending execution mode cells", CEGROdoCellGrowth,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (crece, "Creating execution mode cells", CRECEdoCreateCells, ALWAYS, mt3)
 
-SUBPHASE (repfun, "Replicating functions", REPFUNdoReplicateFunctions,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (cegro, "Extending execution mode cells", CEGROdoCellGrowth, ALWAYS, mt3)
 
-SUBPHASE (mtdfr, "Removing superfluos functions", DFRdoDeadFunctionRemoval,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (repfun, "Replicating functions", REPFUNdoReplicateFunctions, ALWAYS, mt3)
 
-SUBPHASE (concel, "Consolidating execution mode cells", CONCELdoConsolidateCells,
-          global.mtmode == MT_mtstblock, mt)
+SUBPHASE (mtdfr, "Removing superfluous functions", DFRdoDeadFunctionRemoval, ALWAYS, mt3)
 
-SUBPHASE (abort, "Aborting MT3 compilation", MTABabort, global.mtmode == MT_mtstblock, mt)
+SUBPHASE (concel, "Consolidating execution mode cells", CONCELdoConsolidateCells, ALWAYS,
+          mt3)
 
-#endif
+SUBPHASE (abort, "Aborting MT3 compilation", MTABabort, ALWAYS, mt3)
 
-ENDPHASE (mt)
+ENDPHASE (mt3)
+
+#endif /* PRODUCTION */
 
 /******************************************************************************/
 
-PHASE (mem, "Introducing explicit memory management instructions", ALWAYS)
+PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
 SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 
@@ -678,28 +669,33 @@ SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
 
-SUBPHASE (ipc, "Identfying in-place updates", EMIPdoInplaceComputation,
+SUBPHASE (ipc, "Identifying in-place updates", EMIPdoInplaceComputation,
           global.optimize.doipc, mem)
 
 SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
           global.optimize.douip &&global.optimize.dodr, mem)
 
-SUBPHASE (dcr2, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          mem)
+SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemovalModule,
+          global.optimize.dodcr, mem)
 
 SUBPHASE (unshal, "Deactivating display of alias information", SHALdeactivate, ALWAYS,
           mem)
 
-SUBPHASE (rc, "Reference counting", RCIdoReferenceCounting, ALWAYS, mem)
+SUBPHASE (rc, "Running reference count inference", RCIdoReferenceCounting, ALWAYS, mem)
 
-SUBPHASE (rcm, "Reference counting minimization", RCMdoRefcountMinimization, ALWAYS, mem)
+SUBPHASE (rcm, "Reducing reference counting instructions", RCMdoRefcountMinimization,
+          ALWAYS, mem)
 
 SUBPHASE (rco, "Optimizing reference counting instructions", EMRCOdoRefCountOpt,
           global.optimize.dorco, mem)
 
-SUBPHASE (mvsmi, "Moving shared memory management instructions out of SPMD functions",
-          MVSMIdoMoveSharedMemoryManagementInstructions,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), mem)
+#if 0
+SUBPHASE( mvsmi,
+          "Moving shared memory management instructions out of SPMD functions",
+          MVSMIdoMoveSharedMemoryManagementInstructions, 
+          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop),
+          mem)
+#endif
 
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
 
@@ -707,39 +703,52 @@ ENDPHASE (mem)
 
 /******************************************************************************/
 
-PHASE (pc, "Preparing C code generation", ALWAYS)
+PHASE (ussa, "Converting from static single assignment form", ALWAYS)
 
-SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, pc)
+SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, ussa)
 
-SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, pc)
+SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, ussa)
 
-SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, pc)
+SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, ussa)
 
-SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, pc)
+SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, ussa)
 
-SUBPHASE (spmdfix, "Fixing SPMD function signatures", FSFSdoFixSpmdFunctionSignatures,
-          ALWAYS, pc)
+#if 0
+SUBPHASE( spmdfix, 
+          "Fixing SPMD function signatures",
+          FSFSdoFixSpmdFunctionSignatures, 
+          ALWAYS,
+          ussa)
+#endif
 
 SUBPHASE (rera, "Restoring reference arguments", RERAdoRestoreReferenceArguments, ALWAYS,
-          pc)
+          ussa)
 
-SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS, pc)
+SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS, ussa)
 
-SUBPHASE (spmdi, "Building SPMD blocks around with-loops", SPMDIdoSpmdInit,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+ENDPHASE (ussa)
+
+/******************************************************************************/
+
+PHASE (mt, "Running automatic parallelisation",
+       (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
+
+SUBPHASE (spmdi, "Building SPMD blocks around with-loops", SPMDIdoSpmdInit, ALWAYS, mt)
 
 SUBPHASE (cmtf, "Creating MT variants of exported and provided functions",
-          CMTFdoCreateMtFuns,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+          CMTFdoCreateMtFuns, ALWAYS, mt)
 
-SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift, ALWAYS, mt)
 
-SUBPHASE (sched, "Annotating scheduling informations", SCHEDdoScheduleTrav,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+SUBPHASE (sched, "Annotating scheduling information", SCHEDdoScheduleTrav, ALWAYS, mt)
 
-SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop), pc)
+SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign, ALWAYS, mt)
+
+ENDPHASE (mt)
+
+/******************************************************************************/
+
+PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
 
@@ -756,7 +765,7 @@ SUBPHASE (rcs, "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing, 
  *          by duptree!
  */
 
-SUBPHASE (fpc, "Reorganizing function prototypes", FPCdoFunctionPrecompile, ALWAYS, pc)
+SUBPHASE (fpc, "Reorganising function prototypes", FPCdoFunctionPrecompile, ALWAYS, pc)
 
 SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 

@@ -3218,8 +3218,7 @@
               <target mandatory="no">
                 <node name="Fundef" />
                 <phases>
-                  <!-- <range from="mt_cmtf" to="final" /> -->
-                  <!-- Deactivated range spec due to moving mt stuff into precompile -->
+                  <phase name="mt_cmtf"/>
                 </phases>
               </target>
             </targets>
@@ -3432,7 +3431,7 @@
               <target mandatory="no">
                 <node name="Objdef" />
                 <phases>
-                  <range from="ptc_rso" to="pc_reso" />
+                  <range from="ptc_rso" to="ussa_reso" />
                 </phases>
               </target>
             </targets>
@@ -3562,7 +3561,7 @@
               <target mandatory="no">
                 <node name="Dataflowgraph" />
                 <phases>
-                  <range from="mt_cdfg" to="mt_concel" />
+                  <range from="mt3_cdfg" to="mt3_concel" />
                 </phases>
               </target>
             </targets>
@@ -3680,7 +3679,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="mt_asmra" to="mt_crece" />
+                  <range from="mt3_asmra" to="mt3_crece" />
                 </phases>
               </target>
             </targets>
@@ -3716,7 +3715,7 @@
               <target mandatory="no">
                 <node name="Dataflownode" />
                 <phases>
-                  <range from="mt_cdfg" to="mt_concel" />
+                  <range from="mt3_cdfg" to="mt3_concel" />
                 </phases>
               </target>
             </targets>
@@ -4000,7 +3999,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="pc_f2l" to="final" />
+                  <range from="ussa_f2l" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4015,7 +4014,6 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
-                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -4030,7 +4028,6 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
-                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -4045,7 +4042,6 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
-                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -5243,7 +5239,7 @@
                 <node name="Assign" />
                 <phases>
                   <range from="ptc_ssa" to="wlt_ussa" />
-                  <range from="wlt_ssa" to="pc_ussa" />
+                  <range from="wlt_ssa" to="ussa_ussa" />
                 </phases>
               </target>
             </targets>
@@ -5837,7 +5833,6 @@
                   <phase name="ptc_l2f"/>
                   <phase name="cwc_l2f"/>
                   <phase name="wlt_l2f"/>
-                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
@@ -5852,7 +5847,6 @@
                   <phase name="ptc_l2f"/>
                   <phase name="cwc_l2f"/>
                   <phase name="wlt_l2f"/>
-                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
@@ -5867,7 +5861,6 @@
                   <phase name="ptc_l2f"/>
                   <phase name="cwc_l2f"/>
                   <phase name="wlt_l2f"/>
-                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
