@@ -189,7 +189,7 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF (n->onefundef)
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_EXT_ASSIGN(n) (n->ext_assign)
 #define INFO_CSE(n) (n->cse)
@@ -219,7 +219,7 @@ MakeInfo ()
     INFO_RECFUNAP (result) = FALSE;
     INFO_RESULTARG (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
-    INFO_LACINF (result) = TRAVlacNewInfo ();
+    INFO_LACINFO (result) = TRAVlacNewInfo ();
 
     DBUG_RETURN (result);
 }
@@ -1275,7 +1275,7 @@ CSEdoCommonSubexpressionEliminationOneFundef (node *fundef)
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
     TRAVpush (TR_cse);
-    fundef = TRAVdo (arg_node, arg_info);
+    fundef = TRAVdo (fundef, arg_info);
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
@@ -1290,7 +1290,7 @@ CSEdoCommonSubexpressionEliminationOneFundef (node *fundef)
  *****************************************************************************/
 
 node *
-CSEdoCommonSubexpressionElimination (node *arg_node)
+CSEdoCommonSubexpressionEliminationModule (node *module)
 {
     info *arg_info;
 
@@ -1299,10 +1299,10 @@ CSEdoCommonSubexpressionElimination (node *arg_node)
     arg_info = MakeInfo ();
 
     TRAVpush (TR_cse);
-    fundef = TRAVdo (arg_node, arg_info);
+    module = TRAVdo (module, arg_info);
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (module);
 }
