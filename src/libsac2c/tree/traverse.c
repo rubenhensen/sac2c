@@ -195,13 +195,9 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
 
     DBUG_ENTER ("TRAVlacIsSuccOf");
 
-    DBUG_ASSERT ((((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_ap))
-                  || ((NODE_TYPE (succ) == N_block) && (NODE_TYPE (parent) == N_fundef))
-                  || ((NODE_TYPE (succ) == N_fundef)
-                      && (NODE_TYPE (parent) == N_fundef))),
-                 "TRAVlacIsSuccOf called with illegal succ/parent combination");
-
-    if ((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
+    if (succ == NULL) {
+        result = FALSE;
+    } else if ((NODE_TYPE (succ) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
         /* called in N_ap node to decide whether to traverse into fundef */
         result = (FUNDEF_ISLACFUN (succ) && !LAC_INFO_LACFUNOK (lac_info)
                   && !AP_ISRECURSIVEDOFUNCALL (parent));
@@ -213,6 +209,9 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
         /* called in N_fundef to decide whether to follow the next */
         result = (LAC_INFO_BLOCKLEVEL (lac_info) == 0);
     } else {
+        DBUG_ASSERT (FALSE, "TRAVlacIsSuccOf called with illegal succ/parent "
+                            "combination");
+
         result = FALSE;
     }
 
