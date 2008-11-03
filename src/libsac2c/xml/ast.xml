@@ -2001,15 +2001,13 @@
           <node name="Code" />
         </travsons>
       </traversal>
-     <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
+     <traversal id="MTCM" name="Multithreading cost model" default="sons" include="cost_model.h">
         <travuser>
-          <node name="Block" />
           <node name="Module" />
           <node name="Fundef" />
+          <node name="Block" />
           <node name="Assign" />
           <node name="Let" />
-          <node name="Ids" />
-          <node name="Id" />
           <node name="With2" />
           <node name="With" />
           <node name="Fold" />

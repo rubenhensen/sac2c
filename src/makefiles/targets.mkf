@@ -95,9 +95,9 @@ libsac2c_scanparse   := sac.tab sac.lex scnprs handle_dots resolvepragma \
                         introduce_user_tracing_calls
 
 libsac2c_flatten     := flatten lac2fun fun2lac insert_vardec \
-                        handle_mops UndoSSATransform ToNewTypes SSATransform \
+                        handle_mops UndoSSATransform SSATransform \
                         WLPartitionGeneration ExplicitAccumulate \
-                        ToOldTypes wlanalysis lacinlining wldefaultpartition \
+                        wlanalysis lacinlining wldefaultpartition \
                         while2do handle_condexpr unflatten
 
 libsac2c_constants   := shape constants_basic constants_struc_ops \
@@ -161,7 +161,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
 
-libsac2c_concurrent  := create_mtfuns spmd_init  spmd_lift \
+libsac2c_concurrent  := cost_model create_mtfuns  spmd_lift \
                         schedule set_spmd_linksign
 
 libsac2c_multithread := multithread_lib tag_executionmode \
@@ -185,7 +185,8 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         remove_external_code mark_noop_grids \
                         resolve_code_sharing
 
-libsac2c_codegen     := gen_startup_code compile icm2c icm2c_basic \
+libsac2c_codegen     := convert_type_representation gen_startup_code compile \
+                        icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
                         icm2c_wl icm2c_error simd_infer 
 
