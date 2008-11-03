@@ -36,6 +36,7 @@
 #include "memory.h"
 #include "dbug.h"
 #include "globals.h"
+#include "type_utils.h"
 
 /*
  * INFO structure
@@ -750,23 +751,19 @@ MustExecuteSingle (node *assign, info *arg_info)
  *               unique type or not
  *
  *****************************************************************************/
+
 static bool
 AnyUniqueTypeInThere (node *letids)
 {
     bool unique_found;
-    node *iterator;
-    types *type;
+
     DBUG_ENTER ("AnyUniqueTypeInThere");
 
-    /* some initializations */
     unique_found = FALSE;
-    iterator = letids;
 
-    while (iterator != NULL && !unique_found) {
-        type = VARDEC_TYPE (IDS_DECL (letids));
-        unique_found |= TCisUnique (type);
-
-        iterator = IDS_NEXT (letids);
+    while (letids != NULL && !unique_found) {
+        unique_found |= TUisUniqueUserType (IDS_TYPE (letids));
+        letids = IDS_NEXT (letids);
     }
 
     DBUG_RETURN (unique_found);

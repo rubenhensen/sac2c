@@ -2,9 +2,9 @@
 
 /*****************************************************************************
  *
- * file:   ToOldTypes.h
+ * file:   convert_type_representation.c
  *
- * prefix: TOT
+ * prefix: CTR
  *
  * description:
  *
@@ -15,7 +15,7 @@
  *****************************************************************************/
 
 #include "dbug.h"
-#include "ToOldTypes.h"
+#include "convert_type_representation.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -37,7 +37,7 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_TOT_TYPES(n) (n->oldtypes)
+#define INFO_TYPES(n) (n->oldtypes)
 
 /**
  * INFO functions
@@ -51,7 +51,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_TOT_TYPES (result) = NULL;
+    INFO_TYPES (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -68,7 +68,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTvardec( node *arg_node, node *arg_info)
+ * @fn node *CTRvardec( node *arg_node, node *arg_info)
  *
  *   @brief traverse vardecs only!
  *   @param
@@ -77,18 +77,14 @@ FreeInfo (info *info)
  ******************************************************************************/
 
 node *
-TOTvardec (node *arg_node, info *arg_info)
+CTRvardec (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("TOTvardec");
+    DBUG_ENTER ("CTRvardec");
 
     type = AVIS_TYPE (VARDEC_AVIS (arg_node));
     DBUG_ASSERT ((type != NULL), "missing ntype information");
-
-    if (VARDEC_TYPE (arg_node) != NULL) {
-        VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
-    }
 
     VARDEC_TYPE (arg_node) = TYtype2OldType (type);
 
@@ -103,7 +99,7 @@ TOTvardec (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTarg( node *arg_node, node *arg_info)
+ * @fn node *CTRarg( node *arg_node, node *arg_info)
  *
  *   @brief traverse vardecs only!
  *   @param
@@ -112,11 +108,11 @@ TOTvardec (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TOTarg (node *arg_node, info *arg_info)
+CTRarg (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("TOTarg");
+    DBUG_ENTER ("CTRarg");
 
     type = AVIS_TYPE (ARG_AVIS (arg_node));
     DBUG_ASSERT ((type != NULL), "missing ntype information");
@@ -137,7 +133,7 @@ TOTarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTblock( node *arg_node, node *arg_info)
+ * @fn node *CTRblock( node *arg_node, node *arg_info)
  *
  *   @brief traverse vardecs only!
  *   @param
@@ -146,10 +142,10 @@ TOTarg (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TOTblock (node *arg_node, info *arg_info)
+CTRblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("TOTblock");
+    DBUG_ENTER ("CTRblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
@@ -160,7 +156,7 @@ TOTblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTfundef( node *arg_node, node *arg_info)
+ * @fn node *CTRfundef( node *arg_node, node *arg_info)
  *
  *   @brief
  *   @param
@@ -169,9 +165,9 @@ TOTblock (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TOTfundef (node *arg_node, info *arg_info)
+CTRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TOTfundef");
+    DBUG_ENTER ("CTRfundef");
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -188,8 +184,8 @@ TOTfundef (node *arg_node, info *arg_info)
     if (FUNDEF_TYPES (arg_node) != NULL) {
         FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (FUNDEF_TYPES (arg_node));
     }
-    FUNDEF_TYPES (arg_node) = INFO_TOT_TYPES (arg_info);
-    INFO_TOT_TYPES (arg_info) = NULL;
+    FUNDEF_TYPES (arg_node) = INFO_TYPES (arg_info);
+    INFO_TYPES (arg_info) = NULL;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -200,7 +196,7 @@ TOTfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTret( node *arg_node, node *arg_info)
+ * @fn node *CTRret( node *arg_node, node *arg_info)
  *
  *   @brief
  *   @param
@@ -209,12 +205,12 @@ TOTfundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TOTret (node *arg_node, info *arg_info)
+CTRret (node *arg_node, info *arg_info)
 {
     ntype *type;
     types *old_type;
 
-    DBUG_ENTER ("TOTret");
+    DBUG_ENTER ("CTRret");
 
     type = RET_TYPE (arg_node);
     DBUG_ASSERT (type != NULL, "missing ntype in N_ret!");
@@ -224,15 +220,15 @@ TOTret (node *arg_node, info *arg_info)
     }
 
     old_type = TYtype2OldType (type);
-    TYPES_NEXT (old_type) = INFO_TOT_TYPES (arg_info);
-    INFO_TOT_TYPES (arg_info) = old_type;
+    TYPES_NEXT (old_type) = INFO_TYPES (arg_info);
+    INFO_TYPES (arg_info) = old_type;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TOTdoToOldTypes( node *arg_node)
+ * @fn node *CTRdoConvertToOldTypes( node *arg_node)
  *
  *   @brief replaces "ntype" info by "types" info
  *   @param
@@ -241,13 +237,13 @@ TOTret (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TOTdoToOldTypes (node *syntax_tree)
+CTRdoConvertToOldTypes (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ToOldTypes");
+    DBUG_ENTER ("CTRdoConvertToOldTypes");
 
-    TRAVpush (TR_tot);
+    TRAVpush (TR_ctr);
 
     arg_info = MakeInfo ();
     syntax_tree = TRAVdo (syntax_tree, arg_info);

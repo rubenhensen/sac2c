@@ -1,4 +1,6 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 /******************************************************************************
  *
@@ -94,45 +96,6 @@ BuildTypesRenaming (const char *mod, const char *name)
     sprintf (result, "SACt_%s__%s", mod, name);
 
     DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   types *RenameTypes( types *type)
- *
- * description:
- *   Renames the given type if it is a user-defined SAC-type.
- *   Chains of types structures are considered.
- *
- * remarks:
- *   The complete new name is stored in NAME while MOD is set to NULL.
- *
- ******************************************************************************/
-
-static types *
-RenameTypes (types *type)
-{
-    DBUG_ENTER ("RenameTypes");
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        char *newname;
-
-        newname = BuildTypesRenaming (TYPES_MOD (type), TYPES_NAME (type));
-
-        DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
-                             TYPES_NAME (type), newname));
-
-        TYPES_NAME (type) = MEMfree (TYPES_NAME (type));
-        TYPES_NAME (type) = newname;
-        TYPES_MOD (type) = MEMfree (TYPES_MOD (type));
-
-        if (TYPES_NEXT (type) != NULL) {
-            TYPES_NEXT (type) = RenameTypes (TYPES_NEXT (type));
-        }
-    }
-
-    DBUG_RETURN (type);
 }
 
 /******************************************************************************
@@ -446,10 +409,6 @@ RIDfundef (node *arg_node, info *arg_info)
 
     arg_node = RenameFun (arg_node);
 
-    if (FUNDEF_TYPES (arg_node) != NULL) {
-        FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -472,46 +431,20 @@ RIDarg (node *arg_node, info *arg_info)
 
     /*
      * Here, a string representation for the argument types is built which
-     * is lateron used when renaming the function. If present, we use
+     * is later on used when renaming the function. If present, we use
      * the declared type here, as the ntype might have been modified (e.g.
      * the udts might have been replaced) so that the resulting signature
-     * would not be unique anymore.
+     * would not be unique any more.
      */
+
     if (AVIS_DECLTYPE (ARG_AVIS (arg_node)) != NULL) {
         ot = TYtype2OldType (AVIS_DECLTYPE (ARG_AVIS (arg_node)));
     } else {
-        ot = TYtype2OldType (ARG_NTYPE (arg_node));
+        ot = TYtype2OldType (AVIS_TYPE (ARG_AVIS (arg_node)));
     }
+
     ARG_TYPESTRING (arg_node) = CVtype2String (ot, 2, TRUE);
     ot = FREEfreeOneTypes (ot);
-
-    if (ARG_TYPE (arg_node) != NULL) {
-        ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *RIDvardec( node *arg_node, info *arg_info)
- *
- * Description:
- *   Renames types of declared variables.
- *
- ******************************************************************************/
-
-node *
-RIDvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RIDvardec");
-
-    if (VARDEC_TYPE (arg_node) != NULL) {
-        VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
-    }
 
     arg_node = TRAVcont (arg_node, arg_info);
 

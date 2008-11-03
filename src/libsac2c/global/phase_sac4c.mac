@@ -118,7 +118,8 @@ ENDPHASE (cpc)
 
 PHASE (ccg, "Generating Code", ALWAYS)
 
-SUBPHASE (tot, "Converting to old type representation", TOTdoToOldTypes, ALWAYS, ccg)
+SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, ALWAYS,
+          ccg)
 
 SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, ccg)
 

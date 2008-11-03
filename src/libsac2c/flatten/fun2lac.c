@@ -755,8 +755,6 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 (*vardecs) = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (
                                                                    ARG_AVIS (ext_args)))),
                                            *vardecs);
-                VARDEC_TYPE ((*vardecs)) = DUPdupAllTypes (ARG_TYPE (ext_args));
-
                 /*
                  * tmp_a_i = a_i;
                  */

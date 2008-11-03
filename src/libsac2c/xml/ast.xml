@@ -195,16 +195,7 @@
           <node name="Ap" />
         </travuser>
       </traversal>
-      <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-          <node name="Block" />
-          <node name="Ap" />
-        </travuser>
-      </traversal>
-      <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
+      <traversal id="CTR" name="Converting to old type representation" default="sons" include="convert_type_representation.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Arg" />
@@ -213,7 +204,6 @@
           <node name="Ret" />
         </travuser>
       </traversal>
-      
       <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
         <travuser>
           <node name="Block" />
@@ -497,9 +487,7 @@
 	  <node name="Typedef" />
 	  <node name="Objdef" />
 	  <node name="Avis" />
-	  <node name="Arg" />
 	  <node name="Ret" />
-	  <node name="Vardec" />
 	  <node name="SPId" />
 	  <node name="SPFold" />
 	  <node name="Cast" />
@@ -2324,7 +2312,6 @@
 	  <node name="Objdef" />
 	  <node name="Fundef" />
 	  <node name="Arg" />
-	  <node name="Vardec" />
 	  <node name="Return" />
 	  <node name="Ap" />
 	  <node name="Icm" />
@@ -3106,7 +3093,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="cg_tot" to="final" />
+                  <range from="cg_ctr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3407,7 +3394,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <all />
+                  <range from="cg_ctr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3605,7 +3592,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="cg_tot" to="final" />
+                  <range from="cg_ctr" to="final" />
                 </phases>
               </target>
             </targets>

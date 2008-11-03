@@ -178,25 +178,6 @@ LookupNamespaceForSymbol (const char *name, info *info)
  * Traversal functions
  */
 
-static types *
-ANStypes (types *arg_types, info *arg_info)
-{
-    namespace_t *ns;
-
-    DBUG_ENTER ("ANStypes");
-
-    if (TYPES_MOD (arg_types) == NULL) {
-        /*
-         * look up correct namespace
-         */
-        ns = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
-        TYPES_MOD (arg_types) = STRcpy (NSgetName (ns));
-        ns = NSfreeNamespace (ns);
-    }
-
-    DBUG_RETURN (arg_types);
-}
-
 static ntype *
 ANSntype (ntype *arg_ntype, info *arg_info)
 {
@@ -348,10 +329,6 @@ ANSfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_NS (arg_node) == NULL) {
         FUNDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
-    }
-
-    if (FUNDEF_TYPES (arg_node) != NULL) {
-        FUNDEF_TYPES (arg_node) = ANStypes (FUNDEF_TYPES (arg_node), arg_info);
     }
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -537,10 +514,6 @@ ANSarg (node *arg_node, info *arg_info)
     INFO_IDS (arg_info)
       = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
 
-    if (ARG_TYPE (arg_node) != NULL) {
-        ARG_TYPE (arg_node) = ANStypes (ARG_TYPE (arg_node), arg_info);
-    }
-
     if (ARG_AVIS (arg_node) != NULL) {
         ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
     }
@@ -572,10 +545,6 @@ node *
 ANSvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSvardec");
-
-    if (VARDEC_TYPE (arg_node) != NULL) {
-        VARDEC_TYPE (arg_node) = ANStypes (VARDEC_TYPE (arg_node), arg_info);
-    }
 
     VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 

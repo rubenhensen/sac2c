@@ -1,4 +1,6 @@
 /**
+ * $Id$
+ *
  * @file gatherdependencies.h
  * @brief gathers the dependencies of a sac file
  * @author Stephan Herhut
@@ -14,12 +16,10 @@ extern node *GDPspid (node *arg_node, info *arg_info);
 extern node *GDPspfold (node *arg_node, info *arg_info);
 extern node *GDPtypedef (node *arg_node, info *arg_info);
 extern node *GDPret (node *arg_node, info *arg_info);
-extern node *GDParg (node *arg_node, info *arg_info);
 extern node *GDPavis (node *arg_node, info *arg_info);
 extern node *GDPcast (node *arg_node, info *arg_info);
 extern node *GDPobjdef (node *arg_node, info *arg_info);
 extern node *GDPfundef (node *arg_node, info *arg_info);
-extern node *GDPvardec (node *arg_node, info *arg_info);
 extern node *GDPuse (node *arg_node, info *arg_info);
 extern node *GDPimport (node *arg_node, info *arg_info);
 extern node *GDPmodule (node *arg_node, info *arg_info);

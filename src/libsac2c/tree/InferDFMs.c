@@ -249,44 +249,6 @@ DbugPrintMasks (info *arg_info)
 }
 #endif
 
-/*******************************************************************************
- *
- * function:
- *   bool IsUnique( node *avis)
- *
- * description:
- *   checks if variable belonging to avis is unique. The check is performed
- *   on ntype if available, otherwise on types.
- *
- ******************************************************************************/
-static bool
-IsUnique (node *avis)
-{
-    bool result = FALSE;
-
-    DBUG_ENTER ("IsUnique");
-
-    if (NULL != AVIS_TYPE (avis)) {
-
-        result = TUisUniqueUserType (AVIS_TYPE (avis));
-    } else {
-        if ((NODE_TYPE (AVIS_DECL (avis)) == N_arg)
-            && (ARG_TYPE (AVIS_DECL (avis)) != NULL)) {
-
-            result = TCisUnique (ARG_TYPE (AVIS_DECL (avis)));
-        } else if ((NODE_TYPE (AVIS_DECL (avis)) == N_vardec)
-                   && (VARDEC_TYPE (AVIS_DECL (avis)) != NULL)) {
-
-            result = TCisUnique (VARDEC_TYPE (AVIS_DECL (avis)));
-        } else {
-
-            DBUG_ASSERT (FALSE, "both types and ntype are missing!!");
-        }
-    }
-
-    DBUG_RETURN (result);
-}
-
 /******************************************************************************
  *
  * function:
@@ -702,7 +664,7 @@ AdjustMasksWith_Pre (info *arg_info, node *arg_node)
         /*
          * no unique object -> clear entry in mask
          */
-        if (!IsUnique (avis)) {
+        if (!TUisUniqueUserType (AVIS_TYPE (avis))) {
             DFMsetMaskEntryClear (INFO_NEEDED (arg_info), NULL, avis);
         }
 

@@ -189,18 +189,6 @@ GDPret (node *arg_node, info *arg_info)
 }
 
 node *
-GDParg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("GDParg");
-
-    ARG_TYPE (arg_node) = GDPtypes (ARG_TYPE (arg_node), arg_info);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 GDPavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPavis");
@@ -244,18 +232,6 @@ GDPfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("GDPfundef");
 
     FUNDEF_TYPES (arg_node) = GDPtypes (FUNDEF_TYPES (arg_node), arg_info);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-GDPvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("GDPvardec");
-
-    VARDEC_TYPE (arg_node) = GDPtypes (VARDEC_TYPE (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
