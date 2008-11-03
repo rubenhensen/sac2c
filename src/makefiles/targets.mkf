@@ -161,7 +161,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
 
-libsac2c_concurrent  := cost_model create_mtfuns  spmd_lift \
+libsac2c_concurrent  := cost_model create_mtst_funs  spmd_lift \
                         schedule set_spmd_linksign
 
 libsac2c_multithread := multithread_lib tag_executionmode \

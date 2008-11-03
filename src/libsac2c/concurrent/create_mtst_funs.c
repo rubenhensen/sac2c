@@ -1,10 +1,10 @@
 /*****************************************************************************
  *
- * $Id:$
+ * $Id$
  *
- * file:   create_mtfuns.c
+ * file:   create_mtst_funs.c
  *
- * prefix: CMTF
+ * prefix: MTSTF
  *
  * description:
  *
@@ -32,6 +32,8 @@
  *
  *****************************************************************************/
 
+#include "create_mtst_funs.h"
+
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -42,8 +44,6 @@
 #include "memory.h"
 #include "namespaces.h"
 #include "globals.h"
-
-#include "create_mtfuns.h"
 
 /**
  * INFO structure
@@ -99,7 +99,19 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-#ifdef BEMT
+/******************************************************************************
+ *
+ * @fn bool IsSpmdConditional( node *arg_node)
+ *
+ *  @brief checks for an argument node of type N_cond whether it is one of
+ *    conditionals introduced by the cost model.
+ *
+ *  @param arg_node of type N_cond
+ *
+ *  @return predicate value
+ *
+ *****************************************************************************/
+
 static bool
 IsSpmdConditional (node *arg_node)
 {
@@ -123,13 +135,12 @@ IsSpmdConditional (node *arg_node)
 
     DBUG_RETURN (res);
 }
-#endif
 
 /******************************************************************************
  *
- * @fn node *CMTFdoCreateMtFuns( node *syntax_tree)
+ * @fn node *MTSTFdoCreateMtStFuns( node *syntax_tree)
  *
- *  @brief initiates CMTF traversal
+ *  @brief initiates MTSTF traversal
  *
  *  @param syntax_tree
  *
@@ -138,23 +149,21 @@ IsSpmdConditional (node *arg_node)
  *****************************************************************************/
 
 node *
-CMTFdoCreateMtFuns (node *syntax_tree)
+MTSTFdoCreateMtStFuns (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CMTFdoCreateMtFuns");
+    DBUG_ENTER ("MTSTFdoCreateMtStFuns");
 
-    if ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)) {
-        DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-        info = MakeInfo ();
+    info = MakeInfo ();
 
-        TRAVpush (TR_cmtf);
-        syntax_tree = TRAVdo (syntax_tree, info);
-        TRAVpop ();
+    TRAVpush (TR_mtstf);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
-        info = FreeInfo (info);
-    }
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -185,6 +194,7 @@ MakeCompanion (node *fundef)
                  "Function to be duplicated into companion is neither ST nor MT.");
 
     companion = DUPdoDupNode (fundef);
+
     FUNDEF_COMPANION (fundef) = companion;
     FUNDEF_COMPANION (companion) = fundef;
 
@@ -263,9 +273,9 @@ HandleApFold (node *callee, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *CMTFmodule( node *arg_node, info *arg_info)
+ * @fn node *MTSTFmodule( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_module node
+ *  @brief MTSTF traversal function for N_module node
  *
  *  @param arg_node
  *  @param arg_info
@@ -275,9 +285,9 @@ HandleApFold (node *callee, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFmodule (node *arg_node, info *arg_info)
+MTSTFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMTFmodule");
+    DBUG_ENTER ("MTSTFmodule");
 
     if ((MODULE_FILETYPE (arg_node) == F_modimp)
         || (MODULE_FILETYPE (arg_node) == F_classimp)) {
@@ -295,9 +305,9 @@ CMTFmodule (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *CMTFfundef( node *arg_node, info *arg_info)
+ * @fn node *MTSTFfundef( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_fundef node
+ *  @brief MTSTF traversal function for N_fundef node
  *
  *  @param arg_node
  *  @param arg_info
@@ -307,11 +317,11 @@ CMTFmodule (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFfundef (node *arg_node, info *arg_info)
+MTSTFfundef (node *arg_node, info *arg_info)
 {
     node *companion;
 
-    DBUG_ENTER ("CMTFfundef");
+    DBUG_ENTER ("MTSTFfundef");
 
     if (INFO_ONSPINE (arg_info)) {
 
@@ -401,68 +411,9 @@ CMTFfundef (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *CMTFspmd( node *arg_node, info *arg_info)
+ * @fn node *MTSTFcond( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_spmd node
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
- *****************************************************************************/
-
-node *
-CMTFspmd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CMTFspmd");
-
-#ifndef BEMT
-    if (INFO_MTCONTEXT (arg_info)) {
-        /*
-         * We are already in an MT context. Hence, we eliminate this nested SPMD
-         * block to avoid the recursive unfolding of parallelism.
-         */
-
-        if (NODE_TYPE (BLOCK_INSTR (SPMD_REGION (arg_node))) != N_empty) {
-            INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (SPMD_REGION (arg_node));
-            /*
-             * We store the assignment chain of the SPMD region in the info structure
-             * for subsequent integration into the surrounding assignment chain.
-             */
-
-            BLOCK_INSTR (SPMD_REGION (arg_node)) = TBmakeEmpty ();
-            /*
-             * We must restore a correct N_spmd node for later de-allocation.
-             */
-        }
-    } else {
-        /*
-         * We are not yet in a parallel context. Hence, we traverse the SPMD
-         * region in MT context and the optional sequential alternative of a
-         * conditional SPMD block in sequential mode. We need not to traverse
-         * the condition of a conditional SPMD block because for the time being
-         * it may not contain applications of defined functions.
-         */
-
-        INFO_MTCONTEXT (arg_info) = TRUE;
-        SPMD_REGION (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
-        INFO_MTCONTEXT (arg_info) = FALSE;
-
-        if (SPMD_SEQUENTIAL (arg_node) != NULL) {
-            SPMD_SEQUENTIAL (arg_node) = TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
-        }
-    }
-#endif
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * @fn node *CMTFcond( node *arg_node, info *arg_info)
- *
- *  @brief CMTF traversal function for N_cond node
+ *  @brief MTSTF traversal function for N_cond node
  *
  *  @param arg_node
  *  @param arg_info
@@ -472,11 +423,10 @@ CMTFspmd (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFcond (node *arg_node, info *arg_info)
+MTSTFcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMTFcond");
+    DBUG_ENTER ("MTSTFcond");
 
-#ifdef BEMT
     if (IsSpmdConditional (arg_node) && INFO_MTCONTEXT (arg_info)) {
         /*
          * We are already in an MT context. Hence, we eliminate this nested SPMD
@@ -497,16 +447,15 @@ CMTFcond (node *arg_node, info *arg_info)
         COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
-#endif
 
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
- * @fn node *CMTFwith2( node *arg_node, info *arg_info)
+ * @fn node *MTSTFwith2( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_with2 node
+ *  @brief MTSTF traversal function for N_with2 node
  *
  *  @param arg_node
  *  @param arg_info
@@ -516,11 +465,10 @@ CMTFcond (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFwith2 (node *arg_node, info *arg_info)
+MTSTFwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMTFwith2");
+    DBUG_ENTER ("MTSTFwith2");
 
-#ifdef BEMT
     if (INFO_MTCONTEXT (arg_info)) {
         if (WITH2_MT (arg_node)) {
             WITH2_MT (arg_node) = FALSE;
@@ -544,16 +492,14 @@ CMTFwith2 (node *arg_node, info *arg_info)
         }
     }
 
-#endif
-
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
- * @fn node *CMTFassign( node *arg_node, info *arg_info)
+ * @fn node *MTSTFassign( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_assign node
+ *  @brief MTSTF traversal function for N_assign node
  *
  *  @param arg_node
  *  @param arg_info
@@ -563,11 +509,11 @@ CMTFwith2 (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFassign (node *arg_node, info *arg_info)
+MTSTFassign (node *arg_node, info *arg_info)
 {
     node *assign;
 
-    DBUG_ENTER ("CMTFassign");
+    DBUG_ENTER ("MTSTFassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -596,9 +542,9 @@ CMTFassign (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *CMTFap( node *arg_node, info *arg_info)
+ * @fn node *MTSTFap( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_ap node
+ *  @brief MTSTF traversal function for N_ap node
  *
  *  @param arg_node
  *  @param arg_info
@@ -608,9 +554,9 @@ CMTFassign (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFap (node *arg_node, info *arg_info)
+MTSTFap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMTFap");
+    DBUG_ENTER ("MTSTFap");
 
     AP_FUNDEF (arg_node) = HandleApFold (AP_FUNDEF (arg_node), arg_info);
 
@@ -619,9 +565,9 @@ CMTFap (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *CMTFfold( node *arg_node, info *arg_info)
+ * @fn node *MTSTFfold( node *arg_node, info *arg_info)
  *
- *  @brief CMTF traversal function for N_fold node
+ *  @brief MTSTF traversal function for N_fold node
  *
  *  @param arg_node
  *  @param arg_info
@@ -631,9 +577,9 @@ CMTFap (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CMTFfold (node *arg_node, info *arg_info)
+MTSTFfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMTFfold");
+    DBUG_ENTER ("MTSTFfold");
 
     FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
 

@@ -735,8 +735,7 @@ PHASE (mt, "Running automatic parallelisation",
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
-SUBPHASE (cmtf, "Creating MT variants of exported and provided functions",
-          CMTFdoCreateMtFuns, ALWAYS, mt)
+SUBPHASE (cmtf, "Creating MT and ST functions", CMTFdoCreateMtStFuns, ALWAYS, mt)
 
 SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift, ALWAYS, mt)
 
