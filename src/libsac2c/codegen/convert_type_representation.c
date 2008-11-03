@@ -181,9 +181,6 @@ CTRfundef (node *arg_node, info *arg_info)
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
-    if (FUNDEF_TYPES (arg_node) != NULL) {
-        FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (FUNDEF_TYPES (arg_node));
-    }
     FUNDEF_TYPES (arg_node) = INFO_TYPES (arg_info);
     INFO_TYPES (arg_info) = NULL;
 
