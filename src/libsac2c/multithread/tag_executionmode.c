@@ -762,7 +762,7 @@ AnyUniqueTypeInThere (node *letids)
     unique_found = FALSE;
 
     while (letids != NULL && !unique_found) {
-        unique_found |= TUisUniqueUserType (IDS_TYPE (letids));
+        unique_found |= TUisUniqueUserType (AVIS_TYPE (IDS_AVIS (letids)));
         letids = IDS_NEXT (letids);
     }
 
