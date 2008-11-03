@@ -4732,13 +4732,11 @@ PRTwith3 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTwith3");
 
-    DBUG_ASSERT (FALSE, "implement me please!");
-
     fprintf (global.outfile, " with3 {\n");
 
     global.indent++;
 
-    TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
 
     global.indent--;
 
@@ -4747,7 +4745,7 @@ PRTwith3 (node *arg_node, info *arg_info)
 
     global.indent++;
     if (WITH3_OPERATIONS (arg_node) != NULL) {
-        TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+        WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
     } else {
         INDENT;
         fprintf (global.outfile, "void ");
@@ -4772,26 +4770,22 @@ PRTrange (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTrange");
 
-    DBUG_ASSERT (FALSE, "implement me please!");
-
     INDENT;
 
     fprintf (global.outfile, "(");
-    TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " <= ");
-    TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " in ");
-    TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
     fprintf (global.outfile, ") ");
 
-    TRAVdo (RANGE_BODY (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
     fprintf (global.outfile, " : ");
-    TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
-    if (RANGE_NEXT (arg_node) != NULL) {
-        TRAVdo (RANGE_NEXT (arg_node), arg_info);
-    }
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
