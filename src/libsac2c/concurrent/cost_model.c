@@ -300,14 +300,14 @@ MTCMwith2 (node *arg_node, info *arg_info)
 
     if (INFO_MAYPAR (arg_info)) {
         if (INFO_ISWORTH (arg_info)) {
-            WITH2_MT (arg_node) = TRUE;
+            WITH2_PARALLELIZE (arg_node) = TRUE;
         } else {
             if (INFO_CONDITION (arg_info) != NULL) {
                 INFO_SEQUENTIAL (arg_info)
                   = TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
                                DUPdoDupTree (arg_node));
 
-                WITH2_MT (arg_node) = TRUE;
+                WITH2_PARALLELIZE (arg_node) = TRUE;
             }
         }
     } else {

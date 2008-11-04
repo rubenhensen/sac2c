@@ -737,7 +737,7 @@ SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS,
 
 SUBPHASE (cmtf, "Creating MT and ST functions", CMTFdoCreateMtStFuns, ALWAYS, mt)
 
-SUBPHASE (spmdl, "Lifting SPMD blocks to functions", SPMDLdoSpmdLift, ALWAYS, mt)
+SUBPHASE (spmdl, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 
 SUBPHASE (sched, "Annotating scheduling information", SCHEDdoScheduleTrav, ALWAYS, mt)
 

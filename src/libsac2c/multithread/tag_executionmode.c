@@ -196,7 +196,7 @@ TEMassign (node *arg_node, info *arg_info)
                          "TEMassign expects a N_Nwith2 here");
             /* set the calcparallel-flag */
 
-            WITH2_CALCPARALLEL (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
+            WITH2_PARALLELIZE (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
 
             /* tag the allocations of the withloop */
             MUTHLIBtagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);

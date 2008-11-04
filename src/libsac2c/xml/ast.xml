@@ -2026,13 +2026,10 @@
           <node name="Fold" />
         </travuser>
       </traversal>
-       <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
+       <traversal id="MTSPMDF" name="Create SPMD functions" default="sons" include="create_spmd_funs.h">
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Spmd" />
           <node name="With2" />
           <node name="Let" />
           <node name="Id" />
@@ -3201,7 +3198,7 @@
               <target mandatory="no">
                 <node name="Fundef" />
                 <phases>
-                  <phase name="mt_cmtf"/>
+                  <phase name="mt_mtstf"/>
                 </phases>
               </target>
             </targets>
@@ -6417,35 +6414,10 @@
             </targets>
           </type>
         </attribute>
-         <attribute name="AllocAssigns" inconstructor="no">
-          <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="spmdl" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="FreeAssigns" inconstructor="no">
-          <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="spmdl" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
        </attributes>
       <flags>
-        <flag name="MT" />
 	<flag name="NeedsOffset" />
-	<flag name="CalcParallel" />
+	<flag name="Parallelize" />
       </flags>
     </node>
 <!--
