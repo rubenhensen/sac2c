@@ -1,17 +1,4 @@
-/*
- * $Log$
- * Revision 1.3  2005/08/09 12:35:45  sah
- * only remove a DFMmaskBase if one is present ;)
- *
- * Revision 1.2  2005/07/21 16:59:52  sah
- * the DataFlowMaskBase is removed now as well
- * as it is tightly coupled with the body
- *
- * Revision 1.1  2005/07/21 14:19:27  sah
- * Initial revision
- *
- *
- */
+/* $Id$ */
 
 #include "remove_external_code.h"
 
@@ -48,14 +35,7 @@ RECfundef (node *arg_node, info *arg_info)
         FUNDEF_RETURN (arg_node) = NULL;
 
         /*
-         * remove the dataflowmasks
-         */
-        if (FUNDEF_DFM_BASE (arg_node) != NULL) {
-            FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
-        }
-
-        /*
-         * and free the body
+         * free the body
          */
         FUNDEF_BODY (arg_node) = FREEdoFreeTree (FUNDEF_BODY (arg_node));
     }

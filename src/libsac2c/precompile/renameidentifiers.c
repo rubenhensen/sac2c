@@ -392,21 +392,6 @@ RIDfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    /*
-     * Now, the data flow mask base is updated.
-     * This is necessary because some local identifiers are removed while all
-     * others are renamed.
-     */
-    if (FUNDEF_DFM_BASE (arg_node) != NULL) {
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
-                     "FUNDEF_DFM_BASE without body found!");
-
-        FUNDEF_DFM_BASE (arg_node)
-          = DFMupdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
-                                            FUNDEF_ARGS (arg_node),
-                                            BLOCK_VARDEC (FUNDEF_BODY ((arg_node))));
-    }
-
     arg_node = RenameFun (arg_node);
 
     DBUG_RETURN (arg_node);
