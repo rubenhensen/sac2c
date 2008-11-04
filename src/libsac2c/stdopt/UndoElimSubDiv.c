@@ -38,18 +38,15 @@ struct INFO {
     node *postassign;
     node *let;
     bool topdown;
-    lac_info_t *lacinfo;
 };
 
 /*
  * INFO macros
  */
-#define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_POSTASSIGN(n) ((n)->postassign)
-#define INFO_LET(n) ((n)->let)
-#define INFO_TOPDOWN(n) ((n)->topdown)
-#define INFO_LACINFO(n) ((n)->lacinfo)
-
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_POSTASSIGN(n) (n->postassign)
+#define INFO_LET(n) (n->let)
+#define INFO_TOPDOWN(n) (n->topdown)
 /*
  * INFO functions
  */
@@ -66,7 +63,6 @@ MakeInfo ()
     INFO_POSTASSIGN (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_TOPDOWN (result) = TRUE;
-    INFO_LACINFO (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -212,13 +208,9 @@ UESDdoUndoElimSubDiv (node *arg_node)
 
     info = MakeInfo ();
 
-    INFO_LACINFO (info) = TRAVlacNewInfo (FALSE);
-
     TRAVpush (TR_uesd);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
-
-    INFO_LACINFO (info) = TRAVlacFreeInfo (INFO_LACINFO (info));
 
     info = FreeInfo (info);
 
@@ -226,29 +218,22 @@ UESDdoUndoElimSubDiv (node *arg_node)
 }
 
 /** <!--********************************************************************-->
+ *
  * @fn node *UESDfundef( node *arg_node, info *arg_info)
  *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- ******************************************************************************/
+ *****************************************************************************/
 node *
 UESDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UESDfundef");
 
-    if (TRAVlacIsSuccOf (FUNDEF_BODY (arg_node), arg_node, INFO_LACINFO (arg_info))) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
-        FUNDEF_BODY (arg_node)
-          = TRAVlacOpt (FUNDEF_BODY (arg_node), arg_info, INFO_LACINFO (arg_info));
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (TRAVlacIsSuccOf (FUNDEF_NEXT (arg_node), arg_node, INFO_LACINFO (arg_info))) {
-        FUNDEF_NEXT (arg_node)
-          = TRAVlacOpt (FUNDEF_NEXT (arg_node), arg_info, INFO_LACINFO (arg_info));
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -516,38 +501,6 @@ UESDprf (node *arg_node, info *arg_info)
                 DBUG_ASSERT ((FALSE), "unexpected simpletype");
             }
         }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *UESDap(node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- ******************************************************************************/
-node *
-UESDap (node *arg_node, info *arg_info)
-{
-    info *new_info;
-
-    DBUG_ENTER ("UESDap");
-
-    if (INFO_TOPDOWN (arg_info)
-        && TRAVlacIsSuccOf (AP_FUNDEF (arg_node), arg_node, INFO_LACINFO (arg_info))) {
-        new_info = MakeInfo ();
-        INFO_LACINFO (new_info) = INFO_LACINFO (arg_info);
-
-        AP_FUNDEF (arg_node)
-          = TRAVlacDo (AP_FUNDEF (arg_node), new_info, INFO_LACINFO (arg_info));
-
-        INFO_LACINFO (arg_info) = INFO_LACINFO (new_info);
-        new_info = FreeInfo (new_info);
     }
 
     DBUG_RETURN (arg_node);
