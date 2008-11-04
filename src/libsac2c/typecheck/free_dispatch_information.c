@@ -34,8 +34,12 @@ FDIfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
-        FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+        if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+            FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
+        } else {
+            FUNDEF_IMPL (arg_node) = NULL;
+        }
     }
 
     if (FUNDEF_ISTYPEERROR (arg_node)) {
