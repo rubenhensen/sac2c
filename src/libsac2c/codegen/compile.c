@@ -5311,8 +5311,8 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
     dim = WLNODE_DIM (arg_node);
 
-    if ((!WLNODE_ISNOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && WITH2_MT (wlnode)
-        && (SCHadjustmentRequired (dim, wlseg))) {
+    if ((!WLNODE_ISNOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0)
+        && WITH2_PARALLELIZE (wlnode) && (SCHadjustmentRequired (dim, wlseg))) {
 
         begin_icm
           = TCmakeAssignIcm6 ("MT_ADJUST_SCHEDULER__BEGIN", DUPdupIdsIdNt (wlids),
@@ -6346,7 +6346,7 @@ COMPwlxblock (node *arg_node, info *arg_info)
     dim = WLXBLOCK_DIM (arg_node);
 
     is_block = (NODE_TYPE (arg_node) == N_wlblock);
-    mt_active = WITH2_MT (wlnode);
+    mt_active = WITH2_PARALLELIZE (wlnode);
     offset_needed = WITH2_NEEDSOFFSET (wlnode);
 
     /*******************************************
@@ -6561,7 +6561,7 @@ COMPwlstridex (node *arg_node, info *arg_info)
     level = WLSTRIDEX_LEVEL (arg_node);
     dim = WLSTRIDEX_DIM (arg_node);
 
-    mt_active = WITH2_MT (wlnode);
+    mt_active = WITH2_PARALLELIZE (wlnode);
     offset_needed = WITH2_NEEDSOFFSET (wlnode);
 
     /*******************************************
@@ -6781,7 +6781,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
 
     dim = WLGRIDX_DIM (arg_node);
 
-    mt_active = WITH2_MT (wlnode);
+    mt_active = WITH2_PARALLELIZE (wlnode);
     is_fitted = WLGRIDX_ISFITTED (arg_node);
 
     if (WLGRIDX_ISNOOP (arg_node)) {

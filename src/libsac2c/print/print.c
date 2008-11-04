@@ -70,6 +70,7 @@ struct INFO {
     bool firstError;
     int filecounter;
     int funcounter;
+    node *nonlocalfun;
 };
 
 /* access macros print */
@@ -88,6 +89,7 @@ struct INFO {
 #define INFO_FIRSTERROR(n) ((n)->firstError)
 #define INFO_FILECOUNTER(n) ((n)->filecounter)
 #define INFO_FUNCOUNTER(n) ((n)->filecounter)
+#define INFO_NONLOCCALFUN(n) ((n)->nonlocalfun)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -208,6 +210,7 @@ MakeInfo ()
     INFO_FIRSTERROR (result) = TRUE;
     INFO_FILECOUNTER (result) = 1;
     INFO_FUNCOUNTER (result) = 0;
+    INFO_NONLOCCALFUN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1633,24 +1636,64 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, "#include \"header.h\"\n\n");
                 }
 
+                fprintf (global.outfile, "\n\n"
+                                         "/**********************************************"
+                                         "******************************\n");
+
                 INFO_FUNCOUNTER (arg_info) += 1;
 
                 if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-                    fprintf (global.outfile, "/* wrapper function */\n");
+                    fprintf (global.outfile, " * Wrapper function:\n");
                 } else if (FUNDEF_ISCONDFUN (arg_node)) {
-                    fprintf (global.outfile, "/* Cond function */\n");
-
+                    if (INFO_NONLOCCALFUN (arg_info) == NULL) {
+                        fprintf (global.outfile, " * Cond function:\n");
+                    } else {
+                        fprintf (global.outfile, " * Cond function of ");
+                        if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
+                            fprintf (global.outfile, "%s::",
+                                     NSgetName (
+                                       FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
+                        }
+                        if (FUNDEF_NAME (arg_node) != NULL) {
+                            fprintf (global.outfile, "%s(...):\n",
+                                     FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
+                        }
+                    }
                 } else if (FUNDEF_ISDOFUN (arg_node)) {
-                    fprintf (global.outfile, "/* Loop function */\n");
+                    if (INFO_NONLOCCALFUN (arg_info) == NULL) {
+                        fprintf (global.outfile, " * Loop function:\n");
+                    } else {
+                        fprintf (global.outfile, " * Loop function of ");
+                        if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
+                            fprintf (global.outfile, "%s::",
+                                     NSgetName (
+                                       FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
+                        }
+                        if (FUNDEF_NAME (arg_node) != NULL) {
+                            fprintf (global.outfile, "%s(...):\n",
+                                     FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
+                        }
+                    }
                 }
 
                 if (FUNDEF_ISMTFUN (arg_node)) {
-                    fprintf (global.outfile, "/* Multi-threaded function */\n");
+                    fprintf (global.outfile, " * MT function:\n");
                 } else if (FUNDEF_ISSTFUN (arg_node)) {
-                    fprintf (global.outfile, "/* Single-threaded function */\n");
+                    fprintf (global.outfile, " * ST function:\n");
                 } else if (FUNDEF_ISSPMDFUN (arg_node)) {
-                    fprintf (global.outfile, "/* SPMD function */\n");
+                    fprintf (global.outfile, " * SPMD function:\n");
                 }
+
+                fprintf (global.outfile, " * ");
+                if (FUNDEF_NS (arg_node) != NULL) {
+                    fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (arg_node)));
+                }
+
+                fprintf (global.outfile,
+                         "%s(...)\n"
+                         " **************************************************************"
+                         "**************/\n",
+                         FUNDEF_NAME (arg_node));
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
@@ -1685,6 +1728,12 @@ PRTfundef (node *arg_node, info *arg_info)
                     && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
                     fclose (global.outfile);
                     global.outfile = NULL;
+                }
+
+                if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+                    INFO_NONLOCCALFUN (arg_info) = arg_node;
+                    TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
+                    INFO_NONLOCCALFUN (arg_info) = NULL;
                 }
             }
         }
@@ -4124,7 +4173,7 @@ PRTwith2 (node *arg_node, info *arg_info)
     TRAVdo (WITH2_WITHID (arg_node), arg_info);
     fprintf (global.outfile, ")\n");
 
-    if (WITH2_MT (arg_node)) {
+    if (WITH2_PARALLELIZE (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/** MT **/\n");
     }

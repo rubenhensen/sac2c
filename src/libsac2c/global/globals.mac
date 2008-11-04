@@ -473,6 +473,12 @@ GLOBAL (bool, ssaiv, FALSE)
 GLOBAL (bool, extremaanalysis, FALSE)
 
 /*
+ * activate/control grouping of local functions
+ */
+GLOBAL (bool, local_funs_grouped, FALSE)
+GLOBAL (bool, group_local_funs, FALSE)
+
+/*
  * whether to enable the stuff tog does (-:
  */
 GLOBAL (bool, dotogstuff, FALSE)

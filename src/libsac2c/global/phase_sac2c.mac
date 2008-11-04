@@ -278,6 +278,9 @@ SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemoval
 
 /*************************************************/
 
+SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, global.group_local_funs,
+          opt)
+
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
 FUNBEGIN (cyc, opt, cyc)
@@ -426,6 +429,9 @@ FUNEND (scyc)
 CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, scyc)
 
 ENDCYCLE (scyc)
+
+SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns,
+          global.group_local_funs, opt)
 
 /*************************************************/
 
@@ -735,7 +741,7 @@ PHASE (mt, "Running automatic parallelisation",
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
-SUBPHASE (cmtf, "Creating MT and ST functions", CMTFdoCreateMtStFuns, ALWAYS, mt)
+SUBPHASE (cmtf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
 SUBPHASE (spmdl, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 

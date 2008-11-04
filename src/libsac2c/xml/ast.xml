@@ -171,6 +171,19 @@
           <node name="Block" />
         </travuser>
       </traversal>
+      <traversal id="GLF" name="Group Local functions" default="sons" include="group_local_funs.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+        </travuser>
+      </traversal> 
+      <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal> 
       <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
         <travuser>
           <node name="Fundef" />
@@ -2990,6 +3003,16 @@
               <node name="Exprs" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="LocalFuns" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Fundef" />
+              <phases>
+                <range from="opt_glf" to="opt_uglf" />
               </phases>
             </target>
           </targets>

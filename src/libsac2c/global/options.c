@@ -345,6 +345,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
      */
 
+    ARGS_FLAG ("g", global.cc_debug = TRUE);
+
     ARGS_OPTION_BEGIN ("genlib")
     {
         ARG_CHOICE_BEGIN ();
@@ -356,7 +358,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("genlib");
 
-    ARGS_FLAG ("g", global.cc_debug = TRUE);
+    ARGS_FLAG ("glf", global.group_local_funs = TRUE);
 
     /*
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
