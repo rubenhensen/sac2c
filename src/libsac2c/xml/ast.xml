@@ -496,7 +496,6 @@
         <travuser>
 	  <node name="Use" />
 	  <node name="Import" />
-	  <node name="Fundef" />
 	  <node name="Typedef" />
 	  <node name="Objdef" />
 	  <node name="Avis" />

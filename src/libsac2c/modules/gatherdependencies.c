@@ -126,20 +126,6 @@ GDPntype (ntype *arg_type, info *arg_info)
     DBUG_RETURN (arg_type);
 }
 
-static types *
-GDPtypes (types *arg_types, info *arg_info)
-{
-    DBUG_ENTER ("GDPtypes");
-
-    if (arg_types != NULL) {
-        AddModuleToDependencies (TYPES_MOD (arg_types), arg_info);
-
-        TYPES_NEXT (arg_types) = GDPtypes (TYPES_NEXT (arg_types), arg_info);
-    }
-
-    DBUG_RETURN (arg_types);
-}
-
 node *
 GDPspid (node *arg_node, info *arg_info)
 {
@@ -220,18 +206,6 @@ GDPobjdef (node *arg_node, info *arg_info)
     OBJDEF_TYPE (arg_node) = GDPntype (OBJDEF_TYPE (arg_node), arg_info);
 
     AddNamespaceToDependencies (OBJDEF_NS (arg_node), arg_info);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-GDPfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("GDPfundef");
-
-    FUNDEF_TYPES (arg_node) = GDPtypes (FUNDEF_TYPES (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

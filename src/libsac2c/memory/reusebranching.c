@@ -247,7 +247,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             node *thenids, *elseids;
             node *assids;
             node *cfids;
-            types *cftypes;
             node *cfrets;
             node *cfargs;
             lut_t *cflut, *tmplut;
@@ -255,7 +254,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             /*
              * Create condfun return types
              */
-            cftypes = NULL;
             cfrets = NULL;
             asslast = ass;
             while (ASSIGN_NEXT (asslast) != NULL) {
@@ -266,9 +264,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                 cfrets = TCappendRet (cfrets, TBmakeRet (TYeliminateAKV (
                                                            AVIS_TYPE (IDS_AVIS (assids))),
                                                          NULL));
-
-                cftypes = TCappendTypes (cftypes,
-                                         TYtype2OldType (AVIS_TYPE (IDS_AVIS (assids))));
                 assids = IDS_NEXT (assids);
             }
 
@@ -285,8 +280,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             condfun = TBmakeFundef (CreateLacFunName (root_funname),
                                     NSdupNamespace (FUNDEF_NS (fundef)), cfrets, cfargs,
                                     TBmakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
-
-            FUNDEF_TYPES (condfun) = cftypes;
 
             FUNDEF_NEXT (fundef) = condfun;
             FUNDEF_ISCONDFUN (condfun) = TRUE;

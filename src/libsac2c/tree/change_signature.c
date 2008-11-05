@@ -189,39 +189,6 @@ FreeFundefNretExpr (node *exprs, int actpos, int freepos)
 /******************************************************************************
  *
  * function:
- *   static node *FreeFundefNtype(types *typelist, int actpos, int freepos)
- *
- * description:
- *   recurive traversal of type list of
- *   results to free the type in position freepos.
- *****************************************************************************/
-
-static types *
-FreeFundefNtype (types *typelist, int actpos, int freepos)
-{
-    types *tmp;
-
-    DBUG_ENTER ("FreeFundefNtype");
-
-    DBUG_ASSERT ((typelist != NULL), "unexpected end of type-list");
-
-    if (actpos == freepos) {
-        tmp = typelist;
-        typelist = TYPES_NEXT (typelist);
-
-        /* free type */
-        FREEfreeOneTypes (tmp);
-    } else {
-        TYPES_NEXT (typelist)
-          = FreeFundefNtype (TYPES_NEXT (typelist), actpos + 1, freepos);
-    }
-
-    DBUG_RETURN (typelist);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *CSremoveArg(node *fundef,
  *                     node *arg,
  *                     nodelist *letlist,
@@ -338,20 +305,6 @@ CSremoveResult (node *fundef, int position, nodelist *letlist)
       = FreeFundefNretExpr (RETURN_EXPRS (FUNDEF_RETURN (fundef)), 1, position);
 
     /*
-     * remove result from old list of return types.
-     */
-    if (FUNDEF_TYPES (fundef) != NULL) {
-        FUNDEF_TYPES (fundef) = FreeFundefNtype (FUNDEF_TYPES (fundef), 1, position);
-
-        /*
-         * Maybe, we have eliminated the very last return type.
-         */
-        if (FUNDEF_TYPES (fundef) == NULL) {
-            FUNDEF_TYPES (fundef) = TBmakeTypes1 (T_void);
-        }
-    }
-
-    /*
      * Remove return list entry.
      */
     FUNDEF_RETS (fundef) = FreeFundefNret (FUNDEF_RETS (fundef), 1, position);
@@ -461,7 +414,6 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
     /*
      * all applictions adjusted, now adjust fundef:
      * 1. add additional result (given id in exprs chain)
-     * 2. add additional type to types chain
      */
     DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "missing link to return statement");
 
@@ -469,17 +421,6 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
 
     RETURN_EXPRS (FUNDEF_RETURN (fundef))
       = TBmakeExprs (new_id, RETURN_EXPRS (FUNDEF_RETURN (fundef)));
-
-    if (FUNDEF_TYPES (fundef) != NULL) {
-        if (TYPES_BASETYPE (FUNDEF_TYPES (fundef)) == T_void) {
-            FUNDEF_TYPES (fundef) = FREEfreeAllTypes (FUNDEF_TYPES (fundef));
-        }
-
-        /* create new type */
-        FUNDEF_TYPES (fundef)
-          = TCappendTypes (DUPdupAllTypes (VARDEC_OR_ARG_TYPE (vardec)),
-                           FUNDEF_TYPES (fundef));
-    }
 
     FUNDEF_RETS (fundef)
       = TCappendRet (TBmakeRet (TYcopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (vardec))),
