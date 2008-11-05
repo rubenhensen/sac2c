@@ -74,7 +74,7 @@ libsac2c_global      := main usage memory globals \
 libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         LookUpTable DataFlowMask DataFlowMaskUtils check_mem \
                         InferDFMs cleanup_decls change_signature compare_tree \
-                        scheduling wl_bounds node_basic free_node \
+                        wl_bounds node_basic free_node \
                         free_attribs traverse_tables traverse_helper check \
                         check_lib checktst prepare_inlining map_call_graph \
                         map_fun_trav check_node check_attribs remove_dfms \
@@ -162,7 +162,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs \
-                        schedule set_spmd_linksign
+                        scheduling annotate_scheduling set_spmd_linksign
 
 libsac2c_multithread := multithread_lib tag_executionmode \
                         propagate_executionmode create_cells \
