@@ -287,17 +287,6 @@ extern node *TCunAliasObjdef (node *objdef);
 
 #define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
 
-/*
- * Ugly macros, don't use
- */
-#define FUNDEF_BASETYPE(n) (TYPES_BASETYPE (FUNDEF_TYPES (n)))
-#define FUNDEF_DIM(n) (TYPES_DIM (FUNDEF_TYPES (n)))
-#define FUNDEF_SHAPE(n, x) (TYPES_SHAPE (FUNDEF_TYPES (n), x))
-#define FUNDEF_SHPSEG(n) (TYPES_SHPSEG (FUNDEF_TYPES (n)))
-#define FUNDEF_TNAME(n) (TYPES_NAME (FUNDEF_TYPES (n)))
-#define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
-#define FUNDEF_TDEF(n) (TYPES_TDEF (FUNDEF_TYPES (n)))
-
 extern node *TCfindVardec_Name (char *name, node *fundef);
 extern node *TCfindVardec_Varno (int varno, node *fundef);
 
