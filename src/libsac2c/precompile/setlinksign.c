@@ -20,6 +20,12 @@
  *   those external functions without a linksign pragma appropriate indices
  *   are annotated in this compiler phase.
  *
+ *   A note on the HASLINKSIGN flag:
+ *   Until here this flag is used to mark whether or not the numerical index
+ *   does indeed express linksign information. From this phase on, the link
+ *   sign indices are always properly set. Hence, there is no immediate need
+ *   to set the HASLINKSIGN flag as well.
+ *
  *****************************************************************************/
 
 #include "setlinksign.h"
