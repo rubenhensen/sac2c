@@ -73,11 +73,15 @@ FreeInfo (info *info)
 }
 
 /**
- * Local functions
+ * Auxiliary functions
  */
 
-static bool
-IsLocalFun (node *fundef)
+/*
+ * We export this function to have a common predicate here and in traverse.c
+ */
+
+bool
+GLFisLocalFun (node *fundef)
 {
     bool is_local_fun;
 
@@ -136,7 +140,7 @@ GLFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("GLFfundef");
 
     if (INFO_SPINE (arg_info)) {
-        if (IsLocalFun (arg_node)) {
+        if (GLFisLocalFun (arg_node)) {
             arg_node = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         } else {
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -149,7 +153,7 @@ GLFfundef (node *arg_node, info *arg_info)
             INFO_LOCALFUNS (arg_info) = NULL;
         }
     } else {
-        if (IsLocalFun (arg_node)) {
+        if (GLFisLocalFun (arg_node)) {
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             FUNDEF_NEXT (arg_node) = INFO_LOCALFUNS (arg_info);
             INFO_LOCALFUNS (arg_info) = arg_node;

@@ -19,4 +19,6 @@ node *GLFmodule (node *arg_node, info *arg_info);
 node *GLFfundef (node *arg_node, info *arg_info);
 node *GLFap (node *arg_node, info *arg_info);
 
+bool GLFisLocalFun (node *fundef);
+
 #endif /* _SAC_GROUP_LOCAL_FUNS_H_ */

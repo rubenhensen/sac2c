@@ -20,6 +20,7 @@
 #include "math_utils.h"
 #include "sanity_checks.h"
 #include "memory.h"
+#include "group_local_funs.h"
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
@@ -77,24 +78,39 @@ TRAVdo (node *arg_node, info *arg_info)
     global.linenum = old_linenum;
     global.filename = old_filename;
 
-    if ((arg_node != NULL) && (travstack->traversal != TR_anonymous)
-        && (NODE_TYPE (arg_node) == N_module)) {
-        /*
-         * arg_node may have become NULL during traversal.
-         */
-        MODULE_FUNS (arg_node)
-          = TCappendFundef (DUPgetCopiedSpecialFundefs (), MODULE_FUNS (arg_node));
-        if (MODULE_FUNS (arg_node) != NULL) {
-            MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
-        }
+    if ((arg_node != NULL) && (travstack->traversal != TR_anonymous)) {
+        switch (NODE_TYPE (arg_node)) {
+        case N_module:
+            MODULE_FUNS (arg_node)
+              = TCappendFundef (DUPgetCopiedSpecialFundefs (), MODULE_FUNS (arg_node));
 
-        if (MODULE_FUNDECS (arg_node) != NULL) {
-            MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
-        }
+            if (MODULE_FUNS (arg_node) != NULL) {
+                MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
+            }
 
-        if (MODULE_FUNSPECS (arg_node) != NULL) {
-            MODULE_FUNSPECS (arg_node)
-              = FREEremoveAllZombies (MODULE_FUNSPECS (arg_node));
+            if (MODULE_FUNDECS (arg_node) != NULL) {
+                MODULE_FUNDECS (arg_node)
+                  = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
+            }
+
+            if (MODULE_FUNSPECS (arg_node) != NULL) {
+                MODULE_FUNSPECS (arg_node)
+                  = FREEremoveAllZombies (MODULE_FUNSPECS (arg_node));
+            }
+            break;
+        case N_fundef:
+            if (global.local_funs_grouped && !GLFisLocalFun (arg_node)) {
+                FUNDEF_LOCALFUNS (arg_node)
+                  = TCappendFundef (DUPgetCopiedSpecialFundefs (),
+                                    FUNDEF_LOCALFUNS (arg_node));
+                if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+                    FUNDEF_LOCALFUNS (arg_node)
+                      = FREEremoveAllZombies (FUNDEF_LOCALFUNS (arg_node));
+                }
+            }
+            break;
+        default:
+            break;
         }
     }
 

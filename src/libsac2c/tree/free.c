@@ -17,7 +17,7 @@
  * static global variables
  */
 
-static int zombies_exist = 0;
+static int num_zombies = 0;
 
 /*
  * INFO functions
@@ -414,7 +414,7 @@ FreeZombie (node *fundef)
         tmp->attribs.N_fundef = NULL;
         tmp = MEMfree (tmp);
 
-        zombies_exist -= 1;
+        num_zombies -= 1;
     }
 
     DBUG_RETURN (fundef);
@@ -437,7 +437,12 @@ FREEremoveAllZombies (node *arg_node)
 
     DBUG_ASSERT ((arg_node != NULL), "FREEremoveAllZombies called with argument NULL");
 
-    if ((FUNDEF_NEXT (arg_node) != NULL) && (zombies_exist > 0)) {
+    if (global.local_funs_grouped && (FUNDEF_LOCALFUNS (arg_node) != NULL)
+        && (num_zombies > 0)) {
+        FUNDEF_LOCALFUNS (arg_node) = FREEremoveAllZombies (FUNDEF_LOCALFUNS (arg_node));
+    }
+
+    if ((FUNDEF_NEXT (arg_node) != NULL) && (num_zombies > 0)) {
         FUNDEF_NEXT (arg_node) = FREEremoveAllZombies (FUNDEF_NEXT (arg_node));
     }
 
@@ -501,7 +506,7 @@ FREEzombify (node *arg_node)
      * function to clear all existing flags at once.
      */
 
-    zombies_exist += 1;
+    num_zombies += 1;
 
     DBUG_RETURN (arg_node);
 }
