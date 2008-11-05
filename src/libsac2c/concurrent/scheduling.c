@@ -414,8 +414,10 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
                                      SPAP_ARGS (ap_node), line);
     } else {
-        CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
-                            "Scheduling(): Unknown scheduler");
+        CTIabortLine (line,
+                      "Illegal argument in wlcomp-pragma found:\n"
+                      "Scheduling( %s): Unknown scheduler",
+                      SPAP_NAME (ap_node));
     }
 
     DBUG_RETURN (sched);
@@ -1115,7 +1117,8 @@ static struct {
 } taskselector_table[] = {
   /* Name           num_args,  dims*/
   {"Even", 2, 1},
-  {"Factoring", 1, 1}};
+  {"Factoring", 1, 1},
+  {"", 0, 0}};
 
 /******************************************************************************
  *
@@ -1212,8 +1215,10 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
 
         tasksel = CheckTaskselArgs (tasksel, SPAP_ARGS (ap_node), line);
     } else {
-        CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
-                            "Tasksel(): Unknown Taskselector");
+        CTIabortLine (line,
+                      "Illegal argument in wlcomp-pragma found:\n"
+                      "Tasksel( %s): Unknown Taskselector",
+                      SPAP_NAME (ap_node));
     }
 
     DBUG_RETURN (tasksel);

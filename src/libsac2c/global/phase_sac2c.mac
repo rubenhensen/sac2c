@@ -747,12 +747,12 @@ SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, m
 
 #ifdef TO_BE_DONE
 
-SUBPHASE (mtdvr, "Removing superfluous variable declarations", MTDVRremoveDeadVardecs,
+SUBPHASE (mtdvr, "Removing superfluous variable declarations", MTDVRdoRemoveDeadVardecs,
           ALWAYS, mt)
 
 #endif
 
-SUBPHASE (sched, "Annotating scheduling information", SCHEDdoScheduleTrav, ALWAYS, mt)
+SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)
 
 SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign, ALWAYS, mt)
 
