@@ -2051,6 +2051,7 @@
 
       <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
         <travuser>
+          <node name="Module" />
           <node name="Fundef" />
           <node name="With2" />
           <node name="WLsegVar" />

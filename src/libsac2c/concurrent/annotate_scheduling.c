@@ -39,12 +39,14 @@
  */
 
 struct INFO {
-    int dummy;
+    bool inspmdfun;
 };
 
 /**
  * INFO macros
  */
+
+#define INFO_INSPMDFUN(n) (n->inspmdfun)
 
 /**
  * INFO functions
@@ -58,6 +60,8 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
+
+    INFO_INSPMDFUN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -102,29 +106,6 @@ MTASdoAnnotateScheduling (node *syntax_tree)
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *MTASfundef( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-
-node *
-MTASfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MTASfundef");
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node),
-                                         FUNDEF_ISSPMDFUN (arg_node) ? arg_info : NULL);
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -211,108 +192,39 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
     DBUG_RETURN (sched);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *MTASwlseg(node *arg_node, info *arg_info)
+ * @fn node *MTASmodule( node *arg_node, info *arg_info)
  *
- * description:
- *   sched_tab traversal function for N_WLseg nodes.
- *
- *   This function assures that each segment within an spmd-function has
- *   a scheduling specification while all segments outside of spmd-functions
- *   do not have scheduling specifications.
- *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
-MTASwlseg (node *arg_node, info *arg_info)
+MTASmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTASwlseg");
+    DBUG_ENTER ("MTASmodule");
 
-    if (arg_info == NULL) {
-        /*
-         * Here, we are not within an spmd-function, so schedulings derived from
-         * wlcomp pragmas must be removed.
-         */
-        if (WLSEG_SCHEDULING (arg_node) != NULL) {
-            WLSEG_SCHEDULING (arg_node)
-              = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));
-        }
-        if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
-        }
-
-    } else {
-        /*
-         * Here, we are within an spmd-function, so if no scheduling is already
-         * present, the inference strategy is used. Otherwise a scheduling derived
-         * froma wlcomp pragma is checked for suitability for constant segments.
-         */
-        if (WLSEG_SCHEDULING (arg_node) == NULL) {
-            WLSEG_SCHEDULING (arg_node)
-              = InferSchedulingConstSegment (arg_node, arg_info);
-        } else {
-            SCHcheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
-        }
-    }
-
-    if (WLSEG_NEXT (arg_node) != NULL) {
-        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *MTASwlsegvar(node *arg_node, info *arg_info)
+ * @fn node *MTASfundef( node *arg_node, info *arg_info)
  *
- * description:
- *   sched_tab traversal function for N_WLsegVar nodes.
- *
- *   This function assures that each segment within an spmd-function has
- *   a scheduling specification while all segments outside of spmd-functions
- *   do not have scheduling specifications.
- *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
-MTASwlsegvar (node *arg_node, info *arg_info)
+MTASfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTASwlsegvar");
+    DBUG_ENTER ("MTASfundef");
 
-    if (arg_info == NULL) {
-        /*
-         * Here, we are not within an spmd-function, so schedulings derived from
-         * wlcomp pragmas must be removed.
-         */
-        if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
-        }
-        if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
-        }
-
-    } else {
-        /*
-         * Here, we are within an spmd-function, so if no scheduling is already
-         * present, the inference strategy is used. Otherwise a scheduling derived
-         * from wlcomp pragma is checked for suitability for constant segments.
-         */
-        if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = InferSchedulingVarSegment (arg_node, arg_info);
-        } else {
-            SCHcheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
-        }
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_INSPMDFUN (arg_info) = FUNDEF_ISSPMDFUN (arg_node);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (WLSEGVAR_NEXT (arg_node) != NULL) {
-        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -344,6 +256,110 @@ MTASwith2 (node *arg_node, info *arg_info)
      * be removed from nested with-loops. The NULL pointer is used to mark this
      * behaviour.
      */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MTASwlseg(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   sched_tab traversal function for N_WLseg nodes.
+ *
+ *   This function assures that each segment within an spmd-function has
+ *   a scheduling specification while all segments outside of spmd-functions
+ *   do not have scheduling specifications.
+ *
+ ******************************************************************************/
+
+node *
+MTASwlseg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MTASwlseg");
+
+    if (INFO_INSPMDFUN (arg_info)) {
+        /*
+         * Here, we are within an spmd-function, so if no scheduling is already
+         * present, the inference strategy is used. Otherwise a scheduling derived
+         * froma wlcomp pragma is checked for suitability for constant segments.
+         */
+        if (WLSEG_SCHEDULING (arg_node) == NULL) {
+            WLSEG_SCHEDULING (arg_node)
+              = InferSchedulingConstSegment (arg_node, arg_info);
+        } else {
+            SCHcheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
+        }
+    } else {
+        /*
+         * Here, we are not within an spmd-function, so schedulings derived from
+         * wlcomp pragmas must be removed.
+         */
+        if (WLSEG_SCHEDULING (arg_node) != NULL) {
+            WLSEG_SCHEDULING (arg_node)
+              = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));
+        }
+        if (WLSEGX_TASKSEL (arg_node) != NULL) {
+            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
+        }
+    }
+
+    if (WLSEG_NEXT (arg_node) != NULL) {
+        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MTASwlsegvar(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   sched_tab traversal function for N_WLsegVar nodes.
+ *
+ *   This function assures that each segment within an spmd-function has
+ *   a scheduling specification while all segments outside of spmd-functions
+ *   do not have scheduling specifications.
+ *
+ ******************************************************************************/
+
+node *
+MTASwlsegvar (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MTASwlsegvar");
+
+    if (INFO_INSPMDFUN (arg_info)) {
+        /*
+         * Here, we are within an spmd-function, so if no scheduling is already
+         * present, the inference strategy is used. Otherwise a scheduling derived
+         * from wlcomp pragma is checked for suitability for constant segments.
+         */
+        if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
+            WLSEGVAR_SCHEDULING (arg_node)
+              = InferSchedulingVarSegment (arg_node, arg_info);
+        } else {
+            SCHcheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
+        }
+    } else {
+        /*
+         * Here, we are not within an spmd-function, so schedulings derived from
+         * wlcomp pragmas must be removed.
+         */
+        if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+            WLSEGVAR_SCHEDULING (arg_node)
+              = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
+        }
+        if (WLSEGX_TASKSEL (arg_node) != NULL) {
+            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
+        }
+    }
+
+    if (WLSEGVAR_NEXT (arg_node) != NULL) {
+        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
