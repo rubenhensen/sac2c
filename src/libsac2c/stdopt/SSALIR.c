@@ -2065,10 +2065,64 @@ LIRMOVids (node *arg_ids, info *arg_info)
     DBUG_RETURN (arg_ids);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *FreeLIRSubstInfo( node *arg_node, info *arg_info)
+ *
+ * @brief Frees the AVIS_SUBST attribute of an N_AVIS node after the LIR phase
+ *
+ * @param arg_node N_avis node
+ * @param arg_info unused
+ *
+ * @return modified N_avis node
+ ******************************************************************************/
+static node *
+FreeLIRSubstInfo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FreeLIRSubstInfo");
+
+    if (AVIS_SUBST (arg_node) != NULL) {
+        AVIS_SUBST (arg_node) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *FreeLIRInformation( node *arg_node)
+ *
+ * @brief Clears the AVIS_SUBST information from all N_avis nodes within a
+ *        function/module.
+ *
+ * @param arg_node N_fundef node of function to be cleared or
+ *               N_module node of module to be cleared.
+ *
+ * @return modified N_fundef node or N_module node.
+ ******************************************************************************/
+static node *
+FreeLIRInformation (node *arg_node)
+{
+    anontrav_t freetrav[2] = {{N_avis, &FreeLIRSubstInfo}, {0, NULL}};
+
+    DBUG_ENTER ("FreeLIRInformation");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "FreeLIRInformation called with non-module/non-fundef node");
+
+    TRAVpushAnonymous (freetrav, &TRAVsons);
+    if (NODE_TYPE (arg_node) == N_module) {
+        MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), NULL);
+    } else {
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), NULL);
+    }
+    TRAVpop ();
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
- *   node* LIRdoLoopInvariantRemovalOneFundef(node* fundef)
+ *   node* LIRdoWithLoopInvariantRemovalOneFundef(node* fundef)
  *
  * description:
  *   starts the with-loop invariant removal for fundef nodes.
@@ -2092,6 +2146,12 @@ LIRdoWithLoopInvariantRemovalOneFundef (node *fundef)
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    /*
+     * we free the information gathered by LIR here as it is no longer
+     * used after this transformation
+     */
+    fundef = FreeLIRInformation (fundef);
 
     DBUG_RETURN (fundef);
 }
@@ -2128,6 +2188,12 @@ LIRdoLoopInvariantRemoval (node *module)
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    /*
+     * we free the information gathered by LIR here as it is no longer
+     * used after this transformation
+     */
+    module = FreeLIRInformation (module);
 
     DBUG_RETURN (module);
 }
