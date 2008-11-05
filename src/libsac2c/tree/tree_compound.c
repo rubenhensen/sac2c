@@ -3092,7 +3092,7 @@ TCSetIsSubset (node *super, node *sub)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  ERROR :
+ ***  N_error :
  ***/
 
 node *
@@ -3103,6 +3103,38 @@ TCappendError (node *chain, node *item)
     DBUG_ENTER ("TCappendError");
 
     APPEND (ret, node *, IDS, chain, item);
+
+    DBUG_RETURN (ret);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_range :
+ ***/
+
+/** <!-- ****************************************************************** -->
+ * @brief Appends the second argument to the chain of ranges given by the
+ *        first argument.
+ *
+ * @param range_chain chain of range nodes to be appended to
+ * @param range range nodes to be appended
+ *
+ * @return combined chain
+ ******************************************************************************/
+node *
+TCappendRange (node *range_chain, node *range)
+{
+    node *ret;
+
+    DBUG_ENTER ("TCappendRange");
+
+    DBUG_ASSERT (((range_chain == NULL) || (NODE_TYPE (range_chain) == N_range)),
+                 ("First argument of AppendRange() has wrong node type."));
+    DBUG_ASSERT (((range == NULL) || (NODE_TYPE (range) == N_range)),
+                 ("Second argument of AppendRange() has wrong node type."));
+
+    APPEND (ret, node *, RANGE, range_chain, range);
 
     DBUG_RETURN (ret);
 }

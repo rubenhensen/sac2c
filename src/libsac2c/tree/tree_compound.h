@@ -1870,4 +1870,12 @@ extern bool TCSetIsSubset (node *super, node *sub);
 
 extern node *TCappendError (node *chain, node *item);
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_range :
+ ***/
+
+extern node *TCappendRange (node *range_chain, node *range);
+
 #endif /* _SAC_TREE_COMPOUND_H_ */
