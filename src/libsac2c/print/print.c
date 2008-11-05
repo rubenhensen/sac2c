@@ -3321,69 +3321,6 @@ PRTpragma (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PRTspmd( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PRTspmd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTspmd");
-
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, "/*** begin of SPMD region ***\n");
-
-    INDENT;
-    fprintf (global.outfile, " * in:");
-    DFMprintMask (global.outfile, " %s", SPMD_IN (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * out:");
-    DFMprintMask (global.outfile, " %s", SPMD_OUT (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * local:");
-    DFMprintMask (global.outfile, " %s", SPMD_LOCAL (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " */\n");
-
-    if (SPMD_COND (arg_node) == NULL) {
-        TRAVdo (SPMD_REGION (arg_node), arg_info);
-    } else {
-        fprintf (global.outfile, "\n");
-        INDENT;
-        fprintf (global.outfile, "if (");
-        TRAVdo (SPMD_COND (arg_node), arg_info);
-        fprintf (global.outfile, ")\n");
-        TRAVdo (SPMD_REGION (arg_node), arg_info);
-        INDENT;
-        fprintf (global.outfile, "else\n");
-        TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
-    }
-
-    fprintf (global.outfile, "\n");
-    INDENT;
-    fprintf (global.outfile, "/*** end of SPMD region ***/\n");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *PRTmt(node *arg_node, info *arg_info)
  *
  * Description:

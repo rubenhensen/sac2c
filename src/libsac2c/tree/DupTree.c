@@ -1726,28 +1726,6 @@ DUPicm (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPspmd (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPspmd");
-
-    new_node
-      = TBmakeSpmd (DUPTRAV (SPMD_COND (arg_node)), DUPTRAV (SPMD_REGION (arg_node)),
-                    DUPTRAV (SPMD_SEQUENTIAL (arg_node)));
-
-    SPMD_IN (new_node) = DupDfmask (SPMD_IN (arg_node), arg_info);
-    SPMD_OUT (new_node) = DupDfmask (SPMD_OUT (arg_node), arg_info);
-    SPMD_LOCAL (new_node) = DupDfmask (SPMD_LOCAL (arg_node), arg_info);
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPwith (node *arg_node, info *arg_info)
 {
     node *new_node, *partn, *coden, *withopn, *vardec, *oldids;
