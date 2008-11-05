@@ -2624,7 +2624,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="ptc_cwf" to="cwc" />
+                  <range from="ptc_cwf" to="tc_swr" />
                 </phases>
               </target>
             </targets>
@@ -2952,7 +2952,14 @@
             <target mandatory="no">
               <node name="Ret" />
               <phases>
-                <all />
+                  <range from="initial" to="ptc_rrp"/>
+                  <range from="ussa_rera" to="final"/>
+              </phases>
+            </target>
+            <target mandatory="yes">
+              <node name="Ret" />
+              <phases>
+                  <range from="ptc_rrp" to="ussa_rera"/>
               </phases>
             </target>
           </targets>
@@ -3034,10 +3041,17 @@
         <attribute name="Ns" inconstructor="yes">
           <type name="Namespace">
             <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="initial" to="mod_ans" />
+                  <range from="pc_rid" to="final" />
+                </phases>
+              </target>
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <all />
+                  <range from="mod_ans" to="pc_rid" />
                 </phases>
               </target>
             </targets>
@@ -3049,7 +3063,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="exp" to="final" />
+                  <range from="mod_imp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3070,10 +3084,10 @@
         <attribute name="WrapperType" default="NULL" inconstructor="no">
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <all />
+                   <range from="mod_imp" to="opt_fdi"/>
                 </phases>
               </target>
             </targets>
@@ -3085,7 +3099,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <!-- <phase name="annotatefuncalls" /> TODO -->
+                  <range from="opt_pfap" to="final"/>
                 </phases>
               </target>
             </targets>
@@ -3118,10 +3132,10 @@
         <attribute name="Specs" inconstructor="no">
           <type name="Integer">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="tc" />
+                      <range from="tc" to="final" /> 
                 </phases>
               </target>
             </targets>
@@ -3130,10 +3144,10 @@
         <attribute name="Return" inconstructor="no">
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Return" />
                 <phases>
-                  <range from="tc" to="cg_cpl" />
+                  <range from="ptc_l2f" to="final"/>
                 </phases>
               </target>
             </targets>
@@ -3145,10 +3159,10 @@
 	  </description>
           <type name="ExtLink">
             <targets>
-              <target>
+              <target mandatory="no">
                 <node name="Fundef" />
                 <phases>
-                  <phase name="tc" />
+                  <range from="mod_imp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3160,7 +3174,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="tc" />
+                  <range from="tc_esp" to="tc_swr"/>
                 </phases>
               </target>
             </targets>
@@ -3194,10 +3208,12 @@
           <type name="DFMaskBase">
             <targets>
               <target mandatory="no">
-                <any />
-                <phases>
-                  <all />
-                </phases>
+               <any />
+               <phases>
+<!-- TODO: Somewhere in the OPT pass, it is left to be re-utlised. -->
+<!-- Should be cleaned -->
+                 <all/>
+               </phases>
               </target>
             </targets>
           </type>
@@ -3208,7 +3224,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="pc_fpc" to="cg_cpl" />
+                  <range from="pc_fpc" to="cg_frtr" />
                 </phases>
               </target>
             </targets>
@@ -3261,7 +3277,8 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <all />
+                  <!-- This has NOT been TESTED -->
+                  <phase name="opt_cyc_linl" /> 
                 </phases>
               </target>
             </targets>
@@ -3278,7 +3295,8 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="tc" />
+                 <!-- Not ENABLED, i.e. Not TESTED -->
+                  <range from="tc_sossk" to="tc_ti" />
                 </phases>
               </target>
             </targets>
@@ -3295,7 +3313,8 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="tc" />
+                 <!-- Not ENABLED, i.e. Not TESTED -->
+                  <range from="tc_sossk" to="tc_ti" />
                 </phases>
               </target>
             </targets>
@@ -3670,7 +3689,8 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <!-- <range from="BuildMultithread" to="crece" /> TODO -->
+                  <!-- NOT TESTED -->
+                  <range from="mt3_crwiw" to="mt3_repfun" /> 
                 </phases>
               </target>
             </targets>
@@ -3727,10 +3747,10 @@
         <attribute name="Index" inconstructor="no">
           <type name="IndexInfo">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="wlf" />
+                  <phase from="opt_cyc_wli" to="opt_cyc_wlf" />
                 </phases>
               </target>
             </targets>
@@ -4383,7 +4403,13 @@
               <target mandatory="yes">
                 <node name="Avis" />
                 <phases>
-                  <all />
+                  <range from="initial" to="cg_cpl"/>
+                </phases>
+              </target>
+              <target mandatory="no">
+                <node name="Avis" />
+                <phases>
+                  <range from="cg_cpl" to="final"/>
                 </phases>
               </target>
             </targets>
@@ -5380,7 +5406,7 @@
                   <phase name="opt_lir" />
                   <phase name="pc_ussa" />
                   <phase name="wlt_ussa" />
-		  <phase name="pc_rera" />
+		  <phase name="ussa_rera" />
                   <phase name="mem_racc" />
                 </phases>
               </target>
