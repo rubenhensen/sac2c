@@ -41,11 +41,11 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: NEXT    : store old information in nested WLs
- - node[1]: WL      : reference to base node of current WL (N_Nwith)
- - node[2]: ASSIGN  : always the last N_assign node (see WLIassign)
- - node[3]: FUNDEF  : pointer to last fundef node. needed to access vardecs.
- - counter: FOLDABLE: indicates if current withloop is foldable or not
+ - INFO_NEXT    : store old information in nested WLs
+ - INFO_WL      : reference to base node of current WL (N_Nwith)
+ - INFO_ASSIGN  : always the last N_assign node (see WLIassign)
+ - INFO_FUNDEF  : pointer to last fundef node. needed to access vardecs.
+ - INFO_FOLDABLE: indicates if current withloop is foldable or not
  ******************************************************************************/
 
 #include <stdio.h>
@@ -645,10 +645,12 @@ WLIassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = arg_node;
 
     /* this is important. Only index transformations
-       with a non-null ASSIGN_INDEX are valid. See SSAWLIlet. Before WLI, this
+       with a non-null ASSIGN_INDEX are valid. See WLIlet. Before WLI, this
        pointer may be non null (somwhere wrong initialisation -> better
        use MakeAssign()!!! ) */
-    DBUG_ASSERT ((ASSIGN_INDEX (arg_node) == NULL), "left-over assign index found!");
+    if (ASSIGN_INDEX (arg_node) != NULL) {
+        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
+    }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -671,7 +673,7 @@ WLIassign (node *arg_node, info *arg_info)
 node *
 WLIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAWLIcond");
+    DBUG_ENTER ("WLIcond");
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
@@ -857,7 +859,7 @@ WLIwith (node *arg_node, info *arg_info)
     /* initialize WL traversal */
     INFO_WL (arg_info) = arg_node; /* store the current node for later */
     tmpn = WITH_CODE (arg_node);
-    while (tmpn) { /* reset traversal flag for each code */
+    while (tmpn != NULL) { /* reset traversal flag for each code */
         CODE_VISITED (tmpn) = FALSE;
         tmpn = CODE_NEXT (tmpn);
     }
@@ -913,7 +915,7 @@ WLImodarray (node *arg_node, info *arg_info)
     if (WITH_ISFOLDABLE (INFO_WL (arg_info))) {
         substn = ID_WL (MODARRAY_ARRAY (arg_node));
         /*
-         * we just traversed through the sons so SSAWLIid for NWITHOP_ARRAY
+         * we just traversed through the sons so WLIid for NWITHOP_ARRAY
          * has been called and its result is stored in ID_WL().
          */
         if (substn != NULL) {
@@ -1024,7 +1026,7 @@ WLIcode (node *arg_node, info *arg_info)
  *
  * @fn WLIDoWLI( node* arg_node)
  *
- * @brief starts SSAWLI traversal
+ * @brief starts WLI traversal
  *
  * @param arg_node node to process
  *
