@@ -1,16 +1,29 @@
-/*
- * $Log$
- * Revision 1.2  2004/12/07 17:45:59  sah
- * fixed bug
+/*****************************************************************************
  *
- * Revision 1.1  2004/11/29 14:40:57  sah
- * Initial revision
+ * $Id$
  *
+ * file:   setlinksign.c
  *
+ * prefix: SLS
  *
- */
+ * description:
+ *
+ *   The linksign pragma supports a wide range of reorganisations of a
+ *   function prototype for external functions, like reordering of return
+ *   values and parameters or mapping of returns to parameters leading to
+ *   destructive updates (in the C world). In order to have a single uniform
+ *   code generation backend for all SAC and C functions the actual code
+ *   generation is uniformly based on indices attached to each ret and arg
+ *   node that specify the final location of the ret or arg in the compiled
+ *   C function signature. These indices may have been derived already from
+ *   the before mentioned linksign pragma. However, for all SAC functions and
+ *   those external functions without a linksign pragma appropriate indices
+ *   are annotated in this compiler phase.
+ *
+ *****************************************************************************/
 
 #include "setlinksign.h"
+
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
@@ -20,6 +33,7 @@
 /*
  * INFO structure
  */
+
 struct INFO {
     int counter;
 };
@@ -27,11 +41,13 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_SLS_COUNTER(n) ((n)->counter)
+
+#define INFO_COUNTER(n) ((n)->counter)
 
 /*
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
@@ -41,7 +57,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_SLS_COUNTER (result) = 0;
+    INFO_COUNTER (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -56,20 +72,22 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/*
+ * Traversal functions
+ */
+
 node *
 SLSret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SLSret");
 
-    INFO_SLS_COUNTER (arg_info)++;
+    INFO_COUNTER (arg_info)++;
 
     if (!RET_HASLINKSIGNINFO (arg_node)) {
-        RET_LINKSIGN (arg_node) = INFO_SLS_COUNTER (arg_info);
+        RET_LINKSIGN (arg_node) = INFO_COUNTER (arg_info);
     }
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -79,15 +97,13 @@ SLSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SLSarg");
 
-    INFO_SLS_COUNTER (arg_info)++;
+    INFO_COUNTER (arg_info)++;
 
     if (!ARG_HASLINKSIGNINFO (arg_node)) {
-        ARG_LINKSIGN (arg_node) = INFO_SLS_COUNTER (arg_info);
+        ARG_LINKSIGN (arg_node) = INFO_COUNTER (arg_info);
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -97,19 +113,12 @@ SLSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SLSfundef");
 
-    INFO_SLS_COUNTER (arg_info) = 0;
+    INFO_COUNTER (arg_info) = 0;
 
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -119,19 +128,18 @@ SLSmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SLSmodule");
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
+/*
+ * Traversal start function
+ */
+
 node *
-SLSdoSetLinksign (node *tree)
+SLSdoSetLinksign (node *syntax_tree)
 {
     info *info;
 
@@ -140,12 +148,10 @@ SLSdoSetLinksign (node *tree)
     info = MakeInfo ();
 
     TRAVpush (TR_sls);
-
-    tree = TRAVdo (tree, info);
-
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (tree);
+    DBUG_RETURN (syntax_tree);
 }
