@@ -850,9 +850,7 @@ LIRfundef (node *arg_node, info *arg_info)
         }
 
         /* traverse args */
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
         /* top level (not [directly] contained in any withloop) */
         INFO_WITHDEPTH (info) = 0;
@@ -896,9 +894,7 @@ LIRfundef (node *arg_node, info *arg_info)
      * traverse only in next fundef if traversal started in module node
      */
     if ((INFO_TRAVSTART (arg_info) == TS_module) && (INFO_FUNDEF (arg_info) == NULL)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -983,9 +979,7 @@ LIRvardec (node *arg_node, info *arg_info)
     AVIS_EXPRESULT (avis) = FALSE;
 
     /* traverse to next vardec */
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1018,13 +1012,8 @@ LIRblock (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     /* in case of an empty block, insert at least the empty node */
     if (BLOCK_INSTR (arg_node) == NULL) {
@@ -1157,9 +1146,7 @@ LIRassign (node *arg_node, info *arg_info)
     }
 
     /* traverse next assignment */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* in bottom-up traversal: */
     /*
@@ -1223,12 +1210,8 @@ LIRlet (node *arg_node, info *arg_info)
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
         node *avis = IDS_AVIS (ids);
-        if (AVIS_DIM (avis) != NULL) {
-            AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
-        }
-        if (AVIS_SHAPE (avis) != NULL) {
-            AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
-        }
+        AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
+        AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
         ids = IDS_NEXT (ids);
     }
 
@@ -1287,9 +1270,7 @@ LIRlet (node *arg_node, info *arg_info)
     }
 
     /* traverse ids to mark them as loop-invariant/local or normal */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     /* step back to normal mode */
     INFO_FLAG (arg_info) = LIR_NORMAL;
@@ -1456,9 +1437,7 @@ LIRap (node *arg_node, info *arg_info)
     }
 
     /* traverse args of function application */
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1531,9 +1510,7 @@ LIRreturn (node *arg_node, info *arg_info)
     }
 
     /* traverse results */
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
 
     INFO_FLAG (arg_info) = LIR_NORMAL;
 
@@ -1642,9 +1619,7 @@ LIRexprs (node *arg_node, info *arg_info)
     DBUG_ENTER ("LIRexprs");
 
     /* traverse expression */
-    if (EXPRS_EXPR (arg_node) != NULL) {
-        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
-    }
+    EXPRS_EXPR (arg_node) = TRAVopt (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         if ((INFO_APRESCHAIN (arg_info) != NULL)
@@ -1704,9 +1679,7 @@ LIRids (node *arg_ids, info *arg_info)
     }
 
     /* traverse to next expression */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
-    }
+    IDS_NEXT (arg_ids) = TRAVopt (IDS_NEXT (arg_ids), arg_info);
 
     DBUG_RETURN (arg_ids);
 }
@@ -1740,9 +1713,7 @@ LIRMOVblock (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     /* restore block mode */
     INFO_TOPBLOCK (arg_info) = old_flag;
@@ -1871,9 +1842,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
     }
 
     /* traverse to next assignment */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* on bottom up traversal remove marked assignments */
     if (remove_assignment) {
@@ -1900,10 +1869,7 @@ LIRMOVlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("LIRMOVlet");
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1985,12 +1951,8 @@ LIRMOVwithid (node *arg_node, info *arg_info)
 
             INFO_FLAG (arg_info) = LIR_MOVELOCAL;
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-            if (WITHID_IDS (arg_node) != NULL) {
-                WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-            }
-            if (WITHID_IDXS (arg_node) != NULL) {
-                WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
-            }
+            WITHID_IDS (arg_node) = TRAVopt (WITHID_IDS (arg_node), arg_info);
+            WITHID_IDXS (arg_node) = TRAVopt (WITHID_IDXS (arg_node), arg_info);
 
             /* switch back to previous mode */
             INFO_FLAG (arg_info) = old_flag;
@@ -2098,9 +2060,7 @@ LIRMOVids (node *arg_ids, info *arg_info)
     }
 
     /* traverse next ids */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
-    }
+    IDS_NEXT (arg_ids) = TRAVopt (IDS_NEXT (arg_ids), arg_info);
 
     DBUG_RETURN (arg_ids);
 }
