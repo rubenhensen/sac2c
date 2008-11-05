@@ -644,13 +644,11 @@ WLIassign (node *arg_node, info *arg_info)
 
     INFO_ASSIGN (arg_info) = arg_node;
 
-    if (ASSIGN_INDEX (arg_node) != NULL) {
-        /* this is important. Only index transformations
-           with a non-null ASSIGN_INDEX are valid. See SSAWLIlet. Before WLI, this
-           pointer may be non null (somwhere wrong initialisation -> better
-           use MakeAssign()!!! ) */
-        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
-    }
+    /* this is important. Only index transformations
+       with a non-null ASSIGN_INDEX are valid. See SSAWLIlet. Before WLI, this
+       pointer may be non null (somwhere wrong initialisation -> better
+       use MakeAssign()!!! ) */
+    DBUG_ASSERT ((ASSIGN_INDEX (arg_node) == NULL), "left-over assign index found!");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 

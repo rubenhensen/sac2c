@@ -1354,6 +1354,55 @@ Modarray2Genarray (node *withop, node *wln, node *substwln)
     DBUG_RETURN (withop);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *FreeWLIAssignInfo( node *arg_node, info *arg_info)
+ *
+ * @brief Frees the ASSIGN_INDEX attribute of an N_assign node.
+ *
+ * @param arg_node N_assign node
+ * @param arg_info unused
+ *
+ * @return modified N_assign node
+ ******************************************************************************/
+static node *
+FreeWLIAssignInfo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FreeWLIAssignInfo");
+
+    if (ASSIGN_INDEX (arg_node) != NULL) {
+        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *FreeWLIInformation( node *fundef)
+ *
+ * @brief Clears the WLI information from all N_assign nodes within a
+ *        function.
+ *
+ * @param fundef N_fundef node of function to be cleared.
+ *
+ * @return modified N_fundef node.
+ ******************************************************************************/
+static node *
+FreeWLIInformation (node *fundef)
+{
+    anontrav_t freetrav[2] = {{N_assign, &FreeWLIAssignInfo}, {0, NULL}};
+
+    DBUG_ENTER ("FreeWLIInformation");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "FreeWLIInformation called with non-fundef node");
+
+    TRAVpushAnonymous (freetrav, &TRAVsons);
+    FUNDEF_BODY (fundef) = TRAVopt (FUNDEF_BODY (fundef), NULL);
+    TRAVpop ();
+
+    DBUG_RETURN (fundef);
+}
+
 /******************************************************************************
  *
  * Functions for node_info.mac (traversal mechanism)
@@ -1379,12 +1428,8 @@ WLFfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     wlf_mode = wlfm_search_WL;
-    if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-    if (FUNDEF_ARGS (arg_node)) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1899,6 +1944,9 @@ WLFdoWLF (node *arg_node)
 
     info = MakeInfo ();
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "WLFdoWLF called on non-fundef node");
+
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
@@ -1921,6 +1969,12 @@ WLFdoWLF (node *arg_node)
 #endif
 
     info = FreeInfo (info);
+
+    /*
+     * we free the information gathered by WLI here as it is no longer
+     * used after this transformation
+     */
+    arg_node = FreeWLIInformation (arg_node);
 
     DBUG_RETURN (arg_node);
 }
