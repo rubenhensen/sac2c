@@ -16,10 +16,7 @@
  *   During this traversal, all scheduling specifications outside spmd-functions
  *   are removed. Within spmd-functions existing segment scheduling information
  *   is checked for suitability and missing schedulings are supplied on the
- *   basis of an inference scheme. All scheduling information of with-loops
- *   within a single synchronisation block is gathered, combined, checked, and
- *   tied to the synchronisation block. Missing scheduling information is again
- *   supplied by applying an inference scheme.
+ *   basis of an inference scheme.
  *
  *****************************************************************************/
 
@@ -39,14 +36,14 @@
  */
 
 struct INFO {
-    bool inspmdfun;
+    bool inparwl;
 };
 
 /**
  * INFO macros
  */
 
-#define INFO_INSPMDFUN(n) (n->inspmdfun)
+#define INFO_INPARWL(n) (n->inparwl)
 
 /**
  * INFO functions
@@ -61,7 +58,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_INSPMDFUN (result) = FALSE;
+    INFO_INPARWL (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -219,11 +216,7 @@ MTASfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MTASfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_INSPMDFUN (arg_info) = FUNDEF_ISSPMDFUN (arg_node);
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -244,18 +237,17 @@ MTASfundef (node *arg_node, info *arg_info)
 node *
 MTASwith2 (node *arg_node, info *arg_info)
 {
+    bool was_in_par_wl;
+
     DBUG_ENTER ("MTASwith2");
 
-    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+    was_in_par_wl = INFO_INPARWL (arg_info);
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), NULL);
-    }
-    /*
-     * Here, arg_info is not propagated because all scheduling specifications must
-     * be removed from nested with-loops. The NULL pointer is used to mark this
-     * behaviour.
-     */
+    INFO_INPARWL (arg_info) = WITH2_PARALLELIZE (arg_node);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+    INFO_INPARWL (arg_info) = was_in_par_wl;
+
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -279,11 +271,13 @@ MTASwlseg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MTASwlseg");
 
-    if (INFO_INSPMDFUN (arg_info)) {
+    if (INFO_INPARWL (arg_info)) {
         /*
-         * Here, we are within an spmd-function, so if no scheduling is already
-         * present, the inference strategy is used. Otherwise a scheduling derived
-         * froma wlcomp pragma is checked for suitability for constant segments.
+         * Here, we are within a (to be) parallelised with-loop.
+         * If no scheduling has been annotated via the wlcomp pragma,
+         * an inference strategy is used.
+         * Otherwise, the annotated scheduling is checked for suitability for
+         * constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
             WLSEG_SCHEDULING (arg_node)
@@ -293,21 +287,19 @@ MTASwlseg (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * Here, we are not within an spmd-function, so schedulings derived from
-         * wlcomp pragmas must be removed.
+         * Here, we are not within a (to be) parallelised with-loop.
+         * Scheduling annotations from the wlcomp pragma are removed.
          */
         if (WLSEG_SCHEDULING (arg_node) != NULL) {
             WLSEG_SCHEDULING (arg_node)
               = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));
         }
-        if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
+        if (WLSEG_TASKSEL (arg_node) != NULL) {
+            WLSEG_TASKSEL (arg_node) = SCHremoveTasksel (WLSEG_TASKSEL (arg_node));
         }
     }
 
-    if (WLSEG_NEXT (arg_node) != NULL) {
-        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
-    }
+    WLSEG_NEXT (arg_node) = TRAVopt (WLSEG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -331,7 +323,7 @@ MTASwlsegvar (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MTASwlsegvar");
 
-    if (INFO_INSPMDFUN (arg_info)) {
+    if (INFO_INPARWL (arg_info)) {
         /*
          * Here, we are within an spmd-function, so if no scheduling is already
          * present, the inference strategy is used. Otherwise a scheduling derived
@@ -352,14 +344,12 @@ MTASwlsegvar (node *arg_node, info *arg_info)
             WLSEGVAR_SCHEDULING (arg_node)
               = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
         }
-        if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
+        if (WLSEGVAR_TASKSEL (arg_node) != NULL) {
+            WLSEGVAR_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGVAR_TASKSEL (arg_node));
         }
     }
 
-    if (WLSEGVAR_NEXT (arg_node) != NULL) {
-        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
-    }
+    WLSEGVAR_NEXT (arg_node) = TRAVopt (WLSEGVAR_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

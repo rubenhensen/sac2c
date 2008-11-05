@@ -4216,14 +4216,22 @@ PrintWLsegx (node *arg_node, info *arg_info)
         }
 
         if (WLSEGX_SCHEDULING (seg) != NULL) {
-            fprintf (global.outfile, " * scheduling: ");
+            if (global.compiler_subphase < PH_mt_mtas) {
+                fprintf (global.outfile, " * preliminary annotated scheduling: ");
+            } else {
+                fprintf (global.outfile, " * scheduling: ");
+            }
             SCHprintScheduling (global.outfile, WLSEGX_SCHEDULING (seg));
             fprintf (global.outfile, "\n");
             INDENT;
         }
 
         if (WLSEGX_TASKSEL (seg) != NULL) {
-            fprintf (global.outfile, " * taskselector: ");
+            if (global.compiler_subphase < PH_mt_mtas) {
+                fprintf (global.outfile, " * preliminary annotated taskselector: ");
+            } else {
+                fprintf (global.outfile, " * taskselector: ");
+            }
             SCHprintTasksel (global.outfile, WLSEGX_TASKSEL (seg));
             fprintf (global.outfile, "\n");
             INDENT;
