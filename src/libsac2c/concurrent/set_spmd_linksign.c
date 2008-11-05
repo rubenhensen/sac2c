@@ -1,3 +1,29 @@
+/*****************************************************************************
+ *
+ * $Id$
+ *
+ * file:   set_spmd_linksign.c
+ *
+ * prefix: SSPMDLS
+ *
+ * description:
+ *
+ *  Most withops, most prominently genarray and modarray, yield a value that
+ *  is mapped into memory allocated beforehand. In the MT code generation case
+ *  this means that the SPMD function that has been created by now has
+ *  parameters that do not refer to locally free variables of the with-loop,
+ *  but actually to result values of the with-loop.
+ *
+ *  Eventually, we do not want genarray, modarray and co to yield a value,
+ *  but to write into the memory provided as an argument. We express this
+ *  by reusing the linksign parameter reordering mechanism and map rets
+ *  associated with a genarray/modarray/break/propagate withop to the
+ *  corresponding memval parameter of the SPMD function. Rets associated
+ *  with fold withops as well as all regular parameters of the SPMD function
+ *  are associated with standard linksign indices.
+ *
+ *****************************************************************************/
+
 #include "set_spmd_linksign.h"
 
 #include "dbug.h"
@@ -12,7 +38,7 @@
  */
 
 struct INFO {
-    node *with_rets;
+    node *letids;
     node *fun_rets;
     lut_t *lut;
     int ls_num;
@@ -24,12 +50,13 @@ struct INFO {
  * INFO macros
  */
 
-#define INFO_WITH_RETS(n) (n->with_rets)
+#define INFO_LETIDS(n) (n->letids)
 #define INFO_FUN_RETS(n) (n->fun_rets)
 #define INFO_LUT(n) (n->lut)
 #define INFO_LS_NUM(n) (n->ls_num)
 #define INFO_MEM(n) (n->mem)
 #define INFO_RETURNS(n) (n->returns)
+
 /**
  * INFO functions
  */
@@ -42,7 +69,7 @@ MakeInfo ()
     info *result;
     result = MEMmalloc (sizeof (info));
 
-    INFO_WITH_RETS (result) = NULL;
+    INFO_LETIDS (result) = NULL;
     INFO_FUN_RETS (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_LS_NUM (result) = 0;
@@ -78,28 +105,40 @@ FreeInfo (info *info)
 node *
 SSPMDLSarg (node *arg_node, info *arg_info)
 {
+    node *nret = NULL;
+
     DBUG_ENTER ("SSPMDLSarg");
 
-    node *nret = NULL;
     nret = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
-    /* If current avis is in LUT, this argument is ret.*/
     if (nret != ARG_AVIS (arg_node)) {
+        /*
+         * We have found a matching ret in the lut. Hence, this arg is a
+         * memval connected to one of the withops and hence to one of the
+         * return values. This connection is represented by the same linksign
+         * index henceforth.
+         */
         ARG_LINKSIGN (arg_node) = RET_LINKSIGN (nret);
-    } else /* New argument*/
-    {
+    } else {
+        /*
+         * We NOT found a matching ret in the lut. Hence, this is a normal
+         * argument of the SPMD function and we give it the next available
+         * linksign index.
+         */
         ARG_LINKSIGN (arg_node) = INFO_LS_NUM (arg_info);
         INFO_LS_NUM (arg_info) += 1;
     }
 
+    /*
+     * We must indicate proper linksign indexing to avoid having it redone
+     * (and overwritten) by the subsequent standard linksign indexer.
+     */
     ARG_HASLINKSIGNINFO (arg_node) = TRUE;
 
     DBUG_PRINT ("SSPMDLS",
                 ("Add LS %i to arg %s", ARG_LINKSIGN (arg_node), ARG_NAME (arg_node)));
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -126,22 +165,29 @@ SSPMDLSarg (node *arg_node, info *arg_info)
 node *
 SSPMDLSid (node *arg_node, info *arg_info)
 {
+    node *avis = NULL;
+
     DBUG_ENTER ("SSPMDLSid");
 
-    /* if INFO_MEM is set, this is a Memval (genarray, modarray, break) or a
-     * default (propagate). In this case insert withret-avis -> memval into the
-     * LUT.*/
     if (INFO_MEM (arg_info)) {
-        DBUG_PRINT ("SSPMDLS",
-                    ("Insert %s->%s into LUT (id)", IDS_NAME (INFO_WITH_RETS (arg_info)),
-                     ID_NAME (arg_node)));
+        /*
+         * If INFO_MEM is set, this is a Memval (genarray, modarray, break) or a
+         * default (propagate). In this case insert letids-avis -> memval into the
+         * LUT.
+         */
+        DBUG_PRINT ("SSPMDLS", ("Insert %s->%s into LUT (id)",
+                                IDS_NAME (INFO_LETIDS (arg_info)), ID_NAME (arg_node)));
+
         INFO_LUT (arg_info)
-          = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_WITH_RETS (arg_info)),
+          = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LETIDS (arg_info)),
                                ID_AVIS (arg_node));
-    } else if (INFO_RETURNS (arg_info)) {
-        /* if this is an id of a return, get memval and insert memval -> ret into
-         * the LUT*/
-        node *avis = NULL;
+    }
+
+    if (INFO_RETURNS (arg_info)) {
+        /*
+         * If this is an id of a return, get memval and insert memval -> ret into
+         * the LUT.
+         */
         DBUG_PRINT ("SSPMDLS",
                     ("Looking up arg for retexpr %s", AVIS_NAME (ID_AVIS (arg_node))));
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
@@ -173,10 +219,14 @@ SSPMDLSexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSPMDLSexprs");
 
-    /* As we are just adding linksigns to arguments and rets, we just have to
-     * traverse further if this is a return-expression.*/
+    /*
+     * As we are just adding linksigns to arguments and rets, we just have to
+     * traverse further if this is a return-expression. If so, we need to advance
+     * the info-based chain of rets by one position as well.
+     */
     if (INFO_RETURNS (arg_info)) {
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+
         if (EXPRS_NEXT (arg_node) != NULL) {
             INFO_FUN_RETS (arg_info) = RET_NEXT (INFO_FUN_RETS (arg_info));
             DBUG_ASSERT (INFO_FUN_RETS (arg_info) != NULL, "#Returns != #Rets!");
@@ -208,11 +258,8 @@ SSPMDLSreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSPMDLSreturn");
 
     INFO_RETURNS (arg_info) = TRUE;
-
     RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-
     INFO_RETURNS (arg_info) = FALSE;
-    INFO_FUN_RETS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -222,7 +269,7 @@ SSPMDLSreturn (node *arg_node, info *arg_info)
  * @fn node *SSPMDLSpropagate(node *arg_node, info *arg_info)
  *
  *    @brief This function traverses into the default of the propagate and in
- *           case of further withops shifts the INFO_WITH_RETS one position
+ *           case of further withops shifts the INFO_LETIDS one position
  *           further befor traversing into the next op.
  *
  *    @param arg_node N_propagate node
@@ -248,8 +295,8 @@ SSPMDLSpropagate (node *arg_node, info *arg_info)
      * Therefor we traverse through all withops and shift the returns of the
      * withloop parallel to this traversing.*/
     if (PROPAGATE_NEXT (arg_node) != NULL) {
-        INFO_WITH_RETS (arg_info) = IDS_NEXT (INFO_WITH_RETS (arg_info));
-        DBUG_ASSERT (INFO_WITH_RETS (arg_info) != NULL, "#ids != #with-returns!");
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+        DBUG_ASSERT (INFO_LETIDS (arg_info) != NULL, "#ids != #with-returns!");
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
@@ -261,8 +308,8 @@ SSPMDLSpropagate (node *arg_node, info *arg_info)
  * @fn node *SSPMDLSgenarray(node *arg_node, info *arg_info)
  *
  *    @brief This function traverses into the memval of genarray and in case
- *           of further withops shifts the INFO_WITH_RETS one position further
- *           further befor traversing into the next op.
+ *           of further withops shifts the INFO_LETIDS one position further
+ *           before traversing into the next withop.
  *
  *    @param arg_node N_genarray node
  *    @param arg_info INFO structure
@@ -281,14 +328,16 @@ SSPMDLSgenarray (node *arg_node, info *arg_info)
 
     INFO_MEM (arg_info) = FALSE;
 
-    /* as we have to find out each pair of indirectly connected function
+    /*
+     * As we have to find out each pair of indirectly connected function
      * arguments and function returns, we try to keep track of the variable
      * change which is caused by the with loop.
-     * Therefor we traverse through all withops and shift the returns of the
-     * withloop parallel to this traversing.*/
+     * Therefore, we traverse through all withops and shift the returns of the
+     * withloop parallel to this traversing.
+     */
     if (GENARRAY_NEXT (arg_node) != NULL) {
-        INFO_WITH_RETS (arg_info) = IDS_NEXT (INFO_WITH_RETS (arg_info));
-        DBUG_ASSERT (INFO_WITH_RETS (arg_info) != NULL, "#ids != #with-returns!");
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+        DBUG_ASSERT (INFO_LETIDS (arg_info) != NULL, "#ids != #with-returns!");
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
@@ -300,7 +349,7 @@ SSPMDLSgenarray (node *arg_node, info *arg_info)
  * @fn node *SSPMDLSmodarray(node *arg_node, info *arg_info)
  *
  *    @brief This function traverses into the memval of the modarray and in
- *           case of further withops shifts the INFO_WITH_RETS one position
+ *           case of further withops shifts the INFO_LETIDS one position
  *           further befor traversing into the next op.
  *
  *    @param arg_node N_modarray node
@@ -320,14 +369,16 @@ SSPMDLSmodarray (node *arg_node, info *arg_info)
 
     INFO_MEM (arg_info) = FALSE;
 
-    /* as we have to find out each pair of indirectly connected function
+    /*
+     * As we have to find out each pair of indirectly connected function
      * arguments and function returns, we try to keep track of the variable
      * change which is caused by the with loop.
      * Therefor we traverse through all withops and shift the returns of the
-     * withloop parallel to this traversing.*/
+     * withloop parallel to this traversing.
+     */
     if (MODARRAY_NEXT (arg_node) != NULL) {
-        INFO_WITH_RETS (arg_info) = IDS_NEXT (INFO_WITH_RETS (arg_info));
-        DBUG_ASSERT (INFO_WITH_RETS (arg_info) != NULL, "#ids != #with-returns!");
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+        DBUG_ASSERT (INFO_LETIDS (arg_info) != NULL, "#ids != #with-returns!");
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
@@ -339,7 +390,7 @@ SSPMDLSmodarray (node *arg_node, info *arg_info)
  * @fn node *SSPMDLSbreak(node *arg_node, info *arg_info)
  *
  *    @brief This function traverses into the memval of the break and in case
- *           of further withops shifts the INFO_WITH_RETS one position further
+ *           of further withops shifts the INFO_LETIDS one position further
  *           befor traversing into the next op.
  *
  *    @param arg_node N_break node
@@ -359,14 +410,16 @@ SSPMDLSbreak (node *arg_node, info *arg_info)
 
     INFO_MEM (arg_info) = FALSE;
 
-    /* as we have to find out each pair of indirectly connected function
+    /*
+     * As we have to find out each pair of indirectly connected function
      * arguments and function returns, we try to keep track of the variable
      * change which is caused by the with loop.
-     * Therefor we traverse through all withops and shift the returns of the
-     * withloop parallel to this traversing.*/
+     * Therefore, we traverse through all withops and shift the returns of the
+     * withloop parallel to this traversing.
+     */
     if (BREAK_NEXT (arg_node) != NULL) {
-        INFO_WITH_RETS (arg_info) = IDS_NEXT (INFO_WITH_RETS (arg_info));
-        DBUG_ASSERT (INFO_WITH_RETS (arg_info) != NULL, "#ids != #with-returns!");
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+        DBUG_ASSERT (INFO_LETIDS (arg_info) != NULL, "#ids != #with-returns!");
         BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
     }
 
@@ -391,10 +444,7 @@ SSPMDLSwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSPMDLSwith2");
 
-    /* We just have to traverse the withops*/
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-
-    INFO_WITH_RETS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -417,11 +467,15 @@ SSPMDLSlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSPMDLSlet");
 
-    /* Keep LHS, if RHS is withloop, it is needed to associate it to the
-     * corresponding memvals, respectively defaults.*/
-    INFO_WITH_RETS (arg_info) = LET_IDS (arg_node);
+    /*
+     * Keep LHS, if RHS is withloop, it is needed to associate it to the
+     * corresponding memvals, respectively defaults.
+     */
+    INFO_LETIDS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    INFO_LETIDS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -443,20 +497,14 @@ SSPMDLSret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSPMDLSret");
 
-    if (INFO_LS_NUM (arg_info) > 0) {
+    RET_LINKSIGN (arg_node) = INFO_LS_NUM (arg_info);
+    RET_HASLINKSIGNINFO (arg_node) = TRUE;
 
-        /* Set linksign*/
-        RET_LINKSIGN (arg_node) = INFO_LS_NUM (arg_info);
-        RET_HASLINKSIGNINFO (arg_node) = TRUE;
+    DBUG_PRINT ("SSPMDLS", ("Add LS %i to ret", RET_LINKSIGN (arg_node)));
 
-        DBUG_PRINT ("SSPMDLS", ("Add LS %i to ret", RET_LINKSIGN (arg_node)));
+    INFO_LS_NUM (arg_info) += 1;
 
-        INFO_LS_NUM (arg_info) += 1;
-
-        if (RET_NEXT (arg_node) != NULL) {
-            RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-        }
-    }
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -483,22 +531,20 @@ SSPMDLSfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISSPMDFUN (arg_node)) {
         INFO_LS_NUM (arg_info) = 1;
 
-        /* First of all, add LS to rets*/
+        /* Add linksign indices to rets */
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
 
+        /* Traverse through the body to link the rets to the args*/
         /* Keep rets to link them to the arguments*/
         INFO_FUN_RETS (arg_info) = FUNDEF_RETS (arg_node);
-
-        /* Traverse through the body to link the rets to the args*/
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUN_RETS (arg_info) = NULL;
 
         /* Traverse the args to add the LS*/
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
 
-        INFO_LS_NUM (arg_info) = 0;
+        INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
     }
-
-    INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -525,11 +571,7 @@ SSPMDLSmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSPMDLmodule");
 
     INFO_LUT (arg_info) = LUTgenerateLut ();
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
 
     DBUG_RETURN (arg_node);
@@ -558,6 +600,7 @@ SSPMDLSdoSetSpmdLinksign (node *syntax_tree)
     TRAVpush (TR_sspmdls);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
+
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
