@@ -2049,11 +2049,11 @@
         </travuser>
       </traversal>
 
-      <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
+      <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
         <travuser>
           <node name="Fundef" />
-          <node name="WLsegVar" />
           <node name="With2" />
+          <node name="WLsegVar" />
           <node name="WLseg" />
         </travuser>
       </traversal>

@@ -741,9 +741,16 @@ PHASE (mt, "Running automatic parallelisation",
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
-SUBPHASE (cmtf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
+SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
-SUBPHASE (spmdl, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
+SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
+
+#ifdef TO_BE_DONE
+
+SUBPHASE (mtdvr, "Removing superfluous variable declarations", MTDVRremoveDeadVardecs,
+          ALWAYS, mt)
+
+#endif
 
 SUBPHASE (sched, "Annotating scheduling information", SCHEDdoScheduleTrav, ALWAYS, mt)
 

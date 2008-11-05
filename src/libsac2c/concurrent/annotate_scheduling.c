@@ -2,9 +2,9 @@
  *
  * $Id$
  *
- * file:   schedule.c
+ * file:   annotate_scheduling.c
  *
- * prefix: SCHED
+ * prefix: MTAS
  *
  * description:
  *
@@ -23,6 +23,8 @@
  *
  *****************************************************************************/
 
+#include "annotate_scheduling.h"
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -35,6 +37,7 @@
 /**
  * INFO structure
  */
+
 struct INFO {
     int dummy;
 };
@@ -46,6 +49,7 @@ struct INFO {
 /**
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
@@ -70,27 +74,28 @@ FreeInfo (info *info)
 
 /******************************************************************************
  *
- * @fn SCHEDdoScheduleTrav
+ * @fn MTASdoAnnotateScheduling
  *
  *  @brief
  *
  *  @param syntax_tree
  *
- *  @return
+ *  @return syntax_tree
  *
  *****************************************************************************/
+
 node *
-SCHEDdoScheduleTrav (node *syntax_tree)
+MTASdoAnnotateScheduling (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SCHEDdoScheduleTrav");
+    DBUG_ENTER ("MTASdoAnnotateScheduling");
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
 
     info = MakeInfo ();
 
-    TRAVpush (TR_sched);
+    TRAVpush (TR_mtas);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -101,13 +106,14 @@ SCHEDdoScheduleTrav (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCHEDfundef( node *arg_node, info *arg_info)
+ * @fn node *MTASfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
 node *
-SCHEDfundef (node *arg_node, info *arg_info)
+MTASfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDfundef");
+    DBUG_ENTER ("MTASfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node),
@@ -208,7 +214,7 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwlseg(node *arg_node, info *arg_info)
+ *   node *MTASwlseg(node *arg_node, info *arg_info)
  *
  * description:
  *   sched_tab traversal function for N_WLseg nodes.
@@ -220,9 +226,9 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwlseg (node *arg_node, info *arg_info)
+MTASwlseg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDwlseg");
+    DBUG_ENTER ("MTASwlseg");
 
     if (arg_info == NULL) {
         /*
@@ -261,7 +267,7 @@ SCHEDwlseg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwlsegvar(node *arg_node, info *arg_info)
+ *   node *MTASwlsegvar(node *arg_node, info *arg_info)
  *
  * description:
  *   sched_tab traversal function for N_WLsegVar nodes.
@@ -273,9 +279,9 @@ SCHEDwlseg (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwlsegvar (node *arg_node, info *arg_info)
+MTASwlsegvar (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDwlsegvar");
+    DBUG_ENTER ("MTASwlsegvar");
 
     if (arg_info == NULL) {
         /*
@@ -314,7 +320,7 @@ SCHEDwlsegvar (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwith2(node *arg_node, info *arg_info)
+ *   node *MTASwith2(node *arg_node, info *arg_info)
  *
  * description:
  *   This function is used to remove all scheduling specifications tied to
@@ -324,9 +330,9 @@ SCHEDwlsegvar (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwith2 (node *arg_node, info *arg_info)
+MTASwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDwith2");
+    DBUG_ENTER ("MTASwith2");
 
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
