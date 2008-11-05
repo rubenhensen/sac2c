@@ -1137,6 +1137,7 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Prf" />
+	  <node name="Fundef" />
 	</travuser>
       </traversal>
       <traversal id="ILI" name="InferLoopInvariants" default="sons" include="SSAInferLI.h" >
