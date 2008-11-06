@@ -674,3 +674,37 @@ DCIwlsegvar (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief Marks the index of the range as alive, whether it is used or not.
+ *        Furthermore, all sons are traversed.
+ *
+ * @param arg_node N_range node
+ * @param arg_info info structure
+ *
+ * @return N_range node
+ ******************************************************************************/
+node *
+DCIrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DCIrange");
+
+    /* mark index alive */
+    INFO_ALLIDSNEEDED (arg_info) = TRUE;
+    RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
+    INFO_ALLIDSNEEDED (arg_info) = FALSE;
+
+    /* generate demand for the identifiers in the body */
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    /* generate demand for the arguments */
+    RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
+
+    /* do the next range */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}

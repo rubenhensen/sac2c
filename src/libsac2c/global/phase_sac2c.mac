@@ -587,14 +587,14 @@ SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
 
 SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, wlt)
 
+SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
+          global.backend == BE_mutc, wlt)
+
 SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
           global.optimize.docvp, wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
-
-SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
-          global.backend == BE_mutc, wlt)
 
 ENDPHASE (wlt)
 

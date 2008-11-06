@@ -1119,6 +1119,7 @@
 	  <node name="Ids" />
 	  <node name="Code" />
 	  <node name="Withid" />
+	  <node name="Range" />
           <node name="WLsegVar" />
 	</travuser>
       </traversal>
@@ -1556,6 +1557,8 @@
         <travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Block" />
 	  <node name="With2" />
 	  <node name="Withid" />
 	  <node name="WLseg" />
@@ -8689,7 +8692,7 @@
         </son>
         <son name="ChunkSize">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <node name="Num" />
               <node name="Id" />
               <phases>
