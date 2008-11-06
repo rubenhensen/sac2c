@@ -776,9 +776,8 @@ DLfundef (node *arg_node, info *arg_info)
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -811,16 +810,12 @@ DLassign (node *arg_node, info *arg_info)
      * Traverse LHS identifiers to mark them as local in the current block
      */
     INFO_DIRECTION (arg_info) = DIR_down;
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_DIRECTION (arg_info) = DIR_up;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -840,14 +835,10 @@ DLlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("DLlet");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
-        if (LET_IDS (arg_node) != NULL) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-        }
+        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
     } else {
         INFO_TRAVRHS (arg_info) = FALSE;
-        if (LET_IDS (arg_node) != NULL) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-        }
+        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         if (INFO_TRAVRHS (arg_info)) {
             INFO_LHS (arg_info) = LET_IDS (arg_node);
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -870,9 +861,7 @@ DLids (node *arg_node, info *arg_info)
         }
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
