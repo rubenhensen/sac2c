@@ -93,10 +93,8 @@ ETCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ETCfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
