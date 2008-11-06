@@ -1138,10 +1138,9 @@ LURfundef (node *arg_node, info *arg_info)
      * after the do loop unrolling, because do-loop unrolling destroys
      * the ssa form, too).
      */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+
+    /* traverse block of fundef */
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     /* analyse fundef for possible unrolling */
     unrolling = SSALURGetDoLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
@@ -1207,9 +1206,7 @@ LURassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* integrate pre_assignments in assignment chain and remove this assign */
     if (pre_assigns != NULL) {
@@ -1239,9 +1236,7 @@ LURap (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
