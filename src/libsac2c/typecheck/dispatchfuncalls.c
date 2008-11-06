@@ -104,9 +104,7 @@ DFCmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFCmodule");
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     if (INFO_FOLDFUNS (arg_info) != NULL) {
         MODULE_FUNS (arg_node)
@@ -272,12 +270,12 @@ DFCfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DFCfundef");
 
-    if ((!INFO_ONEFUNDEF (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -300,9 +298,7 @@ DFCap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DFCap");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     DBUG_PRINT ("DFC",
                 ("Ap of function %s::%s pointed to " F_PTR ".",
@@ -358,9 +354,7 @@ DFCgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("DFCgenarrray");
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
