@@ -1039,12 +1039,8 @@ RemoveAvisSubst (node *fundef)
 {
     DBUG_ENTER ("RemoveAvisSubst");
 
-    if (FUNDEF_ARGS (fundef) != NULL) {
-        FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), NULL);
-    }
-    if (FUNDEF_VARDEC (fundef) != NULL) {
-        FUNDEF_VARDEC (fundef) = TRAVdo (FUNDEF_VARDEC (fundef), NULL);
-    }
+    FUNDEF_ARGS (fundef) = TRAVopt (FUNDEF_ARGS (fundef), NULL);
+    FUNDEF_VARDEC (fundef) = TRAVopt (FUNDEF_VARDEC (fundef), NULL);
 
     DBUG_RETURN (fundef);
 }
@@ -1128,8 +1124,8 @@ ISAAfundef (node *arg_node, info *arg_info)
         arg_node = RemoveAvisSubst (arg_node);
     }
 
-    if ((INFO_TRAVSCOPE (arg_info) == TS_module) && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_TRAVSCOPE (arg_info) == TS_module) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1326,9 +1322,7 @@ ISAAassign (node *arg_node, info *arg_info)
         postassign = INFO_POSTASSIGN (arg_info);
         INFO_POSTASSIGN (arg_info) = NULL;
 
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
         if (postassign != NULL) {
             ASSIGN_NEXT (arg_node) = TCappendAssign (postassign, ASSIGN_NEXT (arg_node));
@@ -1433,9 +1427,7 @@ ISAAids (node *arg_node, info *arg_info)
         }
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1456,9 +1448,7 @@ ISAAwith (node *arg_node, info *arg_info)
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     INFO_WITHID (arg_info) = oldwithid;
@@ -1513,9 +1503,7 @@ ISAApart (node *arg_node, info *arg_info)
         }
     }
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1530,18 +1518,12 @@ ISAAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISAAcode");
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
 
     AVIS_SUBST (IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))) = NULL;
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
