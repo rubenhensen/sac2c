@@ -1432,6 +1432,7 @@ WLFfundef (node *arg_node, info *arg_info)
     wlf_mode = wlfm_search_WL;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1925,9 +1926,7 @@ WLFcode (node *arg_node, info *arg_info)
         DBUG_ASSERT (0, ("Unexpected WLF mode"));
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
