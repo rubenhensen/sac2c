@@ -225,6 +225,8 @@ UESDdoUndoElimSubDiv (node *arg_node)
 node *
 UESDfundef (node *arg_node, info *arg_info)
 {
+    info *new_info;
+
     DBUG_ENTER ("UESDfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -232,9 +234,12 @@ UESDfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    new_info = MakeInfo ();
+    INFO_FUNDEF (new_info) = arg_node;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), new_info);
+    new_info = FreeInfo (new_info);
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -256,9 +261,7 @@ UESDblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UESDblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -285,21 +288,15 @@ UESDassign (node *arg_node, info *arg_info)
     INFO_TOPDOWN (arg_info) = TRUE;
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     postassign = INFO_POSTASSIGN (arg_info);
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_TOPDOWN (arg_info) = FALSE;
 
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (postassign != NULL) {
         ASSIGN_NEXT (postassign) = arg_node;
@@ -328,9 +325,7 @@ UESDlet (node *arg_node, info *arg_info)
 
     INFO_LET (arg_info) = arg_node;
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
