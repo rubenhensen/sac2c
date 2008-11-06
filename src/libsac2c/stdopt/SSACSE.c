@@ -757,9 +757,7 @@ CSEarg (node *arg_node, info *arg_info)
 
     AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -863,9 +861,7 @@ CSEassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -889,13 +885,9 @@ CSEcond (node *arg_node, info *arg_info)
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
 
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -915,9 +907,7 @@ CSEreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSEreturn");
 
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
 
     /*
      * analyse results and build up RESULTARG nodelist for results
@@ -1043,9 +1033,7 @@ CSEap (node *arg_node, info *arg_info)
         INFO_RECFUNAP (arg_info) = FALSE;
     }
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     /* reset traversal flag */
     INFO_RECFUNAP (arg_info) = FALSE;
@@ -1128,9 +1116,7 @@ CSEids (node *arg_node, info *arg_info)
     }
 
     /* traverse to next ids in chain */
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1228,17 +1214,13 @@ CSEcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSEcode");
 
     /* traverse codeblock */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /*traverse expression to do variable substitution */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /* traverse to next node */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
