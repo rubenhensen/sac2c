@@ -2836,10 +2836,18 @@
         <attribute name="Ns" inconstructor="yes">
           <type name="Namespace">
             <targets>
+          
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="initial" to="mod_ans" />
+                  <range from="pc_rid" to="final" />
+                </phases>
+              </target>
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <all />
+                  <range from="mod_ans" to="pc_rid" />
                 </phases>
               </target>
             </targets>
@@ -2931,10 +2939,10 @@
         <attribute name="SymbolName" default="NULL" inconstructor="no">
           <type name="String">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="exp" to="final" />
+                  <range from="mod_imp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3885,7 +3893,7 @@
       <sons>
         <son name="Exprs">
           <targets>
-            <target mandatory="yes" >
+            <target mandatory="no" >
               <node name="Exprs" />
               <phases>
                 <all />
@@ -4032,10 +4040,10 @@
         <attribute name="Label" inconstructor="no" >
           <type name="String">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="ussa_f2l" to="final" />
+                  <range from="initial" to="final" />
                 </phases>
               </target>
             </targets>
