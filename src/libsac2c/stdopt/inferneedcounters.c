@@ -119,19 +119,15 @@ INFNCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFNCfundef");
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     if (!INFO_ONEFUNDEF (arg_info)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -141,9 +137,7 @@ INFNCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFNCblock");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -171,13 +165,9 @@ INFNCid (node *arg_node, info *arg_info)
 
     AVIS_NEEDCOUNT (avis) += 1;
 
-    if (AVIS_DIM (avis) != NULL) {
-        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
-    }
+    AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
 
-    if (AVIS_SHAPE (avis) != NULL) {
-        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
-    }
+    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
 
     DBUG_RETURN (arg_node);
 }
