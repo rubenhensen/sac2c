@@ -516,9 +516,7 @@ CFassign (node *arg_node, info *arg_info)
     INFO_PREASSIGN (arg_info) = NULL;
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /**
      * First, we separate the current assignments from its successors:
@@ -595,9 +593,7 @@ static node *
 CFcondThen (node *arg_node, info *arg_info)
 {
     node *pre;
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
     DBUG_PRINT ("CF", ("CFcondThen found TRUE condition"));
 
     /* select then-part for later insertion in assignment chain */
@@ -631,9 +627,7 @@ CFcondElse (node *arg_node, info *arg_info)
 {
     node *pre;
 
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
     DBUG_PRINT ("CF", ("CFcondElse found FALSE condition"));
 
     /* select else-part for later insertion in assignment chain */
@@ -1024,9 +1018,7 @@ CFcode (node *arg_node, info *arg_info)
     /*
      * Do not traverse CODE_NEXT since codes are traversed through the Parts
      */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
@@ -1132,9 +1124,7 @@ CFpart (node *arg_node, info *arg_info)
     /*
      * Traverse PART_NEXT
      */
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     /*
      * Revert CODE_USED to correct state
