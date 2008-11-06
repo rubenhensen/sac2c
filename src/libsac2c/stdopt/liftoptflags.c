@@ -66,9 +66,7 @@ LOFdoLiftOptFlags (node *arg_node)
 
     TRAVpush (TR_lof);
 
-    if (arg_node != NULL) {
-        arg_node = TRAVdo (arg_node, NULL);
-    }
+    arg_node = TRAVopt (arg_node, NULL);
 
     TRAVpop ();
 
@@ -123,9 +121,8 @@ LOFfundef (node *arg_node, info *arg_info)
         arg_info = FreeInfo (arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
