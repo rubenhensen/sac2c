@@ -19,7 +19,7 @@
  *    reach the top of a special fundef, we look for the unused args and
  *    remove them, too.
  *    These signature changes are only possible for special fundefs where we
- *    know that there is always exactly on calling application that we can
+ *    know that there is always exactly one calling application that we can
  *    modifiy, too.
  *    the flags if we need an identifier are stored in the avis nodes
  *
@@ -244,13 +244,9 @@ DCRfundef (node *arg_node, info *arg_info)
                  * traverse args and rets to remove unused ones from signature
                  */
                 INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
-                if (FUNDEF_ARGS (arg_node) != NULL) {
-                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-                }
+                FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
-                if (FUNDEF_RETS (arg_node) != NULL) {
-                    FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), info);
-                }
+                FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), info);
 
                 if (INFO_CONDREMOVED (arg_info)) {
                     /*
@@ -267,9 +263,7 @@ DCRfundef (node *arg_node, info *arg_info)
     }
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_module) && (INFO_FUNDEF (arg_info) == NULL)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -437,22 +431,18 @@ DCRblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        /* traverse assignmentchain in block */
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    /* traverse assignmentchain in block */
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* the complete block is empty -> create N_empty node */
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        /*
-         * traverse all vardecs in block to remove useless ones
-         */
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    /*
+     * traverse all vardecs in block to remove useless ones
+     */
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -472,9 +462,7 @@ DCRvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCRvardec");
 
     /* traverse to next vardec */
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     /* process vardec and remove it, if dead code */
     if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
@@ -501,9 +489,7 @@ DCRassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* traverse instruction */
     INFO_REMASSIGN (arg_info) = TRUE;
@@ -577,9 +563,7 @@ DCRlet (node *arg_node, info *arg_info)
     /*
      * Traverse lhs identifiers
      */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     if (!INFO_REMASSIGN (arg_info)) {
         /* traverse right side of let */
@@ -650,9 +634,7 @@ DCRids (node *arg_node, info *arg_info)
     /*
      * Traverse ids bottom-up
      */
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
         INFO_REMASSIGN (arg_info) = FALSE;
@@ -676,14 +658,10 @@ DCRcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCRcode");
 
     /* traverse code block */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /* traverse expression */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
