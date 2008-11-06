@@ -1373,6 +1373,8 @@ FreeWLIAssignInfo (node *arg_node, info *arg_info)
         ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
     }
 
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

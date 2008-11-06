@@ -650,9 +650,7 @@ WLIassign (node *arg_node, info *arg_info)
        with a non-null ASSIGN_INDEX are valid. See WLIlet. Before WLI, this
        pointer may be non null (somwhere wrong initialisation -> better
        use MakeAssign()!!! ) */
-    if (ASSIGN_INDEX (arg_node) != NULL) {
-        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
-    }
+    DBUG_ASSERT ((ASSIGN_INDEX (arg_node) == NULL), "left-over ASSIGN_INDEX found.");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
