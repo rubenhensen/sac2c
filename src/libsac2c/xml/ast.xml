@@ -6800,18 +6800,6 @@
         <son name="Contents">
           <targets>
             <target mandatory="yes">
-              <node name="WLblock" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
-              <node name="WLublock" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
               <node name="WLstride" />
               <phases>
                 <all />
