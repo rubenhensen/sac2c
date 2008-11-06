@@ -134,9 +134,8 @@ RMVfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RMVfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -178,9 +177,7 @@ RMVvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RMVvardec");
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_init:
@@ -212,9 +209,7 @@ RMVids (node *arg_node, info *arg_info)
     AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
     DBUG_PRINT ("RMV", ("marking %s as alive!", IDS_NAME (arg_node)));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
