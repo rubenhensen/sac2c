@@ -625,6 +625,8 @@ WLIfundef (node *arg_node, info *arg_info)
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
     }
 
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -653,10 +655,7 @@ WLIassign (node *arg_node, info *arg_info)
     }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -954,9 +953,7 @@ WLIpart (node *arg_node, info *arg_info)
         }
     }
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
