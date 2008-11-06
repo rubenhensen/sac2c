@@ -133,9 +133,7 @@ ILIfundef (node *arg_node, info *arg_info)
     INFO_ILI_FUNDEF (info) = arg_node;
 
     /* traverse function body */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), info);
 
     info = FreeInfo (info);
 
