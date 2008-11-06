@@ -641,15 +641,8 @@ SSATfundef (node *arg_node, info *arg_info)
          */
         FOR_ALL_AVIS (InitSSAT, arg_node);
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            /* there are some args */
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
-
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            /* there is a block */
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
         /*
          * Remove SSAStacks and set SSACnt to NULL
@@ -666,9 +659,8 @@ SSATfundef (node *arg_node, info *arg_info)
     }
 
     /* traverse next fundef */
-    if ((INFO_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS)
-        && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -977,9 +969,7 @@ SSATap (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     /* traverse special fundef without recursion (only in single fundef mode) */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
@@ -1103,9 +1093,7 @@ SSATpart (node *arg_node, info *arg_info)
     DBUG_ASSERT ((PART_GENERATOR (arg_node) != NULL), "Npart without Ngen node!");
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     /* traverse withid on our way back up: */
     DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
@@ -1240,19 +1228,15 @@ SSATcode (node *arg_node, info *arg_info)
     INFO_NESTLEVEL (arg_info) += 1;
 
     /* traverse block */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /* traverse expressions */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     INFO_NESTLEVEL (arg_info) -= 1;
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        /* traverse next part */
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    /* traverse next part */
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1369,9 +1353,7 @@ SSATreturn (node *arg_node, info *arg_info)
     }
 
     /* traverse exprs */
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
 
     INFO_GENERATE_FUNCOND (arg_info) = FALSE;
 
@@ -1487,18 +1469,11 @@ SSATids (node *arg_node, info *arg_info)
 
     AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
 
-    if (AVIS_DIM (avis) != NULL) {
-        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
-    }
-
-    if (AVIS_SHAPE (avis) != NULL) {
-        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
-    }
+    AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
+    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
 
     /* traverese next ids */
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
