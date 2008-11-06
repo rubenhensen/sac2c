@@ -273,10 +273,14 @@ WLSIMPfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
+    /*
+     * Descend into local fundef chains regardless of whether
+     * INFO_ONEFUNDEF is set.
+     */
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
     if (!INFO_ONEFUNDEF (arg_info)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -292,9 +296,7 @@ WLSIMPassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSIMPassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -502,16 +504,12 @@ WLSIMPcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSIMPcode");
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     if (CODE_USED (arg_node) == 0) {
         arg_node = FREEdoFreeNode (arg_node);
     } else {
-        if (CODE_CBLOCK (arg_node) != NULL) {
-            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        }
+        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -529,9 +527,7 @@ WLSIMPpart (node *arg_node, info *arg_info)
 
     INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     INFO_EMPTYPART (arg_info) = FALSE;
 
