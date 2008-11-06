@@ -702,13 +702,8 @@ NTCmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCmodule");
 
-    if (NULL != MODULE_FUNDECS (arg_node)) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
-
-    if (NULL != MODULE_FUNS (arg_node)) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -739,9 +734,7 @@ NTCfundef (node *arg_node, info *arg_info)
         global.act_info_chn = NULL;
         DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to NULL"));
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
 
@@ -755,9 +748,8 @@ NTCfundef (node *arg_node, info *arg_info)
          * since they would be lost immediately in outer space.
          */
     } else {
-        if (NULL != FUNDEF_NEXT (arg_node)) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        } else {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        if (NULL == FUNDEF_NEXT (arg_node)) {
             specialized_fundefs = SPECresetSpecChain ();
             copied_special_fundefs = DUPgetCopiedSpecialFundefs ();
             integrated_fundefs
@@ -786,13 +778,8 @@ NTCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCblock");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -835,9 +822,7 @@ NTCvardec (node *arg_node, info *arg_info)
         type = TYfreeType (type);
     }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -866,9 +851,7 @@ NTCassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     INFO_LAST_ASSIGN (arg_info) = tmp;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
