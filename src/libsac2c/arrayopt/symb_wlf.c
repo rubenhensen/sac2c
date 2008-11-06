@@ -398,6 +398,8 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops folding in function %s completes",
                              FUNDEF_NAME (arg_node)));
+
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 #endif
     }
 
@@ -427,9 +429,7 @@ SWLFassign (node *arg_node, info *arg_info)
     /*
      * Top-down traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * Append the new cloned block
@@ -461,14 +461,8 @@ SWLFwith (node *arg_node, info *arg_info)
     INFO_LEVEL (arg_info) += 1;
 
     if (INFO_PART (arg_info) == NULL) {
-
-        if (WITH_CODE (arg_node) != NULL) {
-            WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-        }
-
-        if (WITH_PART (arg_node) != NULL) {
-            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        }
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     }
 
     /* Decrement the level counter */
@@ -489,13 +483,10 @@ SWLFcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFcode");
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
-    if ((INFO_PART (arg_info) == NULL) && (CODE_NEXT (arg_node) != NULL)) {
-
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    if (INFO_PART (arg_info) == NULL) {
+        CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -520,9 +511,7 @@ SWLFpart (node *arg_node, info *arg_info)
         INFO_PART (arg_info) = NULL;
     }
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -540,10 +529,7 @@ SWLFids (node *arg_node, info *arg_info)
     DBUG_ENTER ("SWLFids");
 
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
-
-    if (IDS_NEXT (arg_node)) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
