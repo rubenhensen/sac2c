@@ -206,21 +206,10 @@ EATmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EATmodule");
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
-
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
+    MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -278,9 +267,7 @@ EATfundef (node *arg_node, info *arg_info)
                             ("bottomozing function %s due to lacking result type",
                              CTIitemName (arg_node)));
 
-                if (FUNDEF_ARGS (arg_node) != NULL) {
-                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-                }
+                FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
                 if (FUNDEF_BODY (arg_node) != NULL) {
                     FUNDEF_BODY (arg_node) = FREEdoFreeNode (FUNDEF_BODY (arg_node));
@@ -306,14 +293,10 @@ EATfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
                                   CTIitemName (arg_node)));
 
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
             INFO_VARDECS (arg_info) = NULL;
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            }
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
             if (INFO_VARDECS (arg_info) != NULL) {
                 /*
@@ -332,8 +315,8 @@ EATfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if ((!INFO_ONEFUNCTION (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNCTION (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -512,13 +495,8 @@ EATblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EATblock");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -562,9 +540,8 @@ EATpart (node *arg_node, info *arg_info)
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    } else {
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    if (PART_NEXT (arg_node) == NULL) {
         INFO_WLIDS (arg_info) = NULL;
     }
 
