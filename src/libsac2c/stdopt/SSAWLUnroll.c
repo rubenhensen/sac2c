@@ -1134,13 +1134,11 @@ CheckUnrollWithloop (node *wln, info *arg_info)
 node *
 LacFundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLURfundef");
+    DBUG_ENTER ("LacFundef");
 
     INFO_FUNDEF (arg_info) = arg_node;
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    /* traverse block of fundef */
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -1170,9 +1168,7 @@ WLURap (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
@@ -1231,9 +1227,7 @@ WLURassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* integrate pre_assignments in assignment chain and remove this assign */
     if (pre_assigns != NULL) {
@@ -1261,10 +1255,8 @@ WLURfundef (node *arg_node, info *arg_info)
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            /* traverse block of fundef */
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        /* traverse block of fundef */
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
     }
 
@@ -1288,19 +1280,13 @@ WLURwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLURwith");
 
     /* traverse the N_Nwithop node */
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
 
     /* traverse all generators */
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     /* traverse bodies */
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
     /* can this WL be unrolled? */
     if (CheckUnrollWithloop (arg_node, arg_info)) {
