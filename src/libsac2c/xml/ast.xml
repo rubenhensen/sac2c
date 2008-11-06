@@ -3090,7 +3090,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                   <range from="mod_imp" to="opt_fdi"/>
+                  <range from="mod_imp" to="opt_fdi"/>
                 </phases>
               </target>
             </targets>
@@ -3162,7 +3162,7 @@
 	  </description>
           <type name="ExtLink">
             <targets>
-              <target mandatory="no">
+              <target mandatory="no" >
                 <node name="Fundef" />
                 <phases>
                   <range from="mod_imp" to="final" />
@@ -3456,7 +3456,10 @@
               <target mandatory="no">
                 <node name="Objdef" />
                 <phases>
+                <!--
                   <range from="ptc_rso" to="ussa_reso" />
+                -->
+                  <range from="mod_uss" to="ussa_reso" />
                 </phases>
               </target>
             </targets>
@@ -5191,7 +5194,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <all />
+                  <range from="initial" to="cg_ctr" />
                 </phases>
               </target>
             </targets>
@@ -5270,8 +5273,11 @@
               <target mandatory="no">
                 <node name="Assign" />
                 <phases>
-                  <range from="ptc_ssa" to="wlt_ussa" />
-                  <range from="wlt_ssa" to="ussa_ussa" />
+                  <!-- 
+                  <range from="ptc_ssa" to="wlt_l2f" /> 
+                  <range from="wlt_ssa" to="ussa_ussa" /> 
+                  -->
+                  <range from="ptc_ssa" to="cg_frtr" />
                 </phases>
               </target>
             </targets>
@@ -5762,10 +5768,10 @@
         <attribute name="Pragma" inconstructor="no" >
           <type name="Node">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <range from="scp" to="wlt_wltr" />
+                  <range from="scp_prs" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6324,10 +6330,10 @@
         <attribute name="Pragma" default="NULL" inconstructor="no">
           <type name="Node">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <all />
+                  <range from="wlt_wltr" to="wlt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -6894,10 +6900,13 @@
         <attribute name="BV" default="NULL" inconstructor="no">
           <type name="IntegerPointerArray">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
+                <!--
                   <all />
+                -->
+                  <range from="wlt_wltr" to="cg_cpl" />
                 </phases>
               </target>
             </targets>
@@ -6930,10 +6939,14 @@
         <attribute name="Scheduling" inconstructor="no">
           <type name="Scheduling">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
+                
                   <range from="wlt_wltr" to="final" />
+                <!--
+                  <range from="mt_sched" to="pc_moi" />
+                -->
                 </phases>
               </target>
             </targets>
@@ -6945,7 +6958,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
+                <!--
                   <range from="wlt_wltr" to="final" />
+                -->
+                  <phase name="pc_mmv" />
                 </phases>
               </target>
             </targets>
@@ -7634,10 +7650,10 @@
             needs to be increased</description>
           <type name="CodeLink">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Code" />
                 <phases>
-                  <all />
+                  <range from="wlt_wltr" to="cg_cpl" />
                 </phases>
               </target>
             </targets>
@@ -8415,12 +8431,18 @@
         <attribute name="Ns" inconstructor="yes">
 	  <type name="Namespace">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <all />
+                  <range from="initial" to="ptc_goi" />
                 </phases>
               </target>
+              <!--  <target mandatory="yes">
+                      <any />
+                      <phases>
+                        <phase name="ptc_gon"/>
+                      </phases>
+                    </target> -->
             </targets>
           </type>
 	</attribute>
