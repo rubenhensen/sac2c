@@ -1147,9 +1147,7 @@ WLPGmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("WLPG", ("WLPartitionGeneration module-wise"));
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1181,9 +1179,7 @@ WLPGfundef (node *arg_node, info *arg_info)
             FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
         }
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else if (INFO_SUBPHASE (arg_info) == SP_func) {
         /* compiler_phase == PH_sacopt */
         if (FUNDEF_BODY (arg_node)) {
@@ -1229,13 +1225,9 @@ WLPGassign (node *arg_node, info *arg_info)
         arg_node = INFO_NASSIGNS (arg_info);
         INFO_NASSIGNS (arg_info) = NULL;
 
-        if (ASSIGN_NEXT (iterator) != NULL) {
-            ASSIGN_NEXT (iterator) = TRAVdo (ASSIGN_NEXT (iterator), arg_info);
-        }
+        ASSIGN_NEXT (iterator) = TRAVopt (ASSIGN_NEXT (iterator), arg_info);
     } else {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1366,9 +1358,7 @@ WLPGwith (node *arg_node, info *arg_info)
      * The CODEs have to be traversed as they may contain further (nested) WLs
      * and I want to modify bottom up.
      */
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
     /* Pop N_let */
     INFO_LET (arg_info) = let_tmp;
