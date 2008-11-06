@@ -127,15 +127,14 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 
 static info *
-MakeInfo (node *fundef)
+MakeInfo ()
 {
     info *result;
 
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
-
-    INFO_FUNDEF (result) = fundef;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -175,13 +174,16 @@ FreeInfo (info *info)
 node *
 WLSdoWithloopScalarization (node *fundef)
 {
+    info *arg_info;
     DBUG_ENTER ("WLSdoWithloopScalarization");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "WLSdoWithloopScalarization called for non-fundef node");
 
+    arg_info = MakeInfo ();
+
     TRAVpush (TR_wls);
-    fundef = TRAVdo (fundef, NULL);
+    fundef = TRAVdo (fundef, arg_info);
     TRAVpop ();
 
     DBUG_RETURN (fundef);
@@ -212,9 +214,7 @@ WLSassign (node *arg_node, info *arg_info)
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * Traverse RHS
@@ -236,24 +236,25 @@ WLSassign (node *arg_node, info *arg_info)
 node *
 WLSfundef (node *arg_node, info *arg_info)
 {
+    info *newInfo;
     DBUG_ENTER ("WLSfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        /*
-         * Create new INFO structure
-         */
-        arg_info = MakeInfo (arg_node);
+    INFO_FUNDEF (arg_info) = arg_node;
 
+    if (FUNDEF_BODY (arg_node) != NULL) {
         /*
          * traverse block of fundef
          */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        /*
-         * Free INFO structure
-         */
-        arg_info = FreeInfo (arg_info);
     }
+
+    newInfo = MakeInfo ();
+    INFO_FUNDEF (newInfo) = INFO_FUNDEF (arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), newInfo);
+    /*
+     * Free INFO structure
+     */
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
