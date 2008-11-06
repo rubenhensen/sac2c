@@ -193,6 +193,8 @@ CWLEfundef (node *arg_node, info *arg_info)
         DFMremoveMaskBase (dfmask_base);
     }
 
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -208,9 +210,7 @@ CWLEarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CWLEarg");
 
-    if (NULL != ARG_NEXT (arg_node)) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
 
@@ -269,9 +269,7 @@ CWLEassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (NULL != ASSIGN_NEXT (arg_node)) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -290,9 +288,7 @@ CWLEids (node *arg_node, info *arg_info)
 
     DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
 
-    if (NULL != IDS_NEXT (arg_node)) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
