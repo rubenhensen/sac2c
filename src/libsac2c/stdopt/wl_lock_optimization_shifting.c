@@ -1,3 +1,5 @@
+/* $id$ */
+
 #include "wl_lock_optimization_shifting.h"
 
 #include "tree_basic.h"
@@ -101,7 +103,7 @@ WLLOSprf (node *arg_node, info *arg_info)
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         /*Assignment asks if prop_obj_?*/
-        if (INFO_IS_PROP_OBJ (arg_info) == TRUE) {
+        if (INFO_IS_PROP_OBJ (arg_info)) {
             if (PRF_PRF (arg_node) == F_prop_obj_in) {
                 INFO_IS_PROP_OBJ_IN (arg_info) = TRUE;
             } else if (PRF_PRF (arg_node) == F_prop_obj_out) {
@@ -205,9 +207,7 @@ WLLOSassign (node *arg_node, info *arg_info)
 
                 ret_node = TRAVdo (next_node, arg_info);
             } else { /*Assignment cant be moved up nor down*/
-                if (ASSIGN_NEXT (arg_node) != NULL) {
-                    ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-                }
+                ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             }
             /*Here starts the backwards traversal*/
             INFO_IS_PROP_OBJ_IN (arg_info) = old_answer;

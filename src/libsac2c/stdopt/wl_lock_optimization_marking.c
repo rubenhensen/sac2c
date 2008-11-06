@@ -1,3 +1,5 @@
+/* $id$ */
+
 #include "wl_lock_optimization_marking.h"
 
 #include "tree_basic.h"
@@ -95,7 +97,7 @@ WLLOMprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLLOMprf");
 
-    if (INFO_WB (arg_info) == FALSE) { /*Traverses down the tree...*/
+    if (!INFO_WB (arg_info)) { /*Traverses down the tree...*/
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
             DBUG_PRINT ("WLLOM", ("Found prop_obj_in!"));
 
@@ -378,9 +380,7 @@ WLLOMwith (node *arg_node, info *arg_info)
     /*
      * we are only interested in the CODE blocks
      */
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         INFO_WB (arg_info) = FALSE;
@@ -403,9 +403,7 @@ WLLOMcode (node *arg_node, info *arg_info)
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
