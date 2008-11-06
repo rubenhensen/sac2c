@@ -2683,10 +2683,17 @@
         <attribute name="Ns" inconstructor="yes">
           <type name="Namespace">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <all />
+                  <range from="initial" to="mod_ans" />
+                  <range from="pc_rid" to="final" />
+                </phases>
+              </target>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="mod_ans" to="pc_rid" />
                 </phases>
               </target>
             </targets>
@@ -2767,10 +2774,10 @@
         <attribute name="SymbolName" default="NULL" inconstructor="no">
           <type name="String">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="exp" to="final" />
+                  <range from="mod_imp" to="final" />
                 </phases>
               </target>
             </targets>
