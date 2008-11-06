@@ -1,44 +1,5 @@
 /*
  *
- * $Log$
- * Revision 1.12  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.11  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.10  2005/06/02 13:42:48  mwe
- * set WASOPTIMIZED flag if some constant return values were found
- *
- * Revision 1.9  2005/06/01 11:27:04  mwe
- * some comments added
- *
- * Revision 1.8  2005/05/31 13:59:34  mwe
- * usage of ARG_ISINUSE instaed of NEEDCOUNT
- * some methods new implemented
- *
- * Revision 1.7  2005/05/31 12:28:06  mwe
- * bug fixed
- *
- * Revision 1.6  2005/02/18 22:19:02  mwe
- * bug fixed
- *
- * Revision 1.5  2005/02/11 12:10:42  mwe
- * now only arguments marked by deadcoderemoval are deleted
- *
- * Revision 1.4  2005/02/08 22:29:21  mwe
- * doxygen comments added
- *
- * Revision 1.3  2005/02/03 18:28:22  mwe
- * counter added
- * simplification-rules improved
- *
- * Revision 1.2  2005/02/02 21:09:25  mwe
- * corrected traversal
- *
- * Revision 1.1  2005/02/02 18:13:25  mwe
- * Initial revision
- *
  *
  */
 
@@ -189,15 +150,11 @@ SISImodule (node *arg_node, info *arg_info)
 
     INFO_TRAVPHASE (arg_info) = infer;
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     INFO_TRAVPHASE (arg_info) = simplify;
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -228,27 +185,22 @@ SISIfundef (node *arg_node, info *arg_info)
 
         INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
 
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
         INFO_FUNDEF (arg_info) = arg_node;
 
-        if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
-            && (!STReq ("main", FUNDEF_NAME (arg_node)))
+        if ((!FUNDEF_ISLACFUN (arg_node)) && (!STReq ("main", FUNDEF_NAME (arg_node)))
             && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
             && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
-            FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+            FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
         }
 
-        if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
-            && (!FUNDEF_ISLACFUN (arg_node)) && (!FUNDEF_ISEXPORTED (arg_node))
-            && (!FUNDEF_ISPROVIDED (arg_node))) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
+            && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         }
     } else {
         DBUG_ASSERT ((FALSE), "Unexpected traversal phase!");
@@ -276,9 +228,7 @@ SISIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIarg");
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     /*
      * now bottom-up traversal
@@ -320,9 +270,7 @@ SISIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -346,17 +294,13 @@ SISIassign (node *arg_node, info *arg_info)
 
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
     /* integrate post assignments after current assignment */
     ASSIGN_NEXT (arg_node)
       = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -379,15 +323,12 @@ SISIlet (node *arg_node, info *arg_info)
 
     INFO_ISAPNODE (arg_info) = FALSE;
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
-    if ((INFO_ISAPNODE (arg_info)) && (LET_IDS (arg_node) != NULL)
-        && (INFO_APFUNRETS (arg_info) != NULL)) {
+    if ((INFO_ISAPNODE (arg_info)) && (INFO_APFUNRETS (arg_info) != NULL)) {
 
         INFO_IDSLET (arg_info) = TRUE;
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         INFO_IDSLET (arg_info) = FALSE;
     }
 
@@ -487,10 +428,7 @@ SISIids (node *arg_node, info *arg_info)
                          "ret and ids do not fit together");
         }
 
-        if (IDS_NEXT (arg_node) != NULL) {
-
-            IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-        }
+        IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
         /*
          * bottom-up traversal
@@ -561,9 +499,7 @@ SISIreturn (node *arg_node, info *arg_info)
 
         INFO_RETURNEXPRS (arg_info) = TRUE;
 
-        if (RETURN_EXPRS (arg_node) != NULL) {
-            RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-        }
+        RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
         INFO_RETURNEXPRS (arg_info) = FALSE;
     }
 
@@ -587,9 +523,7 @@ SISIret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIret");
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
     /*
      * remove bottom-up rets
      */
