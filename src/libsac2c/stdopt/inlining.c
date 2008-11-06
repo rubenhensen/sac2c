@@ -115,9 +115,7 @@ INLmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLmodule");
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -174,9 +172,7 @@ INLfundef (node *arg_node, info *arg_info)
          * We only continue with traversing the next function if we are on
          * the top level fundef chain.
          */
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
         /*
          * Once we have finished inlining, we reset this flag to prepare the
@@ -221,9 +217,7 @@ INLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("INLassign");
 
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_CODE (arg_info) != NULL) {
         code = INFO_CODE (arg_info);
@@ -234,9 +228,7 @@ INLassign (node *arg_node, info *arg_info)
         global.optcounters.inl_fun++; /* global optimization counter */
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     if (inlined) {
         DBUG_PRINT ("INL", ("Inlining code"));
