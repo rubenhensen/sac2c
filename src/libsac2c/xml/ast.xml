@@ -178,6 +178,14 @@
           <node name="Ap" />
         </travuser>
       </traversal> 
+      <traversal id="IVEXI" name="Index Variable Extrema Insertion" default="sons" include="ivextrema.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="With" />
+        </travuser>
+      </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
         <travuser>
           <node name="Module" />

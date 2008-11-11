@@ -281,6 +281,15 @@ SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemoval
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, global.group_local_funs,
           opt)
 
+/* The positioning of this subphase is relatively unimportant.
+ * It should precede the optimization cycle(s), and has to
+ * be placed after ssaiv has turned IVs into SSA form, but
+ * there are no other constraints on its placement.
+ */
+
+SUBPHASE (ivext, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
+          global.doivext, opt)
+
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
 FUNBEGIN (cyc, opt, cyc)

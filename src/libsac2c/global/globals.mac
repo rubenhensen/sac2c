@@ -468,9 +468,10 @@ GLOBAL (bool, dousertrace, FALSE)
 GLOBAL (bool, ssaiv, FALSE)
 
 /*
- * whether to enable MAXVAL/MINVAL analysis for guard removal
+ * whether to enable MAXVAL/MINVAL insertion for guard removal
+ * and with-loop folding
  */
-GLOBAL (bool, extremaanalysis, FALSE)
+GLOBAL (bool, doivext, FALSE)
 
 /*
  * activate/control grouping of local functions

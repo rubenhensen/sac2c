@@ -385,6 +385,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
     ARGS_OPTION ("iveo", ARG_NUM (global.iveo));
     ARGS_OPTION ("ive", ARG_NUM (global.ive));
+    ARGS_FLAG ("extrema", global.doivext = TRUE);
 
     ARGS_OPTION_BEGIN ("I")
     {
@@ -465,8 +466,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("minmtsize", ARG_NUM (global.min_parallel_size));
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (global.max_replication_size));
-
-    ARGS_FLAG ("extremaanalysis", global.extremaanalysis = TRUE);
 
     ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
 
