@@ -5132,53 +5132,8 @@
             </target>
           </targets>
         </son>        
-
-        <son name="MinVal" default="NULL">
-          <description>
-          This field represents the minimum value that this
-          variable can have. It is valid only for integer-like
-          types, i.e., it does not apply to doubles, etc.
-          The value may be an N_num, an N_array, or an N_id.
-          If an N_id, the N_id must have an associated SSAASSIGN
-          giving the origin of the value. For example, the
-          MinVal of the lower bound of a WL index vector might be
-          an N_array with value [0,0,0], or it might be an N_id
-          with SSASSIGN value of "_shape_A_(X) - 1". 
-
-          A typical use of MinVal is to allow constant folding to
-          to eliminate a prf_non_neg_val_V_ call.
-          </description>
-          <targets>
-            <target mandatory="no">
-              <set name="IntValue" />
-              <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_isaa2" to="opt_esaa2" />
-              </phases>
-            </target>
-          </targets>
-        </son>
-
-        <son name="MaxVal" default="NULL">
-          <description>
-         See MinVal description; MAXVAL represents the maximum, instead
-         of minimum, ALMOST: Like WL index vectors, MAXVAL is
-         part of a semi-closed interval; MAXVAL(X) is 1+maxreduce(X).
-         A typical use of MAXVAL is to allow constant folding to eliminate
-         a prf_val_le_val_VxV_ call.
-          </description>
-          <targets>
-            <target mandatory="no">
-              <set name="IntValue" />
-              <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_isaa2" to="opt_esaa2" />
-              </phases>
-            </target>
-          </targets>
-        </son>
-
       </sons>
+
       <attributes>
         <attribute name="Decl" default="NULL" inconstructor="no" >
           <type name="Link">
@@ -5581,7 +5536,58 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="MinVal" default="NULL">
+          <description>
+          This field is a pointer to the N_avis of the
+          minimum value that this variable can have. 
+          The field is valid only for integer-like
+          types, i.e., it does not apply to doubles, etc.
+          The value may be an N_num, an N_array, or an N_id.
+          If it points to an N_id, the N_id must have an associated SSAASSIGN
+          giving the origin of the value. For example, the
+          MinVal of the lower bound of a WL index vector might be
+          an N_array with value [0,0,0], or it might be an N_id
+          with SSASSIGN value of "_shape_A_(X) - 1". 
+
+          A typical use of MinVal is to allow constant folding to
+          to eliminate an F_non_neg_val_V call.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="yes">
+                <node name="Avis" />
+                <phases>
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+
+        <attribute name="MaxVal" default="NULL">
+          <description>
+         See MinVal description; MAXVAL points to the maximum, rather
+         than the minimum, value of a WL index vector.
+         However, like WL index vectors, MAXVAL is
+         part of a semi-closed interval; MAXVAL(X) is at least 1+maxreduce(X).
+         A typical use of MAXVAL is to allow the constant folder to
+         eliminate an F_val_le_val_VxV call.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="yes">
+                <node name="Avis" />
+                <phases>
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
+
       <flags>
         <flag name="SSADefined" />
         <flag name="SSALPINV" />
