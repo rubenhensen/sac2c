@@ -133,9 +133,21 @@ DCIdoDeadCodeInferenceOneFunction (node *fundef)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @name Static helper funcions
- * @{
+ * function:
+ *     static void MarkAvisAlive( node *avis)
+ *
+ * description:
+ *     If someone wants this AVIS to be kept alive,
+ *     we mark it so. We also traverse the SAA and EXTREMA
+ *     links, to keep their referents alive, too.
+ *
+ *     This action is required because the links (e.g., AVIS_MINVAL)
+ *     are attributes, not sons, in the ast.
  *
  *****************************************************************************/
 
@@ -154,14 +166,16 @@ MarkAvisAlive (node *avis)
         if (AVIS_SHAPE (avis) != NULL) {
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
+        if (AVIS_MINVAL (avis) != NULL) {
+            AVIS_MINVAL (avis) = TRAVdo (AVIS_MINVAL (avis), NULL);
+        }
+        if (AVIS_MAXVAL (avis) != NULL) {
+            AVIS_MAXVAL (avis) = TRAVdo (AVIS_MAXVAL (avis), NULL);
+        }
     }
 
     DBUG_VOID_RETURN;
 }
-
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
- *****************************************************************************/
 
 /******************************************************************************
  *

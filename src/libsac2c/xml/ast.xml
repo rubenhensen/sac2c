@@ -183,7 +183,9 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Block" />
+          <node name="Assign" />
           <node name="With" />
+          <node name="Part" />
         </travuser>
       </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
@@ -5551,6 +5553,11 @@
 
           A typical use of MinVal is to allow constant folding to
           to eliminate an F_non_neg_val_V call.
+
+          The AVIS attributes DIM, SHAPE, MINVAL, and MAXVAL 
+          are explicitly handled by DCR as if they were AST sons. 
+          I.e., the presence of a non-null pointer in one of them causes
+          preservation of the AVIS pointed to, along with its baggage.
           </description>
           <type name="Link">
             <targets>
@@ -5567,7 +5574,7 @@
 
         <attribute name="MaxVal" default="NULL">
           <description>
-         See MinVal description; MAXVAL points to the maximum, rather
+         See MinVal description; MAXVAL points to the avis of the maximum, rather
          than the minimum, value of a WL index vector.
          However, like WL index vectors, MAXVAL is
          part of a semi-closed interval; MAXVAL(X) is at least 1+maxreduce(X).

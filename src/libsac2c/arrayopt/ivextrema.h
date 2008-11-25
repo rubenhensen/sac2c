@@ -19,5 +19,7 @@ extern node *IVEXIfundef (node *arg_node, info *arg_info);
 extern node *IVEXIblock (node *arg_node, info *arg_info);
 extern node *IVEXIwith (node *arg_node, info *arg_info);
 extern node *IVEXIgenerator (node *arg_node, info *arg_info);
+extern node *IVEXIpart (node *arg_node, info *arg_info);
+extern node *IVEXIassign (node *arg_node, info *arg_info);
 
 #endif // _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
