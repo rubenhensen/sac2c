@@ -1905,19 +1905,32 @@ PRTvardec (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s ", type_str);
         type_str = MEMfree (type_str);
 
+        /* Print SAA information */
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
+        fprintf (global.outfile, " { "); /* Start of avis info */
         if (AVIS_DIM (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, "(");
+            fprintf (global.outfile, "dim: ");
             AVIS_DIM (VARDEC_AVIS (arg_node))
               = TRAVdo (AVIS_DIM (VARDEC_AVIS (arg_node)), arg_info);
-            fprintf (global.outfile, ")");
         }
         if (AVIS_SHAPE (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, "[");
+            fprintf (global.outfile, ", shape: ");
             AVIS_SHAPE (VARDEC_AVIS (arg_node))
               = TRAVdo (AVIS_SHAPE (VARDEC_AVIS (arg_node)), arg_info);
-            fprintf (global.outfile, "]");
         }
+        /* Print extrema information */
+        if (AVIS_MINVAL (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", minval: ");
+            AVIS_MINVAL (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_MINVAL (VARDEC_AVIS (arg_node)), arg_info);
+        }
+        if (AVIS_MAXVAL (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", maxval: ");
+            AVIS_MAXVAL (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_MAXVAL (VARDEC_AVIS (arg_node)), arg_info);
+        }
+
+        fprintf (global.outfile, " } "); /* end of avis info */
         fprintf (global.outfile, "; ");
 
         if (VARDEC_TYPE (arg_node) != NULL) {
@@ -3462,7 +3475,7 @@ PRTst (node *arg_node, info *arg_info)
  *   node *PRTwith( node *arg_node, info *arg_info)
  *
  * description:
- *   prints Nwith node.
+ *   prints N_with node.
  *
  ******************************************************************************/
 
@@ -3487,6 +3500,7 @@ PRTwith (node *arg_node, info *arg_info)
     fprintf (global.outfile, "with");
 
     if (WITH_PART (arg_node) != NULL) {
+#ifdef OLDWAY
         fprintf (global.outfile, " ( ");
         if (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))) != NULL) {
             TRAVdo (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))), arg_info);
@@ -3499,10 +3513,19 @@ PRTwith (node *arg_node, info *arg_info)
         global.indent++;
         TRAVdo (WITH_PART (arg_node), arg_info);
         global.indent--;
+#else  // OLDWAY
+        /* All partition definitions appear within curly braces */
+        fprintf (global.outfile, " {\n");
+        global.indent++;
+        TRAVdo (WITH_PART (arg_node), arg_info);
+        fprintf (global.outfile, " } :\n");
+        global.indent--;
+#endif // OLDWAY
     } else {
         fprintf (global.outfile, "\n");
     }
 
+    /* genarray, etc. */
     if (WITH_WITHOP (arg_node) != NULL) {
         TRAVdo (WITH_WITHOP (arg_node), arg_info);
     } else {
