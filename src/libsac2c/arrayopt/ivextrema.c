@@ -7,10 +7,9 @@
  * @defgroup ivexi Index Vector Extrema Insertion Traversal
  *
  * This traversal inserts maxima and minima for index vector variables
- * in with loops. Later optimizations will propagate these maxima
+ * in with-loops. Later optimizations will propagate these maxima
  * and minima, and use then as input for other optimizations,
  * such as with-loop folding and guard removal.
- * Currently, we are looking for the following code pattern:
  *
  * @ingroup ivexi
  *
@@ -140,6 +139,8 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  *   node *IVEXIfundef( node *arg_node, info *arg_info)
  *   node *IVEXIblock( node *arg_node, info *arg_info)
  *   node *IVEXIwith( node *arg_node, info *arg_info)
+ *   node *IVEXIcode( node *arg_node, info *arg_info)
+ *   node *IVEXIlet( node *arg_node, info *arg_info)
  *   node *IVEXIassign( node *arg_node, info *arg_info)
  *
  * description:
@@ -166,6 +167,11 @@ IVEXIfundef (node *arg_node, info *arg_info)
     if (NULL != FUNDEF_BODY (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -181,12 +187,39 @@ IVEXIblock (node *arg_node, info *arg_info)
 }
 
 node *
+IVEXIcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEXIcode");
+    DBUG_PRINT ("IVEX", ("Found code"));
+    if (NULL != CODE_CBLOCK (arg_node)) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (NULL != CODE_NEXT (arg_node)) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 IVEXIwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIwith");
     DBUG_PRINT ("IVEX", ("Found WL"));
     if (NULL != WITH_PART (arg_node)) {
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEXIlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEXIlet");
+    DBUG_PRINT ("IVEX", ("Found let"));
+    if (NULL != LET_EXPR (arg_node)) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -199,6 +232,11 @@ IVEXIassign (node *arg_node, info *arg_info)
     if (NULL != ASSIGN_INSTR (arg_node)) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -209,30 +247,83 @@ IVEXIassign (node *arg_node, info *arg_info)
  *
  * description:
  *   This does all the work. It grabs the lower and upper bounds of
- *   the WL partition index variable, and stuff them into the index variable's
+ *   the WL partition index variable, and stuffs them into the index variable's
  *   MAXVAL and MINVAL.
+ *
+ *   TODO: 2008-12-09: Bodo and I feel that this code should also handle PART_IDS,
+ *         but it does not do that today.
  *
  ******************************************************************************/
 node *
 IVEXIpart (node *arg_node, info *arg_info)
 {
-    node *partn;
-    node *iv;
-    node *avis;
+    node *ivavis;
+    node *bound1;
+    node *bound2;
+    node *ae1;
+    node *ae2;
 
     DBUG_ENTER ("IVEXIpart");
-    DBUG_PRINT ("IVEX", ("Found WL partition"));
-    if (NULL != WITH_PART (arg_node)) {
-        DBUG_PRINT ("IVEX", ("GOTIT"));
-        partn = WITH_PART (arg_node);
-        iv = PART_WITHID (partn);
-        if (N_id != NODE_TYPE (iv)) {
-            DBUG_PRINT ("IVEX", ("iv node type not N_id"));
+    DBUG_PRINT ("IVEXI", ("Found WL partition"));
+    ivavis = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
+    DBUG_ASSERT ((N_avis == NODE_TYPE (ivavis)),
+                 "IVEXIpart expected N_avis in WL index vector");
+    /* Updating the AVIS here is not strictly kosher from a functional standpoint,
+     * but Bodo thinks the alternative (saving this data in an arg_info node
+     * and making a second pass across the syntax tree) is not much better.
+     */
+    bound1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
+    bound2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    DBUG_ASSERT ((N_array == NODE_TYPE (bound1)),
+                 "IXVEXIpart expected N_array as BOUND1");
+    DBUG_ASSERT ((N_array == NODE_TYPE (bound2)),
+                 "IXVEXIpart expected N_array as BOUND2");
+    /* ast.xml claims these can be an N_num, too. We'll see. */
+
+    /* TODO: We only handle single-element IV today.  */
+
+    /* TODO: What if the N_array is empty, e.g.:  [:int] ??  */
+
+    /* An N_array element can contain either an N_id or an N_num. The latter appears
+     * in, e.g., [23].
+     */
+    if (NULL != ARRAY_AELEMS (bound1)) {
+        ae1 = EXPRS_EXPR (ARRAY_AELEMS (bound1));
+        if (N_id == NODE_TYPE (ae1)) {
+            AVIS_MINVAL (ivavis) = ID_AVIS (ae1);
+            DBUG_PRINT ("IVEXI", ("Set AVIS_MINVAL for %s to %s", AVIS_NAME (ivavis),
+                                  AVIS_NAME (ID_AVIS (ae1))));
         } else {
-            avis = ID_AVIS (iv);
-            AVIS_MINVAL (avis) = GENERATOR_BOUND1 (PART_GENERATOR (partn));
-            AVIS_MAXVAL (avis) = GENERATOR_BOUND2 (PART_GENERATOR (partn));
+            DBUG_PRINT ("IVEXI", ("FIXME: ignoring constant BOUND1"));
         }
+
+        if (NULL != EXPRS_NEXT (ARRAY_AELEMS (bound1))) {
+            DBUG_PRINT ("IVEXI", ("FIXME: found non-single-element BOUND1."));
+        }
+    } else {
+        DBUG_PRINT ("IVEXI", ("FIXME: found NULL IV BOUND1"));
     }
+
+    if (NULL != ARRAY_AELEMS (bound2)) {
+        ae2 = EXPRS_EXPR (ARRAY_AELEMS (bound2));
+        if (N_id == NODE_TYPE (ae2)) {
+            AVIS_MAXVAL (ivavis) = ID_AVIS (ae2);
+            DBUG_PRINT ("IVEXI", ("Set AVIS_MAXVAL for %s to %s", AVIS_NAME (ivavis),
+                                  AVIS_NAME (ID_AVIS (ae2))));
+        } else {
+            DBUG_PRINT ("IVEXI", ("FIXME: ignoring constant BOUND2"));
+        }
+
+        if (NULL != EXPRS_NEXT (ARRAY_AELEMS (bound2))) {
+            DBUG_PRINT ("IVEXI", ("FIXME: found non-single-element BOUND2."));
+        }
+    } else {
+        DBUG_PRINT ("IVEXI", ("FIXME: found NULL IV BOUND2"));
+    }
+
+    if (NULL != WITHID_IDS (PART_WITHID (arg_node))) {
+        DBUG_PRINT ("IVEXI", ("FIXME: is not handling with WL WITH_IDS yet."));
+    }
+
     DBUG_RETURN (arg_node);
 }

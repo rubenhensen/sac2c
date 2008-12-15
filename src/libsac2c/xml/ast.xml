@@ -186,6 +186,8 @@
           <node name="Assign" />
           <node name="With" />
           <node name="Part" />
+          <node name="Let" />
+          <node name="Code" />
         </travuser>
       </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >

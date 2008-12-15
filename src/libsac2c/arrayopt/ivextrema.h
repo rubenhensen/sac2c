@@ -17,6 +17,8 @@ extern node *IVEXIdoInsertIndexVectorExtrema (node *arg_node);
 extern node *IVEXImodule (node *arg_node, info *arg_info);
 extern node *IVEXIfundef (node *arg_node, info *arg_info);
 extern node *IVEXIblock (node *arg_node, info *arg_info);
+extern node *IVEXIcode (node *arg_node, info *arg_info);
+extern node *IVEXIlet (node *arg_node, info *arg_info);
 extern node *IVEXIwith (node *arg_node, info *arg_info);
 extern node *IVEXIgenerator (node *arg_node, info *arg_info);
 extern node *IVEXIpart (node *arg_node, info *arg_info);

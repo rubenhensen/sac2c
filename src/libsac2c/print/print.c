@@ -1920,14 +1920,12 @@ PRTvardec (node *arg_node, info *arg_info)
         }
         /* Print extrema information */
         if (AVIS_MINVAL (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", minval: ");
-            AVIS_MINVAL (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_MINVAL (VARDEC_AVIS (arg_node)), arg_info);
+            fprintf (global.outfile, ", minval: %s",
+                     AVIS_NAME (AVIS_MINVAL (VARDEC_AVIS (arg_node))));
         }
         if (AVIS_MAXVAL (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", maxval: ");
-            AVIS_MAXVAL (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_MAXVAL (VARDEC_AVIS (arg_node)), arg_info);
+            fprintf (global.outfile, ", maxval: %s",
+                     AVIS_NAME (AVIS_MAXVAL (VARDEC_AVIS (arg_node))));
         }
 
         fprintf (global.outfile, " } "); /* end of avis info */
