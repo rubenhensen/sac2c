@@ -3379,6 +3379,9 @@
         <flag name="IsCondfun">
           <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
         </flag>
+        <flag name="IsWith3Fun">
+          <description>This is a lifited with3.  The function is only referenced once from the context the with3 was lifted from.</description>
+        </flag>
         <flag name="IsDoFun">
           <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
         </flag>
@@ -8695,6 +8698,42 @@
         </son>
       </sons>
       <attributes>
+        <attribute name="In_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="lw3"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Out_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="lw3"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Local_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="lw3"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
       </flags>
