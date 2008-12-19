@@ -969,6 +969,53 @@ InferMasksWith2 (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   node *InferMasksWith3( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   create 3 fresh masks in arg_info that contain the results of traversing
+ *   this N_with2
+ *
+ ******************************************************************************/
+static node *
+InferMasksWith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("InferMasksWith3");
+
+    /*
+     * setup masks
+     */
+    arg_info = GenerateMasks (arg_info, INFO_IN (arg_info), INFO_OUT (arg_info),
+                              INFO_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksWith_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>  %s entered", NODE_TEXT (arg_node));
+                  DbugPrintMasks (arg_info););
+
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, "<<<  %s finished\n", NODE_TEXT (arg_node)););
+
+    /*
+     * adjust masks (part 2)
+     */
+    arg_info = AdjustMasksWith_Post (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *InferMasksCond( node *arg_node, info *arg_info)
  *
  * Description:
@@ -1570,6 +1617,29 @@ INFDFMSwith2 (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INFDFMSwithx( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+INFDFMSwith3 (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("INFDFMSwith3");
+
+    arg_node = InferMasks (&(WITH3_IN_MASK (arg_node)), &(WITH3_OUT_MASK (arg_node)),
+                           &(WITH3_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                           InferMasksWith3, FALSE);
 
     DBUG_RETURN (arg_node);
 }

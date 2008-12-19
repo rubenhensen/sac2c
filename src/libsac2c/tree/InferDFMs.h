@@ -88,6 +88,7 @@ extern node *INFDFMScode (node *arg_node, info *arg_info);
 extern node *INFDFMSwith (node *arg_node, info *arg_info);
 extern node *INFDFMScond (node *arg_node, info *arg_info);
 extern node *INFDFMSwith2 (node *arg_node, info *arg_info);
+extern node *INFDFMSwith3 (node *arg_node, info *arg_info);
 extern node *INFDFMSdo (node *arg_node, info *arg_info);
 extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
