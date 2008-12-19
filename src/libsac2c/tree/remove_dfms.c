@@ -70,6 +70,38 @@ RDFMSwith2 (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *RDFMSwith3( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node wit32 node
+ * @param arg_info NULL
+ *
+ * @return with3 without DFMs
+ ******************************************************************************/
+node *
+RDFMSwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RDFMSwith3");
+
+    if (WITH3_IN_MASK (arg_node) != NULL) {
+        WITH3_IN_MASK (arg_node) = DFMremoveMask (WITH3_IN_MASK (arg_node));
+    }
+
+    if (WITH3_OUT_MASK (arg_node) != NULL) {
+        WITH3_OUT_MASK (arg_node) = DFMremoveMask (WITH3_OUT_MASK (arg_node));
+    }
+
+    if (WITH3_LOCAL_MASK (arg_node) != NULL) {
+        WITH3_LOCAL_MASK (arg_node) = DFMremoveMask (WITH3_LOCAL_MASK (arg_node));
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *RDFMScond( node *arg_node, info *arg_info)
  *
  * @brief Removes the data flow masks from this node.
