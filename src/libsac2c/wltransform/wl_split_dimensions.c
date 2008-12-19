@@ -66,9 +66,8 @@
  * INFO_WITH3_ASSIGN:          Assignment node for current with3
  * INFO_INDICES:               New withloop indices in reverse order as a
  *                             chain of N_ids nodes.
- * INFO_OFFSETS:               Current withloop offset as N_ids chain. If the
- *                             corresponding operator does not have an offset,
- *                             this is NULL.
+ * INFO_OFFSETS:               Current withloop offset as N_ids chain. Exists
+ *                             only for those operators that have an offset)
  * INFO_ACCUS:                 Stores the N_ids chain of accus for the
  *                             current with-loop 3.
  * INFO_VARDECS:               Stores vardecs that need to be joined into
@@ -449,13 +448,13 @@ ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **as
         ovlAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
         nupAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
 
+        ovlAvis
+          = AssignValue (ovlAvis, TCmakePrf2 (F_mod_SxS, length, DUPdoDupTree (step)),
+                         assigns);
+
         nupAvis
           = AssignValue (nupAvis,
                          TCmakePrf2 (F_sub_SxS, DUPdoDupTree (upper), TBmakeId (ovlAvis)),
-                         assigns);
-
-        ovlAvis
-          = AssignValue (ovlAvis, TCmakePrf2 (F_mod_SxS, length, DUPdoDupTree (step)),
                          assigns);
 
         newsize = TBmakeId (ovlAvis);
@@ -466,14 +465,20 @@ ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **as
 }
 
 /** <!-- ****************************************************************** -->
- * @brief
+ * @fn node *ComputeSize( node *lower, node *upper, node **assigns,
+ *                        info *arg_info)
  *
- * @param lower
- * @param upper
- * @param *assigns
- * @param arg_info
+ * @brief Returns a node that denotes the size (or length) of the given range.
+ *        If the range is fully static, an N_num node will be returned. For
+ *        dynamic ranges, code for computing the length at runtime is added to
+ *        assigns and an N_id node is returned.
  *
- * @return
+ * @param lower ast node denoting lower bound
+ * @param upper ast node denoting upper bound
+ * @param *assigns assignment chain to append the runtime code if necessary
+ * @param arg_info info structure
+ *
+ * @return N_num or N_id node representing the length of the range
  ******************************************************************************/
 static node *
 ComputeSize (node *lower, node *upper, node **assigns, info *arg_info)
@@ -557,8 +562,10 @@ ComputeMax (node *nodea, node *nodeb, node **assigns, info *arg_info)
  * @fn node *ATravCNWgenarray( node *arg_node, info *arg_info)
  *
  * @brief Computes a new genarray withop from the current dimension, current
- *        size and the original with2 genarray withop. Used in an
- *        anonymous traversal by ComputeNewWithops.
+ *        size and the original with2 genarray withop. Furthermore,
+ *        a shape expression is computed and annotated at the withop/added
+ *        to the info structure. Used in an anonymous traversal by
+ *        ComputeNewWithops.
  *
  * @param arg_node N_genarray node
  * @param arg_info info structure
@@ -572,6 +579,9 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     node *shape = NULL;
     node *array;
     int sizeoffset;
+    node *seavis;
+    ntype *deftype;
+    int resdim;
 
     DBUG_ENTER ("ATravCNWgenarray");
 
@@ -592,6 +602,20 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 
     new_node = TBmakeGenarray (shape, DUPdoDupTree (GENARRAY_DEFAULT (arg_node)));
 
+    /*
+     * if there is a default element, transform it into a shape expression.
+     */
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        deftype = AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
+        DBUG_ASSERT (TUdimKnown (deftype), "genarray with non-AKD default found");
+
+        resdim = TCcountExprs (ARRAY_AELEMS (shape));
+        seavis = TBmakeAvis (TRAVtmpVar (),
+                             TYmakeAKS (TYmakeSimpleType (T_int),
+                                        SHcreateShape (1, TYgetDim (deftype) + resdim)));
+        /* TODO CONT HERE */
+    }
+
     GENARRAY_NEXT (new_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
@@ -600,12 +624,14 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 /** <!-- ****************************************************************** -->
  * @fn node *ComputeNewWithops( node *withops, info *arg_info)
  *
- * @brief
+ * @brief Computes a chain of withops for the with3 at the current nesting
+ *        level as given by the info structure. The withops arguments is used
+ *        as a template.
  *
- * @param withops
- * @param arg_info
+ * @param withops template withops of original with2
+ * @param arg_info info structure containing current state of transformation
  *
- * @return
+ * @return new withop chain
  ******************************************************************************/
 static node *
 ComputeNewWithops (node *withops, info *arg_info)
@@ -617,7 +643,7 @@ ComputeNewWithops (node *withops, info *arg_info)
 
     DBUG_ENTER ("ComputeNewWithops");
 
-    TRAVpushAnonymous (cnw_trav, &TRAVsons);
+    TRAVpushAnonymous (cnw_trav, &TRAVerror);
 
     ops = TRAVopt (withops, arg_info);
 
@@ -626,6 +652,20 @@ ComputeNewWithops (node *withops, info *arg_info)
     DBUG_RETURN (ops);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravCNLgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief Traversal function used in anonymous traversal by ComputeNewLhs.
+ *        Constructs a new lhs N_ids node depending on the current state
+ *        of the transformation as given in the info structure and the
+ *        original withop.
+ *        Traverses into the next withop.
+ *
+ * @param arg_node original withop
+ * @param arg_info traversal state in info structure
+ *
+ * @return chain of N_ids node
+ ******************************************************************************/
 static node *
 ATravCNLgenarray (node *arg_node, info *arg_info)
 {
@@ -669,13 +709,14 @@ ATravCNLgenarray (node *arg_node, info *arg_info)
             /*
              * the size is unkown so we have to produce an AKD
              */
-            new_type
-              = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
-                           TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info), NULL);
+            new_type = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
+                                  TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info),
+                                  SHcreateShape (0));
         }
     } else if (TUdimKnown (old_type)) {
         new_type = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
-                              TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info), NULL);
+                              TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info),
+                              SHcreateShape (0));
     } else {
         new_type = TYcopyType (old_type);
     }
@@ -689,6 +730,17 @@ ATravCNLgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeNewLhs( node *withops, info *arg_info)
+ *
+ * @brief Computes from a chain of withops and the current traversal state
+ *        a chain of left-hand sides.
+ *
+ * @param withops template withops of original with2
+ * @param arg_info current state of transformation in info structure
+ *
+ * @return N_ids chain to be used as lhs for with3 at current level
+ ******************************************************************************/
 static node *
 ComputeNewLhs (node *withops, info *arg_info)
 {
@@ -699,7 +751,7 @@ ComputeNewLhs (node *withops, info *arg_info)
 
     DBUG_ENTER ("ComputeNewLhs");
 
-    TRAVpushAnonymous (cnw_trav, &TRAVsons);
+    TRAVpushAnonymous (cnw_trav, &TRAVerror);
 
     lhs = TRAVopt (withops, arg_info);
 
@@ -708,6 +760,190 @@ ComputeNewLhs (node *withops, info *arg_info)
     DBUG_RETURN (lhs);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeOneLengthVector( node *aelems, node *inner, info *arg_info)
+ *
+ * @brief Given an N_exprs chain of extents per dimension, this function
+ *        generates code to compute the unrolling length per dimension.
+ *
+ *        The argument inner is consumed!
+ *
+ * @param aelems   N_exprs chain of extents per dimension
+ * @param inner    N_num or N_id node denoting the length of one inner element
+ *                 CONSUMED!
+ * @param arg_info info structure
+ *
+ * @return N_ids chain of unrolling lengths
+ ******************************************************************************/
+static node *
+ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
+{
+    node *exprs;
+    node *lavis;
+    node *len;
+
+    DBUG_ENTER ("ComputeOneLengthVector");
+
+    if (EXPRS_NEXT (aelems) != NULL) {
+        exprs = ComputeOneLengthVector (EXPRS_NEXT (aelems), inner, arg_info);
+
+        if (IsNum (EXPRS_EXPR (EXPRS_NEXT (aelems))) && IsNum (EXPRS_EXPR (exprs))) {
+            len = TBmakeNum (GetNum (EXPRS_EXPR (EXPRS_NEXT (aelems)))
+                             * GetNum (EXPRS_EXPR (exprs)));
+        } else {
+            lavis
+              = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                             TCmakePrf2 (F_mul_SxS,
+                                         DUPdoDupNode (EXPRS_EXPR (EXPRS_NEXT (aelems))),
+                                         DUPdoDupTree (EXPRS_EXPR (exprs))),
+                             &INFO_PREASSIGNS (arg_info));
+        }
+        exprs = TBmakeExprs (len, exprs);
+    } else {
+        exprs = TBmakeExprs (inner, NULL);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravCDLgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief Used by anonymous traversal in ComputeLengths to compute the lengths
+ *        for a N_genarray operator.
+ *
+ * @param arg_node N_genarray node
+ * @param arg_info info structure
+ *
+ * @return N_set node with lengths for this operator.
+ ******************************************************************************/
+static node *
+ATravCDLgenarray (node *arg_node, info *arg_info)
+{
+    node *set, *inner, *sarray, *exprs;
+    bool match;
+
+    DBUG_ENTER ("ATravCDLgenarray");
+
+    set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    /*
+     * TODO: a shape expression would really help here. For now, lets assume
+     *       a length of one
+     */
+    inner = TBmakeNum (1);
+
+    match = PM (PMarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
+    DBUG_ASSERT (match, "shape not defined as vector");
+
+    exprs = ComputeOneLengthVector (ARRAY_AELEMS (sarray), inner, arg_info);
+
+    set = TBmakeSet (exprs, set);
+
+    DBUG_RETURN (set);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeLengths( node *withops, info *arg_info)
+ *
+ * @brief Computes the unrolling lengths of one element on each dimension of
+ *        the result of a modarray/genarray withop. This is used to update the
+ *        offsets. If the information is not statically known, corresponding
+ *        code to compute the lengths at runtime is generated. The result
+ *        is a N_set chain with one N_set node per operator. Each N_set then
+ *        holds an N_ids chain of lengths per dimension.
+ *
+ * @param withops  chain of withops to compute lengths for
+ * @param arg_info info structure used to insert code
+ *
+ * @return N_set chain of N_ids chains of lenghts per dimension per operator.
+ ******************************************************************************/
+static node *
+ComputeLengths (node *withops, info *arg_info)
+{
+    node *result;
+
+    anontrav_t len_trav[3]
+      = {{N_genarray, &ATravCDLgenarray}, {N_modarray, &TRAVerror}, {0, NULL}};
+
+    DBUG_ENTER ("ComputeLengths");
+
+    TRAVpushAnonymous (len_trav, &TRAVerror);
+    result = TRAVopt (withops, arg_info);
+    TRAVpop ();
+
+    DBUG_RETURN (result);
+}
+
+static node *
+ATravASEgenarray (node *arg_node, info *arg_info)
+{
+    node *def;
+    int dim;
+    node *sexprs = NULL;
+    node *savis;
+
+    DBUG_ENTER ("ATravASEgenarray");
+
+    /*
+     * only if a default exists and its shape is not statically known,
+     * we produce a corresponding shape expression
+     */
+    def = GENARRAY_DEFAULT (arg_node);
+
+    if (FALSE && (def != NULL) && (!TUshapeKnown (AVIS_TYPE (ID_AVIS (def))))) {
+        DBUG_ASSERT (TUdimKnown (AVIS_TYPE (ID_AVIS (def))),
+                     "non-AKD default value in with2 not implemented.");
+
+        dim = TYgetDim (AVIS_TYPE (ID_AVIS (def)));
+
+        while (dim != 0) {
+            savis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                                 TCmakePrf2 (F_idx_shape_sel, TBmakeNum (dim - 1),
+                                             DUPdoDupNode (def)),
+                                 &INFO_PREASSIGNS (arg_info));
+
+            sexprs = TBmakeExprs (TBmakeId (savis), sexprs);
+
+            dim--;
+        }
+
+        GENARRAY_SHAPEEXPR (arg_node) = TCmakeIntVector (sexprs);
+    }
+
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+AmendShapeExpressions (node *withops, info *arg_info)
+{
+    anontrav_t shapeexpr_trav[2] = {{N_genarray, &ATravASEgenarray}, {0, NULL}};
+
+    DBUG_ENTER ("AmendShapeExpressions");
+
+    TRAVpushAnonymous (shapeexpr_trav, &TRAVsons);
+    withops = TRAVopt (withops, arg_info);
+    TRAVpop ();
+
+    DBUG_RETURN (withops);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *InitOffsets( node *lengths, info *arg_info)
+ *
+ * @brief Generates a N_ids chain for offsets for the current with-loop.
+ *        The lenghts argument is used as a template for the number of
+ *        offsets required as the offsets are later on updated using this
+ *        lengths structure, i.e., they need to be of equal length.
+ *        At runtime, the returned ids will evaluate to 0.
+ *
+ * @param lengths template N_set chain for length of offsets
+ * @param arg_info info structure
+ *
+ * @return N_ids chain of offsets
+ ******************************************************************************/
 static node *
 InitOffsets (node *lengths, info *arg_info)
 {
@@ -729,6 +965,27 @@ InitOffsets (node *lengths, info *arg_info)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *UpdateOffsets( node *index, node *offsets, int dim, node *lengths,
+ *                          node **assigns, info *arg_info)
+ *
+ * @brief Computes new offsets for the current nesting level using the current
+ *        loop index and the offsets from the previous (outer) level. In
+ *        general this creates code to compute
+ *
+ *        <code>
+ *        new_offset = old_offset + (lenght(dim) * index);
+ *        </code>
+ *
+ * @param index     N_avis node of current loop index
+ * @param offsets   N_ids chain of offsets of outer level
+ * @param dim       dimension currently being transformed
+ * @param lengths   set of lengths per dimension
+ * @param *assigns  assignment chain to append assignments to
+ * @param arg_info  current state of transformation in info structure
+ *
+ * @return N_ids chain of new offsets
+ ******************************************************************************/
 static node *
 UpdateOffsets (node *index, node *offsets, int dim, node *lengths, node **assigns,
                info *arg_info)
@@ -763,6 +1020,18 @@ UpdateOffsets (node *index, node *offsets, int dim, node *lengths, node **assign
     DBUG_RETURN (new_offsets);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn lut_t *InsertIndicesIntoLut( lut_t *lut, node **w2ind, node *w3ind)
+ *
+ * @brief Inserts mappings from with2 to with3 indices into the lut.
+ *
+ * @param lut     lookup table to amend
+ * @param *w2ind  pointer to chain of with2 indices. This argument is
+ *                overwritten!
+ * @param w3ind   chain of with3 indices (in reversed order).
+ *
+ * @return
+ ******************************************************************************/
 static lut_t *
 InsertIndicesIntoLut (lut_t *lut, node **w2ind, node *w3ind)
 {
@@ -779,23 +1048,55 @@ InsertIndicesIntoLut (lut_t *lut, node **w2ind, node *w3ind)
     DBUG_RETURN (lut);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *CreateIndexVectorExprs( node *indices)
+ *
+ * @brief Given the with3 indices (in reversed order), this function computes
+ *        an N_exprs chain of N_id nodes in the correct order.
+ *
+ * @param indices chain of with3 indices (in reversed order)
+ *
+ * @return N_exprs chain of N_id nodes representing the indices as a vector
+ ******************************************************************************/
 static node *
-CreateIndexVectorExprs (node *index)
+CreateIndexVectorExprs (node *indices)
 {
     node *result = NULL;
 
     DBUG_ENTER ("CreateIndexVectorExprs");
 
-    if (index != NULL) {
-        if (IDS_NEXT (index) != NULL) {
-            result = CreateIndexVectorExprs (IDS_NEXT (index));
+    if (indices != NULL) {
+        if (IDS_NEXT (indices) != NULL) {
+            result = CreateIndexVectorExprs (IDS_NEXT (indices));
         }
-        result = TCappendExprs (result, TBmakeExprs (TBmakeId (IDS_AVIS (index)), NULL));
+        result
+          = TCappendExprs (result, TBmakeExprs (TBmakeId (IDS_AVIS (indices)), NULL));
     }
 
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn lut_t *PrepareCopyLut( lut_t *lut, node *offsets, node **assigns,
+ *                            info *arg_info)
+ *
+ * @brief Builds a lut for DupTree masking all with2 index variables by the
+ *        corresponding with3 counterparts. This includes the index scalars,
+ *        the index vector and the loop offsets.
+ *
+ *        The index vector is constructed from the index scalars and the
+ *        corresponding assignments are appended to assigns. These need to
+ *        be in scope before the actual loop body!
+ *
+ *        This function does not clear the lut but merely amends it.
+ *
+ * @param lut      lut to be inserted into.
+ * @param offsets  N_ids chain of offsets to be used
+ * @param *assigns assignment chain to append assignments to
+ * @param arg_info info structure containing current state of transformation
+ *
+ * @return updated lookup table
+ ******************************************************************************/
 static lut_t *
 PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
 {
@@ -842,17 +1143,20 @@ PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
  * @fn node *MakeRangeBody( node *outerindex, node *contents, node *size,
  *                          node **results, info *arg_info)
  *
- * @brief
+ * @brief Constructs the body of a range by building further nested
+ *        with3 loops.
  *
- * @param outerindex
- * @param contents
- * @param size chunksize of this level. NULL denotes producing scalars wrt.
- *             the outermost dimension, i.e., a grid.
- * @param newdim this body is the last one in this dimension
- * @param *results
- * @param arg_info
+ * @param outerindex N_avis node of index of parent range of this body.
+ * @param contents   the contents son of the stride/grid this range
+ *                   originates from
+ * @param size       chunksize of this level. NULL denotes producing scalars
+ *                   wrt. the outermost dimension, i.e., a grid.
+ * @param newdim     this body is the last one in this dimension
+ * @param *results   N_exprs chain of the result expressions of this body
+ *                   (also known as cexprs in with2 context)
+ * @param arg_info   state of current transformation
  *
- * @return
+ * @return N_block body subtree for the given range
  ******************************************************************************/
 static node *
 MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node **results,
@@ -952,17 +1256,20 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
  *
  * @brief Computes a range node corresponding to the given stride node.
  *
- * @param level
- * @param dim
- * @param lower CONSUMED!
- * @param upper CONSUMED!
- * @param step CONSUMED!
- * @param contents
- * @param next
- * @param arg_info
+ *        This function consumes its lower, upper and step arguments!
  *
- * @return
+ * @param level    level attribute of N_wlstride or N_wlstridevar node
+ * @param dim      dim attribute of N_wlstride or N_wlstridevar node
+ * @param lower    lower bound as either N_num or N_id. CONSUMED!
+ * @param upper    upper bound as either N_num or N_id. CONSUMED!
+ * @param step     step as either N_num or N_id. CONSUMED!
+ * @param contents contents son of N_wlstride or N_wlstridevar node
+ * @param next     next son of N_wlstride or N_wlstridevar node
+ * @param arg_info current state of traversal
+ *
+ * @return N_range node corresponding to the given stride.
  ******************************************************************************/
+
 static node *
 ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *contents,
                node *next, info *arg_info)
@@ -1010,18 +1317,22 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
 }
 
 /** <!-- ****************************************************************** -->
- * @brief
+ * @fn node *ProcessGrid( int level, int dim, node *lower, node *upper,
+ *                        node *nextdim, node *code, node *next,
+ *                        info *arg_info)
  *
- * @param level
- * @param dim
- * @param lower CONSUMED!
- * @param upper CONSUMED!
- * @param nextdim
- * @param code
- * @param next
- * @param arg_info
+ * @brief Computes a range node corresponding to the given grid node.
  *
- * @return
+ * @param level    level attribute of N_wlgrid/N_wlgridvar node
+ * @param dim      dim attribute of N_wlgrid/N_wlgridvar node
+ * @param lower    lower bound as either N_id or N_num node. CONSUMED!
+ * @param upper    upper bound as either N_id or N_num node. CONSUMED!
+ * @param nextdim  nextdim son of N_wlgrid/N_wlgridvar node.
+ * @param code     code son of N_wlgrid/N_wlgridvar node.
+ * @param next     next son of N_wlgrid/N_wlgridvar node.
+ * @param arg_info current state of traversal
+ *
+ * @return N_range node corresponding to the given grid.
  ******************************************************************************/
 static node *
 ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *code,
@@ -1101,74 +1412,6 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
      * consume unuseds
      */
     upper = FREEdoFreeNode (upper);
-
-    DBUG_RETURN (result);
-}
-
-static node *
-ComputeOneLengthVector (node *aelems, info *arg_info)
-{
-    node *exprs;
-    node *lavis;
-    node *len;
-
-    DBUG_ENTER ("ComputeOneLengthVector");
-
-    if (EXPRS_NEXT (aelems) != NULL) {
-        exprs = ComputeOneLengthVector (EXPRS_NEXT (aelems), arg_info);
-
-        if (IsNum (EXPRS_EXPR (EXPRS_NEXT (aelems))) && IsNum (EXPRS_EXPR (exprs))) {
-            len = TBmakeNum (GetNum (EXPRS_EXPR (EXPRS_NEXT (aelems)))
-                             * GetNum (EXPRS_EXPR (exprs)));
-        } else {
-            lavis
-              = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                             TCmakePrf2 (F_mul_SxS,
-                                         DUPdoDupNode (EXPRS_EXPR (EXPRS_NEXT (aelems))),
-                                         DUPdoDupTree (EXPRS_EXPR (exprs))),
-                             &INFO_PREASSIGNS (arg_info));
-        }
-        exprs = TBmakeExprs (len, exprs);
-    } else {
-        exprs = TBmakeExprs (TBmakeNum (1), NULL);
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static node *
-ATravCDLgenarray (node *arg_node, info *arg_info)
-{
-    node *set, *exprs, *sarray;
-    bool match;
-
-    DBUG_ENTER ("ATravCDLgenarray");
-
-    set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-
-    match = PM (PMarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
-    DBUG_ASSERT (match, "shape not defined as vector");
-
-    exprs = ComputeOneLengthVector (ARRAY_AELEMS (sarray), arg_info);
-
-    set = TBmakeSet (exprs, set);
-
-    DBUG_RETURN (set);
-}
-
-static node *
-ComputeLengths (node *withops, info *arg_info)
-{
-    node *result;
-
-    anontrav_t len_trav[3]
-      = {{N_genarray, &ATravCDLgenarray}, {N_modarray, &TRAVerror}, {0, NULL}};
-
-    DBUG_ENTER ("ComputeLengths");
-
-    TRAVpushAnonymous (len_trav, &TRAVsons);
-    result = TRAVopt (withops, arg_info);
-    TRAVpop ();
 
     DBUG_RETURN (result);
 }
@@ -1321,7 +1564,9 @@ WLSDwith2 (node *arg_node, info *arg_info)
 
     /*
      * preset the indices and offset with 0 and compute the length of the
-     * dimensions of the results.
+     * dimensions of the results. Furthermore, for non-AKS genarrays, we
+     * have to amend the GENARRAY_SHAPEEXPR of the orginial genarray to
+     * later derive the SHAPEEXPR of new genarray withops.
      */
     iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
     iv_avis = AssignValue (iv_avis, TBmakeNum (0), &INFO_PREASSIGNS (arg_info));
@@ -1331,6 +1576,9 @@ WLSDwith2 (node *arg_node, info *arg_info)
       = ComputeLengths (INFO_WITH2_WITHOPS (arg_info), arg_info);
 
     INFO_OFFSETS (arg_info) = InitOffsets (INFO_WITH2_LENGTHS (arg_info), arg_info);
+
+    INFO_WITH2_WITHOPS (arg_info)
+      = AmendShapeExpressions (INFO_WITH2_WITHOPS (arg_info), arg_info);
 
     /*
      * Finally, go off and transform :)

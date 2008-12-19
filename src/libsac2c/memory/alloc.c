@@ -574,16 +574,12 @@ EMALassign (node *arg_node, info *arg_info)
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * Traverse RHS of assignment
      */
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
      * Allocate missing variables
@@ -633,9 +629,7 @@ EMALcode (node *arg_node, info *arg_info)
     /*
      * Traverse block
      */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /*
      * Restore ALLOCLIST, WITHOPS and INDEXVECTOR
@@ -915,9 +909,7 @@ EMALcode (node *arg_node, info *arg_info)
           = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), assign);
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1010,16 +1002,12 @@ EMALfundef (node *fundef, info *arg_info)
     /*
      * Traverse fundef body
      */
-    if (FUNDEF_BODY (fundef) != NULL) {
-        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), arg_info);
-    }
+    FUNDEF_BODY (fundef) = TRAVopt (FUNDEF_BODY (fundef), arg_info);
 
     /*
      * Traverse other fundefs
      */
-    if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (fundef) = TRAVdo (FUNDEF_NEXT (fundef), arg_info);
-    }
+    FUNDEF_NEXT (fundef) = TRAVopt (FUNDEF_NEXT (fundef), arg_info);
 
     DBUG_RETURN (fundef);
 }
@@ -1512,9 +1500,7 @@ EMALwith (node *arg_node, info *arg_info)
     /*
      * Traverse codes
      */
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
     /*
      * Free INDEXVECTOR code template
@@ -1591,9 +1577,7 @@ EMALwith2 (node *arg_node, info *arg_info)
     /*
      * Traverse codes
      */
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
 
     /*
      * Free INDEXVECTOR code template
@@ -1723,9 +1707,7 @@ EMALgenarray (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
 
@@ -1817,9 +1799,7 @@ EMALmodarray (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
 
@@ -1896,9 +1876,7 @@ EMALbreak (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (BREAK_NEXT (arg_node) != NULL) {
-        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
-    }
+    BREAK_NEXT (arg_node) = TRAVopt (BREAK_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
 
@@ -1974,9 +1952,7 @@ EMALpropagate (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt (PROPAGATE_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
         /*
@@ -2034,9 +2010,7 @@ EMALfold (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
         /*
@@ -2057,6 +2031,74 @@ EMALfold (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+node *
+EMALwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALwith3");
+
+    /*
+     * Annoate destination memory by traversing WITHOPS
+     */
+    INFO_WITHOPMODE (arg_info) = EA_memname;
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    /*
+     * In order to build a proper suballoc/fill combinations in each Range-Block
+     * it is necessary to know which result variables refer to
+     * genarray/modarray - withops
+     */
+    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    /*
+     * now traverse the code in all ranges
+     */
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+
+    /*
+     * Collect shape/dim information of the with3 results
+     */
+    INFO_WITHOPMODE (arg_info) = EA_shape;
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+EMALrange (node *arg_node, info *arg_info)
+{
+    alloclist_struct *als;
+    node *withops, *indexvector, *cexprs, *assign;
+
+    DBUG_ENTER ("EMALrange");
+
+    /*
+     * Rescue ALLOCLIST and WITHOPS
+     */
+    als = INFO_ALLOCLIST (arg_info);
+    INFO_ALLOCLIST (arg_info) = NULL;
+    withops = INFO_WITHOPS (arg_info);
+    INFO_WITHOPS (arg_info) = NULL;
+
+    /*
+     * Traverse block
+     */
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    /*
+     * Restore ALLOCLIST, WITHOPS and INDEXVECTOR
+     */
+    INFO_ALLOCLIST (arg_info) = als;
+    INFO_WITHOPS (arg_info) = withops;
+
+    /*
+     * go to next range
+     */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /**
  * @}
  */

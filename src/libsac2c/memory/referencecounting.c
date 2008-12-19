@@ -803,6 +803,50 @@ RCIwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn RCIwith3
+ *
+ *  @brief traverses a with3-loop and counts references in its body
+ *
+ *****************************************************************************/
+node *
+RCIwith3 (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("RCIwith3");
+
+    INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+
+    if (WITH3_RANGES (arg_node) != NULL) {
+        WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+        INFO_MUSTCOUNT (arg_info) = TRUE;
+    }
+
+    /*
+     * Consume all Variables used inside the with-loop
+     */
+    avis = DFMgetMaskEntryAvisSet (INFO_WITHMASK (arg_info));
+    while (avis != NULL) {
+        /*
+         * Add one to the environment and create a dec_rc
+         */
+        NLUTincNum (INFO_ENV (arg_info), avis, 1);
+
+        INFO_POSTASSIGN (arg_info) = AdjustRC (avis, -1, INFO_POSTASSIGN (arg_info));
+
+        avis = DFMgetMaskEntryAvisSet (NULL);
+    }
+
+    INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
+
+    INFO_MODE (arg_info) = rc_prfuse;
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn RCIcode
  *
  *  @brief traverses a with-loop's code and inserts ADJUST_RCs at the
@@ -857,6 +901,74 @@ RCIcode (node *arg_node, info *arg_info)
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn RCIrange
+ *
+ *  @brief traverses a with3-loop's range and inserts ADJUST_RCs at the
+ *         beginning of the body block
+ *
+ *****************************************************************************/
+node *
+RCIrange (node *arg_node, info *arg_info)
+{
+    node *avis;
+    dfmask_t *withmask;
+    nlut_t *old_env;
+
+    DBUG_ENTER ("RCIrange");
+
+    withmask = INFO_WITHMASK (arg_info);
+    INFO_WITHMASK (arg_info) = NULL;
+
+    old_env = INFO_ENV (arg_info);
+    INFO_ENV (arg_info) = NLUTgenerateNlutFromNlut (old_env);
+
+    /*
+     * Traverse CEXPRS like funaps
+     */
+    INFO_MODE (arg_info) = rc_apuse;
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    /*
+     * Mark the variable as used in the outer context
+     */
+    avis = NLUTgetNonZeroAvis (INFO_ENV (arg_info));
+    while (avis != NULL) {
+        DFMsetMaskEntrySet (withmask, NULL, avis);
+        avis = NLUTgetNonZeroAvis (NULL);
+    }
+
+    /*
+     * Prepend block with INC_RC statements
+     */
+    BLOCK_INSTR (RANGE_BODY (arg_node))
+      = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
+                            BLOCK_INSTR (RANGE_BODY (arg_node)));
+
+    INFO_WITHMASK (arg_info) = withmask;
+    INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
+    INFO_ENV (arg_info) = old_env;
+
+    /*
+     * count the references in next code
+     */
+    if (RANGE_NEXT (arg_node) != NULL) {
+        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * finally count the lowerbound, upperbound and chunksize in prf mode
+     */
+    INFO_MODE (arg_info) = rc_prfuse;
+    RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

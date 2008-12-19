@@ -19,6 +19,7 @@ extern node *RCIap (node *arg_node, info *arg_info);
 extern node *RCIarray (node *arg_node, info *arg_info);
 extern node *RCIassign (node *arg_node, info *arg_info);
 extern node *RCIcode (node *arg_node, info *arg_info);
+extern node *RCIrange (node *arg_node, info *arg_info);
 extern node *RCIcond (node *arg_node, info *arg_info);
 extern node *RCIfold (node *arg_node, info *arg_info);
 extern node *RCIfuncond (node *arg_node, info *arg_info);
@@ -33,6 +34,7 @@ extern node *RCIpropagate (node *arg_node, info *arg_info);
 extern node *RCIreturn (node *arg_node, info *arg_info);
 extern node *RCIwith (node *arg_node, info *arg_info);
 extern node *RCIwith2 (node *arg_node, info *arg_info);
+extern node *RCIwith3 (node *arg_node, info *arg_info);
 extern node *RCIwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_REFERENCECOUNTING_H_ */

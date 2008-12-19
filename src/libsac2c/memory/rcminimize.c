@@ -336,6 +336,53 @@ RCMcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @node *RCMrange( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+RCMrange (node *arg_node, info *arg_info)
+{
+    nlut_t *oldenv;
+    dfmask_t *oldusedmask;
+
+    DBUG_ENTER ("RCMrange");
+
+    /*
+     * visit all N_id sons
+     */
+    RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
+
+    /*
+     * stack info for new context in range body
+     */
+    oldenv = INFO_ENV (arg_info);
+    oldusedmask = INFO_USEDMASK (arg_info);
+
+    INFO_ENV (arg_info) = NLUTgenerateNlutFromNlut (oldenv);
+    INFO_USEDMASK (arg_info) = DFMgenMaskCopy (oldusedmask);
+
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
+    INFO_USEDMASK (arg_info) = DFMremoveMask (INFO_USEDMASK (arg_info));
+
+    INFO_ENV (arg_info) = oldenv;
+    INFO_USEDMASK (arg_info) = oldusedmask;
+
+    if (RANGE_NEXT (arg_node) != NULL) {
+        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @node *RCMcond( node *arg_node, info *arg_info)
  *
  * @brief
@@ -607,7 +654,8 @@ RCMids (node *arg_node, info *arg_info)
 
     n = NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (arg_node));
 
-    DBUG_ASSERT ((n == 0), "Enequal numbers of inc_rc / dec_rc removed!");
+    DBUG_ASSERTF ((n == 0), ("Unequal numbers of inc_rc / dec_rc removed for %s!",
+                             AVIS_NAME (IDS_AVIS (arg_node))));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);

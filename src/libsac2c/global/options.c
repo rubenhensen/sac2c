@@ -166,6 +166,21 @@ CheckOptionConsistency ()
         global.optimize.doive = FALSE;
     }
 
+    if (global.backend == BE_mutc) {
+        if (global.mtmode != MT_none) {
+            CTIabort ("Traditional MT modes are not available for the muTC "
+                      "backend.");
+        }
+
+        CTIwarn ("Disabling reference counting optimisations not suitable "
+                 "for mutc backend.");
+        global.optimize.dosrf = FALSE;
+        global.optimize.doipc = FALSE;
+        global.optimize.douip = FALSE;
+        global.optimize.dodr = FALSE;
+        global.optimize.dorco = FALSE;
+    }
+
     DBUG_VOID_RETURN;
 }
 

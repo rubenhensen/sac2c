@@ -1702,6 +1702,8 @@
           <node name="With" />
           <node name="With2" />
           <node name="Withid" />
+          <node name="With3" />
+          <node name="Range" />
         </travuser>
         <travsons>
           <node name="Module" />
@@ -1932,9 +1934,11 @@
           <node name="Modarray" />
           <node name="Prf" />
           <node name="Propagate" />
+          <node name="Range" />
           <node name="Return" />
           <node name="With" />
           <node name="With2" />
+          <node name="With3" />
           <node name="Withid" />
         </travuser>
         <travnone>
@@ -1956,6 +1960,7 @@
           <node name="Ids" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Range" />
           <node name="Return" />
         </travuser>
         <travnone>
@@ -6507,6 +6512,17 @@
             </target>
           </targets>
         </son>
+        <son name="ShapeExpr" default="NULL">
+          <description>For AKD with3 loops, ShapeExpr holds an identifier bound to the result shape at runtime.</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <range from="wlt_wlsd" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">
@@ -8765,7 +8781,13 @@
             <target mandatory="yes">
               <node name="Ids" />
               <phases>
-                <all />
+                <range from="wlt_wlsd" to="mem_alloc" />
+              </phases>
+            </target>
+            <target mandatory="yes">
+              <node name="Id" />
+              <phases>
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
