@@ -2576,6 +2576,19 @@
             </target>
           </targets>
         </son>
+        <son name="FunThreads" default="NULL">
+          <description>
+            Contains thread functions for mutc back-end
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Fundef" />
+              <phases>
+                <range from="lw3" to="final"/>
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="FunDecs">
           <targets>
             <target mandatory="no">
