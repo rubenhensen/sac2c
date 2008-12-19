@@ -2589,7 +2589,8 @@
             <target mandatory="no">
               <node name="Fundef" />
               <phases>
-                <range from="lw3" to="final"/>
+                <!-- CAJ <range from="lw3" to="final"/> -->
+                <all/>
               </phases>
             </target>
           </targets>
@@ -8735,7 +8736,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lw3"/>
+                  <!--CAJ<phase name="lw3"/>-->
                 </phases>
               </target>
             </targets>
@@ -8747,7 +8748,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lw3"/>
+                  <!--CAJ<phase name="lw3"/>-->
                 </phases>
               </target>
             </targets>
@@ -8759,7 +8760,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lw3"/>
+                  <!--CAJ<phase name="lw3"/>-->
                 </phases>
               </target>
             </targets>
