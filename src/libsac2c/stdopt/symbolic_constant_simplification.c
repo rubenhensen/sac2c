@@ -1067,19 +1067,39 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_idx_sel_VxA( node *arg_node, info *arg_info)
+ * @fn node *SCSprf_sel_VxA( node *arg_node, info *arg_info)
  *
- * @brief: Replace _idx_sel_VxA_(iv, _shape_A_(X)) by
- *                 _idx_shape_sel_SxA_(iv, X)
+ * @brief: Replace _sel_VxA_([scalar], _shape_A_(arr)) by
+ *                 _idx_shape_sel_SxA_(scalar, arr)
  *
  *****************************************************************************/
 node *
-SCSprf_idx_sel_VxA (node *arg_node, info *arg_info)
+SCSprf_sel_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *arr = NULL;
+    node *scalar = NULL;
 
-    DBUG_ENTER ("SCSprf_idx_sel_VxA");
-    /* FIXME pattern match for (iv, _shape_A_(x)) */
+    DBUG_ENTER ("SCSprf_sel_VxA");
+
+    /* FIXME: Remove next line assertion soon */
+    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
+                 "SCSprf_sel_VxA expected N_id as PRF_ARG1");
+    if (PM (PMvar (&arg2, PMvar (&arg1, PMprf (F_sel_VxA, arg_node)))) &&
+
+        /* Find the second argument's defining function */
+        PM (PMvar (&arr, PMprf (F_shape_A, arg2)))) {
+
+        /* Find the first element of the [scalar] */
+        scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
+        if (N_array == NODE_TYPE (scalar)) {
+            scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
+            DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+            res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arr));
+        }
+    }
     DBUG_RETURN (res);
 }
 

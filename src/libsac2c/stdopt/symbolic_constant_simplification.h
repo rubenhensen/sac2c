@@ -49,5 +49,6 @@ extern node *SCSprf_non_neg_val_V (node *arg_node, info *arg_info);
 extern node *SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info);
 extern node *SCSprf_val_le_val_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_sel_VxA (node *arg_node, info *arg_info);
 
 #endif /* symbolic_constant_simplification.h */
