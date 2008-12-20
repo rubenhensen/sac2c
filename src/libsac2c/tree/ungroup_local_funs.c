@@ -19,6 +19,7 @@
 #include "ungroup_local_funs.h"
 
 #include "dbug.h"
+#include "globals.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
