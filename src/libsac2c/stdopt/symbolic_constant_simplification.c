@@ -1096,8 +1096,10 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
         scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
         if (N_array == NODE_TYPE (scalar)) {
             scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
+#ifdef STUPIDDAMNUNFLATTENEDCODEGENERATOR
             DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
             res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arr));
+#endif // STUPIDDAMNUNFLATTENEDCODEGENERATOR
         }
     }
     DBUG_RETURN (res);
