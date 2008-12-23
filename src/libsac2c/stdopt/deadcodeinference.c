@@ -166,6 +166,12 @@ MarkAvisAlive (node *avis)
         if (AVIS_SHAPE (avis) != NULL) {
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
+        if (AVIS_MINVAL (avis) != NULL) {
+            MarkAvisAlive (AVIS_MINVAL (avis));
+        }
+        if (AVIS_MAXVAL (avis) != NULL) {
+            MarkAvisAlive (AVIS_MAXVAL (avis));
+        }
     }
 
     DBUG_VOID_RETURN;
