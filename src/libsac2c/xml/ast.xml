@@ -108,6 +108,13 @@
           <node name="With" />
         </travuser>
       </traversal>
+      <traversal id="LW3" name="Lift with3s into functions" default="sons" include="lw3.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="With3" />
+          <node name="Range" />
+        </travuser>
+      </traversal>
       <traversal id="WLLOM" name="Withloop lock optimization marking" default="sons" include="wl_lock_optimization_marking.h" >
         <travuser>
           <node name="With" />

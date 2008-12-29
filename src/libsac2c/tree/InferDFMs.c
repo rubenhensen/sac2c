@@ -656,7 +656,8 @@ AdjustMasksWith_Pre (info *arg_info, node *arg_node)
 
     DBUG_ENTER ("AdjustMasksWith_Pre");
 
-    DBUG_ASSERT (((NODE_TYPE (arg_node) == N_with) || (NODE_TYPE (arg_node) == N_with2)),
+    DBUG_ASSERT (((NODE_TYPE (arg_node) == N_with) || (NODE_TYPE (arg_node) == N_with2)
+                  || (NODE_TYPE (arg_node) == N_with3)),
                  "wrong node type found!");
 
     avis = DFMgetMaskEntryAvisSet (INFO_NEEDED (arg_info));
@@ -1480,36 +1481,43 @@ INFDFMSap (node *arg_node, info *arg_info)
     fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     ap_args = AP_ARGS (arg_node);
     while ((ap_args != NULL) && (fundef_args != NULL)) {
-        if ((ARG_ISREFERENCE (fundef_args))) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
-                         "Reference parameter must be a N_id node!");
+        if ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_globobj)) {
+            /* CAJ
+             * How should objects be handled, when lifting?
+             */
+        } else {
+            if ((ARG_ISREFERENCE (fundef_args))) {
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
+                             "Reference parameter must be a N_id node!");
 
-            decl = ID_DECL (EXPRS_EXPR (ap_args));
-            if ((NODE_TYPE (decl) == N_arg) && ((ARG_ISREFERENCE (decl)))) {
-                /*
-                 * argument is used as reference parameter of the application,
-                 * but its declaration is already a reference parameter, too
-                 *   -> do *not* mask as defined variable
-                 *      (it is no out-var but a reference-in-var!)
-                 */
-                DBUG_PRINT ("INFDFMS", ("N_ap in %s() with reference as ref. parameter:"
-                                        "  %s( .. %s .. )",
-                                        FUNDEF_NAME (INFO_FUNDEF (arg_info)),
-                                        FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                        ID_NAME (EXPRS_EXPR (ap_args))));
-            } else {
-                /*
-                 * argument (which declaration is not a reference parameter) is
-                 * used as reference parameter of the application
-                 *   -> mark as defined variable (must be a out-var as well)
-                 */
-                DBUG_PRINT ("INFDFMS",
-                            ("N_ap in %s() with non-reference as ref. parameter:"
-                             "  %s( .. %s .. )",
-                             FUNDEF_NAME (INFO_FUNDEF (arg_info)),
-                             FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                             ID_NAME (EXPRS_EXPR (ap_args))));
-                arg_info = DefinedVar (arg_info, decl);
+                decl = ID_DECL (EXPRS_EXPR (ap_args));
+                if ((NODE_TYPE (decl) == N_arg) && ((ARG_ISREFERENCE (decl)))) {
+                    /*
+                     * argument is used as reference parameter of the application,
+                     * but its declaration is already a reference parameter, too
+                     *   -> do *not* mask as defined variable
+                     *      (it is no out-var but a reference-in-var!)
+                     */
+                    DBUG_PRINT ("INFDFMS",
+                                ("N_ap in %s() with reference as ref. parameter:"
+                                 "  %s( .. %s .. )",
+                                 FUNDEF_NAME (INFO_FUNDEF (arg_info)),
+                                 FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                                 ID_NAME (EXPRS_EXPR (ap_args))));
+                } else {
+                    /*
+                     * argument (which declaration is not a reference parameter) is
+                     * used as reference parameter of the application
+                     *   -> mark as defined variable (must be a out-var as well)
+                     */
+                    DBUG_PRINT ("INFDFMS",
+                                ("N_ap in %s() with non-reference as ref. parameter:"
+                                 "  %s( .. %s .. )",
+                                 FUNDEF_NAME (INFO_FUNDEF (arg_info)),
+                                 FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                                 ID_NAME (EXPRS_EXPR (ap_args))));
+                    arg_info = DefinedVar (arg_info, decl);
+                }
             }
         }
 

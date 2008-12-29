@@ -955,7 +955,8 @@ PrintAuthors (void)
             "      Robert Bernecky\n"
             "      Theo van Klaveren\n"
             "      Florian Buether\n"
-            "      Torben Gerhards\n");
+            "      Torben Gerhards\n"
+            "      Carl A Joslin\n");
 
     DBUG_VOID_RETURN;
 }

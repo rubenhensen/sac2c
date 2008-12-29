@@ -39,7 +39,7 @@
 #define HIDE_LOCALS_COND 4
 #define HIDE_LOCALS_WITH 8
 #define HIDE_LOCALS_WITH2 16
-
+#define HIDE_LOCALS_WITH3 32
 /*
  * macros for handling bit fields
  */
@@ -75,7 +75,9 @@
                       ? TEST_BIT (bf, HIDE_LOCALS_WITH)                                  \
                       : ((NODE_TYPE (arg_node) == N_with2)                               \
                            ? TEST_BIT (bf, HIDE_LOCALS_WITH2)                            \
-                           : FALSE)))))
+                           : ((NODE_TYPE (arg_node) == N_with3)                          \
+                                ? TEST_BIT (bf, HIDE_LOCALS_WITH3)                       \
+                                : FALSE))))))
 
 extern node *INFDFMSfundef (node *arg_node, info *arg_info);
 extern node *INFDFMSarg (node *arg_node, info *arg_info);

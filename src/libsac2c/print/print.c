@@ -928,6 +928,14 @@ PRTmodule (node *arg_node, info *arg_info)
             INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
+        if (NULL != MODULE_FUNTHREADS (arg_node)) {
+            fprintf (global.outfile, "\n\n");
+            INFO_PROTOTYPE (arg_info) = TRUE;
+            /* print function declarations */
+            TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
+            INFO_PROTOTYPE (arg_info) = FALSE;
+        }
+
         if (NULL != MODULE_OBJS (arg_node)) {
             fprintf (global.outfile, "\n\n");
             global.print_objdef_for_header_file = TRUE;
@@ -1108,6 +1116,15 @@ PRTmodule (node *arg_node, info *arg_info)
                                      " */\n\n");
             /* print function definitions */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
+        }
+
+        if (MODULE_FUNTHREADS (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  function definitions (FUNTHREADS)\n"
+                                     " */\n\n");
+            /* print function definitions */
+            TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
         }
     }
 
