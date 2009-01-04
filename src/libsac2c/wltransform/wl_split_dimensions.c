@@ -67,7 +67,11 @@
  * INFO_INDICES:               New withloop indices in reverse order as a
  *                             chain of N_ids nodes.
  * INFO_OFFSETS:               Current withloop offset as N_ids chain. Exists
- *                             only for those operators that have an offset)
+ *                             only for those operators that have an offset).
+ *                             This offset corresponds to the wlidx of the
+ *                             originating with2, i.e., it spans all dimensions.
+ *                             Used to translate references to the original
+ *                             withloop offset.
  * INFO_ACCUS:                 Stores the N_ids chain of accus for the
  *                             current with-loop 3.
  * INFO_VARDECS:               Stores vardecs that need to be joined into
@@ -579,9 +583,6 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     node *shape = NULL;
     node *array;
     int sizeoffset;
-    node *seavis;
-    ntype *deftype;
-    int resdim;
 
     DBUG_ENTER ("ATravCNWgenarray");
 
@@ -600,21 +601,13 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((shape != NULL), "no shape info for genarray constructed");
 
-    new_node = TBmakeGenarray (shape, DUPdoDupTree (GENARRAY_DEFAULT (arg_node)));
-
     /*
-     * if there is a default element, transform it into a shape expression.
+     * we drop the default value and instead construct a shape
+     * expression for the with3 if the with2 genarray has one.
+     *
+     * TODO: actually construct one
      */
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        deftype = AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
-        DBUG_ASSERT (TUdimKnown (deftype), "genarray with non-AKD default found");
-
-        resdim = TCcountExprs (ARRAY_AELEMS (shape));
-        seavis = TBmakeAvis (TRAVtmpVar (),
-                             TYmakeAKS (TYmakeSimpleType (T_int),
-                                        SHcreateShape (1, TYgetDim (deftype) + resdim)));
-        /* TODO CONT HERE */
-    }
+    new_node = TBmakeGenarray (shape, NULL);
 
     GENARRAY_NEXT (new_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
@@ -831,6 +824,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
      * TODO: a shape expression would really help here. For now, lets assume
      *       a length of one
      */
+
     inner = TBmakeNum (1);
 
     match = PM (PMarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
@@ -875,6 +869,17 @@ ComputeLengths (node *withops, info *arg_info)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravASEgenarray( node* arg_node, info *arg_info)
+ *
+ * @brief For AKD genarray operations, this function adds a SHAPEEXPR
+ *        attribute.
+ *
+ * @param arg_node N_genarray node
+ * @param arg_info info structure
+ *
+ * @return amended N_genarray node
+ ******************************************************************************/
 static node *
 ATravASEgenarray (node *arg_node, info *arg_info)
 {
@@ -916,6 +921,19 @@ ATravASEgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *AmendShapeExpressions( node *withops, info *arg_info)
+ *
+ * @brief Fills the GENARRAY_SHAPEXPR attribute of N_genarray nodes to be
+ *        used later for N_genarray sons of N_with nodes. The corresponding
+ *        shape computation is added to the pre-assignment chain in the
+ *        arg_info node.
+ *
+ * @param withops   chain of with operators
+ * @param arg_info  info node
+ *
+ * @return chain of operators with GENARRAY_SHAPEEXPR filled in
+ ******************************************************************************/
 static node *
 AmendShapeExpressions (node *withops, info *arg_info)
 {
@@ -966,29 +984,37 @@ InitOffsets (node *lengths, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *UpdateOffsets( node *index, node *offsets, int dim, node *lengths,
- *                          node **assigns, info *arg_info)
+ * @fn node *UpdateOffsets( node *index,
+ *                          node *offsets,
+ *                          int dim,
+ *                          node *chunksize,
+ *                          node *lengths,
+ *                          node **assigns,
+ *                          node **localoffsets,
+ *                          info *arg_info)
  *
  * @brief Computes new offsets for the current nesting level using the current
  *        loop index and the offsets from the previous (outer) level. In
  *        general this creates code to compute
  *
  *        <code>
- *        new_offset = old_offset + (lenght(dim) * index);
+ *        local_offset = (length(dim) * index * chunksize);
+ *        new_offset = old_offset + local_offset
  *        </code>
  *
- * @param index     N_avis node of current loop index
- * @param offsets   N_ids chain of offsets of outer level
- * @param dim       dimension currently being transformed
- * @param lengths   set of lengths per dimension
- * @param *assigns  assignment chain to append assignments to
- * @param arg_info  current state of transformation in info structure
+ * @param index          N_avis node of current loop index
+ * @param offsets        N_ids chain of offsets of outer level
+ * @param dim            dimension currently being transformed
+ * @param lengths        set of lengths per dimension
+ * @param *assigns       assignment chain to append assignments to
+ * @param *localoffsets  offset into local result of this level
+ * @param arg_info       current state of transformation in info structure
  *
  * @return N_ids chain of new offsets
  ******************************************************************************/
 static node *
-UpdateOffsets (node *index, node *offsets, int dim, node *lengths, node **assigns,
-               info *arg_info)
+UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengths,
+               node **assigns, node **localoffsets, info *arg_info)
 {
     node *oavis, *tavis;
     node *new_offsets;
@@ -997,15 +1023,35 @@ UpdateOffsets (node *index, node *offsets, int dim, node *lengths, node **assign
     DBUG_ENTER ("UpdateOffsets");
 
     if (lengths != NULL) {
-        new_offsets = UpdateOffsets (index, IDS_NEXT (offsets), dim, SET_NEXT (lengths),
-                                     assigns, arg_info);
+        new_offsets = UpdateOffsets (index, IDS_NEXT (offsets), dim, chunksize,
+                                     SET_NEXT (lengths), assigns, localoffsets, arg_info);
 
         len = TCgetNthExprsExpr (dim, SET_MEMBER (lengths));
         DBUG_ASSERT ((len != NULL), "no length found");
 
-        tavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                             TCmakePrf2 (F_mul_SxS, TBmakeId (index), DUPdoDupNode (len)),
-                             assigns);
+        if (chunksize != NULL) {
+            if (IsNum (len) && IsNum (chunksize)) {
+                len = TBmakeNum (GetNum (len) * GetNum (chunksize));
+            } else {
+                len = TBmakeId (AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                                             TCmakePrf2 (F_mul_SxS, DUPdoDupNode (len),
+                                                         DUPdoDupNode (chunksize)),
+                                             assigns));
+            }
+        } else {
+            len = DUPdoDupNode (len);
+        }
+
+        if (IsNum (len) && (GetNum (len) == 1)) {
+            /*
+             * nothing to compute here
+             */
+            len = FREEdoFreeNode (len);
+            tavis = index;
+        } else {
+            tavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                                 TCmakePrf2 (F_mul_SxS, TBmakeId (index), len), assigns);
+        }
 
         oavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
                              TCmakePrf2 (F_add_SxS, TBmakeId (tavis),
@@ -1013,8 +1059,10 @@ UpdateOffsets (node *index, node *offsets, int dim, node *lengths, node **assign
                              assigns);
 
         new_offsets = TBmakeIds (oavis, new_offsets);
+        *localoffsets = TBmakeIds (tavis, *localoffsets);
     } else {
         new_offsets = NULL;
+        *localoffsets = NULL;
     }
 
     DBUG_RETURN (new_offsets);
@@ -1141,7 +1189,7 @@ PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  * @fn node *MakeRangeBody( node *outerindex, node *contents, node *size,
- *                          node **results, info *arg_info)
+ *                          node **results, node **offsets, info *arg_info)
  *
  * @brief Constructs the body of a range by building further nested
  *        with3 loops.
@@ -1154,13 +1202,15 @@ PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
  * @param newdim     this body is the last one in this dimension
  * @param *results   N_exprs chain of the result expressions of this body
  *                   (also known as cexprs in with2 context)
+ * @param *offsets   N_ids chain of local offsets for genarray/modarray
+ *                   operations.
  * @param arg_info   state of current transformation
  *
  * @return N_block body subtree for the given range
  ******************************************************************************/
 static node *
 MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node **results,
-               info *arg_info)
+               node **offsets, info *arg_info)
 {
     node *body, *ranges, *ops, *lhs, *with3;
     node *assigns = NULL;
@@ -1177,7 +1227,8 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     old_offsets = INFO_OFFSETS (arg_info);
     INFO_OFFSETS (arg_info)
       = UpdateOffsets (outerindex, INFO_OFFSETS (arg_info), INFO_CURRENT_DIM (arg_info),
-                       INFO_WITH2_LENGTHS (arg_info), &iv_assigns, arg_info);
+                       size, INFO_WITH2_LENGTHS (arg_info), &iv_assigns, offsets,
+                       arg_info);
     /*
      * compute current index vector
      */
@@ -1237,6 +1288,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     body = TBmakeBlock (assigns, NULL);
 
     *results = TCcreateExprsFromIds (lhs);
+
     /*
      * pop state
      */
@@ -1274,7 +1326,7 @@ static node *
 ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *contents,
                node *next, info *arg_info)
 {
-    node *index, *body, *results;
+    node *index, *body, *results, *offsets;
 
     DBUG_ENTER ("ProcessStride");
 
@@ -1292,15 +1344,15 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
      * runtime and we have to emit the corresponding code.
      */
     if (NeedsFitting (lower, upper, step)) {
-        node *nupper, *over, *body, *index, *results;
+        node *nupper, *over, *body, *index, *results, *offsets;
 
         index = MakeIntegerVar (&INFO_VARDECS (arg_info));
         over = ComputeNewBounds (lower, upper, step, &nupper, &INFO_PREASSIGNS (arg_info),
                                  arg_info);
-        body = MakeRangeBody (index, contents, over, FALSE, &results, arg_info);
+        body = MakeRangeBody (index, contents, over, FALSE, &results, &offsets, arg_info);
 
         next = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupTree (nupper), upper, over,
-                            body, results, next);
+                            body, results, offsets, next);
 
         /*
          * replace old bounds
@@ -1309,9 +1361,10 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
     }
 
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
-    body = MakeRangeBody (index, contents, step, FALSE, &results, arg_info);
+    body = MakeRangeBody (index, contents, step, FALSE, &results, &offsets, arg_info);
 
-    next = TBmakeRange (TBmakeIds (index, NULL), lower, upper, step, body, results, next);
+    next = TBmakeRange (TBmakeIds (index, NULL), lower, upper, step, body, results,
+                        offsets, next);
 
     DBUG_RETURN (next);
 }
@@ -1338,7 +1391,7 @@ static node *
 ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *code,
              node *next, info *arg_info)
 {
-    node *index, *max, *body, *res, *result;
+    node *index, *max, *body, *res, *result, *rangeoffsets;
 
     DBUG_ENTER ("ProcessGrid");
 
@@ -1360,53 +1413,48 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
 
         DBUG_ASSERT ((nextdim == NULL), "code and nextdim?");
 
-        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (code))) == N_empty) {
-            /*
-             * nothing much to do here
-             */
-            body = DUPdoDupTree (CODE_CBLOCK (code));
-        } else {
-            /*
-             * compute current offset
-             */
-            final_offsets
-              = UpdateOffsets (index, INFO_OFFSETS (arg_info),
-                               INFO_CURRENT_DIM (arg_info), INFO_WITH2_LENGTHS (arg_info),
-                               &preassigns, arg_info);
-            /*
-             * compute current index vector
-             */
-            DBUG_ASSERT ((INFO_INDICES (arg_info) != NULL), "no wl indices found");
+        /*
+         * compute current offset
+         */
+        final_offsets
+          = UpdateOffsets (index, INFO_OFFSETS (arg_info), INFO_CURRENT_DIM (arg_info),
+                           NULL, INFO_WITH2_LENGTHS (arg_info), &preassigns,
+                           &rangeoffsets, arg_info);
+        /*
+         * compute current index vector
+         */
+        DBUG_ASSERT ((INFO_INDICES (arg_info) != NULL), "no wl indices found");
 
-            iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-            iv_avis
-              = AssignValue (iv_avis,
-                             TCmakePrf2 (F_add_SxS,
-                                         TBmakeId (IDS_AVIS (INFO_INDICES (arg_info))),
-                                         TBmakeId (index)),
-                             &preassigns);
-            old_iv_avis = IDS_AVIS (INFO_INDICES (arg_info));
-            IDS_AVIS (INFO_INDICES (arg_info)) = iv_avis;
-            lut = PrepareCopyLut (INFO_LUT (arg_info), final_offsets, &preassigns,
-                                  arg_info);
+        iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+        iv_avis = AssignValue (iv_avis,
+                               TCmakePrf2 (F_add_SxS,
+                                           TBmakeId (IDS_AVIS (INFO_INDICES (arg_info))),
+                                           TBmakeId (index)),
+                               &preassigns);
+        old_iv_avis = IDS_AVIS (INFO_INDICES (arg_info));
+        IDS_AVIS (INFO_INDICES (arg_info)) = iv_avis;
+        lut = PrepareCopyLut (INFO_LUT (arg_info), final_offsets, &preassigns, arg_info);
+        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (code))) == N_empty) {
+            body = TBmakeBlock (preassigns, NULL);
+        } else {
             body = DUPdoDupTreeLut (CODE_CBLOCK (code), lut);
             BLOCK_INSTR (body) = TCappendAssign (preassigns, BLOCK_INSTR (body));
-            /* only remove contents! the lut is reused! */
-            lut = LUTremoveContentLut (lut);
-            final_offsets = FREEdoFreeTree (final_offsets);
-            IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
         }
 
         res = DUPdoDupTree (CODE_CEXPRS (code));
+
+        /* only remove contents! the lut is reused! */
+        lut = LUTremoveContentLut (lut);
+        IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     } else {
         DBUG_ASSERT ((nextdim != NULL), "neither code nor nextdim?");
 
-        body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, arg_info);
+        body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, &rangeoffsets, arg_info);
     }
 
     result = TBmakeRange (TBmakeIds (index, NULL), lower, max,
                           NULL, /* grids have no chunksize */
-                          body, res, next);
+                          body, res, rangeoffsets, next);
 
     /*
      * consume unuseds
@@ -1598,7 +1646,8 @@ WLSDwith2 (node *arg_node, info *arg_info)
     arg_node = FREEdoFreeNode (arg_node);
 
     /*
-     * reset the info structure, mainly to ease finding bugs
+     * reset the info structure, mainly to ease finding bugs and to prevent
+     * memory leaks.
      */
     INFO_INDICES (arg_info) = FREEdoFreeTree (INFO_INDICES (arg_info));
     INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));

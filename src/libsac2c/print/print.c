@@ -3841,6 +3841,10 @@ PRTgenarray (node *arg_node, info *arg_info)
         fprintf (global.outfile, " , ");
         TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
+    if (GENARRAY_SHAPEEXPR (arg_node) != NULL) {
+        fprintf (global.outfile, " , ");
+        TRAVdo (GENARRAY_SHAPEEXPR (arg_node), arg_info);
+    }
 
     if (GENARRAY_MEM (arg_node) != NULL) {
         fprintf (global.outfile, " , ");
@@ -4813,7 +4817,9 @@ PRTrange (node *arg_node, info *arg_info)
         fprintf (global.outfile, " in ");
         RANGE_CHUNKSIZE (arg_node) = TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
     }
-    fprintf (global.outfile, ") ");
+    fprintf (global.outfile, " (IDXS: ");
+    RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
+    fprintf (global.outfile, ")) ");
 
     global.indent++;
     if (RANGE_BODY (arg_node) != NULL) {

@@ -606,15 +606,25 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
-    case F_wl_assign:
     case F_wl_break:
         /*
-         * wl_assign( v, m, iv, idx)
+         * wl_break( v, m, iv)
          *
-         * - Traverse only value v
+         * - Traverse value v only
          */
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        break;
+
+    case F_wl_assign:
+        /*
+         * wl_assign( v, m, iv, idx)
+         *
+         * - Traverse value v and idx
+         */
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG4 (arg_node) = TRAVdo (PRF_ARG4 (arg_node), arg_info);
         break;
 
     case F_prop_obj_out:
@@ -660,10 +670,20 @@ RCIprf (node *arg_node, info *arg_info)
 
     case F_accu:
     case F_prop_obj_in:
+        /*
+         * do not visit any of the arguments
+         */
+        break;
+
     case F_suballoc:
         /*
-         * Do not visit the memory variable or the index vector!
+         * a_mem = suballoc( mem, idx)
+         *
+         * Do not visit the memory variable (to pretend its only
+         * referenced once) but the index!
          */
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
     default:

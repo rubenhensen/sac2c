@@ -433,6 +433,308 @@ MakeSizeArg (node *arg)
     DBUG_RETURN (arg);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Adds a suballoc/fill combination for the withops. Furthermore,
+ *        shape and dimensionality information is added to the alloclist
+ *        if possible.
+ *        Lifted from EMALcode.
+ *
+ * @param withops   withops of this with loop
+ * @param idxs      wl idxs for with3, NULL otherwise
+ * @param cexprs    result expressions
+ * @param arg_info  info node used to access INFO_INDEXVECTOR, INFO_ALLOCLIST.
+ *
+ * @return N_assign change to be prepended to the body of this part
+ ******************************************************************************/
+static node *
+AmendWithLoopCode (node *withops, node *idxs, node *cexprs, info *arg_info)
+{
+    node *memavis, *valavis, *cexavis, *indexvector, *wlidx;
+    ntype *crestype = NULL;
+    node *assign = NULL;
+    alloclist_struct *als;
+
+    DBUG_ENTER ("AmendWithLoopCode");
+
+    indexvector = INFO_INDEXVECTOR (arg_info);
+    als = INFO_ALLOCLIST (arg_info);
+
+    while (withops != NULL) {
+        DBUG_ASSERT (als != NULL, "ALLOCLIST must have an element for each WITHOP");
+        DBUG_ASSERT (cexprs != NULL, "With-Loop must have as many results as ALLOCLIST");
+
+        cexavis = ID_AVIS (EXPRS_EXPR (cexprs));
+
+        if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)) {
+            if (idxs == NULL) {
+                /* with / with2: use index annotated at withop */
+                wlidx = WITHOP_IDX (withops);
+            } else {
+                /* with3: extract one idx from idxs annotated at range */
+                wlidx = IDS_AVIS (idxs);
+                idxs = IDS_NEXT (idxs);
+            }
+        } else {
+            wlidx = NULL;
+        }
+
+        /*
+         * Set shape of genarray-wls if not already done and possible
+         */
+        if (NODE_TYPE (withops) == N_genarray) {
+
+            if (als->dim == NULL) {
+                if (TUdimKnown (AVIS_TYPE (cexavis))) {
+                    als->dim
+                      = TCmakePrf2 (F_add_SxS, MakeSizeArg (GENARRAY_SHAPE (withops)),
+                                    TBmakeNum (TYgetDim (AVIS_TYPE (cexavis))));
+                }
+            }
+            if (als->shape == NULL) {
+                if (TUshapeKnown (AVIS_TYPE (cexavis))) {
+                    als->shape
+                      = TCmakePrf2 (F_cat_VxV, DUPdoDupNode (GENARRAY_SHAPE (withops)),
+                                    SHshape2Array (TYgetShape (AVIS_TYPE (cexavis))));
+                }
+            }
+        }
+
+        /*
+         * Insert wl_assign prf for scalar with-loop results
+         *
+         * Insert suballoc/fill combinations for nonscalar with-loop results
+         *
+         * Ex:
+         * {
+         *   ...
+         * }: a;
+         */
+
+        /*
+         * We first try to find out the most special type for the
+         * elements computed in each iteration of the withloop
+         * (the c-expression). The reason for this is twofold:
+         *
+         * - if we manage to find an AKS type, we can use wlassign
+         *   instead of a subvar which is more efficient
+         *
+         * - to be able to allocate and build a correct descriptor
+         *   we have to make sure, that the shape-class of the
+         *   subvar is AKS if the default value or cexpr is
+         *   (in the latter case, there usually is no default value
+         *   at all). If the subvar is AKD/AUD, we need the default
+         *   value to assign a correct descriptor.
+         *   For modarrays, we use a special WL_MODARRAY_SUBSHAPE
+         *   icm to create the descriptor of the subvar. This icm
+         *   relies on the fact, that the shape-class of the subvar
+         *   always is more special than the one of the result
+         *   array.
+         */
+
+        /*
+         * N_genarray
+         */
+        if ((NODE_TYPE (withops) == N_genarray) && (GENARRAY_DEFAULT (withops) != NULL)) {
+            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id),
+                         "found a non flattened default expression!");
+
+            /*
+             * use more special type of default or cexpression
+             */
+            if (TYleTypes (AVIS_TYPE (cexavis), ID_NTYPE (GENARRAY_DEFAULT (withops)))) {
+                crestype = TYcopyType (AVIS_TYPE (cexavis));
+            } else {
+                crestype = TYcopyType (ID_NTYPE (GENARRAY_DEFAULT (withops)));
+            }
+            /*
+             * N_modarray:
+             */
+        } else if ((NODE_TYPE (withops) == N_modarray)
+                   && (!TUshapeKnown (AVIS_TYPE (cexavis)))) {
+
+            DBUG_ASSERT ((indexvector != NULL), "modarray for with3 not yet supported!");
+
+            ntype *ivtype = ID_NTYPE (indexvector);
+            ntype *restype = AVIS_TYPE (als->avis);
+            /*
+             * we need a AKS index vector in order to
+             * do any computation on the cexpressions
+             * shape.
+             */
+            if (TUshapeKnown (ivtype) && TUdimKnown (restype)) {
+                if (TYgetDim (restype) == SHgetExtent (TYgetShape (ivtype), 0)) {
+                    /*
+                     * a scalar!
+                     */
+                    DBUG_PRINT ("EMAL", ("subvar %s is Scalar", AVIS_NAME (als->avis)));
+
+                    crestype
+                      = TYmakeAKS (TYcopyType (TYgetScalar (restype)), SHmakeShape (0));
+                } else {
+                    /*
+                     * non scalar!
+                     */
+                    if (TUshapeKnown (restype)) {
+                        DBUG_PRINT ("EMAL",
+                                    ("subvar of %s is AKS", AVIS_NAME (als->avis)));
+
+                        crestype
+                          = TYmakeAKS (TYcopyType (TYgetScalar (restype)),
+                                       SHdropFromShape (SHgetExtent (TYgetShape (ivtype),
+                                                                     0),
+                                                        TYgetShape (restype)));
+                    } else {
+                        DBUG_PRINT ("EMAL",
+                                    ("subvar of %s is AKD", AVIS_NAME (als->avis)));
+
+                        crestype = TYmakeAKD (TYcopyType (TYgetScalar (restype)),
+                                              TYgetDim (restype) - TYgetDim (ivtype),
+                                              SHmakeShape (0));
+                    }
+                }
+            } else {
+                /*
+                 * restype is AUD or index is non AKS, so leave crestype as is
+                 */
+                crestype = TYcopyType (AVIS_TYPE (cexavis));
+            }
+        } else {
+            /*
+             * cexavis already is AKS, so we cannot do better!
+             */
+            crestype = TYcopyType (AVIS_TYPE (cexavis));
+        }
+
+        if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)
+            || (NODE_TYPE (withops) == N_break)) {
+
+            if (TUdimKnown (crestype) && (TYgetDim (crestype) == 0)) {
+                node *prfap;
+
+                /*
+                 * Create a new value variable
+                 * Ex: a_val
+                 */
+                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                /*
+                 * Create wl-assign operation
+                 *
+                 * Ex:
+                 * {
+                 *   ...
+                 *   a_val = wl_assign( a, A, iv, idx);
+                 * }: a_val;
+                 *
+                 * for Break withops, we use wl_break(a,A,iv);
+                 */
+                if (NODE_TYPE (withops) == N_break) {
+                    prfap
+                      = TCmakePrf3 (F_wl_break, TBmakeId (cexavis), TBmakeId (als->avis),
+                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)));
+
+                } else {
+                    prfap
+                      = TCmakePrf4 (F_wl_assign, TBmakeId (cexavis), TBmakeId (als->avis),
+                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)),
+                                    TBmakeId (wlidx));
+                }
+
+                assign
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL), prfap), assign);
+
+                AVIS_SSAASSIGN (valavis) = assign;
+
+                /*
+                 * Substitute cexpr
+                 *
+                 * Ex:
+                 * {
+                 *   ...
+                 *   a_val = wl_assign( a, A, idx);
+                 * }: a_val;
+                 */
+                EXPRS_EXPR (cexprs) = FREEdoFreeTree (EXPRS_EXPR (cexprs));
+                EXPRS_EXPR (cexprs) = TBmakeId (valavis);
+            } else {
+                /*
+                 * Create a new memory variable
+                 * Ex: a_mem
+                 */
+                memavis = TBmakeAvis (TRAVtmpVarName ("mem"), TYeliminateAKV (crestype));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                /*
+                 * Create a new value variable
+                 * Ex: a_val
+                 */
+                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                /*
+                 * Create fill operation
+                 *
+                 * Ex:
+                 * {
+                 *   ...
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a;
+                 */
+                assign
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
+                                             TCmakePrf2 (F_fill,
+                                                         TCmakePrf1 (F_copy,
+                                                                     TBmakeId (cexavis)),
+                                                         TBmakeId (memavis))),
+                                  assign);
+                AVIS_SSAASSIGN (valavis) = assign;
+
+                /*
+                 * Substitute cexpr
+                 *
+                 * Ex:
+                 * {
+                 *   ...
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a_val;
+                 */
+                EXPRS_EXPR (cexprs) = FREEdoFreeTree (EXPRS_EXPR (cexprs));
+                EXPRS_EXPR (cexprs) = TBmakeId (valavis);
+
+                /*
+                 * Create suballoc assignment
+                 *
+                 * Ex:
+                 * {
+                 *   ...
+                 *   a_mem = suballoc( A, idx);
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a_val;
+                 */
+                assign
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                             TCmakePrf2 (F_suballoc, TBmakeId (als->avis),
+                                                         TBmakeId (wlidx))),
+                                  assign);
+                AVIS_SSAASSIGN (memavis) = assign;
+            }
+        }
+        als = als->next;
+        withops = WITHOP_NEXT (withops);
+        cexprs = EXPRS_NEXT (cexprs);
+        crestype = TYfreeType (crestype);
+    }
+
+    DBUG_RETURN (assign);
+}
+
 /**
  * @}
  */
@@ -610,9 +912,7 @@ node *
 EMALcode (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
-    node *withops, *indexvector, *cexprs, *assign;
-    node *memavis, *valavis, *cexavis;
-    ntype *crestype = NULL;
+    node *withops, *indexvector, *assign;
 
     DBUG_ENTER ("EMALcode");
 
@@ -642,267 +942,8 @@ EMALcode (node *arg_node, info *arg_info)
      * Shape information for each result array must be set and
      * suballoc/fill(copy,...) must be inserted
      */
-    als = INFO_ALLOCLIST (arg_info);
-    withops = INFO_WITHOPS (arg_info);
-    cexprs = CODE_CEXPRS (arg_node);
-    assign = NULL;
-
-    while (withops != NULL) {
-        DBUG_ASSERT (als != NULL, "ALLOCLIST must have an element for each WITHOP");
-        DBUG_ASSERT (cexprs != NULL, "With-Loop must have as many results as ALLOCLIST");
-
-        cexavis = ID_AVIS (EXPRS_EXPR (cexprs));
-
-        /*
-         * Set shape of genarray-wls if not already done and possible
-         */
-        if (NODE_TYPE (withops) == N_genarray) {
-
-            if (als->dim == NULL) {
-                if (TUdimKnown (AVIS_TYPE (cexavis))) {
-                    als->dim
-                      = TCmakePrf2 (F_add_SxS, MakeSizeArg (GENARRAY_SHAPE (withops)),
-                                    TBmakeNum (TYgetDim (AVIS_TYPE (cexavis))));
-                }
-            }
-            if (als->shape == NULL) {
-                if (TUshapeKnown (AVIS_TYPE (cexavis))) {
-                    als->shape
-                      = TCmakePrf2 (F_cat_VxV, DUPdoDupNode (GENARRAY_SHAPE (withops)),
-                                    SHshape2Array (TYgetShape (AVIS_TYPE (cexavis))));
-                }
-            }
-        }
-
-        /*
-         * Insert wl_assign prf for scalar with-loop results
-         *
-         * Insert suballoc/fill combinations for nonscalar with-loop results
-         *
-         * Ex:
-         *   ...
-         * }: a;
-         */
-
-        /*
-         * We first try to find out the most special type for the
-         * elements computed in each iteration of the withloop
-         * (the c-expression). The reason for this is twofold:
-         *
-         * - if we manage to find an AKS type, we can use wlassign
-         *   instead of a subvar which is more efficient
-         *
-         * - to be able to allocate and build a correct descriptor
-         *   we have to make sure, that the shape-class of the
-         *   subvar is AKS if the default value or cexpr is
-         *   (in the latter case, there usually is no default value
-         *   at all). If the subvar is AKD/AUD, we need the default
-         *   value to assign a correct descriptor.
-         *   For modarrays, we use a special WL_MODARRAY_SUBSHAPE
-         *   icm to create the descriptor of the subvar. This icm
-         *   relies on the fact, that the shape-class of the subvar
-         *   always is more special than the one of the result
-         *   array.
-         */
-
-        /*
-         * N_genarray
-         */
-        if ((NODE_TYPE (withops) == N_genarray) && (GENARRAY_DEFAULT (withops) != NULL)) {
-            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id),
-                         "found a non flattened default expression!");
-
-            /*
-             * use more special type of default or cexpression
-             */
-            if (TYleTypes (AVIS_TYPE (cexavis), ID_NTYPE (GENARRAY_DEFAULT (withops)))) {
-                crestype = TYcopyType (AVIS_TYPE (cexavis));
-            } else {
-                crestype = TYcopyType (ID_NTYPE (GENARRAY_DEFAULT (withops)));
-            }
-            /*
-             * N_modarray:
-             */
-        } else if ((NODE_TYPE (withops) == N_modarray)
-                   && (!TUshapeKnown (AVIS_TYPE (cexavis)))) {
-            ntype *ivtype = ID_NTYPE (indexvector);
-            ntype *restype = AVIS_TYPE (als->avis);
-            /*
-             * we need a AKS index vector in order to
-             * do any computation on the cexpressions
-             * shape.
-             */
-            if (TUshapeKnown (ivtype) && TUdimKnown (restype)) {
-                if (TYgetDim (restype) == SHgetExtent (TYgetShape (ivtype), 0)) {
-                    /*
-                     * a scalar!
-                     */
-                    DBUG_PRINT ("EMAL", ("subvar %s is Scalar", AVIS_NAME (als->avis)));
-
-                    crestype
-                      = TYmakeAKS (TYcopyType (TYgetScalar (restype)), SHmakeShape (0));
-                } else {
-                    /*
-                     * non scalar!
-                     */
-                    if (TUshapeKnown (restype)) {
-                        DBUG_PRINT ("EMAL",
-                                    ("subvar of %s is AKS", AVIS_NAME (als->avis)));
-
-                        crestype
-                          = TYmakeAKS (TYcopyType (TYgetScalar (restype)),
-                                       SHdropFromShape (SHgetExtent (TYgetShape (ivtype),
-                                                                     0),
-                                                        TYgetShape (restype)));
-                    } else {
-                        DBUG_PRINT ("EMAL",
-                                    ("subvar of %s is AKD", AVIS_NAME (als->avis)));
-
-                        crestype = TYmakeAKD (TYcopyType (TYgetScalar (restype)),
-                                              TYgetDim (restype) - TYgetDim (ivtype),
-                                              SHmakeShape (0));
-                    }
-                }
-            } else {
-                /*
-                 * restype is AUD or index is non AKS, so leave crestype as is
-                 */
-                crestype = TYcopyType (AVIS_TYPE (cexavis));
-            }
-        } else {
-            /*
-             * cexavis already is AKS, so we cannot do better!
-             */
-            crestype = TYcopyType (AVIS_TYPE (cexavis));
-        }
-
-        if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)
-            || (NODE_TYPE (withops) == N_break)) {
-
-            if (TUdimKnown (crestype) && (TYgetDim (crestype) == 0)) {
-                node *prfap;
-
-                /*
-                 * Create a new value variable
-                 * Ex: a_val
-                 */
-                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                /*
-                 * Create wl-assign operation
-                 *
-                 * Ex:
-                 * {
-                 *   ...
-                 *   a_val = wl_assign( a, A, iv, idx);
-                 * }: a_val;
-                 *
-                 * for Break withops, we use wl_break(a,A,iv);
-                 */
-                if (NODE_TYPE (withops) == N_break) {
-                    prfap
-                      = TCmakePrf3 (F_wl_break, TBmakeId (cexavis), TBmakeId (als->avis),
-                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)));
-
-                } else {
-                    prfap
-                      = TCmakePrf4 (F_wl_assign, TBmakeId (cexavis), TBmakeId (als->avis),
-                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)),
-                                    TBmakeId (WITHOP_IDX (withops)));
-                }
-
-                assign
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL), prfap), assign);
-
-                AVIS_SSAASSIGN (valavis) = assign;
-
-                /*
-                 * Substitute cexpr
-                 *
-                 * Ex:
-                 * {
-                 *   ...
-                 *   a_val = wl_assign( a, A, idx);
-                 * }: a_val;
-                 */
-                EXPRS_EXPR (cexprs) = FREEdoFreeTree (EXPRS_EXPR (cexprs));
-                EXPRS_EXPR (cexprs) = TBmakeId (valavis);
-            } else {
-                /*
-                 * Create a new memory variable
-                 * Ex: a_mem
-                 */
-                memavis = TBmakeAvis (TRAVtmpVarName ("mem"), TYeliminateAKV (crestype));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                /*
-                 * Create a new value variable
-                 * Ex: a_val
-                 */
-                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                /*
-                 * Create fill operation
-                 *
-                 * Ex:
-                 * {
-                 *   ...
-                 *   a_val = fill( copy( a), a_mem);
-                 * }: a;
-                 */
-                assign
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
-                                             TCmakePrf2 (F_fill,
-                                                         TCmakePrf1 (F_copy,
-                                                                     TBmakeId (cexavis)),
-                                                         TBmakeId (memavis))),
-                                  assign);
-                AVIS_SSAASSIGN (valavis) = assign;
-
-                /*
-                 * Substitute cexpr
-                 *
-                 * Ex:
-                 * {
-                 *   ...
-                 *   a_val = fill( copy( a), a_mem);
-                 * }: a_val;
-                 */
-                EXPRS_EXPR (cexprs) = FREEdoFreeTree (EXPRS_EXPR (cexprs));
-                EXPRS_EXPR (cexprs) = TBmakeId (valavis);
-
-                /*
-                 * Create suballoc assignment
-                 *
-                 * Ex:
-                 * {
-                 *   ...
-                 *   a_mem = suballoc( A, idx);
-                 *   a_val = fill( copy( a), a_mem);
-                 * }: a_val;
-                 */
-                assign
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
-                                             TCmakePrf2 (F_suballoc, TBmakeId (als->avis),
-                                                         TBmakeId (
-                                                           WITHOP_IDX (withops)))),
-                                  assign);
-                AVIS_SSAASSIGN (memavis) = assign;
-            }
-        }
-        als = als->next;
-        withops = WITHOP_NEXT (withops);
-        cexprs = EXPRS_NEXT (cexprs);
-        crestype = TYfreeType (crestype);
-    }
+    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), NULL, CODE_CEXPRS (arg_node),
+                                arg_info);
 
     if (assign != NULL) {
         BLOCK_INSTR (CODE_CBLOCK (arg_node))
@@ -1656,7 +1697,7 @@ EMALwithid (node *arg_node, info *arg_info)
 
     /*
      * Allocate memory for the offset scalars
-     * and replace WITH_IDXS with exprs chain of id.
+     * and replace WITHID_IDXS with exprs chain of id.
      */
     expr = NULL;
     ids = WITHID_IDXS (arg_node);
@@ -2047,8 +2088,11 @@ EMALwith3 (node *arg_node, info *arg_info)
      * In order to build a proper suballoc/fill combinations in each Range-Block
      * it is necessary to know which result variables refer to
      * genarray/modarray - withops
+     * For a with3, the index vector is different for each range, so we
+     * generate the code template there.
      */
     INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+    INFO_INDEXVECTOR (arg_info) = NULL;
 
     /*
      * now traverse the code in all ranges
@@ -2068,7 +2112,7 @@ node *
 EMALrange (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
-    node *withops, *indexvector, *cexprs, *assign;
+    node *withops, *assign, *ids;
 
     DBUG_ENTER ("EMALrange");
 
@@ -2090,6 +2134,40 @@ EMALrange (node *arg_node, info *arg_info)
      */
     INFO_ALLOCLIST (arg_info) = als;
     INFO_WITHOPS (arg_info) = withops;
+
+    /*
+     * Shape information for each result array must be set and
+     * suballoc/fill(copy,...) must be inserted. As a prerequisite,
+     * we have to construct a code template for the
+     * index vector.
+     */
+    INFO_INDEXVECTOR (arg_info) = TCmakeIntVector (TCids2Exprs (RANGE_INDEX (arg_node)));
+    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), RANGE_IDXS (arg_node),
+                                RANGE_RESULTS (arg_node), arg_info);
+    /*
+     * the template and the special handle to the indices is not needed
+     * anymore, so lets free both
+     */
+    INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
+    RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
+
+    if (assign != NULL) {
+        BLOCK_INSTR (RANGE_BODY (arg_node))
+          = TCappendAssign (BLOCK_INSTR (RANGE_BODY (arg_node)), assign);
+    }
+
+    /*
+     * allocate memory for the index and replace the ids by an id.
+     * NOTE: we do not allocate memory for the IDXS here, as they
+     * other than for withids have an actual computation associated
+     * with them (i.e., a defining site), which will trigger their
+     * allocation in the range body.
+     */
+    ids = RANGE_INDEX (arg_node);
+    INFO_ALLOCLIST (arg_info) = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids),
+                                         TBmakeNum (0), TCcreateZeroVector (0, T_int));
+    RANGE_INDEX (arg_node) = TBmakeId (IDS_AVIS (ids));
+    ids = FREEdoFreeNode (ids);
 
     /*
      * go to next range

@@ -2597,7 +2597,7 @@ DUPrange (node *arg_node, info *arg_info)
                      DUPTRAV (RANGE_UPPERBOUND (arg_node)),
                      DUPTRAV (RANGE_CHUNKSIZE (arg_node)),
                      DUPTRAV (RANGE_BODY (arg_node)), DUPTRAV (RANGE_RESULTS (arg_node)),
-                     DUPCONT (RANGE_NEXT (arg_node)));
+                     DUPTRAV (RANGE_IDXS (arg_node)), DUPCONT (RANGE_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 

@@ -6097,8 +6097,7 @@
               </phases>
             </target>
           </targets>
-          <description>This is a chain of arrays that are indexed using this WL index vector. After explicit allocation (EMAL), Idxs points to an 
-            N_exprs-list of N_id nodes.</description>
+	    <description>This is a chain of indices into the ravels of the results of genarray and modarray withloops. Once they are explicitly allocated in mem_alloc, they are transformed from identifier definitions (N_ids) into use sites (N_exprs of N_id).</description>
 	</son>
       </sons>
       <attributes>
@@ -6521,10 +6520,10 @@
           </targets>
         </son>
         <son name="ShapeExpr" default="NULL">
-          <description>For AKD with3 loops, ShapeExpr holds an identifier bound to the result shape at runtime.</description>
+          <description>For AKD with3 loops, ShapeExpr holds an array denoting the shape of on element (cellshape).</description>
           <targets>
             <target mandatory="no">
-              <node name="Id" />
+              <node name="Array" />
               <phases>
                 <range from="wlt_wlsd" to="final" />
               </phases>
@@ -6558,7 +6557,7 @@
         <attribute name="Idx" inconstructor="no">
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Avis" />
                 <phases>
                   <range from="opt_wlidx" to="final" />
@@ -6645,7 +6644,7 @@
         <attribute name="Idx" inconstructor="no">
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Avis" />
                 <phases>
                   <range from="opt_wlidx" to="final" />
@@ -8853,6 +8852,17 @@
             </target>
           </targets>
         </son>
+        <son name="Idxs">
+          <targets>
+            <target mandatory="no">
+              <node name="Ids" />
+              <phases>
+                <range from="opt_wlidx" to="mem_alloc" />
+              </phases>
+            </target>
+          </targets>
+	  <description>This is a chain of indices into the ravels of the results of genarray and modarray withloops. Once they are explicitly used in mem_alloc, this special reference is freed.</description>
+	</son>
         <son name="Next">
           <targets>
             <target mandatory="no">
