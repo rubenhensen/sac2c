@@ -19,8 +19,6 @@
  *    ...MASK_OUT   DFMask for in variables
  *    ...MASK_LOCAL DFMask for in variables
  *
- * Notes:
- *  (CAJ) What happens with the thread id?
  *****************************************************************************/
 
 #include "lw3.h"
@@ -248,7 +246,8 @@ LW3range (node *arg_node, info *arg_info)
 
     TRAVdo (RANGE_BODY (arg_node), arg_info);
 
-    RANGE_BODY (arg_node) = CreateThreadFunction (RANGE_BODY (arg_node), arg_info);
+    RANGE_RESULTS (arg_node) = CreateThreadFunction (RANGE_BODY (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 
     DBUG_RETURN (arg_node);
 }
