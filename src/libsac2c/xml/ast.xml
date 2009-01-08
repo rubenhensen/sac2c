@@ -2317,6 +2317,7 @@
           <node name="Let" />
           <node name="Ret" />
           <node name="Arg" />
+          <node name="Ap" />
         </travuser>
       </traversal>
       <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">

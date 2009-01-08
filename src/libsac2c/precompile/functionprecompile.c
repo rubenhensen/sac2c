@@ -173,14 +173,14 @@ FPCmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCmodule");
 
+    if (MODULE_FUNTHREADS (arg_node) != NULL) {
+        MODULE_FUNTHREADS (arg_node) = TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
+    }
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-    if (MODULE_FUNTHREADS (arg_node) != NULL) {
-        MODULE_FUNTHREADS (arg_node) = TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -558,6 +558,7 @@ FPCret (node *arg_node, info *arg_info)
  *
  * Description:
  *   Builds FUNDEF_ARGTAB for arg nodes
+ *   FPClet may need to be changed if this function is changed
  *
  ******************************************************************************/
 
@@ -664,11 +665,115 @@ GetArgtabIndexIn (node *arg, argtab_t *argtab)
 /******************************************************************************
  *
  * Function:
+ *   node *FPCap( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Builds AP_ARGTAB and generates merging assignments for inout-arguments
+ *   if needed.
+ *
+ ******************************************************************************/
+
+node *
+FPCap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCap");
+
+    if (FUNDEF_ISWITH3FUN (AP_FUNDEF (arg_node)) == TRUE) {
+        /*
+         * only with3 function application
+         */
+
+        node *fundef;
+        node *rets;
+        node *exprs;
+        node *args;
+        argtab_t *ap_argtab;
+        argtab_t *argtab;
+        int idx = 0;
+        int dots_offset = 0;
+
+        fundef = AP_FUNDEF (arg_node);
+
+        DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
+
+        DBUG_PRINT ("FPC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
+                            FUNDEF_NAME (fundef)));
+
+        rets = FUNDEF_RETS (fundef);
+        exprs = AP_ARGS (arg_node);
+        args = FUNDEF_ARGS (fundef);
+
+        ap_argtab = TBmakeArgtab (TCcountExprs (exprs) + 1);
+
+        argtab = FUNDEF_ARGTAB (fundef);
+
+        if (argtab == NULL) {
+            DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
+        }
+
+        dots_offset = 0;
+        idx = ap_argtab->size; /* to avoid a CC warning */
+
+        while (exprs != NULL) {
+            DBUG_ASSERT (((args != NULL) || (dots_offset != 0)),
+                         "application is inconsistant");
+
+            if (dots_offset == 0) {
+                idx = GetArgtabIndexIn (args, argtab);
+            }
+            DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
+
+            DBUG_ASSERT ((idx < argtab->size), "illegal index");
+
+            ap_argtab->ptr_in[idx + dots_offset] = exprs;
+            if (dots_offset == 0) {
+                ap_argtab->tag[idx] = argtab->tag[idx];
+            } else {
+                /*
+                 * for ... arguments we have to add descriptors (ATG_in) only
+                 * if this function has the refcountdots pragma
+                 */
+                if (FUNDEF_REFCOUNTDOTS (fundef)) {
+                    ap_argtab->tag[idx + dots_offset] = ATG_in;
+                } else {
+                    ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
+                }
+            }
+
+            exprs = EXPRS_NEXT (exprs);
+
+            if (args != NULL) {
+                args = ARG_NEXT (args);
+
+                if (args == NULL) {
+                    /*
+                     * we have reached a ... argument
+                     */
+                    idx = argtab->size - 1;
+                    dots_offset = 1;
+                }
+            } else {
+                dots_offset++;
+            }
+        }
+
+        CTIabortOnError ();
+
+        AP_ARGTAB (arg_node) = CompressArgtab (ap_argtab);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *FPClet( node *arg_node, info *arg_info)
  *
  * Description:
  *   Builds AP_ARGTAB and generates merging assignments for inout-arguments
  *   if needed.
+ *   FPCap may need to be changed if this function is changed
  *
  ******************************************************************************/
 

@@ -146,17 +146,13 @@ CreateThreadFunction (node *block, info *arg_info)
       = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (INFO_MASK_OUT (arg_info), lut)),
                       NULL);
 
-    /* CAJ
-     * vardecs need adding to the block?
-     */
-
     funName = CreateThreadFunName (arg_info);
     fundef
       = TBmakeFundef (STRcpy (funName), NSdupNamespace (INFO_NS (arg_info)),
                       DFMUdfm2Rets (INFO_MASK_OUT (arg_info)), args, block, /* block */
                       INFO_FUNDEFS (arg_info)); /*point to existing tfundefs*/
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
-
+    FUNDEF_ISWITH3FUN (fundef) = TRUE;
     lut = LUTremoveLut (lut);
 
     INFO_FUNDEFS (arg_info) = fundef; /* save fundef */

@@ -550,16 +550,19 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
         ids_wl = IDS_NEXT (ids_wl);
     }
 
-    DBUG_ASSERT (avis != NULL, "No subarray identifier found!");
+    if (global.backend != BE_mutc) {
+        DBUG_ASSERT (avis != NULL, "No subarray identifier found!");
+    }
 
-    /*
-     * Insert pair (a, A_sub) into LUT
-     */
-    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
-                       AVIS_NAME (avis));
+    if (avis != NULL) {
+        /*
+         * Insert pair (a, A_sub) into LUT
+         */
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                           AVIS_NAME (avis));
 
-    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
-
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
+    }
     DBUG_RETURN (arg_node);
 }
 

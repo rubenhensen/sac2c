@@ -253,6 +253,10 @@ TCPmodule (node *arg_node, info *arg_info)
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
+    if (MODULE_FUNTHREADS (arg_node) != NULL) {
+        MODULE_FUNTHREADS (arg_node) = TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
