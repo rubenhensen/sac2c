@@ -2597,7 +2597,7 @@
             <target mandatory="no">
               <node name="Fundef" />
               <phases>
-                <!-- CAJ <range from="lw3" to="final"/> -->
+                <range from="pc_lw3" to="final"/>
                 <all/>
               </phases>
             </target>
@@ -8743,7 +8743,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <!--CAJ<phase name="lw3"/>-->
+                  <phase name="pc_lw3"/>
                 </phases>
               </target>
             </targets>
@@ -8755,7 +8755,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <!--CAJ<phase name="lw3"/>-->
+                  <phase name="pc_lw3"/>
                 </phases>
               </target>
             </targets>
@@ -8767,7 +8767,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <!--CAJ<phase name="lw3"/>-->
+                  <phase name="pc_lw3"/>
                 </phases>
               </target>
             </targets>
@@ -8848,7 +8848,13 @@
             <target mandatory="yes">
               <node name="Exprs" />
               <phases>
-                <all />
+                <range from="wlt_wlsd" to="pc_lw3" />                
+              </phases>
+            </target>
+            <target mandatory="yes">
+              <node name="Ap" />
+              <phases>
+                <range from="pc_lw3" to="final" />
               </phases>
             </target>
           </targets>

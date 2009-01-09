@@ -29,6 +29,7 @@
 #include "DataFlowMaskUtils.h"
 #include "tree_basic.h"
 #include "str.h"
+#include "DupTree.h"
 #include "namespaces.h"
 #include "node_basic.h"
 #include "traverse.h"
@@ -139,7 +140,7 @@ CreateThreadFunction (node *block, info *arg_info)
     lut = LUTgenerateLut ();
     args = DFMUdfm2Args (INFO_MASK_IN (arg_info), lut);
     tmp_mask = DFMgenMaskMinus (INFO_MASK_OUT (arg_info), INFO_MASK_IN (arg_info));
-    vardecs = DFMUdfm2Vardecs (tmp_mask, lut);
+    vardecs = DFMUdfm2Vardecs (INFO_MASK_LOCAL (arg_info), lut);
     tmp_mask = DFMremoveMask (tmp_mask);
 
     ret
@@ -147,8 +148,10 @@ CreateThreadFunction (node *block, info *arg_info)
                       NULL);
 
     if (vardecs != NULL) {
-        BLOCK_VARDEC (block) = TCappendVardec (vardecs, BLOCK_VARDEC (vardecs));
+        BLOCK_VARDEC (block) = TCappendVardec (vardecs, BLOCK_VARDEC (block));
     }
+
+    BLOCK_INSTR (block) = DUPdoDupTreeLut (BLOCK_INSTR (block), lut);
 
     funName = CreateThreadFunName (arg_info);
     fundef
