@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * $Id: $
+ * $Id$
  *
  * file: lw3.c
  *
@@ -146,11 +146,15 @@ CreateThreadFunction (node *block, info *arg_info)
       = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (INFO_MASK_OUT (arg_info), lut)),
                       NULL);
 
+    if (vardecs != NULL) {
+        BLOCK_VARDEC (block) = TCappendVardec (vardecs, BLOCK_VARDEC (vardecs));
+    }
+
     funName = CreateThreadFunName (arg_info);
     fundef
       = TBmakeFundef (STRcpy (funName), NSdupNamespace (INFO_NS (arg_info)),
                       DFMUdfm2Rets (INFO_MASK_OUT (arg_info)), args, block, /* block */
-                      INFO_FUNDEFS (arg_info)); /*point to existing tfundefs*/
+                      INFO_FUNDEFS (arg_info)); /*point to existing fundefs*/
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
     FUNDEF_ISWITH3FUN (fundef) = TRUE;
     lut = LUTremoveLut (lut);
