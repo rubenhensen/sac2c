@@ -209,7 +209,9 @@ LW3with3 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LW3with3");
 
+    /* Create new info to correctly handle nested with3 loops*/
     new_info = MakeInfo ();
+    INFO_NS (new_info) = INFO_NS (arg_info);
 
     DBUG_ASSERT ((WITH3_IN_MASK (arg_node) != NULL),
                  "No input DFM for current with3 loop");
