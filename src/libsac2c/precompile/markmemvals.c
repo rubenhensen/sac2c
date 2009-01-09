@@ -67,6 +67,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "str.h"
+#include "globals.h"
 #include "memory.h"
 #include "LookUpTable.h"
 #include "print.h"
