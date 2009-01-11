@@ -33,6 +33,7 @@
 #include "print.h"
 #include "free.h"
 #include "shape.h"
+#include "constants.h"
 #include "string.h"
 #include "dbug.h"
 
@@ -47,6 +48,13 @@
  *
  ***************************************************************************/
 typedef enum { EA_memname, EA_shape } ea_withopmode;
+
+/** <!--******************************************************************-->
+ *
+ *  Enumeration of the different traversal modes for RANGESs
+ *
+ ***************************************************************************/
+typedef enum { EA_body, EA_index } ea_rangemode;
 
 /** <!--******************************************************************-->
  *
@@ -72,6 +80,7 @@ struct INFO {
     node *indexvector;
     bool mustfill;
     ea_withopmode withopmode;
+    ea_rangemode rangemode;
 };
 
 /**
@@ -83,6 +92,7 @@ struct INFO {
 #define INFO_INDEXVECTOR(n) ((n)->indexvector)
 #define INFO_MUSTFILL(n) ((n)->mustfill)
 #define INFO_WITHOPMODE(n) ((n)->withopmode)
+#define INFO_RANGEMODE(n) ((n)->rangemode)
 
 /**
  * @name INFO functions
@@ -441,17 +451,20 @@ MakeSizeArg (node *arg)
  *
  * @param withops   withops of this with loop
  * @param idxs      wl idxs for with3, NULL otherwise
+ * @param chunksize chunksize for with3, NULL otherwise
  * @param cexprs    result expressions
  * @param arg_info  info node used to access INFO_INDEXVECTOR, INFO_ALLOCLIST.
  *
  * @return N_assign change to be prepended to the body of this part
  ******************************************************************************/
 static node *
-AmendWithLoopCode (node *withops, node *idxs, node *cexprs, info *arg_info)
+AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
+                   info *arg_info)
 {
     node *memavis, *valavis, *cexavis, *indexvector, *wlidx;
     ntype *crestype = NULL;
     node *assign = NULL;
+    int dim;
     alloclist_struct *als;
 
     DBUG_ENTER ("AmendWithLoopCode");
@@ -480,21 +493,43 @@ AmendWithLoopCode (node *withops, node *idxs, node *cexprs, info *arg_info)
 
         /*
          * Set shape of genarray-wls if not already done and possible
+         *
+         * NOTE: for with3 loops with a chunksize, the result
+         *       shape is not outershape ++ innershape, as the outer-most
+         *       dimension of the inner shape is a partition of the outer
+         *       shape. Thus, we have to drop the first element in these
+         *       cases.
          */
         if (NODE_TYPE (withops) == N_genarray) {
 
             if (als->dim == NULL) {
                 if (TUdimKnown (AVIS_TYPE (cexavis))) {
+                    if (chunksize != NULL) {
+                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1;
+                    } else {
+                        dim = TYgetDim (AVIS_TYPE (cexavis));
+                    }
+
                     als->dim
                       = TCmakePrf2 (F_add_SxS, MakeSizeArg (GENARRAY_SHAPE (withops)),
-                                    TBmakeNum (TYgetDim (AVIS_TYPE (cexavis))));
+                                    TBmakeNum (dim));
                 }
             }
             if (als->shape == NULL) {
                 if (TUshapeKnown (AVIS_TYPE (cexavis))) {
+                    shape *shape = TYgetShape (AVIS_TYPE (cexavis));
+
+                    if (chunksize != NULL) {
+                        shape = SHdropFromShape (1, shape);
+                    }
+
                     als->shape
                       = TCmakePrf2 (F_cat_VxV, DUPdoDupNode (GENARRAY_SHAPE (withops)),
-                                    SHshape2Array (TYgetShape (AVIS_TYPE (cexavis))));
+                                    SHshape2Array (shape));
+
+                    if (chunksize != NULL) {
+                        shape = SHfreeShape (shape);
+                    }
                 }
             }
         }
@@ -529,6 +564,19 @@ AmendWithLoopCode (node *withops, node *idxs, node *cexprs, info *arg_info)
          *   relies on the fact, that the shape-class of the subvar
          *   always is more special than the one of the result
          *   array.
+         *
+         *   For a with3, the encoding is different. The shape
+         *   of the actual default element is
+         *
+         *   SHAPEEXPR ++ shape( default)
+         *
+         *   and to make things worse, the shape of the cexpr, if chunksize
+         *   is not NULL, is
+         *
+         *   [CHUNKSIZE] ++ [SHAPEEXPR] ++ default
+         *
+         *   we have to take all this into account when computing
+         *   crestype.
          */
 
         /*
@@ -541,11 +589,73 @@ AmendWithLoopCode (node *withops, node *idxs, node *cexprs, info *arg_info)
             /*
              * use more special type of default or cexpression
              */
-            if (TYleTypes (AVIS_TYPE (cexavis), ID_NTYPE (GENARRAY_DEFAULT (withops)))) {
+            if (TUleShapeInfo (AVIS_TYPE (cexavis),
+                               ID_NTYPE (GENARRAY_DEFAULT (withops)))) {
                 crestype = TYcopyType (AVIS_TYPE (cexavis));
             } else {
-                crestype = TYcopyType (ID_NTYPE (GENARRAY_DEFAULT (withops)));
+                /*
+                 * we have to compute the actual default type
+                 */
+                if (GENARRAY_DEFSHAPEEXPR (withops) == NULL) {
+                    /*
+                     * no shape expression, this is a simple with/with2
+                     */
+                    crestype = TYcopyType (ID_NTYPE (GENARRAY_DEFAULT (withops)));
+                } else {
+                    ntype *deftype = ID_NTYPE (GENARRAY_DEFAULT (withops));
+                    node *sexpr = GENARRAY_DEFSHAPEEXPR (withops);
+
+                    /*
+                     * a shape expression, this is a with3
+                     *
+                     * To build an AKS type, we need an AKS default, constant
+                     * SHAPEEXPR and constant CHUNKSIZE, if present
+                     */
+                    if (TUshapeKnown (deftype)
+                        && ((chunksize == NULL) || (NODE_TYPE (chunksize) == N_num))
+                        && COisConstant (sexpr)) {
+                        node *exprs = ARRAY_AELEMS (sexpr);
+                        int pos = 0;
+                        shape *lshape;
+
+                        lshape = SHmakeShape (TCcountExprs (exprs)
+                                              + ((chunksize == NULL) ? 0 : 1));
+
+                        while (exprs != NULL) {
+                            lshape
+                              = SHsetExtent (lshape, pos, NUM_VAL (EXPRS_EXPR (exprs)));
+                            exprs = EXPRS_NEXT (exprs);
+                            pos++;
+                        }
+
+                        if (chunksize != NULL) {
+                            lshape = SHsetExtent (lshape, pos, NUM_VAL (chunksize));
+                            pos++;
+                        }
+
+                        crestype
+                          = TYmakeAKS (TYcopyType (TYgetScalar (deftype)),
+                                       SHappendShapes (lshape, TYgetShape (deftype)));
+
+                        lshape = SHfreeShape (lshape);
+                    } else if (TUdimKnown (deftype)) {
+                        /*
+                         * We can build an AKD
+                         */
+                        crestype = TYmakeAKD (TYcopyType (TYgetScalar (deftype)),
+                                              TCcountExprs (ARRAY_AELEMS (sexpr))
+                                                + ((chunksize == NULL) ? 0 : 1)
+                                                + TYgetDim (deftype),
+                                              SHmakeShape (0));
+                    } else {
+                        /*
+                         * if it is AUD, we can just use the original crestype
+                         */
+                        crestype = TYcopyType (AVIS_TYPE (cexavis));
+                    }
+                }
             }
+
             /*
              * N_modarray:
              */
@@ -942,8 +1052,8 @@ EMALcode (node *arg_node, info *arg_info)
      * Shape information for each result array must be set and
      * suballoc/fill(copy,...) must be inserted
      */
-    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), NULL, CODE_CEXPRS (arg_node),
-                                arg_info);
+    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), NULL, NULL,
+                                CODE_CEXPRS (arg_node), arg_info);
 
     if (assign != NULL) {
         BLOCK_INSTR (CODE_CBLOCK (arg_node))
@@ -1172,8 +1282,9 @@ EMALprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_dim_A:
+    case F_size_A:
         /*
-         * dim( A );
+         * dim( A );   -or-   size( A );
          * alloc( 0, [] );
          */
         als->dim = TBmakeNum (0);
@@ -1781,22 +1892,73 @@ EMALgenarray (node *arg_node, info *arg_info)
         /*
          * If shape information has not yet been gathered it must be
          * inferred using the default element
+         *
+         * for with/with2, the result shape is
+         *
+         *   GENARRAY_SHAPE ++ shape( GENARRAY_DEFAULT)
+         *
+         * however, for with3 the shape is
+         *
+         *   GENARRAY_SHAPE ++ GENARRAY_SHAPEEXPR ++ shape( GENARRAY_DEFAULT)
+         *
+         * with the additional constraint that shape( GENARRAY_SHAPE) is [1]
+         * and that GENARRAY_SHAPEEXPR is an N_array node.
+         *
+         * TODO: adopt the following two computations accordingly
+         *       for now, we just bail out
          */
         if (als->dim == NULL) {
             DBUG_ASSERT (GENARRAY_DEFAULT (arg_node) != NULL,
                          "Default element required!");
-            als->dim = TCmakePrf2 (F_add_SxS, MakeSizeArg (GENARRAY_SHAPE (arg_node)),
-                                   MakeDimArg (GENARRAY_DEFAULT (arg_node)));
+            if (GENARRAY_DEFSHAPEEXPR (arg_node) == NULL) {
+                /* with / with2 */
+                als->dim = TCmakePrf2 (F_add_SxS, MakeSizeArg (GENARRAY_SHAPE (arg_node)),
+                                       MakeDimArg (GENARRAY_DEFAULT (arg_node)));
+            } else {
+                /* with3 */
+                DBUG_ASSERT ((TCcountExprs (ARRAY_AELEMS (GENARRAY_SHAPE (arg_node)))
+                              == 1),
+                             "Illegal shape length in with3 genarray.");
+
+                als->dim
+                  = TCmakePrf2 (F_add_SxS, TBmakeNum (1),
+                                TCmakePrf2 (F_add_SxS,
+                                            MakeSizeArg (
+                                              GENARRAY_DEFSHAPEEXPR (arg_node)),
+                                            MakeDimArg (GENARRAY_DEFAULT (arg_node))));
+            }
         }
 
         if (als->shape == NULL) {
             DBUG_ASSERT (GENARRAY_DEFAULT (arg_node) != NULL,
                          "Default element required!");
-            als->shape
-              = TCmakePrf1 (F_shape_A,
-                            TCmakePrf2 (F_genarray,
-                                        DUPdoDupNode (GENARRAY_SHAPE (arg_node)),
-                                        DUPdoDupNode (GENARRAY_DEFAULT (arg_node))));
+
+            if (GENARRAY_DEFSHAPEEXPR (arg_node) == NULL) {
+                /* with/with2 */
+                als->shape
+                  = TCmakePrf1 (F_shape_A,
+                                TCmakePrf2 (F_genarray,
+                                            DUPdoDupNode (GENARRAY_SHAPE (arg_node)),
+                                            DUPdoDupNode (GENARRAY_DEFAULT (arg_node))));
+            } else {
+                /* with3 */
+                DBUG_ASSERT ((NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_array),
+                             "Illegal shape in genarray of with3");
+                DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFSHAPEEXPR (arg_node)) == N_array),
+                             "Illegal defshapeexpr in genarray of with3");
+
+                als->shape
+                  = TCmakePrf1 (F_shape_A,
+                                TCmakePrf2 (F_genarray,
+                                            TCmakeIntVector (
+                                              TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (
+                                                               GENARRAY_SHAPE (
+                                                                 arg_node))),
+                                                             DUPdoDupTree (ARRAY_AELEMS (
+                                                               GENARRAY_DEFSHAPEEXPR (
+                                                                 arg_node))))),
+                                            DUPdoDupNode (GENARRAY_DEFAULT (arg_node))));
+            }
         }
 
         /*
@@ -2097,6 +2259,7 @@ EMALwith3 (node *arg_node, info *arg_info)
     /*
      * now traverse the code in all ranges
      */
+    INFO_RANGEMODE (arg_info) = EA_body;
     WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
 
     /*
@@ -2104,6 +2267,12 @@ EMALwith3 (node *arg_node, info *arg_info)
      */
     INFO_WITHOPMODE (arg_info) = EA_shape;
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    /*
+     * Collect shape/dim information for the range index
+     */
+    INFO_RANGEMODE (arg_info) = EA_index;
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2113,61 +2282,70 @@ EMALrange (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
     node *withops, *assign, *ids;
+    ea_rangemode mode;
 
     DBUG_ENTER ("EMALrange");
 
-    /*
-     * Rescue ALLOCLIST and WITHOPS
-     */
-    als = INFO_ALLOCLIST (arg_info);
-    INFO_ALLOCLIST (arg_info) = NULL;
-    withops = INFO_WITHOPS (arg_info);
-    INFO_WITHOPS (arg_info) = NULL;
+    if (INFO_RANGEMODE (arg_info) == EA_body) {
+        /*
+         * Rescue ALLOCLIST and WITHOPS and RANGEMODE
+         */
+        als = INFO_ALLOCLIST (arg_info);
+        INFO_ALLOCLIST (arg_info) = NULL;
+        withops = INFO_WITHOPS (arg_info);
+        INFO_WITHOPS (arg_info) = NULL;
+        mode = INFO_RANGEMODE (arg_info);
 
-    /*
-     * Traverse block
-     */
-    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+        /*
+         * Traverse block
+         */
+        RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
-    /*
-     * Restore ALLOCLIST, WITHOPS and INDEXVECTOR
-     */
-    INFO_ALLOCLIST (arg_info) = als;
-    INFO_WITHOPS (arg_info) = withops;
+        /*
+         * Restore ALLOCLIST, WITHOPS and RANGEMODE
+         */
+        INFO_ALLOCLIST (arg_info) = als;
+        INFO_WITHOPS (arg_info) = withops;
+        INFO_RANGEMODE (arg_info) = mode;
 
-    /*
-     * Shape information for each result array must be set and
-     * suballoc/fill(copy,...) must be inserted. As a prerequisite,
-     * we have to construct a code template for the
-     * index vector.
-     */
-    INFO_INDEXVECTOR (arg_info) = TCmakeIntVector (TCids2Exprs (RANGE_INDEX (arg_node)));
-    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), RANGE_IDXS (arg_node),
-                                RANGE_RESULTS (arg_node), arg_info);
-    /*
-     * the template and the special handle to the indices is not needed
-     * anymore, so lets free both
-     */
-    INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
-    RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
+        /*
+         * Shape information for each result array must be set and
+         * suballoc/fill(copy,...) must be inserted. As a prerequisite,
+         * we have to construct a code template for the
+         * index vector.
+         */
+        INFO_INDEXVECTOR (arg_info)
+          = TCmakeIntVector (TCids2Exprs (RANGE_INDEX (arg_node)));
+        assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), RANGE_IDXS (arg_node),
+                                    RANGE_CHUNKSIZE (arg_node), RANGE_RESULTS (arg_node),
+                                    arg_info);
+        /*
+         * the template and the special handle to the indices is not needed
+         * anymore, so lets free both
+         */
+        INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
+        RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
 
-    if (assign != NULL) {
-        BLOCK_INSTR (RANGE_BODY (arg_node))
-          = TCappendAssign (BLOCK_INSTR (RANGE_BODY (arg_node)), assign);
+        if (assign != NULL) {
+            BLOCK_INSTR (RANGE_BODY (arg_node))
+              = TCappendAssign (BLOCK_INSTR (RANGE_BODY (arg_node)), assign);
+        }
+    } else {
+        DBUG_ASSERT ((INFO_RANGEMODE (arg_info) == EA_index), "unknown EA_range mode");
+        /*
+         * allocate memory for the index and replace the ids by an id.
+         * NOTE: we do not allocate memory for the IDXS here, as they
+         * other than for withids have an actual computation associated
+         * with them (i.e., a defining site), which will trigger their
+         * allocation in the range body.
+         */
+        ids = RANGE_INDEX (arg_node);
+        INFO_ALLOCLIST (arg_info)
+          = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
+                     TCcreateZeroVector (0, T_int));
+        RANGE_INDEX (arg_node) = TBmakeId (IDS_AVIS (ids));
+        ids = FREEdoFreeNode (ids);
     }
-
-    /*
-     * allocate memory for the index and replace the ids by an id.
-     * NOTE: we do not allocate memory for the IDXS here, as they
-     * other than for withids have an actual computation associated
-     * with them (i.e., a defining site), which will trigger their
-     * allocation in the range body.
-     */
-    ids = RANGE_INDEX (arg_node);
-    INFO_ALLOCLIST (arg_info) = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids),
-                                         TBmakeNum (0), TCcreateZeroVector (0, T_int));
-    RANGE_INDEX (arg_node) = TBmakeId (IDS_AVIS (ids));
-    ids = FREEdoFreeNode (ids);
 
     /*
      * go to next range

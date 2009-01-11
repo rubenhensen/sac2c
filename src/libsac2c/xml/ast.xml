@@ -6460,6 +6460,9 @@
       <flags>
 	<flag name="NeedsOffset" />
 	<flag name="Parallelize" />
+	<flag name="HasNaiveOrdering" default="FALSE">
+	  <description>True, iff the naive compilation scheme was used and thus the with-loop is not computed in canonical order.</description>
+	</flag>
       </flags>
     </node>
 <!--
@@ -6520,8 +6523,8 @@
             </target>
           </targets>
         </son>
-        <son name="ShapeExpr" default="NULL">
-          <description>For AKD with3 loops, ShapeExpr holds an array denoting the shape of on element (cellshape).</description>
+        <son name="DefShapeExpr" default="NULL">
+          <description>For with3 loops, the default element is given by genarray( DefShapeExpr, Default) where default denotes the default element of the genarray. Only present if a default element is present, as well.</description>
           <targets>
             <target mandatory="no">
               <node name="Array" />

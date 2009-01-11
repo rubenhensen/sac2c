@@ -919,6 +919,70 @@ TUeqShapes (ntype *a, ntype *b)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool TUleShapeInfo( ntype *a, ntype *b)
+ *
+ * @brief Returns true if the type a holds at least as much shape information
+ *        as the type b. However, the types need not to be related in any
+ *        kind.
+ *
+ * @param a first ntype to compare
+ * @param b second ntype to compare
+ *
+ * @return true iff a hold at least as much shape info as b
+ ******************************************************************************/
+bool
+TUleShapeInfo (ntype *a, ntype *b)
+{
+    bool result;
+
+    DBUG_ENTER ("TUleShapeInfo");
+
+    switch (TYgetConstr (a)) {
+    case TC_akv:
+    case TC_aks:
+        result = TRUE;
+        break;
+
+    case TC_akd:
+        switch (TYgetConstr (b)) {
+        case TC_akv:
+        case TC_aks:
+            result = FALSE;
+            break;
+
+        default:
+            result = TRUE;
+            break;
+        }
+        break;
+
+    case TC_audgz:
+        switch (TYgetConstr (b)) {
+        case TC_audgz:
+        case TC_aud:
+            result = TRUE;
+            break;
+
+        default:
+            result = FALSE;
+            break;
+        }
+        break;
+
+    case TC_aud:
+        result = (TYgetConstr (b) == TC_aud);
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "illegal argument");
+        result = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn ntype *TUcomputeImplementationType( ntype *ty)

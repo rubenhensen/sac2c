@@ -3838,27 +3838,31 @@ PRTgenarray (node *arg_node, info *arg_info)
     fprintf (global.outfile, "genarray( ");
     TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        fprintf (global.outfile, " , ");
-        TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
-    if (GENARRAY_SHAPEEXPR (arg_node) != NULL) {
-        fprintf (global.outfile, " , ");
-        TRAVdo (GENARRAY_SHAPEEXPR (arg_node), arg_info);
+        if (GENARRAY_DEFSHAPEEXPR (arg_node) != NULL) {
+            fprintf (global.outfile, " , genarray( ");
+            TRAVdo (GENARRAY_DEFSHAPEEXPR (arg_node), arg_info);
+            fprintf (global.outfile, " ,");
+            TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+            fprintf (global.outfile, ")");
+        } else {
+            fprintf (global.outfile, ", ");
+            TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+        }
     }
 
     if (GENARRAY_MEM (arg_node) != NULL) {
-        fprintf (global.outfile, " , ");
+        fprintf (global.outfile, ", ");
         TRAVdo (GENARRAY_MEM (arg_node), arg_info);
     }
 
     if (GENARRAY_RC (arg_node) != NULL) {
-        fprintf (global.outfile, " ,RC(");
+        fprintf (global.outfile, ", RC(");
         TRAVdo (GENARRAY_RC (arg_node), arg_info);
         fprintf (global.outfile, ")");
     }
 
     if (GENARRAY_IDX (arg_node) != NULL) {
-        fprintf (global.outfile, " ,IDX(%s)", AVIS_NAME (GENARRAY_IDX (arg_node)));
+        fprintf (global.outfile, ", IDX(%s)", AVIS_NAME (GENARRAY_IDX (arg_node)));
     }
     fprintf (global.outfile, ")");
 

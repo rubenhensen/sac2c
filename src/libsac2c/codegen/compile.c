@@ -3524,6 +3524,43 @@ COMPprfShape (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPprfSize( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_size_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfSize (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfSize");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_size_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_SIZE_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfReshape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_reshape_VxA.

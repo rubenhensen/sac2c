@@ -39,6 +39,7 @@ extern bool TUisHidden (ntype *type);
 extern bool TUisBoxed (ntype *type);
 extern bool TUisPolymorphic (ntype *type);
 extern bool TUeqShapes (ntype *a, ntype *b);
+extern bool TUleShapeInfo (ntype *a, ntype *b);
 extern ntype *TUstripImplicitNestingOperations (ntype *poly);
 extern ntype *TUcomputeImplementationType (ntype *ty);
 extern char *TUtypeSignature2String (node *fundef);

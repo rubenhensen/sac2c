@@ -570,6 +570,13 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
+   * Low-level backend representations
+   */
+
+  PRF (size_A, (PA_A, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_dummy, NULL, COMPprfSize,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  /*******************************************************************************
    * Memory management:
    */
 

@@ -64,6 +64,8 @@
  *
  * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
+ * ND_PRF_SIZE_A__DATE( to_NT, to_sdim, from_NT, from_sdim)
+ *
  * ND_PRF_RESHAPE_VxA__SHAPE_id( to_NT, to_sdim, shp_NT)
  * ND_PRF_RESHAPE_VxA__SHAPE_arr( to_NT, to_sdim, shp_size, ...shp_ANY...)
  *
@@ -118,6 +120,11 @@
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
 
 /* ND_PRF_SHAPE_A__DATA( ...) is a C-ICM */
+
+#define SAC_ND_PRF_SIZE_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                      \
+    SAC_TR_PRF_PRINT (("ND_PRF_SIZE_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim, \
+                       NT_STR (from_NT), from_sdim))                                     \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_SIZE (from_NT))
 
 /* ND_PRF_RESHAPE_VxA__SHAPE_id( ...) is a C-ICM */
 /* ND_PRF_RESHAPE_VxA__SHAPE_arr( ...) is a C-ICM */

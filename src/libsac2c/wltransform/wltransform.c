@@ -7338,6 +7338,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 
             WITH2_SEGS (new_node) = segs;
+            WITH2_HASNAIVEORDERING (new_node) = do_naive_comp;
         }
 
         /* old WL-representation is no longer needed */

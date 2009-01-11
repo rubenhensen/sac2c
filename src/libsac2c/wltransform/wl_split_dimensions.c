@@ -39,6 +39,7 @@
 #include "DupTree.h"
 #include "pattern_match.h"
 #include "LookUpTable.h"
+#include "ctinfo.h"
 
 /** <!--********************************************************************-->
  *
@@ -363,8 +364,8 @@ PopDim (info *arg_info)
 /** <!-- ****************************************************************** -->
  * @fn bool NeedsFitting( node *lower, node *upper, node *step)
  *
- * @brief Returns true if any of the arguments is not constant (i.e. not an
- *        N_num node) or if the range is not a multiple of the step.
+ * @brief Returns true if the step is not one or unknown and
+ *                     if the range is not a multiple of the step or unknown.
  *
  * @param lower node denoting the lower bound
  * @param upper node denoting the upper bound
@@ -379,8 +380,9 @@ NeedsFitting (node *lower, node *upper, node *step)
 
     DBUG_ENTER ("NeedsFitting");
 
-    result = !(IsNum (lower) && IsNum (upper) && IsNum (step)
-               && (((GetNum (upper) - GetNum (lower)) % GetNum (step)) == 0));
+    result = ((!IsNum (step) || (GetNum (step) != 1))
+              && (!(IsNum (lower) && IsNum (upper) && IsNum (step))
+                  || (((GetNum (upper) - GetNum (lower)) % GetNum (step)) != 0)));
 
     DBUG_RETURN (result);
 }
@@ -468,52 +470,55 @@ ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **as
     DBUG_RETURN (newsize);
 }
 
+#if 0 /* not needed at the moment */
 /** <!-- ****************************************************************** -->
- * @fn node *ComputeSize( node *lower, node *upper, node **assigns,
+ * @fn node *ComputeSize( node *lower, node *upper, node **assigns, 
  *                        info *arg_info)
  *
  * @brief Returns a node that denotes the size (or length) of the given range.
  *        If the range is fully static, an N_num node will be returned. For
  *        dynamic ranges, code for computing the length at runtime is added to
  *        assigns and an N_id node is returned.
- *
+ * 
  * @param lower ast node denoting lower bound
  * @param upper ast node denoting upper bound
  * @param *assigns assignment chain to append the runtime code if necessary
  * @param arg_info info structure
- *
+ * 
  * @return N_num or N_id node representing the length of the range
  ******************************************************************************/
-static node *
-ComputeSize (node *lower, node *upper, node **assigns, info *arg_info)
+static
+node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
 {
-    node *size;
+  node *size;
 
-    DBUG_ENTER ("ComputeSize");
+  DBUG_ENTER("ComputeSize");
 
-    if (IsNum (upper) && IsNum (lower)) {
-        /*
-         * static length
-         */
-        size = TBmakeNum (GetNum (upper) - GetNum (lower));
+  if (IsNum( upper) && IsNum( lower)) {
+    /*
+     * static length
+     */
+    size = TBmakeNum( GetNum( upper) - GetNum( lower));
 
-        DBUG_ASSERT ((NUM_VAL (size) >= 0), "negative size found");
-    } else {
-        /*
-         * we have to compute the length of the range at runtime
-         */
-        node *savis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+    DBUG_ASSERT( (NUM_VAL( size) >= 0), "negative size found");
+  } else {
+    /*
+     * we have to compute the length of the range at runtime
+     */
+    node *savis = MakeIntegerVar( &INFO_VARDECS( arg_info));
 
-        savis = AssignValue (savis,
-                             TCmakePrf2 (F_sub_SxS, DUPdoDupNode (upper),
-                                         DUPdoDupNode (lower)),
-                             assigns);
+    savis = AssignValue( savis,
+                         TCmakePrf2( F_sub_SxS,
+                                     DUPdoDupNode( upper),
+                                     DUPdoDupNode( lower)),
+                         assigns);
 
-        size = TBmakeId (savis);
-    }
+    size = TBmakeId( savis);
+  }
 
-    DBUG_RETURN (size);
+  DBUG_RETURN( size);
 }
+#endif
 
 /** <!-- ****************************************************************** -->
  * @fn node *ComputeMax( node *nodea, node *nodeb, node **assigns,
@@ -581,6 +586,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *shape = NULL;
+    node *sexpr;
     node *array;
     int sizeoffset;
 
@@ -589,25 +595,34 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     if (PM (PMarray (NULL, &array, GENARRAY_SHAPE (arg_node)))) {
         sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
 
-        shape = DUPdoDupTree (
-          TCgetNthExprs (INFO_CURRENT_DIM (arg_info) + sizeoffset, ARRAY_AELEMS (array)));
-
+        /*
+         * If the surrounding WL has a chunksize, this determines
+         * the shape of the inner genarray. Otherwise, the
+         * shape is the shape only taking the current dimension
+         * into account.
+         */
         if (INFO_CURRENT_SIZE (arg_info) != NULL) {
-            shape = TBmakeExprs (DUPdoDupTree (INFO_CURRENT_SIZE (arg_info)), shape);
+            shape = TBmakeExprs (DUPdoDupNode (INFO_CURRENT_SIZE (arg_info)), NULL);
+        } else {
+            shape
+              = TBmakeExprs (DUPdoDupNode (TCgetNthExprsExpr (INFO_CURRENT_DIM (arg_info),
+                                                              ARRAY_AELEMS (array))),
+                             NULL);
         }
-
         shape = TCmakeIntVector (shape);
+
+        /*
+         * the shapeexpression is everything from the current dimension
+         * onwards.
+         */
+        sexpr = TCmakeIntVector (DUPdoDupTree (
+          TCgetNthExprs (INFO_CURRENT_DIM (arg_info) + 1, ARRAY_AELEMS (array))));
     }
 
     DBUG_ASSERT ((shape != NULL), "no shape info for genarray constructed");
 
-    /*
-     * we drop the default value and instead construct a shape
-     * expression for the with3 if the with2 genarray has one.
-     *
-     * TODO: actually construct one
-     */
-    new_node = TBmakeGenarray (shape, NULL);
+    new_node = TBmakeGenarray (shape, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+    GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
 
     GENARRAY_NEXT (new_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
@@ -790,6 +805,7 @@ ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
                                          DUPdoDupNode (EXPRS_EXPR (EXPRS_NEXT (aelems))),
                                          DUPdoDupTree (EXPRS_EXPR (exprs))),
                              &INFO_PREASSIGNS (arg_info));
+            len = TBmakeId (lavis);
         }
         exprs = TBmakeExprs (len, exprs);
     } else {
@@ -813,22 +829,42 @@ ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
 static node *
 ATravCDLgenarray (node *arg_node, info *arg_info)
 {
-    node *set, *inner, *sarray, *exprs;
+    node *set, *inner, *sarray, *exprs, *lhs;
+    shape *shape;
+    int outerdims;
     bool match;
 
     DBUG_ENTER ("ATravCDLgenarray");
 
+    lhs = INFO_WITH2_LHS (arg_info);
+    INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
     set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-
-    /*
-     * TODO: a shape expression would really help here. For now, lets assume
-     *       a length of one
-     */
-
-    inner = TBmakeNum (1);
+    INFO_WITH2_LHS (arg_info) = lhs;
 
     match = PM (PMarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
     DBUG_ASSERT (match, "shape not defined as vector");
+
+    /*
+     * We need to figure out the size of the inner elements, either by
+     *
+     * a) computing the size from the result type and the length of
+     *    the shape vector or
+     * b) by computing size( default)
+     */
+    if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (lhs)))) {
+        outerdims = TCcountExprs (ARRAY_AELEMS (sarray));
+        shape = SHdropFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
+        inner = TBmakeNum (SHgetUnrLen (shape));
+        shape = SHfreeShape (shape);
+    } else {
+        DBUG_ASSERT ((GENARRAY_DEFAULT (arg_node) != NULL), "default element needed!");
+
+        inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                             TCmakePrf1 (F_size_A,
+                                         DUPdoDupNode (GENARRAY_DEFAULT (arg_node))),
+                             &INFO_PREASSIGNS (arg_info));
+        inner = TBmakeId (inner);
+    }
 
     exprs = ComputeOneLengthVector (ARRAY_AELEMS (sarray), inner, arg_info);
 
@@ -846,6 +882,10 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
  *        code to compute the lengths at runtime is generated. The result
  *        is a N_set chain with one N_set node per operator. Each N_set then
  *        holds an N_ids chain of lengths per dimension.
+ *
+ *        Note that when advancing along the chain of withops, the chain
+ *        of left-hand-sides in INFO_WITH2_LHS needs to be advanced, as
+ *        well.
  *
  * @param withops  chain of withops to compute lengths for
  * @param arg_info info structure used to insert code
@@ -867,85 +907,6 @@ ComputeLengths (node *withops, info *arg_info)
     TRAVpop ();
 
     DBUG_RETURN (result);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *ATravASEgenarray( node* arg_node, info *arg_info)
- *
- * @brief For AKD genarray operations, this function adds a SHAPEEXPR
- *        attribute.
- *
- * @param arg_node N_genarray node
- * @param arg_info info structure
- *
- * @return amended N_genarray node
- ******************************************************************************/
-static node *
-ATravASEgenarray (node *arg_node, info *arg_info)
-{
-    node *def;
-    int dim;
-    node *sexprs = NULL;
-    node *savis;
-
-    DBUG_ENTER ("ATravASEgenarray");
-
-    /*
-     * only if a default exists and its shape is not statically known,
-     * we produce a corresponding shape expression
-     */
-    def = GENARRAY_DEFAULT (arg_node);
-
-    if (FALSE && (def != NULL) && (!TUshapeKnown (AVIS_TYPE (ID_AVIS (def))))) {
-        DBUG_ASSERT (TUdimKnown (AVIS_TYPE (ID_AVIS (def))),
-                     "non-AKD default value in with2 not implemented.");
-
-        dim = TYgetDim (AVIS_TYPE (ID_AVIS (def)));
-
-        while (dim != 0) {
-            savis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                                 TCmakePrf2 (F_idx_shape_sel, TBmakeNum (dim - 1),
-                                             DUPdoDupNode (def)),
-                                 &INFO_PREASSIGNS (arg_info));
-
-            sexprs = TBmakeExprs (TBmakeId (savis), sexprs);
-
-            dim--;
-        }
-
-        GENARRAY_SHAPEEXPR (arg_node) = TCmakeIntVector (sexprs);
-    }
-
-    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *AmendShapeExpressions( node *withops, info *arg_info)
- *
- * @brief Fills the GENARRAY_SHAPEXPR attribute of N_genarray nodes to be
- *        used later for N_genarray sons of N_with nodes. The corresponding
- *        shape computation is added to the pre-assignment chain in the
- *        arg_info node.
- *
- * @param withops   chain of with operators
- * @param arg_info  info node
- *
- * @return chain of operators with GENARRAY_SHAPEEXPR filled in
- ******************************************************************************/
-static node *
-AmendShapeExpressions (node *withops, info *arg_info)
-{
-    anontrav_t shapeexpr_trav[2] = {{N_genarray, &ATravASEgenarray}, {0, NULL}};
-
-    DBUG_ENTER ("AmendShapeExpressions");
-
-    TRAVpushAnonymous (shapeexpr_trav, &TRAVsons);
-    withops = TRAVopt (withops, arg_info);
-    TRAVpop ();
-
-    DBUG_RETURN (withops);
 }
 
 /** <!-- ****************************************************************** -->
@@ -1215,7 +1176,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     node *body, *ranges, *ops, *lhs, *with3;
     node *assigns = NULL;
     node *old_size, *old_preassigns;
-    node *old_offsets;
+    node *old_offsets, *old_with3_assign;
     node *iv_avis, *old_iv_avis;
     node *iv_assigns = NULL;
 
@@ -1242,7 +1203,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
                      &iv_assigns);
 
     /*
-     * compute body: setup new state and traverse one level below
+     * compute body and withops: setup new state and traverse one level below
      */
     old_iv_avis = IDS_AVIS (INFO_INDICES (arg_info));
     IDS_AVIS (INFO_INDICES (arg_info)) = iv_avis;
@@ -1251,27 +1212,25 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     old_preassigns = INFO_PREASSIGNS (arg_info);
     INFO_PREASSIGNS (arg_info) = NULL;
 
+    /*
+     * create the assign node empty to set SSA_ASSIGN properly
+     */
+    old_with3_assign = INFO_WITH3_ASSIGN (arg_info);
+    INFO_WITH3_ASSIGN (arg_info) = TBmakeAssign (NULL, NULL);
+
     if (newdim) {
         arg_info = PushDim (arg_info);
     }
     ranges = TRAVdo (contents, arg_info);
+    ops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
+    lhs = ComputeNewLhs (INFO_WITH2_WITHOPS (arg_info), arg_info);
     if (newdim) {
         arg_info = PopDim (arg_info);
     }
 
-    DBUG_ASSERT ((INFO_WITH3_ASSIGN (arg_info) == NULL), "left-over with3 assign");
-
     /*
      * produce with3
      */
-    /*
-     * create the assign node empty to set SSA_ASSIGN properly
-     */
-    INFO_WITH3_ASSIGN (arg_info) = TBmakeAssign (NULL, NULL);
-
-    ops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
-    lhs = ComputeNewLhs (INFO_WITH2_WITHOPS (arg_info), arg_info);
-
     with3 = TBmakeWith3 (ranges, ops);
 
     ASSIGN_INSTR (INFO_WITH3_ASSIGN (arg_info)) = TBmakeLet (lhs, with3);
@@ -1297,6 +1256,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     INFO_CURRENT_SIZE (arg_info) = old_size;
     INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
     INFO_OFFSETS (arg_info) = old_offsets;
+    INFO_WITH3_ASSIGN (arg_info) = old_with3_assign;
 
     DBUG_RETURN (body);
 }
@@ -1586,80 +1546,80 @@ WLSDblock (node *arg_node, info *arg_info)
 node *
 WLSDwith2 (node *arg_node, info *arg_info)
 {
-    node *ranges, *withops, *with3;
+    node *ranges, *withops;
     node *iv_avis;
 
     DBUG_ENTER ("WLSDwith2");
 
-    /*
-     * First of all, we transform the code blocks. As we migth potentially
-     * copy them into multiple with3 bodies later on, transforming them
-     * first reduces complexity. Furthermore, this ensures that we never
-     * nest transformations.
-     */
-    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    if (WITH2_HASNAIVEORDERING (arg_node)) {
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "Cannot transform with-loop with naive ordering");
+    } else {
+        /*
+         * First of all, we transform the code blocks. As we migth potentially
+         * copy them into multiple with3 bodies later on, transforming them
+         * first reduces complexity. Furthermore, this ensures that we never
+         * nest transformations.
+         */
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
-    /*
-     * we keep the withops as a template for later use in the new with3.
-     */
-    INFO_WITH2_WITHOPS (arg_info) = WITH2_WITHOP (arg_node);
+        /*
+         * we keep the withops as a template for later use in the new with3.
+         */
+        INFO_WITH2_WITHOPS (arg_info) = WITH2_WITHOP (arg_node);
 
-    /*
-     * We need to grab the indexvector, indexscalars and withloop offset
-     * from the withid.
-     */
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+        /*
+         * We need to grab the indexvector, indexscalars and withloop offset
+         * from the withid.
+         */
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
-    /*
-     * preset the indices and offset with 0 and compute the length of the
-     * dimensions of the results. Furthermore, for non-AKS genarrays, we
-     * have to amend the GENARRAY_SHAPEEXPR of the orginial genarray to
-     * later derive the SHAPEEXPR of new genarray withops.
-     */
-    iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-    iv_avis = AssignValue (iv_avis, TBmakeNum (0), &INFO_PREASSIGNS (arg_info));
-    INFO_INDICES (arg_info) = TBmakeIds (iv_avis, NULL);
+        /*
+         * preset the indices and offset with 0 and compute the length of the
+         * dimensions of the results.
+         */
+        iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+        iv_avis = AssignValue (iv_avis, TBmakeNum (0), &INFO_PREASSIGNS (arg_info));
+        INFO_INDICES (arg_info) = TBmakeIds (iv_avis, NULL);
 
-    INFO_WITH2_LENGTHS (arg_info)
-      = ComputeLengths (INFO_WITH2_WITHOPS (arg_info), arg_info);
+        INFO_WITH2_LENGTHS (arg_info)
+          = ComputeLengths (INFO_WITH2_WITHOPS (arg_info), arg_info);
 
-    INFO_OFFSETS (arg_info) = InitOffsets (INFO_WITH2_LENGTHS (arg_info), arg_info);
+        INFO_OFFSETS (arg_info) = InitOffsets (INFO_WITH2_LENGTHS (arg_info), arg_info);
 
-    INFO_WITH2_WITHOPS (arg_info)
-      = AmendShapeExpressions (INFO_WITH2_WITHOPS (arg_info), arg_info);
+        /*
+         * Finally, go off and transform :)
+         *
+         * Note that traversing the segments will return the ranges for the
+         * outermost level of the new with3 stucture. Traversing the withops
+         * creates new withops for the current dimension (should be 0).
+         */
+        ranges = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+        withops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
 
-    /*
-     * Finally, go off and transform :)
-     *
-     * Note that traversing the segments will return the ranges for the
-     * outermost level of the new with3 stucture. Traversing the withops
-     * creates new withops for the current dimension (should be 0).
-     */
-    ranges = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    withops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
+        /*
+         * Build the new with-loop 3
+         */
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = TBmakeWith3 (ranges, withops);
 
-    /*
-     * Build the new with-loop 3
-     */
-    with3 = TBmakeWith3 (ranges, withops);
+        /*
+         * reset the info structure, mainly to ease finding bugs and to prevent
+         * memory leaks.
+         */
+        INFO_INDICES (arg_info) = FREEdoFreeTree (INFO_INDICES (arg_info));
+        INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
+        INFO_WITH2_LENGTHS (arg_info) = FREEdoFreeTree (INFO_WITH2_LENGTHS (arg_info));
+        INFO_WITH2_WITHOPS (arg_info) = NULL;
+        INFO_WITH2_IVECT (arg_info) = NULL;
+        INFO_WITH2_ISCLS (arg_info) = NULL;
+        INFO_WITH2_OFFSETS (arg_info) = NULL;
 
-    arg_node = FREEdoFreeNode (arg_node);
+        DBUG_ASSERT ((INFO_CURRENT_DIM (arg_info) == 0),
+                     "dimension counter out of sync.");
+    }
 
-    /*
-     * reset the info structure, mainly to ease finding bugs and to prevent
-     * memory leaks.
-     */
-    INFO_INDICES (arg_info) = FREEdoFreeTree (INFO_INDICES (arg_info));
-    INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
-    INFO_WITH2_LENGTHS (arg_info) = FREEdoFreeTree (INFO_WITH2_LENGTHS (arg_info));
-    INFO_WITH2_WITHOPS (arg_info) = NULL;
-    INFO_WITH2_IVECT (arg_info) = NULL;
-    INFO_WITH2_ISCLS (arg_info) = NULL;
-    INFO_WITH2_OFFSETS (arg_info) = NULL;
-
-    DBUG_ASSERT ((INFO_CURRENT_DIM (arg_info) == 0), "dimension counter out of sync.");
-
-    DBUG_RETURN (with3);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
