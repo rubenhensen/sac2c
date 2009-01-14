@@ -254,6 +254,10 @@ LW3range (node *arg_node, info *arg_info)
     RANGE_RESULTS (arg_node) = CreateThreadFunction (RANGE_BODY (arg_node), arg_info);
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 
+    if (RANGE_NEXT (arg_node) != NULL) {
+        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 

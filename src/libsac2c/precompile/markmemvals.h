@@ -31,6 +31,7 @@ extern node *MMVprf (node *arg_node, info *arg_info);
 extern node *MMVvardec (node *arg_node, info *arg_info);
 extern node *MMVwith (node *arg_node, info *arg_info);
 extern node *MMVwith2 (node *arg_node, info *arg_info);
+extern node *MMVwith3 (node *arg_node, info *arg_info);
 extern node *MMVwlseg (node *arg_node, info *arg_info);
 extern node *MMVwlsegvar (node *arg_node, info *arg_info);
 

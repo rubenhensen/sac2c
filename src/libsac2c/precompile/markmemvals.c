@@ -971,6 +971,52 @@ MMVwith2 (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVwith3
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVwith3 (node *arg_node, info *arg_info)
+{
+    node *withop;
+    node *lhs;
+    node *prop_in;
+
+    DBUG_ENTER ("MMVwith3");
+
+    /*
+     * stack lhs and withop of surrounding WL
+     */
+    lhs = INFO_LHS_WL (arg_info);
+    withop = INFO_WITHOP (arg_info);
+    prop_in = INFO_PROP_IN (arg_info);
+
+    INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
+    INFO_WITHOP (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    if (WITH3_OPERATIONS (arg_node) != NULL) {
+        WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    }
+
+    if (WITH3_RANGES (arg_node) != NULL) {
+        WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    }
+
+    INFO_WITHOP (arg_info) = withop;
+    INFO_LHS_WL (arg_info) = lhs;
+    INFO_PROP_IN (arg_info) = prop_in;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVwlseg
  *
  * @brief
