@@ -4,7 +4,7 @@
  *
  * file: lw3.c
  *
- * prefix: lw3
+ * prefix: LW3
  *
  * Description:
  *
@@ -21,7 +21,7 @@
  *
  *****************************************************************************/
 
-#include "lw3.h"
+#include "lift_with3_bodies.h"
 #include "dbug.h"
 #include "memory.h"
 #include "LookUpTable.h"

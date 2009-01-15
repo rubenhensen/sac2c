@@ -108,7 +108,7 @@
           <node name="With" />
         </travuser>
       </traversal>
-      <traversal id="LW3" name="Lift with3s into functions" default="sons" include="lw3.h" >
+      <traversal id="LW3" name="Lift with3s into functions" default="sons" include="lift_with3_bodies.h" >
         <travuser>
           <node name="Module" />
           <node name="With3" />
