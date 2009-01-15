@@ -98,7 +98,7 @@ libsac2c_flatten     := flatten lac2fun fun2lac insert_vardec \
                         handle_mops UndoSSATransform SSATransform \
                         WLPartitionGeneration ExplicitAccumulate \
                         wlanalysis lacinlining wldefaultpartition \
-                        while2do handle_condexpr unflatten lw3
+                        while2do handle_condexpr unflatten
 
 libsac2c_constants   := shape constants_basic constants_struc_ops \
                         constants_ari_ops cv2cv cv2scalar cv2str \
@@ -184,7 +184,7 @@ libsac2c_memory      := rcopt filterrc alloc referencecounting \
 libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign \
                         remove_external_code mark_noop_grids \
-                        resolve_code_sharing
+                        resolve_code_sharing lw3
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
