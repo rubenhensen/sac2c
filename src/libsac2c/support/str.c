@@ -942,7 +942,7 @@ STRreplaceSpecialCharacters (const char *name)
  *
  * @brief Converts its argument into a string that can be safely used when
  *        printing C code. It does so by replacing all occurences of '"'
- *        by '\"'.
+ *        by '\"' and of '\' by '\\'.
  *
  * @param string a string.
  *
@@ -967,11 +967,17 @@ STRstring2SafeCEncoding (const char *string)
         tmp = result;
 
         for (i = 0; i < len; i++) {
-            if (string[i] == '"') {
+            switch (string[i]) {
+            case '\"':
                 tmp += sprintf (tmp, "\\\"");
-            } else {
+                break;
+            case '\\':
+                tmp += sprintf (tmp, "\\\\");
+                break;
+            default:
                 *tmp = string[i];
                 tmp++;
+                break;
             }
         }
 
@@ -1063,6 +1069,10 @@ STRstring2Array (const char *str)
                 break;
             case '"':
                 new_exprs = TBmakeExprs (TBmakeChar ('"'), new_exprs);
+                i -= 1;
+                break;
+            case '\\':
+                new_exprs = TBmakeExprs (TBmakeChar ('\\'), new_exprs);
                 i -= 1;
                 break;
             default:
