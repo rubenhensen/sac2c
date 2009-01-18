@@ -74,7 +74,7 @@ RDFMSwith2 (node *arg_node, info *arg_info)
  *
  * @brief Removes the data flow masks from this node.
  *
- * @param arg_node wit32 node
+ * @param arg_node with3 node
  * @param arg_info NULL
  *
  * @return with3 without DFMs
@@ -158,6 +158,38 @@ RDFMSdo (node *arg_node, info *arg_info)
 
     if (DO_LOCAL_MASK (arg_node) != NULL) {
         DO_LOCAL_MASK (arg_node) = DFMremoveMask (DO_LOCAL_MASK (arg_node));
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMSblock( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node block node
+ * @param arg_info NULL
+ *
+ * @return do without DFMs
+ ******************************************************************************/
+node *
+RDFMSblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RDFMSblock");
+
+    if (BLOCK_IN_MASK (arg_node) != NULL) {
+        BLOCK_IN_MASK (arg_node) = DFMremoveMask (BLOCK_IN_MASK (arg_node));
+    }
+
+    if (BLOCK_OUT_MASK (arg_node) != NULL) {
+        BLOCK_OUT_MASK (arg_node) = DFMremoveMask (BLOCK_OUT_MASK (arg_node));
+    }
+
+    if (BLOCK_LOCAL_MASK (arg_node) != NULL) {
+        BLOCK_LOCAL_MASK (arg_node) = DFMremoveMask (BLOCK_LOCAL_MASK (arg_node));
     }
 
     arg_node = TRAVcont (arg_node, arg_info);

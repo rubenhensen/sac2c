@@ -13,7 +13,8 @@
  *   The data flow masks are bitmasks that are attached to
  *   - conditionals   (N_cond)
  *   - loops          (N-do)
- *   - and with-loops (N_with / N_with2)
+ *   - and with-loops (N_with / N_with2 / N_with3)
+ *   - blocks         (N-block)
  *   They signal those variables that are relatively free
  *   (IN-mask), local to the compound node (LOCAL-mask), or exported from
  *   the compound node (OUT-mask).
@@ -23,7 +24,8 @@
  *   - INFDFMSdoInferDfms :
  *       - may be called on fundefs and modules only!
  *       - It ensures the existance of a mask base at the fundef(s)
- *         AND it allocates 3 masks at each N_cond, N_do, N_with or N_with2 node
+ *         AND it allocates 3 masks at each N_cond, N_do, N_with, N_with2
+ *         and N_with3 node
  *
  *   - INFDFMSdoInferInDfmAssignChain:
  *       - may be called on any N_assign node!
@@ -33,7 +35,7 @@
  *         at any node.
  *       - It returns (a copy of ) the final IN_MASK.
  *
- * usage of arg_info (INFO_INFDFMS_...):
+ * usage of arg_info (INFO_...):
  *
  *   ...FUNDEF   pointer to the current fundef
  *
@@ -47,9 +49,10 @@
  *   (Note: Each var occuring in a block is either IN-var or (exclusive!)
  *          LOCAL-var)
  *
- *   ...ISFIX    flag: fixpoint reached?
- *   ...FIRST    flag: first traversal?
- *   ...HIDELOC  bit field: steers hiding of local vars
+ *   ...ISFIX          flag: fixpoint reached?
+ *   ...FIRST          flag: first traversal?
+ *   ...HIDELOC        bit field: steers hiding of local vars
+ *   ...ATTACHATTRIBS  flag: attach dfms to cond/do/withX nodes
  *
  *****************************************************************************/
 
@@ -81,19 +84,21 @@ struct INFO {
     bool isfix;
     bool first;
     int hideloc;
+    bool attachattribs;
 };
 
 /*
  * INFO macros
  */
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_IN(n) (n->in)
-#define INFO_OUT(n) (n->out)
-#define INFO_LOCAL(n) (n->local)
-#define INFO_NEEDED(n) (n->needed)
-#define INFO_ISFIX(n) (n->isfix)
-#define INFO_FIRST(n) (n->first)
-#define INFO_HIDELOC(n) (n->hideloc)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_IN(n) ((n)->in)
+#define INFO_OUT(n) ((n)->out)
+#define INFO_LOCAL(n) ((n)->local)
+#define INFO_NEEDED(n) ((n)->needed)
+#define INFO_ISFIX(n) ((n)->isfix)
+#define INFO_FIRST(n) ((n)->first)
+#define INFO_HIDELOC(n) ((n)->hideloc)
+#define INFO_ATTACHATTRIBS(n) ((n)->attachattribs)
 
 /*
  * INFO functions
@@ -115,6 +120,7 @@ MakeInfo ()
     INFO_ISFIX (result) = FALSE;
     INFO_FIRST (result) = FALSE;
     INFO_HIDELOC (result) = 0;
+    INFO_ATTACHATTRIBS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -129,10 +135,27 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/**
- * static variable for indicating whether attribs need to be generated
+/*
+ * macros for testing HIDE_LOCALS for a given node
  */
-static bool attach_attribs;
+#define TEST_BIT(bf, bit) ((bf & bit) != 0)
+
+#define TEST_HIDE_LOCALS(bf, arg_node)                                                   \
+    ((NODE_TYPE (arg_node) == N_do)                                                      \
+       ? TEST_BIT (bf, HIDE_LOCALS_DO)                                                   \
+       : ((NODE_TYPE (arg_node) == N_while)                                              \
+            ? TEST_BIT (bf, HIDE_LOCALS_WHILE)                                           \
+            : ((NODE_TYPE (arg_node) == N_cond)                                          \
+                 ? TEST_BIT (bf, HIDE_LOCALS_COND)                                       \
+                 : ((NODE_TYPE (arg_node) == N_with)                                     \
+                      ? TEST_BIT (bf, HIDE_LOCALS_WITH)                                  \
+                      : ((NODE_TYPE (arg_node) == N_with2)                               \
+                           ? TEST_BIT (bf, HIDE_LOCALS_WITH2)                            \
+                           : ((NODE_TYPE (arg_node) == N_with3)                          \
+                                ? TEST_BIT (bf, HIDE_LOCALS_WITH3)                       \
+                                : ((NODE_TYPE (arg_node) == N_block)                     \
+                                     ? TEST_BIT (bf, HIDE_LOCALS_BLOCK)                  \
+                                     : FALSE)))))))
 
 /*
  * The current value of the DFmask 'old' is freed and subsequently the
@@ -632,45 +655,18 @@ EnsureDFMbase (node *fundef)
  *
  *   That means, we have to clear the needed-mask!
  *
- *   BUT, in case of global objects this behaviour is NOT wanted.
- *   Therefore, during the flattening phase all non-global vars defined
- *   within a with-loop are renamed:
- *
- *     val = 1;
- *     with (...) {
- *       _val = val;
- *       _val = 2;
- *     }
- *     genarray( ...)
- *     ... val ...         <---  here, 'val' still contains the value 1
- *
- *   Because of that, we can leave all global objects in the needed-mask
- *   in order to detect OUT-global-vars :-)
- *
  ******************************************************************************/
 
 static info *
 AdjustMasksWith_Pre (info *arg_info, node *arg_node)
 {
-    node *avis;
-
     DBUG_ENTER ("AdjustMasksWith_Pre");
 
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_with) || (NODE_TYPE (arg_node) == N_with2)
                   || (NODE_TYPE (arg_node) == N_with3)),
                  "wrong node type found!");
 
-    avis = DFMgetMaskEntryAvisSet (INFO_NEEDED (arg_info));
-    while (avis != NULL) {
-        /*
-         * no unique object -> clear entry in mask
-         */
-        if (!TUisUniqueUserType (AVIS_TYPE (avis))) {
-            DFMsetMaskEntryClear (INFO_NEEDED (arg_info), NULL, avis);
-        }
-
-        avis = DFMgetMaskEntryAvisSet (NULL);
-    }
+    DFMsetMaskClear (INFO_NEEDED (arg_info));
 
     DBUG_RETURN (arg_info);
 }
@@ -844,15 +840,59 @@ AdjustMasksDo_Post (info *arg_info)
 }
 
 /******************************************************************************
+ *
+ * function:
+ *   info *AdjustMasksBlock_Pre( info *arg_info, node *arg_node)
+ *
+ * description:
+ *   Adjusts the masks before traversal of a block:
+ *
+ *   All masks are left as is.
+ *
+ ******************************************************************************/
+
+static info *
+AdjustMasksBlock_Pre (info *arg_info, node *arg_node)
+{
+    DBUG_ENTER ("AdjustMasksBlock_Pre");
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   info *AdjustMasksBlock_Post( info *arg_info)
+ *
+ * description:
+ *   Adjusts the masks after traversal of a block:
+ *
+ *   All masks are left as is.
+ *
+ *   Scoping is handled by the surrounding construct.
+ *
+ ******************************************************************************/
+
+static info *
+AdjustMasksBlock_Post (info *arg_info)
+{
+    DBUG_ENTER ("AdjustMasksBlock_Post");
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
  ******************************************************************************
  *
  * InferMasksXXX functions
  *
- * These functions do handle all 4 possible compound operations:
+ * These functions do handle all 6 possible compound operations:
  * - N_cond
  * - N_do
  * - N_with
  * - N_with2
+ * - N_with3
+ * - N_block
  * All these functions do compute 4 new (freshly allocated) masks
  * in arg_info which contain the IN, OUT, LOCAL, and NEEDED masks
  * for the compound node given.
@@ -974,7 +1014,7 @@ InferMasksWith2 (node *arg_node, info *arg_info)
  *
  * Description:
  *   create 3 fresh masks in arg_info that contain the results of traversing
- *   this N_with2
+ *   this N_with3
  *
  ******************************************************************************/
 static node *
@@ -1000,8 +1040,8 @@ InferMasksWith3 (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>  %s entered", NODE_TEXT (arg_node));
                   DbugPrintMasks (arg_info););
 
-    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
 
     DBUG_EXECUTE ("INFDFMS",
                   fprintf (stderr, "<<<  %s finished\n", NODE_TEXT (arg_node)););
@@ -1155,6 +1195,52 @@ InferMasksDo (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *InferMasksBlock( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   create 3 fresh masks in arg_info that contain the results of traversing
+ *   this N_block
+ *
+ ******************************************************************************/
+static node *
+InferMasksBlock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("InferMasksBlock");
+
+    /*
+     * setup masks
+     */
+    arg_info = GenerateMasks (arg_info, INFO_IN (arg_info), INFO_OUT (arg_info),
+                              INFO_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksBlock_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>  %s entered", NODE_TEXT (arg_node));
+                  DbugPrintMasks (arg_info););
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, "<<<  %s finished\n", NODE_TEXT (arg_node)););
+
+    /*
+     * adjust masks (part 2)
+     */
+    arg_info = AdjustMasksBlock_Post (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *InferMasks( dfmask_t* *in, dfmask_t* *out, dfmask_t* *local,
  *                     node *arg_node, info *arg_info,
@@ -1175,7 +1261,7 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
 
     DBUG_ENTER ("InferMasks");
 
-    if (attach_attribs && INFO_FIRST (arg_info)) {
+    if (INFO_ATTACHATTRIBS (arg_info) && INFO_FIRST (arg_info)) {
         /*
          * first traversal
          *  -> init the given in/out/local-masks!!!!
@@ -1214,7 +1300,7 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
     new_out = INFO_OUT (arg_info);
     new_local = INFO_LOCAL (arg_info);
 
-    if (attach_attribs) {
+    if (INFO_ATTACHATTRIBS (arg_info)) {
         /*
          * store the infered in-, out-, local-masks and
          * detect whether the fixpoint-property is hold or not
@@ -1271,12 +1357,12 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
      *     ...out-vars... dummy-fun( ...in-vars... )
      * Therefore we must adjust the current masks accordingly.
      *
-     * Note, that the local-mask must has been updated already!!!!
+     * Note, that the local-mask has been updated already!!!!
      */
     arg_info = DefinedMask (arg_info, new_out);
     arg_info = UsedMask (arg_info, new_in);
 
-    if (!attach_attribs) {
+    if (!INFO_ATTACHATTRIBS (arg_info)) {
         /**
          * the inferred masks are no longer needed as they have not been
          * attached to the arg_node. Hence, we have to remove them.
@@ -1595,59 +1681,17 @@ INFDFMSids (node *arg_node, info *arg_info)
 node *
 INFDFMSwith2 (node *arg_node, info *arg_info)
 {
-
-    dfmask_t *nwith_in, *nwith_out, *nwith_local;
     dfmask_t *out;
 
     DBUG_ENTER ("INFDFMSwith2");
 
-    nwith_in = WITH_OR_WITH2_IN_MASK (arg_node);
-    nwith_out = WITH_OR_WITH2_OUT_MASK (arg_node);
-    nwith_local = WITH_OR_WITH2_LOCAL_MASK (arg_node);
+    arg_node = InferMasks (&WITH2_IN_MASK (arg_node), &WITH2_OUT_MASK (arg_node),
+                           &WITH2_LOCAL_MASK (arg_node), arg_node, arg_info,
+                           InferMasksWith2, FALSE);
 
-    arg_node
-      = InferMasks (&nwith_in, &nwith_out, &nwith_local, arg_node, arg_info,
-                    (NODE_TYPE (arg_node) == N_with) ? InferMasksWith : InferMasksWith2,
-                    FALSE);
-
-    L_WITH_OR_WITH2_IN_MASK (arg_node, nwith_in);
-    L_WITH_OR_WITH2_OUT_MASK (arg_node, nwith_out);
-    L_WITH_OR_WITH2_LOCAL_MASK (arg_node, nwith_local);
-
-    /*
-     * A with-loop indeed *can* have out-vars:
-     * Some global objects might be modified within the with-loop. This is legal
-     * in SAC although it can cause non-deterministic results!
-     * Therfore, we print a warning message here.
-     */
-    out = WITH_OR_WITH2_OUT_MASK (arg_node);
-    if ((out != NULL) && (DFMgetMaskEntryAvisSet (out) != NULL)) {
-
-        DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *INFDFMSwithx( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-INFDFMSwith3 (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("INFDFMSwith3");
-
-    arg_node = InferMasks (&(WITH3_IN_MASK (arg_node)), &(WITH3_OUT_MASK (arg_node)),
-                           &(WITH3_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           InferMasksWith3, FALSE);
+    out = WITH2_OUT_MASK (arg_node);
+    DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),
+                 "with2 loop with out-vars found!");
 
     DBUG_RETURN (arg_node);
 }
@@ -1655,35 +1699,35 @@ INFDFMSwith3 (node *arg_node, info *arg_info)
 node *
 INFDFMSwith (node *arg_node, info *arg_info)
 {
-    dfmask_t *nwith_in, *nwith_out, *nwith_local;
     dfmask_t *out;
 
     DBUG_ENTER ("INFDFMSwith");
 
-    nwith_in = WITH_OR_WITH2_IN_MASK (arg_node);
-    nwith_out = WITH_OR_WITH2_OUT_MASK (arg_node);
-    nwith_local = WITH_OR_WITH2_LOCAL_MASK (arg_node);
+    arg_node = InferMasks (&WITH_IN_MASK (arg_node), &WITH_OUT_MASK (arg_node),
+                           &WITH_LOCAL_MASK (arg_node), arg_node, arg_info,
+                           InferMasksWith, FALSE);
 
-    arg_node
-      = InferMasks (&nwith_in, &nwith_out, &nwith_local, arg_node, arg_info,
-                    (NODE_TYPE (arg_node) == N_with) ? InferMasksWith : InferMasksWith2,
-                    FALSE);
+    out = WITH_OUT_MASK (arg_node);
+    DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),
+                 "with loop with out-vars found!");
 
-    L_WITH_OR_WITH2_IN_MASK (arg_node, nwith_in);
-    L_WITH_OR_WITH2_OUT_MASK (arg_node, nwith_out);
-    L_WITH_OR_WITH2_LOCAL_MASK (arg_node, nwith_local);
+    DBUG_RETURN (arg_node);
+}
 
-    /*
-     * A with-loop indeed *can* have out-vars:
-     * Some global objects might be modified within the with-loop. This is legal
-     * in SAC although it can cause non-deterministic results!
-     * Therfore, we print a warning message here.
-     */
-    out = WITH_OR_WITH2_OUT_MASK (arg_node);
-    if ((out != NULL) && (DFMgetMaskEntryAvisSet (out) != NULL)) {
+node *
+INFDFMSwith3 (node *arg_node, info *arg_info)
+{
+    dfmask_t *out;
 
-        DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
-    }
+    DBUG_ENTER ("INFDFMSwith3");
+
+    arg_node = InferMasks (&(WITH3_IN_MASK (arg_node)), &(WITH3_OUT_MASK (arg_node)),
+                           &(WITH3_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                           InferMasksWith3, FALSE);
+
+    out = WITH3_OUT_MASK (arg_node);
+    DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),
+                 "with3 loop with out-vars found!");
 
     DBUG_RETURN (arg_node);
 }
@@ -1706,9 +1750,38 @@ INFDFMScode (node *arg_node, info *arg_info)
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *INFDFMSrange( node *arg_node, info *arg_info)
+ *
+ * @brief Ensures a proper bottom-up traversal of the results and body of the
+ *        range.
+ *
+ * @param arg_node N_range node
+ * @param arg_info info structure
+ *
+ * @return N_range node
+ ******************************************************************************/
+node *
+INFDFMSrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INFDFMSrange");
+
+    RANGE_RESULTS (arg_node) = TRAVopt (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
+
+    RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
+
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1750,8 +1823,9 @@ INFDFMSdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSdo");
 
-    DBUG_ASSERT (attach_attribs, "trying to traverse N_do node while being called via"
-                                 " INFDFMSdoInferInDfmAssignChain");
+    DBUG_ASSERT (INFO_ATTACHATTRIBS (arg_info),
+                 "trying to traverse N_do node while being called via"
+                 " INFDFMSdoInferInDfmAssignChain");
 
     arg_node
       = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
@@ -1760,85 +1834,24 @@ INFDFMSdo (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @fn node *INFDFMSblock( node *arg_node, info *arg_info)
  *
- * Function:
- *   node *INFDFMSicm( node *arg_node, info *arg_info)
+ * @brief Infers the in, out and local parameters of a block.
  *
- * Description:
- *   ICMs must be handled indiviually in order to prevent the introduction of
- *   wrong data dependencies.
+ * @param arg_node N_block node
+ * @param arg_info info structure
  *
+ * @return N_block node with updated masks
  ******************************************************************************/
-
 node *
-INFDFMSicm (node *arg_node, info *arg_info)
+INFDFMSblock (node *arg_node, info *arg_info)
 {
-#if 0
-  char *name;
-#endif
+    DBUG_ENTER ("INFDFMSblock");
 
-    DBUG_ENTER ("INFDFMSicm");
-
-    DBUG_PRINT ("INFDFMS", ("icm %s found", ICM_NAME (arg_node)));
-
-    DBUG_ASSERT (FALSE, "There should be no ICMs before code generation any more");
-
-#if 0
-  name = ICM_NAME( arg_node);
-  if (strstr( name, "USE_GENVAR_OFFSET") != NULL) {
-    /*
-     * USE_GENVAR_OFFSET( off_nt, wl_nt):
-     *   off_nt = wl_nt__destptr;
-     *
-     * def: 1st arg
-     * use: ---
-     */
-    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
-  }
-  else if (strstr( name, "VECT2OFFSET") != NULL) {
-    /*
-     * VECT2OFFSET( off_nt, ., from_nt, ., ...):
-     *   off_nt = ... from_nt ...;
-     *
-     * def: 1st arg
-     * use: 3nd arg
-     */
-    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
-    arg_info = UsedId( arg_info, ICM_ARG3( arg_node));    
-  }
-  else if (strstr( name, "IDXS2OFFSET") != NULL) {
-    /*
-     * IDXS2OFFSET( off_nt, i, idxs_nt, ., ...):
-     *   off_nt = ... idxs_nt[0] ... idxs_nt[i-1] ...;
-     *
-     * def: 1st arg
-     * use: 3nd arg (var-arg!!)
-     */
-    node *exprs;
-    int cnt;
-
-    arg_info = DefinedId( arg_info, ICM_ARG1( arg_node));
-    DBUG_ASSERT( ((NODE_TYPE( ICM_ARG2( arg_node)) == N_num) &&
-                  (NUM_VAL( ICM_ARG2( arg_node)) >= 0)),
-                 "illegal counter for var-arg of IDXS2OFFSET found!");
-    cnt = NUM_VAL( ICM_ARG2( arg_node));
-    exprs = ICM_EXPRS3( arg_node);
-    while (cnt > 0) {
-      DBUG_ASSERT( (exprs != NULL), "var-arg of IDXSOFFSET is inconsistant!");
-      arg_info = UsedId( arg_info, EXPRS_EXPR( exprs));
-      cnt--;
-      exprs = EXPRS_NEXT( exprs);
-    }
-    DBUG_ASSERT( ((exprs != NULL) &&
-                  (NODE_TYPE( EXPRS_EXPR( exprs)) == N_num)),
-                 "var-arg of IDXSOFFSET is inconsistant!");
-  }
-  else {
-    DBUG_ASSERT( (0), "unknown ICM found!");
-  }
-
-#endif
+    arg_node = InferMasks (&(BLOCK_IN_MASK (arg_node)), &(BLOCK_OUT_MASK (arg_node)),
+                           &(BLOCK_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                           InferMasksBlock, FALSE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1889,7 +1902,7 @@ INFDFMSdoInferDfms (node *syntax_tree, int hide_locals)
      * indicate that we do want to attach attribs to all N_cond, N_do,
      * N_with and N_with2 nodes.
      */
-    attach_attribs = TRUE;
+    INFO_ATTACHATTRIBS (info_node) = TRUE;
 
     TRAVpush (TR_infdfms);
     syntax_tree = TRAVdo (syntax_tree, info_node);
@@ -1935,7 +1948,7 @@ INFDFMSdoInferInDfmAssignChain (node *assign, node *fundef)
     /**
      * indicate that we do NOT want to attach attributes:
      */
-    attach_attribs = FALSE;
+    INFO_ATTACHATTRIBS (info) = FALSE;
 
     TRAVpush (TR_infdfms);
     assign = TRAVdo (assign, info);

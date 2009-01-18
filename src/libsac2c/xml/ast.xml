@@ -111,7 +111,6 @@
       <traversal id="LW3" name="Lift with3s into functions" default="sons" include="lift_with3_bodies.h" >
         <travuser>
           <node name="Module" />
-          <node name="With3" />
           <node name="Range" />
         </travuser>
       </traversal>
@@ -275,6 +274,7 @@
           <node name="Let" />
           <node name="Arg" />
           <node name="Code" />
+          <node name="Range" />
           <node name="Ap" />
           <node name="Id" />
           <node name="Ids" />
@@ -282,8 +282,11 @@
           <node name="With2" />
           <node name="With3" />
           <node name="Cond" />
-          <node name="Icm" />
+          <node name="Block" />
         </travuser>
+	<traverror>
+          <node name="Icm" />
+	</traverror>
       </traversal>
       <traversal id="RDFMS" name="Remove DataFlowMask Traversal" default="sons" include="remove_dfms.h" >
         <travuser>
@@ -293,6 +296,7 @@
           <node name="With2" />
           <node name="With3" />
           <node name="Cond" />
+          <node name="Block" />
         </travuser>
       </traversal>
       <traversal id="CMPT" name="Compare Tree Traversal" default="CMPTunknown" prefun="CMPTnodeType" include="compare_tree.h" >
@@ -1086,6 +1090,7 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Code" />
+	  <node name="Range" />
 	  <node name="Cond" />
 	  <node name="Generator" />
 	  <node name="Genarray" />
@@ -2318,7 +2323,6 @@
           <node name="Let" />
           <node name="Ret" />
           <node name="Arg" />
-          <node name="Ap" />
         </travuser>
       </traversal>
       <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">
@@ -2590,9 +2594,9 @@
             </target>
           </targets>
         </son>
-        <son name="FunThreads" default="NULL">
+        <son name="ThreadFuns" default="NULL">
           <description>
-            Contains thread functions for mutc back-end
+            Contains thread functions for mutc back-end.
           </description>
           <targets>
             <target mandatory="no">
@@ -3406,11 +3410,11 @@
         <flag name="IsNeeded">
           <description>This flag is used in multiple phases, usually to tag functions that are referenced in some sense. It has always to be reset to FALSE at the end of each phase.</description>
         </flag>
-        <flag name="IsCondfun">
+        <flag name="IsCondFun">
           <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
         </flag>
-        <flag name="IsWith3Fun">
-          <description>This is a lifited with3.  The function is only referenced once from the context the with3 was lifted from.</description>
+        <flag name="IsThreadFun">
+          <description>This is a lifited with3.  The function is only referenced once by the with3 it was lifted from.</description>
         </flag>
         <flag name="IsDoFun">
           <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
@@ -3655,6 +3659,51 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="In_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Out_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Local_Mask" inconstructor="no" >
+          <type name="DFMask">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -4007,8 +4056,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -4020,8 +4071,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -4033,8 +4086,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -4103,6 +4158,7 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -4117,6 +4173,7 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -4131,6 +4188,7 @@
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
                   <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -5648,12 +5706,6 @@
             which VARDECS are no longer needed and can thus be eliminated.
           </description>
         </flag>
-        <flag name="IsVect2OffsetIssued" default="FALSE" >
-          <description>Used by IVE to indicate that a Vect2Offset call
-	  bas been issued for this name. Remaining elements of this shape
-	  clique can use that Vect2Offset call instead of their own.
-          </description>
-        </flag>
 	<flag name="IsUniqueConsumed" default="FALSE" >
 	  <description>Used by the uniqueness checker to determine whether
 	  a unique type has been consumed earlier on.
@@ -5696,6 +5748,12 @@
             moved below the global object-lock release.
           </description>
         </flag>
+	<flag name="IsThreadIndex" default="FALSE">
+	  <description>
+	    If true, the given variable is the dedicated index variable for
+	    this thread function. Used by the mutc backend.
+	  </description>
+	</flag>
       </flags>
     </node>
 <!--
@@ -5851,12 +5909,13 @@
         <attribute name="In_Mask" inconstructor="no" >
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="ptc_l2f"/>
-                  <phase name="cwc_l2f"/>
-                  <phase name="wlt_l2f"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -5865,12 +5924,13 @@
         <attribute name="Out_Mask" inconstructor="no" >
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="ptc_l2f"/>
-                  <phase name="cwc_l2f"/>
-                  <phase name="wlt_l2f"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -5879,12 +5939,13 @@
         <attribute name="Local_Mask" inconstructor="no" >
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="ptc_l2f"/>
-                  <phase name="cwc_l2f"/>
-                  <phase name="wlt_l2f"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -6412,10 +6473,13 @@
         <attribute name="In_Mask" inconstructor="no">
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -6424,10 +6488,13 @@
         <attribute name="Out_Mask" inconstructor="no">
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -6436,10 +6503,13 @@
         <attribute name="Local_Mask" inconstructor="no">
           <type name="DFMask">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -8747,7 +8817,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="pc_lw3"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -8759,7 +8832,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="pc_lw3"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -8771,7 +8847,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="pc_lw3"/>
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+		  <phase name="pc_lw3" />
                 </phases>
               </target>
             </targets>
@@ -8868,7 +8947,7 @@
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <range from="opt_wlidx" to="mem_alloc" />
+                <range from="wlt_wlsd" to="mem_alloc" />
               </phases>
             </target>
           </targets>

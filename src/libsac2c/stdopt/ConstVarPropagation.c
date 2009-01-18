@@ -560,7 +560,7 @@ CVPfold (node *arg_node, info *arg_info)
 node *
 CVPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPNcode");
+    DBUG_ENTER ("CVPcode");
 
     /* traverse codeblock */
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
@@ -571,6 +571,34 @@ CVPcode (node *arg_node, info *arg_info)
 
     /* traverse to next node */
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CVPrange(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse body and expression for each range node
+ *
+ *
+ *****************************************************************************/
+node *
+CVPrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CVPrange");
+
+    /* traverse body of range */
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+    /* traverse expression to do variable substitution */
+    INFO_PROPMODE (arg_info) = PROP_variable;
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+
+    /* traverse to next node */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

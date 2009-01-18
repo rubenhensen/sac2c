@@ -136,7 +136,8 @@ SLSmodule (node *arg_node, info *arg_info)
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-    MODULE_FUNTHREADS (arg_node) = TRAVopt (MODULE_FUNTHREADS (arg_node), arg_info);
+    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 

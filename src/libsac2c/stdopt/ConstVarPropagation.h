@@ -21,6 +21,7 @@ extern node *CVPfundef (node *arg_node, info *arg_info);
 extern node *CVPassign (node *arg_node, info *arg_info);
 extern node *CVPlet (node *arg_node, info *arg_info);
 extern node *CVPcode (node *arg_node, info *arg_info);
+extern node *CVPrange (node *arg_node, info *arg_info);
 extern node *CVPcond (node *arg_node, info *arg_info);
 extern node *CVPgenerator (node *arg_node, info *arg_info);
 extern node *CVPgenarray (node *arg_node, info *arg_info);

@@ -920,19 +920,19 @@ PRTmodule (node *arg_node, info *arg_info)
             INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
+        if (NULL != MODULE_THREADFUNS (arg_node)) {
+            fprintf (global.outfile, "\n\n");
+            INFO_PROTOTYPE (arg_info) = TRUE;
+            /* print function declarations */
+            TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
+            INFO_PROTOTYPE (arg_info) = FALSE;
+        }
+
         if (NULL != MODULE_FUNS (arg_node)) {
             fprintf (global.outfile, "\n\n");
             INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
-            INFO_PROTOTYPE (arg_info) = FALSE;
-        }
-
-        if (NULL != MODULE_FUNTHREADS (arg_node)) {
-            fprintf (global.outfile, "\n\n");
-            INFO_PROTOTYPE (arg_info) = TRUE;
-            /* print function declarations */
-            TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
             INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
@@ -1109,6 +1109,15 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
+        if (MODULE_THREADFUNS (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  function definitions (THREADFUNS)\n"
+                                     " */\n\n");
+            /* print function definitions */
+            TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
+        }
+
         if (MODULE_FUNS (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
@@ -1116,15 +1125,6 @@ PRTmodule (node *arg_node, info *arg_info)
                                      " */\n\n");
             /* print function definitions */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
-        }
-
-        if (MODULE_FUNTHREADS (arg_node) != NULL) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  function definitions (FUNTHREADS)\n"
-                                     " */\n\n");
-            /* print function definitions */
-            TRAVdo (MODULE_FUNTHREADS (arg_node), arg_info);
         }
     }
 
@@ -1918,6 +1918,11 @@ PRTvardec (node *arg_node, info *arg_info)
     INDENT;
 
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
+        /* print mutc index specifier */
+        if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
+            fprintf (global.outfile, "index ");
+        }
+
         type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
         type_str = MEMfree (type_str);
