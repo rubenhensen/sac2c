@@ -266,7 +266,7 @@
           <node name="Funcond" />
         </travuser>
       </traversal>
-      <traversal id="INFDFMS" name="Infer DataFlowMask Traversal" default="sons" include="InferDFMs.h" >
+      <traversal id="INFDFMS" name="Infer DataFlowMask Traversal" default="sons" include="infer_dfms.h" >
         <travuser>
           <node name="Assign" />
           <node name="Do" />

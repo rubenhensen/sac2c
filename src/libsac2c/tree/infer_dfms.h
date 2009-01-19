@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#ifndef _SAC_INFERDFMS_H_
-#define _SAC_INFERDFMS_H_
+#ifndef _SAC_INFER_DFMS_H_
+#define _SAC_INFER_DFMS_H_
 
 #include "types.h"
 
@@ -46,4 +46,4 @@ extern node *INFDFMSblock (node *arg_node, info *arg_info);
 extern node *INFDFMSdoInferDfms (node *syntax_tree, int hide_locals);
 extern dfmask_t *INFDFMSdoInferInDfmAssignChain (node *assign, node *fundef);
 
-#endif /* _SAC_INFERDFMS_H_ */
+#endif /* _SAC_INFER_DFMS_H_ */

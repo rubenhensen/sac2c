@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- * file:   InferDFMs.c
+ * file:   infer_dfms.c
  *
  * prefix: INFDFMS
  *
@@ -56,7 +56,8 @@
  *
  *****************************************************************************/
 
-#include "types.h"
+#include "infer_dfms.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -68,7 +69,6 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "InferDFMs.h"
 #include "type_utils.h"
 #include "globals.h"
 

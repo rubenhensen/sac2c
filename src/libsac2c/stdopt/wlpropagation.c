@@ -35,7 +35,7 @@
 #include "wlselcount.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
-#include "InferDFMs.h"
+#include "infer_dfms.h"
 #include "SSAInferLI.h"
 
 #include "wlpropagation.h"

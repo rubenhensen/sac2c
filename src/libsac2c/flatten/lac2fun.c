@@ -35,7 +35,7 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "InferDFMs.h"
+#include "infer_dfms.h"
 #include "remove_dfms.h"
 #include "cleanup_decls.h"
 #include "namespaces.h"

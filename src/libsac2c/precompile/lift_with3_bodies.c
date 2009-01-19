@@ -35,7 +35,7 @@
 #include "cleanup_decls.h"
 #include "remove_dfms.h"
 #include "tree_compound.h"
-#include "InferDFMs.h"
+#include "infer_dfms.h"
 
 /*
  * INFO structure

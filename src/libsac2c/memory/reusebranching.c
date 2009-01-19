@@ -24,7 +24,7 @@
 #include "memory.h"
 #include "dbug.h"
 #include "print.h"
-#include "InferDFMs.h"
+#include "infer_dfms.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
