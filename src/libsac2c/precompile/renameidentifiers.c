@@ -130,6 +130,8 @@ RenameFunName (node *fundef)
 
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
         buf = SBUFprint (buf, "SACwf_");
+    } else if (FUNDEF_ISTHREADFUN (fundef)) {
+        buf = SBUFprint (buf, "SACtf_");
     } else {
         buf = SBUFprint (buf, "SACf_");
     }
@@ -234,21 +236,11 @@ RIDmodule (node *arg_node, info *arg_info)
 
     INFO_RID_MODULE (arg_info) = arg_node;
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
-
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
+    MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

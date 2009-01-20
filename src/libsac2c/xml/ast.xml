@@ -2292,6 +2292,7 @@
           <node name="Do" />
           <node name="Fold" />
           <node name="Fundef" />
+          <node name="Module" />
           <node name="Genarray" />
           <node name="Propagate" />
           <node name="Id" />
@@ -2306,6 +2307,8 @@
           <node name="With3" />
           <node name="WLseg" />
           <node name="WLsegVar" />
+          <node name="Return" />
+          <node name="Ret" />
         </travuser>
       </traversal>
       <traversal id="MOI" name="Manage object initialisers" default="sons" include="manage_object_initialisers.h" >
@@ -2319,10 +2322,11 @@
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
-          <node name="Assign" />
           <node name="Let" />
           <node name="Ret" />
           <node name="Arg" />
+          <node name="Ap" />
+          <node name="Range" />
         </travuser>
       </traversal>
       <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">
@@ -2332,6 +2336,7 @@
           <node name="Assign" />
           <node name="Prf" />
           <node name="Ap" />
+          <node name="Range" />
         </travuser>
       </traversal>
       <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">

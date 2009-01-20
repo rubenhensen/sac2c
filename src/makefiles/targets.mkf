@@ -73,7 +73,7 @@ libsac2c_global      := main usage memory globals \
 
 libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         LookUpTable DataFlowMask DataFlowMaskUtils check_mem \
-                        InferDFMs cleanup_decls change_signature compare_tree \
+                        infer_dfms cleanup_decls change_signature compare_tree \
                         wl_bounds node_basic free_node \
                         free_attribs traverse_tables traverse_helper check \
                         check_lib checktst prepare_inlining map_call_graph \

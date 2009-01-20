@@ -59,6 +59,10 @@
  *              fold( op2, n2)
  *              genarray( shp);
  *
+ * 3. For with3 loops, the results of fill operations of genarray operations
+ *    are removed from the return expression and the ret chain. As we have
+ *    passed the memory in in the first place, there is no need to pass the
+ *    change to a part of it back out again.
  *
  */
 #include "markmemvals.h"
@@ -87,14 +91,16 @@ struct INFO {
     node *withop;
     node *fundef;
     node *prop_in;
+    bool toplevel;
 };
 
-#define INFO_LUT(n) (n->lut)
-#define INFO_LHS(n) (n->lhs)
-#define INFO_LHS_WL(n) (n->lhs_wl)
-#define INFO_WITHOP(n) (n->withop)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_PROP_IN(n) (n->prop_in)
+#define INFO_LUT(n) ((n)->lut)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_LHS_WL(n) ((n)->lhs_wl)
+#define INFO_WITHOP(n) ((n)->withop)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_PROP_IN(n) ((n)->prop_in)
+#define INFO_TOPLEVEL(n) ((n)->toplevel)
 
 /**
  * INFO functions
@@ -114,6 +120,7 @@ MakeInfo ()
     INFO_WITHOP (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_PROP_IN (result) = NULL;
+    INFO_TOPLEVEL (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -157,9 +164,7 @@ MMVblock (node *arg_node, info *arg_info)
     /*
      * Traverse into VARDECs in order to remove unneeded ones
      */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -183,9 +188,7 @@ MMVdo (node *arg_node, info *arg_info)
 
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
 
-    if (DO_SKIP (arg_node) != NULL) {
-        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
-    }
+    DO_SKIP (arg_node) = TRAVopt (DO_SKIP (arg_node), arg_info);
 
     DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
@@ -207,26 +210,46 @@ MMVdo (node *arg_node, info *arg_info)
 node *
 MMVfundef (node *arg_node, info *arg_info)
 {
-    info *info;
-
     DBUG_ENTER ("MMVfundef");
 
     /*
-     * Regular functions are simply traversed
+     * traverse body
      */
-    info = MakeInfo ();
-    INFO_FUNDEF (info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    /*
+     * for regular functions go on, otherwise fix rets
+     */
+    if (INFO_TOPLEVEL (arg_info)) {
+        INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
+
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    } else {
+        FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
     }
 
-    INFO_LUT (info) = LUTremoveContentLut (INFO_LUT (info));
-    info = FreeInfo (info);
+    DBUG_RETURN (arg_node);
+}
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+/** <!-- ****************************************************************** -->
+ * @fn node *MMVmodule( node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only the fundef chain and leaves out special thread
+ *        functions as these are traversed inline.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return the given module with all functions processed.
+ ******************************************************************************/
+node *
+MMVmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVmodule");
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -236,8 +259,8 @@ MMVfundef (node *arg_node, info *arg_info)
  * @fn MMVlet
  *
  *  @brief Traverses right hand side and substitutes left hand side
- *         identifiers. If a substitution is made, the old vardec is marked
- *         ST_artificial as the new left hand side.
+ *         identifiers. If a substitution is made, the old avis is marked
+ *         as AVIS_ISDEAD.
  *
  *  @param arg_node
  *  @param arg_info
@@ -252,13 +275,9 @@ MMVlet (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -287,9 +306,7 @@ MMVids (node *arg_node, info *arg_info)
         newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -339,12 +356,23 @@ node *
 MMVap (node *arg_node, info *arg_info)
 {
     node *exprs, *args;
+    bool toplevel;
 
     DBUG_ENTER ("MMVap");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+    /*
+     * traverse special thread functions inline
+     */
+    if (FUNDEF_ISTHREADFUN (AP_FUNDEF (arg_node))) {
+        toplevel = INFO_TOPLEVEL (arg_info);
+        INFO_TOPLEVEL (arg_info) = FALSE;
+
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+        INFO_TOPLEVEL (arg_info) = toplevel;
     }
+
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     exprs = AP_ARGS (arg_node);
     args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -433,9 +461,7 @@ MMVprfFill (node *arg_node, info *arg_info)
     /*
      * Traverse the new rhs
      */
-    if (arg_node != NULL) {
-        arg_node = TRAVdo (arg_node, arg_info);
-    }
+    arg_node = TRAVopt (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -521,6 +547,10 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
 
     /*
      * a = suballoc( A, idx)
+     *
+     * -or-
+     *
+     * a = suballoc( A, idx, def)
      */
 
     /*
@@ -529,33 +559,45 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
     /*
-     * Find subarray identifier for this suballoc
+     * for the C99 backend, all subarray identifiers for different
+     * code blocks need to be unified, as only one is allocated in
+     * the end. Furthermore, the shape of this single subarray
+     * identifier is set once before the withloop. To do this, we
+     * annotate it at the GENARRAY. We can furthermore remove the
+     * default argument to the suballoc, as suballoc does not
+     * initialise the shape in these cases.
+     *
+     * For the mutc backend, there is one subvar per thread. Thus,
+     * we do not need to annotate the subvar here. Instead, we
+     * leave the default element at the suballoc to be able to
+     * issue the corresponding shape initialisation ICM later on.
      */
-    ids_wl = INFO_LHS_WL (arg_info);
-    withop = INFO_WITHOP (arg_info);
+    if (global.backend == BE_c99) {
+        /*
+         * Find subarray identifier for this suballoc
+         */
+        ids_wl = INFO_LHS_WL (arg_info);
+        withop = INFO_WITHOP (arg_info);
 
-    while (ids_wl != NULL) {
-        node *newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
+        while (ids_wl != NULL) {
+            node *newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
 
-        if (newavis == ID_AVIS (PRF_ARG1 (arg_node))) {
-            /*
-             * Set a as new subarray identifier if none is set yet
-             */
-            if (WITHOP_SUB (withop) == NULL) {
-                L_WITHOP_SUB (withop, TBmakeId (IDS_AVIS (INFO_LHS (arg_info))));
+            if (newavis == ID_AVIS (PRF_ARG1 (arg_node))) {
+                /*
+                 * Set a as new subarray identifier if none is set yet
+                 */
+                if (WITHOP_SUB (withop) == NULL) {
+                    L_WITHOP_SUB (withop, TBmakeId (IDS_AVIS (INFO_LHS (arg_info))));
+                }
+                avis = ID_AVIS (WITHOP_SUB (withop));
+                break;
             }
-            avis = ID_AVIS (WITHOP_SUB (withop));
-            break;
+            withop = WITHOP_NEXT (withop);
+            ids_wl = IDS_NEXT (ids_wl);
         }
-        withop = WITHOP_NEXT (withop);
-        ids_wl = IDS_NEXT (ids_wl);
-    }
 
-    if (global.backend != BE_mutc) {
         DBUG_ASSERT (avis != NULL, "No subarray identifier found!");
-    }
 
-    if (avis != NULL) {
         /*
          * Insert pair (a, A_sub) into LUT
          */
@@ -563,7 +605,24 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
                            AVIS_NAME (avis));
 
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
+
+        /*
+         * Scrap the 3rd argument, as this suballoc does not need to
+         * set the shape descriptor.
+         */
+        if (PRF_EXPRS3 (arg_node) != NULL) {
+            PRF_EXPRS3 (arg_node) = FREEdoFreeNode (PRF_EXPRS3 (arg_node));
+        }
+    } else if (global.backend == BE_mutc) {
+        /*
+         * nothing to be done here :)
+         */
+#ifndef DBUG_OFF
+    } else {
+        DBUG_ASSERT (FALSE, "unknown backend!");
+#endif
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -654,9 +713,7 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
 
     INFO_PROP_IN (arg_info) = arg_node;
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -713,9 +770,7 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
 
     INFO_PROP_IN (arg_info) = NULL;
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -837,9 +892,7 @@ MMVprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -862,9 +915,7 @@ MMVvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVvardec");
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -904,13 +955,9 @@ MMVwith (node *arg_node, info *arg_info)
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
@@ -950,17 +997,9 @@ MMVwith2 (node *arg_node, info *arg_info)
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
 
-    if (WITH2_WITHOP (arg_node) != NULL) {
-        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-    }
-
-    if (WITH2_SEGS (arg_node) != NULL) {
-        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    }
-
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVopt (WITH2_SEGS (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
 
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
@@ -1000,13 +1039,8 @@ MMVwith3 (node *arg_node, info *arg_info)
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH3_OPERATIONS (arg_node);
 
-    if (WITH3_OPERATIONS (arg_node) != NULL) {
-        WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
-    }
-
-    if (WITH3_RANGES (arg_node) != NULL) {
-        WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
-    }
+    WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
@@ -1041,9 +1075,7 @@ MMVwlseg (node *arg_node, info *arg_info)
 
     WLSEG_CONTENTS (arg_node) = TRAVdo (WLSEG_CONTENTS (arg_node), arg_info);
 
-    if (WLSEG_NEXT (arg_node) != NULL) {
-        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
-    }
+    WLSEG_NEXT (arg_node) = TRAVopt (WLSEG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1086,9 +1118,7 @@ MMVwlsegvar (node *arg_node, info *arg_info)
 
     WLSEGVAR_CONTENTS (arg_node) = TRAVdo (WLSEGVAR_CONTENTS (arg_node), arg_info);
 
-    if (WLSEGVAR_NEXT (arg_node) != NULL) {
-        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
-    }
+    WLSEGVAR_NEXT (arg_node) = TRAVopt (WLSEGVAR_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1097,8 +1127,7 @@ MMVwlsegvar (node *arg_node, info *arg_info)
  *
  * @fn MMVgenarray
  *
- *  @brief Adds the current LHS and the MEM-variable into LUT if this
- *         withop is either WO_genarray or WO_modarray.
+ *  @brief Adds the current LHS and the MEM-variable into LUT
  *
  *  @param arg_node
  *  @param arg_info
@@ -1113,9 +1142,7 @@ MMVgenarray (node *arg_node, info *arg_info)
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
 
     GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
 
@@ -1137,7 +1164,7 @@ MMVgenarray (node *arg_node, info *arg_info)
  *
  * @fn MMVpropagate
  *
- *  @brief Just shifts the arguments an goes to the next WO.
+ *  @brief Just shifts the arguments and goes to the next WO.
  *
  *  @param arg_node
  *  @param arg_info
@@ -1164,8 +1191,7 @@ MMVpropagate (node *arg_node, info *arg_info)
  *
  * @fn MMVmodarray
  *
- *  @brief Adds the current LHS and the MEM-variable into LUT if this
- *         withop is either WO_genarray or WO_modarray.
+ *  @brief Adds the current LHS and the MEM-variable into LUT
  *
  *  @param arg_node
  *  @param arg_info
@@ -1200,8 +1226,7 @@ MMVmodarray (node *arg_node, info *arg_info)
  *
  * @fn MMVbreak
  *
- *  @brief Adds the current LHS and the MEM-variable into LUT if this
- *         withop is either WO_genarray or WO_modarray.
+ *  @brief Adds the current LHS and the MEM-variable into LUT
  *
  *  @param arg_node
  *  @param arg_info
@@ -1281,13 +1306,8 @@ MMVcode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVcode");
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * if at least one WL-operator ist fold the accumulation results
@@ -1322,8 +1342,103 @@ MMVcode (node *arg_node, info *arg_info)
         withop = WITHOP_NEXT (withop);
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *MMVreturn( node *arg_node, info *arg_info)
+ *
+ * @brief Removes results of fill operations to submemory from the return
+ *        expressions
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ ******************************************************************************/
+node *
+MMVreturn (node *arg_node, info *arg_info)
+{
+    node *withops, *exprs;
+
+    DBUG_ENTER ("MMVreturn");
+
+    /*
+     * 1) rename RHS
+     */
+    RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
+
+    if (!INFO_TOPLEVEL (arg_info)) {
+        /*
+         * 2) remove results of genarray fill operation as
+         *    the memory has been passed in and doesn't need
+         *    to be passed out again
+         *
+         *    For Fold, this might be a different story TODO MUTC
+         */
+        withops = INFO_WITHOP (arg_info);
+        exprs = RETURN_EXPRS (arg_node);
+
+        while (exprs != NULL) {
+            DBUG_ASSERT ((withops != NULL), "more results in threadfun than withops!");
+
+            if (NODE_TYPE (withops) == N_genarray) {
+                /*
+                 * handle first in chain properly
+                 */
+                if (RETURN_EXPRS (arg_node) == exprs) {
+                    RETURN_EXPRS (arg_node) = FREEdoFreeNode (RETURN_EXPRS (arg_node));
+                    exprs = RETURN_EXPRS (arg_node);
+                } else {
+                    exprs = FREEdoFreeNode (exprs);
+                }
+            } else {
+                exprs = EXPRS_NEXT (exprs);
+            }
+
+            withops = WITHOP_NEXT (withops);
+        }
+
+        DBUG_ASSERT ((withops == NULL), "more withops than results in threadfun!");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *MMVret( node *arg_node, info *arg_info)
+ *
+ * @brief Removes results of fill operations to submemory from the ret chain
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ ******************************************************************************/
+node *
+MMVret (node *arg_node, info *arg_info)
+{
+    node *withops;
+
+    DBUG_ENTER ("MMVret");
+
+    withops = INFO_WITHOP (arg_info);
+
+    DBUG_ASSERT ((withops != NULL), "more rets in threadfun than withops!");
+
+    INFO_WITHOP (arg_info) = WITHOP_NEXT (INFO_WITHOP (arg_info));
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
+    INFO_WITHOP (arg_info) = withops;
+
+    /*
+     * For genarrays, we remove the correspoding return.
+     *
+     * For fold, this might be a different story! TODO MUTC
+     */
+    if (NODE_TYPE (withops) == N_genarray) {
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1347,13 +1462,19 @@ MMVcode (node *arg_node, info *arg_info)
 node *
 MMVdoMarkMemVals (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("MMVdoMarkMemVals");
+
+    info = MakeInfo ();
 
     TRAVpush (TR_mmv);
 
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
 
     TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

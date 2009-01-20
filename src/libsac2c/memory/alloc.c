@@ -661,9 +661,6 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
              */
         } else if ((NODE_TYPE (withops) == N_modarray)
                    && (!TUshapeKnown (AVIS_TYPE (cexavis)))) {
-
-            DBUG_ASSERT ((indexvector != NULL), "modarray for with3 not yet supported!");
-
             ntype *ivtype = ID_NTYPE (indexvector);
             ntype *restype = AVIS_TYPE (als->avis);
             /*
@@ -821,18 +818,45 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
                 /*
                  * Create suballoc assignment
                  *
+                 * if the shape of a_mem is not statically known, we will
+                 * have to compute it at runtime.
+                 *
+                 * For N_genarray withloops, this can be done using the
+                 * default element. Thus, we annotate it here if it exists
+                 * and is needed.
+                 *
+                 * For N_modarray withloops, the shape is still set by some
+                 * backend magic. However, this won't work with the mutc
+                 * backend -> TODO MUTC
+                 *
                  * Ex:
                  * {
                  *   ...
-                 *   a_mem = suballoc( A, idx);
+                 *   a_mem = suballoc( A, idx, \[ def \]);
                  *   a_val = fill( copy( a), a_mem);
                  * }: a_val;
                  */
-                assign
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
-                                             TCmakePrf2 (F_suballoc, TBmakeId (als->avis),
-                                                         TBmakeId (wlidx))),
-                                  assign);
+                if ((NODE_TYPE (withops) == N_genarray)
+                    && !TUshapeKnown (AVIS_TYPE (memavis))) {
+                    DBUG_ASSERT ((GENARRAY_DEFAULT (withops) != NULL),
+                                 "default element required!");
+
+                    assign = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                                      TCmakePrf3 (F_suballoc,
+                                                                  TBmakeId (als->avis),
+                                                                  TBmakeId (wlidx),
+                                                                  DUPdoDupNode (
+                                                                    GENARRAY_DEFAULT (
+                                                                      withops)))),
+                                           assign);
+                } else {
+                    assign = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                                      TCmakePrf2 (F_suballoc,
+                                                                  TBmakeId (als->avis),
+                                                                  TBmakeId (wlidx))),
+                                           assign);
+                }
+
                 AVIS_SSAASSIGN (memavis) = assign;
             }
         }

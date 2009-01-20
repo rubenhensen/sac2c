@@ -39,14 +39,22 @@
 #include "math_utils.h"
 
 /*
+ * enum for traversal modes:
+ *
+ * FPC_fundef: annotate argtabs at fundef
+ * FPC_ap:     annotate argtabs at ap node
+ */
+typedef enum { FPC_fundef, FPC_ap } fpc_travmode;
+
+/*
  * INFO structure
  */
 
 struct INFO {
     node *fundef;
     argtab_t *argtab;
-    node *preassigns;
-    node *postassigns;
+    node *lhs;
+    fpc_travmode travmode;
 };
 
 /*
@@ -55,8 +63,8 @@ struct INFO {
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_ARGTAB(n) ((n)->argtab)
-#define INFO_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_TRAVMODE(n) ((n)->travmode)
 
 /*
  * INFO functions
@@ -73,8 +81,8 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_ARGTAB (result) = NULL;
-    INFO_PREASSIGNS (result) = NULL;
-    INFO_POSTASSIGNS (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_TRAVMODE (result) = FPC_fundef;
 
     DBUG_RETURN (result);
 }
@@ -144,6 +152,15 @@ CompressArgtab (argtab_t *argtab)
     DBUG_RETURN (argtab);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn int HighestLinksign(node * args)
+ *
+ * @brief Returns the maximum linksign of the given arguments
+ *
+ * @param args N_arg chain
+ *
+ * @return maximum linksign found of -1 if args == NULL
+ ******************************************************************************/
 static int
 HighestLinksign (node *args)
 {
@@ -152,32 +169,6 @@ HighestLinksign (node *args)
         res = MATHmax (ARG_LINKSIGN (args), HighestLinksign (ARG_NEXT (args)));
     }
     return (res);
-}
-
-/*
- * traversal functions
- */
-
-/******************************************************************************
- *
- * function:
- *   node *FPCmodule( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-FPCmodule (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FPCmodule");
-
-    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
-    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
-    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
 }
 
 /** <!-- ******************************************************************* -->
@@ -464,140 +455,6 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 /******************************************************************************
  *
  * Function:
- *   node *FPCfundef( node *arg_node, info *arg_info)
- *
- * Description:
- *   Builds FUNDEF_ARGTAB.
- *
- ******************************************************************************/
-
-node *
-FPCfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FPCfundef");
-
-    DBUG_PRINT ("FPC", ("processing fundef %s:%s...", NSgetName (FUNDEF_NS (arg_node)),
-                        FUNDEF_NAME (arg_node)));
-
-    INFO_FUNDEF (arg_info) = arg_node;
-
-    if (!FUNDEF_ISZOMBIE (arg_node)) {
-        int argtabsize
-          = TCcountRets (FUNDEF_RETS (arg_node)) + TCcountArgs (FUNDEF_ARGS (arg_node));
-
-        argtabsize = MATHmax (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
-        INFO_ARGTAB (arg_info) = TBmakeArgtab (argtabsize + 1);
-
-        FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
-        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-
-        CTIabortOnError ();
-
-        /*
-         * assign the argtab to the function
-         */
-        FUNDEF_ARGTAB (arg_node) = INFO_ARGTAB (arg_info);
-
-        FUNDEF_ARGTAB (arg_node) = CompressArgtab (FUNDEF_ARGTAB (arg_node));
-
-        /*
-         * traverse next fundef
-         */
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-        /*
-         * all FUNDEF_ARGTABs are build now -> traverse body
-         */
-        INFO_POSTASSIGNS (arg_info) = NULL;
-        INFO_PREASSIGNS (arg_info) = NULL;
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *FPCret( node *arg_node, info *arg_info)
- *
- * Description:
- *   Builds FUNDEF_ARGTAB for ret nodes
- *
- ******************************************************************************/
-
-node *
-FPCret (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FPCret");
-
-    INFO_ARGTAB (arg_info)
-      = InsertIntoOut (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *FPCarg( node *arg_node, info *arg_info)
- *
- * Description:
- *   Builds FUNDEF_ARGTAB for arg nodes
- *   FPClet may need to be changed if this function is changed
- *
- ******************************************************************************/
-
-node *
-FPCarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FPCret");
-
-    INFO_ARGTAB (arg_info)
-      = InsertIntoIn (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *FPCassign( node *arg_node, info *arg_info)
- *
- * Description:
- *   Inserts the assignments found in INFO_PRE/POSTASSIGNS into the AST.
- *
- ******************************************************************************/
-
-node *
-FPCassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FPCassign");
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_POSTASSIGNS (arg_info) != NULL) {
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_POSTASSIGNS (arg_info) = NULL;
-    }
-    if (INFO_PREASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
-        INFO_PREASSIGNS (arg_info) = NULL;
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   int GetArgtabIndexOut( node *ret, argtab_t *argtab)
  *
  * Description:
@@ -650,156 +507,333 @@ GetArgtabIndexIn (node *arg, argtab_t *argtab)
     DBUG_RETURN (idx);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn argtab_t *BuildApArgtab( node *ap, node *lhs)
+ *
+ * @brief Computes the argtab for an N_ap node
+ *
+ * @param ap  N_ap node to compute argsign for
+ * @param lhs corresponding lhs N_ids chain
+ *
+ * @return the constructed argtab
+ ******************************************************************************/
+static argtab_t *
+BuildApArgtab (node *ap, node *lhs)
+{
+    node *fundef;
+    node *ids;
+    node *rets;
+    node *exprs;
+    node *args;
+    argtab_t *ap_argtab;
+    argtab_t *argtab;
+    int idx = 0;
+    int dots_offset = 0;
+
+    DBUG_ENTER ("BuildApArgtab");
+
+    fundef = AP_FUNDEF (ap);
+
+    DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
+
+    DBUG_PRINT ("FPC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
+                        FUNDEF_NAME (fundef)));
+
+    ids = lhs;
+    rets = FUNDEF_RETS (fundef);
+    exprs = AP_ARGS (ap);
+    args = FUNDEF_ARGS (fundef);
+
+    ap_argtab = TBmakeArgtab (TCcountIds (ids) + TCcountExprs (exprs) + 1);
+
+    argtab = FUNDEF_ARGTAB (fundef);
+
+    if (argtab == NULL) {
+        DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
+    }
+
+    dots_offset = 0;
+    idx = ap_argtab->size; /* to avoid a CC warning */
+
+    while (ids != NULL) {
+        if (dots_offset == 0) {
+            /*
+             * while handling true return values, get index
+             */
+            idx = GetArgtabIndexOut (rets, argtab);
+        }
+        DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
+
+        DBUG_ASSERT ((idx < argtab->size), "illegal index");
+
+        ap_argtab->ptr_out[idx + dots_offset] = ids;
+        if (dots_offset == 0) {
+            ap_argtab->tag[idx] = argtab->tag[idx];
+        } else {
+            /*
+             * for ... results we only declare a descripto (ATG_out)
+             * if the function has the refcountdots pragma set
+             */
+            if (FUNDEF_REFCOUNTDOTS (fundef)) {
+                ap_argtab->tag[idx + dots_offset] = ATG_out;
+            } else {
+                ap_argtab->tag[idx + dots_offset] = ATG_out_nodesc;
+            }
+        }
+
+        ids = IDS_NEXT (ids);
+
+        if (rets != NULL) {
+            rets = RET_NEXT (rets);
+
+            /*
+             * if we have reached the last ret, all following return values are
+             * ... return values
+             */
+            if (rets == NULL) {
+                idx = argtab->size - 1;
+                dots_offset = 1;
+            }
+        } else {
+            dots_offset++;
+        }
+    }
+
+    dots_offset = 0;
+    idx = ap_argtab->size; /* to avoid a CC warning */
+
+    while (exprs != NULL) {
+        DBUG_ASSERT (((args != NULL) || (dots_offset != 0)),
+                     "application is inconsistant");
+
+        if (dots_offset == 0) {
+            idx = GetArgtabIndexIn (args, argtab);
+        }
+        DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
+
+        DBUG_ASSERT ((idx < argtab->size), "illegal index");
+
+        ap_argtab->ptr_in[idx + dots_offset] = exprs;
+        if (dots_offset == 0) {
+            ap_argtab->tag[idx] = argtab->tag[idx];
+        } else {
+            /*
+             * for ... arguments we have to add descriptors (ATG_in) only
+             * if this function has the refcountdots pragma
+             */
+            if (FUNDEF_REFCOUNTDOTS (fundef)) {
+                ap_argtab->tag[idx + dots_offset] = ATG_in;
+            } else {
+                ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
+            }
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+
+        if (args != NULL) {
+            args = ARG_NEXT (args);
+
+            if (args == NULL) {
+                /*
+                 * we have reached a ... argument
+                 */
+                idx = argtab->size - 1;
+                dots_offset = 1;
+            }
+        } else {
+            dots_offset++;
+        }
+    }
+
+    CTIabortOnError ();
+
+    DBUG_RETURN (CompressArgtab (ap_argtab));
+}
+
+/*
+ * traversal functions
+ */
+
 /******************************************************************************
  *
- * Function:
- *   node *FPClet( node *arg_node, info *arg_info)
+ * function:
+ *   node *FPCmodule( node *arg_node, info *arg_info)
  *
- * Description:
- *   Builds AP_ARGTAB and generates merging assignments for inout-arguments
- *   if needed.
+ * description:
+ *
  *
  ******************************************************************************/
 
+node *
+FPCmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCmodule");
+
+    /*
+     * 1) annotate linksigns at fundefs
+     */
+    INFO_TRAVMODE (arg_info) = FPC_fundef;
+
+    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    /*
+     * 2) now that all fundefs have linksigns, annotate the N_ap nodes
+     */
+    INFO_TRAVMODE (arg_info) = FPC_ap;
+    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FPCfundef( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Builds FUNDEF_ARGTAB.
+ *
+ ******************************************************************************/
+
+node *
+FPCfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCfundef");
+
+    DBUG_PRINT ("FPC", ("processing fundef %s...", CTIitemName (arg_node)));
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    if ((INFO_TRAVMODE (arg_info) == FPC_fundef) && !FUNDEF_ISZOMBIE (arg_node)) {
+        int argtabsize
+          = TCcountRets (FUNDEF_RETS (arg_node)) + TCcountArgs (FUNDEF_ARGS (arg_node));
+
+        argtabsize = MATHmax (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
+        INFO_ARGTAB (arg_info) = TBmakeArgtab (argtabsize + 1);
+
+        FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+
+        CTIabortOnError ();
+
+        /*
+         * assign the argtab to the function
+         */
+        FUNDEF_ARGTAB (arg_node) = INFO_ARGTAB (arg_info);
+
+        FUNDEF_ARGTAB (arg_node) = CompressArgtab (FUNDEF_ARGTAB (arg_node));
+    } else if (INFO_TRAVMODE (arg_info) == FPC_ap) {
+        /*
+         * all FUNDEF_ARGTABs are build now -> traverse body
+         */
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    /*
+     * traverse next fundef
+     */
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FPCret( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Builds FUNDEF_ARGTAB for ret nodes
+ *
+ ******************************************************************************/
+
+node *
+FPCret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCret");
+
+    INFO_ARGTAB (arg_info)
+      = InsertIntoOut (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FPCret( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Builds FUNDEF_ARGTAB for ret nodes
+ *
+ ******************************************************************************/
+
+node *
+FPCarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCret");
+
+    INFO_ARGTAB (arg_info)
+      = InsertIntoIn (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *FPClet( node *arg_node, info *arg_info)
+ *
+ * @brief Memoizes the lhs in the info structure.
+ ******************************************************************************/
 node *
 FPClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPClet");
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        /*
-         * only function applications are of interest
-         */
+    DBUG_RETURN (arg_node);
+}
 
-        node *fundef;
-        node *ids;
-        node *rets;
-        node *exprs;
-        node *args;
-        argtab_t *ap_argtab;
-        argtab_t *argtab;
-        int idx = 0;
-        int dots_offset = 0;
+/** <!-- ****************************************************************** -->
+ * @fn node *FPCrange( node *arg_node, info *arg_info)
+ *
+ * @brief Sets the stage for the traversal of the contained N_ap node.
+ ******************************************************************************/
+node *
+FPCrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCrange");
 
-        fundef = AP_FUNDEF (LET_EXPR (arg_node));
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
-        DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
+    INFO_LHS (arg_info) = NULL;
+    RANGE_RESULTS (arg_node) = TRAVopt (RANGE_RESULTS (arg_node), arg_info);
 
-        DBUG_PRINT ("FPC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
-                            FUNDEF_NAME (fundef)));
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
-        ids = LET_IDS (arg_node);
-        rets = FUNDEF_RETS (fundef);
-        exprs = AP_ARGS (LET_EXPR (arg_node));
-        args = FUNDEF_ARGS (fundef);
+    DBUG_RETURN (arg_node);
+}
 
-        ap_argtab = TBmakeArgtab (TCcountIds (ids) + TCcountExprs (exprs) + 1);
+/** <!-- ****************************************************************** -->
+ * @fn node *FPCap( node *arg_node, info *arg_info)
+ *
+ * @brief Attaches an argtab to the given N_arg node.
+ ******************************************************************************/
+node *
+FPCap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FPCap");
 
-        argtab = FUNDEF_ARGTAB (fundef);
-
-        if (argtab == NULL) {
-            DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
-        }
-
-        dots_offset = 0;
-        idx = ap_argtab->size; /* to avoid a CC warning */
-
-        while (ids != NULL) {
-            if (dots_offset == 0) {
-                /*
-                 * while handling true return values, get index
-                 */
-                idx = GetArgtabIndexOut (rets, argtab);
-            }
-            DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
-
-            DBUG_ASSERT ((idx < argtab->size), "illegal index");
-
-            ap_argtab->ptr_out[idx + dots_offset] = ids;
-            if (dots_offset == 0) {
-                ap_argtab->tag[idx] = argtab->tag[idx];
-            } else {
-                /*
-                 * for ... results we only declare a descripto (ATG_out)
-                 * if the function has the refcountdots pragma set
-                 */
-                if (FUNDEF_REFCOUNTDOTS (fundef)) {
-                    ap_argtab->tag[idx + dots_offset] = ATG_out;
-                } else {
-                    ap_argtab->tag[idx + dots_offset] = ATG_out_nodesc;
-                }
-            }
-
-            ids = IDS_NEXT (ids);
-
-            if (rets != NULL) {
-                rets = RET_NEXT (rets);
-
-                /*
-                 * if we have reached the last ret, all following return values are
-                 * ... return values
-                 */
-                if (rets == NULL) {
-                    idx = argtab->size - 1;
-                    dots_offset = 1;
-                }
-            } else {
-                dots_offset++;
-            }
-        }
-
-        dots_offset = 0;
-        idx = ap_argtab->size; /* to avoid a CC warning */
-
-        while (exprs != NULL) {
-            DBUG_ASSERT (((args != NULL) || (dots_offset != 0)),
-                         "application is inconsistant");
-
-            if (dots_offset == 0) {
-                idx = GetArgtabIndexIn (args, argtab);
-            }
-            DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
-
-            DBUG_ASSERT ((idx < argtab->size), "illegal index");
-
-            ap_argtab->ptr_in[idx + dots_offset] = exprs;
-            if (dots_offset == 0) {
-                ap_argtab->tag[idx] = argtab->tag[idx];
-            } else {
-                /*
-                 * for ... arguments we have to add descriptors (ATG_in) only
-                 * if this function has the refcountdots pragma
-                 */
-                if (FUNDEF_REFCOUNTDOTS (fundef)) {
-                    ap_argtab->tag[idx + dots_offset] = ATG_in;
-                } else {
-                    ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
-                }
-            }
-
-            exprs = EXPRS_NEXT (exprs);
-
-            if (args != NULL) {
-                args = ARG_NEXT (args);
-
-                if (args == NULL) {
-                    /*
-                     * we have reached a ... argument
-                     */
-                    idx = argtab->size - 1;
-                    dots_offset = 1;
-                }
-            } else {
-                dots_offset++;
-            }
-        }
-
-        CTIabortOnError ();
-
-        AP_ARGTAB (LET_EXPR (arg_node)) = CompressArgtab (ap_argtab);
-    }
+    AP_ARGTAB (arg_node) = BuildApArgtab (arg_node, INFO_LHS (arg_info));
 
     DBUG_RETURN (arg_node);
 }

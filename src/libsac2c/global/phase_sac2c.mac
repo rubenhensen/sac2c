@@ -773,9 +773,9 @@ PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (lw3, "lift with3s", LW3doLiftWith3, global.backend == BE_mutc, pc)
 
-SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
-
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
+
+SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
 
 SUBPHASE (moi, "Manage object initialisers", MOIdoManageObjectInitialisers, ALWAYS, pc)
 

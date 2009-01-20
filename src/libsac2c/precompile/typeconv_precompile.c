@@ -461,4 +461,21 @@ TCPap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCPrange( node *arg_node, info *arg_info)
+ *
+ * @brief Continues traversal in BODY but does not traverse RESULTS as the
+ *        contained N_ap node is for a special function and does require
+ *        lifting.
+ ******************************************************************************/
+node *
+TCPrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TCPrange");
+
+    RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /* @} */
