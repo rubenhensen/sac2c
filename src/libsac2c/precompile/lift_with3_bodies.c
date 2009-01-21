@@ -36,6 +36,7 @@
 #include "remove_dfms.h"
 #include "tree_compound.h"
 #include "infer_dfms.h"
+#include "free.h"
 
 /*
  * INFO structure
@@ -235,6 +236,8 @@ LW3range (node *arg_node, info *arg_info)
                               arg_info);
 
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
+
+    RANGE_INDEX (arg_node) = FREEdoFreeTree (RANGE_INDEX (arg_node));
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 

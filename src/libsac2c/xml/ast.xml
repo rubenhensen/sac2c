@@ -8883,7 +8883,7 @@
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <range from="mem_alloc" to="final" />
+                <range from="mem_alloc" to="pc_lw3" />
               </phases>
             </target>
           </targets>
