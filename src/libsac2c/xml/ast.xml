@@ -5702,7 +5702,7 @@
             given data object.</description>
         </flag>
         <flag name="IsDead" >
-          <description>Used by MarkMemVals traversal in order to indicate 
+          <description>Used to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
           </description>
         </flag>
