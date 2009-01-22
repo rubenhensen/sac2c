@@ -1808,7 +1808,8 @@ TCgetCompoundNode (node *arg_node)
  *
  * description:
  *   Appends 'assign' to 'assign_chain' and returns the new chain.
- *   If 'assign_chain' was a N_empty node, this node is removed first.
+ *   If 'assign_chain' was a N_empty node AND assign is not NULL,
+ *   the empty node is removed first.
  *
  ******************************************************************************/
 
@@ -1826,10 +1827,15 @@ TCappendAssign (node *assign_chain, node *assign)
                  ("Second argument of TCappendAssign() has wrong node type."));
 
     if ((assign_chain != NULL) && (NODE_TYPE (assign_chain) == N_empty)) {
-        assign_chain = FREEdoFreeNode (assign_chain);
+        if (assign != NULL) {
+            assign_chain = FREEdoFreeNode (assign_chain);
+            ret = assign;
+        } else {
+            ret = assign_chain;
+        }
+    } else {
+        APPEND (ret, node *, ASSIGN, assign_chain, assign);
     }
-
-    APPEND (ret, node *, ASSIGN, assign_chain, assign);
 
     DBUG_RETURN (ret);
 }
