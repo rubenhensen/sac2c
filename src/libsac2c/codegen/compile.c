@@ -6266,7 +6266,7 @@ node *
 COMPrange (node *arg_node, info *arg_info)
 {
     node *family, *create, *next, *sync;
-    node *thread_fun, *lower, *upper;
+    node *thread_fun;
     char *familyName;
 
     DBUG_ENTER ("COMPrange");
@@ -6277,19 +6277,17 @@ COMPrange (node *arg_node, info *arg_info)
       = TCmakeAssignIcm1 ("SAC_MUTC_DECL_FAMILY", TCmakeIdCopyString (familyName), NULL);
 
     thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
-    lower = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
-    upper = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
 
-    create
-      = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
-                          TCmakeIdCopyString (""), DUPdoDupTree (ASSIGN_INSTR (lower)),
-                          DUPdoDupTree (ASSIGN_INSTR (upper)), TCmakeIdCopyString ("1"),
-                          TCmakeIdCopyString ("1"),
-                          DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+    create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
+                               TCmakeIdCopyString (""),
+                               DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
+                               DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
+                               TCmakeIdCopyString ("1"), TCmakeIdCopyString ("1"),
+                               DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
 
     next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
-    sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TBmakeStr (STRcpy (familyName)), NULL);
+    sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 
     TCappendAssign (family, create);
     TCappendAssign (family, next);
@@ -6297,8 +6295,6 @@ COMPrange (node *arg_node, info *arg_info)
 
     /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
     FREEdoFreeTree (thread_fun);
-    FREEdoFreeTree (lower);
-    FREEdoFreeTree (upper);
 
     DBUG_RETURN (family);
 }
