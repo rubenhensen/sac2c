@@ -14,6 +14,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 
 #include "globals.h"
@@ -6268,10 +6269,17 @@ COMPrange (node *arg_node, info *arg_info)
     node *family, *create, *next, *sync;
     node *thread_fun;
     char *familyName;
+    str_buf *buffer;
 
     DBUG_ENTER ("COMPrange");
 
-    familyName = FUNDEF_NAME (AP_FUNDEF (RANGE_RESULTS (arg_node)));
+    buffer = SBUFcreate (1024);
+
+    buffer = SBUFprintf (buffer, "family_%s",
+                         FUNDEF_NAME (AP_FUNDEF (RANGE_RESULTS (arg_node))));
+
+    familyName = SBUF2str (buffer);
+    buffer = SBUFfree (buffer);
 
     family
       = TCmakeAssignIcm1 ("SAC_MUTC_DECL_FAMILY", TCmakeIdCopyString (familyName), NULL);
