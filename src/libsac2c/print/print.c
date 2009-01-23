@@ -1080,6 +1080,16 @@ PRTmodule (node *arg_node, info *arg_info)
          * is rewritten!!!! (sbs)
          */
         if (global.tool != TOOL_sac2tex) {
+            if (MODULE_THREADFUNS (arg_node) != NULL) {
+                fprintf (global.outfile, "\n\n"
+                                         "/*\n"
+                                         " *  prototypes for threads (THREADFUNS)\n"
+                                         " */\n\n");
+                INFO_PROTOTYPE (arg_info) = TRUE;
+                /* print function declarations */
+                TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
+                INFO_PROTOTYPE (arg_info) = FALSE;
+            }
             if (MODULE_FUNS (arg_node) != NULL) {
                 fprintf (global.outfile, "\n\n"
                                          "/*\n"
