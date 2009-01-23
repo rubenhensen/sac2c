@@ -522,8 +522,6 @@ GSCprintMainBegin ()
         fprintf (global.outfile, "SAC_MT_SETUP();\n");
         INDENT;
         fprintf (global.outfile, "SAC_CS_SETUP();\n");
-        INDENT;
-        fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
     }
 
     DBUG_VOID_RETURN;
@@ -567,8 +565,8 @@ GSCprintMainEnd ()
  *
  ******************************************************************************/
 
-void
-GSCprintMain ()
+static void
+GSCprintMainC99 ()
 {
     char *res_NT;
     types *tmp_type;
@@ -576,7 +574,7 @@ GSCprintMain ()
       = (((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
          && (global.optimize.dophm));
 
-    DBUG_ENTER ("GSCprintMain");
+    DBUG_ENTER ("GSCprintMainC99");
 
     INDENT;
     fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
@@ -594,6 +592,8 @@ GSCprintMain ()
     GSCprintMainBegin ();
 
     INDENT;
+    fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
+    INDENT;
     fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
 
     fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
@@ -605,6 +605,64 @@ GSCprintMain ()
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+GSCprintMainMuTC ()
+{
+    char *res_NT;
+    types *tmp_type;
+
+    DBUG_ENTER ("GSCprintMuTC");
+
+    INDENT;
+    fprintf (global.outfile, "thread main()\n");
+    INDENT;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
+    tmp_type = TBmakeTypes1 (T_int);
+    res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
+    tmp_type = FREEfreeAllTypes (tmp_type);
+    ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
+    GSCprintMainBegin ();
+
+    INDENT;
+    fprintf (global.outfile, "SAC_COMMANDLINE_SET( 0, ((char **) 0));\n\n");
+    INDENT;
+    fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
+
+    fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
+    fprintf (global.outfile, ");\n\n");
+    GSCprintMainEnd ();
+#if 0
+  INDENT;
+  fprintf( global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
+#endif
+    res_NT = MEMfree (res_NT);
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+GSCprintMain ()
+{
+    DBUG_ENTER ("GSCprintMain");
+
+    switch (global.backend) {
+    case BE_c99:
+        GSCprintMainC99 ();
+        break;
+    case BE_mutc:
+        GSCprintMainMuTC ();
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "unknown backend");
+    }
 
     DBUG_VOID_RETURN;
 }
