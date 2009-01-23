@@ -53,6 +53,9 @@ extern node *COMPwlgrid (node *arg_node, info *arg_info);
 extern node *COMPwlgridvar (node *arg_node, info *arg_info);
 extern node *COMPcode (node *arg_node, info *arg_info);
 
+extern node *COMPwith3 (node *arg_node, info *arg_info);
+extern node *COMPrange (node *arg_node, info *arg_info);
+
 /******************************************************************************
  *
  * NODES WHICH MUST NOT BE TRAVERSED

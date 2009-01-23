@@ -33,6 +33,7 @@
 #include "LookUpTable.h"
 #include "convert.h"
 #include "math_utils.h"
+#include "types.h"
 
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
@@ -1484,8 +1485,13 @@ MakeIcm_ND_FUN_DEC (node *fundef)
                                 icm_args);
     }
 
-    ret_node
-      = TCmakeIcm2 ("ND_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+    if (FUNDEF_ISTHREADFUN (fundef)) {
+        ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DEC",
+                               TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+    } else {
+        ret_node = TCmakeIcm2 ("ND_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                               icm_args);
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -1859,6 +1865,8 @@ COMPmodule (node *arg_node, info *arg_info)
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
+    MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
+
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
@@ -2139,9 +2147,15 @@ COMPvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPvardec");
 
-    VARDEC_ICM (arg_node) = TCmakeIcm1 ("ND_DECL", MakeTypeArgs (VARDEC_NAME (arg_node),
-                                                                 VARDEC_TYPE (arg_node),
-                                                                 TRUE, TRUE, TRUE, NULL));
+    if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
+        VARDEC_ICM (arg_node) = TCmakeIcm1 ("SAC_MUTC_DECL_INDEX",
+                                            TCmakeIdCopyString (VARDEC_NAME (arg_node)));
+    } else {
+        VARDEC_ICM (arg_node)
+          = TCmakeIcm1 ("ND_DECL",
+                        MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                      TRUE, TRUE, TRUE, NULL));
+    }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -6219,6 +6233,74 @@ COMPwith2 (node *arg_node, info *arg_info)
     wlnode = old_wlnode;
 
     DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPwith3( node *arg_node, info *arg_info)
+ *
+ * @brief Compiliation of with3 node
+ *        Create family ids
+ *        Create creats
+ *        Create syncs
+ *****************************************************************************/
+
+node *
+COMPwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPwith3");
+
+    arg_node = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPrange( node *arg_node, info *arg_info)
+ *
+ * @brief Compiliation of range node creating family create sync
+ *****************************************************************************/
+
+node *
+COMPrange (node *arg_node, info *arg_info)
+{
+    node *family, *create, *next, *sync;
+    node *thread_fun, *lower, *upper;
+    char *familyName;
+
+    DBUG_ENTER ("COMPrange");
+
+    familyName = FUNDEF_NAME (AP_FUNDEF (RANGE_RESULTS (arg_node)));
+
+    family
+      = TCmakeAssignIcm1 ("SAC_MUTC_DECL_FAMILY", TCmakeIdCopyString (familyName), NULL);
+
+    thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    lower = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
+    upper = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+
+    create
+      = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
+                          TCmakeIdCopyString (""), DUPdoDupTree (ASSIGN_INSTR (lower)),
+                          DUPdoDupTree (ASSIGN_INSTR (upper)), TCmakeIdCopyString ("1"),
+                          TCmakeIdCopyString ("1"),
+                          DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+
+    next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TBmakeStr (STRcpy (familyName)), NULL);
+
+    TCappendAssign (family, create);
+    TCappendAssign (family, next);
+    TCappendAssign (family, sync);
+
+    /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
+    FREEdoFreeTree (thread_fun);
+    FREEdoFreeTree (lower);
+    FREEdoFreeTree (upper);
+
+    DBUG_RETURN (family);
 }
 
 /** <!--********************************************************************-->
