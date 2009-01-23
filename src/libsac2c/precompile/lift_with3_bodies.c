@@ -237,9 +237,6 @@ LW3range (node *arg_node, info *arg_info)
 
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 
-    AVIS_ISDEAD (ID_AVIS (RANGE_INDEX (arg_node))) = TRUE;
-    RANGE_INDEX (arg_node) = FREEdoFreeTree (RANGE_INDEX (arg_node));
-
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
