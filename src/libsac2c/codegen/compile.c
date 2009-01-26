@@ -3353,8 +3353,14 @@ static node *
 COMPprfWLAssign (node *arg_node, info *arg_info)
 {
     node *ret_node;
-
+    node *arg3;
     DBUG_ENTER ("COMPprfWLAssign");
+
+    if (NODE_TYPE (PRF_ARG3 (arg_node)) == N_id) {
+        arg3 = DUPdupIdNt (PRF_ARG3 (arg_node));
+    } else {
+        arg3 = DUPdupIdNt (EXPRS_EXPR (ARRAY_AELEMS (PRF_ARG3 (arg_node))));
+    }
 
     ret_node
       = TCmakeAssignIcm6 ("WL_ASSIGN",
@@ -3364,7 +3370,7 @@ COMPprfWLAssign (node *arg_node, info *arg_info)
                           MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
                                         ID_TYPE (PRF_ARG2 (arg_node)), FALSE, TRUE, FALSE,
                                         NULL),
-                          DUPdupIdNt (PRF_ARG3 (arg_node)),
+                          arg3,
                           TBmakeExprs (MakeSizeArg (PRF_ARG3 (arg_node), TRUE), NULL),
                           DUPdupIdNt (PRF_ARG4 (arg_node)),
                           TCmakeIdCopyString (
