@@ -679,6 +679,8 @@ GSCprintSACargCopyFreeStubs ()
     fprintf (global.outfile, "/*\n"
                              " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
                              " */\n"
+                             "extern void SACARGfreeDataUdt( int, void *);\n"
+                             "extern void *SACARGcopyDataUdt( int, int, void *);\n"
                              "void SACARGfreeDataUdt( int size, void *data) {};\n"
                              "void *SACARGcopyDataUdt( int type, int size, void *data) { "
                              "return ((void *) 0x0); } \n"
