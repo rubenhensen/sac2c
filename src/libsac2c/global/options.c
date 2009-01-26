@@ -93,6 +93,27 @@ CheckOptionConsistency ()
 {
     DBUG_ENTER ("CheckOptionConsistency");
 
+    if (global.backend == BE_mutc) {
+        if (global.mtmode != MT_none) {
+            CTIabort ("Traditional MT modes are not available for the muTC "
+                      "backend.");
+        }
+
+        CTInote ("Disabling reference counting optimisations not suitable "
+                 "for mutc backend.");
+        global.optimize.dosrf = FALSE;
+        global.optimize.doipc = FALSE;
+        global.optimize.douip = FALSE;
+        global.optimize.dodr = FALSE;
+        global.optimize.dorco = FALSE;
+
+        if (global.optimize.dophm) {
+            CTInote ("Private heap management has been disabled due to use "
+                     "of the mutc backend.");
+            global.optimize.dophm = FALSE;
+        }
+    }
+
     if (global.runtimecheck.boundary && global.optimize.doap) {
         global.optimize.doap = FALSE;
         CTIwarn ("Option -check b requires option -noAP\n"
@@ -164,21 +185,6 @@ CheckOptionConsistency ()
                  "attributes (SAA).\n"
                  "Index vector elimination disabled.");
         global.optimize.doive = FALSE;
-    }
-
-    if (global.backend == BE_mutc) {
-        if (global.mtmode != MT_none) {
-            CTIabort ("Traditional MT modes are not available for the muTC "
-                      "backend.");
-        }
-
-        CTIwarn ("Disabling reference counting optimisations not suitable "
-                 "for mutc backend.");
-        global.optimize.dosrf = FALSE;
-        global.optimize.doipc = FALSE;
-        global.optimize.douip = FALSE;
-        global.optimize.dodr = FALSE;
-        global.optimize.dorco = FALSE;
     }
 
     DBUG_VOID_RETURN;
