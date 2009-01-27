@@ -4830,7 +4830,7 @@ PRTrange (node *arg_node, info *arg_info)
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " < ");
     RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
-    fprintf (global.outfile, " <= ");
+    fprintf (global.outfile, " < ");
     RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
     if (RANGE_CHUNKSIZE (arg_node) != NULL) {
         fprintf (global.outfile, " in ");
