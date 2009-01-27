@@ -141,6 +141,11 @@ typedef union {
     prf *a_prf;
     node **a_node;
     constant **a_const;
+    int a_num;
+    bool a_bool;
+    double a_double;
+    float a_float;
+    char a_char;
 } attrib_t;
 
 #define REF_ISUNDEFINED(n) ((n == NULL) || (*n == NULL))
@@ -153,6 +158,11 @@ typedef union {
 #define REF_PRF(n) ((n).a_prf)
 #define REF_NODE(n) ((n).a_node)
 #define REF_CONST(n) ((n).a_const)
+#define REF_NUM(n) ((n).a_num)
+#define REF_BOOL(n) ((n).a_bool)
+#define REF_DOUBLE(n) ((n).a_double)
+#define REF_FLOAT(n) ((n).a_float)
+#define REF_CHAR(n) ((n).a_char)
 
 typedef bool (*checkFun_ptr) (node *, int, attrib_t *);
 
@@ -190,10 +200,10 @@ ExtractOneArg (node *stack, node **arg)
         }
     } else {
         if (NODE_TYPE (stack) == N_exprs) {
-            *arg = EXPRS_EXPR (stack);
+            REF_SET (arg, EXPRS_EXPR (stack));
             stack = EXPRS_NEXT (stack);
         } else {
-            *arg = stack;
+            REF_SET (arg, stack);
             stack = NULL;
         }
         DBUG_PRINT ("PM", ("argument found:"));
@@ -290,7 +300,7 @@ lastId (node *arg_node)
 
     DBUG_PRINT ("PM", ("lastId trying to look up the variable definition "));
     res = arg_node;
-    while ((NODE_TYPE (arg_node) == N_id)
+    while ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_id)
            && (AVIS_SSAASSIGN (ID_AVIS (arg_node)) != NULL)) {
         res = arg_node;
         DBUG_PRINT ("PM", ("lastId looking up definition of the variable"));
@@ -327,7 +337,8 @@ followId (node *arg_node)
     DBUG_ENTER ("followId");
     DBUG_PRINT ("PM", ("followId trying to look up the variable definition "));
     res = lastId (arg_node);
-    if ((N_id == NODE_TYPE (res)) && (NULL != AVIS_SSAASSIGN (ID_AVIS (res)))
+    if ((NULL != arg_node) && (N_id == NODE_TYPE (res))
+        && (NULL != AVIS_SSAASSIGN (ID_AVIS (res)))
         && (NULL != ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (res))))) {
         arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (res))));
     }
@@ -376,26 +387,28 @@ static node *
 MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
            attrib_t *attribRefs, node **matched_node, bool pushSons, node *stack)
 {
+    node *match = NULL;
+
     DBUG_ENTER ("MatchNode");
 
     DBUG_PRINT ("PM", ("MatchNode trying to match node of type \"%s\"...",
                        global.mdb_nodetype[nt]));
 
     if (stack != (node *)FAIL) {
-        stack = ExtractOneArg (stack, matched_node);
-        *matched_node = followId (*matched_node);
-        if ((NODE_TYPE (*matched_node) == nt)
-            && ((numAttribs == 0)
-                || matchAttribsFun (*matched_node, numAttribs, attribRefs))) {
+        stack = ExtractOneArg (stack, &match);
+
+        match = followId (match);
+        if ((NODE_TYPE (match) == nt)
+            && ((numAttribs == 0) || matchAttribsFun (match, numAttribs, attribRefs))) {
             DBUG_PRINT ("PM", ("MatchNode( %s, _, %d, _, _, %d, _) matched!",
                                global.mdb_nodetype[nt], numAttribs, pushSons));
             if (pushSons) {
                 switch (nt) {
                 case N_prf:
-                    stack = PushArgs (stack, PRF_ARGS (*matched_node));
+                    stack = PushArgs (stack, PRF_ARGS (match));
                     break;
                 case N_array:
-                    stack = PushArgs (stack, ARRAY_AELEMS (*matched_node));
+                    stack = PushArgs (stack, ARRAY_AELEMS (match));
                     break;
                 case N_id:
                 case N_num:
@@ -407,6 +420,8 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
                     break;
                 }
             }
+
+            REF_SET (matched_node, match);
         } else {
             stack = FailMatch (stack);
             DBUG_PRINT ("PM", ("failed!"));
@@ -553,6 +568,41 @@ MATCH_SCALAR_CONST (char)
 MATCH_SCALAR_CONST (num)
 MATCH_SCALAR_CONST (float)
 MATCH_SCALAR_CONST (double)
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PMboolVal( node *stack)
+ * @fn node *PMcharVal( node *stack)
+ * @fn node *PMnumVal( node *stack)
+ * @fn node *PMfloatVal( node *stack)
+ * @fn node *PMdoubleVal( node *stack)
+ *
+ *****************************************************************************/
+#define MATCH_SCALAR_VALUE(kind, typ, accessor)                                          \
+    static bool Match##kind##Value (node *arg, int noa, attrib_t *attrs)                 \
+    {                                                                                    \
+        return (accessor##_VAL (arg) == REF_##accessor (attrs[0]));                      \
+    }                                                                                    \
+                                                                                         \
+    node *PM##kind##Val (typ val, node *stack)                                           \
+    {                                                                                    \
+        attrib_t attribs[1];                                                             \
+        node *kind##_node = NULL;                                                        \
+        DBUG_ENTER ("PM##kind##Val");                                                    \
+                                                                                         \
+        REF_##accessor (attribs[0]) = val;                                               \
+                                                                                         \
+        stack = MatchNode (N_##kind, Match##kind##Value, 1, attribs, &kind##_node,       \
+                           FALSE, stack);                                                \
+                                                                                         \
+        DBUG_RETURN (stack);                                                             \
+    }
+
+MATCH_SCALAR_VALUE (bool, bool, BOOL)
+MATCH_SCALAR_VALUE (char, char, CHAR)
+MATCH_SCALAR_VALUE (num, int, NUM)
+MATCH_SCALAR_VALUE (float, float, FLOAT)
+MATCH_SCALAR_VALUE (double, double, DOUBLE)
 
 /** <!--*******************************************************************-->
  *
@@ -863,7 +913,7 @@ PMexprs (node **exprs, node *stack)
 {
     node *top;
 
-    DBUG_ENTER ("PManyExprs");
+    DBUG_ENTER ("PMexprs");
 
     stack = ExtractTopFrame (stack, &top);
 
@@ -874,6 +924,47 @@ PMexprs (node **exprs, node *stack)
             REF_SET (exprs, top);
         } else if (CMPTdoCompareTree (top, *exprs) == CMPT_NEQ) {
             stack = FailMatch (stack);
+        }
+    }
+
+    DBUG_RETURN (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Matches the given chain of expressions against the top
+ *        frame on the stack.
+ *
+ * @param exprs   expressions to match against
+ * @param stack   the stack
+ *
+ * @return modified stack
+ ******************************************************************************/
+node *
+PMpartExprs (node *exprs, node *stack)
+{
+    node *top;
+
+    DBUG_ENTER ("PMpartExprs");
+
+    stack = ExtractTopFrame (stack, &top);
+
+    if (top == NULL) {
+        stack = FailMatch (stack);
+    } else {
+        while ((exprs != NULL) && (top != NULL)) {
+            if (CMPTdoCompareTree (EXPRS_EXPR (top), EXPRS_EXPR (exprs)) == CMPT_NEQ) {
+                stack = FailMatch (stack);
+                break;
+            }
+
+            exprs = EXPRS_NEXT (exprs);
+            top = EXPRS_NEXT (top);
+        }
+        if (exprs != NULL) {
+            stack = FailMatch (stack);
+        }
+        if (top != NULL) {
+            stack = PushArgs (stack, top);
         }
     }
 
