@@ -24,6 +24,8 @@
  *
  *   +) If "C" occurs on a right side, it always looks like
  *          "sel( idx, C)"
+ *      where the current index-vector of the potentially nested
+ *      withloops is a prefix of idx.
  *      [Otherwise reuse might miss data dependencies!]
  * </pre>
  *
@@ -54,6 +56,7 @@
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -63,13 +66,15 @@
  *****************************************************************************/
 struct INFO {
     node *iv;
+    node *ivids;
     void *mask;
     void *negmask;
 };
 
-#define INFO_IV(n) (n->iv)
-#define INFO_MASK(n) (n->mask)
-#define INFO_NEGMASK(n) (n->negmask)
+#define INFO_IV(n) ((n)->iv)
+#define INFO_IVIDS(n) ((n)->ivids)
+#define INFO_MASK(n) ((n)->mask)
+#define INFO_NEGMASK(n) ((n)->negmask)
 
 static info *
 MakeInfo ()
@@ -81,6 +86,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_IV (result) = NULL;
+    INFO_IVIDS (result) = NULL;
     INFO_MASK (result) = NULL;
     INFO_NEGMASK (result) = NULL;
 
@@ -132,7 +138,8 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
 
     INFO_MASK (info) = DFMgenMaskClear (maskbase);
     INFO_NEGMASK (info) = DFMgenMaskClear (maskbase);
-    INFO_IV (info) = WITH_VEC (with);
+    INFO_IV (info) = TBmakeSet (WITH_VEC (with), NULL);
+    INFO_IVIDS (info) = TBmakeSet (WITH_IDS (with), NULL);
 
     TRAVpush (TR_reuse);
     with = TRAVdo (with, info);
@@ -148,6 +155,9 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
     INFO_NEGMASK (info) = DFMremoveMask (INFO_NEGMASK (info));
     maskbase = DFMremoveMaskBase (maskbase);
 
+    INFO_IVIDS (info) = FREEdoFreeNode (INFO_IVIDS (info));
+    INFO_IV (info) = FREEdoFreeNode (INFO_IV (info));
+
     info = FreeInfo (info);
 
     DBUG_RETURN (cand);
@@ -155,6 +165,102 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
 
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper funcions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsValidIndex( node *index, node *ivs, node *ivids)
+ *
+ * @brief Checks whether the index refers to elements within the
+ *        sub-pane given by ivs and ivids.
+ *
+ * @param index node representing index
+ * @param ivs   set of index vectors
+ * @param ivids set of index scalars
+ *
+ * @return true iff the index is valid
+ *****************************************************************************/
+static bool
+IsValidIndexHelper (node *index, node **ivs, node **ivids)
+{
+    node *aexprs = NULL;
+    node *rest = NULL;
+    node *arg1 = NULL, *arg2 = NULL;
+    bool result = FALSE;
+
+    DBUG_ENTER ("IsValidIndexHelper");
+
+    /*
+     * index can be
+     *
+     * iv1 ++ iv2 iv1 is prefix of current ivs and iv2 is valid index
+     *                   for the remainder
+     *
+     * iv => iv must be topmost WL index
+     *
+     * [i0, i1, i2, i3, ...] => the scalars are a prefix of ivids
+     *                          or ivids is a prefix of the scalars
+     */
+    if (PM (PMvar (&arg2, PMvar (&arg1, PMprf (F_cat_VxV, index))))) {
+        result = IsValidIndexHelper (arg1, ivs, ivids)
+                 && IsValidIndexHelper (arg2, ivs, ivids);
+    } else if (PM (PMexprs (&aexprs, PMarray (NULL, NULL, index)))) {
+        result = TRUE;
+
+        while (result &&                        /* we don't know better */
+               (*ivids != NULL) &&              /* still more nesting levels */
+               (SET_MEMBER (*ivids) != NULL) && /* this level has idx scalars */
+               (aexprs != NULL)) {              /* more elements in index */
+            node *tmp = TCids2Exprs (SET_MEMBER (*ivids));
+
+            result = PM (PMexprs (&rest, PMpartExprs (tmp, aexprs)));
+
+            tmp = FREEdoFreeTree (tmp);
+            aexprs = rest;
+            rest = NULL;
+
+            *ivs = SET_NEXT (*ivs);
+            *ivids = SET_NEXT (*ivids);
+        }
+    } else if ((NODE_TYPE (index) == N_id)
+               && (ID_AVIS (index) == IDS_AVIS (SET_MEMBER (*ivs)))) {
+        *ivs = SET_NEXT (*ivs);
+        *ivids = SET_NEXT (*ivids);
+
+        result = TRUE;
+    }
+
+    DBUG_RETURN (result);
+}
+
+static bool
+IsValidIndex (node *index, node *ivs, node *ivids)
+{
+    bool result;
+
+    DBUG_ENTER ("IsValidIndex");
+
+    result = IsValidIndexHelper (index, &ivs, &ivids) && (ivs == NULL) && (ivids == NULL);
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -173,8 +279,10 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
  *   'INFO_MASK( arg_info)' contains a pointer to the mask of reusable arrays
  *   'INFO_NEGMASK( arg_info)' contains a pointer to the mask of not reuseables
  *
- *   'INFO_IV( arg_info)' contains a pointer to the index vector of
- *     the current with-loop.
+ *   'INFO_IV( arg_info)' contains a set of pointers to the index vectors
+ *                        in the current scope
+ *   'INFO_IVIDS( arg_info)' contains a set of pointers to the index scalars
+ *                           in the current scope
  *
  ******************************************************************************/
 
@@ -185,7 +293,20 @@ REUSEwith (node *arg_node, info *arg_info)
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    /*
+     * add current index information to sets
+     */
+    INFO_IV (arg_info) = TBmakeSet (WITH_VEC (arg_node), INFO_IV (arg_info));
+    INFO_IVIDS (arg_info) = TBmakeSet (WITH_IDS (arg_node), INFO_IVIDS (arg_info));
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    /*
+     * pop one level from index information
+     */
+    INFO_IVIDS (arg_info) = FREEdoFreeNode (INFO_IVIDS (arg_info));
+    INFO_IV (arg_info) = FREEdoFreeNode (INFO_IV (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -320,14 +441,15 @@ REUSEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("REUSEprf");
 
-    if ((PRF_PRF (arg_node) == F_sel_VxA) && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
-        && (ID_AVIS (PRF_ARG1 (arg_node)) == IDS_AVIS (INFO_IV (arg_info)))
+    if ((PRF_PRF (arg_node) == F_sel_VxA) && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
-                               ID_AVIS (PRF_ARG2 (arg_node))))) {
+                               ID_AVIS (PRF_ARG2 (arg_node))))
+        && IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info),
+                         INFO_IVIDS (arg_info))) {
 
         /*
-         * 'arg2' is used in a normal WL-sel()
+         * 'arg2' is used in a WL-sel that only references
+         * elements of the sub-pane of the current iteration
          *  -> we can possibly reuse this array
          */
         DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (PRF_ARG2 (arg_node)));
