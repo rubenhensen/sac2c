@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "free.h"
 #include "new_types.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -47,6 +48,8 @@ struct INFO {
     node *predavis;
     node *memavis;
     node *rcavis;
+    node *iv;
+    node *ivids;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -55,6 +58,8 @@ struct INFO {
 #define INFO_PREDAVIS(n) ((n)->predavis)
 #define INFO_MEMAVIS(n) ((n)->memavis)
 #define INFO_RCAVIS(n) ((n)->rcavis)
+#define INFO_IV(n) ((n)->iv)
+#define INFO_IVIDS(n) ((n)->ivids)
 
 static info *
 MakeInfo (node *fundef)
@@ -71,6 +76,8 @@ MakeInfo (node *fundef)
     INFO_PREDAVIS (result) = NULL;
     INFO_MEMAVIS (result) = NULL;
     INFO_RCAVIS (result) = NULL;
+    INFO_IV (result) = NULL;
+    INFO_IVIDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -240,6 +247,74 @@ EMDRcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMDRwithid( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRwithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMDRwithid");
+
+    INFO_IV (arg_info) = WITHID_VEC (arg_node);
+    INFO_IVIDS (arg_info) = WITHID_IDS (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRwith( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRwith (node *arg_node, info *arg_info)
+{
+    node *oldivs, *oldiv;
+
+    DBUG_ENTER ("EMDRwith");
+
+    oldiv = INFO_IV (arg_info);
+    oldivs = INFO_IVIDS (arg_info);
+
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+
+    INFO_IVIDS (arg_info) = oldivs;
+    INFO_IV (arg_info) = oldiv;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRwith2( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRwith2 (node *arg_node, info *arg_info)
+{
+    node *oldivs;
+
+    DBUG_ENTER ("EMDRwith2");
+
+    oldivs = INFO_IVIDS (arg_info);
+
+    WITH2_WITHID (arg_node) = TRAVopt (WITH2_WITHID (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
+
+    INFO_IVIDS (arg_info) = oldivs;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMDRcode( node *arg_node, info *arg_info)
  *
  * @brief
@@ -266,7 +341,6 @@ EMDRcode (node *arg_node, info *arg_info)
     exprs = CODE_CEXPRS (arg_node);
     while (exprs != NULL) {
         node *id = NULL;
-        node *iv = NULL;
         node *idx = NULL;
         bool inplace = FALSE;
 
@@ -274,10 +348,12 @@ EMDRcode (node *arg_node, info *arg_info)
 
         if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
             node *wlass = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)));
+            node *aexprs = NULL;
+            node *iv = NULL;
+            node *mem = NULL;
 
             if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_wl_assign)) {
                 node *val;
-                node *mem;
                 node *valavis;
 
                 val = PRF_ARG1 (wlass);
@@ -331,6 +407,73 @@ EMDRcode (node *arg_node, info *arg_info)
                     }
                 }
             }
+
+            /*
+             * Pattern:
+             *
+             * a' = suballoc( A', _)
+             * r = fill( [v1, ..., vn], a')
+             *
+             * where A' is known to be a reuse of B
+             * and the vi are defined as
+             *
+             * vi = fill( idx_sel( idxi, B), vi');
+             * idxi = idxs2offset( _, iv1, ..., ivn, i)
+             *
+             * the shape (arg 1) is by construction the
+             * shape of A and B
+             */
+            if (PM (PMvar (&mem,
+                           PMprf (F_suballoc,
+                                  PMexprs (&aexprs, PMarray (NULL, NULL,
+                                                             PMprf (F_fill, wlass))))))) {
+                node *expr;
+                node *arr = NULL;
+                bool iscopy = TRUE;
+                int pos = 0;
+
+                DBUG_PRINT ("EMDR", ("vector copy: potential candiate found."));
+
+                while ((aexprs != NULL) && iscopy) {
+                    expr = EXPRS_EXPR (aexprs);
+
+                    if (!PM (PMvar (
+                          &arr,
+                          PMany (NULL,
+                                 PMnumVal (
+                                   pos,
+                                   PMpartExprs (
+                                     INFO_IVIDS (arg_info),
+                                     PMany (NULL,
+                                            PMprf (F_idxs2offset,
+                                                   PMprf (F_fill,
+                                                          PMprf (F_idx_sel,
+                                                                 PMprf (F_fill,
+                                                                        expr))))))))))) {
+                        iscopy = FALSE;
+#ifndef DBUG_OFF
+                    } else {
+                        DBUG_PRINT ("EMDR", ("vector copy: element %d fits.", pos));
+#endif
+                    }
+
+                    aexprs = EXPRS_NEXT (aexprs);
+                    pos++;
+                }
+
+#ifndef DBUG_OFF
+                if (iscopy) {
+                    DBUG_PRINT ("EMDR", ("vector copy expression found"));
+                }
+#endif
+                if (iscopy
+                    && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                        == ID_AVIS (arr))) {
+                    DBUG_PRINT ("EMDR", ("vector copy: reuse identified."));
+
+                    inplace = TRUE;
+                }
+            }
         }
 
         if (inplace) {
@@ -352,7 +495,8 @@ EMDRcode (node *arg_node, info *arg_info)
              */
             CODE_CBLOCK_INSTR (arg_node)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                         TCmakePrf1 (F_noop, DUPdoDupNode (iv))),
+                                         TCmakePrf1 (F_noop,
+                                                     DUPdoDupNode (INFO_IV (arg_info)))),
                               CODE_CBLOCK_INSTR (arg_node));
 
             AVIS_SSAASSIGN (avis) = CODE_CBLOCK_INSTR (arg_node);
