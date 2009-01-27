@@ -1043,6 +1043,7 @@
 	  <node name="Vardec" />
 	  <node name="Part" />
 	  <node name="Id" />
+	  <node name="Generator" />
 	</travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
@@ -1524,6 +1525,7 @@
       </traversal>
       <traversal id="WLSB" name="With-Loop Scalarization Build traversal" default="sons" include="wls.h">
         <travuser>
+          <node name="Assign" />
           <node name="Code" />
           <node name="Generator" />
           <node name="Part" />
@@ -5664,7 +5666,7 @@
           </description>
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
@@ -5686,7 +5688,7 @@
           </description>
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
@@ -6191,34 +6193,48 @@
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <all />
+                <range from="scp_prs" to="cwc_ebt" />
+                <range from="opt_dcr3" to="final" />
               </phases>
+            </target>
+            <target>
+             <node name="Id" />
+             <phases>
+               <range from="ewl_accu" to="opt_scc" />
+             </phases>
             </target>
             <target mandatory="yes">
               <node name="Dot" />
               <phases>
-                <all />
+                <range from="scp_prs" to="pre_acn" />
               </phases>
             </target>
           </targets>
-          <description>Bound may be N_num (e.g., [0]), or an N_array.</description>
+          <description>Bound may be an N_num or an N_array, except that, in phase 11 (optimizations), it must be an N_id. </description>
         </son>
         <son name="Bound2">
           <targets>
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <all />
+                <range from="scp_prs" to="cwc_ebt" />
+                <range from="opt_dcr3" to="final" />
               </phases>
+            </target>
+            <target>
+             <node name="Id" />
+             <phases>
+               <range from="ewl_accu" to="opt_scc" />
+             </phases>
             </target>
             <target mandatory="yes">
               <node name="Dot" />
               <phases>
-                <all />
+                <range from="scp_prs" to="pre_acn" />
               </phases>
             </target>
           </targets>
-          <description>Bound may be N_num (e.g., [0]), or an N_array.</description>
+          <description>Bound may be an N_num or an N_array, except that, in phase 11 (optimizations), it must be an N_id. </description>
         </son>
         <son name="Step">
           <targets>

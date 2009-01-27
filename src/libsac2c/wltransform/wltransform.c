@@ -50,6 +50,7 @@
 #include "math_utils.h"
 #include "globals.h"
 #include "vector.h"
+#include "pattern_match.h"
 
 /*
  * INFO structure
@@ -2456,8 +2457,9 @@ IsEmptyStride1 (node *stride)
  *   node *ToFirstComponent( node *array)
  *
  * Description:
- *   returns 'ARRAY_AELEMS(array)' if 'array' is of type N_array, and 'array'
- *   otherwise.
+ *   returns 'ARRAY_AELEMS(array)' if 'array' is of type N_array,
+ *           or if 'array' is an N_id that refers to an N_array.
+ *           Otherwise, returns 'array'.
  *
  ******************************************************************************/
 
@@ -2465,15 +2467,24 @@ static node *
 ToFirstComponent (node *array)
 {
     node *comp;
+    node *nar = NULL;
+    constant *narfs = NULL;
 
     DBUG_ENTER ("ToFirstComponent");
 
     if (array != NULL) {
-        if (NODE_TYPE (array) == N_array) {
-            comp = ARRAY_AELEMS (array);
+        if (PM (PMarray (&narfs, &nar, array))) {
+            COfreeConstant (narfs);
         } else {
-            DBUG_ASSERT ((NODE_TYPE (array) == N_id), "wrong node type found!");
-            comp = array;
+            nar = array;
+        }
+
+        if (NODE_TYPE (nar) == N_array) {
+            comp = ARRAY_AELEMS (nar);
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (nar) == N_id),
+                         "ToFirstComponent expected N_id or N_array");
+            comp = nar;
         }
     } else {
         comp = NULL;

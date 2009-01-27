@@ -26,4 +26,5 @@ extern node *UFLwith (node *arg_node, info *arg_info);
 extern node *UFLpart (node *arg_node, info *arg_info);
 extern node *UFLwithid (node *arg_node, info *arg_info);
 extern node *UFLid (node *arg_node, info *arg_info);
+extern node *UFLgenerator (node *arg_node, info *arg_info);
 #endif /* _SAC_UNFLATTEN_H_ */

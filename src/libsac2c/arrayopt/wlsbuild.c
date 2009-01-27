@@ -6,8 +6,10 @@
  *
  * @defgroup wlsb WLSBuild
  *
- * @brief replaces a with-loop with an equivalent scalarized with-loop.
- *        The term "scalarized" is somewhat misleading. Basically,
+ * @brief replaces two nested with-loops with one equivalent scalarized
+ *        with-loop. ( I find the term "scalarized" to be misleading or,
+ *        at best, not evocative of what this optimization does.)
+ *        In operation,
  *        the index ranges of the two WLs are merged into a single
  *        range via catenation of their bounds. Take and drop on
  *        the extended index vectors restores the original two
@@ -79,6 +81,7 @@
 #include "shape.h"
 #include "free.h"
 #include "constants.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -99,6 +102,7 @@ struct INFO {
     node *newcodes;
     node *newparts;
     node *newwithop;
+    node *preassigns;
     lut_t *codelut;
 };
 
@@ -114,6 +118,7 @@ struct INFO {
 #define INFO_NEWCODES(n) (n->newcodes)
 #define INFO_NEWPARTS(n) (n->newparts)
 #define INFO_NEWWITHOP(n) (n->newwithop)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_CODELUT(n) (n->codelut)
 
 static info *
@@ -137,6 +142,7 @@ MakeInfo (node *fundef)
     INFO_NEWCODES (result) = NULL;
     INFO_NEWPARTS (result) = NULL;
     INFO_NEWWITHOP (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_CODELUT (result) = LUTgenerateLut ();
 
     DBUG_RETURN (result);
@@ -166,41 +172,43 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSBdoBuild( node *with, node *fundef)
+ * @fn node *WLSBdoBuild( node *arg_node, node *fundef)
  *
  * @brief starting function of the WLSBuild traversal.
  *
- * @param with the with-loop to be scalarized
- * @param fundef
+ * @param arg_node: the with-loop to be scalarized
+ * @param fundef: the function containing the with-loop
  *
  * @return a new, scalarized with-loop
  *
  *****************************************************************************/
 node *
-WLSBdoBuild (node *with, node *fundef)
+WLSBdoBuild (node *arg_node, node *fundef)
 {
     info *info;
 
     DBUG_ENTER ("WLSBdoBuild");
 
-    DBUG_ASSERT (NODE_TYPE (with) == N_with, "First parameter must be a with-loop");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_with, "First parameter must be a with-loop");
 
-    DBUG_ASSERT (NODE_TYPE (fundef) = N_fundef, "Second parameter must a fundef");
+    DBUG_ASSERT (NODE_TYPE (fundef) = N_fundef, "Second parameter must be a fundef");
 
     info = MakeInfo (fundef);
 
     DBUG_PRINT ("WLS", ("Building new with-loop..."));
 
     TRAVpush (TR_wlsb);
-    with = TRAVdo (with, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("WLS", ("Scalarization complete!"));
-    DBUG_EXECUTE ("WLS", PRTdoPrintNode (with););
+    DBUG_PRINT ("WLS", ("Scalarization complete. New with-loop is:"));
+    DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+    DBUG_PRINT ("WLS", ("New fundef is:"));
+    DBUG_EXECUTE ("WLS", PRTdoPrintNode (fundef););
 
-    DBUG_RETURN (with);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -213,6 +221,72 @@ WLSBdoBuild (node *with, node *fundef)
  * @{
  *
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FlattenBound( node *arg_node, info *arg_info)
+ *
+ *   @brief  Flattens the WL bound at arg_node.
+ *           I.e., if the generator looks like this on entry:
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            z = with {
+ *             (. <= iv < [s0, s1]) ...
+ *            }
+ *
+ *          it will look like this on the way out:
+ *            int[2] TMP;
+ *            ...
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            TMP = [s0, s1];
+ *            z = with {
+ *             (. <= iv < TMP) ...
+ *            }
+ *
+ *          The only rationale for this change is to ensure that
+ *          WL bounds are named. This allows us to associate an
+ *          N_avis node with each bound, which will be used to
+ *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          These fields, in turn, will be used by the constant
+ *          folder to remove guards and do other swell optimizations.
+ *
+ *   @param  node *arg_node: a WL PART BOUND to be flattened.
+ *           info *arg_info:
+ *
+ *   @return node *node:      N_id node for flattened bound
+ ******************************************************************************/
+static node *
+FlattenBound (node *arg_node, info *arg_info)
+{
+    node *res;
+    node *bavis;
+    node *nas;
+    int shp;
+
+    DBUG_ENTER ("FlattenBound");
+
+    if (global.ssaiv) {
+        DBUG_ASSERT (N_array == NODE_TYPE (arg_node),
+                     "FlattenBound expected N_array BOUND");
+        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
+        bavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
+                            NULL);
+        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
+        AVIS_SSAASSIGN (bavis) = nas;
+        res = TBmakeId (bavis);
+        DBUG_PRINT ("WLSB", ("FlattenBound generated assign for %s", AVIS_NAME (bavis)));
+        FREEdoFreeTree (arg_node);
+    } else {
+        res = arg_node;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  *
@@ -250,10 +324,12 @@ CreateOneVector (int nr)
  * @fn node *ConcatVector(node *vec1, node *vec2, info *arg_info)
  *
  * @brief Concatenates vectors vec1 and vec2.
- *        IMPORTANT: Both vectors are inspected only!
+ *        IMPORTANT: Both vectors are read-only!
  *
  * @param vec1   Either an AKV N_id OR a N_array vector
+ *               OR an N_id that points to an N_array vector.
  * @param vec2   Either an AKV N_id OR a N_array vector
+ *               OR an N_id that points to an N_array vector.
  * @param arg_info
  *
  * @return A N_array vector
@@ -265,31 +341,44 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     node *res;
     node *t1 = NULL;
     node *t2 = NULL;
+    node *v1 = NULL;
+    node *v2 = NULL;
+    constant *v1fs = NULL;
+    constant *v2fs = NULL;
 
     DBUG_ENTER ("ConcatVectors");
+
+    /* We start by dereferencing any N_id, in hopes of finding an N_array */
+    if ((NODE_TYPE (vec1) == N_id) && (PM (PMarray (&v1fs, &v1, vec1)))) {
+        v1fs = COfreeConstant (v1fs);
+    } else {
+        v1 = vec1;
+    }
+
+    if ((NODE_TYPE (vec2) == N_id) && (PM (PMarray (&v2fs, &v2, vec2)))) {
+        v2fs = COfreeConstant (v2fs);
+    } else {
+        v2 = vec2;
+    }
 
     /*
      * In case the arguments are constant N_id nodes, constant arrays are
      * generated to be able to merge the elements,
      */
-    if (NODE_TYPE (vec1) == N_id) {
-        DBUG_ASSERT (TYisAKV (ID_NTYPE (vec1)),
-                     "Bounds vectors must be AKV or structural constants!");
-        t1 = COconstant2AST (TYgetValue (ID_NTYPE (vec1)));
+    if (NODE_TYPE (v1) == N_id) {
+        DBUG_ASSERT (TYisAKV (ID_NTYPE (v1)), "BOUND1 N_id vector not AKV!");
+        t1 = COconstant2AST (TYgetValue (ID_NTYPE (v1)));
     } else {
-        DBUG_ASSERT (NODE_TYPE (vec1) == N_array,
-                     "Bounds vectors must be AKV or structural constants!");
-        t1 = vec1;
+        DBUG_ASSERT (NODE_TYPE (v1) == N_array, "BOUND1 not N_array or N_id!");
+        t1 = v1;
     }
 
-    if (NODE_TYPE (vec2) == N_id) {
-        DBUG_ASSERT (TYisAKV (ID_NTYPE (vec2)),
-                     "Bounds vectors must be AKV or structural constants!");
-        t2 = COconstant2AST (TYgetValue (ID_NTYPE (vec2)));
+    if (NODE_TYPE (v2) == N_id) {
+        DBUG_ASSERT (TYisAKV (ID_NTYPE (v2)), "BOUND2 N_id vector not AKV!");
+        t2 = COconstant2AST (TYgetValue (ID_NTYPE (v2)));
     } else {
-        DBUG_ASSERT (NODE_TYPE (vec1) == N_array,
-                     "Bounds vectors must be AKV or structural constants!");
-        t2 = vec2;
+        DBUG_ASSERT (NODE_TYPE (v2) == N_array, "BOUND2 not N_array or N_id!");
+        t2 = v2;
     }
 
     /*
@@ -299,16 +388,20 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
       TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (t1)), DUPdoDupTree (ARRAY_AELEMS (t2))));
 
     /*
-     * and deallocate the newly created constant vectors must be freed.
+     * then deallocate the constant vectors.
      */
-    if (NODE_TYPE (vec1) == N_id) {
+    if (NODE_TYPE (v1) == N_id) {
         t1 = FREEdoFreeTree (t1);
     }
 
-    if (NODE_TYPE (vec2) == N_id) {
+    if (NODE_TYPE (v2) == N_id) {
         t2 = FREEdoFreeTree (t2);
     }
 
+    /*
+     * Flatten the result
+     */
+    res = FlattenBound (res, arg_info);
     DBUG_RETURN (res);
 }
 
@@ -837,6 +930,42 @@ WLSBmodarray (node *arg_node, info *arg_info)
     INFO_NEWWITHOP (arg_info) = DUPdoDupNode (arg_node);
 
     DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Directs the traversal into the assignment instruction and inserts
+ *        the INFO_PREASSIGNS chain before the current node prior to
+ *        traversing further down.
+ *        [This code shamelessly ripped off from ive_split_selections.c.]
+ *
+ * @param arg_node N_assign node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_assign node
+ ******************************************************************************/
+node *
+WLSBassign (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("WLSBassign");
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    new_node = arg_node;
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        DBUG_ASSERT (N_assign == NODE_TYPE (INFO_PREASSIGNS (arg_info)),
+                     "WLSBassign expected N_assign for preassigns");
+        new_node = TCappendAssign (INFO_PREASSIGNS (arg_info), new_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (new_node);
 }
 
 /** <!--********************************************************************-->

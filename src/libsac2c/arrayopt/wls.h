@@ -67,6 +67,7 @@ extern node *WLSWwithid (node *arg_node, info *arg_info);
 extern node *WLSBdoBuild (node *with, node *fundef);
 
 extern node *WLSBcode (node *arg_node, info *arg_info);
+extern node *WLSBassign (node *arg_node, info *arg_info);
 extern node *WLSBgenerator (node *arg_node, info *arg_info);
 extern node *WLSBpart (node *arg_node, info *arg_info);
 extern node *WLSBwith (node *arg_node, info *arg_info);

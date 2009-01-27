@@ -17,6 +17,8 @@
 #include "DupTree.h"
 #include "ctinfo.h"
 #include "unflatten.h"
+#include "constants.h"
+#include "pattern_match.h"
 
 /*
  * This phase converts With-Loop index variables back into
@@ -24,8 +26,13 @@
  * for each partition in a WL are renamed to match the names
  * in the first partition of the WL.
  *
+ * This phase also unflattens WL bounds, so that they
+ * are (mostly?) N_array nodes, rather than the N_id nodes
+ * that point to those N_array nodes.
+ *
  * This renaming is required by the code generator,
  * and perhaps by other phases.
+ *
  */
 
 /**
@@ -92,6 +99,7 @@ UFLfundef (node *arg_node, info *arg_info)
 
     if (global.ssaiv) {
         if (NULL != FUNDEF_BODY (arg_node)) {
+            DBUG_PRINT ("UFL", ("Unflattening function: %s", FUNDEF_NAME (arg_node)));
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
 
@@ -252,6 +260,72 @@ UFLid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *UFLgenerator( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   unflattens one WL generator:
+ *    Case 1: Replaces N_id nodes in BOUNDs by the N_array nodes they point to.
+ *    Case 2: If N_id nodes do not point to N_arrays, but are AKV,
+ *            then build an N_array containing the constant.
+ *    Case 3: N_array nodes: These are not supposed to exist any more.
+ *
+ *    The latter can occur when the bound is a lac-fn argument.
+ *
+ * TODO: Perhaps should also handle STEP and WIDTH?
+ *
+ ******************************************************************************/
+
+node *
+UFLgenerator (node *arg_node, info *arg_info)
+{
+    node *lb = NULL;
+    node *ub = NULL;
+    constant *lbfs = NULL;
+    constant *ubfs = NULL;
+
+    DBUG_ENTER ("UFLgenerator");
+
+#ifdef REALLYFLATTENED // as of 2009-01-22, this is still being violated
+    DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND1 (arg_node)),
+                 "UFLgenerator expected N_id node for GENERATOR_BOUND1");
+    DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (arg_node)),
+                 "UFLgenerator expected N_id node for GENERATOR_BOUND2");
+#endif // REALLYFLATTENED
+
+    if (NULL != arg_node) {
+        if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
+            COfreeConstant (lbfs);
+            lb = DUPdoDupTree (lb);
+            FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
+            GENERATOR_BOUND1 (arg_node) = lb;
+        } else {
+            if (PM (PMconst (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
+                FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
+                GENERATOR_BOUND1 (arg_node) = COconstant2AST (lbfs);
+                lbfs = COfreeConstant (lbfs);
+            }
+        }
+
+        if ((PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (arg_node))))) {
+            COfreeConstant (ubfs);
+            ub = DUPdoDupTree (ub);
+            FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
+            GENERATOR_BOUND2 (arg_node) = ub;
+        } else {
+            if (PM (PMconst (&ubfs, &ub, GENERATOR_BOUND2 (arg_node)))) {
+                FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
+                GENERATOR_BOUND2 (arg_node) = COconstant2AST (ubfs);
+                lbfs = COfreeConstant (ubfs);
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *UFLpart( node *arg_node, info *arg_info)
  *
  * description:
@@ -271,6 +345,7 @@ UFLpart (node *arg_node, info *arg_info)
 
     if (NULL != arg_node) {
         PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
         if (NULL != PART_NEXT (arg_node)) {
             PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
         }
@@ -296,16 +371,17 @@ UFLwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("UFLwith");
 
+    arg_info = MakeInfo ();
+
     if (NULL != arg_node) {
-        if (NULL != PART_NEXT (WITH_PART (arg_node))) {
-            /* Set up the various AVIS_SUBST fields for next traversal */
+        if (NULL != WITH_PART (arg_node)) {
             WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
             /* Now, rename the withids in code fragments */
             WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         }
     }
-    INFO_WITHID (arg_info) = NULL; /* done with this WL */
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -324,17 +400,13 @@ UFLwith (node *arg_node, info *arg_info)
 node *
 UFLdoUnflattenWLGenerators (node *arg_node)
 {
-    info *arg_info;
+    info *arg_info = NULL;
 
     DBUG_ENTER ("UFLdoUnflattenWLGenerators");
-
-    arg_info = MakeInfo ();
 
     TRAVpush (TR_ufl);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

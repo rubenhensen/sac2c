@@ -16,16 +16,21 @@
  *         }: res
  *        genarray([9]);
  *
- * is transformed into
+ * is transformed into this form, with flattened generators:
  *
  *    A = with(iv)
- *         ([3] <= iv < [6])
+ *         t3 = [3];
+ *         t6 = [6];
+ *         t0 = [0];
+ *         t7 = [7];
+ *         t9 = [9];
+ *         (t3 <= iv < t6)
  *         {res = ...;
  *         }: res
- *         ([0] <= iv < [3])
+ *         (t0 <= iv < t3)
  *         {res = 0;
  *         }: res
- *         ([7] <= iv < [9])
+ *         (t7 <= iv < t9)
  *         {res = 0;
  *         }: res
  *        genarray([9]);
@@ -41,21 +46,25 @@
  *         (a < iv <= b)
  *         {res = ...;
  *         }: res
- *        genarray([c]);
+ *        genarray(c);
  *
  * is transformed into
  *
  *    A = with(iv)
- *         ([a[0]] <= iv < [b[0]])
+ *         a0 = [a[0]];
+ *         b0 = [b[0]];
+ *         c0 = [c[0]];
+ *         z0 = [0];
+ *         (a0 <= iv < b0)
  *         {res = ...;
  *         }: res
- *         ([0] <= iv < [a[0]])
+ *         (z0 <= iv < a0)
  *         {res = 0;
  *         }: res
- *         ([b[0]] <= iv < [c[0]])
+ *         (b0 <= iv < c0)
  *         {res = 0;
  *         }: res
- *        genarray([c[0]]);
+ *        genarray(c0);
  *
  */
 
@@ -78,6 +87,7 @@
 #include "LookUpTable.h"
 #include "wldefaultpartition.h"
 #include "WLPartitionGeneration.h"
+#include "pattern_match.h"
 
 typedef enum { SP_mod, SP_func } sub_phase_t;
 
@@ -429,7 +439,70 @@ WLPGnormalizeStepWidth (node **step, node **width)
 
 /** <!--********************************************************************-->
  *
- * @fn node *AppendPart2WL(node * wln, node *partn)
+ * @fn node *FlattenBound( node *arg_node, info *arg_info)
+ *
+ *   @brief  Flattens the WL bound at arg_node.
+ *           I.e., if the generator looks like this on entry:
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            z = with {
+ *             (. <= iv < [s0, s1]) ...
+ *            }
+ *
+ *          it will look like this on the way out:
+ *            int[2] TMP;
+ *            ...
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            TMP = [s0, s1];
+ *            z = with {
+ *             (. <= iv < TMP) ...
+ *            }
+ *
+ *          The only rationale for this change is to ensure that
+ *          WL bounds are named. This allows us to associate an
+ *          N_avis node with each bound, which will be used to
+ *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          These fields, in turn, will be used by the constant
+ *          folder to remove guards and do other swell optimizations.
+ *
+ *   @param  node *arg_node: a WL PART BOUND to be flattened.
+ *           info *arg_info:
+ *
+ *   @return node *node:      N_id node for flattened bound
+ ******************************************************************************/
+static node *
+FlattenBound (node *arg_node, info *arg_info)
+{
+    node *bavis;
+    node *nas;
+    node *bid;
+    int shp;
+
+    DBUG_ENTER ("FlattenBound");
+    if (global.ssaiv) {
+        DBUG_ASSERT (N_array == NODE_TYPE (arg_node),
+                     "FlattenBound expected N_array BOUND");
+        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
+        bavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
+                            NULL);
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
+        AVIS_SSAASSIGN (bavis) = nas;
+        bid = TBmakeId (bavis);
+        FREEdoFreeTree (arg_node);
+        arg_node = bid;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *AppendPart2WL(node * wln, node *partn, info *arg_info)
  *
  *   @brief append N_part npart to the existing parts of
  *          the N_with node wln
@@ -440,13 +513,16 @@ WLPGnormalizeStepWidth (node **step, node **width)
  ******************************************************************************/
 
 static node *
-AppendPart2WL (node *wln, node *partn)
+AppendPart2WL (node *wln, node *partn, info *arg_info)
 {
     node *parts;
     int no_parts;
 
     DBUG_ENTER ("AppendPart2WL");
 
+    PART_BOUND1 (partn) = FlattenBound (PART_BOUND1 (partn), arg_info);
+    PART_BOUND2 (partn) = FlattenBound (PART_BOUND2 (partn), arg_info);
+    /* TODO: Should treat STEP and WIDTH the same as BOUNDs */
     parts = WITH_PART (wln);
     /* at least one part exists */
     no_parts = 1;
@@ -487,21 +563,41 @@ AppendPart2WL (node *wln, node *partn)
  ******************************************************************************/
 
 static node *
-CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden,
+CutSlices (node *ls, node *us, node *lxxx, node *uxxx, int dim, node *wln, node *coden,
            info *arg_info, node *withid)
 {
     node *lsc, *usc, *le, *ue, *lsce, *usce, *partn, *ubn, *lbn;
+    node *lb = NULL;
+    node *ub = NULL;
+    constant *lbfs = NULL;
+    constant *ubfs = NULL;
     int i, d, lnum, lscnum, unum, uscnum;
 
     DBUG_ENTER ("CutSlices");
+    /* Flatten what we assume to be the only partition */
+    PART_BOUND1 (WITH_PART (wln))
+      = FlattenBound (PART_BOUND1 (WITH_PART (wln)), arg_info);
+    PART_BOUND2 (WITH_PART (wln))
+      = FlattenBound (PART_BOUND2 (WITH_PART (wln)), arg_info);
 
     /* create local copies of the arrays which are modified here*/
     lsc = DUPdoDupTree (ls);
     usc = DUPdoDupTree (us);
 
-    le = ARRAY_AELEMS (l);
+    /* Find the original generator bounds */
+    if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wln)))))) {
+        COfreeConstant (lbfs);
+    } else {
+        DBUG_ASSERT (FALSE, "CutSlices expected N_array BOUND1");
+    }
+    if (PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (wln)))))) {
+        COfreeConstant (ubfs);
+    } else {
+        DBUG_ASSERT (FALSE, "CutSlices expected N_array BOUND2");
+    }
+    le = ARRAY_AELEMS (lb);
     lsce = ARRAY_AELEMS (lsc);
-    ue = ARRAY_AELEMS (u);
+    ue = ARRAY_AELEMS (ub);
     usce = ARRAY_AELEMS (usc);
 
     for (d = 0; d < dim; d++) {
@@ -522,7 +618,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
                     EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
                     EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
                 }
-                wln = AppendPart2WL (wln, partn);
+                wln = AppendPart2WL (wln, partn, arg_info);
             }
         } else {
             partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
@@ -532,7 +628,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             }
             EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
             EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
-            wln = AppendPart2WL (wln, partn);
+            wln = AppendPart2WL (wln, partn, arg_info);
         }
 
         if ((NODE_TYPE (EXPRS_EXPR (ue)) == N_num)
@@ -546,7 +642,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
                     lbn = EXPRS_NEXT (lbn);
                 }
                 NUM_VAL (EXPRS_EXPR (lbn)) = unum;
-                wln = AppendPart2WL (wln, partn);
+                wln = AppendPart2WL (wln, partn, arg_info);
             }
         } else {
             partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
@@ -556,7 +652,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             }
             EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
             EXPRS_EXPR (lbn) = DUPdoDupTree (EXPRS_EXPR (ue));
-            wln = AppendPart2WL (wln, partn);
+            wln = AppendPart2WL (wln, partn, arg_info);
         }
 
         /* and modify array bounds to continue with next dimension */
@@ -586,7 +682,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
 
     if (WITH_PARTS (wln) == -1) {
         /**
-         * no new slice neede to be cut. So the original generator is full!
+         * no new slice needed to be cut. Hence, the original generator is full!
          */
         WITH_PARTS (wln) = 1;
     }
@@ -677,7 +773,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 i = WLPGnormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
                 DBUG_ASSERT (!i, ("internal normalization failure"));
 
-                wln = AppendPart2WL (wln, partn);
+                wln = AppendPart2WL (wln, partn, arg_info);
             }
         } else {
             partn = CreateNewPart (ls, us, step, nw, withidn, coden, arg_info);
@@ -744,7 +840,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             i = WLPGnormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
             DBUG_ASSERT (!i, ("internal normalization failure"));
 
-            wln = AppendPart2WL (wln, partn);
+            wln = AppendPart2WL (wln, partn, arg_info);
         }
 
         /* and modify array bounds to continue with next dimension */
