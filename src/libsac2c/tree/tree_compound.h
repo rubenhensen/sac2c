@@ -1847,6 +1847,7 @@ extern node *TCmakeStrCopy (const char *str);
  ***/
 
 extern node *TCappendSet (node *links1, node *links2);
+extern node *TCdropSet (int num, node *set);
 extern int TCsetAdd (node **links, node *link);
 extern int TCsetDel (node **links, node *link);
 extern int TCsetUnion (node **links, node *add);

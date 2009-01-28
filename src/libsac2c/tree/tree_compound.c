@@ -3046,6 +3046,67 @@ TCappendSet (node *links1, node *links2)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *TCdropSet( int drop, node *set)
+ *
+ * @brief Drops drop elements from the set. If drop is negative, the
+ *        elements are dropped from the tail.
+ *
+ *        NOTE: set is updated destructively!
+ *
+ * @param drop number of elements to drop
+ * @param set  set to drop from
+ *
+ * @return modified set
+ ******************************************************************************/
+
+static node *
+DropSetHelper (int *drop, node *set)
+{
+    bool tagged = FALSE;
+
+    DBUG_ENTER ("DropSetHelper");
+
+    DBUG_ASSERT (((set != NULL) || (*drop <= 0)),
+                 "cannot drop more elements from list than elements in list!");
+
+    if (set != NULL) {
+        if (*drop > 0) {
+            tagged = TRUE;
+            (*drop)--;
+        }
+
+        if (*drop != 0) {
+            SET_NEXT (set) = DropSetHelper (drop, SET_NEXT (set));
+        }
+
+        if (*drop < 0) {
+            tagged = TRUE;
+            (*drop)++;
+        }
+    }
+
+    if (tagged) {
+        set = FREEdoFreeNode (set);
+    }
+
+    DBUG_RETURN (set);
+}
+
+node *
+TCdropSet (int drop, node *set)
+{
+    DBUG_ENTER ("TCdropSet");
+
+    set = DropSetHelper (&drop, set);
+
+    DBUG_ASSERT ((drop == 0),
+                 "Cannot drop more elements from end of list than elements in "
+                 "list!");
+
+    DBUG_RETURN (set);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn int TCsetAdd( node **links, node *link)
  *
  * @brief Adds the element link to links if the set does not yet contain
