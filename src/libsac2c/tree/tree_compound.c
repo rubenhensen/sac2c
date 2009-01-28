@@ -3019,12 +3019,53 @@ TCmakeStrCopy (const char *str)
  *** N_set
  ***/
 
+/** <!-- ****************************************************************** -->
+ * @brief Appends the linked lists links1 and links2. Note that this
+ *        function does not preserve set properties!
+ *
+ * @param links1 N_set chain
+ * @param links2 N_set chain
+ *
+ * @return appended N_set chains
+ ******************************************************************************/
+node *
+TCappendSet (node *links1, node *links2)
+{
+    node *ret;
+
+    DBUG_ENTER ("TCappendSet");
+
+    DBUG_ASSERT (((links1 == NULL) || (NODE_TYPE (links1) == N_set)),
+                 ("First argument of TCappendSet() has wrong node type."));
+    DBUG_ASSERT (((links2 == NULL) || (NODE_TYPE (links2) == N_set)),
+                 ("Second argument of TCappendSet() has wrong node type."));
+
+    APPEND (ret, node *, SET, links1, links2);
+
+    DBUG_RETURN (ret);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn int TCsetAdd( node **links, node *link)
+ *
+ * @brief Adds the element link to links if the set does not yet contain
+ *        link.
+ *
+ *        NOTE: This is implemented as an append to the linked list. This
+ *              fact is relied upon in parts of the compiler that were
+ *              written when SET nodes were still called LINKEDLIST.
+ *
+ * @param *links the set
+ * @param link   node to insert
+ *
+ * @return number of new nodes inserted
+ ******************************************************************************/
 int
-TCSetAdd (node **links, node *link)
+TCsetAdd (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCSetAdd");
+    DBUG_ENTER ("TCsetAdd");
 
     if (*links == NULL) {
         /*
@@ -3036,37 +3077,90 @@ TCSetAdd (node **links, node *link)
         /*
          * its not the current one, so go on
          */
-        result = TCSetAdd (&SET_NEXT (*links), link);
+        result = TCsetAdd (&SET_NEXT (*links), link);
     }
 
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn int TCsetRemove( node **links, node *link)
+ *
+ * @brief Removes the element link from links if the set does contain link.
+ *
+ *        NOTE: This is implementation assumes links is indeed a set, i.e.,
+ *              link is contained at most once!
+ *
+ * @param *links the set
+ * @param link   node to remove
+ *
+ * @return number of new nodes removed
+ ******************************************************************************/
 int
-TCSetUnion (node **links, node *add)
+TCsetRemove (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCSetUnion");
+    DBUG_ENTER ("TCsetRemove");
+
+    if (*links != NULL) {
+        if (SET_MEMBER (*links) == link) {
+            *links = FREEdoFreeNode (*links);
+            result = 1;
+        } else {
+            result = TCsetRemove (&SET_NEXT (*links), link);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn int TCsetUnion( node **links, node *add)
+ *
+ * @brief Merges all elements of add into links. Note that the links structure
+ *        is updated destructively.
+ *
+ * @param *links set to merge and update
+ * @param add    set to merge
+ *
+ * @return Number of elements added to links
+ ******************************************************************************/
+int
+TCsetUnion (node **links, node *add)
+{
+    int result = 0;
+
+    DBUG_ENTER ("TCsetUnion");
 
     while (add != NULL) {
-        result += TCSetAdd (links, SET_MEMBER (add));
+        result += TCsetAdd (links, SET_MEMBER (add));
         add = SET_NEXT (add);
     }
 
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool TCsetContains( node *set, node *link)
+ *
+ * @brief Checks whether link is contained in set
+ *
+ * @param set   the set to search in
+ * @param link  the node to search for
+ *
+ * @return TRUE iff link is member of set
+ ******************************************************************************/
 bool
-TCSetContains (node *set, node *link)
+TCsetContains (node *set, node *link)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("TCSetContains");
+    DBUG_ENTER ("TCsetContains");
 
     while ((set != NULL) && (!result)) {
         DBUG_ASSERT ((NODE_TYPE (set) == N_set),
-                     "called TCSetContains with non N_set node!");
+                     "called TCsetContains with non N_set node!");
 
         result = (SET_MEMBER (set) == link);
 
@@ -3076,8 +3170,18 @@ TCSetContains (node *set, node *link)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool TCsetIsSubset( node *super, node *sub)
+ *
+ * @brief Checks whether all elements of sub are contained in super
+ *
+ * @param super set to check against
+ * @param sub   set to check for being subset
+ *
+ * @return TRUE iff sub is subset of super
+ ******************************************************************************/
 bool
-TCSetIsSubset (node *super, node *sub)
+TCsetIsSubset (node *super, node *sub)
 {
     bool result = TRUE;
 
@@ -3085,9 +3189,9 @@ TCSetIsSubset (node *super, node *sub)
 
     while ((sub != NULL) && result) {
         DBUG_ASSERT ((NODE_TYPE (sub) == N_set),
-                     "called TCSetIsSubset with non N_set node!");
+                     "called TCsetIsSubset with non N_set node!");
 
-        result = result && TCSetContains (super, SET_MEMBER (sub));
+        result = result && TCsetContains (super, SET_MEMBER (sub));
 
         sub = SET_NEXT (sub);
     }

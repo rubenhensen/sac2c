@@ -1843,13 +1843,15 @@ extern node *TCmakeStrCopy (const char *str);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_linklist
+ ***  N_set :
  ***/
 
-extern int TCSetAdd (node **links, node *link);
-extern int TCSetUnion (node **links, node *add);
-extern bool TCSetContains (node *set, node *link);
-extern bool TCSetIsSubset (node *super, node *sub);
+extern node *TCappendSet (node *links1, node *links2);
+extern int TCsetAdd (node **links, node *link);
+extern int TCsetDel (node **links, node *link);
+extern int TCsetUnion (node **links, node *add);
+extern bool TCsetContains (node *set, node *link);
+extern bool TCsetIsSubset (node *super, node *sub);
 
 /*--------------------------------------------------------------------------*/
 

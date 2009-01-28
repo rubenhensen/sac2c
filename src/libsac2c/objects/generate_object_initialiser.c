@@ -89,7 +89,7 @@ SortObjdefList (node *objlist)
              *    initialised objects!
              */
             if ((OBJDEF_INITFUN (SET_MEMBER (pos)) == NULL)
-                || TCSetIsSubset (sorted,
+                || TCsetIsSubset (sorted,
                                   FUNDEF_OBJECTS (OBJDEF_INITFUN (SET_MEMBER (pos))))) {
                 /*
                  * move the member to the sorted list
@@ -106,7 +106,7 @@ SortObjdefList (node *objlist)
                 }
                 SET_NEXT (tmp) = NULL;
 
-                TCSetUnion (&sorted, tmp);
+                TCsetUnion (&sorted, tmp);
                 changes++;
             } else {
                 last = pos;
@@ -145,7 +145,7 @@ AddInitFunDependencies (node *objlist)
                  */
                 if (OBJDEF_INITFUN (SET_MEMBER (pos)) != NULL) {
                     changes
-                      += TCSetUnion (&new,
+                      += TCsetUnion (&new,
                                      FUNDEF_OBJECTS (OBJDEF_INITFUN (SET_MEMBER (pos))));
                 }
                 pos = SET_NEXT (pos);
