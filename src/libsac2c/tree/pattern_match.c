@@ -229,16 +229,17 @@ static node *
 ExtractTopFrame (node *stack, node **top)
 {
     DBUG_ENTER ("ExtractTopFrame");
-    DBUG_ASSERT (stack != NULL, ("ExtractTopFrame called with NULL stack!"));
 
-    if ((NODE_TYPE (stack) == N_set) && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
+    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
+        && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
         *top = SET_MEMBER (stack);
         stack = FREEdoFreeNode (stack);
-    } else if (NODE_TYPE (stack) == N_exprs) {
+    } else {
+        DBUG_ASSERT (((stack == NULL) || (NODE_TYPE (stack) == N_exprs)),
+                     "unexpected element on stack!");
+
         *top = stack;
         stack = NULL;
-    } else {
-        *top = NULL;
     }
 
 #ifndef DBUG_OFF
@@ -850,19 +851,21 @@ PMforEachI (node *(*pattern) (int, node *stack), node *stack)
 
     DBUG_ENTER ("PMforEachI");
 
-    stack = ExtractTopFrame (stack, &exprs);
+    if (stack != (node *)FAIL) {
+        stack = ExtractTopFrame (stack, &exprs);
 
-    DBUG_ASSERT ((exprs != NULL), "No exprs on top of stack");
+        DBUG_ASSERT ((exprs != NULL), "No exprs on top of stack");
 
-    do {
-        success = PM (pattern (pos, EXPRS_EXPR (exprs)));
+        do {
+            success = PM (pattern (pos, EXPRS_EXPR (exprs)));
 
-        exprs = EXPRS_NEXT (exprs);
-        pos++;
-    } while ((exprs != NULL) && success);
+            exprs = EXPRS_NEXT (exprs);
+            pos++;
+        } while ((exprs != NULL) && success);
 
-    if (!success) {
-        stack = FailMatch (stack);
+        if (!success) {
+            stack = FailMatch (stack);
+        }
     }
 
     DBUG_RETURN (stack);
@@ -915,15 +918,17 @@ PMexprs (node **exprs, node *stack)
 
     DBUG_ENTER ("PMexprs");
 
-    stack = ExtractTopFrame (stack, &top);
+    if (stack != (node *)FAIL) {
+        stack = ExtractTopFrame (stack, &top);
 
-    if (top == NULL) {
-        stack = FailMatch (stack);
-    } else {
-        if (REF_ISUNDEFINED (exprs)) {
-            REF_SET (exprs, top);
-        } else if (CMPTdoCompareTree (top, *exprs) == CMPT_NEQ) {
+        if (top == NULL) {
             stack = FailMatch (stack);
+        } else {
+            if (REF_ISUNDEFINED (exprs)) {
+                REF_SET (exprs, top);
+            } else if (CMPTdoCompareTree (top, *exprs) == CMPT_NEQ) {
+                stack = FailMatch (stack);
+            }
         }
     }
 
@@ -946,25 +951,28 @@ PMpartExprs (node *exprs, node *stack)
 
     DBUG_ENTER ("PMpartExprs");
 
-    stack = ExtractTopFrame (stack, &top);
+    if (stack != (node *)FAIL) {
+        stack = ExtractTopFrame (stack, &top);
 
-    if (top == NULL) {
-        stack = FailMatch (stack);
-    } else {
-        while ((exprs != NULL) && (top != NULL)) {
-            if (CMPTdoCompareTree (EXPRS_EXPR (top), EXPRS_EXPR (exprs)) == CMPT_NEQ) {
-                stack = FailMatch (stack);
-                break;
-            }
-
-            exprs = EXPRS_NEXT (exprs);
-            top = EXPRS_NEXT (top);
-        }
-        if (exprs != NULL) {
+        if (top == NULL) {
             stack = FailMatch (stack);
-        }
-        if (top != NULL) {
-            stack = PushArgs (stack, top);
+        } else {
+            while ((exprs != NULL) && (top != NULL)) {
+                if (CMPTdoCompareTree (EXPRS_EXPR (top), EXPRS_EXPR (exprs))
+                    == CMPT_NEQ) {
+                    stack = FailMatch (stack);
+                    break;
+                }
+
+                exprs = EXPRS_NEXT (exprs);
+                top = EXPRS_NEXT (top);
+            }
+            if (exprs != NULL) {
+                stack = FailMatch (stack);
+            }
+            if (top != NULL) {
+                stack = PushArgs (stack, top);
+            }
         }
     }
 
