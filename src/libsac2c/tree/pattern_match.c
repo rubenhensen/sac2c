@@ -969,8 +969,7 @@ PMpartExprs (node *exprs, node *stack)
             }
             if (exprs != NULL) {
                 stack = FailMatch (stack);
-            }
-            if (top != NULL) {
+            } else if (top != NULL) {
                 stack = PushArgs (stack, top);
             }
         }
