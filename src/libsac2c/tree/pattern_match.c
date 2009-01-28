@@ -903,7 +903,7 @@ PMany (node **any, node *stack)
 
 /** <!-- ****************************************************************** -->
  * @brief Matches any chain of expression. If exprs is non-NULL, it fails if
- *        the expressions are non-equal. If any points to an empty  memory
+ *        the expressions are non-equal. If exprs points to an empty memory
  *        location, the matched expression is stored.
  *
  * @param any   expressions to match against or NULL
@@ -922,7 +922,10 @@ PMexprs (node **exprs, node *stack)
         stack = ExtractTopFrame (stack, &top);
 
         if (top == NULL) {
-            stack = FailMatch (stack);
+            if (!REF_ISUNDEFINED (exprs)) {
+                /* NULL matches an empty stack frame */
+                stack = FailMatch (stack);
+            }
         } else {
             if (REF_ISUNDEFINED (exprs)) {
                 REF_SET (exprs, top);
