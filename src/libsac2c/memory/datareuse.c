@@ -299,16 +299,18 @@ EMDRwith (node *arg_node, info *arg_info)
 node *
 EMDRwith2 (node *arg_node, info *arg_info)
 {
-    node *oldivs;
+    node *oldivs, *oldiv;
 
     DBUG_ENTER ("EMDRwith2");
 
+    oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
 
     WITH2_WITHID (arg_node) = TRAVopt (WITH2_WITHID (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
 
     INFO_IVIDS (arg_info) = oldivs;
+    INFO_IV (arg_info) = oldiv;
 
     DBUG_RETURN (arg_node);
 }
@@ -472,6 +474,115 @@ EMDRcode (node *arg_node, info *arg_info)
                     DBUG_PRINT ("EMDR", ("vector copy: reuse identified."));
 
                     inplace = TRUE;
+                }
+            }
+
+            /*
+             * Pattern:
+             * mem = suballoc( A, _);
+             * r = with2/with
+             *       ( _ <= ivi=[ii1, ..., iim] < _) : r_inner;
+             *     genarray( _, _, mem)
+             *
+             * with only 1 partition (i.e., one full partition)
+             * which selects is defined as
+             *
+             * r_inner = sel( iv ++ ivi, B)
+             *
+             * - or -
+             *
+             * r_inner = sel( [i1, ..., in, ii1, ..., iim], B)
+             *
+             * and A is a reuse of B
+             *
+             * The sel operations have been processed by vect2offset!
+             */
+            if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)) {
+                node *withop, *wlids, *wliv, *code;
+                bool iscopy = FALSE;
+
+                withop = WITH_OR_WITH2_WITHOP (wlass);
+                wlids = WITH_OR_WITH2_IDS (wlass);
+                wliv = WITH_OR_WITH2_VEC (wlass);
+                code = WITH_OR_WITH2_CODE (wlass);
+
+                if ((NODE_TYPE (withop) == N_genarray) && (GENARRAY_NEXT (withop) == NULL)
+                    && (CODE_NEXT (code) == NULL)) {
+                    node *cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
+                    node *offset = NULL;
+                    node *arr = NULL;
+                    node *mem = NULL;
+
+                    DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
+
+                    if (PM (PMvar (&arr,
+                                   PMvar (&offset,
+                                          PMprf (F_idx_sel,
+                                                 PMprf (F_fill,
+                                                        PMprf (F_wl_assign, cexpr))))))) {
+                        node *cat_arg1 = NULL, *cat_arg2 = NULL;
+
+                        /*
+                         * offset can be defined as an idxs2offset or a vect2offset
+                         * the shape does not matter, as we select from a reuse
+                         * candidate which has the same shape.
+                         */
+                        if (
+                          (wlids != NULL) && (INFO_IVIDS (arg_info) != NULL)
+                          && PM (
+                               PMexprs (&wlids,
+                                        PMpartExprs (INFO_IVIDS (arg_info),
+                                                     PMany (NULL,
+                                                            PMprf (F_idxs2offset,
+                                                                   PMprf (F_fill,
+                                                                          offset))))))) {
+
+                            DBUG_PRINT ("EMDR", ("wl copy: inner sel is scalar copy."));
+                            iscopy = TRUE;
+                        }
+
+                        /*
+                         * or it can be a concatenation of the two ivs
+                         */
+                        else if (
+                          PM (PMvar (
+                            &cat_arg2,
+                            PMvar (&cat_arg2,
+                                   PMprf (F_cat_VxV,
+                                          PMprf (F_fill,
+                                                 PMany (NULL,
+                                                        PMprf (F_vect2offset,
+                                                               PMprf (F_fill,
+                                                                      offset))))))))) {
+                            /*
+                             * arg_1/2 can be iv or [ivids]
+                             */
+                            if ((((INFO_IV (arg_info) != NULL)
+                                  && PM (PMvar (&INFO_IV (arg_info), cat_arg1)))
+                                 || ((INFO_IVIDS (arg_info) != NULL)
+                                     && PM (PMexprs (&INFO_IVIDS (arg_info),
+                                                     PMarray (NULL, NULL, cat_arg1)))))
+                                && (((wliv != NULL) && PM (PMvar (&wliv, cat_arg2)))
+                                    || ((wlids != NULL)
+                                        && (PM (
+                                             PMexprs (&wlids, PMarray (NULL, NULL,
+                                                                       cat_arg2))))))) {
+
+                                DBUG_PRINT ("EMDR",
+                                            ("wl copy: inner sel is vector copy."));
+                                iscopy = TRUE;
+                            }
+                        }
+                    }
+
+                    if (iscopy
+                        && PM (PMvar (&mem, PMprf (F_suballoc, GENARRAY_MEM (withop))))
+                        && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                            == ID_AVIS (arr))) {
+                        DBUG_PRINT ("EMDR", ("wl copy: reuse identified."));
+
+                        inplace = TRUE;
+                    }
                 }
             }
         }
