@@ -138,8 +138,6 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
 
     INFO_MASK (info) = DFMgenMaskClear (maskbase);
     INFO_NEGMASK (info) = DFMgenMaskClear (maskbase);
-    INFO_IV (info) = TBmakeSet (WITH_VEC (with), NULL);
-    INFO_IVIDS (info) = TBmakeSet (WITH_IDS (with), NULL);
 
     TRAVpush (TR_reuse);
     with = TRAVdo (with, info);
@@ -154,9 +152,6 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
     INFO_MASK (info) = DFMremoveMask (INFO_MASK (info));
     INFO_NEGMASK (info) = DFMremoveMask (INFO_NEGMASK (info));
     maskbase = DFMremoveMaskBase (maskbase);
-
-    INFO_IVIDS (info) = FREEdoFreeNode (INFO_IVIDS (info));
-    INFO_IV (info) = FREEdoFreeNode (INFO_IV (info));
 
     info = FreeInfo (info);
 
@@ -297,16 +292,18 @@ REUSEwith (node *arg_node, info *arg_info)
     /*
      * add current index information to sets
      */
-    INFO_IV (arg_info) = TBmakeSet (WITH_VEC (arg_node), INFO_IV (arg_info));
-    INFO_IVIDS (arg_info) = TBmakeSet (WITH_IDS (arg_node), INFO_IVIDS (arg_info));
+    INFO_IV (arg_info)
+      = TCappendSet (INFO_IV (arg_info), TBmakeSet (WITH_VEC (arg_node), NULL));
+    INFO_IVIDS (arg_info)
+      = TCappendSet (INFO_IVIDS (arg_info), TBmakeSet (WITH_IDS (arg_node), NULL));
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /*
      * pop one level from index information
      */
-    INFO_IVIDS (arg_info) = FREEdoFreeNode (INFO_IVIDS (arg_info));
-    INFO_IV (arg_info) = FREEdoFreeNode (INFO_IV (arg_info));
+    INFO_IV (arg_info) = TCdropSet (-1, INFO_IV (arg_info));
+    INFO_IVIDS (arg_info) = TCdropSet (-1, INFO_IVIDS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
