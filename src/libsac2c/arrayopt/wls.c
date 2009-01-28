@@ -122,9 +122,11 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
+    node *preassigns;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 
 static info *
 MakeInfo ()
@@ -134,7 +136,9 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
+
     INFO_FUNDEF (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -216,10 +220,16 @@ WLSassign (node *arg_node, info *arg_info)
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
+    DBUG_ASSERT ((INFO_PREASSIGNS (arg_info) == NULL), "left-over pre-assigns found!");
     /*
      * Traverse RHS
      */
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -306,7 +316,8 @@ WLSwith (node *arg_node, info *arg_info)
         /*
          * Build the new with-loop
          */
-        arg_node = WLSBdoBuild (arg_node, INFO_FUNDEF (arg_info));
+        arg_node
+          = WLSBdoBuild (arg_node, INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
     }
 
     DBUG_RETURN (arg_node);

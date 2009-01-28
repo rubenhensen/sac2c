@@ -183,7 +183,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-WLSBdoBuild (node *arg_node, node *fundef)
+WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 {
     info *info;
 
@@ -200,6 +200,11 @@ WLSBdoBuild (node *arg_node, node *fundef)
     TRAVpush (TR_wlsb);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
+
+    if (INFO_PREASSIGNS (info) != NULL) {
+        *preassigns = TCappendAssign (*preassigns, INFO_PREASSIGNS (info));
+        INFO_PREASSIGNS (info) = NULL;
+    }
 
     info = FreeInfo (info);
 
@@ -930,42 +935,6 @@ WLSBmodarray (node *arg_node, info *arg_info)
     INFO_NEWWITHOP (arg_info) = DUPdoDupNode (arg_node);
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @brief Directs the traversal into the assignment instruction and inserts
- *        the INFO_PREASSIGNS chain before the current node prior to
- *        traversing further down.
- *        [This code shamelessly ripped off from ive_split_selections.c.]
- *
- * @param arg_node N_assign node
- * @param arg_info info structure
- *
- * @return unchanged N_assign node
- ******************************************************************************/
-node *
-WLSBassign (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("WLSBassign");
-
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    new_node = arg_node;
-
-    if (INFO_PREASSIGNS (arg_info) != NULL) {
-        DBUG_ASSERT (N_assign == NODE_TYPE (INFO_PREASSIGNS (arg_info)),
-                     "WLSBassign expected N_assign for preassigns");
-        new_node = TCappendAssign (INFO_PREASSIGNS (arg_info), new_node);
-        INFO_PREASSIGNS (arg_info) = NULL;
-    }
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (new_node);
 }
 
 /** <!--********************************************************************-->

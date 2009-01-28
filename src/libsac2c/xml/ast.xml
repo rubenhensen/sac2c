@@ -1525,7 +1525,6 @@
       </traversal>
       <traversal id="WLSB" name="With-Loop Scalarization Build traversal" default="sons" include="wls.h">
         <travuser>
-          <node name="Assign" />
           <node name="Code" />
           <node name="Generator" />
           <node name="Part" />

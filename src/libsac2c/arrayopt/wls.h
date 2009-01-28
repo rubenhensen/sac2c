@@ -64,7 +64,7 @@ extern node *WLSWwithid (node *arg_node, info *arg_info);
  * prefix: WLSB
  *
  *****************************************************************************/
-extern node *WLSBdoBuild (node *with, node *fundef);
+extern node *WLSBdoBuild (node *with, node *fundef, node **preassigns);
 
 extern node *WLSBcode (node *arg_node, info *arg_info);
 extern node *WLSBassign (node *arg_node, info *arg_info);
