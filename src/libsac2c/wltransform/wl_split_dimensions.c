@@ -1424,6 +1424,35 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
     DBUG_RETURN (result);
 }
 
+static node *
+ATravNIfail (node *arg_node, info *arg_info)
+{
+    bool *result = (bool *)arg_info;
+
+    DBUG_ENTER ("ATravNIfail");
+
+    *result = TRUE;
+
+    DBUG_RETURN (arg_node);
+}
+
+static bool
+NotImplemented (node *with)
+{
+    bool result = FALSE;
+    anontrav_t len_trav[6]
+      = {{N_genarray, &TRAVcont}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfail},
+         {N_break, &ATravNIfail}, {N_propagate, &ATravNIfail}, {0, NULL}};
+
+    DBUG_ENTER ("NotImplemented");
+
+    TRAVpushAnonymous (len_trav, &TRAVnone);
+    WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), (info *)&result);
+    TRAVpop ();
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -1554,6 +1583,10 @@ WLSDwith2 (node *arg_node, info *arg_info)
     if (WITH2_HASNAIVEORDERING (arg_node)) {
         CTIwarnLine (NODE_LINE (arg_node),
                      "Cannot transform with-loop with naive ordering");
+    }
+    if (NotImplemented (arg_node)) {
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "Cannot transform with-loop due to unsupported operation");
     } else {
         /*
          * First of all, we transform the code blocks. As we migth potentially
