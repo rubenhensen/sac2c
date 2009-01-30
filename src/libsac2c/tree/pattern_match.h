@@ -4,7 +4,9 @@
  */
 
 #ifndef _SAC_PATTERN_MATCH_H_
-#define _SAC_TREE_BASIC_H_
+#define _SAC_PATTERN_MATCH_H_
+
+#include "types.h"
 
 extern bool PM (node *res);
 extern node *PMvar (node **var, node *arg_node);
@@ -31,8 +33,8 @@ extern node *PMintConst (constant **co, node **conode, node *arg_node);
 
 extern node *PMforEachI (node *(*pattern) (int, node *stack), node *stack);
 
-extern node *PMany (node *expr, node *stack);
+extern node *PMany (node **expr, node *stack);
 extern node *PMexprs (node **exprs, node *stack);
 extern node *PMpartExprs (node *exprs, node *stack);
 
-#endif /* _SAC_TREE_BASIC_H_ */
+#endif /* _SAC_PATTERN_MATCH_H_ */

@@ -123,8 +123,9 @@
  *
  */
 
-#include "dbug.h"
+#include "pattern_match.h"
 
+#include "dbug.h"
 #include "print.h"
 #include "globals.h"
 #include "free.h"
@@ -658,6 +659,10 @@ MatchArrayAttribs (node *array_node, int num, attrib_t *arefs)
     shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (array_node));
     if (REF_ISUNDEFINED (REF_CONST (arefs[0]))) {
         REF_SET (REF_CONST (arefs[0]), shpfound);
+        /* still undefied -> must have passed a NULL pointer */
+        if (REF_ISUNDEFINED (REF_CONST (arefs[0]))) {
+            shpfound = COfreeConstant (shpfound);
+        }
         match = TRUE;
     } else if (COcompareConstants (shpfound, *REF_CONST (arefs[0]))) {
         shpfound = COfreeConstant (shpfound);
