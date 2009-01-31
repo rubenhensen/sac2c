@@ -949,10 +949,12 @@ IsProxySel (constant *idx, void *sels, void *template)
 
     DBUG_ENTER ("IsProxySel");
 
-    if (sels != IPS_FAILED) {
-        index = COconstant2AST (idx);
+    if (sels == NULL) {
+        DBUG_ASSERT (TRUE, "ran out of selection operations!");
 
-        DBUG_ASSERT ((sels != NULL), "ran out of selection operations!");
+        sels = IPS_FAILED;
+    } else if (sels != IPS_FAILED) {
+        index = COconstant2AST (idx);
 
         DBUG_ASSERT ((NODE_TYPE (index) == N_array), "index not array?!?");
 
@@ -1053,13 +1055,17 @@ SelProxyArray (node *arg_node, info *arg_info)
               PMexprs (&template, PMarray (NULL, NULL, PMprf (F_sel_VxA, aelems_P))));
 
             DBUG_ASSERT (match, "code has unexpected pattern!");
-            template = DUPdoDupTree (template);
 
             tlen = TCcountExprs (template);
             DBUG_ASSERT ((tlen >= flen), "sel operations do not match!");
 
-            tmp = TCgetNthExprs (tlen - flen - 1, template);
-            EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
+            if (tlen == flen) {
+                template = NULL; /* no non-index part */
+            } else {
+                template = DUPdoDupTree (template);
+                tmp = TCgetNthExprs (tlen - flen - 1, template);
+                EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
+            }
 
             /*
              * now we check whether all selections are
@@ -1087,7 +1093,9 @@ SelProxyArray (node *arg_node, info *arg_info)
 
                 res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
             } else {
-                template = FREEdoFreeTree (template);
+                if (template != NULL) {
+                    template = FREEdoFreeTree (template);
+                }
                 filter_iv = FREEdoFreeTree (filter_iv);
             }
 
