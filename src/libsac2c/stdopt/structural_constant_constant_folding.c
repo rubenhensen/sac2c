@@ -999,7 +999,8 @@ SelProxyArray (node *arg_node, info *arg_info)
     DBUG_ENTER ("SelProxyArray");
 
     if (PM (PMvar (&var_P, PMarrayConstructor (&fs_iv, &iv, PMprf (F_sel_VxA, arg_node))))
-        && PM (PMexprs (&aelems_P, PMarray (&fs_P, &arr_P, var_P)))) {
+        && PM (PMexprs (&aelems_P, PMarray (&fs_P, &arr_P, var_P)))
+        && (aelems_P != NULL)) {
         /*
          * before we check that P is a proxy, we check whether it is defined
          * by sel operations on a single source array. This test is way
