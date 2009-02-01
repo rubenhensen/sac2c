@@ -5650,7 +5650,7 @@ COMPwith (node *arg_node, info *arg_info)
 {
     node *icm_chain = NULL, *body_icms, *default_icms;
     node *generator_icms;
-    node *let_neutral;
+    node *let_neutral, *neutral;
     node *res_ids, *idx_id, *lower_id, *upper_id;
     node *offs_id = NULL;
     bool isfold;
@@ -5670,11 +5670,14 @@ COMPwith (node *arg_node, info *arg_info)
      * Another aspect to be noticed here is that COMPpart relies on
      * INFO_ISFOLD to be set properly since for With-Loops different code
      * has to be created.
+     * For single propagates, i.e., withloops that have only a propagate
+     * operator, we use the fold compilation scheme, as well.
      */
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
 
-    isfold = (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold);
+    isfold = ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold)
+              || (NODE_TYPE (WITH_WITHOP (arg_node)) == N_propagate));
     INFO_ISFOLD (arg_info) = isfold;
     DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -5725,11 +5728,18 @@ COMPwith (node *arg_node, info *arg_info)
                               TCmakeIdCopyStringNt (ID_NAME (upper_id),
                                                     ID_TYPE (upper_id)),
                               icm_chain);
-        let_neutral = TBmakeLet (DUPdoDupNode (res_ids),
-                                 DUPdoDupNode (FOLD_NEUTRAL (WITH_WITHOP (arg_node))));
 
-        icm_chain = TCappendAssign (COMPdoCompile (let_neutral), icm_chain);
+        if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
+            /*
+             * only fold withloops need this initialisation. For
+             * propagate WLs, the object system enfores that res
+             * and default are the same identifier.
+             */
+            neutral = FOLD_NEUTRAL (WITH_WITHOP (arg_node));
+            let_neutral = TBmakeLet (DUPdoDupNode (res_ids), DUPdoDupNode (neutral));
 
+            icm_chain = TCappendAssign (COMPdoCompile (let_neutral), icm_chain);
+        }
     } else {
 
         /*
