@@ -1736,8 +1736,8 @@ HDgenerator (node *arg_node, info *arg_info)
         if ((INFO_HD_DOTSHAPE (arg_info) == NULL)
             && (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))
                 || DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node)))) {
-            CTIabortLine (global.linenum,
-                          "Dot notation is not allowed in fold with loops");
+            CTIabortLine (global.linenum, "Dot notation is not allowed in fold and "
+                                          "propagate with loops");
         }
 
         if (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
