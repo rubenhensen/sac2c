@@ -1440,15 +1440,23 @@ static bool
 NotImplemented (node *with)
 {
     bool result = FALSE;
-    anontrav_t len_trav[6]
+    anontrav_t nip_trav[6]
       = {{N_genarray, &TRAVcont}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfail},
          {N_break, &ATravNIfail}, {N_propagate, &ATravNIfail}, {0, NULL}};
+    anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
 
-    TRAVpushAnonymous (len_trav, &TRAVnone);
+    TRAVpushAnonymous (nip_trav, &TRAVnone);
+    /* check for genarray only */
     WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), (info *)&result);
     TRAVpop ();
+    if (!result) {
+        /* check for no ap in body due to memory management problems */
+        TRAVpushAnonymous (nap_trav, &TRAVsons);
+        WITH2_CODE (with) = TRAVdo (WITH2_CODE (with), (info *)&result);
+        TRAVpop ();
+    }
 
     DBUG_RETURN (result);
 }
