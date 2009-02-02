@@ -6235,7 +6235,7 @@
             <target>
              <node name="Id" />
              <phases>
-               <range from="ewl_accu" to="opt_scc" />
+               <range from="scp_prs" to="opt_scc" />
              </phases>
             </target>
             <target mandatory="yes">
@@ -6259,7 +6259,7 @@
             <target>
              <node name="Id" />
              <phases>
-               <range from="ewl_accu" to="opt_scc" />
+               <range from="scp_prs" to="opt_scc" />
              </phases>
             </target>
             <target mandatory="yes">
