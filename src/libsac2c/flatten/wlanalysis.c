@@ -8,7 +8,10 @@
  *
  * @file wlanalysis.c
  *
- * In this traversal
+ * This traversal performs, among other things, these checks on WL
+ * bounds:
+ *     bounds have same shape as result (genarray shape)
+ *     BOUND1 >= 0.
  *
  */
 
@@ -32,6 +35,7 @@
 #include "WLPartitionGeneration.h"
 #include "wlanalysis.h"
 #include "ctinfo.h"
+#include "pattern_match.h"
 
 /*
  * I have added an alternative implementation that works
@@ -212,77 +216,55 @@ PropagateConstArrayIdentifier (node *expr)
 
 /** <!--********************************************************************-->
  *
- * @fn gen_shape_t PropagateVectorConstants( node **expr)
+ * @fn gen_shape_t DetectVectorConstants( node *arg_node)
  *
- *   @brief expects (*expr) to point either to a scalar constant, to an N_array,
- *          or to an identifyer.
- *          If (**expr) is constant or structural constant, the according node
- *          (N_array / scalar) is freshly generated and (*expr) is modified to
- *          point to the new node. The old one is freed!
- *          If (**expr) is an identifier, the node is checked if it is possible
- *          to create an structural constant.
- *          It returns GV_constant iff (**expr) is constant or
- *          (*expr) == NULL!!
+ *   @brief expects argument to point to an identifier.
+ *          The argument is not changed.
  *
- *   @param  node **expr  :  expr
+ *          It returns GV_constant iff argument is constant or NULL.
+ *
+ *   @param  node *arg_node
  *   @return gen_shape_t  :  GV_constant, GV_struct_constant, GV_known_shape,
  *                           GV_unknown_shape
  ******************************************************************************/
 static gen_shape_t
-PropagateVectorConstants (node **expr)
+DetectVectorConstants (node *arg_node)
 {
-    constant *const_expr;
     gen_shape_t gshape;
+    constant *vfs = NULL;
+    node *v = NULL;
 
-    DBUG_ENTER ("PropagateVectorConstants");
+    DBUG_ENTER ("DetectVectorConstants");
 
     gshape = GV_unknown_shape;
+    if (NULL != arg_node) {
 
-    if ((*expr) != NULL) {
-        const_expr = COaST2Constant ((*expr));
-        if (const_expr != NULL) {
+        if (COisConstant (arg_node) || PM (PMconst (&vfs, &v, arg_node))) {
+            if (NULL != vfs) {
+                vfs = COfreeConstant (vfs);
+            }
             gshape = GV_constant;
-            (*expr) = FREEdoFreeTree (*expr);
-            (*expr) = COconstant2AST (const_expr);
-            const_expr = COfreeConstant (const_expr);
-
         } else {
-#ifndef STRUCT_CONSTANTS
-            if ((NODE_TYPE (*expr) == N_id)
-                && TUisIntVect (AVIS_TYPE (ID_AVIS (*expr)))) {
+
+            v = NULL;
+            vfs = NULL;
+            if (PM (PMarray (&vfs, &v, arg_node)) && (NODE_TYPE (v) == N_id)
+                && TUisIntVect (AVIS_TYPE (ID_AVIS (v)))) {
                 /*
                  * type-wise this is an int-vector, so lets see
                  * whether we can find an N_array node for it
                  */
-                *expr = PropagateConstArrayIdentifier (*expr);
-            }
-
-            if (NODE_TYPE (*expr) == N_array) {
                 gshape = GV_struct_constant;
-#else
-            node *tmp;
-            struct_constant *sco_expr;
-
-            sco_expr = SCCFexpr2StructConstant ((*expr));
-            if (sco_expr != NULL) {
-                gshape = GV_struct_constant;
-                /*
-                 * as the sco_expr may share some subexpressions with (*expr),
-                 * we have to duplicate these BEFORE deleting (*expr)!!!
-                 */
-                tmp = SCCFdupStructConstant2Expr (sco_expr);
-                (*expr) = FREEdoFreeTree (*expr);
-                (*expr) = tmp;
-                sco_expr = SCCFfreeStructConstant (sco_expr);
-#endif /* STRUCT_CONSTANTS */
             } else {
-                if (TUshapeKnown (ID_NTYPE (*expr))) {
+                if (TUshapeKnown (ID_NTYPE (arg_node))) {
                     gshape = GV_known_shape;
                 }
             }
         }
     } else {
-        gshape = GV_constant;
+        gshape = GV_constant; /* Elided GENERATOR_STEP, GENERATOR_WIDTH
+                               * has value of (vector) 1, ergo constant.
+                               */
     }
 
     DBUG_RETURN (gshape);
@@ -291,36 +273,55 @@ PropagateVectorConstants (node **expr)
 /******************************************************************************
  *
  * function:
- *   node * CropBounds( node *wl, shape *max_shp)
+ *   node * CheckBounds( node *wl, shape *max_shp)
  *
  * description:
- *   expects the bound expression for lb and ub to be constants!
+ *   expects the BOUND expression for lb and ub to be constant!
  *   expects also the WL either to by WO_modarray or WO_genarray!
  *
- *   Checks, whether lb and ub fit into the shape given by max_shp.
- *   If they exceed max_shp, they are "fitted"!
- *   The potentially modified WL is returned.
+ *   Checks whether lb and ub fit into the shape given by max_shp.
+ *   Also checks that lb and ub are same shape.
  *
  ******************************************************************************/
 
 static node *
-CropBounds (node *wl, shape *max_shp)
+CheckBounds (node *arg_node, shape *max_shp)
 {
-    node *lbe, *ube;
+    node *lbe;
+    node *ube;
+    node *lbv;
+    node *ubv;
+    constant *lbco;
+    constant *ubco;
+
     int dim;
     int lbnum, ubnum, tnum;
 
-    DBUG_ENTER ("CropBounds");
+    DBUG_ENTER ("CheckBounds");
 
-    DBUG_ASSERT (((NODE_TYPE (WITH_WITHOP (wl)) == N_modarray)
-                  || (NODE_TYPE (WITH_WITHOP (wl)) == N_genarray)),
-                 "CropBounds applied to wrong WL type!");
-    lbe = ARRAY_AELEMS (WITH_BOUND1 (wl));
-    ube = ARRAY_AELEMS (WITH_BOUND2 (wl));
+    DBUG_ASSERT (((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
+                  || (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)),
+                 "CheckBounds applied to wrong WL type!");
+
+    /* Turn both arguments in N_array values for now */
+    lbco = COaST2Constant (WITH_BOUND1 (arg_node));
+    lbv = COconstant2AST (lbco);
+    lbco = COfreeConstant (lbco);
+
+    ubco = COaST2Constant (WITH_BOUND2 (arg_node));
+    ubv = COconstant2AST (ubco);
+    ubco = COfreeConstant (ubco);
+
+    DBUG_ASSERT (((N_array == NODE_TYPE (lbv)) && (N_array == NODE_TYPE (ubv))),
+                 "CheckBounds expected N_array BOUNDS");
+
+    lbe = ARRAY_AELEMS (lbv);
+    ube = ARRAY_AELEMS (ubv);
 
     dim = 0;
     while (lbe) {
-        DBUG_ASSERT ((ube != NULL), "dimensionality differs in lower and upper bound!");
+        DBUG_ASSERT ((ube != NULL),
+                     "upper WL bound has lower dimensionality than lower bound.");
         DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
                       && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
                      "generator bounds must be constant!");
@@ -332,13 +333,13 @@ CropBounds (node *wl, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            CTIerrorLine (NODE_LINE (wl),
+            CTIerrorLine (NODE_LINE (arg_node),
                           "Lower bound of WL-generator in dim %d below zero: %d", dim,
                           lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            CTIerrorLine (NODE_LINE (wl),
+            CTIerrorLine (NODE_LINE (arg_node),
                           "Upper bound of WL-generator in dim %d greater than shape %d: "
                           "%d",
                           dim, tnum, ubnum);
@@ -348,7 +349,12 @@ CropBounds (node *wl, shape *max_shp)
         lbe = EXPRS_NEXT (lbe);
         ube = EXPRS_NEXT (ube);
     }
-    DBUG_RETURN (wl);
+    DBUG_ASSERT ((NULL == ube),
+                 "lower WL bound has lower dimensionality than upper bound.");
+
+    lbv = FREEdoFreeTree (lbv);
+    ubv = FREEdoFreeTree (ubv);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -416,8 +422,8 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
                 /**
                  * In order to obtain be a full partition,
                  * ubc must be a prefix of shpc,
-                 * all elements of lbc must be zero
-                 * and there must be not step vector
+                 * all elements of lbc must be zero,
+                 * and there must be no step vector
                  */
                 sh = COgetShape (ubc);
                 tmp = COmakeConstantFromShape (sh);
@@ -526,10 +532,11 @@ WLApart (node *arg_node, info *arg_info)
  *
  * @fn node *WLAgenerator(node *arg_node, info *arg_info)
  *
- *   @brief  bounds, step and width vectors are substituted into the generator.
+ *   @brief  bounds, step and width vectors are
+ *           NO LONGER substituted into the generator.
  *           Generators that surmount the array bounds (like [-5,3] or
- *           [11,10] > [maxdim1,maxdim2] = [10,10]) are changed to fitting
- *           gens.
+ *           [11,10] > [maxdim1,maxdim2] = [10,10]) are NOT,
+ *           as far as I can see, changed to fitting gens.
  *           Via INFO_WLPG_GENPROP( arg_info) the status of the generator is
  *           returned. Possible values are (poss. ambiguities are resolved top
  *           to bottom):
@@ -572,47 +579,62 @@ WLAgenerator (node *arg_node, info *arg_info)
     /*
      * First, we try to propagate (structural) constants into all sons:
      */
-    current_shape = PropagateVectorConstants (&(GENERATOR_BOUND1 (arg_node)));
-    if (current_shape >= GV_known_shape) {
-        nassigns = VectVar2StructConst (&(GENERATOR_BOUND1 (arg_node)), f_def,
-                                        INFO_SHPEXT (arg_info));
+    current_shape = DetectVectorConstants (GENERATOR_BOUND1 (arg_node));
+    if ((current_shape == GV_known_shape) || (current_shape == GV_unknown_shape)) {
         gshape = GV_struct_constant;
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        if (!global.ssaiv) {
+            nassigns = VectVar2StructConst (&(GENERATOR_BOUND1 (arg_node)), f_def,
+                                            INFO_SHPEXT (arg_info));
+            INFO_NASSIGNS (arg_info)
+              = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        }
     } else {
         gshape = current_shape;
     }
 
-    current_shape = PropagateVectorConstants (&(GENERATOR_BOUND2 (arg_node)));
-    if (current_shape >= GV_known_shape) {
-        nassigns = VectVar2StructConst (&GENERATOR_BOUND2 (arg_node), f_def,
-                                        INFO_SHPEXT (arg_info));
+    current_shape = DetectVectorConstants (GENERATOR_BOUND2 (arg_node));
+    if ((current_shape == GV_known_shape) || (current_shape == GV_unknown_shape)) {
         current_shape = GV_struct_constant;
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        if (!global.ssaiv) {
+            nassigns = VectVar2StructConst (&GENERATOR_BOUND2 (arg_node), f_def,
+                                            INFO_SHPEXT (arg_info));
+            INFO_NASSIGNS (arg_info)
+              = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        }
     }
+
     if (gshape < current_shape) {
         gshape = current_shape;
     }
+
     check_bounds = (gshape == GV_constant);
 
-    current_shape = PropagateVectorConstants (&(GENERATOR_STEP (arg_node)));
-    if (current_shape >= GV_known_shape) {
-        nassigns = VectVar2StructConst (&GENERATOR_STEP (arg_node), f_def,
-                                        INFO_SHPEXT (arg_info));
+    current_shape = DetectVectorConstants (GENERATOR_STEP (arg_node));
+    if ((current_shape == GV_known_shape) || (current_shape == GV_unknown_shape)) {
         current_shape = GV_struct_constant;
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        if (!global.ssaiv) {
+            nassigns = VectVar2StructConst (&GENERATOR_STEP (arg_node), f_def,
+                                            INFO_SHPEXT (arg_info));
+            INFO_NASSIGNS (arg_info)
+              = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        }
     }
     if (gshape < current_shape) {
         gshape = current_shape;
     }
 
-    check_stepwidth = (current_shape <= GV_struct_constant);
+    check_stepwidth
+      = (current_shape == GV_struct_constant) || (current_shape == GV_constant);
 
-    current_shape = PropagateVectorConstants (&(GENERATOR_WIDTH (arg_node)));
-    if (current_shape >= GV_known_shape) {
-        nassigns = VectVar2StructConst (&GENERATOR_WIDTH (arg_node), f_def,
-                                        INFO_SHPEXT (arg_info));
+    current_shape = DetectVectorConstants (GENERATOR_WIDTH (arg_node));
+    if ((current_shape == GV_known_shape) || (current_shape == GV_unknown_shape)) {
         current_shape = GV_struct_constant;
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        if (!global.ssaiv) {
+            nassigns = VectVar2StructConst (&GENERATOR_WIDTH (arg_node), f_def,
+                                            INFO_SHPEXT (arg_info));
+            INFO_NASSIGNS (arg_info)
+              = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
+        }
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -631,7 +653,7 @@ WLAgenerator (node *arg_node, info *arg_info)
         if (check_bounds
             && ((NODE_TYPE (WITH_WITHOP (wln)) == N_modarray)
                 || (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray))) {
-            wln = CropBounds (wln, shp);
+            wln = CheckBounds (wln, shp);
         }
         gprop = ComputeGeneratorProperties (wln, shp);
     } else {
@@ -694,9 +716,9 @@ WLAgenarray (node *arg_node, info *arg_info)
         GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     }
 
-    current_shape = PropagateVectorConstants (&(GENARRAY_SHAPE (arg_node)));
+    current_shape = DetectVectorConstants (GENARRAY_SHAPE (arg_node));
 
-    if (current_shape >= GV_known_shape) {
+    if ((current_shape == GV_known_shape) || (current_shape == GV_unknown_shape)) {
         nassigns = VectVar2StructConst (&GENARRAY_SHAPE (arg_node), f_def,
                                         INFO_SHPEXT (arg_info));
         current_shape = GV_struct_constant;

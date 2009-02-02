@@ -735,7 +735,7 @@ WLDPdoWlDefaultPartition (node *arg_node)
     DBUG_ENTER ("WLDPdoWlDefaultPartition");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "WLDPdoDefaultParttion not started with N_module node");
+                 "WLDPdoDefaultPartition not started with N_module node");
 
     DBUG_PRINT ("WLDP", ("starting with-loop default partition"));
 
