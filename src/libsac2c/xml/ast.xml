@@ -114,6 +114,14 @@
           <node name="Range" />
         </travuser>
       </traversal>
+      <traversal id="DST" name="Distribute threads" default="sons" include="distribute_threads.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Range" />
+        </travuser>
+      </traversal>
       <traversal id="WLLOM" name="Withloop lock optimization marking" default="sons" include="wl_lock_optimization_marking.h" >
         <travuser>
           <node name="With" />
@@ -3390,6 +3398,34 @@
                 <phases>
                  <!-- Not ENABLED, i.e. Not TESTED -->
                   <range from="tc_sossk" to="tc_ti" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Depth" default="0" inconstructor="no">
+          <description>Used to count the depth in the static call graph.
+            (see distribute_threads.c)</description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Height" default="0" inconstructor="no">
+          <description>Used to count the height in the static call graph.
+            (see distribute_threads.c)</description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>
@@ -8990,8 +9026,21 @@
 	</son>
       </sons>
       <attributes>
+        <attribute name="BlockSize" default="0">
+          <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
       </attributes>
       <flags>
+        <flag name="IsGlobal" default="FALSE" />
       </flags>
     </node>
   </syntaxtree>

@@ -184,7 +184,8 @@ libsac2c_memory      := rcopt filterrc alloc referencecounting \
 libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign \
                         remove_external_code mark_noop_grids \
-                        resolve_code_sharing lift_with3_bodies
+                        resolve_code_sharing lift_with3_bodies \
+                        distribute_threads
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \

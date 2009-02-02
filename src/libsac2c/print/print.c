@@ -4826,6 +4826,10 @@ PRTrange (node *arg_node, info *arg_info)
 
     INDENT;
 
+    if (RANGE_ISGLOBAL (arg_node)) {
+        fprintf (global.outfile, "/* global */\n");
+        INDENT;
+    }
     fprintf (global.outfile, "(");
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " < ");
@@ -4838,7 +4842,7 @@ PRTrange (node *arg_node, info *arg_info)
     }
     fprintf (global.outfile, " (IDXS: ");
     RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
-    fprintf (global.outfile, ")) ");
+    fprintf (global.outfile, ") (BS: %d)) ", RANGE_BLOCKSIZE (arg_node));
 
     global.indent++;
     if (RANGE_BODY (arg_node) != NULL) {

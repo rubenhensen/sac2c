@@ -6303,10 +6303,14 @@ COMPrange (node *arg_node, info *arg_info)
     thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
     create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
-                               TCmakeIdCopyString (""),
+                               TCmakeIdCopyString (
+                                 RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
                                DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
                                DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
-                               TCmakeIdCopyString ("1"), TCmakeIdCopyString ("1"),
+                               (RANGE_CHUNKSIZE (arg_node) == NULL)
+                                 ? TCmakeIdCopyString ("1")
+                                 : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
+                               TBmakeNum (RANGE_BLOCKSIZE (arg_node)),
                                DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
 
     next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
