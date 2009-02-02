@@ -215,11 +215,10 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
  *
  * @fn node *NewIds( node *nd, node *fundef)
  *
- *   @brief creates new N_id nodes.
+ *   @brief creates new IDS.
  *
- *   @param  node *nd       :  if N_id node, the new name and type will be
- *                             inferred from it. Otherwise, the type
- *                             will be integer scalar.
+ *   @param  node *nd       :  if N_id node the new name and type will be
+ *                             infered from
  *           node *fundef   :  N_fundef
  *   @return node *         :  new Ids
  ******************************************************************************/
@@ -233,7 +232,7 @@ NewIds (node *nd, node *fundef)
     DBUG_ENTER ("NewIds");
 
     DBUG_ASSERT ((nd != NULL) && ((NODE_TYPE (nd) == N_id) || (NODE_TYPE (nd) == N_num)),
-                 "NULL N_id or not N_id/N_num");
+                 "ID is empty or not N_id/N_num");
 
     if (NODE_TYPE (nd) == N_id) {
         nvarname = TRAVtmpVarName (ID_NAME (nd));
@@ -288,7 +287,7 @@ CreateEntryFlatArray (int entry, int number)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateNewPart(node * wln, node *ub, node * step, node *width,
+ * @fn node *CreateNewPart(node * lb, node *ub, node * step, node *width,
  *                        node *withid, node *coden, info *arg_info)
  *
  *   @brief creates a new N_part.
@@ -297,61 +296,29 @@ CreateEntryFlatArray (int entry, int number)
  *   withids will be renamed into SSA form, and any references
  *   in the code block will be changed appropriately.
  *
- *   @param  node *wln          : N_with node being handled
- *           node *ub           : upper bound of new part
+ *   @param  node *lb,*ub       : bound of new part
  *           node *step, *width : step, width of new part
  *           node *withid       : withid of new part
- *           node *coden        : Pointer of N_code node where the
+ *           node *coden        : Pointer of N_Ncode node where the
  *                                new generator shall point to.
  *           info *arg_info     : local information block
  *   @return node *             : N_part
  ******************************************************************************/
 
 static node *
-CreateNewPart (node *wln, node *ub, node *step, node *width, node *withid, node *coden,
+CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *coden,
                info *arg_info)
 {
     node *genn, *partn;
     node *newwithid;
     node *newcoden;
-    node *lb;
-    node *lbavis;
-    node *rbavis;
-    node *lbid;
-    node *ubid;
-    node *nas;
     lut_t *lut;
-    int bshape;
 
     DBUG_ENTER ("CreateNewPart");
 
-    /* Create flattened WL lower bound of [0,0,0,...0] */
-    bshape = SHgetExtent (TYgetShape (IDS_NTYPE (WITH_VEC (wln))), 0);
-    lb = CreateEntryFlatArray (0, bshape);
-    lbavis = TBmakeAvis (TRAVtmpVar (),
-                         TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (bshape)));
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (lbavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-    nas = TBmakeAssign (TBmakeLet (TBmakeIds (lbavis, NULL), lb), NULL);
-    INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
-    AVIS_SSAASSIGN (lbavis) = nas;
-    lbid = TBmakeId (lbavis);
-
-    /* Create flattened WL upper bound */
-    rbavis = TBmakeAvis (TRAVtmpVar (),
-                         TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (bshape)));
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (rbavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-    nas = TBmakeAssign (TBmakeLet (TBmakeIds (rbavis, NULL), DUPdoDupTree (ub)), NULL);
-    INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
-    AVIS_SSAASSIGN (rbavis) = nas;
-    ubid = TBmakeId (rbavis);
-
-    /* TODO: Should treat STEP and WIDTH the same as BOUNDs */
-
     /* create tree structures */
-    genn = TBmakeGenerator (F_wl_le, F_wl_lt, lbid, ubid, DUPdoDupTree (step),
-                            DUPdoDupTree (width));
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
+                            DUPdoDupTree (step), DUPdoDupTree (width));
     if (global.ssaiv) {
         lut = LUTgenerateLut ();
         newwithid = DUPdoDupTreeLutSsa (withid, lut, INFO_FUNDEF (arg_info));
@@ -392,7 +359,7 @@ CreateNewPart (node *wln, node *ub, node *step, node *width, node *withid, node 
  *          - w without s  (error no 3)
  *
  *   @param  node **step  :  step vector
- *           node **width :  width vector
+ *           node **width :  width vektor
  *   @return int         :  returns 0 if no error was detected, else error no
  *                          (see above).
  ******************************************************************************/
@@ -513,8 +480,9 @@ FlattenBound (node *arg_node, info *arg_info)
     int shp;
 
     DBUG_ENTER ("FlattenBound");
-
-    if (global.ssaiv && (N_array == NODE_TYPE (arg_node))) {
+    if (global.ssaiv) {
+        DBUG_ASSERT (N_array == NODE_TYPE (arg_node),
+                     "FlattenBound expected N_array BOUND");
         shp = TCcountExprs (ARRAY_AELEMS (arg_node));
         bavis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
@@ -527,9 +495,6 @@ FlattenBound (node *arg_node, info *arg_info)
         bid = TBmakeId (bavis);
         FREEdoFreeTree (arg_node);
         arg_node = bid;
-    } else {
-        DBUG_ASSERT (N_id == NODE_TYPE (arg_node),
-                     "FlattenBound expected N_array or N_id node");
     }
 
     DBUG_RETURN (arg_node);
@@ -576,73 +541,60 @@ AppendPart2WL (node *wln, node *partn, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CutSlices( node *ls, node *us, int dim,
+ * @fn node *CutSlices( node *ls, node *us, node *l, node *u, int dim,
  *                       node *wln, node *coden, info *arg_info,
  *                       node *withid)
  *
- *   @brief  Creates a (full) partition by adding new N_generator nodes
+ *   @brief  Creates a (full) partition by adding new N_Ngenerator nodes
  *           to the N_with node.
  *           If the known part is a grid, this is ignored here (so the
  *           resulting N_with node may still not be a full partition,
  *           see CompleteGrid()).
  *
  *   @param  node *ls, *us : bounds of the whole array
- *           int dim       : number of elements in ls, us, l, u
+ *           node *l, *u   : bounds of the given part
+ *           int dim       : number of elements of ls, us, l, u
  *           node *wln     : Pointer of N_with node where the new generators
  *                           shall be inserted.
- *           node *coden   : Pointer of N_code node where the new generators
+ *           node *coden   : Pointer of N_Ncode node where the new generators
  *                           shall point to.
  *           info *arg_info: local information block
  *   @return node *        : modified N_with
  ******************************************************************************/
 
 static node *
-CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
-           node *withid)
+CutSlices (node *ls, node *us, node *lxxx, node *uxxx, int dim, node *wln, node *coden,
+           info *arg_info, node *withid)
 {
     node *lsc, *usc, *le, *ue, *lsce, *usce, *partn, *ubn, *lbn;
     node *lb = NULL;
     node *ub = NULL;
-    node *pbnd = NULL;
-    constant *lbco = NULL;
-    constant *ubco = NULL;
-    constant *pbndshp = NULL;
-    int i, d;
+    constant *lbfs = NULL;
+    constant *ubfs = NULL;
+    int i, d, lnum, lscnum, unum, uscnum;
 
     DBUG_ENTER ("CutSlices");
+    /* Flatten what we assume to be the only partition */
+    PART_BOUND1 (WITH_PART (wln))
+      = FlattenBound (PART_BOUND1 (WITH_PART (wln)), arg_info);
+    PART_BOUND2 (WITH_PART (wln))
+      = FlattenBound (PART_BOUND2 (WITH_PART (wln)), arg_info);
 
-    /* Because this gets called in phase 10, we may have a constant
-     * arising from the typechecker that has not found its way to
-     * the RHS yet. The next few lines involving COconstant2AST
-     * perform this check.
-     * (As an alternative, we could call CF in phase 10 before WLPG.)
-     */
-    if (PM (PMarray (&lbco, &lb, WITH_BOUND1 (wln)))) {
-        lbco = COfreeConstant (lbco);
-    } else {
-        lbco = COaST2Constant (WITH_BOUND1 (wln));
-        if (NULL != lbco) {
-            lb = COconstant2AST (lbco);
-            lbco = COfreeConstant (lbco);
-        }
-    }
-
-    if (PM (PMarray (&ubco, &ub, WITH_BOUND2 (wln)))) {
-        ubco = COfreeConstant (ubco);
-    } else {
-        ubco = COaST2Constant (WITH_BOUND2 (wln));
-        if (NULL != ubco) {
-            ub = COconstant2AST (ubco);
-            ubco = COfreeConstant (ubco);
-        }
-    }
-
-    DBUG_ASSERT ((N_array == NODE_TYPE (lb) && (N_array == NODE_TYPE (ub))),
-                 "CutSlices expected N_array bounds.");
-    /* create local copies of the arrays which are modified here */
+    /* create local copies of the arrays which are modified here*/
     lsc = DUPdoDupTree (ls);
     usc = DUPdoDupTree (us);
 
+    /* Find the original generator bounds */
+    if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wln)))))) {
+        COfreeConstant (lbfs);
+    } else {
+        DBUG_ASSERT (FALSE, "CutSlices expected N_array BOUND1");
+    }
+    if (PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (wln)))))) {
+        COfreeConstant (ubfs);
+    } else {
+        DBUG_ASSERT (FALSE, "CutSlices expected N_array BOUND2");
+    }
     le = ARRAY_AELEMS (lb);
     lsce = ARRAY_AELEMS (lsc);
     ue = ARRAY_AELEMS (ub);
@@ -650,37 +602,75 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
 
     for (d = 0; d < dim; d++) {
         /* Check whether there is a cuboid above (below) the given one. */
-        partn = CreateNewPart (wln, usc, NULL, NULL, withid, coden, arg_info);
-        if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND2 (partn)))) {
-            DBUG_ASSERT (FALSE, "CutSlices expected N_array partn BOUND2");
-        }
-        pbndshp = COfreeConstant (pbndshp);
-        ubn = ARRAY_AELEMS (pbnd);
-        for (i = 0; i < d; i++) {
-            ubn = EXPRS_NEXT (ubn);
-        }
-        EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
-        EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
-        wln = AppendPart2WL (wln, partn, arg_info);
 
-        partn = CreateNewPart (wln, usc, NULL, NULL, withid, coden, arg_info);
-        /* Lower bound (LB) of new partn is: (-1 drop LB)++ ue  */
-        if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND1 (partn)))) {
-            DBUG_ASSERT (FALSE, "CutSlices expected N_array partn BOUND1");
+        if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
+            lnum = NUM_VAL (EXPRS_EXPR (le));
+            lscnum = NUM_VAL (EXPRS_EXPR (lsce));
+            if (lnum > lscnum) {
+                partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
+                ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
+                for (i = 0; i < d; i++) {
+                    ubn = EXPRS_NEXT (ubn);
+                }
+                if (NODE_TYPE (EXPRS_EXPR (ubn)) == N_num) {
+                    NUM_VAL (EXPRS_EXPR (ubn)) = lnum;
+                } else {
+                    EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
+                    EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
+                }
+                wln = AppendPart2WL (wln, partn, arg_info);
+            }
+        } else {
+            partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
+            ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
+            for (i = 0; i < d; i++) {
+                ubn = EXPRS_NEXT (ubn);
+            }
+            EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
+            EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
+            wln = AppendPart2WL (wln, partn, arg_info);
         }
-        pbndshp = COfreeConstant (pbndshp);
 
-        lbn = ARRAY_AELEMS (pbnd);
-        for (i = 0; i < d; i++) {
-            lbn = EXPRS_NEXT (lbn);
+        if ((NODE_TYPE (EXPRS_EXPR (ue)) == N_num)
+            && (NODE_TYPE (EXPRS_EXPR (usce)) == N_num)) {
+            unum = NUM_VAL (EXPRS_EXPR (ue));
+            uscnum = NUM_VAL (EXPRS_EXPR (usce));
+            if (unum < uscnum) {
+                partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
+                lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
+                for (i = 0; i < d; i++) {
+                    lbn = EXPRS_NEXT (lbn);
+                }
+                NUM_VAL (EXPRS_EXPR (lbn)) = unum;
+                wln = AppendPart2WL (wln, partn, arg_info);
+            }
+        } else {
+            partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
+            lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
+            for (i = 0; i < d; i++) {
+                lbn = EXPRS_NEXT (lbn);
+            }
+            EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
+            EXPRS_EXPR (lbn) = DUPdoDupTree (EXPRS_EXPR (ue));
+            wln = AppendPart2WL (wln, partn, arg_info);
         }
-        EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
-        EXPRS_EXPR (lbn) = DUPdoDupTree (EXPRS_EXPR (ue));
-        wln = AppendPart2WL (wln, partn, arg_info);
-        EXPRS_EXPR (lsce) = FREEdoFreeTree (EXPRS_EXPR (lsce));
-        EXPRS_EXPR (lsce) = DUPdoDupTree (EXPRS_EXPR (le));
-        EXPRS_EXPR (usce) = FREEdoFreeTree (EXPRS_EXPR (usce));
-        EXPRS_EXPR (usce) = DUPdoDupTree (EXPRS_EXPR (ue));
+
+        /* and modify array bounds to continue with next dimension */
+        if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
+            NUM_VAL (EXPRS_EXPR (lsce)) = NUM_VAL (EXPRS_EXPR (le));
+        } else {
+            EXPRS_EXPR (lsce) = FREEdoFreeTree (EXPRS_EXPR (lsce));
+            EXPRS_EXPR (lsce) = DUPdoDupTree (EXPRS_EXPR (le));
+        }
+
+        if ((NODE_TYPE (EXPRS_EXPR (ue)) == N_num)
+            && (NODE_TYPE (EXPRS_EXPR (usce)) == N_num)) {
+            NUM_VAL (EXPRS_EXPR (usce)) = NUM_VAL (EXPRS_EXPR (ue));
+        } else {
+            EXPRS_EXPR (usce) = FREEdoFreeTree (EXPRS_EXPR (usce));
+            EXPRS_EXPR (usce) = DUPdoDupTree (EXPRS_EXPR (ue));
+        }
+
         le = EXPRS_NEXT (le);
         lsce = EXPRS_NEXT (lsce);
         ue = EXPRS_NEXT (ue);
@@ -692,7 +682,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
 
     if (WITH_PARTS (wln) == -1) {
         /**
-         * no new slice needed to be cut. So, the original generator is full!
+         * no new slice needed to be cut. Hence, the original generator is full!
          */
         WITH_PARTS (wln) = 1;
     }
@@ -713,7 +703,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
  *           int dim            : number of elements of ls, us
  *           node *wln          : N_with where to add the new parts.
  *                                If ig != NULL, the same pointer is returned.
- *           node *coden        : Pointer of N_code node where the new
+ *           node *coden        : Pointer of N_Ncode node where the new
  *                                generators shall point to.
  *           info *arg_info     : N_INFO is needed to create new vars
  *   @return intern_gen *       : chain of intern_gen struct
@@ -895,8 +885,6 @@ CreateFullPartition (node *wln, info *arg_info)
     ntype *array_type;
     shape *shape, *mshape;
     node *withid;
-    node *shp = NULL;
-    constant *shpco = NULL;
     int gen_shape = 0;
     bool do_create;
 
@@ -905,7 +893,7 @@ CreateFullPartition (node *wln, info *arg_info)
     DBUG_ASSERT ((PART_NEXT (WITH_PART (wln)) != NULL)
                    && (NODE_TYPE (PART_GENERATOR (PART_NEXT (WITH_PART (wln))))
                        == N_default),
-                 "Second partition is not default partition!");
+                 "Second partition is no default partition!");
 
     /* recycle default code for all new parts */
     withid = DUPdoDupTree (PART_WITHID (PART_NEXT (WITH_PART (wln))));
@@ -944,25 +932,6 @@ CreateFullPartition (node *wln, info *arg_info)
 
     case N_genarray:
         array_shape = DUPdoDupTree (GENARRAY_SHAPE (WITH_WITHOP (wln)));
-        /* array_shape may be an N_id or an N_array. If the former,
-         * we look up its N_array value. It may also turn out that
-         * we know the array shape, but PMarray can't find it for us.
-         * This can arise when we have:
-         *  genarray(shp)
-         * and the shape argument is:
-         *  shp = _shape_A_(x)
-         * and x is AKS. In that case, shp may be AKV:
-         *  int[1]{7} shp;
-         *
-         */
-        if (PM (PMarray (&shpco, &shp, array_shape))) {
-            shpco = COfreeConstant (shpco);
-            array_shape = shp;
-        } else {
-            shpco = COaST2Constant (array_shape);
-            array_shape = COconstant2AST (shpco);
-            shpco = COfreeConstant (shpco);
-        }
         break;
 
     default:
@@ -982,8 +951,8 @@ CreateFullPartition (node *wln, info *arg_info)
         array_null = CreateEntryFlatArray (0, gen_shape);
 
         /* create surrounding cuboids */
-        wln
-          = CutSlices (array_null, array_shape, gen_shape, wln, coden, arg_info, withid);
+        wln = CutSlices (array_null, array_shape, WITH_BOUND1 (wln), WITH_BOUND2 (wln),
+                         gen_shape, wln, coden, arg_info, withid);
 
         /* the original part can still be found at first position in wln.
            Now create grids. */
@@ -1075,7 +1044,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     last_ids = NULL;
 
     while (wlop != NULL) {
-        DBUG_ASSERT (let_ids != NULL, "lhs does not match number of WLops");
+        DBUG_ASSERT (let_ids != NULL, "lhs dos not match number of WLops");
 
         switch (NODE_TYPE (wlop)) {
         case N_genarray:
