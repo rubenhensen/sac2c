@@ -127,7 +127,6 @@
 #include "DupTree.h"
 #include "constants.h"
 #include "globals.h"
-#include "pattern_match.h"
 
 /**
  * INFO structure
@@ -575,36 +574,18 @@ WLSIMPdefault (node *arg_node, info *arg_info)
 node *
 WLSIMPgenerator (node *arg_node, info *arg_info)
 {
-    node *lb = NULL;
-    constant *lbfs = NULL;
-    node *ub = NULL;
-    constant *ubfs = NULL;
-    node *width;
-
+    node *lb, *ub, *width;
     constant *cnst;
 
     DBUG_ENTER ("WLSIMPgenerator");
-
-    /* Start by trying to find N_array ancestors for both arguments.
-     * If that doesn't work, use the raw node.
-     */
-    if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
-        COfreeConstant (lbfs);
-    } else {
-        lb = GENERATOR_BOUND1 (arg_node);
-    }
-
-    if (PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (arg_node)))) {
-        COfreeConstant (ubfs);
-    } else {
-        ub = GENERATOR_BOUND2 (arg_node);
-    }
 
     /**
      * Remove empty generators
      *
      * First, we check the lower and upper bounds
      */
+    lb = GENERATOR_BOUND1 (arg_node);
+    ub = GENERATOR_BOUND2 (arg_node);
 
     if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
 
