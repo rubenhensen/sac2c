@@ -55,6 +55,10 @@
  *     During the first traversal (FOLDFUNS == TRUE) only special fold-funs
  *     are traversed. During the second traversal (FOLDFUNS == FALSE) only
  *     the other functions are traversed.
+ *
+ *   INFO_FUNPOST     : icms to be placed at the end of the function body
+ *     Currently used by suballoc in the mutc backend to free descriptors
+ *     at the end of a thread function.
  */
 
 /*
@@ -77,6 +81,7 @@ struct INFO {
     node *spmdbarrier;
     char *break_label;
     lut_t *foldlut;
+    node *postfun;
 };
 
 /*
@@ -98,6 +103,7 @@ struct INFO {
 #define INFO_SPMDBARRIER(n) (n->spmdbarrier)
 #define INFO_BREAKLABEL(n) (n->break_label)
 #define INFO_FOLDLUT(n) (n->foldlut)
+#define INFO_POSTFUN(n) (n->postfun)
 
 /*
  * INFO functions
@@ -126,6 +132,7 @@ MakeInfo ()
     INFO_SPMDFRAME (result) = NULL;
     INFO_SPMDBARRIER (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
+    INFO_POSTFUN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -2072,6 +2079,8 @@ COMPfundef (node *arg_node, info *arg_info)
              */
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
+            DBUG_ASSERT ((INFO_POSTFUN (arg_info) == NULL),
+                         "left-over postfun icms found!");
             /*
              * Store collected scheduler information.
              */
@@ -2501,6 +2510,16 @@ COMPreturn (node *arg_node, info *arg_info)
         arg_node = COMPSpmdFunReturn (arg_node, arg_info);
     } else {
         arg_node = COMPNormalFunReturn (arg_node, arg_info);
+    }
+
+    if (INFO_POSTFUN (arg_info) != NULL) {
+        /*
+         * Fuse in POSTFUN icms. COMPassign takes care of the rest
+         * when finding an N_assign chain.
+         */
+        arg_node
+          = TCappendAssign (INFO_POSTFUN (arg_info), TBmakeAssign (arg_node, NULL));
+        INFO_POSTFUN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -3320,11 +3339,14 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
+    node *mem_id;
     shape_class_t sc;
+    node *sub_get_dim;
 
     DBUG_ENTER ("COMPprfSuballoc");
 
     let_ids = INFO_LASTIDS (arg_info);
+    mem_id = PRF_ARG1 (arg_node);
     sc = NTUgetShapeClassFromTypes (IDS_TYPE (let_ids));
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
@@ -3332,6 +3354,52 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    if (global.backend == BE_mutc) {
+        DBUG_ASSERT ((PRF_ARG3 (arg_node) != NULL),
+                     "suballoc lacking default information in mutc backend");
+        /*
+         * We need to allocate a descriptor and set the shape
+         *
+         * 1) compute dimensionality. If the range is not chunked,
+         *    its the dimensionality of the memvar - 1, else its
+         *    the dimensionality of the memvar. The third arg
+         *    of the suballoc holds this information.
+         */
+        sub_get_dim = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
+                                  TCmakeIcm1 ("ND_A_DIM", DUPdupIdNt (mem_id)),
+                                  DUPdoDupNode (PRF_ARG3 (arg_node)));
+
+        /*
+         * 2) annotate shape for suballoc, if information present and
+         *    dynamic shape required.
+         *    TODO MUTC: As we only support genarray for now, this
+         *               information always has to be present!
+         */
+        if (TCgetShapeDim (IDS_TYPE (let_ids)) < 0) {
+            DBUG_ASSERT ((PRF_ARG4 (arg_node) != NULL),
+                         "missing shape information for suballoc");
+
+            ret_node
+              = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids), ret_node);
+        }
+
+        /*
+         * 3) produce the descriptor allocation
+         */
+        ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
+                                     sub_get_dim, ret_node);
+
+        /*
+         * 4) add a corresponding descriptor free to the
+         *    postfun icm chain
+         */
+        INFO_POSTFUN (arg_info)
+          = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                              TCmakeIdCopyStringNt (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids)),
+                              INFO_POSTFUN (arg_info));
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -6276,7 +6344,7 @@ COMPwith3 (node *arg_node, info *arg_info)
  *
  * @fn node *COMPrange( node *arg_node, info *arg_info)
  *
- * @brief Compiliation of range node creating family create sync
+ * @brief Compilation of range node creating family create sync
  *****************************************************************************/
 
 node *
@@ -6317,9 +6385,9 @@ COMPrange (node *arg_node, info *arg_info)
 
     sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 
-    TCappendAssign (family, create);
-    TCappendAssign (family, next);
-    TCappendAssign (family, sync);
+    family = TCappendAssign (family, create);
+    family = TCappendAssign (family, next);
+    family = TCappendAssign (family, sync);
 
     /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
     FREEdoFreeTree (thread_fun);
