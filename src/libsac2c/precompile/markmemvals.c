@@ -607,11 +607,11 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
 
         /*
-         * Scrap the 3rd argument, as this suballoc does not need to
+         * Scrap the 3rd/4th argument, as this suballoc does not need to
          * set the shape descriptor.
          */
         if (PRF_EXPRS3 (arg_node) != NULL) {
-            PRF_EXPRS3 (arg_node) = FREEdoFreeNode (PRF_EXPRS3 (arg_node));
+            PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
         }
     } else if (global.backend == BE_mutc) {
         /*

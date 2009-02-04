@@ -714,6 +714,7 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
 
         if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)
             || (NODE_TYPE (withops) == N_break)) {
+            node *args = NULL;
 
             if (TUdimKnown (crestype) && (TYgetDim (crestype) == 0)) {
                 node *prfap;
@@ -822,8 +823,8 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
                  * have to compute it at runtime.
                  *
                  * For N_genarray withloops, this can be done using the
-                 * default element. Thus, we annotate it here if it exists
-                 * and is needed.
+                 * default element. Thus, we annotate a alloc-style shape
+                 * expression here if it is needed.
                  *
                  * For N_modarray withloops, the shape is still set by some
                  * backend magic. However, this won't work with the mutc
@@ -832,30 +833,60 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
                  * Ex:
                  * {
                  *   ...
-                 *   a_mem = suballoc( A, idx, \[ def \]);
+                 *   a_mem = suballoc( A, idx, cdim, \[ shape \]);
                  *   a_val = fill( copy( a), a_mem);
                  * }: a_val;
                  */
                 if ((NODE_TYPE (withops) == N_genarray)
                     && !TUshapeKnown (AVIS_TYPE (memavis))) {
+                    node *genshape = NULL;
+
                     DBUG_ASSERT ((GENARRAY_DEFAULT (withops) != NULL),
                                  "default element required!");
 
-                    assign = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
-                                                      TCmakePrf3 (F_suballoc,
-                                                                  TBmakeId (als->avis),
-                                                                  TBmakeId (wlidx),
-                                                                  DUPdoDupNode (
-                                                                    GENARRAY_DEFAULT (
-                                                                      withops)))),
-                                           assign);
-                } else {
-                    assign = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
-                                                      TCmakePrf2 (F_suballoc,
-                                                                  TBmakeId (als->avis),
-                                                                  TBmakeId (wlidx))),
-                                           assign);
+                    /*
+                     * first, add in the default shape expression
+                     */
+                    if (GENARRAY_DEFSHAPEEXPR (withops) != NULL) {
+                        DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFSHAPEEXPR (withops))
+                                      == N_array),
+                                     "default-shape expression needs to be a vector!");
+                        genshape
+                          = DUPdoDupTree (ARRAY_AELEMS (GENARRAY_DEFSHAPEEXPR (withops)));
+                    }
+                    /*
+                     * add outermost dimension of chunked
+                     */
+                    if (chunksize != NULL) {
+                        genshape = TBmakeExprs (DUPdoDupNode (chunksize), genshape);
+                    }
+
+                    if (genshape != NULL) {
+                        args = TBmakeExprs (TCmakePrf1 (F_shape_A,
+                                                        TCmakePrf2 (F_genarray,
+                                                                    TCmakeIntVector (
+                                                                      genshape),
+                                                                    DUPdoDupNode (
+                                                                      GENARRAY_DEFAULT (
+                                                                        withops)))),
+                                            NULL);
+                    } else {
+                        args = TBmakeExprs (TCmakePrf1 (F_shape_A,
+                                                        DUPdoDupNode (
+                                                          GENARRAY_DEFAULT (withops))),
+                                            NULL);
+                    }
                 }
+                args = TBmakeExprs (TBmakeId (als->avis),
+                                    TBmakeExprs (TBmakeId (wlidx),
+                                                 TBmakeExprs ((chunksize == NULL)
+                                                                ? TBmakeNum (0)
+                                                                : TBmakeNum (1),
+                                                              args)));
+
+                assign = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                                  TBmakePrf (F_suballoc, args)),
+                                       assign);
 
                 AVIS_SSAASSIGN (memavis) = assign;
             }
@@ -1928,8 +1959,6 @@ EMALgenarray (node *arg_node, info *arg_info)
          * with the additional constraint that shape( GENARRAY_SHAPE) is [1]
          * and that GENARRAY_SHAPEEXPR is an N_array node.
          *
-         * TODO: adopt the following two computations accordingly
-         *       for now, we just bail out
          */
         if (als->dim == NULL) {
             DBUG_ASSERT (GENARRAY_DEFAULT (arg_node) != NULL,
