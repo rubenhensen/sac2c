@@ -6,7 +6,22 @@
  *
  * @defgroup dst Distribute Threads
  *
- * Computes the blocksize to be used for creates.
+ * Computes the blocksize to be used for creates. The current algorithm is
+ * not tuned for performance but merely tries to prevent deadlock by
+ * ensuring that enough threads are available to make progress on the
+ * lowest level. The general idea is to equally distribute between
+ * levels and put the overspill into the lowest level.
+ *
+ * There are a lot of problems with this approach. Here are two:
+ *
+ * 1) We loose a lot of threads as we partition the thread space
+ *    equally for all ranges of a with3, regardless of their size.
+ *    Not to speak of integer rounding errors.
+ *
+ * 2) The backend currently creates code to concurrently evaluate all
+ *    ranges. However, this very quickly eats up the thread space for
+ *    deep nestings. On the long run, we need a way to switch between
+ *    concurrent and sequential range spawning.
  *
  * @ingroup dst
  *
@@ -342,12 +357,12 @@ DSTrange (node *arg_node, info *arg_info)
     previous_height = INFO_UP (arg_info);
     old_avail = INFO_AVAIL (arg_info);
     INFO_AVAIL (arg_info)
-      = INFO_AVAIL (arg_info) / MATHmin (INFO_WIDTH (arg_info), INFO_THROTTLE (arg_info))
-        - INFO_THROTTLE (arg_info);
-    current_width = INFO_WIDTH (arg_info);
-    INFO_WIDTH (arg_info) = 0;
+      = INFO_AVAIL (arg_info) / INFO_WIDTH (arg_info) - INFO_THROTTLE (arg_info);
 
-    INFO_UP (arg_info) = 0;
+    current_width = INFO_WIDTH (arg_info);
+    INFO_WIDTH (arg_info) = UNKNOWN;
+
+    INFO_UP (arg_info) = UNKNOWN;
     INFO_DOWN (arg_info)++;
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
     INFO_DOWN (arg_info)--;
