@@ -33,13 +33,17 @@ typedef long int SAC_HM_size_unit_t;
 
 #endif /* SAC_COMPILE_SACLIB */
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 /*
  * Declaration of conventional heap management functions
  * used from within compiled SAC programs.
  */
 
-extern void *malloc (size_t size);
-extern void free (void *addr);
+SAC_C_EXTERN void *malloc (size_t size);
+SAC_C_EXTERN void free (void *addr);
 
 /*
  * Macro redefinitions for compatibility reasons with standard library.
@@ -281,43 +285,47 @@ SAC_MT_DECLARE_LOCK (SAC_HM_diag_counter_lock)
  * Declaration of SAC heap management global variables.
  */
 
-extern int SAC_HM_not_yet_initialized;
-extern unsigned long int SAC_HM_acquire_top_arena_lock;
+SAC_C_EXTERN int SAC_HM_not_yet_initialized;
+SAC_C_EXTERN unsigned long int SAC_HM_acquire_top_arena_lock;
 
 /*
  * Declaration of SAC heap management functions.
  */
 
-extern void SAC_HM_Setup (unsigned int threads);
+SAC_C_EXTERN void SAC_HM_Setup (unsigned int threads);
 
-extern void *SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena);
-extern void *SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena);
+SAC_C_EXTERN void *SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units,
+                                            SAC_HM_arena_t *arena);
+SAC_C_EXTERN void *SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units,
+                                            SAC_HM_arena_t *arena);
 
-extern void SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
-extern void SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
+SAC_C_EXTERN void SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
+SAC_C_EXTERN void SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 
-extern void *SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id);
-extern void *SAC_HM_MallocAnyChunk_st (SAC_HM_size_byte_t size);
-extern void *SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id);
+SAC_C_EXTERN void *SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size,
+                                             unsigned int thread_id);
+SAC_C_EXTERN void *SAC_HM_MallocAnyChunk_st (SAC_HM_size_byte_t size);
+SAC_C_EXTERN void *SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size,
+                                             unsigned int thread_id);
 
-extern void *SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num);
-extern void *SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num);
-extern void *SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units);
-extern void *SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units);
+SAC_C_EXTERN void *SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num);
+SAC_C_EXTERN void *SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num);
+SAC_C_EXTERN void *SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units);
+SAC_C_EXTERN void *SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units);
 
-extern void *SAC_HM_MallocDesc (SAC_HM_header_t *addr, SAC_HM_size_byte_t size,
-                                SAC_HM_size_byte_t desc_size);
+SAC_C_EXTERN void *SAC_HM_MallocDesc (SAC_HM_header_t *addr, SAC_HM_size_byte_t size,
+                                      SAC_HM_size_byte_t desc_size);
 
-extern void SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr);
-extern void SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr);
+SAC_C_EXTERN void SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr);
+SAC_C_EXTERN void SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr);
 
-extern void SAC_HM_FreeDesc (SAC_HM_header_t *addr);
+SAC_C_EXTERN void SAC_HM_FreeDesc (SAC_HM_header_t *addr);
 
-extern void SAC_HM_ShowDiagnostics ();
-extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
+SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
+SAC_C_EXTERN void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
-extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
-                                long int cache_size);
+SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
+                                      long int cache_size);
 
 /*
  * Definition of general macros.
@@ -345,7 +353,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
-    extern SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];                        \
+    SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];                  \
     SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;
 #else
@@ -773,7 +781,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_DEFINE()
 
 #if SAC_DO_CHECK_MALLOC
-extern void *SAC_HM_MallocCheck (unsigned int);
+SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_MALLOC(var, size) var = SAC_HM_MallocCheck (size);
 #else /* SAC_DO_CHECK_MALLOC */
 #define SAC_HM_MALLOC(var, size) var = malloc (size);
@@ -795,7 +803,7 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
 
-extern void SAC_HM_ShowDiagnostics ();
+SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
 
 #endif /* SAC_DO_PHM */
 

@@ -19,6 +19,10 @@
 #ifndef _SAC_MT_H_
 #define _SAC_MT_H_
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 #ifndef SAC_SIMD_COMPILATION
 
 /*****************************************************************************/
@@ -1205,7 +1209,7 @@ typedef union {
 
 #define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
 
-#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name;
+#define SAC_MT_DECLARE_LOCK(name) SAC_C_EXTERN pthread_mutex_t name;
 
 #define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
 
@@ -1504,19 +1508,19 @@ typedef union {
  *  Declarations of global variables and functions defined in libsac/mt.c
  */
  
-extern pthread_attr_t SAC_MT_thread_attribs;
+SAC_C_EXTERN pthread_attr_t SAC_MT_thread_attribs;
 
-extern volatile SAC_MT_barrier_t *SAC_MT_barrier;
+SAC_C_EXTERN volatile SAC_MT_barrier_t *SAC_MT_barrier;
 
-extern volatile unsigned int SAC_MT_master_flag;
+SAC_C_EXTERN volatile unsigned int SAC_MT_master_flag;
 
-extern volatile unsigned int SAC_MT_not_yet_parallel;
+SAC_C_EXTERN volatile unsigned int SAC_MT_not_yet_parallel;
 
-extern unsigned int SAC_MT_masterclass;
+SAC_C_EXTERN unsigned int SAC_MT_masterclass;
 
-extern unsigned int SAC_MT_threads;
+SAC_C_EXTERN unsigned int SAC_MT_threads;
 
-extern pthread_t *SAC_MT1_internal_id;
+SAC_C_EXTERN pthread_t *SAC_MT1_internal_id;
 
 /*
  * REMARK:
@@ -1524,41 +1528,41 @@ extern pthread_t *SAC_MT1_internal_id;
  * no volatile for the function return value here, as volatile has
  * no effect for rvalues! And a function return value is a rvalue.
  */
-extern unsigned int (*SAC_MT_spmd_function)
+SAC_C_EXTERN unsigned int (*SAC_MT_spmd_function)
        (const unsigned int, const unsigned int, unsigned int);
 
-extern void SAC_MT_Setup( int cache_line_max, int barrier_offset,
-                          int num_schedulers);
+SAC_C_EXTERN void SAC_MT_Setup( int cache_line_max, int barrier_offset,
+                                int num_schedulers);
 
-extern void SAC_MT_TR_Setup( int cache_line_max, int barrier_offset,
-                             int num_schedulers);
+SAC_C_EXTERN void SAC_MT_TR_Setup( int cache_line_max, int barrier_offset,
+                                   int num_schedulers);
 
-extern void SAC_MT_SetupInitial( int argc, char *argv[], 
-                                 unsigned int num_threads,
-                                 unsigned int max_threads);
+SAC_C_EXTERN void SAC_MT_SetupInitial( int argc, char *argv[], 
+                                       unsigned int num_threads,
+                                       unsigned int max_threads);
 
-extern void SAC_MT_TR_SetupInitial( int argc, char *argv[], 
-                                 unsigned int num_threads,
-                                 unsigned int max_threads);
+SAC_C_EXTERN void SAC_MT_TR_SetupInitial( int argc, char *argv[], 
+                                          unsigned int num_threads,
+                                          unsigned int max_threads);
 
-extern int atoi(const char *str);
+SAC_C_EXTERN int atoi(const char *str);
 
-extern pthread_key_t SAC_MT_threadid_key;
+SAC_C_EXTERN pthread_key_t SAC_MT_threadid_key;
 
-extern unsigned int SAC_MT_master_id;
+SAC_C_EXTERN unsigned int SAC_MT_master_id;
 
 SAC_MT_DECLARE_LOCK( SAC_MT_output_lock)
 
 SAC_MT_DECLARE_LOCK( SAC_MT_init_lock)
 
 
-extern void SAC_MT1_StartWorkers();
+SAC_C_EXTERN void SAC_MT1_StartWorkers();
 
-extern void SAC_MT1_Setup( int cache_line_max, int barrier_offset,
-                           int num_schedulers);
+SAC_C_EXTERN void SAC_MT1_Setup( int cache_line_max, int barrier_offset,
+                                 int num_schedulers);
 
-extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
-                              int num_schedulers);
+SAC_C_EXTERN void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
+                                    int num_schedulers);
 
 
 
@@ -1691,7 +1695,7 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
 
 #define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
 
-#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name;
+#define SAC_MT_DECLARE_LOCK(name) SAC_C_EXTERN pthread_mutex_t name;
 
 #define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
 
@@ -1932,19 +1936,19 @@ typedef union {
  *  Declarations of global variables and functions defined in libsac/mt.c
  */
 
-extern pthread_attr_t SAC_MT_thread_attribs;
+SAC_C_EXTERN pthread_attr_t SAC_MT_thread_attribs;
 
-extern volatile SAC_MT_barrier_t *SAC_MT_barrier;
+SAC_C_EXTERN volatile SAC_MT_barrier_t *SAC_MT_barrier;
 
-extern volatile unsigned int SAC_MT_master_flag;
+SAC_C_EXTERN volatile unsigned int SAC_MT_master_flag;
 
-extern volatile unsigned int SAC_MT_not_yet_parallel;
+SAC_C_EXTERN volatile unsigned int SAC_MT_not_yet_parallel;
 
-extern unsigned int SAC_MT_masterclass;
+SAC_C_EXTERN unsigned int SAC_MT_masterclass;
 
-extern unsigned int SAC_MT_threads;
+SAC_C_EXTERN unsigned int SAC_MT_threads;
 
-extern pthread_t *SAC_MT1_internal_id;
+SAC_C_EXTERN pthread_t *SAC_MT1_internal_id;
 
 /*
  * REMARK:
@@ -1952,22 +1956,25 @@ extern pthread_t *SAC_MT1_internal_id;
  * no volatile for the function return value here, as volatile has
  * no effect for rvalues! And a function return value is a rvalue.
  */
-extern unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
-                                             unsigned int);
+SAC_C_EXTERN unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
+                                                   unsigned int);
 
-extern void SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
+SAC_C_EXTERN void SAC_MT_Setup (int cache_line_max, int barrier_offset,
+                                int num_schedulers);
 
-extern void SAC_MT_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
+SAC_C_EXTERN void SAC_MT_TR_Setup (int cache_line_max, int barrier_offset,
+                                   int num_schedulers);
 
-extern void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
-                                 unsigned int max_threads);
+SAC_C_EXTERN void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
+                                       unsigned int max_threads);
 
-extern void SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
-                                    unsigned int max_threads);
+SAC_C_EXTERN void SAC_MT_TR_SetupInitial (int argc, char *argv[],
+                                          unsigned int num_threads,
+                                          unsigned int max_threads);
 
-extern pthread_key_t SAC_MT_threadid_key;
+SAC_C_EXTERN pthread_key_t SAC_MT_threadid_key;
 
-extern unsigned int SAC_MT_master_id;
+SAC_C_EXTERN unsigned int SAC_MT_master_id;
 
 SAC_MT_DECLARE_LOCK (SAC_MT_propagate_lock)
 

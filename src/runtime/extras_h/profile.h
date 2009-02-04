@@ -23,6 +23,10 @@
 #ifndef _SAC_PROFILE_H
 #define _SAC_PROFILE_H
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 /*
  *  General profiling macros and declarations
  */
@@ -68,27 +72,27 @@ typedef struct timer_record {
  * External declarations of C library functions needed
  */
 
-extern int getrusage (int who, struct rusage *rusage);
+SAC_C_EXTERN int getrusage (int who, struct rusage *rusage);
 
 /*
  * External declarations of library functions defined in libsac
  */
 
-extern void SAC_PF_PrintHeader (char *title);
-extern void SAC_PF_PrintSubHeader (char *title, int lineno);
-extern void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
-extern void SAC_PF_PrintTimePercentage (char *title, char *space, SAC_PF_TIMER *time1,
-                                        SAC_PF_TIMER *time2);
+SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
+SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
+SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
+SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
+                                              SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
 
 /*
  * External declarations of global variables defined in libsac
  */
 
-extern int SAC_PF_act_funno;
-extern int SAC_PF_act_funapno;
-extern int SAC_PF_with_level;
-extern struct rusage SAC_PF_start_timer;
-extern struct rusage SAC_PF_stop_timer;
+SAC_C_EXTERN int SAC_PF_act_funno;
+SAC_C_EXTERN int SAC_PF_act_funapno;
+SAC_C_EXTERN int SAC_PF_with_level;
+SAC_C_EXTERN struct rusage SAC_PF_start_timer;
+SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 
 /*
  *  Macro definitions
@@ -96,16 +100,16 @@ extern struct rusage SAC_PF_stop_timer;
 
 #if SAC_DO_COMPILE_MODULE
 #define SAC_PF_DEFINE()                                                                  \
-    extern SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];               \
-    extern int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                       \
+    SAC_C_EXTERN SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];         \
+    SAC_C_EXTERN int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
                                                                                          \
-    extern int SAC_PF_act_cycle_tag;                                                     \
-    extern SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                       \
+    SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                 \
                                                                                          \
-    extern char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                        \
-    extern int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                          \
-    extern int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                       \
-    extern int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
+    SAC_C_EXTERN char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                  \
+    SAC_C_EXTERN int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                    \
+    SAC_C_EXTERN int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
+    SAC_C_EXTERN int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
 #else
 #define SAC_PF_DEFINE()                                                                  \
     SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];                      \

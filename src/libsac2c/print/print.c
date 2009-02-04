@@ -1198,12 +1198,12 @@ PRTtypedef (node *arg_node, info *arg_info)
     }
 
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "\nextern %s %s( %s);\n", TYPEDEF_NAME (arg_node),
+        fprintf (global.outfile, "\nSAC_C_EXTERN %s %s( %s);\n", TYPEDEF_NAME (arg_node),
                  TYPEDEF_COPYFUN (arg_node), TYPEDEF_NAME (arg_node));
     }
     if (TYPEDEF_FREEFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "extern void %s( %s);\n\n", TYPEDEF_FREEFUN (arg_node),
-                 TYPEDEF_NAME (arg_node));
+        fprintf (global.outfile, "SAC_C_EXTERN void %s( %s);\n\n",
+                 TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -1243,13 +1243,13 @@ PRTobjdef (node *arg_node, info *arg_info)
     if (global.genlib.c && global.print_objdef_for_header_file) {
         fprintf (global.outfile,
                  "/* flag, if object has been initialized */\n"
-                 "extern bool SAC_INIT_FLAG_%s;\n",
+                 "SAC_C_EXTERN bool SAC_INIT_FLAG_%s;\n",
                  OBJDEF_NAME (arg_node));
     }
 
     if ((OBJDEF_ICM (arg_node) == NULL) || (NODE_TYPE (OBJDEF_ICM (arg_node)) != N_icm)) {
         if (!OBJDEF_ISLOCAL (arg_node) || global.print_objdef_for_header_file) {
-            fprintf (global.outfile, "extern ");
+            fprintf (global.outfile, "external ");
         }
 
         if (OBJDEF_ISALIAS (arg_node)) {
@@ -1596,7 +1596,7 @@ PRTfundef (node *arg_node, info *arg_info)
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                fprintf (global.outfile, "extern ");
+                fprintf (global.outfile, "SAC_C_EXTERN ");
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {

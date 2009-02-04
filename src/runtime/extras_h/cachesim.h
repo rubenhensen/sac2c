@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 /*****************************************************************************
@@ -25,6 +25,10 @@
 
 #ifndef _SAC_CACHESIM_H
 #define _SAC_CACHESIM_H
+
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
 
 #ifndef SAC_SIMD_COMPILATION
 
@@ -62,15 +66,15 @@ typedef enum eProfilingLevel {
  *
  ******************************************************************************/
 
-extern void SAC_CS_CheckArguments (int argc, char *argv[],
-                                   tProfilingLevel *profilinglevel, int *cs_global,
-                                   char **cshost, char **csfile, char **csdir,
-                                   unsigned long int *cachesize1, int *cachelinesize1,
-                                   int *associativity1, tWritePolicy *writepolicy1,
-                                   unsigned long int *cachesize2, int *cachelinesize2,
-                                   int *associativity2, tWritePolicy *writepolicy2,
-                                   unsigned long int *cachesize3, int *cachelinesize3,
-                                   int *associativity3, tWritePolicy *writepolicy3);
+SAC_C_EXTERN
+void SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
+                            int *cs_global, char **cshost, char **csfile, char **csdir,
+                            unsigned long int *cachesize1, int *cachelinesize1,
+                            int *associativity1, tWritePolicy *writepolicy1,
+                            unsigned long int *cachesize2, int *cachelinesize2,
+                            int *associativity2, tWritePolicy *writepolicy2,
+                            unsigned long int *cachesize3, int *cachelinesize3,
+                            int *associativity3, tWritePolicy *writepolicy3);
 
 /******************************************************************************
  *
@@ -91,14 +95,15 @@ extern void SAC_CS_CheckArguments (int argc, char *argv[],
  *
  *****************************************************************************/
 
-extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
-                               int cs_global, char *cshost, char *csfile, char *csdir,
-                               unsigned long int cachesize1, int cachelinesize1,
-                               int associativity1, tWritePolicy writepolicy1,
-                               unsigned long int cachesize2, int cachelinesize2,
-                               int associativity2, tWritePolicy writepolicy2,
-                               unsigned long int cachesize3, int cachelinesize3,
-                               int associativity3, tWritePolicy writepolicy3);
+SAC_C_EXTERN
+void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
+                        char *cshost, char *csfile, char *csdir,
+                        unsigned long int cachesize1, int cachelinesize1,
+                        int associativity1, tWritePolicy writepolicy1,
+                        unsigned long int cachesize2, int cachelinesize2,
+                        int associativity2, tWritePolicy writepolicy2,
+                        unsigned long int cachesize3, int cachelinesize3,
+                        int associativity3, tWritePolicy writepolicy3);
 
 /******************************************************************************
  *
@@ -110,7 +115,7 @@ extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_Finalize) (void);
+SAC_C_EXTERN void (*SAC_CS_Finalize) (void);
 
 /******************************************************************************
  *
@@ -124,7 +129,7 @@ extern void (*SAC_CS_Finalize) (void);
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
+SAC_C_EXTERN void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
 
 /******************************************************************************
  *
@@ -137,7 +142,7 @@ extern void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
+SAC_C_EXTERN void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
 
 /******************************************************************************
  *
@@ -152,7 +157,7 @@ extern void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
+SAC_C_EXTERN void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 
 /******************************************************************************
  *
@@ -167,7 +172,7 @@ extern void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
+SAC_C_EXTERN void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 
 /******************************************************************************
  *
@@ -180,7 +185,7 @@ extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_Start) (char * /*tag*/);
+SAC_C_EXTERN void (*SAC_CS_Start) (char * /*tag*/);
 
 /******************************************************************************
  *
@@ -197,7 +202,7 @@ extern void (*SAC_CS_Start) (char * /*tag*/);
  *
  *****************************************************************************/
 
-extern void (*SAC_CS_Stop) (void);
+SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 
 #endif /* ! SAC_SIMD_COMPILATION */
 

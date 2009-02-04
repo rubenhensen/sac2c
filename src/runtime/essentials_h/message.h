@@ -19,14 +19,18 @@
 #ifndef _SAC_MESSAGE_H_
 #define _SAC_MESSAGE_H_
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 #ifndef SAC_SIMD_COMPILATION
 
-extern void SAC_RuntimeError (char *format, ...);
-extern void SAC_RuntimeError_Mult (int cnt, ...);
-extern void SAC_RuntimeErrorLine (int line, char *format, ...);
-extern void SAC_RuntimeWarning (char *format, ...);
-extern const char *SAC_PrintShape (SAC_array_descriptor_t desc);
-extern void SAC_Print (char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeError (char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...);
+SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeWarning (char *format, ...);
+SAC_C_EXTERN const char *SAC_PrintShape (SAC_array_descriptor_t desc);
+SAC_C_EXTERN void SAC_Print (char *format, ...);
 
 #endif /* SAC_SIMD_COMPILATION */
 

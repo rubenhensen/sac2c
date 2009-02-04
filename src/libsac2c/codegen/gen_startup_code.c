@@ -169,6 +169,8 @@ PrintGlobalSwitches ()
     if (global.genlib.c) {
         fprintf (global.outfile, "#define SAC_GENERATE_CLIBRARY\n");
     }
+    fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
+             (global.backend = BE_mutc) ? "extern \"C\"" : "extern");
     fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
