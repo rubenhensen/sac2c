@@ -74,7 +74,7 @@ typedef int *SAC_array_descriptor_t;
 /* size of dimension-dependent parts of the descriptor */
 #define VAR_SIZE_OF_DESC 1
 /* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
-#define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC)
+#define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + (dim)*VAR_SIZE_OF_DESC)
 
 #define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (int))
 
