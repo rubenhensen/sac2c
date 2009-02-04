@@ -990,28 +990,16 @@ UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengt
         len = TCgetNthExprsExpr (dim, SET_MEMBER (lengths));
         DBUG_ASSERT ((len != NULL), "no length found");
 
-        if (chunksize != NULL) {
-            if (IsNum (len) && IsNum (chunksize)) {
-                len = TBmakeNum (GetNum (len) * GetNum (chunksize));
-            } else {
-                len = TBmakeId (AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                                             TCmakePrf2 (F_mul_SxS, DUPdoDupNode (len),
-                                                         DUPdoDupNode (chunksize)),
-                                             assigns));
-            }
-        } else {
-            len = DUPdoDupNode (len);
-        }
-
         if (IsNum (len) && (GetNum (len) == 1)) {
             /*
              * nothing to compute here
              */
-            len = FREEdoFreeNode (len);
             tavis = index;
         } else {
-            tavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                                 TCmakePrf2 (F_mul_SxS, TBmakeId (index), len), assigns);
+            tavis
+              = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                             TCmakePrf2 (F_mul_SxS, TBmakeId (index), DUPdoDupNode (len)),
+                             assigns);
         }
 
         oavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
