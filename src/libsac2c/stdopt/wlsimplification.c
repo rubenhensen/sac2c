@@ -127,6 +127,7 @@
 #include "DupTree.h"
 #include "constants.h"
 #include "globals.h"
+#include "pattern_match.h"
 
 /**
  * INFO structure
@@ -570,22 +571,54 @@ WLSIMPdefault (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPgenerator( node *arg_node, info *arg_info)
  *
+ * @brief
+ *         Generator bounds may be either N_id or N_array nodes.
+ *         We attempt to find N_array nodes from the N_id nodes.
+ *
+ * @param WL generator
+ *
+ * @return modified syntax_tree.
+ *
+ *
  *****************************************************************************/
 node *
 WLSIMPgenerator (node *arg_node, info *arg_info)
 {
-    node *lb, *ub, *width;
+    node *lb;
+    node *ub;
+    node *b = NULL;
+    constant *bfs = NULL;
+    node *width;
     constant *cnst;
 
     DBUG_ENTER ("WLSIMPgenerator");
+
+    lb = GENERATOR_BOUND1 (arg_node);
+    ub = GENERATOR_BOUND2 (arg_node);
+    /*
+     * If one argument is an N_id and the other is an N_array, try
+     * to find an N_array node that is the predecessor of the N_id node.
+     *
+     */
+    if ((N_id == NODE_TYPE (lb)) && (N_array == NODE_TYPE (ub))) {
+        if (PM (PMarray (&bfs, &b, lb))) {
+            bfs = COfreeConstant (bfs);
+            lb = b;
+        }
+    }
+
+    if ((N_array == NODE_TYPE (lb)) && (N_id == NODE_TYPE (ub))) {
+        if (PM (PMarray (&bfs, &b, ub))) {
+            bfs = COfreeConstant (bfs);
+            ub = b;
+        }
+    }
 
     /**
      * Remove empty generators
      *
      * First, we check the lower and upper bounds
      */
-    lb = GENERATOR_BOUND1 (arg_node);
-    ub = GENERATOR_BOUND2 (arg_node);
 
     if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
 

@@ -1069,8 +1069,12 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_sel_VxA( node *arg_node, info *arg_info)
  *
- * @brief: Replace _sel_VxA_([scalar], _shape_A_(arr)) by
- *                 _idx_shape_sel_SxA_(scalar, arr)
+ * @brief: Replace _sel_VxA_([scalarconstant], _shape_A_(arr)) by
+ *                 _idx_shape_sel_SxA_(scalarconstant, arr)
+ *
+ *         NB. The above requires a scalar constant, not just a scalar,
+ *             because idx_shape_sel avoids generating the
+ *             shape vector by having fairly restricted rules on its domain.
  *
  *****************************************************************************/
 node *
@@ -1093,6 +1097,8 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
         PM (PMvar (&arr, PMprf (F_shape_A, arg2)))) {
 
         /* Find the first element of the [scalar] */
+        DBUG_ASSERT ((NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))),
+                     "SCSprf_sel_VxA arg1 must have an AVIS_SSAASSIGN");
         scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
         if (N_array == NODE_TYPE (scalar)) {
             scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
