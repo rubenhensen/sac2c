@@ -1033,26 +1033,18 @@ WLIdoWLI (node *arg_node)
 
     DBUG_ENTER ("WLIdoWLI");
 
-    if (!global.ssaiv) { /* TEMP KLUDGE 2009-01-12. rbe
-                          * Skip WLF if -ssaiv for now, as WLF
-                          * undoes the Good Things done by ssaiv.
-                          * Once I get ssaiv working properly, I will
-                          * return and rewrite WLF properly, including
-                          * repair of this, ahem, shortcoming.
-                          */
-        info = MakeInfo ();
+    info = MakeInfo ();
 
 #ifdef SHOW_MALLOC
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
 #endif
 
-        TRAVpush (TR_wli);
-        arg_node = TRAVdo (arg_node, info);
-        TRAVpop ();
+    TRAVpush (TR_wli);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
 
-        info = FreeInfo (info);
-    }
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }

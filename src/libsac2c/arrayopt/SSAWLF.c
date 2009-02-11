@@ -1945,47 +1945,39 @@ WLFdoWLF (node *arg_node)
 
     DBUG_ENTER ("WLFdoWLF");
 
-    if (!global.ssaiv) { /* TEMP KLUDGE!!!! 2009-01-12
-                          * WLF kills -extrema, -ssaiv stuff, so we
-                          * cripple it until we get other things working.
-                          * This will eventually be replaced by a
-                          * Really Swell version of WLF.
-                          */
+    info = MakeInfo ();
 
-        info = MakeInfo ();
-
-        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                     "WLFdoWLF called on non-fundef node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "WLFdoWLF called on non-fundef node");
 
 #ifdef SHOW_MALLOC
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
 #endif
 
-        global.valid_ssaform = FALSE;
-        /*
-         * Wrapper code is created in non-SSA form and later on transformed into
-         * SSA form using the standard transformation modules lac2fun and
-         * ssa_transform. Therefore, we adjust the global control flag.
-         */
+    global.valid_ssaform = FALSE;
+    /*
+     * Wrapper code is created in non-SSA form and later on transformed into
+     * SSA form using the standard transformation modules lac2fun and
+     * ssa_transform. Therefore, we adjust the global control flag.
+     */
 
-        TRAVpush (TR_wlf);
-        arg_node = TRAVdo (arg_node, info);
-        TRAVpop ();
+    TRAVpush (TR_wlf);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
 
 #ifdef SHOW_MALLOC
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
 #endif
 
-        info = FreeInfo (info);
+    info = FreeInfo (info);
 
-        /*
-         * we free the information gathered by WLI here as it is no longer
-         * used after this transformation
-         */
-        arg_node = FreeWLIInformation (arg_node);
-    }
+    /*
+     * we free the information gathered by WLI here as it is no longer
+     * used after this transformation
+     */
+    arg_node = FreeWLIInformation (arg_node);
 
     DBUG_RETURN (arg_node);
 }
