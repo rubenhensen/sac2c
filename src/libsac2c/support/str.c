@@ -797,7 +797,7 @@ STRreplaceSpecialCharacters (const char *name)
         new_name = NULL;
     } else {
 
-        new_name = MEMmalloc ((3 * STRlen (name)) * sizeof (char));
+        new_name = MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
         new_name[0] = '\0';
 
         for (i = 0, j = 0; (size_t)i < STRlen (name); i++, j++) {
