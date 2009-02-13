@@ -8850,8 +8850,10 @@
 
 -->
     <node name="With3">
+      <description>Used to model the 1d with-loop used by the mutc backend.</description>
       <sons>
         <son name="Ranges">
+	  <description>Gives the set of ranges (generators) this with-loop is defined for. Needs to be a full partition of the outer-most dimension of the result.</description>
           <targets>
             <target mandatory="yes">
               <node name="Range" />
@@ -8862,6 +8864,7 @@
           </targets>
         </son>
         <son name="Operations">
+	  <description>The operations this with-loop computes.</description>
           <targets>
             <target mandatory="yes">
               <set name="WithOp" />
@@ -8933,6 +8936,7 @@
     <node name="Range">
       <sons>
         <son name="Index">
+	  <description>Scalar index of this range.</description>
           <targets>
             <target mandatory="yes">
               <node name="Ids" />
@@ -8949,6 +8953,7 @@
           </targets>
         </son>
         <son name="LowerBound">
+	  <description>Lower bound of this range.</description>
           <targets>
             <target mandatory="yes">
               <node name="Num" />
@@ -8960,6 +8965,7 @@
           </targets>
         </son>
         <son name="UpperBound">
+	  <description>Upper bound of this range.</description>
           <targets>
             <target mandatory="yes">
               <node name="Num" />
@@ -8971,6 +8977,7 @@
           </targets>
         </son>
         <son name="ChunkSize">
+	  <description>Chunk size of this range. If non-NULL, this range is not computed by computing each cell alone, but by computing vectors of ChunkSize many elements per iteration. Note that the total number of elements computed by this range needs to be a multiple of ChunkSize!</description>
           <targets>
             <target mandatory="no">
               <node name="Num" />
@@ -8982,6 +8989,7 @@
           </targets>
         </son>
         <son name="Body">
+	  <description>Block computed for each iteration.</description>
           <targets>
             <target mandatory="yes">
               <node name="Block" />
@@ -8992,6 +9000,7 @@
           </targets>
         </son>
         <son name="Results">
+	  <description>Values assigned to the result for each iteration.</description>
           <targets>
             <target mandatory="yes">
               <node name="Exprs" />
@@ -9031,6 +9040,7 @@
       </sons>
       <attributes>
         <attribute name="BlockSize" default="0">
+	  <description>Used for resource allocation. Corresponds to the blocksize argument of the create instruction in mutc.</description>
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -9044,7 +9054,9 @@
 	</attribute>
       </attributes>
       <flags>
-        <flag name="IsGlobal" default="FALSE" />
+        <flag name="IsGlobal" default="FALSE">
+	  <description>True iff this range should be distributed globally over multiple cores</description>
+	</flag>
       </flags>
     </node>
   </syntaxtree>
