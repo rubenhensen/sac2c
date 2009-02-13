@@ -59,6 +59,9 @@
  *   INFO_FUNPOST     : icms to be placed at the end of the function body
  *     Currently used by suballoc in the mutc backend to free descriptors
  *     at the end of a thread function.
+ *
+ *   INFO_CONCURRENTRANGES: used to pass down the WITH3_USECONCURRENTRANGES
+ *                          during code generation
  */
 
 /*
@@ -82,28 +85,30 @@ struct INFO {
     char *break_label;
     lut_t *foldlut;
     node *postfun;
+    bool concurrentranges;
 };
 
 /*
  * INFO macros
  */
-#define INFO_MODUL(n) (n->modul)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_LASTIDS(n) (n->lastids)
-#define INFO_ASSIGN(n) (n->assign)
-#define INFO_SCHEDULERID(n) (n->schedid)
-#define INFO_SCHEDULERINIT(n) (n->schedinit)
-#define INFO_IDXVEC(n) (n->idxvec)
-#define INFO_OFFSETS(n) (n->offsets)
-#define INFO_LOWERVEC(n) (n->lowervec)
-#define INFO_UPPERVEC(n) (n->uppervec)
-#define INFO_ICMCHAIN(n) (n->icmchain)
-#define INFO_ISFOLD(n) (n->isfold)
-#define INFO_SPMDFRAME(n) (n->spmdframe)
-#define INFO_SPMDBARRIER(n) (n->spmdbarrier)
-#define INFO_BREAKLABEL(n) (n->break_label)
-#define INFO_FOLDLUT(n) (n->foldlut)
-#define INFO_POSTFUN(n) (n->postfun)
+#define INFO_MODUL(n) ((n)->modul)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LASTIDS(n) ((n)->lastids)
+#define INFO_ASSIGN(n) ((n)->assign)
+#define INFO_SCHEDULERID(n) ((n)->schedid)
+#define INFO_SCHEDULERINIT(n) ((n)->schedinit)
+#define INFO_IDXVEC(n) ((n)->idxvec)
+#define INFO_OFFSETS(n) ((n)->offsets)
+#define INFO_LOWERVEC(n) ((n)->lowervec)
+#define INFO_UPPERVEC(n) ((n)->uppervec)
+#define INFO_ICMCHAIN(n) ((n)->icmchain)
+#define INFO_ISFOLD(n) ((n)->isfold)
+#define INFO_SPMDFRAME(n) ((n)->spmdframe)
+#define INFO_SPMDBARRIER(n) ((n)->spmdbarrier)
+#define INFO_BREAKLABEL(n) ((n)->break_label)
+#define INFO_FOLDLUT(n) ((n)->foldlut)
+#define INFO_POSTFUN(n) ((n)->postfun)
+#define INFO_CONCURRENTRANGES(n) ((n)->concurrentranges)
 
 /*
  * INFO functions
@@ -6333,9 +6338,13 @@ COMPwith2 (node *arg_node, info *arg_info)
 node *
 COMPwith3 (node *arg_node, info *arg_info)
 {
+    bool old_concurrentranges = INFO_CONCURRENTRANGES (arg_info);
+
     DBUG_ENTER ("COMPwith3");
 
+    INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
     arg_node = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
 
     DBUG_RETURN (arg_node);
 }
@@ -6378,16 +6387,25 @@ COMPrange (node *arg_node, info *arg_info)
                                (RANGE_CHUNKSIZE (arg_node) == NULL)
                                  ? TCmakeIdCopyString ("1")
                                  : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
+#ifdef USE_STATIC_RESOURCE_ANNOTATIONS
                                TBmakeNum (RANGE_BLOCKSIZE (arg_node)),
+#else
+                               TCmakeIdCopyString (""),
+#endif /* USE_STATIC_RESOURCE_ANNOTATIONS */
                                DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
-
-    next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 
+    next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
     family = TCappendAssign (family, create);
-    family = TCappendAssign (family, next);
-    family = TCappendAssign (family, sync);
+    if (INFO_CONCURRENTRANGES (arg_info)) {
+        family = TCappendAssign (family, next);
+        family = TCappendAssign (family, sync);
+    } else {
+        family = TCappendAssign (family, sync);
+        family = TCappendAssign (family, next);
+    }
 
     /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
     FREEdoFreeTree (thread_fun);

@@ -119,6 +119,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Ap" />
+          <node name="With3" />
           <node name="Range" />
         </travuser>
       </traversal>
@@ -8919,6 +8920,9 @@
         </attribute>
       </attributes>
       <flags>
+        <flag name="UseConcurrentRanges" default="TRUE">
+	  <description>Controls whether the ranges of a with3 will be computed concurrently, or whether the ranges are sequentialised</description>
+	</flag>
       </flags>
     </node>
 <!--

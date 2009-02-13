@@ -22,12 +22,16 @@
  *    ranges. However, this very quickly eats up the thread space for
  *    deep nestings. On the long run, we need a way to switch between
  *    concurrent and sequential range spawning.
+ * 2b) To support the contingency plan mutc compiler, we for now use
+ *     non-concurrent creates in all cases.
  *
  * @ingroup dst
  *
  * @{
  *
  *****************************************************************************/
+
+#undef USE_CONCURRENT_RANGES
 
 /** <!--********************************************************************-->
  *
@@ -329,6 +333,29 @@ DSTap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *DSTwith3(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+DSTwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSTwith3");
+
+#ifdef USE_CONCURRENT_RANGES
+    WITH3_USECONCURRENTRANGES (arg_node) = TRUE;
+#else
+    WITH3_USECONCURRENTRANGES (arg_node) = FALSE;
+#endif /* USE_CONCURRENT_RANGES */
+
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *DSTrange(node *arg_node, info *arg_info)
  *
  * @brief
@@ -356,8 +383,12 @@ DSTrange (node *arg_node, info *arg_info)
      */
     previous_height = INFO_UP (arg_info);
     old_avail = INFO_AVAIL (arg_info);
+#ifdef USE_CONCURRENT_RANGES
     INFO_AVAIL (arg_info)
       = INFO_AVAIL (arg_info) / INFO_WIDTH (arg_info) - INFO_THROTTLE (arg_info);
+#else
+    INFO_AVAIL (arg_info) = INFO_AVAIL (arg_info) - INFO_THROTTLE (arg_info);
+#endif /* USE_CONCURRENT_RANGES */
 
     current_width = INFO_WIDTH (arg_info);
     INFO_WIDTH (arg_info) = UNKNOWN;
