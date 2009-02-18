@@ -63,6 +63,9 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
 #undef ND_FUN_DEC
 
     INDENT;
+
+    fprintf (global.outfile, "SAC_MUTC_DECL_FUN(");
+
     if (rettype_NT[0] != '\0') {
         fprintf (global.outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
     } else {
@@ -74,6 +77,8 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
                  fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
+
+    fprintf (global.outfile, ")"); /* SAC_MUTC_DECL_FUN */
 
     DBUG_VOID_RETURN;
 }
@@ -144,6 +149,8 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     INDENT;
     if (!STReq (retname, "")) {
         fprintf (global.outfile, "%s = ", retname);
+    } else {
+        fprintf (global.outfile, "SAC_MUTC_FUN_AP(");
     }
 
     fprintf (global.outfile, "%s(", name);
@@ -151,6 +158,10 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
                  fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
                           vararg[i + 1]));
     fprintf (global.outfile, ");");
+
+    if (STReq (retname, "")) {
+        fprintf (global.outfile, ")"); /* SAC_MUTC_FUN_AP */
+    }
 
     fprintf (global.outfile, "\n");
 

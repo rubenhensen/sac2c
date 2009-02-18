@@ -232,7 +232,7 @@ runtime_phm_h          := phm
 
 runtime_mt_h           := mt mt_gen
 
-runtime_mutc_h         := mutc
+runtime_mutc_h         := mutc fun
 
 
 ###############################################################################

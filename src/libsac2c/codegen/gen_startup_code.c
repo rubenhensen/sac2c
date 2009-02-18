@@ -161,6 +161,10 @@ PrintGlobalSwitches ()
              (global.num_threads == 0) ? 0 : 1);
     fprintf (global.outfile, "\n");
 
+    /* MUTC Switches */
+    fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n", (0) ? 1 : 0);
+    fprintf (global.outfile, "\n");
+
     fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
              ((global.filetype == F_modimp) || (global.filetype == F_classimp)
               || (global.filetype == F_cmod))
