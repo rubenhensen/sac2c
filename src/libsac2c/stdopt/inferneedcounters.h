@@ -17,10 +17,11 @@
  *
  *****************************************************************************/
 extern node *INFNCdoInferNeedCounters (node *arg_node);
-extern node *INFNCdoInferNeedCountersOneFundef (node *arg_node);
+extern node *INFNCdoInferNeedCountersOneFundef (node *arg_node, bool selonly);
 
 extern node *INFNCfundef (node *arg_node, info *arg_info);
 extern node *INFNCblock (node *arg_node, info *arg_info);
+extern node *INFNCprf (node *arg_node, info *arg_info);
 extern node *INFNCavis (node *arg_node, info *arg_info);
 extern node *INFNCid (node *arg_node, info *arg_info);
 

@@ -1109,19 +1109,10 @@ SSATpart (node *arg_node, info *arg_info)
  *
  * @fn node *SSATwithid(node *arg_node, info *arg_info)
  *
-#if global.dorbestuff
  *  @brief withids are treated as LHS, so introduce new variables
  *         just as any other ids. See notes at top of this
  *         file to see earlier treatment, now disabled.
  *
-#else //RBE
- *   @brief In principle, the withids have to be treated as LHS, as they
- *          introduce new variables. However, if we do have multi generator
- *          with loops, we expect all withids to be identical. Therefore,
- *          we only have to treat the very first one as LHS, all others as
- *          RHS. To distinguish these cases, we use INFO_FIRST_WITHID,
- *          which is reset in SSAwith.
-#endif //RBE
  *
  ******************************************************************************/
 node *
@@ -1137,34 +1128,47 @@ SSATwithid (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = NULL;
 
     if (INFO_FIRST_WITHID (arg_info) == NULL) {
-        if (!global.ssaiv) {
-            /**
+        if (global.ssaiv && (global.compiler_phase <= PH_opt)) {
+            /* I know this looks silly, but it beats the inverted
+             * conditionals in the IF otherwise.
+             */
+            DBUG_PRINT ("SSAT", ("SSATwithid operating in SSA mode"));
+        } else {
+            /*
              * This is the first withid. Therefore, we have to treat it as LHS.
+             * We want this for all non-SSA work.
              */
             INFO_FIRST_WITHID (arg_info) = arg_node;
+            DBUG_PRINT ("SSAT", ("SSATwithid operating in non-SSA mode"));
         }
 
         if (WITHID_VEC (arg_node) != NULL) {
             DBUG_PRINT ("SSA", ("renaming:WITHID_VEC: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node)))));
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
+            DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_VEC (arg_node))),
+                         "WITHID_VEC should not have AVIS_SSAASSIGN");
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
             DBUG_PRINT ("SSA", ("renaming:WITHID_IDS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node)))));
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
+            /* SHould have DBUG_ASSERT here on SSA_ASSIGNs */
         }
 
         if (WITHID_IDXS (arg_node) != NULL) {
             DBUG_PRINT ("SSA", ("renaming:WITHID_IDXS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node)))));
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
+            DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_IDXS (arg_node))),
+                         "WITHID_IDXS should not have AVIS_SSAASSIGN");
         }
     } else {
 
-        if (global.ssaiv) {
-            /* This code should all be dead now */
+        if (global.ssaiv && (global.compiler_phase == PH_opt)) {
+            /* The following code should all be dead now, if we're in the
+             * optimizer. */
             DBUG_PRINT ("SSA", ("RBE dead code walking"));
         }
 

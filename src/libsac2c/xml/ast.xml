@@ -959,6 +959,7 @@
 	<travuser>
 	  <node name="Block" />
 	  <node name="Fundef" />
+	  <node name="Prf" />
 	  <node name="Avis" />
 	  <node name="Id" />
 	</travuser>
@@ -6230,7 +6231,7 @@
               <set name="Expr" />
               <phases>
                 <range from="scp_prs" to="cwc_ebt" />
-                <range from="opt_dcr3" to="final" />
+                <range from="opt_ufl" to="final" />
               </phases>
             </target>
             <target>
@@ -6254,7 +6255,7 @@
               <set name="Expr" />
               <phases>
                 <range from="scp_prs" to="cwc_ebt" />
-                <range from="opt_dcr3" to="final" />
+                <range from="opt_ufl" to="final" />
               </phases>
             </target>
             <target>

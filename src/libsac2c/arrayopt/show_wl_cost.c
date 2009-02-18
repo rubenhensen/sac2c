@@ -48,6 +48,7 @@ SHWLCprintPreFun (node *arg_node, info *arg_info)
         break;
     case N_avis:
         fprintf (global.outfile, "/* WL_NEEDCOUNT=%d */", AVIS_WL_NEEDCOUNT (arg_node));
+        fprintf (global.outfile, "/* NEEDCOUNT=%d */", AVIS_NEEDCOUNT (arg_node));
         break;
     case N_ids:
         fprintf (global.outfile, "/* WL_NEEDCOUNT=%d */",

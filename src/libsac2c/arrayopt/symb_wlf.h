@@ -13,7 +13,8 @@
  * Prefix: SWLF
  *
  *****************************************************************************/
-extern node *SWLFdoSymbolicWithLoopFolding (node *fundef);
+extern node *SWLFdoSymbolicWithLoopFolding (node *arg_node);
+extern node *SWLFdoSymbolicWithLoopFoldingModule (node *arg_node);
 
 extern node *SWLFfundef (node *arg_node, info *arg_info);
 extern node *SWLFassign (node *arg_node, info *arg_info);

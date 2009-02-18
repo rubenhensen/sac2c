@@ -10,6 +10,7 @@
 
 extern bool PM (node *res);
 extern node *PMvar (node **var, node *arg_node);
+extern node *PMlastVar (node **var, node *arg_node);
 
 extern node *PMbool (node *stack);
 extern node *PMchar (node *stack);

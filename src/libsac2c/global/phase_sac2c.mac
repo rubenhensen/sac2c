@@ -248,7 +248,7 @@ CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
 CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
             opt, saacyc1)
 
-CYCLEPHASE (cse, "Elimininating common subexpressions",
+CYCLEPHASE (cse, "Eliminating common subexpressions",
             CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt,
             saacyc1)
 
@@ -344,8 +344,16 @@ CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
 CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
                global.optimize.doswlf, opt, cyc)
 
-CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding", SWLFdoSymbolicWithLoopFolding,
-               global.optimize.doswlf, opt, cyc)
+/* swlf does no good here any more; I am leaving this here
+ * for the nonce, for future reference, though,
+ * in case we are able to merge saacyc and cyc again.
+ *
+ *CYCLEPHASEFUN( swlf,
+ *            "Applying symbolic with-loop folding",
+ *            SWLFdoSymbolicWithLoopFolding,
+ *            global.optimize.doswlf,
+ *            opt, cyc)
+ */
 
 CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
                global.optimize.doswlf, opt, cyc)
@@ -478,7 +486,7 @@ CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
 CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
             opt, saacyc)
 
-CYCLEPHASE (cse, "Elimininating common subexpressions",
+CYCLEPHASE (cse, "Eliminating common subexpressions",
             CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
@@ -489,6 +497,9 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
+
+CYCLEPHASE (swlf, "Applying symbolic with-loop folding",
+            SWLFdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
             opt, saacyc)
@@ -506,7 +517,7 @@ SUBPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes, ALWAYS, op
 SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion, global.optimize.dowlfs,
           opt)
 
-SUBPHASE (wlfscse, "Elimininating common subexpressions after fusion",
+SUBPHASE (wlfscse, "Eliminating common subexpressions after fusion",
           CSEdoCommonSubexpressionEliminationModule,
           global.optimize.dowlfs &&global.optimize.docse, opt)
 

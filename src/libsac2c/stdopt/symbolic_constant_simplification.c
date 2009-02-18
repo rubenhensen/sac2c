@@ -1088,7 +1088,6 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_sel_VxA");
 
-    /* FIXME: Remove next line assertion soon */
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_sel_VxA expected N_id as PRF_ARG1");
     if (PM (PMvar (&arg2, PMvar (&arg1, PMprf (F_sel_VxA, arg_node)))) &&
@@ -1097,15 +1096,15 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
         PM (PMvar (&arr, PMprf (F_shape_A, arg2)))) {
 
         /* Find the first element of the [scalar] */
-        DBUG_ASSERT ((NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))),
-                     "SCSprf_sel_VxA arg1 must have an AVIS_SSAASSIGN");
-        scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
-        if (N_array == NODE_TYPE (scalar)) {
-            scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
-            if (N_num == NODE_TYPE (scalar)) {
-                DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
-                res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar),
-                                  DUPdoDupNode (arr));
+        if (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))) { /* eschew IVs */
+            scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
+            if (N_array == NODE_TYPE (scalar)) {
+                scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
+                if (N_num == NODE_TYPE (scalar)) {
+                    DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+                    res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar),
+                                      DUPdoDupNode (arr));
+                }
             }
         }
     }

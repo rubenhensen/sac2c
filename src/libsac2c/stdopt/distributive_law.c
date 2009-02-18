@@ -763,7 +763,7 @@ DLfundef (node *arg_node, info *arg_info)
         /*
          * Infer need counters
          */
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, FALSE);
 
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         INFO_FUNARGS (arg_info) = FUNDEF_ARGS (arg_node);
