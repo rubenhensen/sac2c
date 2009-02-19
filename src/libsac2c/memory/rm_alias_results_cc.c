@@ -164,6 +164,7 @@ Substitute (node **ids, node *avis, info *arg_info)
                                          TCmakePrf1 (F_copy, TBmakeId (avis))),
                               INFO_POSTASSIGN (arg_info));
         }
+        AVIS_SSAASSIGN (IDS_AVIS (*ids)) = INFO_POSTASSIGN (arg_info);
     }
 
     *ids = FREEdoFreeNode (*ids);
