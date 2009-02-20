@@ -138,6 +138,7 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
+
     node *part;
     int level;
     bool swlfoldable;
@@ -749,9 +750,10 @@ SWLFfundef (node *arg_node, info *arg_info)
                              FUNDEF_NAME (arg_node)));
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        if (NULL != FUNDEF_NEXT (arg_node)) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), NULL);
-        }
+    }
+
+    if (NULL != FUNDEF_NEXT (arg_node)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), NULL);
     }
 
     DBUG_RETURN (arg_node);
