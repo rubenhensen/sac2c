@@ -654,6 +654,7 @@
           <node name="Globobj" />
           <node name="Fundef" />
           <node name="Ap" />
+          <node name="Objdef" />
         </travuser>
       </traversal>
       <traversal id="GOI" name="Generating Object Initialiser" default="sons" include="generate_object_initialiser.h" >

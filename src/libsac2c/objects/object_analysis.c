@@ -387,6 +387,12 @@ OANmodule (node *arg_node, info *arg_info)
     MODULE_FUNSPECS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), NULL, ProjectObjectsToFunSpecs);
 
+    /*
+     * check for selfdependencies in object initialisers
+     */
+    MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
+    CTIabortOnError ();
+
     DBUG_RETURN (arg_node);
 }
 
@@ -462,9 +468,25 @@ OANfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("OAN", ("leaving fundef %s", CTIitemName (arg_node)));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+OANobjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("OANobjdef");
+
+    if ((OBJDEF_INITFUN (arg_node) != NULL)
+        && (TCsetContains (FUNDEF_OBJECTS (OBJDEF_INITFUN (arg_node)), arg_node))) {
+        CTIerror ("The initialisation expression of global object `%s' depends on "
+                  "its own result (the global object). Most likely it uses a "
+                  "function that requires the object to already exist.",
+                  CTIitemName (arg_node));
     }
+
+    OBJDEF_NEXT (arg_node) = TRAVopt (OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
