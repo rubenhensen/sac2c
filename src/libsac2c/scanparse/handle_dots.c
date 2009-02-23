@@ -1166,35 +1166,43 @@ ScanVector (node *vector, node *array, info *arg_info)
             idtable *handle = ids;
 
             while (handle != NULL) {
-                if ((handle->type == ID_scalar)
-                    && (STReq (handle->id, SPID_NAME (EXPRS_EXPR (vector))))) {
-                    node *position = NULL;
-                    node *shape = NULL;
-                    shpchain *chain = NULL;
+                if (STReq (handle->id, SPID_NAME (EXPRS_EXPR (vector)))) {
+                    if (handle->type == ID_scalar) {
+                        node *position = NULL;
+                        node *shape = NULL;
+                        shpchain *chain = NULL;
 
-                    if (tripledotflag) {
-                        position
-                          = MAKE_BIN_PRF (F_sub_SxS,
-                                          TBmakePrf (F_dim_A,
-                                                     TBmakeExprs (DUPdoDupTree (array),
-                                                                  NULL)),
-                                          TBmakeNum (exprslen - poscnt));
-                    } else {
-                        position = TBmakeNum (poscnt);
-                    }
+                        if (tripledotflag) {
+                            position
+                              = MAKE_BIN_PRF (F_sub_SxS,
+                                              TBmakePrf (F_dim_A,
+                                                         TBmakeExprs (DUPdoDupTree (
+                                                                        array),
+                                                                      NULL)),
+                                              TBmakeNum (exprslen - poscnt));
+                        } else {
+                            position = TBmakeNum (poscnt);
+                        }
 
-                    shape = MAKE_BIN_PRF (F_sel_VxA,
+                        shape
+                          = MAKE_BIN_PRF (F_sel_VxA,
                                           TCmakeIntVector (TBmakeExprs (position, NULL)),
                                           TBmakePrf (F_shape_A,
                                                      TBmakeExprs (DUPdoDupTree (array),
                                                                   NULL)));
-                    chain = MEMmalloc (sizeof (shpchain));
+                        chain = MEMmalloc (sizeof (shpchain));
 
-                    chain->shape = shape;
-                    chain->next = handle->shapes;
-                    handle->shapes = chain;
+                        chain->shape = shape;
+                        chain->next = handle->shapes;
+                        handle->shapes = chain;
 
-                    break;
+                        break;
+                    } else if (handle->type == ID_vector) {
+                        CTIwarnLine (NODE_LINE (vector),
+                                     "Set notation index vector '%s' is used in a scalar "
+                                     "context.",
+                                     handle->id);
+                    }
                 }
 
                 handle = handle->next;
@@ -1231,15 +1239,23 @@ ScanId (node *id, node *array, info *arg_info)
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
-        if ((ids->type == ID_vector) && (STReq (ids->id, SPID_NAME (id)))) {
-            node *shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
-            shpchain *chain = MEMmalloc (sizeof (shpchain));
+        if (STReq (ids->id, SPID_NAME (id))) {
+            if (ids->type == ID_vector) {
+                node *shape
+                  = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
+                shpchain *chain = MEMmalloc (sizeof (shpchain));
 
-            chain->shape = shape;
-            chain->next = ids->shapes;
-            ids->shapes = chain;
+                chain->shape = shape;
+                chain->next = ids->shapes;
+                ids->shapes = chain;
 
-            break;
+                break;
+            }
+        } else if (ids->type == ID_scalar) {
+            CTIwarnLine (NODE_LINE (id),
+                         "Set notation index scalar '%s' is used in a vector "
+                         "context.",
+                         ids->id);
         }
 
         ids = ids->next;
@@ -1324,7 +1340,9 @@ BuildWLShape (idtable *table, idtable *end)
             shpchain *handle = table->shapes;
 
             if (handle == NULL) {
-                CTIerrorLine (global.linenum, "No shape information found for '%s'",
+                CTIerrorLine (global.linenum,
+                              "No shape information found for index "
+                              "scalar '%s'.",
                               table->id);
             } else {
                 shape = handle->shape;
@@ -1345,7 +1363,10 @@ BuildWLShape (idtable *table, idtable *end)
 #ifdef HD_SETWL_VECTOR
     else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
-            CTIerrorLine (global.linenum, "no shape information found for %s", table->id);
+            CTIerrorLine (global.linenum,
+                          "No shape information found for index "
+                          "vector '%s'.",
+                          table->id);
         } else {
             /*
              * do not build min-WL if there is only one shape
@@ -2144,94 +2165,102 @@ HDsetwl (node *arg_node, info *arg_info)
 
     INFO_HD_WLSHAPE (arg_info) = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
 
-    if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
-        result
-          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (NULL, Exprs2Ids (ids)),
-                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
-                                                     TBmakeDot (1), NULL, NULL)),
-                        TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                    TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                                 NULL)),
-                        TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)), NULL));
-
-    }
+    if (INFO_HD_WLSHAPE (arg_info) != NULL) {
+        if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
+            result
+              = TBmakeWith (TBmakePart (NULL, TBmakeWithid (NULL, Exprs2Ids (ids)),
+                                        TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                         TBmakeDot (1), NULL, NULL)),
+                            TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                        TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                                                     NULL)),
+                            TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)),
+                                            NULL));
+        }
 #ifdef HD_SETWL_VECTOR
-    else {
-        node *newids = TBmakeSpids (STRcpy (SPID_NAME (ids)), NULL);
+        else {
+            node *newids = TBmakeSpids (STRcpy (SPID_NAME (ids)), NULL);
 
-        result
-          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (newids, NULL),
-                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
-                                                     TBmakeDot (1), NULL, NULL)),
-                        TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                    TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                                 NULL)),
-                        TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)), NULL));
-    }
+            result
+              = TBmakeWith (TBmakePart (NULL, TBmakeWithid (newids, NULL),
+                                        TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                         TBmakeDot (1), NULL, NULL)),
+                            TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                        TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                                                     NULL)),
+                            TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)),
+                                            NULL));
+        }
 #endif
 
-    /* build a default value for the withloop */
-    defexpr = DUPdoDupTree (SETWL_EXPR (arg_node));
-    INFO_HD_TRAVSTATE (arg_info) = HD_default;
-    defexpr = TRAVdo (defexpr, arg_info);
-    INFO_HD_TRAVSTATE (arg_info) = HD_scan;
+        /* build a default value for the withloop */
+        defexpr = DUPdoDupTree (SETWL_EXPR (arg_node));
+        INFO_HD_TRAVSTATE (arg_info) = HD_default;
+        defexpr = TRAVdo (defexpr, arg_info);
+        INFO_HD_TRAVSTATE (arg_info) = HD_scan;
 
-    CODE_USED (WITH_CODE (result))++;
-    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
-    GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
-
-    /* check whether we had some dots in order to create */
-    /* code to handle the permutation                    */
-
-    if (dotcnt != 0) {
-        node *intermediate = result;
-        node *withid = MakeTmpId ("permutationiv");
-        node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
-        node *shape
-          = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
-        node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
-        node *defexpr = NULL;
-        node *defshape = NULL;
-        node *withids = TBmakeSpids (STRcpy (SPID_NAME (withid)), NULL);
-
-        /* create permutation code */
-
-        /* build the default value */
-        defshape
-          = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
-                          TBmakePrf (F_shape_A,
-                                     TBmakeExprs (DUPdoDupTree (intermediate), NULL)));
-
-        defexpr = BuildDefaultWithloop (intermediate, defshape);
-
-        result
-          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
-                                    TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
-                                                     TBmakeDot (1), NULL, NULL)),
-                        TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                    TBmakeExprs (TCmakeSpap2 (NULL, STRcpy ("sel"),
-                                                              selvector, intermediate),
-                                                 NULL)),
-                        TBmakeGenarray (shapevector, NULL));
-
-        GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
         CODE_USED (WITH_CODE (result))++;
         PART_CODE (WITH_PART (result)) = WITH_CODE (result);
+        GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
+
+        /* check whether we had some dots in order to create */
+        /* code to handle the permutation                    */
+
+        if (dotcnt != 0) {
+            node *intermediate = result;
+            node *withid = MakeTmpId ("permutationiv");
+            node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
+            node *shape
+              = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
+            node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
+            node *defexpr = NULL;
+            node *defshape = NULL;
+            node *withids = TBmakeSpids (STRcpy (SPID_NAME (withid)), NULL);
+
+            /* create permutation code */
+
+            /* build the default value */
+            defshape
+              = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
+                              TBmakePrf (F_shape_A,
+                                         TBmakeExprs (DUPdoDupTree (intermediate),
+                                                      NULL)));
+
+            defexpr = BuildDefaultWithloop (intermediate, defshape);
+
+            result
+              = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
+                                        TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                         TBmakeDot (1), NULL, NULL)),
+                            TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                        TBmakeExprs (TCmakeSpap2 (NULL, STRcpy ("sel"),
+                                                                  selvector,
+                                                                  intermediate),
+                                                     NULL)),
+                            TBmakeGenarray (shapevector, NULL));
+
+            GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
+            CODE_USED (WITH_CODE (result))++;
+            PART_CODE (WITH_PART (result)) = WITH_CODE (result);
+        }
+
+        FREEdoFreeTree (arg_node);
+        FREEdoFreeTree (ids);
+
+        FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
+
+        INFO_HD_WLSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_WLSHAPE (arg_info));
     }
-
-    FREEdoFreeTree (arg_node);
-    FREEdoFreeTree (ids);
-
-    FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
 
     INFO_HD_IDTABLE (arg_info) = oldtable;
     INFO_HD_TRAVSTATE (arg_info) = oldstate;
-    INFO_HD_WLSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_WLSHAPE (arg_info));
     INFO_HD_WLSHAPE (arg_info) = oldshape;
 
-    result = TRAVdo (result, arg_info);
+    if (result != NULL) {
+        arg_node = TRAVdo (result, arg_info);
+    }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (arg_node);
 }
 
 /**
