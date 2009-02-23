@@ -7759,7 +7759,7 @@ TYdeserializeType (typeconstr con, ...)
         result = TYmakeBottomType (STRcpy (va_arg (args, char *)));
 
         va_end (args);
-    }
+    } break;
     case TC_dummy: {
         result = MakeNtype (TC_dummy, 0);
     } break;
