@@ -1557,6 +1557,7 @@
 	  <node name="Prf" />
 	  <node name="Let" />
 	  <node name="With" />
+	  <node name="Part" />
 	  <node name="Code" />
         </travuser>
       </traversal>
@@ -1902,7 +1903,8 @@
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
-          <node name="With" />
+          <node name="With" />     
+          <node name="Part" />     
         </travuser>
       </traversal>
       <traversal id="EMSR" name="Static Reuse" default="none" include="staticreuse.h" >

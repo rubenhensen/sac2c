@@ -16,6 +16,7 @@
 extern node *REUSEdoGetReuseArrays (node *syntax_tree, node *fundef);
 
 extern node *REUSEwith (node *arg_node, info *arg_info);
+extern node *REUSEpart (node *arg_node, info *arg_info);
 extern node *REUSEgenarray (node *arg_node, info *arg_info);
 extern node *REUSEmodarray (node *arg_node, info *arg_info);
 extern node *REUSEfold (node *arg_node, info *arg_info);

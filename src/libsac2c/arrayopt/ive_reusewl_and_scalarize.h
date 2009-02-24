@@ -7,6 +7,7 @@
 
 extern node *IVERASlet (node *arg_node, info *arg_info);
 extern node *IVERASwith (node *arg_node, info *arg_info);
+extern node *IVERASpart (node *arg_node, info *arg_info);
 extern node *IVERAScode (node *arg_node, info *arg_info);
 extern node *IVERASprf (node *arg_node, info *arg_info);
 extern node *IVERASfundef (node *arg_node, info *arg_info);

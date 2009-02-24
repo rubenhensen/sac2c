@@ -71,12 +71,17 @@ FreeInfo (info *info)
  * offsets for a given vect2offset operation.
  *
  * IV            stores the avis of the indexvector
+ *               Under ssaiv, these are different for each WL partition.
+ *
  * OFFSETS       contains all offsetvar avis and their corresponding
  *               shapeexpression
+ *
  * LOCALOFFSETS  contains offset that are computed "locally" within the
  *               current block
+ *
  * SCALARS       contains the N_ids chain of scalars that can be used instead
  *               of the index vector
+ *               Under ssaiv, these are different for each WL partition.
  */
 
 struct OFFSETINFO {
@@ -184,7 +189,7 @@ FreeOffsetInfo (offsetinfo *info)
 /** <!-- ****************************************************************** -->
  * @fn ivinfo *PushIV( ivinfo *info, node *withid, node *lhs, node *withops)
  *
- * @brief Pushed the given withid on the withloop information stack given
+ * @brief Push the given withid on the withloop information stack given
  *        by the first argument. The lhs and withops arguments are used
  *        for constructing the offset information table.
  *
@@ -203,14 +208,20 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
     DBUG_ENTER ("PushIV");
 
     DBUG_PRINT ("IVERAS",
-                ("adding withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid)))));
+                ("adding WL withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid)))));
 
     result = MEMmalloc (sizeof (ivinfo));
 
-    WITHIV_IV (result) = IDS_AVIS (WITHID_VEC (withid));
+    if (global.ssaiv) { /* Fill in WITHIV at N_part node */
+        WITHIV_IV (result) = NULL;
+        WITHIV_SCALARS (result) = NULL;
+    } else {
+        WITHIV_IV (result) = IDS_AVIS (WITHID_VEC (withid));
+        WITHIV_SCALARS (result) = WITHID_IDS (withid);
+    }
+
     WITHIV_OFFSETS (result) = GenOffsetInfo (lhs, withops);
     WITHIV_LOCALOFFSETS (result) = NULL;
-    WITHIV_SCALARS (result) = WITHID_IDS (withid);
     WITHIV_NEXT (result) = info;
 
     DBUG_RETURN (result);
@@ -512,20 +523,79 @@ IVERASlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASpart( node *arg_node, info *arg_info)
+ *  Under -ssaiv, each WL partition has its own set of WITH_IDs.
+ *  Hence, these have to be pushed info the INFO block at the
+ *  N_part node , rather than at the IVERASwith node.
+ *
+ *  We traverse the code block for the partition after setting up
+ *  the WITHIDS.
+ *
+ * @param N_part node and info node.
+ *
+ * @return arg_node is unchanged, but arg_info updated as side effect.
+ *
+ ******************************************************************************/
+node *
+IVERASpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVERASpart");
+
+    if (global.ssaiv) {
+        DBUG_PRINT ("IVERAS",
+                    ("Adding partition withid %s",
+                     AVIS_NAME (IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node))))));
+        WITHIV_IV (INFO_IVINFO (arg_info))
+          = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
+        WITHIV_SCALARS (INFO_IVINFO (arg_info)) = WITHID_IDS (PART_WITHID (arg_node));
+    }
+
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+
+    if (NULL != PART_NEXT (arg_node)) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASwith( node *arg_node, info *arg_info)
+ *
+ *
+ * @param N_part node and info node.
+ *
+ * @return updated arg_node
+ *
+ ******************************************************************************/
 node *
 IVERASwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVERASwith");
 
+    DBUG_PRINT ("IVERAS", ("Handling WL for partition 0 WITHID: %s",
+                           AVIS_NAME (IDS_AVIS (WITHID_VEC (WITH_WITHID (arg_node))))));
+
     INFO_IVINFO (arg_info) = PushIV (INFO_IVINFO (arg_info), WITH_WITHID (arg_node),
                                      INFO_LHS (arg_info), WITH_WITHOP (arg_node));
 
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     INFO_IVINFO (arg_info) = PopIV (INFO_IVINFO (arg_info));
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERAScode( node *arg_node, info *arg_info)
+ *
+ *
+ * @param N_part node and info node.
+ *
+ * @return updated arg_node
+ *
+ ******************************************************************************/
 
 node *
 IVERAScode (node *arg_node, info *arg_info)
@@ -573,8 +643,8 @@ IVERASprf (node *arg_node, info *arg_info)
         } else {
             if (NODE_TYPE (AVIS_DECL (ID_AVIS (ivarg))) != N_arg) {
                 /*
-                 * this id has no defining assignment and is no argument.
-                 * the only possible reason for this is, that this id is a
+                 * This id has no defining assignment and is not an argument.
+                 * The only possible reason for this is that this id is a
                  * withloop index vector. as this is a local vect2offset
                  * within a withloop code block, we have to remember
                  * the lhs avis for this shape for later use. This is done

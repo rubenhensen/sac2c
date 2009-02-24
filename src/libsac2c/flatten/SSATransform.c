@@ -1143,7 +1143,7 @@ SSATwithid (node *arg_node, info *arg_info)
         }
 
         if (WITHID_VEC (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("renaming:WITHID_VEC: %s",
+            DBUG_PRINT ("SSA", ("renaming: WITHID_VEC: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node)))));
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
             DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_VEC (arg_node))),
@@ -1151,19 +1151,20 @@ SSATwithid (node *arg_node, info *arg_info)
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("renaming:WITHID_IDS: %s",
+            DBUG_PRINT ("SSA", ("renaming: WITHID_IDS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node)))));
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
             /* SHould have DBUG_ASSERT here on SSA_ASSIGNs */
         }
 
         if (WITHID_IDXS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("renaming:WITHID_IDXS: %s",
+            DBUG_PRINT ("SSA", ("traversing: WITHID_IDXS: %s",
                                 AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node)))));
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
             DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_IDXS (arg_node))),
                          "WITHID_IDXS should not have AVIS_SSAASSIGN");
         }
+
     } else {
 
         if (global.ssaiv && (global.compiler_phase == PH_opt)) {

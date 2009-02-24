@@ -5,6 +5,9 @@
 /**
  * @defgroup wrci With-loop reuse candidate inference
  *
+ * WL reuse candidates are all arrays A that are accessed only
+ * by means of selection at A[iv]
+ *
  * @ingroup mm
  *
  * @{

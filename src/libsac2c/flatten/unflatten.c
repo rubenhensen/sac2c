@@ -26,12 +26,12 @@
  * for each partition in a WL are renamed to match the names
  * in the first partition of the WL.
  *
- * This phase also unflattens WL bounds, so that they
+ * This phase ALSO unflattens WL bounds, so that they
  * are (mostly?) N_array nodes, rather than the N_id nodes
  * that point to those N_array nodes.
  *
  * This renaming is required by the code generator,
- * and perhaps by other phases.
+ * and other phases that run after the optimizers.
  *
  */
 
@@ -157,8 +157,27 @@ UFLwithid (node *arg_node, info *arg_info)
             curidxs = IDS_NEXT (curidxs);
             curidxsp0 = IDS_NEXT (curidxsp0);
         }
+#ifdef FIXME
+        I think the WITHID_IDXS varbs should remain name - invariant over SSA,
+          because they represent FOR
+            - loop index vars that are shared by all partitions of the WL.
 
-        /* Now, replace this partition's withid by the partition zero withid */
+              curidxs
+          = WITHID_IDXS (arg_node);
+        curidxsp0 = WITHID_IDXS (INFO_WITHID (arg_info));
+        while (NULL != curidxs) {
+            AVIS_SUBST (IDS_AVIS (curidxs)) = IDS_AVIS (curidxsp0);
+            DBUG_PRINT ("UFL", ("Marking WITHID_IDXS %s to be replaced by %s",
+                                AVIS_NAME (IDS_AVIS (curidxs)),
+                                AVIS_NAME (AVIS_SUBST (IDS_AVIS (curidxs)))));
+            curidxs = IDS_NEXT (curidxs);
+            curidxsp0 = IDS_NEXT (curidxsp0);
+        }
+#endif // FIXME
+
+        /* Now, replace this partition's withid elements
+         * by the partition zero withid
+         */
         if (NULL != WITHID_VEC (arg_node)) {
             FREEdoFreeTree (WITHID_VEC (arg_node));
             WITHID_VEC (arg_node) = DUPdoDupTree (WITHID_VEC (INFO_WITHID (arg_info)));
@@ -168,6 +187,16 @@ UFLwithid (node *arg_node, info *arg_info)
             FREEdoFreeTree (WITHID_IDS (arg_node));
             WITHID_IDS (arg_node) = DUPdoDupTree (WITHID_IDS (INFO_WITHID (arg_info)));
         }
+
+#ifdef FIXME
+        See above
+
+          if (NULL != WITHID_IDXS (arg_node))
+        {
+            FREEdoFreeTree (WITHID_IDXS (arg_node));
+            WITHID_IDXS (arg_node) = DUPdoDupTree (WITHID_IDXS (INFO_WITHID (arg_info)));
+        }
+#endif // FIXME
     }
 
     DBUG_RETURN (arg_node);

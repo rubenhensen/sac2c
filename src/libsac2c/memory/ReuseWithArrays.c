@@ -284,26 +284,58 @@ IsValidIndex (node *index, node *ivs, node *ivids)
 node *
 REUSEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSENwith");
+    DBUG_ENTER ("REUSEwith");
 
+    /* Decide what info we want to collect */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *REUSEpart( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   'INFO_MASK( arg_info)' contains a pointer to the mask of reusable arrays
+ *   'INFO_NEGMASK( arg_info)' contains a pointer to the mask of not reuseables
+ *
+ *   'INFO_IV( arg_info)' contains a set of pointers to the index vectors
+ *                        in the current scope
+ *   'INFO_IVIDS( arg_info)' contains a set of pointers to the index scalars
+ *                           in the current scope
+ *
+ *  With the advent of ssaiv, we have to perform this set membership
+ *  operation at the partition level, because WITHIDS differ for each of them.
+ ******************************************************************************/
+
+node *
+REUSEpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("REUSEpart");
 
     /*
      * add current index information to sets
      */
     INFO_IV (arg_info)
-      = TCappendSet (INFO_IV (arg_info), TBmakeSet (WITH_VEC (arg_node), NULL));
+      = TCappendSet (INFO_IV (arg_info), TBmakeSet (PART_VEC (arg_node), NULL));
     INFO_IVIDS (arg_info)
-      = TCappendSet (INFO_IVIDS (arg_info), TBmakeSet (WITH_IDS (arg_node), NULL));
+      = TCappendSet (INFO_IVIDS (arg_info), TBmakeSet (PART_IDS (arg_node), NULL));
 
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
     /*
      * pop one level from index information
      */
     INFO_IV (arg_info) = TCdropSet (-1, INFO_IV (arg_info));
     INFO_IVIDS (arg_info) = TCdropSet (-1, INFO_IVIDS (arg_info));
+
+    if (NULL != PART_NEXT (arg_node)) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
