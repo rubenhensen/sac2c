@@ -521,12 +521,11 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_PARAM_(dummy, basetype) basetype
 
 #define SAC_ND_PARAM_in_nodesc(var_NT, basetype)                                         \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT)
+    SAC_MUTC_PARAM (SAC_ND_TYPE (var_NT, basetype), SAC_ND_A_FIELD (var_NT), var_NT)
 
 #define SAC_ND_PARAM_out_nodesc(var_NT, basetype)                                        \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    *SAC_NAMEP (SAC_ND_A_FIELD (var_NT))
+    SAC_MUTC_PARAM (SAC_ND_TYPE (var_NT, basetype) *,                                    \
+                    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)), var_NT)
 
 #define SAC_ND_PARAM_inout(var_NT, basetype) SAC_ND_PARAM_out (var_NT, basetype)
 
@@ -557,7 +556,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_PARAM_in__DESC(var_NT, basetype)                                          \
     SAC_ND_PARAM_in_nodesc (var_NT, basetype),                                           \
-      SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT)
+      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT), SAC_ND_A_DESC (var_NT), var_NT)
 
 /*
  * SAC_ND_PARAM_out implementations (referenced by sac_std_gen.h)
@@ -568,7 +567,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_PARAM_out__DESC(var_NT, basetype)                                         \
     SAC_ND_PARAM_out_nodesc (var_NT, basetype),                                          \
-      SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))
+      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT) *, SAC_NAMEP (SAC_ND_A_DESC (var_NT)),   \
+                      var_NT)
 
 /*
  * SAC_ND_ARG_in implementations (referenced by sac_std_gen.h)

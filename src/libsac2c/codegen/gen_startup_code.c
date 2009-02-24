@@ -162,7 +162,10 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "\n");
 
     /* MUTC Switches */
-    fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n", (0) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n",
+             (global.mutc_fun_as_threads) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_MUTC_MACROS  %d\n",
+             (global.mutc_macros) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",

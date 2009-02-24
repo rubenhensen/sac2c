@@ -453,6 +453,19 @@ PrintOptimisationOptions (void)
 }
 
 static void
+PrintMutcOptions (void)
+{
+    DBUG_ENTER ("PrintMutcOptions");
+
+    printf ("\n\nMUTC OPTIONS:\n\n"
+            "    -mutc_funt_threads Convert all functions to thread functions and use\n"
+            "                    singleton creates\n\n"
+            "    -mutc_macros    Use mutc macro abstraction interface\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 PrintMultithreadOptions (void)
 {
     DBUG_ENTER ("PrintMultithreadOptions");
@@ -1003,6 +1016,7 @@ USGprintUsage ()
         PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
         PrintMultithreadOptions ();
+        PrintMutcOptions ();
         PrintBackendOptions ();
         PrintGeneralDebugOptions ();
 #ifndef DBUG_OFF

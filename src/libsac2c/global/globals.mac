@@ -883,6 +883,13 @@ GLOBAL (configuration_t, config, config_init)
 
 GLOBAL (stringset_t *, dependencies, NULL);
 
+/*
+ * MUTC backend options
+ */
+
+GLOBAL (bool, mutc_fun_as_threads, FALSE);
+GLOBAL (bool, mutc_macros, FALSE);
+
 #undef GLOBALtype
 #undef GLOBALname
 #undef GLOBALinit

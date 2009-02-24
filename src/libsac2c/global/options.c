@@ -112,6 +112,13 @@ CheckOptionConsistency ()
                      "of the mutc backend.");
             global.optimize.dophm = FALSE;
         }
+    } else {
+        if (global.mutc_fun_as_threads == TRUE) {
+            CTIabort ("-mutc_fun_threads only works with mutc backend");
+        }
+        if (global.mutc_macros == TRUE) {
+            CTIabort ("-mutc_macros only works with mutc backend");
+        }
     }
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
@@ -503,6 +510,10 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("M", global.makedeps = TRUE);
     ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
+
+    /* mutc options */
+    ARGS_FLAG ("mutc_fun_threads", global.mutc_fun_as_threads = TRUE);
+    ARGS_FLAG ("mutc_macros", global.mutc_macros = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
