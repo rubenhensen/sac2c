@@ -811,9 +811,6 @@ SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
 
 SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
 
-SUBPHASE (ta, "Tag arguments of functions", TAdoTagArguments, global.backend == BE_mutc,
-          pc)
-
 ENDPHASE (pc)
 
 /******************************************************************************/

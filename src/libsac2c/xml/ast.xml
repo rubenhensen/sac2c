@@ -2495,12 +2495,6 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="TA" name="Tag arguments" default="sons"
-                 include="tag_argument.h">
-        <travuser>
-          <node name="Arg" />
-        </travuser>
-      </traversal>
    </traversals>
 
   <nodesets>
@@ -5812,12 +5806,6 @@
 	    this thread function. Used by the mutc backend.
 	  </description>
 	</flag>
-        <flag name="IsFunArgument" default="FALSE">
-          <description>
-            This variable is a function argument
-            (Used my mutc/SL backend)
-          </description>
-        </flag>
       </flags>
     </node>
 <!--
