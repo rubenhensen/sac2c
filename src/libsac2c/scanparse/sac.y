@@ -579,7 +579,7 @@ fundef2: fundefargs BRACKET_R
          { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
-           $$ = $<node>3;
+           $<node>$ = $<node>3;
            FUNDEF_BODY( $$) = $4;             /* function bdoy  */
            FUNDEF_ARGS( $$) = $1;             /* fundef args */
 
@@ -594,7 +594,7 @@ fundef2: fundefargs BRACKET_R
          }
        | BRACKET_R { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
-         { $$ = $<node>2;
+         { $<node>$ = $<node>2;
            FUNDEF_BODY( $$) = $3;
 
            DBUG_PRINT( "PARSE",
