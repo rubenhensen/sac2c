@@ -4788,10 +4788,13 @@ PRTwith3 (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTwith3");
 
     global.indent++;
-    fprintf (global.outfile, "with3 (CONCURRENT: %s) {\n",
-             (WITH3_USECONCURRENTRANGES (arg_node) ? "true" : "false"));
+    fprintf (global.outfile, "with3 {\n");
 
     global.indent++;
+    if (WITH3_USECONCURRENTRANGES (arg_node)) {
+        fprintf (global.outfile, "/* concurrent */\n");
+    }
+
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
     global.indent--;
 
@@ -4845,15 +4848,12 @@ PRTrange (node *arg_node, info *arg_info)
     RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
     fprintf (global.outfile, ") ");
 
-    fprintf (global.outfile, "(BS: %d) ", RANGE_BLOCKSIZE (arg_node));
-    fprintf (global.outfile, "(PL: %s) ", (RANGE_ISGLOBAL (arg_node)) ? "GLOBAL" : "");
-    fprintf (global.outfile, "(CH: %d) ", RANGE_CHUNKSIZE (arg_node));
-
     fprintf (global.outfile, ") ");
+
+    fprintf (global.outfile, "/* (BS: %d) */ ", RANGE_BLOCKSIZE (arg_node));
 
     global.indent++;
     if (RANGE_BODY (arg_node) != NULL) {
-        fprintf (global.outfile, "\n");
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
     }
 
