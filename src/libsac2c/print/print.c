@@ -142,6 +142,15 @@ static node *last_assignment_icm = NULL;
     PRINT_POINTER_BRACKETS (file, str);
 
 /*
+ * macro for printing external or SAC_C_EXTERN, depending on context
+ */
+#define PRINT_EXTERN                                                                     \
+    (((global.compiler_subphase != PH_cg_prt)                                            \
+      && (global.compiler_subphase != PH_ccg_prt))                                       \
+       ? "external"                                                                      \
+       : "SAC_C_EXTERN")
+
+/*
  * First, we generate the external declarations for all functions that
  * expand ICMs to C.
  */
@@ -1198,11 +1207,12 @@ PRTtypedef (node *arg_node, info *arg_info)
     }
 
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "\nSAC_C_EXTERN %s %s( %s);\n", TYPEDEF_NAME (arg_node),
-                 TYPEDEF_COPYFUN (arg_node), TYPEDEF_NAME (arg_node));
+        fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
+                 TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
+                 TYPEDEF_NAME (arg_node));
     }
     if (TYPEDEF_FREEFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "SAC_C_EXTERN void %s( %s);\n\n",
+        fprintf (global.outfile, "%s void %s( %s);\n\n", PRINT_EXTERN,
                  TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
     }
 
@@ -1243,8 +1253,8 @@ PRTobjdef (node *arg_node, info *arg_info)
     if (global.genlib.c && global.print_objdef_for_header_file) {
         fprintf (global.outfile,
                  "/* flag, if object has been initialized */\n"
-                 "SAC_C_EXTERN bool SAC_INIT_FLAG_%s;\n",
-                 OBJDEF_NAME (arg_node));
+                 "%s bool SAC_INIT_FLAG_%s;\n",
+                 PRINT_EXTERN, OBJDEF_NAME (arg_node));
     }
 
     if ((OBJDEF_ICM (arg_node) == NULL) || (NODE_TYPE (OBJDEF_ICM (arg_node)) != N_icm)) {
@@ -1596,7 +1606,7 @@ PRTfundef (node *arg_node, info *arg_info)
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                fprintf (global.outfile, "SAC_C_EXTERN ");
+                fprintf (global.outfile, "%s ", PRINT_EXTERN);
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
