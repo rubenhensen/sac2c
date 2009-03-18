@@ -131,13 +131,18 @@ RENids (node *arg_node, info *arg_info)
 node *
 RENwlsegvar (node *arg_node, info *arg_info)
 {
+    int d;
+
     DBUG_ENTER ("RENwlsegvar");
 
-    if (*WLSEGVAR_IDX_MIN (arg_node) != NULL) {
-        *WLSEGVAR_IDX_MIN (arg_node) = TRAVdo (*WLSEGVAR_IDX_MIN (arg_node), arg_info);
+    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+        WLSEGVAR_IDX_MIN (arg_node)
+        [d] = TRAVopt (WLSEGVAR_IDX_MIN (arg_node)[d], arg_info);
     }
-    if (*WLSEGVAR_IDX_MAX (arg_node) != NULL) {
-        *WLSEGVAR_IDX_MAX (arg_node) = TRAVdo (*WLSEGVAR_IDX_MAX (arg_node), arg_info);
+
+    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+        WLSEGVAR_IDX_MAX (arg_node)
+        [d] = TRAVopt (WLSEGVAR_IDX_MAX (arg_node)[d], arg_info);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
