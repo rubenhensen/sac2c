@@ -297,8 +297,8 @@ FUNBEGIN (cyc, opt, cyc)
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
-CYCLEPHASEFUN (ili, "Infering loop invariant variables", ILIdoInferLoopInvariants, ALWAYS,
-               opt, cyc)
+CYCLEPHASEFUN (ili, "Inferring loop invariant variables", ILIdoInferLoopInvariants,
+               ALWAYS, opt, cyc)
 
 CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
                global.optimize.dotup, opt, cyc)
@@ -332,7 +332,7 @@ CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
                global.optimize.docwle, opt, cyc)
 
-CYCLEPHASEFUN (wli, "Infering foldable with-loops", WLIdoWLI, global.optimize.dowlf, opt,
+CYCLEPHASEFUN (wli, "Inferring foldable with-loops", WLIdoWLI, global.optimize.dowlf, opt,
                cyc)
 
 CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowlf, opt,
@@ -497,6 +497,9 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
+
+CYCLEPHASE (wli, "Inferring symbolically foldable with-loops", WLIdoWLI,
+            global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (swlf, "Applying symbolic with-loop folding",
             SWLFdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
