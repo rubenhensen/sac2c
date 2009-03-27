@@ -4850,10 +4850,14 @@ PRTrange (node *arg_node, info *arg_info)
     RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
     fprintf (global.outfile, " < ");
     RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);
+
     if (RANGE_CHUNKSIZE (arg_node) != NULL) {
         fprintf (global.outfile, " in ");
         RANGE_CHUNKSIZE (arg_node) = TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
+    } else {
+        fprintf (global.outfile, " in 1");
     }
+
     fprintf (global.outfile, " (IDXS: ");
     RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
     fprintf (global.outfile, ") ");
