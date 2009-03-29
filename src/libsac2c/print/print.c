@@ -1890,19 +1890,28 @@ PRTarg (node *arg_node, info *arg_info)
     if ((!INFO_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
         fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
-
+    fprintf (global.outfile, " { "); /* Start of avis info */
     if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, "(");
+        fprintf (global.outfile, "dim: ");
         AVIS_DIM (ARG_AVIS (arg_node))
           = TRAVdo (AVIS_DIM (ARG_AVIS (arg_node)), arg_info);
-        fprintf (global.outfile, ")");
     }
     if (AVIS_SHAPE (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, "[");
+        fprintf (global.outfile, ", shape: ");
         AVIS_SHAPE (ARG_AVIS (arg_node))
           = TRAVdo (AVIS_SHAPE (ARG_AVIS (arg_node)), arg_info);
-        fprintf (global.outfile, "]");
     }
+    /* Print extrema information */
+    if (AVIS_MINVAL (ARG_AVIS (arg_node)) != NULL) {
+        fprintf (global.outfile, ", minval: %s",
+                 AVIS_NAME (AVIS_MINVAL (ARG_AVIS (arg_node))));
+    }
+    if (AVIS_MAXVAL (ARG_AVIS (arg_node)) != NULL) {
+        fprintf (global.outfile, ", maxval: %s",
+                 AVIS_NAME (AVIS_MAXVAL (ARG_AVIS (arg_node))));
+    }
+
+    fprintf (global.outfile, " } "); /* end of avis info */
 
     TRAVdo (ARG_AVIS (arg_node), arg_info);
 
