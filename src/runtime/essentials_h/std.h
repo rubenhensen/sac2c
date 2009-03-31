@@ -46,6 +46,7 @@
 #define NT_SHP(var_NT) Item1 var_NT
 #define NT_HID(var_NT) Item2 var_NT
 #define NT_UNQ(var_NT) Item3 var_NT
+#define NT_TMP(var_NT) Item3 var_NT
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 

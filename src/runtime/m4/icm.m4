@@ -1,5 +1,8 @@
 divert(-1)
 
+define(`start_icm_definition', `define(`CAT_M4_NAME', $1)' `define(`CAT_M4_COUNT', 0)')dnl
+define(`end_icm_definition', def_cat);
+
 dnl icm( `SAC_BASE_MACRO_NAME', 
 dnl      `spec', `spec', `spec', `SAC_TARGET_MACRO_NAME',
 dnl      `CATnn', `argsbefore', `argsafter')
@@ -35,6 +38,9 @@ icm(`$1', `$2', `HID', `$4', `$5', `$6', `$7', `$8')',
 `$4', `*',
 `icm(`$1', `$2', `$3', `NUQ', `$5', `$6', `$7', `$8')
 icm(`$1', `$2', `$3', `UNQ', `$5', `$6', `$7', `$8')',
+`$5', `*',
+`icm(`$1', `$2', `$3', `$4', `NUQ', `$6', `$7', `$8')
+icm(`$1', `$2', `$3', `$4', `UNQ', `$6', `$7', `$8')',
 `_do_icm1(`$1', `$2', `$3', `$4', `$5', `$6', `$7', `$8')')')
 
 dnl This macro concatenates the shape element of the tag ($2)
@@ -44,13 +50,13 @@ define(`_do_icm1',
 `#ifndef DEF_$1
 `#'define DEF_$1
 `#'define $1(extra_args(`0', `$7')`'ifelse(`$7', `0', `', `, ')var_NT`'ifelse(`$8', `0', `', `, ')extra_args(`$7', `eval($7+$8)'))  \
-  CAT$6( $1___, NT_SHP( var_NT) \
+  use_cat`'( $1___, NT_SHP( var_NT) \
   BuildArgs`'eval($7+$8+1)( \
 extra_args(`0', `$7')`'ifelse(`$7', `0', `', `, ')var_NT`'ifelse(`$8', `0', `', `, ')extra_args(`$7', `eval($7+$8)'))  \
 )
 #endif
 
-_do_icm2(`$1___$2', `$3', `$4', `$5', increase_cat($6), `$7', `$8')')
+_do_icm2(`$1___$2', `$3', `$4', `$5', `$6', `$7', `$8')')
 
 dnl This macro concatenates the hidden element of the tag ($2)
 dnl to the macro name, and then calls _do_icm3 with the
@@ -60,33 +66,52 @@ define(`_do_icm2',
 `#ifndef DEF_$1
 `#'define DEF_$1
 `#'define $1(extra_args(`0', `$6')`'ifelse(`$6', `0', `', `, ')var_NT`'ifelse(`$7', `0', `', `, ')extra_args(`$6', `eval($6+$7)'))  \
-  CAT$5( $1___, NT_HID( var_NT) \
+  use_cat`'( $1___, NT_HID( var_NT) \
   BuildArgs`'eval($6+$7+1)( \
 extra_args(`0', `$6')`'ifelse(`$6', `0', `', `, ')var_NT`'ifelse(`$7', `0', `', `, ')extra_args(`$6', `eval($6+$7)'))  \
 )
 #endif
 
-_do_icm3(`$1___$2', `$3', `$4', increase_cat($5), `$6', `$7')')
+_do_icm3(`$1___$2', `$3', `$4', `$5', `$6', `$7')')
 
-dnl This macro concatenates the unique element of the tag ($2)
-dnl to the macro name, and then calls _do_icm4 with the
+dnl---------------------------------------------------------
+
+dnl This macro concatenates the hidden element of the tag ($2)
+dnl to the macro name, and then calls _do_icm3 with the
 dnl remainder of the arguments.
 
 define(`_do_icm3',
 `#ifndef DEF_$1
 `#'define DEF_$1
 `#'define $1(extra_args(`0', `$5')`'ifelse(`$5', `0', `', `, ')var_NT`'ifelse(`$6', `0', `', `, ')extra_args(`$5', `eval($5+$6)'))  \
-  CAT$4( $1___, NT_UNQ( var_NT) \
+  use_cat`'( $1___, NT_UNQ( var_NT) \
   BuildArgs`'eval($5+$6+1)( \
 extra_args(`0', `$5')`'ifelse(`$5', `0', `', `, ')var_NT`'ifelse(`$6', `0', `', `, ')extra_args(`$5', `eval($5+$6)'))  \
 )
 #endif
 
-_do_icm4(`$1___$2', `$3', `$5', `$6')')
+_do_icm4(`$1___$2', `$3', `$4', `$5', `$6')')
+dnl-----------------------------------------------
+
+dnl This macro concatenates the unique element of the tag ($2)
+dnl to the macro name, and then calls _do_icm4 with the
+dnl remainder of the arguments.
+
+define(`_do_icm4',
+`#ifndef DEF_$1
+`#'define DEF_$1
+`#'define $1(extra_args(`0', `$4')`'ifelse(`$4', `0', `', `, ')var_NT`'ifelse(`$5', `0', `', `, ')extra_args(`$4', `eval($4+$5)'))  \
+  use_cat`'( $1___, NT_TMP( var_NT) \
+  BuildArgs`'eval($4+$5+1)( \
+extra_args(`0', `$4')`'ifelse(`$4', `0', `', `, ')var_NT`'ifelse(`$5', `0', `', `, ')extra_args(`$4', `eval($4+$5)'))  \
+)
+#endif
+
+_do_icm5(`$1___$2', `$3', `$4', `$5')')
 
 dnl This macro simply defines macro $1 to macro $2.
 
-define(`_do_icm4',
+define(`_do_icm5',
 `#ifndef DEF_$1
 `#'define DEF_$1
 `#'define $1(extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))  \
@@ -95,6 +120,20 @@ extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', 
 #endif
 
 ')
+
+define(`use_cat', `define(`CAT_M4_COUNT', incr(CAT_M4_COUNT))' `CAT_M4_`'CAT_M4_NAME`'_`'CAT_M4_COUNT')dnl
+
+define(`def_cat', `_def_cat(CAT_M4_COUNT)')
+define(`_def_cat', `ifelse($1, 0, `', `__def_cat(`'CAT_M4_NAME`'_$1) _def_cat(eval($1-1)) ')')
+define(`__def_cat2', `$1');
+define(`__def_cat', `
+#ifndef DEF_CAT_M4_$1
+#define DEF_CAT_M4_$1
+#define CAT_M4_$1(x, y) xCAT_M4_$1(x, y)
+#define xCAT_M4_$1(x, y) x##y
+#endif
+')
+
 
 dnl Increases counter for CATnn macro's.
 define(`increase_cat', `incr(`$1')')
