@@ -197,18 +197,24 @@ findNarray (node *arg_node)
 static node *
 CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
 {
-    int i;
     node *res = NULL;
+    node *firstarray = NULL;
+    int i;
 
     DBUG_ENTER ("CreateArrayOfShapeSels");
 
     DBUG_ASSERT ((NODE_TYPE (array) == N_id),
                  "CreateArrayOfShapeSels not called with N_id");
 
+    /* Find first array in chain with same shape as array */
+    if (!PM (PMshape (&firstarray, array, NULL))) {
+        firstarray = array;
+    }
+
     for (i = dim - 1; i >= 0; i--) {
         node *sel_avis;
 
-        sel_avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (array)),
+        sel_avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (firstarray)),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -217,7 +223,7 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
         INFO_NASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (sel_avis, NULL),
                                      TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
-                                                 TBmakeId (ID_AVIS (array)))),
+                                                 TBmakeId (ID_AVIS (firstarray)))),
                           INFO_NASSIGNS (arg_info));
 
         /*
@@ -650,13 +656,19 @@ static node *
 CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
            node *withid)
 {
-    node *lsc, *usc, *le, *ue, *lsce, *usce, *partn, *ubn, *lbn;
+    node *lsc = NULL;
+    node *usc = NULL;
+    node *le, *ue, *partn, *ubn, *lbn;
+    node *lsce = NULL;
+    node *usce = NULL;
     node *lb = NULL;
     node *ub = NULL;
     node *pbnd = NULL;
     constant *lbco = NULL;
     constant *ubco = NULL;
     constant *pbndshp = NULL;
+    constant *lsco = NULL;
+    constant *usco = NULL;
     int i, d;
     int lnum;
     int lscnum;
@@ -697,13 +709,34 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
     lsc = DUPdoDupTree (ls);
     usc = DUPdoDupTree (us);
 
-    le = ARRAY_AELEMS (lb);
-    lsce = ARRAY_AELEMS (lsc);
-    ue = ARRAY_AELEMS (ub);
-    usce = ARRAY_AELEMS (usc);
+    if (PM (PMarray (&lsco, &lsce, lsc))) {
+        lsco = COfreeConstant (lsco);
+    } else {
+        lsco = COaST2Constant (lsc);
+        if (NULL != lsco) {
+            lsce = COconstant2AST (lsco);
+            lsco = COfreeConstant (lsco);
+        }
+    }
 
-    for (d = 0; d < dim; d++) {
-        /* Check whether there is a cuboid above (below) the given one. */
+    if (PM (PMarray (&usco, &usce, usc))) {
+        usco = COfreeConstant (usco);
+    } else {
+        usco = COaST2Constant (lsc);
+        if (NULL != usco) {
+            usce = COconstant2AST (usco);
+            usco = COfreeConstant (usco);
+        }
+    }
+
+    lsce = ARRAY_AELEMS (lsce);
+    usce = ARRAY_AELEMS (usce);
+
+    le = ARRAY_AELEMS (lb);
+    ue = ARRAY_AELEMS (ub);
+
+    for (d = 0; d < dim;
+         d++) { /* Check whether there is a cuboid above (below) the given one. */
 
         if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
             lnum = NUM_VAL (EXPRS_EXPR (le));
@@ -877,7 +910,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 if (PM (PMarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
                     COfreeConstant (lbnfs);
                 } else {
-                    DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array result"));
+                    DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array BOUND"));
                 }
 
                 lbn = ARRAY_AELEMS (lbn);
@@ -925,7 +958,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             if (PM (PMarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
                 COfreeConstant (lbnfs);
             } else {
-                DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array result"));
+                DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array BOUND1"));
             }
 
             lbn = ARRAY_AELEMS (lbn);
@@ -1101,8 +1134,10 @@ CreateFullPartition (node *wln, info *arg_info)
             array_shape = DUPdoDupTree (shp);
         } else {
             shpco = COaST2Constant (array_shape);
-            array_shape = COconstant2AST (shpco);
-            shpco = COfreeConstant (shpco);
+            if (NULL != shpco) {
+                array_shape = COconstant2AST (shpco);
+                shpco = COfreeConstant (shpco);
+            }
         }
         break;
 
