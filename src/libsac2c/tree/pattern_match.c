@@ -792,6 +792,82 @@ PMintConst (constant **co, node **conode, node *stack)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *PMshape( node **id2, node *id, node *stack)
+ *
+ * @brief tries to match an array shape.
+ *        This has to work in non-saa mode, so we do not rely
+ *        on AVIS_SHAPE.
+ *
+ *        The idea here is to trace back the N_id in id to the
+ *        first array of the same shape as arg. Basically,
+ *        it does lastId(id), but also has some tricks to go
+ *        further when that result comes from a modarray WL.
+ *
+ *        FIXME: Perhaps it could look at genarray, too, but I'm not
+ *        sure how to do that just yet.
+ *
+ *        If *id2 is NULL, the above id node is bound to id2.
+ *        If *id2 is bound already, it only matches if both N_id nodes
+ *        have the same shape.
+ * @param id2
+ * @param stack "stack" of exprs.
+ *
+ * @return stack is unchanged.
+ *****************************************************************************/
+node *
+PMshape (node **id2, node *id, node *stack)
+{
+    node *arg;
+    node *modarr;
+
+    DBUG_ENTER ("PMshape");
+
+    DBUG_ASSERT (N_id == NODE_TYPE (id), ("PMshape expected N_id node"));
+    if (*id2 == NULL) {
+        DBUG_PRINT ("PM", ("PMshape trying to match unbound variable."));
+    } else {
+        DBUG_PRINT ("PM", ("PMshape trying to match bound variable."));
+    }
+
+    if (stack != (node *)FAIL) {
+        if (NULL != id) {
+            arg = lastId (id);
+        }
+
+        /* Chase possible modarray WL */
+        /* FIXME: probably can do something similar with genarray,
+         * if we can find its shape
+         */
+        modarr = AVIS_SSAASSIGN (ID_AVIS (arg));
+        if (NULL != modarr) {
+            modarr = LET_EXPR (ASSIGN_INSTR (modarr));
+            if ((N_with == NODE_TYPE (modarr))
+                && (N_modarray == NODE_TYPE (WITH_WITHOP (modarr)))) {
+                arg = MODARRAY_ARRAY (WITH_WITHOP (modarr));
+                /* We SHOULD recurse here, I think, to catch chained modarrays */
+            }
+        }
+
+        if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
+            if (REF_ISUNDEFINED (id2)) {
+                DBUG_PRINT ("PM", ("PMshape binding N_id"));
+                REF_SET (id2, arg);
+            } else if (*id2 == arg) {
+                DBUG_PRINT ("PM", ("PMshape found matching N_id"));
+            } else {
+                stack = FailMatch (stack);
+            }
+        } else {
+            stack = FailMatch (stack);
+        }
+    } else {
+        DBUG_PRINT ("PM", ("PMshape passing on FAIL."));
+    }
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *PMsaashape( node **shp, node **arg, node *stack)
  *
  * @brief tries to match against an AVIS_SHAPE.
