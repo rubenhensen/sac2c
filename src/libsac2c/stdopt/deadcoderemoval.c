@@ -211,8 +211,9 @@ DCRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRfundef");
 
-    DBUG_PRINT ("DCR",
-                ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("DCR", ("\nStarting dead code removal in fundef %s %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                        FUNDEF_NAME (arg_node)));
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
         || ((INFO_TRAVSCOPE (arg_info) == TS_module)
