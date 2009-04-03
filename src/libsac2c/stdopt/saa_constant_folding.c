@@ -220,7 +220,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
  *
  * @result new arg_node if idx_shape_sel( idx, X) operation has a constant
  *         idx, and shape(X) is being kept as an N_array. If so, the
- *         operation is replaced by a references to the appropriate element
+ *         operation is replaced by a reference to the appropriate element
  *         of the N_array.
  *         else NULL
  *
