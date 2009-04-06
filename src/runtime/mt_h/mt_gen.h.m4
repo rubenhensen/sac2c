@@ -24,151 +24,151 @@ start_icm_definition(mt_gen)
 dnl SAC_MT_FRAME_ELEMENT_inout
 
 icm(`SAC_MT_FRAME_ELEMENT_inout',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_inout__NODESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_inout__NODESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_inout__DESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_inout__DESC', `3', `0')
 
 dnl SAC_MT_FRAME_ELEMENT_in
 
 icm(`SAC_MT_FRAME_ELEMENT_in',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_in__NODESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_in',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_in__NODESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_in',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_in__DESC', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_in',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_in__DESC', `3', `0')
 
 dnl SAC_MT_FRAME_ELEMENT_out
 
 icm(`SAC_MT_FRAME_ELEMENT_out',
-    `*', `*', `*', `*',
+    `*', `*', `*', `*', `*', `*',
     `SAC_MT_FRAME_ELEMENT_out__NOOP', `3', `0')
 
 dnl SAC_MT_BARRIER_ELEMENT_inout
 
 icm(`SAC_MT_BARRIER_ELEMENT_inout',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__NODESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_inout',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__NODESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_inout',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__DESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_inout',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__DESC', `3', `0')
 
 dnl SAC_MT_BARRIER_ELEMENT_out
 
 icm(`SAC_MT_BARRIER_ELEMENT_out',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__NODESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_out',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__NODESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_out',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__DESC', `3', `0')
 icm(`SAC_MT_BARRIER_ELEMENT_out',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_out__DESC', `3', `0')
 
 dnl SAC_MT_BARRIER_ELEMENT_in
 
 icm(`SAC_MT_BARRIER_ELEMENT_in',
-    `*', `*', `*', `*',
+    `*', `*', `*', `*', `*', `*',
     `SAC_MT_BARRIER_ELEMENT_in__NOOP', `3', `0')
 
 dnl SAC_MT_SEND_PARAM_in
 
 icm(`SAC_MT_SEND_PARAM_in',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_in__NODESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_in',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_in__NODESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_in',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_in__DESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_in',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_in__DESC', `2', `0')
 
 dnl SAC_MT_SEND_PARAM_inout
 
 icm(`SAC_MT_SEND_PARAM_inout',
-    `SCL', `*', `*', `*',
+    `SCL', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_inout__NODESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_inout__NODESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_inout__DESC', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_inout__DESC', `2', `0')
 
 dnl SAC_MT_SEND_PARAM_out
 
 icm(`SAC_MT_SEND_PARAM_out',
-    `*', `*', `*', `*',
+    `*', `*', `*', `*', `*', `*',
     `SAC_MT_SEND_PARAM_out__NOOP', `2', `0')
 
 dnl SAC_MT_RECEIVE_PARAM_in
 
 icm(`SAC_MT_RECEIVE_PARAM_in',
-    `SCL', `NHD', `*', `*',
+    `SCL', `NHD', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_in__NODESC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_in',
-    `SCL', `HID', `*', `*',
+    `SCL', `HID', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_in',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_in',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_in__DESC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_in',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_in__DESC', `3', `0')
 
 dnl SAC_MT_RECEIVE_PARAM_inout
 
 icm(`SAC_MT_RECEIVE_PARAM_inout',
-    `SCL', `NHD', `*', `*',
+    `SCL', `NHD', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_inout__NODESC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
-    `SCL', `HID', `*', `*',
+    `SCL', `HID', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
-    `AKS', `*', `*', `*',
+    `AKS', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
-    `AKD', `*', `*', `*',
+    `AKD', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_inout__DESC', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
-    `AUD', `*', `*', `*',
+    `AUD', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_inout__DESC', `3', `0')
 
 dnl SAC_MT_RECEIVE_PARAM_out
 
 icm(`SAC_MT_RECEIVE_PARAM_out',
-    `*', `*', `*', `*',
+    `*', `*', `*', `*', `*', `*',
     `SAC_MT_RECEIVE_PARAM_out__NOOP', `3', `0')
 
 #endif  /* SAC_DO_MULTITHREAD */
