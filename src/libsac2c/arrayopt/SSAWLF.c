@@ -45,9 +45,9 @@
      which are in the original code (1) and those in newly created code
      blocks (2).
      Creation of new code is initiated in CreateCode() and the resulting
-     N_Ncode nodes are collected in new_codes until they are inserted into the
+     N_code nodes are collected in new_codes until they are inserted into the
      syntax tree in WLFNwith(). While a code is in new_codes, ID_WL of every
-     Id inside the code points to it's original Id (this is the Id which was
+     Id inside the code points to its original Id (this is the Id which was
      copied by DUPdoDupTree()). DUPdoDupTree() sets this pointer and, if the
      argument of DUPdoDupTree() is a code inside new_codes, copies ID_WL of
      this code (which is a pointer to the original).
@@ -297,7 +297,7 @@ FreeCC (code_constr_type *cc)
  * description:
  *   tries to merge gererators (grids) to reduce effort of further
  *   intersections.
- *   This optimization can result in better codeproduction of compile
+ *   This optimization can result in better code production of compile
  *   (wltransform.c, OptimizeWL does something similar but it not that
  *    powerful).
  *
@@ -556,7 +556,7 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 
     DBUG_ENTER ("LinearTransformationsVector");
     DBUG_ASSERT (transformations->vector == ig->shape,
-                 ("Transformations to not fit to generators"));
+                 ("Transformations do not fit to generators"));
 
     dim = ig->shape;
 
@@ -697,7 +697,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
  * description:
  *   substitutes the code block subst into target. INFO_ID points
  *   to the N_id node in the target WL which shall be replaced.
- *   New vardecs and assignments are introduced and an N_Ncode node is returned.
+ *   New vardecs and assignments are introduced and an N_code node is returned.
  *   Most of the work is done in the usual traversal steps (with mode
  *   wlfm_replace and wlfm_rename).
  *
@@ -711,8 +711,8 @@ CreateCode (node *target, node *subst)
 
     DBUG_ENTER ("CreateCode");
 
-    DBUG_ASSERT ((N_code == NODE_TYPE (target)), "wrong Parameter");
-    DBUG_ASSERT ((N_code == NODE_TYPE (subst)), "wrong Parameter");
+    DBUG_ASSERT ((N_code == NODE_TYPE (target)), "wrong target Parameter");
+    DBUG_ASSERT ((N_code == NODE_TYPE (subst)), "wrong subst Parameter");
 
     wlf_mode = wlfm_replace;
 
@@ -1310,7 +1310,7 @@ Modarray2Genarray (node *withop, node *wln, node *substwln)
 {
     DBUG_ENTER ("Modarray2Genarray");
 
-    DBUG_ASSERT (substwln, "substwln ist NULL");
+    DBUG_ASSERT (substwln, "substwln is NULL");
     DBUG_ASSERT (withop != NULL, "withop is NULL");
 
     /*
@@ -1652,7 +1652,7 @@ WLFid (node *arg_node, info *arg_info)
             }
 
             /* merge subst_header and substn */
-            /* we dont' need the old _SUBST info anymore so we return the
+            /* we don't need the old _SUBST info anymore, so we return the
                new subst assign chain here. WLFassign uses this information to
                melt both chains. */
             if (subst_header) {
@@ -1818,7 +1818,7 @@ WLFwith (node *arg_node, info *arg_info)
                exchange old generators with all_new_ig. */
             if (new_codes) {
                 /* We have new codes. This means at least one folding action has been
-                   done and we have to replace the N_Nparts, too. */
+                   done and we have to replace the N_parts, too. */
                 tmpn = WITH_CODE (arg_node);
                 while (CODE_NEXT (tmpn)) {
                     tmpn = CODE_NEXT (tmpn);
@@ -1835,14 +1835,14 @@ WLFwith (node *arg_node, info *arg_info)
                 DBUG_PRINT ("WLF", ("<= new generators created"));
             }
 
-            /* this WL is finisched. Search other WLs on same level. */
+            /* this WL is finished. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
         }
 
         /*
-         * If the current WL has a modarray-operator there is a referene to another
+         * If the current WL has a modarray-operator there is a reference to another
          * array in its operator part. If this array was chosen to be folded
-         * (FoldDecision) we have to eleminate the reference to it. Else DCR
+         * (FoldDecision) we have to eliminate the reference to it. Else DCR
          * would not remove the subst WL.
          *
          * substwln can be NULL if array is not in reach (loops, function argument)

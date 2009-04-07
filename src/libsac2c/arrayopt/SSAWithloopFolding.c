@@ -233,7 +233,12 @@ WLFdbugIndexInfo (index_info *iinfo)
  *
  * description:
  *   Searches for the Id (idn) in the WL generator (index var).
- *   The N_With node has to be available to find the index vars.
+ *   The N_with node has to be available to find the index vars.
+ *   That is, this function performs:
+ *
+ *         result = idn member (WITHID_VEC(wln) ++ WITHID_IDS(wln)
+ *
+ *   But, being C code, it has to be a little wordier...
  *
  * return:
  *   -1: Id is the index vector
@@ -241,35 +246,51 @@ WLFdbugIndexInfo (index_info *iinfo)
  *    x with x gt 0: Id is the x'th scalar index variable.
  *
  * remark:
- *   we exploit here that the index variables of all N_Withid nodes in
- *   one WL have the same names.
+ *  In order to work with -ssaiv, we have to search the WITH_IDS
+ *  of all partitions of the WL.
+ *
+ *   We can no longer, in the -ssaiv world, "exploit here that
+ *   the index variables of all N_Withid nodes in
+ *   one WL have the same names."
  *
  ******************************************************************************/
 int
 WLFlocateIndexVar (node *idn, node *wln)
 {
     node *_ids;
-    int result = 0, i;
+    node *partn;
+    node *mywln;
+    int result = 0;
+    int i;
 
     DBUG_ENTER ("WLFlocateIndexVar");
     DBUG_ASSERT (N_with == NODE_TYPE (wln), ("wln is not N_with node"));
 
-    wln = PART_WITHID (WITH_PART (wln));
-    _ids = WITHID_VEC (wln);
+    partn = WITH_PART (wln);
+    while ((result == 0) && NULL != partn) {
 
-    if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
-        result = -1;
-    } else {
-        i = 1;
-        _ids = WITHID_IDS (wln);
-        while (_ids != NULL) {
-            if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
-                result = i;
-                break;
+        mywln = PART_WITHID (partn);
+        _ids = WITHID_VEC (mywln);
+
+        if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
+            DBUG_PRINT ("WLF", ("WLFlocateIndexVar found WITH_ID %s",
+                                AVIS_NAME (ID_AVIS (idn))));
+            result = -1;
+        } else {
+            i = 1;
+            _ids = WITHID_IDS (mywln);
+            while (_ids != NULL) {
+                if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
+                    result = i;
+                    DBUG_PRINT ("WLF", ("WLFlocateIndexVar found WITH_IDS %s",
+                                        AVIS_NAME (ID_AVIS (idn))));
+                    break;
+                }
+                i++;
+                _ids = IDS_NEXT (_ids);
             }
-            i++;
-            _ids = IDS_NEXT (_ids);
         }
+        partn = (TRUE == global.ssaiv) ? PART_NEXT (partn) : NULL;
     }
 
     DBUG_RETURN (result);

@@ -12,18 +12,18 @@
  Most code is unchanged from the original implementation in WLI.c.
 
  in this phase every withloop seems to be (nmw) attributed with:
-   NWITH_REFERENCED(wl)
-     this is the number of identifier that reference this withloop
+   WITH_REFERENCED(wl)
+     this is the number of identifiers that reference this withloop
 
-   NWITH_REFERENCED_FOLD(wl)
+   WITH_REFERENCED_FOLD(wl)
      this is the number of references from foldable (modarray) WL, so
-     NWITH_REFERENCED(arg_node) >= NWITH_REFERENCED_FOLD(arg_node) should hold
+     WITH_REFERENCED(arg_node) >= WITH_REFERENCED_FOLD(arg_node) should hold
 
-   NWITH_REFERENCES_FOLDED(wl)
+   WITH_REFERENCES_FOLDED(wl)
      is a counter used in SSAWLF that counts the folding operations. it
      is initialized here with 0.
 
-   NWITH_FOLDABLE(wl)
+   WITH_FOLDABLE(wl)
      marks all WL with constant borders, step and so on.
      only for these WLs withloop folding can be computed.
 
@@ -42,7 +42,7 @@
 
  Usage of arg_info:
  - INFO_NEXT    : store old information in nested WLs
- - INFO_WL      : reference to base node of current WL (N_Nwith)
+ - INFO_WL      : reference to base node of current WL (N_with)
  - INFO_ASSIGN  : always the last N_assign node (see WLIassign)
  - INFO_FUNDEF  : pointer to last fundef node. needed to access vardecs.
  - INFO_FOLDABLE: indicates if current withloop is foldable or not
@@ -186,7 +186,7 @@ SimplifyFun (prf prf)
  *
  * remark:
  *   This function has only to be called if indexn is a known valid index
- *   transformation. This is supposed here and not checked again.
+ *   transformation. This is assumed to be true here, and not checked again.
  *
  ******************************************************************************/
 static node *
@@ -213,6 +213,9 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
                 && SHcompareShapes (TYgetShape (IDS_NTYPE (WITH_VEC (substn))),
                                     TYgetShape (ID_NTYPE (indexn)))) {
                 WITH_REFERENCED_FOLD (substn)++;
+                DBUG_PRINT ("WLI",
+                            ("CheckArrayFoldable WITH_REFERENCED_FOLD(%s) = %d",
+                             AVIS_NAME (ID_AVIS (idn)), WITH_REFERENCED_FOLD (substn)));
             } else {
                 substn = NULL;
             }
@@ -648,7 +651,7 @@ WLIassign (node *arg_node, info *arg_info)
 
     /* this is important. Only index transformations
        with a non-null ASSIGN_INDEX are valid. See WLIlet. Before WLI, this
-       pointer may be non null (somwhere wrong initialisation -> better
+       pointer may be non-null (somewhere wrong initialisation -> better
        use MakeAssign()!!! ) */
     DBUG_ASSERT ((ASSIGN_INDEX (arg_node) == NULL), "left-over ASSIGN_INDEX found.");
 
@@ -702,11 +705,19 @@ WLIid (node *arg_node, info *arg_info)
     if ((assignn != NULL) && (NODE_TYPE (ASSIGN_RHS (assignn)) == N_with)) {
         ID_WL (arg_node) = assignn;
         /*
-         * arg_node describes a WL, so NWITH_REFERENCED has to be incremented
+         * arg_node describes a WL, so WITH_REFERENCED has to be incremented
          */
         (WITH_REFERENCED (ASSIGN_RHS (assignn))) += 1;
+        DBUG_PRINT ("WLI",
+                    ("WLIid WITH_REFERENCED(%s) = %d", AVIS_NAME (ID_AVIS (arg_node)),
+                     WITH_REFERENCED (ASSIGN_RHS (assignn))));
     } else {
         /* id is not defined by a withloop */
+#ifdef NOISY
+        DBUG_PRINT ("WLI",
+                    ("WLIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node))));
+#endif // NOISY
+
         ID_WL (arg_node) = NULL;
     }
 
@@ -736,18 +747,20 @@ WLIlet (node *arg_node, info *arg_info)
 
     /* traverse sons first so that ID_WL of every Id is defined (or NULL). */
     old_assignn = INFO_ASSIGN (arg_info);
+
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
     INFO_ASSIGN (arg_info) = old_assignn;
 
     /* if we are inside a WL we have to search for valid index transformations. */
     if (INFO_WL (arg_info)) {
-        /* if this is a prf, we are interrested in transformations like +,*,-,/
+        /* if this is a prf, we are interested in transformations like +,*,-,/
            and in indexing (F_sel_VxA). */
         exprn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (exprn)) {
             prf = PRF_PRF (exprn);
             switch (prf) {
-                /* this maybe an assignment which calculates an index for an
+                /* this may be an assignment which calculates an index for an
                    array to fold. */
             case F_add_SxS:
             case F_sub_SxS:
@@ -834,7 +847,7 @@ WLIlet (node *arg_node, info *arg_info)
  * description:
  *   start gathering information for this WL.
  *   First some initialisations in the WL structure are done, then the
- *   N_Nparts are traversed (which call the appropriate N_Ncode subtrees).
+ *   N_parts are traversed (which call the appropriate N_code subtrees).
  *
  ******************************************************************************/
 node *
@@ -874,12 +887,13 @@ WLIwith (node *arg_node, info *arg_info)
     WITH_ISFOLDABLE (INFO_WL (arg_info)) = INFO_FOLDABLE (arg_info);
     INFO_DETFOLDABLE (arg_info) = FALSE;
 
-    /* traverse all parts (and implicitely bodies) */
-    DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
+    /* traverse all parts and, implicitly, bodies) */
+    DBUG_PRINT ("WLI",
+                ("WLIwith searching code of  WL in line %d", NODE_LINE (arg_node)));
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    DBUG_PRINT ("WLI", ("searching done"));
+    DBUG_PRINT ("WLI", ("WLIwith searching done"));
 
-    /* traverse N_Nwithop */
+    /* traverse N_withop */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* restore arg_info */
@@ -896,8 +910,9 @@ WLIwith (node *arg_node, info *arg_info)
  *   node *WLImodarray(node *arg_node, info *arg_info)
  *
  * description:
- *   if op is modarray we have to check whether the base array Id can be
- *   eleminated by folding. Then NWITH_REFERENCED_FOLD is incremented.
+ *   if op is modarray, we have to check if the base array Id can be
+ *   eliminated by folding. If so, then
+ *   WITH_REFERENCED_FOLD is incremented.
  *
  ******************************************************************************/
 node *
@@ -912,11 +927,14 @@ WLImodarray (node *arg_node, info *arg_info)
     if (WITH_ISFOLDABLE (INFO_WL (arg_info))) {
         substn = ID_WL (MODARRAY_ARRAY (arg_node));
         /*
-         * we just traversed through the sons so WLIid for NWITHOP_ARRAY
+         * we just traversed through the sons so WLIid for WITHOP_ARRAY
          * has been called and its result is stored in ID_WL().
          */
         if (substn != NULL) {
             (WITH_REFERENCED_FOLD (ASSIGN_RHS (substn)))++;
+            DBUG_PRINT ("WLI", ("WLImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+                                AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
+                                WITH_REFERENCED_FOLD (ASSIGN_RHS (substn))));
         }
     }
 
@@ -963,6 +981,7 @@ WLIpart (node *arg_node, info *arg_info)
  * description:
  *   checks whether borders, step and width are constant. The result is stored
  *   in INFO_FOLDABLE( arg_info).
+ *   If being called from SWLF, we allow non-constant bounds, step, width.
  *
  ******************************************************************************/
 node *
@@ -970,17 +989,23 @@ WLIgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIgenerator");
 
-    INFO_FOLDABLE (arg_info)
-      = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND1 (arg_node));
-    INFO_FOLDABLE (arg_info)
-      = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND2 (arg_node));
+    INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
+                               && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+                                   COisConstant (GENERATOR_BOUND1 (arg_node)));
+    INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
+                               && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+                                   COisConstant (GENERATOR_BOUND2 (arg_node)));
 
     if (GENERATOR_STEP (arg_node) != NULL) {
         INFO_FOLDABLE (arg_info)
-          = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_STEP (arg_node));
+          = INFO_FOLDABLE (arg_info)
+            && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+                COisConstant (GENERATOR_STEP (arg_node)));
         if (GENERATOR_WIDTH (arg_node) != NULL) {
             INFO_FOLDABLE (arg_info)
-              = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_WIDTH (arg_node));
+              = INFO_FOLDABLE (arg_info)
+                && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+                    COisConstant (GENERATOR_WIDTH (arg_node)));
         }
     } else {
         DBUG_ASSERT ((GENERATOR_WIDTH (arg_node) == NULL),

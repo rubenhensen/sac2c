@@ -798,13 +798,37 @@ PMintConst (constant **co, node **conode, node *stack)
  *        This has to work in non-saa mode, so we do not rely
  *        on AVIS_SHAPE.
  *
- *        The idea here is to trace back the N_id in id to the
- *        first array of the same shape as arg. Basically,
- *        it does lastId(id), but also has some tricks to go
- *        further when that result comes from a modarray WL.
+ *        We define the "shape primogenitor" of an array, id, as:
+ *           1. the earliest, in a dataflow sense,
+ *              array that has the same shape as id, and
+ *           2. that has a direct lineage to id.
  *
- *        FIXME: Perhaps it could look at genarray, too, but I'm not
- *        sure how to do that just yet.
+ *        The idea here is to trace a chain of N_id and
+ *        N_with/modarray nodes from id to the
+ *        shape primogenitor of id. Basically,
+ *        it does lastId(id), but also has some tricks to go
+ *        further when that result comes from a modarray WL
+ *        or (someday) a genarray WL.
+ *
+ *        Hence, if we have:
+ *
+ *          a = iota(shp);
+ *          b = a + 1;
+ *          c = b * 2;
+ *          s0 = idx_shape_sel(0, c);
+ *          s1 = idx_shape_sel(1, c);
+ *          sv = [s0, s1];
+ *          d = with { ([0] <= iv < sv ) : c[iv] + 1;
+ *                   } : modarray(c);
+ *
+ *          CFidx_shape_sel will invoke PMshape to produce:
+ *
+ *          s0 = idx_shape_sel(0, a);
+ *          s1 = idx_shape_sel(1, a);
+ *
+ *        Please excuse the sloppy parameters - I'm not sure how this
+ *        would be used in a proper PM environment. Feel free to
+ *        fix it.
  *
  *        If *id2 is NULL, the above id node is bound to id2.
  *        If *id2 is bound already, it only matches if both N_id nodes
@@ -819,14 +843,20 @@ PMshape (node **id2, node *id, node *stack)
 {
     node *arg;
     node *modarr;
+    node *modarr2 = NULL;
 
     DBUG_ENTER ("PMshape");
 
+    stack = FailMatch (stack);
+#ifdef RBEJUNK
+
     DBUG_ASSERT (N_id == NODE_TYPE (id), ("PMshape expected N_id node"));
     if (*id2 == NULL) {
-        DBUG_PRINT ("PM", ("PMshape trying to match unbound variable."));
+        DBUG_PRINT ("PM", ("PMshape trying to match unbound variable: %s.",
+                           AVIS_NAME (ID_AVIS (id))));
     } else {
-        DBUG_PRINT ("PM", ("PMshape trying to match bound variable."));
+        DBUG_PRINT ("PM", ("PMshape trying to match bound variable: %s.",
+                           AVIS_NAME (ID_AVIS (id))));
     }
 
     if (stack != (node *)FAIL) {
@@ -841,19 +871,32 @@ PMshape (node **id2, node *id, node *stack)
         modarr = AVIS_SSAASSIGN (ID_AVIS (arg));
         if (NULL != modarr) {
             modarr = LET_EXPR (ASSIGN_INSTR (modarr));
-            if ((N_with == NODE_TYPE (modarr))
-                && (N_modarray == NODE_TYPE (WITH_WITHOP (modarr)))) {
-                arg = MODARRAY_ARRAY (WITH_WITHOP (modarr));
-                /* We SHOULD recurse here, I think, to catch chained modarrays */
+            if ((N_with == NODE_TYPE (modarr))) {
+                switch (NODE_TYPE (WITH_WITHOP (modarr))) {
+                case N_modarray:
+                    arg = MODARRAY_ARRAY (WITH_WITHOP (modarr));
+                    break;
+                case N_genarray:
+                    /* FIXME: We want to work backward if default cell is scalar */
+                    break;
+                default:
+                    break;
+                }
+                /* Recurse to continue up the assign chain. */
+                if (PM (PMshape (&modarr2, arg, NULL))) {
+                    arg = modarr2;
+                }
             }
         }
 
         if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
             if (REF_ISUNDEFINED (id2)) {
-                DBUG_PRINT ("PM", ("PMshape binding N_id"));
                 REF_SET (id2, arg);
+                DBUG_PRINT ("PM",
+                            ("PMshape binding N_id: %s.", AVIS_NAME (ID_AVIS (*id2))));
             } else if (*id2 == arg) {
-                DBUG_PRINT ("PM", ("PMshape found matching N_id"));
+                DBUG_PRINT ("PM", ("PMshape found matching N_id: %s.",
+                                   AVIS_NAME (ID_AVIS (*id2))));
             } else {
                 stack = FailMatch (stack);
             }
@@ -863,6 +906,7 @@ PMshape (node **id2, node *id, node *stack)
     } else {
         DBUG_PRINT ("PM", ("PMshape passing on FAIL."));
     }
+#endif //  RBEJUNK
     DBUG_RETURN (stack);
 }
 

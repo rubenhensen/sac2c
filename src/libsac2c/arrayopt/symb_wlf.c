@@ -31,18 +31,23 @@
  *             there are no other references to the foldee.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
+ *             There is a little trick to convert a modarray(foldee)
+ *             into a genarray(shape(foldee)), but this happens
+ *             after any folding. Hence, there is a kludge to
+ *             allow a NEEDCOUNT of 2 if there is a modarray
+ *             present.
  *
  *           - the foldee WL must have a DEPDEPTH value of 1??
  *             Not sure what this means yet...
  *
  *           - The folder WL must refer to the foldee WL via
  *              _sel_VxA_(idx, foldee)
- *             and idx must the folder WITHID.
+ *             and idx must be the folder's WITHID.
  *
  *           - The WL operator is a genarray or modarray (NO folds, please).
  *
  *           - The WL is a single-operator WL. (These should have been
- *             eliminated by phase 10?)
+ *             eliminated by phase 10, I think.)
  *
  *           - The generator of the folder WL matches
  *             the generator of the folder WL.
@@ -85,7 +90,7 @@
  *  9  B = with( jv)
  * 10          ( lb <= jv < ub) {
  * 11        <block_b1>
- * 12        <block_a>
+ * 12        <block_a>, with references to iv renamed to jv.
  * 13        ael = new id of val;
  * 14        <block_b2>
  * 15      } : -
@@ -138,10 +143,15 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-
     node *part;
+    /* This is the current partition in the folder WL. */
+    node *wl;
     int level;
-    bool swlfoldable;
+    node *swlfoldablefoldeepart;
+    bool modarray2genarray;
+    /* This is TRUE iff folderWL's modarray(foldee)
+     * can be converted to a enarray(shape(foldee)).
+     */
 };
 
 /**
@@ -149,8 +159,10 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PART(n) ((n)->part)
+#define INFO_WL(n) ((n)->wl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_SWLFOLDABLE(n) ((n)->swlfoldable)
+#define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
+#define INFO_MODARRAY2GENARRAY(n) ((n)->modarray2genarray)
 
 static info *
 MakeInfo (node *fundef)
@@ -163,8 +175,10 @@ MakeInfo (node *fundef)
 
     INFO_FUNDEF (result) = fundef;
     INFO_PART (result) = NULL;
+    INFO_WL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_SWLFOLDABLE (result) = FALSE;
+    INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
+    INFO_MODARRAY2GENARRAY (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -316,13 +330,19 @@ checkElement (node *curel, int i, node *foldeewl)
                 && (i == COconst2Int (arg1fs)) && /* Constant match */
                 sameWL (arg2, foldeewl)) {
                 z = TRUE;
-                DBUG_PRINT ("SWLF",
-                            ("checkElement can fold %s", AVIS_NAME (ID_AVIS (arg2))));
             }
         }
     }
 
     arg1fs = (NULL != arg1fs) ? COfreeConstant (arg1fs) : NULL;
+
+    if (z) {
+        DBUG_PRINT ("SWLF", ("checkElement can fold %s", AVIS_NAME (ID_AVIS (arg2))));
+    } else {
+        DBUG_PRINT ("SWLF", ("checkElement can not fold %s", AVIS_NAME (ID_AVIS (arg2))));
+        DBUG_PRINT ("SWLF", ("checkElement can fold %s", AVIS_NAME (ID_AVIS (arg2))));
+    }
+
     DBUG_RETURN (z);
 }
 
@@ -378,7 +398,7 @@ scalarCell (node *foldeewl)
  *
  *               fa = [ arr0, arr1, ...]
  *
- *             with thes properties:
+ *             with these properties:
  *
  *             1.
  *                  arr0 = _idx_shape_sel(0, foldeewl);
@@ -474,8 +494,9 @@ shapeMatchesArray (node *fa, node *fb, node *foldeewl)
 static bool
 matchGeneratorField (node *fa, node *fb, node *foldeewl)
 {
-    node *fbv = NULL;
-    constant *fbvfs = NULL;
+    node *fav = NULL;
+    constant *fafs = NULL;
+    constant *fbfs = NULL;
     bool mat = FALSE;
     ;
 
@@ -484,122 +505,177 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
     if (fa == fb) { /* SAA should do it this way most of the time */
         mat = TRUE;
     } else {
-        if (PM (PMarray (&fbvfs, &fbv, fa)) && PM (PMarray (&fbvfs, &fbv, fb))) {
-            DBUG_PRINT ("SWLF", ("matchGeneratorField matched PMarray"));
-            fbvfs = COfreeConstant (fbvfs);
-            mat = TRUE;
-        } else {
-            DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMarray"));
-#ifdef DICEYCODE
-            mat = shapeMatchesArray (fa, fb, foldeewl);
-#endif // DICEYCODE
+        if ((NULL != fa) && (NULL != fb)) {
+            if (fa == fb) {
+                mat = TRUE;
+            } else {
+                if (PM (PMarray (&fafs, &fav, fa)) && PM (PMarray (&fbfs, &fav, fb))) {
+                    mat = COisTrue (COeq (fafs, fbfs), TRUE);
+                }
+            }
         }
     }
+
+    fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
+    fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
+
+    if (mat) {
+        DBUG_PRINT ("SWLF", ("matchGeneratorField matched PMarray"));
+    } else {
+        DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMarray"));
+    }
+#ifdef DICEYCODE
+    mat = shapeMatchesArray (fa, fb, foldeewl);
+#endif // DICEYCODE
     DBUG_RETURN (mat);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkWithLoop(...
+ * @fn node * FindMatchingPart(...
  *
- * @brief check if a WL is fold-able.
+ * @brief check if a WL has a legal foldee partition.
  *        The requirements for folding are:
  *           - The WL operator is a genarray or modarray (NO folds, please).
  *           - The WL is a single-operator WL.
- *           - The generator of the WL matches the generator
- *               of that of the WL it is to be folded into.
+ *           - The current partition of the folder-WL matches some generator
+ *               of that of the foldee-WL.
+ *               FIXME: This is overly strict. This function should
+ *                      be extended to allow the current folder partition's
+ *                      generator range to either match or be a proper subset
+ *                      of a generator of the foldee.
  *           - The sel(idx,y) idx is the WITHID of the
- * @params *with:  the putative foldee -- the WL that
+ *             putative foldee.
+ *
+ * @params *foldee:  the putative foldee -- the WL that
  *                 would be subsumed into the one at "part".
  *         *index: The idx in sel(idx, y) of the WL that is selecting
  *                 from the result of WL.
- *         *part: The partition of the folder WL.
+ *         *folderpart: The partition of the folder WL.
+ *
+ * @result: The address of the matching foldee partition, if any.
+ *          NULL if none is found.
  *
  *
  *****************************************************************************/
-static bool
-checkWithLoop (node *with, node *index, node *part)
+static node *
+FindMatchingPart (node *foldee, node *idx, node *folderpart)
 {
     node *pg;
     node *wg;
+    node *wp;
     bool matched = FALSE;
     bool m1 = FALSE;
 
-    DBUG_ENTER ("checkWithLoop");
+    DBUG_ENTER ("FindMatchingPart");
+    DBUG_ASSERT (N_with == NODE_TYPE (foldee),
+                 ("FindMatchingPart expected N_with foldee"));
+    DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
+                 ("FindMatchingPart expected N_part folder"));
 
-    pg = PART_GENERATOR (part);
-    wg = PART_GENERATOR (WITH_PART (with));
+    pg = PART_GENERATOR (folderpart);
+    wp = WITH_PART (foldee);
 
-    if ((global.ssaiv) &&
-        /* Find and match Referents for generators */
-        matchGeneratorField (GENERATOR_BOUND1 (pg), GENERATOR_BOUND1 (wg), with)
-        && matchGeneratorField (GENERATOR_BOUND2 (pg), GENERATOR_BOUND2 (wg), with)
-        && matchGeneratorField (GENERATOR_STEP (pg), GENERATOR_STEP (wg), with)
-        && matchGeneratorField (GENERATOR_WIDTH (pg), GENERATOR_WIDTH (wg), with)) {
-        m1 = TRUE;
-        DBUG_PRINT ("SWLF", ("checkWithLoop referents all match"));
-    } else { /* Ye olde school way */
-        m1 = (CMPT_EQ == CMPTdoCompareTree (pg, wg));
-        DBUG_PRINT ("SWLF", ("checkWithLoop referents all match: olde school"));
+    while ((!matched) && wp != NULL) {
+        wg = PART_GENERATOR (wp);
+        if ((global.ssaiv) &&
+            /* Find and match Referents for generators */
+            matchGeneratorField (GENERATOR_BOUND1 (pg), GENERATOR_BOUND1 (wg), foldee)
+            && matchGeneratorField (GENERATOR_BOUND2 (pg), GENERATOR_BOUND2 (wg), foldee)
+            && matchGeneratorField (GENERATOR_STEP (pg), GENERATOR_STEP (wg), foldee)
+            && matchGeneratorField (GENERATOR_WIDTH (pg), GENERATOR_WIDTH (wg), foldee)) {
+            m1 = TRUE;
+            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
+        } else { /* Ye olde school way */
+            m1 = (CMPT_EQ == CMPTdoCompareTree (pg, wg));
+            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match: olde school"));
+        }
+
+        if (((NODE_TYPE (WITH_WITHOP (foldee)) == N_genarray)
+             || (NODE_TYPE (WITH_WITHOP (foldee)) == N_modarray))
+            && (WITHOP_NEXT (WITH_WITHOP (foldee)) == NULL) && m1) {
+            matched = TRUE;
+        } else {
+            wp = PART_NEXT (wp);
+        }
     }
 
-    if (((NODE_TYPE (WITH_WITHOP (with)) == N_genarray)
-         || (NODE_TYPE (WITH_WITHOP (with)) == N_modarray))
-        && (WITHOP_NEXT (WITH_WITHOP (with)) == NULL) && m1
-        && (ID_AVIS (index) == IDS_AVIS (WITHID_VEC (PART_WITHID (part))))) {
-
-        matched = TRUE;
+    if (matched) {
         DBUG_PRINT ("SWLF", ("checkWithLoop matches"));
+    } else {
+        wp = NULL;
+        DBUG_PRINT ("SWLF", ("checkWithLoop does not match"));
     }
 
-    DBUG_RETURN (matched);
+    DBUG_RETURN (wp);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkSWLFoldable( node *sel, node * part, info *arg_info, ...)
+ * @fn bool checkSWLFoldable( node *arg_node, info *arg_info,
+ * node * folderpart, int level)
  *
- * @brief check if _sel_VxA_(idx, y) is foldable into part.
+ * @brief check if _sel_VxA_(idx, foldee), appearing in folder WL
+ *        partition, part, is foldable into the folder WL.
  *        The requirements for folding are:
- *           - y has an SSAASSIGN (means that WITH_IDs are NOT legal),
- *           - y has a NEEDCOUNT of 1 (there are no other uses of y),
- *           - y has a DEFDEPTH value which I don't understand yet,
- *           - y is the result of a WL.
+ *           - foldee has an SSAASSIGN (means that WITH_IDs are NOT legal),
+ *           - foldee has a NEEDCOUNT of 1 (there are no other uses of foldee),
+ *             or of 2 iff the folder WL is a modarray(foldee).
+ *           - foldee has a DEFDEPTH value which I don't understand yet,
+ *           - foldee is the result of a WL.
  *           - and checkWithLoop is happy with these arguments.
  *
- * @param _sel_VxA_( idx, y)
- * @param The partition into which we would like to fold this sel().
+ * @param _sel_VxA_( idx, foldee)
+ * @param folderpart: The partition into which we would like to fold this sel().
  * @param level
+ * @result If the foldee is foldable into the folder, return the
+ *         N_part of the foldee that should be used for the fold; else NULL.
  *
  *****************************************************************************/
-static bool
-checkSWLFoldable (node *arg_node, node *part, int level)
+static node *
+checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
 {
-    node *avis;
-    node *assign;
-    node *arg1;
-    node *arg2;
-    bool swlfable = FALSE;
+    node *foldeeavis;
+    node *foldeeassign;
+    node *idx;
+    node *foldeepart = NULL;
+    int nc;
 
     DBUG_ENTER ("checkSWLFoldable");
 
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
-    avis = ID_AVIS (arg2);
+    idx = PRF_ARG1 (arg_node);
+    foldeeavis = ID_AVIS (PRF_ARG2 (arg_node));
 
-    if ((AVIS_SSAASSIGN (avis) != NULL) && (AVIS_NEEDCOUNT (avis) == 1)
-        && (AVIS_DEFDEPTH (avis) + 1 == level)) {
+    /* There must be only one data reference to the foldee WL.
+     * However, if the folder WL is: modarray(foldee),
+     * that is counted as a data reference, so we have to allow for
+     * it here.
+     */
+    if ((N_modarray == NODE_TYPE (WITH_WITHOP (INFO_WL (arg_info))))
+        && (foldeeavis == ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (INFO_WL (arg_info)))))) {
+        nc = 2;
+    } else {
+        nc = 1;
+    }
 
-        assign = ASSIGN_INSTR (AVIS_SSAASSIGN (avis));
+    if ((AVIS_SSAASSIGN (foldeeavis) != NULL) && (AVIS_NEEDCOUNT (foldeeavis) == nc)
+        && (AVIS_DEFDEPTH (foldeeavis) + 1 == level)) {
 
-        if ((NODE_TYPE (assign) == N_let) && (NODE_TYPE (LET_EXPR (assign)) == N_with)
-            && (checkWithLoop (LET_EXPR (assign), arg1, part))) {
-            swlfable = TRUE;
-            DBUG_PRINT ("SWLF", ("WLs are foldable"));
+        foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (foldeeavis));
+        if ((NODE_TYPE (foldeeassign) == N_let)
+            && (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with)) {
+            foldeepart = FindMatchingPart (LET_EXPR (foldeeassign), idx, folderpart);
         }
     }
 
-    DBUG_RETURN (swlfable);
+    if (NULL != foldeepart) {
+        INFO_MODARRAY2GENARRAY (arg_info) = TRUE;
+        DBUG_PRINT ("SWLF", ("WLs are foldable"));
+    } else {
+        DBUG_PRINT ("SWLF", ("WLs are not foldable"));
+    }
+
+    DBUG_RETURN (foldeepart);
 }
 
 /** <!--********************************************************************-->
@@ -624,8 +700,12 @@ createLut (node *part1, node *part2)
     ids2 = WITHID_IDS (PART_WITHID (part2));
 
     lut = LUTgenerateLut ();
+    DBUG_PRINT ("SWLF", ("Inserting WITHID_VEC into lut: foldee: %s, folder %s",
+                         AVIS_NAME (IDS_AVIS (vec1)), AVIS_NAME (IDS_AVIS (vec2))));
     LUTinsertIntoLutP (lut, IDS_AVIS (vec1), IDS_AVIS (vec2));
     while (ids1 != NULL) {
+        DBUG_PRINT ("SWLF", ("Inserting WITHID_IDS into lut: foldee: %s, folder: %s",
+                             AVIS_NAME (IDS_AVIS (ids1)), AVIS_NAME (IDS_AVIS (ids2))));
         LUTinsertIntoLutP (lut, IDS_AVIS (ids1), IDS_AVIS (ids2));
 
         ids1 = IDS_NEXT (ids1);
@@ -671,10 +751,25 @@ getAvisLetExpr (node *sel)
  * @fn node *doSWLFreplace( ... )
  *
  * @brief
+ *   In
+ *    BBB = with...  elb = _sel_VxA_(iv, AAA) ...    NB. foldee
+ *    CCC = with...  elc = _sel_VxA_(jv, BBB) ...     NB. folder
  *
+ *   Replace, in the folder WL:
+ *     elc = _sel_VxA_( jv, BBB)
+ *   by
+ *     tmp = _sel_VxA_( iv, AAA)
+ *     elc = tmp;
+ *
+ * @params
+ *    assign:
+ *    fundef: N_fundef node, so we can insert new avis node for
+ *            temp assign being made here.
+ *    foldee: N_part node of foldee.
+ *    folder: N_part node of folder.
  *****************************************************************************/
 static node *
-doSWLFreplace (node *assign, node *fundef, node *with1, node *part2)
+doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder)
 {
     node *oldblock, *newblock;
     node *expravis, *newavis;
@@ -682,11 +777,13 @@ doSWLFreplace (node *assign, node *fundef, node *with1, node *part2)
 
     DBUG_ENTER ("doSWLFreplace");
 
-    /* Create a new Lut */
-    lut = createLut (WITH_PART (with1), part2);
+    /* Create a new Lut, to map names in foldee to corresponding names
+     * in folder
+     */
+    lut = createLut (foldee, folder);
 
-    oldblock = CODE_CBLOCK (WITH_CODE (with1));
-    expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (WITH_CODE (with1))));
+    oldblock = CODE_CBLOCK (PART_CODE (foldee));
+    expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newblock = DUPdoDupTreeLutSsa (BLOCK_INSTR (oldblock), lut, fundef);
     newavis = LUTsearchInLutPp (lut, expravis);
 
@@ -764,20 +861,20 @@ SWLFfundef (node *arg_node, info *arg_info)
  * @fn node SWLFassign( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
+ *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
  *
  *****************************************************************************/
 node *
 SWLFassign (node *arg_node, info *arg_info)
 {
-    node *with1;
-    bool foldable;
+    node *foldee; /* FIXME probably obsolete ? */
+    node *foldablefoldeepart;
 
     DBUG_ENTER ("SWLFassign");
 
-    foldable = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    foldable = INFO_SWLFOLDABLE (arg_info);
-    INFO_SWLFOLDABLE (arg_info) = FALSE;
+    foldablefoldeepart = INFO_SWLFOLDABLEFOLDEEPART (arg_info);
+    INFO_SWLFOLDABLEFOLDEEPART (arg_info) = NULL;
 
     /*
      * Top-down traversal
@@ -787,10 +884,10 @@ SWLFassign (node *arg_node, info *arg_info)
     /*
      * Append the new cloned block
      */
-    if (foldable) {
-        with1 = getAvisLetExpr (LET_EXPR (ASSIGN_INSTR (arg_node)));
-        arg_node
-          = doSWLFreplace (arg_node, INFO_FUNDEF (arg_info), with1, INFO_PART (arg_info));
+    if (NULL != foldablefoldeepart) {
+        foldee = getAvisLetExpr (LET_EXPR (ASSIGN_INSTR (arg_node)));
+        arg_node = doSWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
+                                  INFO_PART (arg_info));
 
         global.optcounters.swlf_expr += 1;
     }
@@ -808,8 +905,15 @@ SWLFassign (node *arg_node, info *arg_info)
 node *
 SWLFwith (node *arg_node, info *arg_info)
 {
+    node *nextop;
+    node *genop;
+    node *folderop;
+    node *foldeeshape;
+
     DBUG_ENTER ("SWLFwith");
 
+    INFO_WL (arg_info) = arg_node;
+    INFO_MODARRAY2GENARRAY (arg_info) = FALSE;
     /* Increment the level counter */
     INFO_LEVEL (arg_info) += 1;
 
@@ -818,8 +922,26 @@ SWLFwith (node *arg_node, info *arg_info)
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     }
 
+    /* Try to replace modarray(foldeeWL) by genarray(shape(foldeeWL)).
+     * This has no effect on the foldeeWL itself, but is needed to
+     * eliminate the reference to foldeeWL, so it can be removed by DCR.
+     */
+    folderop = WITH_WITHOP (arg_node);
+    if ((N_modarray == NODE_TYPE (folderop))
+        && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (folderop))))
+        && (TRUE == INFO_MODARRAY2GENARRAY (arg_info))) {
+        foldeeshape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (folderop)));
+        genop = TBmakeGenarray (DUPdoDupTree (foldeeshape), NULL);
+        GENARRAY_NEXT (genop) = MODARRAY_NEXT (folderop);
+        nextop = FREEdoFreeNode (folderop);
+        WITH_WITHOP (arg_node) = genop;
+        DBUG_PRINT ("SWLF", ("Replacing modarray by genarray"));
+    }
+
     /* Decrement the level counter */
     INFO_LEVEL (arg_info) -= 1;
+    INFO_WL (arg_info) = NULL;
+    INFO_MODARRAY2GENARRAY (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -849,7 +971,7 @@ SWLFcode (node *arg_node, info *arg_info)
  *
  * @fn node *SWLFpart( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Traverse each partition of a WL.
  *
  *****************************************************************************/
 node *
@@ -857,12 +979,9 @@ SWLFpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFpart");
 
-    if (CODE_USED (PART_CODE (arg_node)) == 1) {
-
-        INFO_PART (arg_info) = arg_node;
-        PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-        INFO_PART (arg_info) = NULL;
-    }
+    INFO_PART (arg_info) = arg_node;
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+    INFO_PART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -892,6 +1011,7 @@ SWLFids (node *arg_node, info *arg_info)
  * @fn node *SWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
+ *   Examine all X[iv] primitives to see if iv is current folder-WL iv.
  *
  *****************************************************************************/
 node *
@@ -901,10 +1021,13 @@ SWLFprf (node *arg_node, info *arg_info)
 
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
+        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
+        && (ID_AVIS (PRF_ARG1 (arg_node))
+            == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info)))))) {
 
-        INFO_SWLFOLDABLE (arg_info)
-          = checkSWLFoldable (arg_node, INFO_PART (arg_info), INFO_LEVEL (arg_info));
+        INFO_SWLFOLDABLEFOLDEEPART (arg_info)
+          = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
+                              INFO_LEVEL (arg_info));
     }
 
     DBUG_RETURN (arg_node);

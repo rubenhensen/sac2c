@@ -1127,20 +1127,14 @@ SSATwithid (node *arg_node, info *arg_info)
     assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = NULL;
 
-    if (INFO_FIRST_WITHID (arg_info) == NULL) {
-        if (global.ssaiv && (global.compiler_phase <= PH_opt)) {
-            /* I know this looks silly, but it beats the inverted
-             * conditionals in the IF otherwise.
-             */
-            DBUG_PRINT ("SSAT", ("SSATwithid operating in SSA mode"));
-        } else {
-            /*
-             * This is the first withid. Therefore, we have to treat it as LHS.
-             * We want this for all non-SSA work.
-             */
-            INFO_FIRST_WITHID (arg_info) = arg_node;
-            DBUG_PRINT ("SSAT", ("SSATwithid operating in non-SSA mode"));
-        }
+    if ((INFO_FIRST_WITHID (arg_info) == NULL)
+        || (global.ssaiv && (global.compiler_phase <= PH_opt))) {
+
+        /*
+         * This is the first withid, or -ssaiv mode.
+         * Therefore, we have to treat the withid as LHS.
+         */
+        INFO_FIRST_WITHID (arg_info) = arg_node;
 
         if (WITHID_VEC (arg_node) != NULL) {
             DBUG_PRINT ("SSA", ("renaming: WITHID_VEC: %s",

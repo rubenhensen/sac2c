@@ -1442,3 +1442,32 @@ SCSprf_shape (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (resid);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_idx_shape_sel( node *arg_node, info *arg_info)
+ *
+ * description: This optimization replaces an idx_shape_sel operation
+ *              on an array, arr, by the same operation on its shape
+ *              primogenitor. See tree/pattern_match.c for definition.
+ *
+ *****************************************************************************/
+node *
+SCSprf_idx_shape_sel (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *idprimo = NULL;
+
+    DBUG_ENTER ("SCSprf_idx_shape_sel");
+
+    PM (PMshape (&idprimo, PRF_ARG2 (arg_node), NULL));
+    if ((NULL != idprimo) && idprimo != PRF_ARG2 (arg_node)) {
+        res = DUPdoDupTree (arg_node);
+        DBUG_PRINT ("CF", ("SCSprf_idx_shape_sel replacing %s by %s",
+                           AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
+                           AVIS_NAME (ID_AVIS (idprimo))));
+        PRF_ARG2 (res) = idprimo;
+    }
+
+    DBUG_RETURN (res);
+}

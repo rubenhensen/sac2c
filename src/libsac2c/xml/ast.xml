@@ -3519,6 +3519,9 @@
 
 -->
     <node name="Arg">
+      <description>
+      One argument of a defined function definition.
+      </description>
       <sons>
         <son name="Avis">
           <targets>
@@ -4450,6 +4453,9 @@
 
 -->
     <node name="Funcond">
+     <description>
+      A SaC expression of the form: cond ? truevalue : elsevalue.
+     </description>
       <sons>
         <son name="If">
           <targets>
@@ -5935,6 +5941,10 @@
       </sons>
       <attributes>
         <attribute name="Parts" default="-1" inconstructor="no" >
+          <description>
+          The number of partitions in this with-loop.
+          I have no idea what the -1 indicates.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -6608,9 +6618,13 @@
 
 -->
     <node name="Genarray">
-      <description>withloop operation</description>
+      <description>withloop generate array operation.</description>
       <sons>
         <son name="Shape">
+          <description>
+            The frame shape of the result. The WL result shape
+            is: Shape ++ shape(Default).
+          </description>
           <targets>
             <target mandatory="yes">
               <set name="Expr" />
@@ -6621,6 +6635,9 @@
           </targets>
         </son>
         <son name="Default">
+          <description>
+           The default cell of the result.
+          </description>
           <targets>
             <target mandatory="no">
               <set name="Expr" />
@@ -6651,6 +6668,10 @@
           </targets>
         </son>
         <son name="RC" default="NULL">
+                <description>
+                  Somebody please provide a description of RC!
+                </description>
+
           <targets>
             <target mandatory="no">
               <node name="Exprs" />
@@ -6749,6 +6770,9 @@
           </targets>
         </son>
         <son name="RC" default="NULL">
+                <description>
+                  Somebody please provide a description of RC!
+                </description>
           <targets>
             <target mandatory="no">
               <node name="Exprs" />
