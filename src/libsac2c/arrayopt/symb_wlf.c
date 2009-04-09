@@ -495,6 +495,7 @@ static bool
 matchGeneratorField (node *fa, node *fb, node *foldeewl)
 {
     node *fav = NULL;
+    node *fbv = NULL;
     constant *fafs = NULL;
     constant *fbfs = NULL;
     bool mat = FALSE;
@@ -509,8 +510,8 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
             if (fa == fb) {
                 mat = TRUE;
             } else {
-                if (PM (PMarray (&fafs, &fav, fa)) && PM (PMarray (&fbfs, &fav, fb))) {
-                    mat = COisTrue (COeq (fafs, fbfs), TRUE);
+                if (PM (PMarray (&fafs, &fav, fa)) && PM (PMarray (&fbfs, &fbv, fb))) {
+                    mat = fav == fbv;
                 }
             }
         }
