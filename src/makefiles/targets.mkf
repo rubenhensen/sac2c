@@ -224,7 +224,7 @@ runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h
 ###############################################################################
 
 runtime_essentials_h   := audwl commandline icm prf std std_gen message \
-                          bool errors idx misc wl
+                          bool errors idx misc wl tuple
 
 runtime_extras_h       := cachesim profile runtimecheck trace
 

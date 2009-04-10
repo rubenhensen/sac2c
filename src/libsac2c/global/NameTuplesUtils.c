@@ -15,6 +15,37 @@
 
 #include "NameTuplesUtils.h"
 
+/** <!--********************************************************************-->
+ *
+ * @fn mutcStorageClass TBsimpletype2mutcStorageClass( simpletype st)
+ *
+ *   @brief  Convert a simpletype into mutcStorageClass
+ *
+ *   @param st    simpletype to convert
+ *   @return      mutcStorageClass that can hold simpletype
+ *
+ *****************************************************************************/
+
+static mutcStorageClass
+simpletype2mutcStorageClass (simpletype st)
+{
+    mutcStorageClass ret;
+
+    DBUG_ENTER ("TBsimpletype2mutcStorageClass");
+
+#define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
+               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, unused2)             \
+    case it_name:                                                                        \
+        ret = it_mutc_sc;                                                                \
+        break;
+
+    switch (st) {
+#include "type_info.mac"
+    }
+
+    DBUG_RETURN (ret);
+}
+
 /******************************************************************************
  *
  * function:
@@ -135,6 +166,46 @@ NTUgetUniqueClassFromTypes (types *type)
 /******************************************************************************
  *
  * function:
+ *   mutc_storage_class_class_t NTUMutcgetStorageClassFromTypes( types *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_storage_class_class_t
+NTUgetMutcStorageClassFromTypes (types *type)
+{
+    mutc_storage_class_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcStorageClassFromTypes");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_ASSERT ((0), "illegal data class found!");
+        z = C_unknownc;
+    } else {
+        switch (simpletype2mutcStorageClass (TYPES_BASETYPE (type))) {
+        case MUTC_SC_INT:
+            z = C_int;
+            break;
+        case MUTC_SC_FLOAT:
+            z = C_float;
+            break;
+        default:
+            z = C_unknownc;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   char *NTUcreateNtTag( const char *name, types *type)
  *
  * description:
@@ -148,6 +219,7 @@ NTUcreateNtTag (const char *name, types *type)
     shape_class_t sc;
     hidden_class_t hc;
     unique_class_t uc;
+    mutc_storage_class_class_t storage;
     char *res;
 
     DBUG_ENTER ("NTUcreateNtTag");
@@ -158,13 +230,17 @@ NTUcreateNtTag (const char *name, types *type)
     hc = NTUgetHiddenClassFromTypes (type);
     uc = NTUgetUniqueClassFromTypes (type);
 
-    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
-                              + STRlen (global.nt_hidden_string[hc])
-                              + STRlen (global.nt_unique_string[uc]) + 16)
-                             * sizeof (char));
+    storage = NTUgetMutcStorageClassFromTypes (type);
 
-    sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
-             global.nt_hidden_string[hc], global.nt_unique_string[uc]);
+    res = (char *)MEMmalloc (
+      (STRlen (name) + STRlen (global.nt_shape_string[sc])
+       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
+       + STRlen (global.nt_mutc_storage_class_string[storage]) + 20)
+      * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s,)))))", name, global.nt_shape_string[sc],
+             global.nt_hidden_string[hc], global.nt_unique_string[uc],
+             global.nt_mutc_storage_class_string[storage]);
 
     DBUG_RETURN (res);
 }
@@ -369,6 +445,7 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     hidden_class_t hc;
     unique_class_t uc;
     char *res;
+    mutc_storage_class_class_t storage;
 
     DBUG_ENTER ("NTUcreateNtTagFromNType");
 
@@ -378,13 +455,26 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     hc = NTUgetHiddenClassFromNType (ntype);
     uc = NTUgetUniqueClassFromNType (ntype);
 
-    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
-                              + STRlen (global.nt_hidden_string[hc])
-                              + STRlen (global.nt_unique_string[uc]) + 16)
-                             * sizeof (char));
+    switch (simpletype2mutcStorageClass (TUgetBaseSimpleType (ntype))) {
+    case MUTC_SC_INT:
+        storage = C_int;
+        break;
+    case MUTC_SC_FLOAT:
+        storage = C_float;
+        break;
+    default:
+        storage = C_unknownc;
+    }
 
-    sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
-             global.nt_hidden_string[hc], global.nt_unique_string[uc]);
+    res = (char *)MEMmalloc (
+      (STRlen (name) + STRlen (global.nt_shape_string[sc])
+       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
+       + STRlen (global.nt_mutc_storage_class_string[storage]) + 20)
+      * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s,)))))", name, global.nt_shape_string[sc],
+             global.nt_hidden_string[hc], global.nt_unique_string[uc],
+             global.nt_mutc_storage_class_string[storage]);
 
     DBUG_RETURN (res);
 }

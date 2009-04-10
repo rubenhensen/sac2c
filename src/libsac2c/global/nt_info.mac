@@ -65,6 +65,21 @@ NTIF (C_nhd, "NHD"), NTIF (C_hid, "HID"),
 NTIF (C_nuq, "NUQ"), NTIF (C_unq, "UNQ"),
   NTIF (C_unknownu, "???") /* should be the last entry! */
 
+#elif (ATTRIB == NT_MUTC_STORAGE_CLASS_INDEX)
+
+NTIF (C_int, "INT"), NTIF (C_float, "FLO"),
+  NTIF (C_unknownc, "???") /* should be the last entry! */
+
+#elif (ATTRIB == NT_MUTC_SCOPE_INDEX)
+
+NTIF (C_global, "GLO"), NTIF (C_shared, "SHA"), NTIF (C_na, "N_A"), /* Not applicable */
+  NTIF (C_unknowno, "???")                                          /* should be the last entry! */
+
+#elif (ATTRIB == NT_MUTC_USAGE_INDEX)
+
+NTIF (C_arg, "ARG"), NTIF (C_param, "PAR"), NTIF (C_arg_param, "A_P"),
+  NTIF (C_none, "NON"), NTIF (C_unknowna, "???") /* should be the last entry! */
+
 #endif
 
 #undef NTIF

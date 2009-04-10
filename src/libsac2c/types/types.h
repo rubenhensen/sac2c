@@ -205,6 +205,16 @@ typedef enum {
 } min_array_rep_t;
 
 /*
+ * enums used by the mutc backend
+ */
+
+typedef enum { MUTC_SC_INT, MUTC_SC_FLOAT } mutcStorageClass;
+
+typedef enum { MUTC_GLOBAL, MUTC_LOCAL } mutcScope;
+
+typedef enum { MUTC_US_DEFAULT, MUTC_US_PARAM } mutcUsage;
+
+/*
  * structs
  */
 
@@ -254,6 +264,10 @@ typedef struct TYPES {
     shpseg *shpseg;     /* pointer to shape specification */
     struct TYPES *next; /* only needed for fun-results  */
                         /* and implementation of implicit types */
+    /* mutc backend */
+    mutcScope scope; /* the scope of the value of this var */
+    mutcUsage usage; /* where is this var used */
+
 } types;
 
 /*
@@ -384,6 +398,9 @@ typedef struct ARGTAB_T {
 #define NT_SHAPE_INDEX 1
 #define NT_HIDDEN_INDEX 2
 #define NT_UNIQUE_INDEX 3
+#define NT_MUTC_STORAGE_CLASS_INDEX 4
+#define NT_MUTC_SCOPE_INDEX 5
+#define NT_MUTC_USAGE_INDEX 6
 
 /*
  * Enumerated types for data class and uniqueness class
@@ -412,6 +429,30 @@ typedef enum {
 #undef NTIFtype
 #undef ATTRIB
 } unique_class_t;
+
+typedef enum {
+#define ATTRIB NT_MUTC_STORAGE_CLASS_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
+} mutc_storage_class_class_t;
+
+typedef enum {
+#define ATTRIB NT_MUTC_SCOPE_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
+} mutc_scope_class_t;
+
+typedef enum {
+#define ATTRIB NT_MUTC_USAGE_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
+} mutc_usage_class_t;
 
 /*
  * moved from shape.h

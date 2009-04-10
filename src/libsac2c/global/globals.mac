@@ -789,6 +789,10 @@ GLOBAL (min_array_rep_t, min_array_rep, MAR_scl_aks)
 GLOBAL (char **, nt_shape_string, nt_shape_string_init)
 GLOBAL (char **, nt_hidden_string, nt_hidden_string_init)
 GLOBAL (char **, nt_unique_string, nt_unique_string_init)
+/* mutc */
+GLOBAL (char **, nt_mutc_storage_class_string, nt_mutc_storage_class_string_init)
+GLOBAL (char **, nt_mutc_scope_string, nt_mutc_scope_string_init)
+GLOBAL (char **, nt_mutc_usage_string, nt_mutc_usage_string_init)
 /*
  * These character arrays are the macro-name-parts used to select
  * array class and array uniqueness properties.

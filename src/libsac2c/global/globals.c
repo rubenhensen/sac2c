@@ -125,6 +125,30 @@ static char *nt_unique_string_init[] = {
 #undef NTIFstr
 };
 
+static char *nt_mutc_storage_class_string_init[] = {
+#define ATTRIB NT_MUTC_STORAGE_CLASS_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+#undef ATTRIB
+#undef NTIFstr
+};
+
+static char *nt_mutc_scope_string_init[] = {
+#define ATTRIB NT_MUTC_SCOPE_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+#undef ATTRIB
+#undef NTIFstr
+};
+
+static char *nt_mutc_usage_string_init[] = {
+#define ATTRIB NT_MUTC_USAGE_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+#undef ATTRIB
+#undef NTIFstr
+};
+
 static const zipcvfunptr zipcv_plus_init[] = {
 #define TYP_IFzipcv(fun) fun##Plus
 #include "type_info.mac"
