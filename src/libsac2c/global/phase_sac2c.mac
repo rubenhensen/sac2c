@@ -498,8 +498,8 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
 
-CYCLEPHASE (wli, "Inferring symbolically foldable with-loops", WLIdoWLI,
-            global.optimize.doswlf, opt, saacyc)
+CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
+            SWLFIdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (swlf, "Applying symbolic with-loop folding",
             SWLFdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
@@ -567,8 +567,9 @@ SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVar
 SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
-SUBPHASE (scc, "Stripping conformity checks", SCCdoStripConformityChecks,
-          !global.runtimecheck.conformity && global.insertconformitychecks, opt)
+SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
+          SCCdoStripConformityChecks,
+          global.optimize.doswlf || global.insertconformitychecks, opt)
 
 SUBPHASE (ufl, "Unflattening WL generator", UFLdoUnflattenWLGenerators, global.ssaiv, opt)
 

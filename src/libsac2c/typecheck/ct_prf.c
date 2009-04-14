@@ -444,6 +444,46 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_dataflowguard( te_info *info, ntype *elems)
+ *
+ * description:
+ *  _dataflowguard merely acts as a place to hang
+ *   expressions of any sort off the ast.
+ *   This is intended as a data-flow approach to
+ *   adding ancillary information to the ast.
+ *   It might be a good way to eliminate
+ *   kludge-code in CVP and DCR, currently there to support
+ *   AVIS_SHAPE, AVIS_DIM, AVIS_MINVAL, and AVIS_MAXVAL.
+ *
+ *   The semantics of the _dataflowguard are:
+ *
+ *    iv' = _dataflowguard_(iv, saved1, saved2, saved3...)
+ *
+ *    The "saved" variables are maintained without change. It is
+ *    the duty of the code using iv' to delete the
+ *    guard in the fullness of time, after making use of the
+ *    junk variables. The scc phase also deletes these
+ *    guards, replacing them by:
+ *
+ *    iv' = iv;
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_dataflowguard (te_info *info, ntype *args)
+{
+    ntype *arg;
+
+    DBUG_ENTER ("NTCCTprf_dataflowguard");
+
+    arg = TYgetProductMember (args, 0);
+
+    DBUG_RETURN (TYmakeProductType (1, arg));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_type_constraint( te_info *info, ntype *elems)
  *
  * description:

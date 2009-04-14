@@ -24,8 +24,6 @@
  an ssaiv environment. Specifically, each set of generators
  has DIFFERENT sets of vector and scalar WITHID names.
 
-FIXME: get rid of following assumption.
-
 
  Assumption: We assume that all generators of a WL have the same
  shape.  Furthermore we assume that, if an N_Ncode is referenced by

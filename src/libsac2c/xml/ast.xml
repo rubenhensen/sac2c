@@ -1427,6 +1427,17 @@
           <node name="Code" />
 	</travuser>
      </traversal>
+     <traversal id="SWLFI" name="Symbolic With-Loop-Folding Inference" default="sons" include="symb_wlfi.h" >
+       <travuser>
+          <node name="Fundef"  />
+          <node name="Assign"  />
+          <node name="With"    />
+          <node name="Code"    />
+          <node name="Part"    />
+          <node name="Ids"     />
+          <node name="Prf"     />
+       </travuser>
+     </traversal>
      <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
        <travuser>
           <node name="Fundef"  />
@@ -4851,7 +4862,15 @@
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="SelIssuedDataflowGuard" default="FALSE" >
+         <description> 
+          If true, this sel operation has already
+          emitted an F_dataflowguard operation that now precedes this
+          sel op. If false, then SWLFI will emit a guard, then set this flag.
+         </description> 
+        </flag>
+      </flags>
     </node>
 <!--
 

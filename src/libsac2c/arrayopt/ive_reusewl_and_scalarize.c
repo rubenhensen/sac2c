@@ -70,8 +70,8 @@ FreeInfo (info *info)
  * information to ease the lookup of matching withloop
  * offsets for a given vect2offset operation.
  *
- * IV            stores the avis of the indexvector
- *               Under ssaiv, these are different for each WL partition.
+ * IV            stores the avis of the index vector
+ *               Under ssaiv, these avises differ for each WL partition.
  *
  * OFFSETS       contains all offsetvar avis and their corresponding
  *               shapeexpression
@@ -81,7 +81,7 @@ FreeInfo (info *info)
  *
  * SCALARS       contains the N_ids chain of scalars that can be used instead
  *               of the index vector
- *               Under ssaiv, these are different for each WL partition.
+ *               Under ssaiv, these avises differ for each WL partition.
  */
 
 struct OFFSETINFO {

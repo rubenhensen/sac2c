@@ -9,48 +9,53 @@
  * @defgroup swlf Symbolic With-Loop Folding
  *
  * @terminology:
- *        Foldee WL, or foldee: The WL that will no longer
+ *        Foldee-WL, or foldee: The WL that will no longer
  *        exist after this phase completes. In the example
- *        below, A is the foldee.
+ *        below, A is the foldee-WL.
  *
- *        Folder WL: the WL that will absorb the block(s) from
- *        the foldee WL. In the example below, B is the folder WL.
+ *        Folder-WL: the WL that will absorb the block(s) from
+ *        the foldee-WL. In the example below, B is the folder-WL.
  *
- * @brief Symbolic With-Loop Folding
+ * @brief Extended With-Loop Folding
  *        This performs WLF on arrays that are not foldable
- *        by WLF, for some reason(s), such as some AKD and AUD arrays.
+ *        by WLF.
  *
- *        At present (2009-02-17), SWLF has several
- *        restrictions over WLF:
+ *        The features of extended WLF are:
  *
- *           - the foldee WL must have an SSAASSIGN.
- *             NB. This means that references to WITH_IDS are
- *                 not foldable!
+ *            - Ability to fold arrays whose shapes are not
+ *              known statically. Specifically, if the index
+ *              set of the folder-WL is known to be identical to,
+ *              or a subset of, the index set of the foldee-WL,
+ *              folding will occur. FIXME: This will have to be
+ *              updated once the indices can accept offsets.
  *
- *           - the foldee WL must have a NEEDCOUNT of 1. I.e.,
- *             there are no other references to the foldee.
+ *           - the foldee-WL must have an SSAASSIGN.
+ *
+ *           - the foldee-WL must have a NEEDCOUNT of 1. I.e.,
+ *             there must be no other references to the foldee-WL.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
- *             There is a little trick to convert a modarray(foldee)
+ *             This code includes a little trick to convert a modarray(foldee)
  *             into a genarray(shape(foldee)), but this happens
  *             after any folding. Hence, there is a kludge to
- *             allow a NEEDCOUNT of 2 if there is a modarray
+ *             allow a NEEDCOUNT of 2 if there is a modarray folder-WL
  *             present.
  *
- *           - the foldee WL must have a DEPDEPTH value of 1??
+ *           - the foldee-WL must have a DEPDEPTH value of 1??
  *             Not sure what this means yet...
  *
- *           - The folder WL must refer to the foldee WL via
+ *           - The folder-WL must refer to the foldee WL via
  *              _sel_VxA_(idx, foldee)
- *             and idx must be the folder's WITHID.
+ *             and idx must be the folder-WL's WITHID.
  *
- *           - The WL operator is a genarray or modarray (NO folds, please).
+ *           - The foldee-WL operator is a genarray or modarray
+ *             (NO folds, please).
  *
  *           - The WL is a single-operator WL. (These should have been
  *             eliminated by phase 10, I think.)
  *
- *           - The generator of the folder WL matches
- *             the generator of the folder WL.
+ *           - The generator of the folder- WL matches
+ *             the generator of the foldee-WL.
  *
  *         This phase now must run when SAA information is available,
  *         because I intend to kill the dicey code that attempted to make
@@ -144,12 +149,14 @@
 struct INFO {
     node *fundef;
     node *part;
-    /* This is the current partition in the folder WL. */
+    /* This is the current partition in the folder-WL. */
     node *wl;
+    /* This is the current folder-WL. */
     int level;
+    /* This is the current nesting level of WLs */
     node *swlfoldablefoldeepart;
     bool modarray2genarray;
-    /* This is TRUE iff folderWL's modarray(foldee)
+    /* modarray2genarray is TRUE iff folderWL's modarray(foldee)
      * can be converted to a enarray(shape(foldee)).
      */
 };
@@ -537,14 +544,20 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
  *
  * @brief check if a WL has a legal foldee partition.
  *        The requirements for folding are:
- *           - The WL operator is a genarray or modarray (NO folds, please).
+ *           - The WL operator is a genarray or modarray,
+ *             or it is a fold, and the generated code does
+ *             not include -mt support. See comments at
+ *             head of this file for a rationale.
+ *
  *           - The WL is a single-operator WL.
+ *
  *           - The current partition of the folder-WL matches some generator
  *               of that of the foldee-WL.
  *               FIXME: This is overly strict. This function should
  *                      be extended to allow the current folder partition's
- *                      generator range to either match or be a proper subset
+ *                      generator range to either match or be a subset
  *                      of a generator of the foldee.
+ *
  *           - The sel(idx,y) idx is the WITHID of the
  *             putative foldee.
  *
@@ -579,12 +592,12 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
 
     while ((!matched) && wp != NULL) {
         wg = PART_GENERATOR (wp);
-        if ((global.ssaiv) &&
-            /* Find and match Referents for generators */
-            matchGeneratorField (GENERATOR_BOUND1 (pg), GENERATOR_BOUND1 (wg), foldee)
-            && matchGeneratorField (GENERATOR_BOUND2 (pg), GENERATOR_BOUND2 (wg), foldee)
-            && matchGeneratorField (GENERATOR_STEP (pg), GENERATOR_STEP (wg), foldee)
-            && matchGeneratorField (GENERATOR_WIDTH (pg), GENERATOR_WIDTH (wg), foldee)) {
+        if (
+          /* Find and match Referents for generators */
+          matchGeneratorField (GENERATOR_BOUND1 (pg), GENERATOR_BOUND1 (wg), foldee)
+          && matchGeneratorField (GENERATOR_BOUND2 (pg), GENERATOR_BOUND2 (wg), foldee)
+          && matchGeneratorField (GENERATOR_STEP (pg), GENERATOR_STEP (wg), foldee)
+          && matchGeneratorField (GENERATOR_WIDTH (pg), GENERATOR_WIDTH (wg), foldee)) {
             m1 = TRUE;
             DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
         } else { /* Ye olde school way */
@@ -592,9 +605,9 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
             DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match: olde school"));
         }
 
-        if (((NODE_TYPE (WITH_WITHOP (foldee)) == N_genarray)
-             || (NODE_TYPE (WITH_WITHOP (foldee)) == N_modarray))
-            && (WITHOP_NEXT (WITH_WITHOP (foldee)) == NULL) && m1) {
+        if (m1 && (WITHOP_NEXT (WITH_WITHOP (foldee)) == NULL)
+            && ((NODE_TYPE (WITH_WITHOP (foldee)) == N_genarray)
+                || (NODE_TYPE (WITH_WITHOP (foldee)) == N_modarray))) {
             matched = TRUE;
         } else {
             wp = PART_NEXT (wp);
@@ -652,7 +665,8 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
      * that is counted as a data reference, so we have to allow for
      * it here.
      */
-    if ((N_modarray == NODE_TYPE (WITH_WITHOP (INFO_WL (arg_info))))
+    if ((NULL != INFO_WL (arg_info))
+        && (N_modarray == NODE_TYPE (WITH_WITHOP (INFO_WL (arg_info))))
         && (foldeeavis == ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (INFO_WL (arg_info)))))) {
         nc = 2;
     } else {
@@ -1023,15 +1037,23 @@ SWLFprf (node *arg_node, info *arg_info)
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
+
+#ifdef NOOFFSET
         && (ID_AVIS (PRF_ARG1 (arg_node))
             == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info)))))) {
+#else // NOOFFSET
+    ) {
+        if (ID_AVIS (PRF_ARG1 (arg_node))
+            == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info))))) {
 
+#endif // NOOFFSET
         INFO_SWLFOLDABLEFOLDEEPART (arg_info)
           = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }
+}
 
-    DBUG_RETURN (arg_node);
+DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

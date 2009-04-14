@@ -15,6 +15,7 @@ extern ntype *NTCCTprf_type_conv (te_info *info, ntype *args);
 extern ntype *NTCCTprf_dispatch_error (te_info *info, ntype *args);
 extern ntype *NTCCTprf_guard (te_info *info, ntype *args);
 extern ntype *NTCCTprf_afterguard (te_info *info, ntype *args);
+extern ntype *NTCCTprf_dataflowguard (te_info *info, ntype *args);
 extern ntype *NTCCTprf_type_constraint (te_info *info, ntype *args);
 extern ntype *NTCCTprf_same_shape (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape_dim (te_info *info, ntype *args);

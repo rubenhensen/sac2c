@@ -9,6 +9,9 @@
  * Removes all conformity checks from the dataflow graph so that they
  * can be safely removed by dead code removal.
  *
+ * This phase also removes dataflow guards, as they should never
+ * reach anywhere beyond the optimization phase.
+ *
  * @ingroup scc
  *
  * @{
@@ -329,12 +332,21 @@ SCCprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
-    case F_afterguard:
-    case F_non_neg_val_V:
+    case F_dataflowguard: /* dataflow guard never reaches code generator */
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
                                  &INFO_PREASSIGNS (arg_info));
         INFO_SCRAPASSIGN (arg_info) = TRUE;
+        break;
+
+    case F_afterguard:
+    case F_non_neg_val_V:
+        if (!global.runtimecheck.conformity && global.insertconformitychecks) {
+            INFO_LHS (arg_info)
+              = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
+                                     &INFO_PREASSIGNS (arg_info));
+            INFO_SCRAPASSIGN (arg_info) = TRUE;
+        }
         break;
 
     /* prfs with two identities on first args */
@@ -343,27 +355,33 @@ SCCprf (node *arg_node, info *arg_info)
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
     case F_prod_matches_prod_shape_VxA:
-        INFO_LHS (arg_info)
-          = RenameOrReplaceRets (0, 2, INFO_LHS (arg_info), PRF_ARGS (arg_node),
-                                 &INFO_PREASSIGNS (arg_info));
-        INFO_SCRAPASSIGN (arg_info) = TRUE;
+        if (!global.runtimecheck.conformity && global.insertconformitychecks) {
+            INFO_LHS (arg_info)
+              = RenameOrReplaceRets (0, 2, INFO_LHS (arg_info), PRF_ARGS (arg_node),
+                                     &INFO_PREASSIGNS (arg_info));
+            INFO_SCRAPASSIGN (arg_info) = TRUE;
+        }
         break;
 
     /* prfs with one identity on second arg */
     case F_type_constraint:
-        INFO_LHS (arg_info)
-          = RenameOrReplaceRets (1, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
-                                 &INFO_PREASSIGNS (arg_info));
-        INFO_SCRAPASSIGN (arg_info) = TRUE;
+        if (!global.runtimecheck.conformity && global.insertconformitychecks) {
+            INFO_LHS (arg_info)
+              = RenameOrReplaceRets (1, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
+                                     &INFO_PREASSIGNS (arg_info));
+            INFO_SCRAPASSIGN (arg_info) = TRUE;
+        }
         break;
 
         /* prfs with n-1 identities */
     case F_guard:
-        INFO_LHS (arg_info)
-          = RenameOrReplaceRets (0, TCcountExprs (PRF_ARGS (arg_node)) - 1,
-                                 INFO_LHS (arg_info), PRF_ARGS (arg_node),
-                                 &INFO_PREASSIGNS (arg_info));
-        INFO_SCRAPASSIGN (arg_info) = TRUE;
+        if (!global.runtimecheck.conformity && global.insertconformitychecks) {
+            INFO_LHS (arg_info)
+              = RenameOrReplaceRets (0, TCcountExprs (PRF_ARGS (arg_node)) - 1,
+                                     INFO_LHS (arg_info), PRF_ARGS (arg_node),
+                                     &INFO_PREASSIGNS (arg_info));
+            INFO_SCRAPASSIGN (arg_info) = TRUE;
+        }
         break;
 
     default:; /* do nothing for the rest */
