@@ -30,6 +30,11 @@
  *                     float->float, double->double
  *    _idx_sel(iv, _shape_A_(X)) ->  _idx_shape_sel(iv, X)
  *
+ *    _idx_shape_sel(iv, WLmodarrayresult) ->   idx_shape_sel(iv,
+ *MODARRAY_ARRAY(WITH_OP(WLmodarray)))
+ *     FIXME: We should be able to do the same sort of thing with WLgenarray, when the
+ *cell shape is scalar.
+ *
  *  Conformability checking CF:
  *
  *    In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
@@ -1460,13 +1465,13 @@ SCSprf_idx_shape_sel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_idx_shape_sel");
 
-    PM (PMshape (&idprimo, PRF_ARG2 (arg_node), NULL));
-    if ((NULL != idprimo) && idprimo != PRF_ARG2 (arg_node)) {
+    idprimo = PMshapePrimogenitor (PRF_ARG2 (arg_node));
+    if ((ID_AVIS (idprimo) != ID_AVIS (PRF_ARG2 (arg_node)))) {
         res = DUPdoDupTree (arg_node);
         DBUG_PRINT ("CF", ("SCSprf_idx_shape_sel replacing %s by %s",
                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
                            AVIS_NAME (ID_AVIS (idprimo))));
-        PRF_ARG2 (res) = idprimo;
+        PRF_ARG2 (res) = DUPdoDupTree (idprimo);
     }
 
     DBUG_RETURN (res);

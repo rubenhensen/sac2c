@@ -1032,28 +1032,19 @@ SWLFids (node *arg_node, info *arg_info)
 node *
 SWLFprf (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("SWLFprf");
 
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
+        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)) {
 
-#ifdef NOOFFSET
-        && (ID_AVIS (PRF_ARG1 (arg_node))
-            == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info)))))) {
-#else // NOOFFSET
-    ) {
-        if (ID_AVIS (PRF_ARG1 (arg_node))
-            == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info))))) {
-
-#endif // NOOFFSET
         INFO_SWLFOLDABLEFOLDEEPART (arg_info)
           = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }
-}
 
-DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

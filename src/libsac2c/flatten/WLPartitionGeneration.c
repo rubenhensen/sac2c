@@ -207,9 +207,7 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
                  "CreateArrayOfShapeSels not called with N_id");
 
     /* Find first array in chain with same shape as array */
-    if (!PM (PMshape (&firstarray, array, NULL))) {
-        firstarray = array;
-    }
+    firstarray = PMshapePrimogenitor (array);
 
     for (i = dim - 1; i >= 0; i--) {
         node *sel_avis;

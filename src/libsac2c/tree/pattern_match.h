@@ -11,6 +11,7 @@
 extern bool PM (node *res);
 extern node *PMvar (node **var, node *arg_node);
 extern node *PMlastVar (node **var, node *arg_node);
+extern node *PMlastVarGuards (node **var, node *arg_node);
 
 extern node *PMbool (node *stack);
 extern node *PMchar (node *stack);
@@ -27,7 +28,7 @@ extern node *PMdoubleVal (double val, node *stack);
 extern node *PMprf (prf fun, node *arg_node);
 extern node *PMarray (constant **frameshape, node **array, node *arg_node);
 extern node *PMarrayConstructor (constant **frameshape, node **array, node *arg_node);
-extern node *PMshape (node **shp, node *array, node *stack);
+extern node *PMshapePrimogenitor (node *stack);
 extern node *PMsaashape (node **shp, node **array, node *stack);
 
 extern node *PMconst (constant **co, node **conode, node *arg_node);

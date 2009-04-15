@@ -547,6 +547,38 @@ PMlastVar (node **var, node *stack)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *PMlastVarGuards( node **var, node *stack)
+ *
+ * @brief tries to match against the last variable in a
+ *        chain, while treating guards as if they were not in
+ *        the chain.
+ *        E.g., the call PMlastVarGuards(d...) in this chain:
+ *
+ *          a = id([3]);
+ *          b = a;
+ *          c = F_dataflowguard(b, save1, save2);
+ *          d = c;
+ *
+ *        will result in  pointer to <a>.
+ *
+ *        If *var is NULL, the top of
+ *        the stack is bound to it (provided it is an N_id).
+ *        If *var is bound already, it only matches if both N_id nodes
+ *        point to the same N_avis.
+ * @param *var: bound N_id (if any)
+ *        stack: "stack" of exprs.
+ * @return shortened stack.
+ *****************************************************************************/
+node *
+PMlastVarGuards (node **var, node *stack)
+{
+    DBUG_ENTER ("PMlastVarGuards");
+    stack = pmvar (var, stack, TRUE);
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *PMbool( node *stack)
  * @fn node *PMchar( node *stack)
  * @fn node *PMnum( node *stack)
@@ -792,9 +824,11 @@ PMintConst (constant **co, node **conode, node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMshape( node **id2, node *id, node *stack)
+ * @fn node *PMshapePrimogenitor( node *stack)
  *
- * @brief tries to match an array shape.
+ * @brief This is not really a PM function, but it has
+ *        attributes that sort of want to be one.
+ *
  *        This has to work in non-saa mode, so we do not rely
  *        on AVIS_SHAPE.
  *
@@ -821,7 +855,7 @@ PMintConst (constant **co, node **conode, node *stack)
  *          d = with { ([0] <= iv < sv ) : c[iv] + 1;
  *                   } : modarray(c);
  *
- *          CFidx_shape_sel will invoke PMshape to produce:
+ *          CFidx_shape_sel will invoke PMshapePrimogenitor to produce:
  *
  *          s0 = idx_shape_sel(0, a);
  *          s1 = idx_shape_sel(1, a);
@@ -830,84 +864,63 @@ PMintConst (constant **co, node **conode, node *stack)
  *        would be used in a proper PM environment. Feel free to
  *        fix it.
  *
- *        If *id2 is NULL, the above id node is bound to id2.
- *        If *id2 is bound already, it only matches if both N_id nodes
- *        have the same shape.
- * @param id2
- * @param stack "stack" of exprs.
+ * @param id is
  *
- * @return stack is unchanged.
+ * @return the uppermost N_id with the same shape.
  *****************************************************************************/
 node *
-PMshape (node **id2, node *id, node *stack)
+PMshapePrimogenitor (node *arg)
 {
-    node *arg;
     node *modarr;
-    node *modarr2 = NULL;
+    node *res;
+    node *defaultcell;
 
-    DBUG_ENTER ("PMshape");
+    DBUG_ENTER ("PMshapePrimogenitor");
 
-    stack = FailMatch (stack);
-#ifdef RBEJUNK
+    DBUG_PRINT ("PM", ("PMshapePrimogenitor trying to find primogenitor for: %s.",
+                       AVIS_NAME (ID_AVIS (arg))));
 
-    DBUG_ASSERT (N_id == NODE_TYPE (id), ("PMshape expected N_id node"));
-    if (*id2 == NULL) {
-        DBUG_PRINT ("PM", ("PMshape trying to match unbound variable: %s.",
-                           AVIS_NAME (ID_AVIS (id))));
-    } else {
-        DBUG_PRINT ("PM", ("PMshape trying to match bound variable: %s.",
-                           AVIS_NAME (ID_AVIS (id))));
-    }
+    arg = lastId (arg);
+    res = arg;
 
-    if (stack != (node *)FAIL) {
-        if (NULL != id) {
-            arg = lastId (id);
-        }
-
-        /* Chase possible modarray WL */
-        /* FIXME: probably can do something similar with genarray,
-         * if we can find its shape
-         */
-        modarr = AVIS_SSAASSIGN (ID_AVIS (arg));
-        if (NULL != modarr) {
-            modarr = LET_EXPR (ASSIGN_INSTR (modarr));
-            if ((N_with == NODE_TYPE (modarr))) {
-                switch (NODE_TYPE (WITH_WITHOP (modarr))) {
-                case N_modarray:
-                    arg = MODARRAY_ARRAY (WITH_WITHOP (modarr));
-                    break;
-                case N_genarray:
-                    /* FIXME: We want to work backward if default cell is scalar */
-                    break;
-                default:
-                    break;
+    /* Chase possible modarray WL */
+    /* FIXME: probably can do something similar with genarray,
+     * if we can find its shape
+     */
+    modarr = AVIS_SSAASSIGN (ID_AVIS (arg));
+    if (NULL != modarr) {
+        modarr = LET_EXPR (ASSIGN_INSTR (modarr));
+        if ((N_with == NODE_TYPE (modarr))) {
+            switch (NODE_TYPE (WITH_WITHOP (modarr))) {
+            case N_modarray:
+                arg = MODARRAY_ARRAY (WITH_WITHOP (modarr));
+                break;
+            case N_genarray:
+                /* If the default cell is scalar, and the genarray shape is
+                 * shape(x), we can replace arg with x.
+                 */
+                defaultcell = GENARRAY_DEFAULT (WITH_WITHOP (modarr));
+                if ((NULL == defaultcell)
+                    || ((N_id == NODE_TYPE (defaultcell))
+                        && TYisScalar (AVIS_TYPE (ID_AVIS (defaultcell))))) {
+                    /*
+                     * The default cell is, indeed, scalar.
+                     * Result shape is genarray_shape. If that comes from shape(x),
+                     * we can replace arg with x.
+                     */
+                    DBUG_PRINT ("PM", ("PMshapePrimogenitor found scalar default cell"));
                 }
-                /* Recurse to continue up the assign chain. */
-                if (PM (PMshape (&modarr2, arg, NULL))) {
-                    arg = modarr2;
-                }
+                break;
+            default:
+                break;
+            }
+            /* Recurse to continue up the assign chain. */
+            if (arg != res) {
+                arg = PMshapePrimogenitor (arg);
             }
         }
-
-        if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
-            if (REF_ISUNDEFINED (id2)) {
-                REF_SET (id2, arg);
-                DBUG_PRINT ("PM",
-                            ("PMshape binding N_id: %s.", AVIS_NAME (ID_AVIS (*id2))));
-            } else if (*id2 == arg) {
-                DBUG_PRINT ("PM", ("PMshape found matching N_id: %s.",
-                                   AVIS_NAME (ID_AVIS (*id2))));
-            } else {
-                stack = FailMatch (stack);
-            }
-        } else {
-            stack = FailMatch (stack);
-        }
-    } else {
-        DBUG_PRINT ("PM", ("PMshape passing on FAIL."));
     }
-#endif //  RBEJUNK
-    DBUG_RETURN (stack);
+    DBUG_RETURN (arg);
 }
 
 /** <!--*******************************************************************-->
