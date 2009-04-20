@@ -473,12 +473,14 @@ ntype *
 NTCCTprf_dataflowguard (te_info *info, ntype *args)
 {
     ntype *arg;
+    ntype *res;
 
     DBUG_ENTER ("NTCCTprf_dataflowguard");
 
     arg = TYgetProductMember (args, 0);
-
-    DBUG_RETURN (TYmakeProductType (1, arg));
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
