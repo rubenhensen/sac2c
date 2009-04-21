@@ -113,6 +113,8 @@
 #include "print.h"
 #include "str.h"
 #include "memory.h"
+#include "DupTree.h"
+#include "shape.h"
 
 /** <!--********************************************************************-->
  *
@@ -156,6 +158,77 @@ FreeInfo (info *info)
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ *  NB. THIS IS A CLONE OF CODE FROM ../flatten/WLPartitionGeneration.c.
+ *      Perhaps we need a single function to do this stuff?
+ *
+ * @fn node *WLSflattenBound( node *arg_node, node *fundef, node **preassigns)
+ *
+ *   @brief  Flattens the WL bound at arg_node.
+ *           I.e., if the generator looks like this on entry:
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            z = with {
+ *             (. <= iv < [s0, s1]) ...
+ *            }
+ *
+ *          it will look like this on the way out:
+ *            int[2] TMP;
+ *            ...
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            TMP = [s0, s1];
+ *            z = with {
+ *             (. <= iv < TMP) ...
+ *            }
+ *
+ *          The only rationale for this change is to ensure that
+ *          WL bounds are named. This allows us to associate an
+ *          N_avis node with each bound, which will be used to
+ *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          These fields, in turn, will be used by the constant
+ *          folder to remove guards and do other swell optimizations.
+ *
+ *   @param  node *arg_node: a WL PART BOUND to be flattened.
+ *           node *fundef:   the N_fundef code this function is in.
+ *           node **preassigns: The address of a preassigns chain.
+ *             We can't use arg_info, because different callers
+ *             have different INFO node structures.
+ *
+ *   @return node *node:      N_id node for flattened bound
+ ******************************************************************************/
+node *
+WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
+{
+    node *avis;
+    node *assgn;
+    node *id;
+    int shp;
+
+    DBUG_ENTER ("WLSflattenBound");
+
+    id = arg_node;
+    if (N_array == NODE_TYPE (arg_node)) {
+        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
+        /* This is dirty, but given the three different arg_info nodes
+         * involved, I don't have a better idea.
+         */
+        FUNDEF_VARDEC (fundef) = TBmakeVardec (avis, FUNDEF_VARDEC (fundef));
+        assgn = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
+                              NULL);
+        *preassigns = TCappendAssign (*preassigns, assgn);
+        AVIS_SSAASSIGN (avis) = assgn;
+        id = TBmakeId (avis);
+        DBUG_PRINT ("WLS",
+                    ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
+    }
+
+    DBUG_RETURN (id);
+}
 
 /** <!--********************************************************************-->
  *

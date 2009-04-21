@@ -99,6 +99,7 @@ struct INFO {
     node *depstack;
     dfmask_t *depmask;
     node *cexpr;
+    node *preassigns;
     bool mustcopy;
 };
 
@@ -109,6 +110,7 @@ struct INFO {
 #define INFO_DEPSTACK(n) (n->depstack)
 #define INFO_DEPMASK(n) (n->depmask)
 #define INFO_CEXPR(n) (n->cexpr)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_MUSTCOPY(n) (n->mustcopy)
 
 static info *
@@ -127,6 +129,7 @@ MakeInfo (node *fundef, int innerdims)
     INFO_DEPSTACK (result) = NULL;
     INFO_DEPMASK (result) = NULL;
     INFO_CEXPR (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_MUSTCOPY (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -262,7 +265,7 @@ UpperBound (shape *unrshp, int index)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeSelCodes( node *parts, ids *iv, node *arr, node *fundef)
+ * @fn node *MakeSelCodes( node *parts, ids *iv, node *arr, info *arg_info)
  *
  * @brief creates a CODE for each part in parts that does nothing but select
  *        arr[ iv ].
@@ -272,13 +275,13 @@ UpperBound (shape *unrshp, int index)
  * @param parts
  * @param iv
  * @param arr
- * @param fundef
+ * @param arg_info
  *
  * @return chain of codes
  *
  *****************************************************************************/
 static node *
-MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
+MakeSelCodes (node *part, node *iv, node *arr, info *arg_info)
 {
     node *code = NULL;
     node *avis = NULL;
@@ -299,7 +302,7 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
 
         vardecs = TBmakeVardec (avis, vardecs);
 
-        fundef = TCaddVardecs (fundef, vardecs);
+        INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardecs);
 
         ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                        TCmakePrf2 (F_sel_VxA, TBmakeId (IDS_AVIS (iv)),
@@ -312,7 +315,7 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
         PART_CODE (part) = code;
         CODE_USED (code) = 1;
 
-        CODE_NEXT (code) = MakeSelCodes (PART_NEXT (part), iv, arr, fundef);
+        CODE_NEXT (code) = MakeSelCodes (PART_NEXT (part), iv, arr, arg_info);
     }
 
     DBUG_RETURN (code);
@@ -320,7 +323,8 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeSelParts( shape *maxshp, int unrdim, node *withid)
+ * @fn node *MakeSelParts( shape *maxshp, int unrdim, node *withid,
+ *                         info *arg_info);
  *
  * @brief creates a chain of parts whose generators each cover one element
  *        in the range of _0_ to take([unrdim], maxshp).
@@ -333,9 +337,11 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
  *
  *****************************************************************************/
 static node *
-MakeSelParts (shape *maxshp, int unrdim, node *withid)
+MakeSelParts (shape *maxshp, int unrdim, node *withid, info *arg_info)
 {
     node *parts = NULL;
+    node *lower_id;
+    node *upper_id;
     shape *unrshp, *lower_tl, *upper_tl;
     int i;
 
@@ -358,11 +364,16 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
         upper_hd = UpperBound (unrshp, i);
 
         lower = SHappendShapes (lower_hd, lower_tl);
+        lower_id = WLSflattenBound (SHshape2Array (lower), INFO_FUNDEF (arg_info),
+                                    &INFO_PREASSIGNS (arg_info));
+
         upper = SHappendShapes (upper_hd, upper_tl);
+        upper_id = WLSflattenBound (SHshape2Array (upper), INFO_FUNDEF (arg_info),
+                                    &INFO_PREASSIGNS (arg_info));
 
         newpart = TBmakePart (NULL, DUPdoDupNode (withid),
-                              TBmakeGenerator (F_wl_le, F_wl_lt, SHshape2Array (lower),
-                                               SHshape2Array (upper), NULL, NULL));
+                              TBmakeGenerator (F_wl_le, F_wl_lt, lower_id, upper_id, NULL,
+                                               NULL));
 
         lower_hd = SHfreeShape (lower_hd);
         upper_hd = SHfreeShape (upper_hd);
@@ -382,7 +393,7 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateCopyWithloop( node *array, int dim, node *fundef)
+ * @fn node *CreateCopyWithloop( node *array, info * arg_info)
  *
  * @brief creates a withloop copying the first dimensions from array array.
  *        Typically, this means there is one part containing a selection
@@ -392,15 +403,15 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
  *        this is only performed if the array contains no more elements then
  *        global.wlunrnum.
  *
- * @param array id of the array to be copied
- * @param dim number of dimensions the copy-wl shall cover
- * @param fundef
+ * @param array: N_id of the array to be copied
+ * @param arg_info
+ * @param INFO_INNERDIM: number of dimensions the copy-wl shall cover
  *
  * @return
  *
  *****************************************************************************/
 static node *
-CreateCopyWithloop (node *array, int dim, node *fundef)
+CreateCopyWithloop (node *array, info *arg_info)
 {
     node *wl;
     node *avis;
@@ -413,10 +424,12 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
     node *scl_ids = NULL;
     int i;
     int unrdim = 0;
+    int dim;
     shape *maxshp;
 
     DBUG_ENTER ("CreateCopyWithloop");
 
+    dim = INFO_INNERDIMS (arg_info);
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
 
@@ -447,9 +460,9 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
 
     withid = TBmakeWithid (vec_ids, scl_ids);
 
-    parts = MakeSelParts (maxshp, unrdim, withid);
+    parts = MakeSelParts (maxshp, unrdim, withid, arg_info);
 
-    codes = MakeSelCodes (parts, vec_ids, array, fundef);
+    codes = MakeSelCodes (parts, vec_ids, array, arg_info);
 
     withop = TBmakeGenarray (SHshape2Array (
                                SHtakeFromShape (dim, TYgetShape (ID_NTYPE (array)))),
@@ -459,7 +472,7 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
 
     WITH_PARTS (wl) = TCcountParts (parts);
 
-    fundef = TCaddVardecs (fundef, vardecs);
+    INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardecs);
 
     /*
      * Clean up
@@ -561,8 +574,7 @@ WLSWcode (node *arg_node, info *arg_info)
 
             ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                            CreateCopyWithloop (CODE_CEXPR (arg_node),
-                                                               INFO_INNERDIMS (arg_info),
-                                                               INFO_FUNDEF (arg_info))),
+                                                               arg_info)),
                                 NULL);
             AVIS_SSAASSIGN (avis) = ass;
 

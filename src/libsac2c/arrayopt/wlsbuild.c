@@ -239,72 +239,6 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FlattenBound( node *arg_node, info *arg_info)
- *
- *   @brief  Flattens the WL bound at arg_node.
- *           I.e., if the generator looks like this on entry:
- *            s0 = _idx_shape_sel(0,x);
- *            s1 = _idx_shape_sel(1,x);
- *            z = with {
- *             (. <= iv < [s0, s1]) ...
- *            }
- *
- *          it will look like this on the way out:
- *            int[2] TMP;
- *            ...
- *            s0 = _idx_shape_sel(0,x);
- *            s1 = _idx_shape_sel(1,x);
- *            TMP = [s0, s1];
- *            z = with {
- *             (. <= iv < TMP) ...
- *            }
- *
- *          The only rationale for this change is to ensure that
- *          WL bounds are named. This allows us to associate an
- *          N_avis node with each bound, which will be used to
- *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
- *          These fields, in turn, will be used by the constant
- *          folder to remove guards and do other swell optimizations.
- *
- *   @param  node *arg_node: a WL PART BOUND to be flattened.
- *           info *arg_info:
- *
- *   @return node *node:      N_id node for flattened bound
- ******************************************************************************/
-static node *
-FlattenBound (node *arg_node, info *arg_info)
-{
-    node *res;
-    node *bavis;
-    node *nas;
-    int shp;
-
-    DBUG_ENTER ("FlattenBound");
-
-    if (global.ssaiv) {
-        DBUG_ASSERT (N_array == NODE_TYPE (arg_node),
-                     "FlattenBound expected N_array BOUND");
-        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
-        bavis = TBmakeAvis (TRAVtmpVar (),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
-                            NULL);
-        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
-        AVIS_SSAASSIGN (bavis) = nas;
-        res = TBmakeId (bavis);
-        DBUG_PRINT ("WLSB", ("FlattenBound generated assign for %s", AVIS_NAME (bavis)));
-        FREEdoFreeTree (arg_node);
-    } else {
-        res = arg_node;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *CreateOneVector( int l)
  *
  * @brief Creates a vector of ones of length l
@@ -416,7 +350,7 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     /*
      * Flatten the result
      */
-    res = FlattenBound (res, arg_info);
+    res = WLSflattenBound (res, INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
     DBUG_RETURN (res);
 }
 
