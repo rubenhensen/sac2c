@@ -152,6 +152,67 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *flattenBound( node *arg_node, info *arg_info)
+ *
+ *   @brief  Flattens the WL bound at arg_node.
+ *           I.e., if the generator looks like this on entry:
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            z = with {
+ *             (. <= iv < [s0, s1]) ...
+ *            }
+ *
+ *          it will look like this on the way out:
+ *            int[2] TMP;
+ *            ...
+ *            s0 = _idx_shape_sel(0,x);
+ *            s1 = _idx_shape_sel(1,x);
+ *            TMP = [s0, s1];
+ *            z = with {
+ *             (. <= iv < TMP) ...
+ *            }
+ *
+ *          The only rationale for this change is to ensure that
+ *          WL bounds are named. This allows us to associate an
+ *          N_avis node with each bound, which will be used to
+ *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          These fields, in turn, will be used by the constant
+ *          folder to remove guards and do other swell optimizations.
+ *
+ *   @param  node *arg_node: a WL PART BOUND to be flattened.
+ *           info *arg_info:
+ *
+ *   @return node *node:      N_id node for flattened bound
+ ******************************************************************************/
+static node *
+flattenBound (node *arg_node, info *arg_info)
+{
+    node *bavis;
+    node *nas;
+    node *bid;
+    int shp;
+
+    DBUG_ENTER ("flattenBound");
+
+    bid = arg_node;
+    if (N_array == NODE_TYPE (arg_node)) {
+        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
+        bavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
+                            NULL);
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
+        AVIS_SSAASSIGN (bavis) = nas;
+        bid = TBmakeId (bavis);
+    }
+
+    DBUG_RETURN (bid);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *findNarray( node *arg_node)
  *
  *   @brief Find N_array ancestor of arg_node
@@ -346,45 +407,19 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
     node *genn, *partn;
     node *newwithid;
     node *newcoden;
-    node *lbavis;
-    node *ubavis;
     node *lbid;
     node *ubid;
-    node *nas;
     lut_t *lut;
-    int genshape;
 
     DBUG_ENTER ("CreateNewPart");
 
+    lbid = flattenBound (lb, arg_info);
+    ubid = flattenBound (ub, arg_info);
+    /* FIXME: Probably should treat STEP and WIDTH the same as BOUNDs */
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, lbid, ubid, DUPdoDupTree (step),
+                            DUPdoDupTree (width));
+
     if (global.ssaiv) {
-        /* Create flattened WL lower bound */
-        genshape = SHgetUnrLen (TYgetShape (IDS_NTYPE (WITHID_VEC (withid))));
-        lb = CreateEntryFlatArray (0, genshape);
-        lbavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                       SHcreateShape (1, genshape)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (lbavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        nas
-          = TBmakeAssign (TBmakeLet (TBmakeIds (lbavis, NULL), DUPdoDupTree (lb)), NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
-        AVIS_SSAASSIGN (lbavis) = nas;
-        lbid = TBmakeId (lbavis);
-
-        /* Create flattened WL upper bound */
-        ubavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                       SHcreateShape (1, genshape)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (ubavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        nas
-          = TBmakeAssign (TBmakeLet (TBmakeIds (ubavis, NULL), DUPdoDupTree (ub)), NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
-        AVIS_SSAASSIGN (ubavis) = nas;
-        ubid = TBmakeId (ubavis);
-
-        /* TODO: Probably should treat STEP and WIDTH the same as BOUNDs */
-
-        genn = TBmakeGenerator (F_wl_le, F_wl_lt, lbid, ubid, DUPdoDupTree (step),
-                                DUPdoDupTree (width));
         lut = LUTgenerateLut ();
         newwithid = DUPdoDupTreeLutSsa (withid, lut, INFO_FUNDEF (arg_info));
         newcoden = DUPdoDupTreeLutSsa (coden, lut, INFO_FUNDEF (arg_info));
@@ -394,8 +429,6 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
         WITH_CODE (INFO_WL (arg_info)) = newcoden;
         CODE_INC_USED (newcoden);
     } else {
-        genn = TBmakeGenerator (F_wl_le, F_wl_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
-                                DUPdoDupTree (step), DUPdoDupTree (width));
         partn = TBmakePart (coden, DUPdoDupTree (withid), genn);
         CODE_INC_USED (coden);
     }
@@ -525,68 +558,6 @@ WLPGnormalizeStepWidth (node **step, node **width)
     }
 
     DBUG_RETURN (error);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *flattenBound( node *arg_node, info *arg_info)
- *
- *   @brief  Flattens the WL bound at arg_node.
- *           I.e., if the generator looks like this on entry:
- *            s0 = _idx_shape_sel(0,x);
- *            s1 = _idx_shape_sel(1,x);
- *            z = with {
- *             (. <= iv < [s0, s1]) ...
- *            }
- *
- *          it will look like this on the way out:
- *            int[2] TMP;
- *            ...
- *            s0 = _idx_shape_sel(0,x);
- *            s1 = _idx_shape_sel(1,x);
- *            TMP = [s0, s1];
- *            z = with {
- *             (. <= iv < TMP) ...
- *            }
- *
- *          The only rationale for this change is to ensure that
- *          WL bounds are named. This allows us to associate an
- *          N_avis node with each bound, which will be used to
- *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
- *          These fields, in turn, will be used by the constant
- *          folder to remove guards and do other swell optimizations.
- *
- *   @param  node *arg_node: a WL PART BOUND to be flattened.
- *           info *arg_info:
- *
- *   @return node *node:      N_id node for flattened bound
- ******************************************************************************/
-static node *
-flattenBound (node *arg_node, info *arg_info)
-{
-    node *bavis;
-    node *nas;
-    node *bid;
-    int shp;
-
-    DBUG_ENTER ("flattenBound");
-
-    if ((global.ssaiv && (N_array == NODE_TYPE (arg_node)))) {
-        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
-        bavis = TBmakeAvis (TRAVtmpVar (),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
-                            NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
-        AVIS_SSAASSIGN (bavis) = nas;
-        bid = TBmakeId (bavis);
-        FREEdoFreeTree (arg_node);
-        arg_node = bid;
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
