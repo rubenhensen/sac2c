@@ -168,6 +168,17 @@ PrintGlobalSwitches ()
              (global.mutc_macros) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
+    /* Expose backend mode to backend */
+    switch (global.backend) {
+    case BE_mutc:
+        fprintf (global.outfile, "#define SAC_BACKEND MUTC\n");
+        break;
+    case BE_c99:
+        fprintf (global.outfile, "#define SAC_BACKEND C99\n");
+        break;
+    }
+    fprintf (global.outfile, "\n");
+
     fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
              ((global.filetype == F_modimp) || (global.filetype == F_classimp)
               || (global.filetype == F_cmod))
