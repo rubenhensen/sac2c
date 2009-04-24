@@ -144,7 +144,8 @@
 #include "types.h"
 
 typeconstr TYgetConstr (ntype *type);
-
+mutcScope TYgetMutcScope (ntype *type);
+mutcUsage TYgetMutcUsage (ntype *type);
 /*
  * Scalar Types: Simple / User / Symbol
  */

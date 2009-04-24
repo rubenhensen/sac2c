@@ -103,6 +103,9 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
     TYPES_TDEF (tmp) = NULL;
     TYPES_NEXT (tmp) = NULL;
 
+    TYPES_MUTC_SCOPE (tmp) = MUTC_GLOBAL;
+    TYPES_MUTC_USAGE (tmp) = MUTC_US_DEFAULT;
+
     DBUG_RETURN (tmp);
 }
 

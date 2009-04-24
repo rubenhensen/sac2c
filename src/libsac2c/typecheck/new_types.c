@@ -172,6 +172,8 @@ struct NTYPE {
     typeconstr typeconstr;
     int arity;
     typeattr typeattr;
+    mutcScope mutcscope;
+    mutcUsage mutcusage;
     struct NTYPE **sons;
 };
 
@@ -186,7 +188,8 @@ struct NTYPE {
 #define NTYPE_ARITY(n) (n->arity)
 #define NTYPE_SONS(n) (n->sons)
 #define NTYPE_SON(n, i) (n->sons[i])
-
+#define NTYPE_MUTC_SCOPE(n) (n->mutcscope)
+#define NTYPE_MUTC_USAGE(n) (n->mutcusage)
 /*
  * Macros for accessing the attributes...
  */
@@ -300,6 +303,9 @@ MakeNtype (typeconstr con, int arity)
     } else {
         NTYPE_SONS (res) = NULL;
     }
+
+    NTYPE_MUTC_SCOPE (res) = MUTC_GLOBAL;
+    NTYPE_MUTC_USAGE (res) = MUTC_US_DEFAULT;
 
     DBUG_RETURN (res);
 }
@@ -469,6 +475,38 @@ TYgetConstr (ntype *type)
     DBUG_ENTER ("TYgetConstr");
 
     DBUG_RETURN (NTYPE_CON (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    mutcScope TYgetMutcScope( ntype *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+mutcScope
+TYgetMutcScope (ntype *type)
+{
+    DBUG_ENTER ("TYgetMutcScope");
+
+    DBUG_RETURN (NTYPE_MUTC_SCOPE (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    mutcUsage TYgetMutcUsage( ntype *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+mutcUsage
+TYgetMutcUsage (ntype *type)
+{
+    DBUG_ENTER ("TYgetMutcUsage");
+
+    DBUG_RETURN (NTYPE_MUTC_USAGE (type));
 }
 
 /******************************************************************************
@@ -5917,6 +5955,11 @@ Type2OldType (ntype *new)
         DBUG_ASSERT ((0), "Type2OldType not yet entirely implemented!");
         res = NULL;
         break;
+    }
+
+    if (res != NULL && new != NULL) {
+        TYPES_MUTC_SCOPE (res) = NTYPE_MUTC_SCOPE (new);
+        TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (new);
     }
 
     DBUG_RETURN (res);

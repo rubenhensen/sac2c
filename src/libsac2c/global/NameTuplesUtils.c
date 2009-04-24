@@ -206,6 +206,68 @@ NTUgetMutcStorageClassFromTypes (types *type)
 /******************************************************************************
  *
  * function:
+ *   mutc_scope_class_t NTUMutcgetScopeFromTypes( types *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_scope_class_t
+NTUgetMutcScopeFromTypes (types *type)
+{
+    mutc_scope_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcScopeFromTypes");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_ASSERT ((0), "illegal scope found!");
+        z = C_unknowno;
+    } else {
+        z = C_global;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   mutc_usage_class_t NTUgetMutcUsageFromTypes( types *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_usage_class_t
+NTUgetMutcUsageFromTypes (types *type)
+{
+    mutc_scope_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcUsageFromTypes");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_ASSERT ((0), "illegal usage found!");
+        z = C_unknowna;
+    } else {
+        z = C_none;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   char *NTUcreateNtTag( const char *name, types *type)
  *
  * description:
@@ -220,6 +282,8 @@ NTUcreateNtTag (const char *name, types *type)
     hidden_class_t hc;
     unique_class_t uc;
     mutc_storage_class_class_t storage;
+    mutc_scope_class_t scope;
+    mutc_usage_class_t usage;
     char *res;
 
     DBUG_ENTER ("NTUcreateNtTag");
@@ -231,16 +295,21 @@ NTUcreateNtTag (const char *name, types *type)
     uc = NTUgetUniqueClassFromTypes (type);
 
     storage = NTUgetMutcStorageClassFromTypes (type);
+    scope = NTUgetMutcScopeFromTypes (type);
+    usage = NTUgetMutcUsageFromTypes (type);
 
-    res = (char *)MEMmalloc (
-      (STRlen (name) + STRlen (global.nt_shape_string[sc])
-       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
-       + STRlen (global.nt_mutc_storage_class_string[storage]) + 20)
-      * sizeof (char));
+    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
+                              + STRlen (global.nt_hidden_string[hc])
+                              + STRlen (global.nt_unique_string[uc])
+                              + STRlen (global.nt_mutc_storage_class_string[storage])
+                              + STRlen (global.nt_mutc_scope_string[scope])
+                              + STRlen (global.nt_mutc_usage_string[usage]) + 29)
+                             * sizeof (char));
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s,)))))", name, global.nt_shape_string[sc],
-             global.nt_hidden_string[hc], global.nt_unique_string[uc],
-             global.nt_mutc_storage_class_string[storage]);
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))", name,
+             global.nt_shape_string[sc], global.nt_hidden_string[hc],
+             global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
+             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage]);
 
     DBUG_RETURN (res);
 }
@@ -430,6 +499,100 @@ NTUgetUniqueClassFromNType (ntype *ntype)
     DBUG_RETURN (z);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   mutc_storage_class_class_t NTUgetMutcStorageClassFromNType( ntype *ntype)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_storage_class_class_t
+NTUgetMutcStorageClassFromNType (ntype *ntype)
+{
+    mutc_storage_class_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcStorageClassFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    switch (simpletype2mutcStorageClass (TUgetBaseSimpleType (ntype))) {
+    case MUTC_SC_INT:
+        z = C_int;
+        break;
+    case MUTC_SC_FLOAT:
+        z = C_float;
+        break;
+    default:
+        z = C_unknownc;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   mutc_scope_class_t NTUgetMutcScopeFromNType( ntype *ntype)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_scope_class_t
+NTUgetMutcScopeFromNType (ntype *ntype)
+{
+    mutc_scope_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcScopeFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    switch (TYgetMutcScope (ntype)) {
+    case MUTC_GLOBAL:
+        z = C_global;
+        break;
+    case MUTC_LOCAL:
+        z = C_shared;
+        break;
+    default:
+        z = C_unknowno;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   mutc_usage_class_t NTUgetMutcUsageFromNType( ntype *ntype)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+mutc_usage_class_t
+NTUgetMutcUsageFromNType (ntype *ntype)
+{
+    mutc_usage_class_t z;
+
+    DBUG_ENTER ("NTUgetMutcUsageFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    switch (TYgetMutcUsage (ntype)) {
+    case MUTC_US_PARAM:
+        z = C_param;
+        break;
+    default:
+        z = C_none;
+    }
+
+    DBUG_RETURN (z);
+}
+
 /** <!-- ****************************************************************** -->
  * @brief Creates the tag of an object (usually an array) from its type.
  *
@@ -446,6 +609,8 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     unique_class_t uc;
     char *res;
     mutc_storage_class_class_t storage;
+    mutc_scope_class_t scope;
+    mutc_usage_class_t usage;
 
     DBUG_ENTER ("NTUcreateNtTagFromNType");
 
@@ -455,26 +620,22 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     hc = NTUgetHiddenClassFromNType (ntype);
     uc = NTUgetUniqueClassFromNType (ntype);
 
-    switch (simpletype2mutcStorageClass (TUgetBaseSimpleType (ntype))) {
-    case MUTC_SC_INT:
-        storage = C_int;
-        break;
-    case MUTC_SC_FLOAT:
-        storage = C_float;
-        break;
-    default:
-        storage = C_unknownc;
-    }
+    storage = NTUgetMutcStorageClassFromNType (ntype);
+    scope = NTUgetMutcScopeFromNType (ntype);
+    usage = NTUgetMutcUsageFromNType (ntype);
 
-    res = (char *)MEMmalloc (
-      (STRlen (name) + STRlen (global.nt_shape_string[sc])
-       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
-       + STRlen (global.nt_mutc_storage_class_string[storage]) + 20)
-      * sizeof (char));
+    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
+                              + STRlen (global.nt_hidden_string[hc])
+                              + STRlen (global.nt_unique_string[uc])
+                              + STRlen (global.nt_mutc_storage_class_string[storage])
+                              + STRlen (global.nt_mutc_scope_string[scope])
+                              + STRlen (global.nt_mutc_usage_string[usage]) + 29)
+                             * sizeof (char));
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s,)))))", name, global.nt_shape_string[sc],
-             global.nt_hidden_string[hc], global.nt_unique_string[uc],
-             global.nt_mutc_storage_class_string[storage]);
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))", name,
+             global.nt_shape_string[sc], global.nt_hidden_string[hc],
+             global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
+             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage]);
 
     DBUG_RETURN (res);
 }

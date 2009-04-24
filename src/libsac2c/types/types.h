@@ -210,7 +210,10 @@ typedef enum {
 
 typedef enum { MUTC_SC_INT, MUTC_SC_FLOAT } mutcStorageClass;
 
-typedef enum { MUTC_GLOBAL, MUTC_LOCAL } mutcScope;
+typedef enum {
+    MUTC_GLOBAL,
+    MUTC_LOCAL,
+} mutcScope;
 
 typedef enum { MUTC_US_DEFAULT, MUTC_US_PARAM } mutcUsage;
 
