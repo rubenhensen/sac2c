@@ -475,7 +475,7 @@ bool
 SSInewRel (tvar *small, tvar *big)
 {
     bool res;
-    int i;
+    int i, j;
 
     DBUG_ENTER ("SSInewRel");
 
@@ -485,6 +485,8 @@ SSInewRel (tvar *small, tvar *big)
         /*
          * relationship already established!
          */
+        DBUG_ASSERT (IsIn (big, TVAR_NBIG (small), TVAR_BIGS (small)),
+                     "SSI consistency broken (non-symmetric relation)");
         res = TRUE;
     } else {
         /*
@@ -494,6 +496,13 @@ SSInewRel (tvar *small, tvar *big)
         AddSmaller (big, small);
         /*
          * Build transitive closures:
+         * We have three cases:
+         *    the    smalls of small   vs         big
+         *                 small       vs     the bigs of big
+         *    the    smalls of small   vs     the bigs of big
+         *
+         * Prior to bug 484 (for 5 years or so!!!) it remained undiscovered
+         * that the third case is needed!!!
          */
         for (i = 0; i < TVAR_NBIG (big); i++) {
             if (!IsIn (TVAR_BIG (big, i), TVAR_NBIG (small), TVAR_BIGS (small))) {
@@ -505,6 +514,15 @@ SSInewRel (tvar *small, tvar *big)
             if (!IsIn (TVAR_SMALL (small, i), TVAR_NSMALL (big), TVAR_SMALLS (big))) {
                 AddSmaller (big, TVAR_SMALL (small, i));
                 AddBigger (TVAR_SMALL (small, i), big);
+            }
+        }
+        for (i = 0; i < TVAR_NSMALL (small); i++) {
+            for (j = 0; j < TVAR_NBIG (big); j++) {
+                if (!IsIn (TVAR_SMALL (small, i), TVAR_NSMALL (TVAR_BIG (big, j)),
+                           TVAR_SMALLS (TVAR_BIG (big, j)))) {
+                    AddSmaller (TVAR_BIG (big, j), TVAR_SMALL (small, i));
+                    AddBigger (TVAR_SMALL (small, i), TVAR_BIG (big, j));
+                }
             }
         }
 
