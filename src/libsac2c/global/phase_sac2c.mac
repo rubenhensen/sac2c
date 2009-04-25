@@ -498,6 +498,9 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
 
+CYCLEPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
+            global.optimize.doswlf, opt, saacyc)
+
 CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
             SWLFIdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
 

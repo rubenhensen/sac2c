@@ -20,13 +20,15 @@
  *        This performs WLF on arrays that are not foldable
  *        by WLF.
  *
- *        The features of extended WLF are:
+ *        The features of extended SWLF are:
  *
  *            - Ability to fold arrays whose shapes are not
  *              known statically. Specifically, if the index
  *              set of the folder-WL is known to be identical to,
  *              or a subset of, the index set of the foldee-WL,
- *              folding will occur. FIXME: This will have to be
+ *              folding will occur.
+ *
+ *              FIXME: This will have to be
  *              updated once the indices can accept offsets.
  *
  *           - the foldee-WL must have an SSAASSIGN.
@@ -55,7 +57,22 @@
  *             eliminated by phase 10, I think.)
  *
  *           - The generator of the folder- WL matches
- *             the generator of the foldee-WL.
+ *             the generator of the foldee-WL, or is a subset
+ *             of it. Note that this implies that
+ *             the WL-bounds are the same length, which
+ *             may not be the case. Consider this example:
+ *
+ *               x = with([0] <= iv < [n]) ... : [1,2,3,4]; NB. x is int[.,.]
+ *               z = with([0,0], <= iv < shape(x)) :  x[iv];
+ *
+ *             The bounds of x are int[1], while the bounds of z are int[2].
+ *             It is important that SWLFI not generate a partition
+ *             intersection expression such as:
+ *
+ *              _swlfi_789 = _max_VxV_( bound1(x), bound1(z));
+ *
+ *             because TUP will get very confused about the length
+ *             error. As I did...
  *
  *         This phase now must run when SAA information is available,
  *         because I intend to kill the dicey code that attempted to make
@@ -492,14 +509,13 @@ shapeMatchesArray (node *fa, node *fb, node *foldeewl)
  *          the folder WL.
  *          fb is a GENERATOR_BOUND2 or similar generator field for
  *          the foldee WL.
- *          foldeewl is the N_id of the result of the foldee WL.
  *
  * @return Boolean TRUE if both fields are the same or can
  *          be shown to represent the same shape vector.
  *
  *****************************************************************************/
 static bool
-matchGeneratorField (node *fa, node *fb, node *foldeewl)
+matchGeneratorField (node *fa, node *fb)
 {
     node *fav = NULL;
     node *fbv = NULL;
@@ -540,14 +556,45 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
 
 /** <!--********************************************************************-->
  *
+ * @fn node * ExtractNthWLIntersection...
+ *
+ * @brief Extract the Nth WL bounds for the intersection of the
+ *        foldee partition with partition partno of the foldee WL.
+ *
+ * @params partno: the partition number in the foldee WL.
+ *         boundnum: 0 for BOUND1, 1 for BOUND2.
+ *         idx: the index vector for the _sel_VxA( idx, foldee).
+ *         The intersection calculations hang off the F_dataflowguard
+ *         that is the parent of idx.
+ *
+ * @result: The lower/upper bounds of the WL intersection.
+ *
+ *****************************************************************************/
+static node *
+ExtractNthWLIntersection (int partno, int boundnum, node *idx)
+{
+    node *bnd;
+    node *dfg;
+
+    DBUG_ENTER ("FindMatchingPart");
+
+    dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
+    dfg = LET_EXPR (ASSIGN_INSTR (dfg));
+    DBUG_ASSERT ((F_dataflowguard == PRF_PRF (dfg)),
+                 ("FindMatchingPart expected F_dataflowguard as parent of idx"));
+    /* expressions are bound1, bound2 for each partition. */
+    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 1), PRF_ARGS (dfg));
+    DBUG_RETURN (bnd);
+}
+
+/** <!--********************************************************************-->
+ *
+ *
  * @fn node * FindMatchingPart(...
  *
  * @brief check if a WL has a legal foldee partition.
  *        The requirements for folding are:
- *           - The WL operator is a genarray or modarray,
- *             or it is a fold, and the generated code does
- *             not include -mt support. See comments at
- *             head of this file for a rationale.
+ *           - The WL foldee-WL operator is a genarray or modarray.
  *
  *           - The WL is a single-operator WL.
  *
@@ -561,7 +608,7 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
  *           - The sel(idx,y) idx is the WITHID of the
  *             putative foldee.
  *
- * @params *foldee:  the putative foldee -- the WL that
+ * @params *foldee:  the putative foldee-WL: the WL that
  *                 would be subsumed into the one at "part".
  *         *index: The idx in sel(idx, y) of the WL that is selecting
  *                 from the result of WL.
@@ -575,11 +622,14 @@ matchGeneratorField (node *fa, node *fb, node *foldeewl)
 static node *
 FindMatchingPart (node *foldee, node *idx, node *folderpart)
 {
-    node *pg;
+    node *folderpg;
     node *wg;
     node *wp;
+    node *intersectb1;
+    node *intersectb2;
     bool matched = FALSE;
     bool m1 = FALSE;
+    int partno = 0;
 
     DBUG_ENTER ("FindMatchingPart");
     DBUG_ASSERT (N_with == NODE_TYPE (foldee),
@@ -587,21 +637,24 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
     DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
                  ("FindMatchingPart expected N_part folder"));
 
-    pg = PART_GENERATOR (folderpart);
+    folderpg = PART_GENERATOR (folderpart);
     wp = WITH_PART (foldee);
 
     while ((!matched) && wp != NULL) {
         wg = PART_GENERATOR (wp);
+        intersectb1 = ExtractNthWLIntersection (partno, 0, idx);
+        intersectb2 = ExtractNthWLIntersection (partno, 1, idx);
         if (
-          /* Find and match Referents for generators */
-          matchGeneratorField (GENERATOR_BOUND1 (pg), GENERATOR_BOUND1 (wg), foldee)
-          && matchGeneratorField (GENERATOR_BOUND2 (pg), GENERATOR_BOUND2 (wg), foldee)
-          && matchGeneratorField (GENERATOR_STEP (pg), GENERATOR_STEP (wg), foldee)
-          && matchGeneratorField (GENERATOR_WIDTH (pg), GENERATOR_WIDTH (wg), foldee)) {
+          /* Find and match Referents for generators, skipping default partitions */
+          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (wg)))
+          && (matchGeneratorField (intersectb1, GENERATOR_BOUND1 (folderpg)))
+          && (matchGeneratorField (intersectb2, GENERATOR_BOUND2 (folderpg)))
+          && matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (wg))
+          && matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (wg))) {
             m1 = TRUE;
             DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
         } else { /* Ye olde school way */
-            m1 = (CMPT_EQ == CMPTdoCompareTree (pg, wg));
+            m1 = (CMPT_EQ == CMPTdoCompareTree (folderpg, wg));
             DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match: olde school"));
         }
 
@@ -611,6 +664,7 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
             matched = TRUE;
         } else {
             wp = PART_NEXT (wp);
+            partno++;
         }
     }
 
@@ -664,6 +718,12 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
      * However, if the folder WL is: modarray(foldee),
      * that is counted as a data reference, so we have to allow for
      * it here.
+     *
+     *  FIXME: Bodo agrees that the CORRECT answer is
+     *  that all foldee-WL data refs happen in folder-WL body.
+     *
+     *   this is already done in SWLFI!!!!
+     *
      */
     if ((NULL != INFO_WL (arg_info))
         && (N_modarray == NODE_TYPE (WITH_WITHOP (INFO_WL (arg_info))))
@@ -732,37 +792,6 @@ createLut (node *part1, node *part2)
 
 /** <!--********************************************************************-->
  *
- * @fn node *getAvisLetExpr( node *sel)
- *
- * @brief ...
- *
- *****************************************************************************/
-static node *
-getAvisLetExpr (node *sel)
-{
-    node *n;
-
-    DBUG_ENTER ("getAvisLetExpr");
-
-    n = ID_AVIS (PRF_ARG2 (sel));
-
-    if (n != NULL) {
-        n = AVIS_SSAASSIGN (n);
-
-        if (n != NULL) {
-            n = ASSIGN_INSTR (n);
-
-            if (n != NULL) {
-                n = LET_EXPR (n);
-            }
-        }
-    }
-
-    DBUG_RETURN (n);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *doSWLFreplace( ... )
  *
  * @brief
@@ -820,7 +849,6 @@ doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder)
  *
  * @name Traversal functions
  * @{
- *    PRTdoPrintNode( sel);
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -882,7 +910,6 @@ SWLFfundef (node *arg_node, info *arg_info)
 node *
 SWLFassign (node *arg_node, info *arg_info)
 {
-    node *foldee; /* FIXME probably obsolete ? */
     node *foldablefoldeepart;
 
     DBUG_ENTER ("SWLFassign");
@@ -900,7 +927,6 @@ SWLFassign (node *arg_node, info *arg_info)
      * Append the new cloned block
      */
     if (NULL != foldablefoldeepart) {
-        foldee = getAvisLetExpr (LET_EXPR (ASSIGN_INSTR (arg_node)));
         arg_node = doSWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
                                   INFO_PART (arg_info));
 
@@ -1027,6 +1053,8 @@ SWLFids (node *arg_node, info *arg_info)
  *
  * @brief
  *   Examine all X[iv] primitives to see if iv is current folder-WL iv.
+ *   If the iv does not have an SSAASSIGN, it means iv is a WITHID,
+ *   and so SWLFI has not yet inserted an F_dataflowguard for it.
  *
  *****************************************************************************/
 node *
@@ -1036,8 +1064,10 @@ SWLFprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("SWLFprf");
 
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
+        && (PRF_SELISSUEDDATAFLOWGUARD (arg_node))
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)) {
+        && (NULL != AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))))
+        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
         INFO_SWLFOLDABLEFOLDEEPART (arg_info)
           = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),

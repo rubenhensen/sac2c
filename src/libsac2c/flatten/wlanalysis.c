@@ -180,7 +180,7 @@ VectVar2StructConst (node **expr, node *fundef, info *arg_info)
     /**
      * Now, we build LB' and the assign to it: LB' = [shp0, shp1, shp2];
      */
-    if (global.optimize.doswlf || global.ssaiv) {
+    if (global.ssaiv) {
         lb_avis
           = TBmakeAvis (TRAVtmpVarName (ID_NAME (*expr)),
                         TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shpext)));
@@ -404,7 +404,7 @@ PropagateVectorConstants (node **expr)
 
     DBUG_ENTER ("PropagateVectorConstants");
 
-    if (global.optimize.doswlf || global.ssaiv) {
+    if (global.ssaiv) {
         gshape = DetectVectorConstants (*expr);
     } else {
         gshape = GV_unknown_shape;
@@ -780,7 +780,7 @@ WLAgenerator (node *arg_node, info *arg_info)
         if (check_bounds
             && ((NODE_TYPE (WITH_WITHOP (wln)) == N_modarray)
                 || (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray))) {
-            if (global.optimize.doswlf || global.ssaiv) {
+            if (global.ssaiv) {
                 CheckBounds (wln, shp);
             } else {
                 wln = CropBounds (wln, shp);

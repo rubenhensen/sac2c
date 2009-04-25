@@ -21,6 +21,7 @@ extern node *SWLFIassign (node *arg_node, info *arg_info);
 extern node *SWLFIwith (node *arg_node, info *arg_info);
 extern node *SWLFIpart (node *arg_node, info *arg_info);
 extern node *SWLFIcode (node *arg_node, info *arg_info);
+extern node *SWLFIgenerator (node *arg_node, info *arg_info);
 extern node *SWLFIids (node *arg_node, info *arg_info);
 extern node *SWLFIprf (node *arg_node, info *arg_info);
 

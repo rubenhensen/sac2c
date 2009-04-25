@@ -488,6 +488,16 @@
           <node name="Code" />
         </travuser>
       </traversal>
+      <traversal id="FLATG" name="Flattengenerators" default="sons" include="flattengenerators.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
       <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
 	<travuser>
 	  <node name="Assign" />
