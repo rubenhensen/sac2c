@@ -502,7 +502,7 @@ createNewIV (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkGeneratorBonds( node *folderwlid, node *foldeewl);
+ * @fn bool checkGeneratorBounds( node *folderwlid, node *foldeewl);
  *
  * @brief: Predicate for determining if the folder-WL
  *         and foldee-WL have generator bounds of the same
@@ -594,7 +594,7 @@ checkFoldeeSuitable (node *foldeewl, info *arg_info, int nc)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkSWLFIFoldable( node *arg_node, info *arg_info)
+ * @fn bool checkFoldeeFoldable( node *arg_node, info *arg_info)
  *
  * @brief We are looking at _sel_VxA_(idx, foldee), contained
  *        within a folder-WL. We want to determine if
@@ -604,7 +604,7 @@ checkFoldeeSuitable (node *foldeewl, info *arg_info, int nc)
  *
  *        This function concerns itself only with the characteristics
  *        of the entire foldee-WL: partition-dependent characteristics
- *        are determined by the SWLF phase itself.
+ *        are determined by the SWLF phase later on.
  *
  *        The requirements for folding are:
  *
@@ -642,14 +642,14 @@ checkFoldeeSuitable (node *foldeewl, info *arg_info, int nc)
  *
  *****************************************************************************/
 static bool
-checkSWLFIFoldable (node *arg_node, info *arg_info)
+checkFoldeeFoldable (node *arg_node, info *arg_info)
 {
     node *foldeeavis;
     node *foldeewlid;
     int nc;
     bool z;
 
-    DBUG_ENTER ("checkSWLIFFoldable");
+    DBUG_ENTER ("checkFoldeeFoldable");
 
     foldeewlid = PRF_ARG2 (arg_node);
     foldeeavis = ID_AVIS (foldeewlid);
@@ -676,6 +676,36 @@ checkSWLFIFoldable (node *arg_node, info *arg_info)
     } else {
         DBUG_PRINT ("SWLFI", ("WL is not foldable"));
     }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool checkFolderFoldable( node *arg_node, info *arg_info)
+ *
+ * @brief We are looking at _sel_VxA_(idx, foldee), contained
+ *        within a folder-WL. We want to determine if
+ *        the folder-WL is acceptable to have something folded into it.
+ *
+ *        For the nonce, we forbid any offsets in idx from the WITHID.
+ *        Nonce is hopefully just a day or so. 2009-04-26.
+ *
+ * @param _sel_VxA_( idx, foldee-WL) arg_node.
+ * @result True if the folder-WL (and the indexing expression)
+ *         are acceptable for having another WL folded into it,
+ *         else false.
+ *
+ *****************************************************************************/
+static bool
+checkFolderFoldable (node *arg_node, info *arg_info)
+{
+    bool z;
+
+    DBUG_ENTER ("checkFolderFoldable");
+
+    z = ID_AVIS (PRF_ARG1 (arg_node))
+        == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info))));
 
     DBUG_RETURN (z);
 }
@@ -876,12 +906,13 @@ SWLFIprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (!PRF_SELISSUEDDATAFLOWGUARD (arg_node))) {
 
-        INFO_SWLFOLDABLEFOLDEE (arg_info) = checkSWLFIFoldable (arg_node, arg_info);
+        INFO_SWLFOLDABLEFOLDEE (arg_info) = checkFolderFoldable (arg_node, arg_info)
+                                            & checkFoldeeFoldable (arg_node, arg_info);
 
         /* Replace iv by iv' */
         if (INFO_SWLFOLDABLEFOLDEE (arg_info)) {
             z = createNewIV (arg_node, arg_info);
-            /* FIXME why doesn't this work???     FreeDoFreeNode( PRF_ARG1( arg_node)); */
+            /* FIXME why doesn't this work???   FreeDoFreeNode( PRF_ARG1( arg_node)); */
             PRF_ARG1 (arg_node) = z;
             DBUG_PRINT ("SWLFI", ("SWLFIprf replacing PRF_ARG1 on _sel_VxA_"));
         }
