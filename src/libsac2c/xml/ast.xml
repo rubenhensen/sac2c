@@ -235,6 +235,11 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="TP" name="Tag Preparation" default="sons" include="tag_preparation.h" >
+        <travuser>
+          <node name="Arg" />
+        </travuser>
+      </traversal>
       <traversal id="CTR" name="Converting to old type representation" default="sons" include="convert_type_representation.h" >
         <travuser>
           <node name="Fundef" />

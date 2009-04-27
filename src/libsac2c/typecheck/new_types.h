@@ -157,6 +157,8 @@ extern ntype *TYmakeSymbType (char *name, namespace_t *mod);
 extern ntype *TYsetSimpleType (ntype *simple, simpletype base);
 extern ntype *TYsetHiddenUserType (ntype *simple, usertype udt);
 
+extern ntype *TYsetMutcUsage (ntype *type, mutcUsage usage);
+
 extern simpletype TYgetSimpleType (ntype *simple);
 extern usertype TYgetHiddenUserType (ntype *simple);
 extern usertype TYgetUserType (ntype *user);

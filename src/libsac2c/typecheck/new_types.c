@@ -605,6 +605,16 @@ TYsetHiddenUserType (ntype *simple, usertype udt)
     DBUG_RETURN (simple);
 }
 
+ntype *
+TYsetMutcUsage (ntype *type, mutcUsage usage)
+{
+    DBUG_ENTER ("TYsetMutcUsage");
+
+    NTYPE_MUTC_USAGE (type) = usage;
+
+    DBUG_RETURN (type);
+}
+
 /******************************************************************************
  *
  * function:

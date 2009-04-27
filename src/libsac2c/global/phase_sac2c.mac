@@ -824,6 +824,8 @@ ENDPHASE (pc)
 
 PHASE (cg, "Generating Code", ALWAYS)
 
+SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
+
 SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, ALWAYS,
           cg)
 

@@ -190,7 +190,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
-                        icm2c_wl icm2c_error simd_infer 
+                        icm2c_wl icm2c_error simd_infer tag_preparation
 
 libsac2c_print       := print convert
 
