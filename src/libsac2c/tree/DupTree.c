@@ -412,6 +412,8 @@ DupTypes (types *arg_types, info *arg_info)
                          STRcpy (TYPES_NAME (arg_types)), STRcpy (TYPES_MOD (arg_types)));
 
         TYPES_TDEF (new_types) = TYPES_TDEF (arg_types);
+        TYPES_MUTC_SCOPE (new_types) = TYPES_MUTC_SCOPE (arg_types);
+        TYPES_MUTC_USAGE (new_types) = TYPES_MUTC_USAGE (arg_types);
 
         DBUG_PRINT ("TYPE", ("new type" F_PTR ",old " F_PTR, new_types, arg_types));
         DBUG_PRINT ("TYPE", ("new name" F_PTR ", old name" F_PTR, TYPES_NAME (new_types),

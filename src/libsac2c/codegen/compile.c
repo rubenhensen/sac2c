@@ -1391,12 +1391,16 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
  ******************************************************************************/
 
 static node *
-MakeArgNode (int idx, types *type)
+MakeArgNode (int idx, types *arg_type)
 {
     node *id;
     char *name;
+    types *type;
 
     DBUG_ENTER ("MakeArgNode");
+
+    type = DUPdupAllTypes (arg_type);
+    TYPES_MUTC_USAGE (type) = MUTC_US_PARAM;
 
     name = MEMmalloc (20 * sizeof (char));
     sprintf (name, "SAC_arg_%d", idx);
@@ -1410,6 +1414,8 @@ MakeArgNode (int idx, types *type)
     }
 
     name = MEMfree (name);
+
+    type = FREEfreeAllTypes (type);
 
     DBUG_RETURN (id);
 }

@@ -259,7 +259,14 @@ NTUgetMutcUsageFromTypes (types *type)
         DBUG_ASSERT ((0), "illegal usage found!");
         z = C_unknowna;
     } else {
-        z = C_none;
+        switch (TYPES_MUTC_USAGE (type)) {
+        case MUTC_US_PARAM:
+            z = C_param;
+            break;
+        default:
+            z = C_none;
+            break;
+        }
     }
 
     DBUG_RETURN (z);

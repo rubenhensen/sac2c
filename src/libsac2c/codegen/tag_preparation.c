@@ -81,6 +81,8 @@ TParg (node *arg_node, info *arg_info)
     type = AVIS_TYPE (ARG_AVIS (arg_node));
     DBUG_ASSERT ((type != NULL), "missing ntype information");
 
+    arg_node = TRAVcont (arg_node, arg_info);
+
     type = TYsetMutcUsage (type, MUTC_US_PARAM);
 
     DBUG_RETURN (arg_node);
