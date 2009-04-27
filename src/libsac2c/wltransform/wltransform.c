@@ -18,13 +18,13 @@
  *
  * *** CAUTION ***
  * For a successful transformation the AST has to meet some requirements:
- *   - For all N_generator nodes of a with-loop the following must hold:
+ *   - For all N_generator nodes of a with-loop is hold:
  *       - OP1 equals <= and OP2 equals <.
  *       - BOUND1, BOUND2, STEP, WIDTH are not NULL.
  *       - BOUND1, BOUND2, STEP, WIDTH are N_id nodes, N_array nodes containing
  *         N_id nodes or N_array nodes containing N_num nodes
  *         (A, [a,b,c] or [1,2,3]).
- *   - For all N_withid nodes of a single with-loop, the following must hold:
+ *   - For all N_withid nodes of a single with-loop is hold:
  *       - the same VEC and IDS names are used.
  *
  ******************************************************************************/
@@ -1358,11 +1358,6 @@ GetShapeIndex (shape *shp, int dim)
 /**
  ** external functions
  **/
-/* The following claimed by Bodo to be a dirty trick, but I don't
- * know of a better way...
- */
-extern void *COgetDataVec (constant *a);
-extern int COgetExtent (constant *a, int i);
 
 /******************************************************************************
  *
@@ -2501,40 +2496,62 @@ ToFirstComponent (node *array)
 /******************************************************************************
  *
  * Function:
- *   int CurrentComponentGetInt( node *aelems, int i )
+ *   node *ToNextComponent( node *aelems)
  *
  * Description:
- *   Returns aelems[i].
+ *   returns the next component of 'aelems'.
+ *
+ ******************************************************************************/
+
+static node *
+ToNextComponent (node *aelems)
+{
+    node *comp;
+
+    DBUG_ENTER ("ToNextComponent");
+
+    if (aelems != NULL) {
+        if (NODE_TYPE (aelems) == N_exprs) {
+            comp = EXPRS_NEXT (aelems);
+        } else {
+            comp = aelems;
+        }
+    } else {
+        comp = NULL;
+    }
+
+    DBUG_RETURN (comp);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int CurrentComponentGetInt( node *aelems)
+ *
+ * Description:
+ *   Returns the current int-component of 'aelems'.
  *
  ******************************************************************************/
 
 static int
-CurrentComponentGetInt (node *aelems, int i)
+CurrentComponentGetInt (node *aelems)
 {
     int comp;
-    node *el;
-    constant *co;
 
     DBUG_ENTER ("CurrentComponentGetInt");
 
     if (aelems != NULL) {
         switch (NODE_TYPE (aelems)) {
         case N_id:
-            if (TYisAKV (ID_NTYPE (aelems))) {
-                co = TYgetValue (ID_NTYPE (aelems));
-                comp = ((int *)COgetDataVec (co))[i];
-                co = COfreeConstant (co);
-            } else {
-                comp = IDX_OTHER;
-            }
+            comp = IDX_OTHER;
             break;
 
         case N_exprs:
-            el = TCgetNthExprsExpr (i, aelems);
-            if (NODE_TYPE (el) == N_num) {
-                comp = NUM_VAL (el);
+            if (NODE_TYPE (EXPRS_EXPR (aelems)) == N_num) {
+                comp = NUM_VAL (EXPRS_EXPR (aelems));
             } else {
-                DBUG_ASSERT ((NODE_TYPE (el) == N_id), "wrong node type found");
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
+                             "wrong node type found");
                 comp = IDX_OTHER;
             }
             break;
@@ -2554,18 +2571,16 @@ CurrentComponentGetInt (node *aelems, int i)
 /******************************************************************************
  *
  * Function:
- *   bool CurrentComponentIsInt( node *aelems, int i)
+ *   bool CurrentComponentIsInt( node *aelems)
  *
  * Description:
  *
- *   Predicate for determining if aelems[i] is, indeed, a scalar constant.
  *
  ******************************************************************************/
 
 static bool
-CurrentComponentIsInt (node *aelems, int i)
+CurrentComponentIsInt (node *aelems)
 {
-    node *el;
     bool res;
 
     DBUG_ENTER ("CurrentComponentIsInt");
@@ -2573,15 +2588,15 @@ CurrentComponentIsInt (node *aelems, int i)
     if (aelems != NULL) {
         switch (NODE_TYPE (aelems)) {
         case N_id:
-            res = TYisAKV (ID_NTYPE (aelems));
+            res = FALSE;
             break;
 
         case N_exprs:
-            el = TCgetNthExprsExpr (i, aelems);
-            if (NODE_TYPE (el) == N_num) {
+            if (NODE_TYPE (EXPRS_EXPR (aelems)) == N_num) {
                 res = TRUE;
             } else {
-                DBUG_ASSERT ((NODE_TYPE (el) == N_id), "wrong node type found");
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
+                             "wrong node type found");
                 res = FALSE;
             }
             break;
@@ -2601,30 +2616,28 @@ CurrentComponentIsInt (node *aelems, int i)
 /******************************************************************************
  *
  * Function:
- *   node *CurrentComponentGetNode( node *aelems, int i)
+ *   node *CurrentComponentGetNode( node *aelems)
  *
  * Description:
- *   Returns the component aelems[i] as a N_num (int-value exists)
+ *   Returns the current component of 'aelems' as a N_num (int-value exists)
  *   or N_id (no int-value exists) node.
  *
  ******************************************************************************/
 
 static node *
-CurrentComponentGetNode (node *aelems, int i)
+CurrentComponentGetNode (node *aelems)
 {
     node *comp;
-    node *el;
     int comp_int;
 
     DBUG_ENTER ("CurrentComponentGetNode");
 
-    comp_int = CurrentComponentGetInt (aelems, i);
+    comp_int = CurrentComponentGetInt (aelems);
 
     if (comp_int >= 0) {
         comp = TBmakeNum (comp_int);
     } else {
-        el = TCgetNthExprs (i, aelems);
-        DBUG_ASSERT (NODE_TYPE (el) == N_exprs,
+        DBUG_ASSERT (NODE_TYPE (aelems) == N_exprs,
                      "non-structural constants are no longer accepted"
                      " as WL boundaries in wltransform");
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id), "wrong node type found");
@@ -2692,23 +2705,22 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
             DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
 
-            if ((width == NULL) || CurrentComponentIsInt (width, dim)) {
+            if ((width == NULL) || CurrentComponentIsInt (width)) {
                 /*
                  * width is constant
                  */
-                new_grid = TBmakeWlgrid (0, dim, 0, CurrentComponentGetInt (width, dim),
-                                         NULL, NULL, NULL);
+                new_grid = TBmakeWlgrid (0, dim, 0, CurrentComponentGetInt (width), NULL,
+                                         NULL, NULL);
             } else {
                 /*
                  * width is not constant
                  */
-                new_grid
-                  = TBmakeWlgridvar (0, dim, NULL, TBmakeNum (0),
-                                     CurrentComponentGetNode (width, dim), NULL, NULL);
+                new_grid = TBmakeWlgridvar (0, dim, NULL, TBmakeNum (0),
+                                            CurrentComponentGetNode (width), NULL, NULL);
             }
 
-            if (CurrentComponentIsInt (bound1, dim) && CurrentComponentIsInt (bound2, dim)
-                && ((step == NULL) || CurrentComponentIsInt (step, dim))
+            if (CurrentComponentIsInt (bound1) && CurrentComponentIsInt (bound2)
+                && ((step == NULL) || CurrentComponentIsInt (step))
                 && NODE_TYPE (new_grid) == N_wlgrid) {
                 /*
                  * all stride parameters are constant
@@ -2716,12 +2728,12 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
 
                 /* build N_wlstride-node of current dimension */
                 new_stride
-                  = TBmakeWlstride (0, dim, CurrentComponentGetInt (bound1, dim),
+                  = TBmakeWlstride (0, dim, CurrentComponentGetInt (bound1),
                                     (iter_shp != NULL)
-                                      ? MATHmin (CurrentComponentGetInt (bound2, dim),
+                                      ? MATHmin (CurrentComponentGetInt (bound2),
                                                  SHgetExtent (iter_shp, dim))
-                                      : CurrentComponentGetInt (bound2, dim),
-                                    CurrentComponentGetInt (step, dim), new_grid, NULL);
+                                      : CurrentComponentGetInt (bound2),
+                                    CurrentComponentGetInt (step), new_grid, NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
@@ -2734,10 +2746,9 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
 
                 /* build N_wlstridevar-node of current dimension */
                 new_stride
-                  = TBmakeWlstridevar (0, dim, CurrentComponentGetNode (bound1, dim),
-                                       CurrentComponentGetNode (bound2, dim),
-                                       CurrentComponentGetNode (step, dim), new_grid,
-                                       NULL);
+                  = TBmakeWlstridevar (0, dim, CurrentComponentGetNode (bound1),
+                                       CurrentComponentGetNode (bound2),
+                                       CurrentComponentGetNode (step), new_grid, NULL);
             }
 
             if (is_empty) {
@@ -2752,6 +2763,12 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
                 }
                 last_grid = new_grid;
             }
+
+            /* go to next dim */
+            bound1 = ToNextComponent (bound1);
+            bound2 = ToNextComponent (bound2);
+            step = ToNextComponent (step);
+            width = ToNextComponent (width);
         }
 
         if (!is_empty) {
