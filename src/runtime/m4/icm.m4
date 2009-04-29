@@ -11,7 +11,9 @@ define(`end_icm_definition', def_cat
 dnl define(_do_icm1, `ifdef(`M4_DEF_$1', `', `_def_nth($1)define(`M4_DEF_$1')')'_do_icm_choice($*))
 define(_do_icm1, _do_icm_choice($*))
 
-define(pat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, _pat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
+define(pat, `ifelse(`$#', `2', `patnopat($@)', `patpat($@)')')
+define(patpat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, _pat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
+define(patnopat, ``#'define $1(...) $1_(__VA_ARGS__)')
 define(_pat, `ifelse(`$#', `1', `$1(nt)', `use_cat`'($1(nt), _pat(shift($*)))')')
 
 define(_def_nth, ``#'define $1(nt, ...) use_cat`'($1_, use_cat`'(NT_SHP(nt), use_cat`'(NT_HID(nt), use_cat`'(NT_UNQ(nt), use_cat`'(NT_SCL(nt), use_cat`'(NT_TMP(nt), NT_TMP(nt)))))))(nt __VA_ARGS__)
