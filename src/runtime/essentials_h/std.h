@@ -522,23 +522,39 @@ typedef int *SAC_array_descriptor_t;
 /* creates name for formal function parameter */
 #define SAC_NAMEP(name) CAT0 (name, __p)
 
+#define SAC_ND_PARAM_in(nt, basetype) SAC_ND_PARAM_FLAG_in (nt, basetype, FUN)
+
+#define SAC_ND_PARAM_out(nt, basetype) SAC_ND_PARAM_FLAG_out (nt, basetype, FUN)
+
 /* needed for T_dots parameters (ATG_notag) */
 #define SAC_ND_PARAM_(dummy, basetype) basetype
+#define SAC_ND_PARAM_FLAG_(dummy, basetype, flag) basetype
 
 #define SAC_ND_PARAM_in_nodesc(var_NT, basetype)                                         \
-    SAC_MUTC_PARAM (SAC_ND_TYPE (var_NT, basetype), SAC_ND_A_FIELD (var_NT), var_NT)
+    SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, FUN)
+#define SAC_ND_PARAM_FLAG_in_nodesc(var_NT, basetype, flag)                              \
+    SAC_MUTC_PARAM (SAC_ND_TYPE (var_NT, basetype), SAC_ND_A_FIELD (var_NT), var_NT, flag)
 
 #define SAC_ND_PARAM_out_nodesc(var_NT, basetype)                                        \
+    SAC_ND_PARAM_FLAG_out_nodesc (var_NT, basetype, FUN)
+#define SAC_ND_PARAM_FLAG_out_nodesc(var_NT, basetype, flag)                             \
     SAC_MUTC_PARAM (SAC_ND_TYPE (var_NT, basetype) *,                                    \
-                    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)), var_NT)
+                    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)), var_NT, flag)
 
-#define SAC_ND_PARAM_inout(var_NT, basetype) SAC_ND_PARAM_out (var_NT, basetype)
+#define SAC_ND_PARAM_inout(var_NT, basetype)                                             \
+    SAC_ND_PARAM_FLAG_inout (var_NT, basetype, FUN)
+#define SAC_ND_PARAM_FLAG_inout(var_NT, basetype, flag)                                  \
+    SAC_ND_PARAM_FLAG_out (var_NT, basetype, flag)
 
 #define SAC_ND_PARAM_inout_nodesc(var_NT, basetype)                                      \
-    SAC_ND_PARAM_out_nodesc (var_NT, basetype)
+    SAC_ND_PARAM_FLAG_inout_nodesc (var_NT, basetype, FUN)
+#define SAC_ND_PARAM_FLAG_inout_nodesc(var_NT, basetype, flag)                           \
+    SAC_ND_PARAM_FLAG_out_nodesc (var_NT, basetype, flag)
 
 #define SAC_ND_PARAM_inout_nodesc_bx(var_NT, basetype)                                   \
-    SAC_ND_PARAM_in_nodesc (var_NT, basetype)
+    SAC_ND_PARAM_FLAG_inout_nodesc_bx (var_NT, basetype, FUN)
+#define SAC_ND_PARAM_FLAG_inout_nodesc_bx(var_NT, basetype, flag)                        \
+    SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag)
 
 #define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_A_FIELD (var_NT)
 
@@ -556,24 +572,24 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_PARAM_in implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_PARAM_in__NODESC(var_NT, basetype)                                        \
-    SAC_ND_PARAM_in_nodesc (var_NT, basetype)
+#define SAC_ND_PARAM_in__NODESC(var_NT, basetype, flag)                                  \
+    SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag)
 
-#define SAC_ND_PARAM_in__DESC(var_NT, basetype)                                          \
-    SAC_ND_PARAM_in_nodesc (var_NT, basetype),                                           \
-      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT), SAC_ND_A_DESC (var_NT), var_NT)
+#define SAC_ND_PARAM_in__DESC(var_NT, basetype, flag)                                    \
+    SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag),                                \
+      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT), SAC_ND_A_DESC (var_NT), var_NT, flag)
 
 /*
  * SAC_ND_PARAM_out implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_PARAM_out__NODESC(var_NT, basetype)                                       \
-    SAC_ND_PARAM_out_nodesc (var_NT, basetype)
+#define SAC_ND_PARAM_out__NODESC(var_NT, basetype, flag)                                 \
+    SAC_ND_PARAM_FLAG_out_nodesc (var_NT, basetype, flag)
 
-#define SAC_ND_PARAM_out__DESC(var_NT, basetype)                                         \
-    SAC_ND_PARAM_out_nodesc (var_NT, basetype),                                          \
+#define SAC_ND_PARAM_out__DESC(var_NT, basetype, flag)                                   \
+    SAC_ND_PARAM_FLAG_out_nodesc (var_NT, basetype, flag),                               \
       SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT) *, SAC_NAMEP (SAC_ND_A_DESC (var_NT)),   \
-                      var_NT)
+                      var_NT, flag)
 
 /*
  * SAC_ND_ARG_in implementations (referenced by sac_std_gen.h)
@@ -611,11 +627,14 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_DECL_PARAM_inout implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_DECL_PARAM_inout__NODESC(var_NT, basetype)                                \
+#define SAC_ND_DECL_PARAM_inout(var_NT, basetype)                                        \
+    SAC_ND_DECL_PARAM_FLAG_inout (var_NT, basetype, flag)
+
+#define SAC_ND_DECL_PARAM_inout__NODESC(var_NT, basetype, flag)                          \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = *SAC_NAMEP (SAC_ND_A_FIELD (var_NT));
 
-#define SAC_ND_DECL_PARAM_inout__DESC(var_NT, basetype)                                  \
+#define SAC_ND_DECL_PARAM_inout__DESC(var_NT, basetype, flag)                            \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = *SAC_NAMEP (SAC_ND_A_FIELD (var_NT));                      \
     SAC_ND_DESC_TYPE (var_NT)                                                            \

@@ -17,19 +17,19 @@
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#define SAC_MUTC_PARAM1(nt, t, flag) SAC_MUTC_PARAM2 (nt, t)
-#else /* FUNAP_AS_CREATE */
-#define SAC_MUTC_PARAM1(nt, t, flag) SAC_MUTC_PARAM1_##flag (nt, t)
-#define SAC_MUTC_PARAM1_THREAD(nt, t) SAC_MUTC_PARAM2 (nt, t)
-#define SAC_MUTC_PARAM1_FUN(nt, t) t NT_NAME (nt)
-#endif /* FUNAP_AS_CREATE */
-
-#if SAC_MUTC_FUNAP_AS_CREATE
 #define SAC_MUTC_ARG1(nt, t, flag) SAC_MUTC_ARG2 (nt, t)
 #else /* FUNAP_AS_CREATE */
 #define SAC_MUTC_ARG1(nt, t, flag) SAC_MUTC_ARG1_##flag (nt, t)
 #define SAC_MUTC_ARG1_THREAD(nt, t) SAC_MUTC_ARG2 (nt, t)
 #define SAC_MUTC_ARG1_FUN(nt, t) t NT_NAME (nt)
+#endif /* FUNAP_AS_CREATE */
+
+#if SAC_MUTC_FUNAP_AS_CREATE
+#define SAC_MUTC_PARAM(t, name, nt, flag) SAC_MUTC_PARAM2 (nt, t)
+#else /* FUNAP_AS_CREATE */
+#define SAC_MUTC_PARAM(t, name, nt, flag) SAC_MUTC_PARAM1_##flag (nt, t)
+#define SAC_MUTC_PARAM1_THREAD(nt, t) SAC_MUTC_PARAM2 (nt, t)
+#define SAC_MUTC_PARAM1_FUN(nt, t) t NT_NAME (nt)
 #endif /* FUNAP_AS_CREATE */
 
 #if SAC_MUTC_FUNAP_AS_CREATE
@@ -70,6 +70,7 @@
 
 #else /* SAC_MUTC_MACROS */
 
+#define SAC_MUTC_PARAM(t, n, nt, flag) t n
 #define SAC_MUTC_FUNAP(...) __VA_ARGS__
 #define SAC_MUTC_DECL_FAMILY(name) family name;
 #define SAC_MUTC_DECL_INDEX(name) index name;

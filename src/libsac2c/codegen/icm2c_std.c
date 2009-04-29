@@ -74,8 +74,8 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
 
     fprintf (global.outfile, "%s(", name);
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, FUN)",
+                          vararg[i], vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     fprintf (global.outfile, ")"); /* SAC_MUTC_DECL_FUN */
@@ -114,8 +114,8 @@ ICMCompileND_THREAD_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char 
 
     fprintf (global.outfile, "%s(", name);
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, THREAD)",
+                          vararg[i], vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
