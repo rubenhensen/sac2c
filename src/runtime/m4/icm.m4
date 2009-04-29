@@ -8,165 +8,51 @@ define(`end_icm_definition', def_cat
 `#endif'
 );
 
-dnl icm( `SAC_BASE_MACRO_NAME', 
-dnl      `spec', `spec', `spec', `SAC_TARGET_MACRO_NAME',
-dnl      `CATnn', `argsbefore', `argsafter')
-dnl
-dnl This macro will expand the given SAC_BASE_MACRO_NAME to the
-dnl target macro SAC_TARGET_MACRO_NAME according to the spec tag
-dnl specifiers. Valid values for spec are:
-dnl
-dnl   AUD | AKD | AKS | SCL | *
-dnl   NHD | HID | *
-dnl   NUQ | UNQ | *
-dnl   INT | FLO | *
-dnl   
-dnl Where * will be expanded to all possibilities of that specifier.
-dnl Specification may overlap, in which case only the first hit will
-dnl take effect. Target macro names must be unique for all icm
-dnl calls. CATnn is the level of the current CAT macro, which will be
-dnl increased automatically (e.g. 8, 9, ...). Argsbefore and argsafter
-dnl is the count of arguments before and after the nametuple argument.
-dnl
-dnl You have to make sure that all your calls to icm() together
-dnl cover the entire spec space for the base macro name (ie that all
-dnl tag combinations are covered).
+dnl define(_do_icm1, `ifdef(`M4_DEF_$1', `', `_def_nth($1)define(`M4_DEF_$1')')'_do_icm_choice($*))
+define(_do_icm1, _do_icm_choice($*))
 
-define(`icm',
-`ifelse(`$2', `*',
-`icm(`$1', `SCL', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `AKS', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `AKD', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `AUD', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `___', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')',
-`$3', `*',
-`icm(`$1', `$2', `NHD', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `HID', `$4', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `___', `$4', `$5', `$6', `$7', `$8', `$9', `$10')',
-`$4', `*',
-`icm(`$1', `$2', `$3', `NUQ', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `UNQ', `$5', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `___', `$5', `$6', `$7', `$8', `$9', `$10')',
-`$5', `*',
-`icm(`$1', `$2', `$3', `$4', `INT', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `FLO', `$6', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `___', `$6', `$7', `$8', `$9', `$10')',
-`$6', `*',
-`icm(`$1', `$2', `$3', `$4', `$5', `NUQ', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `$5', `UNQ', `$7', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `$5', `___', `$7', `$8', `$9', `$10')',
-`$7', `*',
-`icm(`$1', `$2', `$3', `$4', `$5', `$6', `NUQ', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `$5', `$6', `UNQ', `$8', `$9', `$10')
-icm(`$1', `$2', `$3', `$4', `$5', `$6', `___', `$8', `$9', `$10')',
-`_do_icm1(`$1', `$2', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')')')
+define(pat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, _pat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
+define(_pat, `ifelse(`$#', `1', `$1(nt)', `use_cat`'($1(nt), _pat(shift($*)))')')
 
-dnl This macro concatenates the shape element of the tag ($2)
-dnl to the macro name, and then calls _do_icm2 with the
-dnl remainder of the arguments.
-define(`_do_icm1', 
-`ifdef(`M4_DEF_$1', `', `_do_icm1_code($*)' )
-define(M4_DEF_$1)
-_do_icm2(`$1___$2', `$3', `$4', `$5', `$6', `$7', `$8', `$9', `$10')')
-
-define(`_do_icm1_code', 
-``#'define $1(extra_args(`0', `$9')`'ifelse(`$9', `0', `', `, ')var_NT`'ifelse(`$10', `0', `', `, ')extra_args(`$9', `eval($9+$10)'))  \
-  use_cat`'( $1___, NT_SHP( var_NT) \
-  BuildArgs`'eval($9+$10+1)( \
-extra_args(`0', `$9')`'ifelse(`$9', `0', `', `, ')var_NT`'ifelse(`$10', `0', `', `, ')extra_args(`$9', `eval($9+$10)'))  \
-)
+define(_def_nth, ``#'define $1(nt, ...) use_cat`'($1_, use_cat`'(NT_SHP(nt), use_cat`'(NT_HID(nt), use_cat`'(NT_UNQ(nt), use_cat`'(NT_SCL(nt), use_cat`'(NT_TMP(nt), NT_TMP(nt)))))))(nt __VA_ARGS__)
 ')
 
+define(_args, `ifelse($1, `0', `', `_args(eval($1-1)) arg$1,')')
 
-dnl This macro concatenates the hidden element of the tag ($2)
-dnl to the macro name, and then calls _do_icm3 with the
-dnl remainder of the arguments.
-define(`_do_icm2', 
-`ifdef(`M4_DEF_$1', `', `_do_icm2_code($*)' )
-define(`M4_DEF_$1', `')
-_do_icm3(`$1___$2', `$3', `$4', `$5', `$6', `$7', `$8', `$9')')
+define(_rule, `ifdef(M4_DEF_$1_`'cjoin(shift2($*)), `', `_ruleDef($@)')')
+define(_ruleDef, `define(M4_DEF_$1_`'cjoin(shift2($*)))'`_ruleDefC($@)')
+define(_ruleDefC, ``#'define $1_`'cjoin(shift2($*))(...) $2(__VA_ARGS__)')
 
-define(`_do_icm2_code', 
-`
-`#'define $1(extra_args(`0', `$8')`'ifelse(`$8', `0', `', `, ')var_NT`'ifelse(`$9', `0', `', `, ')extra_args(`$8', `eval($8+$9)'))  \
-  use_cat`'( $1___, NT_HID( var_NT) \
-  BuildArgs`'eval($8+$9+1)( \
-extra_args(`0', `$8')`'ifelse(`$8', `0', `', `, ')var_NT`'ifelse(`$9', `0', `', `, ')extra_args(`$8', `eval($8+$9)'))  \
-)
-')
+define(rule, `foreach(`x', `_rule2(shift2($*))', `_rule($1,$2,x)
+')')
+define(_rule2, `ifelse(`$1', `', `', `_rule2more($@)')')
+define(_rule2more, `ifelse(substr(`$1', `0', `1'), `*', `_rule2star($@)', `foreach(`y', `_rule2(shift($*))', `$1`'y,')')')
+define(_rule2star, `star($1, _rule2(shift($*)))')
 
+define(star, `foreach(`z', `_star($1)', `starNest(z, `shift($@)')')')
+define(starNest, `foreach(`a', `$2', `$1`'a,')')
+define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
+                      `$1', `*HID', `NHD, HID, ___',
+                      `$1', `*UNQ', `NUQ, UNQ, ___',
+                      `$1', `*REG', `INT, FLO, ___',
+                      `$1', `*SCO', `SHR, GLO, ___',
+                      `$1', `*USG', `PAR, ARG, P_A, NON, ___',
+                      `errprint(`Unknown wild card "$1"
+')')')
 
-dnl---------------------------------------------------------
+define(`foreach', `_foreach(`$1', `$3', $2)')
+define(`_foreach', `ifelse(`$4', `', `_foreachLast($@)', `_foreachMore($@)')')
+define(_foreachLast, `pushdef(`$1', `$3')`'$2`'`'popdef(`$1')')
+define(_foreachMore, `pushdef(`$1', `$3')`'$2`'`'popdef(`$1')`'_foreach(`$1', `$2', shift3($@))')
 
-dnl This macro concatenates the hidden element of the tag ($2)
-dnl to the macro name, and then calls _do_icm3 with the
-dnl remainder of the arguments.
-define(`_do_icm3', 
-`ifdef(`DEF_$1', `', `_do_icm3_code($*)' )
-define(`DEF_$1', `')
-_do_icm4(`$1___$2', `$3', `$4', `$5', `$6', `$7', `$8')')
+define(`shift2', `shift(shift($@))')
+define(`shift3', `shift(shift(shift($@)))')
 
-define(`_do_icm3_code', 
-``#'define $1(extra_args(`0', `$7')`'ifelse(`$7', `0', `', `, ')var_NT`'ifelse(`$8', `0', `', `, ')extra_args(`$7', `eval($7+$8)'))  \
-  use_cat`'( $1___, NT_UNQ( var_NT) \
-  BuildArgs`'eval($7+$8+1)( \
-extra_args(`0', `$7')`'ifelse(`$7', `0', `', `, ')var_NT`'ifelse(`$8', `0', `', `, ')extra_args(`$7', `eval($7+$8)'))  \
-)
-')
-dnl-----------------------------------------------
-define(`_do_icm4', 
-`ifdef(`DEF_$1', `', `_do_icm4_code($*)' )
-define(`DEF_$1', `')
-_do_icm5(`$1___$2', `$3', `$4', `$5', `$6', `$7')')
+define(`_do_icm_choice', `ifdef(`M4_DEF_$1_$2$3$4$5$6$7', `',`define(`M4_DEF_$1_$2$3$4$5$6$7')'``#'define $1_$2$3$4$5$6$7(...) $8(__VA_ARGS__)')')
 
-define(`_do_icm4_code', 
-``#'define $1(extra_args(`0', `$6')`'ifelse(`$6', `0', `', `, ')var_NT`'ifelse(`$7', `0', `', `, ')extra_args(`$6', `eval($6+$7)'))  \
-  use_cat`'( $1___, NT_SCL( var_NT) \
-  BuildArgs`'eval($6+$7+1)( \
-extra_args(`0', `$6')`'ifelse(`$6', `0', `', `, ')var_NT`'ifelse(`$7', `0', `', `, ')extra_args(`$6', `eval($6+$7)'))  \
-)
-')
+define(`cjoin', `ifelse(`$#', `1', `$1', `$1`'cjoin(shift($*))')')
 
-define(`_do_icm5', 
-`ifdef(`DEF_$1', `', `_do_icm5_code($*)' )
-define(`DEF_$1', `')
-_do_icm6(`$1___$2', `$3', `$4', `$5', `$6')')
-
-define(`_do_icm5_code', 
-``#'define $1(extra_args(`0', `$5')`'ifelse(`$5', `0', `', `, ')var_NT`'ifelse(`$6', `0', `', `, ')extra_args(`$5', `eval($5+$6)'))  \
-  use_cat`'( $1___, NT_TMP( var_NT) \
-  BuildArgs`'eval($5+$6+1)( \
-extra_args(`0', `$5')`'ifelse(`$5', `0', `', `, ')var_NT`'ifelse(`$6', `0', `', `, ')extra_args(`$5', `eval($5+$6)'))  \
-)
-')
-
-define(`_do_icm6', 
-`ifdef(`DEF_$1', `', `_do_icm6_code($*)' )
-define(`DEF_$1', `')
-_do_icm7(`$1___$2', `$3', `$4', `$5')')
-
-define(`_do_icm6_code', 
-``#'define $1(extra_args(`0', `$4')`'ifelse(`$4', `0', `', `, ')var_NT`'ifelse(`$5', `0', `', `, ')extra_args(`$4', `eval($4+$5)'))  \
-  use_cat`'( $1___, NT_TMP( var_NT) \
-  BuildArgs`'eval($4+$5+1)( \
-extra_args(`0', `$4')`'ifelse(`$4', `0', `', `, ')var_NT`'ifelse(`$5', `0', `', `, ')extra_args(`$4', `eval($4+$5)'))  \
-)
-')
-
-define(`_do_icm7', 
-`ifdef(`DEF_$1', `', `_do_icm7_code($*)' )
-define(`DEF_$1', `')
-')
-
-dnl This macro simply defines macro $1 to macro $2.
-
-define(`_do_icm7_code', 
-``#'define $1(extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))  \
-  $2( \
-extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))
-')
-
-define(`use_cat', `define(`CAT_M4_COUNT', incr(CAT_M4_COUNT))' `CAT_M4_`'CAT_M4_NAME`'_`'CAT_M4_COUNT')dnl
+define(`use_cat', `define(`CAT_M4_COUNT', incr(CAT_M4_COUNT))'`CAT_M4_`'CAT_M4_NAME`'_`'CAT_M4_COUNT')dnl
 
 define(`def_cat', `_def_cat(CAT_M4_COUNT)')
 define(`_def_cat', `ifelse($1, 0, `', `__def_cat(`'CAT_M4_NAME`'_$1) _def_cat(eval($1-1)) ')')
@@ -176,12 +62,5 @@ define(`__def_cat', `
 #define xCAT_M4_$1(x, y) x##y
 ')
 
-
-dnl Increases counter for CATnn macro's.
-define(`increase_cat', `incr(`$1')')
-
-dnl Prints extra arguments before the basename, nametuple pair.
-define(`extra_args',
-`ifelse(eval($1 >= $2), `1', `', `arg$1`'ifelse(eval(incr($1) >= $2), `1', `', `, ')`'extra_args(incr($1), `$2')')')
 
 divert(0)

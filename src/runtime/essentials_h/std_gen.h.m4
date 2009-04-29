@@ -1,3 +1,12 @@
+
+
+
+
+
+
+
+
+
 /*
  * $Id$
  *
@@ -14,639 +23,294 @@ include(`icm.m4')
 
 start_icm_definition(std_gen)
 
-dnl SAC_ND_A_DESC
-
-icm(`SAC_ND_A_DESC',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_A_DESC__UNDEF', `0', `0')
-icm(`SAC_ND_A_DESC',
-    `SCL', `HID', `NUQ', `*', `*', `*',
-    `SAC_ND_A_DESC__DEFAULT', `0', `0')
-icm(`SAC_ND_A_DESC',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_A_DESC__UNDEF', `0', `0')
-icm(`SAC_ND_A_DESC',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_DESC_DIM
-
-icm(`SAC_ND_A_DESC_DIM',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_DIM__DEFAULT', `0', `0')
-icm(`SAC_ND_A_DESC_DIM',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_DIM__UNDEF', `0', `0')
-
-dnl SAC_ND_A_DESC_SIZE
-
-icm(`SAC_ND_A_DESC_SIZE',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SIZE__DEFAULT', `0', `0')
-icm(`SAC_ND_A_DESC_SIZE',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SIZE__DEFAULT', `0', `0')
-icm(`SAC_ND_A_DESC_SIZE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SIZE__UNDEF', `0', `0')
-
-dnl SAC_ND_A_DESC_SHAPE
-
-icm(`SAC_ND_A_DESC_SHAPE',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SHAPE__DEFAULT', `0', `1')
-icm(`SAC_ND_A_DESC_SHAPE',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SHAPE__DEFAULT', `0', `1')
-icm(`SAC_ND_A_DESC_SHAPE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DESC_SHAPE__UNDEF', `0', `1')
-
-dnl SAC_ND_A_MIRROR_DIM
-
-icm(`SAC_ND_A_MIRROR_DIM',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_DIM__SCL', `0', `0')
-icm(`SAC_ND_A_MIRROR_DIM',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_DIM__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_MIRROR_SIZE
-
-icm(`SAC_ND_A_MIRROR_SIZE',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_SIZE__SCL', `0', `0')
-icm(`SAC_ND_A_MIRROR_SIZE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_SIZE__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_MIRROR_SHAPE
-
-icm(`SAC_ND_A_MIRROR_SHAPE',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_SHAPE__DEFAULT', `0', `1')
-icm(`SAC_ND_A_MIRROR_SHAPE',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_SHAPE__DEFAULT', `0', `1')
-icm(`SAC_ND_A_MIRROR_SHAPE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_MIRROR_SHAPE__UNDEF', `0', `1')
-
-dnl SAC_ND_A_FIELD
-
-icm(`SAC_ND_A_FIELD',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_FIELD__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_RC
-
-icm(`SAC_ND_A_RC',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_ND_A_RC__UNDEF', `0', `0')
-icm(`SAC_ND_A_RC',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_ND_A_RC__UNDEF', `0', `0')
-icm(`SAC_ND_A_RC',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_ND_A_RC__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_DIM
-
-icm(`SAC_ND_A_DIM',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_DIM__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_SIZE
-
-icm(`SAC_ND_A_SIZE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_A_SIZE__DEFAULT', `0', `0')
-
-dnl SAC_ND_A_SHAPE
-
-icm(`SAC_ND_A_SHAPE',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_A_SHAPE__SCL', `0', `1')
-icm(`SAC_ND_A_SHAPE',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_A_SHAPE__AKS_AKD', `0', `1')
-icm(`SAC_ND_A_SHAPE',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_SHAPE__AKS_AKD', `0', `1')
-icm(`SAC_ND_A_SHAPE',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_A_SHAPE__AUD', `0', `1')
-
-dnl SAC_ND_READ
-
-icm(`SAC_ND_READ',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_READ__SCL', `0', `1')
-icm(`SAC_ND_READ',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_READ__DEFAULT', `0', `1')
-
-dnl SAC_ND_WRITE
-
-icm(`SAC_ND_WRITE',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_WRITE__SCL', `0', `1')
-icm(`SAC_ND_WRITE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_WRITE__DEFAULT', `0', `1')
-
-dnl SAC_ND_WRITE_COPY
-
-icm(`SAC_ND_WRITE_COPY',
-    `*', `HID', `*', `*', `*', `*',
-    `SAC_ND_WRITE_COPY__HID', `0', `3')
-
-icm(`SAC_ND_WRITE_COPY',
-    `*', `NHD', `*', `*', `*', `*',
-    `SAC_ND_WRITE_COPY__NHD', `0', `3')
-
-dnl SAC_ND_DESC_TYPE
-
-icm(`SAC_ND_DESC_TYPE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_DESC_TYPE__DEFAULT', `0', `0')
-
-dnl SAC_ND_TYPE
-
-icm(`SAC_ND_TYPE',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_TYPE_TAG__SCL', `0', `1')
-icm(`SAC_ND_TYPE',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_TYPE_TAG__DEFAULT', `0', `1')
-
-dnl SAC_ND_TYPEDEF
-
-icm(`SAC_ND_TYPEDEF',
-    `*', `HID', `*', `*', `*', `*',
-    `SAC_ND_TYPEDEF__HID', `0', `1')
-
-icm(`SAC_ND_TYPEDEF',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_TYPEDEF__DEFAULT', `0', `1')
-
-dnl SAC_ND_DECL__DESC
-
-icm(`SAC_ND_DECL__DESC',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_DECL__DESC__NONE', `0', `1')
-icm(`SAC_ND_DECL__DESC',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_DECL__DESC__NONE', `0', `1')
-icm(`SAC_ND_DECL__DESC',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_DECL__DESC__DEFAULT', `0', `1')
-
-dnl SAC_ND_PARAM_in
-
-icm(`SAC_ND_PARAM_in',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_PARAM_in__NODESC', `0', `1')
-icm(`SAC_ND_PARAM_in',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_PARAM_in__NODESC', `0', `1')
-icm(`SAC_ND_PARAM_in',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_PARAM_in__DESC', `0', `1')
-
-dnl SAC_ND_PARAM_out
-
-icm(`SAC_ND_PARAM_out',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_PARAM_out__NODESC', `0', `1')
-icm(`SAC_ND_PARAM_out',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_PARAM_out__NODESC', `0', `1')
-icm(`SAC_ND_PARAM_out',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_PARAM_out__DESC', `0', `1')
-
-dnl SAC_ND_ARG_in
-
-icm(`SAC_ND_ARG_in',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ARG_in__NODESC', `0', `0')
-icm(`SAC_ND_ARG_in', 
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ARG_in__NODESC', `0', `0')
-icm(`SAC_ND_ARG_in',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ARG_in__DESC', `0', `0')
-
-dnl SAC_ND_ARG_out
-
-icm(`SAC_ND_ARG_out',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ARG_out__NODESC', `0', `0')
-icm(`SAC_ND_ARG_out',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ARG_out__NODESC', `0', `0')
-icm(`SAC_ND_ARG_out',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ARG_out__DESC', `0', `0')
-
-dnl SAC_ND_RET_out
-
-icm(`SAC_ND_RET_out',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_RET_out__NODESC', `1', `0')
-icm(`SAC_ND_RET_out',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_RET_out__NODESC', `1', `0')
-icm(`SAC_ND_RET_out',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_RET_out__DESC', `1', `0')
-
-dnl SAC_ND_DECL_PARAM_inout
-
-icm(`SAC_ND_DECL_PARAM_inout',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_DECL_PARAM_inout__NODESC', `0', `1')
-icm(`SAC_ND_DECL_PARAM_inout',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_DECL_PARAM_inout__NODESC', `0', `1')
-icm(`SAC_ND_DECL_PARAM_inout',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_DECL_PARAM_inout__DESC', `0', `1')
-
-dnl SAC_ND_ALLOC /* not used */
-
-icm(`SAC_ND_ALLOC',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DAO', `0', `3')
-icm(`SAC_ND_ALLOC',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DAO', `0', `3')
-icm(`SAC_ND_ALLOC',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__NO_DAO', `0', `3')
-icm(`SAC_ND_ALLOC', 
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__NO_DAO', `0', `3')
-
-dnl SAC_ND_ALLOC_BEGIN
-
-icm(`SAC_ND_ALLOC_BEGIN',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_BEGIN__DAO', `0', `2')
-icm(`SAC_ND_ALLOC_BEGIN',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_BEGIN__DAO', `0', `2')
-icm(`SAC_ND_ALLOC_BEGIN',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_BEGIN__NO_DAO', `0', `2')
-icm(`SAC_ND_ALLOC_BEGIN',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_BEGIN__NO_DAO', `0', `2')
-
-dnl SAC_ND_ALLOC_END
-
-icm(`SAC_ND_ALLOC_END',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_END__DAO', `0', `2')
-icm(`SAC_ND_ALLOC_END',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_END__DAO', `0', `2')
-icm(`SAC_ND_ALLOC_END',
-    `AKD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_END__NO_DAO', `0', `2')
-icm(`SAC_ND_ALLOC_END',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC_END__NO_DAO', `0', `2')
-
-dnl SAC_ND_ALLOC__DESC
-
-icm(`SAC_ND_ALLOC__DESC',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__NOOP', `0', `1')
-icm(`SAC_ND_ALLOC__DESC',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__NOOP', `0', `1')
-icm(`SAC_ND_ALLOC__DESC',
-    `AUD', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__AUD', `0', `1')
-icm(`SAC_ND_ALLOC__DESC',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__FIXED', `0', `1')
-
-dnl SAC_ND_ALLOC__DATA
-
-icm(`SAC_ND_ALLOC__DATA',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DATA__NOOP', `0', `0')
-icm(`SAC_ND_ALLOC__DATA',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DATA__AKS', `0', `0')
-icm(`SAC_ND_ALLOC__DATA',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DATA__AKD_AUD', `0', `0')
-
-dnl SAC_ND_ALLOC__DESC_AND_DATA
-
-icm(`SAC_ND_ALLOC__DESC_AND_DATA',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__NOOP', `0', `1')
-icm(`SAC_ND_ALLOC__DESC_AND_DATA',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__NOOP', `0', `1')
-icm(`SAC_ND_ALLOC__DESC_AND_DATA',
-    `SCL', `HID', `NUQ', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC__FIXED', `0', `1')
-icm(`SAC_ND_ALLOC__DESC_AND_DATA',
-    `AKS', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC_AND_DATA__AKS', `0', `1')
-icm(`SAC_ND_ALLOC__DESC_AND_DATA',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ALLOC__DESC_AND_DATA__UNDEF', `0', `1')
-
-dnl SAC_ND_FREE__DESC
-
-icm(`SAC_ND_FREE__DESC',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_FREE__DESC__NOOP', `0', `0')
-icm(`SAC_ND_FREE__DESC',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_FREE__DESC__NOOP', `0', `0')
-icm(`SAC_ND_FREE__DESC',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_FREE__DESC__DEFAULT', `0', `0')
-
-dnl SAC_ND_FREE__DATA
-
-icm(`SAC_ND_FREE__DATA',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__SCL_NHD', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `SCL', `HID', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__SCL_HID', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AKS', `NHD', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKS_NHD', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AKS', `HID', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKS_HID', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AKD', `NHD', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKD_NHD', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AKD', `HID', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKS_HID', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AUD', `NHD', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKD_NHD', `0', `1')
-icm(`SAC_ND_FREE__DATA',
-    `AUD', `HID', `*', `*', `*', `*',
-    `SAC_ND_FREE__DATA__AKS_HID', `0', `1')
-
-dnl SAC_ND_ASSIGN__DATA
-dnl
-dnl Note: This ICM takes TWO nametuple arguments instead of one. This is
-dnl       implemented by expanding it twice. The intermediate macro's are
-dnl       immediately called from here, so it's not visible from the outside,
-dnl       but this implementation is fairly inefficient in terms of code size.
-dnl
-dnl There are five cases for the LHS nametuple:
-dnl     SCL, NHD
-dnl     SCL, HID
-dnl     AKS and AKD
-dnl     AUD, NHD
-dnl     AUD, HID
-dnl
-dnl These are actually reduced to less target macro's, but we still need
-dnl them.
-
-icm(`SAC_ND_ASSIGN__DATA',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `SCL', `HID', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `AKS', `*', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__AKS', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `AKD', `*', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__AKS', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `AKD', `*', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__AKS', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `AUD', `NHD', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `0', `2')
-icm(`SAC_ND_ASSIGN__DATA',
-    `AUD', `HID', `*', `*', `*', `*',
-    `GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `0', `2')
-
-dnl GEN_SAC_ND_ASSIGN__DATA__SCL_NHD
-dnl
-dnl Left-hand NT is a SCL NHD. There are three cases for the RHS:
-dnl     SCL -> do a direct assignment of the scl value
-dnl     AKS/AKD, AUD HID -> undef (can't assign)
-dnl     AUD, NHD -> copy aud value to scl
-
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AKS_AKS', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
-    `AUD', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__SCL_AUD', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__UNDEF', `1', `1')
-
-dnl GEN_SAC_ND_ASSIGN__DATA__SCL_HID
-dnl
-dnl Left-hand NT is a SCL HID. There are four cases for the RHS:
-dnl     SCL -> do a direct assignment of the scl value
-dnl     AKS/AKD, AUD NHD -> undef (can't assign)
-dnl     AUD HID NUQ  -> copy aud value to scl
-dnl     AUD HID UNQ  -> copy aud value to scl, free unique aud
-
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AKS_AKS', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
-    `AUD', `HID', `NUQ', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__SCL_AUD', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
-    `AUD', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__SCL_AUD_UNQ', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__UNDEF', `1', `1')
-
-dnl GEN_SAC_ND_ASSIGN__DATA__AKS
-dnl
-dnl Left-hand NT is a AKS or AKD. There are two cases for the RHS:
-dnl     SCL -> undef (can't assign)
-dnl     AKS, AKD or AUD -> do a direct assignment
-
-icm(`GEN_SAC_ND_ASSIGN__DATA__AKS',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__UNDEF', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AKS',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AKS_AKS', `1', `1')
-
-dnl GEN_SAC_ND_ASSIGN__DATA__AUD_NHD
-dnl
-dnl Left-hand NT is a AUD NHD. There are three cases for the RHS:
-dnl     SCL NHD -> allocate aud, copy scl
-dnl     SCL HID -> undef (can't assign)
-dnl     AKS, AKD, AUD -> allocate aud, do assignment
-
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
-    `SCL', `HID', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__UNDEF', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AUD_AKS', `1', `1')
-
-dnl GEN_SAC_ND_ASSIGN__DATA__AUD_HID
-
-dnl Left-hand NT is a AUD NHD. There are four cases for the RHS:
-dnl     SCL HID NUQ -> allocate aud, copy scl
-dnl     SCL HID UNQ -> allocate aud, copy scl, do uniqueness foo
-dnl     SCL NHD -> undef (can't assign)
-dnl     AKS, AKD, AUD -> allocate aud, do assignment
-
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
-    `SCL', `HID', `NUQ', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
-    `SCL', `HID', `UNQ', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AUD_SCL_UNQ', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
-    `SCL', `NHD', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__UNDEF', `1', `1')
-icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_ASSIGN__DATA__AUD_AKS', `1', `1')
-
-dnl SAC_ND_COPY__DATA
-dnl
-dnl Note: This ICM takes TWO nametuple arguments instead of one. This is
-dnl       implemented by expanding it twice. The intermediate macro's are
-dnl       immediately called from here, so it's not visible from the outside,
-dnl       but this implementation is fairly inefficient in terms of code size.
-dnl
-dnl There are two cases for the LHS nametuple:
-dnl     SCL
-dnl     AKS, AKD, AUD
-dnl
-dnl These are actually reduced to two target macro's, but we still need
-dnl the intermediate ones for the SCL case because it's not a 1:1
-dnl mapping from the LHS.
-
-icm(`SAC_ND_COPY__DATA',
-    `SCL', `*', `*', `*', `*', `*',
-    `GEN_SAC_ND_COPY__DATA__SCL', `0', `2')
-icm(`SAC_ND_COPY__DATA',
-    `*', `*', `*', `*', `*', `*',
-    `GEN_SAC_ND_COPY__DATA__ANY', `0', `2')
-
-dnl GEN_SAC_ND_COPY__DATA__SCL
-dnl
-dnl There are two cases for the RHS:
-dnl   SCL -> copy scalar value
-dnl   AKS, AKD, AUD -> do a data copy
-
-icm(`GEN_SAC_ND_COPY__DATA__SCL',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_COPY__DATA__SCL_SCL', `1', `1')
-icm(`GEN_SAC_ND_COPY__DATA__SCL',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_COPY__DATA__SCL_ANY', `1', `1')
-
-dnl GEN_SAC_ND_COPY__DATA__ANY
-dnl
-dnl There are two cases for the RHS:
-dnl   SCL -> copy scalar value
-dnl   AKS, AKD, AUD -> do a data copy
-
-icm(`GEN_SAC_ND_COPY__DATA__ANY',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_ND_COPY__DATA__ANY_SCL', `1', `1')
-icm(`GEN_SAC_ND_COPY__DATA__ANY',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_ND_COPY__DATA__ANY_ANY', `1', `1')
-
-dnl SAC_ND_SET__RC
-
-icm(`SAC_ND_SET__RC',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_ND_SET__RC__NOOP', `0', `1')
-icm(`SAC_ND_SET__RC',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_ND_SET__RC__NOOP', `0', `1')
-icm(`SAC_ND_SET__RC',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_ND_SET__RC__DEFAULT', `0', `1')
-
-dnl SAC_ND_INC_RC
-
-icm(`SAC_ND_INC_RC',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_ND_INC_RC__NOOP', `0', `1')
-icm(`SAC_ND_INC_RC',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_ND_INC_RC__NOOP', `0', `1')
-icm(`SAC_ND_INC_RC',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_ND_INC_RC__DEFAULT', `0', `1')
-
-dnl SAC_ND_DEC_RC
-
-icm(`SAC_ND_DEC_RC',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_ND_DEC_RC__NOOP', `0', `1')
-icm(`SAC_ND_DEC_RC',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_ND_DEC_RC__NOOP', `0', `1')
-icm(`SAC_ND_DEC_RC',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_ND_DEC_RC__DEFAULT', `0', `1')
-
-dnl SAC_ND_DEC_RC_FREE
-
-icm(`SAC_ND_DEC_RC_FREE',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_ND_DEC_RC_FREE__UNQ', `0', `2')
-icm(`SAC_ND_DEC_RC_FREE',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_ND_DEC_RC_FREE__NOOP', `0', `2')
-icm(`SAC_ND_DEC_RC_FREE',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_ND_DEC_RC_FREE__DEFAULT', `0', `2')
-
-dnl SAC_IS_LASTREF__BLOCK_BEGIN
-
-icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
-    `*', `*', `UNQ', `*', `*', `*',
-    `SAC_IS_LASTREF__BLOCK_BEGIN__UNQ', `0', `0')
-icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
-    `SCL', `NHD', `NUQ', `*', `*', `*',
-    `SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ', `0', `0')
-icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
-    `*', `*', `NUQ', `*', `*', `*',
-    `SAC_IS_LASTREF__BLOCK_BEGIN__DEFAULT', `0', `0')
-
-dnl SAC_IS_REUSED__BLOCK_BEGIN
-
-icm(`SAC_IS_REUSED__BLOCK_BEGIN',
-    `SCL', `*', `*', `*', `*', `*',
-    `SAC_IS_REUSED__BLOCK_BEGIN__SCL', `0', `1')
-icm(`SAC_IS_REUSED__BLOCK_BEGIN',
-    `*', `*', `*', `*', `*', `*',
-    `SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT', `0', `1')
+
+pat(`SAC_ND_A_DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `HID', `UNQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_DESC_DIM', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_DESC_DIM', `SAC_ND_A_DESC_DIM__DEFAULT', `AUD', `*HID', `*UNQ')
+rule(`SAC_ND_A_DESC_DIM', `SAC_ND_A_DESC_DIM__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_DESC_SIZE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_DESC_SIZE', `SAC_ND_A_DESC_SIZE__DEFAULT', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_A_DESC_SIZE', `SAC_ND_A_DESC_SIZE__DEFAULT', `AUD', `*HID', `*UNQ')
+rule(`SAC_ND_A_DESC_SIZE', `SAC_ND_A_DESC_SIZE__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_DESC_SHAPE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_DESC_SHAPE', `SAC_ND_A_DESC_SHAPE__DEFAULT', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_A_DESC_SHAPE', `SAC_ND_A_DESC_SHAPE__DEFAULT', `AUD', `*HID', `*UNQ')
+rule(`SAC_ND_A_DESC_SHAPE', `SAC_ND_A_DESC_SHAPE__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_MIRROR_DIM', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_MIRROR_DIM', `SAC_ND_A_MIRROR_DIM__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_A_MIRROR_DIM', `SAC_ND_A_MIRROR_DIM__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_MIRROR_SIZE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_MIRROR_SIZE', `SAC_ND_A_MIRROR_SIZE__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_A_MIRROR_SIZE', `SAC_ND_A_MIRROR_SIZE__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_MIRROR_SHAPE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_MIRROR_SHAPE', `SAC_ND_A_MIRROR_SHAPE__DEFAULT', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_A_MIRROR_SHAPE', `SAC_ND_A_MIRROR_SHAPE__DEFAULT', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_A_MIRROR_SHAPE', `SAC_ND_A_MIRROR_SHAPE__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_FIELD', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_FIELD', `SAC_ND_A_FIELD__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_RC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_A_RC', `SAC_ND_A_RC__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_ND_A_DIM', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_DIM', `SAC_ND_A_DIM__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_SIZE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_SIZE', `SAC_ND_A_SIZE__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_A_SHAPE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AKS_AKD', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AKS_AKD', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AUD', `AUD', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_READ', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_READ', `SAC_ND_READ__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_READ', `SAC_ND_READ__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_WRITE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_WRITE_COPY', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__HID', `*SHP', `HID', `*UNQ')
+
+rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__NHD', `*SHP', `NHD', `*UNQ')
+
+
+pat(`SAC_ND_DESC_TYPE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DESC_TYPE', `SAC_ND_DESC_TYPE__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_TYPE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_TYPE', `SAC_ND_TYPE_TAG__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_TYPE', `SAC_ND_TYPE_TAG__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_TYPEDEF', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_TYPEDEF', `SAC_ND_TYPEDEF__HID', `*SHP', `HID', `*UNQ')
+
+rule(`SAC_ND_TYPEDEF', `SAC_ND_TYPEDEF__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_DECL__DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `HID', `UNQ')
+rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_PARAM_in', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_PARAM_out', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ARG_in', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ARG_out', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_RET_out', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_RET_out', `SAC_ND_RET_out__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_DECL_PARAM_inout', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__DESC', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC', `SAC_ND_ALLOC__DAO', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC', `SAC_ND_ALLOC__DAO', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC', `SAC_ND_ALLOC__NO_DAO', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC', `SAC_ND_ALLOC__NO_DAO', `AUD', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC_BEGIN', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC_BEGIN', `SAC_ND_ALLOC_BEGIN__DAO', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_BEGIN', `SAC_ND_ALLOC_BEGIN__DAO', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_BEGIN', `SAC_ND_ALLOC_BEGIN__NO_DAO', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_BEGIN', `SAC_ND_ALLOC_BEGIN__NO_DAO', `AUD', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC_END', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC_END', `SAC_ND_ALLOC_END__DAO', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_END', `SAC_ND_ALLOC_END__DAO', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_END', `SAC_ND_ALLOC_END__NO_DAO', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC_END', `SAC_ND_ALLOC_END__NO_DAO', `AUD', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC__DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__AUD', `AUD', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__FIXED', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC__DATA', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__NOOP', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__AKS', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__AKD_AUD', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_ALLOC__DESC_AND_DATA', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__FIXED', `SCL', `HID', `NUQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__AKS', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_FREE__DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HID', `UNQ')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_FREE__DATA', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__SCL_NHD', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__SCL_HID', `SCL', `HID', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD', `AKS', `NHD', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AKS', `HID', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AKD', `NHD', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AKD', `HID', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AUD', `NHD', `*UNQ')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AUD', `HID', `*UNQ')
+
+
+pat(`SAC_ND_ASSIGN__DATA', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SCL', `HID', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKS', `*HID', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKD', `*HID', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `AUD', `NHD', `*UNQ')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `AUD', `HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SAC_ND_ASSIGN__DATA__AKS_AKS', `SCL', `*HID', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SAC_ND_ASSIGN__DATA__SCL_AUD', `AUD', `NHD', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__AKS_AKS', `SCL', `*HID', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__SCL_AUD', `AUD', `HID', `NUQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__SCL_AUD_UNQ', `AUD', `HID', `UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `*HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__AKS', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `*HID', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__AKS_AKS', `*SHP', `*HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `SCL', `NHD', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `HID', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__AUD_AKS', `*SHP', `*HID', `*UNQ')
+
+
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `SCL', `HID', `NUQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `SAC_ND_ASSIGN__DATA__AUD_SCL_UNQ', `SCL', `HID', `UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `NHD', `*UNQ')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `SAC_ND_ASSIGN__DATA__AUD_AKS', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_COPY__DATA', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_COPY__DATA', `GEN_SAC_ND_COPY__DATA__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_ND_COPY__DATA', `GEN_SAC_ND_COPY__DATA__ANY', `*SHP', `*HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_COPY__DATA__SCL', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_COPY__DATA__SCL', `SAC_ND_COPY__DATA__SCL_SCL', `SCL', `*HID', `*UNQ')
+rule(`GEN_SAC_ND_COPY__DATA__SCL', `SAC_ND_COPY__DATA__SCL_ANY', `*SHP', `*HID', `*UNQ')
+
+
+pat(`GEN_SAC_ND_COPY__DATA__ANY', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`GEN_SAC_ND_COPY__DATA__ANY', `SAC_ND_COPY__DATA__ANY_SCL', `SCL', `*HID', `*UNQ')
+rule(`GEN_SAC_ND_COPY__DATA__ANY', `SAC_ND_COPY__DATA__ANY_ANY', `*SHP', `*HID', `*UNQ')
+
+
+pat(`SAC_ND_SET__RC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_ND_INC_RC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_ND_DEC_RC', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_ND_DEC_RC_FREE', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__UNQ', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_IS_LASTREF__BLOCK_BEGIN', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_IS_LASTREF__BLOCK_BEGIN', `SAC_IS_LASTREF__BLOCK_BEGIN__UNQ', `*SHP', `*HID', `UNQ')
+rule(`SAC_IS_LASTREF__BLOCK_BEGIN', `SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ', `SCL', `NHD', `NUQ')
+rule(`SAC_IS_LASTREF__BLOCK_BEGIN', `SAC_IS_LASTREF__BLOCK_BEGIN__DEFAULT', `*SHP', `*HID', `NUQ')
+
+
+pat(`SAC_IS_REUSED__BLOCK_BEGIN', `0', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_IS_REUSED__BLOCK_BEGIN', `SAC_IS_REUSED__BLOCK_BEGIN__SCL', `SCL', `*HID', `*UNQ')
+rule(`SAC_IS_REUSED__BLOCK_BEGIN', `SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 end_icm_definition
 
