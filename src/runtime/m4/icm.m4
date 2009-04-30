@@ -1,38 +1,9 @@
 divert(-1)
 
-define(`start_icm_definition', `define(`CAT_M4_NAME', $1)' `define(`CAT_M4_COUNT', 0)'
-`#ifndef DEF_FILE_$1
-`#'define DEF_FILE_$1'
-)dnl
-define(`end_icm_definition', def_cat
-`#endif'
-);
-
-dnl define(_do_icm1, `ifdef(`M4_DEF_$1', `', `_def_nth($1)define(`M4_DEF_$1')')'_do_icm_choice($*))
-define(_do_icm1, _do_icm_choice($*))
-
-define(pat, `ifelse(`$#', `2', `patnopat($@)', `patpat($@)')')
-define(patpat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, _pat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
-define(patnopat, ``#'define $1(...) $1_(__VA_ARGS__)')
-define(_pat, `ifelse(`$#', `1', `$1(nt)', `use_cat`'($1(nt), _pat(shift($*)))')')
-
-define(_def_nth, ``#'define $1(nt, ...) use_cat`'($1_, use_cat`'(NT_SHP(nt), use_cat`'(NT_HID(nt), use_cat`'(NT_UNQ(nt), use_cat`'(NT_SCL(nt), use_cat`'(NT_TMP(nt), NT_TMP(nt)))))))(nt __VA_ARGS__)
-')
-
-define(_args, `ifelse($1, `0', `', `_args(eval($1-1)) arg$1,')')
-
-define(_rule, `ifdef(M4_DEF_$1_`'cjoin(shift2($*)), `', `_ruleDef($@)')')
-define(_ruleDef, `define(M4_DEF_$1_`'cjoin(shift2($*)))'`_ruleDefC($@)')
-define(_ruleDefC, ``#'define $1_`'cjoin(shift2($*))(...) $2(__VA_ARGS__)')
-
-define(rule, `foreach(`x', `_rule2(shift2($*))', `_rule($1,$2,x)
-')')
-define(_rule2, `ifelse(`$1', `', `', `_rule2more($@)')')
-define(_rule2more, `ifelse(substr(`$1', `0', `1'), `*', `_rule2star($@)', `foreach(`y', `_rule2(shift($*))', `$1`'y,')')')
-define(_rule2star, `star($1, _rule2(shift($*)))')
-
-define(star, `foreach(`z', `_star($1)', `starNest(z, `shift($@)')')')
-define(starNest, `foreach(`a', `$2', `$1`'a,')')
+dnl Definition of all * tags
+dnl Return definition of given * tag 
+dnl
+dnl $1  * tag
 define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `$1', `*HID', `NHD, HID, ___',
                       `$1', `*UNQ', `NUQ, UNQ, ___',
@@ -42,23 +13,177 @@ define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `errprint(`Unknown wild card "$1"
 ')')')
 
+dnl Start ifndef block
+dnl Remember namespace for use with cat macros.
+dnl
+dnl $1  name space
+define(`start_icm_definition', `define(`CAT_M4_NAME', $1)' `define(`CAT_M4_COUNT', 0)'
+`#ifndef DEF_FILE_$1
+`#'define DEF_FILE_$1'
+)dnl
+
+dnl End of ifndef block
+dnl Define CAT macros
+define(`end_icm_definition', def_cat
+`#endif'
+);
+
+dnl Define a pattern for an icm
+dnl 
+dnl $1  icm name
+dnl $2  num args before nt
+dnl $3* patten
+define(pat, `ifelse(`$#', `2', `patnopat($@)', `patpat($@)')')
+
+dnl Define CPP macro to handle nt there is a pattern
+dnl
+dnl $1  icm name
+dnl $2  num args before nt
+dnl $3+ patten
+define(patpat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, patcat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
+
+dnl Define CPP macro to handle nt there is NO pattern
+dnl
+dnl $1  icm name
+dnl $2  num args before nt
+define(patnopat, ``#'define $1(...) $1_(__VA_ARGS__)')
+
+dnl Join part of the NT together using CPP macros to form a single
+dnl string that can be used for a macro name
+dnl
+dnl $1+ nt accessors
+define(patcat, `ifelse(`$#', `1', `$1(nt)', `use_cat`'($1(nt), patcat(shift($*)))')')
+
+dnl Generate a list of arguments
+dnl arg1, arg2 ...
+dnl
+dnl $1  Number of arguments to create
+define(_args, `ifelse($1, `0', `', `_args(eval($1-1)) arg$1,')')
+
+dnl Create CPP macro for this rule only if the CPP macro does not exist
+dnl
+dnl $1  source icm name
+dnl $2  target icm name
+dnl $3* tag patten
+define(_rule, `ifdef(M4_DEF_$1_`'cjoin(shift2($*)), `', `_ruleDef($@)')')
+
+dnl Defince CPP macro for this rule and remember that we have created this
+dnl CPP macro
+dnl
+dnl $1  source icm name
+dnl $2  target icm name
+dnl $3* tag patten
+define(_ruleDef, `define(M4_DEF_$1_`'cjoin(shift2($*)))'`_ruleDefC($@)')
+
+
+dnl Defince CPP macro for this rule
+dnl
+dnl $1  source icm name
+dnl $2  target icm name
+dnl $3* tag patten
+define(_ruleDefC, ``#'define $1_`'cjoin(shift2($*))(...) $2(__VA_ARGS__)')
+
+dnl Define a CPP macro for each combination that this rule covers
+dnl 
+dnl $1  from icm
+dnl $2  to icm
+dnl $3+ list of lists of tags that this rule applies to
+define(rule, `foreach(`x', `_rule2(shift2($*))', `_rule($1,$2,x)
+')')
+
+dnl Return a list of all possible tag combination defined by this patten
+dnl
+dnl $1* patten
+define(_rule2, `ifelse(`$1', `', `', `_rule2more($@)')')
+
+dnl Return a list of all possible tag combination defined by this patten
+dnl 
+dnl $1+ patten
+define(_rule2more, `ifelse(substr(`$1', `0', `1'), `*', `_rule2star($@)', `foreach(`y', `_rule2(shift($*))', `$1`'y,')')')
+
+dnl Return a list of all possible tag combination defined by this patten
+dnl that starts with a * tag
+dnl
+dnl $1  star tag (*...)
+dnl $2* rest of pattern
+define(_rule2star, `star($1, _rule2(shift($*)))')
+
+dnl Expand a star tag and produce the product of the * tag posible values and 
+dnl the given tag values
+dnl 
+dnl $1  star tag
+dnl $2* tag values list
+define(star, `foreach(`z', `_star($1)', `starNest(z, `shift($@)')')')
+
+dnl Join $1 with each item in $2
+dnl
+dnl $1  tag
+dnl $2+ list of list of tags
+define(starNest, `foreach(`a', `$2', `$1`'a,')')
+
+dnl Implimentation of a foreach loop
+dnl 
+dnl $1  variable to be used in each iteration
+dnl $2  list of values to use
+dnl $3  code to run for each iteration
 define(`foreach', `_foreach(`$1', `$3', $2)')
+
+dnl Implement a foreach loop
+dnl
+dnl $1  variable to be used in each iteration
+dnl $2  code to run for each iteration
+dnl $3* values iterated over
 define(`_foreach', `ifelse(`$4', `', `_foreachLast($@)', `_foreachMore($@)')')
+
+dnl This is the last iteration of a foreach loop
+dnl
+dnl $1  variable to be used in this iteration
+dnl $2  code to run
+dnl $3  value to use in this iteration
 define(_foreachLast, `pushdef(`$1', `$3')`'$2`'`'popdef(`$1')')
+
+dnl Iterate through foreach loop
+dnl
+dnl $1  variable to be used in each iteration
+dnl $2  code to run in each iteration
+dnl $3  value to use in this iteration
+dnl $4* values for future iterations
 define(_foreachMore, `pushdef(`$1', `$3')`'$2`'`'popdef(`$1')`'_foreach(`$1', `$2', shift3($@))')
 
+dnl Shift twice
+dnl
+dnl $1  value to through away
+dnl $2  value to through away
+dnl $3* value(s) to return
 define(`shift2', `shift(shift($@))')
+
+dnl Shift three times
+dnl
+dnl $1  value to through away
+dnl $2  value to through away
+dnl $3  value to through away
+dnl $4* value(s) to return
 define(`shift3', `shift(shift(shift($@)))')
 
-define(`_do_icm_choice', `ifdef(`M4_DEF_$1_$2$3$4$5$6$7', `',`define(`M4_DEF_$1_$2$3$4$5$6$7')'``#'define $1_$2$3$4$5$6$7(...) $8(__VA_ARGS__)')')
-
+dnl Join arguments together to form a string
+dnl
+dnl $1+ arguments to join
 define(`cjoin', `ifelse(`$#', `1', `$1', `$1`'cjoin(shift($*))')')
 
+dnl Return a new cat macro call for use and remember to define it later
 define(`use_cat', `define(`CAT_M4_COUNT', incr(CAT_M4_COUNT))'`CAT_M4_`'CAT_M4_NAME`'_`'CAT_M4_COUNT')dnl
 
+dnl Define all needed cat macros in the current name space
 define(`def_cat', `_def_cat(CAT_M4_COUNT)')
+
+dnl Define 0 or more cat macros
+dnl
+dnl $1  name space to use for cat macros
 define(`_def_cat', `ifelse($1, 0, `', `__def_cat(`'CAT_M4_NAME`'_$1) _def_cat(eval($1-1)) ')')
-define(`__def_cat2', `$1');
+
+dnl Define a cat macro
+dnl
+dnl $1  name of cat macro to define
 define(`__def_cat', `
 #define CAT_M4_$1(x, y) xCAT_M4_$1(x, y)
 #define xCAT_M4_$1(x, y) x##y

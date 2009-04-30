@@ -1,0 +1,139 @@
+ ____         ____   _                _                  _                    
+/ ___|  __ _ / ___| | |__   __ _  ___| | _____ _ __   __| |                   
+\___ \ / _` | |     | '_ \ / _` |/ __| |/ / _ \ '_ \ / _` |                   
+ ___) | (_| | |___  | |_) | (_| | (__|   <  __/ | | | (_| |                   
+| ____/\__,_|\____| |_.__/\___,_|\___|_|\_\___|_| |_|\__,_|                  
+                                                                              
+                                                                              
+                                                                              
++---------------+                 +----------------+                          
+|   *_gen.h.m4  |                 | *.h            |                          
++---------------+                 +----------------+                          
+| ICM           |                 | .h ICM         |                          
+|  pattern      |                 | Definitions    |                          
+|   ICM         |                 |                |                          
++---------------+                 +----------------+                          
+        |                                  |                                  
+        |  m4 transformation               |                                  
+        |  speed of this is stage          |                                  
+        |  is of low importance            |                                  
+        V                                  |                                  
++---------------+                          |                                  
+|   *_gen.h     |                          |                                  
++---------------+--------------------------+                                  
+| CPP macros    |                          |                                  
++---------------+                          |                                  
+                                           V                                  
+                                   +---------------+                          
+                                   | sac.h         |                          
+                                   +---------------+                          
+                                           |                                  
+                                           V        It is the time that the   
++---------------+                     -----------   CPP takes at this stage   
+| sac program   |------------------->(  CPP      )  that is considered a      
++---------------+                     -----------   problem                   
+                                           |                                  
+                                           V                                  
+                                   +---------------+                          
+                                   |  raw c code   |                          
+                                   +---------------+                          
+                                                                              
+                                                                              
+                                                                              
+The size of sac.h contributes a significant amount of time to the             
+runtime of sac2c.                                                             
+                                                                              
+                                                                              
+Formally icm + tag -> icm rules where defined as:
+                                                                              
++-----------------------------------------------------------------------------+
+|                                                                             |
+| dnl SAC_ND_A_DESC                                                           |
+|                                                                             |
+| icm(`SAC_ND_A_DESC',                                                        |
+|     `SCL', `NHD', `*', `*', `*', `*',                                       |
+|     `SAC_ND_A_DESC__UNDEF', `0', `0')                                       |
+| icm(`SAC_ND_A_DESC',                                                        |
+|     `SCL', `HID', `NUQ', `*', `*', `*',                                     |
+|     `SAC_ND_A_DESC__DEFAULT', `0', `0')                                     |
+| icm(`SAC_ND_A_DESC',                                                        |
+|     `SCL', `HID', `UNQ', `*', `*', `*',                                     |
+|     `SAC_ND_A_DESC__UNDEF', `0', `0')                                       |
+| icm(`SAC_ND_A_DESC',                                                        |
+|     `*', `*', `*', `*', `*', `*',                                           |
+|     `SAC_ND_A_DESC__DEFAULT', `0', `0')                                     |
+|                                                                             |
++-----------------------------------------------------------------------------+
+                                                                              
+The current way of defining icm + tag -> icm rules is:
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+| pat(`SAC_ND_A_DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')                     |
+|                                                                             |
+| rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `NHD', `*UNQ')         |
+| rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')        |
+| rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `HID', `*UNQ')         |
+| rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `*SHP', `*HID', `*UNQ')     |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+"pat" defines the type of tag pattern.
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+| pat( Name of macro being defined,                                           |
+|      Number of arguments before the name tuple,                             |
+|      List of 0 or more name tuple accessors that are to be used)            |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+The accessors to the name tuples should be in the same order as the
+patterns that will be described with rule.
+
+It is not required to specify the number of arguments after the NT.
+
+"rule" defines a mapping from one ICM to another ICM when the desired
+tags patch the paten.
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+| rule( Name of macro being defined,                                          |
+|       Name of macro to be called if pattern matches,                        |
+|       Pattern list in same order and same length as in pat macro)           |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+When any value of a tag can be accepted then *TAGNAME should be used.
+If more than one value is acceptable for a tag then ether two rules
+can be used or the tags may be "," separated:
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+| pat( `IN_ICM', `0', `NT_SHP')                                               |
+|                                                                             |
+| rule( `IN_ICM', `OUT_ICM', `AKV')                                           |
+| rule( `IN_ICM', `OUT_ICM', `AKS')                                           |
+|                                                                             |
++-----------------------------------------------------------------------------+
+                                                                              
+Is the same as: 
+               
++-----------------------------------------------------------------------------+
+|                                                                             |
+| pat( `IN_ICM', `0', `NT_SHP')                                               |
+|                                                                             |
+| rule( `IN_ICM', `OUT_ICM', `AKV, AKS')                                      |
+|                                                                             |
++-----------------------------------------------------------------------------+
+               
+When there are more than one matching rule then the first one is accepted.
+
+DO NOT
+======
+
+The following produce undefined behavior:
+
+Pass tags in rule in a different order than pat.
+Using pat more than once with the same ICM.
+Specifying illegal accessors.
