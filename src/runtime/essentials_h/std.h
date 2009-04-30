@@ -556,14 +556,22 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_PARAM_FLAG_inout_nodesc_bx(var_NT, basetype, flag)                        \
     SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag)
 
+#define SAC_ND_ARG_FLAG_in_nodesc(var_NT, flag) SAC_ND_ARG_in_nodesc (var_NT)
 #define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_A_FIELD (var_NT)
 
+#define SAC_ND_ARG_FLAG_out_nodesc(var_NT, flag) SAC_ND_ARG_out_nodesc (var_NT)
 #define SAC_ND_ARG_out_nodesc(var_NT) &SAC_ND_A_FIELD (var_NT)
 
+#define SAC_ND_ARG_FLAG_inout(var_NT, flag) SAC_ND_ARG_FLAG_out (var_NT, flag)
 #define SAC_ND_ARG_inout(var_NT) SAC_ND_ARG_out (var_NT)
 
+#define SAC_ND_ARG_in(var_NT) SAC_ND_ARG_FLAG_in (var_NT, FUN)
+#define SAC_ND_ARG_out(var_NT) SAC_ND_ARG_FLAG_out (var_NT, FUN)
+
+#define SAC_ND_ARG_FLAG_inout_nodesc(var_NT, flag) SAC_ND_ARG_inout_nodesc (var_NT)
 #define SAC_ND_ARG_inout_nodesc(var_NT) SAC_ND_ARG_out_nodesc (var_NT)
 
+#define SAC_ND_ARG_FLAG_inout_nodesc_bx(var_NT, flag) SAC_ND_ARG_inout_nodesc_bx (var_NT)
 #define SAC_ND_ARG_inout_nodesc_bx(var_NT) SAC_ND_ARG_in_nodesc (var_NT)
 
 #define SAC_ND_RET_inout(retvar_NT, var_NT) SAC_ND_RET_out (retvar_NT, var_NT)
@@ -595,17 +603,18 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_ARG_in implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ARG_in__NODESC(var_NT) SAC_ND_ARG_in_nodesc (var_NT)
+#define SAC_ND_ARG_in__NODESC(var_NT, flag) SAC_ND_ARG_in_nodesc (var_NT)
 
-#define SAC_ND_ARG_in__DESC(var_NT) SAC_ND_ARG_in_nodesc (var_NT), SAC_ND_A_DESC (var_NT)
+#define SAC_ND_ARG_in__DESC(var_NT, flag)                                                \
+    SAC_ND_ARG_in_nodesc (var_NT), SAC_ND_A_DESC (var_NT)
 
 /*
  * SAC_ND_ARG_out implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ARG_out__NODESC(var_NT) SAC_ND_ARG_out_nodesc (var_NT)
+#define SAC_ND_ARG_out__NODESC(var_NT, flag) SAC_ND_ARG_out_nodesc (var_NT)
 
-#define SAC_ND_ARG_out__DESC(var_NT)                                                     \
+#define SAC_ND_ARG_out__DESC(var_NT, flag)                                               \
     SAC_ND_ARG_out_nodesc (var_NT), &SAC_ND_A_DESC (var_NT)
 
 /*

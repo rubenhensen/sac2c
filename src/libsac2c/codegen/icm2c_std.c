@@ -155,13 +155,52 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 
     fprintf (global.outfile, "%s(", name);
     ScanArglist (vararg_cnt, 2, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
+                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, FUN)", vararg[i],
                           vararg[i + 1]));
     fprintf (global.outfile, ");");
 
     if (STReq (retname, "")) {
         fprintf (global.outfile, ")"); /* SAC_MUTC_FUN_AP */
     }
+
+    fprintf (global.outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_THREAD_AP( char *name, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_THREAD_AP( name, vararg_cnt, [ TAG, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_THREAD_AP (char *name, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileND_THREAD_AP");
+
+#define ND_THREAD_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_THREAD_AP
+
+    INDENT;
+
+    fprintf (global.outfile, "SAC_MUTC_THREAD_AP(");
+
+    fprintf (global.outfile, "%s(", name);
+    ScanArglist (vararg_cnt, 2, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, THREAD)", vararg[i],
+                          vararg[i + 1]));
+    fprintf (global.outfile, ");");
 
     fprintf (global.outfile, "\n");
 
