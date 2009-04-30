@@ -130,7 +130,7 @@ ICMCompileND_THREAD_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char 
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_DEC( name, retname, vararg_cnt, [ TAG, arg_NT ]* )
+ *   ND_FUN_DEC( name, retname, vararg_cnt, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
@@ -154,9 +154,9 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     }
 
     fprintf (global.outfile, "%s(", name);
-    ScanArglist (vararg_cnt, 2, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, FUN)", vararg[i],
-                          vararg[i + 1]));
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, FUN)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");");
 
     if (STReq (retname, "")) {
@@ -176,7 +176,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_THREAD_AP( name, vararg_cnt, [ TAG, arg_NT ]* )
+ *   ND_THREAD_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
@@ -197,9 +197,9 @@ ICMCompileND_THREAD_AP (char *name, int vararg_cnt, char **vararg)
     fprintf (global.outfile, "SAC_MUTC_THREAD_AP(");
 
     fprintf (global.outfile, "%s(", name);
-    ScanArglist (vararg_cnt, 2, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, THREAD)", vararg[i],
-                          vararg[i + 1]));
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, THREAD)",
+                          vararg[i], vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");");
 
     fprintf (global.outfile, "\n");

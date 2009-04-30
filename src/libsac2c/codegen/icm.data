@@ -35,7 +35,7 @@ ICM_DEF( ND_FUN_AP, ICM_TRACE(fun))
   ICM_ID( name)
   ICM_ID( retname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (2*vararg_cnt), vararg)
+  ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( ND_FUN_AP, (name, retname, vararg_cnt, vararg))
 #endif
 
@@ -764,7 +764,7 @@ ICM_END( MT_SPMD_FUN_RET, (funname, vararg_cnt, vararg))
 ICM_DEF( MT_SPMD_FUN_AP, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (2*vararg_cnt), vararg)
+  ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SPMD_FUN_AP, (funname, vararg_cnt, vararg))
 #endif
 

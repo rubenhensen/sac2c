@@ -116,7 +116,7 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 #undef MT_SPMD_FUN_AP
 
     cnt = 0;
-    for (i = 0; i < 2 * vararg_cnt; i += 2) {
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_SEND_PARAM_%s( %s, %d, %s)\n", vararg[i],
                  funname, cnt++, vararg[i + 1]);

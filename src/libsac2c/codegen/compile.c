@@ -1610,6 +1610,69 @@ MakeFundefIcm (node *fundef, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  char *GetBaseTypeFromAvis( node *in)
+ *
+ * @brief  Get the base type of the item pointed to by avis node "in"
+ *
+ *****************************************************************************/
+static char *
+GetBaseTypeFromAvis (node *in)
+{
+    types *type;
+
+    DBUG_ENTER ("GetBaseTypeFromAvis");
+    DBUG_ASSERT ((in != NULL), "no node found!");
+
+    in = AVIS_DECL (in);
+
+    if (NODE_TYPE (in) == N_vardec) {
+        type = VARDEC_TYPE (in);
+    } else if (NODE_TYPE (in) == N_arg) {
+        type = ARG_TYPE (in);
+    } else {
+        DBUG_ASSERT (FALSE, "Illegal node type found!");
+    }
+
+    return (STRcpy (GetBasetypeStr (type)));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  char *GetBaseTypeFromExpr( node *in)
+ *
+ * @brief  Get the base type of the item pointed to by expr node "in"
+ *
+ *****************************************************************************/
+
+static char *
+GetBaseTypeFromExpr (node *in)
+{
+    char *ret;
+    DBUG_ENTER ("GetBaseTypeFromExpr");
+    DBUG_ASSERT ((in != NULL), "no node found!");
+
+    if (NODE_TYPE (in) == N_exprs) {
+        in = EXPRS_EXPR (in);
+    }
+
+    if (NODE_TYPE (in) == N_id) {
+        in = ID_AVIS (in);
+        ret = GetBaseTypeFromAvis (in);
+    } else if (NODE_TYPE (in) == N_ids) {
+        in = IDS_AVIS (in);
+        ret = GetBaseTypeFromAvis (in);
+    } else if (NODE_TYPE (in) == N_globobj) {
+        in = GLOBOBJ_OBJDEF (in);
+        ret = TYtype2String (OBJDEF_TYPE (in), FALSE, 0);
+    } else {
+        DBUG_ASSERT (FALSE, "Unexpected node type found!");
+    }
+
+    return (ret);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *MakeIcm_FUN_AP( node *ap, node *fundef, node *assigns)
  *
  * @brief  Builds a N_assign node with the ND_FUN_AP icm.
@@ -1640,6 +1703,10 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
 
         if (argtab->ptr_out[i] != NULL) {
             exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);
+
+            exprs = TBmakeExprs (TCmakeIdCopyString (
+                                   GetBaseTypeFromExpr (argtab->ptr_out[i])),
+                                 exprs);
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
@@ -1647,9 +1714,15 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
             if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id) {
                 exprs
                   = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+                exprs = TBmakeExprs (TCmakeIdCopyString (
+                                       GetBaseTypeFromExpr (argtab->ptr_in[i])),
+                                     exprs);
             } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
                 exprs
                   = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+                exprs = TBmakeExprs (TCmakeIdCopyString (
+                                       GetBaseTypeFromExpr (argtab->ptr_in[i])),
+                                     exprs);
 #ifndef DBUG_OFF
             } else {
                 DBUG_ASSERT (0, "arguments of N_ap should be either N_id or N_globobj!");
