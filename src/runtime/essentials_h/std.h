@@ -562,11 +562,11 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ARG_FLAG_out_nodesc(var_NT, type, flag) SAC_ND_ARG_out_nodesc (var_NT)
 #define SAC_ND_ARG_out_nodesc(var_NT) &SAC_ND_A_FIELD (var_NT)
 
-#define SAC_ND_ARG_FLAG_inout(var_NT, type, flag) SAC_ND_ARG_FLAG_out (var_NT, tag, flag)
+#define SAC_ND_ARG_FLAG_inout(var_NT, type, flag) SAC_ND_ARG_FLAG_out (var_NT, type, flag)
 #define SAC_ND_ARG_inout(var_NT) SAC_ND_ARG_out (var_NT)
 
-#define SAC_ND_ARG_in(var_NT) SAC_ND_ARG_FLAG_in (var_NT, FUN)
-#define SAC_ND_ARG_out(var_NT) SAC_ND_ARG_FLAG_out (var_NT, FUN)
+#define SAC_ND_ARG_in(var_NT) SAC_ND_ARG_FLAG_in (var_NT, void, FUN)
+#define SAC_ND_ARG_out(var_NT) SAC_ND_ARG_FLAG_out (var_NT, void, FUN)
 
 #define SAC_ND_ARG_FLAG_inout_nodesc(var_NT, type, flag) SAC_ND_ARG_inout_nodesc (var_NT)
 #define SAC_ND_ARG_inout_nodesc(var_NT) SAC_ND_ARG_out_nodesc (var_NT)
