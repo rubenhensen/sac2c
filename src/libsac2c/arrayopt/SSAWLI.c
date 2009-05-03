@@ -880,9 +880,9 @@ WLIwith (node *arg_node, info *arg_info)
 
     /* initialize determination of FOLDABLE */
     INFO_FOLDABLE (arg_info) = TRUE;
-    INFO_DETFOLDABLE (arg_info) = TRUE;
 
     /* determine FOLDABLE */
+    INFO_DETFOLDABLE (arg_info) = TRUE;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_ISFOLDABLE (INFO_WL (arg_info)) = INFO_FOLDABLE (arg_info);
     INFO_DETFOLDABLE (arg_info) = FALSE;

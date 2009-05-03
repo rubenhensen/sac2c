@@ -1445,8 +1445,13 @@
      <traversal id="SWLFI" name="Symbolic With-Loop-Folding Inference" default="sons" include="symb_wlfi.h" >
        <travuser>
           <node name="Fundef"  />
+          <node name="Block"   />
           <node name="Assign"  />
+          <node name="Let"  />
+          <node name="Id"  />
+          <node name="Cond" />
           <node name="With"    />
+          <node name="Modarray"    />
           <node name="Code"    />
           <node name="Part"    />
           <node name="Ids"     />
@@ -5524,6 +5529,7 @@
                 <any />
                 <phases>
                   <phase name="opt_al" />
+                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
                 </phases>
               </target>
             </targets>
@@ -5536,6 +5542,7 @@
                 <node name="With" />
                 <phases>
                   <phase name="opt_al" />
+                  <phase name="opt_saacyc_swlf" />
                 </phases>
               </target>
             </targets>
@@ -5846,6 +5853,12 @@
 	    this thread function. Used by the mutc backend.
 	  </description>
 	</flag>
+	<flag name="IsWLFolded" default="FALSE">
+	  <description>
+             If true, the given variable is the result of a foldeeWL
+             that has been folded out of existence.
+	  </description>
+	</flag>
       </flags>
     </node>
 <!--
@@ -6048,24 +6061,54 @@
           </type>
         </attribute>
         <attribute name="Referenced" inconstructor="no" >
+          <description>
+          The total number of RHS references to the result of this WL.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="opt_cyc_wlf" />
+                  <range from="opt_cyc_wlf"     to="opt_cyc_wlf" />
+                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
                 </phases>
               </target>
             </targets>
           </type>
         </attribute>
-        <attribute name="Referenced_Fold" inconstructor="no" >
+        <attribute name="Referenced_Fold" default="0">
+          <description>
+            The number of RHS references, within a potential folder-WL,  
+            to the result of this WL, by the WL at
+            Referenced_Fold_WL. WLF and SWLF can fold WLs only
+            if this field and WITH_REFERENCED are equal.
+            The only rationale for this restriction is that it prevents
+            the same foldee-WL element from being computed more than once.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="opt_cyc_wlf" />
+                  <range from="opt_cyc_wlf"      to="opt_cyc_wlf" />
+                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Referenced_Folderwl" default ="NULL" >
+          <description>
+            The with-loop that refers to the result created by
+            this with-loop. See Referenced_Fold.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Avis" />
+                <unknown />
+                <phases>
+                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
                 </phases>
               </target>
             </targets>
@@ -6122,6 +6165,7 @@
       </attributes>
       <flags>
         <flag name="IsFoldable" />
+
 	<flag name="IsDependent" />
       </flags>
     </node>

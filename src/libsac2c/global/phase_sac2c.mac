@@ -548,6 +548,10 @@ SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
 SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithloopIdxs,
           ALWAYS, opt)
 
+SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
+          SCCdoStripConformityChecks,
+          global.optimize.doswlf || global.insertconformitychecks, opt)
+
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
@@ -569,10 +573,6 @@ SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVar
 
 SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
-
-SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
-          SCCdoStripConformityChecks,
-          global.optimize.doswlf || global.insertconformitychecks, opt)
 
 SUBPHASE (ufl, "Unflattening WL generator", UFLdoUnflattenWLGenerators, global.ssaiv, opt)
 

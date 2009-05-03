@@ -1231,6 +1231,10 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
  * description:
  *   decides whether subst_wl shall be folded into target_wl or not.
  *
+ *   All references to subst_wl must lie within the target_wl.
+ *   This avoids duplicating the work of creating subst_wl
+ *   result elements.
+ *
  *   The flag FOLDABLE of every WL is
  *     1 if there are const array bounds
  *     0 else.

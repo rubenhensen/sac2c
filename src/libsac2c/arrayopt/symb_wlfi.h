@@ -17,12 +17,18 @@ extern node *SWLFIdoSymbolicWithLoopFolding (node *arg_node);
 extern node *SWLFIdoSymbolicWithLoopFoldingModule (node *arg_node);
 
 extern node *SWLFIfundef (node *arg_node, info *arg_info);
+extern node *SWLFIblock (node *arg_node, info *arg_info);
 extern node *SWLFIassign (node *arg_node, info *arg_info);
+extern node *SWLFIlet (node *arg_node, info *arg_info);
+extern node *SWLFIcond (node *arg_node, info *arg_info);
+extern node *SWLFIid (node *arg_node, info *arg_info);
 extern node *SWLFIwith (node *arg_node, info *arg_info);
 extern node *SWLFIpart (node *arg_node, info *arg_info);
 extern node *SWLFIcode (node *arg_node, info *arg_info);
+extern node *SWLFImodarray (node *arg_node, info *arg_info);
 extern node *SWLFIgenerator (node *arg_node, info *arg_info);
 extern node *SWLFIids (node *arg_node, info *arg_info);
 extern node *SWLFIprf (node *arg_node, info *arg_info);
+extern node *SWLFIavis (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SYMB_WLFI_H_ */

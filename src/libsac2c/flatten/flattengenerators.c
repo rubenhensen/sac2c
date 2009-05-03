@@ -172,21 +172,31 @@ flattenBound (node *arg_node, info *arg_info)
     DBUG_ENTER ("flattenBound");
 
     res = arg_node;
-    if ((NULL != arg_node) && (N_array == NODE_TYPE (arg_node))) {
-        xrho = TCcountExprs (ARRAY_AELEMS (arg_node));
-        shp = SHcreateShape (dim, xrho);
-        avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), shp));
-        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
-        nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
-                            NULL);
-        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
-        AVIS_SSAASSIGN (avis) = nas;
-        AVIS_DIM (avis) = TBmakeNum (dim);
-        AVIS_SHAPE (avis)
-          = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (AVIS_DIM (avis)), NULL));
-        res = TBmakeId (avis);
-        FREEdoFreeTree (arg_node);
-        DBUG_PRINT ("FLATGflattenBound", ("Generated avis for: %s", AVIS_NAME (avis)));
+    if (NULL != arg_node) {
+        switch (NODE_TYPE (arg_node)) {
+        case N_array:
+            xrho = TCcountExprs (ARRAY_AELEMS (arg_node));
+            shp = SHcreateShape (dim, xrho);
+            avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), shp));
+            INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+            nas
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
+                              NULL);
+            INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
+            AVIS_SSAASSIGN (avis) = nas;
+            AVIS_DIM (avis) = TBmakeNum (dim);
+            AVIS_SHAPE (avis)
+              = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (AVIS_DIM (avis)), NULL));
+            res = TBmakeId (avis);
+            FREEdoFreeTree (arg_node);
+            DBUG_PRINT ("FLATGflattenBound",
+                        ("Generated avis for: %s", AVIS_NAME (avis)));
+            break;
+        case N_id:
+            break;
+        default:
+            DBUG_ASSERT (FALSE, "FLATG flattenBound expected N_array or N_id");
+        }
     }
 
     DBUG_RETURN (res);
