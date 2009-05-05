@@ -3,9 +3,13 @@
 #ifndef _SAC_ICM2C_STD_H_
 #define _SAC_ICM2C_STD_H_
 
-extern void ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+                                   char **vararg);
+extern void ICMCompileND_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt,
                                   char **vararg);
-extern void ICMCompileND_THREAD_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileND_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+                                          char **vararg);
+extern void ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt,
                                          char **vararg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);

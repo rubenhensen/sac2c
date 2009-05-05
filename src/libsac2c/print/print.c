@@ -1614,10 +1614,13 @@ PRTfundef (node *arg_node, info *arg_info)
                 } else {
                     /* print N_icm ND_FUN_DEC */
                     fprintf (global.outfile, "\n");
-                    TRAVdo (FUNDEF_ICM (arg_node), arg_info);
+                    TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
                 }
 
-                fprintf (global.outfile, ";\n");
+                if (!(FUNDEF_ICM (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                    fprintf (global.outfile, ";\n");
+                }
 
                 if ((global.compiler_subphase != PH_cg_prt)
                     && (global.compiler_subphase != PH_ccg_prt)) {
@@ -1759,7 +1762,14 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
                 }
 
-                fprintf (global.outfile, "\n\n");
+                fprintf (global.outfile, "\n");
+
+                if (!(FUNDEF_ICM (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                    TRAVdo (FUNDEF_ICMDEFEND (arg_node), arg_info);
+                }
+
+                fprintf (global.outfile, "\n");
 
                 if (INFO_SEPARATE (arg_info)
                     && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
@@ -3257,15 +3267,19 @@ PRTicm (node *arg_node, info *arg_info)
          * If so, we avoid a double prefixing.
          */
         if (STRprefix ("SAC_", ICM_NAME (arg_node))) {
-            fprintf (global.outfile, "%s( ", ICM_NAME (arg_node));
+            fprintf (global.outfile, "%s", ICM_NAME (arg_node));
         } else {
-            fprintf (global.outfile, "SAC_%s( ", ICM_NAME (arg_node));
+            fprintf (global.outfile, "SAC_%s", ICM_NAME (arg_node));
         }
+
+        fprintf (global.outfile, "(");
 
         if (ICM_ARGS (arg_node) != NULL) {
             TRAVdo (ICM_ARGS (arg_node), arg_info);
         }
+
         fprintf (global.outfile, ")");
+
         if (last_assignment_icm == arg_node) {
             global.indent += ICM_INDENT_AFTER (arg_node);
         }

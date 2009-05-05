@@ -12,22 +12,40 @@
  * traversal of icm.data (-> icm2c.c!).
  */
 
-#if defined(ND_FUN_DEC) || defined(ICM_ALL)
-ICM_DEF( ND_FUN_DEC, ICM_TRACE_NONE)
+#if defined(ND_FUN_DECL) || defined(ICM_ALL)
+ICM_DEF( ND_FUN_DECL, ICM_TRACE_NONE)
   ICM_ID( name)
   ICM_NT( rettype_NT)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_FUN_DEC, (name, rettype_NT, vararg_cnt, vararg))
+ICM_END( ND_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
-#if defined(ND_THREAD_FUN_DEC) || defined(ICM_ALL)
-ICM_DEF( ND_THREAD_FUN_DEC, ICM_TRACE_NONE)
+#if defined(ND_FUN_DEF) || defined(ICM_ALL)
+ICM_DEF( ND_FUN_DEF, ICM_TRACE_NONE)
   ICM_ID( name)
   ICM_NT( rettype_NT)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_THREAD_FUN_DEC, (name, rettype_NT, vararg_cnt, vararg))
+ICM_END( ND_FUN_DEF, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(ND_THREAD_FUN_DECL) || defined(ICM_ALL)
+ICM_DEF( ND_THREAD_FUN_DECL, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( ND_THREAD_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(ND_THREAD_FUN_DEF) || defined(ICM_ALL)
+ICM_DEF( ND_THREAD_FUN_DEF, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( ND_THREAD_FUN_DEF, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)

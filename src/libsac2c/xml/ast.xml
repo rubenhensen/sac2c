@@ -3300,6 +3300,34 @@
           </type>
 	</attribute>
         <attribute name="Icm" inconstructor="no">
+          <description>ICM for function definitions</description>
+          <type name="Node">
+            <targets>
+              <target mandatory="yes">
+                <node name="Icm" />
+                <phases>
+                  <range from="cg_cpl" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="IcmDecl" inconstructor="no">
+          <description>ICM for function decelerations</description>
+          <type name="Node">
+            <targets>
+              <target mandatory="yes">
+                <node name="Icm" />
+                <phases>
+                  <range from="cg_cpl" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="IcmDefEnd" inconstructor="no">
+          <description>ICM to mark the end of a function definition
+          </description>
           <type name="Node">
             <targets>
               <target mandatory="yes">

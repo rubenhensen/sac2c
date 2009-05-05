@@ -53,32 +53,61 @@
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_DEC");
+    DBUG_ENTER ("ICMCompileND_FUN_DECL");
 
-#define ND_FUN_DEC
+#define ND_FUN_DEF
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEC
+#undef ND_FUN_DEF
 
     INDENT;
 
-    fprintf (global.outfile, "SAC_MUTC_DECL_FUN(");
+    fprintf (global.outfile, "SAC_MUTC_DECL_FUN2(");
+
+    fprintf (global.outfile, "%s, ", name);
 
     if (rettype_NT[0] != '\0') {
-        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), NONVOID, ", rettype_NT);
     } else {
-        fprintf (global.outfile, "void ");
+        fprintf (global.outfile, "void, VOID, ");
     }
 
-    fprintf (global.outfile, "%s(", name);
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, FUN)",
                           vararg[i], vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    fprintf (global.outfile, ")"); /* SAC_MUTC_DECL_FUN */
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileND_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileND_FUN_DEF");
+
+#define ND_FUN_DEF
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_FUN_DEF
+
+    INDENT;
+
+    fprintf (global.outfile, "SAC_MUTC_START_DEF_FUN2(");
+
+    fprintf (global.outfile, "%s, ", name);
+
+    if (rettype_NT[0] != '\0') {
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), NONVOID, ", rettype_NT);
+    } else {
+        fprintf (global.outfile, "void, VOID, ");
+    }
+
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, FUN)",
+                          vararg[i], vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
 }
@@ -98,9 +127,9 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
  ******************************************************************************/
 
 void
-ICMCompileND_THREAD_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_THREAD_FUN_DEC");
+    DBUG_ENTER ("ICMCompileND_THREAD_FUN_DEF");
 
 #define ND_FUN_DEC
 #include "icm_comment.c"
@@ -110,9 +139,33 @@ ICMCompileND_THREAD_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char 
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
     INDENT;
-    fprintf (global.outfile, "thread ");
+    fprintf (global.outfile, "SAC_MUTC_DECL_THREADFUN2 ");
 
-    fprintf (global.outfile, "%s(", name);
+    fprintf (global.outfile, "( %s, , ", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, THREAD)",
+                          vararg[i], vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileND_THREAD_FUN_DEF");
+
+#define ND_FUN_DEC
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_FUN_DEC
+
+    DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MUTC_DECL_THREADFUN2 ");
+
+    fprintf (global.outfile, "( %s, , ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, THREAD)",
                           vararg[i], vararg[i + 2], vararg[i + 1]));

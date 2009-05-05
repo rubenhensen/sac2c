@@ -32,15 +32,17 @@ dnl Define a pattern for an icm
 dnl 
 dnl $1  icm name
 dnl $2  num args before nt
-dnl $3* patten
-define(pat, `ifelse(`$#', `2', `patnopat($@)', `patpat($@)')')
+dnl $3  num args after nt
+dnl $4* patten
+define(pat, `ifelse(`$#', `3', `patnopat($@)', `patpat($@)')')
 
 dnl Define CPP macro to handle nt there is a pattern
 dnl
 dnl $1  icm name
 dnl $2  num args before nt
-dnl $3+ patten
-define(patpat, ``#'define $1(_args($2) nt, ...) use_cat`'($1_, patcat(shift2($*)))(_args($2) nt ,`#'`#'__VA_ARGS__)')
+dnl $3  num args after nt
+dnl $4+ patten
+define(patpat, ``#'define $1(_args($2) nt _args2($3)) use_cat`'($1_, patcat(shift3($*)))(_args($2) nt _args2($3))')
 
 dnl Define CPP macro to handle nt there is NO pattern
 dnl
@@ -54,11 +56,18 @@ dnl
 dnl $1+ nt accessors
 define(patcat, `ifelse(`$#', `1', `$1(nt)', `use_cat`'($1(nt), patcat(shift($*)))')')
 
-dnl Generate a list of arguments
-dnl arg1, arg2 ...
+dnl Generate a list of arguments ending in ,
+dnl arg1, arg2, ...,
 dnl
 dnl $1  Number of arguments to create
 define(_args, `ifelse($1, `0', `', `_args(eval($1-1)) arg$1,')')
+
+dnl Generate a list of arguments starting with , and with a different name
+dnl to that of _args
+dnl , gra1, gra2, ...
+dnl
+dnl $1  Number of arguments to create
+define(_args2, `ifelse($1, `0', `', `_args2(eval($1-1)), gra$1')')
 
 dnl Create CPP macro for this rule only if the CPP macro does not exist
 dnl

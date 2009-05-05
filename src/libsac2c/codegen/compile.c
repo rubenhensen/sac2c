@@ -1422,15 +1422,18 @@ MakeArgNode (int idx, types *arg_type)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeIcm_ND_FUN_DEC( node *fundef)
+ * @fn  node *MakeIcm_ND_FUN_DEC( node *fundef, bool decl)
  *
- * @brief  Creates a ND_FUN_DEC ICM, which has the following format:
+ * @brief  Creates a ND_FUN_DEF/ND_FUNDECL ICM, which has the following format:
  *         ND_FUN_DEC( name, rettype, narg, [TAG, type, arg]*),
+ *
+ * @param fundef
+ * @param decl  Is this a function declaration or definition?
  *
  ******************************************************************************/
 
 static node *
-MakeIcm_ND_FUN_DEC (node *fundef)
+MakeIcm_ND_FUN_DEC (node *fundef, bool decl)
 {
     node *ret_node;
     argtab_t *argtab;
@@ -1504,14 +1507,23 @@ MakeIcm_ND_FUN_DEC (node *fundef)
                                 icm_args);
     }
 
-    if (FUNDEF_ISTHREADFUN (fundef)) {
-        ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DEC",
-                               TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+    if (decl) {
+        if (FUNDEF_ISTHREADFUN (fundef)) {
+            ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DECL",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+        } else {
+            ret_node = TCmakeIcm2 ("ND_FUN_DECL",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+        }
     } else {
-        ret_node = TCmakeIcm2 ("ND_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                               icm_args);
+        if (FUNDEF_ISTHREADFUN (fundef)) {
+            ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DEF",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+        } else {
+            ret_node = TCmakeIcm2 ("ND_FUN_DEF",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+        }
     }
-
     DBUG_RETURN (ret_node);
 }
 
@@ -1602,7 +1614,31 @@ MakeFundefIcm (node *fundef, info *arg_info)
     if (FUNDEF_ISSPMDFUN (fundef)) {
         icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
     } else {
-        icm = MakeIcm_ND_FUN_DEC (fundef);
+        icm = MakeIcm_ND_FUN_DEC (fundef, FALSE);
+    }
+
+    DBUG_RETURN (icm);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeFundeclIcm( node *fundef, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+MakeFundeclIcm (node *fundef, info *arg_info)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeFundeclIcm");
+
+    if (FUNDEF_ISSPMDFUN (fundef)) {
+        icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
+    } else {
+        icm = MakeIcm_ND_FUN_DEC (fundef, TRUE);
     }
 
     DBUG_RETURN (icm);
@@ -1748,9 +1784,15 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
         } else {
             icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
         }
-        ret_node
-          = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                              icm_args, assigns);
+        if (FUNDEF_ISTHREADFUN (fundef)) {
+            ret_node = TCmakeAssignIcm2 ("ND_THREAD_AP",
+                                         TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                         icm_args, assigns);
+        } else {
+            ret_node
+              = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                  icm_args, assigns);
+        }
     }
 
     DBUG_RETURN (ret_node);
@@ -2189,6 +2231,8 @@ COMPfundef (node *arg_node, info *arg_info)
         }
 
         FUNDEF_ICM (arg_node) = MakeFundefIcm (arg_node, arg_info);
+        FUNDEF_ICMDECL (arg_node) = MakeFundeclIcm (arg_node, arg_info);
+        FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_MUTC_END_DEF_FUN", NULL);
 
         /*
          * traverse next fundef
