@@ -2,6 +2,8 @@
 
 #define _SAC_MUTC_STARTUP_H_
 
+#if 0
+
 #if SAC_MUTC_MACROS
 SAC_MUTC_STARTUP
 #endif /* SAC_MUTC_MACROS */
@@ -27,4 +29,6 @@ SAC_MUTC_MAIN
     }                                                                                    \
     sl_enddef
 
-#endif _SAC_MUTC_STARTUP_H_
+#endif /* _SAC_MUTC_STARTUP_H_ */
+
+#endif
