@@ -458,7 +458,7 @@ PrintMutcOptions (void)
     DBUG_ENTER ("PrintMutcOptions");
 
     printf ("\n\nMUTC OPTIONS:\n\n"
-            "    -mutc_funt_threads Convert all functions to thread functions and use\n"
+            "    -mutc_fun_threads Convert all functions to thread functions and use\n"
             "                    singleton creates\n\n"
             "    -mutc_macros    Use mutc macro abstraction interface\n\n");
 

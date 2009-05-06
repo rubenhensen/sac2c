@@ -49,8 +49,9 @@
 #define NT_SHP(var_NT) Item1 var_NT
 #define NT_HID(var_NT) Item2 var_NT
 #define NT_UNQ(var_NT) Item3 var_NT
-#define NT_SCL(var_NT) Item4 var_NT
-#define NT_TMP(var_NT) Item3 var_NT
+#define NT_REG(var_NT) Item4 var_NT
+#define NT_SCO(var_NT) Item5 var_NT
+#define NT_USG(var_NT) Item6 var_NT
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
@@ -556,11 +557,13 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_PARAM_FLAG_inout_nodesc_bx(var_NT, basetype, flag)                        \
     SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag)
 
-#define SAC_ND_ARG_FLAG_in_nodesc(var_NT, type, flag) SAC_ND_ARG_in_nodesc (var_NT)
-#define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_A_FIELD (var_NT)
+#define SAC_ND_ARG_FLAG_in_nodesc(var_NT, type, flag)                                    \
+    SAC_MUTC_ARG (SAC_ND_A_FIELD (var_NT), var_NT, type, flag)
+#define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_ARG_FLAG_in_nodesc (var_NT, void, FUN)
 
-#define SAC_ND_ARG_FLAG_out_nodesc(var_NT, type, flag) SAC_ND_ARG_out_nodesc (var_NT)
-#define SAC_ND_ARG_out_nodesc(var_NT) &SAC_ND_A_FIELD (var_NT)
+#define SAC_ND_ARG_FLAG_out_nodesc(var_NT, type, flag)                                   \
+    SAC_MUTC_ARG (&SAC_ND_A_FIELD (var_NT), var_NT, type, flag)
+#define SAC_ND_ARG_out_nodesc(var_NT) SAC_ND_ARG_FLAG_out_nodesc (var_NT, void, FUN)
 
 #define SAC_ND_ARG_FLAG_inout(var_NT, type, flag) SAC_ND_ARG_FLAG_out (var_NT, type, flag)
 #define SAC_ND_ARG_inout(var_NT) SAC_ND_ARG_out (var_NT)
@@ -613,26 +616,31 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_ARG_out implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ARG_FLAG_out__NODESC(var_NT, type, flag) SAC_ND_ARG_out__NODESC (var_NT)
-#define SAC_ND_ARG_out__NODESC(var_NT) SAC_ND_ARG_out_nodesc (var_NT)
+#define SAC_ND_ARG_FLAG_out__NODESC(var_NT, type, flag)                                  \
+    SAC_ND_ARG_FLAG_out_nodesc (var_NT, type, flag)
+#define SAC_ND_ARG_out__NODESC(var_NT) SAC_ND_ARG_FLAG_out__NODESC (var_NT, void *, FUN)
 
-#define SAC_ND_ARG_FLAG_out__DESC(var_NT, type, flag) SAC_ND_ARG_out__DESC (var_NT)
+#define SAC_ND_ARG_FLAG_out__DESC(var_NT, type, flag)                                    \
+    SAC_ND_ARG_out_nodesc (var_NT),                                                      \
+      SAC_MUTC_ARG (&SAC_ND_A_DESC (var_NT), var_nt, type, flag)
 #define SAC_ND_ARG_out__DESC(var_NT)                                                     \
-    SAC_ND_ARG_out_nodesc (var_NT), &SAC_ND_A_DESC (var_NT)
-
-/*
- * SAC_ND_RET_out implementations (referenced by sac_std_gen.h)
- */
+    SAC_ND_ARG_FLAG_out__DESC (var_NT, void *, FUN) /*                                   \
+                                                     * SAC_ND_RET_out implementations    \
+                                                     * (referenced by sac_std_gen.h)     \
+                                                     */
 
 #define SAC_ND_RET_out__NODESC(retvar_NT, var_NT)                                        \
     {                                                                                    \
-        *SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)) = SAC_ND_A_FIELD (var_NT);               \
+        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))         \
+          = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT));                       \
     }
 
 #define SAC_ND_RET_out__DESC(retvar_NT, var_NT)                                          \
     {                                                                                    \
-        *SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)) = SAC_ND_A_FIELD (var_NT);               \
-        *SAC_NAMEP (SAC_ND_A_DESC (retvar_NT)) = SAC_ND_A_DESC (var_NT);                 \
+        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))         \
+          = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT));                       \
+        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_DESC (retvar_NT)))          \
+          = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_DESC (var_NT));                        \
     }
 
 /*

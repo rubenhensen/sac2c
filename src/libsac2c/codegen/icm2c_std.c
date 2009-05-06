@@ -202,17 +202,19 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     INDENT;
     if (!STReq (retname, "")) {
         fprintf (global.outfile, "%s = ", retname);
+        fprintf (global.outfile, "%s(", name);
     } else {
-        fprintf (global.outfile, "SAC_MUTC_FUN_AP(");
+        fprintf (global.outfile, "SAC_MUTC_FUNAP2(");
+        fprintf (global.outfile, "%s, ", name);
     }
 
-    fprintf (global.outfile, "%s(", name);
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, FUN)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
-    fprintf (global.outfile, ");");
 
-    if (STReq (retname, "")) {
+    if (!STReq (retname, "")) {
+        fprintf (global.outfile, ");");
+    } else {
         fprintf (global.outfile, ")"); /* SAC_MUTC_FUN_AP */
     }
 

@@ -30,6 +30,9 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+#if SAC_MUTC_MACROS
+#else
+
 #ifndef SAC_SIMD_COMPILATION
 
 #define SAC_CS_NONE 0
@@ -312,5 +315,7 @@ SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 #define SAC_CS_STOP(tag)
 
 #endif /* SAC_DO_CACHESIM */
+
+#endif /* mutc */
 
 #endif /* _SAC_CACHESIM_H */

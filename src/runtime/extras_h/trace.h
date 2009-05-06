@@ -20,6 +20,8 @@
 #ifndef _SAC_TRACE_H
 #define _SAC_TRACE_H
 
+#if !SAC_MUTC_MACROS
+
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
@@ -212,5 +214,8 @@ typedef enum {
 #define SAC_TR_DEC_HIDDEN_MEMCNT(size)
 
 #endif /* SAC_DO_TRACE_MEM */
+#else
+#define SAC_HM_DEFINE()
+#endif /* mutc */
 
 #endif /* _SAC_TRACE_H */

@@ -27,7 +27,11 @@
 #endif /*  __bool_true_false_are_defined */
 
 #ifndef SAC_SIMD_COMPILATION
+#if SAC_MUTC_MACROS
+typedef int boolbool;
+#else
 typedef int bool;
+#endif
 #endif
 
 #define true 1

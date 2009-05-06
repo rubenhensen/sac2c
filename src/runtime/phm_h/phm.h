@@ -18,6 +18,9 @@
 #ifndef _SAC_HEAPMGR_H
 #define _SAC_HEAPMGR_H
 
+#if SAC_MUTC_MACROS
+#else
+
 #ifndef SAC_SIMD_COMPILATION
 
 /*
@@ -808,5 +811,7 @@ SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
 #endif /* SAC_DO_PHM */
 
 #endif /* SAC_SIMD_COMPILATION */
+
+#endif /* mutc */
 
 #endif /* _SAC_HEAPMGR_H */

@@ -27,6 +27,8 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+#if !SAC_MUTC_MACROS
+
 /*
  *  General profiling macros and declarations
  */
@@ -456,5 +458,9 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 #define PROFILE_LIBRARY(x)
 
 #endif /* SAC_DO_PROFILE_LIB */
+
+#else
+#define SAC_PF_DEFINE()
+#endif /* mutc */
 
 #endif /* _SAC_PROFILE_H */

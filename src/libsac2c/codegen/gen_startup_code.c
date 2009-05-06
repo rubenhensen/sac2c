@@ -165,7 +165,7 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n",
              (global.mutc_fun_as_threads) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_MUTC_MACROS  %d\n",
-             (global.mutc_macros) ? 1 : 0);
+             (global.backend == BE_mutc) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     /* Expose backend mode to backend */
@@ -188,7 +188,7 @@ PrintGlobalSwitches ()
         fprintf (global.outfile, "#define SAC_GENERATE_CLIBRARY\n");
     }
     fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
-             (global.backend == BE_mutc) ? "extern \"C\"" : "extern");
+             (global.backend == BE_mutc) ? "" : "extern");
     fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
@@ -678,7 +678,7 @@ GSCprintMain ()
         GSCprintMainC99 ();
         break;
     case BE_mutc:
-        GSCprintMainMuTC ();
+        /* GSCprintMainMuTC(); */
         break;
     default:
         DBUG_ASSERT (FALSE, "unknown backend");
