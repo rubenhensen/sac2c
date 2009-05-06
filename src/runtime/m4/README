@@ -69,7 +69,7 @@ The current way of defining icm + tag -> icm rules is:
 
 +-----------------------------------------------------------------------------+
 |                                                                             |
-| pat(`SAC_ND_A_DESC', `0', `NT_SHP', `NT_HID', `NT_UNQ')                     |
+| pat(`SAC_ND_A_DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')                |
 |                                                                             |
 | rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `NHD', `*UNQ')         |
 | rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')        |
@@ -84,6 +84,7 @@ The current way of defining icm + tag -> icm rules is:
 |                                                                             |
 | pat( Name of macro being defined,                                           |
 |      Number of arguments before the name tuple,                             |
+|      Number of arguments after the name tuple,                              |
 |      List of 0 or more name tuple accessors that are to be used)            |
 |                                                                             |
 +-----------------------------------------------------------------------------+
