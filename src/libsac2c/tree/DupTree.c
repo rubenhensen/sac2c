@@ -761,6 +761,26 @@ DUPmodule (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPstructdef (node *arg_node, info *arg_info)
+{
+    node *new_vardecs;
+    node *new_node;
+
+    DBUG_ENTER ("DUPstructdef");
+
+    new_vardecs = DUPTRAV (STRUCTDEF_STRUCTELEM (arg_node));
+
+    new_node = TBmakeStructdef (STRcpy (STRUCTDEF_NAME (arg_node)), new_vardecs,
+                                DUPCONT (STRUCTDEF_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPtypedef (node *arg_node, info *arg_info)
 {
     node *new_node;
@@ -1034,6 +1054,23 @@ DUPblock (node *arg_node, info *arg_info)
      * BLOCK_SSACOUNTER is adjusted correctly later on by DupFundef()
      */
     BLOCK_SSACOUNTER (new_node) = BLOCK_SSACOUNTER (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPstructelem (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPstructelem");
+
+    new_node = TBmakeVardec (DUPTRAV (STRUCTELEM_AVIS (arg_node)),
+                             DUPCONT (STRUCTELEM_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 

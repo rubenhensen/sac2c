@@ -92,7 +92,7 @@ libsac2c_serialize   := serialize_node serialize_attribs deserialize \
 libsac2c_scanparse   := sac.tab sac.lex scnprs handle_dots resolvepragma \
                         handle_with_loop_generators handle_with_loop_operators \
                         handle_zero_generator_with_loops \
-                        introduce_user_tracing_calls
+                        introduce_user_tracing_calls hidestructs
 
 libsac2c_flatten     := flatten lac2fun fun2lac insert_vardec \
                         handle_mops UndoSSATransform SSATransform \

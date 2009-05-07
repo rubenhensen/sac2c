@@ -2526,6 +2526,14 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="HS" name="Hide Structs" default="sons"
+                 include="hidestructs.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Structdef" />
+          <node name="Structelem" />
+        </travuser>
+      </traversal>
    </traversals>
 
   <nodesets>
@@ -2613,6 +2621,19 @@
             <target mandatory="no">
               <set name="Interface" />
               <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <!-- TODO: Remove the default. -->
+        <son name="Structs" default="NULL">
+          <description>structs defined within the module</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Structdef" />
+              <phases>
+                <!-- TODO: This is not actually true... -->
                 <all />
               </phases>
             </target>
@@ -2751,6 +2772,51 @@
     </node>
 <!--
 
+N_structdef :
+
+-->
+    <node name="Structdef">
+      <description>definition of a struct</description>
+      <sons>
+        <son name="Structelem">
+          <targets>
+            <target mandatory="yes">
+              <node name="Structelem" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Structdef" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Name" inconstructor="yes">
+          <type name="String">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags/>
+    </node>
+<!--
+
   N_typedef :
 
 -->
@@ -2879,6 +2945,18 @@
                 <any />
                 <phases>
                   <range from="mod_imp" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Structdef" default="NULL" inconstructor="no">
+          <type name="Node">
+            <targets>
+              <target mandatory="yes">
+                <node name="Structdef" />
+                <phases>
+                  <all/>
                 </phases>
               </target>
             </targets>
@@ -3570,6 +3648,21 @@
             TRUE iff the fixpoint of this function has been found in SOSSK.
           </description>
         </flag>
+        <flag name="IsStructGet" default="FALSE">
+          <description>
+            This is a "getter" for a struct element.
+          </description>
+        </flag>
+        <flag name="IsStructSet" default="FALSE">
+          <description>
+            This is a "setter" for a struct element.
+          </description>
+        </flag>
+        <flag name="IsStructInit" default="FALSE">
+          <description>
+            This is a "constructor" for a struct.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -3820,6 +3913,40 @@
 	</attribute>
       </attributes>
       <flags></flags>
+    </node>
+<!--
+
+  N_structelem :
+
+-->
+    <node name="Structelem">
+      <description>declaration of an element of a struct</description>
+      <sons>
+        <son name="Avis">
+          <targets>
+            <target mandatory="yes">
+              <node name="Avis" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Structelem" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+      </attributes>
+      <flags>
+      </flags>
     </node>
 <!--
 

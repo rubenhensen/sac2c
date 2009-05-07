@@ -473,7 +473,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TSIprintInfo");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_code), "Wrong node-type: N_code exspected");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_code), "Wrong node-type: N_code expected");
 
     count = 0;
     iter = 0;
@@ -906,6 +906,8 @@ PRTmodule (node *arg_node, info *arg_info)
         global.outfile = FMGRwriteOpen ("%s/header.h", global.tmp_dirname);
         GSCprintFileHeader (arg_node);
 
+        /* TODO: Also check for MODULE_STRUCTDEFS (arg_node)? */
+
         if (NULL != MODULE_TYPES (arg_node)) {
             fprintf (global.outfile, "\n\n");
             /* print typedefs */
@@ -1043,6 +1045,8 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
         }
 
+        /* TODO: Also check for MODULE_STRUCTDEFS (arg_node)? */
+
         if (MODULE_TYPES (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
@@ -1146,6 +1150,31 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTstructdef( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTstructdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTstructdef");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    /* TODO: Also print the structelems. */
+    fprintf (global.outfile, "struct %s {...}", STRUCTDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1929,6 +1958,35 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, ",");
         PRINT_CONT (TRAVdo (ARG_NEXT (arg_node), arg_info), ;);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTstructelem( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   TODO: This should print a pretty representation of the structdef.
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTstructelem (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTstructelem");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    INDENT;
+
+    fprintf (global.outfile, "%s %s;",
+             TYtype2String (AVIS_TYPE (STRUCTELEM_AVIS (arg_node)), FALSE, 0),
+             AVIS_NAME (STRUCTELEM_AVIS (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

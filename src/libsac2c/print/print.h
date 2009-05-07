@@ -44,12 +44,14 @@ extern void PRTprintHomsv (FILE *handle, int *vect, int dims);
  */
 extern node *PRTmodule (node *arg_node, info *arg_info);
 extern node *PRTimplist (node *arg_node, info *arg_info);
+extern node *PRTstructdef (node *arg_node, info *arg_info);
 extern node *PRTtypedef (node *arg_node, info *arg_info);
 extern node *PRTobjdef (node *arg_node, info *arg_info);
 extern node *PRTfundef (node *arg_node, info *arg_info);
 extern node *PRTannotate (node *arg_node, info *arg_info);
 extern node *PRTret (node *arg_node, info *arg_info);
 extern node *PRTarg (node *arg_node, info *arg_info);
+extern node *PRTstructelem (node *arg_node, info *arg_info);
 extern node *PRTvardec (node *arg_node, info *arg_info);
 extern node *PRTblock (node *arg_node, info *arg_info);
 extern node *PRTreturn (node *arg_node, info *arg_info);

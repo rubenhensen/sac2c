@@ -29,6 +29,7 @@
 #include "stringset.h"
 #include "namespaces.h"
 #include "check_mem.h"
+#include "hidestructs.h"
 
 #include "resource.h"
 
@@ -93,7 +94,7 @@ static int prf_arity[] = {
 
 %token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON DCOLON SEMIC 
 COMMA  AMPERS  DOT  QUESTION  RIGHTARROW LEFTARROW 
-INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
+INLINE  LET  STRUCT  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
@@ -141,9 +142,9 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
  * SAC programs
  */
 
-%type <node> prg  defs  def2  def3  def4 def5
+%type <node> prg  defs  def2  def3  def4  def5 def6
 
-%type <node> typedef exttypedef
+%type <node> structdef structdef2 typedef exttypedef
 
 %type <node> objdef extobjdef
 
@@ -277,86 +278,95 @@ defs: interface def2
       { $$ = $1; }
     ;
 
-def2: typedef def2
+def2: structdef def2
+       { $$ = $2;
+         STRUCTDEF_NEXT( $1) = MODULE_STRUCTS( $$);
+         MODULE_STRUCTS( $$) = $1;
+       }
+     | def3
+       { $$ = $1; }
+     ;
+
+def3: typedef def3
       { $$ = $2;
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         MODULE_TYPES( $$) = $1;
       }
-    | exttypedef def2
+    | exttypedef def3
       { $$ = $2;
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         MODULE_TYPES( $$) = $1;
       } 
-    | exttypedef { pragma_type = PRAG_typedef; } pragmas def2
+    | exttypedef { pragma_type = PRAG_typedef; } pragmas def3
       { $$ = $4;
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         TYPEDEF_PRAGMA( $1) = $3;
         MODULE_TYPES( $$) = $1;
       } 
-    | def3
+    | def4
       { $$ = $1; }
     ;
 
-def3: objdef def3
+def4: objdef def4
       { $$ = $2;
         OBJDEF_NEXT( $1) = MODULE_OBJS( $$);
         MODULE_OBJS( $$) = $1;
       }
-    | extobjdef def3
+    | extobjdef def4
       { $$ = $2;
         OBJDEF_NEXT( $1) = MODULE_OBJS( $$);
         MODULE_OBJS( $$) = $1;
       }
-    | extobjdef { pragma_type = PRAG_objdef; } pragmas def3
+    | extobjdef { pragma_type = PRAG_objdef; } pragmas def4
       { $$ = $4;
         OBJDEF_NEXT( $1) = MODULE_OBJS( $$);
         OBJDEF_PRAGMA( $1) = $3;
         MODULE_OBJS( $$) = $1;
       }
-    | def4
-      { $$ = $1; }
-    ;
-
-def4: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def4
-      { $$ = $5;
-        FUNDEF_PRAGMA( $2) = $4;
-        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
-      }
-    | EXTERN fundec def4
-      { $$ = $3;
-        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
-      }
-    | SPECIALIZE fundec {  pragma_type = PRAG_fundec; } pragmas def4
-      { $$ = $4;
-        FUNDEF_PRAGMA( $2) = $4;
-        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
-      }
-    | SPECIALIZE fundec def4
-      { $$ = $3;
-        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
-      }
-    | fundef { pragma_type = PRAG_fundef; } pragmas def4
-      { $$ = $4;
-        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
-      }
-    | fundef def4
-      { $$ = $2;
-        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
-      }
-    | main def4
-      { $$ = $2;
-        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
-      } 
     | def5
       { $$ = $1; }
     ;
 
-def5: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def5: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def5
+      { $$ = $5;
+        FUNDEF_PRAGMA( $2) = $4;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
+      }
+    | EXTERN fundec def5
+      { $$ = $3;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
+      }
+    | SPECIALIZE fundec {  pragma_type = PRAG_fundec; } pragmas def5
+      { $$ = $4;
+        FUNDEF_PRAGMA( $2) = $4;
+        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
+      }
+    | SPECIALIZE fundec def5
+      { $$ = $3;
+        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
+      }
+    | fundef { pragma_type = PRAG_fundef; } pragmas def5
+      { $$ = $4;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      }
+    | fundef def5
+      { $$ = $2;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      }
+    | main def5
+      { $$ = $2;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      } 
+    | def6
+      { $$ = $1; }
+    ;
+
+def6: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
-	            ("%s:"F_PTR,
-	             global.mdb_nodetype[ NODE_TYPE( $$)],
-	             $$));
+                    ("%s:"F_PTR,
+                     global.mdb_nodetype[ NODE_TYPE( $$)],
+                     $$));
       }
     ;
 
@@ -451,6 +461,49 @@ symbolsetentries: ext_id COMMA symbolsetentries { $$ = TBmakeSymbol( $1, $3); }
                 ;
 
 
+/*
+*********************************************************************
+*
+*  rules for structs
+*
+*********************************************************************
+*/
+
+structdef: STRUCT ID BRACE_L structdef2 /* BRACE_R in structdef2 */ SEMIC
+           { $$ = TBmakeStructdef( $2, $4, NULL); }
+         ;
+
+structdef2: ntype ids SEMIC structdef2
+            { node *ids_ptr = $2;
+              $$ = $4;
+
+              DBUG_ASSERT( ($2 != NULL),
+                            "There must be at least one ids to assign to.");
+
+              do { /* Multiple vardecs. */
+                /* I copied this one from exprblock2, but couldn't you use
+                 * DUPavis for the first arg of TBmakeVardec()? Or, heck, maybe
+                 * even DUPvardec for this entire loop? */
+                $$ = TBmakeStructelem(
+                               TBmakeAvis( STRcpy( SPIDS_NAME( $2)),
+                                           TYcopyType( $1)),
+                               $$);
+
+                AVIS_DECLTYPE( STRUCTELEM_AVIS( $$)) = TYcopyType( $1);
+
+                /* The first (of the remaining) ids has been turned into a
+                 * vardec, it can now be freed. */
+                ids_ptr = SPIDS_NEXT( $2);
+                $2 = FREEdoFreeNode( $2);
+                $2 = ids_ptr;
+              } while ($2 != NULL);
+            }
+          | BRACE_R
+            { $$ = NULL;
+            }
+          ;
+
+
 /*
 *********************************************************************
 *
@@ -580,7 +633,7 @@ fundef2: fundefargs BRACKET_R
          exprblock
          { 
            $<node>$ = $<node>3;
-           FUNDEF_BODY( $$) = $4;             /* function bdoy  */
+           FUNDEF_BODY( $$) = $4;             /* function body  */
            FUNDEF_ARGS( $$) = $1;             /* fundef args */
 
            DBUG_PRINT( "PARSE",
@@ -931,9 +984,9 @@ exprblock2: ntype ids SEMIC exprblock2
                            "non-terminal ids should not return NULL ptr!");
 
               /*
-               * In the AST, each variable has it's own declaration.
+               * In the AST, each variable has its own declaration.
                * Therefore, for each ID in ids, we have to generate
-               * it's own N_vardec node with it's own copy of the
+               * its own N_vardec node with its own copy of the
                * types-structure from $1!
                */
               while (SPIDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
@@ -1041,6 +1094,21 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
            { $$ = TBmakeLet( $1, $4);
              NODE_LINE( $$) = $<cint>3;
            }
+/*
+ * This is too ugly.
+ */
+/*
+         | qual_ext_id DOT ID LET { $<cint>$ = global.linenum; } expr
+           {
+             node *funcall;
+             node *exprs;
+
+             exprs = TBmakeExprs( DUPdoDupNode( $1), TBmakeExprs( $6, NULL));
+             funcall = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_SET, $3)), exprs);
+             $$ = TBmakeLet( TBmakeSpids( STRcpy( SPID_NAME( $1)), NULL), funcall);
+             NODE_LINE( $$) = $<cint>5;
+           }
+*/
          | ID SQBR_L exprs SQBR_R LET { $<cint>$ = global.linenum; } expr
            { node *id, *ids, *ap;
 
@@ -1259,6 +1327,11 @@ expr: qual_ext_id                { $$ = $1;                   }
     | BRACE_L SQBR_L exprs SQBR_R RIGHTARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
       }
+    | expr DOT ID  /* TODO: Disallow space between these arguments? */
+      {
+        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
+                         TBmakeExprs( $1, NULL));
+      }
     ;
       
 expr_with: NWITH { $<cint>$ = global.linenum; } with
@@ -1276,7 +1349,7 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          * activate the following two lines....
          */
         CTIwarnLine( global.linenum, 
-                     "Old with-loop style depricated!\n"
+                     "Old with-loop style deprecated!\n"
                      "Please use the new syntax instead");
 #endif
 
@@ -1800,8 +1873,7 @@ basentype: simplentype
            { $$ = $1;
            }
          | polyntype
-           {
-             $$ = $1;
+           { $$ = $1;
            }
          ;
 
@@ -1812,7 +1884,16 @@ simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
            | TYPE_DBL    { $$ = TYmakeSimpleType( T_double); }
            ;
 
-userntype: ID
+userntype: STRUCT ID
+         /* This replaces all `struct <id>' occurences, when used as a ntype,
+          * by `_struct_<id>'. Struct definitions are later replaced by typedefs
+          * of such identifiers as hidden types, so whenever the programmer
+          * thinks he is using a struct he is just using a typedef'ed hidden
+          * type. The typechecker will take care of the rest.
+          */
+           { $$ = TYmakeSymbType( STRcat( STRUCT_TYPE, $2), NULL);
+           }
+         | ID
            { $$ = TYmakeSymbType( $1, NULL);
            }
          | ID DCOLON ID

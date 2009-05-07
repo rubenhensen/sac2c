@@ -200,6 +200,7 @@ int charpos = 0;
 "_tod_S_"                  { FILTER( PRF_TOD_S); }
 
 
+"struct"                   { FILTER( STRUCT); }
 "typedef"                  { FILTER( TYPEDEF); }
 "classtype"                { FILTER( CLASSTYPE); }
 "objdef"                   { FILTER( OBJDEF); }
@@ -269,7 +270,6 @@ int charpos = 0;
 "auto"                     { FILTER( C_KEYWORD); }
 "static"                   { FILTER( C_KEYWORD); }
 "extern"                   { FILTER( C_KEYWORD); }
-"struct"                   { FILTER( C_KEYWORD); }
 "union"                    { FILTER( C_KEYWORD); }
 "volatile"                 { FILTER( C_KEYWORD); }
 "case"                     { FILTER( C_KEYWORD); }

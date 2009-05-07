@@ -20,6 +20,9 @@ ENDPHASE (scp)
 
 PHASE (pre, "Preprocessing SAC program", ALWAYS)
 
+SUBPHASE (hs, "Hiding struct definitions behind typedefs and accessors", HSdoHideStructs,
+          ALWAYS, pre)
+
 SUBPHASE (iotc, "Introducing user-tracing calls", IUTCdoIntroduceUserTraceCalls,
           global.dousertrace, pre)
 
