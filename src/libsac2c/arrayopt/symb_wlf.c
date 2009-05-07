@@ -121,6 +121,44 @@
  *
  * Then lines 1-5 are removed by DCR(Dead Code Removal).
  *
+ *  TODO:
+ *   1. At present, SWLF does not occur unless ALL references
+ *      to the foldeeWL are in the folderWL. Here is an extension
+ *      to allow small computations to be folded into several
+ *      folderWLs:
+ *
+ *      Introduce cost function into WLNC. The idea here is
+ *      to provide a crude measure of the cost of computing
+ *      a single WL result element. We start by giving
+ *      each primitive a cost:
+ *        F_xxx_SxS_:  1
+ *        F_xxx_SxV_:  infinity
+ *        F_xxx_VxS_:  infinity
+ *        F_xxx_VxV_:  infinity
+ *        N_ap:        infinity
+ *        N_with:      infinity
+ *        etc.
+ *
+ *      The wl_needcount code will sum the cost of the code
+ *      in each WL. Hmm. This looks like the cost should
+ *      reside in the WL-partition.
+ *
+ *      If the foldeeWL is otherwise ripe for folding, we allow
+ *      the fold to occur if the cost is less than some threshold,
+ *      even if the references to the foldeeWL occur in several
+ *      folderWLs.
+ *
+ *   2. Permit WLF through reshape operations.
+ *      The idea here is that, if the folderWL and foldeeWL
+ *      operating in wlidx mode, then
+ *      the folding can be done, because neither WL cares about
+ *      the shape of the foldeeWL result, just that they have
+ *      identical element counts.
+ *
+ *      A bit more thought here might give a nice way to
+ *      extend this to the case where only one WL is operating
+ *      in wlidx mode.
+ *
  * @ingroup opt
  *
  * @{

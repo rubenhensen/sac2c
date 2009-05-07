@@ -195,9 +195,7 @@
       </traversal> 
       <traversal id="IVEXI" name="Index Variable Extrema Insertion" default="sons" include="ivextrema.h" >
         <travuser>
-          <node name="Module" />
           <node name="Fundef" />
-          <node name="Block" />
           <node name="Assign" />
           <node name="With" />
           <node name="Part" />
@@ -5696,12 +5694,18 @@ N_structdef :
               <target mandatory="no">
                 <node name="With" />
                 <phases>
-                  <phase name="opt_al" />
-                  <phase name="opt_saacyc_swlf" />
+                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
                 </phases>
               </target>
             </targets>
           </type>
+          <description>
+            This field is the number of references to the foldeeWL that
+            created this value, from one, arbitrary-chosen folderWL.
+            The field is used as a crude cost function on the foldeeWL,
+            so that the EWLF is performed only if all references to the
+            foldeeWL are from one other (folderWL) WL.
+          </description>
         </attribute>
         <attribute name="VarNo" inconstructor="no" >
           <type name="Integer">
@@ -6322,6 +6326,13 @@ N_structdef :
         <flag name="IsFoldable" />
 
 	<flag name="IsDependent" />
+        <flag name="IsExtremaInserted">
+          <description>
+          True if IVEXI has already inserted extrema variables
+          for this WL.
+          </description>
+        </flag>
+
       </flags>
     </node>
 <!--
@@ -6600,7 +6611,7 @@ N_structdef :
       <sons>
         <son name="CBlock">
 	<description> 
-	 A list of N_assigns that correspond to the set
+	 A possibly empty list of N_assigns that correspond to the set
 	 of expressions that appear within the curly braces
 	 that (may) follow a WL generator specification.
 	</description> 
@@ -6615,7 +6626,7 @@ N_structdef :
         </son>
         <son name="CExprs">
 	<description> 
-	 A list of N_exprs that represent the expressions
+	 A non-empty list of N_exprs that represent the expressions
 	 that create the result elements associated with
 	 each WL partition generator.
 	</description> 

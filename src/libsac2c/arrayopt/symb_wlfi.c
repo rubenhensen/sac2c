@@ -207,8 +207,8 @@ SWLFIdoSymbolicWithLoopFolding (node *arg_node)
 {
     DBUG_ENTER ("SWLFIdoSymbolicWithLoopFolding");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "SWLFIdoSymbolicWithLoopFolding called for non-fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 ("SWLFIdoSymbolicWithLoopFolding called for non-fundef node"));
 
     TRAVpush (TR_swlfi);
     arg_node = TRAVdo (arg_node, NULL);

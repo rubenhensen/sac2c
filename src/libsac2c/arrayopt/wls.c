@@ -212,6 +212,7 @@ WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
     id = arg_node;
     if (N_array == NODE_TYPE (arg_node)) {
         shp = TCcountExprs (ARRAY_AELEMS (arg_node));
+        /* Result is always an integer vector */
         avis = TBmakeAvis (TRAVtmpVar (),
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
         /* This is dirty, but given the three different arg_info nodes
@@ -223,6 +224,10 @@ WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
         *preassigns = TCappendAssign (*preassigns, assgn);
         AVIS_SSAASSIGN (avis) = assgn;
         id = TBmakeId (avis);
+
+        /* Now, create names for the dim and shape variables */
+        AVIS_DIM (avis) = TBmakeNum (1);
+        AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
         DBUG_PRINT ("WLS",
                     ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
     }
