@@ -10,6 +10,10 @@
  *
  */
 
+/*
+ * See ../m4/README
+ */
+
 include(icm.m4)
 
 start_icm_definition(mutc_gen)

@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 /*
  * $Id$
  *
@@ -17,6 +8,10 @@
  *
  * std_gen.h  is generated automatically from std_gen.h.m4
  *
+ */
+
+/*
+ * See ../m4/README
  */
 
 include(`icm.m4')
