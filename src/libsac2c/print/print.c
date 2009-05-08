@@ -1646,8 +1646,8 @@ PRTfundef (node *arg_node, info *arg_info)
                     TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
                 }
 
-                if (!(FUNDEF_ICM (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                if (!((FUNDEF_ICM (arg_node) == NULL)
+                      || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm))) {
                     fprintf (global.outfile, ";\n");
                 }
 
@@ -1793,8 +1793,8 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, "\n");
 
-                if (!(FUNDEF_ICM (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                if (!((FUNDEF_ICM (arg_node) == NULL)
+                      || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm))) {
                     TRAVdo (FUNDEF_ICMDEFEND (arg_node), arg_info);
                 }
 
