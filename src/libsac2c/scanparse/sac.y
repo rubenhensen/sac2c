@@ -154,7 +154,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
-%type <node> exprs expr expr_with expr_ap opt_arguments expr_ar expr_sel
+%type <node> exprs expr /*expr_structelem*/ expr_with expr_ap opt_arguments expr_ar expr_sel
      with generator  steps  width  nwithops nwithop  withop  wlassignblock  genidx 
      part  parts npart nparts nums returntypes returndectypes ntypes varntypes
 %type <prf> genop prf
@@ -1316,6 +1316,7 @@ expr: qual_ext_id                { $$ = $1;                   }
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
     | expr_ap                     { $$ = $1; }   /* prefix function calls */
+/*  | expr_structelem             { $$ = $1; }    * struct element        */
     | expr_with                   { $$ = $1; }   /* with loops            */
     | expr_ar                     { $$ = $1; }   /* constant arrays       */
     | BRACKET_L COLON ntype BRACKET_R expr   %prec CAST
@@ -1327,12 +1328,21 @@ expr: qual_ext_id                { $$ = $1;                   }
     | BRACE_L SQBR_L exprs SQBR_R RIGHTARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
       }
-    | expr DOT ID  /* TODO: Disallow space between these arguments? */
-      {
-        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
-                         TBmakeExprs( $1, NULL));
-      }
     ;
+
+/*
+ * This rule creates a shift/reduce conflict (13, actually). I assume it has
+ * something to do with the fact that an expression can also be a dot itself,
+ * but closer inspection is due. In the mean time, commented out to prevent
+ * errors in the trunk.
+ */
+/*
+expr_structelem: expr DOT ID
+               {
+                 $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
+                 TBmakeExprs( $1, NULL));
+               };
+*/
       
 expr_with: NWITH { $<cint>$ = global.linenum; } with
       { $$ = $3;
