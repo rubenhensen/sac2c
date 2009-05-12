@@ -208,6 +208,7 @@ SAC_C_EXTERN void (*SAC_CS_Start) (char * /*tag*/);
 SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 
 #endif /* ! SAC_SIMD_COMPILATION */
+#endif
 
 /*****************************************************************************
  *
@@ -315,7 +316,5 @@ SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 #define SAC_CS_STOP(tag)
 
 #endif /* SAC_DO_CACHESIM */
-
-#endif /* mutc */
 
 #endif /* _SAC_CACHESIM_H */

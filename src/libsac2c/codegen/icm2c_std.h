@@ -13,7 +13,8 @@ extern void ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int varar
                                          char **vararg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
-
+extern void ICMCompileND_THREAD_AP (char *name, char *retname, int vararg_cnt,
+                                    char **vararg);
 extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);
 
 extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp);

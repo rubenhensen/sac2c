@@ -19,7 +19,8 @@
 #define _SAC_HEAPMGR_H
 
 #if SAC_MUTC_MACROS
-#else
+#define SAC_DO_PHM 0
+#endif
 
 #ifndef SAC_SIMD_COMPILATION
 
@@ -31,9 +32,11 @@ typedef unsigned long int SAC_HM_size_byte_t;
 typedef long int SAC_HM_size_unit_t;
 
 #ifndef SAC_COMPILE_SACLIB
+#if !SAC_MUTC_MACROS
 
 #include <sys/types.h> /* typedef unsigned int size_t;  */
 
+#endif
 #endif /* SAC_COMPILE_SACLIB */
 
 #ifndef SAC_C_EXTERN
@@ -44,9 +47,10 @@ typedef long int SAC_HM_size_unit_t;
  * Declaration of conventional heap management functions
  * used from within compiled SAC programs.
  */
-
+#if !SAC_MUTC_MACROS
 SAC_C_EXTERN void *malloc (size_t size);
 SAC_C_EXTERN void free (void *addr);
+#endif
 
 /*
  * Macro redefinitions for compatibility reasons with standard library.
@@ -806,12 +810,12 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
 
+#if !SAC_MUTC_MACROS
 SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
+#endif
 
 #endif /* SAC_DO_PHM */
 
 #endif /* SAC_SIMD_COMPILATION */
-
-#endif /* mutc */
 
 #endif /* _SAC_HEAPMGR_H */

@@ -260,6 +260,9 @@ NTUgetMutcUsageFromTypes (types *type)
         z = C_unknowna;
     } else {
         switch (TYPES_MUTC_USAGE (type)) {
+        case MUTC_US_PARAMIO:
+            z = C_paramio;
+            break;
         case MUTC_US_PARAM:
             z = C_param;
             break;
@@ -590,6 +593,9 @@ NTUgetMutcUsageFromNType (ntype *ntype)
     DBUG_ASSERT ((ntype != NULL), "No type found!");
 
     switch (TYgetMutcUsage (ntype)) {
+    case MUTC_US_PARAMIO:
+        z = C_paramio;
+        break;
     case MUTC_US_PARAM:
         z = C_param;
         break;

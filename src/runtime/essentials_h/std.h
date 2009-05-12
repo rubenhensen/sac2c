@@ -141,7 +141,12 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
-#define SAC_ND_A_DESC__DEFAULT(var_NT) CAT5 (NT_NAME (var_NT), __desc)
+#define SAC_ND_A_DESC__DEFAULT(var_NT)                                                   \
+    SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_DESC_NAME (var_NT))
+
+#define SAC_ND_A_DESC_NAME__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_NAME__DEFAULT(var_NT) CAT5 (NT_NAME (var_NT), __desc)
 
 /*
  * SAC_ND_A_DESC_DIM implementations (referenced by sac_std_gen.h)
@@ -279,23 +284,26 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_READ implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_READ__SCL(from_NT, from_pos) SAC_ND_A_FIELD (from_NT)
+#define SAC_ND_READ__SCL(from_NT, from_pos)                                              \
+    SAC_MUTC_ND_GET_VAR (from_NT, SAC_ND_A_FIELD (from_NT))
 
 #define SAC_ND_READ__DEFAULT(from_NT, from_pos)                                          \
     (SAC_TR_AA_PRINT ("read", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)         \
-       SAC_CS_READ_ARRAY (from_NT, from_pos) SAC_ND_A_FIELD (from_NT)[from_pos])
+       SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
+         SAC_MUTC_ND_GET_VAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
 /*
  * SAC_ND_WRITE implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_WRITE__SCL(to_NT, to_pos) SAC_ND_A_FIELD (to_NT)
+#define SAC_ND_WRITE__SCL(to_NT, to_pos)                                                 \
+    SAC_MUTC_ND_GET_VAR (to_NT, SAC_ND_A_FIELD (to_NT))
 
 #define SAC_ND_WRITE__DEFAULT(to_NT, to_pos)                                             \
     SAC_TR_AA_PRINT ("write", to_NT, to_pos)                                             \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
-    SAC_ND_A_FIELD (to_NT)[to_pos]
+    SAC_MUTC_ND_GET_VAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 
 /*
  * SAC_ND_WRITE_COPY implementations (referenced by sac_std_gen.h)
@@ -558,20 +566,25 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag)
 
 #define SAC_ND_ARG_FLAG_in_nodesc(var_NT, type, flag)                                    \
-    SAC_MUTC_ARG (SAC_ND_A_FIELD (var_NT), var_NT, type, flag)
-#define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_ARG_FLAG_in_nodesc (var_NT, void, FUN)
+    SAC_MUTC_ARG (SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)), var_NT,         \
+                  SAC_ND_TYPE (var_NT, type), flag)
+
+#define SAC_ND_ARG_in_nodesc(var_NT) SAC_ND_ARG_FLAG_in_nodesc (var_NT, void *, FUN)
 
 #define SAC_ND_ARG_FLAG_out_nodesc(var_NT, type, flag)                                   \
-    SAC_MUTC_ARG (&SAC_ND_A_FIELD (var_NT), var_NT, type, flag)
-#define SAC_ND_ARG_out_nodesc(var_NT) SAC_ND_ARG_FLAG_out_nodesc (var_NT, void, FUN)
+    SAC_MUTC_ARG (&SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)), var_NT,        \
+                  SAC_ND_TYPE (var_NT, type), flag)
+
+#define SAC_ND_ARG_out_nodesc(var_NT) SAC_ND_ARG_FLAG_out_nodesc (var_NT, void *, FUN)
 
 #define SAC_ND_ARG_FLAG_inout(var_NT, type, flag) SAC_ND_ARG_FLAG_out (var_NT, type, flag)
 #define SAC_ND_ARG_inout(var_NT) SAC_ND_ARG_out (var_NT)
 
-#define SAC_ND_ARG_in(var_NT) SAC_ND_ARG_FLAG_in (var_NT, void, FUN)
-#define SAC_ND_ARG_out(var_NT) SAC_ND_ARG_FLAG_out (var_NT, void, FUN)
+#define SAC_ND_ARG_in(var_NT) SAC_ND_ARG_FLAG_in (var_NT, void *, FUN)
+#define SAC_ND_ARG_out(var_NT) SAC_ND_ARG_FLAG_out (var_NT, void *, FUN)
 
-#define SAC_ND_ARG_FLAG_inout_nodesc(var_NT, type, flag) SAC_ND_ARG_inout_nodesc (var_NT)
+#define SAC_ND_ARG_FLAG_inout_nodesc(var_NT, type, flag)                                 \
+    SAC_ND_ARG_FLAG_out_nodesc (var_NT, type, flag)
 #define SAC_ND_ARG_inout_nodesc(var_NT) SAC_ND_ARG_out_nodesc (var_NT)
 
 #define SAC_ND_ARG_FLAG_inout_nodesc_bx(var_NT, type, flag)                              \
@@ -589,7 +602,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_PARAM_in__DESC(var_NT, basetype, flag)                                    \
     SAC_ND_PARAM_FLAG_in_nodesc (var_NT, basetype, flag),                                \
-      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT), SAC_ND_A_DESC (var_NT), var_NT, flag)
+      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT), SAC_ND_A_DESC_NAME (var_NT),            \
+                      SET_NT_REG (INT, var_NT), flag)
 
 /*
  * SAC_ND_PARAM_out implementations (referenced by sac_std_gen.h)
@@ -600,16 +614,21 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_PARAM_out__DESC(var_NT, basetype, flag)                                   \
     SAC_ND_PARAM_FLAG_out_nodesc (var_NT, basetype, flag),                               \
-      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT) *, SAC_NAMEP (SAC_ND_A_DESC (var_NT)),   \
-                      var_NT, flag)
+      SAC_MUTC_PARAM (SAC_ND_DESC_TYPE (var_NT) *,                                       \
+                      SAC_NAMEP (SAC_ND_A_DESC_NAME (var_NT)), SET_NT_REG (INT, var_NT), \
+                      flag)
 
 /*
  * SAC_ND_ARG_in implementations (referenced by sac_std_gen.h)
  */
-#define SAC_ND_ARG_FLAG_in__NODESC(var_NT, type, flag) SAC_ND_ARG_in__NODESC (var_NT)
+#define SAC_ND_ARG_FLAG_in__NODESC(var_NT, type, flag)                                   \
+    SAC_ND_ARG_FLAG_in_nodesc (var_NT, type, flag)
 #define SAC_ND_ARG_in__NODESC(var_NT) SAC_ND_ARG_in_nodesc (var_NT)
 
-#define SAC_ND_ARG_FLAG_in__DESC(var_NT, type, flag) SAC_ND_ARG_in__DESC (var_NT)
+#define SAC_ND_ARG_FLAG_in__DESC(var_NT, type, flag)                                     \
+    SAC_ND_ARG_FLAG_in_nodesc (var_NT, type, flag),                                      \
+      SAC_MUTC_ARG (SAC_ND_A_DESC (var_NT), SET_NT_REG (INT, var_NT),                    \
+                    SAC_ND_DESC_TYPE (var_NT), flag)
 #define SAC_ND_ARG_in__DESC(var_NT) SAC_ND_ARG_in_nodesc (var_NT), SAC_ND_A_DESC (var_NT)
 
 /*
@@ -617,12 +636,13 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_ARG_FLAG_out__NODESC(var_NT, type, flag)                                  \
-    SAC_ND_ARG_FLAG_out_nodesc (var_NT, type, flag)
+    SAC_ND_ARG_FLAG_out_nodesc (var_NT, type *, flag)
 #define SAC_ND_ARG_out__NODESC(var_NT) SAC_ND_ARG_FLAG_out__NODESC (var_NT, void *, FUN)
 
 #define SAC_ND_ARG_FLAG_out__DESC(var_NT, type, flag)                                    \
-    SAC_ND_ARG_out_nodesc (var_NT),                                                      \
-      SAC_MUTC_ARG (&SAC_ND_A_DESC (var_NT), var_nt, type, flag)
+    SAC_ND_ARG_FLAG_out_nodesc (var_NT, type *, flag),                                   \
+      SAC_MUTC_ARG (&SAC_ND_A_DESC (var_NT), SET_NT_REG (INT, var_NT),                   \
+                    SAC_ND_DESC_TYPE (var_NT) *, flag)
 #define SAC_ND_ARG_out__DESC(var_NT)                                                     \
     SAC_ND_ARG_FLAG_out__DESC (var_NT, void *, FUN) /*                                   \
                                                      * SAC_ND_RET_out implementations    \
@@ -631,16 +651,17 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_RET_out__NODESC(retvar_NT, var_NT)                                        \
     {                                                                                    \
-        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))         \
+        *SAC_MUTC_ND_GET_VAR_INOUT (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))   \
           = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT));                       \
     }
 
 #define SAC_ND_RET_out__DESC(retvar_NT, var_NT)                                          \
     {                                                                                    \
-        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))         \
+        *SAC_MUTC_ND_GET_VAR_INOUT (retvar_NT, SAC_NAMEP (SAC_ND_A_FIELD (retvar_NT)))   \
           = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT));                       \
-        *SAC_MUTC_ND_GET_VAR (retvar_NT, SAC_NAMEP (SAC_ND_A_DESC (retvar_NT)))          \
-          = SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_DESC (var_NT));                        \
+        *SAC_MUTC_ND_GET_VAR_INOUT (retvar_NT,                                           \
+                                    SAC_NAMEP (SAC_ND_A_DESC_NAME (retvar_NT)))          \
+          = SAC_ND_A_DESC (var_NT);                                                      \
     }
 
 /*
@@ -648,17 +669,20 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_DECL_PARAM_inout(var_NT, basetype)                                        \
-    SAC_ND_DECL_PARAM_FLAG_inout (var_NT, basetype, flag)
+    SAC_ND_DECL_PARAM_FLAG_inout (var_NT, basetype, FLAG)
 
 #define SAC_ND_DECL_PARAM_inout__NODESC(var_NT, basetype, flag)                          \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = *SAC_NAMEP (SAC_ND_A_FIELD (var_NT));
+    SAC_ND_A_FIELD (var_NT)                                                              \
+      = *SAC_MUTC_ND_GET_VAR_INOUT (var_NT, SAC_NAMEP (SAC_ND_A_FIELD (var_NT)));
 
 #define SAC_ND_DECL_PARAM_inout__DESC(var_NT, basetype, flag)                            \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = *SAC_NAMEP (SAC_ND_A_FIELD (var_NT));                      \
+    SAC_ND_A_FIELD (var_NT)                                                              \
+      = *SAC_MUTC_ND_GET_VAR_INOUT (var_NT, SAC_NAMEP (SAC_ND_A_FIELD (var_NT)));        \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT) = *SAC_NAMEP (SAC_ND_A_DESC (var_NT));
+    SAC_ND_A_DESC (var_NT)                                                               \
+      = *SAC_MUTC_ND_GET_VAR_INOUT (var_NT, SAC_NAMEP (SAC_ND_A_DESC (var_NT)));
 
 /******************************************************************************
  *
@@ -864,7 +888,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
-        freefun (SAC_ND_A_FIELD (var_NT));                                               \
+        freefun (SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)));                 \
         SAC_TR_DEC_HIDDEN_MEMCNT (1)                                                     \
     }
 
@@ -872,7 +896,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                                 \
+        SAC_HM_FREE_FIXED_SIZE (SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)),   \
                                 SAC_ND_A_SIZE (var_NT)                                   \
                                   * sizeof (*SAC_ND_A_FIELD (var_NT)))                   \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
@@ -892,7 +916,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
-        SAC_HM_FREE (SAC_ND_A_FIELD (var_NT))                                            \
+        SAC_HM_FREE (SAC_MUTC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)))              \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
@@ -960,7 +984,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_ASSIGN__DATA__AKS_AKS(to_NT, from_NT, copyfun)                            \
     {                                                                                    \
-        SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                               \
+        SAC_MUTC_ND_GET_VAR (to_NT, SAC_ND_A_FIELD (to_NT))                              \
+          = SAC_MUTC_ND_GET_VAR (from_NT, SAC_ND_A_FIELD (from_NT));                     \
     }
 
 #define SAC_ND_ASSIGN__DATA__AUD_SCL_NHD(to_NT, from_NT, copyfun)                        \

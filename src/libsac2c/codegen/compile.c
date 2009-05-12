@@ -1699,7 +1699,7 @@ GetBaseTypeFromExpr (node *in)
         ret = GetBaseTypeFromAvis (in);
     } else if (NODE_TYPE (in) == N_globobj) {
         in = GLOBOBJ_OBJDEF (in);
-        ret = TYtype2String (OBJDEF_TYPE (in), FALSE, 0);
+        ret = GetBasetypeStr (TYtype2OldType (OBJDEF_TYPE (in)));
     } else {
         DBUG_ASSERT (FALSE, "Unexpected node type found!");
     }

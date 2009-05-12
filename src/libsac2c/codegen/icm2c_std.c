@@ -226,7 +226,10 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_THREAD_AP( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileND_THREAD_AP( char *name,
+ *                                char *retname,
+ *                                int vararg_cnt,
+ *                                char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -238,7 +241,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileND_THREAD_AP (char *name, int vararg_cnt, char **vararg)
+ICMCompileND_THREAD_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ("ICMCompileND_THREAD_AP");
 
@@ -249,13 +252,13 @@ ICMCompileND_THREAD_AP (char *name, int vararg_cnt, char **vararg)
 
     INDENT;
 
-    fprintf (global.outfile, "SAC_MUTC_THREAD_AP(");
+    fprintf (global.outfile, "SAC_MUTC_THREAD_AP2(");
 
-    fprintf (global.outfile, "%s(", name);
+    fprintf (global.outfile, "%s, ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, THREAD)",
                           vararg[i], vararg[i + 2], vararg[i + 1]));
-    fprintf (global.outfile, ");");
+    fprintf (global.outfile, ")");
 
     fprintf (global.outfile, "\n");
 

@@ -424,8 +424,9 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
 
     INDENT;
     fprintf (global.outfile,
-             "SAC_ND_A_FIELD( %s) = SAC_ND_A_FIELD( %s)+SAC_ND_READ( %s, 0);\n", sub_NT,
-             to_NT, off_NT);
+             "SAC_MUTC_ND_GET_VAR(%s, SAC_ND_A_FIELD( %s)) = SAC_MUTC_ND_GET_VAR( %s, "
+             "SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
+             sub_NT, sub_NT, to_NT, to_NT, off_NT);
 
     DBUG_VOID_RETURN;
 }

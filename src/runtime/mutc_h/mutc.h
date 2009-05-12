@@ -8,11 +8,11 @@
 #define SAC_MUTC_DECL_FAMILY(name) sl_family_t family_##name;
 #define SAC_MUTC_DECL_INDEX(name) sl_index (name);
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
-    sl_create (family_##name, place, lb, yb, st, bl, , ap);
-#define SAC_MUTC_DECL_THREADFUN2(name, anon, ...) sl_decl (name, , __VA_ARGS__)
+    sl_create (family_##name, place, lb, ub, st, bl, , ap);
+#define SAC_MUTC_DECL_THREADFUN2(name, anon, ...) sl_decl (name, void, __VA_ARGS__)
 #define SAC_MUTC_SYNC(name) sl_sync (family_##name);
-#define SAC_MUTC_THREADAP2(name, ...) name, __VA_ARGS__
-#define SAC_MUTC_START_DEF_THREADFUN2(name, anon, ...) sl_def (name, , __VA_ARGS__)
+#define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
+#define SAC_MUTC_START_DEF_THREADFUN2(name, anon, ...) sl_def (name, void, __VA_ARGS__)
 #define SAC_MUTC_END_DEF_THREADFUN() sl_enddef
 #define SAC_MUTC_UNLOCK_SHARED(nt) sl_setp (NT_NAME (nt), 1);
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));

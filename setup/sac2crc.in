@@ -289,6 +289,10 @@ CACHE3_ASSOC     :=  0
 CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
  
+
+target sl:
+ 
+CC               :=  "comslc"
  
  
 /*******************************************************************************

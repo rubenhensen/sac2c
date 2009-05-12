@@ -27,6 +27,11 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+#if SAC_MUTC_MACROS
+#define SAC_PF_BEGIN_WITH(str)
+#define SAC_PF_END_WITH(str)
+#endif
+
 #if !SAC_MUTC_MACROS
 
 /*

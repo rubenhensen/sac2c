@@ -20,7 +20,9 @@
 #ifndef _SAC_TRACE_H
 #define _SAC_TRACE_H
 
-#if !SAC_MUTC_MACROS
+#if SAC_MUTC_MACROS
+#define SAC_DO_TRACE 0
+#endif
 
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
@@ -216,6 +218,4 @@ typedef enum {
 #endif /* SAC_DO_TRACE_MEM */
 #else
 #define SAC_HM_DEFINE()
-#endif /* mutc */
-
 #endif /* _SAC_TRACE_H */

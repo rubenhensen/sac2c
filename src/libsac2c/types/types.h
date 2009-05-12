@@ -215,7 +215,7 @@ typedef enum {
     MUTC_LOCAL,
 } mutcScope;
 
-typedef enum { MUTC_US_DEFAULT, MUTC_US_PARAM } mutcUsage;
+typedef enum { MUTC_US_DEFAULT, MUTC_US_PARAMIO, MUTC_US_PARAM } mutcUsage;
 
 /*
  * structs

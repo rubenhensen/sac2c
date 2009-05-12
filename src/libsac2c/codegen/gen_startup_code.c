@@ -632,39 +632,43 @@ GSCprintMainC99 ()
 static void
 GSCprintMainMuTC ()
 {
-    char *res_NT;
-    types *tmp_type;
+#if 0
+  char *res_NT;
+  types *tmp_type;
+#endif
 
     DBUG_ENTER ("GSCprintMuTC");
+#if 0
+  INDENT;
+  fprintf( global.outfile, "thread main()\n");
+  INDENT;
+  fprintf( global.outfile, "{\n");
+  global.indent++;
+  tmp_type = TBmakeTypes1( T_int);
+  res_NT = NTUcreateNtTag( "SAC_res", tmp_type);
+  tmp_type = FREEfreeAllTypes( tmp_type);
+  ICMCompileND_DECL( res_NT, "int", 0, NULL);   /* create ND_DECL icm */
+  GSCprintMainBegin();
 
-    INDENT;
-    fprintf (global.outfile, "thread main()\n");
-    INDENT;
-    fprintf (global.outfile, "{\n");
-    global.indent++;
-    tmp_type = TBmakeTypes1 (T_int);
-    res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
-    tmp_type = FREEfreeAllTypes (tmp_type);
-    ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
-    GSCprintMainBegin ();
+  INDENT;
+  fprintf( global.outfile, "SAC_COMMANDLINE_SET( 0, ((char **) 0));\n\n");
+  INDENT;
+  fprintf( global.outfile, "SACf_%s__main( ",
+      NSgetName( NSgetRootNamespace()));
 
-    INDENT;
-    fprintf (global.outfile, "SAC_COMMANDLINE_SET( 0, ((char **) 0));\n\n");
-    INDENT;
-    fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
-
-    fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
-    fprintf (global.outfile, ");\n\n");
-    GSCprintMainEnd ();
+  fprintf( global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
+  fprintf( global.outfile, ");\n\n");
+  GSCprintMainEnd();
 #if 0
   INDENT;
   fprintf( global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
 #endif
-    res_NT = MEMfree (res_NT);
-    global.indent--;
-    INDENT;
-    fprintf (global.outfile, "}\n");
-
+  res_NT = MEMfree( res_NT);
+  global.indent--;
+  INDENT;
+  fprintf( global.outfile, "}\n");
+#endif
+    fprintf (global.outfile, "SAC_MUTC_MAIN\n");
     DBUG_VOID_RETURN;
 }
 
@@ -678,7 +682,7 @@ GSCprintMain ()
         GSCprintMainC99 ();
         break;
     case BE_mutc:
-        /* GSCprintMainMuTC(); */
+        GSCprintMainMuTC ();
         break;
     default:
         DBUG_ASSERT (FALSE, "unknown backend");
@@ -696,15 +700,18 @@ GSCprintSACargCopyFreeStubs ()
 {
     DBUG_ENTER ("GSCprintSACargCopyFreeStubs");
 
-    fprintf (global.outfile, "/*\n"
-                             " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
-                             " */\n"
-                             "extern void SACARGfreeDataUdt( int, void *);\n"
-                             "extern void *SACARGcopyDataUdt( int, int, void *);\n"
-                             "void SACARGfreeDataUdt( int size, void *data) {};\n"
-                             "void *SACARGcopyDataUdt( int type, int size, void *data) { "
-                             "return ((void *) 0x0); } \n"
-                             "\n");
+    if (global.backend != BE_mutc) {
+
+        fprintf (global.outfile, "/*\n"
+                                 " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                                 " */\n"
+                                 "extern void SACARGfreeDataUdt( int, void *);\n"
+                                 "extern void *SACARGcopyDataUdt( int, int, void *);\n"
+                                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                                 "void *SACARGcopyDataUdt( int type, int size, void "
+                                 "*data) { return ((void *) 0x0); } \n"
+                                 "\n");
+    }
 
     DBUG_VOID_RETURN;
 }

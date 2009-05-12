@@ -90,6 +90,36 @@ TParg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *TPfundef( node *arg_node, node *arg_info)
+ *
+ *   @brief Find inout parameters
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TPfundef (node *arg_node, info *arg_info)
+{
+    argtab_t *argtab;
+    int i;
+
+    DBUG_ENTER ("TParg");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    argtab = FUNDEF_ARGTAB (arg_node);
+    for (i = 1; i < argtab->size; i++) {
+        if (argtab->tag[i] == ATG_inout) {
+            TYsetMutcUsage (AVIS_TYPE (ARG_AVIS (argtab->ptr_in[i])), MUTC_US_PARAMIO);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TPdoTagPreparation( node *arg_node)
  *
  *   @brief Add information to the ntype needed for tags.
