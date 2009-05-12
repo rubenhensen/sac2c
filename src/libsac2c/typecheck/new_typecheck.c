@@ -799,6 +799,11 @@ NTCvardec (node *arg_node, info *arg_info)
 {
     node *avis;
     ntype *type;
+
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("NTCvardec");
 
     avis = VARDEC_AVIS (arg_node);
@@ -817,7 +822,13 @@ NTCvardec (node *arg_node, info *arg_info)
          * would do that job. However, this precludes us from recognizing
          * uses of non-defined vars when running the first time!
          * Hence, we just eliminate the existing types and start from scratch.
+         * The desired subtyping issue is (at least in case of a)!) achieved
+         * by the explicit insertion of _type_conv_ operations in phase 5.
          */
+        DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (type, FALSE, 0););
+        DBUG_PRINT ("NTC",
+                    ("eliminating type declaration %s %s", tmp_str, AVIS_NAME (avis)));
+        DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
         AVIS_TYPE (avis) = NULL;
         type = TYfreeType (type);
     }
