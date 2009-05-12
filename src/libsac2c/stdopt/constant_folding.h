@@ -32,4 +32,6 @@ extern node *CFfuncond (node *arg_node, info *arg_info);
 extern node *CFprf_shape (node *arg_node, info *arg_info);
 extern node *CFprf_reshape (node *arg_node, info *arg_info);
 
+extern bool IsSAAMode (void);
+
 #endif /* _SAC_constantfolding_h_ */

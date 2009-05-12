@@ -677,6 +677,10 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
        TEone, NULL, NULL),
 
+  PRF (attachminmax, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_attachminmax, NULL,
+       COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
        NULL, COMPprfTypeConstraint, NULL, NULL, NULL, SAAdim_type_constraint,
        SAAshp_type_constraint, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),

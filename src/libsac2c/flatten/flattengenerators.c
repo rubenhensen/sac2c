@@ -185,8 +185,7 @@ flattenBound (node *arg_node, info *arg_info)
             INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
             AVIS_SSAASSIGN (avis) = nas;
             AVIS_DIM (avis) = TBmakeNum (dim);
-            AVIS_SHAPE (avis)
-              = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (AVIS_DIM (avis)), NULL));
+            AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (xrho), NULL));
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
             DBUG_PRINT ("FLATGflattenBound",

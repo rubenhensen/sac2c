@@ -139,7 +139,7 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
     DBUG_RETURN (res);
 }
 
-static node *
+node *
 MakeVectAvis (char *name, node *dim)
 {
     node *res;

@@ -461,6 +461,9 @@ SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
 SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
           global.optimize.dosaa, opt)
 
+SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
+          global.optimize.doswlf || global.doivext, opt)
+
 SUBPHASE (ivext, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
           global.doivext &&global.optimize.dosaa &&global.optimize.doswlf, opt)
 
@@ -494,9 +497,6 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
-
-CYCLEPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
-            global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
             SWLFIdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)

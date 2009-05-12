@@ -42,6 +42,8 @@
  *
  *              X[ (k*tmp) + offset ];
  *
+ * They do, however, mark the end of shared N_code blocks in WLs,
+ * just as -ssaiv does.
  *
  * @ingroup ivexi
  *
@@ -73,6 +75,9 @@
 #include "DupTree.h"
 #include "pattern_match.h"
 #include "LookUpTable.h"
+#include "check.h"
+#include "makedimexpr.h"
+#include "makeshapeexpr.h"
 
 /** <!--********************************************************************-->
  *
@@ -83,7 +88,8 @@
 struct INFO {
     node *fundef;
     node *vardecs;
-    node *preassigns;
+    node *preassignspart;
+    node *preassignswith;
     node *code;
     lut_t *lutvars;
     lut_t *lutcodes;
@@ -94,7 +100,8 @@ struct INFO {
  */
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_PREASSIGNSPART(n) ((n)->preassignspart)
+#define INFO_PREASSIGNSWITH(n) ((n)->preassignswith)
 #define INFO_CODE(n) ((n)->code)
 #define INFO_LUTVARS(n) ((n)->lutvars)
 #define INFO_LUTCODES(n) ((n)->lutcodes)
@@ -110,7 +117,8 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
-    INFO_PREASSIGNS (result) = NULL;
+    INFO_PREASSIGNSPART (result) = NULL;
+    INFO_PREASSIGNSWITH (result) = NULL;
     INFO_CODE (result) = NULL;
     INFO_LUTVARS (result) = NULL;
     INFO_LUTCODES (result) = NULL;
@@ -146,7 +154,6 @@ node *
 IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 {
     info *arg_info;
-
     DBUG_ENTER ("IVEXIdoIndexVectorExtremaInsertion");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
@@ -163,7 +170,6 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
     DBUG_PRINT ("IVEXI", ("Index vector extrema insertion complete."));
 
     arg_info = FreeInfo (arg_info);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -177,52 +183,234 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVEXItmpIV( node *arg_node, info *arg_info)
+ * @fn node *generateSelect( node *arg_node, info *arg_info, int k)
+ *
+ * @brief: Create:
+ *             kk = k;          NB Flatten k
+ *             k' = [kk];
+ *             s0 = _sel_VxA_([k], bound);
+ *             and associated vardecs.
+ * @params:
+ *     arg_node: The N_id node for a generator bound.
+ *     arg_info: Your basic arg_info stuff.
+ *     k:        which element of the bound we want to select.
+ *
+ * @return: The N_id of the new temp, s0.
+ *
+ *****************************************************************************/
+node *
+generateSelect (node *bound, info *arg_info, int k)
+{
+    node *bavis;
+
+    node *kavis;
+    node *kid;
+    node *kids;
+    node *kass;
+
+    node *zavis;
+    node *zid;
+    node *zids;
+    node *zass;
+
+    node *favis;
+    node *fid;
+    node *fids;
+    node *fass;
+
+    DBUG_ENTER ("generateSelect");
+
+    bavis = ID_AVIS (bound);
+
+    /* Flatten k */
+
+    favis = MakeScalarAvis (TRAVtmpVarName (AVIS_NAME (bavis)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (favis, INFO_VARDECS (arg_info));
+
+    fid = TBmakeId (favis);
+    fids = TBmakeIds (favis, NULL);
+    fass = TBmakeAssign (TBmakeLet (fids, TBmakeNum (k)), NULL);
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), fass);
+    AVIS_SSAASSIGN (favis) = fass;
+    AVIS_DIM (favis) = TBmakeNum (0);
+    AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
+    AVIS_MINVAL (favis) = favis;
+    AVIS_MAXVAL (favis) = favis;
+
+    /* Create k' = [k]; */
+    kavis = MakeVectAvis (TRAVtmpVarName (AVIS_NAME (bavis)), TBmakeNum (1));
+    INFO_VARDECS (arg_info) = TBmakeVardec (kavis, INFO_VARDECS (arg_info));
+
+    kid = TBmakeId (kavis);
+    kids = TBmakeIds (kavis, NULL);
+    kass
+      = TBmakeAssign (TBmakeLet (kids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                               SHcreateShape (0)),
+                                                    SHcreateShape (1, 1),
+                                                    TBmakeExprs (fid, NULL))),
+                      NULL);
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
+    AVIS_SSAASSIGN (kavis) = kass;
+    AVIS_DIM (kavis) = TBmakeNum (1);
+    AVIS_SHAPE (kavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
+    AVIS_MINVAL (kavis) = kavis;
+    AVIS_MAXVAL (kavis) = kavis;
+
+    /* Create s0 = _sel_VxA_([k], bound);  */
+
+    zavis
+      = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)), TYcopyType (AVIS_TYPE (bavis)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
+    zid = TBmakeId (zavis);
+    zids = TBmakeIds (zavis, NULL);
+    zass
+      = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_sel_VxA, kid, DUPdoDupTree (bound))),
+                      NULL);
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
+    AVIS_SSAASSIGN (zavis) = zass;
+    AVIS_DIM (zavis) = TBmakeNum (0);
+    AVIS_SHAPE (zavis) = TCmakeIntVector (NULL);
+    AVIS_MINVAL (zavis) = zavis;
+    AVIS_MAXVAL (zavis) = zavis;
+
+    DBUG_PRINT ("IVEXI", ("generateSelect introduced temp index variable: %s for: %s",
+                          AVIS_NAME (zavis), AVIS_NAME (ID_AVIS (bound))));
+    DBUG_RETURN (zid);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVEXItmpVec( node *arg_node, info *arg_info, node* oldavis))
  *
  * @brief:
- *      Insert a temp, its vardec, and an assign for arg_node.
- *      We start with:
+ *      Insert a temp, its vardec, and an assign for oldavis IV.
+ *      We start with an WITHID_VEC:
  *
  *           IV
  *
  *      and want:
  *
- *           tmp = IV;
+ *           iv' = _attachminmax_(IV, GENERATOR_BOUND1(partn),
+ *                                    GENERATOR_BOUND2(partn));
  *
- *      and an appropriate vardec for tmp, of course.
+ *      and an appropriate vardec for iv', of course.
  *
  *      We build an N_id for IV because WITHIDs don't have them,
- *      just N_avis nodes.
+ *      just N_avis nodes. If -ssaiv becomes a reality, this
+ *      can be scrapped, and we can attach the minmax to IV
+ *      directly.
  *
  * @params:
- *     arg_node: The N_avis  of the name for whichwe want to build a temp.
+ *     oldavis: The N_avis of the name for which we want to build iv'.
+ *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
  *
  * @return: The N_id of the new temp.
  *
  *****************************************************************************/
 node *
-IVEXItmpIV (node *arg_node, info *arg_info)
+IVEXItmpVec (node *arg_node, info *arg_info, node *oldavis)
 {
     node *avis;
-    node *ivid;
     node *nas;
     node *nid;
+    node *args;
+    node *b1;
+    node *b2;
 
-    DBUG_ENTER ("IVEXItmpIV");
+    DBUG_ENTER ("IVEXItmpVec");
 
-    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "IVEXItmpIV expected N_avis");
-    ivid = TBmakeId (arg_node);
-    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (arg_node)));
+    DBUG_ASSERT (N_avis == NODE_TYPE (oldavis), "IVEXItmpVec expected N_avis");
+    b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
+    b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+
+    DBUG_ASSERT (N_id == NODE_TYPE (b1),
+                 "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
+    DBUG_ASSERT (N_id == NODE_TYPE (b2),
+                 "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
+    avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
+                       TYcopyType (AVIS_TYPE (oldavis)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
-    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), ivid), NULL);
-    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
+
+    args = TBmakeExprs (TBmakeId (oldavis),
+                        TBmakeExprs (DUPdoDupTree (b1),
+                                     TBmakeExprs (DUPdoDupTree (b2), NULL)));
+    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                   TBmakePrf (F_attachminmax, args)),
+                        NULL);
+    INFO_PREASSIGNSPART (arg_info) = TCappendAssign (INFO_PREASSIGNSPART (arg_info), nas);
     AVIS_SSAASSIGN (avis) = nas;
-    AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (arg_node));
-    AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
+    AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (oldavis));
+    AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (oldavis));
+    AVIS_MINVAL (avis) = ID_AVIS (b1);
+    AVIS_MAXVAL (avis) = ID_AVIS (b2);
     nid = TBmakeId (avis);
-    DBUG_PRINT ("IVEXI", ("IVEXItmpIV introduced temp index variable: %s for: %s",
-                          AVIS_NAME (avis), AVIS_NAME (arg_node)));
+    DBUG_PRINT ("IVEXI", ("IVEXItmpVec introduced temp index variable: %s for: %s",
+                          AVIS_NAME (avis), AVIS_NAME (oldavis)));
+    DBUG_RETURN (nid);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVEXItmpIds( node *arg_node, info *arg_info, node* oldavis, int k)
+ *
+ * @brief:  Same as IVEXItmpVec, except this one handles one
+ *          of the WITHID_IDS scalar variables i,j,k in
+ *            IV = [i,j,k]
+ *
+ *          This is slightly more complex, because we have to
+ *          select the appropriate generator elements.
+ *
+ *     oldavis: The N_avis of the name for which we want to build iv'.
+ *     arg_node: An N_part of the WL.
+ *     arg_info: Your basic arg_info stuff.
+ *     k:        the index of the scalar, e.g., i=0, j=1, k=2
+ * @return: The N_id of the new temp.
+ *
+ *****************************************************************************/
+node *
+IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
+{
+    node *avis;
+    node *nas;
+    node *nid;
+    node *args;
+    node *b1;
+    node *b2;
+
+    DBUG_ENTER ("IVEXItmpIds");
+
+    DBUG_ASSERT (N_avis == NODE_TYPE (oldavis), "IVEXItmpIds expected N_avis");
+
+    b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
+    b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    DBUG_ASSERT (N_id == NODE_TYPE (b1),
+                 "IVEXItmpIds expected N_id for GENERATOR_BOUND1");
+    DBUG_ASSERT (N_id == NODE_TYPE (b2),
+                 "IVEXItmpIds expected N_id for GENERATOR_BOUND2");
+
+    b1 = generateSelect (b1, arg_info, k);
+    b2 = generateSelect (b2, arg_info, k);
+
+    avis = MakeScalarAvis (TRAVtmpVarName (AVIS_NAME (oldavis)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    args = TBmakeExprs (TBmakeId (oldavis), TBmakeExprs (b1, TBmakeExprs (b2, NULL)));
+    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                   TBmakePrf (F_attachminmax, args)),
+                        NULL);
+    INFO_PREASSIGNSPART (arg_info) = TCappendAssign (INFO_PREASSIGNSPART (arg_info), nas);
+    AVIS_SSAASSIGN (avis) = nas;
+    AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (oldavis));
+    AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (oldavis));
+    AVIS_MINVAL (avis) = ID_AVIS (b1);
+    AVIS_MAXVAL (avis) = ID_AVIS (b2);
+    nid = TBmakeId (avis);
+    DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced temp index variable: %s for: %s",
+                          AVIS_NAME (avis), AVIS_NAME (oldavis)));
     DBUG_RETURN (nid);
 }
 
@@ -232,14 +420,11 @@ IVEXItmpIV (node *arg_node, info *arg_info)
  *
  * @brief:
  *    1. populate INFO_LUTVARS with WITHID names and new temp names.
- *    2. Call IVEXItmpIV to create temp names and the assigns
+ *    2. Call IVEXItmpVec to create temp names and the assigns
  *       that will start off the updated code blocks.
  *
  * @params:
- *     arg_node: Any N_withid pointer in the WL. (If -ssaiv mode
- *               support is desired, this will have to be called
- *               for all partitions of the WL.)
- *
+ *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
  *
  * @return:
@@ -251,30 +436,27 @@ populateLUTVars (node *arg_node, info *arg_info)
     node *oldavis;
     node *newid;
     node *ids;
+    int k = 0;
 
     DBUG_ENTER ("populateLUTVars");
 
     /* Populate LUTVARS with WITHID_VEC and new name. */
-    oldavis = IDS_AVIS (WITHID_VEC (arg_node));
-    newid = IVEXItmpIV (oldavis, arg_info);
+    oldavis = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
+    newid = IVEXItmpVec (arg_node, arg_info, oldavis);
     LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, ID_AVIS (newid));
     DBUG_PRINT ("IVEXI", ("Inserting WITHID_VEC into lut: oldid: %s, newid: %s",
                           AVIS_NAME (oldavis), AVIS_NAME (ID_AVIS (newid))));
-    /* FIXME
-     *
-     *             stick max/min into new vars
-     * FIXME
-     */
 
     /* Rename withid scalars */
-    ids = WITHID_IDS (arg_node);
+    ids = WITHID_IDS (PART_WITHID (arg_node));
     while (ids != NULL) {
         oldavis = IDS_AVIS (ids);
-        newid = IVEXItmpIV (oldavis, arg_info);
+        newid = IVEXItmpIds (arg_node, arg_info, oldavis, k);
         DBUG_PRINT ("IVEXIpart", ("Inserting WITHID_IDS into lut: oldid: %s, newid: %s",
                                   AVIS_NAME (oldavis), AVIS_NAME (ID_AVIS (newid))));
         LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, ID_AVIS (newid));
         ids = IDS_NEXT (ids);
+        k++;
     }
     DBUG_VOID_RETURN;
 }
@@ -286,7 +468,6 @@ populateLUTVars (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 
-#ifdef CRUD
 /******************************************************************************
  *
  * function:
@@ -305,7 +486,6 @@ IVEXImodule (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
-#endif // CRUD
 
 /******************************************************************************
  *
@@ -325,6 +505,7 @@ node *
 IVEXIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIfundef");
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_PRINT ("IVEXI", ("IVEXI in %s %s begins",
                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                           FUNDEF_NAME (arg_node)));
@@ -352,8 +533,10 @@ IVEXIfundef (node *arg_node, info *arg_info)
                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                          FUNDEF_NAME (arg_node)));
 
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -385,56 +568,21 @@ IVEXIblock (node *arg_node, info *arg_info)
  *   node *IVEXIcode( node *arg_node, info *arg_info)
  *
  * description:
- *   We get here from IVEXIwith. Here we insert the temporary
- *   assigns:
+ *   IVEXIpath has already rebuilt all the WITH_CODE blocks,
+ *   but they are not linked there. Rather, they are hanging
+ *   as a chain off PART_CODE.
  *
- *     tmp = iv;
- *
- *   and also put the old and new N_code pointers into LUT_CODE.
- *   When we're done, a traversal of the N_part nodes will
- *   use the LUT to correct their PART_CODE pointers.
+ *   Here, we zero the old WITH_CODE_USED counts, so they disappear
+ *   later.
  *
  ******************************************************************************/
 node *
 IVEXIcode (node *arg_node, info *arg_info)
 {
-    node *new_arg_node;
-
     DBUG_ENTER ("IVEXIcode");
     DBUG_PRINT ("IVEXI", ("Found WITH_CODE"));
 
-    /* Save a lot of work if this is an empty code block */
-    if (N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (arg_node)))) {
-
-        /* Visit the code block, so we can put the preassigns
-         * where they belong.
-     PART_CODE( arg_node) = TRAVdo( PART_CODE(arg_node), arg_info);
-        PART_NEXT( arg_node) = TRAVopt( PART_NEXT(arg_node), arg_info);
-         */
-
-        /* copy the code block, doing the renames */
-        new_arg_node = DUPdoDupTreeLutSsa (arg_node, INFO_LUTVARS (arg_info),
-                                           INFO_FUNDEF (arg_info));
-        CODE_USED (new_arg_node) = CODE_USED (arg_node);
-        CODE_USED (arg_node) = 0;
-
-        /* Prepend the preassigns. */
-        if (INFO_PREASSIGNS (arg_info) != NULL) {
-            BLOCK_INSTR (CODE_CBLOCK (new_arg_node))
-              = TCappendAssign (INFO_PREASSIGNS (arg_info),
-                                BLOCK_INSTR (CODE_CBLOCK (new_arg_node)));
-            INFO_PREASSIGNS (arg_info) = NULL;
-        }
-
-        /* Insert old and new pointers into LUTCODES so that partition
-         * PART_CODE pointers can be rebuilt.
-         */
-        LUTinsertIntoLutP (INFO_LUTCODES (arg_info), arg_node, new_arg_node);
-    } else {
-        /* If this partition is empty, we don't want preassigns. */
-        INFO_PREASSIGNS (arg_info) = NULL;
-    }
-
+    CODE_USED (arg_node) = 0;
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -446,16 +594,10 @@ IVEXIcode (node *arg_node, info *arg_info)
  *   node *IVEXIwith( node *arg_node, info *arg_info)
  *
  * description:
- *   Populate the LUTVARS lut with WITHID names and their
- *   new replacement names.
  *
- *   Traverse WITH_CODE to replace WITHID references by their
+ *   Traverse partitions to replace WITHID references by their
  *   shiny, new ones, using LUTVARS. That traversal will
  *   populate LUTCODES with old and new WITH_CODE pointer.
- *
- *   Traverse WITH_PART, to correct PART_CODE pointers using
- *   LUTCODES.
- *
  *
  ******************************************************************************/
 node *
@@ -467,14 +609,17 @@ IVEXIwith (node *arg_node, info *arg_info)
 
     if (!WITH_ISEXTREMAINSERTED (arg_node)) {
 
-        populateLUTVars (PART_WITHID (WITH_PART (arg_node)), arg_info);
-
-        /* Update all code blocks, mapping WITHID refs to new names, via LUTVARS. */
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-
-        /* Use LUTCODES to update PART_CODE pointers. */
+        DBUG_ASSERT (NULL == INFO_CODE (arg_info), "IVEXIwith got non-NULL INFO_CODE");
+        /* Traverse the partitions, to define new temps. */
+        /* FIXME */ CHKdoTreeCheck (arg_node);
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        /* FIXME */ CHKdoTreeCheck (arg_node);
         WITH_ISEXTREMAINSERTED (arg_node) = TRUE;
+
+        WITH_CODE (arg_node) = FREEdoFreeTree (WITH_CODE (arg_node));
+        /* First partition is head of free */
+        WITH_CODE (arg_node) = INFO_CODE (arg_info);
+        INFO_CODE (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -514,6 +659,11 @@ IVEXIassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
+    if (NULL != INFO_PREASSIGNSWITH (arg_info)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
+        INFO_PREASSIGNSWITH (arg_info) = NULL;
+    }
+
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -525,19 +675,53 @@ IVEXIassign (node *arg_node, info *arg_info)
  *   node *IVEXIpart( node *arg_node, info *arg_info)
  *
  * description:
- *   Correct the PART_CODE address.
+ *   Create temp vardecs and assigns.
+ *   Rename code block references to WITHIDs.
  *
+ *   Set AVIS_MINVAL, AVIS_MAXVAL from the partition
+ *   generator bounds.
+ *
+ *   We fix all the code blocks here, and chain
+ *   together for IVEXIwith.
+ *
+ *   When this phase completes, all sharing of WITH_CODE blocks is lost.
  *
  ******************************************************************************/
 node *
 IVEXIpart (node *arg_node, info *arg_info)
 {
-
     DBUG_ENTER ("IVEXIpart");
     DBUG_PRINT ("IVEXI", ("Found WL partition"));
 
-    PART_CODE (arg_node)
-      = LUTsearchInLutPp (INFO_LUTCODES (arg_info), PART_CODE (arg_node));
+    /* Don't try this on empty code blocks, kids. */
+    if (N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))))) {
+
+        populateLUTVars (arg_node, arg_info);
+
+        /* copy the code block, renaming WITHIDs refs to temp names. */
+        PART_CODE (arg_node)
+          = DUPdoDupTreeLutSsa (PART_CODE (arg_node), INFO_LUTVARS (arg_info),
+                                INFO_FUNDEF (arg_info));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = DUPdoDupTreeLut (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                             INFO_LUTVARS (arg_info));
+
+        LUTremoveContentLut (INFO_LUTVARS (arg_info));
+        if (NULL != INFO_PREASSIGNSPART (arg_info)) {
+            BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))
+              = TCappendAssign (INFO_PREASSIGNSPART (arg_info),
+                                BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))));
+            INFO_PREASSIGNSPART (arg_info) = NULL;
+        }
+    } else {
+        PART_CODE (arg_node) = DUPdoDupTree (PART_CODE (arg_node));
+    }
+
+    CODE_USED (PART_CODE (arg_node)) = 1;
+    /* Chain previous code to this new one */
+    /* This chain will eventually hang from WITH_CODE */
+    CODE_NEXT (PART_CODE (arg_node)) = INFO_CODE (arg_info);
+    INFO_CODE (arg_info) = PART_CODE (arg_node);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 

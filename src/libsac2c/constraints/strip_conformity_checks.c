@@ -332,7 +332,10 @@ SCCprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
-    case F_dataflowguard: /* dataflow guard never reaches code generator */
+
+    /* dataflow and attach minval/maxval guard never reach code generator */
+    case F_dataflowguard:
+    case F_attachminmax:
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
                                  &INFO_PREASSIGNS (arg_info));

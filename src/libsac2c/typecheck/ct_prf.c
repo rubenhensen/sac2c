@@ -444,6 +444,47 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_attachminmax( te_info *info, ntype *elems)
+ *
+ * description:
+ *   _attachminmax_ is used to preserve a temp assigned
+ *   from WITHIDs in WLs. If -ssaiv ever works, we can just
+ *   scrap this, and attach AVIS_MINVAL and AVIS_MAXVAL to
+ *   the WITHIDs directly. At present, we can't do that,
+ *   because the extrema are different for each partition,
+ *   but the WITHIDs are not different, hence this kludge.
+ *
+ *   The semantics of the _attachminmax_ are:
+ *
+ *    iv' = _dataflowguard_(iv, GENERATOR_BOUND1, GENERATOR_BOUND2)
+ *
+ *    The duty of the code using iv' (SWLFI/SWLF) is to delete the
+ *    guard in the fullness of time, after making use of the
+ *    extrema. The scc phase will delete these guards before
+ *    they ever reach the code generator. In both cases,
+ *    the above call is replaced by:
+ *
+ *    iv' = iv;
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_attachminmax (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTprf_attachminmax");
+
+    arg = TYgetProductMember (args, 0);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_dataflowguard( te_info *info, ntype *elems)
  *
  * description:

@@ -204,6 +204,7 @@ static const travfun_p prf_cfsaa_funtab[] = {
  * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node* CFdoConstantFoldingOneFundef(node* arg_node)
@@ -260,10 +261,33 @@ CFdoConstantFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @name Static helper funcions
+ * @name Static (usually) helper funcions
  * @{
  *
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsSAAMode( node *arg_node)
+ *
+ * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
+ *        should be generated and propagated.
+ *
+ *****************************************************************************/
+bool
+IsSAAMode (void)
+{
+    bool z;
+
+    DBUG_ENTER ("IsSAAMode");
+
+    z = global.optimize.dosaa
+        && (((global.compiler_anyphase >= PH_opt_isaa1)
+             && (global.compiler_anyphase < PH_opt_esaa1))
+            || ((global.compiler_anyphase >= PH_opt_isaa2)
+                && (global.compiler_anyphase < PH_opt_esaa2)));
+    DBUG_RETURN (z);
+}
 
 /** <!--********************************************************************-->
  *

@@ -199,7 +199,6 @@
           <node name="Assign" />
           <node name="With" />
           <node name="Part" />
-          <node name="Let" />
           <node name="Code" />
         </travuser>
       </traversal> 

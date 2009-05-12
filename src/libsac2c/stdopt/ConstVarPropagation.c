@@ -166,13 +166,13 @@ CVPavis (node *arg_node, info *arg_info)
         AVIS_SHAPE (arg_node) = TRAVdo (AVIS_SHAPE (arg_node), arg_info);
     }
 
-    if (AVIS_MINVAL (arg_node) != NULL) {
+    if ((AVIS_MINVAL (arg_node) != NULL) && (arg_node != AVIS_MINVAL (arg_node))) {
         INFO_PROPMODE (arg_info)
           = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MINVAL (arg_node) = TRAVdo (AVIS_MINVAL (arg_node), arg_info);
     }
 
-    if (AVIS_MAXVAL (arg_node) != NULL) {
+    if ((AVIS_MAXVAL (arg_node) != NULL) && (arg_node != AVIS_MAXVAL (arg_node))) {
         INFO_PROPMODE (arg_info)
           = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
