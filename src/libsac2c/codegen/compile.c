@@ -1669,7 +1669,7 @@ GetBaseTypeFromAvis (node *in)
         DBUG_ASSERT (FALSE, "Illegal node type found!");
     }
 
-    return (STRcpy (GetBasetypeStr (type)));
+    DBUG_RETURN (STRcpy (GetBasetypeStr (type)));
 }
 
 /** <!--********************************************************************-->
@@ -1704,7 +1704,7 @@ GetBaseTypeFromExpr (node *in)
         DBUG_ASSERT (FALSE, "Unexpected node type found!");
     }
 
-    return (ret);
+    DBUG_RETURN (ret);
 }
 
 /** <!--********************************************************************-->
