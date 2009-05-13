@@ -1104,14 +1104,17 @@ SWLFids (node *arg_node, info *arg_info)
 node *
 SWLFprf (node *arg_node, info *arg_info)
 {
+    node *arg1;
 
     DBUG_ENTER ("SWLFprf");
 
+    arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
-        && (isPrfArg1DataFlowGuard (arg_node))
-        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NULL != AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))))
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
+        && (isPrfArg1DataFlowGuard (arg_node)) && (N_id == NODE_TYPE (arg1))
+        && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1)))
+        && (NULL != AVIS_MINVAL (ID_AVIS (arg1)))
+        && (NULL != AVIS_MAXVAL (ID_AVIS (arg1)))
+        && (N_id == NODE_TYPE (PRF_ARG2 (arg_node)))) {
 
         INFO_SWLFOLDABLEFOLDEEPART (arg_info)
           = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),

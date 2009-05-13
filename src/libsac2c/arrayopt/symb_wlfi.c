@@ -84,7 +84,6 @@
 #include "compare_tree.h"
 #include "DupTree.h"
 #include "free.h"
-#include "LookUpTable.h"
 #include "globals.h"
 #include "wl_cost_check.h"
 #include "wl_needcount.h"
@@ -293,64 +292,31 @@ flattenExpression (node *arg_node, info *arg_info, node *bounder)
 
 /** <!--********************************************************************-->
  *
- * @fn node *createFolderLut( node *folderpart, node *bound)
- *
- * @brief Create a look up table to map folderWL WITHID_VECs into
- *        WL partition bounds. We don't care about WITHID_IDS,
- *        because this code is only used to determine if the WLs
- *        are foldable. The actual folding code has to be cognizant
- *        of the WITHID_IDS, however.
- *
- *        This is going to map N_avis nodes to N_id nodes.
- *
- * @param folderpart: A partition of the folderWL
- * @param bound:      A GENERATOR_BOUND1 or GENERATOR_BOUND2 of the
- *                    folder-wl.
- *
- * @result The lut created here.
- *
- *****************************************************************************/
-static lut_t *
-createFolderLut (node *folderpart, node *bound)
-{
-    lut_t *lut;
-    node *vecin;
-
-    DBUG_ENTER ("createFolderLut");
-
-    vecin = WITHID_VEC (PART_WITHID (folderpart));
-
-    lut = LUTgenerateLut ();
-    DBUG_ASSERT (N_id == NODE_TYPE (bound), "SWLFI createFolderLut expected N_id");
-    DBUG_PRINT ("SWLF", ("Inserting WITHID_VEC into lut: foldee: %s, folder %s",
-                         AVIS_NAME (IDS_AVIS (vecin)), AVIS_NAME (ID_AVIS (bound))));
-    LUTinsertIntoLutP (lut, IDS_AVIS (vecin), bound);
-
-    DBUG_RETURN (lut);
-}
-/** <!--********************************************************************-->
- *
- * @fn node *IntersectBoundsBuilderOne( node *foldeepart, node *arg_node,
- *                                      info *arg_info)
+ * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
+ *                                      node *foldeepart, int boundnum)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
  *        a single foldeeWL partition with folderWL index set, of the form:
  *
- *           sel((k*iv) + ivoffset, foldee)
+ *           iv' = (k*iv) + ivoffset;
+ *           sel( iv', foldeeWL)
  *
  *        The expression for simplification by the compiler.
- *        We determine the intersection of the folderWL selection
- *        expression with the foldeeWL's  partition bounds this way:
+ *        We determine the intersection of the folderWL iv'
+ *        index set with the foldeeWL's  partition bounds this way:
  *
- *          Intersection1 = _max_VxV_( ivoffset + GENERATOR_BOUND1(folder),
- *                                         GENERATOR_BOUND1(foldee));
+ *          int1 = _max_VxV_( AVIS_MINVAL( iv'),
+ *                            GENERATOR_BOUND1(foldee));
  *
- *          Intersection2 = _min_VxV_( ivoffset + GENERATOR_BOUND2(folder),
- *                                         GENERATOR_BOUND2(foldee));
+ *          int2 = _min_VxV_( AVIS_MAXVAL( iv'),
+ *                            GENERATOR_BOUND2(foldee));
+ *          iv'' = _dataflowguard(iv', int1, int2);
+ *          sel( iv'', foldeeWL)
  *
- *        where Intersection1 is the lower bound of the intersection,
- *        and   Intersection1 is the upper bound of the intersection.
+ *        where int1 evaluates to the lower bound of the intersection,
+ *        and   int2 evaluates to the upper bound of the intersection.
  *
+ * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params foldeepart: An N_part of the foldeeWL.
  * @params arg_info.
  * @params boundnum: 1 for bound1, 2 for bound2
@@ -359,38 +325,29 @@ createFolderLut (node *folderpart, node *bound)
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilderOne (node *foldeepart, info *arg_info, int boundnum)
+IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum)
 {
-    lut_t *lut;
     node *boundee;
     node *bounder;
     node *folderpart;
     node *expn;
-    node *int1;
     node *idxavis;
-    node *idxid;
     node *idxassign;
+    node *bid;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
     folderpart = INFO_PART (arg_info);
-    idxid = WITHID_VEC (PART_WITHID (folderpart));
-    idxavis = IDS_AVIS (idxid);
 
-    /* Find the indexing expression used in the sel(iv, foldee).
-     * If there is no offset, then the WITH_ID is used directly,
-     * and it possesses no AVIS_ASSIGN.
-     */
+    /* The indexing expression used in the sel(iv, foldee). */
+    idxavis = ID_AVIS (PRF_ARG1 (arg_node));
     idxassign = AVIS_SSAASSIGN (idxavis);
-    idxassign = (NULL == idxassign) ? idxavis : ASSIGN_INSTR (idxassign);
 
-    bounder = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (folderpart))
-                              : GENERATOR_BOUND2 (PART_GENERATOR (folderpart));
+    /* AVIS_MINVAL and AVIS_MAXVAL are guaranteed to exist if we get here */
+    bounder = (boundnum == 1) ? AVIS_MINVAL (idxavis) : AVIS_MAXVAL (idxavis);
     boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
                               : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
 
-    DBUG_ASSERT (N_id == NODE_TYPE (bounder),
-                 "IntersectBoundsBuilderOne expected N_id WL-generator bounder");
     DBUG_ASSERT (N_id == NODE_TYPE (boundee),
                  "IntersectBoundsBuilderOne expected N_id WL-generator boundee");
 
@@ -405,21 +362,19 @@ IntersectBoundsBuilderOne (node *foldeepart, info *arg_info, int boundnum)
      * and
      *   (k*folderbound2) + offset
      */
-    lut = createFolderLut (folderpart, bounder);
-    int1 = LUTsearchInLutPp (lut, idxassign);
-    lut = LUTremoveLut (lut);
-    expn = TBmakeExprs (TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV,
-                                    DUPdoDupTree (int1), DUPdoDupTree (boundee)),
+    bid = TBmakeId (bounder);
+    expn = TBmakeExprs (TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, bid,
+                                    DUPdoDupTree (boundee)),
                         NULL);
-    expn = flattenExpression (expn, arg_info, bounder);
+    expn = flattenExpression (expn, arg_info, bid);
 
     DBUG_RETURN (expn);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *IntersectBoundsBuilder( node *foldeepart, node *arg_node,
- *                                      info *arg_info)
+ * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
+ *                                   node *foldeepart, int boundnum)
  *
  * @brief Build a set of expressions for intersecting the bounds of
  *        all foldeeWL partitions with folderWL index set, of the form:
@@ -429,6 +384,7 @@ IntersectBoundsBuilderOne (node *foldeepart, info *arg_info, int boundnum)
  *        We traverse all foldeeWL partitions, building a set of
  *        intersect calcuations for each of them.
  *
+ * @params arg_node: The _sel_VxA( idx, foldeeWL).
  * @params foldeeid: The N_id created by the foldeeWL.
  * @params arg_info.
  * @params boundnum: 1 for bound1, 2 for bound2
@@ -437,7 +393,7 @@ IntersectBoundsBuilderOne (node *foldeepart, info *arg_info, int boundnum)
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilder (node *foldeeid, info *arg_info, int boundnum)
+IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boundnum)
 {
     node *expn = NULL;
     node *partn;
@@ -452,7 +408,7 @@ IntersectBoundsBuilder (node *foldeeid, info *arg_info, int boundnum)
     partn = WITH_PART (foldeewl);
 
     while (NULL != partn) {
-        curid = IntersectBoundsBuilderOne (partn, arg_info, boundnum);
+        curid = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum);
         expn = TCappendExprs (expn, TBmakeExprs (curid, NULL));
         partn = PART_NEXT (partn);
     }
@@ -503,8 +459,8 @@ createNewIV (node *arg_node, info *arg_info)
     if (!isPrfArg1DataFlowGuard (arg_node)) {
         ivid = PRF_ARG1 (arg_node);
         foldeewl = PRF_ARG2 (arg_node);
-        lbicalc = IntersectBoundsBuilder (foldeewl, arg_info, 1);
-        ubicalc = IntersectBoundsBuilder (foldeewl, arg_info, 2);
+        lbicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1);
+        ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2);
         args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid), NULL), lbicalc);
         args = TCappendExprs (args, ubicalc);
 
@@ -624,13 +580,13 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
  *        within a folderWL. We want to determine if
  *        the folderWL is acceptable to have something folded into it.
  *
- *        For the nonce, we forbid any offsets in idx from the WITHID.
- *        Nonce is hopefully just a day or so. 2009-04-26.
+ *        We require that idx have a non-NULL AVIS_MINVAL & AVIS_MAXVAL.
+ *        This may not be enough to guarantee foldability, but
+ *        without them, we're stuck.
  *
  *        These WITHID matches are foldable:
  *
- *         foldeeWL WITHID_VEC == folderWL WITHID_VEC
- *         (or their predecessors).
+ *         foldeeWL WITHID_VEC == folderWL index set extrema
  *
  * @param _sel_VxA_( idx, foldeeWL) arg_node.
  * @result True if the folderWL (and the indexing expression)
@@ -641,21 +597,21 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
 static bool
 checkFolderFoldable (node *arg_node, info *arg_info)
 {
-    node *foldeeavis;
-    node *foldeeparent = NULL;
+    node *idx = NULL;
+    node *idxavis;
     bool z = FALSE;
 
     DBUG_ENTER ("checkFolderFoldable");
 
-    if (PM (PMlastVarGuards (&foldeeparent, PRF_ARG1 (arg_node)))) {
-        foldeeavis = ID_AVIS (foldeeparent);
-        z = (foldeeavis == IDS_AVIS (WITHID_VEC (PART_WITHID (INFO_PART (arg_info)))));
-    }
+    idx = PRF_ARG1 (arg_node);
+    idxavis = ID_AVIS (idx);
+    z = (NULL != AVIS_MINVAL (idxavis)) && (NULL != AVIS_MAXVAL (idxavis));
     if (z) {
-        DBUG_PRINT ("SWLFI", ("FolderWL %s WITHID is foldable.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("SWLFI", ("FolderWL %s extrema found: WL may be foldable.",
+                              AVIS_NAME (idxavis)));
     } else {
-        DBUG_PRINT ("SWLFI",
-                    ("FolderWL %s WITHID is not foldable.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("SWLFI", ("FolderWL %s extrema not found: WL is not foldable.",
+                              AVIS_NAME (idxavis)));
     }
     DBUG_RETURN (z);
 }
@@ -903,7 +859,9 @@ SWLFIid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFIid");
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
+#ifdef NOISY
     DBUG_PRINT ("SWLFI", ("WLIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
+#endif // NOISY
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     foldeewl = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
                  ? ASSIGN_RHS (assignn)
