@@ -92,7 +92,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *flattenBound( node *arg_node, info *arg_info)
+ * @fn static node *FLATGflattenBound( node *arg_node, info *arg_info)
  *
  *   @brief  Flattens the WL bound at arg_node.
  *           I.e., if the generator looks like this on entry:
@@ -160,23 +160,22 @@ FreeInfo (info *info)
  *   @return node *node:      N_id node for flattened bound
  ******************************************************************************/
 static node *
-flattenBound (node *arg_node, info *arg_info)
+FLATGflattenBound (node *arg_node, info *arg_info)
 {
     node *avis;
     node *nas;
     node *res;
     shape *shp;
-    int dim = 1;
     int xrho;
 
-    DBUG_ENTER ("flattenBound");
+    DBUG_ENTER ("FLATGflattenBound");
 
     res = arg_node;
     if (NULL != arg_node) {
         switch (NODE_TYPE (arg_node)) {
         case N_array:
             xrho = TCcountExprs (ARRAY_AELEMS (arg_node));
-            shp = SHcreateShape (dim, xrho);
+            shp = SHcreateShape (1, xrho);
             avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), shp));
             INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
             nas
@@ -184,17 +183,19 @@ flattenBound (node *arg_node, info *arg_info)
                               NULL);
             INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
             AVIS_SSAASSIGN (avis) = nas;
-            AVIS_DIM (avis) = TBmakeNum (dim);
+#ifdef SAAMODE
+            AVIS_DIM (avis) = TBmakeNum (1);
             AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (xrho), NULL));
+#endif // SAAMODE
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
-            DBUG_PRINT ("FLATGflattenBound",
-                        ("Generated avis for: %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("FLATG",
+                        ("Generated avis for: %s, of shape %d", AVIS_NAME (avis), xrho));
             break;
         case N_id:
             break;
         default:
-            DBUG_ASSERT (FALSE, "FLATG flattenBound expected N_array or N_id");
+            DBUG_ASSERT (FALSE, "FLATGflattenBound expected N_array or N_id");
         }
     }
 
@@ -389,6 +390,7 @@ FLATGwith (node *arg_node, info *arg_info)
 
     /* Traverse all partitions in this N_with. */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_info);
+
     INFO_VARDECS (arg_info) = INFO_VARDECS (new_info);
     INFO_PREASSIGNS (arg_info)
       = TCappendAssign (INFO_PREASSIGNS (new_info), INFO_PREASSIGNS (arg_info));
@@ -452,10 +454,12 @@ FLATGgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FLATGgenerator");
 
-    GENERATOR_BOUND1 (arg_node) = flattenBound (GENERATOR_BOUND1 (arg_node), arg_info);
-    GENERATOR_BOUND2 (arg_node) = flattenBound (GENERATOR_BOUND2 (arg_node), arg_info);
-    GENERATOR_STEP (arg_node) = flattenBound (GENERATOR_STEP (arg_node), arg_info);
-    GENERATOR_WIDTH (arg_node) = flattenBound (GENERATOR_WIDTH (arg_node), arg_info);
+    GENERATOR_BOUND1 (arg_node)
+      = FLATGflattenBound (GENERATOR_BOUND1 (arg_node), arg_info);
+    GENERATOR_BOUND2 (arg_node)
+      = FLATGflattenBound (GENERATOR_BOUND2 (arg_node), arg_info);
+    GENERATOR_STEP (arg_node) = FLATGflattenBound (GENERATOR_STEP (arg_node), arg_info);
+    GENERATOR_WIDTH (arg_node) = FLATGflattenBound (GENERATOR_WIDTH (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

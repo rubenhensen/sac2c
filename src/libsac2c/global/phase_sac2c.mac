@@ -455,17 +455,17 @@ SUBPHASE (lir2, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
 SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
 
-SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
-          global.optimize.dodcr, opt)
-
-SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
-          global.optimize.dosaa, opt)
-
 SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
           global.optimize.doswlf || global.doivext, opt)
 
 SUBPHASE (ivext, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
           global.doivext &&global.optimize.dosaa &&global.optimize.doswlf, opt)
+
+SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
+          global.optimize.dodcr, opt)
+
+SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
+          global.optimize.dosaa, opt)
 
 /*************************************************/
 

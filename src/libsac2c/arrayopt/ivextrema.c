@@ -78,6 +78,7 @@
 #include "check.h"
 #include "makedimexpr.h"
 #include "makeshapeexpr.h"
+#include "rename.h"
 
 /** <!--********************************************************************-->
  *
@@ -90,7 +91,7 @@ struct INFO {
     node *vardecs;
     node *preassignspart;
     node *preassignswith;
-    node *code;
+    node *with;
     lut_t *lutvars;
     lut_t *lutcodes;
 };
@@ -102,7 +103,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PREASSIGNSPART(n) ((n)->preassignspart)
 #define INFO_PREASSIGNSWITH(n) ((n)->preassignswith)
-#define INFO_CODE(n) ((n)->code)
+#define INFO_WITH(n) ((n)->with)
 #define INFO_LUTVARS(n) ((n)->lutvars)
 #define INFO_LUTCODES(n) ((n)->lutcodes)
 
@@ -119,7 +120,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNSPART (result) = NULL;
     INFO_PREASSIGNSWITH (result) = NULL;
-    INFO_CODE (result) = NULL;
+    INFO_WITH (result) = NULL;
     INFO_LUTVARS (result) = NULL;
     INFO_LUTCODES (result) = NULL;
 
@@ -183,6 +184,33 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * stolen from WithLoopFusion.c
+ *
+ * @fn node IVEXIRemoveUnusedCodes(node *codes)
+ *
+ *   @brief removes all unused N_codes recursively
+ *
+ *   @param  node *codes : N_code chain
+ *   @return node *      : modified N_code chain
+ ******************************************************************************/
+static node *
+IVEXIRemoveUnusedCodes (node *codes)
+{
+    DBUG_ENTER ("IVEXIRemoveUnusedCodes");
+    DBUG_ASSERT ((codes != NULL), "no codes available!");
+    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
+
+    if (CODE_NEXT (codes) != NULL)
+        CODE_NEXT (codes) = IVEXIRemoveUnusedCodes (CODE_NEXT (codes));
+
+    if (CODE_USED (codes) == 0)
+        codes = FREEdoFreeNode (codes);
+
+    DBUG_RETURN (codes);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *generateSelect( node *arg_node, info *arg_info, int k)
  *
  * @brief: Create:
@@ -217,6 +245,7 @@ generateSelect (node *bound, info *arg_info, int k)
     node *fid;
     node *fids;
     node *fass;
+    node *numone;
 
     DBUG_ENTER ("generateSelect");
 
@@ -233,13 +262,13 @@ generateSelect (node *bound, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), fass);
     AVIS_SSAASSIGN (favis) = fass;
-    AVIS_DIM (favis) = TBmakeNum (0);
-    AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
     AVIS_MINVAL (favis) = favis;
     AVIS_MAXVAL (favis) = favis;
 
     /* Create k' = [k]; */
-    kavis = MakeVectAvis (TRAVtmpVarName (AVIS_NAME (bavis)), TBmakeNum (1));
+    numone = TBmakeNum (1);
+    kavis = MakeVectAvis (TRAVtmpVarName (AVIS_NAME (bavis)), numone);
+    numone = FREEdoFreeNode (numone);
     INFO_VARDECS (arg_info) = TBmakeVardec (kavis, INFO_VARDECS (arg_info));
 
     kid = TBmakeId (kavis);
@@ -253,8 +282,6 @@ generateSelect (node *bound, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
     AVIS_SSAASSIGN (kavis) = kass;
-    AVIS_DIM (kavis) = TBmakeNum (1);
-    AVIS_SHAPE (kavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
     AVIS_MINVAL (kavis) = kavis;
     AVIS_MAXVAL (kavis) = kavis;
 
@@ -271,8 +298,10 @@ generateSelect (node *bound, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
     AVIS_SSAASSIGN (zavis) = zass;
+#ifdef SAAMODE
     AVIS_DIM (zavis) = TBmakeNum (0);
     AVIS_SHAPE (zavis) = TCmakeIntVector (NULL);
+#endif // SAAMODE
     AVIS_MINVAL (zavis) = zavis;
     AVIS_MAXVAL (zavis) = zavis;
 
@@ -308,7 +337,7 @@ generateSelect (node *bound, info *arg_info, int k)
  *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
  *
- * @return: The N_id of the new temp.
+ * @return: The N_avis of the new temp.
  *
  *****************************************************************************/
 node *
@@ -316,7 +345,6 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *oldavis)
 {
     node *avis;
     node *nas;
-    node *nid;
     node *args;
     node *b1;
     node *b2;
@@ -343,14 +371,15 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *oldavis)
                         NULL);
     INFO_PREASSIGNSPART (arg_info) = TCappendAssign (INFO_PREASSIGNSPART (arg_info), nas);
     AVIS_SSAASSIGN (avis) = nas;
+#ifdef SAAMODE
     AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (oldavis));
     AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (oldavis));
+#endif // SAAMODE
     AVIS_MINVAL (avis) = ID_AVIS (b1);
     AVIS_MAXVAL (avis) = ID_AVIS (b2);
-    nid = TBmakeId (avis);
     DBUG_PRINT ("IVEXI", ("IVEXItmpVec introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (oldavis)));
-    DBUG_RETURN (nid);
+    DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
@@ -368,7 +397,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *oldavis)
  *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
  *     k:        the index of the scalar, e.g., i=0, j=1, k=2
- * @return: The N_id of the new temp.
+ * @return: The N_avis of the new temp.
  *
  *****************************************************************************/
 node *
@@ -376,7 +405,6 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
 {
     node *avis;
     node *nas;
-    node *nid;
     node *args;
     node *b1;
     node *b2;
@@ -404,19 +432,16 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
                         NULL);
     INFO_PREASSIGNSPART (arg_info) = TCappendAssign (INFO_PREASSIGNSPART (arg_info), nas);
     AVIS_SSAASSIGN (avis) = nas;
-    AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (oldavis));
-    AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (oldavis));
     AVIS_MINVAL (avis) = ID_AVIS (b1);
     AVIS_MAXVAL (avis) = ID_AVIS (b2);
-    nid = TBmakeId (avis);
     DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (oldavis)));
-    DBUG_RETURN (nid);
+    DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn static void populateLUTVars( node *arg_node, info *arg_info)
+ * @fn static void populateLUTVara( node *arg_node, info *arg_info)
  *
  * @brief:
  *    1. populate INFO_LUTVARS with WITHID names and new temp names.
@@ -434,7 +459,7 @@ static void
 populateLUTVars (node *arg_node, info *arg_info)
 {
     node *oldavis;
-    node *newid;
+    node *navis;
     node *ids;
     int k = 0;
 
@@ -442,19 +467,19 @@ populateLUTVars (node *arg_node, info *arg_info)
 
     /* Populate LUTVARS with WITHID_VEC and new name. */
     oldavis = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
-    newid = IVEXItmpVec (arg_node, arg_info, oldavis);
-    LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, ID_AVIS (newid));
+    navis = IVEXItmpVec (arg_node, arg_info, oldavis);
+    LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, navis);
     DBUG_PRINT ("IVEXI", ("Inserting WITHID_VEC into lut: oldid: %s, newid: %s",
-                          AVIS_NAME (oldavis), AVIS_NAME (ID_AVIS (newid))));
+                          AVIS_NAME (oldavis), AVIS_NAME (navis)));
 
     /* Rename withid scalars */
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (ids != NULL) {
         oldavis = IDS_AVIS (ids);
-        newid = IVEXItmpIds (arg_node, arg_info, oldavis, k);
+        navis = IVEXItmpIds (arg_node, arg_info, oldavis, k);
         DBUG_PRINT ("IVEXIpart", ("Inserting WITHID_IDS into lut: oldid: %s, newid: %s",
-                                  AVIS_NAME (oldavis), AVIS_NAME (ID_AVIS (newid))));
-        LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, ID_AVIS (newid));
+                                  AVIS_NAME (oldavis), AVIS_NAME (navis)));
+        LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, navis);
         ids = IDS_NEXT (ids);
         k++;
     }
@@ -505,7 +530,6 @@ node *
 IVEXIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIfundef");
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_PRINT ("IVEXI", ("IVEXI in %s %s begins",
                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                           FUNDEF_NAME (arg_node)));
@@ -533,10 +557,8 @@ IVEXIfundef (node *arg_node, info *arg_info)
                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                          FUNDEF_NAME (arg_node)));
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -562,6 +584,7 @@ IVEXIblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef CRAP
 /******************************************************************************
  *
  * function:
@@ -587,6 +610,7 @@ IVEXIcode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif // CRAP
 
 /******************************************************************************
  *
@@ -603,24 +627,34 @@ IVEXIcode (node *arg_node, info *arg_info)
 node *
 IVEXIwith (node *arg_node, info *arg_info)
 {
+    info *new_info;
 
     DBUG_ENTER ("IVEXIwith");
     DBUG_PRINT ("IVEXI", ("Found WL"));
 
     if (!WITH_ISEXTREMAINSERTED (arg_node)) {
 
-        DBUG_ASSERT (NULL == INFO_CODE (arg_info), "IVEXIwith got non-NULL INFO_CODE");
+        DBUG_ASSERT (NULL == INFO_WITH (arg_info), "IVEXIwith got non-NULL INFO_WITH");
+        /* FIXME Actually, just want to stop when we get nested WLs to have a peek */
+
+        new_info = MakeInfo ();
+        INFO_FUNDEF (new_info) = INFO_FUNDEF (arg_info);
+        INFO_VARDECS (new_info) = INFO_VARDECS (arg_info);
+        INFO_LUTVARS (new_info) = INFO_LUTVARS (arg_info);
+        INFO_LUTCODES (new_info) = INFO_LUTCODES (arg_info);
+        INFO_WITH (new_info) = arg_node;
+
         /* Traverse the partitions, to define new temps. */
-        /* FIXME */ CHKdoTreeCheck (arg_node);
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        /* FIXME */ CHKdoTreeCheck (arg_node);
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_info);
         WITH_ISEXTREMAINSERTED (arg_node) = TRUE;
 
-        WITH_CODE (arg_node) = FREEdoFreeTree (WITH_CODE (arg_node));
-        /* First partition is head of free */
-        WITH_CODE (arg_node) = INFO_CODE (arg_info);
-        INFO_CODE (arg_info) = NULL;
+        INFO_VARDECS (arg_info) = INFO_VARDECS (new_info);
+        INFO_PREASSIGNSWITH (arg_info) = INFO_PREASSIGNSWITH (new_info);
+        new_info = FreeInfo (new_info);
     }
+
+    /* If partitions were unshared, we could eliminate this. */
+    WITH_CODE (arg_node) = IVEXIRemoveUnusedCodes (WITH_CODE (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -690,6 +724,9 @@ IVEXIassign (node *arg_node, info *arg_info)
 node *
 IVEXIpart (node *arg_node, info *arg_info)
 {
+    node *codenext;
+    node *newcode;
+
     DBUG_ENTER ("IVEXIpart");
     DBUG_PRINT ("IVEXI", ("Found WL partition"));
 
@@ -698,30 +735,30 @@ IVEXIpart (node *arg_node, info *arg_info)
 
         populateLUTVars (arg_node, arg_info);
 
-        /* copy the code block, renaming WITHIDs refs to temp names. */
-        PART_CODE (arg_node)
-          = DUPdoDupTreeLutSsa (PART_CODE (arg_node), INFO_LUTVARS (arg_info),
-                                INFO_FUNDEF (arg_info));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = DUPdoDupTreeLut (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                             INFO_LUTVARS (arg_info));
-
+        /* We have to keep the renamer's paws off other partitions. */
+        codenext = CODE_NEXT (PART_CODE (arg_node));
+        CODE_NEXT (PART_CODE (arg_node)) = NULL;
+        newcode = DUPdoDupTreeLutSsa (PART_CODE (arg_node), INFO_LUTVARS (arg_info),
+                                      INFO_FUNDEF (arg_info));
+        CODE_NEXT (PART_CODE (arg_node)) = codenext;
         LUTremoveContentLut (INFO_LUTVARS (arg_info));
+
+        /* No longer using old code block */
+        (CODE_USED (PART_CODE (arg_node)))--;
+        CODE_USED (newcode) = 1;
+        PART_CODE (arg_node) = newcode;
+
+        /* Link new code block to WLs chain */
+        CODE_NEXT (newcode) = WITH_CODE (INFO_WITH (arg_info));
+        WITH_CODE (INFO_WITH (arg_info)) = newcode;
+
         if (NULL != INFO_PREASSIGNSPART (arg_info)) {
-            BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))
+            BLOCK_INSTR (CODE_CBLOCK (newcode))
               = TCappendAssign (INFO_PREASSIGNSPART (arg_info),
-                                BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))));
+                                BLOCK_INSTR (CODE_CBLOCK (newcode)));
             INFO_PREASSIGNSPART (arg_info) = NULL;
         }
-    } else {
-        PART_CODE (arg_node) = DUPdoDupTree (PART_CODE (arg_node));
     }
-
-    CODE_USED (PART_CODE (arg_node)) = 1;
-    /* Chain previous code to this new one */
-    /* This chain will eventually hang from WITH_CODE */
-    CODE_NEXT (PART_CODE (arg_node)) = INFO_CODE (arg_info);
-    INFO_CODE (arg_info) = PART_CODE (arg_node);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 

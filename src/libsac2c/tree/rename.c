@@ -115,6 +115,18 @@ RENid (node *arg_node, info *arg_info)
 }
 
 node *
+RENavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RENavis");
+
+    AVIS_MINVAL (arg_node)
+      = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MINVAL (arg_node));
+    AVIS_MAXVAL (arg_node)
+      = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAXVAL (arg_node));
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RENids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RENids");
