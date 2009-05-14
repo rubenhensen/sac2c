@@ -552,6 +552,9 @@ SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
 SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithloopIdxs,
           ALWAYS, opt)
 
+SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
+          global.optimize.doswlf, opt)
+
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
           global.optimize.doswlf || global.insertconformitychecks, opt)

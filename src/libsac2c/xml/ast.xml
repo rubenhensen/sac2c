@@ -211,6 +211,12 @@
           <node name="While" />
         </travuser>
       </traversal> 
+      <traversal id="IVEXC" name="Index Variable Extrema Cleanup" default="sons" include="ivexcleanup.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Avis" />
+        </travuser>
+      </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
         <travuser>
           <node name="Module" />
