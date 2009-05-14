@@ -45,6 +45,28 @@
  * They do, however, mark the end of shared N_code blocks in WLs,
  * just as -ssaiv does.
  *
+ *
+ *
+ * Some notes on phase ordering for ivextrema, ivexpropagate,
+ * swlfi, and swlf:
+ *
+ *   ivextrema introduces new vardecs, and leaves old ones
+ *   hanging around. The latter have to be removed, or later
+ *   phases will reference them, and their now-dead AVIS_MINVAL/MAXVAL
+ *   values, causing 'orrible pain. Hence, the presence of dcr2
+ *   right after ivext.
+ *
+ *   The other requirements are:
+ *      - isaa2 or other AVIS_DIM/SHAPE-introducing code
+ *        must follow ivext, as it does not, at present,
+ *        introduce these fields. No big deal to make it
+ *        do so, if moving ivext after isaa2 was desired.
+ *
+ *      - ivext must precede ivexp.
+ *      - ivexp must precede swlfi.
+ *      - swlfi must precede swlf.
+ *      - scc and dcr3 must follow swlf, eventually.
+ *
  * @ingroup ivexi
  *
  * @{
@@ -75,10 +97,6 @@
 #include "DupTree.h"
 #include "pattern_match.h"
 #include "LookUpTable.h"
-#include "check.h"
-#include "makedimexpr.h"
-#include "makeshapeexpr.h"
-#include "rename.h"
 
 /** <!--********************************************************************-->
  *
@@ -253,7 +271,8 @@ generateSelect (node *bound, info *arg_info, int k)
 
     /* Flatten k */
 
-    favis = MakeScalarAvis (TRAVtmpVarName (AVIS_NAME (bavis)));
+    favis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)),
+                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     INFO_VARDECS (arg_info) = TBmakeVardec (favis, INFO_VARDECS (arg_info));
 
     fid = TBmakeId (favis);
@@ -267,7 +286,9 @@ generateSelect (node *bound, info *arg_info, int k)
 
     /* Create k' = [k]; */
     numone = TBmakeNum (1);
-    kavis = MakeVectAvis (TRAVtmpVarName (AVIS_NAME (bavis)), numone);
+    kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)),
+                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                   SHcreateShape (1, NUM_VAL (numone))));
     numone = FREEdoFreeNode (numone);
     INFO_VARDECS (arg_info) = TBmakeVardec (kavis, INFO_VARDECS (arg_info));
 
@@ -423,7 +444,8 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
     b1 = generateSelect (b1, arg_info, k);
     b2 = generateSelect (b2, arg_info, k);
 
-    avis = MakeScalarAvis (TRAVtmpVarName (AVIS_NAME (oldavis)));
+    avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
+                       TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     args = TBmakeExprs (TBmakeId (oldavis), TBmakeExprs (b1, TBmakeExprs (b2, NULL)));

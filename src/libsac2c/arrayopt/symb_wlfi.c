@@ -93,6 +93,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "shape.h"
+#include "check.h"
 
 /** <!--********************************************************************-->
  *
@@ -455,28 +456,24 @@ createNewIV (node *arg_node, info *arg_info)
     /* Generate expressions for lower-bound intersection and
      * upper-bound intersection calculation.
      */
+    ivid = PRF_ARG1 (arg_node);
+    foldeewl = PRF_ARG2 (arg_node);
+    lbicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1);
+    ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2);
+    args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid), NULL), lbicalc);
+    args = TCappendExprs (args, ubicalc);
 
-    if (!isPrfArg1DataFlowGuard (arg_node)) {
-        ivid = PRF_ARG1 (arg_node);
-        foldeewl = PRF_ARG2 (arg_node);
-        lbicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1);
-        ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2);
-        args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid), NULL), lbicalc);
-        args = TCappendExprs (args, ubicalc);
+    ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
+    ivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (ivid))),
+                         TYcopyType (AVIS_TYPE (ID_AVIS (ivid))));
 
-        ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
-        ivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (ivid))),
-                             TYcopyType (AVIS_TYPE (ID_AVIS (ivid))));
-
-        INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
-        ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),
-                                            TBmakePrf (F_dataflowguard, args)),
-                                 NULL);
-        INFO_PREASSIGNS (arg_info)
-          = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
-        ividprime = TBmakeId (ivavis);
-        AVIS_SSAASSIGN (ivavis) = ivassign;
-    }
+    INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
+    ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),
+                                        TBmakePrf (F_dataflowguard, args)),
+                             NULL);
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
+    ividprime = TBmakeId (ivavis);
+    AVIS_SSAASSIGN (ivavis) = ivassign;
 
     DBUG_RETURN (ividprime);
 }
@@ -686,8 +683,10 @@ SWLFIfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
 
+            /* FIXME */ CHKdoTreeCheck (arg_node);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
+            /* FIXME */ CHKdoTreeCheck (arg_node);
             BLOCK_VARDEC (FUNDEF_BODY (arg_node)) = INFO_VARDECS (arg_info);
             INFO_VARDECS (arg_info) = NULL;
         }
@@ -699,9 +698,11 @@ SWLFIfundef (node *arg_node, info *arg_info)
                               FUNDEF_NAME (arg_node)));
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        /* FIXME */ CHKdoTreeCheck (arg_node);
     }
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), NULL);
 
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -755,6 +756,7 @@ SWLFIwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFIwith");
 
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     old_arg_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
@@ -774,6 +776,7 @@ SWLFIwith (node *arg_node, info *arg_info)
     arg_info = FreeInfo (arg_info);
     arg_info = old_arg_info;
 
+    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -928,10 +931,12 @@ SWLFIprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         /* Replace iv by iv' */
-        if (INFO_SWLFOLDABLEFOLDEE (arg_info)) {
+        /* FIXME */ CHKdoTreeCheck (arg_node);
+        if ((INFO_SWLFOLDABLEFOLDEE (arg_info)) && (!isPrfArg1DataFlowGuard (arg_node))) {
             z = createNewIV (arg_node, arg_info);
-            /* FIXME why doesn't this work???FreeDoFreeNode( PRF_ARG1( arg_node)); */
+            FREEdoFreeNode (PRF_ARG1 (arg_node));
             PRF_ARG1 (arg_node) = z;
+            /* FIXME */ CHKdoTreeCheck (arg_node);
             DBUG_PRINT ("SWLFI", ("SWLFIprf Inserting F_dataflowguard at _sel_VxA_"));
         }
     }

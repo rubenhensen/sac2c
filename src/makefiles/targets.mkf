@@ -158,7 +158,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         tagdependencies resolvedependencies symb_wlf \
                         symb_wlfi wl_cost_check wl_needcount show_wl_cost \
                         loop_scalarization withloop_flattening             \
-                        ivextrema 
+                        ivextrema ivexpropagation
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
 

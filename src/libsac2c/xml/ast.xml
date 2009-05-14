@@ -201,6 +201,16 @@
           <node name="Part" />
         </travuser>
       </traversal> 
+      <traversal id="IVEXP" name="Index Variable Extrema Propagation" default="sons" include="ivexpropagation.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Cond" />
+          <node name="Funcond" />
+          <node name="While" />
+        </travuser>
+      </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
         <travuser>
           <node name="Module" />
@@ -4861,6 +4871,7 @@ N_structdef :
 
 -->
     <node name="Char">
+     <description>  Character scalar </description>
       <sons></sons>
       <attributes>
         <attribute name="Val" inconstructor="yes" >
@@ -4884,6 +4895,7 @@ N_structdef :
 
 -->
     <node name="Float">
+     <description>  Floating-point scalar </description>
       <sons></sons>
       <attributes>
         <attribute name="Val" inconstructor="yes" >
@@ -4907,6 +4919,7 @@ N_structdef :
 
 -->
     <node name="Double">
+     <description>  Double-precision real scalar </description>
       <sons></sons>
       <attributes>
         <attribute name="Val" inconstructor="yes" >
@@ -4930,6 +4943,7 @@ N_structdef :
 
 -->
     <node name="Bool">
+     <description>  Boolean scalar </description>
       <sons></sons>
       <attributes>
         <attribute name="Val" inconstructor="yes" >
@@ -5003,6 +5017,7 @@ N_structdef :
 
 -->
     <node name="Prf">
+     <description> Primitive (built-in) SAC function </description>
       <sons>
         <son name="Args">
           <targets>
@@ -5915,7 +5930,7 @@ N_structdef :
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_isaa2" to="opt_esaa2" />
+                <range from="opt_ivext" to="opt_esaa2" />
                 </phases>
               </target>
             </targets>
@@ -5937,7 +5952,7 @@ N_structdef :
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_isaa2" to="opt_esaa2" />
+                <range from="opt_ivext" to="opt_esaa2" />
                 </phases>
               </target>
             </targets>

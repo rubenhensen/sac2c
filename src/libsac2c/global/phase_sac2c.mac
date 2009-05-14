@@ -458,6 +458,10 @@ SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
 SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
           global.optimize.doswlf || global.doivext, opt)
 
+/* See comments in arrayopt/ivextrema.c regarding phase
+ * ordering for ivext, dcr2, ivexp, swlfi, swlf, dcr4, scc.
+ */
+
 SUBPHASE (ivext, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
           global.doivext &&global.optimize.dosaa &&global.optimize.doswlf, opt)
 
@@ -497,6 +501,9 @@ CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGener
 
 CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
             global.optimize.dowlsimp, opt, saacyc)
+
+CYCLEPHASE (ivexp, "Propagating index vector extrema",
+            IVEXPdoIndexVectorExtremaPropModule, global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
             SWLFIdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)

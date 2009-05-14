@@ -248,7 +248,6 @@ node *
 WLNCwith (node *arg_node, info *arg_info)
 {
     node *outer_with;
-    node *avis;
 
     DBUG_ENTER ("WLNCwith");
 
