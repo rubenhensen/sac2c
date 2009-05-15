@@ -18,4 +18,4 @@ extern node *IVEXCdoIndexVectorExtremaCleanup (node *syntax_tree);
 extern node *IVEXCwith (node *arg_node, info *arg_info);
 extern node *IVEXCavis (node *arg_node, info *arg_info);
 
-#endif _SAC_INDEX_VECTOR_EXTREMA_CLEANUP_H_
+#endif // _SAC_INDEX_VECTOR_EXTREMA_CLEANUP_H_
