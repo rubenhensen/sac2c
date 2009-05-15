@@ -508,8 +508,8 @@ CYCLEPHASE (ivexp, "Propagating index vector extrema",
 CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
             SWLFIdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
 
-CYCLEPHASE (swlf, "Applying symbolic with-loop folding",
-            SWLFdoSymbolicWithLoopFoldingModule, global.optimize.doswlf, opt, saacyc)
+CYCLEPHASE (swlf, "Applying symbolic with-loop folding", SWLFdoSymbolicWithLoopFolding,
+            global.optimize.doswlf, opt, saacyc)
 
 CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
             opt, saacyc)

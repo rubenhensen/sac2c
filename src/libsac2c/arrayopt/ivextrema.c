@@ -168,6 +168,15 @@ FreeInfo (info *info)
  *
  * @fn node *IVEXIdoInsertIndexVectorExtrema( node *arg_node)
  *
+ * @brief:
+ *   Create two LUTs:
+ *     LUTVARS holds information for renaming WITHID references
+ *             to temp names within each WITH_CODE block.
+ *     LUTCODES holds the old and new WITH_CODE block pointers,
+ *             to let IVEXIpart correct the N_code pointers in
+ *             each partition.
+ *     Traverse subtree.
+ *
  *****************************************************************************/
 node *
 IVEXIdoInsertIndexVectorExtrema (node *arg_node)
@@ -179,12 +188,17 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
                  "IVEXIdoIndexVectorExtremaInsertion expected N_modules");
 
     arg_info = MakeInfo ();
+    INFO_LUTVARS (arg_info) = LUTgenerateLut ();
+    INFO_LUTCODES (arg_info) = LUTgenerateLut ();
 
     DBUG_PRINT ("IVEXI", ("Starting index vector extrema insertion traversal."));
 
     TRAVpush (TR_ivexi);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    INFO_LUTVARS (arg_info) = LUTremoveLut (INFO_LUTVARS (arg_info));
+    INFO_LUTCODES (arg_info) = LUTremoveLut (INFO_LUTCODES (arg_info));
 
     DBUG_PRINT ("IVEXI", ("Index vector extrema insertion complete."));
 
@@ -540,12 +554,6 @@ IVEXImodule (node *arg_node, info *arg_info)
  *   node *IVEXIfundef( node *arg_node, info *arg_info)
  *
  * description:
- *   Create two LUTs:
- *     LUTVARS holds information for renaming WITHID references
- *             to temp names within each WITH_CODE block.
- *     LUTCODES holds the old and new WITH_CODE block pointers,
- *             to let IVEXIpart correct the N_code pointers in
- *             each partition.
  *
  ******************************************************************************/
 node *
@@ -557,15 +565,11 @@ IVEXIfundef (node *arg_node, info *arg_info)
                           FUNDEF_NAME (arg_node)));
 
     INFO_FUNDEF (arg_info) = arg_node;
-    INFO_LUTVARS (arg_info) = LUTgenerateLut ();
-    INFO_LUTCODES (arg_info) = LUTgenerateLut ();
 
     if (NULL != FUNDEF_BODY (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
     INFO_FUNDEF (arg_info) = NULL;
-    INFO_LUTVARS (arg_info) = LUTremoveLut (INFO_LUTVARS (arg_info));
-    INFO_LUTCODES (arg_info) = LUTremoveLut (INFO_LUTCODES (arg_info));
 
     /* If new vardecs were made, append them to the current set */
     if (INFO_VARDECS (arg_info) != NULL) {

@@ -210,6 +210,8 @@ struct INFO {
     int level;
     /* This is the current nesting level of WLs */
     node *swlfoldablefoldeepart;
+    lut_t *lut;
+    /* This is the WITH_ID renaming lut */
 };
 
 /**
@@ -220,6 +222,7 @@ struct INFO {
 #define INFO_WL(n) ((n)->wl)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
+#define INFO_LUT(n) ((n)->lut)
 
 static info *
 MakeInfo (node *fundef)
@@ -235,6 +238,7 @@ MakeInfo (node *fundef)
     INFO_WL (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
+    INFO_LUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -260,6 +264,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+#ifdef DEAD
 /******************************************************************************
  *
  * function:
@@ -281,6 +286,7 @@ SWLFdoSymbolicWithLoopFoldingModule (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+#endif // DEAD
 
 /** <!--********************************************************************-->
  *
@@ -288,22 +294,27 @@ SWLFdoSymbolicWithLoopFoldingModule (node *arg_node)
  *
  * @brief global entry point of symbolic With-Loop folding
  *
- * @param fundef Fundef-Node to apply SWLF.
+ * @param fundef N_module to apply SWLF.
  *
- * @return optimized fundef
+ * @return optimized N_module
  *
  *****************************************************************************/
 node *
 SWLFdoSymbolicWithLoopFolding (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ("SWLFdoSymbolicWithLoopFolding");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "SWLFdoSymbolicWithLoopFolding called for non-fundef node");
+    arg_info = MakeInfo (NULL);
+    INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_swlf);
-    arg_node = TRAVdo (arg_node, NULL);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
     TRAVpop ();
+
+    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -798,18 +809,18 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
 
 /** <!--********************************************************************-->
  *
- * @fn node *createLut( node *part1, node *part2)
+ * @fn node *populateLut( node *part1, node *part2, info *arg_info)
  *
- * @brief Create a look up table and insert into vec and ids
+ * @brief Populate a look up table for mapping WITH_VEC and
+ *        WITH_ID references into temp names.
  *
  *****************************************************************************/
-static lut_t *
-createLut (node *part1, node *part2)
+static void
+populateLut (node *part1, node *part2, info *arg_info)
 {
-    lut_t *lut;
     node *vec1, *ids1, *vec2, *ids2;
 
-    DBUG_ENTER ("createLut");
+    DBUG_ENTER ("populateLut");
 
     vec1 = WITHID_VEC (PART_WITHID (part1));
     ids1 = WITHID_IDS (PART_WITHID (part1));
@@ -817,20 +828,20 @@ createLut (node *part1, node *part2)
     vec2 = WITHID_VEC (PART_WITHID (part2));
     ids2 = WITHID_IDS (PART_WITHID (part2));
 
-    lut = LUTgenerateLut ();
     DBUG_PRINT ("SWLF", ("Inserting WITHID_VEC into lut: foldee: %s, folder %s",
                          AVIS_NAME (IDS_AVIS (vec1)), AVIS_NAME (IDS_AVIS (vec2))));
-    LUTinsertIntoLutP (lut, IDS_AVIS (vec1), IDS_AVIS (vec2));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (vec1), IDS_AVIS (vec2));
+
     while (ids1 != NULL) {
         DBUG_PRINT ("SWLF", ("Inserting WITHID_IDS into lut: foldee: %s, folder: %s",
                              AVIS_NAME (IDS_AVIS (ids1)), AVIS_NAME (IDS_AVIS (ids2))));
-        LUTinsertIntoLutP (lut, IDS_AVIS (ids1), IDS_AVIS (ids2));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids1), IDS_AVIS (ids2));
 
         ids1 = IDS_NEXT (ids1);
         ids2 = IDS_NEXT (ids2);
     }
 
-    DBUG_RETURN (lut);
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -840,7 +851,7 @@ createLut (node *part1, node *part2)
  * @brief
  *   In
  *    BBB = with...  elb = _sel_VxA_(iv, AAA) ...    NB. foldee
- *    CCC = with...  elc = _sel_VxA_(jv, BBB) ...     NB. folder
+ *    CCC = with...  elc = _sel_VxA_(jv, BBB) ...    NB. folder
  *
  *   Replace, in the folder WL:
  *     elc = _sel_VxA_( jv, BBB)
@@ -856,30 +867,42 @@ createLut (node *part1, node *part2)
  *    folder: N_part node of folder.
  *****************************************************************************/
 static node *
-doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder)
+doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder, info *arg_info)
 {
     node *oldblock, *newblock;
     node *expravis, *newavis;
-    lut_t *lut;
 
     DBUG_ENTER ("doSWLFreplace");
 
-    /* Create a new Lut, to map names in foldee to corresponding names
-     * in folder
+    /* Populate lut, to map names in foldeeWL to corresponding names
+     * in folderWL.
      */
-    lut = createLut (foldee, folder);
+    populateLut (foldee, folder, arg_info);
 
     oldblock = CODE_CBLOCK (PART_CODE (foldee));
+
+    /* If foldeeWL is empty, don't do any code substitutions.
+     * Just replace sel(iv, foldeeWL) by iv.
+     */
+    if (N_empty == NODE_TYPE (BLOCK_INSTR (oldblock))) {
+        newblock = NULL;
+    } else {
+        newblock
+          = DUPdoDupTreeLutSsa (BLOCK_INSTR (oldblock), INFO_LUT (arg_info), fundef);
+    }
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
-    newblock = DUPdoDupTreeLutSsa (BLOCK_INSTR (oldblock), lut, fundef);
-    newavis = LUTsearchInLutPp (lut, expravis);
+    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
+
+    LUTremoveContentLut (INFO_LUT (arg_info));
 
     /**
      * replace the code
      */
     FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (assign)));
     LET_EXPR (ASSIGN_INSTR (assign)) = TBmakeId (newavis);
-    assign = TCappendAssign (newblock, assign);
+    if (NULL != newblock) {
+        assign = TCappendAssign (newblock, assign);
+    }
 
     DBUG_RETURN (assign);
 }
@@ -913,16 +936,14 @@ SWLFfundef (node *arg_node, info *arg_info)
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                              FUNDEF_NAME (arg_node)));
 
+        INFO_FUNDEF (arg_info) = arg_node;
+
         arg_node = WLNCdoWLNeedCount (arg_node);
 #ifdef DAOEN
         arg_node = WLCCdoWLCostCheck (arg_node);
 #endif // DAOEN
 
-        arg_info = MakeInfo (arg_node);
-
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        arg_info = FreeInfo (arg_info);
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loop folding in %s %s ends",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
@@ -930,9 +951,10 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
+    INFO_FUNDEF (arg_info) = NULL;
 
     if (NULL != FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), NULL);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -967,7 +989,7 @@ SWLFassign (node *arg_node, info *arg_info)
      */
     if (NULL != foldablefoldeepart) {
         arg_node = doSWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
-                                  INFO_PART (arg_info));
+                                  INFO_PART (arg_info), arg_info);
 
         global.optcounters.swlf_expr += 1;
     }
@@ -996,6 +1018,7 @@ SWLFwith (node *arg_node, info *arg_info)
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_WL (arg_info) = arg_node;
+    INFO_LUT (arg_info) = INFO_LUT (old_info);
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_info) + 1;
 
     WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
@@ -1021,6 +1044,7 @@ SWLFwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("SWLF", ("Replacing modarray by genarray"));
     }
+
     INFO_WL (old_info) = NULL;
     arg_info = FreeInfo (arg_info);
 
@@ -1040,14 +1064,6 @@ SWLFcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("SWLFcode");
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-
-    /*
-     * this looks like FIXME CRAP
-      if( INFO_PART( arg_info) == NULL) {
-        CODE_NEXT( arg_node) = TRAVopt( CODE_NEXT( arg_node), arg_info);
-      }
-      FIXME
-    */
 
     DBUG_RETURN (arg_node);
 }
