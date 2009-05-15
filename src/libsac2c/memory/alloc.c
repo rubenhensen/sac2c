@@ -1643,6 +1643,12 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_host2device:
+    case F_device2host:
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
     case F_alloc:
     case F_suballoc:
     case F_fill:

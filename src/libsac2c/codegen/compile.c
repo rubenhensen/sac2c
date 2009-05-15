@@ -5251,6 +5251,20 @@ COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+node *
+COMPprfDevice2Host (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPprfDevice2Host");
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPprfHost2Device (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPprfHost2Device");
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * static global variables for the compilation of primitive functions

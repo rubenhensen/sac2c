@@ -3620,6 +3620,11 @@ PRTwith (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "with");
 
+    if (WITH_CUDARIZABLE (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/** CUDA WL **/\n");
+    }
+
     if (WITH_PART (arg_node) != NULL) {
 #ifdef OLDWAY
         fprintf (global.outfile, " ( ");
@@ -4265,6 +4270,11 @@ PRTwith2 (node *arg_node, info *arg_info)
     if (WITH2_PARALLELIZE (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/** MT **/\n");
+    }
+
+    if (WITH2_CUDARIZABLE (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/** CUDA WL **/\n");
     }
 
     INDENT;

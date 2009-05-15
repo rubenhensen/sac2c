@@ -84,6 +84,42 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="CUKNL" name="Create cuda kernel functions" default="sons" include="create_cuda_kernels.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Fundef" />
+          <node name="Module" />
+          <node name="Genarray" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
+      <traversal id="CUTYCV" name="CUDA type conversion" default="sons" include="cuda_type_conversion.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="Assign" />
+          <node name="With2" />
+          <node name="With" />
+          <node name="Id" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
+      <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="With2" />
+          <node name="With" />
+          <node name="Let" />
+          <node name="Code" />
+          <node name="Fundef" />
+          <node name="Ids" />
+        </travuser>
+      </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />
@@ -3630,6 +3666,15 @@ N_structdef :
         <flag name="IsStfun">
           <description>This is (potentially) a copy of the original function that will be executed sequentially by a single thread during runtime. If the function is only used in sequential context, this may in fact be the original function that has been reused.</description>
         </flag>
+        <flag name="IsCudaHostfun" default="FALSE">
+          <description>This is a cuda host side function.</description>
+        </flag>
+        <flag name="IsCudaGlobalfun" default="FALSE">
+          <description>This is a cuda global kernel function.</description>
+        </flag>
+        <flag name="IsCudaDevicefun" default="FALSE">
+          <description>This is a cuda device function (called within a global kernel function).</description>
+        </flag>
         <flag name="IsWrapperfun" />
         <flag name="IsZombie" />
         <flag name="IsExtern" />
@@ -6344,8 +6389,8 @@ N_structdef :
       </attributes>
       <flags>
         <flag name="IsFoldable" />
-
-	<flag name="IsDependent" />
+        <flag name="Cudarizable" default="TRUE" />
+	    <flag name="IsDependent" />
         <flag name="IsExtremaInserted">
           <description>
           True if IVEXI has already inserted extrema variables
@@ -6874,6 +6919,7 @@ N_structdef :
 	<flag name="HasNaiveOrdering" default="FALSE">
 	  <description>True, iff the naive compilation scheme was used and thus the with-loop is not computed in canonical order.</description>
 	</flag>
+    <flag name="Cudarizable" default="TRUE" />
       </flags>
     </node>
 <!--

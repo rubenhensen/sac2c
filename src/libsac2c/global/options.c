@@ -247,6 +247,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("c99", global.backend = BE_c99);
         ARG_CHOICE ("mutc", global.backend = BE_mutc);
+        ARG_CHOICE ("cuda", global.backend = BE_cuda);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("B");
