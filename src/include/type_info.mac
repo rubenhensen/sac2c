@@ -194,6 +194,12 @@ TYP_IF (T_dots, "...", "...", "d", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy
 TYP_IF (T_user, "user", "SAC_user", "", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
         COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
+TYP_IF (T_float_dev, "float_dev", "float_dev", "fd", COcv2Float, COcv2CvFloat,
+        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+
+TYP_IF (T_int_dev, "int_dev", "int_dev", "id", COcv2Num, COcv2CvInt, COcv2StrInt,
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+
 TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 

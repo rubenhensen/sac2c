@@ -347,7 +347,8 @@ CUKNLassign (node *arg_node, info *arg_info)
         while (ASSIGN_NEXT (tmp) != NULL) {
             tmp = ASSIGN_NEXT (tmp);
         }
-        ASSIGN_NEXT (tmp) = next INFO_CUDAAPS (arg_info) = NULL;
+        ASSIGN_NEXT (tmp) = next;
+        INFO_CUDAAPS (arg_info) = NULL;
         if (ASSIGN_NEXT (tmp) != NULL) {
             ASSIGN_NEXT (tmp) = TRAVdo (ASSIGN_NEXT (tmp), arg_info);
         }
