@@ -172,43 +172,20 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIdoSymbolicWithLoopFoldingModule(node *module)
+ *   node *SWLFIdoSymbolicWithLoopFolding(node *module)
  *
- * description:
- *   Applies symbolic WL folding to a module.
- *
- *****************************************************************************/
-node *
-SWLFIdoSymbolicWithLoopFoldingModule (node *arg_node)
-{
-
-    DBUG_ENTER ("SWLFIdoSymbolicWithLoopFoldingModule");
-
-    TRAVpush (TR_swlfi);
-    arg_node = TRAVdo (arg_node, NULL);
-    TRAVpop ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SWLFIdoSymbolicWithLoopFolding( node *fundef)
- *
- * @brief global entry point of symbolic With-Loop folding
- *
- * @param fundef Fundef-Node to apply SWLF.
- *
- * @return optimized fundef
+ * @brief Global entry point of symbolic With-Loop folding
+ *        Applies symbolic WL folding to a module.
  *
  *****************************************************************************/
 node *
 SWLFIdoSymbolicWithLoopFolding (node *arg_node)
 {
+
     DBUG_ENTER ("SWLFIdoSymbolicWithLoopFolding");
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 ("SWLFIdoSymbolicWithLoopFolding called for non-fundef node"));
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
+                 ("SWLFIdoSymbolicWithLoopFolding called for non-module"));
 
     TRAVpush (TR_swlfi);
     arg_node = TRAVdo (arg_node, NULL);
@@ -683,10 +660,8 @@ SWLFIfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
 
-            /* FIXME */ CHKdoTreeCheck (arg_node);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            /* FIXME */ CHKdoTreeCheck (arg_node);
             BLOCK_VARDEC (FUNDEF_BODY (arg_node)) = INFO_VARDECS (arg_info);
             INFO_VARDECS (arg_info) = NULL;
         }
@@ -698,11 +673,9 @@ SWLFIfundef (node *arg_node, info *arg_info)
                               FUNDEF_NAME (arg_node)));
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        /* FIXME */ CHKdoTreeCheck (arg_node);
     }
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), NULL);
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -756,7 +729,6 @@ SWLFIwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFIwith");
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     old_arg_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
@@ -776,7 +748,6 @@ SWLFIwith (node *arg_node, info *arg_info)
     arg_info = FreeInfo (arg_info);
     arg_info = old_arg_info;
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -931,12 +902,10 @@ SWLFIprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         /* Replace iv by iv' */
-        /* FIXME */ CHKdoTreeCheck (arg_node);
         if ((INFO_SWLFOLDABLEFOLDEE (arg_info)) && (!isPrfArg1DataFlowGuard (arg_node))) {
             z = createNewIV (arg_node, arg_info);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
             PRF_ARG1 (arg_node) = z;
-            /* FIXME */ CHKdoTreeCheck (arg_node);
             DBUG_PRINT ("SWLFI", ("SWLFIprf Inserting F_dataflowguard at _sel_VxA_"));
         }
     }

@@ -14,7 +14,6 @@
  *
  *****************************************************************************/
 extern node *SWLFIdoSymbolicWithLoopFolding (node *arg_node);
-extern node *SWLFIdoSymbolicWithLoopFoldingModule (node *arg_node);
 
 extern node *SWLFIfundef (node *arg_node, info *arg_info);
 extern node *SWLFIblock (node *arg_node, info *arg_info);

@@ -225,17 +225,13 @@ WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
         AVIS_SSAASSIGN (avis) = assgn;
         id = TBmakeId (avis);
 
-#ifdef MAYBELATER
-        wls only runs during cyc.If it ever runs during ssacyc,
-          we will need to deal with these next few lines.
-
-          /* Now, create the dim and shape info */
-          AVIS_DIM (avis)
-          = TBmakeNum (1);
-        AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+        if (isSAAMode ()) {
+            /* Now, create the dim and shape info */
+            AVIS_DIM (avis) = TBmakeNum (1);
+            AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+        }
         DBUG_PRINT ("WLS",
                     ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
-#endif // MAYBELATER
     }
 
     DBUG_RETURN (id);

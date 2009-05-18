@@ -216,6 +216,36 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ *
+ * @static
+ * void IVEXIprintLHS( node *arg_node, info *arg_info)
+ *
+ *   @brief Print the LHS of the SSAASSIGN, so we can tell
+ *          what we're looking at.
+ *
+ *   @param  arg_node: some N_assign node
+ *
+ *   @return nothing
+ ******************************************************************************/
+static void
+IVEXIprintLHS (node *arg_node, info *arg_info)
+{
+    node *instr;
+    node *avis;
+
+    DBUG_ENTER ("IVEXIprintLHS");
+
+    instr = ASSIGN_INSTR (arg_node);
+    if (N_let == NODE_TYPE (instr)) {
+        avis = IDS_AVIS (LET_IDS (instr));
+        DBUG_PRINT ("IVEXI", ("Looking at: %s", AVIS_NAME (avis)));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * stolen from WithLoopFusion.c
  *
  * @fn node IVEXIRemoveUnusedCodes(node *codes)
@@ -565,10 +595,7 @@ IVEXIfundef (node *arg_node, info *arg_info)
                           FUNDEF_NAME (arg_node)));
 
     INFO_FUNDEF (arg_info) = arg_node;
-
-    if (NULL != FUNDEF_BODY (arg_node)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 
     /* If new vardecs were made, append them to the current set */
@@ -603,9 +630,7 @@ IVEXIblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEXIblock");
 
     DBUG_PRINT ("IVEXI", ("Found block"));
-    if (NULL != BLOCK_INSTR (arg_node)) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -653,30 +678,15 @@ IVEXIcode (node *arg_node, info *arg_info)
 node *
 IVEXIwith (node *arg_node, info *arg_info)
 {
-    info *new_info;
 
     DBUG_ENTER ("IVEXIwith");
-    DBUG_PRINT ("IVEXI", ("Found WL"));
 
     if (!WITH_ISEXTREMAINSERTED (arg_node)) {
-
-        DBUG_ASSERT (NULL == INFO_WITH (arg_info), "IVEXIwith got non-NULL INFO_WITH");
-        /* FIXME Actually, just want to stop when we get nested WLs to have a peek */
-
-        new_info = MakeInfo ();
-        INFO_FUNDEF (new_info) = INFO_FUNDEF (arg_info);
-        INFO_VARDECS (new_info) = INFO_VARDECS (arg_info);
-        INFO_LUTVARS (new_info) = INFO_LUTVARS (arg_info);
-        INFO_LUTCODES (new_info) = INFO_LUTCODES (arg_info);
-        INFO_WITH (new_info) = arg_node;
+        INFO_WITH (arg_info) = arg_node;
 
         /* Traverse the partitions, to define new temps. */
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_info);
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
         WITH_ISEXTREMAINSERTED (arg_node) = TRUE;
-
-        INFO_VARDECS (arg_info) = INFO_VARDECS (new_info);
-        INFO_PREASSIGNSWITH (arg_info) = INFO_PREASSIGNSWITH (new_info);
-        new_info = FreeInfo (new_info);
     }
 
     /* If partitions were unshared, we could eliminate this. */
@@ -708,20 +718,44 @@ IVEXIlet (node *arg_node, info *arg_info)
  *   node *IVEXIassign( node *arg_node, info *arg_info)
  *
  * description:
+ *  Handle insertion of new preassigns. These are generated
+ *  by _sel_VxA_ ops inside a WL, and are preprended to
+ *  the N_assign containing that N_with.
+ *
+ *  Things are slightly tricky because of the need to handle
+ *  nested WLs: we construct a new arg_info node to hide any
+ *  existing preassigns from the outer WL.
  *
  ******************************************************************************/
 node *
 IVEXIassign (node *arg_node, info *arg_info)
 {
+    info *old_info;
+
     DBUG_ENTER ("IVEXIassign");
 
-    DBUG_PRINT ("IVEXI", ("Found assign"));
+    IVEXIprintLHS (arg_node, arg_info);
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
+        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+        old_info = arg_info;
+        arg_info = MakeInfo ();
+        INFO_FUNDEF (arg_info) = INFO_FUNDEF (old_info);
+        INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
+        INFO_LUTVARS (arg_info) = INFO_LUTVARS (old_info);
+        INFO_LUTCODES (arg_info) = INFO_LUTCODES (old_info);
 
-    if (NULL != INFO_PREASSIGNSWITH (arg_info)) {
-        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
-        INFO_PREASSIGNSWITH (arg_info) = NULL;
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+        /* Handle any preassigns from any inner WL */
+        if (NULL != INFO_PREASSIGNSWITH (arg_info)) {
+            arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
+            INFO_PREASSIGNSWITH (arg_info) = NULL;
+        }
+
+        INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
+        arg_info = FreeInfo (arg_info);
+        arg_info = old_info;
     }
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -755,6 +789,9 @@ IVEXIpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXIpart");
     DBUG_PRINT ("IVEXI", ("Found WL partition"));
+
+    /* We will deal with our partition after looking inside it */
+    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
 
     /* Don't try this on empty code blocks, kids. */
     if (N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))))) {

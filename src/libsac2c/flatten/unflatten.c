@@ -80,15 +80,28 @@ FreeInfo (info *info)
  *  node *UFLfundef(node *arg_node, info *arg_info)
  *
  * description:
- *  If we are running in SSA mode for WL generators,
+ *  If we are running in ssaiv mode for WL WITHIDS,
  *  rename them back to non-SSA form so that remaining
  *  phases that depend on name-sharing among partitions
  *  can operate properly.
  *
- *  This function does NOT, at present, remove dead variables,
- *  as a DCR call follows immediately. If you want to use
- *  this phase elsewhere, it might be worthwhile to enhance
- *  this code to remove the dead varbs.
+ *  Also, unflatten generators, e.g.:
+ *
+ *  Before:
+ *        lb = [0];
+ *        ub = [42];
+ *        z = with {
+ *          (lb <= iv < ub) : iv;
+ *          } : genarray([42], 0);
+ *
+ *  After:
+ *        lb = [0];         NB. Perhaps dead now.
+ *        ub = [42];        NB. Perhaps dead now.
+ *        z = with {
+ *          ([0] <= iv < [42]) : iv;
+ *          } : genarray([42], 0);
+ *
+ *  Dead code is removed by a later DCR call.
  *
  ******************************************************************************/
 
@@ -97,19 +110,15 @@ UFLfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UFLfundef");
 
-    if (global.ssaiv) {
-        if (NULL != FUNDEF_BODY (arg_node)) {
-            DBUG_PRINT ("UFL", ("Unflattening function: %s", FUNDEF_NAME (arg_node)));
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
-
-        /*
-         * Proceed with the next function...
-         */
-        if (NULL != FUNDEF_NEXT (arg_node)) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+    if (NULL != FUNDEF_BODY (arg_node)) {
+        DBUG_PRINT ("UFL", ("Unflattening function: %s", FUNDEF_NAME (arg_node)));
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
+
+    /*
+     * Proceed with the next function...
+     */
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -128,15 +137,24 @@ UFLfundef (node *arg_node, info *arg_info)
 node *
 UFLwithid (node *arg_node, info *arg_info)
 {
-    node *curidxsp0;
-    node *curidxs;
 
     DBUG_ENTER ("UFLwithid");
 
-    if (NULL == INFO_WITHID (arg_info)) {
-        /* First partition */
-        INFO_WITHID (arg_info) = arg_node;
-    } else {
+#ifdef ssaiv
+    node *curidxsp0;
+    node *curidxs;
+
+    if ssaiv ever gets working, you might want to reuse/review some of this code.
+
+  In particular, it renames iv -> iv, and then deletes the vardec
+  for iv. This is not desirable.
+
+  if ( NULL == INFO_WITHID( arg_info))
+        {
+            /* First partition */
+            INFO_WITHID (arg_info) = arg_node;
+        }
+    else {
         /* Set up renames for remaining partitions */
         if (NULL != WITHID_VEC (arg_node)) {
             AVIS_SUBST (IDS_AVIS (WITHID_VEC (arg_node)))
@@ -199,6 +217,8 @@ UFLwithid (node *arg_node, info *arg_info)
 #endif // FIXME
     }
 
+#endif // ssaiv
+
     DBUG_RETURN (arg_node);
 }
 
@@ -219,15 +239,13 @@ UFLblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("UFLblock");
 
-    /* Mark unreferenced variables */
-    if (NULL != BLOCK_INSTR (arg_node)) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    /* Mark unreferenced variables; look for WL generators  */
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
+#ifdef ssaiv
     /* Delete unreferenced vardecs */
-    if (NULL != BLOCK_VARDEC (arg_node)) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+#endif //  ssaiv
 
     DBUG_RETURN (arg_node);
 }
@@ -248,9 +266,9 @@ UFLvardec (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("UFLvardec");
-    if (NULL != VARDEC_NEXT (arg_node)) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+
+#ifdef ssaiv
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     if ((NULL == VARDEC_AVIS (arg_node))
         || (NULL != AVIS_SUBST (VARDEC_AVIS (arg_node)))) {
@@ -258,6 +276,8 @@ UFLvardec (node *arg_node, info *arg_info)
                     ("Deleting vardec for %s", AVIS_NAME (VARDEC_AVIS (arg_node))));
         arg_node = FREEdoFreeNode (arg_node);
     }
+#endif //  ssaiv
+
     DBUG_RETURN (arg_node);
 }
 
@@ -277,12 +297,14 @@ UFLid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("UFLid");
 
+#ifdef ssaiv
     if (NULL != AVIS_SUBST (ID_AVIS (arg_node))) {
         DBUG_PRINT ("UFL", ("Renaming %s to %s", AVIS_NAME (ID_AVIS (arg_node)),
                             AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node)))));
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
 
+#endif // ssaiv
     DBUG_RETURN (arg_node);
 }
 
@@ -307,27 +329,26 @@ UFLid (node *arg_node, info *arg_info)
 node *
 UFLgenerator (node *arg_node, info *arg_info)
 {
-    node *lb = NULL;
-    node *ub = NULL;
-    constant *lbfs = NULL;
-    constant *ubfs = NULL;
+    node *lb;
+    node *ub;
+    constant *lbfs;
+    constant *ubfs;
 
     DBUG_ENTER ("UFLgenerator");
 
-#ifdef REALLYFLATTENED // as of 2009-01-22, this is still being violated
-    DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND1 (arg_node)),
-                 "UFLgenerator expected N_id node for GENERATOR_BOUND1");
-    DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (arg_node)),
-                 "UFLgenerator expected N_id node for GENERATOR_BOUND2");
-#endif // REALLYFLATTENED
-
     if (NULL != arg_node) {
+        lb = NULL;
+        lbfs = NULL;
         if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
+            DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND1 to array constant"));
             COfreeConstant (lbfs);
             lb = DUPdoDupTree (lb);
             FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
             GENERATOR_BOUND1 (arg_node) = lb;
         } else {
+            lb = NULL;
+            lbfs = NULL;
+            DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND1 to constant"));
             if (PM (PMconst (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
                 FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
                 GENERATOR_BOUND1 (arg_node) = COconstant2AST (lbfs);
@@ -335,13 +356,19 @@ UFLgenerator (node *arg_node, info *arg_info)
             }
         }
 
+        ub = NULL;
+        ubfs = NULL;
         if ((PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (arg_node))))) {
+            DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND2 to array constant"));
             COfreeConstant (ubfs);
             ub = DUPdoDupTree (ub);
             FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
             GENERATOR_BOUND2 (arg_node) = ub;
         } else {
+            ub = NULL;
+            ubfs = NULL;
             if (PM (PMconst (&ubfs, &ub, GENERATOR_BOUND2 (arg_node)))) {
+                DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND2 to constant"));
                 FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
                 GENERATOR_BOUND2 (arg_node) = COconstant2AST (ubfs);
                 lbfs = COfreeConstant (ubfs);
@@ -373,11 +400,11 @@ UFLpart (node *arg_node, info *arg_info)
     DBUG_ENTER ("UFLpart");
 
     if (NULL != arg_node) {
+#ifdef ssaiv
         PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+#endif // ssavi
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-        if (NULL != PART_NEXT (arg_node)) {
-            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-        }
+        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -402,14 +429,12 @@ UFLwith (node *arg_node, info *arg_info)
 
     arg_info = MakeInfo ();
 
-    if (NULL != arg_node) {
-        if (NULL != WITH_PART (arg_node)) {
-            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
-            /* Now, rename the withids in code fragments */
-            WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-        }
-    }
+    /* Now, rename the withids in code fragments */
+    /* Deal with generator unflattening, too */
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);

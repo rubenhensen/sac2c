@@ -153,7 +153,7 @@ incrementNeedcount (node *avis, info *arg_info)
                              AVIS_NAME (avis), AVIS_WL_NEEDCOUNT (avis)));
     } else {
         DBUG_PRINT ("WLNC", ("incrementNeedCount(%s) reference from different WL.",
-                             ID_AVIS (avis)));
+                             AVIS_NAME (avis)));
     }
 
     DBUG_VOID_RETURN;
@@ -247,6 +247,7 @@ WLNCavis (node *arg_node, info *arg_info)
 node *
 WLNCwith (node *arg_node, info *arg_info)
 {
+    node *avis;
     node *outer_with;
 
     DBUG_ENTER ("WLNCwith");
@@ -258,16 +259,10 @@ WLNCwith (node *arg_node, info *arg_info)
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
-    /* Account for modarray(foldeeWL). This could be done
-     * with a traversal  through WITH_WITHOP, but I'm lazy.
-     * Actually, it looks like wl_needcount.c, which does the
-     * non-WL needcount work, ignores WITH_WITHOP, so this
-     * code should not be needed.
-    if ( N_modarray == NODE_TYPE( WITH_WITHOP( arg_node))) {
-      avis = ID_AVIS( MODARRAY_ARRAY( WITH_WITHOP( arg_node)));
-      incrementNeedcount( avis, arg_info);
+    if (N_modarray == NODE_TYPE (WITH_WITHOP (arg_node))) {
+        avis = ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
+        incrementNeedcount (avis, arg_info);
     }
-     */
 
     INFO_WITH (arg_info) = outer_with;
 

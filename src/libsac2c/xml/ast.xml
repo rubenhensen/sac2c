@@ -232,7 +232,9 @@
       <traversal id="IVEXI" name="Index Variable Extrema Insertion" default="sons" include="ivextrema.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Block" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="With" />
           <node name="Part" />
         </travuser>
@@ -1305,9 +1307,9 @@
       </traversal>
       <traversal id="WLUR" name="With-Loop Unrolling Traversal" default="sons" include="SSAWLUnroll.h" >
 	<travuser>
-    <node name="Ap" />
+          <node name="Ap" />
 	  <node name="Assign" />
-    <node name="Fundef" />
+          <node name="Fundef" />
 	  <node name="With" />
 	</travuser>
       </traversal>

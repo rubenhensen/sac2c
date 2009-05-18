@@ -155,6 +155,8 @@ CVPavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPavis");
 
+    INFO_PROPMODE (arg_info) = PROP_nothing;
+
     if (AVIS_DIM (arg_node) != NULL) {
         INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
         AVIS_DIM (arg_node) = TRAVdo (AVIS_DIM (arg_node), arg_info);
@@ -177,8 +179,6 @@ CVPavis (node *arg_node, info *arg_info)
           = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
     }
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
 
     DBUG_RETURN (arg_node);
 }
@@ -313,6 +313,8 @@ CVPprf (node *arg_node, info *arg_info)
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
+    case F_attachminmax:
+    case F_dataflowguard:
         /*
          * Only propagate variables here
          */

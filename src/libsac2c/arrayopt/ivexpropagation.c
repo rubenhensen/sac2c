@@ -53,12 +53,16 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
+    node *minval;
+    node *maxval;
 };
 
 /**
  * INFO macros
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_MINVAL(n) ((n)->minval)
+#define INFO_MAXVAL(n) ((n)->maxval)
 
 static info *
 MakeInfo ()
@@ -70,6 +74,8 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
+    INFO_MINVAL (result) = NULL;
+    INFO_MAXVAL (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -134,28 +140,33 @@ IVEXPdoIndexVectorExtremaPropModule (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *PrfExtrema( node *arg_node, info *arg_info)
+ *   bool PrfExtrema( node *arg_node, info *arg_info)
  *
  * description: Identifies extrema within a primitive.
  *
  * @params  arg_node: an N_prf node.
- * @result: If extrema can be identified in a suitable
- *          N_avis, that N_avis is the result. Otherwise,
- *          NULL.
+ * @result: True if we have found extrema, and stored
+ *          them in INFO_MINVAL and INFO_MAXVAL.
  *
  ******************************************************************************/
-static node *
+static bool
 PrfExtrema (node *arg_node, info *arg_info)
 {
-    node *zavis = NULL;
+    node *avis;
+    bool z = FALSE;
 
-    DBUG_ENTER ("PrdExtrema");
-
+    DBUG_ENTER ("PrfExtrema");
     DBUG_PRINT ("IVEXP", ("Found prf"));
+
+    INFO_MINVAL (arg_info) = NULL;
+    INFO_MAXVAL (arg_info) = NULL;
 
     switch (PRF_PRF (arg_node)) {
     case F_dataflowguard:
-        zavis = ID_AVIS (PRF_ARG1 (arg_node));
+        avis = ID_AVIS (PRF_ARG1 (arg_node));
+        INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
+        INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
+        z = TRUE;
         break;
 
     /* The following are ISMOP */
@@ -170,11 +181,17 @@ PrfExtrema (node *arg_node, info *arg_info)
         DBUG_PRINT ("IVEXP", ("Missed an ISMOP N_prf"));
         break;
 
+    case F_attachminmax:
+        INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
+        INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG3 (arg_node));
+        z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
+        break;
+
     default:
         DBUG_PRINT ("IVEXP", ("Missed an N_prf"));
     }
 
-    DBUG_RETURN (zavis);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -199,7 +216,6 @@ IVEXPlet (node *arg_node, info *arg_info)
     node *rhs;
     node *lhsavis;
     node *rhsavis;
-    node *avis;
 
     DBUG_ENTER ("IVEXPlet");
 
@@ -219,13 +235,11 @@ IVEXPlet (node *arg_node, info *arg_info)
         break;
 
     case N_prf:
-        avis = PrfExtrema (rhs, arg_info);
-        if ((NULL != avis)
-            && ((NULL != AVIS_MINVAL (avis)) || (NULL != AVIS_MAXVAL (avis)))) {
+        if (PrfExtrema (rhs, arg_info)) {
             DBUG_PRINT ("IVEXP", ("IVEXP N_prf: propagating extrema to lhs %s",
                                   AVIS_NAME (lhsavis)));
-            AVIS_MINVAL (lhsavis) = AVIS_MINVAL (avis);
-            AVIS_MAXVAL (lhsavis) = AVIS_MAXVAL (avis);
+            AVIS_MINVAL (lhsavis) = INFO_MINVAL (arg_info);
+            AVIS_MAXVAL (lhsavis) = INFO_MAXVAL (arg_info);
         }
         break;
 
@@ -239,8 +253,18 @@ IVEXPlet (node *arg_node, info *arg_info)
         if (TYisAKV (AVIS_TYPE (lhsavis))) {
             DBUG_PRINT ("IVEXP", ("IVEXP propagating constant extrema to lhs: %s",
                                   AVIS_NAME (lhsavis)));
+
+#define CRUD
+#ifdef CRUD
+
+            /*
+               See if this is the cause of CSE on constants no longer working.
+               (nested.sac)
+            */
+
             AVIS_MINVAL (lhsavis) = lhsavis;
             AVIS_MAXVAL (lhsavis) = lhsavis;
+#endif // CRUD
         }
         break;
 

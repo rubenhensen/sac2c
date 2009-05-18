@@ -264,30 +264,6 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
-#ifdef DEAD
-/******************************************************************************
- *
- * function:
- *   node *SWLFdoSymbolicWithLoopFoldingModule(node *module)
- *
- * description:
- *   Applies symbolic WL folding to a module.
- *
- *****************************************************************************/
-node *
-SWLFdoSymbolicWithLoopFoldingModule (node *arg_node)
-{
-
-    DBUG_ENTER ("SWLFdoSymbolicWithLoopFoldingModule");
-
-    TRAVpush (TR_swlf);
-    arg_node = TRAVdo (arg_node, NULL);
-    TRAVpop ();
-
-    DBUG_RETURN (arg_node);
-}
-#endif // DEAD
-
 /** <!--********************************************************************-->
  *
  * @fn node *SWLFdoSymbolicWithLoopFolding( node *fundef)
