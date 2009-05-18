@@ -160,10 +160,10 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         loop_scalarization withloop_flattening             \
                         ivextrema ivexpropagation ivexcleanup
 
-libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions
+libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions annotate_cuda_withloop cuda_type_conversion
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs \
-                        scheduling annotate_scheduling set_spmd_linksign
+                        scheduling annotate_scheduling set_spmd_linksign 
 
 libsac2c_multithread := multithread_lib tag_executionmode \
                         propagate_executionmode create_cells \
@@ -185,7 +185,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign \
                         remove_external_code mark_noop_grids \
                         resolve_code_sharing lift_with3_bodies \
-                        distribute_threads
+                        distribute_threads create_cuda_kernels
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
