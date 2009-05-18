@@ -629,7 +629,7 @@ fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
        ;
 
 fundef2: fundefargs BRACKET_R
-         { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+         { $<node>$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
            $<node>$ = $<node>3;
@@ -645,7 +645,8 @@ fundef2: fundefargs BRACKET_R
                         global.mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$))],
                         FUNDEF_ARGS( $$)));
          }
-       | BRACKET_R { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+       | BRACKET_R 
+         { $<node>$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { $<node>$ = $<node>2;
            FUNDEF_BODY( $$) = $3;
