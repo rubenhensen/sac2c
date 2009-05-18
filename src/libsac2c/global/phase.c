@@ -27,6 +27,29 @@ static int cycle_counter;
 static optimize_counter_t oc_global;
 static optimize_counter_t oc_pass;
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool isSAAMode( node *arg_node)
+ *
+ * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
+ *        should be generated and propagated.
+ *
+ *****************************************************************************/
+bool
+isSAAMode (void)
+{
+    bool z;
+
+    DBUG_ENTER ("isSAAMode");
+
+    z = global.optimize.dosaa
+        && (((global.compiler_anyphase >= PH_opt_isaa1)
+             && (global.compiler_anyphase < PH_opt_esaa1))
+            || ((global.compiler_anyphase >= PH_opt_isaa2)
+                && (global.compiler_anyphase < PH_opt_esaa2)));
+    DBUG_RETURN (z);
+}
+
 #ifndef DBUG_OFF
 
 static void

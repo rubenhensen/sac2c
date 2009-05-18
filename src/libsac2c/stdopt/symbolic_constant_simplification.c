@@ -86,7 +86,6 @@
 #include "ctinfo.h"
 #include "pattern_match.h"
 #include "constant_folding_info.h"
-#include "constant_folding.h"
 
 /* local used helper functions */
 
@@ -1294,7 +1293,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
                             TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
 
-            if (IsSAAMode ()) {
+            if (isSAAMode ()) {
                 AVIS_DIM (tmpivavis) = TBmakeNum (0);
                 AVIS_SHAPE (tmpivavis)
                   = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
@@ -1426,7 +1425,7 @@ SCSprf_shape (node *arg_node, info *arg_info)
                               INFO_PREASSIGN (arg_info));
             AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
 
-            if (IsSAAMode ()) {
+            if (isSAAMode ()) {
                 AVIS_DIM (avis) = TBmakeNum (0); /* each shape element is an int. */
                 AVIS_SHAPE (avis) = TCmakeIntVector (NULL);
             }
@@ -1439,7 +1438,7 @@ SCSprf_shape (node *arg_node, info *arg_info)
         res = TCmakeIntVector (res);
         resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                         SHcreateShape (1, arg1dim)));
-        if (IsSAAMode ()) {
+        if (isSAAMode ()) {
             AVIS_DIM (resavis) = TBmakeNum (1);
             AVIS_SHAPE (resavis)
               = TCmakeIntVector (TBmakeExprs (TBmakeNum (arg1dim), NULL));

@@ -268,29 +268,6 @@ CFdoConstantFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IsSAAMode( node *arg_node)
- *
- * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
- *        should be generated and propagated.
- *
- *****************************************************************************/
-bool
-IsSAAMode (void)
-{
-    bool z;
-
-    DBUG_ENTER ("IsSAAMode");
-
-    z = global.optimize.dosaa
-        && (((global.compiler_anyphase >= PH_opt_isaa1)
-             && (global.compiler_anyphase < PH_opt_esaa1))
-            || ((global.compiler_anyphase >= PH_opt_isaa2)
-                && (global.compiler_anyphase < PH_opt_esaa2)));
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool IsFullyConstantNode( node *arg_node)
  *
  * @brief in contrast to COisConstant, this function ensures a "minimal"

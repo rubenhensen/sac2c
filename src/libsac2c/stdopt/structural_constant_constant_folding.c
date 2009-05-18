@@ -51,7 +51,6 @@
 #include "namespaces.h"
 #include "remove_vardecs.h"
 #include "constant_folding_info.h"
-#include "constant_folding.h"
 #include "pattern_match.h"
 #include "print.h"
 
@@ -146,7 +145,7 @@ StructOpSel (node *arg_node, info *arg_info)
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
                             TYmakeAKS (TYmakeSimpleType (T_int),
                                        SHcreateShape (1, iv_len - X_dim)));
-            if (IsSAAMode ()) {
+            if (isSAAMode ()) {
                 AVIS_DIM (tmpivavis) = TBmakeNum (1);
                 // Following is really GenIntVector call
                 AVIS_SHAPE (tmpivavis)
