@@ -115,6 +115,7 @@
 #include "memory.h"
 #include "DupTree.h"
 #include "shape.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *

@@ -53,6 +53,7 @@
 #include "constant_folding_info.h"
 #include "pattern_match.h"
 #include "print.h"
+#include "phase.h"
 
 /******************************************************************************
  *

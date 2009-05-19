@@ -86,6 +86,7 @@
 #include "ctinfo.h"
 #include "pattern_match.h"
 #include "constant_folding_info.h"
+#include "phase.h"
 
 /* local used helper functions */
 
