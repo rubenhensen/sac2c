@@ -1084,6 +1084,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
         genn = PART_GENERATOR (partn);
         ok = (NODE_TYPE (genn) == N_generator && COisConstant (GENERATOR_BOUND1 (genn))
               && COisConstant (GENERATOR_BOUND2 (genn))
+              && TYisAKS (IDS_NTYPE (PART_VEC (partn)))
               && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
               && ((GENERATOR_WIDTH (genn) == NULL)
                   || COisConstant (GENERATOR_WIDTH (genn))));
