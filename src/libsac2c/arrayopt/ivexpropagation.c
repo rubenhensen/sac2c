@@ -12,10 +12,47 @@
  *  assigns and, where we are able to do so, primitive functions.
  *
  *  Details:
- *     Assigns: RHS extrema are copied to LHS.
+ *    Assigns: RHS extrema are copied to LHS.
  *
- *     F_dataflowguard: PRF_ARG1's extrema are copied to result.
+ *    F_dataflowguard: PRF_ARG1's extrema are copied to result.
  *
+ *    Primitives:
+ *
+ *      Several cases:
+ *
+ *      1. If the primitive result has known extrema, we do nothing.
+ *
+ *      2. If it has one known extrema, I am confused.
+ *
+ *      3. If the primitive result has unknown extrema, but
+ *         the function has an _attachminmax attached to it,
+ *         as below, we propagate minv' and maxv into
+ *         the extrema of the primitive function's result,
+ *         and replace ivminmax in the original primitive
+ *         by iv'.
+ *
+ *      4.  If the primitive result has unknown extrema,
+ *          but the primitive arguments have known extrema,
+ *          we generate new code to clone the primitive so that
+ *          it operates on the extrema. E.g., if we have (this
+ *          from sac/apex/iotan/iotan.sac):
+ *
+ *             iv'' =  _sub_SxS_( 49999999, iv');
+ *
+ *          with minv = AVIS_MINVAL( iv') and
+ *               maxv = AVIS_MAXVAL( iv')
+ *
+ *          We turn this into:
+ *
+ *             minv' = _sub_SxS_( 49999999, minv);
+ *             maxv' = _sub_SxS_( 49999999, maxv);
+ *             ivminmax = _attachminmax( iv', minv', maxv');
+ *             iv'' = _sub_SxS_( 49999999, ivminmax);
+ *
+ *          After enough trips through the optimization cycle,
+ *          this code should turn into case 4.
+ *
+ *****************************************************************************
  *
  * @ingroup ivexp
  *
@@ -44,6 +81,7 @@
 #include "constants.h"
 #include "tree_compound.h"
 #include "pattern_match.h"
+#include "ivextrema.h"
 
 /** <!--********************************************************************-->
  *
@@ -99,6 +137,7 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *IVEXPdoIndexVectorExtremaProp( node *arg_node)
@@ -140,22 +179,44 @@ IVEXPdoIndexVectorExtremaPropModule (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   bool PrfExtrema( node *arg_node, info *arg_info)
+ *   bool isResultHasExtrema( node *arg_node, info *arg_info)
  *
- * description: Identifies extrema within a primitive.
+ * description: Predicate for determining if LHS of N_let node
+ *              has known extrema.
  *
- * @params  arg_node: an N_prf node.
- * @result: True if we have found extrema, and stored
- *          them in INFO_MINVAL and INFO_MAXVAL.
+ * @params  arg_node: an N_let node.
+ * @result: True if the LHS has known extrema.
  *
  ******************************************************************************/
 static bool
-PrfExtrema (node *arg_node, info *arg_info)
+isResultHasExtrema (node *arg_node, info *arg_info)
+{
+    bool z;
+
+    DBUG_ENTER ("isResultHasExtrema");
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool PrfExtractExtrema( node *arg_node, info *arg_info)
+ *
+ * description: Extracts extrema from within a primitive.
+ *
+ * @params  arg_node: an N_prf node.
+ * @result: True if we have found extrema, and stored
+ *          their values in INFO_MINVAL and INFO_MAXVAL.
+ *
+ ******************************************************************************/
+static bool
+PrfExtractExtrema (node *arg_node, info *arg_info)
 {
     node *avis;
     bool z = FALSE;
 
-    DBUG_ENTER ("PrfExtrema");
+    DBUG_ENTER ("PrfExtractExtrema");
     DBUG_PRINT ("IVEXP", ("Found prf"));
 
     INFO_MINVAL (arg_info) = NULL;
@@ -169,7 +230,13 @@ PrfExtrema (node *arg_node, info *arg_info)
         z = TRUE;
         break;
 
-    /* The following are ISMOP */
+    case F_attachminmax:
+        INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
+        INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG3 (arg_node));
+        z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
+        break;
+
+    /* The following can sometimes be helped. */
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
@@ -178,20 +245,55 @@ PrfExtrema (node *arg_node, info *arg_info)
     case F_sub_SxV:
     case F_sub_VxS:
     case F_sub_VxV:
-        DBUG_PRINT ("IVEXP", ("Missed an ISMOP N_prf"));
-        break;
+        /* If one argument is constant, and the other has extrema,
+         * but the result does not have extrema, and we have
+         * not already introduced extrema code,
+         * we will introduce code to propagate the extrema.
+         * If it already has extrema code attached, we may
+         * look at it?????
+         *
+         * For other cases, such as F_non_negval, we merely
+         * simplify the expression in the absence of extrema
+         * info.
+         *
+         */
 
-    case F_attachminmax:
-        INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
-        INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG3 (arg_node));
-        z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
+        DBUG_PRINT ("IVEXP", ("Introduced extrema code for N_prf"));
         break;
 
     default:
-        DBUG_PRINT ("IVEXP", ("Missed an N_prf"));
+        DBUG_PRINT ("IVEXP", ("Skipping an N_prf"));
     }
 
     DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Primitive function treatment of extrema:
+ *
+ *
+ ******************************************************************************/
+static void
+foo (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("foo");
+
+    node *IVEXIattachExtrema (node * minv, node * maxv, node * ivavis, node * *preassigns,
+                              node * *vardecs);
+    /*
+     *      minval = _min_( AVIS_MINVAL( PRF_ARG1), AVIS_MINVAL( PRF_ARG2))
+     *      maxval = _min_( AVIS_MAXVAL( PRF_ARG1), AVIS_MAXVAL( PRF_ARG2))
+     *
+     *    _max_SxS_, _max_SxV_, _max_VxS_, _max_VxV_
+     *
+     *    _add_SxS_, _add_SxV_, _add_VxS_, _add_VxV_
+     *         minval =
+     *
+     *
+     */
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -223,65 +325,85 @@ IVEXPlet (node *arg_node, info *arg_info)
 
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
-    switch (NODE_TYPE (rhs)) {
-    case N_id:
-        rhsavis = ID_AVIS (rhs);
-        if ((NULL != AVIS_MINVAL (rhsavis)) || (NULL != AVIS_MAXVAL (rhsavis))) {
-            DBUG_PRINT ("IVEXP", ("IVEXP N_id: propagating extrema from %s to %s",
-                                  AVIS_NAME (rhsavis), AVIS_NAME (lhsavis)));
-            AVIS_MINVAL (lhsavis) = AVIS_MINVAL (rhsavis);
-            AVIS_MAXVAL (lhsavis) = AVIS_MAXVAL (rhsavis);
-        }
-        break;
 
-    case N_prf:
-        if (PrfExtrema (rhs, arg_info)) {
-            DBUG_PRINT ("IVEXP", ("IVEXP N_prf: propagating extrema to lhs %s",
-                                  AVIS_NAME (lhsavis)));
-            AVIS_MINVAL (lhsavis) = INFO_MINVAL (arg_info);
-            AVIS_MAXVAL (lhsavis) = INFO_MAXVAL (arg_info);
-        }
-        break;
+    /* If we know the answer already, do nothing */
+    if (!isResultHasExtrema (arg_node, arg_info)) {
 
-    /* Constant RHS */
-    case N_bool:
-    case N_char:
-    case N_num:
-    case N_float:
-    case N_double:
-    case N_array:
-        if (TYisAKV (AVIS_TYPE (lhsavis))) {
-            DBUG_PRINT ("IVEXP", ("IVEXP propagating constant extrema to lhs: %s",
-                                  AVIS_NAME (lhsavis)));
+        switch (NODE_TYPE (rhs)) {
+        case N_id:
+            rhsavis = ID_AVIS (rhs);
+            if ((NULL != AVIS_MINVAL (rhsavis)) || (NULL != AVIS_MAXVAL (rhsavis))) {
+                DBUG_PRINT ("IVEXP", ("IVEXP N_id: propagating extrema from %s to %s",
+                                      AVIS_NAME (rhsavis), AVIS_NAME (lhsavis)));
+                AVIS_MINVAL (lhsavis) = AVIS_MINVAL (rhsavis);
+                AVIS_MAXVAL (lhsavis) = AVIS_MAXVAL (rhsavis);
+            }
+            break;
 
-#define CRUD
-#ifdef CRUD
+        case N_prf:
+            if (PrfExtractExtrema (rhs, arg_info)) {
+                DBUG_PRINT ("IVEXP", ("IVEXP N_prf: propagating extrema to lhs %s",
+                                      AVIS_NAME (lhsavis)));
+                AVIS_MINVAL (lhsavis) = INFO_MINVAL (arg_info);
+                AVIS_MAXVAL (lhsavis) = INFO_MAXVAL (arg_info);
+            }
+            break;
 
+        /* Constant RHS */
+        case N_bool:
+        case N_char:
+        case N_num:
+        case N_float:
+        case N_double:
+        case N_array:
             /*
-               See if this is the cause of CSE on constants no longer working.
-               (nested.sac)
-            */
+             * We no longer generate/propagate extrema into constants.
+             *
+             * The idea now (2009-05-21) is this:
+             *
+             *   - We introduce extrema only into WL IVs.
+             *   - N_let: We propagate extrema, via assignment, into other avis nodes.
+             *   - N_prf: if one argument of a dyadic scalar function has
+             *            extrema, and the other argument is constant, we
+             *            will insert code to compute the adjusted extrema
+             *            and propagate it into the result of the primitive.
+             *
+             *            Effectively, this gives us the same linear transform
+             *            coverage as similar schemes: (k * IV) + n.
+             *
+             */
 
-            AVIS_MINVAL (lhsavis) = lhsavis;
-            AVIS_MAXVAL (lhsavis) = lhsavis;
-#endif // CRUD
+#ifdef NOCONSTANTS
+            if (TYisAKV (AVIS_TYPE (lhsavis))) {
+                DBUG_PRINT ("IVEXP", ("IVEXP propagating constant extrema to lhs: %s",
+                                      AVIS_NAME (lhsavis)));
+                /*
+                 *
+                 *  See if this is the cause of CSE on constants no longer working.
+                 *  (nested.sac)
+                 */
+
+                AVIS_MINVAL (lhsavis) = lhsavis;
+                AVIS_MAXVAL (lhsavis) = lhsavis;
+            }
+#endif // NOCONSTANTS
+            break;
+
+        /* We are unable to help these poor souls */
+        case N_ap:
+
+            break;
+
+        case N_with:
+            /* We have to descend into the depths here */
+            WITH_PART (rhs) = TRAVdo (WITH_PART (rhs), arg_info);
+            break;
+
+        default:
+            DBUG_PRINT ("IVEXP", ("IVEXP ISMOP: please fix this RHS for LHS: %s",
+                                  AVIS_NAME (lhsavis)));
+            break;
         }
-        break;
-
-    /* We are unable to help these poor souls */
-    case N_ap:
-
-        break;
-
-    case N_with:
-        /* We have to descend into the depths here */
-        WITH_PART (rhs) = TRAVdo (WITH_PART (rhs), arg_info);
-        break;
-
-    default:
-        DBUG_PRINT ("IVEXP", ("IVEXP ISMOP: please fix this RHS for LHS: %s",
-                              AVIS_NAME (lhsavis)));
-        break;
     }
 
     DBUG_RETURN (arg_node);
