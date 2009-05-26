@@ -30,9 +30,13 @@
  *                  X[tmp];
  *            } : genarray(shp,defaultcell);
  *
- * We then set
+ * We then set the extrema values:
+ *
  *             AVIS_MINVAL(ID_AVIS(tmp)) = GENERATOR_BOUND1(wl)
- *             AVIS_MAXVAL(ID_AVIS(tmp)) = GENERATOR_BOUND2(wl);
+ *             AVIS_MAXVAL(ID_AVIS(tmp)) = GENERATOR_BOUND2(wl) - 1 ;
+ *
+ * Note that the extrema are exact. This makes computation
+ * on them much easier.
  *
  * With any luck, these min/val values will be propagated down to the
  * X[tmp], at which point SWLFI can introduce inferences on them
@@ -46,7 +50,6 @@
  * just as -ssaiv does.
  *
  *
- *
  * Some notes on phase ordering for ivextrema, ivexpropagate,
  * swlfi, and swlf:
  *
@@ -54,15 +57,11 @@
  *   hanging around. The latter have to be removed, or later
  *   phases will reference them, and their now-dead AVIS_MINVAL/MAXVAL
  *   values, causing 'orrible pain. Hence, the presence of dcr2
- *   right after ivext.
+ *   right after ivexi.
  *
  *   The other requirements are:
- *      - isaa2 or other AVIS_DIM/SHAPE-introducing code
- *        must follow ivext, as it does not, at present,
- *        introduce these fields. No big deal to make it
- *        do so, if moving ivext after isaa2 was desired.
  *
- *      - ivext must precede ivexp.
+ *      - ivexi must precede ivexp.
  *      - ivexp must precede swlfi.
  *      - swlfi must precede swlf.
  *      - scc and dcr3 must follow swlf, eventually.
@@ -98,6 +97,7 @@
 #include "pattern_match.h"
 #include "LookUpTable.h"
 #include "phase.h"
+#include "check.h"
 
 /** <!--********************************************************************-->
  *
@@ -217,13 +217,13 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVEXIattachExtrema( node *minv, node *maxv, node *ivavis,
- *                               node *preassigns, node *vardecs)
+ * @fn node *IVEXIattachExtrema( node *minv, node *maxv, node *id,
+ *                               node **vardecs, node **preassigns)
  *
  * @brief:
- *      Insert a temp, its vardec, and an assign for ivavis,
+ *      Insert a temp, its vardec, and an assign for id,
  *      along with the extrema values minv and maxv.
- *      We start with ivavis:
+ *      We start with N_id id:
  *
  *           iv
  *
@@ -235,13 +235,8 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  *
  *           int[.] iv';
  *
- *      We build an N_id for ivavis because WITHIDs don't have them.
- *      just N_avis nodes. If -ssaiv becomes a reality, this
- *      can be scrapped, and we can attach the minmax to iv
- *      directly.
- *
  * @params:
- *     ivavis: The N_avis of the name for which we want to build iv'.
+ *     id: The N_id of the name for which we want to build iv'.
  *     minv, maxv: the AVIS_MINVAL and AVIS_MAXVAL to be attached to iv'.
  *     preassigns: The address of an INFO_PREASSIGNS( arg_info) node
  *                 in the caller's environment.
@@ -252,27 +247,25 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  *
  *****************************************************************************/
 node *
-IVEXIattachExtrema (node *minv, node *maxv, node *ivavis, node **preassigns,
-                    node **vardecs)
+IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **preassigns)
 
 {
     node *avis;
     node *nas;
     node *args;
+    node *ivavis;
 
     DBUG_ENTER ("IVEXIattachExtrema");
 
-    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis),
-                 "IVEXIattachExtrema expected N_avis for ivavis");
+    DBUG_ASSERT (N_id == NODE_TYPE (id), "IVEXIattachExtrema expected N_id for id");
     DBUG_ASSERT (N_id == NODE_TYPE (minv), "IVEXIattachExtrema expected N_id for minv");
     DBUG_ASSERT (N_id == NODE_TYPE (maxv), "IVEXIattachExtrema expected N_id for maxv");
-    avis
-      = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)), TYcopyType (AVIS_TYPE (ivavis)));
+
+    ivavis = ID_AVIS (id);
+    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ivavis)));
     *vardecs = TBmakeVardec (avis, *vardecs);
 
-    args = TBmakeExprs (TBmakeId (ivavis),
-                        TBmakeExprs (DUPdoDupTree (minv),
-                                     TBmakeExprs (DUPdoDupTree (maxv), NULL)));
+    args = TBmakeExprs (id, TBmakeExprs (minv, TBmakeExprs (maxv, NULL)));
     nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                    TBmakePrf (F_attachminmax, args)),
                         NULL);
@@ -289,6 +282,66 @@ IVEXIattachExtrema (node *minv, node *maxv, node *ivavis, node **preassigns,
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (ivavis)));
     DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ *
+ * @fn node *IVEXIadjustExtremaBound(node *arg_node, int k,
+ *                             node **vardecs, node **preassigns)
+ *
+ *   @brief arg_node is the N_avis of a GENERATOR_BOUND2 node, which
+ *          we will adjust to be an exact extrema value
+ *          by adding/subtracting 1 from it. This makes life
+ *          easier downstream, when we start to do arithmetic
+ *          on the extrema.
+ *
+ *          We generate, along with a vardec for b2':
+ *
+ *          b2' = _add_VxS_( b2, k);
+ *
+ *   @param  arg_node: a GENERATOR_BOUND2 N_avis node.
+ *           int n:    Constant value to be used as
+ *           vardecs:  Address of a vardecs chain that we will append to.
+ *           preassigns: Address of a preassigns chain we will append to.
+ *
+ *   @return The N_avis result, b2', of the adjustment computation.
+ *
+ ******************************************************************************/
+node *
+IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassigns)
+{
+    node *zavis;
+    node *zids;
+    node *zass;
+
+    DBUG_ENTER ("IVEXIadjustExtremaBound");
+
+    zavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
+                        TYcopyType (AVIS_TYPE (arg_node)));
+    *vardecs = TBmakeVardec (zavis, *vardecs);
+    zids = TBmakeIds (zavis, NULL);
+    zass = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_add_VxS, TBmakeId (arg_node),
+                                                      TBmakeNum (k))),
+                         NULL);
+
+    /* Keep us from trying to add extrema to the extrema calculations.  */
+    PRF_DONOTATTACHMINMAX (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
+
+    *preassigns = TCappendAssign (*preassigns, zass);
+    AVIS_SSAASSIGN (zavis) = zass;
+#ifdef BOBBOISCONFUSED
+    AVIS_MINVAL (zavis) = zavis;
+    AVIS_MAXVAL (zavis) = zavis;
+    oops
+#endif // BOBBOISCONFUSED
+      if (isSAAMode ())
+    {
+        AVIS_DIM (zavis) = DUPdoDupTree (AVIS_DIM (arg_node));
+        AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
+    }
+
+    DBUG_RETURN (zavis);
 }
 
 /** <!--********************************************************************-->
@@ -350,26 +403,29 @@ IVEXIRemoveUnusedCodes (node *codes)
 
 /** <!--********************************************************************-->
  *
- * @fn node *generateSelect( node *arg_node, info *arg_info, int k)
+ * @fn static
+ * node *generateSelect( node *arg_node, info *arg_info, int k)
  *
- * @brief: Create:
- *             kk = k;          NB Flatten k
+ * @brief:
+ * We start with a N_avis for a generator bound, arg_node:
+ *
+ *              arg_node = [ I, J ];
+ * Create:
+ *             kk = k;          NB. Flatten k
  *             k' = [kk];
- *             s0 = _sel_VxA_([k], bound);
+ *             z = _sel_VxA_([k], arg_node);
  *             and associated vardecs.
  * @params:
- *     arg_node: The N_id node for a generator bound.
+ *     arg_node: The N_avis node for a generator bound.
  *     arg_info: Your basic arg_info stuff.
  *     k:        which element of the bound we want to select.
  *
- * @return: The N_id of the new temp, s0.
+ * @return: The N_id of the new temp, z.
  *
  *****************************************************************************/
-node *
-generateSelect (node *bound, info *arg_info, int k)
+static node *
+generateSelect (node *arg_node, info *arg_info, int k)
 {
-    node *bavis;
-
     node *kavis;
     node *kid;
     node *kids;
@@ -388,11 +444,9 @@ generateSelect (node *bound, info *arg_info, int k)
 
     DBUG_ENTER ("generateSelect");
 
-    bavis = ID_AVIS (bound);
-
     /* Flatten k */
 
-    favis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)),
+    favis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     INFO_VARDECS (arg_info) = TBmakeVardec (favis, INFO_VARDECS (arg_info));
 
@@ -402,12 +456,18 @@ generateSelect (node *bound, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), fass);
     AVIS_SSAASSIGN (favis) = fass;
+
+    if (isSAAMode ()) {
+        AVIS_DIM (favis) = TBmakeNum (0);
+        AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
+    }
+
     AVIS_MINVAL (favis) = favis;
     AVIS_MAXVAL (favis) = favis;
 
     /* Create k' = [k]; */
     numone = TBmakeNum (1);
-    kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)),
+    kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYmakeAKS (TYmakeSimpleType (T_int),
                                    SHcreateShape (1, NUM_VAL (numone))));
     numone = FREEdoFreeNode (numone);
@@ -424,19 +484,28 @@ generateSelect (node *bound, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
     AVIS_SSAASSIGN (kavis) = kass;
+
+    if (isSAAMode ()) {
+        AVIS_DIM (kavis) = TBmakeNum (1);
+        AVIS_SHAPE (kavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
+    }
+
     AVIS_MINVAL (kavis) = kavis;
+#ifdef BOBBOISCONFUSED
     AVIS_MAXVAL (kavis) = kavis;
+#endif // BOBBOISCONFUSED
 
-    /* Create s0 = _sel_VxA_([k], bound);  */
+    /* Create z = _sel_VxA_([k], bound);  */
 
-    zavis
-      = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (bavis)), TYcopyType (AVIS_TYPE (bavis)));
+    zavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
+                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
     zid = TBmakeId (zavis);
     zids = TBmakeIds (zavis, NULL);
     zass
-      = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_sel_VxA, kid, DUPdoDupTree (bound))),
+      = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_sel_VxA, kid, TBmakeId (arg_node))),
                       NULL);
+
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
     AVIS_SSAASSIGN (zavis) = zass;
@@ -449,7 +518,7 @@ generateSelect (node *bound, info *arg_info, int k)
     }
 
     DBUG_PRINT ("IVEXI", ("generateSelect introduced temp index variable: %s for: %s",
-                          AVIS_NAME (zavis), AVIS_NAME (ID_AVIS (bound))));
+                          AVIS_NAME (zavis), AVIS_NAME (arg_node)));
     DBUG_RETURN (zid);
 }
 
@@ -466,7 +535,7 @@ generateSelect (node *bound, info *arg_info, int k)
  *      and want:
  *
  *           iv' = _attachminmax_(iv, GENERATOR_BOUND1(partn),
- *                                    GENERATOR_BOUND2(partn));
+ *                                    GENERATOR_BOUND2(partn) - 1);
  *
  *      and an appropriate vardec for iv', of course.
  *
@@ -495,14 +564,16 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNSPART (arg_info));
 
     DBUG_ASSERT (N_id == NODE_TYPE (b1),
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
-    DBUG_ASSERT (N_id == NODE_TYPE (b2),
-                 "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
+    DBUG_ASSERT (N_avis == NODE_TYPE (b2),
+                 "IVEXItmpVec expected N_avis for GENERATOR_BOUND2");
 
-    avis = IVEXIattachExtrema (b1, b2, ivavis, &INFO_PREASSIGNSPART (arg_info),
-                               &INFO_VARDECS (arg_info));
+    avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
+                               &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info));
 
     DBUG_RETURN (avis);
 }
@@ -540,12 +611,15 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNSWITH (arg_info));
+
     DBUG_ASSERT (N_id == NODE_TYPE (b1),
                  "IVEXItmpIds expected N_id for GENERATOR_BOUND1");
-    DBUG_ASSERT (N_id == NODE_TYPE (b2),
-                 "IVEXItmpIds expected N_id for GENERATOR_BOUND2");
+    DBUG_ASSERT (N_avis == NODE_TYPE (b2),
+                 "IVEXItmpIds expected N_avis for GENERATOR_BOUND2");
 
-    b1 = generateSelect (b1, arg_info, k);
+    b1 = generateSelect (ID_AVIS (b1), arg_info, k);
     b2 = generateSelect (b2, arg_info, k);
 
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
@@ -560,6 +634,11 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
     AVIS_SSAASSIGN (avis) = nas;
     AVIS_MINVAL (avis) = ID_AVIS (b1);
     AVIS_MAXVAL (avis) = ID_AVIS (b2);
+    if (isSAAMode ()) {
+        AVIS_DIM (avis) = TBmakeNum (0);
+        AVIS_SHAPE (avis) = TCmakeIntVector (NULL);
+    }
+
     DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (oldavis)));
     DBUG_RETURN (avis);
@@ -631,7 +710,6 @@ node *
 IVEXImodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXImodule");
-    DBUG_PRINT ("IVEXI", ("Found module"));
     if (NULL != MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
@@ -689,7 +767,6 @@ IVEXIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIblock");
 
-    DBUG_PRINT ("IVEXI", ("Found block"));
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -739,7 +816,6 @@ node *
 IVEXIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIlet");
-    DBUG_PRINT ("IVEXI", ("Found let"));
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -820,7 +896,6 @@ IVEXIpart (node *arg_node, info *arg_info)
     node *newcode;
 
     DBUG_ENTER ("IVEXIpart");
-    DBUG_PRINT ("IVEXI", ("Found WL partition"));
 
     /* We will deal with our partition after looking inside it */
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);

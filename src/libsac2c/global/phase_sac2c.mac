@@ -458,12 +458,13 @@ SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
 SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
           global.optimize.doswlf || global.doivext, opt)
 
+SUBPHASE (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
+          global.doivext, opt)
+
 /* See comments in arrayopt/ivextrema.c regarding phase
  * ordering for ivext, dcr2, ivexp, swlfi, swlf, dcr4, scc.
+ *  DCR must follow ivexi almost immediately.
  */
-
-SUBPHASE (ivext, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
-          global.doivext &&global.optimize.dosaa &&global.optimize.doswlf, opt)
 
 SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
           global.optimize.dodcr, opt)

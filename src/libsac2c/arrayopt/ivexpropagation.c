@@ -82,6 +82,11 @@
 #include "tree_compound.h"
 #include "pattern_match.h"
 #include "ivextrema.h"
+#include "symb_wlfi.h"
+#include "DupTree.h"
+#include "check.h"
+#include "phase.h"
+#include "shape.h"
 
 /** <!--********************************************************************-->
  *
@@ -93,6 +98,8 @@ struct INFO {
     node *fundef;
     node *minval;
     node *maxval;
+    node *preassigns;
+    node *vardecs;
 };
 
 /**
@@ -101,6 +108,8 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_MINVAL(n) ((n)->minval)
 #define INFO_MAXVAL(n) ((n)->maxval)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_VARDECS(n) ((n)->vardecs)
 
 static info *
 MakeInfo ()
@@ -114,6 +123,8 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_MINVAL (result) = NULL;
     INFO_MAXVAL (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -178,6 +189,251 @@ IVEXPdoIndexVectorExtremaPropModule (node *arg_node)
 
 /******************************************************************************
  *
+ * function: node *makeNarray( node *minmax, info *arg_info, int arrxrho)
+ *
+ * description: Create an N_array from an N_exprs chain at minmax,
+ *              of frame shape arrxrho. Also creates an assign and
+ *              vardec for same.
+ *
+ * @params:  minmax: an N_exprs chain.
+ *           arg_info: Your basic arg_info node.
+ *           arrxrho: The frame shape for the N_array.
+ * @result:
+ *           The N_id for the shiny new N_array.
+ *
+ *****************************************************************************/
+static node *
+makeNarray (node *minmax, info *arg_info, int arrxrho)
+{
+    node *res;
+    node *resavis;
+    node *resassign;
+
+    DBUG_ENTER ("makeNarray");
+    res = TCmakeIntVector (TBmakeExprs (TBmakeNum (arrxrho), NULL));
+    resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                    SHcreateShape (1, arrxrho)));
+    if (isSAAMode ()) {
+        AVIS_DIM (resavis) = TBmakeNum (1);
+        AVIS_SHAPE (resavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (arrxrho), NULL));
+        ;
+    }
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+
+    resassign = TBmakeAssign (TBmakeLet (TBmakeIds (resavis, NULL), res), NULL);
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), resassign);
+    AVIS_SSAASSIGN (resavis) = resassign;
+
+    DBUG_RETURN (resavis);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool isAvisHasExtrema( node *avis)
+ *
+ * description: Predicate for determining if an N_avis node has known extrema.
+ *
+ * @params  arg_node: an N_avis node.
+ * @result: True if the node has both extrema present.
+ *
+ ******************************************************************************/
+static bool
+isAvisHasExtrema (node *avis)
+{
+    bool z;
+
+    DBUG_ENTER ("isAvisHasExtrema");
+    z = (NULL != AVIS_MINVAL (avis)) || (NULL != AVIS_MAXVAL (avis));
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ * static
+ *   bool isArgHasAttachminmax( node *arg_node)
+ *
+ * description: Predicate for determining if N_id arg_node has
+ *              an F_attachminmax at its SSAASSIGN.LHS
+ *
+ * @params  arg_node: an N_id node.
+ * @result: True if we have already issued an F_attachminmax for N_id.
+ *
+ ******************************************************************************/
+static bool
+isArgHasAttachminmax (node *arg_node)
+{
+    node *assgn;
+    bool z;
+
+    DBUG_ENTER ("isArgHasAttachminmax");
+
+    assgn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
+
+    z = (NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))
+        && (F_attachminmax == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))));
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool isPrfArgHasKnownExtrema( node *arg_node, info *arg_info)
+ *
+ * description: Predicate for determining if PRF_ARG in arg_node has
+ *              F_attachextrema attached, with known extrema,
+ *              attached to the F_attachextrema as
+ *              PRF_ARG2 and PRF_ARG3, or if the F_attachextrema
+ *              result is a constant, in which case it acts
+ *              in the same role.
+ *
+ *              This latter treatment of constants may be simpler
+ *              than making AVIS_MINVAL/MAXVAL of constants point
+ *              to their N_avis nodes.
+ *
+ *
+ * @params  arg_node: an N_id node.
+ * @result: True if the N_id derives directly from an F_attachextrema,
+ *          and the F_attachextrema primitive result has both extrema known.
+ *
+ *          Side effect is to set INFO_MINVAL and INFO_MAXVAL.
+ *
+ ******************************************************************************/
+static bool
+isPrfArgHasKnownExtrema (node *arg_node, info *arg_info)
+{
+    node *ids;
+    bool z = FALSE;
+
+    DBUG_ENTER ("isPrfArgHasKnownExtrema");
+    if ((N_id == NODE_TYPE (arg_node))) {
+        if (isArgHasAttachminmax (arg_node)) {
+            ids = LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
+            if ((NULL != AVIS_MINVAL (IDS_AVIS (ids)))
+                && (NULL != AVIS_MAXVAL (IDS_AVIS (ids)))) {
+                z = TRUE;
+                INFO_MINVAL (arg_info) = AVIS_MINVAL (IDS_AVIS (ids));
+                INFO_MAXVAL (arg_info) = AVIS_MAXVAL (IDS_AVIS (ids));
+            }
+            if (COisConstant (ids)) {
+                z = TRUE;
+                INFO_MINVAL (arg_info) = IDS_AVIS (ids);
+                INFO_MAXVAL (arg_info) = IDS_AVIS (ids);
+            }
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PropagateNarray node *arg_node, info *arg_info)
+ *
+ * description:
+ *        Propagate N_array extrema to LHS.
+ *
+ * @params  arg_node: an N_let node pointing to an N_array node.
+ *
+ * @result: Consider an N_array:
+ *
+ *               V = [ I, J, K];
+ *
+ *          If all N_array elements have non_null extrema,
+ *          build LHS extrema values as follows:
+ *
+ *            minv = [  AVIS_MINVAL( I), AVIS_MINVAL( J), AVIS_MINVAL( K) ];
+ *            maxv = [  AVIS_MAXVAL( I), AVIS_MAXVAL( J), AVIS_MAXVAL( K) ];
+ *            V' = [ I, J, K];
+ *            V'' = _attachminmax( V', minv, maxv);
+ *            V = V'';
+ *          While we're at it, we set the extrema for V, too.
+ *
+ ******************************************************************************/
+static node *
+PropagateNarray (node *arg_node, info *arg_info)
+{
+    node *v;
+    node *lhsavis;
+    node *minv = NULL;
+    node *maxv = NULL;
+    node *exprs;
+    node *vprime;
+    node *vprimeprime;
+    bool allex;
+    int arrxrho;
+
+    DBUG_ENTER ("PropagateNarray");
+
+    v = LET_EXPR (arg_node);
+
+    /* Check that we have extrema for all array elements.
+     * We allow N_id elements only. All others are rejected.
+     * We may have to come back and extend this to support N_num nodes...
+     */
+    allex = TRUE;
+    exprs = ARRAY_AELEMS (v);
+    allex = (NULL != exprs); /* No funny biz with [:int] */
+    while (allex && (exprs != NULL)) {
+        if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
+            allex = allex & isAvisHasExtrema (ID_AVIS (EXPRS_EXPR (exprs)));
+        } else {
+            allex = FALSE;
+        }
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    if (allex) {
+        /* Build exprs chains of minima and maxima. */
+        exprs = ARRAY_AELEMS (v);
+        while (exprs != NULL) {
+            minv
+              = TBmakeExprs (TBmakeId (AVIS_MINVAL (ID_AVIS (EXPRS_EXPR (exprs)))), minv);
+            maxv
+              = TBmakeExprs (TBmakeId (AVIS_MAXVAL (ID_AVIS (EXPRS_EXPR (exprs)))), maxv);
+            exprs = EXPRS_NEXT (exprs);
+        }
+
+        /* At this point, we have two N_exprs chains of extrema.
+         * Make these N_array nodes and give them names, then attach
+         * them, via dataflow, to the N_let LHS.
+         */
+        arrxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (v));
+        lhsavis = IDS_AVIS (LET_IDS (arg_node));
+        minv = makeNarray (minv, arg_info, arrxrho);
+        maxv = makeNarray (maxv, arg_info, arrxrho);
+
+        /*     V' = [I, J, K];
+         *     V'' = _attachminmax( V', minv, maxv);
+         */
+        vprime = SWLFIflattenExpression (v, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), lhsavis);
+
+        vprimeprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
+                                                    vprime, &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info)));
+
+        /*
+         *       V = V'';
+         *
+         *       SWLFIflattenExpression has already wiped LET_EXPR.
+         */
+        LET_EXPR (arg_node) = vprimeprime;
+
+        AVIS_MINVAL (lhsavis) = minv;
+        AVIS_MAXVAL (lhsavis) = maxv;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   bool isResultHasExtrema( node *arg_node, info *arg_info)
  *
@@ -194,6 +450,7 @@ isResultHasExtrema (node *arg_node, info *arg_info)
     bool z;
 
     DBUG_ENTER ("isResultHasExtrema");
+    z = isAvisHasExtrema (IDS_AVIS (LET_IDS (arg_node)));
 
     DBUG_RETURN (z);
 }
@@ -204,10 +461,12 @@ isResultHasExtrema (node *arg_node, info *arg_info)
  *   bool PrfExtractExtrema( node *arg_node, info *arg_info)
  *
  * description: Extracts extrema from within a primitive.
+ *              We know that the LET_LHS does not have extrema.
  *
  * @params  arg_node: an N_prf node.
  * @result: True if we have found extrema, and stored
  *          their values in INFO_MINVAL and INFO_MAXVAL.
+ *          Caller will populate LHS avis appropriately.
  *
  ******************************************************************************/
 static bool
@@ -215,9 +474,10 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
 {
     node *avis;
     bool z = FALSE;
+    bool arg1c;
+    bool arg2c;
 
     DBUG_ENTER ("PrfExtractExtrema");
-    DBUG_PRINT ("IVEXP", ("Found prf"));
 
     INFO_MINVAL (arg_info) = NULL;
     INFO_MAXVAL (arg_info) = NULL;
@@ -227,38 +487,103 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         avis = ID_AVIS (PRF_ARG1 (arg_node));
         INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
         INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
-        z = TRUE;
+        z = (NULL != INFO_MINVAL (arg_info)) && (NULL != INFO_MAXVAL (arg_info));
         break;
 
     case F_attachminmax:
         INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
         INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG3 (arg_node));
-        z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
+        z = (NULL != INFO_MINVAL (arg_info)) && (NULL != INFO_MAXVAL (arg_info));
         break;
 
-    /* The following can sometimes be helped. */
+        /* The common cases of offset indexing come here. */
+#ifdef CODINGTIME
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
     case F_add_VxV:
+
+#endif // CODINGTIME
     case F_sub_SxS:
     case F_sub_SxV:
     case F_sub_VxS:
     case F_sub_VxV:
-        /* If one argument is constant, and the other has extrema,
-         * but the result does not have extrema, and we have
-         * not already introduced extrema code,
+
+#ifdef CODINGTIME
+    case F_and_SxS:
+    case F_and_SxV:
+    case F_and_VxS:
+    case F_and_VxV:
+
+    case F_or_SxS:
+    case F_or_SxV:
+    case F_or_VxS:
+    case F_or_VxV:
+
+    case F_mul_SxS:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+
+    case F_min_SxS:
+    case F_min_SxV:
+    case F_min_VxS:
+    case F_min_VxV:
+
+    case F_max_SxS:
+    case F_max_SxV:
+    case F_max_VxS:
+    case F_max_VxV:
+
+#endif  // CODINGTIME
+        /* This is dumb. Should use prf_info.mac table. */
+
+        /*  The result is known not to have extrema.
+         * If one argument is constant, and the other has extrema,
+         * and no extrema-computing code exists,
          * we will introduce code to propagate the extrema.
-         * If it already has extrema code attached, we may
-         * look at it?????
-         *
-         * For other cases, such as F_non_negval, we merely
-         * simplify the expression in the absence of extrema
-         * info.
          *
          */
+        arg1c = COisConstant (PRF_ARG1 (arg_node));
+        arg2c = COisConstant (PRF_ARG2 (arg_node));
 
-        DBUG_PRINT ("IVEXP", ("Introduced extrema code for N_prf"));
+        if (arg1c != arg2c) {
+
+            if (arg1c && (PRF_ATTACHMINMAXISSUED (arg_node))
+                && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG2 (arg_node))))
+                && (isPrfArgHasKnownExtrema (PRF_ARG2 (arg_node), arg_info))) {
+                DBUG_PRINT ("IVEXP", ("we are getting closer const|arg"));
+                z = TRUE;
+            }
+
+            if (arg2c && (PRF_ATTACHMINMAXISSUED (arg_node))
+                && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node))))
+                && (isPrfArgHasKnownExtrema (PRF_ARG1 (arg_node), arg_info))) {
+                DBUG_PRINT ("IVEXP", ("we are getting closer arg|const"));
+                z = TRUE;
+            }
+
+            DBUG_PRINT ("IVEXP", ("Introduced extrema code for N_prf"));
+        }
+        break;
+
+    /* These cases are ISMOP */
+    case F_tob_S:
+    case F_toi_S:
+    case F_toc_S:
+    case F_tof_S:
+    case F_tod_S:
+
+    case F_not_S:
+    case F_not_V:
+
+    case F_neg_S:
+    case F_neg_V:
+
+    case F_abs_S:
+    case F_abs_V:
+
+        DBUG_PRINT ("IVEXP", ("ISMOP extrema code for N_prf"));
         break;
 
     default:
@@ -267,33 +592,167 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
 
     DBUG_RETURN (z);
 }
+/*
+ * For other cases, such as F_non_negval, we merely
+ * simplify the expression in the absence of extrema
+ * info.
+ *
+ */
 
 /** <!--********************************************************************-->
  *
- * Primitive function treatment of extrema:
+ * static
+ * node *IntroducePrfExtremaCalc(node *arg_node, info *arg_info)
  *
+ * description:
+ *      For some primitives, where CF and friends are able to perform
+ *      expression simplification, we insert code to (attempt to)
+ *      compute the extrema for this function application.
+ *
+ *      If this insertion is already done, this function is an identity.
+ *
+ * Arguments:
+ *      arg_node: N_let for the N_prf.
+ *
+ * Results:
+ *      The updated arg_node, with iv' -> iv''.
+ *
+ *      INFO_VARDECS are appended to, with entries for:
+ *         minv, maxv, and iv''.
+ *
+ *      INFO_PREASSIGNS are appended to, with the assigns for
+ *        minv, maxv, and iv''.
+ *
+ * Restrictions:
+ *      A subset of N_prfs only are supported.
+ *      The N_prf extrema must have a chance of being computed by the optimizer.
+ *      We require that, for dyadic prfs, that one argument be
+ *      constant and the other be non-constant, with both extrema present.
+ *
+ *      It may be possible to relax some of these restrictions with
+ *      ISMOP or better insight. Right now, we're just trying to
+ *      make it work.
+ *
+ * Example:
+ *
+ *      The N_prf is:
+ *          offset = 42;
+ *          lhs = _sub_SxS_( offset, iv');
+ *
+ *      We know that iv' has extrema attached, so we transform this
+ *      into:
+ *
+ *          offset = 42;
+ *          minv = _sub_SxS__( offset, AVIS_MINVAL( iv'));
+ *          maxv = _sub_SxS__( offset, AVIS_MAXVAL( iv'));
+ *          iv'' = _attachminmax( iv', minv, maxv);
+ *          lhs = _sub_SxS_( offset, iv'');
  *
  ******************************************************************************/
-static void
-foo (node *arg_node, info *arg_info)
+static node *
+IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
 {
+    node *rhs;
+    node *z;
+    node *minv;
+    node *maxv;
+    node *minarg1;
+    node *minarg2;
+    node *maxarg1;
+    node *maxarg2;
+    node *lhsavis;
+    node *nca;
+    bool arg1c;
+    bool arg2c;
 
-    DBUG_ENTER ("foo");
+    DBUG_ENTER ("IntroducePrfExtremaCalc");
 
-    node *IVEXIattachExtrema (node * minv, node * maxv, node * ivavis, node * *preassigns,
-                              node * *vardecs);
-    /*
-     *      minval = _min_( AVIS_MINVAL( PRF_ARG1), AVIS_MINVAL( PRF_ARG2))
-     *      maxval = _min_( AVIS_MAXVAL( PRF_ARG1), AVIS_MAXVAL( PRF_ARG2))
-     *
-     *    _max_SxS_, _max_SxV_, _max_VxS_, _max_VxV_
-     *
-     *    _add_SxS_, _add_SxV_, _add_VxS_, _add_VxV_
-     *         minval =
-     *
-     *
-     */
-    DBUG_VOID_RETURN;
+    rhs = LET_EXPR (arg_node);
+    z = arg_node;
+
+    if ((N_prf == NODE_TYPE (rhs))) {
+        switch
+            PRF_PRF (rhs)
+            {
+
+            case F_sub_SxS:
+
+                arg1c = COisConstant (PRF_ARG1 (rhs));
+                arg2c = COisConstant (PRF_ARG2 (rhs));
+                if (arg1c != arg2c) { /* One constant, one non-constant */
+
+                    nca = arg1c ? PRF_ARG2 (rhs) : PRF_ARG1 (rhs);
+
+                    if (isAvisHasExtrema (ID_AVIS (nca)) && (!PRF_DONOTATTACHMINMAX (rhs))
+                        && (!PRF_ATTACHMINMAXISSUED (rhs))) {
+
+                        DBUG_PRINT ("IVEXP", ("GOta introduce subtract."));
+
+                        PRF_ATTACHMINMAXISSUED (rhs) = TRUE;
+
+                        lhsavis = IDS_AVIS (LET_IDS (arg_node));
+
+                        minarg1 = arg1c
+                                    ? DUPdoDupTree (PRF_ARG1 (rhs))
+                                    : TBmakeId (AVIS_MINVAL (ID_AVIS (PRF_ARG1 (rhs))));
+                        minarg2 = arg2c
+                                    ? DUPdoDupTree (PRF_ARG2 (rhs))
+                                    : TBmakeId (AVIS_MINVAL (ID_AVIS (PRF_ARG2 (rhs))));
+
+                        minv = TBmakeExprs (TCmakePrf2 (PRF_PRF (rhs), minarg1, minarg2),
+                                            NULL);
+                        PRF_DONOTATTACHMINMAX (EXPRS_EXPR (minv)) = TRUE;
+
+                        minv
+                          = SWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
+
+                        maxarg1 = arg1c
+                                    ? DUPdoDupTree (PRF_ARG1 (rhs))
+                                    : TBmakeId (AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (rhs))));
+
+                        maxarg2 = arg2c
+                                    ? DUPdoDupTree (PRF_ARG2 (rhs))
+                                    : TBmakeId (AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (rhs))));
+
+                        maxv = TBmakeExprs (TCmakePrf2 (PRF_PRF (rhs), maxarg1, maxarg2),
+                                            NULL);
+                        PRF_DONOTATTACHMINMAX (EXPRS_EXPR (maxv)) = TRUE;
+
+                        maxv
+                          = SWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
+
+                        /* KLUDGE, perhaps, to be replaced by proper code */
+                        if (F_sub_SxS == PRF_PRF (rhs)) {
+                            z = TBmakeId (
+                              IVEXIattachExtrema (maxv, minv, DUPdoDupNode (nca),
+                                                  &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNS (arg_info)));
+                        } else {
+                            z = TBmakeId (
+                              IVEXIattachExtrema (minv, maxv, DUPdoDupNode (nca),
+                                                  &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNS (arg_info)));
+                        }
+                        DBUG_PRINT ("IVEXP", ("attached Extrema for subtract."));
+                        if (arg1c) {
+                            FREEdoFreeTree (PRF_ARG2 (LET_EXPR (arg_node)));
+                            PRF_ARG2 (LET_EXPR (arg_node)) = z;
+                        } else {
+                            FREEdoFreeTree (PRF_ARG1 (LET_EXPR (arg_node)));
+                            PRF_ARG1 (LET_EXPR (arg_node)) = z;
+                        }
+                    }
+                }
+                break;
+                /* add more cases here!  */
+            default:
+                break;
+            }
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -306,10 +765,53 @@ foo (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *IVEXPassign( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *   Place preassigns in their proper locations.
+ *
+ *   This is slightly tricky, because we start with:
+ *
+ *    arg_node-> instr -> next
+ *
+ *   and want to end up with:
+ *
+ *    arg_node -> preassigns -> next
+ *
+ ******************************************************************************/
+node *
+IVEXPassign (node *arg_node, info *arg_info)
+{
+    node *new_arg_node;
+
+    DBUG_ENTER ("IVEXPassign");
+
+    new_arg_node = arg_node;
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (NULL != INFO_PREASSIGNS (arg_info)) {
+        new_arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (new_arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *IVEXPlet( node *arg_node, info *arg_info)
  *
  * description:
- *   Propagate iv extrema from RHS to LHS.
+ *
+ *    0. If result (LHS) already has extrema, do nothing.
+ *    1. Propagate iv extrema from RHS to LHS.
+ *    2. If extrema exist for one argument, and other argument is
+ *       constant, introduce code to compute extrema for this LHS.
  *
  ******************************************************************************/
 node *
@@ -321,9 +823,8 @@ IVEXPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXPlet");
 
-    DBUG_PRINT ("IVEXP", ("Found let"));
-
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
+    DBUG_PRINT ("IVEXP", ("Found let for %s", AVIS_NAME (lhsavis)));
     rhs = LET_EXPR (arg_node);
 
     /* If we know the answer already, do nothing */
@@ -346,6 +847,16 @@ IVEXPlet (node *arg_node, info *arg_info)
                                       AVIS_NAME (lhsavis)));
                 AVIS_MINVAL (lhsavis) = INFO_MINVAL (arg_info);
                 AVIS_MAXVAL (lhsavis) = INFO_MAXVAL (arg_info);
+                DBUG_ASSERT (N_avis == NODE_TYPE (AVIS_MINVAL (lhsavis)),
+                             ("PrfExtractExtrema returned non-avis minval"));
+                DBUG_ASSERT (N_avis == NODE_TYPE (AVIS_MAXVAL (lhsavis)),
+                             ("PrfExtractExtrema returned non-avis maxval"));
+            } else {
+                /* Could not extract extrema from RHS.
+                 * We may introduce extrema-computation code here.
+                 */
+                arg_node = IntroducePrfExtremaCalc (arg_node, arg_info);
+                /* Handle any preassigns from any inner WL */
             }
             break;
 
@@ -355,7 +866,6 @@ IVEXPlet (node *arg_node, info *arg_info)
         case N_num:
         case N_float:
         case N_double:
-        case N_array:
             /*
              * We no longer generate/propagate extrema into constants.
              *
@@ -374,21 +884,13 @@ IVEXPlet (node *arg_node, info *arg_info)
              */
 
 #ifdef NOCONSTANTS
+            /* This causes cvp crashes, and is probably not so good, anyway. */
             if (TYisAKV (AVIS_TYPE (lhsavis))) {
-                DBUG_PRINT ("IVEXP", ("IVEXP propagating constant extrema to lhs: %s",
-                                      AVIS_NAME (lhsavis)));
-                /*
-                 *
-                 *  See if this is the cause of CSE on constants no longer working.
-                 *  (nested.sac)
-                 */
-
                 AVIS_MINVAL (lhsavis) = lhsavis;
                 AVIS_MAXVAL (lhsavis) = lhsavis;
             }
 #endif // NOCONSTANTS
             break;
-
         /* We are unable to help these poor souls */
         case N_ap:
 
@@ -397,6 +899,10 @@ IVEXPlet (node *arg_node, info *arg_info)
         case N_with:
             /* We have to descend into the depths here */
             WITH_PART (rhs) = TRAVdo (WITH_PART (rhs), arg_info);
+            break;
+
+        case N_array:
+            arg_node = PropagateNarray (arg_node, arg_info);
             break;
 
         default:
@@ -423,8 +929,6 @@ IVEXPwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXPwith");
 
-    DBUG_PRINT ("IVEXP", ("Found with"));
-
     arg_node = TRAVdo (WITH_PART (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -443,8 +947,6 @@ IVEXPpart (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("IVEXPpart");
-
-    DBUG_PRINT ("IVEXP", ("Found part"));
 
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -466,8 +968,6 @@ IVEXPcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXPcond");
 
-    DBUG_PRINT ("IVEXP", ("Found cond"));
-
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -486,8 +986,6 @@ IVEXPfuncond (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("IVEXPfuncond");
-
-    DBUG_PRINT ("IVEXP", ("Found funcond"));
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
@@ -510,10 +1008,50 @@ IVEXPwhile (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXPwhile");
 
-    DBUG_PRINT ("IVEXP", ("Found while"));
-
     WHILE_COND (arg_node) = TRAVdo (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IVEXPfundef( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *  Insert new vardecs into fundef node.
+ *
+ ******************************************************************************/
+node *
+IVEXPfundef (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("IVEXPfundef");
+    DBUG_PRINT ("IVEXP", ("IVEXP in %s %s begins",
+                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                          FUNDEF_NAME (arg_node)));
+
+    DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL, ("IVEXPfundef INFO_VARDECS not NULL"));
+
+    INFO_FUNDEF (arg_info) = arg_node;
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    INFO_FUNDEF (arg_info) = NULL;
+
+    /* If new vardecs were made, append them to the current set */
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+          = TCappendVardec (INFO_VARDECS (arg_info),
+                            BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    DBUG_PRINT ("IVEXP", ("IVEXP in %s %s ends",
+                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                          FUNDEF_NAME (arg_node)));
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

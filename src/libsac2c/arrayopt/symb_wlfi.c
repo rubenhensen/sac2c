@@ -94,6 +94,8 @@
 #include "type_utils.h"
 #include "shape.h"
 #include "check.h"
+#include "ivextrema.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *
@@ -207,7 +209,8 @@ SWLFIdoSymbolicWithLoopFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *flattenExpression(node *arg_node, info *arg_info, node *bounder)
+ * @fn node *SWLFIflattenExpression(node *arg_node, node **vardecs,
+ *                                  node **preassigns, node *restypeavis)
  *
  *   @brief  Flattens the expression at arg_node.
  *           E.g., if the expression is:
@@ -221,15 +224,18 @@ SWLFIdoSymbolicWithLoopFolding (node *arg_node)
  *            TMP = _max_VxV_(a, b);
  *            TMP
  *
- *
  *   @param  node *arg_node: a node to be flattened.
- *           info *arg_info:
- *           node *bounder: an N_id with the same type as TMP.
+ *           node **vardecs: a pointer to a vardecs chain that
+ *                           will have a new vardec appended to it.
+ *           node **preassigns: a pointer to a preassigns chain that
+ *                           will have a new assign appended to it.
+ *           node *restypeavis: an N_avis with the same type as TMP.
  *
  *   @return node *node:      N_id node for flattened node
  ******************************************************************************/
-static node *
-flattenExpression (node *arg_node, info *arg_info, node *bounder)
+node *
+SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
+                        node *restypeavis)
 {
     node *res;
     node *avis;
@@ -237,24 +243,39 @@ flattenExpression (node *arg_node, info *arg_info, node *bounder)
     node *prf;
     node *id;
 
-    DBUG_ENTER ("flattenExpression");
+    DBUG_ENTER ("SWLFIflattenExpression");
     res = arg_node;
+    switch (NODE_TYPE (arg_node)) {
+    case N_exprs:
+        prf = EXPRS_EXPR (arg_node);
+        DBUG_ASSERT (NULL == EXPRS_NEXT (arg_node),
+                     "SWFIflattenExpression did not expect fancy N_exprs");
+        break;
+
+    case N_array:
+        prf = arg_node;
+        break;
+    default:
+        DBUG_ASSERT (FALSE, ("SWLFIflattenExpression is broken."));
+        break;
+    }
+
     switch (NODE_TYPE (arg_node)) {
 
     case N_exprs:
-        prf = EXPRS_EXPR (arg_node);
-        DBUG_ASSERT (N_prf == NODE_TYPE (prf),
-                     "flattenExpression expected N_prf in expression");
-        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (bounder))));
-        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+    case N_array:
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (restypeavis)));
+        *vardecs = TBmakeVardec (avis, *vardecs);
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (prf)), NULL);
-        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
+        *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
-        AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (ID_AVIS (bounder)));
-        AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (bounder)));
+        if (isSAAMode ()) {
+            AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
+            AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
+        }
         id = TBmakeId (avis);
         DBUG_PRINT ("SWLFI",
-                    ("flattenExpression generated assign for %s", AVIS_NAME (avis)));
+                    ("SWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
         FREEdoFreeTree (arg_node);
         res = id;
 
@@ -262,7 +283,7 @@ flattenExpression (node *arg_node, info *arg_info, node *bounder)
         break;
 
     default:
-        DBUG_PRINT ("SWLFI", ("flattenExpression missed a case."));
+        DBUG_PRINT ("SWLFI", ("SWLFIflattenExpression missed a case."));
     }
 
     DBUG_RETURN (res);
@@ -271,7 +292,7 @@ flattenExpression (node *arg_node, info *arg_info, node *bounder)
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
- *                                      node *foldeepart, int boundnum)
+ *                                      node *foldeepart, int restypeavirestypeavis)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
  *        a single foldeeWL partition with folderWL index set, of the form:
@@ -311,7 +332,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *expn;
     node *idxavis;
     node *idxassign;
-    node *bid;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
@@ -322,7 +342,11 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     idxassign = AVIS_SSAASSIGN (idxavis);
 
     /* AVIS_MINVAL and AVIS_MAXVAL are guaranteed to exist if we get here */
-    bounder = (boundnum == 1) ? AVIS_MINVAL (idxavis) : AVIS_MAXVAL (idxavis);
+    bounder = (boundnum == 1) ? AVIS_MINVAL (idxavis)
+                              : IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), 1,
+                                                         &INFO_VARDECS (arg_info),
+                                                         &INFO_PREASSIGNS (arg_info));
+
     boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
                               : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
 
@@ -340,11 +364,11 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
      * and
      *   (k*folderbound2) + offset
      */
-    bid = TBmakeId (bounder);
-    expn = TBmakeExprs (TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, bid,
-                                    DUPdoDupTree (boundee)),
+    expn = TBmakeExprs (TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV,
+                                    TBmakeId (bounder), DUPdoDupTree (boundee)),
                         NULL);
-    expn = flattenExpression (expn, arg_info, bid);
+    expn = SWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
+                                   &INFO_PREASSIGNS (arg_info), bounder);
 
     DBUG_RETURN (expn);
 }
@@ -452,6 +476,10 @@ createNewIV (node *arg_node, info *arg_info)
     ividprime = TBmakeId (ivavis);
     AVIS_SSAASSIGN (ivavis) = ivassign;
 
+    if (isSAAMode ()) {
+        AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ID_AVIS (ivid)));
+        AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (ivid)));
+    }
     DBUG_RETURN (ividprime);
 }
 

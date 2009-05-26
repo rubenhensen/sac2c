@@ -91,6 +91,8 @@ IVEXCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXCwith");
 
+    WITH_ISEXTREMAINSERTED (arg_node) = FALSE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -108,6 +110,8 @@ IVEXCavis (node *arg_node, info *arg_info)
 
     AVIS_MINVAL (arg_node) = NULL;
     AVIS_MAXVAL (arg_node) = NULL;
+    AVIS_COUNTING_WL (arg_node) = NULL;
+    AVIS_WL_NEEDCOUNT (arg_node) = 0;
 
     DBUG_RETURN (arg_node);
 }

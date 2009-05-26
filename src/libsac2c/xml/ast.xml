@@ -241,6 +241,8 @@
       </traversal> 
       <traversal id="IVEXP" name="Index Variable Extrema Propagation" default="sons" include="ivexpropagation.h" >
         <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
           <node name="Let" />
           <node name="With" />
           <node name="Part" />
@@ -5110,6 +5112,20 @@ N_structdef :
           sel op. If false, then SWLFI will emit a guard, then set this flag.
          </description> 
         </flag>
+        <flag name="AttachminmaxIssued" default="FALSE" >
+         <description> 
+          If true, this operation has already
+          emitted an F_attachminmax operation that now precedes this
+          sel op. If false, then IVEXP will emit a guard, then set this flag.
+         </description> 
+        </flag>
+        <flag name="DoNotAttachminmax" default="FALSE" >
+         <description> 
+                 If true, this operation should not have an F_attachminmax
+                 attached to it, as it is computing a minmax value for
+                 another node.
+         </description> 
+        </flag>
       </flags>
     </node>
 <!--
@@ -5749,7 +5765,7 @@ N_structdef :
                 <any />
                 <phases>
                   <phase name="opt_al" />
-                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                  <range from="opt_isaa2" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -5761,7 +5777,7 @@ N_structdef :
               <target mandatory="no">
                 <node name="With" />
                 <phases>
-                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                  <range from="opt_isaa2" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -5983,7 +5999,7 @@ N_structdef :
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_ivext" to="opt_esaa2" />
+                <range from="opt_ivexi" to="opt_esaa2" />
                 </phases>
               </target>
             </targets>
@@ -6005,7 +6021,7 @@ N_structdef :
                 <node name="Avis" />
                 <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
-                <range from="opt_ivext" to="opt_esaa2" />
+                <range from="opt_ivexi" to="opt_esaa2" />
                 </phases>
               </target>
             </targets>

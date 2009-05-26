@@ -15,6 +15,8 @@
  *****************************************************************************/
 extern node *SWLFIdoSymbolicWithLoopFolding (node *arg_node);
 
+extern node *SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
+                                     node *restypeavis);
 extern node *SWLFIfundef (node *arg_node, info *arg_info);
 extern node *SWLFIblock (node *arg_node, info *arg_info);
 extern node *SWLFIassign (node *arg_node, info *arg_info);

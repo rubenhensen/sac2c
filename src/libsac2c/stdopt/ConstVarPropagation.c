@@ -398,9 +398,13 @@ CVPprf (node *arg_node, info *arg_info)
 
     default:
         /*
-         * In the default case, all arguments may be constant scalars
+         * In the default case, NO prf arguments may be constant scalars
+         * during saacyc optimization and thereabouts.
          */
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = ((global.compiler_subphase >= PH_opt_uglf)
+                                    && (global.compiler_subphase < PH_opt_tup))
+                                     ? PROP_variable
+                                     : PROP_variable | PROP_scalarconst;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);

@@ -16,6 +16,8 @@
 extern node *IVEXPdoIndexVectorExtremaPropModule (node *arg_node);
 
 extern node *IVEXPmodule (node *arg_node, info *arg_info);
+extern node *IVEXPfundef (node *arg_node, info *arg_info);
+extern node *IVEXPassign (node *arg_node, info *arg_info);
 extern node *IVEXPlet (node *arg_node, info *arg_info);
 extern node *IVEXPwith (node *arg_node, info *arg_info);
 extern node *IVEXPcond (node *arg_node, info *arg_info);
