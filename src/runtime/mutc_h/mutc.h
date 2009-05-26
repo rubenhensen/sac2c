@@ -10,7 +10,7 @@
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
     sl_create (family_##name, place, lb, ub, st, bl, , ap);
 #define SAC_MUTC_DECL_THREADFUN2(name, anon, ...) sl_decl (name, void, __VA_ARGS__)
-#define SAC_MUTC_SYNC(name) sl_sync (family_##name);
+#define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
 #define SAC_MUTC_START_DEF_THREADFUN2(name, anon, ...) sl_def (name, void, __VA_ARGS__)
 #define SAC_MUTC_END_DEF_THREADFUN() sl_enddef

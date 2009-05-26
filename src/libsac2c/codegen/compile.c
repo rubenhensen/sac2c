@@ -2232,7 +2232,11 @@ COMPfundef (node *arg_node, info *arg_info)
 
         FUNDEF_ICM (arg_node) = MakeFundefIcm (arg_node, arg_info);
         FUNDEF_ICMDECL (arg_node) = MakeFundeclIcm (arg_node, arg_info);
-        FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_MUTC_END_DEF_FUN", NULL);
+        if (!FUNDEF_ISSPMDFUN (arg_node)) {
+            FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_MUTC_END_DEF_FUN", NULL);
+        } else {
+            FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_NOOP", NULL);
+        }
 
         /*
          * traverse next fundef

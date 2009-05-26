@@ -24,15 +24,14 @@
 #endif /* SAC_C_EXTERN */
 
 #ifndef SAC_SIMD_COMPILATION
-
 #if SAC_MUTC_MACROS
 
-#define SAC_RuntimeError(...)
-#define SAC_RuntimeError_Mult(...)
-#define SAC_RuntimeErrorLine(...)
-#define SAC_RuntimeWarning(...)
-#define SAC_PrintShape(...)
-#define SAC_Print(...)
+#define SAC_RuntimeError(...) SAC_Print (__VA_ARGS__)
+#define SAC_RuntimeError_Mult(...) 0
+#define SAC_RuntimeErrorLine(line, ...) SAC_RuntimeError (__VA_ARGS__)
+#define SAC_RuntimeWarning(...) SAC_Print (__VA_ARGS__)
+#define SAC_PrintShape(...) 0
+#define SAC_Print(format, ...) 0
 
 #else
 

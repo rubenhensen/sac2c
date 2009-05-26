@@ -163,7 +163,7 @@ ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char 
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
     INDENT;
-    fprintf (global.outfile, "SAC_MUTC_DECL_THREADFUN2 ");
+    fprintf (global.outfile, "SAC_MUTC_START_DEF_THREADFUN2 ");
 
     fprintf (global.outfile, "( %s, , ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
