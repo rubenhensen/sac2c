@@ -1,15 +1,6 @@
 #!/bin/sh
 
-#
-# This obviously is not the real configure script. 
-# That resides in ./setup.
-#
-# We use this script to move all configure related files
-# into a dedicated subdirectory rather than flooding the
-# project root directory.
-#
-
 cd setup
 ./configure
-cp sac2crc ..
+
 

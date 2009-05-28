@@ -140,6 +140,16 @@ AC_SUBST(CB, $CB)
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()
 
+dnl check whether yacc really exists
+
+if [ test "$YACC" = "yacc" ]; then
+  AC_CHECK_PROGS(YACCE, [yacc], [!fail])
+  if [ test  "$YACCE" != "yacc" ]; then
+    AC_MSG_ERROR([Cannot find usable bison/yacc.])
+  else 
+    AC_MSG_NOTICE([val: $YACCE])
+  fi
+fi
 
 dnl
 dnl check whether a non yacc works
@@ -167,6 +177,11 @@ fi
 
 dnl search for flex or lex
 AC_PROG_LEX()
+
+dnl check whether lex really exists
+if [ test "$LEX" != "lex" -a "$LEX" != "flex" ]; then
+   AC_MSG_ERROR([Cannot find usable flex/lex.])
+fi
 
 dnl search for xlst engine
 AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
