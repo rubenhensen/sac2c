@@ -263,21 +263,21 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
 
     ivavis = ID_AVIS (id);
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ivavis)));
+    if (isSAAMode ()) {
+        AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (ivavis));
+        AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (ivavis));
+    }
     *vardecs = TBmakeVardec (avis, *vardecs);
 
     args = TBmakeExprs (id, TBmakeExprs (minv, TBmakeExprs (maxv, NULL)));
     nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                    TBmakePrf (F_attachminmax, args)),
                         NULL);
-    *preassigns = TCappendAssign (*preassigns, nas);
     AVIS_SSAASSIGN (avis) = nas;
+    *preassigns = TCappendAssign (*preassigns, nas);
+
     AVIS_MINVAL (avis) = ID_AVIS (minv);
     AVIS_MAXVAL (avis) = ID_AVIS (maxv);
-
-    if (isSAAMode ()) {
-        AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (ivavis));
-        AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (ivavis));
-    }
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (ivavis)));

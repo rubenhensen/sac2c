@@ -83,7 +83,7 @@ IVEXCdoIndexVectorExtremaCleanup (node *syntax_tree)
  *
  * @fn node *IVEXCwith(node *arg_node, info *arg_info)
  *
- * @brief  Resets N_with fields no longer needed by SWLF.
+ * @brief  Resets N_with fields no longer needed by EWLF.
  *
  *****************************************************************************/
 node *
@@ -92,6 +92,25 @@ IVEXCwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEXCwith");
 
     WITH_ISEXTREMAINSERTED (arg_node) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVEXCprf(node *arg_node, info *arg_info)
+ *
+ * @brief  Resets N_prf fields no longer needed by EWLF
+ *
+ *****************************************************************************/
+node *
+IVEXCprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEXCprf");
+
+    PRF_SELISSUEDDATAFLOWGUARD (arg_node) = FALSE;
+    PRF_ATTACHMINMAXISSUED (arg_node) = FALSE;
+    PRF_DONOTATTACHMINMAX (arg_node) = FALSE;
 
     DBUG_RETURN (arg_node);
 }

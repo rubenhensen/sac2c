@@ -100,6 +100,7 @@ struct INFO {
     node *maxval;
     node *preassigns;
     node *vardecs;
+    node *curwith;
 };
 
 /**
@@ -110,6 +111,7 @@ struct INFO {
 #define INFO_MAXVAL(n) ((n)->maxval)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_CURWITH(n) ((n)->curwith)
 
 static info *
 MakeInfo ()
@@ -125,6 +127,7 @@ MakeInfo ()
     INFO_MAXVAL (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_CURWITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -199,18 +202,21 @@ IVEXPdoIndexVectorExtremaPropModule (node *arg_node)
  *           arg_info: Your basic arg_info node.
  *           arrxrho: The frame shape for the N_array.
  * @result:
- *           The N_id for the shiny new N_array.
+ *           The N_avis for the shiny new N_array.
  *
  *****************************************************************************/
 static node *
 makeNarray (node *minmax, info *arg_info, int arrxrho)
 {
-    node *res;
     node *resavis;
-    node *resassign;
+    node *narr;
+    node *zavis;
 
     DBUG_ENTER ("makeNarray");
-    res = TCmakeIntVector (TBmakeExprs (TBmakeNum (arrxrho), NULL));
+
+    narr = TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
+                        SHcreateShape (1, arrxrho), minmax);
+
     resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                     SHcreateShape (1, arrxrho)));
     if (isSAAMode ()) {
@@ -221,11 +227,9 @@ makeNarray (node *minmax, info *arg_info, int arrxrho)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
 
-    resassign = TBmakeAssign (TBmakeLet (TBmakeIds (resavis, NULL), res), NULL);
-    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), resassign);
-    AVIS_SSAASSIGN (resavis) = resassign;
-
-    DBUG_RETURN (resavis);
+    zavis = SWLFIflattenExpression (narr, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), resavis);
+    DBUG_RETURN (zavis);
 }
 
 /******************************************************************************
@@ -411,12 +415,12 @@ PropagateNarray (node *arg_node, info *arg_info)
         /*     V' = [I, J, K];
          *     V'' = _attachminmax( V', minv, maxv);
          */
-        vprime = SWLFIflattenExpression (v, &INFO_VARDECS (arg_info),
+        vprime = SWLFIflattenExpression (DUPdoDupTree (v), &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info), lhsavis);
 
-        vprimeprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
-                                                    vprime, &INFO_VARDECS (arg_info),
-                                                    &INFO_PREASSIGNS (arg_info)));
+        vprimeprime = TBmakeId (
+          IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), TBmakeId (vprime),
+                              &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info)));
 
         /*
          *       V = V'';
@@ -496,20 +500,12 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         z = (NULL != INFO_MINVAL (arg_info)) && (NULL != INFO_MAXVAL (arg_info));
         break;
 
-        /* The common cases of offset indexing come here. */
-#ifdef CODINGTIME
+    /* These cases are all dyadic functions */
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
     case F_add_VxV:
 
-#endif // CODINGTIME
-    case F_sub_SxS:
-    case F_sub_SxV:
-    case F_sub_VxS:
-    case F_sub_VxV:
-
-#ifdef CODINGTIME
     case F_and_SxS:
     case F_and_SxV:
     case F_and_VxS:
@@ -535,7 +531,11 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
     case F_max_VxS:
     case F_max_VxV:
 
-#endif  // CODINGTIME
+    case F_sub_SxS:
+    case F_sub_SxV:
+    case F_sub_VxS:
+    case F_sub_VxV:
+
         /* This is dumb. Should use prf_info.mac table. */
 
         /*  The result is known not to have extrema.
@@ -552,14 +552,12 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
             if (arg1c && (PRF_ATTACHMINMAXISSUED (arg_node))
                 && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG2 (arg_node))))
                 && (isPrfArgHasKnownExtrema (PRF_ARG2 (arg_node), arg_info))) {
-                DBUG_PRINT ("IVEXP", ("we are getting closer const|arg"));
                 z = TRUE;
             }
 
             if (arg2c && (PRF_ATTACHMINMAXISSUED (arg_node))
                 && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node))))
                 && (isPrfArgHasKnownExtrema (PRF_ARG1 (arg_node), arg_info))) {
-                DBUG_PRINT ("IVEXP", ("we are getting closer arg|const"));
                 z = TRUE;
             }
 
@@ -587,7 +585,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_PRINT ("IVEXP", ("Skipping an N_prf"));
+        break;
     }
 
     DBUG_RETURN (z);
@@ -670,12 +668,47 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
     rhs = LET_EXPR (arg_node);
     z = arg_node;
 
-    if ((N_prf == NODE_TYPE (rhs))) {
+    if ((N_prf == NODE_TYPE (rhs)) && (!PRF_ATTACHMINMAXISSUED (rhs))) {
         switch
             PRF_PRF (rhs)
-            {
+            { /* sheep vs. goats - ignore oddball N_prfs.*/
+            default:
+                break;
 
+                /* These cases are all dyadic functions */
             case F_sub_SxS:
+            case F_sub_SxV:
+            case F_sub_VxS:
+            case F_sub_VxV:
+            case F_add_SxS:
+            case F_add_SxV:
+            case F_add_VxS:
+            case F_add_VxV:
+
+            case F_and_SxS:
+            case F_and_SxV:
+            case F_and_VxS:
+            case F_and_VxV:
+
+            case F_or_SxS:
+            case F_or_SxV:
+            case F_or_VxS:
+            case F_or_VxV:
+
+            case F_mul_SxS:
+            case F_mul_SxV:
+            case F_mul_VxS:
+            case F_mul_VxV:
+
+            case F_min_SxS:
+            case F_min_SxV:
+            case F_min_VxS:
+            case F_min_VxV:
+
+            case F_max_SxS:
+            case F_max_SxV:
+            case F_max_VxS:
+            case F_max_VxV:
 
                 arg1c = COisConstant (PRF_ARG1 (rhs));
                 arg2c = COisConstant (PRF_ARG2 (rhs));
@@ -686,7 +719,8 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     if (isAvisHasExtrema (ID_AVIS (nca)) && (!PRF_DONOTATTACHMINMAX (rhs))
                         && (!PRF_ATTACHMINMAXISSUED (rhs))) {
 
-                        DBUG_PRINT ("IVEXP", ("GOta introduce subtract."));
+                        DBUG_PRINT ("IVEXP", ("Introducing N_prf extrema calc for %s",
+                                              AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
 
                         PRF_ATTACHMINMAXISSUED (rhs) = TRUE;
 
@@ -699,9 +733,8 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                                     ? DUPdoDupTree (PRF_ARG2 (rhs))
                                     : TBmakeId (AVIS_MINVAL (ID_AVIS (PRF_ARG2 (rhs))));
 
-                        minv = TBmakeExprs (TCmakePrf2 (PRF_PRF (rhs), minarg1, minarg2),
-                                            NULL);
-                        PRF_DONOTATTACHMINMAX (EXPRS_EXPR (minv)) = TRUE;
+                        minv = TCmakePrf2 (PRF_PRF (rhs), minarg1, minarg2);
+                        PRF_DONOTATTACHMINMAX (minv) = TRUE;
 
                         minv
                           = SWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
@@ -715,40 +748,80 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                                     ? DUPdoDupTree (PRF_ARG2 (rhs))
                                     : TBmakeId (AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (rhs))));
 
-                        maxv = TBmakeExprs (TCmakePrf2 (PRF_PRF (rhs), maxarg1, maxarg2),
-                                            NULL);
-                        PRF_DONOTATTACHMINMAX (EXPRS_EXPR (maxv)) = TRUE;
+                        maxv = TCmakePrf2 (PRF_PRF (rhs), maxarg1, maxarg2);
+                        PRF_DONOTATTACHMINMAX (maxv) = TRUE;
 
                         maxv
                           = SWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                                     &INFO_PREASSIGNS (arg_info), lhsavis);
+                    }
 
-                        /* KLUDGE, perhaps, to be replaced by proper code */
-                        if (F_sub_SxS == PRF_PRF (rhs)) {
+                    switch
+                        PRF_PRF (rhs)
+                        {
+
+                        /* These cases are all dyadic functions */
+                        case F_add_SxS:
+                        case F_add_SxV:
+                        case F_add_VxS:
+                        case F_add_VxV:
+
+                        case F_and_SxS:
+                        case F_and_SxV:
+                        case F_and_VxS:
+                        case F_and_VxV:
+
+                        case F_or_SxS:
+                        case F_or_SxV:
+                        case F_or_VxS:
+                        case F_or_VxV:
+
+                        case F_mul_SxS:
+                        case F_mul_SxV:
+                        case F_mul_VxS:
+                        case F_mul_VxV:
+
+                        case F_min_SxS:
+                        case F_min_SxV:
+                        case F_min_VxS:
+                        case F_min_VxV:
+
+                        case F_max_SxS:
+                        case F_max_SxV:
+                        case F_max_VxS:
+                        case F_max_VxV:
+
                             z = TBmakeId (
-                              IVEXIattachExtrema (maxv, minv, DUPdoDupNode (nca),
+                              IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
+                                                  DUPdoDupNode (nca),
                                                   &INFO_VARDECS (arg_info),
                                                   &INFO_PREASSIGNS (arg_info)));
-                        } else {
+                            break;
+
+                        case F_sub_SxS:
+                        case F_sub_SxV:
+                        case F_sub_VxS:
+                        case F_sub_VxV:
                             z = TBmakeId (
-                              IVEXIattachExtrema (minv, maxv, DUPdoDupNode (nca),
+                              IVEXIattachExtrema (TBmakeId (maxv), TBmakeId (minv),
+                                                  DUPdoDupNode (nca),
                                                   &INFO_VARDECS (arg_info),
                                                   &INFO_PREASSIGNS (arg_info)));
+                            break;
+
+                        default:
+                            break;
                         }
-                        DBUG_PRINT ("IVEXP", ("attached Extrema for subtract."));
-                        if (arg1c) {
-                            FREEdoFreeTree (PRF_ARG2 (LET_EXPR (arg_node)));
-                            PRF_ARG2 (LET_EXPR (arg_node)) = z;
-                        } else {
-                            FREEdoFreeTree (PRF_ARG1 (LET_EXPR (arg_node)));
-                            PRF_ARG1 (LET_EXPR (arg_node)) = z;
-                        }
+
+                    DBUG_PRINT ("IVEXP", ("attached Extrema for prf."));
+                    if (arg1c) {
+                        FREEdoFreeNode (PRF_ARG2 (LET_EXPR (arg_node)));
+                        PRF_ARG2 (LET_EXPR (arg_node)) = z;
+                    } else {
+                        FREEdoFreeNode (PRF_ARG1 (LET_EXPR (arg_node)));
+                        PRF_ARG1 (LET_EXPR (arg_node)) = z;
                     }
                 }
-                break;
-                /* add more cases here!  */
-            default:
-                break;
             }
     }
 
@@ -827,8 +900,8 @@ IVEXPlet (node *arg_node, info *arg_info)
     DBUG_PRINT ("IVEXP", ("Found let for %s", AVIS_NAME (lhsavis)));
     rhs = LET_EXPR (arg_node);
 
-    /* If we know the answer already, do nothing */
-    if (!isResultHasExtrema (arg_node, arg_info)) {
+    /* If we know the answer already, or not inside WL, do nothing */
+    if ((NULL != INFO_CURWITH (arg_info)) && (!isResultHasExtrema (arg_node, arg_info))) {
 
         switch (NODE_TYPE (rhs)) {
         case N_id:
@@ -903,6 +976,7 @@ IVEXPlet (node *arg_node, info *arg_info)
 
         case N_array:
             arg_node = PropagateNarray (arg_node, arg_info);
+
             break;
 
         default:
@@ -921,15 +995,25 @@ IVEXPlet (node *arg_node, info *arg_info)
  *   node *IVEXPwith( node *arg_node, info *arg_info)
  *
  * description: Into the depths
+ *  We have to save current WL pointer, because we don't want
+ *  IVEXPlet running off to attempt extrema introduction outside
+ *  of a WL.
  *
  ******************************************************************************/
 node *
 IVEXPwith (node *arg_node, info *arg_info)
 {
 
+    node *oldwith;
+
     DBUG_ENTER ("IVEXPwith");
 
+    oldwith = INFO_CURWITH (arg_info);
+    INFO_CURWITH (arg_info) = arg_node;
+
     arg_node = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    INFO_CURWITH (arg_info) = oldwith;
 
     DBUG_RETURN (arg_node);
 }

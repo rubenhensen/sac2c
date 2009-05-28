@@ -569,7 +569,9 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
 
           SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
                     SCCdoStripConformityChecks,
-                    global.optimize.doswlf || global.insertconformitychecks, opt)
+                    global.doivext || global.optimize.doswlf
+                      || global.insertconformitychecks,
+                    opt)
 
             SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
                       IVESPLITdoSplitSelections, global.optimize.doive, opt)

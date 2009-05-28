@@ -231,62 +231,31 @@ SWLFIdoSymbolicWithLoopFolding (node *arg_node)
  *                           will have a new assign appended to it.
  *           node *restypeavis: an N_avis with the same type as TMP.
  *
- *   @return node *node:      N_id node for flattened node
+ *   @return node *node:      N_avis node for flattened node
+ *
  ******************************************************************************/
 node *
 SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                         node *restypeavis)
 {
-    node *res;
     node *avis;
     node *nas;
-    node *prf;
-    node *id;
 
     DBUG_ENTER ("SWLFIflattenExpression");
-    res = arg_node;
-    switch (NODE_TYPE (arg_node)) {
-    case N_exprs:
-        prf = EXPRS_EXPR (arg_node);
-        DBUG_ASSERT (NULL == EXPRS_NEXT (arg_node),
-                     "SWFIflattenExpression did not expect fancy N_exprs");
-        break;
 
-    case N_array:
-        prf = arg_node;
-        break;
-    default:
-        DBUG_ASSERT (FALSE, ("SWLFIflattenExpression is broken."));
-        break;
+    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (restypeavis)));
+    *vardecs = TBmakeVardec (avis, *vardecs);
+    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
+    *preassigns = TCappendAssign (*preassigns, nas);
+    AVIS_SSAASSIGN (avis) = nas;
+    if (isSAAMode ()) {
+        AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
+        AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
     }
+    DBUG_PRINT ("SWLFI",
+                ("SWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
 
-    switch (NODE_TYPE (arg_node)) {
-
-    case N_exprs:
-    case N_array:
-        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (restypeavis)));
-        *vardecs = TBmakeVardec (avis, *vardecs);
-        nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (prf)), NULL);
-        *preassigns = TCappendAssign (*preassigns, nas);
-        AVIS_SSAASSIGN (avis) = nas;
-        if (isSAAMode ()) {
-            AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
-            AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
-        }
-        id = TBmakeId (avis);
-        DBUG_PRINT ("SWLFI",
-                    ("SWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
-        FREEdoFreeTree (arg_node);
-        res = id;
-
-    case N_id:
-        break;
-
-    default:
-        DBUG_PRINT ("SWLFI", ("SWLFIflattenExpression missed a case."));
-    }
-
-    DBUG_RETURN (res);
+    DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
@@ -319,7 +288,7 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  * @params foldeepart: An N_part of the foldeeWL.
  * @params arg_info.
  * @params boundnum: 1 for bound1, 2 for bound2
- * @return An N_exprs containing the two intersect expressions.
+ * @return An N_avis pointing to an N_exprs for the two intersect expressions.
  *
  *****************************************************************************/
 
@@ -332,6 +301,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *expn;
     node *idxavis;
     node *idxassign;
+    node *resavis;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
@@ -364,13 +334,12 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
      * and
      *   (k*folderbound2) + offset
      */
-    expn = TBmakeExprs (TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV,
-                                    TBmakeId (bounder), DUPdoDupTree (boundee)),
-                        NULL);
-    expn = SWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
-                                   &INFO_PREASSIGNS (arg_info), bounder);
+    expn = TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, TBmakeId (bounder),
+                       DUPdoDupTree (boundee));
+    resavis = SWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info), bounder);
 
-    DBUG_RETURN (expn);
+    DBUG_RETURN (resavis);
 }
 
 /** <!--********************************************************************-->
@@ -401,7 +370,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
     node *partn;
     node *foldeeassign;
     node *foldeewl;
-    node *curid;
+    node *curavis;
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
@@ -410,8 +379,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
     partn = WITH_PART (foldeewl);
 
     while (NULL != partn) {
-        curid = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum);
-        expn = TCappendExprs (expn, TBmakeExprs (curid, NULL));
+        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum);
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         partn = PART_NEXT (partn);
     }
 
@@ -1004,7 +973,6 @@ SWLFImodarray (node *arg_node, info *arg_info)
  *
  * description:
  *
- *   FIXME: Probably not needed???
  ******************************************************************************/
 node *
 SWLFIlet (node *arg_node, info *arg_info)
@@ -1021,7 +989,6 @@ SWLFIlet (node *arg_node, info *arg_info)
  *
  * description:
  *
- *   FIXME: Probably not needed???
  ******************************************************************************/
 node *
 SWLFIblock (node *arg_node, info *arg_info)

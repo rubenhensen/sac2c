@@ -6,58 +6,56 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup swlf Symbolic With-Loop Folding
+ * @defgroup swlf Extended With-Loop Folding
  *
  * @terminology:
  *        Foldee-WL, or foldee: The WL that will no longer
  *        exist after this phase completes. In the example
- *        below, A is the foldee-WL.
+ *        below, A is the foldeeWL.
  *
  *        Folder-WL: the WL that will absorb the block(s) from
- *        the foldee-WL. In the example below, B is the folder-WL.
+ *        the foldeeWL. In the example below, B is the folderWL.
  *
  * @brief Extended With-Loop Folding
- *        This performs WLF on arrays that are not foldable
+ *        This performs WLF on some arrays that are not foldable
  *        by WLF.
  *
- *        The features of extended SWLF are:
+ *        The features of EWLF are:
  *
  *            - Ability to fold arrays whose shapes are not
  *              known statically. Specifically, if the index
- *              set of the folder-WL is known to be identical to,
- *              or a subset of, the index set of the foldee-WL,
+ *              set of the folderWL is known to be identical to,
+ *              or a subset of, the index set of the foldeeWL,
  *              folding will occur.
  *
- *              FIXME: This will have to be
- *              updated once the indices can accept offsets.
+ *           - the foldeeWL must have an SSAASSIGN.
  *
- *           - the foldee-WL must have an SSAASSIGN.
- *
- *           - the foldee-WL must have a NEEDCOUNT of 1. I.e.,
- *             there must be no other references to the foldee-WL.
+ *           - the foldeeWL must have a NEEDCOUNT of 1. I.e.,
+ *             there must be no other references to the foldeeWL.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
  *             This code includes a little trick to convert a modarray(foldee)
  *             into a genarray(shape(foldee)), but this happens
  *             after any folding. Hence, there is a kludge to
- *             allow a NEEDCOUNT of 2 if there is a modarray folder-WL
+ *             allow a NEEDCOUNT of 2 if there is a modarray folderWL
  *             present.
  *
- *           - the foldee-WL must have a DEPDEPTH value of 1??
+ *           - the foldeeWL must have a DEPDEPTH value of 1??
  *             Not sure what this means yet...
  *
- *           - The folder-WL must refer to the foldee WL via
+ *           - The folderWL must refer to the foldee WL via
  *              _sel_VxA_(idx, foldee)
- *             and idx must be the folder-WL's WITHID.
+ *             and idx must be the folderWL's WITHID, or a
+ *             linear function thereof.
  *
- *           - The foldee-WL operator is a genarray or modarray
+ *           - The foldeeWL operator is a genarray or modarray
  *             (NO folds, please).
  *
  *           - The WL is a single-operator WL. (These should have been
  *             eliminated by phase 10, I think.)
  *
- *           - The generator of the folder- WL matches
- *             the generator of the foldee-WL, or is a subset
+ *           - The index set of the folderWL's partition matches
+ *             the generator of the foldeeWL, or is a subset
  *             of it. Note that this implies that
  *             the WL-bounds are the same length, which
  *             may not be the case. Consider this example:
@@ -66,17 +64,13 @@
  *               z = with([0,0], <= iv < shape(x)) :  x[iv];
  *
  *             The bounds of x are int[1], while the bounds of z are int[2].
- *             It is important that SWLFI not generate a partition
+ *             It is important that EWLFI not generate a partition
  *             intersection expression such as:
  *
  *              _swlfi_789 = _max_VxV_( bound1(x), bound1(z));
  *
  *             because TUP will get very confused about the length
  *             error. As I did...
- *
- *         This phase now must run when SAA information is available,
- *         because I intend to kill the dicey code that attempted to make
- *         it work in the absence of -dosaa information.
  *
  * An example for Symbolic With-Loop Folding is given below:
  *
@@ -204,9 +198,9 @@
 struct INFO {
     node *fundef;
     node *part;
-    /* This is the current partition in the folder-WL. */
+    /* This is the current partition in the folderWL. */
     node *wl;
-    /* This is the current folder-WL. */
+    /* This is the current folderWL. */
     int level;
     /* This is the current nesting level of WLs */
     node *swlfoldablefoldeepart;
@@ -337,211 +331,6 @@ isPrfArg1DataFlowGuard (node *arg_node)
  *
  *****************************************************************************/
 
-#ifdef DICEYCODE
-/** <!--********************************************************************-->
- *
- * @fn static bool sameWL( node *arg2, node *foldeewl)
- *
- * @brief Predicate to check if arg2 is the result of foldewl
- *
- * @param arg2: an N_id that may be the result of the WL foldeewl.
- *        foldeewl: an N_with.
- *
- * @return Boolean TRUE if N_id was formed by foldeewl
- *
- *****************************************************************************/
-static bool
-sameWL (node *arg2, node *foldeewl)
-{
-    bool z;
-    node *idas;
-
-    DBUG_ENTER ("sameWL");
-
-    idas = AVIS_SSAASSIGN (ID_AVIS (arg2));
-    z = (NULL != idas) && (foldeewl == LET_EXPR (ASSIGN_INSTR (idas)));
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool checkElement( node *curel, int i, node *foldeewl)
- *
- * @brief Vets one element of an N_array generator bound.
- *
- * @param curel: an N_assign node from an ARRAY_AELEMS.
- *               If it's an N_num, we fail, because this case
- *               should be caught elsewhere.
- *        i:     the index into the ARRAY_AELEMS node.
- *               Hence, the index into the bound's shape vector
- *        foldeewl: the WL that is intended to be folded out of
- *               existence.
- *
- * @return Boolean TRUE if the generator bound is of the form:
- *                 _idx_shape_sel( i, arr)
- *                 where i is the appropriate index, and
- *                 arr is the foldee WL.
- *
- *****************************************************************************/
-static bool
-checkElement (node *curel, int i, node *foldeewl)
-{
-    node *el;
-    node *arg1 = NULL;
-    constant *arg1fs = NULL;
-    node *arg2 = NULL;
-    bool z = FALSE;
-
-    DBUG_ENTER ("checkElement");
-
-    if (N_id == NODE_TYPE (curel)) {
-        el = AVIS_SSAASSIGN (ID_AVIS (curel));
-        if (NULL != el) {
-            el = LET_EXPR (ASSIGN_INSTR (el));
-            if (PM (
-                  PMvar (&arg2, PMintConst (&arg1fs, &arg1, PMprf (F_idx_shape_sel, el))))
-                && (i == COconst2Int (arg1fs)) && /* Constant match */
-                sameWL (arg2, foldeewl)) {
-                z = TRUE;
-            }
-        }
-    }
-
-    arg1fs = (NULL != arg1fs) ? COfreeConstant (arg1fs) : NULL;
-
-    if (z) {
-        DBUG_PRINT ("SWLF", ("checkElement can fold %s", AVIS_NAME (ID_AVIS (arg2))));
-    } else {
-        DBUG_PRINT ("SWLF", ("checkElement can not fold %s", AVIS_NAME (ID_AVIS (arg2))));
-        DBUG_PRINT ("SWLF", ("checkElement can fold %s", AVIS_NAME (ID_AVIS (arg2))));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- * @fn static bool scalarCell( node *foldeewl)
- *
- * @brief Check that the foldee WL is either a modarray,
- *        or a genarray with scalar default cell.
- *
- * @param foldeewl: the foldee WL N_id node
- *
- * @result: TRUE if WL is modarray or has scalar (or NULL) default cell.
- *
- *****************************************************************************/
-static bool
-scalarCell (node *foldeewl)
-{
-    node *def;
-    bool z;
-
-    DBUG_ENTER ("scalarCell");
-
-    z = N_modarray == NODE_TYPE (WITH_WITHOP (foldeewl));
-
-    if (N_genarray == NODE_TYPE (WITH_WITHOP (foldeewl))) {
-        def = GENARRAY_DEFAULT (WITH_WITHOP (foldeewl));
-        z = z || (NULL == def)
-            || ((N_id == NODE_TYPE (def) && TYisScalar (AVIS_TYPE (ID_AVIS (def)))));
-        /* FIXME: above line may be less than swell if def is
-         * an N_num or other scalar type
-         */
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool shapeMatchesArray( node *fa, node *fb, node *foldeewl)
- *
- * @brief Ensure that GENERATOR nodes fa and fb match non-trivially.
- *        fa and fb are not the same, nor do they have identical
- *        ancestors.
- *
- *        We do this by showing that fa == shape(foldeewl).
- *
- * @param fa: the folder WL GENERATOR N_id node.
- *        fb: the foldee WL GENERATOR N_id node.
- *        foldeewl: The WL that we want to fold out of existence.
- *
- *             If all is well, fa's ancestor is an N_array that
- *             is shape(foldeewl), taking the form:
- *
- *               fa = [ arr0, arr1, ...]
- *
- *             with these properties:
- *
- *             1.
- *                  arr0 = _idx_shape_sel(0, foldeewl);
- *                  arr1 = _idx_shape_sel(1, foldeewl);
- *                  arr2 = _idx_shape_sel(2, foldeewl);
- *                  ...
- *
- *             2. dim(fb) == shape(fa)[0].
- *
- *             3. The default cell shape of a genarray foldewl
- *                must be scalar, or the foldewl must be a modarray.
- *
- *             4. PRF_ARG2 of all the idx_shape_sel ops must be fb.
- *
- *
- * @return Boolean TRUE if fa == shape( fb).
- *
- *****************************************************************************/
-static bool
-shapeMatchesArray (node *fa, node *fb, node *foldeewl)
-{
-    node *nfa = NULL;
-    constant *nfafs = NULL;
-    node *nfb = NULL;
-    constant *nfbfs = NULL;
-    node *nextel;
-    node *curel;
-    bool mat = TRUE;
-    int rnk;
-    int i;
-
-    DBUG_ENTER ("shapeMatchesArray");
-
-    if (PM (PMarray (&nfbfs, &nfb, fb))) {
-        COfreeConstant (nfbfs);
-    } else {
-        DBUG_ASSERT (FALSE, ("shapeMatches array did not find N_array for fb"));
-    }
-
-    /* 1. performed partly by PM:  fa is has an N_array ancestor */
-    if (PM (PMarray (&nfafs, &nfa, fa))) {
-        rnk = SHgetUnrLen (ARRAY_FRAMESHAPE (nfa));
-        COfreeConstant (nfafs);
-
-        /* 2. dim(fb) == shape(fa)[0] */
-        if (rnk == TYgetDim (ARRAY_ELEMTYPE (nfb))) {
-            nextel = ARRAY_AELEMS (nfa);
-            for (i = 0; i < rnk; i++) {
-                DBUG_ASSERT (NULL != nextel, ("shapeMatchesArray saw corrupt N_array"));
-                curel = EXPRS_EXPR (nextel);
-                /* 1. idx_shape_sel checks performed by checkElement */
-                /* 4. performed by checkElement */
-                mat = mat && checkElement (curel, i, foldeewl);
-                nextel = EXPRS_NEXT (nextel);
-            }
-            /* 3. check for genarray scalar default cell, or modarray */
-            mat = mat && scalarCell (foldeewl);
-        } else {
-            mat = FALSE;
-        }
-
-    } else {
-        mat = FALSE;
-    }
-
-    DBUG_RETURN (mat);
-}
-#endif // DICEYCODE
-
 /** <!--********************************************************************-->
  *
  * @fn bool matchGeneratorField( node *fa, node *fb, node *foldeewl)
@@ -598,9 +387,6 @@ matchGeneratorField (node *fa, node *fb)
     } else {
         DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMarray"));
     }
-#ifdef DICEYCODE
-    mat = shapeMatchesArray (fa, fb, foldeewl);
-#endif // DICEYCODE
     DBUG_RETURN (mat);
 }
 
@@ -644,18 +430,18 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *
  * @brief check if a WL has a legal foldee partition.
  *        The requirements for folding are:
- *           - The WL foldee-WL operator is a genarray or modarray.
+ *           - The WL foldeeWL operator is a genarray or modarray.
  *
  *           - The WL is a single-operator WL.
  *
- *           - The current partition of the folder-WL matches some generator
- *               of that of the foldee-WL, or is a subset
+ *           - The current partition of the folderWL matches some generator
+ *               of that of the foldeeWL, or is a subset
  *               of it.
  *
  *           - The sel(idx,y) idx is the WITHID of the
  *             putative foldee, or a direct descendant of same.
  *
- * @params *foldee:  the putative foldee-WL: the WL that
+ * @params *foldee:  the putative foldeeWL: the WL that
  *                 would be subsumed into the one at "part".
  *         *index: The idx in sel(idx, y) of the WL that is selecting
  *                 from the result of WL.
@@ -1088,7 +874,7 @@ SWLFids (node *arg_node, info *arg_info)
  * @fn node *SWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all X[iv] primitives to see if iv is current folder-WL iv.
+ *   Examine all X[iv] primitives to see if iv is current folderWL iv.
  *   If the iv does not have an SSAASSIGN, it means iv is a WITHID,
  *   and so SWLFI has not yet inserted an F_dataflowguard for it.
  *

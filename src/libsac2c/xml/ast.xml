@@ -255,6 +255,7 @@
         <travuser>
           <node name="With" />
           <node name="Avis" />
+          <node name="Prf" />
         </travuser>
       </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
