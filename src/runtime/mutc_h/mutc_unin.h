@@ -18,18 +18,33 @@
                                                            T_USG (PAR, T_EMPTY))))))),   \
                        int))                                                             \
     {                                                                                    \
-        SAC_ND_DECL__DESC (                                                              \
+        int SAC_ND_A_MIRROR_DIM (                                                        \
           (tmp,                                                                          \
            T_SHP (AKD,                                                                   \
                   T_HID (HID,                                                            \
-                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY)))))))) \
+                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
+          = 1;                                                                           \
+        int SAC_ND_A_MIRROR_SIZE (                                                       \
+          (tmp,                                                                          \
+           T_SHP (AKD,                                                                   \
+                  T_HID (HID,                                                            \
+                         T_UNQ (NUQ,                                                     \
+                                T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY))))))));     \
+        SAC_ND_DECL__DESC ((tmp,                                                         \
+                            T_SHP (AKD,                                                  \
+                                   T_HID (HID,                                           \
+                                          T_UNQ (NUQ,                                    \
+                                                 T_REG (INT,                             \
+                                                        T_SCO (GLO,                      \
+                                                               T_USG (NON,               \
+                                                                      T_EMPTY))))))), )  \
         SAC_ND_DECL__DATA ((tmp,                                                         \
                             T_SHP (AKD,                                                  \
                                    T_HID (HID,                                           \
                                           T_UNQ (NUQ,                                    \
                                                  T_REG (INT,                             \
                                                         T_SCO (GLO,                      \
-                                                               T_USG (PAR,               \
+                                                               T_USG (NON,               \
                                                                       T_EMPTY))))))),    \
                            double, )                                                     \
         SAC_ND_ALLOC__DESC ((tmp,                                                        \
@@ -38,7 +53,7 @@
                                            T_UNQ (NUQ,                                   \
                                                   T_REG (INT,                            \
                                                          T_SCO (GLO,                     \
-                                                                T_USG (PAR,              \
+                                                                T_USG (NON,              \
                                                                        T_EMPTY))))))),   \
                             1)                                                           \
         SAC_ND_SET__RC ((tmp,                                                            \
@@ -47,39 +62,56 @@
                                        T_UNQ (NUQ,                                       \
                                               T_REG (INT,                                \
                                                      T_SCO (GLO,                         \
-                                                            T_USG (PAR, T_EMPTY))))))),  \
+                                                            T_USG (NON, T_EMPTY))))))),  \
                         1)                                                               \
-        SAC_ND_DESC_SIZE (                                                               \
+        SAC_ND_A_MIRROR_SIZE (                                                           \
           (tmp,                                                                          \
            T_SHP (AKD,                                                                   \
                   T_HID (HID,                                                            \
-                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY)))))))) \
-          = SAC_ND_A_FIELD (                                                             \
-            (in,                                                                         \
-             T_SHP (SCL,                                                                 \
-                    T_HID (HID,                                                          \
-                           T_UNQ (NUQ,                                                   \
-                                  T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY))))))));   \
-        SAC_ND_DESC_SHAPE ((tmp,                                                         \
-                            T_SHP (AKD,                                                  \
-                                   T_HID (HID,                                           \
-                                          T_UNQ (NUQ,                                    \
-                                                 T_REG (INT,                             \
-                                                        T_SCO (GLO,                      \
-                                                               T_USG (PAR,               \
-                                                                      T_EMPTY))))))),    \
-                           0)                                                            \
-          = SAC_ND_A_FIELD (                                                             \
-            (in,                                                                         \
-             T_SHP (SCL,                                                                 \
-                    T_HID (HID,                                                          \
-                           T_UNQ (NUQ,                                                   \
-                                  T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY))))))));   \
+                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
+          = SAC_ND_READ ((in,                                                            \
+                          T_SHP (SCL,                                                    \
+                                 T_HID (HID,                                             \
+                                        T_UNQ (NUQ,                                      \
+                                               T_REG (INT,                               \
+                                                      T_SCO (GLO,                        \
+                                                             T_USG (PAR,                 \
+                                                                    T_EMPTY))))))), );   \
+        SAC_ND_A_DESC_SIZE (                                                             \
+          (tmp,                                                                          \
+           T_SHP (AKD,                                                                   \
+                  T_HID (HID,                                                            \
+                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
+          = SAC_ND_READ ((in,                                                            \
+                          T_SHP (SCL,                                                    \
+                                 T_HID (HID,                                             \
+                                        T_UNQ (NUQ,                                      \
+                                               T_REG (INT,                               \
+                                                      T_SCO (GLO,                        \
+                                                             T_USG (PAR,                 \
+                                                                    T_EMPTY))))))), );   \
+        SAC_ND_A_DESC_SHAPE ((tmp,                                                       \
+                              T_SHP (AKD,                                                \
+                                     T_HID (HID,                                         \
+                                            T_UNQ (NUQ,                                  \
+                                                   T_REG (INT,                           \
+                                                          T_SCO (GLO,                    \
+                                                                 T_USG (NON,             \
+                                                                        T_EMPTY))))))),  \
+                             0)                                                          \
+          = SAC_ND_READ ((in,                                                            \
+                          T_SHP (SCL,                                                    \
+                                 T_HID (HID,                                             \
+                                        T_UNQ (NUQ,                                      \
+                                               T_REG (INT,                               \
+                                                      T_SCO (GLO,                        \
+                                                             T_USG (PAR,                 \
+                                                                    T_EMPTY))))))), );   \
         SAC_ND_ALLOC__DATA (                                                             \
           (tmp,                                                                          \
            T_SHP (AKD,                                                                   \
                   T_HID (HID,                                                            \
-                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY)))))))) \
+                         T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
         SAC_ND_RET_out ((out,                                                            \
                          T_SHP (AKD,                                                     \
                                 T_HID (HID,                                              \
@@ -93,6 +125,6 @@
                                        T_UNQ (NUQ,                                       \
                                               T_REG (INT,                                \
                                                      T_SCO (GLO,                         \
-                                                            T_USG (PAR, T_EMPTY))))))))  \
+                                                            T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
     SAC_MUTC_END_DEF_FUN ()
