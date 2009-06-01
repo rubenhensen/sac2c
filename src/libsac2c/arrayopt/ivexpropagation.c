@@ -808,6 +808,8 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                 break;
 
             default:
+                z = NULL; /* Keep gcc happy */
+                DBUG_ASSERT (FALSE, "IVEXP missed a case.");
                 break;
             }
 
