@@ -36,6 +36,7 @@
 #include "shape.h"
 #include "constants.h"
 #include "compare_tree.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *
@@ -153,8 +154,10 @@ MakeVectAvis (char *name, node *dim)
         res = TBmakeAvis (name, TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
     }
 
-    AVIS_DIM (res) = TBmakeNum (1);
-    AVIS_SHAPE (res) = GenIntVector (DUPdoDupNode (dim));
+    if (isSAAMode ()) {
+        AVIS_DIM (res) = TBmakeNum (1);
+        AVIS_SHAPE (res) = GenIntVector (DUPdoDupNode (dim));
+    }
 
     DBUG_RETURN (res);
 }

@@ -36,6 +36,7 @@
 #include "shape.h"
 #include "constants.h"
 #include "compare_tree.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *
@@ -98,8 +99,10 @@ MakeScalarAvis (char *name)
 
     res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    AVIS_DIM (res) = TBmakeNum (0);
-    AVIS_SHAPE (res) = TCmakeIntVector (NULL);
+    if (isSAAMode ()) {
+        AVIS_DIM (res) = TBmakeNum (0);
+        AVIS_SHAPE (res) = TCmakeIntVector (NULL);
+    }
 
     DBUG_RETURN (res);
 }

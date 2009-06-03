@@ -237,6 +237,7 @@
           <node name="Let" />
           <node name="With" />
           <node name="Part" />
+          <node name="Avis" />
         </travuser>
       </traversal> 
       <traversal id="IVEXP" name="Index Variable Extrema Propagation" default="sons" include="ivexpropagation.h" >

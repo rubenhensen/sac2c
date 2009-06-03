@@ -254,6 +254,7 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     node *nas;
     node *args;
     node *ivavis;
+    node *prf;
 
     DBUG_ENTER ("IVEXIattachExtrema");
 
@@ -270,9 +271,10 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     *vardecs = TBmakeVardec (avis, *vardecs);
 
     args = TBmakeExprs (id, TBmakeExprs (minv, TBmakeExprs (maxv, NULL)));
-    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                   TBmakePrf (F_attachminmax, args)),
-                        NULL);
+
+    prf = TBmakePrf (F_attachminmax, args);
+    PRF_ATTACHMINMAXISSUED (prf) = TRUE;
+    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), prf), NULL);
     AVIS_SSAASSIGN (avis) = nas;
     *preassigns = TCappendAssign (*preassigns, nas);
 
@@ -330,13 +332,12 @@ IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
 
     *preassigns = TCappendAssign (*preassigns, zass);
     AVIS_SSAASSIGN (zavis) = zass;
+#define BOBBOISCONFUSED
 #ifdef BOBBOISCONFUSED
     AVIS_MINVAL (zavis) = zavis;
     AVIS_MAXVAL (zavis) = zavis;
-    oops
 #endif // BOBBOISCONFUSED
-      if (isSAAMode ())
-    {
+    if (isSAAMode ()) {
         AVIS_DIM (zavis) = DUPdoDupTree (AVIS_DIM (arg_node));
         AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
     }
@@ -368,7 +369,9 @@ IVEXIprintLHS (node *arg_node, info *arg_info)
     instr = ASSIGN_INSTR (arg_node);
     if (N_let == NODE_TYPE (instr)) {
         avis = IDS_AVIS (LET_IDS (instr));
+#ifdef VERBOSE
         DBUG_PRINT ("IVEXI", ("Looking at: %s", AVIS_NAME (avis)));
+#endif // VERBOSE
     }
 
     DBUG_VOID_RETURN;
@@ -491,6 +494,7 @@ generateSelect (node *arg_node, info *arg_info, int k)
     }
 
     AVIS_MINVAL (kavis) = kavis;
+#define BOBBOISCONFUSED
 #ifdef BOBBOISCONFUSED
     AVIS_MAXVAL (kavis) = kavis;
 #endif // BOBBOISCONFUSED
@@ -817,6 +821,29 @@ IVEXIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIlet");
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IVEXIavis( node *arg_node, info *arg_info)
+ *
+ * description:
+ *  Set extrema for AKV avis nodes.
+ *
+ ******************************************************************************/
+node *
+IVEXIavis (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("IVEXIavis");
+
+    if (isTYAKV (AVIS_TYPE (arg_node))) {
+        AVIS_MINVAL (arg_node) = arg_node;
+        AVIS_MAXVAL (arg_node) = arg_node;
+    }
+
     DBUG_RETURN (arg_node);
 }
 

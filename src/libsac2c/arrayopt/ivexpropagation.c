@@ -895,7 +895,11 @@ IVEXPlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEXPlet");
 
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
+
+#ifdef VERBOSE
     DBUG_PRINT ("IVEXP", ("Found let for %s", AVIS_NAME (lhsavis)));
+#endif // VERBOSE
+
     rhs = LET_EXPR (arg_node);
 
     /* If we know the answer already, or not inside WL, do nothing */
@@ -956,13 +960,15 @@ IVEXPlet (node *arg_node, info *arg_info)
              *
              */
 
-#ifdef NOCONSTANTS
+#define CONSTANTS
+#ifdef CONSTANTS
             /* This causes cvp crashes, and is probably not so good, anyway. */
+            /* but let's try it, now that extrema are exact */
             if (TYisAKV (AVIS_TYPE (lhsavis))) {
                 AVIS_MINVAL (lhsavis) = lhsavis;
                 AVIS_MAXVAL (lhsavis) = lhsavis;
             }
-#endif // NOCONSTANTS
+#endif // CONSTANTS
             break;
         /* We are unable to help these poor souls */
         case N_ap:
@@ -977,7 +983,14 @@ IVEXPlet (node *arg_node, info *arg_info)
             break;
 
         case N_array:
-            arg_node = PropagateNarray (arg_node, arg_info);
+            /* If the value is constant, this is easy */
+            lhsavis = IDS_AVIS (LET_IDS (arg_node));
+            if (TYisAKV (AVIS_TYPE (lhsavis))) {
+                AVIS_MINVAL (lhsavis) = lhsavis;
+                AVIS_MAXVAL (lhsavis) = lhsavis;
+            } else {
+                arg_node = PropagateNarray (arg_node, arg_info);
+            }
 
             break;
 
@@ -1120,7 +1133,6 @@ IVEXPfundef (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL, ("IVEXPfundef INFO_VARDECS not NULL"));
 
-    /* FIXME */ CHKdoTreeCheck (arg_node);
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
@@ -1132,7 +1144,6 @@ IVEXPfundef (node *arg_node, info *arg_info)
                             BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
         INFO_VARDECS (arg_info) = NULL;
     }
-    /* FIXME */ CHKdoTreeCheck (arg_node);
 
     DBUG_PRINT ("IVEXP", ("IVEXP in %s %s ends",
                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),

@@ -2,6 +2,17 @@
  * $Id$
  */
 
+/* FIXME:
+ *  This optimization apparently fails to catch single-trip WLs,
+ *  which arise from generator expressions of the form:
+ *
+ *         ( [:int] <= iv < [:int] ) ...
+ *
+ *  Adding thie case would be a good thing. At present, WLSIMP
+ *  does it, but it really belongs here, according to the
+ *  wisdom of the ages.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 

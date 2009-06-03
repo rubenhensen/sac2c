@@ -502,10 +502,10 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
     }
 
     if (matched) {
-        DBUG_PRINT ("SWLF", ("checkWithLoop matches"));
+        DBUG_PRINT ("SWLF", ("FindMatchingPart matches"));
     } else {
         wp = NULL;
-        DBUG_PRINT ("SWLF", ("checkWithLoop does not match"));
+        DBUG_PRINT ("SWLF", ("FindMatchingPart does not match"));
     }
 
     DBUG_RETURN (wp);
