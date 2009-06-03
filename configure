@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# This obviously is not the real configure script. 
+# This is obviously not the real configure script. 
 # That resides in ./setup.
 #
 # We use this script to move all configure related files
