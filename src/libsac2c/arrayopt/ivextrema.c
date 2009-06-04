@@ -839,7 +839,7 @@ IVEXIavis (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXIavis");
 
-    if (isTYAKV (AVIS_TYPE (arg_node))) {
+    if (TYisAKV (AVIS_TYPE (arg_node))) {
         AVIS_MINVAL (arg_node) = arg_node;
         AVIS_MAXVAL (arg_node) = arg_node;
     }
