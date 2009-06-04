@@ -124,6 +124,7 @@
 #include "free.h"
 #include "DupTree.h"
 #include "constants.h"
+#include "lacinlining.h"
 #include "shape.h"
 #include "ctinfo.h"
 #include "compare_tree.h"
@@ -209,6 +210,8 @@ static const travfun_p prf_cfsaa_funtab[] = {
  *
  * @fn node* CFdoConstantFoldingOneFundef(node* arg_node)
  *
+ * NB: this enforces "following up LACFUNs"
+ *
  *****************************************************************************/
 
 node *
@@ -231,6 +234,19 @@ CFdoConstantFoldingOneFundef (node *arg_node)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+
+    if (global.local_funs_grouped && !FUNDEF_ISLACFUN (arg_node)) {
+        /**
+         *   In case we are dealing with an "ordinary" (ie non LACFUN) function
+         *   we are facing a potential inconsistency in case of the -glf representation
+         *   here!
+         *   One of the local functions may have been tagged as LACINLINE which
+         *   implicitly transforms it into an ordinary function and, thus, renders
+         *   the localfun list wrong.
+         *   Rather than fixing that, we apply lacinline instead.
+         */
+        arg_node = LINLdoLACInliningOneFundef (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

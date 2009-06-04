@@ -28,6 +28,7 @@
 #include "ssi.h"
 #include "sig_deps.h"
 #include "globals.h"
+#include "lacinlining.h"
 
 /*
  * OPEN PROBLEMS:
@@ -279,6 +280,13 @@ EBTdoEliminateBottomTypesOneFunction (node *arg_node)
         info_node = FreeInfo (info_node);
 
         TRAVpop ();
+
+        if (global.local_funs_grouped) {
+            /**
+             *   we may have transformed a lac function into a lacinline!
+             */
+            arg_node = LINLdoLACInliningOneFundef (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);

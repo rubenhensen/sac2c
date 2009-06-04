@@ -222,6 +222,8 @@ LINLmodule (node *arg_node, info *arg_info)
 node *
 LINLfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
+
     DBUG_ENTER ("LINLfundef");
 
     DBUG_PRINT ("LINL", ("lacinlining in %s", CTIitemName (arg_node)));
@@ -230,6 +232,19 @@ LINLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
+    }
+    if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+        /**
+         * we are in glf mode. Since we want to handle all lacinlines in the
+         * chain, we need to temporarily set INFO_ONEFUNDEF to false.
+         * Although glf mode today (5/2009) implies
+         * that INFO_ONEFUNDEF is true, this may not hold in the future.
+         * Hence, we stack that value before setting it to FALSE.
+         */
+        old_onefundef = INFO_ONEFUNDEF (arg_info);
+        INFO_ONEFUNDEF (arg_info) = FALSE;
+        FUNDEF_LOCALFUNS (arg_node) = TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        INFO_ONEFUNDEF (arg_info) = old_onefundef;
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -255,7 +270,7 @@ LINLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LINLassign");
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_CODE (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
@@ -281,6 +296,8 @@ LINLassign (node *arg_node, info *arg_info)
          * remove the lacfunction which it points to. This funny
          * sideeffect is not documented, but may be found in
          * free_attribs.c (FREEattribsExtLink)
+         * This also implicitly returns ASSIGN_NEXT which enables
+         * us to update arg_node apropriately by:
          */
 
         arg_node = FREEdoFreeNode (arg_node);

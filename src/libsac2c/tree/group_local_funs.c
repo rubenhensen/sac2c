@@ -90,7 +90,16 @@ GLFisLocalFun (node *fundef)
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "IsLocalFun called with illegal node type.");
 
-    is_local_fun = FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISDOFUN (fundef);
+    /**
+     *  this is NOT a good solution!! We should have a separate flag
+     *  here. The problem is, that we may deal with a function that
+     *  is to be lacinlined. which still lives in the locals.
+     *  Since traverse makes use of this function to decide whether
+     *  hooked functions (zombies or duped ones) should be treated,
+     *  we need to make sure these two are still considered "local".
+     */
+    is_local_fun = FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISDOFUN (fundef)
+                   || FUNDEF_ISLACINLINE (fundef) || FUNDEF_ISZOMBIE (fundef);
 
     DBUG_RETURN (is_local_fun);
 }
