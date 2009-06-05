@@ -281,8 +281,7 @@ SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemoval
 
 /*************************************************/
 
-SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, global.group_local_funs,
-          opt)
+SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
@@ -441,8 +440,7 @@ CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, s
 
 ENDCYCLE (scyc)
 
-SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns,
-          global.group_local_funs, opt)
+SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 /*************************************************/
 

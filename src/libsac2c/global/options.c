@@ -401,8 +401,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("genlib");
 
-    ARGS_FLAG ("glf", global.group_local_funs = TRUE);
-
     /*
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
