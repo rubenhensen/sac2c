@@ -1654,7 +1654,7 @@ MakeFundeclIcm (node *fundef, info *arg_info)
 static char *
 GetBaseTypeFromAvis (node *in)
 {
-    types *type;
+    types *type = NULL;
 
     DBUG_ENTER ("GetBaseTypeFromAvis");
     DBUG_ASSERT ((in != NULL), "no node found!");
@@ -1680,10 +1680,10 @@ GetBaseTypeFromAvis (node *in)
  *
  *****************************************************************************/
 
-static char *
+static const char *
 GetBaseTypeFromExpr (node *in)
 {
-    char *ret;
+    const char *ret;
     DBUG_ENTER ("GetBaseTypeFromExpr");
     DBUG_ASSERT ((in != NULL), "no node found!");
 

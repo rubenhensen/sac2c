@@ -29,7 +29,7 @@
 static mutcStorageClass
 simpletype2mutcStorageClass (simpletype st)
 {
-    mutcStorageClass ret;
+    mutcStorageClass ret = 0;
 
     DBUG_ENTER ("TBsimpletype2mutcStorageClass");
 
