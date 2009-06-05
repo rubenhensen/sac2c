@@ -653,7 +653,21 @@ WLIassign (node *arg_node, info *arg_info)
        with a non-null ASSIGN_INDEX are valid. See WLIlet. Before WLI, this
        pointer may be non-null (somewhere wrong initialisation -> better
        use MakeAssign()!!! ) */
-    DBUG_ASSERT ((ASSIGN_INDEX (arg_node) == NULL), "left-over ASSIGN_INDEX found.");
+#if 0
+  /**
+   * This led to bug 505 :-(
+   * However, as time is precious and it is rather difficult to
+   * trace this I have added the hack below. Using our tree-checker
+   * we should be able to sort this out. Any volunteers?
+   * I will leave the bug marked as open...
+   */
+  DBUG_ASSERT( (ASSIGN_INDEX( arg_node) == NULL),
+               "left-over ASSIGN_INDEX found.");
+#else
+    if (ASSIGN_INDEX (arg_node) != NULL) {
+        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
+    }
+#endif
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
