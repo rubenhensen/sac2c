@@ -397,10 +397,6 @@ WLNCid (node *arg_node, info *arg_info)
             break;
         default:
             break;
-            /* FIXME I do not understand why this is needed...
-             *
-            AVIS_WL_NEEDCOUNT( avis) += 2;
-             */
         }
     }
 

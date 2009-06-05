@@ -1127,7 +1127,9 @@ CSEids (node *arg_node, info *arg_info)
  *   node *CSEid( node *arg_node, info *arg_info)
  *
  * description:
- *   traverse ids data to do substitution.
+ *   traverse id data to do substitution.
+ *
+ *   We also may rename AVIS_MINVAL and AVIS_MAXVAL.
  *
  *****************************************************************************/
 node *
@@ -1164,6 +1166,16 @@ CSEid (node *arg_node, info *arg_info)
             DBUG_PRINT ("CSE", ("bypassing result %s", AVIS_NAME (ID_AVIS (arg_node))));
         }
 #endif
+    }
+
+    if ((NULL != AVIS_MINVAL (ID_AVIS (arg_node)))
+        && (NULL != AVIS_SUBST (AVIS_MINVAL (ID_AVIS (arg_node))))) {
+        AVIS_MINVAL (ID_AVIS (arg_node)) = AVIS_SUBST (AVIS_MINVAL (ID_AVIS (arg_node)));
+    }
+
+    if ((NULL != AVIS_MAXVAL (ID_AVIS (arg_node)))
+        && (NULL != AVIS_SUBST (AVIS_MAXVAL (ID_AVIS (arg_node))))) {
+        AVIS_MAXVAL (ID_AVIS (arg_node)) = AVIS_SUBST (AVIS_MAXVAL (ID_AVIS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);

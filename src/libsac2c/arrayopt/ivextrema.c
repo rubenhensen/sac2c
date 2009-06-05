@@ -332,11 +332,8 @@ IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
 
     *preassigns = TCappendAssign (*preassigns, zass);
     AVIS_SSAASSIGN (zavis) = zass;
-#define BOBBOISCONFUSED
-#ifdef BOBBOISCONFUSED
     AVIS_MINVAL (zavis) = zavis;
     AVIS_MAXVAL (zavis) = zavis;
-#endif // BOBBOISCONFUSED
     if (isSAAMode ()) {
         AVIS_DIM (zavis) = DUPdoDupTree (AVIS_DIM (arg_node));
         AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
@@ -494,10 +491,7 @@ generateSelect (node *arg_node, info *arg_info, int k)
     }
 
     AVIS_MINVAL (kavis) = kavis;
-#define BOBBOISCONFUSED
-#ifdef BOBBOISCONFUSED
     AVIS_MAXVAL (kavis) = kavis;
-#endif // BOBBOISCONFUSED
 
     /* Create z = _sel_VxA_([k], bound);  */
 
@@ -573,15 +567,11 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     DBUG_ASSERT (N_id == NODE_TYPE (b2),
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
 
-#define FIXME // STUPID!!!!!!
-#ifdef FIXME  // DEAD - done at creation time
     b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNSPART (arg_info));
 
-#endif // FIXME // DEAD
     avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
                                &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info));
-
     DBUG_RETURN (avis);
 }
 
@@ -623,13 +613,8 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
     DBUG_ASSERT (N_id == NODE_TYPE (b2),
                  "IVEXItmpIds expected N_id for GENERATOR_BOUND2");
 
-#ifdef FIXME // DEAD - done at creation time
-    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNSWITH (arg_info));
-
-#endif // FIXME // DEAD - done at creation time
     b1 = generateSelect (ID_AVIS (b1), arg_info, k);
-    b2 = generateSelect (b2, arg_info, k);
+    b2 = generateSelect (ID_AVIS (b2), arg_info, k);
 
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));

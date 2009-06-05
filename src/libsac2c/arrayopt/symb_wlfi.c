@@ -209,6 +209,35 @@ SWLFIdoSymbolicWithLoopFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn
+ *                                  node **preassigns, node *restypeavis)
+ *
+ *   @brief  TRUE if the N_with does not contain a default N_part.
+ *
+ *   @param  node *arg_node: an N_with node.
+ *   @return Boolean.
+ *
+ ******************************************************************************/
+static bool
+noDefaultPartition (node *arg_node)
+{
+    node *partn;
+    bool z = TRUE;
+
+    DBUG_ENTER ("noDefaultPartition");
+
+    partn = WITH_PART (arg_node);
+
+    while ((NULL != partn) && z) {
+        z = z & (N_default != NODE_TYPE (PART_GENERATOR (partn)));
+        partn = PART_NEXT (partn);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SWLFIflattenExpression(node *arg_node, node **vardecs,
  *                                  node **preassigns, node *restypeavis)
  *
@@ -564,6 +593,7 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
         if ((NODE_TYPE (foldeeassign) == N_let)
             && (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with)
             && (WITHOP_NEXT (WITH_WITHOP (LET_EXPR (foldeeassign))) == NULL)
+            && (noDefaultPartition (LET_EXPR (foldeeassign)))
             && ((NODE_TYPE (WITH_WITHOP (LET_EXPR (foldeeassign))) == N_genarray)
                 || (NODE_TYPE (WITH_WITHOP (LET_EXPR (foldeeassign))) == N_modarray))) {
             z = TRUE;

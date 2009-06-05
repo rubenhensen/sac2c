@@ -540,12 +540,8 @@ FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
         intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
         if (
           /* Find and match Referents for generators, skipping default partitions */
-          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee))) &&
-#ifdef FIXME
-          (matchGeneratorField (idxbound1, intersectb1))
-          && (matchGeneratorField (idxbound2, intersectb2)) &&
-#endif // FIXME
-          (idxbound1 == intersectb1) && (idxbound2 == intersectb2) &&
+          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
+          && (idxbound1 == intersectb1) && (idxbound2 == intersectb2) &&
 
           (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
           && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
@@ -953,27 +949,18 @@ SWLFprf (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (isPrfArg1AttachIntersect (arg_node))) {
-#ifdef FIXME // OLD ?
-      ( N_id == NODE_TYPE( arg1))                               && 
-      ( NULL != AVIS_SSAASSIGN( ID_AVIS( arg1)))                &&
-      ( NULL != AVIS_MINVAL( ID_AVIS( arg1)))                   &&
-      ( NULL != AVIS_MAXVAL( ID_AVIS( arg1)))                   &&
-      ( N_id == NODE_TYPE( PRF_ARG2( arg_node))))
-      {
-#endif // FIXME // OLD ?
-
-          INFO_SWLFOLDABLEFOLDEEPART (arg_info)
-            = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
-                                INFO_LEVEL (arg_info));
-      }
-
-      DBUG_RETURN (arg_node);
+        INFO_SWLFOLDABLEFOLDEEPART (arg_info)
+          = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
+                              INFO_LEVEL (arg_info));
     }
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Traversal functions -->
-     *****************************************************************************/
+    DBUG_RETURN (arg_node);
+}
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Symbolic with loop folding -->
-     *****************************************************************************/
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Symbolic with loop folding -->
+ *****************************************************************************/

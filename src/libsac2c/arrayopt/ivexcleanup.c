@@ -108,9 +108,6 @@ IVEXCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXCprf");
 
-#ifdef DEAD
-    PRF_SELISSUEDDATAFLOWGUARD (arg_node) = FALSE;
-#endif // DEAD
     PRF_EXTREMAATTACHED (arg_node) = FALSE;
     PRF_NOEXTREMAWANTED (arg_node) = FALSE;
 
