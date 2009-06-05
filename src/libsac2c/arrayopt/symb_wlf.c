@@ -295,31 +295,81 @@ SWLFdoSymbolicWithLoopFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isPrfArg1DataFlowGuard( node *arg_node)
+ * @fn bool isPrfArg1AttachIntersect( node *arg_node)
  *
- * @brief Predicate to check if arg1 of this N_prf is an F_dataflowguard op
+ * @brief Predicate to check if arg1 of this N_prf has
+ *        an F_attachintersect guard attached to it.
  *
  * @param arg_node: an N_prf
  *
- * @return Boolean TRUE if PRF_ARG2 is an F_dataflowguard.
+ * @return Boolean TRUE if PRF_ARG2 is an F_attachintersect.
  *
  *****************************************************************************/
 bool
-isPrfArg1DataFlowGuard (node *arg_node)
+isPrfArg1AttachIntersect (node *arg_node)
 {
     node *arg1;
     node *assgn;
     bool z = FALSE;
 
-    DBUG_ENTER ("isPrfArg1DataFlowGuard");
+    DBUG_ENTER ("isPrfArg1AttachIntersect");
 
     arg1 = PRF_ARG1 (arg_node);
     DBUG_ASSERT (N_id == NODE_TYPE (arg1),
-                 "isPrfArg1DataFlowGuard expected N_id as PRF_ARG1");
+                 "isPrfArg1AttachIntersect expected N_id as PRF_ARG1");
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
     if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))
-        && (F_dataflowguard == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))))) {
+        && (F_attachintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))))) {
         z = TRUE;
+    }
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isPrfArg1AttachExtrema( node *arg_node)
+ *
+ * @brief Predicate to check if arg1 of this N_prf is an F_attachextrema op
+ *  OR if arg1 is an F_attachintersect, and its PRF_ARG1 is an F_attachextrema.
+ *  This is VERY brittle code, and we should find a more robust way
+ *  to do this. FIXME.
+ *
+ * @param arg_node: an N_prf
+ *
+ * @return Boolean TRUE if PRF_ARG2 is an F_attachextrema.
+ *
+ *****************************************************************************/
+bool
+isPrfArg1AttachExtrema (node *arg_node)
+{
+    node *arg1;
+    node *assgn;
+    node *assgn2;
+    node *prf;
+    node *prf2;
+    bool z = FALSE;
+
+    DBUG_ENTER ("isPrfArg1AttachExtrema");
+
+    arg1 = PRF_ARG1 (arg_node);
+    DBUG_ASSERT (N_id == NODE_TYPE (arg1),
+                 "isPrfArg1AttachExtrema expected N_id as PRF_ARG1");
+    assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
+    if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))) {
+
+        prf = LET_EXPR (ASSIGN_INSTR (assgn));
+        if ((F_attachextrema == PRF_PRF (prf))) {
+            z = TRUE;
+        } else {
+            assgn2 = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prf)));
+            if ((NULL != assgn)
+                && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
+                prf2 = LET_EXPR (ASSIGN_INSTR (assgn2));
+                if ((F_attachintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
+                    z = TRUE;
+                }
+            }
+        }
     }
     DBUG_RETURN (z);
 }
@@ -400,8 +450,9 @@ matchGeneratorField (node *fa, node *fb)
  * @params partno: the partition number in the foldee WL.
  *         boundnum: 0 for BOUND1, 1 for BOUND2.
  *         idx: the index vector for the _sel_VxA( idx, foldee).
- *         The intersection calculations hang off the F_dataflowguard
- *         that is the parent of idx.
+ *         The intersection calculations hang off the F_attachextrema
+ *         that is the parent of idx, after the idx and its idxmax
+ *         entries.
  *
  * @result: The lower/upper bounds of the WL intersection.
  *
@@ -412,14 +463,14 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
     node *bnd;
     node *dfg;
 
-    DBUG_ENTER ("FindMatchingPart");
+    DBUG_ENTER ("ExtractNthWLIntersection");
 
     dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
     dfg = LET_EXPR (ASSIGN_INSTR (dfg));
-    DBUG_ASSERT ((F_dataflowguard == PRF_PRF (dfg)),
-                 ("FindMatchingPart expected F_dataflowguard as parent of idx"));
+    DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
+                 ("FindMatchingPart wanted F_attachintersect as idx parent"));
     /* expressions are bound1, bound2 for each partition. */
-    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 1), PRF_ARGS (dfg));
+    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 2), PRF_ARGS (dfg));
     DBUG_RETURN (bnd);
 }
 
@@ -434,69 +485,83 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *
  *           - The WL is a single-operator WL.
  *
- *           - The current partition of the folderWL matches some generator
- *               of that of the foldeeWL, or is a subset
- *               of it.
+ *           - The current folderWL's sel(idx, foldeeWL) index set matches
+ *             the index set of some partition of the foldeeWL,
+ *             or is a subset of that partition.
  *
- *           - The sel(idx,y) idx is the WITHID of the
- *             putative foldee, or a direct descendant of same.
- *
- * @params *foldee:  the putative foldeeWL: the WL that
- *                 would be subsumed into the one at "part".
- *         *index: The idx in sel(idx, y) of the WL that is selecting
- *                 from the result of WL.
- *         *folderpart: The partition of the folder WL.
+ * @params *arg_node: the N_prf of the sel(idx, foldeeWL).
+ *         *folderpart: the folderWL partition containing arg_node.
+ *         *foldeeWL: the N_with of the foldeeWL.
  *
  * @result: The address of the matching foldee partition, if any.
  *          NULL if none is found.
  *
- *
  *****************************************************************************/
 static node *
-FindMatchingPart (node *foldee, node *idx, node *folderpart)
+FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
 {
     node *folderpg;
-    node *wg;
-    node *wp;
+    node *gee;
+    node *partee;
     node *intersectb1;
     node *intersectb2;
+    node *idx;
+    node *idxbound1;
+    node *idxbound2;
+    node *idxassign;
+    node *idxparent;
     bool matched = FALSE;
     bool m1 = FALSE;
     int partno = 0;
 
     DBUG_ENTER ("FindMatchingPart");
-    DBUG_ASSERT (N_with == NODE_TYPE (foldee),
-                 ("FindMatchingPart expected N_with foldee"));
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
+                 ("FindMatchingPart expected N_prf arg_node"));
+    DBUG_ASSERT (N_with == NODE_TYPE (foldeeWL),
+                 ("FindMatchingPart expected N_with foldeeWL"));
     DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
-                 ("FindMatchingPart expected N_part folder"));
+                 ("FindMatchingPart expected N_part folderpart"));
+
+    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, foldeeWL) */
+    idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
+    DBUG_ASSERT (NULL != idxassign, ("FindMatchingPart found NULL SSAASSIGN"));
+    idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
+    DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
+                 ("FindMatchingPart expected F_attachintersect as idx parent"));
+    idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+    idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (idxparent)));
 
     folderpg = PART_GENERATOR (folderpart);
-    wp = WITH_PART (foldee);
+    partee = WITH_PART (foldeeWL);
 
-    while ((!matched) && wp != NULL) {
-        wg = PART_GENERATOR (wp);
-        intersectb1 = ExtractNthWLIntersection (partno, 0, idx);
-        intersectb2 = ExtractNthWLIntersection (partno, 1, idx);
+    while ((!matched) && partee != NULL) {
+        gee = PART_GENERATOR (partee);
+        intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
+        intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
         if (
           /* Find and match Referents for generators, skipping default partitions */
-          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (wg)))
-          && (matchGeneratorField (intersectb1, GENERATOR_BOUND1 (folderpg)))
-          && (matchGeneratorField (intersectb2, GENERATOR_BOUND2 (folderpg)))
-          && matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (wg))
-          && matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (wg))) {
+          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee))) &&
+#ifdef FIXME
+          (matchGeneratorField (idxbound1, intersectb1))
+          && (matchGeneratorField (idxbound2, intersectb2)) &&
+#endif // FIXME
+          (idxbound1 == intersectb1) && (idxbound2 == intersectb2) &&
+
+          (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
+          && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
             m1 = TRUE;
             DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
         } else { /* Ye olde school way */
-            m1 = (CMPT_EQ == CMPTdoCompareTree (folderpg, wg));
-            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match: olde school"));
+            m1 = (CMPT_EQ == CMPTdoCompareTree (folderpg, gee));
+            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match, olde school"));
         }
 
-        if (m1 && (WITHOP_NEXT (WITH_WITHOP (foldee)) == NULL)
-            && ((NODE_TYPE (WITH_WITHOP (foldee)) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (foldee)) == N_modarray))) {
+        if (m1 && (WITHOP_NEXT (WITH_WITHOP (foldeeWL)) == NULL)
+            && ((NODE_TYPE (WITH_WITHOP (foldeeWL)) == N_genarray)
+                || (NODE_TYPE (WITH_WITHOP (foldeeWL)) == N_modarray))) {
             matched = TRUE;
         } else {
-            wp = PART_NEXT (wp);
+            partee = PART_NEXT (partee);
             partno++;
         }
     }
@@ -504,11 +569,11 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
     if (matched) {
         DBUG_PRINT ("SWLF", ("FindMatchingPart matches"));
     } else {
-        wp = NULL;
+        partee = NULL;
         DBUG_PRINT ("SWLF", ("FindMatchingPart does not match"));
     }
 
-    DBUG_RETURN (wp);
+    DBUG_RETURN (partee);
 }
 
 /** <!--********************************************************************-->
@@ -520,7 +585,7 @@ FindMatchingPart (node *foldee, node *idx, node *folderpart)
  *        partition, part, is foldable into the folder WL.
  *        Most checks have already been made by SWLFI.
  *        Here, we check that the generators match,
- *        and that the  only references to the foldeeWL result are
+ *        and that the only references to the foldeeWL result are
  *        in the folderWL.
  *
  * @param _sel_VxA_( idx, foldee)
@@ -553,8 +618,7 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
                                  AVIS_WL_NEEDCOUNT (foldeeavis)));
 
             if (AVIS_NEEDCOUNT (foldeeavis) == AVIS_WL_NEEDCOUNT (foldeeavis)) {
-                foldeepart = FindMatchingPart (LET_EXPR (foldeeassign),
-                                               PRF_ARG1 (arg_node), folderpart);
+                foldeepart = FindMatchingPart (arg_node, folderpart, foldeewl);
             }
         }
     }
@@ -876,7 +940,7 @@ SWLFids (node *arg_node, info *arg_info)
  * @brief
  *   Examine all X[iv] primitives to see if iv is current folderWL iv.
  *   If the iv does not have an SSAASSIGN, it means iv is a WITHID,
- *   and so SWLFI has not yet inserted an F_dataflowguard for it.
+ *   and so SWLFI has not yet inserted an F_attachextrema for it.
  *
  *****************************************************************************/
 node *
@@ -888,24 +952,28 @@ SWLFprf (node *arg_node, info *arg_info)
 
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
-        && (isPrfArg1DataFlowGuard (arg_node)) && (N_id == NODE_TYPE (arg1))
-        && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1)))
-        && (NULL != AVIS_MINVAL (ID_AVIS (arg1)))
-        && (NULL != AVIS_MAXVAL (ID_AVIS (arg1)))
-        && (N_id == NODE_TYPE (PRF_ARG2 (arg_node)))) {
+        && (isPrfArg1AttachIntersect (arg_node))) {
+#ifdef FIXME // OLD ?
+      ( N_id == NODE_TYPE( arg1))                               && 
+      ( NULL != AVIS_SSAASSIGN( ID_AVIS( arg1)))                &&
+      ( NULL != AVIS_MINVAL( ID_AVIS( arg1)))                   &&
+      ( NULL != AVIS_MAXVAL( ID_AVIS( arg1)))                   &&
+      ( N_id == NODE_TYPE( PRF_ARG2( arg_node))))
+      {
+#endif // FIXME // OLD ?
 
-        INFO_SWLFOLDABLEFOLDEEPART (arg_info)
-          = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
-                              INFO_LEVEL (arg_info));
+          INFO_SWLFOLDABLEFOLDEEPART (arg_info)
+            = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
+                                INFO_LEVEL (arg_info));
+      }
+
+      DBUG_RETURN (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
-}
+    /** <!--********************************************************************-->
+     * @}  <!-- Traversal functions -->
+     *****************************************************************************/
 
-/** <!--********************************************************************-->
- * @}  <!-- Traversal functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- * @}  <!-- Symbolic with loop folding -->
- *****************************************************************************/
+    /** <!--********************************************************************-->
+     * @}  <!-- Symbolic with loop folding -->
+     *****************************************************************************/

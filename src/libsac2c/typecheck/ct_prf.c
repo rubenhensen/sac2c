@@ -444,19 +444,19 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_attachminmax( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_attachextrema( te_info *info, ntype *elems)
  *
  * description:
- *   _attachminmax_ is used to preserve a temp assigned
+ *   _attachextrema_ is used to preserve a temp assigned
  *   from WITHIDs in WLs. If -ssaiv ever works, we can just
  *   scrap this, and attach AVIS_MINVAL and AVIS_MAXVAL to
  *   the WITHIDs directly. At present, we can't do that,
  *   because the extrema are different for each partition,
  *   but the WITHIDs are not different, hence this kludge.
  *
- *   The semantics of the _attachminmax_ are:
+ *   The semantics of the _attachextrema are:
  *
- *    iv' = _dataflowguard_(iv, GENERATOR_BOUND1, GENERATOR_BOUND2)
+ *    iv' = _attachextrema(iv, GENERATOR_BOUND1, GENERATOR_BOUND2)
  *
  *    The duty of the code using iv' (SWLFI/SWLF) is to delete the
  *    guard in the fullness of time, after making use of the
@@ -469,12 +469,12 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_attachminmax (te_info *info, ntype *args)
+NTCCTprf_attachextrema (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_attachminmax");
+    DBUG_ENTER ("NTCCTprf_attachextrema");
 
     arg = TYgetProductMember (args, 0);
     res = TYcopyType (arg);
@@ -485,38 +485,35 @@ NTCCTprf_attachminmax (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_dataflowguard( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_attachintersect( te_info *info, ntype *elems)
  *
  * description:
- *  _dataflowguard merely acts as a place to hang
- *   expressions of any sort off the ast.
+ *   This guard acts as a holder for index vector intersect
+ *   computations, preceeding an _sel_( idx, foldeeWL) operation.
+ *
  *   This is intended as a data-flow approach to
  *   adding ancillary information to the ast.
- *   It might be a good way to eliminate
- *   kludge-code in CVP and DCR, currently there to support
- *   AVIS_SHAPE, AVIS_DIM, AVIS_MINVAL, and AVIS_MAXVAL.
  *
- *   The semantics of the _dataflowguard are:
+ *   The semantics of the _attachintersect are:
  *
- *    iv' = _dataflowguard_(iv, saved1, saved2, saved3...)
+ *    iv' = _attachintersect(iv, indexsetmin, indexsetmax)
+ *    z   = _sel_VxA_( iv', foldeeWL);
  *
- *    The "saved" variables are maintained without change. It is
- *    the duty of the code using iv' to delete the
- *    guard in the fullness of time, after making use of the
- *    junk variables. The scc phase also deletes these
- *    guards, replacing them by:
- *
- *    iv' = iv;
+ *   The indexsetmin and indexsetmax are the result
+ *   of the EWLF intersect computation
+ *   between iv' and the foldeeWL partition(s).
+ *   If they exactly match a partition of the foldeeWL,
+ *   then EWLF may proceed.
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_dataflowguard (te_info *info, ntype *args)
+NTCCTprf_attachintersect (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_dataflowguard");
+    DBUG_ENTER ("NTCCTprf_attachintersect");
 
     arg = TYgetProductMember (args, 0);
     res = TYcopyType (arg);

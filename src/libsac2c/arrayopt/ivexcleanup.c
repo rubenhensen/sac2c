@@ -91,7 +91,7 @@ IVEXCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXCwith");
 
-    WITH_ISEXTREMAINSERTED (arg_node) = FALSE;
+    WITH_EXTREMAATTACHED (arg_node) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -108,9 +108,11 @@ IVEXCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXCprf");
 
+#ifdef DEAD
     PRF_SELISSUEDDATAFLOWGUARD (arg_node) = FALSE;
-    PRF_ATTACHMINMAXISSUED (arg_node) = FALSE;
-    PRF_DONOTATTACHMINMAX (arg_node) = FALSE;
+#endif // DEAD
+    PRF_EXTREMAATTACHED (arg_node) = FALSE;
+    PRF_NOEXTREMAWANTED (arg_node) = FALSE;
 
     DBUG_RETURN (arg_node);
 }

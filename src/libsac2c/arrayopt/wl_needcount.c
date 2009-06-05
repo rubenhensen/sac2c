@@ -397,9 +397,9 @@ WLNCid (node *arg_node, info *arg_info)
             break;
         default:
             break;
-            /* FIXME I think this is garbage
+            /* FIXME I do not understand why this is needed...
              *
-             *    AVIS_WL_NEEDCOUNT( avis) += 2;
+            AVIS_WL_NEEDCOUNT( avis) += 2;
              */
         }
     }

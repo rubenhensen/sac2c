@@ -40,7 +40,7 @@
  *
  *         AVIS_NEEDCOUNT(foldeeWL) == WL_REFERENCED_FOLD(foldeeWL)
  *
- *        This phase inserts _dataflowguard "intersection expressions"
+ *        This phase inserts _attachextrema "intersection expressions"
  *        before certain _sel_(iv, X) statements. Specifically, iv must
  *        be a function of the WITH_ID(folderWL),
  *        and X must be the result of a foldeeWL.
@@ -261,7 +261,8 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
- *                                      node *foldeepart, int restypeavirestypeavis)
+ *                                      node *foldeepart, int boundnum,
+ *                                      node *ivminmax)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
  *        a single foldeeWL partition with folderWL index set, of the form:
@@ -276,27 +277,34 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *          int1 = _max_VxV_( AVIS_MINVAL( iv'),
  *                            GENERATOR_BOUND1(foldee));
  *
- *          int2 = _min_VxV_( AVIS_MAXVAL( iv'),
+ *          ivmax = _add_VxS_( AVIS_MAXVAL( iv'), 1);
+ *          int2  = _min_VxV_( ivmax,
  *                            GENERATOR_BOUND2(foldee));
- *          iv'' = _dataflowguard(iv', int1, int2);
+ *          iv'' = _attachextrema_(iv', ivmax, int1, int2);
  *          sel( iv'', foldeeWL)
  *
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection.
  *
+ *        The ivmax calculation adjusts AVIS_MAXVAL to match
+ *        the canonical generator bounds. This is used as
+ *        shown above, but the value glued to the guard is
+ *        also needed by FindMatchingPart in SWLF.
+ *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params foldeepart: An N_part of the foldeeWL.
  * @params arg_info.
- * @params boundnum: 1 for bound1, 2 for bound2
+ * @params boundnum: 1 for bound1,     or 2 for bound2
+ * @parame bounder: AVIS_MINVAL( idx) or ( AVIS_MAXVAL( idx) + 1)
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
  *
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum)
+IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum,
+                           node *bounder)
 {
     node *boundee;
-    node *bounder;
     node *folderpart;
     node *expn;
     node *idxavis;
@@ -310,12 +318,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     /* The indexing expression used in the sel(iv, foldee). */
     idxavis = ID_AVIS (PRF_ARG1 (arg_node));
     idxassign = AVIS_SSAASSIGN (idxavis);
-
-    /* AVIS_MINVAL and AVIS_MAXVAL are guaranteed to exist if we get here */
-    bounder = (boundnum == 1) ? AVIS_MINVAL (idxavis)
-                              : IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), 1,
-                                                         &INFO_VARDECS (arg_info),
-                                                         &INFO_PREASSIGNS (arg_info));
 
     boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
                               : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
@@ -345,7 +347,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
- *                                   node *foldeepart, int boundnum)
+ *                                   node *foldeepart, int boundnum,
+ *                                   node *ivminmax)
  *
  * @brief Build a set of expressions for intersecting the bounds of
  *        all foldeeWL partitions with folderWL index set, of the form:
@@ -358,13 +361,15 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
  * @params arg_node: The _sel_VxA( idx, foldeeWL).
  * @params foldeeid: The N_id created by the foldeeWL.
  * @params arg_info.
- * @params boundnum: 1 for bound1, 2 for bound2
+ * @params boundnum: 1 for bound1,        2 for bound2
+ * @params ivminmax: AVIS_MINVAL( idx) or (AVIS_MAXVAL( idx) + 1)
  * @return An N_exprs node containing the (two*#foldee partitions) intersect expressions.
  *
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boundnum)
+IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boundnum,
+                        node *ivminmax)
 {
     node *expn = NULL;
     node *partn;
@@ -379,7 +384,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
     partn = WITH_PART (foldeewl);
 
     while (NULL != partn) {
-        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum);
+        curavis
+          = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum, ivminmax);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         partn = PART_NEXT (partn);
     }
@@ -389,18 +395,34 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
 
 /** <!--********************************************************************-->
  *
- * @fn node *createNewIV( node *arg_node, info *arg_info)
+ * @fn node *attachIntersectCalc( node *arg_node, info *arg_info)
  *
- * @brief Create new iv' from iv.
- *        Also, create a guard expression:
- *         iv' = _dataflowguard_( iv, TRUE);
- *        Our caller will replace the selection:
- *         z = _sel_(iv, foldeeWL);
- *        by
- *         z = _sel_(iv', foldeeWL);
+ * @brief  We are looking at the N_prf for:
  *
- *        This function also appends a vardec to the INFO chain,
- *        and an assign to the preassigns chain.
+ *            z = _sel_(idx, foldeeWL);
+ *         and idx now has extrema attached to it. We
+ *         are now in a position to compute the intersection
+ *         between idx's index set and that of the foldeeWL
+ *         partitions.
+ *
+ *         We create new idx' from idx, to hold the result
+ *         of the intersect computations that we build here.
+ *
+ *   Replace:
+ *
+ *   z = _sel_(idx, foldeeWL);
+ *
+ *   by
+ *
+ *   minv0 = _max_VxV( AVIS_MINVAL( idx)    , GENERATOR_BOUND1( foldeepart)
+ *   maxv0 = _min_VxV( AVIS_MAXVAL( idx) + 1, GENERATOR_BOUND2( foldeepart)
+ *   ... ( above 2 lines for each partition)
+ *
+ *   iv' = _attachintersect( iv, ivmax, minv0, maxv0, minv1, maxv1,...);
+ *   z = _sel_(iv', foldeeWL);
+ *
+ *   This function also appends vardecs to the INFO chain,
+ *   and assigns to the preassigns chain.
  *
  * @params arg_node: the N_prf node of the sel() operation.
  * @return A pointer to the newly created N_id node for iv'.
@@ -408,29 +430,40 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *****************************************************************************/
 
 static node *
-createNewIV (node *arg_node, info *arg_info)
+attachIntersectCalc (node *arg_node, info *arg_info)
 {
     node *ivavis;
     node *ivassign;
     int ivshape;
     node *ivid;
     node *ividprime;
+    node *ivmax;
     node *lbicalc;
     node *ubicalc;
     node *foldeewl;
     node *args;
+    node *idxavis;
 
-    DBUG_ENTER ("createNewIV");
-    DBUG_PRINT ("SWLFI", ("Inserting dataflow guard"));
+    DBUG_ENTER ("attachIntersectCalc");
+    DBUG_PRINT ("SWLFI", ("Inserting attachextrema computations"));
 
     /* Generate expressions for lower-bound intersection and
      * upper-bound intersection calculation.
      */
     ivid = PRF_ARG1 (arg_node);
     foldeewl = PRF_ARG2 (arg_node);
-    lbicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1);
-    ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2);
-    args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid), NULL), lbicalc);
+
+    /* Convert exact extrema upper bound into N_generator form */
+    idxavis = ID_AVIS (ivid);
+    ivmax = IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), 1, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info));
+
+    lbicalc
+      = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1, AVIS_MINVAL (idxavis));
+    ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2, ivmax);
+    args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid),
+                                       TBmakeExprs (TBmakeId (ivmax), NULL)),
+                          lbicalc);
     args = TCappendExprs (args, ubicalc);
 
     ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
@@ -439,7 +472,7 @@ createNewIV (node *arg_node, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
     ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),
-                                        TBmakePrf (F_dataflowguard, args)),
+                                        TBmakePrf (F_attachintersect, args)),
                              NULL);
     INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
     ividprime = TBmakeId (ivavis);
@@ -477,6 +510,11 @@ createNewIV (node *arg_node, info *arg_info)
  *           - foldeeWL has an SSAASSIGN (means that WITH_IDs are NOT legal),
  *
  *           - foldeeWL is referenced only by the folderWL.
+ *             This is not strictly needed; it is only there
+ *             to avoid potentially computing the same
+ *             foldeeWL element more than once. FIXME: wl_needcount.c
+ *             changes will relax this and restriction and base it
+ *             on foldeeWL element computation cost.
  *
  *           - foldeeWL has a DEFDEPTH value (which I don't understand yet).
  *
@@ -487,8 +525,8 @@ createNewIV (node *arg_node, info *arg_info)
  *        the folderWL partition match, or be a subset, of the
  *        foldeeWL partition index set.
  *
- *        The expressions hanging from the dataflowguard inserted
- *        by createNewIV are intended to determine if this
+ *        The expressions hanging from the attachextrema inserted
+ *        by attachExtremaCalc are intended to determine if this
  *        requirement is met. CF, CVP, and other optimizations
  *        should simplify those expressions and give SWLF
  *        the information it needs to determine if the index
@@ -551,15 +589,14 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
  *        within a folderWL. We want to determine if
  *        the folderWL is acceptable to have something folded into it.
  *
- *        We require that idx have a non-NULL AVIS_MINVAL & AVIS_MAXVAL.
+ *        We deem the prf foldable if idx derives directly from
+ *        an _attachintersect_, or if idx has extrema.
+ *
  *        This may not be enough to guarantee foldability, but
- *        without them, we're stuck.
- *
- *        These WITHID matches are foldable:
- *
- *         foldeeWL WITHID_VEC == folderWL index set extrema
+ *        without extrema, we're stuck.
  *
  * @param _sel_VxA_( idx, foldeeWL) arg_node.
+ *
  * @result True if the folderWL (and the indexing expression)
  *         are acceptable for having another WL folded into it,
  *         else false.
@@ -570,13 +607,23 @@ checkFolderFoldable (node *arg_node, info *arg_info)
 {
     node *idx = NULL;
     node *idxavis;
-    bool z = FALSE;
+    bool z;
 
     DBUG_ENTER ("checkFolderFoldable");
 
     idx = PRF_ARG1 (arg_node);
     idxavis = ID_AVIS (idx);
-    z = (NULL != AVIS_MINVAL (idxavis)) && (NULL != AVIS_MAXVAL (idxavis));
+    /* idx has extrema or F_attachintersect */
+    z = ((NULL != AVIS_MINVAL (idxavis)) && (NULL != AVIS_MAXVAL (idxavis)))
+        || isPrfArg1AttachIntersect (arg_node);
+
+#ifdef DEADER // We put the F_attachintersect in later! */
+    node *instr;
+    if (NULL != AVIS_SSAASSIGN (idxavis)) {
+        instr = ASSIGN_INSTR (AVIS_SSAASSIGN (idxavis));
+        z = (N_let == NODE_TYPE (instr)) && (N_prf == NODE_TYPE (LET_EXPR (instr)))
+            && (F_attachintersect == PRF_PRF (LET_EXPR (instr)));
+    }
     if (z) {
         DBUG_PRINT ("SWLFI", ("FolderWL %s extrema found: WL may be foldable.",
                               AVIS_NAME (idxavis)));
@@ -584,6 +631,8 @@ checkFolderFoldable (node *arg_node, info *arg_info)
         DBUG_PRINT ("SWLFI", ("FolderWL %s extrema not found: WL is not foldable.",
                               AVIS_NAME (idxavis)));
     }
+#endif // DEADER
+
     DBUG_RETURN (z);
 }
 
@@ -872,13 +921,20 @@ SWLFIid (node *arg_node, info *arg_info)
  * @fn node *SWLFIprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all _sel_VxA_(iv, foldeeWL) primitives to see if
+ *   Examine all _sel_VxA_(idx, foldeeWL) primitives to see if
  *   we may be able to fold foldeeWL here, assuming that
  *   the _sel_ is within a potential folderWL.
  *
  *   We don't find out if all the conditions for folding can
  *   be met until this phase completes, so SWLF makes the
  *   final decision on folding.
+ *
+ *   When we do encounter an eligible sel() operation,
+ *   with extrema available on PRF_ARG1, we construct
+ *   an intersect computation between the now-available index
+ *   set of idx, and each partition of the foldeeWL.
+ *   These are attached to the sel() via an F_attachintersect
+ *   guard.
  *
  *****************************************************************************/
 node *
@@ -898,12 +954,13 @@ SWLFIprf (node *arg_node, info *arg_info)
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
-        /* Replace iv by iv' */
-        if ((INFO_SWLFOLDABLEFOLDEE (arg_info)) && (!isPrfArg1DataFlowGuard (arg_node))) {
-            z = createNewIV (arg_node, arg_info);
+        /* Maybe attach intersect calculations now. */
+        if ((INFO_SWLFOLDABLEFOLDEE (arg_info))
+            && (!isPrfArg1AttachIntersect (arg_node))) {
+            z = attachIntersectCalc (arg_node, arg_info);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
             PRF_ARG1 (arg_node) = z;
-            DBUG_PRINT ("SWLFI", ("SWLFIprf Inserting F_dataflowguard at _sel_VxA_"));
+            DBUG_PRINT ("SWLFI", ("SWLFIprf inserted F_attachintersect at _sel_VxA_"));
         }
     }
 

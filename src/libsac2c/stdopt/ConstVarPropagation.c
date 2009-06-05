@@ -313,8 +313,8 @@ CVPprf (node *arg_node, info *arg_info)
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
-    case F_attachminmax:
-    case F_dataflowguard:
+    case F_attachextrema:
+    case F_attachintersect:
         /*
          * Only propagate variables here
          */

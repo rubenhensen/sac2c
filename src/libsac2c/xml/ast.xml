@@ -4819,6 +4819,20 @@ N_structdef :
         </attribute>
       </attributes>
       <flags>
+        <flag name="ExtremaAttached" default="FALSE" >
+         <description> 
+          If true, this N_array has already
+          an F_attachextrema guard attached to it.
+          If false, IVEXP will emit the guard, then set this flag.
+         </description> 
+        </flag>
+        <flag name="NoExtremaWanted" default="FALSE" >
+         <description> 
+           If true, this N_array should not have an F_attachextrema
+           attached to it, as it is computing extrema for
+           another node.
+         </description> 
+        </flag>
       </flags>
     </node>
 <!--
@@ -5107,24 +5121,17 @@ N_structdef :
         </attribute>
       </attributes>
       <flags>
-        <flag name="SelIssuedDataflowGuard" default="FALSE" >
-         <description> 
-          If true, this sel operation has already
-          emitted an F_dataflowguard operation that now precedes this
-          sel op. If false, then SWLFI will emit a guard, then set this flag.
-         </description> 
-        </flag>
-        <flag name="AttachminmaxIssued" default="FALSE" >
+        <flag name="ExtremaAttached" default="FALSE" >
          <description> 
           If true, this operation has already
-          emitted an F_attachminmax operation that now precedes this
-          sel op. If false, then IVEXP will emit a guard, then set this flag.
+          emitted an F_attachextrema guard that now precedes this
+          prf. If false, IVEXP will emit the guard, then set this flag.
          </description> 
         </flag>
-        <flag name="DoNotAttachminmax" default="FALSE" >
+        <flag name="NoExtremaWanted" default="FALSE" >
          <description> 
-                 If true, this operation should not have an F_attachminmax
-                 attached to it, as it is computing a minmax value for
+                 If true, this operation should not have an F_attachextrema
+                 attached to it, as it is computing extrema for
                  another node.
          </description> 
         </flag>
@@ -6322,12 +6329,12 @@ N_structdef :
         </attribute>
         <attribute name="Referenced_Fold" default="0">
           <description>
-            The number of RHS references, within a potential folder-WL,  
+            The number of RHS references, within a potential folderWL,  
             to the result of this WL, by the WL at
-            Referenced_Fold_WL. WLF and SWLF can fold WLs only
+            Referenced_Folderwl. WLF and EWLF can fold WLs only
             if this field and WITH_REFERENCED are equal.
             The only rationale for this restriction is that it prevents
-            the same foldee-WL element from being computed more than once.
+            the same foldeeWL element from being computed more than once.
           </description>
           <type name="Integer">
             <targets>
@@ -6343,8 +6350,8 @@ N_structdef :
         </attribute>
         <attribute name="Referenced_Folderwl" default ="NULL" >
           <description>
-            The with-loop that refers to the result created by
-            this with-loop. See Referenced_Fold.
+            The first folderWL that refers to the result created by
+            this putative foldeeWL. See Referenced_Fold.
           </description>
           <type name="Link">
             <targets>
@@ -6411,10 +6418,10 @@ N_structdef :
         <flag name="IsFoldable" />
         <flag name="Cudarizable" default="TRUE" />
 	    <flag name="IsDependent" />
-        <flag name="IsExtremaInserted">
+        <flag name="ExtremaAttached" default ="FALSE">
           <description>
-          True if IVEXI has already inserted extrema variables
-          for this WL.
+          True if IVEXI has already attached extrema variables
+          to this WL.
           </description>
         </flag>
 

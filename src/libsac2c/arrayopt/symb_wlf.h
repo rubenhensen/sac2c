@@ -15,7 +15,8 @@
  *****************************************************************************/
 extern node *SWLFdoSymbolicWithLoopFolding (node *arg_node);
 extern node *SWLFdoSymbolicWithLoopFoldingModule (node *arg_node);
-extern bool isPrfArg1DataFlowGuard (node *arg_node);
+extern bool isPrfArg1AttachExtrema (node *arg_node);
+extern bool isPrfArg1AttachIntersect (node *arg_node);
 
 extern node *SWLFfundef (node *arg_node, info *arg_info);
 extern node *SWLFassign (node *arg_node, info *arg_info);

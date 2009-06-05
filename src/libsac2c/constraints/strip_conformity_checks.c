@@ -9,7 +9,7 @@
  * Removes all conformity checks from the dataflow graph so that they
  * can be safely removed by dead code removal.
  *
- * This phase also removes dataflow guards, as they should never
+ * This phase also removes extrema and dataflow guards, as they should never
  * reach anywhere beyond the optimization phase.
  *
  * @ingroup scc
@@ -333,9 +333,9 @@ SCCprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
 
-    /* dataflow and attach minval/maxval guard never reach code generator */
-    case F_dataflowguard:
-    case F_attachminmax:
+    /* dataflow and attachextrema guards never reach code generator */
+    case F_attachextrema:
+    case F_attachintersect:
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
                                  &INFO_PREASSIGNS (arg_info));

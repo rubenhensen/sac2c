@@ -229,7 +229,7 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  *
  *      and want to end up with:
  *
- *           iv' = _attachminmax_(iv, minv, maxv);
+ *           iv' = _attachextrema(iv, minv, maxv);
  *
  *      and an appropriate vardec for iv', of course, such as:
  *
@@ -272,8 +272,8 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
 
     args = TBmakeExprs (id, TBmakeExprs (minv, TBmakeExprs (maxv, NULL)));
 
-    prf = TBmakePrf (F_attachminmax, args);
-    PRF_ATTACHMINMAXISSUED (prf) = TRUE;
+    prf = TBmakePrf (F_attachextrema, args);
+    PRF_EXTREMAATTACHED (prf) = TRUE;
     nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), prf), NULL);
     AVIS_SSAASSIGN (avis) = nas;
     *preassigns = TCappendAssign (*preassigns, nas);
@@ -328,7 +328,7 @@ IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
                          NULL);
 
     /* Keep us from trying to add extrema to the extrema calculations.  */
-    PRF_DONOTATTACHMINMAX (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
+    PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
 
     *preassigns = TCappendAssign (*preassigns, zass);
     AVIS_SSAASSIGN (zavis) = zass;
@@ -538,14 +538,14 @@ generateSelect (node *arg_node, info *arg_info, int k)
  *
  *      and want:
  *
- *           iv' = _attachminmax_(iv, GENERATOR_BOUND1(partn),
+ *           iv' = _attachextrema(iv, GENERATOR_BOUND1(partn),
  *                                    GENERATOR_BOUND2(partn) - 1);
  *
  *      and an appropriate vardec for iv', of course.
  *
  *      We build an N_id for iv because WITHIDs don't have them,
  *      just N_avis nodes. If -ssaiv becomes a reality, this
- *      can be scrapped, and we can attach the minmax to iv
+ *      can be scrapped, and we can attach the extrema to iv
  *      directly.
  *
  * @params:
@@ -568,14 +568,17 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    DBUG_ASSERT (N_id == NODE_TYPE (b1),
+                 "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
+    DBUG_ASSERT (N_id == NODE_TYPE (b2),
+                 "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
+
+#define FIXME // STUPID!!!!!!
+#ifdef FIXME  // DEAD - done at creation time
     b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNSPART (arg_info));
 
-    DBUG_ASSERT (N_id == NODE_TYPE (b1),
-                 "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
-    DBUG_ASSERT (N_avis == NODE_TYPE (b2),
-                 "IVEXItmpVec expected N_avis for GENERATOR_BOUND2");
-
+#endif // FIXME // DEAD
     avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
                                &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info));
 
@@ -615,14 +618,16 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
+    DBUG_ASSERT (N_id == NODE_TYPE (b1),
+                 "IVEXItmpIds expected N_id for GENERATOR_BOUND1");
+    DBUG_ASSERT (N_id == NODE_TYPE (b2),
+                 "IVEXItmpIds expected N_id for GENERATOR_BOUND2");
+
+#ifdef FIXME // DEAD - done at creation time
     b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNSWITH (arg_info));
 
-    DBUG_ASSERT (N_id == NODE_TYPE (b1),
-                 "IVEXItmpIds expected N_id for GENERATOR_BOUND1");
-    DBUG_ASSERT (N_avis == NODE_TYPE (b2),
-                 "IVEXItmpIds expected N_avis for GENERATOR_BOUND2");
-
+#endif // FIXME // DEAD - done at creation time
     b1 = generateSelect (ID_AVIS (b1), arg_info, k);
     b2 = generateSelect (b2, arg_info, k);
 
@@ -632,7 +637,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
 
     args = TBmakeExprs (TBmakeId (oldavis), TBmakeExprs (b1, TBmakeExprs (b2, NULL)));
     nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                   TBmakePrf (F_attachminmax, args)),
+                                   TBmakePrf (F_attachextrema, args)),
                         NULL);
     INFO_PREASSIGNSPART (arg_info) = TCappendAssign (INFO_PREASSIGNSPART (arg_info), nas);
     AVIS_SSAASSIGN (avis) = nas;
@@ -794,12 +799,12 @@ IVEXIwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXIwith");
 
-    if (!WITH_ISEXTREMAINSERTED (arg_node)) {
+    if (!WITH_EXTREMAATTACHED (arg_node)) {
         INFO_WITH (arg_info) = arg_node;
 
         /* Traverse the partitions, to define new temps. */
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        WITH_ISEXTREMAINSERTED (arg_node) = TRUE;
+        WITH_EXTREMAATTACHED (arg_node) = TRUE;
     }
 
     /* If partitions were unshared, we could eliminate this. */
@@ -928,7 +933,9 @@ IVEXIpart (node *arg_node, info *arg_info)
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
 
     /* Don't try this on empty code blocks, kids. */
-    if (N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))))) {
+    /* Or default partitions, either! */
+    if ((N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))))
+        && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 
         populateLUTVars (arg_node, arg_info);
 
