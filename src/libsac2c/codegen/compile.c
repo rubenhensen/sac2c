@@ -1683,7 +1683,7 @@ GetBaseTypeFromAvis (node *in)
 static const char *
 GetBaseTypeFromExpr (node *in)
 {
-    const char *ret;
+    const char *ret = NULL;
     DBUG_ENTER ("GetBaseTypeFromExpr");
     DBUG_ASSERT ((in != NULL), "no node found!");
 
