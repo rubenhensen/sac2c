@@ -502,7 +502,8 @@ ExtractedNarrayExtrema (node *arg_node, info *arg_info)
     el0 = EXPRS_EXPR (ARRAY_AELEMS (LET_EXPR (arg_node)));
     if (N_id == NODE_TYPE (el0)) {
         el0 = AVIS_SSAASSIGN (ID_AVIS (el0));
-        if (N_let == NODE_TYPE (ASSIGN_INSTR (el0))) {
+        if ((NULL != el0) && /* missing SSAASSIGN in N_ap parameter today FIXME */
+            (N_let == NODE_TYPE (ASSIGN_INSTR (el0)))) {
             prf = LET_EXPR (ASSIGN_INSTR (el0));
             if ((N_prf == NODE_TYPE (prf)) && (F_attachextrema == PRF_PRF (prf))
                 && ((TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (prf)))))
