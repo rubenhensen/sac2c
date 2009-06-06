@@ -73,6 +73,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     info *next;
     node *wl;
     node *assign;
@@ -84,6 +85,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_NEXT(n) (n->next)
 #define INFO_WL(n) (n->wl)
 #define INFO_ASSIGN(n) (n->assign)
@@ -103,6 +105,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_NEXT (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_ASSIGN (result) = NULL;
@@ -619,6 +622,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
 node *
 WLIfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
     DBUG_ENTER ("WLIfundef");
 
     INFO_WL (arg_info) = NULL;
@@ -628,7 +632,14 @@ WLIfundef (node *arg_node, info *arg_info)
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
     }
 
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1073,6 +1084,10 @@ WLIdoWLI (node *arg_node)
     DBUG_ENTER ("WLIdoWLI");
 
     info = MakeInfo ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "WLI called on nonN_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
 
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
