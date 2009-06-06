@@ -1451,7 +1451,7 @@ WLFfundef (node *arg_node, info *arg_info)
     INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
     if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), NULL);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
