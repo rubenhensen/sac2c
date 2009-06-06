@@ -13,8 +13,49 @@
 #include "new_typecheck.h"
 #include "type_utils.h"
 #include "constants.h"
+#include "memory.h"
 
 #include "elimtypeconv.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    bool onefundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_ONEFUNDEF(n) (n->onefundef)
+
+/*
+ INFO functions
+ */
+
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = MEMmalloc (sizeof (info));
+
+    INFO_ONEFUNDEF (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
 
 /** <!--********************************************************************-->
  *
@@ -30,11 +71,21 @@
 node *
 ETCdoEliminateTypeConversions (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ("ETCdoEliminateTypeConversions");
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 "a second entry is required for calls on N_module");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+
     TRAVpush (TR_etc);
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -91,10 +142,21 @@ CompareDTypes (node *avis, node *dim, node *shape)
 node *
 ETCfundef (node *arg_node, info *arg_info)
 {
+    bool one_fundef;
+
     DBUG_ENTER ("ETCfundef");
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    one_fundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = one_fundef;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
