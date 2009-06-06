@@ -271,17 +271,19 @@ DFCfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DFCfundef");
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
+        DBUG_PRINT ("DFC", ("traversing function body of %s", FUNDEF_NAME (arg_node)));
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("DFC", ("leaving function body of %s", FUNDEF_NAME (arg_node)));
+
+        old_onefundef = INFO_ONEFUNDEF (arg_info);
+        INFO_ONEFUNDEF (arg_info) = FALSE;
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        INFO_ONEFUNDEF (arg_info) = old_onefundef;
+    }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
