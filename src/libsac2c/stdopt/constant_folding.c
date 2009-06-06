@@ -432,7 +432,9 @@ CFfundef (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
         INFO_LHSTYPE (arg_info) = NULL;
 
+        DBUG_PRINT ("CF", ("traversing body of %s", FUNDEF_NAME (arg_node)));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("CF", ("leaving body of %s", FUNDEF_NAME (arg_node)));
 
         INFO_FUNDEF (arg_info) = old_fundef;
         INFO_TOPBLOCK (arg_info) = old_topblock;
