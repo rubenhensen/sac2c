@@ -25,6 +25,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     node *fundef;
     node *newassign;
     node *lhs;
@@ -33,6 +34,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_NEWASSIGN(n) ((n)->newassign)
@@ -49,6 +51,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_NEWASSIGN (result) = NULL;
@@ -144,9 +147,13 @@ node *
 ESDdoElimSubDiv (node *arg_node)
 {
     info *info;
+    DBUG_ENTER ("ESDdoElimSubDiv");
+
     info = MakeInfo ();
 
-    DBUG_ENTER ("ESDdoElimSubDiv");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ESD called on nonN_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
 
     TRAVpush (TR_esd);
     arg_node = TRAVdo (arg_node, info);
@@ -175,30 +182,24 @@ ESDdoElimSubDiv (node *arg_node)
 node *
 ESDfundef (node *arg_node, info *arg_info)
 {
-    info *newInfo;
+    bool old_onefundef;
 
     DBUG_ENTER ("ESDFundef");
 
     INFO_FUNDEF (arg_info) = arg_node;
-    newInfo = MakeInfo ();
 
-    /*
-     * Stack INFO_FUNDEF and descend into local LAC functions
-     */
-    INFO_FUNDEF (newInfo) = INFO_FUNDEF (arg_info);
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), newInfo);
-    newInfo = FreeInfo (newInfo);
-
-    /*
-     * Now descend into the function body itself
-     */
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    DBUG_RETURN (arg_node);
 
-    /*
-     * Descend into next fundef
-     */
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /**<!--***************************************************************-->
@@ -278,6 +279,7 @@ ESDlet (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+    INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }

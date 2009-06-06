@@ -48,6 +48,7 @@
  *****************************************************************************/
 
 struct INFO {
+    bool onefundef;
     node *lhs;
     node *rhsavis;
     node *withid;
@@ -55,6 +56,7 @@ struct INFO {
     dfmask_t *dfm;
 };
 
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 /* The left hand side of the N_let, the array we are copying into */
 #define INFO_LHS(n) (n->lhs)
 /* The right hand side of the N_let, or the array we copy from, respectively */
@@ -76,6 +78,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_RHSAVIS (result) = NULL;
@@ -121,6 +124,9 @@ CWLEdoTemplateTraversal (node *syntax_tree)
     DBUG_ENTER ("CWLEdoTemplateTraversal");
 
     info = MakeInfo ();
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "CWLE called on nonN_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
 
     DBUG_PRINT ("CWLE", ("Starting template traversal."));
 
@@ -174,6 +180,7 @@ CWLEdoTemplateTraversal (node *syntax_tree)
 node *
 CWLEfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
     dfmask_base_t *dfmask_base = NULL;
 
     DBUG_ENTER ("CWLEfundef");
@@ -193,7 +200,14 @@ CWLEfundef (node *arg_node, info *arg_info)
         DFMremoveMaskBase (dfmask_base);
     }
 
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

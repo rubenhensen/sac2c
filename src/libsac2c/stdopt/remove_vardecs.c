@@ -39,9 +39,11 @@
  *
  *****************************************************************************/
 struct INFO {
+    bool onefundef;
     enum { TM_init, TM_delete } travmode;
 };
 
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_TRAVMODE(n) ((n)->travmode)
 
 static info *
@@ -53,6 +55,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_TRAVMODE (result) = TM_init;
 
     DBUG_RETURN (result);
@@ -90,6 +93,10 @@ RMVdoRemoveVardecsOneFundef (node *fundef)
     DBUG_ENTER ("RMVdoRemoveVardecsOneFundef");
 
     info = MakeInfo ();
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "RMVdoRemoveVardecsOneFundef called on non N_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
 
     TRAVpush (TR_rmv);
     fundef = TRAVdo (fundef, info);
@@ -132,11 +139,19 @@ RMVdoRemoveVardecsOneFundef (node *fundef)
 node *
 RMVfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
     DBUG_ENTER ("RMVfundef");
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 

@@ -19,6 +19,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     node *preassign;
     node *fundef;
 };
@@ -26,6 +27,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_FUNDEF(n) ((n)->fundef)
 
@@ -41,6 +43,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
@@ -183,6 +186,10 @@ ASdoArithmeticSimplification (node *syntax_tree)
 
     info = MakeInfo ();
 
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "AS called on nonN_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
+
     TRAVpush (TR_as);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
@@ -195,14 +202,24 @@ ASdoArithmeticSimplification (node *syntax_tree)
 node *
 ASfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
+
     DBUG_ENTER ("ASfundef");
 
     INFO_FUNDEF (arg_info) = arg_node;
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
     INFO_FUNDEF (arg_info) = NULL;
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -95,6 +95,8 @@ ESVdoEliminateShapeVariables (node *syntax_tree)
 
     info = MakeInfo ();
 
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "ESV called on non N_module node");
+
     TRAVpush (TR_esv);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();

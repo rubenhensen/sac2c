@@ -757,6 +757,8 @@ EliminateEmptyProducts (node *mop, simpletype st)
 node *
 DLfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
+
     DBUG_ENTER ("DLfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -775,8 +777,12 @@ DLfundef (node *arg_node, info *arg_info)
         INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
     }
 
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
     if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 

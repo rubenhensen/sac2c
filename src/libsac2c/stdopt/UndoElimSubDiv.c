@@ -35,6 +35,7 @@
  */
 struct INFO {
     node *fundef;
+    bool onefundef;
     node *postassign;
     node *let;
     bool topdown;
@@ -43,6 +44,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_POSTASSIGN(n) (n->postassign)
 #define INFO_LET(n) (n->let)
@@ -208,6 +210,10 @@ UESDdoUndoElimSubDiv (node *arg_node)
 
     info = MakeInfo ();
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "WLI called on nonN_fundef node");
+
+    INFO_ONEFUNDEF (info) = TRUE;
+
     TRAVpush (TR_uesd);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
@@ -225,7 +231,7 @@ UESDdoUndoElimSubDiv (node *arg_node)
 node *
 UESDfundef (node *arg_node, info *arg_info)
 {
-    info *new_info;
+    bool old_onefundef;
 
     DBUG_ENTER ("UESDfundef");
 
@@ -234,12 +240,14 @@ UESDfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    new_info = MakeInfo ();
-    INFO_FUNDEF (new_info) = arg_node;
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), new_info);
-    new_info = FreeInfo (new_info);
+    old_onefundef = INFO_ONEFUNDEF (arg_info);
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
