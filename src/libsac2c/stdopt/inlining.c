@@ -143,12 +143,14 @@ node *
 INLfundef (node *arg_node, info *arg_info)
 {
     info *old_info;
-    int old_depth;
 
     DBUG_ENTER ("INLfundef");
 
+    DBUG_PRINT ("INL", ("Looking at %s", CTIitemName (arg_node)));
+
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
-        && (!FUNDEF_ISWRAPPERFUN (arg_node))) {
+        && (!FUNDEF_ISWRAPPERFUN (arg_node))
+        && ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_DEPTH (arg_info) >= 1))) {
 
         old_info = arg_info;
         arg_info = MakeInfo ();
@@ -168,11 +170,6 @@ INLfundef (node *arg_node, info *arg_info)
 
         FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
     }
-
-    old_depth = INFO_DEPTH (arg_info);
-    INFO_DEPTH (arg_info) = 0;
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_DEPTH (arg_info) = old_depth;
 
     if (INFO_DEPTH (arg_info) == 0) {
         /*
