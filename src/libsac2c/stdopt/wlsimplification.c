@@ -308,29 +308,6 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool WLSIMPisEmptyCode( node *arg_node)
- *
- * @brief Predicate for empty WITH_CODE block with
- *
- * @param  N_code node.
- *
- * @return TRUE if N_code is empty.
- *
- *****************************************************************************/
-static bool
-WLSIMPisEmptyCode (node *arg_node)
-{
-    bool z;
-
-    DBUG_ENTER ("WLSIMPisEmptyCode");
-
-    z = (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (arg_node))));
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *WLSIMPdoWithloopSimplification( node *fundef)
  *
  * @brief
