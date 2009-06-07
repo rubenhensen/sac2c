@@ -28,6 +28,8 @@
  */
 struct INFO {
     bool onefundef;
+    bool dispatched;
+    node *fundef;
     node *cexprs;
     node *let;
     node *foldfuns;
@@ -37,6 +39,8 @@ struct INFO {
  * INFO macros
  */
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_DISPATCHED(n) ((n)->dispatched)
 #define INFO_CEXPRS(n) ((n)->cexprs)
 #define INFO_LASTLET(n) ((n)->let)
 #define INFO_FOLDFUNS(n) ((n)->foldfuns)
@@ -54,6 +58,8 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
+    INFO_FUNDEF (result) = NULL;
+    INFO_DISPATCHED (result) = FALSE;
     INFO_CEXPRS (result) = NULL;
     INFO_LASTLET (result) = NULL;
     INFO_FOLDFUNS (result) = NULL;
@@ -117,7 +123,7 @@ DFCmodule (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DispatchFunCall( node *fundef, ntype *arg_types)
+ *   node *DispatchFunCall( node *fundef, ntype *arg_types, info *arg_info)
  *
  * Description:
  *
@@ -125,7 +131,7 @@ DFCmodule (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-DispatchFunCall (node *fundef, ntype *arg_types)
+DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
 {
     dft_res *dft_res;
     node *new_fundef = NULL;
@@ -242,11 +248,7 @@ DispatchFunCall (node *fundef, ntype *arg_types)
         }
     }
     if (new_fundef != NULL) {
-        /**
-         * reactive potential inlining!
-         * This is required for enabling inlining within the cycle!
-         */
-        FUNDEF_ISINLINECOMPLETED (new_fundef) = FALSE;
+        INFO_DISPATCHED (arg_info) = TRUE;
     } else {
         new_fundef = fundef;
     }
@@ -267,22 +269,35 @@ DispatchFunCall (node *fundef, ntype *arg_types)
 node *
 DFCfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
+    node *old_fundef;
     DBUG_ENTER ("DFCfundef");
 
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
-        DBUG_PRINT ("DFC", ("traversing function body of %s", FUNDEF_NAME (arg_node)));
+    /**
+     * we do not dispatch within wrapper functions, and we only look at
+     * LaC functions if we are in one-fundef mode. The reason here is
+     * that in one-fundef mode and only in that mode, we treat LAC-funs
+     * as inline (cf DFCap). This choice became necessary to be able to tag the correct
+     * callgraph for LaCfuns as FUNDEF_ISINLINECOMPLETED( arg_node) = FALSE
+     * which is required for a proper inlining in fundef mode.
+     */
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)
+        && (INFO_ONEFUNDEF (arg_info) || !FUNDEF_ISLACFUN (arg_node))) {
+        DBUG_PRINT ("DFC", ("traversing function body of %s", CTIitemName (arg_node)));
+        old_fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_PRINT ("DFC", ("leaving function body of %s", FUNDEF_NAME (arg_node)));
+        INFO_FUNDEF (arg_info) = old_fundef;
+        DBUG_PRINT ("DFC", ("leaving function body of %s", CTIitemName (arg_node)));
 
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        INFO_ONEFUNDEF (arg_info) = old_onefundef;
+        if (INFO_DISPATCHED (arg_info)) {
+            FUNDEF_ISINLINECOMPLETED (arg_node) = FALSE;
+            DBUG_PRINT ("DFC", ("FUNDEF_ISINLINECOMPLETED set to FALSE for %s",
+                                CTIitemName (arg_node)));
+        }
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
+        INFO_DISPATCHED (arg_info) = FALSE;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -302,6 +317,7 @@ DFCfundef (node *arg_node, info *arg_info)
 node *
 DFCap (node *arg_node, info *arg_info)
 {
+    bool old_dispatched;
     ntype *arg_types;
 
     DBUG_ENTER ("DFCap");
@@ -313,12 +329,20 @@ DFCap (node *arg_node, info *arg_info)
                  NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
-    AP_FUNDEF (arg_node) = DispatchFunCall (AP_FUNDEF (arg_node), arg_types);
+    AP_FUNDEF (arg_node) = DispatchFunCall (AP_FUNDEF (arg_node), arg_types, arg_info);
 
     DBUG_PRINT ("DFC",
                 ("Ap of function %s:%s now points to " F_PTR ".",
                  NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
     arg_types = TYfreeType (arg_types);
+
+    if (INFO_ONEFUNDEF (arg_info) && FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        old_dispatched = INFO_DISPATCHED (arg_info);
+        INFO_DISPATCHED (arg_info) = FALSE;
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        INFO_DISPATCHED (arg_info) = (INFO_DISPATCHED (arg_info) || old_dispatched);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -436,7 +460,8 @@ DFCfold (node *arg_node, info *arg_info)
     arg_type = TYlubOfTypes (neutr_type, body_type);
     arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
-    FOLD_FUNDEF (arg_node) = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types);
+    FOLD_FUNDEF (arg_node)
+      = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types, arg_info);
 
     /*
      * cleanup
