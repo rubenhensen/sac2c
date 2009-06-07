@@ -488,6 +488,14 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *           - The current folderWL's sel(idx, foldeeWL) index set matches
  *             the index set of some partition of the foldeeWL,
  *             or is a subset of that partition.
+ *             We have already computed the intersection of those
+ *             index sets, and they hang off the F_attachintersect node.
+ *             The Nth foldeeWL partition can be folded if the
+ *             Nth intersection set matches the index set of the
+ *             folderWL partition. We don't even look
+ *             at the foldeeWL any more, except it comes along for
+ *             the ride as an easy way to pick the correct
+ *             foldeeWL partition when we do find a match.
  *
  * @params *arg_node: the N_prf of the sel(idx, foldeeWL).
  *         *folderpart: the folderWL partition containing arg_node.

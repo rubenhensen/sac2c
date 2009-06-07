@@ -36,5 +36,6 @@ extern node *CSEids (node *arg_node, info *arg_info);
 extern node *CSEid (node *arg_node, info *arg_info);
 extern node *CSEwith (node *arg_node, info *arg_info);
 extern node *CSEcode (node *arg_node, info *arg_info);
+extern node *CSEvardec (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CSE_H_ */

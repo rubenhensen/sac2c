@@ -834,6 +834,17 @@ CSEblock (node *arg_node, info *arg_info)
         INFO_CSE (arg_info) = RemoveTopCseLayer (INFO_CSE (arg_info));
     }
 
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        /*
+         * traverse vardecs of block again, to rename extrema.
+         */
+        node *vardec = BLOCK_VARDEC (arg_node);
+        while (vardec != NULL) {
+            vardec = CSEvardec (vardec, arg_info);
+            vardec = VARDEC_NEXT (vardec);
+        }
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1129,8 +1140,6 @@ CSEids (node *arg_node, info *arg_info)
  * description:
  *   traverse id data to do substitution.
  *
- *   We also may rename AVIS_MINVAL and AVIS_MAXVAL.
- *
  *****************************************************************************/
 node *
 CSEid (node *arg_node, info *arg_info)
@@ -1168,16 +1177,6 @@ CSEid (node *arg_node, info *arg_info)
 #endif
     }
 
-    if ((NULL != AVIS_MINVAL (ID_AVIS (arg_node)))
-        && (NULL != AVIS_SUBST (AVIS_MINVAL (ID_AVIS (arg_node))))) {
-        AVIS_MINVAL (ID_AVIS (arg_node)) = AVIS_SUBST (AVIS_MINVAL (ID_AVIS (arg_node)));
-    }
-
-    if ((NULL != AVIS_MAXVAL (ID_AVIS (arg_node)))
-        && (NULL != AVIS_SUBST (AVIS_MAXVAL (ID_AVIS (arg_node))))) {
-        AVIS_MAXVAL (ID_AVIS (arg_node)) = AVIS_SUBST (AVIS_MAXVAL (ID_AVIS (arg_node)));
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1206,6 +1205,35 @@ CSEwith (node *arg_node, info *arg_info)
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     INFO_WITHID (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSEvardec(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse a vardec to rename its extrema.
+ *
+ *
+ *****************************************************************************/
+node *
+CSEvardec (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("CSEvardec");
+
+    avis = VARDEC_AVIS (arg_node);
+    if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
+        AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
+    }
+
+    if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
+        AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
+    }
 
     DBUG_RETURN (arg_node);
 }
