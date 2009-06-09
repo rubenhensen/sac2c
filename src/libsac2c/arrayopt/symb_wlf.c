@@ -167,6 +167,7 @@
  *
  *****************************************************************************/
 #include "symb_wlf.h"
+#include "symb_wlfi.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -188,6 +189,7 @@
 #include "constants.h"
 #include "shape.h"
 #include "new_types.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *
@@ -206,6 +208,7 @@ struct INFO {
     node *swlfoldablefoldeepart;
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
+    node *vardecs;
 };
 
 /**
@@ -217,6 +220,7 @@ struct INFO {
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_VARDECS(n) ((n)->vardecs)
 
 static info *
 MakeInfo (node *fundef)
@@ -233,6 +237,7 @@ MakeInfo (node *fundef)
     INFO_LEVEL (result) = 0;
     INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
     INFO_LUT (result) = NULL;
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -639,39 +644,161 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
 
 /** <!--********************************************************************-->
  *
- * @fn node *populateLut( node *part1, node *part2, info *arg_info)
+ * @fn node *populateLut( node *arg_node, info *arg_info,
+ *                        node *folder, node *foldee, node *idxassigns)
  *
- * @brief Populate a look up table for mapping WITH_VEC and
- *        WITH_ID references into temp names.
+ * @brief Populate a look up table for mapping names in the copied
+ *        WL code block. The primary function here is to rename
+ *        everything except arg_node. Specifically, we rename all
+ *        sets of the WITHID_VEC and WITHID_IDS, so that
+ *        a given name only appears in one N_part code block, hence
+ *        preserving SSA-ness. Since the idx in _sel_VxA_( idx, foldeeWL)
+ *        comes from the folderWL, we place that single
+ *        name in both sides of the LUT, so it does not
+ *        get renamed.
+ *
+ *        We also generate new names for the WITHID names in the foldee,
+ *        so as to force renaming of those, as well. This is necessary
+ *        to avoid LHS conflicts between not-quite-yet-deleted WITHIDs
+ *        in the foldeeWL, and those copied WITHID names in the
+ *        cloned code block.
  *
  *****************************************************************************/
 static void
-populateLut (node *part1, node *part2, info *arg_info)
+populateLut (node *arg_node, info *arg_info, node *folder, node *foldee, node *idxassigns)
 {
-    node *vec1, *ids1, *vec2, *ids2;
+    node *vec1;
+    node *ids1;
+    node *arg1;
+    node *navis;
 
     DBUG_ENTER ("populateLut");
 
-    vec1 = WITHID_VEC (PART_WITHID (part1));
-    ids1 = WITHID_IDS (PART_WITHID (part1));
+    arg1 = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (arg_node)));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), ID_AVIS (arg1), ID_AVIS (arg1));
+    DBUG_PRINT ("SWLF", ("Inserting idx into lut: oldname: %s, newname %s",
+                         AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg1))));
 
-    vec2 = WITHID_VEC (PART_WITHID (part2));
-    ids2 = WITHID_IDS (PART_WITHID (part2));
+    /* Rename all WITHIDs from foldeeWL partition */
+    vec1 = WITHID_VEC (PART_WITHID (foldee));
 
-    DBUG_PRINT ("SWLF", ("Inserting WITHID_VEC into lut: foldee: %s, folder %s",
-                         AVIS_NAME (IDS_AVIS (vec1)), AVIS_NAME (IDS_AVIS (vec2))));
-    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (vec1), IDS_AVIS (vec2));
+    /* Generate a new LHS name for WITHID_VEC */
+    navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (IDS_AVIS (vec1))),
+                        TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (IDS_AVIS (vec1)))),
+                                   SHcreateShape (1, 1)));
+    if (isSAAMode ()) {
+        AVIS_DIM (navis) = DUPdoDupTree (AVIS_DIM (IDS_AVIS (vec1)));
+        AVIS_SHAPE (navis) = DUPdoDupTree (AVIS_SHAPE (IDS_AVIS (vec1)));
+    }
+    INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (vec1), navis);
+
+    DBUG_PRINT ("SWLF", ("Inserting WITHID_VEC into lut: oldname: %s, newname %s",
+                         AVIS_NAME (IDS_AVIS (vec1)), AVIS_NAME (navis)));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (vec1), navis);
+
+    ids1 = WITHID_IDS (PART_WITHID (foldee));
 
     while (ids1 != NULL) {
-        DBUG_PRINT ("SWLF", ("Inserting WITHID_IDS into lut: foldee: %s, folder: %s",
-                             AVIS_NAME (IDS_AVIS (ids1)), AVIS_NAME (IDS_AVIS (ids2))));
-        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids1), IDS_AVIS (ids2));
+        /* Generate a new LHS name for a WITHID_IDS */
+        navis
+          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (IDS_AVIS (ids1))),
+                        TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (IDS_AVIS (ids1)))),
+                                   SHcreateShape (0)));
+        if (isSAAMode ()) {
+            AVIS_DIM (navis) = DUPdoDupTree (AVIS_DIM (IDS_AVIS (ids1)));
+            AVIS_SHAPE (navis) = DUPdoDupTree (AVIS_SHAPE (IDS_AVIS (ids1)));
+        }
+        INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids1), navis);
 
+        DBUG_PRINT ("SWLF", ("Inserting WITHID_IDS into lut: oldname: %s, newname: %s",
+                             AVIS_NAME (IDS_AVIS (ids1)), AVIS_NAME (navis)));
         ids1 = IDS_NEXT (ids1);
-        ids2 = IDS_NEXT (ids2);
     }
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @ fn static node *makeIdxAssigns( node *arg_node, node *foldeePart)
+ *
+ * @brief for a foldee partition, with generator:
+ *        (. <= iv=[i,j] < .)
+ *        and a folder _sel_VxA_( idx, foldeeWL),
+ *
+ *        generate an N_assigns chain of this form:
+ *
+ *        iv = idx;
+ *        i  = _sel_VxA_( [0], idx);
+ *        j  = _sel_VxA_( [1], idx);
+ *
+ * @result: an N_assign chain as above.
+ *
+ *****************************************************************************/
+static node *
+makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
+{
+    node *z = NULL;
+    node *vec;
+    node *ids;
+    node *sel;
+    node *narray;
+    node *idxid;
+    node *navis;
+    node *nass;
+
+    int k;
+
+    DBUG_ENTER ("makeIdxAssigns");
+
+    ids = WITHID_IDS (PART_WITHID (foldeePart));
+    idxid = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (arg_node)));
+    k = 0;
+
+    while (NULL != ids) {
+        /* Build [k] */
+        narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
+        navis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+        if (isSAAMode ()) {
+            AVIS_DIM (navis) = TBmakeNum (1);
+            AVIS_SHAPE (navis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
+        }
+
+        nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
+        z = TCappendAssign (z, nass);
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
+        AVIS_SSAASSIGN (navis) = nass;
+
+        sel = TBmakeAssign (TBmakeLet (DUPdoDupNode (ids),
+                                       TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
+                                                   DUPdoDupNode (idxid))),
+                            NULL);
+
+        z = TCappendAssign (z, sel);
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = sel;
+        if (isSAAMode ()) {
+            AVIS_DIM (IDS_AVIS (ids)) = TBmakeNum (0);
+            AVIS_SHAPE (IDS_AVIS (ids)) = TCmakeIntVector (NULL);
+        }
+
+        ids = IDS_NEXT (ids);
+        k++;
+    }
+
+    vec = WITHID_VEC (PART_WITHID (foldeePart));
+    z = TBmakeAssign (TBmakeLet (DUPdoDupNode (vec), DUPdoDupNode (idxid)), z);
+
+    AVIS_SSAASSIGN (IDS_AVIS (vec)) = z;
+    if (isSAAMode ()) {
+        AVIS_DIM (IDS_AVIS (vec)) = TBmakeNum (1);
+        AVIS_SHAPE (IDS_AVIS (vec)) = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
+    }
+
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -680,36 +807,47 @@ populateLut (node *part1, node *part2, info *arg_info)
  *
  * @brief
  *   In
- *    BBB = with...  elb = _sel_VxA_(iv, AAA) ...    NB. foldee
- *    CCC = with...  elc = _sel_VxA_(jv, BBB) ...    NB. folder
+ *    BBB = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...    NB. foldee
+ *    CCC = with...  elc = _sel_VxA_(idx, BBB) ...    NB. folder
  *
  *   Replace, in the folder WL:
- *     elc = _sel_VxA_( jv, BBB)
+ *     elc = _sel_VxA_( idx, BBB)
  *   by
- *     tmp = _sel_VxA_( iv, AAA)
+ *     iv = idx;
+ *     i = _sel_VxA_([0], idx);
+ *     j = _sel_VxA_([1], idx);
+ *     {code block from BBB}
+ *     tmp = bbbresultelement)
  *     elc = tmp;
  *
  * @params
- *    assign:
+ *    arg_node: N_assign for the sel()
  *    fundef: N_fundef node, so we can insert new avis node for
  *            temp assign being made here.
  *    foldee: N_part node of foldee.
  *    folder: N_part node of folder.
  *****************************************************************************/
 static node *
-doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder, info *arg_info)
+doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *arg_info)
 {
     node *oldblock, *newblock;
-    node *expravis, *newavis;
+    node *newavis;
+    node *idxassigns;
+    node *expravis;
 
     DBUG_ENTER ("doSWLFreplace");
+
+    oldblock = CODE_CBLOCK (PART_CODE (foldee));
+
+    /* Generate iv=[i,j] assigns, then do renames. */
+    idxassigns = makeIdxAssigns (arg_node, arg_info, foldee);
 
     /* Populate lut, to map names in foldeeWL to corresponding names
      * in folderWL.
      */
-    populateLut (foldee, folder, arg_info);
+    populateLut (arg_node, arg_info, folder, foldee, idxassigns);
 
-    oldblock = CODE_CBLOCK (PART_CODE (foldee));
+    idxassigns = DUPdoDupTreeLutSsa (idxassigns, INFO_LUT (arg_info), fundef);
 
     /* If foldeeWL is empty, don't do any code substitutions.
      * Just replace sel(iv, foldeeWL) by iv.
@@ -728,13 +866,15 @@ doSWLFreplace (node *assign, node *fundef, node *foldee, node *folder, info *arg
     /**
      * replace the code
      */
-    FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (assign)));
-    LET_EXPR (ASSIGN_INSTR (assign)) = TBmakeId (newavis);
+    FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (arg_node)));
+    LET_EXPR (ASSIGN_INSTR (arg_node)) = TBmakeId (newavis);
     if (NULL != newblock) {
-        assign = TCappendAssign (newblock, assign);
+        arg_node = TCappendAssign (newblock, arg_node);
     }
 
-    DBUG_RETURN (assign);
+    arg_node = TCappendAssign (idxassigns, arg_node);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -774,6 +914,14 @@ SWLFfundef (node *arg_node, info *arg_info)
 #endif // DAOEN
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        /* If new vardecs were made, append them to the current set */
+        if (INFO_VARDECS (arg_info) != NULL) {
+            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+              = TCappendVardec (INFO_VARDECS (arg_info),
+                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+            INFO_VARDECS (arg_info) = NULL;
+        }
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loop folding in %s %s ends",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
@@ -850,6 +998,7 @@ SWLFwith (node *arg_node, info *arg_info)
     INFO_WL (arg_info) = arg_node;
     INFO_LUT (arg_info) = INFO_LUT (old_info);
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_info) + 1;
+    INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
 
     WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
@@ -876,6 +1025,7 @@ SWLFwith (node *arg_node, info *arg_info)
     }
 
     INFO_WL (old_info) = NULL;
+    INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);

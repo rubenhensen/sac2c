@@ -428,7 +428,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *
  * @brief  We are looking at the N_prf for:
  *
- *            z = _sel_(idx, foldeeWL);
+ *            z = _sel_VxA_( idx, foldeeWL);
  *         and idx now has extrema attached to it. We
  *         are now in a position to compute the intersection
  *         between idx's index set and that of the foldeeWL

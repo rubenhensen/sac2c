@@ -136,6 +136,7 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "check_mem.h"
+#include "tree_basic.h"
 
 /*
  * size of a collision table fragment
@@ -1531,6 +1532,10 @@ LUTprintLut (FILE *handle, lut_t *lut)
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
                 fprintf (handle, "%i: [ " F_PTR " -> " F_PTR " ]\n", i, tmp[0], tmp[1]);
+                if (N_avis == NODE_TYPE ((node *)tmp[0])) {
+                    fprintf (handle, "%s  ->  %s\n", AVIS_NAME ((node *)tmp[0]),
+                             AVIS_NAME ((node *)tmp[1]));
+                }
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */

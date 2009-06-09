@@ -334,6 +334,40 @@ isPrfArgHasKnownExtrema (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static
+ *   node *buildExtremaChain( node *arg_node, int minmax)
+ *
+ * description:
+ *        Little recursive extrema-chain builder,
+ *        to get results in correct order.
+ *
+ * @params  arg_node: an N_array node.
+ *          minmax: 0 for MINVAL, 1 for MAXVAL
+ *
+ * @result: An N_exprs chain of extrema.
+ *
+ ******************************************************************************/
+static node *
+buildExtremaChain (node *exprs, int minmax)
+{
+    node *z = NULL;
+    node *avis;
+    node *m;
+
+    DBUG_ENTER ("buildExtremaChain");
+    if (NULL != EXPRS_NEXT (exprs)) {
+        z = buildExtremaChain (EXPRS_NEXT (exprs), minmax);
+    }
+    avis = ID_AVIS (EXPRS_EXPR (exprs));
+    m = (0 == minmax) ? AVIS_MINVAL (avis) : AVIS_MAXVAL (avis);
+    z = TBmakeExprs (TBmakeId (m), z);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PropagateNarray node *arg_node, info *arg_info)
  *
  * description:
@@ -397,14 +431,8 @@ PropagateNarray (node *arg_node, info *arg_info)
     }
     if (allex) {
         /* Build exprs chains of minima and maxima. */
-        exprs = ARRAY_AELEMS (v);
-        while (exprs != NULL) {
-            minv
-              = TBmakeExprs (TBmakeId (AVIS_MINVAL (ID_AVIS (EXPRS_EXPR (exprs)))), minv);
-            maxv
-              = TBmakeExprs (TBmakeId (AVIS_MAXVAL (ID_AVIS (EXPRS_EXPR (exprs)))), maxv);
-            exprs = EXPRS_NEXT (exprs);
-        }
+        minv = buildExtremaChain (ARRAY_AELEMS (v), 0);
+        maxv = buildExtremaChain (ARRAY_AELEMS (v), 1);
 
         /* At this point, we have two N_exprs chains of extrema.
          * Make these N_array nodes and give them names, then attach
