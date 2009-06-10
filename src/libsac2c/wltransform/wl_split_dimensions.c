@@ -1389,7 +1389,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
             BLOCK_INSTR (body) = TCappendAssign (preassigns, BLOCK_INSTR (body));
         }
 
-        res = DUPdoDupTree (CODE_CEXPRS (code));
+        res = DUPdoDupTreeLut (CODE_CEXPRS (code), lut);
 
         /* only remove contents! the lut is reused! */
         lut = LUTremoveContentLut (lut);
