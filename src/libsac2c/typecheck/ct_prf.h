@@ -16,6 +16,7 @@ extern ntype *NTCCTprf_dispatch_error (te_info *info, ntype *args);
 extern ntype *NTCCTprf_guard (te_info *info, ntype *args);
 extern ntype *NTCCTprf_afterguard (te_info *info, ntype *args);
 extern ntype *NTCCTprf_attachextrema (te_info *info, ntype *args);
+extern ntype *NTCCTprf_attachextreman (te_info *info, ntype *args);
 extern ntype *NTCCTprf_attachintersect (te_info *info, ntype *args);
 extern ntype *NTCCTprf_type_constraint (te_info *info, ntype *args);
 extern ntype *NTCCTprf_same_shape (te_info *info, ntype *args);

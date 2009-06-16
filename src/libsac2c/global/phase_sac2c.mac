@@ -602,33 +602,38 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
                           SUBPHASE (ufl, "Unflattening WL generator",
                                     UFLdoUnflattenWLGenerators, ALWAYS, opt)
 
-                            SUBPHASE (dcr3, "Removing dead code",
-                                      DCRdoDeadCodeRemovalModule,
-                                      (global.optimize.dosaa || global.optimize.doive
-                                       || !global.runtimecheck.conformity)
-                                        && global.optimize.dodcr,
-                                      opt)
+                            SUBPHASE (cse2, "Eliminating common subexpression",
+                                      CSEdoCommonSubexpressionEliminationModule,
+                                      global.optimize.docse, opt)
 
-                              SUBPHASE (wllom, "Withloop lock optimization marking",
-                                        WLLOMdoLockOptimizationMarking,
-                                        global.optimize.dowllo, opt)
+                              SUBPHASE (dcr3, "Removing dead code",
+                                        DCRdoDeadCodeRemovalModule,
+                                        (global.optimize.dosaa || global.optimize.doive
+                                         || !global.runtimecheck.conformity)
+                                          && global.optimize.dodcr,
+                                        opt)
 
-                                SUBPHASE (wllos, "Withloop lock optimization shifting",
-                                          WLLOSdoLockOptimizationShifting,
+                                SUBPHASE (wllom, "Withloop lock optimization marking",
+                                          WLLOMdoLockOptimizationMarking,
                                           global.optimize.dowllo, opt)
 
-                                  SUBPHASE (fdi, "Freeing dispatch information",
-                                            FDIdoFreeDispatchInformation, ALWAYS, opt)
+                                  SUBPHASE (wllos, "Withloop lock optimization shifting",
+                                            WLLOSdoLockOptimizationShifting,
+                                            global.optimize.dowllo, opt)
 
-                                    SUBPHASE (pfap, "Profiling function applications",
-                                              PFdoProfileFunCalls, global.doprofile, opt)
+                                    SUBPHASE (fdi, "Freeing dispatch information",
+                                              FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-                                      SUBPHASE (stat,
-                                                "Displaying optimisation statistics",
-                                                STATdoPrintStatistics,
-                                                global.verbose_level >= 3, opt)
+                                      SUBPHASE (pfap, "Profiling function applications",
+                                                PFdoProfileFunCalls, global.doprofile,
+                                                opt)
 
-                                        ENDPHASE (opt)
+                                        SUBPHASE (stat,
+                                                  "Displaying optimisation statistics",
+                                                  STATdoPrintStatistics,
+                                                  global.verbose_level >= 3, opt)
+
+                                          ENDPHASE (opt)
 
   /******************************************************************************/
 

@@ -27,7 +27,7 @@ extern node *IVEXIassign (node *arg_node, info *arg_info);
 extern node *IVEXIavis (node *arg_node, info *arg_info);
 
 extern node *IVEXIattachExtrema (node *minv, node *maxv, node *ivavis, node **vardecs,
-                                 node **preassigns);
+                                 node **preassigns, prf nprf);
 extern node *IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs,
                                       node **preassigns);
 

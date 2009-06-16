@@ -481,6 +481,39 @@ NTCCTprf_attachextrema (te_info *info, ntype *args)
     res = TYmakeProductType (1, res);
     DBUG_RETURN (res);
 }
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_attachextreman( te_info *info, ntype *elems)
+ *
+ * description:
+ *   This primitive is used to preserve N_array extrema. The
+ *   extrema are attached to the first element of the N_array.
+ *   E.g.,  given the following N_array:
+ *
+ *        narr = [ I, J, K];
+ *
+ *   This is turned into:
+ *
+ *        I' = _attachextreman ( I, minnarr, maxnarr);
+ *        narr = [ I', J, K];
+ *
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_attachextreman (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTprf_attachextreman");
+
+    arg = TYgetProductMember (args, 0);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  *

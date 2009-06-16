@@ -280,65 +280,129 @@ PushArgs (node *stack, node *args)
 
 /** <!--*******************************************************************-->
  *
- * @fn static node *lastId( node * arg_node)
+ * @fn bool isPrfGuard(node *arg_node)
+ *
+ * @brief If arg_node is an N_prf and is a guard with PRF_ARG1 as
+ *        its primary result, return TRUE; else FALSE.
+ * @param
+ * @return
+ *****************************************************************************/
+static bool
+isPrfGuard (node *arg_node)
+{
+    bool z;
+
+    DBUG_ENTER ("isPrfGuard");
+    z = (N_prf == NODE_TYPE (arg_node));
+    if (z) {
+        switch (PRF_PRF (arg_node)) {
+        default:
+            z = FALSE;
+            break;
+        case F_guard:
+        case F_attachextrema:
+        case F_attachintersect:
+        case F_non_neg_val_V:
+        case F_val_lt_shape_VxA:
+        case F_val_le_val_VxV:
+        case F_shape_matches_dim_VxA:
+            z = TRUE;
+            break;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn static node *lastId( node *arg_node, bool ignoreguards)
  *
  * @brief looks behind the definitions of N_id nodes, if possible
  *        to find the last N_id node in a chain.
+ *        Guards are treated as if they are just another
+ *        N_id in the chain, if ignoreguards is TRUE.
+ *
  *          f = [5,6];
  *          b = f;
- *          c = b;
+ *          c = _attachintersect(b, min, max);
  *          d = c;
  *
- *        If we do lastId(d), the result is f.
+ *        If we do lastId(d, TRUE), the result is f.
+ *        If we do lastId(d, FALSE), the result is c.
  *
  * @param arg: potential N_id node to be followed after
  * @return first N_id in chain iff available; unmodified arg otherwise
+ * `
  *****************************************************************************/
 static node *
-lastId (node *arg_node)
+lastId (node *arg_node, bool ignoreguards)
 {
     node *res;
+    node *newres;
+    node *assgn;
     DBUG_ENTER ("lastId");
 
-    DBUG_PRINT ("PM", ("lastId trying to look up the variable definition "));
     res = arg_node;
-    while ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_id)
-           && (AVIS_SSAASSIGN (ID_AVIS (arg_node)) != NULL)) {
-        res = arg_node;
-        DBUG_PRINT ("PM", ("lastId looking up definition of the variable"));
-        arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
-        DBUG_PRINT ("PM", ("lastId definition found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, arg_node););
+    newres = arg_node;
+    while ((arg_node != NULL) && (NULL != newres)) {
+        newres = NULL;
+        /* Find precursor to this node, if it exists */
+        if ((NODE_TYPE (arg_node) == N_id)
+            && (AVIS_SSAASSIGN (ID_AVIS (arg_node)) != NULL)) {
+            DBUG_PRINT ("PM", ("lastId looking up variable definition for %s.",
+                               AVIS_NAME (ID_AVIS (arg_node))));
+            newres = arg_node;
+            arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
+        } else {
+            if (ignoreguards && isPrfGuard (arg_node)) {
+                newres = PRF_ARG1 (arg_node);
+                DBUG_PRINT ("PM", ("lastId looking past guard, at %s.",
+                                   AVIS_NAME (ID_AVIS (newres))));
+                assgn = AVIS_SSAASSIGN (ID_AVIS (newres));
+                if (NULL != assgn) {
+                    arg_node = LET_EXPR (ASSIGN_INSTR (assgn));
+                } else {
+                    arg_node = NULL;
+                }
+            }
+        }
+
+        if (NULL != newres) {
+            res = newres;
+            DBUG_PRINT ("PM", ("lastId definition is: %s.", AVIS_NAME (ID_AVIS (res))));
+        }
     }
     DBUG_RETURN (res);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn static node *followId( node * arg_node)
+ * @fn static node *followId( node * arg_node, bool ignoreguards)
  *
  * @brief looks behind the definitions of N_id nodes, if possible
  *        to find the definition point of a value. For example,
  *          f = [5,6];
  *          a = f;
- *          b = a;
+ *          b = _attachextrema( a);
  *          c = b;
  *          d = c;
  *
- *        If we do followId(d), the result is the N_array [5,6].
+ *        If we do followId(d, TRUE), the result is the N_array [5,6].
+ *        If we do followId(d, FALSE), the result is FAIL.
  *
  * @param arg: potential N_id node to be followed after
  * @return defining expression iff available;
  *         unmodified arg otherwise
  *****************************************************************************/
 static node *
-followId (node *arg_node)
+followId (node *arg_node, bool ignoreguards)
 {
     node *res;
 
     DBUG_ENTER ("followId");
     DBUG_PRINT ("PM", ("followId trying to look up the variable definition "));
-    res = lastId (arg_node);
+    res = lastId (arg_node, ignoreguards);
     if ((NULL != arg_node) && (N_id == NODE_TYPE (res))
         && (NULL != AVIS_SSAASSIGN (ID_AVIS (res)))
         && (NULL != ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (res))))) {
@@ -371,7 +435,7 @@ FailMatch (node *stack)
  * @fn node *MatchNode( nodetype nt, checkFun_ptr matchAttribsFun,
  *                      int numAttribs, attrib_t *attribRefs,
  *                      node **matched_node,
- *                      bool pushSons, node *stack)
+ *                      bool pushSons, node *stack, bool ignoreguards)
  *
  * @brief generic matching function. It follows the top of the stack
  *        expression through variable definitions until the specified
@@ -387,7 +451,8 @@ FailMatch (node *stack)
  *****************************************************************************/
 static node *
 MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
-           attrib_t *attribRefs, node **matched_node, bool pushSons, node *stack)
+           attrib_t *attribRefs, node **matched_node, bool pushSons, node *stack,
+           bool ignoreguards)
 {
     node *match = NULL;
 
@@ -399,7 +464,7 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &match);
 
-        match = followId (match);
+        match = followId (match, ignoreguards);
         if ((NODE_TYPE (match) == nt)
             && ((numAttribs == 0) || matchAttribsFun (match, numAttribs, attribRefs))) {
             DBUG_PRINT ("PM", ("MatchNode( %s, _, %d, _, _, %d, _) matched!",
@@ -456,12 +521,15 @@ PM (node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn static node *pmvar( node **var, node *stack, bool lastid)
+ * @fn static node *pmvar( node **var, node *stack,
+ *                         bool lastid, bool ignoreguards)
  *
  * @brief tries to match against a variable. If *var is NULL, the top of
  *        the stack is bound to it (provided it is an N_id).
  *        If *var is bound already, it only matches if both N_id nodes
  *        point to the same N_avis.
+ *        If ignoreguards is true, search will continue through guard
+ *        nodes.
  *
  * @param *var: bound N_id (if any)
  *        stack: "stack" of exprs.
@@ -470,7 +538,7 @@ PM (node *stack)
  * @return shortened stack.
  *****************************************************************************/
 static node *
-pmvar (node **var, node *stack, bool getlastid)
+pmvar (node **var, node *stack, bool getlastid, bool ignoreguards)
 {
     node *arg;
 
@@ -484,7 +552,7 @@ pmvar (node **var, node *stack, bool getlastid)
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
         if (getlastid) {
-            arg = lastId (arg);
+            arg = lastId (arg, ignoreguards);
         }
         if (NODE_TYPE (arg) == N_id) {
             if (*var == NULL) {
@@ -520,7 +588,7 @@ node *
 PMvar (node **var, node *stack)
 {
     DBUG_ENTER ("PMvar");
-    stack = pmvar (var, stack, FALSE);
+    stack = pmvar (var, stack, FALSE, FALSE);
     DBUG_RETURN (stack);
 }
 
@@ -541,7 +609,7 @@ node *
 PMlastVar (node **var, node *stack)
 {
     DBUG_ENTER ("PMlastVar");
-    stack = pmvar (var, stack, TRUE);
+    stack = pmvar (var, stack, TRUE, FALSE);
     DBUG_RETURN (stack);
 }
 
@@ -573,7 +641,7 @@ node *
 PMlastVarGuards (node **var, node *stack)
 {
     DBUG_ENTER ("PMlastVarGuards");
-    stack = pmvar (var, stack, TRUE);
+    stack = pmvar (var, stack, TRUE, TRUE);
     DBUG_RETURN (stack);
 }
 
@@ -592,7 +660,7 @@ PMlastVarGuards (node **var, node *stack)
         node *kind##_node;                                                               \
         DBUG_ENTER ("PM##kind");                                                         \
                                                                                          \
-        stack = MatchNode (N_##kind, NULL, 0, NULL, &kind##_node, FALSE, stack);         \
+        stack = MatchNode (N_##kind, NULL, 0, NULL, &kind##_node, FALSE, stack, FALSE);  \
                                                                                          \
         DBUG_RETURN (stack);                                                             \
     }
@@ -627,7 +695,7 @@ MATCH_SCALAR_CONST (double)
         REF_##accessor (attribs[0]) = val;                                               \
                                                                                          \
         stack = MatchNode (N_##kind, Match##kind##Value, 1, attribs, &kind##_node,       \
-                           FALSE, stack);                                                \
+                           FALSE, stack, FALSE);                                         \
                                                                                          \
         DBUG_RETURN (stack);                                                             \
     }
@@ -662,7 +730,7 @@ PMprf (prf fun, node *stack)
     DBUG_ENTER ("PMprf");
 
     REF_PRF (arefs[0]) = &fun;
-    stack = MatchNode (N_prf, MatchPrfAttribs, 1, arefs, &prf_node, TRUE, stack);
+    stack = MatchNode (N_prf, MatchPrfAttribs, 1, arefs, &prf_node, TRUE, stack, FALSE);
 
     DBUG_RETURN (stack);
 }
@@ -712,7 +780,7 @@ PMarray (constant **frameshape, node **array, node *stack)
     DBUG_ENTER ("PMarray");
 
     REF_CONST (arefs[0]) = frameshape;
-    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, TRUE, stack);
+    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, TRUE, stack, FALSE);
 
     DBUG_RETURN (stack);
 }
@@ -724,7 +792,19 @@ PMarrayConstructor (constant **frameshape, node **array, node *stack)
     DBUG_ENTER ("PMarray");
 
     REF_CONST (arefs[0]) = frameshape;
-    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack);
+    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack, FALSE);
+
+    DBUG_RETURN (stack);
+}
+
+node *
+PMarrayConstructorGuards (constant **frameshape, node **array, node *stack)
+{
+    attrib_t arefs[1];
+    DBUG_ENTER ("PMarray");
+
+    REF_CONST (arefs[0]) = frameshape;
+    stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack, TRUE);
 
     DBUG_RETURN (stack);
 }
@@ -756,7 +836,7 @@ PMconst (constant **co, node **conode, node *stack)
             type = AVIS_TYPE (ID_AVIS (arg));
             if (TYisAKV (type)) {
                 cofound = COcopyConstant (TYgetValue (type));
-                arg = followId (arg); /* needed for conode! */
+                arg = followId (arg, FALSE); /* needed for conode! */
             }
         } else {
             cofound = COaST2Constant (arg);
@@ -840,7 +920,7 @@ PMintConst (constant **co, node **conode, node *stack)
  *        The idea here is to trace a chain of N_id and
  *        N_with/modarray nodes from id to the
  *        shape primogenitor of id. Basically,
- *        it does lastId(id), but also has some tricks to go
+ *        it does lastId(id, TRUE), but also has some tricks to go
  *        further when that result comes from a modarray WL
  *        or (someday) a genarray WL.
  *
@@ -880,7 +960,7 @@ PMshapePrimogenitor (node *arg)
     DBUG_PRINT ("PM", ("PMshapePrimogenitor trying to find primogenitor for: %s.",
                        AVIS_NAME (ID_AVIS (arg))));
 
-    arg = lastId (arg);
+    arg = lastId (arg, TRUE);
     res = arg;
 
     /* Chase possible modarray WL */
@@ -950,7 +1030,7 @@ PMsaashape (node **shp, node **array, node *stack)
     if (stack != (node *)FAIL) {
         arg = AVIS_SHAPE (ID_AVIS (*array));
         if (NULL != arg) {
-            arg = lastId (arg);
+            arg = lastId (arg, TRUE); /* Not sure about ignoreguards value here... */
         }
         if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
             if (REF_ISUNDEFINED (shp)) {

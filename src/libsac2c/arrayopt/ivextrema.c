@@ -218,12 +218,44 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn static bool isSameTypeShape( node *ida, node *idb)
+ *
+ * @brief predicate to see if two N_id nodes have same
+ *        type, shape, and rank, ignoring AKS vs. AKV differences.
+ *
+ *****************************************************************************/
+static bool
+isSameTypeShape (node *ida, node *idb)
+{
+    bool z;
+    ntype *typa;
+    ntype *typb;
+
+    DBUG_ENTER ("isSameTypeShape");
+
+    typa = TYeliminateAKV (AVIS_TYPE (ID_AVIS (ida)));
+    typb = TYeliminateAKV (AVIS_TYPE (ID_AVIS (idb)));
+
+    z = TYeqTypes (typa, typb);
+
+    typa = TYfreeType (typa);
+    typb = TYfreeType (typb);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *IVEXIattachExtrema( node *minv, node *maxv, node *id,
- *                               node **vardecs, node **preassigns)
+ *                               node **vardecs, node **preassigns,
+ *                               prf nprf)
  *
  * @brief:
  *      Insert a temp, its vardec, and an assign for id,
- *      along with the extrema values minv and maxv.
+ *      along with the extrema values minv and maxv, using the
+ *      guard function nprf. Typically, nprf will be
+ *      F_attachextrema or F_attachextreman.
+ *
  *      We start with N_id id:
  *
  *           iv
@@ -248,7 +280,8 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  *
  *****************************************************************************/
 node *
-IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **preassigns)
+IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **preassigns,
+                    prf nprf)
 
 {
     node *avis;
@@ -263,6 +296,11 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     DBUG_ASSERT (N_id == NODE_TYPE (minv), "IVEXIattachExtrema expected N_id for minv");
     DBUG_ASSERT (N_id == NODE_TYPE (maxv), "IVEXIattachExtrema expected N_id for maxv");
 
+    DBUG_ASSERT (((F_attachextrema != nprf) || isSameTypeShape (id, minv)),
+                 ("IVEXIattachExtrema type mismatch: id, minv"));
+    DBUG_ASSERT (((F_attachextrema != nprf) || isSameTypeShape (id, maxv)),
+                 ("IVEXIattachExtrema type mismatch: id, maxv"));
+
     ivavis = ID_AVIS (id);
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ivavis)));
     if (isSAAMode ()) {
@@ -273,66 +311,21 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
 
     args = TBmakeExprs (id, TBmakeExprs (minv, TBmakeExprs (maxv, NULL)));
 
-    prf = TBmakePrf (F_attachextrema, args);
+    prf = TBmakePrf (nprf, args);
     PRF_EXTREMAATTACHED (prf) = TRUE;
     nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), prf), NULL);
     AVIS_SSAASSIGN (avis) = nas;
     *preassigns = TCappendAssign (*preassigns, nas);
 
-    AVIS_MINVAL (avis) = ID_AVIS (minv);
-    AVIS_MAXVAL (avis) = ID_AVIS (maxv);
+    if (F_attachextrema == nprf) {
+        AVIS_MINVAL (avis) = ID_AVIS (minv);
+        AVIS_MAXVAL (avis) = ID_AVIS (maxv);
+    }
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
                           AVIS_NAME (avis), AVIS_NAME (ivavis)));
     DBUG_RETURN (avis);
 }
-
-#ifdef DEAD
-/** <!--********************************************************************-->
- *
- *
- * @fn node *flattenIntScalar( int k,
- *                             node **vardecs, node **preassigns)
- *
- *   @brief Generate  tmp = k,
- *          along with its vardec, for integer k.
- *
- *   @param
- *           int n:    Integer constant
- *           vardecs:  Address of a vardecs chain that we will append to.
- *           preassigns: Address of a preassigns chain we will append to.
- *
- *   @return The N_avis result of the flattened scalar.
- *
- ******************************************************************************/
-static node *
-flattenIntScalar (int k, node **vardecs, node **preassigns)
-{
-    node *avis;
-    node *kass;
-
-    DBUG_ENTER ("flattenIntScalar");
-
-    avis
-      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    *vardecs = TBmakeVardec (avis, *vardecs);
-
-    kass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TBmakeNum (k)), NULL);
-    *preassigns = TCappendAssign (*preassigns, kass);
-    AVIS_SSAASSIGN (avis) = kass;
-
-    if (isSAAMode ()) {
-        AVIS_DIM (avis) = TBmakeNum (0);
-        AVIS_SHAPE (avis) = TCmakeIntVector (NULL);
-    }
-
-    AVIS_MINVAL (avis) = avis;
-    AVIS_MAXVAL (avis) = avis;
-
-    DBUG_RETURN (avis);
-}
-
-#endif // DEAD
 
 /** <!--********************************************************************-->
  *
@@ -492,7 +485,6 @@ generateSelect (node *arg_node, info *arg_info, int k)
     node *fid;
     node *fids;
     node *fass;
-    node *numone;
 
     DBUG_ENTER ("generateSelect");
 
@@ -518,11 +510,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
     AVIS_MAXVAL (favis) = favis;
 
     /* Create k' = [k]; */
-    numone = TBmakeNum (1);
     kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
-                        TYmakeAKS (TYmakeSimpleType (T_int),
-                                   SHcreateShape (1, NUM_VAL (numone))));
-    numone = FREEdoFreeNode (numone);
+                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
     INFO_VARDECS (arg_info) = TBmakeVardec (kavis, INFO_VARDECS (arg_info));
 
     kid = TBmakeId (kavis);
@@ -536,14 +525,13 @@ generateSelect (node *arg_node, info *arg_info, int k)
     INFO_PREASSIGNSWITH (arg_info)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
     AVIS_SSAASSIGN (kavis) = kass;
+    AVIS_MINVAL (kavis) = kavis;
+    AVIS_MAXVAL (kavis) = kavis;
 
     if (isSAAMode ()) {
         AVIS_DIM (kavis) = TBmakeNum (1);
         AVIS_SHAPE (kavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
     }
-
-    AVIS_MINVAL (kavis) = kavis;
-    AVIS_MAXVAL (kavis) = kavis;
 
     /* Create z = _sel_VxA_([k], bound);  */
 
@@ -622,7 +610,8 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
                                   &INFO_PREASSIGNSPART (arg_info));
 
     avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
-                               &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info));
+                               &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info),
+                               F_attachextrema);
     DBUG_RETURN (avis);
 }
 
@@ -681,6 +670,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
     AVIS_SSAASSIGN (avis) = nas;
     AVIS_MINVAL (avis) = ID_AVIS (b1);
     AVIS_MAXVAL (avis) = ID_AVIS (b2);
+
     if (isSAAMode ()) {
         AVIS_DIM (avis) = TBmakeNum (0);
         AVIS_SHAPE (avis) = TCmakeIntVector (NULL);

@@ -28,6 +28,8 @@ extern node *PMdoubleVal (double val, node *stack);
 extern node *PMprf (prf fun, node *arg_node);
 extern node *PMarray (constant **frameshape, node **array, node *arg_node);
 extern node *PMarrayConstructor (constant **frameshape, node **array, node *arg_node);
+extern node *PMarrayConstructorGuards (constant **frameshape, node **array,
+                                       node *arg_node);
 extern node *PMshapePrimogenitor (node *stack);
 extern node *PMsaashape (node **shp, node **array, node *stack);
 

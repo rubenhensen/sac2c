@@ -335,6 +335,7 @@ SCCprf (node *arg_node, info *arg_info)
 
     /* dataflow and attachextrema guards never reach code generator */
     case F_attachextrema:
+    case F_attachextreman:
     case F_attachintersect:
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),

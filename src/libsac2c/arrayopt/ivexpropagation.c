@@ -384,15 +384,11 @@ buildExtremaChain (node *exprs, int minmax)
  *
  *            minv = AVIS_MINVAL( I), AVIS_MINVAL( J), AVIS_MINVAL( K)
  *            maxv = AVIS_MAXVAL( I), AVIS_MAXVAL( J), AVIS_MAXVAL( K)
- *            I' = _attachextrema( I, minv, maxv);
- *            NB. minv and maxv are N_exprs chains, actually, in
- *            NB. the guard.
+ *            I' = _attachextreman( I, minv, maxv);
+ *            NB. minv and maxv are N_exprs chains in the guard.
  *            V = [ I', J, K];   NB. With minv and maxv as extrema of V.
  *
- *          The problem we have here is being able to look at the V''
- *          N_array and show that we have already generated an
- *          _attachextrema_ for it. Chaining any N_array
- *          element through that guard should suffice.
+ *          The extrema are attached to I for convenicnce only.
  *
  ******************************************************************************/
 static node *
@@ -443,16 +439,18 @@ PropagateNarray (node *arg_node, info *arg_info)
         minv = makeNarray (minv, arg_info, arrxrho);
         maxv = makeNarray (maxv, arg_info, arrxrho);
 
-        /*     I' = _attachextrema( I, minv, maxv);
+        /*     I' = _attachextreman( I, minv, maxv);
          *      V = [I', J, K];      NB. Decorated with minv, maxv.
          */
         aelemI = DUPdoDupNode (EXPRS_EXPR (ARRAY_AELEMS (v)));
         DBUG_ASSERT (N_id == NODE_TYPE (aelemI),
                      ("PropagateNarray expected N_id in N_array"));
 
-        Iprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
-                                               &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info)));
+        DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextreman"));
+        Iprime
+          = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
+                                          &INFO_VARDECS (arg_info),
+                                          &INFO_PREASSIGNS (arg_info), F_attachextreman));
 
         /*
          *       V = [ I', J, K]; NB. With extrema on V.
@@ -506,16 +504,12 @@ isResultHasExtrema (node *arg_node, info *arg_info)
  * description:
  *    The N_let arg_node RHS is an N_array.
  *    If element N_array[0] derives immediately from
- *    an F_attachextrema, AND its PRF_ARG1 and PRF_ARG2 have different
- *    ranks, then the extrema on the F_attachextrema belong to the
- *    N_array LHS, and NOT to N_array[0].
- *
- *    A cleaner approach might be to give this case its own N_prf:
- *    F_attachnarrayextrema.
+ *    an F_attachextreman, then the extrema on the
+ *    F_attachextrema belong to the N_array LHS.
  *
  * @params  arg_node: an N_let node.
- * @result:  Pointer to N_prf of the F_attachextrema, if it
- *           is of righ one. Else NULL.
+ * @result:  Pointer to N_prf of the F_attachextreman, if it
+ *           is of right one. Else NULL.
  *
  ******************************************************************************/
 static node *
@@ -533,9 +527,7 @@ ExtractedNarrayExtrema (node *arg_node, info *arg_info)
         if ((NULL != el0) && /* missing SSAASSIGN in N_ap parameter today FIXME */
             (N_let == NODE_TYPE (ASSIGN_INSTR (el0)))) {
             prf = LET_EXPR (ASSIGN_INSTR (el0));
-            if ((N_prf == NODE_TYPE (prf)) && (F_attachextrema == PRF_PRF (prf))
-                && ((TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (prf)))))
-                    != (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (prf))))))) {
+            if ((N_prf == NODE_TYPE (prf)) && (F_attachextreman == PRF_PRF (prf))) {
                 z = prf;
             }
         }
@@ -573,7 +565,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_attachintersect:
-        /* The extrema of PRF_ARG1 become the extrema of the LHS */
+        /* The extrema of PRF_ARG1 become the LHS extrema */
         avis = ID_AVIS (PRF_ARG1 (arg_node));
         INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
         INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
@@ -581,12 +573,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         break;
 
     case F_attachextrema:
-        /* We have to be careful here: It might be better to give
-         * N_array extrema calc its own guard. However,
-         * for now, we'll try the cheat: If this is an N_array
-         * guard, the ranks of PRF_ARG1 and PRG_ARG2 will
-         * be different. For run of the mill stuff, they'll be the same.
-         */
+        /* The extrema at PRF_ARG2 and PRF_ARG3 become the LHS extrema */
         if ((TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
             == (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
             INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
@@ -595,7 +582,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         }
         break;
 
-    /* These cases are all dyadic functions */
+    /* These cases are all commutative dyadic functions */
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
@@ -699,12 +686,6 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
 
         DBUG_RETURN (z);
     }
-    /*
-     * For other cases, such as F_non_negval, we merely
-     * simplify the expression in the absence of extrema
-     * info.
-     *
-     */
 
     /** <!--********************************************************************-->
      *
@@ -785,7 +766,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 default:
                     break;
 
-                    /* These cases are all dyadic functions */
+                    /* These cases are all commutative dyadic functions */
                 case F_sub_SxS:
                 case F_sub_SxV:
                 case F_sub_VxS:
@@ -868,7 +849,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 PRF_PRF (rhs)
                 {
 
-                /* These cases are all dyadic functions */
+                /* These cases are all commutative dyadic functions */
                 case F_add_SxS:
                 case F_add_SxV:
                 case F_add_VxS:
@@ -899,20 +880,20 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 case F_max_VxS:
                 case F_max_VxV:
 
-                    z = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
-                                                      DUPdoDupNode (nca),
-                                                      &INFO_VARDECS (arg_info),
-                                                      &INFO_PREASSIGNS (arg_info)));
+                    z = TBmakeId (
+                      IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
+                                          DUPdoDupNode (nca), &INFO_VARDECS (arg_info),
+                                          &INFO_PREASSIGNS (arg_info), F_attachextrema));
                     break;
 
                 case F_sub_SxS:
                 case F_sub_SxV:
                 case F_sub_VxS:
                 case F_sub_VxV:
-                    z = TBmakeId (IVEXIattachExtrema (TBmakeId (maxv), TBmakeId (minv),
-                                                      DUPdoDupNode (nca),
-                                                      &INFO_VARDECS (arg_info),
-                                                      &INFO_PREASSIGNS (arg_info)));
+                    z = TBmakeId (
+                      IVEXIattachExtrema (TBmakeId (maxv), TBmakeId (minv),
+                                          DUPdoDupNode (nca), &INFO_VARDECS (arg_info),
+                                          &INFO_PREASSIGNS (arg_info), F_attachextrema));
                     break;
 
                 default:
@@ -1071,16 +1052,12 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                  *
                  */
 
-#define CONSTANTS
-#ifdef CONSTANTS
-                /* This causes cvp crashes, and is probably not so good, anyway. */
-                /* but let's try it, now that extrema are exact */
                 if (TYisAKV (AVIS_TYPE (lhsavis))) {
                     AVIS_MINVAL (lhsavis) = lhsavis;
                     AVIS_MAXVAL (lhsavis) = lhsavis;
                 }
-#endif // CONSTANTS
                 break;
+
             /* We are unable to help these poor souls */
             case N_ap:
 

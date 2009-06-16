@@ -309,7 +309,7 @@ IsFullyConstantNode (node *arg_node)
 
     if (IsScalarConstantNode (arg_node)) {
         res = TRUE;
-    } else if (PM (PMarrayConstructor (&frameshape, &arg_node, arg_node))) {
+    } else if (PM (PMarrayConstructorGuards (&frameshape, &arg_node, arg_node))) {
         arg_node = ARRAY_AELEMS (arg_node);
         res = TRUE;
         while (res && (arg_node != NULL)) {

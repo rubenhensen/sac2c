@@ -117,9 +117,9 @@ StructOpSel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("StructOpSel");
     // Match for _sel_VxA_( constant, N_array)
-    if (PM (
-          PMarrayConstructor (&arg2fs, &arg2,
-                              PMintConst (&con1, &arg1, PMprf (F_sel_VxA, arg_node))))) {
+    if (PM (PMarrayConstructorGuards (&arg2fs, &arg2,
+                                      PMintConst (&con1, &arg1,
+                                                  PMprf (F_sel_VxA, arg_node))))) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -203,9 +203,9 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
      *    arr having same element count prod(shp)
      *    and rank-0 ELEMTYPE
      */
-    if (PM (PMarrayConstructor (&fs2, &arg2,
-                                PMintConst (&con1, &arg1,
-                                            PMprf (F_reshape_VxA, arg_node))))) {
+    if (PM (PMarrayConstructorGuards (&fs2, &arg2,
+                                      PMintConst (&con1, &arg1,
+                                                  PMprf (F_reshape_VxA, arg_node))))) {
         if (0 == TYgetDim (ARRAY_ELEMTYPE (arg2))) {
             resshape = COconstant2Shape (con1);
             prodarg1 = SHgetUnrLen (resshape);
@@ -256,9 +256,9 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
     int resxrho;
 
     DBUG_ENTER ("SCCFprf_take_SxV");
-    if (PM (
-          PMarrayConstructor (&fs2, &arg2,
-                              PMintConst (&con1, &arg1, PMprf (F_take_SxV, arg_node))))) {
+    if (PM (PMarrayConstructorGuards (&fs2, &arg2,
+                                      PMintConst (&con1, &arg1,
+                                                  PMprf (F_take_SxV, arg_node))))) {
         takecount = COconst2Int (con1);
         resxrho = abs (takecount);
         argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
@@ -304,9 +304,9 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     int arg2xrho;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
-    if (PM (
-          PMarrayConstructor (&arg2fs, &arg2,
-                              PMintConst (&con1, &arg1, PMprf (F_drop_SxV, arg_node))))) {
+    if (PM (PMarrayConstructorGuards (&arg2fs, &arg2,
+                                      PMintConst (&con1, &arg1,
+                                                  PMprf (F_drop_SxV, arg_node))))) {
         dc = COconst2Int (con1);
         if (0 == dc) {
             res = DUPdoDupTree (arg2);
@@ -382,9 +382,9 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
          * match F_modarray_AxVxS( X = [...], iv = [c0,...,cn], val)
          */
         if (PM (PMvar (&val, PMconst (&coiv, &iv,
-                                      PMarrayConstructor (&fsX, &X,
-                                                          PMprf (F_modarray_AxVxS,
-                                                                 arg_node)))))) {
+                                      PMarrayConstructorGuards (&fsX, &X,
+                                                                PMprf (F_modarray_AxVxS,
+                                                                       arg_node)))))) {
             if (SHcompareShapes (COgetShape (fsX), COgetShape (coiv))) {
                 offset = COvect2offset (fsX, coiv);
                 res = DUPdoDupTree (X);
@@ -449,11 +449,11 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
         /**
          *   match F_modarray_AxVxA( X = [...], iv = [c0,...,cn], val = [...])
          */
-        if (PM (PMarrayConstructor (&fsval, &val,
-                                    PMconst (&coiv, &iv,
-                                             PMarrayConstructor (&fsX, &X,
-                                                                 PMprf (F_modarray_AxVxA,
-                                                                        arg_node)))))) {
+        if (PM (PMarrayConstructorGuards (
+              &fsval, &val,
+              PMconst (&coiv, &iv,
+                       PMarrayConstructorGuards (&fsX, &X,
+                                                 PMprf (F_modarray_AxVxA, arg_node)))))) {
 
             /**
              *  The only way to get this version of modarray is by means
@@ -545,10 +545,11 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
              * we only do the simple case (case a above) where V fits neatly
              * into X as an element.
              */
-            if (PM (PMvar (&val, PMconst (&coiv, &iv,
-                                          PMarrayConstructor (&fsX, &X,
-                                                              PMprf (F_modarray_AxVxA,
-                                                                     arg_node)))))
+            if (PM (
+                  PMvar (&val, PMconst (&coiv, &iv,
+                                        PMarrayConstructorGuards (&fsX, &X,
+                                                                  PMprf (F_modarray_AxVxA,
+                                                                         arg_node)))))
                 && (COgetExtent (coiv, 0) == COgetExtent (fsX, 0))) {
                 offset = COvect2offset (fsX, coiv);
                 res = DUPdoDupTree (X);
@@ -612,9 +613,10 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && PM (PMarrayConstructor (&fs2, &arg2,
-                                   PMarrayConstructor (&fs1, &arg1,
-                                                       PMprf (F_cat_VxV, arg_node))))) {
+        && PM (PMarrayConstructorGuards (&fs2, &arg2,
+                                         PMarrayConstructorGuards (&fs1, &arg1,
+                                                                   PMprf (F_cat_VxV,
+                                                                          arg_node))))) {
 
         DBUG_ASSERT ((1 == SHgetDim (ARRAY_FRAMESHAPE (arg1))),
                      "SCCFprf_cat expected vector arg1 frameshape");
@@ -931,7 +933,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  *        x = sel( {iv_1, iv_2], P);
  *
- *        we can ignore iv_1 as it has to be 0 anyways. We loose a check here
+ *        we can ignore iv_1 as it has to be 0 anyways. We lose a check here
  *        but ecc should catch these cases for us.
  *        Finally, the proxy might cover more than one dimension.
  *
@@ -1001,7 +1003,8 @@ SelProxyArray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SelProxyArray");
 
-    if (PM (PMvar (&var_P, PMarrayConstructor (&fs_iv, &iv, PMprf (F_sel_VxA, arg_node))))
+    if (PM (PMvar (&var_P,
+                   PMarrayConstructorGuards (&fs_iv, &iv, PMprf (F_sel_VxA, arg_node))))
         && PM (PMexprs (&aelems_P, PMarray (&fs_P, &arr_P, var_P)))
         && (aelems_P != NULL)) {
         /*
