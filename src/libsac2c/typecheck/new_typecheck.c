@@ -1040,6 +1040,9 @@ NTClet (node *arg_node, info *arg_info)
                 if (existing_type == NULL) {
                     AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
                 } else {
+                    /* A likely cause of failure in next line is multiple
+                     * assigns of LHS (This is SSA, remember.)
+                     */
                     DBUG_ASSERT (TYisAlpha (existing_type),
                                  "non-alpha type for LHS found!");
                     ok = SSInewTypeRel (inferred_type, existing_type);
@@ -1090,6 +1093,9 @@ NTClet (node *arg_node, info *arg_info)
                     /*
                      * reuse the type we have infered earlier...
                      */
+                    /* A likely cause of failure in next line is multiple
+                     * assigns of LHS (This is SSA, remember.)
+                     */
                     DBUG_ASSERT (TYisAlpha (existing_type),
                                  "non-alpha type for LHS found!");
                     max = SSIgetMax (TYgetAlpha (existing_type));
@@ -1120,6 +1126,9 @@ NTClet (node *arg_node, info *arg_info)
         if (existing_type == NULL) {
             AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
         } else {
+            /* A likely cause of failure in next line is multiple
+             * assigns of LHS (This is SSA, remember.)
+             */
             DBUG_ASSERT (TYisAlpha (existing_type), "non-alpha type for LHS found!");
             ok = SSInewTypeRel (inferred_type, existing_type);
             if (!ok) {
