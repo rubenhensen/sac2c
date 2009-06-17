@@ -839,7 +839,6 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
 
     newblock = TCappendAssign (idxassigns, newblock);
     newblock = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-    FREEdoFreeTree (idxassigns);
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
