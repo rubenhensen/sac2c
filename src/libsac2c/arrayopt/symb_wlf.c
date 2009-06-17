@@ -726,6 +726,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
     node *nass;
     node *lhsids;
     node *lhsavis;
+    node *sel;
 
     int k;
 
@@ -737,6 +738,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 
     while (NULL != ids) {
         /* Build [k] */
+        /* First, the k */
         narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
         navis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
@@ -747,17 +749,18 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 
         nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
         AVIS_SSAASSIGN (navis) = nass;
-        z = TCappendAssign (z, nass);
+        z = TCappendAssign (nass, z);
         INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
 
         lhsavis = IDS_AVIS (ids);
         DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
                              AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
-        z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
-                                     TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
-                                                 DUPdoDupNode (idxid))),
-                          z);
-        AVIS_SSAASSIGN (lhsavis) = z;
+        sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+                                       TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
+                                                   DUPdoDupNode (idxid))),
+                            NULL);
+        z = TCappendAssign (z, sel);
+        AVIS_SSAASSIGN (lhsavis) = sel;
 
         if (isSAAMode ()) {
             AVIS_DIM (lhsavis) = TBmakeNum (0);
