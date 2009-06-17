@@ -578,62 +578,57 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
                         CVPdoConstVarPropagation,
                         global.optimize.doive &&global.optimize.docvp, opt)
 
-                SUBPHASE (ivecse, "Eliminating common subexpression (for IVE)",
-                          CSEdoCommonSubexpressionEliminationModule,
-                          global.optimize.doive &&global.optimize.docse, opt)
+                SUBPHASE (iveras,
+                          "Eliminating index vectors (reuse WL-offsets and scalarize)",
+                          IVERASdoWithloopReuseAndOptimisation, global.optimize.doive,
+                          opt)
 
-                  SUBPHASE (iveras,
-                            "Eliminating index vectors (reuse WL-offsets and scalarize)",
-                            IVERASdoWithloopReuseAndOptimisation, global.optimize.doive,
-                            opt)
+                  SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
+                            WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
 
-                    SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
-                              WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
+                    SUBPHASE (esaa2, "Eliminating symbolic array attributes",
+                              ESVdoEliminateShapeVariables, global.optimize.dosaa, opt)
 
-                      SUBPHASE (esaa2, "Eliminating symbolic array attributes",
-                                ESVdoEliminateShapeVariables, global.optimize.dosaa, opt)
+                      SUBPHASE (lir3, "Applying loop invariant removal",
+                                LIRdoLoopInvariantRemoval,
+                                (global.optimize.dosaa || global.optimize.doive)
+                                  && global.optimize.dolir,
+                                opt)
 
-                        SUBPHASE (lir3, "Applying loop invariant removal",
-                                  LIRdoLoopInvariantRemoval,
-                                  (global.optimize.dosaa || global.optimize.doive)
-                                    && global.optimize.dolir,
-                                  opt)
+                        SUBPHASE (ufl, "Unflattening WL generator",
+                                  UFLdoUnflattenWLGenerators, ALWAYS, opt)
 
-                          SUBPHASE (ufl, "Unflattening WL generator",
-                                    UFLdoUnflattenWLGenerators, ALWAYS, opt)
+                          SUBPHASE (cse2, "Eliminating common subexpression",
+                                    CSEdoCommonSubexpressionEliminationModule,
+                                    global.optimize.docse, opt)
 
-                            SUBPHASE (cse2, "Eliminating common subexpression",
-                                      CSEdoCommonSubexpressionEliminationModule,
-                                      global.optimize.docse, opt)
+                            SUBPHASE (dcr3, "Removing dead code",
+                                      DCRdoDeadCodeRemovalModule,
+                                      (global.optimize.dosaa || global.optimize.doive
+                                       || !global.runtimecheck.conformity)
+                                        && global.optimize.dodcr,
+                                      opt)
 
-                              SUBPHASE (dcr3, "Removing dead code",
-                                        DCRdoDeadCodeRemovalModule,
-                                        (global.optimize.dosaa || global.optimize.doive
-                                         || !global.runtimecheck.conformity)
-                                          && global.optimize.dodcr,
-                                        opt)
+                              SUBPHASE (wllom, "Withloop lock optimization marking",
+                                        WLLOMdoLockOptimizationMarking,
+                                        global.optimize.dowllo, opt)
 
-                                SUBPHASE (wllom, "Withloop lock optimization marking",
-                                          WLLOMdoLockOptimizationMarking,
+                                SUBPHASE (wllos, "Withloop lock optimization shifting",
+                                          WLLOSdoLockOptimizationShifting,
                                           global.optimize.dowllo, opt)
 
-                                  SUBPHASE (wllos, "Withloop lock optimization shifting",
-                                            WLLOSdoLockOptimizationShifting,
-                                            global.optimize.dowllo, opt)
+                                  SUBPHASE (fdi, "Freeing dispatch information",
+                                            FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-                                    SUBPHASE (fdi, "Freeing dispatch information",
-                                              FDIdoFreeDispatchInformation, ALWAYS, opt)
+                                    SUBPHASE (pfap, "Profiling function applications",
+                                              PFdoProfileFunCalls, global.doprofile, opt)
 
-                                      SUBPHASE (pfap, "Profiling function applications",
-                                                PFdoProfileFunCalls, global.doprofile,
-                                                opt)
+                                      SUBPHASE (stat,
+                                                "Displaying optimisation statistics",
+                                                STATdoPrintStatistics,
+                                                global.verbose_level >= 3, opt)
 
-                                        SUBPHASE (stat,
-                                                  "Displaying optimisation statistics",
-                                                  STATdoPrintStatistics,
-                                                  global.verbose_level >= 3, opt)
-
-                                          ENDPHASE (opt)
+                                        ENDPHASE (opt)
 
   /******************************************************************************/
 

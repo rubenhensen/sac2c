@@ -339,6 +339,7 @@ isPrfArg1AttachIntersect (node *arg_node)
  *  OR if arg1 is an F_attachintersect, and its PRF_ARG1 is an F_attachextrema.
  *  This is VERY brittle code, and we should find a more robust way
  *  to do this. FIXME.
+ *  Like a PM of some sort...
  *
  * @param arg_node: an N_prf
  *
@@ -705,9 +706,11 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  *        generate an N_assigns chain of this form:
  *
- *        iv' = idx;
- *        i'  = _sel_VxA_( [0], idx);
- *        j'  = _sel_VxA_( [1], idx);
+ *        iv = idx;
+ *        i  = _sel_VxA_( [0], idx);
+ *        j  = _sel_VxA_( [1], idx);
+ *
+ *        Then, iv, i, j will all be SSA-renamed by the caller.
  *
  * @result: an N_assign chain as above.
  *
@@ -722,7 +725,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
     node *idxid;
     node *navis;
     node *nass;
-    node *dupids;
+    node *lhsids;
     node *lhsavis;
 
     int k;
@@ -743,12 +746,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
             AVIS_SHAPE (navis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
         }
 
-        dupids = TBmakeIds (navis, NULL);
-        nass = TBmakeAssign (TBmakeLet (dupids, narray), NULL);
+        nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
         AVIS_SSAASSIGN (navis) = nass;
         z = TCappendAssign (z, nass);
         INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
-        lhsavis = populateLut (ids, arg_info, SHcreateShape (0));
+
+        lhsavis = IDS_AVIS (ids);
         DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
                              AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
         sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
@@ -767,9 +770,10 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
         k++;
     }
 
-    /* Now generate iv' = iv; */
-    dupids = WITHID_VEC (PART_WITHID (foldeePart));
-    lhsavis = populateLut (dupids, arg_info, SHcreateShape (1, k));
+    /* Now generate iv = idx; */
+    lhsids = WITHID_VEC (PART_WITHID (foldeePart));
+    lhsavis = IDS_AVIS (lhsids);
+
     z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), DUPdoDupNode (idxid)), z);
     AVIS_SSAASSIGN (lhsavis) = z;
     DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
@@ -795,13 +799,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
  *   Replace, in the folderWL:
  *     elc = _sel_VxA_( idx, foldeeWL)
  *   by
- *     iv' = idx;
- *     i' = _sel_VxA_([0], idx);
- *     j' = _sel_VxA_([1], idx);
- *     {code block from foldeeWL, with renames (populateLut) as follows:
- *        iv --> iv'
- *        i  --> i'
- *        j  --> j'
+ *     iv = idx;
+ *     i = _sel_VxA_([0], idx);
+ *     j = _sel_VxA_([1], idx);
+ *
+ *     {code block from foldeeWL, with SSA renames}
+ *
  *     tmp = foldeeWLresultelement)
  *     elc = tmp;
  *
@@ -827,16 +830,17 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, foldee);
 
-    idxassigns = DUPdoDupTreeLut (idxassigns, INFO_LUT (arg_info));
-
     /* If foldeeWL is empty, don't do any code substitutions.
      * Just replace sel(iv, foldeeWL) by iv.
      */
     if (N_empty == NODE_TYPE (BLOCK_INSTR (oldblock))) {
         newblock = NULL;
     } else {
-        newblock = DUPdoDupTreeLut (BLOCK_INSTR (oldblock), INFO_LUT (arg_info));
+        newblock = BLOCK_INSTR (oldblock);
     }
+
+    newblock = TCappendAssign (idxassigns, newblock);
+    newblock = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
@@ -851,8 +855,6 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     if (NULL != newblock) {
         arg_node = TCappendAssign (newblock, arg_node);
     }
-
-    arg_node = TCappendAssign (idxassigns, arg_node);
 
     DBUG_RETURN (arg_node);
 }
