@@ -720,7 +720,6 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 {
     node *z = NULL;
     node *ids;
-    node *sel;
     node *narray;
     node *idxid;
     node *navis;
@@ -754,12 +753,11 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
         lhsavis = IDS_AVIS (ids);
         DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
                              AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
-        sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
-                                       TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
-                                                   DUPdoDupNode (idxid))),
-                            NULL);
-        AVIS_SSAASSIGN (lhsavis) = sel;
-        z = TCappendAssign (z, sel);
+        z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+                                     TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
+                                                 DUPdoDupNode (idxid))),
+                          z);
+        AVIS_SSAASSIGN (lhsavis) = z;
 
         if (isSAAMode ()) {
             AVIS_DIM (lhsavis) = TBmakeNum (0);
@@ -841,6 +839,7 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
 
     newblock = TCappendAssign (idxassigns, newblock);
     newblock = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    FREEdoFreeTree (idxassigns);
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
