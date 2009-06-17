@@ -816,14 +816,16 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 static node *
 doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *arg_info)
 {
-    node *oldblock, *newblock;
+    node *oldblock;
+    node *newblock;
+    node *newblock2;
     node *newavis;
     node *idxassigns;
     node *expravis;
 
     DBUG_ENTER ("doSWLFreplace");
 
-    oldblock = CODE_CBLOCK (PART_CODE (foldee));
+    oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (foldee)));
 
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, foldee);
@@ -831,14 +833,16 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     /* If foldeeWL is empty, don't do any code substitutions.
      * Just replace sel(iv, foldeeWL) by iv.
      */
-    if (N_empty == NODE_TYPE (BLOCK_INSTR (oldblock))) {
-        newblock = NULL;
-    } else {
-        newblock = BLOCK_INSTR (oldblock);
-    }
+    newblock = (N_empty == NODE_TYPE (oldblock)) ? idxassigns
+                                                 : TCappendAssign (idxassigns, oldblock);
 
-    newblock = TCappendAssign (idxassigns, newblock);
-    newblock = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    newblock2
+      = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+
+    /* FIXME the following FREE is crap, as it kills DCR immediately,
+     * but removing it causes memory leak.
+  FREEdoFreeTree( idxassigns);
+     */
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
@@ -850,8 +854,8 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
      */
     FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (arg_node)));
     LET_EXPR (ASSIGN_INSTR (arg_node)) = TBmakeId (newavis);
-    if (NULL != newblock) {
-        arg_node = TCappendAssign (newblock, arg_node);
+    if (NULL != newblock2) {
+        arg_node = TCappendAssign (newblock2, arg_node);
     }
 
     DBUG_RETURN (arg_node);
