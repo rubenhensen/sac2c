@@ -332,7 +332,7 @@ libsacphm_compat    := malloc
 #
 ###############################################################################
 
-tools_targets           := csimt csima ctest sac2c sac2c-p sac2c-d sac4c sac2tex
+tools_targets           := csimt csima ctest sac2c sac2c-p sac2c-d sac4c sac2tex comslc
 tools_targetdir         := bin
 
 tools_subtarget_suffix  := .o
@@ -362,6 +362,7 @@ tools_sac4c           := sac4c
 
 tools_sac2tex         := sac2tex
 
+tools_comslc          := comslc
 
 ###############################################################################
 #
