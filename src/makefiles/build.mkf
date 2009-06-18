@@ -306,6 +306,9 @@ $(PROJECT_ROOT)/lib/lib%_seq.so: $(SUBTARGETS)
 # Building tools
 #
 
+$(PROJECT_ROOT)/bin/comslc:
+	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
+
 $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"
