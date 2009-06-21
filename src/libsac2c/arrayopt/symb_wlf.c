@@ -632,6 +632,9 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
                 foldeepart = FindMatchingPart (arg_node, folderpart, foldeewl);
             }
         }
+    } else {
+        DBUG_PRINT ("SWLF", ("WL %s will not fold. AVIS_DEFDEPTH: %d, lavel: %d",
+                             AVIS_NAME (foldeeavis), AVIS_DEFDEPTH (foldeeavis), level));
     }
 
     if (NULL != foldeepart) {
@@ -707,8 +710,10 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *        generate an N_assigns chain of this form:
  *
  *        iv = idx;
- *        i  = _sel_VxA_( [0], idx);
- *        j  = _sel_VxA_( [1], idx);
+ *        k0 = [0];
+ *        i  = _sel_VxA_( k0, idx);
+ *        k1 = [1];
+ *        j  = _sel_VxA_( k1, idx);
  *
  *        Then, iv, i, j will all be SSA-renamed by the caller.
  *
@@ -737,7 +742,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
     k = 0;
 
     while (NULL != ids) {
-        /* Build [k] */
+        /* Build k0 = [k]; */
         /* First, the k */
         narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
         navis = TBmakeAvis (TRAVtmpVar (),
@@ -755,7 +760,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
         lhsavis = IDS_AVIS (ids);
         DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
                              AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
-        sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+        sel = TBmakeAssign (TBmakeLet (DUPdoDupNode (ids),
                                        TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
                                                    DUPdoDupNode (idxid))),
                             NULL);
@@ -896,9 +901,7 @@ SWLFfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
 
         arg_node = WLNCdoWLNeedCount (arg_node);
-#ifdef DAOEN
         arg_node = WLCCdoWLCostCheck (arg_node);
-#endif // DAOEN
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 

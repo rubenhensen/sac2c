@@ -6,7 +6,10 @@
  *
  * @defgroup wlcc With Loop Cost Check
  *
- * @brief Computes the cost of With Loops
+ * @brief Computes the per-element-computation cost of With Loops
+ *
+ * The cost is associated with each N_code, as the cost
+ * may vary greatly from partition to partition.
  *
  * Definition of Cost function of With Loops
  *   SAC Function's Structure
@@ -168,7 +171,9 @@ WLCCwith (node *arg_node, info *arg_info)
         /* Now all inner With Loops have their cost. */
 
         INFO_DO_CHECK (arg_info) = TRUE;
+#ifdef FIXME                      // wrong
         WITH_COST (arg_node) = 0; /* Initialize cost value */
+#endif                            // FIXME
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_DO_CHECK (arg_info) = FALSE;
         INFO_WITH (arg_info) = outer_with;
@@ -197,9 +202,11 @@ WLCCcode (node *arg_node, info *arg_info)
             CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
         }
 
-        if (INFO_CODE_COST (arg_info) > WITH_COST (INFO_WITH (arg_info))) {
-            WITH_COST (INFO_WITH (arg_info)) = INFO_CODE_COST (arg_info);
+        /* FIXME wrong
+        if( INFO_CODE_COST( arg_info) > WITH_COST( INFO_WITH( arg_info))) {
+          WITH_COST( INFO_WITH( arg_info)) = INFO_CODE_COST( arg_info);
         }
+        */
 
         if (CODE_NEXT (arg_node) != NULL) {
             CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);

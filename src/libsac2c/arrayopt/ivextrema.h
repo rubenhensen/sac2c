@@ -24,6 +24,7 @@ extern node *IVEXIwith (node *arg_node, info *arg_info);
 extern node *IVEXIgenerator (node *arg_node, info *arg_info);
 extern node *IVEXIpart (node *arg_node, info *arg_info);
 extern node *IVEXIassign (node *arg_node, info *arg_info);
+extern node *IVEXIprf (node *arg_node, info *arg_info);
 extern node *IVEXIavis (node *arg_node, info *arg_info);
 
 extern node *IVEXIattachExtrema (node *minv, node *maxv, node *ivavis, node **vardecs,

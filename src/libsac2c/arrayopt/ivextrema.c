@@ -7,7 +7,9 @@
  * @defgroup ivexi Index Vector Extrema Insertion Traversal
  *
  * This traversal inserts maxima and minima for index vector variables
- * in with-loops. Later optimizations will propagate these maxima
+ * in with-loops and for other code, such as constraint guard removal.
+ *
+ * Later optimizations will propagate these maxima
  * and minima, and use then as input for other optimizations,
  * such as with-loop folding and guard removal.
  *
@@ -218,6 +220,121 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @static fn node *IVEXImakeIntScalar(int k, node **vardecs, node **preassigns)
+ *
+ *   @brief Create flattened integer scalar of value k:
+ *
+ *          fid = k;
+ *
+ *   @param: arg_info - your basic arg_info
+ *   @param: k : the value to be created.
+ *
+ *   @return N_id node for fid.
+ ******************************************************************************/
+static node *
+IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
+{
+    node *favis;
+    node *fid;
+    node *fids;
+    node *fass;
+
+    DBUG_ENTER ("IVEXImakeIntScalar");
+    favis
+      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    *vardecs = TBmakeVardec (favis, *vardecs);
+
+    fid = TBmakeId (favis);
+    fids = TBmakeIds (favis, NULL);
+    fass = TBmakeAssign (TBmakeLet (fids, TBmakeNum (k)), NULL);
+    *preassigns = TCappendAssign (*preassigns, fass);
+    AVIS_SSAASSIGN (favis) = fass;
+
+    if (isSAAMode ()) {
+        AVIS_DIM (favis) = TBmakeNum (0);
+        AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
+    }
+
+    AVIS_MINVAL (favis) = favis;
+    AVIS_MAXVAL (favis) = favis;
+
+    DBUG_RETURN (fid);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *BuildExtremumNonnegval( node *arg_node, info *arg_info)
+ *
+ * @brief Construct Extremum computation for F_non_neg_val_V.
+ *
+ *        We start with:
+ *
+ *          v =  F_non_neg_val_V( arg1);
+ *
+ *        And generate:
+ *
+ *          zr = 0;
+ *          p = _ge_VxS_( arg1, zr);
+ *          v = F_non_neg_val_V( arg1, p);
+ *
+ *        If CF finds that p is constant and all TRUE, it will
+ *        replace the guard by:
+ *
+ *          v = arg1;
+ *
+ *        FIXME: someone has to set AVIS_MINVAL( ID_AVIS( v)) = 0 or better,
+ *               to allow EWLF and friends to perform optimistic WLF.
+ *
+ * @param: arg_node: N_prf of F_non_neg_val_V.
+ *         arg_info: your basic arg_info.
+ *
+ * @result: N_id node for p.
+ *
+ *****************************************************************************/
+static node *
+BuildExtremumNonnegval (node *arg_node, info *arg_info)
+{
+    node *zr;
+    node *zavis;
+    node *zass;
+    node *zids;
+    int shp;
+
+    DBUG_ENTER ("BuildExtremumNonnegval");
+
+    /* Construct zr */
+    zr
+      = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNSWITH (arg_info));
+
+    /* Construct Boolean vector, p */
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (PRF_ARG1 (arg_node))));
+    zavis = TBmakeAvis (TRAVtmpVar (),
+                        TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (1, shp)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
+    zids = TBmakeIds (zavis, NULL);
+    zass = TBmakeAssign (TBmakeLet (zids,
+                                    TCmakePrf2 (F_ge_VxS,
+                                                DUPdoDupNode (PRF_ARG1 (arg_node)), zr)),
+                         NULL);
+
+    /* Keep us from trying to add extrema to the extrema calculations.  */
+    PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
+
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
+    AVIS_SSAASSIGN (zavis) = zass;
+    AVIS_MINVAL (zavis) = zavis;
+    AVIS_MAXVAL (zavis) = zavis;
+    if (isSAAMode ()) {
+        AVIS_DIM (zavis) = TBmakeNum (1);
+        AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (PRF_ARG1 (arg_node)));
+    }
+
+    DBUG_RETURN (TBmakeId (zavis));
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static bool isSameTypeShape( node *ida, node *idb)
  *
  * @brief predicate to see if two N_id nodes have same
@@ -424,7 +541,7 @@ IVEXIprintLHS (node *arg_node, info *arg_info)
  *
  * stolen from WithLoopFusion.c
  *
- * @fn node IVEXIRemoveUnusedCodes(node *codes)
+ * @fn node *IVEXIRemoveUnusedCodes(node *codes)
  *
  *   @brief removes all unused N_codes recursively
  *
@@ -481,33 +598,14 @@ generateSelect (node *arg_node, info *arg_info, int k)
     node *zids;
     node *zass;
 
-    node *favis;
     node *fid;
-    node *fids;
-    node *fass;
 
     DBUG_ENTER ("generateSelect");
 
     /* Flatten k */
 
-    favis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
-                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    INFO_VARDECS (arg_info) = TBmakeVardec (favis, INFO_VARDECS (arg_info));
-
-    fid = TBmakeId (favis);
-    fids = TBmakeIds (favis, NULL);
-    fass = TBmakeAssign (TBmakeLet (fids, TBmakeNum (k)), NULL);
-    INFO_PREASSIGNSWITH (arg_info)
-      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), fass);
-    AVIS_SSAASSIGN (favis) = fass;
-
-    if (isSAAMode ()) {
-        AVIS_DIM (favis) = TBmakeNum (0);
-        AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
-    }
-
-    AVIS_MINVAL (favis) = favis;
-    AVIS_MAXVAL (favis) = favis;
+    fid
+      = IVEXImakeIntScalar (k, &INFO_VARDECS (arg_info), &INFO_PREASSIGNSWITH (arg_info));
 
     /* Create k' = [k]; */
     kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
@@ -993,6 +1091,43 @@ IVEXIpart (node *arg_node, info *arg_info)
     }
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IVEXIprf( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Handle insertion of extrema on guard primitives.
+ *
+ *
+ ******************************************************************************/
+node *
+IVEXIprf (node *arg_node, info *arg_info)
+{
+    node *z;
+
+    DBUG_ENTER ("IVEXIprf");
+
+    z = arg_node;
+
+    switch (PRF_PRF (arg_node)) {
+    default:
+        break;
+    F_non_neg_val_V:
+        /* If no extrema here, attach one. */
+        if (NULL == PRF_ARG2 (arg_node)) {
+            PRF_ARG2 (arg_node) = BuildExtremumNonnegval (arg_node, arg_info);
+        }
+        break;
+    F_val_lt_shape_VxA:
+        break;
+    F_val_le_val_VxV:
+        break;
+    }
 
     DBUG_RETURN (arg_node);
 }
