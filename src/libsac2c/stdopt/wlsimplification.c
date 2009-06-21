@@ -16,8 +16,9 @@
  *   Empty generator:  A generator for which 0 == product( ub - lb)
  *    Perhaps we should denote these as zero-trip generators,
  *    since the term "empty generator" is ambiguous.
+ *    NB. we make use of the condition all( lb <= ub) here!!!
  *
- *   One-trip generator: A generator for which 1 = product( ub - lb).
+ *   One-trip generator: A generator for which 1 == product( ub - lb).
  *    NB. The generator  ( [:int] <= iv < [:int] ) is a one-trip
  *        generator.
  *
@@ -31,15 +32,6 @@
  *   B) it creates GENERATOR_GENWIDTH annotations
  *
  *   C) it eliminates one-trip With-Loops.
- *      One-trip With-Loops are those with generators of the form
- *        ( [:int] <= iv < [:int] )
- *
- *      Since the iteration count for a generator is:
- *
- *         product( ub - lb)
- *
- *      and the product (times-reduce) of an empty vector is 1,
- *      the body of these With-Loops is executed exactly once.
  *
  * The optimization ASSUMES that all With-Loops are full partitions
  * ( i.e., WLPG has been run prior to the optimization),
