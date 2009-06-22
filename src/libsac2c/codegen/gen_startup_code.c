@@ -176,6 +176,9 @@ PrintGlobalSwitches ()
     case BE_c99:
         fprintf (global.outfile, "#define SAC_BACKEND C99\n");
         break;
+    case BE_cuda:
+        fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
+        break;
     }
     fprintf (global.outfile, "\n");
 
