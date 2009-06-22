@@ -313,6 +313,9 @@ CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagati
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
                global.optimize.docf, opt, cyc)
 
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, cyc)
+
 CYCLEPHASEFUN (cvp, "Propagating constants and variables",
                CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, cyc)
 
@@ -332,7 +335,7 @@ CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowl
                cyc)
 
 CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
-               SSATdoTransformOneFundef, global.optimize.dowlf, opt, cyc)
+               SSATdoTransformOneFunction, global.optimize.dowlf, opt, cyc)
 
 CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
                global.optimize.doswlf, opt, cyc)
@@ -354,6 +357,9 @@ CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeac
 CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
                global.optimize.dodcr, opt, cyc)
 
+CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, cyc)
+
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, cyc)
 
@@ -371,9 +377,6 @@ CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
 
 CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
                SSATdoTransformOneFunction, global.optimize.dowlur, opt, cyc)
-
-CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
-               global.lacinline, opt, cyc)
 
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
                LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
@@ -405,6 +408,9 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
 
 CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
                global.optimize.dodcr, opt, cyc)
+
+CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, cyc)
 
 FUNEND (cyc)
 
