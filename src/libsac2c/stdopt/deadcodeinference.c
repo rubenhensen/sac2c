@@ -148,6 +148,9 @@ DCIdoDeadCodeInferenceOneFunction (node *fundef)
  *
  *     This action is required because the links (e.g., AVIS_MINVAL)
  *     are attributes, not sons, in the ast.
+ *     If this value is constant, it will have AVIS_MINVAL/MAXVAL
+ *     pointing to its avis. In that case, we don't mark it alive.
+ *     If someone else points to the constant, it will remain alive.
  *
  *****************************************************************************/
 
@@ -166,10 +169,10 @@ MarkAvisAlive (node *avis)
         if (AVIS_SHAPE (avis) != NULL) {
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
-        if (AVIS_MINVAL (avis) != NULL) {
+        if ((AVIS_MINVAL (avis) != NULL) && (AVIS_MINVAL (avis) != avis)) {
             MarkAvisAlive (AVIS_MINVAL (avis));
         }
-        if (AVIS_MAXVAL (avis) != NULL) {
+        if ((AVIS_MAXVAL (avis) != NULL) && (AVIS_MAXVAL (avis) != avis)) {
             MarkAvisAlive (AVIS_MAXVAL (avis));
         }
     }

@@ -2469,8 +2469,16 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
-    AVIS_MINVAL (new_node) = AVIS_MINVAL (arg_node);
-    AVIS_MAXVAL (new_node) = AVIS_MAXVAL (arg_node);
+
+    if (NULL != AVIS_MINVAL (arg_node)) {
+        AVIS_MINVAL (new_node)
+          = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MINVAL (arg_node));
+    }
+
+    if (NULL != AVIS_MAXVAL (arg_node)) {
+        AVIS_MAXVAL (new_node)
+          = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAXVAL (arg_node));
+    }
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
 

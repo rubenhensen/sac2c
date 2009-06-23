@@ -408,7 +408,8 @@ DCRret (node *arg_node, info *arg_info)
      * the RET list along with the concrete argument in the function applications
      */
     if (AVIS_ISDEAD (IDS_AVIS (LET_IDS (extlet)))) {
-        DBUG_PRINT ("DCR", ("removing ret"));
+        DBUG_PRINT ("DCR",
+                    ("removing ret for %s", AVIS_NAME (IDS_AVIS (LET_IDS (extlet)))));
 
         arg_node = FREEdoFreeNode (arg_node);
         LET_IDS (extlet) = FREEdoFreeNode (LET_IDS (extlet));
@@ -501,7 +502,8 @@ DCRassign (node *arg_node, info *arg_info)
 
     /* free this assignment if unused anymore */
     if (INFO_REMASSIGN (arg_info)) {
-        DBUG_PRINT ("DCR", ("removing assignment"));
+        DBUG_PRINT ("DCR", ("removing assignment for %s",
+                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))))));
         arg_node = FREEdoFreeNode (arg_node);
         global.optcounters.dead_expr++;
     }

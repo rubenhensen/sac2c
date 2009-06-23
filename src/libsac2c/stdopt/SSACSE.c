@@ -818,6 +818,17 @@ CSEblock (node *arg_node, info *arg_info)
 
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
+        if (BLOCK_VARDEC (arg_node) != NULL) {
+            /*
+             * traverse vardecs of block again, to rename extrema.
+             */
+            node *vardec = BLOCK_VARDEC (arg_node);
+            while (vardec != NULL) {
+                vardec = CSEvardec (vardec, arg_info);
+                vardec = VARDEC_NEXT (vardec);
+            }
+        }
+
         /*
          * remove the fake assignment of the index scalars to the index vector
          */
@@ -832,17 +843,6 @@ CSEblock (node *arg_node, info *arg_info)
          * remove top cse frame
          */
         INFO_CSE (arg_info) = RemoveTopCseLayer (INFO_CSE (arg_info));
-    }
-
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        /*
-         * traverse vardecs of block again, to rename extrema.
-         */
-        node *vardec = BLOCK_VARDEC (arg_node);
-        while (vardec != NULL) {
-            vardec = CSEvardec (vardec, arg_info);
-            vardec = VARDEC_NEXT (vardec);
-        }
     }
 
     DBUG_RETURN (arg_node);

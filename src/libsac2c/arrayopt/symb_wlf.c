@@ -827,7 +827,6 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
 {
     node *oldblock;
     node *newblock;
-    node *newblock2;
     node *newavis;
     node *idxassigns;
     node *expravis;
@@ -842,10 +841,12 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     /* If foldeeWL is empty, don't do any code substitutions.
      * Just replace sel(iv, foldeeWL) by iv.
      */
-    newblock = (N_empty == NODE_TYPE (oldblock))
-                 ? idxassigns
-                 : TCappendAssign (idxassigns, DUPdoDupTree (oldblock));
+    newblock
+      = (N_empty == NODE_TYPE (oldblock))
+          ? NULL
+          : DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
+#ifdef JUNK // ????
     /* If new vardecs were made, append them to the current set */
     if (INFO_VARDECS (arg_info) != NULL) {
         BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
@@ -853,11 +854,7 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
                             BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
         INFO_VARDECS (arg_info) = NULL;
     }
-
-    newblock2
-      = DUPdoDupTreeLutSsa (newblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-
-    FREEdoFreeTree (newblock);
+#endif //  JUNK // ????
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
@@ -869,9 +866,11 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
      */
     FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (arg_node)));
     LET_EXPR (ASSIGN_INSTR (arg_node)) = TBmakeId (newavis);
-    if (NULL != newblock2) {
-        arg_node = TCappendAssign (newblock2, arg_node);
+    if (NULL != newblock) {
+        arg_node = TCappendAssign (newblock, arg_node);
     }
+
+    arg_node = TCappendAssign (idxassigns, arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -909,9 +908,7 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         arg_node = WLNCdoWLNeedCount (arg_node);
         arg_node = WLCCdoWLCostCheck (arg_node);
-        /*FIXME */ CHKdoTreeCheck (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        /*FIXME */ CHKdoTreeCheck (arg_node);
 
         /* If new vardecs were made, append them to the current set */
         if (INFO_VARDECS (arg_info) != NULL) {
