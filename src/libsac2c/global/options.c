@@ -107,10 +107,9 @@ CheckOptionConsistency ()
         global.optimize.dodr = FALSE;
         global.optimize.dorco = FALSE;
 
-        CTInote ("Disabling 'Propagating constants and variables' as does not play"
-                 "nice with muTC");
-        /* Splitting withloops by dimensions */
-        global.optimize.docvp = FALSE;
+        /* CTInote( "Disabling 'Propagating constants and variables' as does not "
+                 "play nice with muTC");
+        global.optimize.docvp = FALSE;*/
 
         if (global.optimize.dophm) {
             CTInote ("Private heap management has been disabled due to use "

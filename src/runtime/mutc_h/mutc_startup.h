@@ -2,8 +2,11 @@
 
 #define _SAC_MUTC_STARTUP_H_
 
+#define SAC_MUTC_INCLUDE m4_include (sac_helpers.slh)
+
 #define SAC_MUTC_STARTUP                                                                 \
     SAC_MUTC_STARTUP_ANON ()                                                             \
+    SAC_MUTC_INCLUDE                                                                     \
     SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \

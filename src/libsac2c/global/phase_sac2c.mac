@@ -658,68 +658,72 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
                 SUBPHASE (wlsd, "Splitting withloops by dimensions",
                           WLSDdoWithLoopSplitDimensions, global.backend == BE_mutc, wlt)
 
-                  SUBPHASE (cvp, "Propagating constants and variables",
-                            CVPdoConstVarPropagation, global.optimize.docvp, wlt)
+                  SUBPHASE (rw3, "Remove With3s", RW3doRemoveWith3,
+                            global.backend == BE_mutc, wlt)
 
-                    SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
-                              global.optimize.dodcr, wlt)
+                    SUBPHASE (cvp, "Propagating constants and variables",
+                              CVPdoConstVarPropagation, global.optimize.docvp, wlt)
 
-                      SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
-                                global.backend == BE_cuda, wlt)
+                      SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
+                                global.optimize.dodcr, wlt)
 
-                        SUBPHASE (cutycv, "CUDA type conversion",
-                                  CUTYCVdoCUDAtypeConversion, global.backend == BE_cuda,
-                                  wlt)
+                        SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
+                                  global.backend == BE_cuda, wlt)
 
-                          ENDPHASE (wlt)
+                          SUBPHASE (cutycv, "CUDA type conversion",
+                                    CUTYCVdoCUDAtypeConversion, global.backend == BE_cuda,
+                                    wlt)
+
+                            ENDPHASE (wlt)
 
 /******************************************************************************/
 
 #ifndef PRODUCTION
 
-                            PHASE (mt3, "Running 3rd generation multithreading", NEVER)
+                              PHASE (mt3, "Running 3rd generation multithreading", NEVER)
 
-                              SUBPHASE (tem, "Tagging execution modes",
-                                        TEMdoTagExecutionmode, ALWAYS, mt3)
+                                SUBPHASE (tem, "Tagging execution modes",
+                                          TEMdoTagExecutionmode, ALWAYS, mt3)
 
-                                SUBPHASE (crwiw, "Creating with in with",
-                                          CRWIWdoCreateWithinwith, ALWAYS, mt3)
+                                  SUBPHASE (crwiw, "Creating with in with",
+                                            CRWIWdoCreateWithinwith, ALWAYS, mt3)
 
-                                  SUBPHASE (pem, "Propagating execution modes",
-                                            PEMdoPropagateExecutionmode, ALWAYS, mt3)
+                                    SUBPHASE (pem, "Propagating execution modes",
+                                              PEMdoPropagateExecutionmode, ALWAYS, mt3)
 
-                                    SUBPHASE (cdfg, "Creating data flow graph",
-                                              CDFGdoCreateDataflowgraph, ALWAYS, mt3)
+                                      SUBPHASE (cdfg, "Creating data flow graph",
+                                                CDFGdoCreateDataflowgraph, ALWAYS, mt3)
 
-                                      SUBPHASE (asmra, "Rearringing assignments",
-                                                ASMRAdoAssignmentsRearrange, ALWAYS, mt3)
+                                        SUBPHASE (asmra, "Rearringing assignments",
+                                                  ASMRAdoAssignmentsRearrange, ALWAYS,
+                                                  mt3)
 
-                                        SUBPHASE (crece, "Creating execution mode cells",
-                                                  CRECEdoCreateCells, ALWAYS, mt3)
+                                          SUBPHASE (crece,
+                                                    "Creating execution mode cells",
+                                                    CRECEdoCreateCells, ALWAYS, mt3)
 
-                                          SUBPHASE (cegro,
-                                                    "Extending execution mode cells",
-                                                    CEGROdoCellGrowth, ALWAYS, mt3)
+                                            SUBPHASE (cegro,
+                                                      "Extending execution mode cells",
+                                                      CEGROdoCellGrowth, ALWAYS, mt3)
 
-                                            SUBPHASE (repfun, "Replicating functions",
-                                                      REPFUNdoReplicateFunctions, ALWAYS,
-                                                      mt3)
-
-                                              SUBPHASE (mtdfr,
-                                                        "Removing superfluous functions",
-                                                        DFRdoDeadFunctionRemoval, ALWAYS,
-                                                        mt3)
+                                              SUBPHASE (repfun, "Replicating functions",
+                                                        REPFUNdoReplicateFunctions,
+                                                        ALWAYS, mt3)
 
                                                 SUBPHASE (
-                                                  concel,
-                                                  "Consolidating execution mode cells",
-                                                  CONCELdoConsolidateCells, ALWAYS, mt3)
+                                                  mtdfr, "Removing superfluous functions",
+                                                  DFRdoDeadFunctionRemoval, ALWAYS, mt3)
 
-                                                  SUBPHASE (abort,
-                                                            "Aborting MT3 compilation",
-                                                            MTABabort, ALWAYS, mt3)
+                                                  SUBPHASE (
+                                                    concel,
+                                                    "Consolidating execution mode cells",
+                                                    CONCELdoConsolidateCells, ALWAYS, mt3)
 
-                                                    ENDPHASE (mt3)
+                                                    SUBPHASE (abort,
+                                                              "Aborting MT3 compilation",
+                                                              MTABabort, ALWAYS, mt3)
+
+                                                      ENDPHASE (mt3)
 
 #endif /* PRODUCTION */
 

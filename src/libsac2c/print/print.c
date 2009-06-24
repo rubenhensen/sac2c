@@ -1235,14 +1235,23 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
-                 TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
-                 TYPEDEF_NAME (arg_node));
-    }
-    if (TYPEDEF_FREEFUN (arg_node) != NULL) {
-        fprintf (global.outfile, "%s void %s( %s);\n\n", PRINT_EXTERN,
-                 TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
+    if (global.backend != BE_mutc) {
+        if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+            fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
+                     TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
+                     TYPEDEF_NAME (arg_node));
+        }
+        if (TYPEDEF_FREEFUN (arg_node) != NULL) {
+            fprintf (global.outfile, "%s void %s( %s);\n\n", PRINT_EXTERN,
+                     TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
+        }
+    } else {
+        if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+            CTIwarn ("Discarding copy fun for %s\n", TYPEDEF_NAME (arg_node));
+        }
+        if (TYPEDEF_FREEFUN (arg_node) != NULL) {
+            CTIwarn ("Discarding free fun for %s\n", TYPEDEF_NAME (arg_node));
+        }
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -4937,7 +4946,7 @@ PRTrange (node *arg_node, info *arg_info)
     }
     fprintf (global.outfile, "(");
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
-    fprintf (global.outfile, " < ");
+    fprintf (global.outfile, " <= ");
     RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
     fprintf (global.outfile, " < ");
     RANGE_UPPERBOUND (arg_node) = TRAVdo (RANGE_UPPERBOUND (arg_node), arg_info);

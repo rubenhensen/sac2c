@@ -1678,6 +1678,13 @@
           <node name="With" />
         </travuser>
       </traversal>
+      <traversal id="RW3" name="Remove With3s" default="sons" include="remove_with3.h">
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="With3" />
+        </travuser>
+      </traversal>
       <traversal id="WLSD" name="With-Loop Split Dimensions" default="sons" include="wl_split_dimensions.h">
         <travuser>
 	  <node name="Fundef" />
