@@ -6520,6 +6520,26 @@ COMPrange (node *arg_node, info *arg_info)
 
     thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
+    if (NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_id) {
+        RANGE_LOWERBOUND (arg_node)
+          = TCmakeAssignIcm2 ("SAC_MUTC_ND_GET_VAR",
+                              TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
+                                                    ID_TYPE (
+                                                      RANGE_LOWERBOUND (arg_node))),
+                              TCmakeIdCopyString (ID_NAME (RANGE_LOWERBOUND (arg_node))),
+                              NULL);
+    }
+
+    if (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_id) {
+        RANGE_UPPERBOUND (arg_node)
+          = TCmakeAssignIcm2 ("SAC_MUTC_ND_GET_VAR",
+                              TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
+                                                    ID_TYPE (
+                                                      RANGE_UPPERBOUND (arg_node))),
+                              TCmakeIdCopyString (ID_NAME (RANGE_UPPERBOUND (arg_node))),
+                              NULL);
+    }
+
     create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
                                TCmakeIdCopyString (
                                  RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
