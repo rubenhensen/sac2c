@@ -360,6 +360,9 @@ CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
 CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, cyc)
 
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
+               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
+
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, cyc)
 
@@ -377,9 +380,6 @@ CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
 
 CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
                SSATdoTransformOneFunction, global.optimize.dowlur, opt, cyc)
-
-CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
-               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
 
 CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
