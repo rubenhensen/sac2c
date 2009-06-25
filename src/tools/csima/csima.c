@@ -108,6 +108,15 @@ DecodeString (char *tag)
     return (buffer);
 }
 
+/*
+ * In the following code we deliberately omit checks for the sucess of fscanf
+ * conversions as the input is tool generated and deemed syntactically correct.
+ * Checks would also be very expensive and the cachesim analyser is performance
+ * critical.
+ * Latest C compiler versions require us to assign the result value to a variable,
+ * nontheless, to avoid nasty warnings.
+ */
+
 int
 main (int argc, char *argv[])
 {
@@ -116,6 +125,7 @@ main (int argc, char *argv[])
     char op;
     FILE *in_stream = stdin;
     char tagbuffer[MAX_TAG_LENGTH];
+    int res;
 
     AnalyserSetup (argc, argv);
 
@@ -124,42 +134,42 @@ main (int argc, char *argv[])
     while (!feof (stdin)) {
         switch (op) {
         case 'R':
-            fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
+            res = fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
             SAC_CS_ReadAccess ((void *)baseaddress, (void *)elemaddress);
             break;
 
         case 'W':
-            fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
+            res = fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
             SAC_CS_WriteAccess ((void *)baseaddress, (void *)elemaddress);
             break;
 
         case 'G':
-            fscanf (in_stream, "%lx %u\n", &baseaddress, &size);
+            res = fscanf (in_stream, "%lx %u\n", &baseaddress, &size);
             SAC_CS_RegisterArray ((void *)baseaddress, size);
             break;
 
         case 'U':
-            fscanf (in_stream, "%lx\n", &baseaddress);
+            res = fscanf (in_stream, "%lx\n", &baseaddress);
             SAC_CS_UnregisterArray ((void *)baseaddress);
             break;
 
         case 'B':
-            fscanf (in_stream, " %s\n", tagbuffer);
+            res = fscanf (in_stream, " %s\n", tagbuffer);
             SAC_CS_Start (DecodeString (tagbuffer));
             break;
 
         case 'E':
-            fscanf (in_stream, " \n");
+            res = fscanf (in_stream, " \n");
             SAC_CS_Stop ();
             break;
 
         case 'F':
-            fscanf (in_stream, " \n");
+            res = fscanf (in_stream, " \n");
             SAC_CS_Finalize ();
             break;
 
         default:
-            fscanf (in_stream, "%s\n", tagbuffer);
+            res = fscanf (in_stream, "%s\n", tagbuffer);
             SAC_RuntimeError ("CacheSimAnalyser: unknown input: %c %s", op, tagbuffer);
         } /*switch */
 
