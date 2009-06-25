@@ -13,49 +13,38 @@
  *
  *   ub: Upper bound (GENERATOR_BOUND2) of a With-Loop generator.
  *
- *   Empty generator:  A generator for which 0 == product( ub - lb)
- *    Perhaps we should denote these as zero-trip generators,
- *    since the term "empty generator" is ambiguous.
- *    NB. we make use of the condition all( lb <= ub) here!!!
+ *   Zero-trip generator:  A generator for which 0 == product( ub - lb)
+ *    NB: we name these generators zero-trip rather than empty here
+ *        as we want them not to be confused with the one-trip generators
+ *        that have empty bounds: ( [:int] <= iv < [:int] ).
+ *        For those we have product( ub - lb) = product( []) == 1 !!!
  *
- *   One-trip generator: A generator for which 1 == product( ub - lb).
- *    NB. The generator  ( [:int] <= iv < [:int] ) is a one-trip
- *        generator.
+ *    IMPORTANT: we make use of the condition all( lb <= ub) here!!!
  *
- * This optimization does 3 things:
+ * This optimization does 2 things:
  *
- *   A) it eliminates empty generators from With-Loops
+ *   A) it eliminates zero-trip generators from With-Loops
  *      In case all generators are eliminated, the entire With-Loop
  *      is being replaced by some appropriate alternative code (for details
  *      see below!).
  *
  *   B) it creates GENERATOR_GENWIDTH annotations
  *
- *   C) it eliminates one-trip With-Loops.
  *
  * The optimization ASSUMES that all With-Loops are full partitions
- * ( i.e., WLPG has been run prior to the optimization),
- * AND that WLFS has not yet been run!
- * As a consequence, all With-Loops need to be of the form:
- *    with {
- *      [ (.... ) : expr; ] +
- *      [ default: expr; ]
- *    }  ( genarray(...) | modarray(...) | fold(...) [ break ] )
- *       [ propagate(...) ] *
- *
- * Note here, that the absence of a default-partition indicates that appropriate
+ * ( i.e., WLPG has been run prior to the optimization).
+ * As a consequence, the absence of a default-partition indicates that appropriate
  * generator-partitions have been inserted instead!
- * Note also, that we have a maximum of one genarray/modarray/fold operators!
  *
  *
+ * A) handling zero-trip generators
  *
- * A) handling empty generator-partitions:
- *
- * The criteria for emptiness (as implemented in WLSIMPgenerator) are:
+ * The criteria for emptiness (as implemented in CheckZeroTrip) are:
  *
  *  1) (  a <= iv <  a)    where a::int[n]  with n>0  !
  *  2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
  *                               and vec1 >= vec2
+ *                               and n>0!
  *  3) ( [l1, ..., ln] <= iv < [u1, ..., un])
  *                         where exists n>0 so that:
  *                               ln and un are the same variable
@@ -65,69 +54,34 @@
  *  5) ( lb <= iv <= ub width [v1,...,vn])
  *                         where exists i such that vi == 0
  *
- * In case one of the above criteria holds, INFO_EMPTYPART( arg_info)
+ * In case one of the above criteria holds, INFO_ZEROTRIP( arg_info)
  * is being set which signals WLSIMPpart to delete that partition.
  *
- * After all partitions  have been inspected, we may find 3 different
- * situations (see WLSIMPwith):
+ * After all partitions  have been inspected, we inspect whether all
+ * partitions including a potentially existing default-partition are
+ * gone. If so, we initiate the following transformation while
+ * traversing the operation parts:
  *
- *  1) at least one generator-partition still exists => we are done
- *
- *  2) all generator-partitions are gone
- *     AND there is no default partition:
- *
- *      due to the prerequisite of having a full partition we know that
+ * NB:  due to the prerequisite of having a full partition we know that
  *      the full index space is empty. As a consequence, we can make
  *      the following changes:
  *
  *   res = with {
  *         } genarray( shape, default);
  *
- *         ====>    res =  reshape( _cat_VxV_( shape), shape( default),
- *                                  [:basetype])
+ *         ====>    res =  [:type(res)]
+ *
+ *       NB: type(res) is guaranteed to be AKS because, otherwise, we cannot
+ *           statically decide that all partitions are in fact empty!
+ *           If it was not AKS, either there would be a default partition,
+ *           or partition generation would have inserted a second partition
+ *           which depends on the unknown lower / upper limit!
  *
  *   res = with {                    ===>     res = a;
  *         } modarray( a );
  *
  *   res = with {                    ===>     res = neutr;
  *         } fold( fun, neutr);
- *         FIXME: This does not work as of 2009-05-31, because of
- *         the possible presence of a non-empty CODE_CBLOCK,
- *         as occurs here:
- *
- *          lb = [:int];
- *          ub = [:int];
- *          x = with {
- *                (lb <= iv < ub) {
- *                  q = 6;
- *                  q2 = 8;
- *                  q3 = _add_SxS_(q, q2);
- *                } : q3;
- *              } : fold( -, 42  );
- *
- *
- *
- *  3) all generator-partitions are gone
- *     BUT there is a default partition:
- *
- *      as there is a default partition, we know that we are dealing with
- *      a degenerate genarray-WL or modarray-WL, which we can treat as
- *      follows:
- *
- *   res = with {
- *           default( iv) : default;
- *         } genarray( shape, default);
- *
- *         ====>    res = with {
- *                          ( 0 * shape <= iv < shape) : default;
- *                        } genarray( shape, default);
- *
- *   res = with {                    ===>     res = a;
- *           default( iv) : a[iv];
- *         } modarray( a );
- *
- *      Note here, that we cannot have a fold-WL here, as these never
- *      obtain default partitions!!
  *
  *  IN ALL CASES where we replace a With-Loop by an assignment, we have
  *  to adjust potential break / propagate operators accordingly!
@@ -138,47 +92,6 @@
  *   B.  GENERATOR_GENWIDTH annotation creation:
  *
  *   This replaces empty GENWIDTH values by (ub -lb).
- *
- *   C. Elimination of one-trip With-Loops:
- *      There are three cases handled here. In each case,
- *      the With-Loop body is executed exactly once.
- *
- *      1. genarray:
- *
- *         res = with {
- *                 (lb <= iv < ub) : {expr0; expr1;... exprn;}
- *                   : exprn;
- *               } : genarray( shp, def);
- *
- *         This is transformed into:
- *
- *         {expr0; expr1; ...exprn;}
- *         res =  exprn;
- *
- *      2. modarray:
- *
- *         res = with {
- *                 (lb <= iv < ub) : {expr0; expr1;... exprn;}
- *                   : exprn;
- *               } : modarray( arr);
- *
- *
- *         This is transformed into:
- *
- *         {expr0; expr1; ...exprn;}
- *         res =  exprn;
- *
- *      3. fold: Broken. See above FIXME.
- *
- *         res = with {
- *                 (lb <= iv < ub) : {expr0; expr1;... exprn;}
- *                   : exprn;
- *               } : fold( op, neut);
- *
- *         This is transformed into:
- *
- *         {expr0; expr1; ...exprn;}
- *         res =  op( neut, exprn);
  *
  * </pre>
  *
@@ -227,15 +140,8 @@ struct INFO {
      * elements for identifying empty generators
      */
     node *lhs;
-    node *with;   /* Needed as long as the [] problem is not ironed out */
-    node *withid; /* partition's WITH_WITHID value. If -ssaiv,
-                     this will have to be reworked. */
-    node *bound1; /* GENERATOR_BOUND1 */
-    node *cexprs; /* partition's CODE_CEXPRS value */
-    node *cblock; /* partition's CODE_CBLOCK value */
     int num_genparts;
-    bool emptypart;
-    bool onetrip; /* Entire WL is empty - [:int] <= iv < [:int] */
+    bool zerotrip;
     bool replace;
     bool onefundef;
 };
@@ -247,15 +153,9 @@ struct INFO {
 #define INFO_PREASSIGN(n) ((n)->preassign)
 
 #define INFO_LHS(n) ((n)->lhs)
-#define INFO_WITH(n) ((n)->with)
-#define INFO_WITHID(n) ((n)->withid)
-#define INFO_BOUND1(n) ((n)->bound1)
-#define INFO_CEXPRS(n) ((n)->cexprs)
-#define INFO_CBLOCK(n) ((n)->cblock)
 #define INFO_NUM_GENPARTS(n) ((n)->num_genparts)
 
-#define INFO_EMPTYPART(n) ((n)->emptypart)
-#define INFO_ONETRIP(n) ((n)->onetrip)
+#define INFO_ZEROTRIP(n) ((n)->zerotrip)
 #define INFO_REPLACE(n) ((n)->replace)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
@@ -274,14 +174,8 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_LHS (result) = NULL;
-    INFO_WITH (result) = NULL;
-    INFO_WITHID (result) = NULL;
-    INFO_BOUND1 (result) = NULL;
-    INFO_CEXPRS (result) = NULL;
-    INFO_CBLOCK (result) = NULL;
     INFO_NUM_GENPARTS (result) = 0;
-    INFO_EMPTYPART (result) = FALSE;
-    INFO_ONETRIP (result) = FALSE;
+    INFO_ZEROTRIP (result) = FALSE;
     INFO_REPLACE (result) = FALSE;
     INFO_ONEFUNDEF (result) = TRUE;
 
@@ -298,13 +192,187 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/**
+ * local helper functions
+ */
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateGenwidth( node *lb_array, node *ub_array, info* arg_info)
+ *
+ * @brief if lb_array == [ a, b, 3] and ub_array == [7, x, 9] it creates:
+ *          tmp1 = 7 - a;
+ *          tmp2 = x - b;
+ *          tmp3 = 9 - 3;
+ *        and returns [ tmp1, tmp2, tmp3];
+ *
+ *        All declarations are directly inserted (using INFO_FUNDEF)
+ *        and the assignments are inserted in INFO_PREASSIGN.
+ *
+ *****************************************************************************/
+static node *
+CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
+{
+    node *ub_exprs, *lb_exprs;
+    node *exprs = NULL;
+    node *diffavis;
+
+    DBUG_ENTER ("CreateGenwidth");
+
+    DBUG_ASSERT (NODE_TYPE (lb_array) == N_array, "lb should be N_array");
+    DBUG_ASSERT (NODE_TYPE (ub_array) == N_array, "ub should be N_array");
+
+    lb_exprs = ARRAY_AELEMS (lb_array);
+    ub_exprs = ARRAY_AELEMS (ub_array);
+
+    while (lb_exprs != NULL) {
+        diffavis = TBmakeAvis (TRAVtmpVar (),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (diffavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
+                                     TCmakePrf2 (F_sub_SxS,
+                                                 DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
+                                                 DUPdoDupNode (EXPRS_EXPR (lb_exprs)))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
+
+        exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (diffavis), NULL));
+
+        lb_exprs = EXPRS_NEXT (lb_exprs);
+        ub_exprs = EXPRS_NEXT (ub_exprs);
+    }
+
+    DBUG_RETURN (TCmakeIntVector (exprs));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool CheckZeroTrip( node *lb, node *ub, node *width)
+ *
+ * @brief checks the 5 criteria explained in the main comment block
+ *
+ *****************************************************************************/
+static bool
+CheckZeroTrip (node *lb, node *ub, node *width)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("CheckZeroTrip");
+
+    if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
+
+        /**
+         * criteria 1) (  a <= iv <  a)    where a::int[n]  with n>0  !
+         */
+        if ((ID_AVIS (lb) == ID_AVIS (ub)) && (TUshapeKnown (ID_NTYPE (lb)))
+            && (TYgetDim (ID_NTYPE (lb)) == 1)
+            && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
+            res = TRUE;
+        } else {
+
+            /**
+             * criteria 2) ( lb <= iv < ub)    where lb::int[n]{vec1},
+             *                                       ub::int[n]{vec2},
+             *                                       vec1 >= vec2
+             *                                       n > 0!
+             */
+            if (TYisAKV (ID_NTYPE (lb)) && TYisAKV (ID_NTYPE (ub))) {
+
+                constant *lt
+                  = COlt (TYgetValue (ID_NTYPE (lb)), TYgetValue (ID_NTYPE (ub)));
+                shape *shp = TYgetShape (ID_NTYPE (lb));
+
+                if (!COisTrue (lt, TRUE) && (SHgetExtent (shp, 0) > 0)) {
+                    res = TRUE;
+                }
+
+                lt = COfreeConstant (lt);
+                shp = SHfreeShape (shp);
+            }
+        }
+    } else if ((NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array)) {
+        /**
+         * criteria 3) ( [l1, ..., ln] <= iv < [u1, ..., un])
+         *             where exists n>0 so that:
+         *                   ln and un are the same variable
+         *                   || ln >= un
+         */
+
+        lb = ARRAY_AELEMS (lb);
+        ub = ARRAY_AELEMS (ub);
+
+        while (lb != NULL) {
+            node *lbelem, *ubelem;
+
+            lbelem = EXPRS_EXPR (lb);
+            ubelem = EXPRS_EXPR (ub);
+
+            if ((NODE_TYPE (lbelem) == N_id) && (NODE_TYPE (ubelem) == N_id)
+                && (ID_AVIS (lbelem) == ID_AVIS (ubelem))) {
+                res = TRUE;
+            } else {
+                ntype *lbt, *ubt;
+                lbt = NTCnewTypeCheck_Expr (lbelem);
+                ubt = NTCnewTypeCheck_Expr (ubelem);
+
+                if (TYisAKV (lbt) && TYisAKV (ubt)) {
+                    constant *lt = COlt (TYgetValue (lbt), TYgetValue (ubt));
+                    if (!COisTrue (lt, TRUE)) {
+                        res = TRUE;
+                    }
+
+                    lt = COfreeConstant (lt);
+                }
+
+                lbt = TYfreeType (lbt);
+                ubt = TYfreeType (ubt);
+            }
+
+            lb = EXPRS_NEXT (lb);
+            ub = EXPRS_NEXT (ub);
+        }
+    }
+
+    if (width != NULL) {
+        if (NODE_TYPE (width) == N_id) {
+            /**
+             * criteria 4) ( lb <= iv <= ub width a)
+             *              where a::int[n]{vec} and vec contains a 0
+             */
+            if (TYisAKV (ID_NTYPE (width))
+                && COisZero (TYgetValue (ID_NTYPE (width)), FALSE)) {
+                res = TRUE;
+            }
+        } else {
+            constant *cnst;
+            DBUG_ASSERT ((NODE_TYPE (width) == N_array),
+                         "Width spec is neither N_id nor N_array");
+            /**
+             * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
+             *             where where exists i such that vi == 0
+             */
+            cnst = COaST2Constant (width);
+            if (cnst != NULL) {
+                if (COisZero (cnst, FALSE)) {
+                    res = TRUE;
+                }
+                cnst = COfreeConstant (cnst);
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *WLSIMPdoWithloopSimplification( node *fundef)
  *
  * @brief
- *
- * @param syntax_tree
  *
  * @return modified syntax_tree.
  *
@@ -317,6 +385,8 @@ WLSIMPdoWithloopSimplification (node *fundef)
     DBUG_ENTER ("WLSIMPdoWithloopSimplification");
 
     info = MakeInfo ();
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "fundef node expected!");
 
     TRAVpush (TR_wlsimp);
     fundef = TRAVdo (fundef, info);
@@ -333,8 +403,6 @@ WLSIMPdoWithloopSimplification (node *fundef)
  *
  * @brief
  *
- * @param syntax_tree
- *
  * @return modified syntax_tree.
  *
  *****************************************************************************/
@@ -347,6 +415,8 @@ WLSIMPdoWithloopSimplificationModule (node *syntax_tree)
 
     info = MakeInfo ();
 
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "module node expected!");
+
     INFO_ONEFUNDEF (info) = FALSE;
 
     TRAVpush (TR_wlsimp);
@@ -358,9 +428,18 @@ WLSIMPdoWithloopSimplificationModule (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+/**
+ * AST traversal functions:
+ */
+
 /** <!--********************************************************************-->
  *
  * @fn node *WLSIMPfundef( node *arg_node, info *arg_info)
+ *
+ * @brief LaC-funs: - does NOT follow N_ap at all!
+ *                  - supports glf format (ie traverses all local funs when
+ *                    present)
+ *        sets INFO_FUNDEF while traversing the body.
  *
  *****************************************************************************/
 node *
@@ -372,6 +451,7 @@ WLSIMPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = NULL;
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -389,6 +469,12 @@ WLSIMPfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *WLSIMPassign( node *arg_node, info *arg_info)
+ *
+ * @brief bottom up traversal
+ *        reacts on:
+ *         - INFO_REPLACE => frees the actual assignment
+ *         - INFO_PREASSIGN => inserts code prior to this assignment
+ *         NB: INFO_REPLACE and INFO_PREASSIGN may coexist!
  *
  *****************************************************************************/
 node *
@@ -416,6 +502,8 @@ WLSIMPassign (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPlet( node *arg_node, info *arg_info)
  *
+ * @brief inserts INFO_LHS while traversing the rhs.
+ *
  *****************************************************************************/
 node *
 WLSIMPlet (node *arg_node, info *arg_info)
@@ -424,6 +512,7 @@ WLSIMPlet (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -432,15 +521,11 @@ WLSIMPlet (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPwith( node *arg_node, info *arg_info)
  *
- *  We look into the N_with only if the WITH_VEC is [:int].
- *
  *****************************************************************************/
 node *
 WLSIMPwith (node *arg_node, info *arg_info)
 {
     node *preass;
-    node *info_lhs;
-    info *old_info;
 
     DBUG_ENTER ("WLSIMPwith");
 
@@ -448,24 +533,15 @@ WLSIMPwith (node *arg_node, info *arg_info)
                 ("examining With-Loop: %s in line %d",
                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NODE_LINE (arg_node)));
 
-    old_info = arg_info;
-    arg_info = MakeInfo ();
-
-    INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_info);
-    INFO_FUNDEF (arg_info) = INFO_FUNDEF (old_info);
-    INFO_WITH (arg_info) = arg_node;
-    INFO_LHS (arg_info) = INFO_LHS (old_info);
-
-    /* Do inner-most WLs first */
-    info_lhs = INFO_LHS (arg_info);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    INFO_LHS (arg_info) = info_lhs;
-
+    INFO_NUM_GENPARTS (arg_info) = 0;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    DBUG_PRINT ("WLSIMP", ("%d parts left", INFO_NUM_GENPARTS (arg_info)));
 
     if (INFO_NUM_GENPARTS (arg_info) == 0) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
+    INFO_LHS (arg_info) = NULL;
 
     if (!INFO_REPLACE (arg_info)) {
         preass = INFO_PREASSIGN (arg_info);
@@ -474,12 +550,6 @@ WLSIMPwith (node *arg_node, info *arg_info)
         INFO_PREASSIGN (arg_info) = preass;
     }
 
-    /* Propagate these to WLSIMPassign */
-    INFO_LHS (old_info) = INFO_LHS (arg_info);
-    INFO_REPLACE (old_info) = INFO_REPLACE (arg_info);
-    INFO_PREASSIGN (old_info) = INFO_PREASSIGN (arg_info);
-    arg_info = FreeInfo (arg_info);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -487,52 +557,32 @@ WLSIMPwith (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPgenarray( node *arg_node, info *arg_info)
  *
+ * @brief  creates an assignment of the form:
+ *        lhs = [:lhstype];
+ *        where INFO_LHS == lhs  and the type of lhs is lhstype!
+ *
  *****************************************************************************/
 node *
 WLSIMPgenarray (node *arg_node, info *arg_info)
 {
+    node *lhs, *empty;
+    ntype *lhstype;
+
     DBUG_ENTER ("WLSIMPgenarray");
 
-    if (!INFO_ONETRIP (arg_info)) {
-        if (NULL != GENARRAY_DEFAULT (arg_node)) {
-            /*
-             * TODO: FIX ME!
-             *
-             * Here we should generate a non-default partition...
-             */
-            DBUG_ASSERT (FALSE, "killed all gens of genarrayWL!");
-        } else {
-            /*
-             * TODO: FIX ME!
-             *
-             * Genarray with-loops without parts should be replaced with
-             * reshape( cat( shp, shape(def)), (:basetype)[])
-             *
-             * This is currently not possible as the basetype of [] cannot be
-             * preserved in the NTC.
-             */
-            DBUG_ASSERT (FALSE, "killed all gens of genarrayWL!");
-        }
-    }
+    DBUG_PRINT ("WLSIMP", ("transforming N_genarray"));
 
+    lhs = INFO_LHS (arg_info);
+    lhstype = IDS_NTYPE (lhs);
+
+    empty = TBmakeArray (TYcopyType (lhstype), SHcopyShape (TYgetShape (lhstype)), NULL);
     INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
-                                 DUPdoDupNode (INFO_CEXPRS (arg_info))),
-                      INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), empty), INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
     INFO_REPLACE (arg_info) = TRUE;
 
-    if (NULL != INFO_CBLOCK (arg_info)) {
-        INFO_PREASSIGN (arg_info)
-          = TCappendAssign (INFO_CBLOCK (arg_info), INFO_PREASSIGN (arg_info));
-        INFO_CBLOCK (arg_info) = NULL;
-    }
-
-    /* For a single-trip WL, set the WITHID_VEC to the generator lower bound */
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (INFO_WITHID (arg_info), INFO_BOUND1 (arg_info)),
-                      INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (IDS_AVIS (INFO_WITHID (arg_info))) = INFO_PREASSIGN (arg_info);
+    DBUG_ASSERT (TUshapeKnown (lhstype),
+                 "all partitions of genarray WL are gone but lhs shape unknown!");
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -546,26 +596,32 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPmodarray( node *arg_node, info *arg_info)
  *
+ * @brief creates an assignment of the form:    lhs = a;
+ *        where INFO_LHS == lhs
+ *         and  arg_node == modarray(a)
  *
  *****************************************************************************/
 node *
 WLSIMPmodarray (node *arg_node, info *arg_info)
 {
-    node *rhs;
+    node *lhs;
 
     DBUG_ENTER ("WLSIMPmodarray");
 
-    rhs = INFO_ONETRIP (arg_info) ? INFO_CEXPRS (arg_info) : MODARRAY_ARRAY (arg_node);
-
+    DBUG_PRINT ("WLSIMP", ("transforming N_modarray"));
+    lhs = INFO_LHS (arg_info);
     INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)), DUPdoDupNode (rhs)),
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs),
+                                 DUPdoDupNode (MODARRAY_ARRAY (arg_node))),
                       INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+    AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
     INFO_REPLACE (arg_info) = TRUE;
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((IDS_NEXT (lhs) == NULL), "lhs length does not match WLops");
     }
     DBUG_RETURN (arg_node);
 }
@@ -574,50 +630,38 @@ WLSIMPmodarray (node *arg_node, info *arg_info)
  *
  * @fn node *WLSIMPfold( node *arg_node, info *arg_info)
  *
- * For one-trip WLs, we need to produce a function to perform
- * one trip through the reduction.
- *
- *  This does not work, due to _accu(iv) stuff. FIXME
+ * @ brief create assignment of the form    lhs = neutr
+ *        where lhs comes from INFO_LHS
+ *         and  arg_node == fold( op, neutr)
  *
  *****************************************************************************/
 node *
 WLSIMPfold (node *arg_node, info *arg_info)
 {
-    node *rhs;
-
     DBUG_ENTER ("WLSIMPfold");
 
-    if (FALSE && INFO_ONETRIP (arg_info)) { /* FIXME. see above */
+    DBUG_PRINT ("WLSIMP", ("transforming N_fold"));
 
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
-                                     TCmakeAp2 (DUPdoDupNode (FOLD_FUNDEF (arg_node)),
-                                                DUPdoDupNode (FOLD_NEUTRAL (arg_node)),
-                                                DUPdoDupNode (INFO_CEXPRS (arg_info)))),
-                          INFO_PREASSIGN (arg_info));
-
-    } else {
-
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
-                                     DUPdoDupNode (rhs)),
-                          INFO_PREASSIGN (arg_info));
-    }
-
+    INFO_PREASSIGN (arg_info)
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
+                                 DUPdoDupNode (FOLD_NEUTRAL (arg_node))),
+                      INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
-
     INFO_REPLACE (arg_info) = TRUE;
 
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *WLSIMPbreak( node *arg_node, info *arg_info)
+ *
+ * @brief skip this one and the corresponding lhs entry!
  *
  *****************************************************************************/
 node *
@@ -635,6 +679,10 @@ WLSIMPbreak (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *WLSIMPpropagate( node *arg_node, info *arg_info)
+ *
+ * @brief create assignment of the form    lhs = def
+ *        where lhs comes from INFO_LHS
+ *         and  arg_node == propagate( def)
  *
  *****************************************************************************/
 node *
@@ -687,69 +735,26 @@ WLSIMPcode (node *arg_node, info *arg_info)
 node *
 WLSIMPpart (node *arg_node, info *arg_info)
 {
-    bool b1;
-    bool b2;
-
     DBUG_ENTER ("WLSIMPpart");
 
     INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
-    INFO_ONETRIP (arg_info) = FALSE;
-    INFO_EMPTYPART (arg_info) = FALSE;
-
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (INFO_EMPTYPART (arg_info) || INFO_ONETRIP (arg_info)) {
-
-        /* Save the code block info for later, as it'll be gone by the
-         * time we look into the WITH_OP */
-        INFO_CEXPRS (arg_info)
-          = DUPdoDupTree (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (arg_node))));
-        INFO_WITHID (arg_info) = DUPdoDupTree (WITHID_VEC (PART_WITHID (arg_node)));
-        INFO_BOUND1 (arg_info)
-          = DUPdoDupTree (GENERATOR_BOUND1 (PART_GENERATOR (arg_node)));
-
-        /*
-         * Delete last part of genarray with-loop only if a
-         * default cell exists.
+    if (INFO_ZEROTRIP (arg_info)) {
+        DBUG_PRINT ("WLSIMP", ("eliminating zero-trip generator"));
+        /**
+         * The following free implicitly decrements CODE_USED.
+         * We therefore, rely on a code traversal AFTER this partition
+         * traversal!
          */
-        b1 = (N_genarray == NODE_TYPE (WITH_WITHOP (INFO_WITH (arg_info))))
-             && ((1 < INFO_NUM_GENPARTS (arg_info))
-                 || (NULL != GENARRAY_DEFAULT (WITH_WITHOP (INFO_WITH (arg_info)))));
-
-        b2 = INFO_ONETRIP (arg_info) &&
-             /*FIXME - fold loops don't collapse properly */
-             (N_fold != NODE_TYPE (WITH_WITHOP (INFO_WITH (arg_info))));
-
-        if (b1 || b2) {
-            DBUG_PRINT ("WLSIMP", ("eliminating generator in %s",
-                                   AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-
-            if (N_assign
-                == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))))) {
-                INFO_CBLOCK (arg_info)
-                  = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node))));
-            }
-
-            arg_node = FREEdoFreeNode (arg_node);
-            INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) - 1;
-        }
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_ZEROTRIP (arg_info) = FALSE;
+        INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) - 1;
     }
 
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLSIMPdefault( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-WLSIMPdefault (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLSIMPdefault");
     DBUG_RETURN (arg_node);
 }
 
@@ -772,164 +777,32 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 {
     node *lb;
     node *ub;
-    node *b = NULL;
-    constant *bfs = NULL;
     node *width;
-    constant *cnst;
 
     DBUG_ENTER ("WLSIMPgenerator");
 
     lb = GENERATOR_BOUND1 (arg_node);
+    PM (PMarray (NULL, &lb, lb)); /* propagate N_array if found */
+
     ub = GENERATOR_BOUND2 (arg_node);
-    /*
-     * If one argument is an N_id and the other is an N_array, try
-     * to find an N_array node that is the predecessor of the N_id node.
-     *
-     */
-    if ((N_id == NODE_TYPE (lb)) && (N_array == NODE_TYPE (ub))) {
-        if (PM (PMarray (&bfs, &b, lb))) {
-            bfs = COfreeConstant (bfs);
-            lb = b;
-        }
-    }
+    PM (PMarray (NULL, &ub, ub)); /* propagate N_array if found */
 
-    if ((N_array == NODE_TYPE (lb)) && (N_id == NODE_TYPE (ub))) {
-        if (PM (PMarray (&bfs, &b, ub))) {
-            bfs = COfreeConstant (bfs);
-            ub = b;
-        }
-    }
-
-    /**
-     * Remove empty generators
-     *
-     * First, we check the lower and upper bounds
-     */
-
-    if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
-
-        if ((ID_AVIS (lb) == ID_AVIS (ub)) && (TUshapeKnown (ID_NTYPE (lb)))
-            && (TYgetDim (ID_NTYPE (lb)) == 1)
-            && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
-            INFO_EMPTYPART (arg_info) = TRUE;
-        } else {
-            if (TYisAKV (ID_NTYPE (lb)) && TYisAKV (ID_NTYPE (ub))) {
-
-                constant *lt
-                  = COlt (TYgetValue (ID_NTYPE (lb)), TYgetValue (ID_NTYPE (ub)));
-                if (!COisTrue (lt, TRUE)) {
-                    INFO_EMPTYPART (arg_info) = TRUE;
-                }
-
-                lt = COfreeConstant (lt);
-            }
-        }
-    } else {
-        DBUG_ASSERT ((NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array),
-                     "Boundaries are neither only N_array nor only N_id nodes");
-
-        lb = ARRAY_AELEMS (lb);
-        ub = ARRAY_AELEMS (ub);
-
-        /* [:int] <= iv < [:int] executes the loop once. */
-        if ((NULL == lb) && (NULL == ub)) {
-            INFO_ONETRIP (arg_info) = TRUE;
-            INFO_EMPTYPART (arg_info) = TRUE;
-        }
-
-        while (lb != NULL) {
-            node *lbelem, *ubelem;
-
-            lbelem = EXPRS_EXPR (lb);
-            ubelem = EXPRS_EXPR (ub);
-
-            if ((NODE_TYPE (lbelem) == N_id) && (NODE_TYPE (ubelem) == N_id)
-                && (ID_AVIS (lbelem) == ID_AVIS (ubelem))) {
-                INFO_EMPTYPART (arg_info) = TRUE;
-            } else {
-                ntype *lbt, *ubt;
-                lbt = NTCnewTypeCheck_Expr (lbelem);
-                ubt = NTCnewTypeCheck_Expr (ubelem);
-
-                if (TYisAKV (lbt) && TYisAKV (ubt)) {
-                    constant *lt = COlt (TYgetValue (lbt), TYgetValue (ubt));
-                    if (!COisTrue (lt, TRUE)) {
-                        INFO_EMPTYPART (arg_info) = TRUE;
-                    }
-
-                    lt = COfreeConstant (lt);
-                }
-
-                lbt = TYfreeType (lbt);
-                ubt = TYfreeType (ubt);
-            }
-
-            lb = EXPRS_NEXT (lb);
-            ub = EXPRS_NEXT (ub);
-        }
-    }
-
-    /**
-     * Now, we check whether there exists a width vector
-     * and if so, whether it contains a zero
-     */
     width = GENERATOR_WIDTH (arg_node);
     if (width != NULL) {
-        if (NODE_TYPE (width) == N_id) {
-            if (TYisAKV (ID_NTYPE (width))
-                && COisZero (TYgetValue (ID_NTYPE (width)), FALSE)) {
-                INFO_EMPTYPART (arg_info) = TRUE;
-            }
-        } else {
-            DBUG_ASSERT ((NODE_TYPE (width) == N_array),
-                         "Width spec is neither N_id nor N_array");
-            cnst = COaST2Constant (width);
-            if (cnst != NULL) {
-                if (COisZero (cnst, FALSE)) {
-                    INFO_EMPTYPART (arg_info) = TRUE;
-                }
-                cnst = COfreeConstant (cnst);
-            }
-        }
+        PM (PMarray (NULL, &width, width)); /* propagate N_array if found */
     }
 
-    /**
-     * Annotate GENERATOR_GENWIDTH
-     */
-    if ((global.optimize.douip) && (GENERATOR_GENWIDTH (arg_node) == NULL)) {
+    INFO_ZEROTRIP (arg_info) = CheckZeroTrip (lb, ub, width);
 
-        if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array)
-            && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_array)) {
-            node *ub, *lb;
-            node *exprs = NULL;
+    if (global.optimize.douip && (GENERATOR_GENWIDTH (arg_node) == NULL)
+        && (NODE_TYPE (lb) == N_array) && (NODE_TYPE (lb) == N_array)) {
 
-            lb = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
-            ub = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
-
-            while (lb != NULL) {
-                node *diffavis;
-                diffavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                                 SHmakeShape (0)));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (diffavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
-                                             TCmakePrf2 (F_sub_SxS,
-                                                         DUPdoDupNode (EXPRS_EXPR (ub)),
-                                                         DUPdoDupNode (EXPRS_EXPR (lb)))),
-                                  INFO_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
-
-                exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (diffavis), NULL));
-
-                lb = EXPRS_NEXT (lb);
-                ub = EXPRS_NEXT (ub);
-            }
-
-            GENERATOR_GENWIDTH (arg_node) = TCmakeIntVector (exprs);
-        }
+        /**
+         * This uses INFO_FUNDEF to insert vardecs AND
+         * it puts some stuff in INFO_PREASSIGN which needs to go before this
+         * With-Loop!
+         */
+        GENERATOR_GENWIDTH (arg_node) = CreateGenwidth (lb, ub, arg_info);
     }
 
     DBUG_RETURN (arg_node);

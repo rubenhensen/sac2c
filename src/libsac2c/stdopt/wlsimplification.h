@@ -31,6 +31,5 @@ extern node *WLSIMPpropagate (node *arg_node, info *arg_info);
 extern node *WLSIMPcode (node *arg_node, info *arg_info);
 extern node *WLSIMPpart (node *arg_node, info *arg_info);
 extern node *WLSIMPgenerator (node *arg_node, info *arg_info);
-extern node *WLSIMPdefault (node *arg_node, info *arg_info);
 
 #endif /* _SAC_EXPLICITCOPY_H_ */

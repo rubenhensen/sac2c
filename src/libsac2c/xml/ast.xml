@@ -1573,7 +1573,6 @@
           <node name="Code" />
           <node name="Part" />
           <node name="Generator" />
-          <node name="Default" />
         </travuser>
       </traversal>
       <traversal id="CWLE" name="Copy With-Loop Elimination" default="sons" include="copywlelim.h">
