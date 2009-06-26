@@ -43,12 +43,12 @@ CHKinsertError (node *arg_node, char *string)
             CTIwarn ("%s", string);
         }
 
-        arg_node = TBmakeError (STRcpy (string), arg_node);
+        arg_node = TBmakeError (STRcpy (string), global.compiler_anyphase, arg_node);
     } else {
-
         if (!(STReq (string, ERROR_MESSAGE (arg_node)))) {
-
             ERROR_NEXT (arg_node) = CHKinsertError (ERROR_NEXT (arg_node), string);
+        } else {
+            ERROR_ANYPHASE (arg_node) = global.compiler_anyphase;
         }
     }
 

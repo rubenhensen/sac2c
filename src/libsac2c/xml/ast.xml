@@ -73,6 +73,8 @@
     copy="function" persist="no" />
     <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked"
     copy="literal" persist="yes" />
+    <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial"
+    copy="literal" />
   </attributetypes>
   <traversals>
     <!-- id is the short id of the traversal 
@@ -9122,6 +9124,18 @@ N_structdef :
       <attributes>
         <attribute name="message" inconstructor="yes">
           <type name="String">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="anyphase" inconstructor="yes">
+          <type name="CompilerPhase">
             <targets>
               <target mandatory="yes">
                 <any />

@@ -2558,11 +2558,8 @@ DUPerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeError (STRcpy (ERROR_MESSAGE (arg_node)), NULL);
-
-    if (ERROR_NEXT (arg_node) != NULL) {
-        ERROR_NEXT (new_node) = DUPCONT (ERROR_NEXT (arg_node));
-    }
+    new_node = TBmakeError (STRcpy (ERROR_MESSAGE (arg_node)), ERROR_ANYPHASE (arg_node),
+                            DUPTRAV (ERROR_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }

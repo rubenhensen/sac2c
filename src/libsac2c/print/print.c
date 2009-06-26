@@ -5317,7 +5317,8 @@ PRTerror (node *arg_node, info *arg_info)
 
     firstError = INFO_FIRSTERROR (arg_info);
 
-    if (global.outfile != NULL) {
+    if ((global.outfile != NULL)
+        && (ERROR_ANYPHASE (arg_node) == global.compiler_anyphase)) {
 
         if (firstError) {
             fprintf (global.outfile, "\n/******* BEGIN TREE CORRUPTION ********\n");
