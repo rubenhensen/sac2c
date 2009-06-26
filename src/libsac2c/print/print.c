@@ -549,23 +549,17 @@ printSOSSKdemand (node *arg_node, info *arg_info)
 
         /* First print the name of the function*/
         fprintf (global.outfile, "/*\n");
-        fprintf (global.outfile, " * ");
-        fprintf (global.outfile, FUNDEF_NAME (arg_node));
-        fprintf (global.outfile, "\n");
+        fprintf (global.outfile, " * %s\n", FUNDEF_NAME (arg_node));
         fprintf (global.outfile, " * -------------------------\n");
 
         while (fundef_current_arg != NULL) {
             /* print the name of the argument*/
             demand = AVIS_DEMAND (ARG_AVIS (fundef_current_arg));
-            fprintf (global.outfile, " * ");
-            fprintf (global.outfile, ARG_NAME (fundef_current_arg));
-            fprintf (global.outfile, ":\n");
+            fprintf (global.outfile, " * %s:\n", ARG_NAME (fundef_current_arg));
             if (demand != NULL) {
                 /* print the demand*/
                 demand_string = COconstant2String (demand);
-                fprintf (global.outfile, " *   ");
-                fprintf (global.outfile, demand_string);
-                fprintf (global.outfile, "\n");
+                fprintf (global.outfile, " *   %s\n", demand_string);
                 demand_string = MEMfree (demand_string);
             } else {
                 fprintf (global.outfile, " *   -- NO DEMAND --\n");
