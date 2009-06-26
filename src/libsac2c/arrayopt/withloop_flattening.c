@@ -75,6 +75,7 @@
 #include "tree_basic.h"
 #include "memory.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "shape.h"
 #include "constants.h"
 #include "tree_compound.h"
@@ -116,6 +117,7 @@ struct INFO {
     node *vardecs;
     node *preassigns;
     node *postassigns;
+    bool replace;
     node *newshp;
     node *lhs;
 };
@@ -130,6 +132,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_REPLACE(n) ((n)->replace)
 #define INFO_NEWSHP(n) ((n)->newshp)
 #define INFO_LHS(n) ((n)->lhs)
 
@@ -149,6 +152,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_POSTASSIGNS (result) = NULL;
+    INFO_REPLACE (result) = FALSE;
     INFO_NEWSHP (result) = NULL;
     INFO_LHS (result) = NULL;
 
@@ -227,6 +231,20 @@ equalShapes (node *shp1, node *shp2)
 #endif
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *createLowerBound( info* arg_info)
+ *
+ * @brief create an assignment
+ *          tmp = [0];
+ *        and a vardec
+ *          int[1] tmp;
+ *
+ *        insert these into INFO_VARDECS, and INFO_PREASSIGNS, respectively
+ *
+ *        and return an N_id for   tmp
+ *
+ *****************************************************************************/
 static node *
 createLowerBound (info *arg_info)
 {
@@ -253,6 +271,20 @@ createLowerBound (info *arg_info)
     DBUG_RETURN (TBmakeId (lb_avis));
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *createUpperBound( node *bound, info* arg_info)
+ *
+ * @brief create an assignment
+ *          tmp = sac_prelude::prod( bound);
+ *        and a vardec
+ *          int[1] tmp;
+ *
+ *        insert these into INFO_VARDECS, and INFO_PREASSIGNS, respectively
+ *        insert the N_avis of tmp into INFO_NEWSHP
+ *        and return an N_id for   tmp
+ *
+ *****************************************************************************/
 static node *
 createUpperBound (node *bound, info *arg_info)
 {
@@ -280,6 +312,101 @@ createUpperBound (node *bound, info *arg_info)
     AVIS_SSAASSIGN (ub_avis) = ub_assign;
 
     DBUG_RETURN (TBmakeId (ub_avis));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *createReshapeAssignments( node *lhs, node* old_shp,
+ *                                     node* new_shp, arg_info)
+ *
+ * @brief create assignments
+ *          lhs1 = _reshape_VxA_( old_shp, tmp1);
+ *          ...
+ *          lhsn = _reshape_VxA_( old_shp, tmpn);
+
+ *        and vardecs
+ *          <basetype(lhs1)>[ new_shp] tmp1;
+ *          ...
+ *          <basetype(lhsn)>[ new_shp] tmpn;
+ *
+ *        insert these into INFO_POSTASSIGNS and INFO_VARDECS, respectively
+ *        and returns in N_ids chain     tmp1, ..., tmpn
+ *
+ *****************************************************************************/
+static node *
+createReshapeAssignments (node *lhs, node *old_shp, node *new_shp, info *arg_info)
+{
+    node *avis;
+    node *new_lhs = NULL;
+
+    DBUG_ENTER ("createReshapeAssignments");
+
+    DBUG_ASSERT (NODE_TYPE (old_shp) == N_array,
+                 "N_array expected as 2nd arg in createReshapeAssignments");
+    DBUG_ASSERT (NODE_TYPE (new_shp) == N_avis,
+                 "N_avis expected as 3nd arg in createReshapeAssignments");
+
+    if (lhs != NULL) {
+        new_lhs = createReshapeAssignments (IDS_NEXT (lhs), old_shp, new_shp, arg_info);
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (
+                                        TUgetBaseSimpleType (IDS_NTYPE (lhs))),
+                                      SHcopyShape (TYgetShape (AVIS_TYPE (new_shp)))));
+        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+        INFO_POSTASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs),
+                                     TCmakePrf2 (F_reshape_VxA, DUPdoDupNode (old_shp),
+                                                 TBmakeId (avis))),
+                          INFO_POSTASSIGNS (arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_POSTASSIGNS (arg_info);
+
+        new_lhs = TBmakeIds (avis, new_lhs);
+    }
+
+    DBUG_RETURN (new_lhs);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *createWLAssignAndReshapes( node *with, info* arg_info)
+ *
+ * @brief create a assignments
+ *          tmp1, ..., tmpn = with...;
+ *          lhs1 = _reshape_VxA_( SHAPE( arg_info), tmp1);
+ *          ...
+ *          lhsn = _reshape_VxA_( SHAPE( arg_info), tmpn);
+ *
+ *        and vardecs
+ *          <basetype(lhs1)>[NEWSHP(arg_info)] tmp1;
+ *          ...
+ *          <basetype(lhsn)>[NEWSHP(arg_info)] tmpn;
+ *
+ *        insert these into INFO_VARDECS, set INFO_REPLACE
+ *        and return the assignment chain.
+ *
+ *****************************************************************************/
+static node *
+createWLAssignAndReshapes (node *with, info *arg_info)
+{
+    node *new_lhs, *assigns;
+
+    DBUG_ENTER ("createWLAssignAndReshapes");
+
+    new_lhs = createReshapeAssignments (INFO_LHS (arg_info), INFO_SHAPE (arg_info),
+                                        INFO_NEWSHP (arg_info), arg_info);
+    INFO_SHAPE (arg_info) = FREEdoFreeNode (INFO_SHAPE (arg_info));
+    INFO_NEWSHP (arg_info) = NULL;
+
+    assigns = TBmakeAssign (TBmakeLet (new_lhs, DUPdoDupTree (with)),
+                            INFO_POSTASSIGNS (arg_info));
+
+    while (new_lhs != NULL) {
+        AVIS_SSAASSIGN (IDS_AVIS (new_lhs)) = INFO_POSTASSIGNS (arg_info);
+        new_lhs = IDS_NEXT (new_lhs);
+    }
+
+    DBUG_RETURN (assigns);
 }
 
 /** <!--********************************************************************-->
@@ -317,7 +444,7 @@ WLFLTMgenerator (node *arg_node, info *arg_info)
  *
  * @fn node *WLFLTMgenarray(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief  replace existing shape by INFO_NEWSHP(arg_info)!
  *
  *****************************************************************************/
 static node *
@@ -325,13 +452,12 @@ WLFLTMgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFLTMgenarray");
 
-    GENARRAY_SHAPE (arg_node) = FREEdoFreeTree (GENARRAY_SHAPE (arg_node));
+    INFO_SHAPE (arg_info) = GENARRAY_SHAPE (arg_node);
     GENARRAY_SHAPE (arg_node) = TBmakeId (INFO_NEWSHP (arg_info));
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    } else {
-        INFO_NEWSHP (arg_info) = NULL;
+        INFO_SHAPE (arg_info) = FREEdoFreeTree (INFO_SHAPE (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -341,7 +467,13 @@ WLFLTMgenarray (node *arg_node, info *arg_info)
  *
  * @fn node *WLFLTMwithid(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief replace existing withids by
+ *              tmp2 = [tmp];
+ *
+ *        add decls
+ *              int    tmp;
+ *              int[1] tmp2;
+ *        to INFO_VARDECS( arg_info)
  *
  *****************************************************************************/
 static node *
@@ -544,6 +676,9 @@ WLFLTwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         TRAVpop ();
+
+        INFO_POSTASSIGNS (arg_info) = createWLAssignAndReshapes (arg_node, arg_info);
+        INFO_REPLACE (arg_info) = TRUE;
     }
 
     INFO_GENARRAYS (arg_info) = 0;
@@ -695,6 +830,11 @@ WLFLTassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_REPLACE (arg_info)) {
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_REPLACE (arg_info) = FALSE;
+    }
 
     if (INFO_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
