@@ -25,7 +25,7 @@
  * STATIC BUFFERS SHOULD BE REPLACED BY USING str_buffer
  */
 
-#define MAX_SYSCALL 1000
+#define MAX_SYSCALL 10000
 
 /**
  * global file handle for syscall tracking

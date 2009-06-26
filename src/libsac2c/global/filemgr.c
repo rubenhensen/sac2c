@@ -102,12 +102,12 @@ void *
 FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral)
 {
     void *result = neutral;
-    static char buffer[MAX_FILE_NAME];
+    static char buffer[MAX_PATH_LEN];
     char *path;
 
     DBUG_ENTER ("FMGRmapPath");
 
-    strcpy (buffer, path_bufs[p]);
+    strncpy (buffer, path_bufs[p], MAX_PATH_LEN);
     path = strtok (buffer, ":");
 
     while (path != NULL) {
