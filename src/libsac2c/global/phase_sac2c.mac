@@ -354,7 +354,7 @@ CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate
 CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
                global.optimize.doswlf, opt, cyc)
 
-CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
+CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
                global.optimize.dodcr, opt, cyc)
 
 CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
@@ -406,7 +406,7 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                      || global.optimize.dodl),
                opt, cyc)
 
-CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
+CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
                global.optimize.dodcr, opt, cyc)
 
 CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,

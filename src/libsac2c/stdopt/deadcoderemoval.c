@@ -54,12 +54,13 @@
 #include "free.h"
 #include "deadcodeinference.h"
 #include "globals.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
  */
 struct INFO {
-    enum { TS_module, TS_fundef } travscope;
+    enum { TS_module, TS_fundef, TS_function } travscope;
     bool remassign;
     node *assign;
     node *fundef;
@@ -147,6 +148,40 @@ DCRdoDeadCodeRemovalOneFundef (node *fundef)
 /******************************************************************************
  *
  * function:
+ *   node *DCRdoDeadCodeRemovalOneFunction(node *fundef)
+ *
+ * description:
+ *   starting point of dead code removal.
+ *   applies dead code removal to the designated function and its associated
+ *   LAC funs only.
+ *   Thereby, unnecessary arguments of LAC functions are removed.
+ *
+ *****************************************************************************/
+node *
+DCRdoDeadCodeRemovalOneFunction (node *fundef)
+{
+    info *info;
+
+    DBUG_ENTER ("DCRdoDeadCodeRemoval");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
+
+    info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_function;
+
+    TRAVpush (TR_dcr);
+    fundef = TRAVdo (fundef, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *DCRdoDeadCodeRemovalModule(node *module)
  *
  * description:
@@ -211,12 +246,20 @@ DCRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRfundef");
 
-    DBUG_PRINT ("DCR", ("\nStarting dead code removal in fundef %s %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("DCR",
+                ("\nStarting dead code removal using %s mode in %s %s",
+                 ((INFO_TRAVSCOPE (arg_info) == TS_module)
+                    ? "module"
+                    : ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
+                         ? "fundef"
+                         : ((INFO_TRAVSCOPE (arg_info) == TS_function) ? "function"
+                                                                       : "unknown"))),
+                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
+                 CTIitemName (arg_node)));
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
-        || ((INFO_TRAVSCOPE (arg_info) == TS_module)
+        || (((INFO_TRAVSCOPE (arg_info) == TS_module)
+             || (INFO_TRAVSCOPE (arg_info) == TS_function))
             && (((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL))))) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -229,7 +272,8 @@ DCRfundef (node *arg_node, info *arg_info)
                 arg_node = DCIdoDeadCodeInferenceOneFundef (arg_node);
             }
 
-            if ((INFO_TRAVSCOPE (arg_info) == TS_module)
+            if (((INFO_TRAVSCOPE (arg_info) == TS_module)
+                 || (INFO_TRAVSCOPE (arg_info) == TS_function))
                 && (!FUNDEF_ISLACFUN (arg_node))) {
                 arg_node = DCIdoDeadCodeInferenceOneFunction (arg_node);
             }
@@ -240,7 +284,9 @@ DCRfundef (node *arg_node, info *arg_info)
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            if ((INFO_TRAVSCOPE (info) == TS_module) && (FUNDEF_ISLACFUN (arg_node))) {
+            if (((INFO_TRAVSCOPE (info) == TS_module)
+                 || (INFO_TRAVSCOPE (info) == TS_function))
+                && (FUNDEF_ISLACFUN (arg_node))) {
                 /*
                  * traverse args and rets to remove unused ones from signature
                  */
@@ -596,7 +642,8 @@ DCRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRap");
 
-    if (INFO_TRAVSCOPE (arg_info) == TS_module) {
+    if ((INFO_TRAVSCOPE (arg_info) == TS_module)
+        || (INFO_TRAVSCOPE (arg_info) == TS_function)) {
         /*
          * traverse special fundef without recursion
          */
@@ -606,15 +653,15 @@ DCRap (node *arg_node, info *arg_info)
                 INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
             } else {
                 DBUG_PRINT ("DCR", ("traverse in special fundef %s",
-                                    FUNDEF_NAME (AP_FUNDEF (arg_node))));
+                                    CTIitemName (AP_FUNDEF (arg_node))));
 
                 /* start traversal of special fundef (and maybe reduce parameters!) */
                 AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-                DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
-                                    "continue in fundef %s\n",
-                                    FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                    FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+                DBUG_PRINT ("DCR", ("traversal of special fundef %s finished.",
+                                    CTIitemName (AP_FUNDEF (arg_node))));
+                DBUG_PRINT ("DCR", ("continuing with function %s...",
+                                    CTIitemName (INFO_FUNDEF (arg_info))));
             }
         }
     }
@@ -642,7 +689,13 @@ DCRids (node *arg_node, info *arg_info)
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
+        DBUG_PRINT ("DCR", ("%s is alive", AVIS_NAME (IDS_AVIS (arg_node))));
+
         INFO_REMASSIGN (arg_info) = FALSE;
+#ifndef DBUG_OFF
+    } else {
+        DBUG_PRINT ("DCR", ("%s is dead", AVIS_NAME (IDS_AVIS (arg_node))));
+#endif
     }
 
     DBUG_RETURN (arg_node);

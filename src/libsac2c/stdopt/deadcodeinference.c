@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "dbug.h"
 #include "traverse.h"
+#include "ctinfo.h"
 #include "free.h"
 
 /*
@@ -196,7 +197,7 @@ DCIfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCIfundef");
 
     DBUG_PRINT ("DCI",
-                ("\nstarting dead code inference in fundef %s.", FUNDEF_NAME (arg_node)));
+                ("\nstarting dead code inference in fundef %s.", CTIitemName (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
@@ -211,6 +212,8 @@ DCIfundef (node *arg_node, info *arg_info)
 
             INFO_FUNDEF (info) = arg_node;
             INFO_TRAVSCOPE (info) = INFO_TRAVSCOPE (arg_info);
+
+            DBUG_PRINT ("DCI", ("...processing %s.", CTIitemName (arg_node)));
 
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD

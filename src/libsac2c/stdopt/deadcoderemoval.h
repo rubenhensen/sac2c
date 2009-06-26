@@ -1,15 +1,5 @@
-/*
- * $Log$
- * Revision 1.3  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.2  2005/08/02 14:24:37  ktr
- * a seperate dead code inference traversal is now employed
- *
- * Revision 1.1  2005/07/19 16:56:53  ktr
- * Initial revision
- *
- */
+/* $Id$ */
+
 #ifndef _SAC_DEADCODEREMOVAL_H_
 #define _SAC_DEADCODEREMOVAL_H_
 
@@ -23,6 +13,7 @@
  *
  *****************************************************************************/
 extern node *DCRdoDeadCodeRemovalOneFundef (node *fundef);
+extern node *DCRdoDeadCodeRemovalOneFunction (node *fundef);
 extern node *DCRdoDeadCodeRemovalModule (node *module);
 
 extern node *DCRfundef (node *arg_node, info *arg_info);
