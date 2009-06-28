@@ -122,16 +122,13 @@ FreeInfo (info *info)
  * helper functions
  */
 node *
-AddVect2Offset (node *iv, node *array, info *info)
+AddVect2Offset (node *iv, node *array, info *info, node *shpprf2)
 {
     node *avis;
 
     DBUG_ENTER ("AddVect2Offset");
 
     DBUG_ASSERT ((NODE_TYPE (array) == N_id), "non flattened array expression found...");
-
-    DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (array)) != NULL),
-                 "no ssa shape information found!");
 
     avis
       = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
@@ -140,9 +137,7 @@ AddVect2Offset (node *iv, node *array, info *info)
 
     INFO_PREASSIGNS (info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                 TCmakePrf2 (F_vect2offset,
-                                             DUPdoDupTree (AVIS_SHAPE (ID_AVIS (array))),
-                                             DUPdoDupTree (iv))),
+                                 TCmakePrf2 (F_vect2offset, shpprf2, DUPdoDupTree (iv))),
                       INFO_PREASSIGNS (info));
     AVIS_SSAASSIGN (avis) = INFO_PREASSIGNS (info);
 
@@ -220,6 +215,11 @@ IVESPLITassign (node *arg_node, info *arg_info)
  * @brief Splits sel and modarray operations into the offset computation
  *        and array access parts.
  *
+ *        The offset computation requires shape( PRF_ARG2) as
+ *        an N_array node. If SAA information is not available,
+ *        but PRF_ARG2 is AKS/AKV, we use the array's type
+ *        and construct an N_array from that.
+ *
  * @param arg_node N_prf node
  * @param arg_info info structure
  *
@@ -230,29 +230,48 @@ IVESPLITprf (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *avis;
+    node *shpprf2 = NULL;
 
     DBUG_ENTER ("IVESPLITprf");
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
-        if ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL)) {
-            avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
+    case F_modarray_AxVxS:
+    case F_modarray_AxVxA:
+        if ((NULL != PRF_ARG2 (arg_node)) && (N_id == NODE_TYPE (PRF_ARG2 (arg_node)))) {
+            if (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL) {
+                shpprf2 = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
+            } else if (TYisAKS (
+                         TYeliminateAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
+                shpprf2 = SHshape2Array (
+                  TYgetShape (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))));
+            }
+        }
+        if (NULL == shpprf2) {
+            CTIwarn ("Cannot split index op due to missing symbolic shape information");
+        }
+        break;
+
+    default:
+        shpprf2 = NULL;
+        break;
+    }
+
+    if (NULL != shpprf2) {
+        switch (PRF_PRF (arg_node)) {
+        case F_sel_VxA:
+            avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info,
+                                   shpprf2);
             new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
             PRF_ARG2 (arg_node) = NULL;
 
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
-#ifdef WARN_MISSING_SAA
-        } else {
-            CTIwarn ("Cannot split selection due to missing symbolic "
-                     "information");
-#endif
-        }
-        break;
+            break;
 
-    case F_modarray_AxVxS:
-        if (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
-            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+        case F_modarray_AxVxS:
+            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info,
+                                   shpprf2);
 
             new_node = TCmakePrf3 (F_idx_modarray_AxSxS, PRF_ARG1 (arg_node),
                                    TBmakeId (avis), PRF_ARG3 (arg_node));
@@ -261,17 +280,11 @@ IVESPLITprf (node *arg_node, info *arg_info)
             PRF_ARG3 (arg_node) = NULL;
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
-#ifdef WARN_MISSING_SAA
-        } else {
-            CTIwarn ("Cannot split modarray due to missing symbolic "
-                     "information");
-#endif
-        }
-        break;
+            break;
 
-    case F_modarray_AxVxA:
-        if (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
-            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+        case F_modarray_AxVxA:
+            avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info,
+                                   shpprf2);
 
             new_node = TCmakePrf3 (F_idx_modarray_AxSxA, PRF_ARG1 (arg_node),
                                    TBmakeId (avis), PRF_ARG3 (arg_node));
@@ -280,17 +293,11 @@ IVESPLITprf (node *arg_node, info *arg_info)
             PRF_ARG3 (arg_node) = NULL;
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
-#ifdef WARN_MISSING_SAA
-        } else {
-            CTIwarn ("Cannot split modarray due to missing symbolic "
-                     "information");
-#endif
-        }
-        break;
+            break;
 
-    default:
-        /* nothing */
-        break;
+        default:
+            break;
+        }
     }
 
     DBUG_RETURN (arg_node);
