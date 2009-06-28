@@ -241,8 +241,8 @@ IVESPLITprf (node *arg_node, info *arg_info)
         if ((NULL != PRF_ARG2 (arg_node)) && (N_id == NODE_TYPE (PRF_ARG2 (arg_node)))) {
             if (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL) {
                 shpprf2 = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
-            } else if (TYisAKS (
-                         TYeliminateAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
+            } else if ((TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
+                       || (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
                 shpprf2 = SHshape2Array (
                   TYgetShape (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))));
             }
