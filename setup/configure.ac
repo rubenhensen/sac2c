@@ -299,7 +299,7 @@ fi
 
 dnl
 dnl when not using bison, we need to reference YYLABELS
-dnl
+dnl 
 
 if test "$YACC" = "obsolete_yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
