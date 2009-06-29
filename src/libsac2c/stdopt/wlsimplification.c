@@ -43,12 +43,13 @@
  *
  *  1) (  a <= iv <  a)    where a::int[n]  with n>0  !
  *  2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
- *                               and vec1 >= vec2
+ *                               and all( vec1 >= vec2)
  *                               and n>0!
  *  3) ( [l1, ..., ln] <= iv < [u1, ..., un])
- *                         where exists n>0 so that:
- *                               ln and un are the same variable
- *                               or ln >= un
+ *                         where n > 0
+ *                         and exists k>=0 so that:
+ *                               lk and uk are the same variable
+ *                               or lk >= uk
  *  4) ( lb <= iv <= ub width a)
  *                         where a::int[n]{vec} and vec contains a 0
  *  5) ( lb <= iv <= ub width [v1,...,vn])
@@ -200,10 +201,12 @@ FreeInfo (info *info)
  *
  * @fn node *CreateGenwidth( node *lb_array, node *ub_array, info* arg_info)
  *
- * @brief if lb_array == [ a, b, 3] and ub_array == [7, x, 9] it creates:
- *          tmp1 = 7 - a;
- *          tmp2 = x - b;
+ * @brief we assume lb_array and ub_array to be N-array nodes that represent
+ *        integer vectors, namely the lower and upper bound of a generator.
+ *        If lb_array == [ a, b, 3] and ub_array == [7, x, 9] it creates:
  *          tmp3 = 9 - 3;
+ *          tmp2 = x - b;
+ *          tmp1 = 7 - a;
  *        and returns [ tmp1, tmp2, tmp3];
  *
  *        All declarations are directly inserted (using INFO_FUNDEF)
@@ -226,6 +229,7 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
     ub_exprs = ARRAY_AELEMS (ub_array);
 
     while (lb_exprs != NULL) {
+        DBUG_ASSERT ((ub_exprs != NULL), "upper bound shorter than lower bound!");
         diffavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
@@ -245,6 +249,7 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         lb_exprs = EXPRS_NEXT (lb_exprs);
         ub_exprs = EXPRS_NEXT (ub_exprs);
     }
+    DBUG_ASSERT ((ub_exprs == NULL), "upper bound longer than lower bound!");
 
     DBUG_RETURN (TCmakeIntVector (exprs));
 }
@@ -291,33 +296,34 @@ CheckZeroTrip (node *lb, node *ub, node *width)
                 }
 
                 lt = COfreeConstant (lt);
-                shp = SHfreeShape (shp);
             }
         }
     } else if ((NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array)) {
         /**
          * criteria 3) ( [l1, ..., ln] <= iv < [u1, ..., un])
-         *             where exists n>0 so that:
-         *                   ln and un are the same variable
-         *                   || ln >= un
+         *             where n > 0
+         *             and exists k>=0 so that:
+         *                   lk and uk are the same variable
+         *                   || lk >= uk
          */
 
         lb = ARRAY_AELEMS (lb);
         ub = ARRAY_AELEMS (ub);
 
         while (lb != NULL) {
-            node *lbelem, *ubelem;
+            node *lb_elem, *ub_elem;
 
-            lbelem = EXPRS_EXPR (lb);
-            ubelem = EXPRS_EXPR (ub);
+            DBUG_ASSERT ((ub != NULL), "upper bound is shorter than lower bound");
+            lb_elem = EXPRS_EXPR (lb);
+            ub_elem = EXPRS_EXPR (ub);
 
-            if ((NODE_TYPE (lbelem) == N_id) && (NODE_TYPE (ubelem) == N_id)
-                && (ID_AVIS (lbelem) == ID_AVIS (ubelem))) {
+            if ((NODE_TYPE (lb_elem) == N_id) && (NODE_TYPE (ub_elem) == N_id)
+                && (ID_AVIS (lb_elem) == ID_AVIS (ub_elem))) {
                 res = TRUE;
             } else {
                 ntype *lbt, *ubt;
-                lbt = NTCnewTypeCheck_Expr (lbelem);
-                ubt = NTCnewTypeCheck_Expr (ubelem);
+                lbt = NTCnewTypeCheck_Expr (lb_elem);
+                ubt = NTCnewTypeCheck_Expr (ub_elem);
 
                 if (TYisAKV (lbt) && TYisAKV (ubt)) {
                     constant *lt = COlt (TYgetValue (lbt), TYgetValue (ubt));
@@ -335,6 +341,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
             lb = EXPRS_NEXT (lb);
             ub = EXPRS_NEXT (ub);
         }
+        DBUG_ASSERT ((ub == NULL), "upper bound is longer than lower bound");
     }
 
     if (width != NULL) {
@@ -353,7 +360,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
                          "Width spec is neither N_id nor N_array");
             /**
              * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
-             *             where where exists i such that vi == 0
+             *             where exists i such that vi == 0
              */
             cnst = COaST2Constant (width);
             if (cnst != NULL) {
@@ -540,6 +547,8 @@ WLSIMPwith (node *arg_node, info *arg_info)
 
     if (INFO_NUM_GENPARTS (arg_info) == 0) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    } else {
+        INFO_NUM_GENPARTS (arg_info) = 0;
     }
     INFO_LHS (arg_info) = NULL;
 
@@ -795,7 +804,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
     INFO_ZEROTRIP (arg_info) = CheckZeroTrip (lb, ub, width);
 
     if (global.optimize.douip && (GENERATOR_GENWIDTH (arg_node) == NULL)
-        && (NODE_TYPE (lb) == N_array) && (NODE_TYPE (lb) == N_array)) {
+        && (NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array)) {
 
         /**
          * This uses INFO_FUNDEF to insert vardecs AND
