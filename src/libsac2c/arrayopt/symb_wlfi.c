@@ -450,6 +450,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *   iv' = _attachintersect( iv, ivmax, minv0, maxv0, minv1, maxv1,...);
  *   z = _sel_(iv', foldeeWL);
  *
+ *   We have to compute ivmax as the AVIS_MAXVAL( iv) + 1, because
+ *   extrema are exact, and generator bounds 1 higher.
+ *
  *   This function also appends vardecs to the INFO chain,
  *   and assigns to the preassigns chain.
  *
@@ -695,6 +698,13 @@ checkBothFoldable (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("checkBothFoldable");
 
+    z = TRUE; /* We no longer care about generator bounds.
+               * All folding checks are now based on the
+               * intersection between idx index set and
+               * foldeeWL partition intersection matching
+               * idx index set.
+               */
+#ifdef FIXME
     foldeewl = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
     folderwl = INFO_FOLDERWL (arg_info);
 
@@ -709,6 +719,7 @@ checkBothFoldable (node *arg_node, info *arg_info)
         DBUG_PRINT ("SWLFI", ("FolderWL & FoldeeWL %s generator shapes do not match.",
                               AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
+#endif // FIXME
     DBUG_RETURN (z);
 }
 /** <!--********************************************************************-->
