@@ -1682,8 +1682,8 @@
       <traversal id="RW3" name="Remove With3s" default="sons" include="remove_with3.h">
         <travuser>
           <node name="Assign" />
-          <node name="Fundef" />
           <node name="With3" />
+          <node name="Range" />
         </travuser>
       </traversal>
       <traversal id="WLSD" name="With-Loop Split Dimensions" default="sons" include="wl_split_dimensions.h">
@@ -9235,7 +9235,7 @@ N_structdef :
 
 -->
     <node name="With3">
-      <description>Used to model the 1d with-loop used by the mutc backend.</description>
+      <description>Used to model the 1d with-loop used by the mutc backend.  The with3 loop is nested to provide the needed number of detentions</description>
       <sons>
         <son name="Ranges">
 	  <description>Gives the set of ranges (generators) this with-loop is defined for. Needs to be a full partition of the outer-most dimension of the result.</description>
@@ -9319,6 +9319,7 @@ N_structdef :
 
 -->
     <node name="Range">
+      <description>The generator of a with3</description>
       <sons>
         <son name="Index">
 	  <description>Scalar index of this range.</description>

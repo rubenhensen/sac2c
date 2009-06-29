@@ -8,7 +8,20 @@
  *
  * Remove unneeded with3s
  *
+ * As an artifact of the with2 there are lots of with3 loops that just
+ * go over a single element i=0, i<1; i++.  This wastes resources on
+ * MGSim.
  *
+ * This traversal matains ssa form.
+ *
+ * if (upperbound - lowerbound) == 1
+ * and if count(N_range) == 1
+ *
+ * set index = lowerbound
+ * range body
+ * set lhs0 = result0
+ * ...
+ * set lhsn = resultn
  *
  * @ingroup
  *
@@ -38,6 +51,7 @@
 #include "print.h"
 #include "shape.h"
 #include "new_types.h"
+#include "DupTree.h"
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -45,22 +59,51 @@
  *
  *****************************************************************************/
 struct INFO {
-    node *vardecs;
     node *assigns;
     node *results;
+    node *lowerBound;
+    bool removableRange;
+    node *loopAssigns;
+    node *loopIndex;
+    node *savedResults;
+    int ranges;
 };
 
 /**
- * INFO_VARDECS list of vardecs that must be placed into fundef.
+ * INFO_ASSIGNS         assigns that should be placed where the with3 loop was
+ *                      in the ast.
  *
- * INFO_ASSIGNS assigns that should be placed where the with3 loop was
- *              in the ast.
+ * INFO_RESULTS         results with3 loop
+ *                      WARNING this is a pointer into the AST
  *
- * INFO_RESULTS results of removed with3 loop to be placed with ids in lets
+ * INFO_RESULTS         results of removed with3 loop to be placed with ids in
+ *                      lets
+ *
+ * INFO_REMOVABLE_RANGE Current with3 loop has a range that meets the
+ *                      requirements for removal
+ *
+ * INFO_LOWERBOUND      The lower bound of the last range in the current with3
+ *                      loop
+ *
+ * INFO_LOOP_ASSIGNS    The assigns from the last range body of the current
+ *                      with loop
+ *                      WARNING this is a pointer into the AST
+ *
+ * INFO_LOOP_INDEX      The N_ids of the index of the last range in the current
+ *                      with3 loop
+ *                      WARNING this is a pointer into the AST
+ *
+ * INFO_RANGES          Number of ranges in this with3 loop
+ *
  */
-#define INFO_VARDECS(info) (info->vardecs)
 #define INFO_ASSIGNS(info) (info->assigns)
-#define INFO_RESULTS(info) (info->results)
+#define INFO_RESULTS(info) (info->results) /* pointer */
+#define INFO_SAVED_RESULTS(info) (info->savedResults)
+#define INFO_REMOVABLE_RANGE(info) (info->removableRange)
+#define INFO_LOWERBOUND(info) (info->lowerBound)    /* pointer */
+#define INFO_LOOP_ASSIGNS(info) (info->loopAssigns) /* pointer */
+#define INFO_LOOP_INDEX(info) (info->loopIndex)     /* pointer */
+#define INFO_RANGES(info) (info->ranges)
 
 static info *
 MakeInfo ()
@@ -70,8 +113,14 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
-    INFO_VARDECS (result) = NULL;
     INFO_ASSIGNS (result) = NULL;
+    INFO_RESULTS (result) = NULL;
+    INFO_LOWERBOUND (result) = NULL;
+    INFO_REMOVABLE_RANGE (result) = FALSE;
+    INFO_LOOP_ASSIGNS (result) = NULL;
+    INFO_LOOP_INDEX (result) = NULL;
+    INFO_SAVED_RESULTS (result) = NULL;
+    INFO_RANGES (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -80,6 +129,12 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
+
+    DBUG_ASSERT ((INFO_ASSIGNS (info) == NULL),
+                 "Trying to free info which still contains assigns");
+
+    DBUG_ASSERT ((INFO_SAVED_RESULTS (info) == NULL),
+                 "Trying to free info which still contains saved results");
 
     info = MEMfree (info);
 
@@ -115,7 +170,7 @@ RW3doRemoveWith3 (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("RW3", ("Remove With3 traversal complete."));
+    DBUG_PRINT ("RW3", ("Ending Remove With3 traversal complete."));
 
     info = FreeInfo (info);
 
@@ -128,56 +183,95 @@ RW3doRemoveWith3 (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @name Static helper funcions
+ * @name Static helper functions
  * @{
  *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
- * @fn node *JoinIdsExprs(node *ids, node *expr)
+ * @fn node *JoinIdsExprs( node *ids, node *exprs)
  *
  * @brief Join ids and exprs into (assign->let)s
+ *        Wrap all exprs into arrays
+ *        The output sub ast is in ssa form.
  *
+ * Input:
+ *
+ *        ids           exprs
+ *         +> ids        +> exprs
+ *             +> ids        +> exprs
+ *
+ * Output: ([] = new node)
+ *        [assign]
+ *         | +> [let]
+ *         |     | +> ids
+ *         |     +> [array]
+ *         |          +> exprs
+ *         +> [assign]
+ *             | +> [let]
+ *             |     | +> ids
+ *             |     +> [array]
+ *             |          +> exprs
+ *             +> [assign]
+ *                   +> [let]
+ *                       | +> ids
+ *                       +> [array]
+ *                            +> exprs
  *
  *****************************************************************************/
 static node *
-JoinIdsExprs (node *ids, node *exprs)
+JoinIdsExprs (node *arg_ids, node *exprs)
 {
-    node *let, *id, *assign, *expr;
+    node *let, *assign, *ids;
     DBUG_ENTER ("JoinIdsExprs");
 
-    DBUG_ASSERT ((ids != NULL), "ids missing");
+    DBUG_ASSERT ((arg_ids != NULL), "ids missing");
     DBUG_ASSERT ((exprs != NULL), "exprs missing");
 
-    id = ids;
-    ids = IDS_NEXT (ids);
-    IDS_NEXT (id) = NULL;
-
-    let
-      = TBmakeLet (id, TBmakeArray (TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs)))),
-                                    SHcreateShape (1, 1),
-                                    TBmakeExprs (EXPRS_EXPR (exprs), NULL)));
-
-    expr = exprs;
-    exprs = EXPRS_NEXT (exprs);
-    EXPRS_NEXT (expr) = NULL;
-    EXPRS_EXPR (expr) = NULL;
-    expr = FREEdoFreeTree (expr); /* Remove remains of exprs node */
-
-    DBUG_ASSERT (((ids == NULL && exprs == NULL) || (ids != NULL && exprs != NULL)),
-                 "ids and exprs chains are of different length.");
-
-    if (ids == NULL) {
-        assign = TBmakeAssign (let, NULL);
+    if (IDS_NEXT (arg_ids) == NULL) {
+        assign = NULL;
     } else {
-        assign = TBmakeAssign (let, JoinIdsExprs (ids, exprs));
+        assign = JoinIdsExprs (IDS_NEXT (ids), EXPRS_NEXT (exprs));
     }
 
+    ids = DUPdoDupNode (arg_ids);
+
+    let = TBmakeLet (ids, TBmakeArray (TYcopyType (IDS_NTYPE (ids)),
+                                       SHcopyShape (TYgetShape (IDS_NTYPE (ids))),
+                                       DUPdoDupNode (exprs)));
+
+    assign = TBmakeAssign (let, assign);
+
     /* avis->ssaassign needed to keep the AST legal */
-    AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (let))) = assign;
+    AVIS_SSAASSIGN (IDS_AVIS (ids)) = assign;
 
     DBUG_RETURN (assign);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ResetInfo( node *ids, node *exprs)
+ *
+ * @brief Reset state information in info structure
+ *        Does not remove saved sub asts in the info structure
+ *****************************************************************************/
+static info *
+ResetInfo (info *arg_info)
+{
+    DBUG_ENTER ("ResetInfo");
+
+    /* Remove possibly old pointers from info */
+    INFO_RESULTS (arg_info) = NULL;
+    INFO_LOOP_ASSIGNS (arg_info) = NULL;
+    INFO_LOWERBOUND (arg_info) = NULL;
+    INFO_LOOP_INDEX (arg_info) = NULL;
+
+    /* Reset info counters */
+    INFO_RANGES (arg_info) = 0;
+    INFO_REMOVABLE_RANGE (arg_info) = FALSE;
+
+    DBUG_RETURN (arg_info);
 }
 
 /** <!--********************************************************************-->
@@ -193,104 +287,9 @@ JoinIdsExprs (node *ids, node *exprs)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RW3with3(node *arg_node, info *arg_info)
- *
- * @brief Remove this with3 if we can.
- *
- * With3 must only have one range and that range must go over one element.
- * Support for ranges that have a step are not supported.
- *
- *****************************************************************************/
-node *
-RW3with3 (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RW3with3");
-
-    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
-
-    /* Only one range */
-    if (RANGE_NEXT (WITH3_RANGES (arg_node)) == NULL) {
-        constant *lower;
-        constant *upper;
-        lower = COaST2Constant (RANGE_LOWERBOUND (WITH3_RANGES (arg_node)));
-        upper = COaST2Constant (RANGE_UPPERBOUND (WITH3_RANGES (arg_node)));
-
-        if ((lower != NULL) && (upper != NULL)) { /* May not be AKV */
-            constant *tmp;
-            tmp = COsub (upper, lower);
-            if (COconst2Int (tmp) <= 1) { /* < to support empty ranges */
-                /* Can remove this range */
-                INFO_VARDECS (arg_info)
-                  = TCappendVardec (BLOCK_VARDEC (RANGE_BODY (WITH3_RANGES (arg_node))),
-                                    INFO_VARDECS (arg_info));
-                INFO_ASSIGNS (arg_info)
-                  = TCappendAssign (BLOCK_INSTR (RANGE_BODY (WITH3_RANGES (arg_node))),
-                                    INFO_ASSIGNS (arg_info));
-                /* set index to lower bound */
-                INFO_ASSIGNS (arg_info)
-                  = TBmakeAssign (TBmakeLet (RANGE_INDEX (WITH3_RANGES (arg_node)),
-                                             RANGE_LOWERBOUND (WITH3_RANGES (arg_node))),
-                                  INFO_ASSIGNS (arg_info));
-
-                /* Must set SSAASSIGN to make tree legal at this phase of the
-                   compiler */
-                AVIS_SSAASSIGN (
-                  IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_ASSIGNS (arg_info)))))
-                  = INFO_ASSIGNS (arg_info);
-
-                tmp = COfreeConstant (tmp);
-
-                INFO_RESULTS (arg_info) = RANGE_RESULTS (WITH3_RANGES (arg_node));
-
-                /* Remove pointers to nodes we wish to keep */
-                BLOCK_VARDEC (RANGE_BODY (WITH3_RANGES (arg_node))) = NULL;
-                BLOCK_INSTR (RANGE_BODY (WITH3_RANGES (arg_node))) = NULL;
-                RANGE_INDEX (WITH3_RANGES (arg_node)) = NULL;
-                RANGE_LOWERBOUND (WITH3_RANGES (arg_node)) = NULL;
-                RANGE_RESULTS (WITH3_RANGES (arg_node)) = NULL;
-                /* Free arg_node as we no longer need it and we have taken all
-                   we need */
-                arg_node = FREEdoFreeTree (arg_node);
-            }
-            lower = COfreeConstant (lower);
-            upper = COfreeConstant (upper);
-        }
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *RW3fundef(node *arg_node, info *arg_info)
- *
- * @brief Insert any saved vardecs on end of fundef's vardec list.
- *
- *****************************************************************************/
-node *
-RW3fundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RW3fundef");
-
-    DBUG_ASSERT ((INFO_VARDECS (arg_info) == NULL), "leftover vardecs found.");
-
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-    if (INFO_VARDECS (arg_info) != NULL) {
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
-        INFO_VARDECS (arg_info) = NULL;
-    }
-
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *RW3assign(node *arg_node, info *arg_info)
  *
- * @brief Remove old let and replace with a new one.
+ * @brief Remove old let and replace with a new set.
  *
  * Let must not have exprs on its right hand side.  It should have
  * expr instead.
@@ -313,23 +312,120 @@ RW3assign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_RESULTS (arg_info) != NULL) {
+    if (INFO_SAVED_RESULTS (arg_info) != NULL) {
+        /* with3 loop has been removed */
         node *arg_node_original = arg_node;
         node *let = ASSIGN_INSTR (arg_node);
-        arg_node = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_RESULTS (arg_info)),
-                                   ASSIGN_NEXT (arg_node));
+        arg_node
+          = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_SAVED_RESULTS (arg_info)),
+                            ASSIGN_NEXT (arg_node));
         LET_IDS (let) = NULL;
         ASSIGN_NEXT (arg_node_original) = NULL;
-        FREEdoFreeTree (arg_node_original);
-        INFO_RESULTS (arg_info) = NULL;
+        arg_node_original = FREEdoFreeTree (arg_node_original);
+        INFO_SAVED_RESULTS (arg_info) = FREEdoFreeTree (INFO_SAVED_RESULTS (arg_info));
     }
 
     if (INFO_ASSIGNS (arg_info) != NULL) {
+        /* put saved assigns before result lets */
         arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
         INFO_ASSIGNS (arg_info) = NULL;
     }
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RW3with3(node *arg_node, info *arg_info)
+ *
+ * @brief Remove this with3 if we can.
+ *
+ * With3 must only have one range and that range must go over one element.
+ * Support for ranges that have a step are not supported.
+ *
+ *****************************************************************************/
+node *
+RW3with3 (node *arg_node, info *arg_info)
+{
+    node *let, *index;
+    DBUG_ENTER ("RW3with3");
+
+    DBUG_ASSERT ((INFO_RANGES (arg_info) == 0), "Counted ranges that where not expected");
+
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+
+    DBUG_ASSERT ((INFO_RANGES (arg_info) >= 1),
+                 "At least one range expected in a with3 loop");
+
+    if ((INFO_RANGES (arg_info) == 1) && (INFO_REMOVABLE_RANGE (arg_info) != NULL)) {
+
+        /* Save the body of the with3 loop */
+        INFO_ASSIGNS (arg_info)
+          = TCappendAssign (DUPdoDupTree (INFO_LOOP_ASSIGNS (arg_info)),
+                            INFO_ASSIGNS (arg_info));
+
+        /* set index to lower bound */
+        index = DUPdoDupTree (INFO_LOOP_INDEX (arg_info));
+        let = TBmakeLet (index, DUPdoDupTree (INFO_LOWERBOUND (arg_info)));
+        INFO_ASSIGNS (arg_info) = TBmakeAssign (let, INFO_ASSIGNS (arg_info));
+
+        /* Must set SSAASSIGN to make tree legal at this phase of the
+           compiler */
+        AVIS_SSAASSIGN (IDS_AVIS (index)) = INFO_ASSIGNS (arg_info);
+        INFO_SAVED_RESULTS (arg_info) = DUPdoDupTree (INFO_RESULTS (arg_info));
+
+        /* Free old ast */
+        arg_node = FREEdoFreeTree (arg_node);
+    }
+
+    arg_info = ResetInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RW3range(node *arg_node, info *arg_info)
+ *
+ * @brief Is this range removable? Collection needed info to remove
+ *        A range is considered removable if:
+ *        lowerbound - upperbound == 1
+ *        Must be able to staticly calculate the above.
+ *
+ *****************************************************************************/
+node *
+RW3range (node *arg_node, info *arg_info)
+{
+    constant *clower, *cupper;
+    info *nested_info;
+    DBUG_ENTER ("RW3range");
+
+    nested_info = MakeInfo ();
+    arg_node = TRAVcont (arg_node, nested_info);
+    nested_info = FreeInfo (nested_info);
+
+    INFO_RANGES (arg_info) = INFO_RANGES (arg_info) + 1;
+    INFO_LOWERBOUND (arg_info) = RANGE_LOWERBOUND (arg_node);
+    INFO_RESULTS (arg_info) = RANGE_RESULTS (arg_node);
+    INFO_LOOP_ASSIGNS (arg_info) = BLOCK_INSTR (RANGE_BODY (arg_node));
+    INFO_LOOP_INDEX (arg_info) = RANGE_INDEX (arg_node);
+
+    clower = COaST2Constant (RANGE_LOWERBOUND (arg_node));
+    cupper = COaST2Constant (RANGE_UPPERBOUND (arg_node));
+
+    if ((clower != NULL) && (cupper != NULL)) {
+        int lower, upper;
+        lower = COconst2Int (clower);
+        upper = COconst2Int (cupper);
+        if ((upper - lower) == 1) {
+            INFO_REMOVABLE_RANGE (arg_info) = TRUE;
+        }
+    }
+
+    clower = COfreeConstant (clower);
+    cupper = COfreeConstant (cupper);
 
     DBUG_RETURN (arg_node);
 }
