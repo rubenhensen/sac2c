@@ -359,7 +359,7 @@ RW3with3 (node *arg_node, info *arg_info)
     DBUG_ASSERT ((INFO_RANGES (arg_info) >= 1),
                  "At least one range expected in a with3 loop");
 
-    if ((INFO_RANGES (arg_info) == 1) && (INFO_REMOVABLE_RANGE (arg_info) != NULL)) {
+    if ((INFO_RANGES (arg_info) == 1) && (INFO_REMOVABLE_RANGE (arg_info) == TRUE)) {
 
         /* Save the body of the with3 loop */
         INFO_ASSIGNS (arg_info)
