@@ -305,6 +305,10 @@ if test "$YACC" = "obsolete_yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
 
+if test "$YACC" = "yacc"; then
+  AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
+fi
+
 dnl
 dnl check for pthread flag on gcc
 dnl

@@ -5093,6 +5093,14 @@ _ACEOF
 
 fi
 
+if test "$YACC" = "yacc"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define MUST_REFERENCE_YYLABELS 1
+_ACEOF
+
+fi
+
 
 if test "$GCC" = yes; then
   { echo "$as_me:$LINENO: checking existence of pthread flag" >&5
