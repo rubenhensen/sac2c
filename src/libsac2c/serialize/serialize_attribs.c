@@ -41,7 +41,7 @@
  *
  * @fn SATserializeString
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -75,7 +75,7 @@ SATserializeString (info *info, char *attr, node *parent)
  *
  * @fn SATserializeSharedString
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -97,7 +97,7 @@ SATserializeSharedString (info *info, char *attr, node *parent)
  *
  * @fn SATserializeInteger
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -119,7 +119,7 @@ SATserializeInteger (info *info, int attr, node *parent)
  *
  * @fn SATserializeLong
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -141,7 +141,7 @@ SATserializeLong (info *info, long attr, node *parent)
  *
  * @fn SATserializeBool
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -163,7 +163,7 @@ SATserializeBool (info *info, bool attr, node *parent)
  *
  * @fn SATserializeFloat
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -191,7 +191,7 @@ SATserializeFloat (info *info, float attr, node *parent)
  *
  * @fn SATserializeDouble
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -219,7 +219,7 @@ SATserializeDouble (info *info, double attr, node *parent)
  *
  * @fn SATserializeChar
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -241,7 +241,7 @@ SATserializeChar (info *info, unsigned char attr, node *parent)
  *
  * @fn SATserializeOldType
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -267,7 +267,7 @@ SATserializeOldType (info *info, types *attr, node *parent)
  *
  * @fn SATserializeNode
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -296,7 +296,7 @@ SATserializeNode (info *info, node *attr, node *parent)
  *
  * @fn SATserializNamespace
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -322,7 +322,7 @@ SATserializeNamespace (info *info, namespace_t *attr, node *parent)
  *
  * @fn SATserializeLink
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -371,7 +371,7 @@ SATserializeLink (info *info, node *attr, node *parent)
  *
  * @fn SATserializeExtLink
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -408,7 +408,7 @@ SATserializeExtLink (info *info, node *attr, node *parent)
  *
  * @fn SATserializeLink
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -436,7 +436,7 @@ SATserializeCodeLink (info *info, node *attr, node *parent)
  *
  * @fn SATserializeFileType
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -458,7 +458,7 @@ SATserializeFileType (info *info, file_type attr, node *parent)
  *
  * @fn SATserializeLUT
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -480,7 +480,7 @@ SATserializeLUT (info *info, lut_t *attr, node *parent)
  *
  * @fn SATserializePrf
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -502,7 +502,7 @@ SATserializePrf (info *info, prf attr, node *parent)
  *
  * @fn SATserializeMask
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param pos    position within the current array
@@ -525,7 +525,7 @@ SATserializeMask (info *info, int pos, long *attr, node *parent)
  *
  * @fn SATserializeNodeList
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -547,7 +547,7 @@ SATserializeNodeList (info *info, nodelist *attr, node *parent)
  *
  * @fn SATserializeSharedNodeList
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -569,7 +569,7 @@ SATserializeSharedNodeList (info *info, nodelist *attr, node *parent)
  *
  * @fn SATserializePragmaLink
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -591,7 +591,7 @@ SATserializePragmaLink (info *info, node *attr, node *parent)
  *
  * @fn SATserializeDFMask
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -613,7 +613,7 @@ SATserializeDFMask (info *info, dfmask_t *attr, node *parent)
  *
  * @fn SATserializeDFMaskBase
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -635,7 +635,7 @@ SATserializeDFMaskBase (info *info, dfmask_base_t *attr, node *parent)
  *
  * @fn SATserializeNewType
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -661,7 +661,7 @@ SATserializeNewType (info *info, ntype *attr, node *parent)
  *
  * @fn SATserializeArgTab
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -683,7 +683,7 @@ SATserializeArgTab (info *info, argtab_t *attr, node *parent)
  *
  * @fn SATserializeIndexPointer
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -705,7 +705,7 @@ SATserializeIndexPointer (info *info, index_info *attr, node *parent)
  *
  * @fn SATserializeShape
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -727,7 +727,7 @@ SATserializeShape (info *info, shape *attr, node *parent)
  *
  * @fn SATserializeSimpleType
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -749,7 +749,7 @@ SATserializeSimpleType (info *info, simpletype attr, node *parent)
  *
  * @fn SATserializeAccessInfo
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -771,7 +771,7 @@ SATserializeAccessInfo (info *info, access_info_t *attr, node *parent)
  *
  * @fn SATserializeShpSeg
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -793,7 +793,7 @@ SATserializeShpSeg (info *info, shpseg *attr, node *parent)
  *
  * @fn SATserializeIntegerPointer
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -815,7 +815,7 @@ SATserializeIntegerPointer (info *info, int *attr, node *parent)
  *
  * @fn SATserializeIntegerPointerArray
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param pos    position within the current array
@@ -838,7 +838,7 @@ SATserializeIntegerPointerArray (info *info, int pos, int *attr, node *parent)
  *
  * @fn SATserializeScheduling
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -860,7 +860,7 @@ SATserializeScheduling (info *info, sched_t *attr, node *parent)
  *
  * @fn SATserializeTaskSel
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -882,7 +882,7 @@ SATserializeTaskSel (info *info, tasksel_t *attr, node *parent)
  *
  * @fn SATserializeNodePointer
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -904,7 +904,7 @@ SATserializeNodePointer (info *info, node **attr, node *parent)
  *
  * @fn SATserializeBitField
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -926,7 +926,7 @@ SATserializeBitField (info *info, int attr, node *parent)
  *
  * @fn SATserializeConstant
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -948,7 +948,7 @@ SATserializeConstant (info *info, constant *attr, node *parent)
  *
  * @fn SATserializeMTExecMode
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -970,7 +970,7 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
  *
  * @fn SATserializeTypeCheckingStatus
  *
- * @brief generates code to de-serialize the given attribute
+ * @brief generates code to serialize the given attribute
  *
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
@@ -980,6 +980,28 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 
 void
 SATserializeTypeCheckingStatus (info *info, NTC_stat attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeTypeCheckingStatus");
+
+    fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeCompilerPhase
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
 {
     DBUG_ENTER ("SATserializeTypeCheckingStatus");
 

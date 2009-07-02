@@ -16,7 +16,11 @@ typedef int (*sacmain_p) (int, char **);
 
 #define SAC2CBASEENV "SAC2CBASE"
 
+#ifdef DBUG_OFF
 #define DLOPEN_FLAGS RTLD_GLOBAL | RTLD_LAZY
+#else /* DBUG_OFF */
+#define DLOPEN_FLAGS RTLD_GLOBAL | RTLD_NOW
+#endif /* DBUG_OFF */
 
 /*
  * we use a macro here instead of an external function definitions
