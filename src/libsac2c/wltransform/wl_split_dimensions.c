@@ -592,7 +592,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ATravCNWgenarray");
 
-    if (PM (PMarray (NULL, &array, GENARRAY_SHAPE (arg_node)))) {
+    if (PMO (PMOarray (NULL, &array, GENARRAY_SHAPE (arg_node)))) {
         sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
 
         /*
@@ -841,7 +841,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
     set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
-    match = PM (PMarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
+    match = PMO (PMOarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
     DBUG_ASSERT (match, "shape not defined as vector");
 
     /*

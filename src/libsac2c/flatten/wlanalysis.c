@@ -257,7 +257,7 @@ DetectVectorConstants (node *arg_node)
     gshape = GV_unknown_shape;
     if (NULL != arg_node) {
 
-        if (COisConstant (arg_node) || PM (PMconst (&vfs, &v, arg_node))) {
+        if (COisConstant (arg_node) || PMO (PMOconst (&vfs, &v, arg_node))) {
             if (NULL != vfs) {
                 vfs = COfreeConstant (vfs);
             }
@@ -266,7 +266,7 @@ DetectVectorConstants (node *arg_node)
 
             v = NULL;
             vfs = NULL;
-            if (PM (PMarray (&vfs, &v, arg_node)) && (NODE_TYPE (v) == N_id)
+            if (PMO (PMOarray (&vfs, &v, arg_node)) && (NODE_TYPE (v) == N_id)
                 && TUisIntVect (AVIS_TYPE (ID_AVIS (v)))) {
                 /*
                  * type-wise this is an int-vector, so lets see

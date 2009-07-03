@@ -203,10 +203,10 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
      * [i0, i1, i2, i3, ...] => the scalars are a prefix of ivids
      *                          or ivids is a prefix of the scalars
      */
-    if (PM (PMvar (&arg2, PMvar (&arg1, PMprf (F_cat_VxV, index))))) {
+    if (PMO (PMOvar (&arg2, PMOvar (&arg1, PMOprf (F_cat_VxV, index))))) {
         result = IsValidIndexHelper (arg1, ivs, ivids)
                  && IsValidIndexHelper (arg2, ivs, ivids);
-    } else if (PM (PMexprs (&aexprs, PMarray (NULL, NULL, index)))) {
+    } else if (PMO (PMOexprs (&aexprs, PMOarray (NULL, NULL, index)))) {
         result = TRUE;
 
         while (result &&                        /* we don't know better */
@@ -215,7 +215,7 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
                (aexprs != NULL)) {              /* more elements in index */
             node *tmp = TCids2Exprs (SET_MEMBER (*ivids));
 
-            result = PM (PMexprs (&rest, PMpartExprs (tmp, aexprs)));
+            result = PMO (PMOexprs (&rest, PMOpartExprs (tmp, aexprs)));
 
             tmp = FREEdoFreeTree (tmp);
             aexprs = rest;

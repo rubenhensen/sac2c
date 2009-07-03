@@ -298,13 +298,13 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     DBUG_ENTER ("ConcatVectors");
 
     /* We start by dereferencing any N_id, in hopes of finding an N_array */
-    if ((NODE_TYPE (vec1) == N_id) && (PM (PMarray (&v1fs, &v1, vec1)))) {
+    if ((NODE_TYPE (vec1) == N_id) && (PMO (PMOarray (&v1fs, &v1, vec1)))) {
         v1fs = COfreeConstant (v1fs);
     } else {
         v1 = vec1;
     }
 
-    if ((NODE_TYPE (vec2) == N_id) && (PM (PMarray (&v2fs, &v2, vec2)))) {
+    if ((NODE_TYPE (vec2) == N_id) && (PMO (PMOarray (&v2fs, &v2, vec2)))) {
         v2fs = COfreeConstant (v2fs);
     } else {
         v2 = vec2;

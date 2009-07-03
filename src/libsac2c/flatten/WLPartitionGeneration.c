@@ -169,7 +169,7 @@ findNarray (node *arg_node)
 
     DBUG_ENTER ("findNarray");
 
-    if (PM (PMarray (&narrayfs, &narray, arg_node))) {
+    if (PMO (PMOarray (&narrayfs, &narray, arg_node))) {
         COfreeConstant (narrayfs);
     } else {
         DBUG_ASSERT (FALSE, ("findNarray did not find N_array"));
@@ -207,7 +207,7 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
                  "CreateArrayOfShapeSels not called with N_id");
 
     /* Find first array in chain with same shape as array */
-    firstarray = PMshapePrimogenitor (array);
+    firstarray = PMOshapePrimogenitor (array);
 
     for (i = dim - 1; i >= 0; i--) {
         node *sel_avis;
@@ -451,7 +451,7 @@ WLPGnormalizeStepWidth (node **step, node **width)
 
             if ((*width) == NULL) {
                 /*  create width with constant 1 */
-                if (PM (PMarray (&stparfs, &stpar, *step))) {
+                if (PMO (PMOarray (&stparfs, &stpar, *step))) {
                     COfreeConstant (stparfs);
                 } else {
                     DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array step"));
@@ -463,12 +463,12 @@ WLPGnormalizeStepWidth (node **step, node **width)
             /* step and width may be N_ids. Find the N_arrays they refer to. */
             stpar = NULL;
             stparfs = NULL;
-            if (PM (PMarray (&stparfs, &stpar, *step))) {
+            if (PMO (PMOarray (&stparfs, &stpar, *step))) {
                 COfreeConstant (stparfs);
             } else {
                 DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array step"));
             }
-            if (PM (PMarray (&wtharfs, &wthar, *width))) {
+            if (PMO (PMOarray (&wtharfs, &wthar, *width))) {
                 COfreeConstant (wtharfs);
             } else {
                 DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array width"));
@@ -681,7 +681,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
      * perform this check.
      * (As an alternative, we could call CF in phase 10 before WLPG.)
      */
-    if (PM (PMarray (&lbco, &lb, WITH_BOUND1 (wln)))) {
+    if (PMO (PMOarray (&lbco, &lb, WITH_BOUND1 (wln)))) {
         lbco = COfreeConstant (lbco);
     } else {
         lbco = COaST2Constant (WITH_BOUND1 (wln));
@@ -691,7 +691,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
         }
     }
 
-    if (PM (PMarray (&ubco, &ub, WITH_BOUND2 (wln)))) {
+    if (PMO (PMOarray (&ubco, &ub, WITH_BOUND2 (wln)))) {
         ubco = COfreeConstant (ubco);
     } else {
         ubco = COaST2Constant (WITH_BOUND2 (wln));
@@ -707,7 +707,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
     lsc = DUPdoDupTree (ls);
     usc = DUPdoDupTree (us);
 
-    if (PM (PMarray (&lsco, &lsce, lsc))) {
+    if (PMO (PMOarray (&lsco, &lsce, lsc))) {
         lsco = COfreeConstant (lsco);
     } else {
         lsco = COaST2Constant (lsc);
@@ -717,7 +717,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
         }
     }
 
-    if (PM (PMarray (&usco, &usce, usc))) {
+    if (PMO (PMOarray (&usco, &usce, usc))) {
         usco = COfreeConstant (usco);
     } else {
         usco = COaST2Constant (lsc);
@@ -743,7 +743,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
                 partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
                 pbnd = NULL;
                 pbndshp = NULL;
-                if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND2 (partn)))) {
+                if (!PMO (PMOarray (&pbndshp, &pbnd, PART_BOUND2 (partn)))) {
                     DBUG_ASSERT (FALSE, "CutSlices expected N_array partn BOUND2");
                 }
                 pbndshp = COfreeConstant (pbndshp);
@@ -763,7 +763,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
             partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
             pbnd = NULL;
             pbndshp = NULL;
-            if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND2 (partn)))) {
+            if (!PMO (PMOarray (&pbndshp, &pbnd, PART_BOUND2 (partn)))) {
                 DBUG_ASSERT (FALSE, "CutSlices expected another N_array partn BOUND2");
             }
             pbndshp = COfreeConstant (pbndshp);
@@ -784,7 +784,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
                 partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
                 pbnd = NULL;
                 pbndshp = NULL;
-                if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND1 (partn)))) {
+                if (!PMO (PMOarray (&pbndshp, &pbnd, PART_BOUND1 (partn)))) {
                     DBUG_ASSERT (FALSE, "CutSlices expected N_array partn BOUND1");
                 }
                 pbndshp = COfreeConstant (pbndshp);
@@ -797,7 +797,7 @@ CutSlices (node *ls, node *us, int dim, node *wln, node *coden, info *arg_info,
             }
         } else {
             partn = CreateNewPart (lsc, usc, NULL, NULL, withid, coden, arg_info);
-            if (!PM (PMarray (&pbndshp, &pbnd, PART_BOUND1 (partn)))) {
+            if (!PMO (PMOarray (&pbndshp, &pbnd, PART_BOUND1 (partn)))) {
                 DBUG_ASSERT (FALSE, "CutSlices expected another N_array partn BOUND1");
             }
             pbndshp = COfreeConstant (pbndshp);
@@ -879,7 +879,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
     /* create local copies of the arrays which are modified here*/
     DBUG_ASSERT (N_array == NODE_TYPE (width), ("CompleteGrid needs N_array WIDTH"));
-    if (PM (PMarray (&stpfs, &stp, step))) {
+    if (PMO (PMOarray (&stpfs, &stp, step))) {
         COfreeConstant (stpfs);
     } else {
         DBUG_ASSERT (FALSE, ("CompleteGrid needs N_array STEP"));
@@ -905,7 +905,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 /* Extract bound and width_arrays */
                 lbn = NULL;
                 lbnfs = NULL;
-                if (PM (PMarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
+                if (PMO (PMOarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
                     COfreeConstant (lbnfs);
                 } else {
                     DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array BOUND"));
@@ -953,7 +953,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             /* Extract bound and width_arrays */
             lbn = NULL;
             lbnfs = NULL;
-            if (PM (PMarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
+            if (PMO (PMOarray (&lbnfs, &lbn, PART_BOUND1 (partn)))) {
                 COfreeConstant (lbnfs);
             } else {
                 DBUG_ASSERT (FALSE, ("CompleteGrid expected N_id or N_array BOUND1"));
@@ -1127,7 +1127,7 @@ CreateFullPartition (node *wln, info *arg_info)
          *  int[1]{7} shp;
          *
          */
-        if (PM (PMarray (&shpco, &shp, array_shape))) {
+        if (PMO (PMOarray (&shpco, &shp, array_shape))) {
             shpco = COfreeConstant (shpco);
             array_shape = DUPdoDupTree (shp);
         } else {

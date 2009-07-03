@@ -339,7 +339,7 @@ UFLgenerator (node *arg_node, info *arg_info)
     if (NULL != arg_node) {
         lb = NULL;
         lbfs = NULL;
-        if (PM (PMarray (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
+        if (PMO (PMOarray (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
             DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND1 to array constant"));
             COfreeConstant (lbfs);
             lb = DUPdoDupTree (lb);
@@ -349,7 +349,7 @@ UFLgenerator (node *arg_node, info *arg_info)
             lb = NULL;
             lbfs = NULL;
             DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND1 to constant"));
-            if (PM (PMconst (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
+            if (PMO (PMOconst (&lbfs, &lb, GENERATOR_BOUND1 (arg_node)))) {
                 FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
                 GENERATOR_BOUND1 (arg_node) = COconstant2AST (lbfs);
                 lbfs = COfreeConstant (lbfs);
@@ -358,7 +358,7 @@ UFLgenerator (node *arg_node, info *arg_info)
 
         ub = NULL;
         ubfs = NULL;
-        if ((PM (PMarray (&ubfs, &ub, GENERATOR_BOUND2 (arg_node))))) {
+        if ((PMO (PMOarray (&ubfs, &ub, GENERATOR_BOUND2 (arg_node))))) {
             DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND2 to array constant"));
             COfreeConstant (ubfs);
             ub = DUPdoDupTree (ub);
@@ -367,7 +367,7 @@ UFLgenerator (node *arg_node, info *arg_info)
         } else {
             ub = NULL;
             ubfs = NULL;
-            if (PM (PMconst (&ubfs, &ub, GENERATOR_BOUND2 (arg_node)))) {
+            if (PMO (PMOconst (&ubfs, &ub, GENERATOR_BOUND2 (arg_node)))) {
                 DBUG_PRINT ("UFL", ("Unflattening GENERATOR_BOUND2 to constant"));
                 FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
                 GENERATOR_BOUND2 (arg_node) = COconstant2AST (ubfs);

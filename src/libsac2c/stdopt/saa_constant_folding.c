@@ -280,10 +280,11 @@ SAACFprf_same_shape_AxA (node *arg_node, info *arg_info)
     node *shp = NULL;
 
     DBUG_ENTER ("SAACFprf_same_shape_AxA");
-    if (PM (PMsaashape (&shp, &arg1,
-                        PMsaashape (&shp, &arg2,
-                                    PMvar (&arg1, PMvar (&arg2, PMprf (F_same_shape_AxA,
-                                                                       arg_node))))))) {
+    if (PMO (PMOsaashape (&shp, &arg1,
+                          PMOsaashape (&shp, &arg2,
+                                       PMOvar (&arg1,
+                                               PMOvar (&arg2, PMOprf (F_same_shape_AxA,
+                                                                      arg_node))))))) {
         /* See if saa shapes match */
 
         res = TBmakeExprs (DUPdoDupTree (arg1),
@@ -325,12 +326,13 @@ SAACFprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 #ifdef CRUD
 
     FIXME
-      - write this.if (PM (PMsaashape (&shp, &arg1,
-                                       PMsaashape (&shp, &arg2,
-                                                   PMvar (&arg1,
-                                                          PMvar (&arg2,
-                                                                 PMprf (F_same_shape_AxA,
-                                                                        arg_node)))))))
+      - write this
+          .if (PMO (PMOsaashape (&shp, &arg1,
+                                 PMOsaashape (&shp, &arg2,
+                                              PMOvar (&arg1,
+                                                      PMOvar (&arg2,
+                                                              PMOprf (F_same_shape_AxA,
+                                                                      arg_node)))))))
     {
         /* See if saa shapes match */
 

@@ -295,8 +295,9 @@ IsScalarConstantNode (node *arg_node)
 {
     DBUG_ENTER ("IsScalarConstantNode");
 
-    DBUG_RETURN (PM (PMbool (arg_node)) || PM (PMchar (arg_node)) || PM (PMnum (arg_node))
-                 || PM (PMfloat (arg_node)) || PM (PMdouble (arg_node)));
+    DBUG_RETURN (PMO (PMObool (arg_node)) || PMO (PMOchar (arg_node))
+                 || PMO (PMOnum (arg_node)) || PMO (PMOfloat (arg_node))
+                 || PMO (PMOdouble (arg_node)));
 }
 
 static bool
@@ -309,7 +310,7 @@ IsFullyConstantNode (node *arg_node)
 
     if (IsScalarConstantNode (arg_node)) {
         res = TRUE;
-    } else if (PM (PMarrayConstructorGuards (&frameshape, &arg_node, arg_node))) {
+    } else if (PMO (PMOarrayConstructorGuards (&frameshape, &arg_node, arg_node))) {
         arg_node = ARRAY_AELEMS (arg_node);
         res = TRUE;
         while (res && (arg_node != NULL)) {
@@ -864,7 +865,7 @@ ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
     node *array;
 
     if (exprs != NULL) {
-        *ok = *ok && PM (PMarray (fs, &array, EXPRS_EXPR (exprs)));
+        *ok = *ok && PMO (PMOarray (fs, &array, EXPRS_EXPR (exprs)));
         exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
         if (*ok) {
             exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);

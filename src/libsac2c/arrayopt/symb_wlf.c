@@ -429,7 +429,8 @@ matchGeneratorField (node *fa, node *fb)
             if (fa == fb) {
                 mat = TRUE;
             } else {
-                if (PM (PMarray (&fafs, &fav, fa)) && PM (PMarray (&fbfs, &fbv, fb))) {
+                if (PMO (PMOarray (&fafs, &fav, fa))
+                    && PMO (PMOarray (&fbfs, &fbv, fb))) {
                     mat = fav == fbv;
                 }
             }
@@ -440,9 +441,9 @@ matchGeneratorField (node *fa, node *fb)
     fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
 
     if (mat) {
-        DBUG_PRINT ("SWLF", ("matchGeneratorField matched PMarray"));
+        DBUG_PRINT ("SWLF", ("matchGeneratorField matched PMOarray"));
     } else {
-        DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMarray"));
+        DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMOarray"));
     }
     DBUG_RETURN (mat);
 }

@@ -91,7 +91,7 @@
 /* local used helper functions */
 
 #define MATCH_PRF_ARG1_PRF_ARG2(arg_node, glob)                                          \
-    PM (PMvar (&glob, PMvar (&glob, PRF_ARGS (arg_node))))
+    PMO (PMOvar (&glob, PMOvar (&glob, PRF_ARGS (arg_node))))
 
 /******************************************************************************
  *
@@ -1096,10 +1096,10 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_sel_VxA expected N_id as PRF_ARG1");
-    if (PM (PMvar (&arg2, PMvar (&arg1, PMprf (F_sel_VxA, arg_node)))) &&
+    if (PMO (PMOvar (&arg2, PMOvar (&arg1, PMOprf (F_sel_VxA, arg_node)))) &&
 
         /* Find the second argument's defining function */
-        PM (PMvar (&arr, PMprf (F_shape_A, arg2)))) {
+        PMO (PMOvar (&arr, PMOprf (F_shape_A, arg2)))) {
 
         /* Find the first element of the [scalar] */
         if (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))) { /* eschew IVs */
@@ -1242,7 +1242,7 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_shape_matches_dim_VxA");
 
-    if (PM (PMvar (&arr, PMvar (&iv, PMprf (F_shape_matches_dim_VxA, arg_node))))) {
+    if (PMO (PMOvar (&arr, PMOvar (&iv, PMOprf (F_shape_matches_dim_VxA, arg_node))))) {
         ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
         if (TUshapeKnown (ivtype) && TUdimKnown (arrtype)
@@ -1282,7 +1282,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     constant *arg1frameshape = NULL;
 
     DBUG_ENTER ("SCSprf_non_neg_val_V");
-    if (PM (PMarray (&arg1frameshape, &arg1, PMprf (F_non_neg_val_V, arg_node)))) {
+    if (PMO (PMOarray (&arg1frameshape, &arg1, PMOprf (F_non_neg_val_V, arg_node)))) {
         arg1c = COaST2Constant (arg1);
         arg1frameshape = COfreeConstant (arg1frameshape);
         if ((NULL != arg1c) && COisNonNeg (arg1c, TRUE)) {
@@ -1474,7 +1474,7 @@ SCSprf_idx_shape_sel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_idx_shape_sel");
 
-    idprimo = PMshapePrimogenitor (PRF_ARG2 (arg_node));
+    idprimo = PMOshapePrimogenitor (PRF_ARG2 (arg_node));
     if ((ID_AVIS (idprimo) != ID_AVIS (PRF_ARG2 (arg_node)))) {
         res = DUPdoDupTree (arg_node);
         DBUG_PRINT ("CF", ("SCSprf_idx_shape_sel replacing %s by %s",

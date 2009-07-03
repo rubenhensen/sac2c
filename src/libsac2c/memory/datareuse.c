@@ -425,10 +425,11 @@ EMDRcode (node *arg_node, info *arg_info)
              * the shape (arg 1) is by construction the
              * shape of A and B
              */
-            if (PM (PMvar (&mem,
-                           PMprf (F_suballoc,
-                                  PMexprs (&aexprs, PMarray (NULL, NULL,
-                                                             PMprf (F_fill, wlass))))))) {
+            if (PMO (
+                  PMOvar (&mem, PMOprf (F_suballoc,
+                                        PMOexprs (&aexprs,
+                                                  PMOarray (NULL, NULL,
+                                                            PMOprf (F_fill, wlass))))))) {
                 node *expr;
                 node *arr = NULL;
                 bool iscopy = TRUE;
@@ -439,18 +440,19 @@ EMDRcode (node *arg_node, info *arg_info)
                 while ((aexprs != NULL) && iscopy) {
                     expr = EXPRS_EXPR (aexprs);
 
-                    if (!PM (PMvar (
+                    if (!PMO (PMOvar (
                           &arr,
-                          PMany (NULL,
-                                 PMnumVal (
-                                   pos,
-                                   PMpartExprs (
-                                     INFO_IVIDS (arg_info),
-                                     PMany (NULL,
-                                            PMprf (F_idxs2offset,
-                                                   PMprf (F_fill,
-                                                          PMprf (F_idx_sel,
-                                                                 PMprf (F_fill,
+                          PMOany (
+                            NULL,
+                            PMOnumVal (
+                              pos,
+                              PMOpartExprs (
+                                INFO_IVIDS (arg_info),
+                                PMOany (NULL,
+                                        PMOprf (F_idxs2offset,
+                                                PMOprf (F_fill,
+                                                        PMOprf (F_idx_sel,
+                                                                PMOprf (F_fill,
                                                                         expr))))))))))) {
                         iscopy = FALSE;
 #ifndef DBUG_OFF
@@ -515,11 +517,11 @@ EMDRcode (node *arg_node, info *arg_info)
 
                     DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
 
-                    if (PM (PMvar (&arr,
-                                   PMvar (&offset,
-                                          PMprf (F_idx_sel,
-                                                 PMprf (F_fill,
-                                                        PMprf (F_wl_assign, cexpr))))))) {
+                    if (PMO (PMOvar (&arr, PMOvar (&offset,
+                                                   PMOprf (F_idx_sel,
+                                                           PMOprf (F_fill,
+                                                                   PMOprf (F_wl_assign,
+                                                                           cexpr))))))) {
                         node *cat_arg1 = NULL, *cat_arg2 = NULL;
 
                         /*
@@ -527,15 +529,14 @@ EMDRcode (node *arg_node, info *arg_info)
                          * the shape does not matter, as we select from a reuse
                          * candidate which has the same shape.
                          */
-                        if (
-                          (wlids != NULL) && (INFO_IVIDS (arg_info) != NULL)
-                          && PM (
-                               PMexprs (&wlids,
-                                        PMpartExprs (INFO_IVIDS (arg_info),
-                                                     PMany (NULL,
-                                                            PMprf (F_idxs2offset,
-                                                                   PMprf (F_fill,
-                                                                          offset))))))) {
+                        if ((wlids != NULL) && (INFO_IVIDS (arg_info) != NULL)
+                            && PMO (
+                                 PMOexprs (&wlids,
+                                           PMOpartExprs (
+                                             INFO_IVIDS (arg_info),
+                                             PMOany (NULL, PMOprf (F_idxs2offset,
+                                                                   PMOprf (F_fill,
+                                                                           offset))))))) {
 
                             DBUG_PRINT ("EMDR", ("wl copy: inner sel is scalar copy."));
                             iscopy = TRUE;
@@ -545,28 +546,29 @@ EMDRcode (node *arg_node, info *arg_info)
                          * or it can be a concatenation of the two ivs
                          */
                         else if (
-                          PM (PMvar (
+                          PMO (PMOvar (
                             &cat_arg2,
-                            PMvar (&cat_arg2,
-                                   PMprf (F_cat_VxV,
-                                          PMprf (F_fill,
-                                                 PMany (NULL,
-                                                        PMprf (F_vect2offset,
-                                                               PMprf (F_fill,
+                            PMOvar (
+                              &cat_arg2,
+                              PMOprf (F_cat_VxV,
+                                      PMOprf (F_fill,
+                                              PMOany (NULL,
+                                                      PMOprf (F_vect2offset,
+                                                              PMOprf (F_fill,
                                                                       offset))))))))) {
                             /*
                              * arg_1/2 can be iv or [ivids]
                              */
                             if ((((INFO_IV (arg_info) != NULL)
-                                  && PM (PMvar (&INFO_IV (arg_info), cat_arg1)))
+                                  && PMO (PMOvar (&INFO_IV (arg_info), cat_arg1)))
                                  || ((INFO_IVIDS (arg_info) != NULL)
-                                     && PM (PMexprs (&INFO_IVIDS (arg_info),
-                                                     PMarray (NULL, NULL, cat_arg1)))))
-                                && (((wliv != NULL) && PM (PMvar (&wliv, cat_arg2)))
+                                     && PMO (PMOexprs (&INFO_IVIDS (arg_info),
+                                                       PMOarray (NULL, NULL, cat_arg1)))))
+                                && (((wliv != NULL) && PMO (PMOvar (&wliv, cat_arg2)))
                                     || ((wlids != NULL)
-                                        && (PM (
-                                             PMexprs (&wlids, PMarray (NULL, NULL,
-                                                                       cat_arg2))))))) {
+                                        && (PMO (
+                                             PMOexprs (&wlids, PMOarray (NULL, NULL,
+                                                                         cat_arg2))))))) {
 
                                 DBUG_PRINT ("EMDR",
                                             ("wl copy: inner sel is vector copy."));
@@ -576,7 +578,7 @@ EMDRcode (node *arg_node, info *arg_info)
                     }
 
                     if (iscopy
-                        && PM (PMvar (&mem, PMprf (F_suballoc, GENARRAY_MEM (withop))))
+                        && PMO (PMOvar (&mem, PMOprf (F_suballoc, GENARRAY_MEM (withop))))
                         && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
                             == ID_AVIS (arr))) {
                         DBUG_PRINT ("EMDR", ("wl copy: reuse identified."));

@@ -2473,7 +2473,7 @@ ToFirstComponent (node *array)
     DBUG_ENTER ("ToFirstComponent");
 
     if (array != NULL) {
-        if (PM (PMarray (&narfs, &nar, array))) {
+        if (PMO (PMOarray (&narfs, &nar, array))) {
             COfreeConstant (narfs);
         } else {
             nar = array;

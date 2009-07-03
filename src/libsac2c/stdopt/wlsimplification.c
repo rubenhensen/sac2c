@@ -306,7 +306,25 @@ CheckZeroTrip (node *lb, node *ub, node *width)
          *                   lk and uk are the same variable
          *                   || lk >= uk
          */
+        /**
+         * not yet PMish:
+         *
+    int i,j,l;
+    node *x = NULL;
 
+    if( ( PMmatchFlat(
+            PMretryAny( &i, &l,
+              PMpair( PMarrayLen( &l, PMskipN( &i), PMvar( &x), PMskip()),
+                     PMarrayLen( &l, PMskipN( &i), PMvar( &x), PMskip()))),
+            PMpairExprs( lb, ub))
+          || PMmatchFlat(
+               PMretryAny( &j, &l,
+                 PMpair( PMarrayLen( &l, PMskipN( &j), PMint( &v1), PMskip()),
+                        PMarrayLen( &l, PMskipN( &j), PMintLE( &v2, &v1), PMskip())))
+               PMpairExprs( lb, ub)))
+        && ( l > 0 )) {
+
+         */
         lb = ARRAY_AELEMS (lb);
         ub = ARRAY_AELEMS (ub);
 
@@ -791,14 +809,14 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSIMPgenerator");
 
     lb = GENERATOR_BOUND1 (arg_node);
-    PM (PMarray (NULL, &lb, lb)); /* propagate N_array if found */
+    PMO (PMOarray (NULL, &lb, lb)); /* propagate N_array if found */
 
     ub = GENERATOR_BOUND2 (arg_node);
-    PM (PMarray (NULL, &ub, ub)); /* propagate N_array if found */
+    PMO (PMOarray (NULL, &ub, ub)); /* propagate N_array if found */
 
     width = GENERATOR_WIDTH (arg_node);
     if (width != NULL) {
-        PM (PMarray (NULL, &width, width)); /* propagate N_array if found */
+        PMO (PMOarray (NULL, &width, width)); /* propagate N_array if found */
     }
 
     INFO_ZEROTRIP (arg_info) = CheckZeroTrip (lb, ub, width);

@@ -20,7 +20,7 @@
  *
  *    node *x=NULL;
  *
- *    if(  PM( PMvar( &x, PMvar( &x, PMprf( _sub_SxS_, expr))))  ) {
+ *    if(  PMO( PMOvar( &x, PMOvar( &x, PMOprf( _sub_SxS_, expr))))  ) {
  *      ...
  *    }
  *
@@ -46,8 +46,8 @@
  *    node *A=NULL:
  *    node *val=NULL:
  *
- *    if( PM( PMvar( &val, PMvar( &iv, PMvar( &A, PMprf( F_modarray_AxVxS,
- *             PMvar( &iv, PMprf( F_sel_VxA, expr)))))))  ) {
+ *    if( PMO( PMOvar( &val, PMOvar( &iv, PMOvar( &A, PMOprf( F_modarray_AxVxS,
+ *             PMOvar( &iv, PMOprf( F_sel_VxA, expr)))))))  ) {
  *       ...
  *    }
  *
@@ -66,7 +66,7 @@
  * You can use an arbitrary nesting of the matching functions. They
  * all adhere to the following structure:
  *
- *  node *PM<xyz>( <match-specific-args>, node *stack)
+ *  node *PMO<xyz>( <match-specific-args>, node *stack)
  *
  * The argument stack expects the expression to be matched against.
  * This can either be an expression node (N_num, N_array, N_prf, ...)
@@ -78,8 +78,8 @@
  *
  * At the time being (22.6.07) we support the following matching functions:
  *
- *  PMvar( node **var, ...) which matches N-id nodes, and
- *  PMprf( prf fun, ...)    which matches anything that is defined as
+ *  PMOvar( node **var, ...) which matches N-id nodes, and
+ *  PMOprf( prf fun, ...)    which matches anything that is defined as
  *                          an application of the prf fun.
  *
  * Note here, that all variables that you want to match need to be
@@ -87,14 +87,14 @@
  *
  * The nesting of match functions needs to be surrounded by a call to
  * the function
- *   bool PM( node *stack)
+ *   bool PMO( node *stack)
  * which interprets the result of the match and yields true or false
  * accordingly.
  *
  * Debugging:
  * ==========
  *
- * You may want to use -#d,PM to observe how your matches perform:-)
+ * You may want to use -#d,PMO to observe how your matches perform:-)
  *
  *
  * Some implementation issues:
@@ -207,8 +207,8 @@ ExtractOneArg (node *stack, node **arg)
             REF_SET (arg, stack);
             stack = NULL;
         }
-        DBUG_PRINT ("PM", ("argument found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *arg););
+        DBUG_PRINT ("PMO", ("argument found:"));
+        DBUG_EXECUTE ("PMO", PRTdoPrintFile (stderr, *arg););
     }
     DBUG_RETURN (stack);
 }
@@ -245,8 +245,8 @@ ExtractTopFrame (node *stack, node **top)
 
 #ifndef DBUG_OFF
     if (*top != NULL) {
-        DBUG_PRINT ("PM", ("frame found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *top););
+        DBUG_PRINT ("PMO", ("frame found:"));
+        DBUG_EXECUTE ("PMO", PRTdoPrintFile (stderr, *top););
     }
 #endif
 
@@ -350,15 +350,15 @@ lastId (node *arg_node, bool ignoreguards)
         /* Find precursor to this node, if it exists */
         if ((NODE_TYPE (arg_node) == N_id)
             && (AVIS_SSAASSIGN (ID_AVIS (arg_node)) != NULL)) {
-            DBUG_PRINT ("PM", ("lastId looking up variable definition for %s.",
-                               AVIS_NAME (ID_AVIS (arg_node))));
+            DBUG_PRINT ("PMO", ("lastId looking up variable definition for %s.",
+                                AVIS_NAME (ID_AVIS (arg_node))));
             newres = arg_node;
             arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
         } else {
             if (ignoreguards && isPrfGuard (arg_node)) {
                 newres = PRF_ARG1 (arg_node);
-                DBUG_PRINT ("PM", ("lastId looking past guard, at %s.",
-                                   AVIS_NAME (ID_AVIS (newres))));
+                DBUG_PRINT ("PMO", ("lastId looking past guard, at %s.",
+                                    AVIS_NAME (ID_AVIS (newres))));
                 assgn = AVIS_SSAASSIGN (ID_AVIS (newres));
                 if (NULL != assgn) {
                     arg_node = LET_EXPR (ASSIGN_INSTR (assgn));
@@ -370,7 +370,7 @@ lastId (node *arg_node, bool ignoreguards)
 
         if (NULL != newres) {
             res = newres;
-            DBUG_PRINT ("PM", ("lastId definition is: %s.", AVIS_NAME (ID_AVIS (res))));
+            DBUG_PRINT ("PMO", ("lastId definition is: %s.", AVIS_NAME (ID_AVIS (res))));
         }
     }
     DBUG_RETURN (res);
@@ -401,7 +401,7 @@ followId (node *arg_node, bool ignoreguards)
     node *res;
 
     DBUG_ENTER ("followId");
-    DBUG_PRINT ("PM", ("followId trying to look up the variable definition "));
+    DBUG_PRINT ("PMO", ("followId trying to look up the variable definition "));
     res = lastId (arg_node, ignoreguards);
     if ((NULL != arg_node) && (N_id == NODE_TYPE (res))
         && (NULL != AVIS_SSAASSIGN (ID_AVIS (res)))
@@ -423,7 +423,7 @@ static node *
 FailMatch (node *stack)
 {
     DBUG_ENTER ("FailMatch");
-    DBUG_PRINT ("PM", ("match failed!"));
+    DBUG_PRINT ("PMO", ("match failed!"));
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
         stack = FREEdoFreeTree (stack);
     }
@@ -458,8 +458,8 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
 
     DBUG_ENTER ("MatchNode");
 
-    DBUG_PRINT ("PM", ("MatchNode trying to match node of type \"%s\"...",
-                       global.mdb_nodetype[nt]));
+    DBUG_PRINT ("PMO", ("MatchNode trying to match node of type \"%s\"...",
+                        global.mdb_nodetype[nt]));
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &match);
@@ -467,8 +467,8 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
         match = followId (match, ignoreguards);
         if ((NODE_TYPE (match) == nt)
             && ((numAttribs == 0) || matchAttribsFun (match, numAttribs, attribRefs))) {
-            DBUG_PRINT ("PM", ("MatchNode( %s, _, %d, _, _, %d, _) matched!",
-                               global.mdb_nodetype[nt], numAttribs, pushSons));
+            DBUG_PRINT ("PMO", ("MatchNode( %s, _, %d, _, _, %d, _) matched!",
+                                global.mdb_nodetype[nt], numAttribs, pushSons));
             if (pushSons) {
                 switch (nt) {
                 case N_prf:
@@ -491,10 +491,10 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
             REF_SET (matched_node, match);
         } else {
             stack = FailMatch (stack);
-            DBUG_PRINT ("PM", ("failed!"));
+            DBUG_PRINT ("PMO", ("failed!"));
         }
     } else {
-        DBUG_PRINT ("PM", ("MatchNode passing on FAIL!"));
+        DBUG_PRINT ("PMO", ("MatchNode passing on FAIL!"));
     }
     DBUG_RETURN (stack);
 }
@@ -506,16 +506,16 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
 
 /** <!--*******************************************************************-->
  *
- * @fn bool PM( node *stack)
+ * @fn bool PMO( node *stack)
  *
  * @brief checks the result of a pattern match for failure
  * @param stack: resulting stack of a match
  * @return success
  *****************************************************************************/
 bool
-PM (node *stack)
+PMO (node *stack)
 {
-    DBUG_ENTER ("PM");
+    DBUG_ENTER ("PMO");
     DBUG_RETURN (stack != (node *)FAIL);
 }
 
@@ -544,9 +544,9 @@ pmvar (node **var, node *stack, bool getlastid, bool ignoreguards)
 
     DBUG_ENTER ("pmvar");
     if (*var == NULL) {
-        DBUG_PRINT ("PM", ("pmvar trying to match unbound variable..."));
+        DBUG_PRINT ("PMO", ("pmvar trying to match unbound variable..."));
     } else {
-        DBUG_PRINT ("PM", ("pmvar trying to match bound variable..."));
+        DBUG_PRINT ("PMO", ("pmvar trying to match bound variable..."));
     }
 
     if (stack != (node *)FAIL) {
@@ -556,10 +556,10 @@ pmvar (node **var, node *stack, bool getlastid, bool ignoreguards)
         }
         if (NODE_TYPE (arg) == N_id) {
             if (*var == NULL) {
-                DBUG_PRINT ("PM", ("pmvar binding variable!"));
+                DBUG_PRINT ("PMO", ("pmvar binding variable!"));
                 *var = arg;
             } else if (ID_AVIS (*var) == ID_AVIS (arg)) {
-                DBUG_PRINT ("PM", ("pmvar found variable matches bound one!"));
+                DBUG_PRINT ("PMO", ("pmvar found variable matches bound one!"));
             } else {
                 stack = FailMatch (stack);
             }
@@ -567,14 +567,14 @@ pmvar (node **var, node *stack, bool getlastid, bool ignoreguards)
             stack = FailMatch (stack);
         }
     } else {
-        DBUG_PRINT ("PM", ("pmvar ...passing-on FAIL!"));
+        DBUG_PRINT ("PMO", ("pmvar ...passing-on FAIL!"));
     }
     DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMvar( node **var, node *stack)
+ * @fn node *PMOvar( node **var, node *stack)
  *
  * @brief tries to match against a variable. If *var is NULL, the top of
  *        the stack is bound to it (provided it is an N_id).
@@ -585,16 +585,16 @@ pmvar (node **var, node *stack, bool getlastid, bool ignoreguards)
  * @return shortened stack.
  *****************************************************************************/
 node *
-PMvar (node **var, node *stack)
+PMOvar (node **var, node *stack)
 {
-    DBUG_ENTER ("PMvar");
+    DBUG_ENTER ("PMOvar");
     stack = pmvar (var, stack, FALSE, FALSE);
     DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMlastVar( node **var, node *stack)
+ * @fn node *PMOlastVar( node **var, node *stack)
  *
  * @brief tries to match against the last variable in a
  *        chain. If *var is NULL, the top of
@@ -606,21 +606,21 @@ PMvar (node **var, node *stack)
  * @return shortened stack.
  *****************************************************************************/
 node *
-PMlastVar (node **var, node *stack)
+PMOlastVar (node **var, node *stack)
 {
-    DBUG_ENTER ("PMlastVar");
+    DBUG_ENTER ("PMOlastVar");
     stack = pmvar (var, stack, TRUE, FALSE);
     DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMlastVarGuards( node **var, node *stack)
+ * @fn node *PMOlastVarGuards( node **var, node *stack)
  *
  * @brief tries to match against the last variable in a
  *        chain, while treating guards as if they were not in
  *        the chain.
- *        E.g., the call PMlastVarGuards(d...) in this chain:
+ *        E.g., the call PMOlastVarGuards(d...) in this chain:
  *
  *          a = id([3]);
  *          b = a;
@@ -638,27 +638,27 @@ PMlastVar (node **var, node *stack)
  * @return shortened stack.
  *****************************************************************************/
 node *
-PMlastVarGuards (node **var, node *stack)
+PMOlastVarGuards (node **var, node *stack)
 {
-    DBUG_ENTER ("PMlastVarGuards");
+    DBUG_ENTER ("PMOlastVarGuards");
     stack = pmvar (var, stack, TRUE, TRUE);
     DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMbool( node *stack)
- * @fn node *PMchar( node *stack)
- * @fn node *PMnum( node *stack)
- * @fn node *PMfloat( node *stack)
- * @fn node *PMdouble( node *stack)
+ * @fn node *PMObool( node *stack)
+ * @fn node *PMOchar( node *stack)
+ * @fn node *PMOnum( node *stack)
+ * @fn node *PMOfloat( node *stack)
+ * @fn node *PMOdouble( node *stack)
  *
  *****************************************************************************/
 #define MATCH_SCALAR_CONST(kind)                                                         \
-    node *PM##kind (node *stack)                                                         \
+    node *PMO##kind (node *stack)                                                        \
     {                                                                                    \
         node *kind##_node;                                                               \
-        DBUG_ENTER ("PM##kind");                                                         \
+        DBUG_ENTER ("PMO##kind");                                                        \
                                                                                          \
         stack = MatchNode (N_##kind, NULL, 0, NULL, &kind##_node, FALSE, stack, FALSE);  \
                                                                                          \
@@ -673,11 +673,11 @@ MATCH_SCALAR_CONST (double)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMboolVal( node *stack)
- * @fn node *PMcharVal( node *stack)
- * @fn node *PMnumVal( node *stack)
- * @fn node *PMfloatVal( node *stack)
- * @fn node *PMdoubleVal( node *stack)
+ * @fn node *PMOboolVal( node *stack)
+ * @fn node *PMOcharVal( node *stack)
+ * @fn node *PMOnumVal( node *stack)
+ * @fn node *PMOfloatVal( node *stack)
+ * @fn node *PMOdoubleVal( node *stack)
  *
  *****************************************************************************/
 #define MATCH_SCALAR_VALUE(kind, typ, accessor)                                          \
@@ -686,11 +686,11 @@ MATCH_SCALAR_CONST (double)
         return (accessor##_VAL (arg) == REF_##accessor (attrs[0]));                      \
     }                                                                                    \
                                                                                          \
-    node *PM##kind##Val (typ val, node *stack)                                           \
+    node *PMO##kind##Val (typ val, node *stack)                                          \
     {                                                                                    \
         attrib_t attribs[1];                                                             \
         node *kind##_node = NULL;                                                        \
-        DBUG_ENTER ("PM##kind##Val");                                                    \
+        DBUG_ENTER ("PMO##kind##Val");                                                   \
                                                                                          \
         REF_##accessor (attribs[0]) = val;                                               \
                                                                                          \
@@ -708,7 +708,7 @@ MATCH_SCALAR_VALUE (double, double, DOUBLE)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMprf( prf fun, node *stack)
+ * @fn node *PMOprf( prf fun, node *stack)
  *
  * @brief tries to match against an N_prf with the given fun. If successfull,
  *        the actual arguments are pushed on top of the stack.
@@ -723,11 +723,11 @@ MatchPrfAttribs (node *prf_node, int num, attrib_t *arefs)
 }
 
 node *
-PMprf (prf fun, node *stack)
+PMOprf (prf fun, node *stack)
 {
     node *prf_node;
     attrib_t arefs[1];
-    DBUG_ENTER ("PMprf");
+    DBUG_ENTER ("PMOprf");
 
     REF_PRF (arefs[0]) = &fun;
     stack = MatchNode (N_prf, MatchPrfAttribs, 1, arefs, &prf_node, TRUE, stack, FALSE);
@@ -737,8 +737,8 @@ PMprf (prf fun, node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMarray( constant ** frameshape, node **array, node *stack)
- * @fn node *PMarrayConstructor( constant ** frameshape, node **array, node *stack)
+ * @fn node *PMOarray( constant ** frameshape, node **array, node *stack)
+ * @fn node *PMOarrayConstructor( constant ** frameshape, node **array, node *stack)
  *
  * @brief tries to match against an N_array. If *frameshape is NULL, any
  *        array on the top of the stack matches, its AST representation is bound
@@ -747,8 +747,8 @@ PMprf (prf fun, node *stack)
  *        If *frameshape is not NULL, it only matches if the top of the stack is
  *        an N_array with the given frameshape. In that case only array is bound
  *        to the respective part of the AST.
- * @return shortened stack. In PMarray, the ARRAY_AELEMS are pushed onto the
- *        stackbefore returning, in PMarrayConstructor NOT!
+ * @return shortened stack. In PMOarray, the ARRAY_AELEMS are pushed onto the
+ *        stackbefore returning, in PMOarrayConstructor NOT!
  *****************************************************************************/
 static bool
 MatchArrayAttribs (node *array_node, int num, attrib_t *arefs)
@@ -774,10 +774,10 @@ MatchArrayAttribs (node *array_node, int num, attrib_t *arefs)
 }
 
 node *
-PMarray (constant **frameshape, node **array, node *stack)
+PMOarray (constant **frameshape, node **array, node *stack)
 {
     attrib_t arefs[1];
-    DBUG_ENTER ("PMarray");
+    DBUG_ENTER ("PMOarray");
 
     REF_CONST (arefs[0]) = frameshape;
     stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, TRUE, stack, FALSE);
@@ -786,10 +786,10 @@ PMarray (constant **frameshape, node **array, node *stack)
 }
 
 node *
-PMarrayConstructor (constant **frameshape, node **array, node *stack)
+PMOarrayConstructor (constant **frameshape, node **array, node *stack)
 {
     attrib_t arefs[1];
-    DBUG_ENTER ("PMarray");
+    DBUG_ENTER ("PMOarray");
 
     REF_CONST (arefs[0]) = frameshape;
     stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack, FALSE);
@@ -798,10 +798,10 @@ PMarrayConstructor (constant **frameshape, node **array, node *stack)
 }
 
 node *
-PMarrayConstructorGuards (constant **frameshape, node **array, node *stack)
+PMOarrayConstructorGuards (constant **frameshape, node **array, node *stack)
 {
     attrib_t arefs[1];
-    DBUG_ENTER ("PMarray");
+    DBUG_ENTER ("PMOarray");
 
     REF_CONST (arefs[0]) = frameshape;
     stack = MatchNode (N_array, MatchArrayAttribs, 1, arefs, array, FALSE, stack, TRUE);
@@ -811,7 +811,7 @@ PMarrayConstructorGuards (constant **frameshape, node **array, node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMconst( constant ** co, node **conode, node *stack)
+ * @fn node *PMOconst( constant ** co, node **conode, node *stack)
  *
  * @brief tries to match against a constant. If *co is NULL, any constant
  *        on the top of the stack matches, its AST representation is bound
@@ -822,13 +822,13 @@ PMarrayConstructorGuards (constant **frameshape, node **array, node *stack)
  * @return shortened stack.
  *****************************************************************************/
 node *
-PMconst (constant **co, node **conode, node *stack)
+PMOconst (constant **co, node **conode, node *stack)
 {
     node *arg;
     ntype *type;
     constant *cofound = NULL;
 
-    DBUG_ENTER ("PMconst");
+    DBUG_ENTER ("PMOconst");
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &arg);
@@ -842,13 +842,13 @@ PMconst (constant **co, node **conode, node *stack)
             cofound = COaST2Constant (arg);
         }
         if (cofound != NULL) {
-            DBUG_PRINT ("PM", ("PMconst matched constant!"));
+            DBUG_PRINT ("PMO", ("PMOconst matched constant!"));
             if (*co == NULL) {
                 *co = cofound;
                 *conode = arg;
             } else {
                 if (COcompareConstants (*co, cofound)) {
-                    DBUG_PRINT ("PM", ("PMconst matched value!"));
+                    DBUG_PRINT ("PMO", ("PMOconst matched value!"));
                     *conode = arg;
                 } else {
                     stack = FailMatch (stack);
@@ -859,7 +859,7 @@ PMconst (constant **co, node **conode, node *stack)
             stack = FailMatch (stack);
         }
     } else {
-        DBUG_PRINT ("PM", ("PMconst passing on FAIL!"));
+        DBUG_PRINT ("PMO", ("PMOconst passing on FAIL!"));
     }
 
     DBUG_RETURN (stack);
@@ -867,7 +867,7 @@ PMconst (constant **co, node **conode, node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMintConst( constant ** co, node **conode, node *stack)
+ * @fn node *PMOintConst( constant ** co, node **conode, node *stack)
  *
  * @brief tries to match against an integer constant. If *co is NULL, any
  *        constant on the top of the stack matches, its AST representation
@@ -879,14 +879,14 @@ PMconst (constant **co, node **conode, node *stack)
  * @return shortened stack.
  *****************************************************************************/
 node *
-PMintConst (constant **co, node **conode, node *stack)
+PMOintConst (constant **co, node **conode, node *stack)
 {
     constant *co_in;
-    DBUG_ENTER ("PMintConst");
+    DBUG_ENTER ("PMOintConst");
 
     if (stack != (node *)FAIL) {
         co_in = *co;
-        stack = PMconst (co, conode, stack);
+        stack = PMOconst (co, conode, stack);
         if (stack != (node *)FAIL) {
             if (COgetType (*co) != T_int) {
                 stack = FailMatch (stack);
@@ -896,7 +896,7 @@ PMintConst (constant **co, node **conode, node *stack)
             }
         }
     } else {
-        DBUG_PRINT ("PM", ("PMintConst passing on FAIL!"));
+        DBUG_PRINT ("PMO", ("PMOintConst passing on FAIL!"));
     }
 
     DBUG_RETURN (stack);
@@ -904,9 +904,9 @@ PMintConst (constant **co, node **conode, node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMshapePrimogenitor( node *stack)
+ * @fn node *PMOshapePrimogenitor( node *stack)
  *
- * @brief This is not really a PM function, but it has
+ * @brief This is not really a PMO function, but it has
  *        attributes that sort of want to be one.
  *
  *        This has to work in non-saa mode, so we do not rely
@@ -935,13 +935,13 @@ PMintConst (constant **co, node **conode, node *stack)
  *          d = with { ([0] <= iv < sv ) : c[iv] + 1;
  *                   } : modarray(c);
  *
- *          CFidx_shape_sel will invoke PMshapePrimogenitor to produce:
+ *          CFidx_shape_sel will invoke PMOshapePrimogenitor to produce:
  *
  *          s0 = idx_shape_sel(0, a);
  *          s1 = idx_shape_sel(1, a);
  *
  *        Please excuse the sloppy parameters - I'm not sure how this
- *        would be used in a proper PM environment. Feel free to
+ *        would be used in a proper PMO environment. Feel free to
  *        fix it.
  *
  * @param id is
@@ -949,16 +949,16 @@ PMintConst (constant **co, node **conode, node *stack)
  * @return the uppermost N_id with the same shape.
  *****************************************************************************/
 node *
-PMshapePrimogenitor (node *arg)
+PMOshapePrimogenitor (node *arg)
 {
     node *modarr;
     node *res;
     node *defaultcell;
 
-    DBUG_ENTER ("PMshapePrimogenitor");
+    DBUG_ENTER ("PMOshapePrimogenitor");
 
-    DBUG_PRINT ("PM", ("PMshapePrimogenitor trying to find primogenitor for: %s.",
-                       AVIS_NAME (ID_AVIS (arg))));
+    DBUG_PRINT ("PMO", ("PMOshapePrimogenitor trying to find primogenitor for: %s.",
+                        AVIS_NAME (ID_AVIS (arg))));
 
     arg = lastId (arg, TRUE);
     res = arg;
@@ -988,7 +988,8 @@ PMshapePrimogenitor (node *arg)
                      * Result shape is genarray_shape. If that comes from shape(x),
                      * we can replace arg with x.
                      */
-                    DBUG_PRINT ("PM", ("PMshapePrimogenitor found scalar default cell"));
+                    DBUG_PRINT ("PMO",
+                                ("PMOshapePrimogenitor found scalar default cell"));
                 }
                 break;
             default:
@@ -996,7 +997,7 @@ PMshapePrimogenitor (node *arg)
             }
             /* Recurse to continue up the assign chain. */
             if (arg != res) {
-                arg = PMshapePrimogenitor (arg);
+                arg = PMOshapePrimogenitor (arg);
             }
         }
     }
@@ -1005,7 +1006,7 @@ PMshapePrimogenitor (node *arg)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PMsaashape( node **shp, node **arg, node *stack)
+ * @fn node *PMOsaashape( node **shp, node **arg, node *stack)
  *
  * @brief tries to match against an AVIS_SHAPE.
  *        If *shp is NULL, the AVIS_SHAPE(*array) is bound to shp.
@@ -1017,14 +1018,14 @@ PMshapePrimogenitor (node *arg)
  * @return stack is unchanged.
  *****************************************************************************/
 node *
-PMsaashape (node **shp, node **array, node *stack)
+PMOsaashape (node **shp, node **array, node *stack)
 {
     node *arg;
-    DBUG_ENTER ("PMsaashape");
+    DBUG_ENTER ("PMOsaashape");
     if (*shp == NULL) {
-        DBUG_PRINT ("PM", ("PMsaashape trying to match unbound variable."));
+        DBUG_PRINT ("PMO", ("PMOsaashape trying to match unbound variable."));
     } else {
-        DBUG_PRINT ("PM", ("PMsaashape trying to match bound variable."));
+        DBUG_PRINT ("PMO", ("PMOsaashape trying to match bound variable."));
     }
 
     if (stack != (node *)FAIL) {
@@ -1034,10 +1035,10 @@ PMsaashape (node **shp, node **array, node *stack)
         }
         if ((NULL != arg) && (N_id == NODE_TYPE (arg))) {
             if (REF_ISUNDEFINED (shp)) {
-                DBUG_PRINT ("PM", ("PMsaashape binding AVIS_SHAPE"));
+                DBUG_PRINT ("PMO", ("PMOsaashape binding AVIS_SHAPE"));
                 REF_SET (shp, AVIS_SHAPE (ID_AVIS (arg)));
             } else if (*shp == AVIS_SHAPE (ID_AVIS (arg))) {
-                DBUG_PRINT ("PM", ("PMsaashape found matching AVIS_SHAPE"));
+                DBUG_PRINT ("PMO", ("PMOsaashape found matching AVIS_SHAPE"));
             } else {
                 stack = FailMatch (stack);
             }
@@ -1045,7 +1046,7 @@ PMsaashape (node **shp, node **array, node *stack)
             stack = FailMatch (stack);
         }
     } else {
-        DBUG_PRINT ("PM", ("PMsaashape passing-on FAIL."));
+        DBUG_PRINT ("PMO", ("PMOsaashape passing-on FAIL."));
     }
     DBUG_RETURN (stack);
 }
@@ -1061,13 +1062,13 @@ PMsaashape (node **shp, node **array, node *stack)
  * @return shortened stack
  ******************************************************************************/
 node *
-PMforEachI (node *(*pattern) (int, node *stack), node *stack)
+PMOforEachI (node *(*pattern) (int, node *stack), node *stack)
 {
     node *exprs;
     bool success = TRUE;
     int pos = 0;
 
-    DBUG_ENTER ("PMforEachI");
+    DBUG_ENTER ("PMOforEachI");
 
     if (stack != (node *)FAIL) {
         stack = ExtractTopFrame (stack, &exprs);
@@ -1075,7 +1076,7 @@ PMforEachI (node *(*pattern) (int, node *stack), node *stack)
         DBUG_ASSERT ((exprs != NULL), "No exprs on top of stack");
 
         do {
-            success = PM (pattern (pos, EXPRS_EXPR (exprs)));
+            success = PMO (pattern (pos, EXPRS_EXPR (exprs)));
 
             exprs = EXPRS_NEXT (exprs);
             pos++;
@@ -1100,11 +1101,11 @@ PMforEachI (node *(*pattern) (int, node *stack), node *stack)
  * @return modified stack
  ******************************************************************************/
 node *
-PMany (node **any, node *stack)
+PMOany (node **any, node *stack)
 {
     node *actual;
 
-    DBUG_ENTER ("PMany");
+    DBUG_ENTER ("PMOany");
 
     if (stack != (node *)FAIL) {
         stack = ExtractOneArg (stack, &actual);
@@ -1130,11 +1131,11 @@ PMany (node **any, node *stack)
  * @return modified stack
  ******************************************************************************/
 node *
-PMexprs (node **exprs, node *stack)
+PMOexprs (node **exprs, node *stack)
 {
     node *top;
 
-    DBUG_ENTER ("PMexprs");
+    DBUG_ENTER ("PMOexprs");
 
     if (stack != (node *)FAIL) {
         stack = ExtractTopFrame (stack, &top);
@@ -1166,11 +1167,11 @@ PMexprs (node **exprs, node *stack)
  * @return modified stack
  ******************************************************************************/
 node *
-PMpartExprs (node *exprs, node *stack)
+PMOpartExprs (node *exprs, node *stack)
 {
     node *top;
 
-    DBUG_ENTER ("PMpartExprs");
+    DBUG_ENTER ("PMOpartExprs");
 
     if (stack != (node *)FAIL) {
         stack = ExtractTopFrame (stack, &top);
