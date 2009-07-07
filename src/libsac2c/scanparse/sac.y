@@ -154,7 +154,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
-%type <node> exprs expr /*expr_structelem*/ expr_with expr_ap opt_arguments expr_ar expr_sel
+%type <node> exprs subexpr expr /*expr_structelem*/ expr_with expr_ap opt_arguments expr_ar expr_sel
      with generator  steps  width  nwithops nwithop  withop  wlassignblock  genidx 
      part  parts npart nparts nums returntypes returndectypes ntypes varntypes
 %type <prf> genop prf
@@ -1254,7 +1254,9 @@ exprs: expr COMMA exprs          { $$ = TBmakeExprs( $1, $3);   }
      | expr                      { $$ = TBmakeExprs( $1, NULL); }
      ;
 
-expr: qual_ext_id                { $$ = $1;                   }
+expr: subexpr { $$ = $1; }
+
+subexpr: qual_ext_id                { $$ = $1;                   }
     | DOT                        { $$ = TBmakeDot( 1);        }
     | DOT DOT DOT                { $$ = TBmakeDot( 3);        }
     | NUM                        { $$ = TBmakeNum( $1);       }

@@ -3,9 +3,11 @@
 
 #include "types.h"
 
-#define STRUCT_TYPE "_struct_"
-#define STRUCT_GET (STRUCT_TYPE "get_")
-#define STRUCT_SET (STRUCT_TYPE "set_")
+#define STRUCT_PREFIX "_struct_"
+#define STRUCT_TYPE "_struct_t_"
+#define STRUCT_GET "_struct_t_get_"
+#define STRUCT_SET "_struct_t_set_"
+#define STRUCT_ELEM "_struct_t_elem_"
 
 extern node *HSdoDestruct (node *syntax_tree);
 

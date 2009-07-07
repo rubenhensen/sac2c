@@ -2597,6 +2597,16 @@
           <node name="Structelem" />
         </travuser>
       </traversal>
+      <traversal id="DES" name="Remove Structs" default="sons"
+                 include="destruct.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+          <node name="Exprs" />
+        </travuser>
+      </traversal>
    </traversals>
 
   <nodesets>
@@ -3014,7 +3024,7 @@ N_structdef :
           </type>
         </attribute>
         <attribute name="Structdef" default="NULL" inconstructor="no">
-          <type name="Node">
+          <type name="ExtLink">
             <targets>
               <target mandatory="yes">
                 <node name="Structdef" />
@@ -3636,6 +3646,32 @@ N_structdef :
             </targets>
           </type>
         </attribute>
+        <attribute name="Structgetter" default="NULL" inconstructor="no">
+          <description>If this function is a getter for a struct element, this attribute points to that element.</description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Structelem" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Structsetter" default="NULL" inconstructor="no">
+          <description>If this function is a setter for a struct element, this attribute points to that element.</description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Structelem" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsExported">
@@ -3718,21 +3754,6 @@ N_structdef :
         <flag name="FixpointFound" default="FALSE">
           <description>
             TRUE iff the fixpoint of this function has been found in SOSSK.
-          </description>
-        </flag>
-        <flag name="IsStructGet" default="FALSE">
-          <description>
-            This is a "getter" for a struct element.
-          </description>
-        </flag>
-        <flag name="IsStructSet" default="FALSE">
-          <description>
-            This is a "setter" for a struct element.
-          </description>
-        </flag>
-        <flag name="IsStructInit" default="FALSE">
-          <description>
-            This is a "constructor" for a struct.
           </description>
         </flag>
       </flags>
@@ -4016,6 +4037,18 @@ N_structdef :
         </son>
       </sons>
       <attributes>
+        <attribute name="Typedef" default="NULL" inconstructor="no">
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="yes">
+                <node name="Typedef" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
       </flags>

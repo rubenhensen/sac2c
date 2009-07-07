@@ -182,6 +182,8 @@ SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           cwc)
 
+SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
+
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
 SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,

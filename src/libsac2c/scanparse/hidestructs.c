@@ -41,6 +41,7 @@
 struct INFO {
     node *module;
     node *init_args;
+    node *structdef;
     ntype *structtype;
 };
 
@@ -49,6 +50,7 @@ struct INFO {
  */
 #define INFO_MODULE(n) ((n)->module)
 #define INFO_INIT_ARGS(n) ((n)->init_args)
+#define INFO_STRUCTDEF(n) ((n)->structdef)
 #define INFO_STRUCTTYPE(n) ((n)->structtype)
 
 /**
@@ -64,8 +66,9 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_MODULE (result) = NULL;
-    INFO_STRUCTTYPE (result) = NULL;
     INFO_INIT_ARGS (result) = NULL;
+    INFO_STRUCTDEF (result) = NULL;
+    INFO_STRUCTTYPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -166,19 +169,20 @@ HSstructdef (node *arg_node, info *arg_info)
     /* Push the typedef on the module's typedef stack. */
     TYPEDEF_NEXT (typedef_) = MODULE_TYPES (module);
     MODULE_TYPES (module) = typedef_;
-    /* Create a new userntype for this struct (typechecker will link above typedef
-     * to this userntype). */
-    INFO_STRUCTTYPE (arg_info)
-      = TYmakeAKS (TYmakeSymbType (STRcpy (sname), NULL), SHmakeShape (0));
-    sname = MEMfree (sname);
+    /* Prepare the argument list for the N_structelem handlers. */
     DBUG_ASSERT (INFO_INIT_ARGS (arg_info) == NULL,
                  ("Garbage constructor arguments lying around in arg_info."));
+    INFO_STRUCTDEF (arg_info) = arg_node;
+    /* Create a new userntype for this struct (typechecker will link above typedef
+     * to this userntype). */
+    structtype = TYmakeAKS (TYmakeSymbType (STRcpy (sname), NULL), SHmakeShape (0));
+    INFO_STRUCTTYPE (arg_info) = structtype;
+    sname = MEMfree (sname);
 
     STRUCTDEF_STRUCTELEM (arg_node) = TRAVopt (STRUCTDEF_STRUCTELEM (arg_node), arg_info);
 
     /* Create two constructors: one with every element as a seperate argument, one
      * with another struct as the sole argument. */
-    structtype = INFO_STRUCTTYPE (arg_info);
     ret = TBmakeRet (TYcopyType (structtype), NULL);
     /* First constructor. */
     fundec = TBmakeFundef (STRcpy (STRUCTDEF_NAME (arg_node)), NULL, ret,
@@ -189,13 +193,16 @@ HSstructdef (node *arg_node, info *arg_info)
     fundec = DUPdoDupNode (fundec);
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
-    FREEdoFreeTree (FUNDEF_ARGS (fundec));
+    if (FUNDEF_ARGS (fundec) != NULL) {
+        FREEdoFreeTree (FUNDEF_ARGS (fundec));
+    }
     FUNDEF_ARGS (fundec) = arg;
     FUNDEF_NEXT (fundec) = MODULE_FUNDECS (module);
     MODULE_FUNDECS (module) = fundec;
 
-    INFO_STRUCTTYPE (arg_info) = TYfreeType (INFO_STRUCTTYPE (arg_info));
     INFO_INIT_ARGS (arg_info) = NULL;
+    INFO_STRUCTDEF (arg_info) = NULL;
+    INFO_STRUCTTYPE (arg_info) = TYfreeType (INFO_STRUCTTYPE (arg_info));
 
     STRUCTDEF_NEXT (arg_node) = TRAVopt (STRUCTDEF_NEXT (arg_node), arg_info);
 
@@ -217,41 +224,53 @@ HSstructelem (node *arg_node, info *arg_info)
     node *arg;
     node *ret;
     node *module;
+    node *structdef;
     ntype *structtype;
+    char *elemname;
 
     DBUG_ENTER ("HSstructelem");
 
-    structtype = INFO_STRUCTTYPE (arg_info);
-
-    /* Only handle this structelem if it belongs to a structdef. */
-    if (structtype == NULL) {
-        DBUG_RETURN (arg_node);
-    }
-
     module = INFO_MODULE (arg_info);
+    DBUG_ASSERT (module != NULL, ("No module set for this struct element."));
+    structdef = INFO_STRUCTDEF (arg_info);
+    DBUG_ASSERT (structdef != NULL, ("No structdef for this struct element."));
+    structtype = INFO_STRUCTTYPE (arg_info);
+    DBUG_ASSERT (structtype != NULL, ("No struct set for this struct element."));
+    elemname = AVIS_NAME (STRUCTELEM_AVIS (arg_node));
     /* Create getter as new external fundec. */
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
     ret = TBmakeRet (TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (arg_node))), NULL);
-    fundec = TBmakeFundef (STRcat (STRUCT_GET, AVIS_NAME (STRUCTELEM_AVIS (arg_node))),
-                           NULL, /* TODO: namespace? */
+    fundec = TBmakeFundef (STRcat (STRUCT_GET, elemname), NULL, /* TODO: namespace? */
                            ret, arg, NULL, MODULE_FUNDECS (module));
     FUNDEF_ISEXTERN (fundec) = TRUE;
+    FUNDEF_STRUCTGETTER (fundec) = arg_node;
     /* Push the getter on the module's fundec stack. */
     MODULE_FUNDECS (module) = fundec;
     /* Setter. */
     fundec = DUPdoDupNode (fundec);
     MEMfree (FUNDEF_NAME (fundec));
-    FUNDEF_NAME (fundec) = STRcat (STRUCT_SET, AVIS_NAME (STRUCTELEM_AVIS (arg_node)));
+    FUNDEF_NAME (fundec) = STRcat (STRUCT_SET, elemname);
     arg = TBmakeArg (DUPdoDupNode (STRUCTELEM_AVIS (arg_node)), NULL);
     ARG_NEXT (FUNDEF_ARGS (fundec)) = arg;
     MEMfree (FUNDEF_RETS (fundec));
     FUNDEF_RETS (fundec) = TBmakeRet (TYcopyType (structtype), NULL);
+    FUNDEF_STRUCTGETTER (fundec) = NULL;
+    FUNDEF_STRUCTSETTER (fundec) = arg_node;
     /* Setter on the stack (hahaha). */
     FUNDEF_NEXT (fundec) = MODULE_FUNDECS (module);
     MODULE_FUNDECS (module) = fundec;
     /* Make a safe copy of the arg for later use. */
     arg = DUPdoDupNode (arg);
+    /* Create a typedef for this struct element. */
+    STRUCTELEM_TYPEDEF (arg_node)
+      = TBmakeTypedef (STRcatn (4, STRUCT_ELEM, STRUCTDEF_NAME (structdef), "_",
+                                elemname),
+                       NULL,
+                       TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED),
+                                  SHmakeShape (0)),
+                       MODULE_TYPES (module));
+    MODULE_TYPES (module) = STRUCTELEM_TYPEDEF (arg_node);
 
     /* Continue with the next structelem. */
     STRUCTELEM_NEXT (arg_node) = TRAVopt (STRUCTELEM_NEXT (arg_node), arg_info);
