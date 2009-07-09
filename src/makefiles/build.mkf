@@ -215,6 +215,7 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 	@$(ECHO) "Creating $(PREFIX_ROOT)include/sac.h"
 	$(HIDE) $(HEADER_ZIPPER) $^ > $@
 	@$(TOUCH) .done
+	@$(TOUCH) $(FINGERPRINT_FILE)
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 
