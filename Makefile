@@ -237,9 +237,9 @@ include $(MAKEFILE_DIR)/check.mkf
 
 config: 
 	@ cd setup ; \
-          svn lock configure $(AUTOHEADERED) ; \
+          svn lock configure ../$(AUTOHEADERED) ; \
           autoconf ; \
           autoheader ; \
-          svn commit configure $(AUTOHEADERED)
+          svn commit configure ../$(AUTOHEADERED)
 
 

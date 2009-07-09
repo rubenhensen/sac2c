@@ -469,8 +469,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
          fi
 	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $@)"
 	$(HIDE)$(YACC) $<
-	$(HIDE)mv y.tab.c $@
-	$(HIDE)$(RM) y.tab.h
+	$(HIDE)fgrep -v "#pragma ident" y.tab.c > $@
+	$(HIDE)$(RM) y.tab.h y.tab.c
 	$(HIDE)mv y.output $(dir $@)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
