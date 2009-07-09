@@ -11,7 +11,8 @@
  * Prefix: ESD
  *
  *****************************************************************************/
-extern node *ESDdoElimSubDiv (node *);
+extern node *ESDdoElimSubDiv (node *arg_node);
+extern node *ESDdoElimSubDivModule (node *arg_node);
 
 extern node *ESDblock (node *, info *);
 extern node *ESDassign (node *, info *);

@@ -7,7 +7,7 @@
  * @file UndoElimSubDiv.c
  *
  * @brief Replaces all occurences of primitive negation and reciprocal operators
- *        introduced by ElimSubDiv with substraction and division.
+ *        introduced by ElimSubDiv with subtraction and division.
  *
  */
 
@@ -188,6 +188,39 @@ TogglePrf (prf op)
     }
 
     DBUG_RETURN (result);
+}
+
+/**<!--****************************************************************-->
+ *
+ * @fn node *UESDdoUndoElimSubDivModule(node *arg_node)
+ *
+ * @brief starting function of UndoElimSubDiv for modules
+ *
+ * @param fundef
+ *
+ * @return
+ *
+ ************************************************************************/
+node *
+UESDdoUndoElimSubDivModule (node *arg_node)
+{
+    info *info;
+
+    DBUG_ENTER ("UESDdoUndoElimSubDivModule");
+
+    info = MakeInfo ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "WLI called on non-N_module node");
+
+    INFO_ONEFUNDEF (info) = FALSE;
+
+    TRAVpush (TR_uesd);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /**<!--****************************************************************-->

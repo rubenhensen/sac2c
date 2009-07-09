@@ -36,7 +36,8 @@
  * Prefix: UESD
  *
  *****************************************************************************/
-extern node *UESDdoUndoElimSubDiv (node *);
+extern node *UESDdoUndoElimSubDiv (node *arg_node);
+extern node *UESDdoUndoElimSubDivModule (node *arg_node);
 
 extern node *UESDfundef (node *, info *);
 extern node *UESDblock (node *, info *);

@@ -4,7 +4,7 @@
  *
  * @file ElimSubDiv.c
  *
- * @brief replaces substration and division by introducing special
+ * @brief replaces subtraction and division by introducing special
  * primitive negation and reciprocal operator (F_esd_neg, F_esd_rec)
  *
  */
@@ -134,6 +134,38 @@ TogglePrf (prf op)
 
 /**<!--**************************************************************-->
  *
+ * @fn node *ESDdoElimSubDivModule(node *arg_node)
+ *
+ * @brief start function for traversal
+ *
+ * @param fundef N_module node
+ *
+ * @return
+ *
+ **********************************************************************/
+node *
+ESDdoElimSubDivModule (node *arg_node)
+{
+    info *info;
+    DBUG_ENTER ("ESDdoElimSubDivModule");
+
+    info = MakeInfo ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "ESD called on non-N_module node");
+
+    INFO_ONEFUNDEF (info) = FALSE;
+
+    TRAVpush (TR_esd);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--**************************************************************-->
+ *
  * @fn node *ESDdoElimSubDiv(node *fundef)
  *
  * @brief start function for traversal
@@ -151,7 +183,7 @@ ESDdoElimSubDiv (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ESD called on nonN_fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ESD called on non-N_fundef node");
 
     INFO_ONEFUNDEF (info) = TRUE;
 
@@ -288,7 +320,7 @@ ESDlet (node *arg_node, info *arg_info)
  *
  * @fn ESDprf(node *arg_node, info *arg_info)
  *
- * @brief removes substartion and division, introduces negation
+ * @brief removes subtraction and division, introduces negation
  *        and reciprocal instead
  *
  * @param arg_node
