@@ -88,32 +88,32 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DLdoDistribLawOptimization( node *arg_node)
+ * @fn node *DLdoDistribLawOptimizationarg_node node *arg_node)
  *
- * @brief starting point of distributivity optimization
+ * @brief starting point of distributivity optimization for a module
  *
- * @param arg_node
+ * @param arg_node: an N_module node
  *
  * @return
  *
  *****************************************************************************/
 
 node *
-DLdoDistribLawOptimization (node *syntax_tree)
+DLdoDistribLawOptimizationModule (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("DLdoDistribLawOptimization");
+    DBUG_ENTER ("DLdoDistribLawOptimizationModule");
 
     info = MakeInfo ();
 
     TRAVpush (TR_dl);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

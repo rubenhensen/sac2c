@@ -80,32 +80,33 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ALdoAssocLawOptimization( node *arg_node)
+ * @fn node *ALdoAssocLawOptimizationModule( node *arg_node)
  *
  * @brief starting point of associativity optimization
  *
- * @param arg_node
+ * @param arg_node: An N_module node
  *
  * @return
  *
  *****************************************************************************/
 
 node *
-ALdoAssocLawOptimization (node *syntax_tree)
+ALdoAssocLawOptimizationModule (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("ALdoAssocLawOptimization");
+    DBUG_ENTER ("ALdoAssocLawOptimizationModule");
 
     info = MakeInfo ();
+    INFO_ONEFUNDEF (info) = FALSE;
 
     TRAVpush (TR_al);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

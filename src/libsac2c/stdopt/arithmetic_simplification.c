@@ -168,17 +168,49 @@ Negate (node *expression, info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ASdoArithmeticSimplification( node *arg_node)
+ * @fn node *ASdoArithmeticSimplificationModule( node *arg_node)
  *
- * @brief starting point of arithmetic simplification.
+ * @brief starting point of arithmetic simplification for a module.
  *
- * @param arg_node
+ * @param arg_node - An N_module
  *
  * @return
  *
  *****************************************************************************/
 node *
-ASdoArithmeticSimplification (node *syntax_tree)
+ASdoArithmeticSimplificationModule (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("ASdoArithmeticSimplificationModule");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "AS called on non-N_module node");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+
+    TRAVpush (TR_as);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASdoArithmeticSimplification( node *arg_node)
+ *
+ * @brief starting point of arithmetic simplification for a function.
+ *
+ * @param arg_node - An N_fundef
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ASdoArithmeticSimplification (node *arg_node)
 {
     info *info;
 
@@ -186,17 +218,17 @@ ASdoArithmeticSimplification (node *syntax_tree)
 
     info = MakeInfo ();
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "AS called on nonN_fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "AS called on non-N_fundef node");
 
     INFO_ONEFUNDEF (info) = TRUE;
 
     TRAVpush (TR_as);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 node *
