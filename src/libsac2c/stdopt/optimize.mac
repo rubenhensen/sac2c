@@ -102,6 +102,7 @@ OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")
 OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
 OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
 OPTIMIZE ("wllo", wllo, FALSE, FALSE, "run with-loop lock optimization")
+OPTIMIZE ("rw3", rw3, TRUE, TRUE, "remove with3 loops")
 
 OPTCOUNTER (dead_expr, FALSE, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, FALSE, "dead variable declaration(s) removed")

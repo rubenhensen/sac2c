@@ -2025,6 +2025,7 @@
           <node name="Fundef" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Range" />
         </travuser>
         <travnone>
           <node name="Objdef" />

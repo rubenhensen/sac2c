@@ -14,6 +14,7 @@ extern node *EMIPdoInplaceComputation (node *syntax_tree);
 
 extern node *EMIPap (node *arg_node, info *arg_info);
 extern node *EMIPcode (node *arg_node, info *arg_info);
+extern node *EMIPrange (node *arg_node, info *arg_info);
 extern node *EMIPcond (node *arg_node, info *arg_info);
 extern node *EMIPfundef (node *arg_node, info *arg_info);
 extern node *EMIPlet (node *arg_node, info *arg_info);

@@ -3516,21 +3516,34 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
               = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids), ret_node);
         }
 
-        /*
-         * 3) produce the descriptor allocation
-         */
-        ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
-                                     sub_get_dim, ret_node);
+#if 0
+    /*
+     * (CAJ) I do not think that points 3 & 4 are needed.
+     *
+     * If they are then they can not be implemented like this as they
+     * always results in a call to malloc which is unacceptable in a
+     * loop.  If these are needed then the descriptor should be put on
+     * the stack.
+     */
 
-        /*
-         * 4) add a corresponding descriptor free to the
-         *    postfun icm chain
-         */
-        INFO_POSTFUN (arg_info)
-          = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                              TCmakeIdCopyStringNt (IDS_NAME (let_ids),
-                                                    IDS_TYPE (let_ids)),
-                              INFO_POSTFUN (arg_info));
+    /*
+     * 3) produce the descriptor allocation
+     */
+    ret_node = MakeAllocDescIcm( IDS_NAME( let_ids),
+                                 IDS_TYPE( let_ids),
+                                 1,
+                                 sub_get_dim,
+                                 ret_node);
+
+    /*
+     * 4) add a corresponding descriptor free to the 
+     *    postfun icm chain
+     */
+    INFO_POSTFUN( arg_info) = TCmakeAssignIcm1( "ND_FREE__DESC",
+                                TCmakeIdCopyStringNt( IDS_NAME( let_ids),
+                                                      IDS_TYPE( let_ids)),
+                                INFO_POSTFUN( arg_info));
+#endif
     }
 
     DBUG_RETURN (ret_node);

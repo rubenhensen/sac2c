@@ -141,122 +141,25 @@ EMIPdoInplaceComputation (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @name Traversal functions
+ * @name Static helper funcions
  * @{
  *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPap( node *arg_node, info *arg_info)
+ * @fn node *HandleBlock(node *arg_node)
  *
- * @brief
- *
- *****************************************************************************/
-node *
-EMIPap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMIPap");
-
-    /*
-     * CONDFUNs are traversed in order of appearance
-     */
-    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
-
-        if (STRsub ("ReuseCond", FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
-            /*
-             * Transform predavis, memavis and rcavis before traversing REUSECOND
-             */
-            node *funargs, *apargs;
-            funargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-            apargs = AP_ARGS (arg_node);
-
-            while (apargs != NULL) {
-
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_PREDAVIS (arg_info)) {
-                    INFO_PREDAVIS (arg_info) = ARG_AVIS (funargs);
-                }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_MEMAVIS (arg_info)) {
-                    INFO_MEMAVIS (arg_info) = ARG_AVIS (funargs);
-                }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_RCAVIS (arg_info)) {
-                    INFO_RCAVIS (arg_info) = ARG_AVIS (funargs);
-                }
-
-                apargs = EXPRS_NEXT (apargs);
-                funargs = ARG_NEXT (funargs);
-            }
-        }
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *EMIPcond( node *arg_node, info *arg_info)
- *
- * @brief
+ * @brief The main part of this traversal
+ *        Are rets performing in-place computation?
  *
  *****************************************************************************/
-node *
-EMIPcond (node *arg_node, info *arg_info)
+static node *
+HandleBlock (node *block, node *rets, info *arg_info)
 {
-    lut_t *oldlut;
+    DBUG_ENTER ("HandleBlock");
 
-    DBUG_ENTER ("EMIPcond");
-
-    oldlut = INFO_REUSELUT (arg_info);
-    INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
-
-    if ((NODE_TYPE (COND_COND (arg_node)) == N_id)
-        && (ID_AVIS (COND_COND (arg_node)) == INFO_PREDAVIS (arg_info))) {
-        /*
-         * b = reuse( a);
-         *
-         * Insert (memavis, rcavis) into REUSELUT
-         */
-        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_MEMAVIS (arg_info),
-                           INFO_RCAVIS (arg_info));
-    }
-    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-
-    INFO_REUSELUT (arg_info) = LUTremoveLut (INFO_REUSELUT (arg_info));
-    INFO_REUSELUT (arg_info) = oldlut;
-
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *EMIPcode( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-EMIPcode (node *arg_node, info *arg_info)
-{
-    node *cexprs;
-
-    DBUG_ENTER ("EMIPcode");
-
-    /*
-     * Traverse into CBLOCK in order to apply datareuse in nested with-loops
-     */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    /*
-     * The great moment:
-     * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
-     */
-    cexprs = CODE_CEXPRS (arg_node);
-    while (cexprs != NULL) {
+    while (rets != NULL) {
         node *cid;
         node *wlass;
         node *rhs;
@@ -269,7 +172,7 @@ EMIPcode (node *arg_node, info *arg_info)
         bool isinblock;
         node *assigns;
 
-        cid = EXPRS_EXPR (cexprs);
+        cid = EXPRS_EXPR (rets);
         wlass = AVIS_SSAASSIGN (ID_AVIS (cid));
 
         if (wlass != NULL) {
@@ -299,7 +202,7 @@ EMIPcode (node *arg_node, info *arg_info)
                  */
                 isinblock = FALSE;
                 if (AVIS_SSAASSIGN (avis) != NULL) {
-                    assigns = BLOCK_INSTR (CODE_CBLOCK (arg_node));
+                    assigns = BLOCK_INSTR (block);
                     while (assigns != NULL) {
                         if (assigns == AVIS_SSAASSIGN (avis)) {
                             isinblock = TRUE;
@@ -419,13 +322,13 @@ EMIPcode (node *arg_node, info *arg_info)
                         /*
                          * Replace CEXPR
                          */
-                        EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
-                        EXPRS_EXPR (cexprs) = DUPdoDupNode (cval);
+                        EXPRS_EXPR (rets) = FREEdoFreeNode (EXPRS_EXPR (rets));
+                        EXPRS_EXPR (rets) = DUPdoDupNode (cval);
 
                         /*
                          * Remove old suballoc/fill(copy) combination
                          */
-                        n = BLOCK_INSTR (CODE_CBLOCK (arg_node));
+                        n = BLOCK_INSTR (block);
                         while (ASSIGN_NEXT (n) != memass) {
                             n = ASSIGN_NEXT (n);
                         }
@@ -436,15 +339,151 @@ EMIPcode (node *arg_node, info *arg_info)
                 break;
             }
         }
-        cexprs = EXPRS_NEXT (cexprs);
+        rets = EXPRS_NEXT (rets);
     }
+
+    DBUG_RETURN (NULL);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMIPap( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMIPap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIPap");
+
+    /*
+     * CONDFUNs are traversed in order of appearance
+     */
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
+
+        if (STRsub ("ReuseCond", FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+            /*
+             * Transform predavis, memavis and rcavis before traversing REUSECOND
+             */
+            node *funargs, *apargs;
+            funargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+            apargs = AP_ARGS (arg_node);
+
+            while (apargs != NULL) {
+
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_PREDAVIS (arg_info)) {
+                    INFO_PREDAVIS (arg_info) = ARG_AVIS (funargs);
+                }
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_MEMAVIS (arg_info)) {
+                    INFO_MEMAVIS (arg_info) = ARG_AVIS (funargs);
+                }
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_RCAVIS (arg_info)) {
+                    INFO_RCAVIS (arg_info) = ARG_AVIS (funargs);
+                }
+
+                apargs = EXPRS_NEXT (apargs);
+                funargs = ARG_NEXT (funargs);
+            }
+        }
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMIPcond( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMIPcond (node *arg_node, info *arg_info)
+{
+    lut_t *oldlut;
+
+    DBUG_ENTER ("EMIPcond");
+
+    oldlut = INFO_REUSELUT (arg_info);
+    INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
+
+    if ((NODE_TYPE (COND_COND (arg_node)) == N_id)
+        && (ID_AVIS (COND_COND (arg_node)) == INFO_PREDAVIS (arg_info))) {
+        /*
+         * b = reuse( a);
+         *
+         * Insert (memavis, rcavis) into REUSELUT
+         */
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_MEMAVIS (arg_info),
+                           INFO_RCAVIS (arg_info));
+    }
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+
+    INFO_REUSELUT (arg_info) = LUTremoveLut (INFO_REUSELUT (arg_info));
+    INFO_REUSELUT (arg_info) = oldlut;
+
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMIPcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMIPcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIPcode");
+
+    /*
+     * Traverse into CBLOCK in order to apply datareuse in nested with-loops
+     */
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    HandleBlock (CODE_CBLOCK (arg_node), CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * Traverse next code
      */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMIPcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMIPrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIPrange");
+
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+    HandleBlock (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node), arg_info);
+
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

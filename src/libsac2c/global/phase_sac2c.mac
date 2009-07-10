@@ -661,7 +661,7 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
                           WLSDdoWithLoopSplitDimensions, global.backend == BE_mutc, wlt)
 
                   SUBPHASE (rw3, "Remove With3s", RW3doRemoveWith3,
-                            global.backend == BE_mutc, wlt)
+                            global.backend == BE_mutc && global.optimize.dorw3, wlt)
 
                     SUBPHASE (cvp, "Propagating constants and variables",
                               CVPdoConstVarPropagation, global.optimize.docvp, wlt)
