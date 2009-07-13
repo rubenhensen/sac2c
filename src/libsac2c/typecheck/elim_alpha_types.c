@@ -468,8 +468,12 @@ EATarray (node *arg_node, info *arg_info)
         if (!TYisSimple (TYgetScalar (arrayelem))
             || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
 
-            DBUG_ASSERT (TYleTypes (elemtype, arrayelem),
-                         "new element type of array does not match old type!");
+            if (!TYleTypes (elemtype, arrayelem)) {
+                DBUG_PRINT ("FIXNT",
+                            ("new element type of array does not match old type of LHS!",
+                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+                DBUG_ASSERT (FALSE, "new element type of array does not match old type!");
+            }
         }
 #endif
     }
