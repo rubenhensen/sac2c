@@ -160,20 +160,28 @@ MarkAvisAlive (node *avis)
 {
     DBUG_ENTER ("MarkAvisAlive");
 
+    DBUG_PRINT ("DCI", ("looking at %s", AVIS_NAME (avis)));
+
     if (AVIS_ISDEAD (avis)) {
         AVIS_ISDEAD (avis) = FALSE;
         DBUG_PRINT ("DCI", ("marking var %s as alive", AVIS_NAME (avis)));
 
         if (AVIS_DIM (avis) != NULL) {
+            DBUG_PRINT ("DCI", ("Traversing AVIS_DIM for %s", AVIS_NAME (avis)));
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
         }
         if (AVIS_SHAPE (avis) != NULL) {
+            DBUG_PRINT ("DCI", ("Traversing AVIS_SHAPE for %s", AVIS_NAME (avis)));
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
         if ((AVIS_MINVAL (avis) != NULL) && (AVIS_MINVAL (avis) != avis)) {
+            DBUG_PRINT ("DCI", ("Marking alive AVIS_MINVAL(%s)= %s", AVIS_NAME (avis),
+                                AVIS_NAME (AVIS_MINVAL (avis))));
             MarkAvisAlive (AVIS_MINVAL (avis));
         }
         if ((AVIS_MAXVAL (avis) != NULL) && (AVIS_MAXVAL (avis) != avis)) {
+            DBUG_PRINT ("DCI", ("Marking alive AVIS_MAXVAL(%s)= %s", AVIS_NAME (avis),
+                                AVIS_NAME (AVIS_MAXVAL (avis))));
             MarkAvisAlive (AVIS_MAXVAL (avis));
         }
     }
@@ -477,7 +485,7 @@ DCIlet (node *arg_node, info *arg_info)
  * description:
  *   if application of special function (cond, do) traverse into this
  *   function except for recursive calls of the current function.
- *   traverse all arguments to marks them as needed
+ *   traverse all arguments to mark them as needed
  *
  *****************************************************************************/
 node *
@@ -512,6 +520,9 @@ DCIap (node *arg_node, info *arg_info)
             while (extids != NULL) {
                 if ((!AVIS_ISDEAD (IDS_AVIS (extids)))
                     && (AVIS_ISDEAD (IDS_AVIS (recids)))) {
+                    DBUG_PRINT ("DCI", ("Marking fn argument %s alive in function %s",
+                                        AVIS_NAME (IDS_AVIS (recids)),
+                                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
                     MarkAvisAlive (IDS_AVIS (recids));
                 }
                 extids = IDS_NEXT (extids);
@@ -529,7 +540,7 @@ DCIap (node *arg_node, info *arg_info)
             /* start traversal of special fundef (and maybe reduce parameters!) */
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("DCI", ("traversal of special fundef %s finished"
+            DBUG_PRINT ("DCI", ("traversal of special fundef %s finished;\n"
                                 "continue in fundef %s\n",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node)),
                                 FUNDEF_NAME (INFO_FUNDEF (arg_info))));
@@ -540,6 +551,9 @@ DCIap (node *arg_node, info *arg_info)
 
             while (args != NULL) {
                 if (!AVIS_ISDEAD (ARG_AVIS (args))) {
+                    DBUG_PRINT ("DCI", ("Marking fn argument %s alive in function %s",
+                                        AVIS_NAME (ID_AVIS (EXPRS_EXPR (argexprs))),
+                                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
                     MarkAvisAlive (ID_AVIS (EXPRS_EXPR (argexprs)));
                 }
 

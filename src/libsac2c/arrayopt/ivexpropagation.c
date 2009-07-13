@@ -16,41 +16,7 @@
  *
  *    F_attachextrema: PRF_ARG1's extrema are copied to result.
  *
- *    Primitives:
- *
- *      Several cases:
- *
- *      1. If the primitive result has known extrema, we do nothing.
- *
- *      2. If it has one known extrema, I am confused.
- *
- *      3. If the primitive result has unknown extrema, but
- *         the function has an _attachextrema attached to it,
- *         as below, we propagate minv' and maxv into
- *         the extrema of the primitive function's result,
- *         and replace ivextrema in the original primitive
- *         by iv'.
- *
- *      4.  If the primitive result has unknown extrema,
- *          but the primitive arguments have known extrema,
- *          we generate new code to clone the primitive so that
- *          it operates on the extrema. E.g., if we have (this
- *          from sac/apex/iotan/iotan.sac):
- *
- *             iv'' =  _sub_SxS_( 49999999, iv');
- *
- *          with minv = AVIS_MINVAL( iv') and
- *               maxv = AVIS_MAXVAL( iv')
- *
- *          We turn this into:
- *
- *             minv' = _sub_SxS_( 49999999, minv);
- *             maxv' = _sub_SxS_( 49999999, maxv);
- *             ivextrema = _attachextrema( iv', minv', maxv');
- *             iv'' = _sub_SxS_( 49999999, ivextrema);
- *
- *          After enough trips through the optimization cycle,
- *          this code should turn into case 4.
+ *    Primitives: See detailed discussion at: IntroducePrfExtremaCalc
  *
  *****************************************************************************
  *
@@ -100,6 +66,7 @@ struct INFO {
     node *minval;
     node *maxval;
     node *preassigns;
+    node *postassigns;
     node *vardecs;
     node *curwith;
 };
@@ -111,6 +78,7 @@ struct INFO {
 #define INFO_MINVAL(n) ((n)->minval)
 #define INFO_MAXVAL(n) ((n)->maxval)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_CURWITH(n) ((n)->curwith)
 
@@ -127,6 +95,7 @@ MakeInfo ()
     INFO_MINVAL (result) = NULL;
     INFO_MAXVAL (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_POSTASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_CURWITH (result) = NULL;
 
@@ -237,7 +206,36 @@ makeNarray (node *extrema, info *arg_info, int arrxrho)
 /******************************************************************************
  *
  * function:
- *   bool isAvisHasExtrema( node *avis)
+ *  static bool isConstantValue( node *arg_node)
+ *
+ * description: Predicate for determining if an N_id has a constant value.
+ *
+ * @params  arg_node: an N_id node.
+ *
+ * @result: True if the node has a constant value.
+ *
+ ******************************************************************************/
+static bool
+isConstantValue (node *arg_node)
+{
+    constant *con = NULL;
+    node *val = NULL;
+    bool z;
+
+    DBUG_ENTER ("isConstantValue");
+
+    if (PMO (PMOconst (&con, &val, arg_node))) {
+        con = COfreeConstant (con);
+        z = TRUE;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static bool isAvisHasExtrema( node *avis)
  *
  * description: Predicate for determining if an N_avis node has known extrema.
  *
@@ -263,7 +261,7 @@ isAvisHasExtrema (node *avis)
  *   bool isArgExtremaAttach( node *arg_node)
  *
  * description: Predicate for determining if N_id arg_node has
- *              an F_attachextrema at its SSAASSIGN.LHS
+ *              an F_attachextrema at its SSAASSIGN LHS
  *
  * @params  arg_node: an N_id node.
  * @result: True if we have already issued an F_attachextrema for N_id.
@@ -320,7 +318,7 @@ isPrfArgHasKnownExtrema (node *arg_node, info *arg_info)
                 INFO_MINVAL (arg_info) = AVIS_MINVAL (IDS_AVIS (ids));
                 INFO_MAXVAL (arg_info) = AVIS_MAXVAL (IDS_AVIS (ids));
             }
-            if (COisConstant (ids)) {
+            if (isConstantValue (ids)) {
                 z = TRUE;
                 INFO_MINVAL (arg_info) = IDS_AVIS (ids);
                 INFO_MAXVAL (arg_info) = IDS_AVIS (ids);
@@ -447,10 +445,10 @@ PropagateNarray (node *arg_node, info *arg_info)
                      ("PropagateNarray expected N_id in N_array"));
 
         DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextreman"));
-        Iprime
-          = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
-                                          &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info), F_attachextreman));
+        Iprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
+                                               &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info),
+                                               F_attachextreman, NULL));
 
         /*
          *       V = [ I', J, K]; NB. With extrema on V.
@@ -620,14 +618,8 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
 
         /* This is dumb. Should use prf_info.mac table. */
 
-        /*  The result is known not to have extrema.
-         * If one argument is constant, and the other has extrema,
-         * and no extrema-computing code exists,
-         * we will introduce code to propagate the extrema.
-         *
-         */
-        arg1c = COisConstant (PRF_ARG1 (arg_node));
-        arg2c = COisConstant (PRF_ARG2 (arg_node));
+        arg1c = isConstantValue (PRF_ARG1 (arg_node));
+        arg2c = isConstantValue (PRF_ARG2 (arg_node));
 
         if (arg1c != arg2c) {
 
@@ -712,35 +704,93 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
      *        minv, maxv, and iv''.
      *
      * Restrictions:
-     *      A subset of N_prfs only are supported.
-     *      The N_prf extrema must have a chance of being computed by the optimizer.
-     *      We require that, for dyadic prfs, that one argument be
-     *      constant and the other be non-constant, with both extrema present.
+     *      A subset of N_prfs are supported, namely, those for which
+     *      we can meaningfully compute their extrema.
      *
-     *      It may be possible to relax some of these restrictions with
-     *      ISMOP or better insight. Right now, we're just trying to
-     *      make it work.
+     *      There are four cases here:
      *
-     * Example:
+     *      1,2. One argument constant; the other non-constant:
+     *           we compute new extrema.
+     *
+     *      3.   Both arguments constant: these will disappear
+     *           as the typechecker does its thing:
+     *           we do nothing.
+     *
+     *      4.   Neither argument constant: subcases:
+     *             4a. Neither argument has extrema:
+     *                 we do nothing.
+     *
+     *             4b. One argument has extrema:
+     *                 we compute new extrema.
+     *
+     *             4c. Both arguments have extrema, as when we
+     *                 have IV + JV, and both arguments are WITH_IDs.
+     *                 We blindly pick one side and compute extrema.
+     *
+     *                 FIXME: We could get a bit fancier here. For example,
+     *                 max and min could be handled easily and correctly.
+     *                 For functions such as add, sub, it gets messy
+     *                 and the results may diverge. Perhaps we could
+     *                 do worst-case computation here, and win sometimes.
+     *                 Oops. Nope: We guarantee that extrema are precise,
+     *                 so this won't work. Bad dog!!
+     *
+     * Example 1:
      *
      *      The N_prf is:
      *          offset = 42;
-     *          lhs = _sub_SxS_( offset, iv');
+     *          lhs = _add_SxS_( offset, iv);
      *
      *      We know that iv' has extrema attached, so we transform this
      *      into:
      *
      *          offset = 42;
-     *          minv = _sub_SxS__( offset, AVIS_MINVAL( iv'));
-     *          maxv = _sub_SxS__( offset, AVIS_MAXVAL( iv'));
-     *          iv'' = _attachextrema( iv', minv, maxv);
-     *          lhs = _sub_SxS_( offset, iv'');
+     *          minv = _add_SxS__( offset, AVIS_MINVAL( iv));
+     *          maxv = _add_SxS__( offset, AVIS_MAXVAL( iv));
+     *          lhs' = _add_SxS_( offset, iv);
+     *          lhs = _attachextrema( lhs', minv, maxv);
+     *
+     *          This requires that we (a) rename the result of the
+     *          original add, and (b) insert a post_assign.
+     *
+     * Example 2:
+     *
+     *      Subtraction is a little tricky when extrema are PRF_ARG2.
+     *      Note that we swap minv and max in the attach. The N_prf is:
+     *
+     *          offset = 42;
+     *          lhs = _sub_SxS_( offset, iv);
+     *
+     *      We know that iv' has extrema attached, so we transform this
+     *      into:
+     *
+     *          offset = 42;
+     *          minv = _sub_SxS__( offset, AVIS_MINVAL( iv));
+     *          maxv = _sub_SxS__( offset, AVIS_MAXVAL( iv));
+     *          lhs' = _sub_SxS_( offset, iv);
+     *          lhs = _attachextrema( lhs', maxv, minv );
+     *
+     * Example 3:
+     *
+     *      Subtraction with extrema as PRF_ARG1 is same as Example 1.
+     *      The N_prf is:
+     *
+     *          offset = 42;
+     *          lhs = _sub_SxS_( iv, offset);
+     *
+     *      We know that iv' has extrema attached, so we transform this
+     *      into:
+     *
+     *          offset = 42;
+     *          minv = _sub_SxS__( AVIS_MINVAL( iv), offset);
+     *          maxv = _sub_SxS__( AVIS_MAXVAL( iv), offset);
+     *          lhs' = _sub_SxS_( iv, offset);
+     *          lhs = _attachextrema( lhs', minv, maxv );
      *
      ******************************************************************************/
     static node *IntroducePrfExtremaCalc (node * arg_node, info * arg_info)
     {
         node *rhs;
-        node *z;
         node *minv;
         node *maxv;
         node *minarg1;
@@ -748,13 +798,20 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         node *maxarg1;
         node *maxarg2;
         node *lhsavis;
+        node *newlhsavis;
         node *nca = NULL;
+        node *swp;
+        node *z;
+        node *ssas;
         bool arg1c;
         bool arg2c;
+        bool arg1e;
+        bool arg2e;
         bool docalc = FALSE;
 
         DBUG_ENTER ("IntroducePrfExtremaCalc");
 
+        lhsavis = IDS_AVIS (LET_IDS (arg_node));
         rhs = LET_EXPR (arg_node);
 
         /* First, we decide if we should insert the extrema calculation code. */
@@ -766,11 +823,14 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 default:
                     break;
 
-                    /* These cases are all commutative dyadic functions */
+                    /* Non-commutative dyadic functions */
                 case F_sub_SxS:
                 case F_sub_SxV:
                 case F_sub_VxS:
                 case F_sub_VxV:
+                    /* absence of break is intentional. See next switch statement */
+
+                    /* Commutative dyadic functions */
 
                 case F_add_SxS:
                 case F_add_SxV:
@@ -802,14 +862,39 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 case F_max_VxS:
                 case F_max_VxV:
 
-                    arg1c = COisConstant (PRF_ARG1 (rhs));
-                    arg2c = COisConstant (PRF_ARG2 (rhs));
-                    if (arg1c != arg2c) { /* One constant, one non-constant */
+                    arg1c = isConstantValue (PRF_ARG1 (rhs));
+                    arg2c = isConstantValue (PRF_ARG2 (rhs));
+                    if (arg1c != arg2c) { /* Cases 1,2: One constant, one non-constant */
 
                         nca = arg1c ? PRF_ARG2 (rhs) : PRF_ARG1 (rhs);
                         docalc = isAvisHasExtrema (ID_AVIS (nca));
+                    } else if (arg1c && arg2c) { /* Case 3: Both arguments constant. */
+                        docalc = FALSE;
+                    } else { /* Case 4: neither arg constant */
+
+                        /* Treat extrema'd argument as if it was non-constant */
+                        arg1e = isAvisHasExtrema (ID_AVIS (PRF_ARG1 (rhs)));
+                        arg2e = isAvisHasExtrema (ID_AVIS (PRF_ARG2 (rhs)));
+                        docalc = arg1e || arg2e; /* Extrema on one side or both is ok */
+                        nca = arg1e ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
+                        arg1c = !arg1e;
+                        arg2c = !arg2e;
                     }
                     break;
+
+#ifdef FIXME
+                case F_neg_S:
+                    DBUG_ASSERT (FALSE, "Code F_neg prop");
+                    break;
+
+                case F_tob_S:
+                case F_toi_S:
+                case F_tof_S:
+                case F_tod_S:
+                case F_toc_S:
+                    DBUG_ASSERT (FALSE, "Code F_toi and frends prop");
+                    break;
+#endif // FIXME
                 }
         }
 
@@ -819,8 +904,6 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                                   AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
 
             PRF_EXTREMAATTACHED (rhs) = TRUE;
-
-            lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
             minarg1 = arg1c ? DUPdoDupTree (PRF_ARG1 (rhs))
                             : TBmakeId (AVIS_MINVAL (ID_AVIS (PRF_ARG1 (rhs))));
@@ -848,6 +931,19 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
             switch
                 PRF_PRF (rhs)
                 {
+
+                case F_sub_SxS:
+                case F_sub_SxV:
+                case F_sub_VxS:
+                case F_sub_VxV:
+                    /* swap minv and maxv if PRF_ARG2 has extrema. */
+                    if (arg2c) {
+                        swp = minv;
+                        minv = maxv;
+                        maxv = swp;
+                    }
+
+                    /* Absence of break is intentional. */
 
                 /* These cases are all commutative dyadic functions */
                 case F_add_SxS:
@@ -880,36 +976,32 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
                 case F_max_VxS:
                 case F_max_VxV:
 
-                    z = TBmakeId (
-                      IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
-                                          DUPdoDupNode (nca), &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info), F_attachextrema));
+                    /* Give the current N_assign a new result name. */
+
+                    newlhsavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (lhsavis)),
+                                             TYcopyType (AVIS_TYPE (lhsavis)));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (newlhsavis, INFO_VARDECS (arg_info));
+                    ssas = AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node)));
+                    LET_IDS (arg_node) = TBmakeIds (newlhsavis, NULL);
+                    AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))) = ssas;
+
+                    /* We don't need this result. It's all done with smoke,
+                     * mirrors, and side effects.
+                     */
+                    z = IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv),
+                                            TBmakeId (newlhsavis),
+                                            &INFO_VARDECS (arg_info),
+                                            &INFO_POSTASSIGNS (arg_info), F_attachextrema,
+                                            lhsavis);
+
                     break;
 
-                case F_sub_SxS:
-                case F_sub_SxV:
-                case F_sub_VxS:
-                case F_sub_VxV:
-                    z = TBmakeId (
-                      IVEXIattachExtrema (TBmakeId (maxv), TBmakeId (minv),
-                                          DUPdoDupNode (nca), &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info), F_attachextrema));
-                    break;
-
-                default:
-                    z = NULL; /* Keep gcc happy */
-                    DBUG_ASSERT (FALSE, "IVEXP missed a case.");
+                default: /* keep gcc happy */
                     break;
                 }
 
             DBUG_PRINT ("IVEXP", ("attached Extrema for prf."));
-            if (arg1c) {
-                FREEdoFreeNode (PRF_ARG2 (LET_EXPR (arg_node)));
-                PRF_ARG2 (LET_EXPR (arg_node)) = z;
-            } else {
-                FREEdoFreeNode (PRF_ARG1 (LET_EXPR (arg_node)));
-                PRF_ARG1 (LET_EXPR (arg_node)) = z;
-            }
         }
 
         DBUG_RETURN (arg_node);
@@ -942,22 +1034,27 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
      ******************************************************************************/
     node *IVEXPassign (node * arg_node, info * arg_info)
     {
-        node *new_arg_node;
 
         DBUG_ENTER ("IVEXPassign");
 
-        new_arg_node = arg_node;
+        /* This order lets us insert preassigns without confusion. */
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
+        /* We want PREASSIGNS ++ arg_node ++ POSTASSIGNS ++ ASSIGN_NEXT */
+        if (NULL != INFO_POSTASSIGNS (arg_info)) {
+            ASSIGN_NEXT (arg_node)
+              = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+            INFO_POSTASSIGNS (arg_info) = NULL;
+        }
+
         if (NULL != INFO_PREASSIGNS (arg_info)) {
-            new_arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+            arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
             INFO_PREASSIGNS (arg_info) = NULL;
         }
 
-        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
-        DBUG_RETURN (new_arg_node);
+        DBUG_RETURN (arg_node);
     }
 
     /******************************************************************************
@@ -975,6 +1072,8 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
      *
      *    2. If extrema exist for one argument, and other argument is
      *       constant, introduce code to compute extrema for this LHS.
+     *       Also, we then have to rename the LHS. This is done
+     *       by the extrema insertion code.
      *
      ******************************************************************************/
     node *IVEXPlet (node * arg_node, info * arg_info)
@@ -1036,11 +1135,10 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
             case N_float:
             case N_double:
                 /*
-                 * We no longer generate/propagate extrema into constants.
                  *
                  * The idea now (2009-05-21) is this:
                  *
-                 *   - We introduce extrema only into WL IVs.
+                 *   - We introduce extrema only into WL IVs and constants.
                  *   - N_let: We propagate extrema, via assignment, into other avis nodes.
                  *   - N_prf: if one argument of a dyadic scalar function has
                  *            extrema, and the other argument is constant, we

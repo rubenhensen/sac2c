@@ -23,6 +23,9 @@ extern node *SWLFassign (node *arg_node, info *arg_info);
 extern node *SWLFwith (node *arg_node, info *arg_info);
 extern node *SWLFpart (node *arg_node, info *arg_info);
 extern node *SWLFcode (node *arg_node, info *arg_info);
+extern node *SWLFcond (node *arg_node, info *arg_info);
+extern node *SWLFfuncond (node *arg_node, info *arg_info);
+extern node *SWLFwhile (node *arg_node, info *arg_info);
 extern node *SWLFids (node *arg_node, info *arg_info);
 extern node *SWLFprf (node *arg_node, info *arg_info);
 

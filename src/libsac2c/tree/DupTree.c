@@ -1,3 +1,48 @@
+#ifdef FIXME
+this nearly works with ivextrema.c.The problem remaining, I think,
+  is related to DUP making multiple copies of lacfns.Particularly when a Loop
+    - fn contains a cond_fn,
+  as in the code
+    below.It might be fixable by making DUPap not traverse a Loop_fn from within itself.
+
+  use Array : all;
+
+int
+main ()
+{
+    y = genarray ([10], [ true, false, true, false ]);
+    x = transpose (y);
+    z = ordotandBBBSTAR (x, y);
+    StdIO::print (z);
+    return (0);
+}
+
+bool[+] ordotandBBBSTAR (bool[+] x, bool[+] y)
+{ /* CDC STAR-100 APL Algorithm for inner product */
+
+    rowsx = drop ([-1], shape (x));
+    colsx = shape (x)[[dim (x) - 1]];
+    colsy = shape (y)[[dim (y) - 1]];
+    Zrow = genarray ([colsy], false);
+    /* Parallel over rows of x */
+    z = with
+    {
+        (.<= row <=.)
+        {
+            Crow = Zrow;
+            for (colx = 0; colx < colsx; colx++) {
+                xrow = x[row];
+                xel = xrow[[colx]];
+                VEC = xel & y[[colx]];
+                Crow = VEC | Crow;
+            }
+        } : Crow;
+    } : genarray( rowsx, Zrow);
+    return (z);
+}
+
+#endif // FIXME
+
 /*
  * new_node = TBmakeRange(
  * $Id$
@@ -952,7 +997,12 @@ DUParg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUParg");
 
-    new_node = TBmakeArg (DUPTRAV (ARG_AVIS (arg_node)), DUPCONT (ARG_NEXT (arg_node)));
+    /* SAA requires that N_arg nodes be traversed left-to-right,
+     * because the incoming AVIS_DIM/SHAPE information for an
+     * argument may be an N_id, which is defined as an earlier
+     * (left-more) argument.
+     */
+    new_node = TBmakeArg (DUPTRAV (ARG_AVIS (arg_node)), NULL);
 
     ARG_TYPE (new_node) = DupTypes (ARG_TYPE (arg_node), arg_info);
 
@@ -966,6 +1016,8 @@ DUParg (node *arg_node, info *arg_info)
 
     /* correct backreference */
     AVIS_DECL (ARG_AVIS (new_node)) = new_node;
+
+    ARG_NEXT (new_node) = DUPCONT (ARG_NEXT (arg_node));
 
     DBUG_RETURN (new_node);
 }
@@ -1017,6 +1069,11 @@ DUPblock (node *arg_node, info *arg_info)
 {
     node *new_vardecs;
     node *new_node;
+    node *v;
+    node *avis;
+    node *navis;
+    node *nid;
+
 #if DUP_DFMS
     DFMmask_base_t old_base, new_base;
 #endif
@@ -1056,6 +1113,85 @@ DUPblock (node *arg_node, info *arg_info)
     BLOCK_SSACOUNTER (new_node) = BLOCK_SSACOUNTER (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    /* Have to defer updating extrema until all vardecs in place */
+    v = BLOCK_VARDEC (new_node);
+
+    navis = NULL; /* Ensure that we do not reference undefined navis */
+    while (NULL != v) {
+        avis = VARDEC_AVIS (v);
+        DBUG_PRINT ("DUP", ("DUPblock vardec scan looking at %s", AVIS_NAME (avis)));
+        if (NULL != AVIS_MINVAL (avis)) {
+            navis = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MINVAL (avis));
+            DBUG_ASSERT (N_avis == NODE_TYPE (navis),
+                         ("DUPblock found non-avis AVIS_MINVAL"));
+            DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_MINVAL from %s to %s",
+                                AVIS_NAME (AVIS_MINVAL (avis)), AVIS_NAME (navis)));
+            AVIS_MINVAL (avis) = navis;
+        }
+
+        if (NULL != AVIS_MAXVAL (avis)) {
+            nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAXVAL (avis));
+            DBUG_ASSERT (N_avis == NODE_TYPE (navis),
+                         ("DUPblock found non-avis AVIS_MAXVAL"));
+            DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_MAXVAL from %s to %s",
+                                AVIS_NAME (AVIS_MAXVAL (avis)), AVIS_NAME (navis)));
+            AVIS_MAXVAL (avis) = navis;
+        }
+
+        /* I can't figure this SAA stuff working at all unless
+         * these fields are either N_num or N_id!
+         *
+         * For now, this code assumes/requires that an AVIS_DIM
+         * be either an N_num or N_id, and that an AVIS_SHAPE be
+         * either an N_array or an N_id. In the N_id cases, we are
+         * guaranteed that all the avis entries have already been
+         * processed.
+         *
+         * For N_id nodes, we pick up the new name from the LUR.
+         * N_num and N_array nodes are left intact.
+         *
+         */
+        if (NULL != AVIS_DIM (avis)) {
+            if (N_id == NODE_TYPE (AVIS_DIM (avis))) {
+                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_DIM (avis));
+                if (nid != AVIS_DIM (avis)) { /* nilpotent rename */
+                    DBUG_ASSERT (N_id == NODE_TYPE (nid),
+                                 ("DUPblock found non-id AVIS_DIM rename target"));
+                    DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_DIM from %s to %s",
+                                        AVIS_NAME (ID_AVIS (AVIS_DIM (avis))),
+                                        AVIS_NAME (ID_AVIS (nid))));
+                    AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
+                    AVIS_DIM (avis) = DUPdoDupNode (nid);
+                }
+            } else if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
+                AVIS_DIM (avis) = DUPdoDupNode (AVIS_DIM (avis));
+            } else {
+                DBUG_ASSERT (FALSE, ("DUPblock found oddball AVIS_DIM node type"));
+            }
+        }
+
+        if (NULL != AVIS_SHAPE (avis)) {
+            if (N_id == NODE_TYPE (AVIS_SHAPE (avis))) {
+                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SHAPE (avis));
+                if (nid != AVIS_SHAPE (avis)) { /* nilpotent rename */
+                    DBUG_ASSERT (N_id == NODE_TYPE (nid),
+                                 ("DUPblock found non-id AVIS_SHAPE rename target"));
+                    DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_SHAPE from %s to %s",
+                                        AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))),
+                                        AVIS_NAME (ID_AVIS (nid))));
+                    AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+                    AVIS_SHAPE (avis) = DUPdoDupNode (nid);
+                }
+            } else if (N_array == NODE_TYPE (AVIS_SHAPE (avis))) {
+                AVIS_SHAPE (avis) = DUPdoDupNode (AVIS_SHAPE (avis));
+            } else {
+                DBUG_ASSERT (FALSE, ("DUPblock found oddball AVIS_SHAPE node type"));
+            }
+        }
+
+        v = VARDEC_NEXT (v);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -1299,6 +1435,8 @@ DUPids (node *arg_node, info *arg_info)
     AVIS_HASDTTHENPROXY (avis) = AVIS_HASDTTHENPROXY (IDS_AVIS (arg_node));
     AVIS_HASDTELSEPROXY (avis) = AVIS_HASDTELSEPROXY (IDS_AVIS (arg_node));
 
+    /* FIXME: not sure if next two lines really belong here??? */
+    /* And if they do, why aren't there similar lines for DUPid? */
     AVIS_DIM (avis) = DUPTRAV (AVIS_DIM (IDS_AVIS (arg_node)));
     AVIS_SHAPE (avis) = DUPTRAV (AVIS_SHAPE (IDS_AVIS (arg_node)));
 
@@ -1337,20 +1475,26 @@ DUPap (node *arg_node, info *arg_info)
 {
     node *old_fundef, *new_fundef;
     node *new_node;
+    node *fundef;
+    char *funname;
 
     DBUG_ENTER ("DUPap");
 
+    fundef = INFO_FUNDEF (arg_info);
+    funname = (NULL == fundef) ? "?" : FUNDEF_NAME (fundef);
     DBUG_PRINT ("DUP",
-                ("duplicating application of %s() ...",
+                ("duplicating N_ap call to %s() from %s",
                  (AP_FUNDEF (arg_node) != NULL) ? FUNDEF_NAME (AP_FUNDEF (arg_node))
-                                                : "?"));
+                                                : "?",
+                 funname));
 
     old_fundef = AP_FUNDEF (arg_node);
 
     if (old_fundef != NULL) {
         new_fundef = LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
 
-        DBUG_ASSERT ((!FUNDEF_ISCONDFUN (old_fundef) || (new_fundef == old_fundef)),
+        DBUG_ASSERT (((AP_ISRECURSIVEDOFUNCALL (arg_node))
+                      || (!FUNDEF_ISLACFUN (old_fundef) || (new_fundef == old_fundef))),
                      "found a condfun ap that points to an already copied function !?!");
 
         if (FUNDEF_ISCONDFUN (old_fundef)
@@ -2450,6 +2594,8 @@ DUPavis (node *arg_node, info *arg_info)
                     TYcopyType (AVIS_TYPE (arg_node)));
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
+    DBUG_PRINT ("DUP", ("DUPavis will map %s to %s", AVIS_NAME (arg_node),
+                        AVIS_NAME (new_node)));
 
     AVIS_SSACOUNT (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSACOUNT (arg_node));
@@ -2470,15 +2616,11 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
 
-    if (NULL != AVIS_MINVAL (arg_node)) {
-        AVIS_MINVAL (new_node)
-          = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MINVAL (arg_node));
-    }
+    AVIS_DIM (new_node) = DUPTRAV (AVIS_DIM (arg_node));
+    AVIS_SHAPE (new_node) = DUPTRAV (AVIS_SHAPE (arg_node));
 
-    if (NULL != AVIS_MAXVAL (arg_node)) {
-        AVIS_MAXVAL (new_node)
-          = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAXVAL (arg_node));
-    }
+    AVIS_MINVAL (new_node) = AVIS_MINVAL (arg_node);
+    AVIS_MAXVAL (new_node) = AVIS_MAXVAL (arg_node);
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
 

@@ -7,14 +7,14 @@
  * prefix: DCR
  *
  * description:
- *    this module traverses one function (and its liftet special fundefs)
+ *    this module traverses one function (and its lifted special fundefs)
  *    and removes all dead code. this transformation is NOT conservative
  *    (it might remove endless loops, if they are not necessary to compute
  *     the result)
  *
  * implementation:
  *    we start at the return statement and do a bottom-up traversal marking
- *    all needed identifier. if we find a call to a special fundef, we remove
+ *    all needed identifiers. If we find a call to a special fundef, we remove
  *    all results not needed before traversing the special fundef. when we
  *    reach the top of a special fundef, we look for the unused args and
  *    remove them, too.
@@ -224,6 +224,8 @@ RemoveUnusedReturnValues (node *exprs)
     }
 
     if (AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (exprs)))) {
+        DBUG_PRINT ("DCR", ("Removing dead return value %s",
+                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs)))));
         exprs = FREEdoFreeNode (exprs);
     }
 
@@ -266,7 +268,7 @@ DCRfundef (node *arg_node, info *arg_info)
             info *info;
 
             /*
-             * Infere dead variables
+             * Infer dead variables
              */
             if (INFO_TRAVSCOPE (arg_info) == TS_fundef) {
                 arg_node = DCIdoDeadCodeInferenceOneFundef (arg_node);
@@ -380,7 +382,7 @@ DCRarg (node *arg_node, info *arg_info)
      * the ARG list along with the concrete argument in the function applications
      */
     if (AVIS_ISDEAD (ARG_AVIS (arg_node))) {
-        DBUG_PRINT ("DCR", ("remove arg %sa", ARG_NAME (arg_node)));
+        DBUG_PRINT ("DCR", ("remove arg %s", ARG_NAME (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
         AP_ARGS (extap) = FREEdoFreeNode (AP_ARGS (extap));
@@ -481,7 +483,7 @@ DCRblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRblock");
 
-    /* traverse assignmentchain in block */
+    /* traverse assignment chain in block */
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_INSTR (arg_node) == NULL) {

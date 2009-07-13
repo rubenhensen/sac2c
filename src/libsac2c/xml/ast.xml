@@ -235,11 +235,15 @@
         <travuser>
           <node name="Fundef" />
           <node name="Block" />
+          <node name="Funcond" />
+          <node name="Cond" />
+          <node name="While" />
           <node name="Assign" />
           <node name="Let" />
           <node name="With" />
           <node name="Part" />
           <node name="Avis" />
+          <node name="Ap" />
         </travuser>
       </traversal> 
       <traversal id="IVEXP" name="Index Variable Extrema Propagation" default="sons" include="ivexpropagation.h" >
@@ -1506,7 +1510,9 @@
           <node name="Assign"  />
           <node name="Let"  />
           <node name="Id"  />
+          <node name="Funcond" />
           <node name="Cond" />
+          <node name="While" />
           <node name="With"    />
           <node name="Modarray"    />
           <node name="Code"    />
@@ -1518,6 +1524,9 @@
      <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
        <travuser>
           <node name="Fundef"  />
+          <node name="Funcond" />
+          <node name="Cond" />
+          <node name="While" />
           <node name="Assign"  />
           <node name="With"    />
           <node name="Code"    />
@@ -5577,7 +5586,7 @@ N_structdef :
       <sons>
         <son name="Dim" default="NULL">
           <description>
-          An expression (N_exprs) specifying the array's rank
+          An N_num or N_id specifying the array's rank
           as a symbolic array attribute. The expression is a numeric
           constant (N_num) for AKS, AKD, and AKV arrays, and an
           identifier (N_id) for AUD arrays.
@@ -5594,12 +5603,12 @@ N_structdef :
         </son>
         <son name="Shape" default="NULL">
           <description>
-	  An array (N_array) specifying the array's shape
+	  An N_array or N_id specifying the array's shape
 	  as a symbolic array attribute. The array is
 	  comprised of integer constants (N_num) for AKV and AKS arrays,
 	  a mixed array of integer constants and identifiers (N_num, N_id)
 	  for AKD arrays with partial shape information, or an
-	  identifier (N_id) for AUD arrays.
+	  identifier (N_id) for AUD and some AKD arrays.
           </description>
           <targets>
             <target mandatory="no">
@@ -6621,7 +6630,7 @@ N_structdef :
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="scp_prs" to="cwc_ebt" />
+                <range from="scp_prs" to="opt_flt" />
                 <range from="opt_ufl" to="final" />
               </phases>
             </target>
@@ -6638,14 +6647,15 @@ N_structdef :
               </phases>
             </target>
           </targets>
-          <description>Bound may be an N_num or an N_array, except that, in phase 11 (optimizations), it must be an N_id. </description>
+          <description>Bound must be an N_id or an N_array, except that, in 
+                  saacyc, it must be an N_id. </description>
         </son>
         <son name="Bound2">
           <targets>
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="scp_prs" to="cwc_ebt" />
+                <range from="scp_prs" to="opt_flt" />
                 <range from="opt_ufl" to="final" />
               </phases>
             </target>
@@ -6662,7 +6672,8 @@ N_structdef :
               </phases>
             </target>
           </targets>
-          <description>Bound may be an N_num or an N_array, except that, in phase 11 (optimizations), it must be an N_id. </description>
+          <description>Bound must be an N_id or an N_array, except that, 
+                  in saacycit must be an N_id. </description>
         </son>
         <son name="Step">
           <targets>
@@ -7048,7 +7059,12 @@ N_structdef :
         </son>
         <son name="RC" default="NULL">
                 <description>
-                  Somebody please provide a description of RC!
+                   RC(xxx) encodes that xxx is a reuse candidate for this WL, 
+                   i.e., that the result of this WL or, more specifically,
+                   the operator the RC(xxx) is attached to, can potentially 
+                   be stored in xxx. This information is inferred at the end
+                   of the optimisations, IIRC but only used later on 
+                   in reference counting to perform memory reuse.
                 </description>
 
           <targets>
@@ -7150,7 +7166,12 @@ N_structdef :
         </son>
         <son name="RC" default="NULL">
                 <description>
-                  Somebody please provide a description of RC!
+                   RC(xxx) encodes that xxx is a reuse candidate for this WL, 
+                   i.e., that the result of this WL or, more specifically,
+                   the operator the RC(xxx) is attached to, can potentially 
+                   be stored in xxx. This information is inferred at the end
+                   of the optimisations, IIRC but only used later on 
+                   in reference counting to perform memory reuse.
                 </description>
           <targets>
             <target mandatory="no">

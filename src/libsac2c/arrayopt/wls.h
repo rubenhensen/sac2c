@@ -27,7 +27,7 @@ extern node *WLSflattenBound (node *arg_node, node *fundef, node **preassigns);
  * prefix: WLSC
  *
  *****************************************************************************/
-extern int WLSCdoCheck (node *with);
+extern int WLSCdoCheck (node *with, node *nassign);
 
 extern node *WLSCblock (node *arg_node, info *arg_info);
 extern node *WLSCcode (node *arg_node, info *arg_info);

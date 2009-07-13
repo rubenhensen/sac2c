@@ -127,11 +127,13 @@ struct INFO {
     bool onefundef;
     node *fundef;
     node *preassigns;
+    node *nassign; /* for DBUG_PRINT clarification only */
 };
 
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGNS(n) (n->preassigns)
+#define INFO_NASSIGN(n) (n->nassign)
 
 static info *
 MakeInfo ()
@@ -145,6 +147,7 @@ MakeInfo ()
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_NASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -225,8 +228,8 @@ WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
         FUNDEF_VARDEC (fundef) = TBmakeVardec (avis, FUNDEF_VARDEC (fundef));
         assgn = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
                               NULL);
-        *preassigns = TCappendAssign (*preassigns, assgn);
         AVIS_SSAASSIGN (avis) = assgn;
+        *preassigns = TCappendAssign (*preassigns, assgn);
         id = TBmakeId (avis);
 
         if (isSAAMode ()) {
@@ -265,11 +268,11 @@ WLSdoWithloopScalarization (node *fundef)
     info *arg_info;
     DBUG_ENTER ("WLSdoWithloopScalarization");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "WLSdoWithloopScalarization called for non-fundef node");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef) || (NODE_TYPE (fundef) == N_module),
+                 "WLSdoWithloopScalarization called for non-fundef/module node");
 
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (fundef));
 
     TRAVpush (TR_wls);
     fundef = TRAVdo (fundef, arg_info);
@@ -300,18 +303,32 @@ WLSdoWithloopScalarization (node *fundef)
 node *
 WLSassign (node *arg_node, info *arg_info)
 {
+    node *oldnassign;
+    node *L;
+
     DBUG_ENTER ("WLSassign");
 
     /*
      * Bottom-up traversal
      */
+
+    /* FIXME DEBUG OINLY NEXT FEW LINES */
+    L = ASSIGN_INSTR (arg_node);
+    if (N_let == NODE_TYPE (L)) {
+        DBUG_ASSERT (AVIS_SSAASSIGN ((IDS_AVIS (LET_IDS (L)))) == arg_node,
+                     ("AVIS_SSAASSIGN pointers do not reflect."));
+    }
+
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_ASSERT ((INFO_PREASSIGNS (arg_info) == NULL), "left-over pre-assigns found!");
     /*
      * Traverse RHS
      */
+    oldnassign = INFO_NASSIGN (arg_info);
+    INFO_NASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    INFO_NASSIGN (arg_info) = oldnassign;
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
@@ -400,7 +417,7 @@ WLSwith (node *arg_node, info *arg_info)
     /*
      * Scalarization is possible iff WLSCheck does not return 0
      */
-    innerdims = WLSCdoCheck (arg_node);
+    innerdims = WLSCdoCheck (arg_node, INFO_NASSIGN (arg_info));
 
     if (innerdims > 0) {
 

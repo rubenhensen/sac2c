@@ -22,6 +22,8 @@ extern node *SWLFIblock (node *arg_node, info *arg_info);
 extern node *SWLFIassign (node *arg_node, info *arg_info);
 extern node *SWLFIlet (node *arg_node, info *arg_info);
 extern node *SWLFIcond (node *arg_node, info *arg_info);
+extern node *SWLFIfuncond (node *arg_node, info *arg_info);
+extern node *SWLFIwhile (node *arg_node, info *arg_info);
 extern node *SWLFIid (node *arg_node, info *arg_info);
 extern node *SWLFIwith (node *arg_node, info *arg_info);
 extern node *SWLFIpart (node *arg_node, info *arg_info);

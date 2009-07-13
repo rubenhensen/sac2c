@@ -1115,6 +1115,66 @@ SWLFprf (node *arg_node, info *arg_info)
  * @}  <!-- Traversal functions -->
  *****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *   node *SWLFcond(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse conditional parts in the given order.
+ *
+ ******************************************************************************/
+node *
+SWLFcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFcond");
+
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+    COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
+    COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SWLFfuncond( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+SWLFfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFfuncond");
+
+    FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
+    FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
+    FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SWLFwhile( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+SWLFwhile (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFwhile");
+
+    WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
+    WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  * @}  <!-- Symbolic with loop folding -->
  *****************************************************************************/

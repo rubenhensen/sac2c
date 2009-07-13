@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "new_typecheck.h"
 #include "new_types.h"
+#include "pattern_match.h"
 #include "arithmetic_simplification.h"
 
 /*
@@ -59,48 +60,89 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ContainedPrf( node *expression)
+ *
+ * @brief Locates the expression that created PRF_ARG1( expression)
+ *
+ * @param arg_node - PRF_ARG1 of an N_prf.
+ *
+ * @note: We chase the assign chain for PRF_ARG1 back through
+ *        mulitple assigns until we hit an N_prf, ignoring any
+ *        guard-like primitives we encounter along the way.
+ *        The latter behavior is required to allow expression
+ *        simplification in the presence of guards and extrema.
+ *
+ * @return The RHS of the N_prf expression that created PRF_ARG1, if it
+ *         of the appropriate type:
+ *         If no such expression exists, NULL.
+ *
+ *****************************************************************************/
+
 node *
-ContainedPrf (node *expression)
+ContainedPrf (node *arg_node)
 {
-    node *contained;
+    node *val = NULL;
 
     DBUG_ENTER ("ContainedPrf");
 
-    DBUG_ASSERT ((NODE_TYPE (expression) == N_prf), "prf expected!");
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (expression)) == N_id), "N_id argument expected");
-    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL),
-                 "SSAASSIGN is NULL!");
+    /* chase back over assigns and guards, then look for any primitive */
+    if (PMO (PMOlastVarGuards (&val, arg_node))) {
+        val = AVIS_SSAASSIGN (ID_AVIS (val));
+        if (NULL != val) {
+            val = LET_EXPR (ASSIGN_INSTR (val));
+            val = (N_prf == NODE_TYPE (val)) ? val : NULL;
+        }
+    }
 
-    contained
-      = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression)))));
-
-    DBUG_RETURN (contained);
+    DBUG_RETURN (val);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsSuitableForPropagation( node *expression)
+ *
+ * @brief: Predicate for identifying expressions of the form:
+ *
+ *           _add_SxS_( X, constant)
+ *           _add_SxS_( constant, X)
+ *           _add_SxV_( X, constant)
+ *           _add_SxV_( constant, X)
+ *           _add_VxS_( X, constant)
+ *           _add_VxS_( constant, X)
+ *           _add_VxV_( X, constant)
+ *           _add_VxV_( constant, X)
+ *
+ *
+ * @param arg_node - An N_prf
+ *
+ * @return  TRUE if expression satisfies the brief requirement.
+ *
+ *****************************************************************************/
 bool
 IsSuitableForPropagation (node *expression)
 {
-    bool result;
+    node *val1 = NULL;
+    node *val2 = NULL;
+    constant *con1 = NULL;
+    constant *con2 = NULL;
+    bool result = FALSE;
 
     DBUG_ENTER ("IsSuitableForPropagation");
 
     if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
-        && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
-        expression = ContainedPrf (expression);
+        && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)
+        && ((PRF_PRF (expression) == F_add_SxS) || (PRF_PRF (expression) == F_add_SxV)
+            || (PRF_PRF (expression) == F_add_VxS)
+            || (PRF_PRF (expression) == F_add_VxV))) {
 
-        /*
-         * In short, we are looking for add operations where
-         * at least one argument is a constant 8-)
-         */
-        result = ((NODE_TYPE (expression) == N_prf)
-                  && ((PRF_PRF (expression) == F_add_SxS)
-                      || (PRF_PRF (expression) == F_add_SxV)
-                      || (PRF_PRF (expression) == F_add_VxS)
-                      || (PRF_PRF (expression) == F_add_VxV))
-                  && (COisConstant (PRF_ARG1 (expression))
-                      || COisConstant (PRF_ARG2 (expression))));
-    } else {
-        result = FALSE;
+        if (PMO (PMOconst (&con1, &val1, PRF_ARG1 (expression)))
+            || PMO (PMOconst (&con2, &val2, PRF_ARG2 (expression)))) {
+            result = TRUE;
+        }
+        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
+        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
     }
 
     DBUG_RETURN (result);
@@ -115,7 +157,6 @@ IsNegationOfNegation (node *expression)
 
     if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
-        expression = ContainedPrf (expression);
         result
           = ((NODE_TYPE (expression) == N_prf) && (PRF_PRF (expression) == F_esd_neg));
     } else {
@@ -125,32 +166,40 @@ IsNegationOfNegation (node *expression)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *Negate( node *arg_node)
+ *
+ * @brief  Transform arg_node into neg( arg_node)
+ *
+ * @param arg_node - PRF_ARG1/2 of an N_prf.
+ *
+ *
+ * @return  FIXMEj
+ *
+ *****************************************************************************/
 node *
-Negate (node *expression, info *info)
+Negate (node *arg_node, info *info)
 {
     node *negexpr;
     ntype *negtype;
     node *avis;
+    node *val = NULL;
+    constant *cexpr = NULL;
+    constant *negcexpr;
+    ntype *prodtype;
 
     DBUG_ENTER ("Negate");
 
-    /*
-     * transform a into neg( a)
-     */
-    if (COisConstant (expression)) {
-        constant *cexpr = COaST2Constant (expression);
-        constant *negcexpr = COneg (cexpr);
+    if (PMO (PMOconst (&cexpr, &val, arg_node))) {
+        /* Create negexpr */
+        negcexpr = COneg (cexpr);
         negexpr = COconstant2AST (negcexpr);
-
         negcexpr = COfreeConstant (negcexpr);
         cexpr = COfreeConstant (cexpr);
-
         negtype = NTCnewTypeCheck_Expr (negexpr);
     } else {
-        ntype *prodtype;
-
-        negexpr = TCmakePrf1 (F_esd_neg, DUPdoDupTree (expression));
-
+        negexpr = TCmakePrf1 (F_esd_neg, DUPdoDupTree (arg_node));
         prodtype = NTCnewTypeCheck_Expr (negexpr);
         negtype = TYcopyType (TYgetProductMember (prodtype, 0));
         prodtype = TYfreeType (prodtype);
@@ -160,6 +209,7 @@ Negate (node *expression, info *info)
 
     INFO_PREASSIGN (info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), negexpr), INFO_PREASSIGN (info));
+    AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (info);
 
     TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
 
@@ -282,20 +332,23 @@ ASassign (node *arg_node, info *arg_info)
 node *
 ASprf (node *arg_node, info *arg_info)
 {
+    node *contained;
+
     DBUG_ENTER ("ASprf");
 
-    if ((PRF_PRF (arg_node) == F_esd_neg) && IsSuitableForPropagation (arg_node)) {
-        node *contained = ContainedPrf (arg_node);
-        arg_node = FREEdoFreeTree (arg_node);
+    contained = ContainedPrf (PRF_ARG1 (arg_node));
+    if ((PRF_PRF (arg_node) == F_esd_neg) && (NULL != contained)) {
 
-        arg_node
-          = TCmakePrf2 (PRF_PRF (contained), Negate (PRF_ARG1 (contained), arg_info),
-                        Negate (PRF_ARG2 (contained), arg_info));
-    } else if ((PRF_PRF (arg_node) == F_esd_neg) && IsNegationOfNegation (arg_node)) {
-        node *contained = PRF_ARG1 (ContainedPrf (arg_node));
-        arg_node = FREEdoFreeTree (arg_node);
-
-        arg_node = DUPdoDupTree (contained);
+        if (IsSuitableForPropagation (contained)) {
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node
+              = TCmakePrf2 (PRF_PRF (contained), Negate (PRF_ARG1 (contained), arg_info),
+                            Negate (PRF_ARG2 (contained), arg_info));
+        } else if (IsNegationOfNegation (contained)) {
+            contained = PRF_ARG1 (contained);
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = DUPdoDupTree (contained);
+        }
     }
 
     DBUG_RETURN (arg_node);

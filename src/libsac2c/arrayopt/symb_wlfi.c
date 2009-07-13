@@ -291,7 +291,8 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
  *                                      node *foldeepart, int boundnum,
- *                                      node *ivminmax)
+ *                                      node *ivminmax,
+ *                                      node *genshpavis)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
  *        a single foldeeWL partition with folderWL index set, of the form:
@@ -299,23 +300,29 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *           iv' = (k*iv) + ivoffset;
  *           sel( iv', foldeeWL)
  *
- *        The expression for simplification by the compiler.
+ *        The intersection calculation is made slightly more complex
+ *        by the fact that iv' has shape of:
+ *         GENERATOR_BOUND1(foldeepart) ++ cellshape(foldeepart)
+ *        Instead of computing this, we take the prefix of iv'.
+ *
  *        We determine the intersection of the folderWL iv'
- *        index set with the foldeeWL's  partition bounds this way:
+ *        index set with the foldeeWL's partition bounds this way:
  *
- *          int1 = _max_VxV_( AVIS_MINVAL( iv'),
- *                            GENERATOR_BOUND1(foldee));
+ *          genshp = _shape_A_(GENERATOR_BOUND1( foldee));
  *
- *          ivmax = _add_VxS_( AVIS_MAXVAL( iv'), 1);
- *          int2  = _min_VxV_( ivmax,
- *                            GENERATOR_BOUND2(foldee));
- *          iv'' = _attachextrema_(iv', ivmax, int1, int2);
+ *          ivmin = _take_SxV( genshp, AVIS_MINVAL( iv'));
+ *          intlo = _max_VxV_( AVIS_MINVAL( ivmin), GENERATOR_BOUND1(foldee));
+ *
+ *          ivmax = _take_SxV( genshp, AVIS_MAXVAL( iv');
+ *          ivmax' = _add_VxS_( ivmax, 1);
+ *          inthi  = _min_VxV_( ivmax', GENERATOR_BOUND2(foldee));
+ *          iv'' = _attachextrema_(iv', ivmax', intlo, inthi);
  *          sel( iv'', foldeeWL)
  *
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection.
  *
- *        The ivmax calculation adjusts AVIS_MAXVAL to match
+ *        The ivmaxpref calculation adjusts AVIS_MAXVAL to match
  *        the canonical generator bounds. This is used as
  *        shown above, but the value glued to the guard is
  *        also needed by FindMatchingPart in SWLF.
@@ -325,13 +332,15 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  * @params arg_info.
  * @params boundnum: 1 for bound1,     or 2 for bound2
  * @parame bounder: AVIS_MINVAL( idx) or ( AVIS_MAXVAL( idx) + 1)
+ * @param  genshpavis: the N_avis for the above genshp computation.
+ *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
  *
  *****************************************************************************/
 
 static node *
 IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum,
-                           node *bounder)
+                           node *ivminmax, node *genshpavis)
 {
     node *boundee;
     node *folderpart;
@@ -339,6 +348,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *idxavis;
     node *idxassign;
     node *resavis;
+    node *takeres;
+    node *takeresavis;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
@@ -365,10 +376,16 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
      * and
      *   (k*folderbound2) + offset
      */
-    expn = TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, TBmakeId (bounder),
+
+    takeres = TCmakePrf2 (F_take_SxV, TBmakeId (genshpavis), TBmakeId (ivminmax));
+
+    takeresavis = SWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
+                                          &INFO_PREASSIGNS (arg_info), genshpavis);
+
+    expn = TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, TBmakeId (takeresavis),
                        DUPdoDupTree (boundee));
     resavis = SWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
-                                      &INFO_PREASSIGNS (arg_info), bounder);
+                                      &INFO_PREASSIGNS (arg_info), genshpavis);
 
     DBUG_RETURN (resavis);
 }
@@ -405,16 +422,25 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
     node *foldeeassign;
     node *foldeewl;
     node *curavis;
+    node *genshp;
+    node *genshpavis;
+    node *gen;
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
     foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
     foldeewl = LET_EXPR (foldeeassign);
-    partn = WITH_PART (foldeewl);
 
+    /* Emit:  genshp = _shape_A_(GENERATOR_BOUND1( foldee)); */
+    gen = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
+    genshp = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupTree (gen));
+    genshpavis = SWLFIflattenExpression (genshp, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), ID_AVIS (gen));
+
+    partn = WITH_PART (foldeewl);
     while (NULL != partn) {
-        curavis
-          = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum, ivminmax);
+        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum,
+                                             ivminmax, genshpavis);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         partn = PART_NEXT (partn);
     }
@@ -690,10 +716,12 @@ checkFolderFoldable (node *arg_node, info *arg_info)
 static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
+#ifdef FIXME
     node *folderwl;
     node *foldeewl;
     node *b1;
     node *b2;
+#endif // FIXME
     bool z;
 
     DBUG_ENTER ("checkBothFoldable");
@@ -701,8 +729,8 @@ checkBothFoldable (node *arg_node, info *arg_info)
     z = TRUE; /* We no longer care about generator bounds.
                * All folding checks are now based on the
                * intersection between idx index set and
-               * foldeeWL partition intersection matching
-               * idx index set.
+               * foldeeWL partition intersection generator
+               * limits, catenated to cell shape.
                */
 #ifdef FIXME
     foldeewl = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
@@ -1092,7 +1120,6 @@ node *
 SWLFIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFIblock");
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -1117,6 +1144,45 @@ SWLFIavis (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *SWLFIfuncond( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+SWLFIfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFIfuncond");
+
+    FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
+    FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
+    FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SWLFIwhile( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+SWLFIwhile (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFIwhile");
+
+    WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
+    WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
- * @}  <!-- Symbolic with loop folding -->
+ * @}  <!-- Symbolic with loop folding inference -->
  *****************************************************************************/
