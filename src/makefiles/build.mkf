@@ -63,10 +63,14 @@ SUBTARGETS       := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
                       $(addsuffix .$($(STYLE)_short),\
                         $(SUBTARGETS_RAW)))
 
-SUBTARGETS_MT    := $(patsubst %.o,%.mt.o,$(SUBTARGETS))
-SUBTARGETS_SEQ   := $(patsubst %.o,%.seq.o,$(SUBTARGETS))
-SUBTARGETS_DIAG  := $(patsubst %.o,%.diag.o,$(SUBTARGETS))
-SUBTARGETS_MT_DIAG := $(patsubst %.o,%.mt.diag.o,$(SUBTARGETS))
+SUBTARGETS_LIBSAC := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
+                       $(addsuffix .$(prod_short),\
+                         $(SUBTARGETS_RAW)))
+
+SUBTARGETS_MT    := $(patsubst %.o,%.mt.o,$(SUBTARGETS_LIBSAC))
+SUBTARGETS_SEQ   := $(patsubst %.o,%.seq.o,$(SUBTARGETS_LIBSAC))
+SUBTARGETS_DIAG  := $(patsubst %.o,%.diag.o,$(SUBTARGETS_LIBSAC))
+SUBTARGETS_MT_DIAG := $(patsubst %.o,%.mt.diag.o,$(SUBTARGETS_LIBSAC))
 
 SUBTARGETS_HEADER   := $(addsuffix .h,\
                          $(foreach srcdir,$(runtime_sourcedirs),\
@@ -286,7 +290,7 @@ $(PROJECT_ROOT)/lib/lib%_mt.so: $(SUBTARGETS_MT)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS) 
+$(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS_SEQ) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq.a ($($(STYLE)_long) version)"
 	$(HIDE) $(AR) $@ $^
@@ -294,7 +298,7 @@ $(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/lib%_seq.so: $(SUBTARGETS) 
+$(PROJECT_ROOT)/lib/lib%_seq.so: $(SUBTARGETS_SEQ) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq.so ($($(STYLE)_long) version)"
 	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ $^
