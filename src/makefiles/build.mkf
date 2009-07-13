@@ -63,14 +63,10 @@ SUBTARGETS       := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
                       $(addsuffix .$($(STYLE)_short),\
                         $(SUBTARGETS_RAW)))
 
-SUBTARGETS_LIBSAC := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
-                       $(addsuffix .$(prod_short),\
-                         $(SUBTARGETS_RAW)))
-
-SUBTARGETS_MT    := $(patsubst %.o,%.mt.o,$(SUBTARGETS_LIBSAC))
-SUBTARGETS_SEQ   := $(SUBTARGETS_LIBSAC)
-SUBTARGETS_DIAG  := $(patsubst %.o,%.diag.o,$(SUBTARGETS_LIBSAC))
-SUBTARGETS_MT_DIAG := $(patsubst %.o,%.mt.diag.o,$(SUBTARGETS_LIBSAC))
+SUBTARGETS_MT    := $(patsubst %.o,%.mt.o,$(SUBTARGETS))
+SUBTARGETS_SEQ   := $(SUBTARGETS)
+SUBTARGETS_DIAG  := $(patsubst %.o,%.diag.o,$(SUBTARGETS))
+SUBTARGETS_MT_DIAG := $(patsubst %.o,%.mt.diag.o,$(SUBTARGETS))
 
 SUBTARGETS_HEADER   := $(addsuffix .h,\
                          $(foreach srcdir,$(runtime_sourcedirs),\
