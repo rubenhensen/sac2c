@@ -162,6 +162,7 @@ CHKassignAvisSSAAssign (node *arg_node)
                       = CHKinsertError (NODE_ERROR (IDS_AVIS (ids)),
                                         "AVIS_SSAASSIGN does not point to correct "
                                         "N_assign node.");
+                    DBUG_PRINT ("CHK", ("for %s", AVIS_NAME (IDS_AVIS (ids))));
                 }
                 ids = IDS_NEXT (ids);
             }
