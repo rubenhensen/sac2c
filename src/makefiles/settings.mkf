@@ -71,7 +71,7 @@ CLOCK_SKEW_ELIMINATION := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
 
 SAC2C                  := $(PROJECT_ROOT)/bin/sac2c
 
-SAC2CFLAGS             := -v0 
+SAC2CFLAGS             := -v0 -O3
 
 FINGERPRINTER          := $(PROJECT_ROOT)/src/bin/md5calc
 
