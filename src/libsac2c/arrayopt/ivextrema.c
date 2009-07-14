@@ -490,6 +490,7 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifndef DBUG_OFF
 /** <!--********************************************************************-->
  *
  * @fn static bool isSameTypeShape( node *ida, node *idb)
@@ -517,6 +518,7 @@ isSameTypeShape (node *ida, node *idb)
 
     DBUG_RETURN (z);
 }
+#endif //  DBUG_OFF
 
 /** <!--********************************************************************-->
  *
