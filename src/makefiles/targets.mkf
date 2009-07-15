@@ -98,7 +98,8 @@ libsac2c_flatten     := flatten lac2fun fun2lac insert_vardec \
                         handle_mops UndoSSATransform SSATransform \
                         WLPartitionGeneration ExplicitAccumulate \
                         wlanalysis lacinlining wldefaultpartition \
-                        while2do handle_condexpr unflatten flattengenerators
+                        while2do handle_condexpr undossaivtransform \
+                        flattengenerators
 
 libsac2c_constants   := shape constants_basic constants_struc_ops \
                         constants_ari_ops cv2cv cv2scalar cv2str \

@@ -1121,7 +1121,7 @@
           <node name="Vardec" />
         </travuser>
       </traversal>
-      <traversal id="UFL" name="Unflatten WL Partitions" default="sons" include="unflatten.h" >
+      <traversal id="USSAI" name="Undo SSAIV Transform" default="sons" include="undossaivtransform.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="With" />
@@ -1130,7 +1130,6 @@
 	  <node name="Vardec" />
 	  <node name="Part" />
 	  <node name="Id" />
-	  <node name="Generator" />
 	</travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
@@ -6631,7 +6630,6 @@ N_structdef :
               <set name="Expr" />
               <phases>
                 <range from="scp_prs" to="opt_flt" />
-                <range from="opt_ufl" to="final" />
               </phases>
             </target>
             <target>
@@ -6656,7 +6654,6 @@ N_structdef :
               <set name="Expr" />
               <phases>
                 <range from="scp_prs" to="opt_flt" />
-                <range from="opt_ufl" to="final" />
               </phases>
             </target>
             <target>

@@ -629,8 +629,8 @@ this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling"
                                   && global.optimize.dolir,
                                 opt)
 
-                        SUBPHASE (ufl, "Unflattening WL generator",
-                                  UFLdoUnflattenWLGenerators, ALWAYS, opt)
+                        SUBPHASE (ussai, "Undo SSAIV Transform",
+                                  USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
                           SUBPHASE (cse2, "Eliminating common subexpression",
                                     CSEdoCommonSubexpressionEliminationModule,
