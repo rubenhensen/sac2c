@@ -7,6 +7,8 @@ do
           ;;
       -o*) output=$2; shift
           ;;
+      -c*) arg_c="-c"
+          ;;
       -*)
           ;;
       *) infile="${infile} $1"
@@ -15,6 +17,6 @@ do
   shift
 done
 
-gcc ${include} -E -P -o ${output}.sl ${infile}
+gcc ${include} ${arg_c} -E -P -o ${output}.sl ${infile}
 
 slc -o ${output} ${output}.sl
