@@ -296,10 +296,29 @@ CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
  
 
+/*****************************************************************************
+ * sl targets
+ */
 target sl:
  
-CC               :=  "comslc"
- 
+CC               :=  "comslc seqc"
+LD_DYNAMIC       :=  "true"
+
+target sl_ppp::sl:
+
+CC               := "comslc ppp"
+
+target sl_ptl::sl:
+
+CC               := "comslc ptl"
+
+target sl_seqc::sl:
+
+CC               := "comslc seqc"
+
+target sl_utc::sl:
+
+CC               := "comslc utc0"
  
 /*******************************************************************************
  *******************************************************************************
