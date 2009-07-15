@@ -2466,31 +2466,20 @@ IsEmptyStride1 (node *stride)
 static node *
 ToFirstComponent (node *array)
 {
-    node *comp;
-    node *nar = NULL;
-    constant *narfs = NULL;
+    pattern *pat;
+    node *elems;
 
     DBUG_ENTER ("ToFirstComponent");
 
-    if (array != NULL) {
-        if (PMO (PMOarray (&narfs, &nar, array))) {
-            COfreeConstant (narfs);
-        } else {
-            nar = array;
-        }
+    pat = PMarray (1, PMfetch (&elems, PMskip ()));
 
-        if (NODE_TYPE (nar) == N_array) {
-            comp = ARRAY_AELEMS (nar);
-        } else {
-            DBUG_ASSERT ((NODE_TYPE (nar) == N_id),
-                         "ToFirstComponent expected N_id or N_array");
-            comp = nar;
-        }
-    } else {
-        comp = NULL;
+    if ((array != NULL) && PMmatchFlat (pat, array)) {
+        array = elems;
     }
 
-    DBUG_RETURN (comp);
+    pat = PMfree (pat);
+
+    DBUG_RETURN (array);
 }
 
 /******************************************************************************

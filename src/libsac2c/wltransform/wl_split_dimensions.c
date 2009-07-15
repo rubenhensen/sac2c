@@ -587,12 +587,15 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     node *new_node;
     node *shape = NULL;
     node *sexpr;
-    node *array;
+    node *array = NULL;
+    pattern *pat;
     int sizeoffset;
 
     DBUG_ENTER ("ATravCNWgenarray");
 
-    if (PMO (PMOarray (NULL, &array, GENARRAY_SHAPE (arg_node)))) {
+    pat = PMfetch (&array, PMarray (1, PMskip ()));
+
+    if (PMmatchFlat (pat, GENARRAY_SHAPE (arg_node))) {
         sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
 
         /*
@@ -618,6 +621,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
         sexpr = TCmakeIntVector (DUPdoDupTree (
           TCgetNthExprs (INFO_CURRENT_DIM (arg_info) + 1, ARRAY_AELEMS (array))));
     }
+    pat = PMfree (pat);
 
     DBUG_ASSERT ((shape != NULL), "no shape info for genarray constructed");
 
@@ -833,6 +837,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
     shape *shape;
     int outerdims;
     bool match;
+    pattern *pat;
 
     DBUG_ENTER ("ATravCDLgenarray");
 
@@ -841,7 +846,11 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
     set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
-    match = PMO (PMOarray (NULL, &sarray, GENARRAY_SHAPE (arg_node)));
+    pat = PMfetch (&sarray, PMarray (1, PMskip ()));
+
+    match = PMmatchFlat (pat, GENARRAY_SHAPE (arg_node));
+
+    pat = PMfree (pat);
     DBUG_ASSERT (match, "shape not defined as vector");
 
     /*

@@ -8,32 +8,37 @@
 
 #include "types.h"
 
-#if 0
+/** needs to be moved into types.h: */
+typedef struct PAT pattern;
 
 /**
  * Design of the shiny new pattern matcher:
  */
-extern bool PMmatchExact( pattern *pat, node *expr);
-extern bool PMmatchFlat( pattern *pat, node *expr);
-extern bool PMmatchFlatPseudo( pattern *pat, node *expr);
+extern bool PMmatchExact (pattern *pat, node *expr);
+extern bool PMmatchFlat (pattern *pat, node *expr);
+extern bool PMmatchFlatPseudo (pattern *pat, node *expr);
 
 /**
  * Pattern-DSL:
  */
-extern pattern *PMvar( node **avis);             /*  avis                     */
-extern pattern *PMint( int *v);                  /*  v                        */
-extern pattern *PMintLE( int *v1, int *v2);      /*  v1  | v1 <= v2           */
-extern pattern *PMarray( ...);                   /*  [ <pats> ]               */
-extern pattern *PMarrayLen( int * l, ...);       /*  [ <pats> ] | length == l */
-extern pattern *PMprf( prf fun, ...);            /*  prf( <pats> )            */
-extern pattern *PMfetch( node **hook, pattern *pat);       /*  <pat>  as hook */
-extern pattern *PMretryAny( int *i, int *l, ...); /* exist  0<=i<l: <pats(i)> */
-extern pattern *PMretryAll( int *i, int *l, ...); /* forall 0<=i<l: <pats(i)> */
-extern pattern *PMskip();                        /*  ...                      */
-extern pattern *PMskipN( int *i);                /*  ... <-i                  */
-extern pattern *PMpair( pattern *p1, pattern *p2);/* ( <p1>, <p2>)            */
+extern pattern *PMvar (node **var);
+extern pattern *PMint (int *v);
+extern pattern *PMintLE (int *v1, int *v2);
+extern pattern *PMarray (int num_pats, ...);
+extern pattern *PMarrayLen (int *l, int num_pats, ...);
+/* extern pattern *PMprf( prf fun, int num_pats, ...); */
+extern pattern *PMfetch (node **hook, pattern *pat);
+extern pattern *PMfetchAsVar (node **hook, pattern *pat);
+/* extern pattern *PMretryAny( int *i, int *l, int num_pats, ...); */
+/* extern pattern *PMretryAll( int *i, int *l, int num_pats, ...); */
+extern pattern *PMskip ();
+/* extern pattern *PMskipN( int *i); */
+extern pattern *PMpair (pattern *p1, pattern *p2);
 
-#endif
+/**
+ * utils:
+ */
+extern pattern *PMfree (pattern *p);
 
 /*******************************************************************************
  *******************************************************************************
