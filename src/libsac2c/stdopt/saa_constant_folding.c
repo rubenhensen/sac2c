@@ -280,10 +280,10 @@ SAACFprf_same_shape_AxA (node *arg_node, info *arg_info)
     node *shp = NULL;
 
     DBUG_ENTER ("SAACFprf_same_shape_AxA");
-    if (PMO (PMOsaashape (&shp, &arg1,
-                          PMOsaashape (&shp, &arg2,
-                                       PMOvar (&arg1,
-                                               PMOvar (&arg2, PMOprf (F_same_shape_AxA,
+    if (PMO (PMOsaashape (&shp, &arg2,
+                          PMOsaashape (&shp, &arg1,
+                                       PMOvar (&arg2,
+                                               PMOvar (&arg1, PMOprf (F_same_shape_AxA,
                                                                       arg_node))))))) {
         /* See if saa shapes match */
 
