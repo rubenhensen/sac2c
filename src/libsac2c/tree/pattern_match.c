@@ -147,6 +147,8 @@ static enum pm_mode { PM_exact, PM_flat, PM_flatPseudo } mode;
 typedef node *matchFun (pattern *, node *, node **);
 
 struct PAT {
+    prf fun;
+    constant **con;
     node **n_arg1;
     int *i_arg1;
     int *i_arg2;
@@ -156,6 +158,8 @@ struct PAT {
     matchFun *matcher;
 };
 
+#define PAT_PRF(p) (p->fun)
+#define PAT_C1(p) (p->con)
 #define PAT_I1(p) (p->i_arg1)
 #define PAT_I2(p) (p->i_arg2)
 #define PAT_N1(p) (p->n_arg1)
@@ -170,6 +174,8 @@ makePattern (matchFun f, int num_pats)
     pattern *res;
 
     res = (pattern *)MEMmalloc (sizeof (pattern));
+
+    PAT_C1 (res) = NULL;
     PAT_I1 (res) = NULL;
     PAT_I2 (res) = NULL;
     PAT_N1 (res) = NULL;
@@ -1331,15 +1337,15 @@ patternVar (pattern *pat, node *stack, node **match)
     node **var;
     node *arg;
 
-    if (match == NULL) {
+    var = PAT_N1 (pat);
+    if (var == NULL) {
         DBUG_PRINT ("PM", ("PMvar trying to match N_id"));
-    } else if (*match == NULL) {
+    } else if (*var == NULL) {
         DBUG_PRINT ("PM", ("PMvar trying to match and fetch N_id."));
     } else {
         DBUG_PRINT ("PM", ("PMvar trying to match N_id and compare against \"%s\".",
-                           AVIS_NAME (*match)));
+                           AVIS_NAME (*var)));
     }
-    var = PAT_N1 (pat);
 
     stack = ExtractOneArg (stack, &arg);
 
@@ -1348,18 +1354,23 @@ patternVar (pattern *pat, node *stack, node **match)
 
         if (var == NULL) {
             DBUG_PRINT ("PM", ("ignoring matched variable!"));
+            if (match != NULL) {
+                *match = arg;
+            }
         } else if (*var == NULL) {
             DBUG_PRINT ("PM", ("binding matched variable!"));
             *var = arg;
+            if (match != NULL) {
+                *match = arg;
+            }
         } else if (ID_AVIS (*var) == ID_AVIS (arg)) {
             DBUG_PRINT ("PM", ("variable matches bound one!"));
+            if (match != NULL) {
+                *match = arg;
+            }
         } else {
             stack = FailMatch (stack);
         }
-    }
-
-    if (match != NULL) {
-        *match = arg;
     }
 
     return (stack);
@@ -1372,6 +1383,78 @@ PMvar (node **var)
 
     res = makePattern (patternVar, 0);
     PAT_N1 (res) = var;
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMconst( constant ** c)
+ *
+ * @brief constant pattern:  < *c>
+ *        - no inner pattern
+ *        - does depend on matching mode!
+ *
+ *        tri-state argument:
+ *        c == NULL   => ignore what you match
+ *        *c == NULL  => bring back the value matched
+ *        *c != NULL  => match iff the value matched is identical to *c
+ *
+ ******************************************************************************/
+static node *
+patternConst (pattern *pat, node *stack, node **match)
+{
+    constant **c;
+    constant *c2;
+    node *arg;
+
+    c = PAT_C1 (pat);
+    if (c == NULL) {
+        DBUG_PRINT ("PM", ("PMconst trying to match constant"));
+    } else if (*c == NULL) {
+        DBUG_PRINT ("PM", ("PMconst trying to match and fetch constant."));
+    } else {
+        DBUG_PRINT ("PM", ("PMconst trying to match constant and compare against given "
+                           "value."));
+    }
+
+    stack = ExtractOneArg (stack, &arg);
+
+    if ((arg != NULL) && COisConstant (arg)) {
+        DBUG_PRINT ("PM", ("matching constant "));
+
+        if (c == NULL) {
+            DBUG_PRINT ("PM", ("ignoring matched constant!"));
+        } else if (*c == NULL) {
+            DBUG_PRINT ("PM", ("binding matched constant!"));
+            *c = COaST2Constant (arg);
+        } else {
+            c2 = COaST2Constant (arg);
+            if (COcompareConstants (c2, *c)) {
+                DBUG_PRINT ("PM", ("constant matches bound one!"));
+            } else {
+                stack = FailMatch (stack);
+            }
+            c2 = COfreeConstant (c2);
+        }
+    } else {
+        stack = FailMatch (stack);
+    }
+
+    if (match != NULL) {
+        *match = arg;
+    }
+
+    return (stack);
+}
+
+pattern *
+PMconst (constant **c)
+{
+    pattern *res;
+
+    res = makePattern (patternConst, 0);
+    PAT_C1 (res) = c;
 
     return (res);
 }
@@ -1607,9 +1690,162 @@ PMarrayLen (int *l, int num_pats, ...)
     return (res);
 }
 
-#if 0
-extern pattern *PMprf( prf fun, int num_pats, ...);
-#endif
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMarrayFS( constant **fs,
+                       int num_pats, sub_pat_1, ..., sub_pat_{num_pats})
+ *
+ * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ *        tri-state argument:
+ *        fs == NULL  => ignore this parameter
+ *        *fs == NULL => bring back a copy of the frameshape of N_array matched
+ *        *fs != NULL => match iff the frameshape of N_array is identical to *fs
+
+ *
+ ******************************************************************************/
+static node *
+patternArrayFS (pattern *pat, node *stack, node **match)
+{
+    node *arg, *inner_stack;
+    int i;
+    constant **fs;
+    constant *shpfound;
+
+    fs = PAT_C1 (pat);
+
+    if (fs == NULL) {
+        DBUG_PRINT ("PM",
+                    ("trying to match N_array ignoring FS; should use PMarray instead!"));
+    } else if (*fs == NULL) {
+        DBUG_PRINT ("PM", ("trying to match N_array fetching frameshape"));
+    } else {
+        DBUG_PRINT ("PM", ("trying to match N_array with given frameshape"));
+    }
+
+    stack = ExtractOneArg (stack, &arg);
+    arg = skipVarDefs (arg);
+
+    if ((arg != NULL) && (NODE_TYPE (arg) == N_array)) {
+        if (fs != NULL) {
+            shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
+            if (*fs == NULL) {
+                DBUG_PRINT ("PM", ("N_array found; binding frameshape!"));
+                *fs = shpfound;
+            } else if (COcompareConstants (*fs, shpfound)) {
+                DBUG_PRINT ("PM", ("N_array with matching frameshape found!"));
+                shpfound = COfreeConstant (shpfound);
+            } else {
+                DBUG_PRINT ("PM", ("N_array found; frameshape does not match!"));
+                shpfound = COfreeConstant (shpfound);
+                stack = FailMatch (stack);
+            }
+        }
+
+        if (stack != (node *)FAIL) {
+            if (match != NULL) {
+                *match = arg;
+            }
+            inner_stack = ARRAY_AELEMS (arg);
+
+            for (i = 0; i < PAT_NP (pat); i++) {
+                inner_stack
+                  = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
+                if (inner_stack == (node *)FAIL) {
+                    i = PAT_NP (pat);
+                }
+            }
+            stack = checkInnerMatchResult (inner_stack, stack);
+        }
+    } else {
+        stack = FailMatch (stack);
+    }
+
+    return (stack);
+}
+
+pattern *
+PMarrayFS (constant **fs, int num_pats, ...)
+{
+    va_list ap;
+    pattern *res;
+    int i;
+
+    res = makePattern (patternArrayFS, num_pats);
+
+    PAT_C1 (res) = fs;
+
+    va_start (ap, num_pats);
+    for (i = 0; i < num_pats; i++) {
+        PAT_PD (res)[i] = va_arg (ap, pattern *);
+    }
+    va_end (ap);
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMprf( prf fun, int num_pats, sub_pat_1, ..., sub_pat_{num_pats})
+ *
+ * @brief prf pattern:  <fun>( sub_pat_1, ..., sub_pat_{num_pats})
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+static node *
+patternPrf (pattern *pat, node *stack, node **match)
+{
+    node *inner_stack;
+    node *arg;
+    int i;
+
+    DBUG_PRINT ("PM", ("trying to match N_prf"));
+
+    stack = ExtractOneArg (stack, &arg);
+    arg = skipVarDefs (arg);
+
+    if ((arg != NULL) && (NODE_TYPE (arg) == N_prf) && (PRF_PRF (arg) == PAT_PRF (pat))) {
+        DBUG_PRINT ("PM", ("matching N_prf found!"));
+        if (match != NULL) {
+            *match = arg;
+        }
+        inner_stack = PRF_ARGS (arg);
+
+        for (i = 0; i < PAT_NP (pat); i++) {
+            inner_stack = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
+            if (inner_stack == (node *)FAIL) {
+                i = PAT_NP (pat);
+            }
+        }
+        stack = checkInnerMatchResult (inner_stack, stack);
+    } else {
+        stack = FailMatch (stack);
+    }
+
+    return (stack);
+}
+
+pattern *
+PMprf (prf fun, int num_pats, ...)
+{
+    va_list ap;
+    pattern *res;
+    int i;
+
+    res = makePattern (patternPrf, num_pats);
+    PAT_PRF (res) = fun;
+
+    va_start (ap, num_pats);
+    for (i = 0; i < num_pats; i++) {
+        PAT_PD (res)[i] = va_arg (ap, pattern *);
+    }
+    va_end (ap);
+
+    return (res);
+}
 
 /** <!--*********************************************************************-->
  *

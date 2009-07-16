@@ -176,7 +176,7 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
  * @brief Checks whether the index refers to elements within the
  *        sub-pane given by ivs and ivids.
  *
- * @param index node representing index
+ * @param index node representing index under investigation
  * @param ivs   set of index vectors
  * @param ivids set of index scalars
  *
@@ -185,9 +185,11 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
 static bool
 IsValidIndexHelper (node *index, node **ivs, node **ivids)
 {
+    node *array;
     node *aexprs = NULL;
     node *rest = NULL;
-    node *arg1 = NULL, *arg2 = NULL;
+    node *iv1, *iv2;
+    pattern *pat1, *pat2;
     bool result = FALSE;
 
     DBUG_ENTER ("IsValidIndexHelper");
@@ -195,24 +197,30 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
     /*
      * index can be
      *
-     * iv1 ++ iv2 iv1 is prefix of current ivs and iv2 is valid index
-     *                   for the remainder
-     *
-     * iv => iv must be topmost WL index
+     * iv1 ++ iv2 : result is true iff  iv1 is prefix of current ivs
+     *                                  && iv2 is valid index for the remainder
      *
      * [i0, i1, i2, i3, ...] => the scalars are a prefix of ivids
      *                          or ivids is a prefix of the scalars
+     *
+     * iv : result is true iff iv is in ivs
+     *
      */
-    if (PMO (PMOvar (&arg2, PMOvar (&arg1, PMOprf (F_cat_VxV, index))))) {
-        result = IsValidIndexHelper (arg1, ivs, ivids)
-                 && IsValidIndexHelper (arg2, ivs, ivids);
-    } else if (PMO (PMOexprs (&aexprs, PMOarray (NULL, NULL, index)))) {
+    pat1 = PMprf (F_cat_VxV, 2, PMvar (&iv1), PMvar (&iv2));
+    pat2 = PMfetch (&array, PMarray (1, PMskip ()));
+
+    if (PMmatchFlat (pat1, index)) {
+        result
+          = IsValidIndexHelper (iv1, ivs, ivids) && IsValidIndexHelper (iv2, ivs, ivids);
+    } else if (PMmatchFlat (pat2, index)) {
         result = TRUE;
+        aexprs = ARRAY_AELEMS (array);
 
         while (result &&                        /* we don't know better */
                (*ivids != NULL) &&              /* still more nesting levels */
                (SET_MEMBER (*ivids) != NULL) && /* this level has idx scalars */
                (aexprs != NULL)) {              /* more elements in index */
+
             node *tmp = TCids2Exprs (SET_MEMBER (*ivids));
 
             result = PMO (PMOexprs (&rest, PMOpartExprs (tmp, aexprs)));
@@ -231,6 +239,8 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
 
         result = TRUE;
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (result);
 }

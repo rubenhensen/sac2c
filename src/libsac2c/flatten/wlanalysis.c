@@ -249,36 +249,28 @@ static gen_shape_t
 DetectVectorConstants (node *arg_node)
 {
     gen_shape_t gshape;
-    constant *vfs = NULL;
-    node *v = NULL;
+    ntype *t;
+    pattern *pat;
 
     DBUG_ENTER ("DetectVectorConstants");
 
-    gshape = GV_unknown_shape;
     if (NULL != arg_node) {
 
-        if (COisConstant (arg_node) || PMO (PMOconst (&vfs, &v, arg_node))) {
-            if (NULL != vfs) {
-                vfs = COfreeConstant (vfs);
-            }
-            gshape = GV_constant;
-        } else {
+        DBUG_ASSERT (NODE_TYPE (arg_node) == N_id,
+                     "nonN_id found as argument to DetectVectorConstants");
+        t = AVIS_TYPE (ID_AVIS (arg_node));
+        pat = PMarray (1, PMskip ());
 
-            v = NULL;
-            vfs = NULL;
-            if (PMO (PMOarray (&vfs, &v, arg_node)) && (NODE_TYPE (v) == N_id)
-                && TUisIntVect (AVIS_TYPE (ID_AVIS (v)))) {
-                /*
-                 * type-wise this is an int-vector, so lets see
-                 * whether we can find an N_array node for it
-                 */
-                gshape = GV_struct_constant;
-            } else {
-                if (TUshapeKnown (ID_NTYPE (arg_node))) {
-                    gshape = GV_known_shape;
-                }
-            }
+        if (TYisAKV (t)) {
+            gshape = GV_constant;
+        } else if (PMmatchFlat (pat, arg_node)) {
+            gshape = GV_struct_constant;
+        } else if (TUshapeKnown (t)) {
+            gshape = GV_known_shape;
+        } else {
+            gshape = GV_unknown_shape;
         }
+        pat = PMfree (pat);
     } else {
         gshape = GV_constant; /* Elided GENERATOR_STEP, GENERATOR_WIDTH
                                * has value of (vector) 1, ergo constant.

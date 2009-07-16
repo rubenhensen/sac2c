@@ -152,34 +152,6 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *findNarray( node *arg_node)
- *
- *   @brief Find N_array ancestor of arg_node
- *
- *
- *   @param  : node *arg_node,  N_array or N_id
- *   @return : node * N_array
- *
- ******************************************************************************/
-static node *
-findNarray (node *arg_node)
-{
-    node *narray = NULL;
-    constant *narrayfs = NULL;
-
-    DBUG_ENTER ("findNarray");
-
-    if (PMO (PMOarray (&narrayfs, &narray, arg_node))) {
-        COfreeConstant (narrayfs);
-    } else {
-        DBUG_ASSERT (FALSE, ("findNarray did not find N_array"));
-    }
-
-    DBUG_RETURN (narray);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *CreateArrayOfShapeSels( node *array, int dim, info *arg_info)
  *
  *   @brief expects (array) to point to an identifier and generates a
@@ -434,11 +406,10 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
 int
 WLPGnormalizeStepWidth (node **step, node **width)
 {
-    node *stp, *wth;
+    node *stp, *wth, *array;
     node *stpar = NULL;
-    constant *stparfs = NULL;
     node *wthar = NULL;
-    constant *wtharfs = NULL;
+    pattern *pat;
     int stpnum, wthnum, veclen;
     int error = 0, is_1 = 1;
 
@@ -448,11 +419,12 @@ WLPGnormalizeStepWidth (node **step, node **width)
         error = 3;
     } else {
         if ((*step) != NULL) {
+            pat = PMfetch (&array, PMarray (1, PMskip ()));
 
             if ((*width) == NULL) {
                 /*  create width with constant 1 */
-                if (PMO (PMOarray (&stparfs, &stpar, *step))) {
-                    COfreeConstant (stparfs);
+                if (PMmatchFlat (pat, *step)) {
+                    stpar = array;
                 } else {
                     DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array step"));
                 }
@@ -460,19 +432,17 @@ WLPGnormalizeStepWidth (node **step, node **width)
 
                 (*width) = CreateEntryFlatArray (1, veclen);
             }
-            /* step and width may be N_ids. Find the N_arrays they refer to. */
-            stpar = NULL;
-            stparfs = NULL;
-            if (PMO (PMOarray (&stparfs, &stpar, *step))) {
-                COfreeConstant (stparfs);
+            if (PMmatchFlat (pat, *step)) {
+                stpar = array;
             } else {
                 DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array step"));
             }
-            if (PMO (PMOarray (&wtharfs, &wthar, *width))) {
-                COfreeConstant (wtharfs);
+            if (PMmatchFlat (pat, *width)) {
+                wthar = array;
             } else {
                 DBUG_ASSERT (FALSE, ("WLPGnormalizeStepWidth needs N_array width"));
             }
+            pat = PMfree (pat);
 
             stp = ARRAY_AELEMS (stpar);
             wth = ARRAY_AELEMS (wthar);
@@ -1240,7 +1210,9 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     node *nassigns = NULL;
     node *_ids;
     node *res = NULL;
+    node *array;
     ntype *array_type;
+    pattern *pat;
 
     DBUG_ENTER ("CreateEmptyGenWLReplacement");
 
@@ -1258,8 +1230,14 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
              * First, we change the generator to full scope.
              */
             dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
-            lb = findNarray (WITH_BOUND1 (wl));
-            ub = findNarray (WITH_BOUND2 (wl));
+            pat = PMfetch (&array, PMarray (1, PMskip ()));
+            if (PMmatchFlat (pat, WITH_BOUND1 (wl))) {
+                lb = array;
+            }
+            if (PMmatchFlat (pat, WITH_BOUND2 (wl))) {
+                ub = array;
+            }
+            pat = PMfree (pat);
             lbe = ARRAY_AELEMS (lb);
             ube = ARRAY_AELEMS (ub);
 

@@ -112,14 +112,20 @@ StructOpSel (node *arg_node, info *arg_info)
     node *tmpivval;
     node *tmpivavis;
     node *tmpXid;
-    node *arg1 = NULL;
     node *arg2 = NULL;
+    pattern *pat;
 
     DBUG_ENTER ("StructOpSel");
-    // Match for _sel_VxA_( constant, N_array)
-    if (PMO (PMOarrayConstructorGuards (&arg2fs, &arg2,
-                                        PMOintConst (&con1, &arg1,
-                                                     PMOprf (F_sel_VxA, arg_node))))) {
+    /**
+     *   Match for    _sel_VxA_( constant, N_array)
+     *   and bind      con1    to constant
+     *                 arg2    to N_array-node
+     *                 arg2fs  to the frameshape of N_array
+     */
+    pat = PMprf (F_sel_VxA, 2, PMconst (&con1),
+                 PMfetch (&arg2, PMarrayFS (&arg2fs, 1, PMskip ())));
+
+    if (PMmatchFlatPseudo (pat, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -169,6 +175,7 @@ StructOpSel (node *arg_node, info *arg_info)
         }
         con1 = COfreeConstant (con1);
     }
+    pat = PMfree (pat);
     DBUG_RETURN (result);
 }
 
