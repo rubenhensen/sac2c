@@ -307,6 +307,7 @@ LD_DYNAMIC       :=  "true"
 target sl_ppp::sl:
 
 CC               := "comslc ppp"
+AR_CREATE        := "mtalpha-linux-gnu-ar"
 
 target sl_ptl::sl:
 

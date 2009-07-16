@@ -4,6 +4,14 @@
 
 #define SAC_MUTC_INCLUDE m4_include (sac_helpers.slh)
 
+#if SAC_DO_COMPILE_MODULE
+
+#define SAC_MUTC_STARTUP                                                                 \
+    SAC_MUTC_STARTUP_ANON ()                                                             \
+    SAC_MUTC_INCLUDE
+
+#else
+
 #define SAC_MUTC_STARTUP                                                                 \
     SAC_MUTC_STARTUP_ANON ()                                                             \
     SAC_MUTC_INCLUDE                                                                     \
@@ -11,6 +19,8 @@
     SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \
     SAC_MUTC_SAC_SVP_IO_PUTN
+
+#endif
 
 #define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
     sl_decl (svp_io_putn, void, sl_glparm (long long, a), sl_glparm (int, t));           \
