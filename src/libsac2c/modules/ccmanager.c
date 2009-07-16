@@ -216,7 +216,12 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
     switch (kind) {
     case STRS_saclib:
         result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
-        sprintf (result, "-l%sMod", lib);
+        if (global.backend == BE_mutc) {
+            /* Support cross compiling */
+            sprintf (result, "-l%sMod%s", lib, global.target_name);
+        } else {
+            sprintf (result, "-l%sMod", lib);
+        }
 
         break;
     case STRS_extlib:
