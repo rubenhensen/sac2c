@@ -259,7 +259,7 @@ DetectVectorConstants (node *arg_node)
         DBUG_ASSERT (NODE_TYPE (arg_node) == N_id,
                      "nonN_id found as argument to DetectVectorConstants");
         t = AVIS_TYPE (ID_AVIS (arg_node));
-        pat = PMarray (1, PMskip ());
+        pat = PMarray (0, 1, PMskip (0));
 
         if (TYisAKV (t)) {
             gshape = GV_constant;

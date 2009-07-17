@@ -7,6 +7,7 @@
 #define _SAC_PATTERN_MATCH_H_
 
 #include "types.h"
+#include "pattern_match_attribs.h"
 
 /** needs to be moved into types.h: */
 typedef struct PAT pattern;
@@ -21,25 +22,15 @@ extern bool PMmatchFlatPseudo (pattern *pat, node *expr);
 /**
  * Pattern-DSL:
  */
-extern pattern *PMvar (node **var);
-extern pattern *PMconst (constant **c);
-
-extern pattern *PMint (int *v);
-extern pattern *PMintLE (int *v1, int *v2);
-
-extern pattern *PMarray (int num_pats, ...);
-extern pattern *PMarrayLen (int *l, int num_pats, ...);
-extern pattern *PMarrayFS (constant **fs, int num_pats, ...);
-
-extern pattern *PMprf (prf fun, int num_pats, ...);
-
-extern pattern *PMfetch (node **hook, pattern *pat);
+extern pattern *PMvar (int num_attribs, ...);
 extern pattern *PMfetchAsVar (node **hook, pattern *pat);
-
+extern pattern *PMconst (int num_attribs, ...);
+extern pattern *PMint (int num_attribs, ...);
+extern pattern *PMarray (int num_attribs, ...);
+extern pattern *PMprf (int num_attribs, ...);
 /* extern pattern *PMretryAny( int *i, int *l, int num_pats, ...); */
 /* extern pattern *PMretryAll( int *i, int *l, int num_pats, ...); */
-extern pattern *PMskip ();
-/* extern pattern *PMskipN( int *i); */
+extern pattern *PMskip (int num_attribs, ...);
 /* extern pattern *PMpair( pattern *p1, pattern *p2); */
 
 /**

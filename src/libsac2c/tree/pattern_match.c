@@ -144,48 +144,103 @@ static char *FAIL = "";
 
 static enum pm_mode { PM_exact, PM_flat, PM_flatPseudo } mode;
 
-typedef node *matchFun (pattern *, node *, node **);
+typedef node *matchFun (pattern *, node *);
 
 struct PAT {
-    prf fun;
-    constant **con;
-    node **n_arg1;
-    int *i_arg1;
-    int *i_arg2;
-    pattern *p_arg1;
-    int num_p_dyn;
-    pattern **p_dyn;
+    nodetype nt;
+    bool follow;
+    int num_attr;
+    attrib **attr;
+    int num_pats;
+    pattern **pats;
     matchFun *matcher;
 };
 
-#define PAT_PRF(p) (p->fun)
-#define PAT_C1(p) (p->con)
-#define PAT_I1(p) (p->i_arg1)
-#define PAT_I2(p) (p->i_arg2)
-#define PAT_N1(p) (p->n_arg1)
-#define PAT_P1(p) (p->p_arg1)
-#define PAT_NP(p) (p->num_p_dyn)
-#define PAT_PD(p) (p->p_dyn)
+#define PAT_NT(p) (p->nt)
+#define PAT_NESTED(p) ((p->num_pats) == 0)
+#define PAT_DOFOLLOW(p) (p->follow)
+#define PAT_NA(p) (p->num_attr)
+#define PAT_PATTRS(p) (p->attr)
+#define PAT_NP(p) (p->num_pats)
+#define PAT_PATS(p) (p->pats)
 #define PAT_FUN(p) (p->matcher)
 
 static pattern *
-makePattern (matchFun f, int num_pats)
+makePattern (nodetype nt, matchFun f)
 {
     pattern *res;
 
     res = (pattern *)MEMmalloc (sizeof (pattern));
 
-    PAT_C1 (res) = NULL;
-    PAT_I1 (res) = NULL;
-    PAT_I2 (res) = NULL;
-    PAT_N1 (res) = NULL;
-    PAT_P1 (res) = NULL;
-    PAT_NP (res) = num_pats;
-    PAT_PD (res) = (pattern **)MEMmalloc (num_pats * sizeof (pattern *));
+    PAT_NT (res) = nt;
     PAT_FUN (res) = f;
+    PAT_DOFOLLOW (res) = TRUE;
+    PAT_NA (res) = 0;
+    PAT_PATTRS (res) = NULL;
+    PAT_NP (res) = 0;
+    PAT_PATS (res) = NULL;
 
     return (res);
 }
+
+/*******************************************************************************
+ */
+
+static pattern *
+genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
+{
+    va_list arg_p_copy;
+    int i;
+
+    va_copy (arg_p_copy, arg_p);
+
+    PAT_PATTRS (res) = (attrib **)MEMmalloc (num_attribs * sizeof (attrib *));
+
+    for (i = 0; i < num_attribs; i++) {
+        PAT_PATTRS (res)[i] = va_arg (arg_p_copy, attrib *);
+    }
+    if (nested) {
+        PAT_NP (res) = va_arg (arg_p_copy, int);
+        PAT_PATS (res) = (pattern **)MEMmalloc (PAT_NP (res) * sizeof (pattern *));
+        for (i = 0; i < PAT_NP (res); i++) {
+            PAT_PATS (res)[i] = va_arg (arg_p_copy, pattern *);
+        }
+    } else {
+        PAT_NP (res) = 0;
+    }
+    va_end (arg_p_copy);
+
+    return (res);
+}
+
+/*******************************************************************************
+ */
+
+static node *
+getInner (node *arg_node)
+{
+    node *inner;
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_array:
+        inner = ARRAY_AELEMS (arg_node);
+        break;
+    case N_id:
+        inner = arg_node; /* needed for PMfetchAsVar */
+        break;
+    case N_prf:
+        inner = PRF_ARGS (arg_node);
+        break;
+    default:
+        inner = arg_node;
+        DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
+        break;
+    }
+
+    return (inner);
+}
+/*******************************************************************************
+ */
 
 typedef union {
     prf *a_prf;
@@ -1317,449 +1372,111 @@ PMOpartExprs (node *exprs, node *stack)
     DBUG_RETURN (stack);
 }
 
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMvar( node ** var)
- *
- * @brief identifyer patter:  < *var>
- *        - no inner pattern
- *        - does NOT depend on matching mode!
- *
- *        tri-state argument:
- *        var == NULL   => ignore what you match
- *        *var == NULL  => bring back link to the avis of the var matched
- *        *var != NULL  => match iff the variable matched points to THAT avis
- *
- ******************************************************************************/
 static node *
-patternVar (pattern *pat, node *stack, node **match)
+genericPatternMatcher (pattern *pat, node *stack)
 {
-    node **var;
-    node *arg;
-
-    var = PAT_N1 (pat);
-    if (var == NULL) {
-        DBUG_PRINT ("PM", ("PMvar trying to match N_id"));
-    } else if (*var == NULL) {
-        DBUG_PRINT ("PM", ("PMvar trying to match and fetch N_id."));
-    } else {
-        DBUG_PRINT ("PM", ("PMvar trying to match N_id and compare against \"%s\".",
-                           AVIS_NAME (*var)));
-    }
-
-    stack = ExtractOneArg (stack, &arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_id)) {
-        DBUG_PRINT ("PM", ("matching variable \"%s\"", ID_NAME (arg)));
-
-        if (var == NULL) {
-            DBUG_PRINT ("PM", ("ignoring matched variable!"));
-            if (match != NULL) {
-                *match = arg;
-            }
-        } else if (*var == NULL) {
-            DBUG_PRINT ("PM", ("binding matched variable!"));
-            *var = arg;
-            if (match != NULL) {
-                *match = arg;
-            }
-        } else if (ID_AVIS (*var) == ID_AVIS (arg)) {
-            DBUG_PRINT ("PM", ("variable matches bound one!"));
-            if (match != NULL) {
-                *match = arg;
-            }
-        } else {
-            stack = FailMatch (stack);
-        }
-    }
-
-    return (stack);
-}
-
-pattern *
-PMvar (node **var)
-{
-    pattern *res;
-
-    res = makePattern (patternVar, 0);
-    PAT_N1 (res) = var;
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMconst( constant ** c)
- *
- * @brief constant pattern:  < *c>
- *        - no inner pattern
- *        - does depend on matching mode!
- *
- *        tri-state argument:
- *        c == NULL   => ignore what you match
- *        *c == NULL  => bring back the value matched
- *        *c != NULL  => match iff the value matched is identical to *c
- *
- ******************************************************************************/
-static node *
-patternConst (pattern *pat, node *stack, node **match)
-{
-    constant **c;
-    constant *c2;
-    node *arg;
-
-    c = PAT_C1 (pat);
-    if (c == NULL) {
-        DBUG_PRINT ("PM", ("PMconst trying to match constant"));
-    } else if (*c == NULL) {
-        DBUG_PRINT ("PM", ("PMconst trying to match and fetch constant."));
-    } else {
-        DBUG_PRINT ("PM", ("PMconst trying to match constant and compare against given "
-                           "value."));
-    }
-
-    stack = ExtractOneArg (stack, &arg);
-
-    if ((arg != NULL) && COisConstant (arg)) {
-        DBUG_PRINT ("PM", ("matching constant "));
-
-        if (c == NULL) {
-            DBUG_PRINT ("PM", ("ignoring matched constant!"));
-        } else if (*c == NULL) {
-            DBUG_PRINT ("PM", ("binding matched constant!"));
-            *c = COaST2Constant (arg);
-        } else {
-            c2 = COaST2Constant (arg);
-            if (COcompareConstants (c2, *c)) {
-                DBUG_PRINT ("PM", ("constant matches bound one!"));
-            } else {
-                stack = FailMatch (stack);
-            }
-            c2 = COfreeConstant (c2);
-        }
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    if (match != NULL) {
-        *match = arg;
-    }
-
-    return (stack);
-}
-
-pattern *
-PMconst (constant **c)
-{
-    pattern *res;
-
-    res = makePattern (patternConst, 0);
-    PAT_C1 (res) = c;
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMint( int * v)
- *
- * @brief scalar value pattern:  < *v>
- *        - no inner pattern
- *        - does depend on matching mode!
- *
- *        bi-state argument:
- *        v == NULL   => ignore what you match
- *        v != NULL  => bring back int value of the N_num node matched.
- *
- ******************************************************************************/
-static node *
-patternInt (pattern *pat, node *stack, node **match)
-{
-    node *arg;
-
-    DBUG_PRINT ("PM", ("trying to match N_num"));
-
-    stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_num)) {
-        DBUG_PRINT ("PM", ("N_num with value %d found!", NUM_VAL (arg)));
-        *PAT_I1 (pat) = NUM_VAL (arg);
-        if (match != NULL) {
-            *match = arg;
-        }
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    return (stack);
-}
-
-pattern *
-PMint (int *v)
-{
-    pattern *res;
-
-    res = makePattern (patternInt, 0);
-    PAT_I1 (res) = v;
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMintLE( int * v1, int *v2)
- *
- * @brief scalar value pattern:  < *v1>   |  *v1 <= *v2
- *        - no inner pattern
- *        - does depend on matching mode!
- *
- *        we expect ( v1 != NULL) and (v2!= NULL)!!!
- *
- *        *v1 will bring back int value of the N_num node matched.
- *
- ******************************************************************************/
-static node *
-patternIntLE (pattern *pat, node *stack, node **match)
-{
-    node *arg;
-
-    DBUG_PRINT ("PM", ("trying to match N_num that is <= %d", *PAT_I2 (pat)));
-
-    stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_num) && (NUM_VAL (arg) <= *PAT_I2 (pat))) {
-        DBUG_PRINT ("PM", ("N_num with value %d found!", NUM_VAL (arg)));
-        *PAT_I1 (pat) = NUM_VAL (arg);
-        if (match != NULL) {
-            *match = arg;
-        }
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    return (stack);
-}
-
-pattern *
-PMintLE (int *v1, int *v2)
-{
-    pattern *res;
-
-    res = makePattern (patternIntLE, 0);
-    DBUG_ASSERT ((v1 != NULL), "PMintLE expects non-NULL first argument");
-    DBUG_ASSERT ((v2 != NULL), "PMintLE expects non-NULL second argument");
-    PAT_I1 (res) = v1;
-    PAT_I2 (res) = v2;
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMarray( int num_pats, va_list arg_p)
- *
- * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
- *        - num_pats inner pattern
- *        - does depend on matching mode!
- *
- ******************************************************************************/
-static node *
-patternArray (pattern *pat, node *stack, node **match)
-{
+    attrib *attr;
+    pattern *inner_pat;
     node *inner_stack;
     node *arg;
     int i;
 
-    DBUG_PRINT ("PM", ("trying to match N_array"));
+    DBUG_PRINT ("PM", ("trying to match %s:", global.mdb_nodetype[PAT_NT (pat)]));
 
     stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_array)) {
-        DBUG_PRINT ("PM", ("N_array found!"));
-        if (match != NULL) {
-            *match = arg;
-        }
-        inner_stack = ARRAY_AELEMS (arg);
-
-        for (i = 0; i < PAT_NP (pat); i++) {
-            inner_stack = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
-            if (inner_stack == (node *)FAIL) {
-                i = PAT_NP (pat);
-            }
-        }
-        stack = checkInnerMatchResult (inner_stack, stack);
-    } else {
-        stack = FailMatch (stack);
+    if (PAT_DOFOLLOW (pat)) {
+        arg = skipVarDefs (arg);
     }
 
-    return (stack);
-}
+    if ((arg != NULL) && (NODE_TYPE (arg) == PAT_NT (pat))) {
 
-pattern *
-PMarray (int num_pats, ...)
-{
-    va_list ap;
-    pattern *res;
-    int i;
-
-    res = makePattern (patternArray, num_pats);
-
-    va_start (ap, num_pats);
-    for (i = 0; i < num_pats; i++) {
-        PAT_PD (res)[i] = va_arg (ap, pattern *);
-    }
-    va_end (ap);
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMarrayLen( int * l, int num_pats, va_list arg_p)
- *
- * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
- *        - num_pats inner pattern
- *        - does depend on matching mode!
- *
- *        bi-state argument:
- *        *l == -1  => bring back ravel-length of N_array matched
- *        *l >= 0   => match iff the ravel-length of N_array == *l
-
- *
- ******************************************************************************/
-static node *
-patternArrayLen (pattern *pat, node *stack, node **match)
-{
-    node *arg, *inner_stack;
-    int i;
-    int *l;
-
-    l = PAT_I1 (pat);
-    DBUG_PRINT ("PM",
-                ("trying to match N_array of frame-length %d (-1 == arbitrary)!", *l));
-
-    stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_array)
-        && ((*l == -1) || (*l == SHgetUnrLen (ARRAY_FRAMESHAPE (arg))))) {
-        DBUG_PRINT ("PM", ("N_array with frame-length %d found!",
-                           SHgetUnrLen (ARRAY_FRAMESHAPE (arg))));
-
-        *l = SHgetUnrLen (ARRAY_FRAMESHAPE (arg));
-
-        if (match != NULL) {
-            *match = arg;
-        }
-        inner_stack = ARRAY_AELEMS (arg);
-
-        for (i = 0; i < PAT_NP (pat); i++) {
-            inner_stack = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
-            if (inner_stack == (node *)FAIL) {
-                i = PAT_NP (pat);
-            }
-        }
-        stack = checkInnerMatchResult (inner_stack, stack);
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    return (stack);
-}
-
-pattern *
-PMarrayLen (int *l, int num_pats, ...)
-{
-    va_list ap;
-    pattern *res;
-    int i;
-
-    res = makePattern (patternArrayLen, num_pats);
-
-    PAT_I1 (res) = l;
-
-    va_start (ap, num_pats);
-    for (i = 0; i < num_pats; i++) {
-        PAT_PD (res)[i] = va_arg (ap, pattern *);
-    }
-    va_end (ap);
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMarrayFS( constant **fs,
-                       int num_pats, sub_pat_1, ..., sub_pat_{num_pats})
- *
- * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
- *        - num_pats inner pattern
- *        - does depend on matching mode!
- *
- *        tri-state argument:
- *        fs == NULL  => ignore this parameter
- *        *fs == NULL => bring back a copy of the frameshape of N_array matched
- *        *fs != NULL => match iff the frameshape of N_array is identical to *fs
-
- *
- ******************************************************************************/
-static node *
-patternArrayFS (pattern *pat, node *stack, node **match)
-{
-    node *arg, *inner_stack;
-    int i;
-    constant **fs;
-    constant *shpfound;
-
-    fs = PAT_C1 (pat);
-
-    if (fs == NULL) {
-        DBUG_PRINT ("PM",
-                    ("trying to match N_array ignoring FS; should use PMarray instead!"));
-    } else if (*fs == NULL) {
-        DBUG_PRINT ("PM", ("trying to match N_array fetching frameshape"));
-    } else {
-        DBUG_PRINT ("PM", ("trying to match N_array with given frameshape"));
-    }
-
-    stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_array)) {
-        if (fs != NULL) {
-            shpfound = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
-            if (*fs == NULL) {
-                DBUG_PRINT ("PM", ("N_array found; binding frameshape!"));
-                *fs = shpfound;
-            } else if (COcompareConstants (*fs, shpfound)) {
-                DBUG_PRINT ("PM", ("N_array with matching frameshape found!"));
-                shpfound = COfreeConstant (shpfound);
-            } else {
-                DBUG_PRINT ("PM", ("N_array found; frameshape does not match!"));
-                shpfound = COfreeConstant (shpfound);
+        for (i = 0; i < PAT_NA (pat); i++) {
+            attr = PAT_PATTRS (pat)[i];
+            if (!PMAmatch (attr, arg)) {
                 stack = FailMatch (stack);
+                i = PAT_NA (pat);
             }
         }
 
-        if (stack != (node *)FAIL) {
-            if (match != NULL) {
-                *match = arg;
-            }
-            inner_stack = ARRAY_AELEMS (arg);
-
+        if (PAT_NESTED (pat) && (stack != (node *)FAIL)) {
+            inner_stack = getInner (arg);
             for (i = 0; i < PAT_NP (pat); i++) {
-                inner_stack
-                  = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
+                inner_pat = PAT_PATS (pat)[i];
+                inner_stack = PAT_FUN (inner_pat) (inner_pat, inner_stack);
                 if (inner_stack == (node *)FAIL) {
                     i = PAT_NP (pat);
                 }
             }
             stack = checkInnerMatchResult (inner_stack, stack);
         }
+
     } else {
+        DBUG_PRINT ("PM", ("%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
+        stack = FailMatch (stack);
+    }
+
+    return (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMvar( int num_attribs, ...);
+ *
+ * @brief matches an IMMEDIATE identifyer (N_id)
+ *        - no inner pattern
+ *        - does NOT depend on matching mode!
+ *
+ ******************************************************************************/
+pattern *
+PMvar (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_id, genericPatternMatcher), FALSE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    PAT_DOFOLLOW (res) = FALSE;
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMconst( int num_attribs, ...);
+ *
+ * @brief matches constant nodes...
+ *        - no inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+static node *
+constMatcher (pattern *pat, node *stack)
+{
+    attrib *attr;
+    node *arg;
+    int i;
+
+    DBUG_PRINT ("PM", ("trying to match a constant:"));
+
+    stack = ExtractOneArg (stack, &arg);
+    if (PAT_DOFOLLOW (pat)) {
+        arg = skipVarDefs (arg);
+    }
+
+    if ((arg != NULL) && COisConstant (arg)) {
+        DBUG_PRINT ("PM", ("matching constant "));
+        for (i = 0; i < PAT_NA (pat); i++) {
+            attr = PAT_PATTRS (pat)[i];
+            if (!PMAmatch (attr, arg)) {
+                stack = FailMatch (stack);
+                i = PAT_NA (pat);
+            }
+        }
+    } else {
+        DBUG_PRINT ("PM", ("no constant found!"));
         stack = FailMatch (stack);
     }
 
@@ -1767,20 +1484,14 @@ patternArrayFS (pattern *pat, node *stack, node **match)
 }
 
 pattern *
-PMarrayFS (constant **fs, int num_pats, ...)
+PMconst (int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
-    int i;
 
-    res = makePattern (patternArrayFS, num_pats);
-
-    PAT_C1 (res) = fs;
-
-    va_start (ap, num_pats);
-    for (i = 0; i < num_pats; i++) {
-        PAT_PD (res)[i] = va_arg (ap, pattern *);
-    }
+    va_start (ap, num_attribs);
+    res
+      = genericFillPattern (makePattern (N_module, constMatcher), FALSE, num_attribs, ap);
     va_end (ap);
 
     return (res);
@@ -1788,96 +1499,70 @@ PMarrayFS (constant **fs, int num_pats, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMprf( prf fun, int num_pats, sub_pat_1, ..., sub_pat_{num_pats})
+ * pattern *PMint( int num_attribs, ...)
  *
- * @brief prf pattern:  <fun>( sub_pat_1, ..., sub_pat_{num_pats})
- *        - num_pats inner pattern
+ * @brief matching N_num
+ *        - no inner pattern
  *        - does depend on matching mode!
  *
  ******************************************************************************/
-static node *
-patternPrf (pattern *pat, node *stack, node **match)
-{
-    node *inner_stack;
-    node *arg;
-    int i;
-
-    DBUG_PRINT ("PM", ("trying to match N_prf"));
-
-    stack = ExtractOneArg (stack, &arg);
-    arg = skipVarDefs (arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_prf) && (PRF_PRF (arg) == PAT_PRF (pat))) {
-        DBUG_PRINT ("PM", ("matching N_prf found!"));
-        if (match != NULL) {
-            *match = arg;
-        }
-        inner_stack = PRF_ARGS (arg);
-
-        for (i = 0; i < PAT_NP (pat); i++) {
-            inner_stack = PAT_FUN (PAT_PD (pat)[i]) (PAT_PD (pat)[i], inner_stack, NULL);
-            if (inner_stack == (node *)FAIL) {
-                i = PAT_NP (pat);
-            }
-        }
-        stack = checkInnerMatchResult (inner_stack, stack);
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    return (stack);
-}
-
 pattern *
-PMprf (prf fun, int num_pats, ...)
+PMint (int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
-    int i;
 
-    res = makePattern (patternPrf, num_pats);
-    PAT_PRF (res) = fun;
-
-    va_start (ap, num_pats);
-    for (i = 0; i < num_pats; i++) {
-        PAT_PD (res)[i] = va_arg (ap, pattern *);
-    }
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_num, genericPatternMatcher), FALSE,
+                              num_attribs, ap);
     va_end (ap);
 
     return (res);
 }
 
-/** <!--*********************************************************************-->
+/** <!-- ****************************************************************** -->
  *
- * @fn pattern *PMfetch( node **hook, pattern *what)
+ * pattern *PMarray( int num_attribs, ..., int num_pats, ...)
  *
- * @brief fetch pattern:   <what> as <*hook>
- *        - has one inner pattern <what>
- *        - in case <what> matches, the corresponding pointer in the AST
- *          is placed into <*hook>.
- */
-
-static node *
-patternFetch (pattern *pat, node *stack, node **match)
-{
-    pattern *what_pat;
-
-    what_pat = PAT_P1 (pat);
-    stack = PAT_FUN (what_pat) (what_pat, stack, PAT_N1 (pat));
-
-    return (stack);
-}
-
+ * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
 pattern *
-PMfetch (node **hook, pattern *what)
+PMarray (int num_attribs, ...)
 {
+    va_list ap;
     pattern *res;
 
-    /* DBUG_ASSERT( hook != NULL) */
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_array, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
 
-    res = makePattern (patternFetch, 0);
-    PAT_N1 (res) = hook;
-    PAT_P1 (res) = what;
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMprf( int num_attribs, ..., int num_pats, ...)
+ *
+ * @brief prf pattern:  prf( sub_pat_1, ..., sub_pat_{num_pats})
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+pattern *
+PMprf (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_prf, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
     return (res);
 }
 
@@ -1891,31 +1576,6 @@ PMfetch (node **hook, pattern *what)
  *          is defined by something that matches the inner pattern <what>.
  *          If that holds, <id> is placed into <*hook>.
  */
-
-static node *
-patternFetchAsVar (pattern *pat, node *stack, node **match)
-{
-    node *inner_stack, *arg;
-    pattern *what_pat;
-
-    what_pat = PAT_P1 (pat);
-
-    stack = ExtractOneArg (stack, &arg);
-
-    if ((arg != NULL) && (NODE_TYPE (arg) == N_id)) {
-        DBUG_PRINT ("PM", ("matching variable \"%s\"", ID_NAME (arg)));
-        if (match != NULL) {
-            *match = arg;
-        }
-        inner_stack = PAT_FUN (what_pat) (what_pat, arg, NULL);
-        stack = checkInnerMatchResult (inner_stack, stack);
-    } else {
-        stack = FailMatch (stack);
-    }
-
-    return (stack);
-}
-
 pattern *
 PMfetchAsVar (node **hook, pattern *what)
 {
@@ -1923,9 +1583,14 @@ PMfetchAsVar (node **hook, pattern *what)
 
     /* DBUG_ASSERT( hook != NULL) */
 
-    res = makePattern (patternFetchAsVar, 0);
-    PAT_N1 (res) = hook;
-    PAT_P1 (res) = what;
+    res = makePattern (N_id, genericPatternMatcher);
+    PAT_DOFOLLOW (res) = FALSE;
+    PAT_NA (res) = 1;
+    PAT_PATTRS (res) = (attrib **)MEMmalloc (sizeof (attrib *));
+    PAT_PATTRS (res)[0] = PMAgetNode (hook);
+    PAT_NP (res) = 1;
+    PAT_PATS (res) = (pattern **)MEMmalloc (sizeof (pattern *));
+    PAT_PATS (res)[0] = what;
     return (res);
 }
 
@@ -1967,7 +1632,7 @@ pattern *Pall( pattern *what)
 
 /** <!--*********************************************************************-->
  *
- * @fn pattern *PMskip( );
+ * @fn pattern *PMskip(  int num_attribs, ...)
  *
  * @brief skipping pattern:   ...
  *        deletes stack and returnd NULL unless it contains FAIL which is
@@ -1975,13 +1640,14 @@ pattern *Pall( pattern *what)
  */
 
 static node *
-patternSkip (pattern *pat, node *stack, node **match)
+skipMatcher (pattern *pat, node *stack)
 {
+    node *match;
+
     DBUG_PRINT ("PM", ("skipping remaining elements!"));
 
-    if (match != NULL) {
-        stack = ExtractTopFrame (stack, match);
-    }
+    stack = ExtractTopFrame (stack, &match);
+
     if (stack != (node *)FAIL) {
         if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
             stack = FREEdoFreeTree (stack);
@@ -1994,11 +1660,15 @@ patternSkip (pattern *pat, node *stack, node **match)
 }
 
 pattern *
-PMskip ()
+PMskip (int num_attribs, ...)
 {
+    va_list ap;
     pattern *res;
 
-    res = makePattern (patternSkip, 0);
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_exprs, skipMatcher), FALSE, num_attribs, ap);
+    va_end (ap);
+
     return (res);
 }
 
@@ -2009,11 +1679,21 @@ PMskip ()
 pattern *
 PMfree (pattern *p)
 {
+    int i;
+
     DBUG_ENTER ("PMfree");
     if (p != NULL) {
-        PAT_P1 (p) = PMfree (PAT_P1 (p));
+        for (i = 0; i < PAT_NA (p); i++) {
+            PAT_PATTRS (p)[i] = PMAfree (PAT_PATTRS (p)[i]);
+        }
+        if (PAT_NA (p) > 0) {
+            PAT_PATTRS (p) = (attrib **)MEMfree (PAT_PATTRS (p));
+        }
+        for (i = 0; i < PAT_NP (p); i++) {
+            PAT_PATS (p)[i] = PMfree (PAT_PATS (p)[i]);
+        }
         if (PAT_NP (p) > 0) {
-            PAT_PD (p) = (pattern **)MEMfree (PAT_PD (p));
+            PAT_PATS (p) = (pattern **)MEMfree (PAT_PATS (p));
         }
         p = (pattern *)MEMfree (p);
     }
@@ -2029,7 +1709,7 @@ PMmatchExact (pattern *pat, node *expr)
 {
     mode = PM_exact;
 
-    return (PAT_FUN (pat) (pat, expr, NULL) != (node *)FAIL);
+    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }
 
 int
@@ -2037,7 +1717,7 @@ PMmatchFlat (pattern *pat, node *expr)
 {
     mode = PM_flat;
 
-    return (PAT_FUN (pat) (pat, expr, NULL) != (node *)FAIL);
+    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }
 
 int
@@ -2045,5 +1725,5 @@ PMmatchFlatPseudo (pattern *pat, node *expr)
 {
     mode = PM_flatPseudo;
 
-    return (PAT_FUN (pat) (pat, expr, NULL) != (node *)FAIL);
+    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }

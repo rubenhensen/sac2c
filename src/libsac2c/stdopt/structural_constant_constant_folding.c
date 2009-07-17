@@ -122,8 +122,8 @@ StructOpSel (node *arg_node, info *arg_info)
      *                 arg2    to N_array-node
      *                 arg2fs  to the frameshape of N_array
      */
-    pat = PMprf (F_sel_VxA, 2, PMconst (&con1),
-                 PMfetch (&arg2, PMarrayFS (&arg2fs, 1, PMskip ())));
+    pat = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
+                 PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
     if (PMmatchFlatPseudo (pat, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);

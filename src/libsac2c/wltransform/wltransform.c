@@ -2471,7 +2471,7 @@ ToFirstComponent (node *array)
 
     DBUG_ENTER ("ToFirstComponent");
 
-    pat = PMarray (1, PMfetch (&elems, PMskip ()));
+    pat = PMarray (0, 1, PMskip (1, PMAgetNode (&elems)));
 
     if ((array != NULL) && PMmatchFlat (pat, array)) {
         array = elems;

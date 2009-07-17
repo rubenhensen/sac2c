@@ -593,7 +593,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ATravCNWgenarray");
 
-    pat = PMfetch (&array, PMarray (1, PMskip ()));
+    pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
     if (PMmatchFlat (pat, GENARRAY_SHAPE (arg_node))) {
         sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
@@ -846,7 +846,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
     set = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
-    pat = PMfetch (&sarray, PMarray (1, PMskip ()));
+    pat = PMarray (1, PMAgetNode (&sarray), 1, PMskip (0));
 
     match = PMmatchFlat (pat, GENARRAY_SHAPE (arg_node));
 

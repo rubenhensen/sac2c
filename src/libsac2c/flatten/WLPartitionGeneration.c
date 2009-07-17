@@ -419,7 +419,7 @@ WLPGnormalizeStepWidth (node **step, node **width)
         error = 3;
     } else {
         if ((*step) != NULL) {
-            pat = PMfetch (&array, PMarray (1, PMskip ()));
+            pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
             if ((*width) == NULL) {
                 /*  create width with constant 1 */
@@ -1230,7 +1230,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
              * First, we change the generator to full scope.
              */
             dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
-            pat = PMfetch (&array, PMarray (1, PMskip ()));
+            pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
             if (PMmatchFlat (pat, WITH_BOUND1 (wl))) {
                 lb = array;
             }
