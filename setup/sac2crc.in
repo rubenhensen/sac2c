@@ -302,7 +302,7 @@ CACHE3_MSCA      :=  0
 target sl:
  
 CC               :=  "comslc seqc"
-LD_DYNAMIC       :=  "true"
+LD_DYNAMIC       :=  "echo 'Not making dynamic library for sl: '"
 
 target sl_ppp::sl:
 
