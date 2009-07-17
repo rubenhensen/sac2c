@@ -449,6 +449,7 @@ UESDprf (node *arg_node, info *arg_info)
                   = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
                 tmp = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), tmp), NULL);
+                AVIS_SSAASSIGN (avis) = tmp;
 
                 /*
                  * change current prf
