@@ -62,6 +62,8 @@
  *
  *   INFO_CONCURRENTRANGES: used to pass down the WITH3_USECONCURRENTRANGES
  *                          during code generation
+ *
+ *   INFO_COND        : inside a conditional id or bool
  */
 
 /*
@@ -86,6 +88,7 @@ struct INFO {
     lut_t *foldlut;
     node *postfun;
     bool concurrentranges;
+    bool cond;
 };
 
 /*
@@ -109,6 +112,7 @@ struct INFO {
 #define INFO_FOLDLUT(n) ((n)->foldlut)
 #define INFO_POSTFUN(n) ((n)->postfun)
 #define INFO_CONCURRENTRANGES(n) ((n)->concurrentranges)
+#define INFO_COND(n) ((n)->cond)
 
 /*
  * INFO functions
@@ -138,6 +142,7 @@ MakeInfo ()
     INFO_SPMDBARRIER (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
     INFO_POSTFUN (result) = NULL;
+    INFO_COND (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -1930,6 +1935,52 @@ CheckAp (node *ap, info *arg_info)
 
 #endif
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *RhsId(node *arg_node, node *arg_info)
+ *
+ * @brief Compiles let expression with id on RHS.
+ *        The return value is a N_assign chain of ICMs.
+ *        Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ *****************************************************************************/
+
+static node *
+RhsId (node *arg_node, info *arg_info)
+{
+    node *let_ids = NULL;
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("RhsId");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    /*
+     * 'arg_node' and 'let_ids' are both non-unique or both unique
+     */
+    if (!STReq (IDS_NAME (let_ids), ID_NAME (arg_node))) {
+        ret_node
+          = TCmakeAssignIcm2 ("ND_ASSIGN",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE,
+                                            MakeTypeArgs (ID_NAME (arg_node),
+                                                          ID_TYPE (arg_node), FALSE, TRUE,
+                                                          FALSE, NULL)),
+                              TCmakeIdCopyString (
+                                GenericFun (GF_copy, ID_TYPE (arg_node))),
+                              ret_node);
+    } else {
+        /*
+         * We are dealing with an assignment of the kind:
+         *   a = a;
+         * which we compile into:
+         *   NOOP()
+         */
+        ret_node = TCmakeAssignIcm0 ("NOOP", ret_node);
+    }
+    DBUG_RETURN (ret_node);
+}
+
 /******************************************************************************
  *
  * COMPILE traversal functions
@@ -2870,44 +2921,33 @@ COMPap (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPid( node *arg_node, info *arg_info)
  *
- * @brief  Compiles let expression with id on RHS.
- *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPLet.
+ * @brief  Handle ids from two locations:
+ *
+ *         From in the conditional of a cond or do node
+ *
+ *         All other ids from the rhs
  *
  ******************************************************************************/
 
 node *
 COMPid (node *arg_node, info *arg_info)
 {
-    node *let_ids;
     node *ret_node = NULL;
 
     DBUG_ENTER ("COMPid");
 
-    let_ids = INFO_LASTIDS (arg_info);
-
-    /*
-     * 'arg_node' and 'let_ids' are both non-unique or both unique
-     */
-    if (!STReq (IDS_NAME (let_ids), ID_NAME (arg_node))) {
-        ret_node
-          = TCmakeAssignIcm2 ("ND_ASSIGN",
-                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                            TRUE, FALSE,
-                                            MakeTypeArgs (ID_NAME (arg_node),
-                                                          ID_TYPE (arg_node), FALSE, TRUE,
-                                                          FALSE, NULL)),
-                              TCmakeIdCopyString (
-                                GenericFun (GF_copy, ID_TYPE (arg_node))),
-                              ret_node);
+    if (INFO_COND (arg_info)) {
+        if (NODE_TYPE (arg_node) == N_id) {
+            ret_node
+              = TBmakeIcm ("SAC_ND_GET_VAR",
+                           TBmakeExprs (DUPdupIdNt (arg_node),
+                                        TBmakeExprs (DUPdoDupTree (arg_node), NULL)));
+            FREEdoFreeTree (arg_node);
+        } else {
+            ret_node = arg_node;
+        }
     } else {
-        /*
-         * We are dealing with an assignment of the kind:
-         *   a = a;
-         * which we compile into:
-         *   NOOP()
-         */
-        ret_node = TCmakeAssignIcm0 ("NOOP", ret_node);
+        ret_node = RhsId (arg_node, arg_info);
     }
 
     DBUG_RETURN (ret_node);
@@ -5355,9 +5395,10 @@ COMPdo (node *arg_node, info *arg_info)
                   || (NODE_TYPE (DO_COND (arg_node)) == N_bool)),
                  "loop condition is neither a N_id nor a N_bool node!");
 
-    /*
-     * DO_COND(arg_node) must not be traversed!
-     */
+    INFO_COND (arg_info) = TRUE;
+    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
+    INFO_COND (arg_info) = FALSE;
+
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
     if (DO_SKIP (arg_node) != NULL) {
         DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
@@ -5428,9 +5469,10 @@ COMPcond (node *arg_node, info *arg_info)
                   || (NODE_TYPE (COND_COND (arg_node)) == N_bool)),
                  "if-clause condition is neither a N_id nor a N_bool node!");
 
-    /*
-     * COND_COND(arg_node) must not be traversed!
-     */
+    INFO_COND (arg_info) = TRUE;
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+    INFO_COND (arg_info) = FALSE;
+
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
@@ -6535,7 +6577,7 @@ COMPrange (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_id) {
         RANGE_LOWERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_MUTC_ND_GET_VAR",
+          = TCmakeAssignIcm2 ("SAC_ND_GET_VAR",
                               TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
                                                     ID_TYPE (
                                                       RANGE_LOWERBOUND (arg_node))),
@@ -6545,7 +6587,7 @@ COMPrange (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_id) {
         RANGE_UPPERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_MUTC_ND_GET_VAR",
+          = TCmakeAssignIcm2 ("SAC_ND_GET_VAR",
                               TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
                                                     ID_TYPE (
                                                       RANGE_UPPERBOUND (arg_node))),

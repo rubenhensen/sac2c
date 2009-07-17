@@ -4935,7 +4935,7 @@ N_structdef :
             </targets>
           </type>
           <description>
-            Deprecated. Still used in the compiler backend until major redesign of backend node structure.
+            Deprecated. Will be removed as soon as it has been confirmed that this attribute is no longer used.
           </description>
         </attribute>
         <attribute name="NT_Tag" default="NULL" inconstructor="no" >
