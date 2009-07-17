@@ -157,7 +157,7 @@ struct PAT {
 };
 
 #define PAT_NT(p) (p->nt)
-#define PAT_NESTED(p) ((p->num_pats) == 0)
+#define PAT_NESTED(p) ((p->num_pats) != 0)
 #define PAT_DOFOLLOW(p) (p->follow)
 #define PAT_NA(p) (p->num_attr)
 #define PAT_PATTRS(p) (p->attr)
@@ -194,6 +194,7 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
 
     va_copy (arg_p_copy, arg_p);
 
+    PAT_NA (res) = num_attribs;
     PAT_PATTRS (res) = (attrib **)MEMmalloc (num_attribs * sizeof (attrib *));
 
     for (i = 0; i < num_attribs; i++) {
@@ -1642,11 +1643,21 @@ pattern *Pall( pattern *what)
 static node *
 skipMatcher (pattern *pat, node *stack)
 {
+    attrib *attr;
     node *match;
+    int i;
 
     DBUG_PRINT ("PM", ("skipping remaining elements!"));
 
     stack = ExtractTopFrame (stack, &match);
+
+    for (i = 0; i < PAT_NA (pat); i++) {
+        attr = PAT_PATTRS (pat)[i];
+        if (!PMAmatch (attr, match)) {
+            stack = FailMatch (stack);
+            i = PAT_NA (pat);
+        }
+    }
 
     if (stack != (node *)FAIL) {
         if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
