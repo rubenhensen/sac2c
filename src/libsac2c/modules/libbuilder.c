@@ -15,19 +15,52 @@
 #include "filemgr.h"
 #include "globals.h"
 
+/** <!--********************************************************************-->
+ *
+ * @fn char *BuildDepLibsStringMod( const char *lib,
+ *                                  strstype_t kind,
+ *                                  void *rest)
+ *
+ * @brief fold funciton to generate a string of modules to link with.
+ *
+ *****************************************************************************/
+
 static void *
 BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 {
-    char *result;
+    char *result = NULL;
+    char *llib = NULL;
 
     DBUG_ENTER ("BuildDepLibsStringMod");
 
+    llib = STRcpy (lib);
+
     switch (kind) {
     case STRS_objfile:
-        result = STRcpy (lib);
+        if (global.backend == BE_mutc) {
+            char *tmp;
+            DBUG_ASSERT (STRsuffix (".o", llib),
+                         "found linkwith that does not end in .o");
+
+            /* remove .o */
+            tmp = llib;
+            llib = STRsubStr (llib, 0, -2);
+            MEMfree (tmp);
+
+            /* add target to file name */
+            tmp = llib;
+            llib = STRcat (llib, global.target_name);
+            MEMfree (tmp);
+
+            /* add .o back */
+            tmp = llib;
+            llib = STRcat (llib, ".o");
+            MEMfree (tmp);
+        }
+        result = STRcpy (llib);
         break;
     default:
-        result = STRcpy ("");
+        result = STRnull ();
         break;
     }
 
@@ -36,13 +69,51 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
           = MEMmalloc (sizeof (char) * (STRlen ((char *)rest) + STRlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
-
         result = MEMfree (result);
         rest = MEMfree (rest);
         result = temp;
     }
 
+    llib = MEMfree (llib);
+
     DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateStaticLibrary(node *deplibs)
+ *
+ * @brief Create a static library for a module.
+ *     or Create a cross compiled static library for a module for sl.
+ *
+ *****************************************************************************/
+static void
+CreateStaticLibrary (char *deplibs)
+{
+    DBUG_ENTER ("CreateStaticLibrary");
+
+    CTInote ("Creating static SAC library `lib%sMod.a'", global.modulename);
+
+    if (global.backend == BE_mutc) {
+        /* Support cross compiling */
+        SYScall ("%s %slib%sMod%s.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
+                 global.config.ar_create, global.targetdir, global.modulename,
+                 global.target_name, global.tmp_dirname, global.tmp_dirname, deplibs);
+        if (global.config.ranlib[0] != '\0') {
+            SYScall ("%s %slib%sMod%s.a", global.config.ranlib, global.targetdir,
+                     global.modulename, global.target_name);
+        }
+    } else {
+        SYScall ("%s %slib%sMod.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
+                 global.config.ar_create, global.targetdir, global.modulename,
+                 global.tmp_dirname, global.tmp_dirname, deplibs);
+        if (global.config.ranlib[0] != '\0') {
+            SYScall ("%s %slib%sMod.a", global.config.ranlib, global.targetdir,
+                     global.modulename);
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 node *
@@ -64,23 +135,7 @@ LIBBcreateLibrary (node *syntax_tree)
 
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
-    CTInote ("Creating static SAC library `lib%sMod.a'", global.modulename);
-
-    if (global.backend == BE_mutc) {
-        /* Support cross compiling */
-        SYScall ("%s %slib%sMod%s.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
-                 global.config.ar_create, global.targetdir, global.modulename,
-                 global.target_name, global.tmp_dirname, global.tmp_dirname, deplibs);
-    } else {
-        SYScall ("%s %slib%sMod.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
-                 global.config.ar_create, global.targetdir, global.modulename,
-                 global.tmp_dirname, global.tmp_dirname, deplibs);
-    }
-
-    if (global.config.ranlib[0] != '\0') {
-        SYScall ("%s %slib%sMod.a", global.config.ranlib, global.targetdir,
-                 global.modulename);
-    }
+    CreateStaticLibrary (deplibs);
 
     CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
 

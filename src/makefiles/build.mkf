@@ -307,7 +307,7 @@ $(PROJECT_ROOT)/lib/lib%_seq.so: $(SUBTARGETS_SEQ)
 # Building tools
 #
 
-$(PROJECT_ROOT)/bin/comslc:
+$(PROJECT_ROOT)/bin/comslc: comslc/comslc
 	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
 
 $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)

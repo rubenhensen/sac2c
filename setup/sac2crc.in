@@ -308,6 +308,7 @@ target sl_ppp::sl:
 
 CC               := "comslc ppp"
 AR_CREATE        := "mtalpha-linux-gnu-ar cr"
+RANLIB           := "mtalpha-linux-gnu-ranlib"
 
 target sl_ptl::sl:
 

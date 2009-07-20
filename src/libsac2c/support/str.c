@@ -85,6 +85,62 @@ STRncpy (const char *source, int maxlen)
     DBUG_RETURN (ret);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn char *STRsubStr( const char *string, int start, int len)
+ *
+ * @brief copy part of a string from start to start + len.
+ *        if len is <0 then len is relative to the length of the string.
+ *
+ *****************************************************************************/
+char *
+STRsubStr (const char *string, int start, int len)
+{
+    int strlen = 0;
+    char *ret = NULL;
+
+    DBUG_ENTER ("STRsubStr");
+
+    strlen = STRlen (string);
+
+    if (len < 0) {
+        len = strlen + len; /* + - => - */
+    }
+
+    if ((start + len) > strlen) { /* to long take what we can */
+        len = strlen - start;
+    }
+
+    if (start > len) {
+        ret = STRnull ();
+    } else {
+        ret = memcpy (MEMmalloc (sizeof (char) * (len + 1)),
+                      string + start, /* move to start of sub string */
+                      len);
+        ret[len] = '\0';
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *STRnull( )
+ *
+ * @brief return an empty string
+ *
+ *****************************************************************************/
+char *
+STRnull ()
+{
+    char *ret = NULL;
+    DBUG_ENTER ("STRnull");
+
+    ret = MEMmalloc (sizeof (char) * 1);
+    ret[0] = '\0';
+
+    DBUG_RETURN (ret);
+}
 /*******************************************************************************
  *
  * Description: Concatenate two strings and allocate memory for new string.
@@ -413,6 +469,30 @@ STRprefix (const char *prefix, const char *str)
                 res = (0 == strncmp (prefix, str, STRlen (prefix)));
             }
         }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool *STRsuffix( const char *suffix, const char *str)
+ *
+ * @brief return true if suffix is the end of str, else return false.
+ *
+ *****************************************************************************/
+bool
+STRsuffix (const char *suffix, const char *str)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("STRsuffix");
+
+    if (STRlen (suffix) > STRlen (str)) {
+        res = FALSE;
+    } else {
+        str = str + STRlen (str) - STRlen (suffix);
+        res = (0 == strcmp (str, suffix));
     }
 
     DBUG_RETURN (res);

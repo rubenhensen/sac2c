@@ -19,10 +19,13 @@ extern bool STReqci (const char *first, const char *second);
 extern bool STReqhex (const char *first, const char *second);
 extern bool STReqoct (const char *first, const char *second);
 extern bool STRprefix (const char *prefix, const char *str);
+extern bool STRsuffix (const char *suffix, const char *str);
 extern bool STReqn (const char *first, const char *second, int n);
 extern bool STRsub (const char *sub, const char *str);
 extern int STRlen (const char *str);
 extern char *STRonNull (char *alt, char *str);
+extern char *STRsubStr (const char *string, int start, int len);
+extern char *STRnull ();
 
 extern char *STRitoa (int number);
 extern char *STRitoa_oct (int number);

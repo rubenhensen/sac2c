@@ -17,6 +17,14 @@ do
           ;;
       -c*) arg_c="-c"
           ;;
+      -lsac_seq)
+          ;;
+      -l*)
+          libs="${libs} $1"
+          ;;
+      -L*)
+          libs="${libs} $1"
+          ;;
       -*)
           ;;
       *) infile="${infile} $1"
@@ -32,4 +40,4 @@ fi
 
 gcc ${include} -E -P -o ${output}.sl ${infile}
 
-slc -b $backend ${arg_c} -o ${output} ${output}.sl
+slc -b $backend ${arg_c} $libs -o ${output} ${output}.sl
