@@ -23,7 +23,6 @@ extern bool PMmatchFlatPseudo (pattern *pat, node *expr);
  * Pattern-DSL:
  */
 extern pattern *PMvar (int num_attribs, ...);
-extern pattern *PMfetchAsVar (node **hook, pattern *pat);
 extern pattern *PMconst (int num_attribs, ...);
 extern pattern *PMint (int num_attribs, ...);
 extern pattern *PMarray (int num_attribs, ...);

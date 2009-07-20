@@ -312,17 +312,32 @@ CheckZeroTrip (node *lb, node *ub, node *width)
     int i,j,l;
     node *x = NULL;
 
-    if( ( PMmatchFlat(
-            PMretryAny( &i, &l,
-              PMpair( PMarrayLen( &l, PMskipN( &i), PMvar( &x), PMskip()),
-                     PMarrayLen( &l, PMskipN( &i), PMvar( &x), PMskip()))),
-            PMpairExprs( lb, ub))
-          || PMmatchFlat(
-               PMretryAny( &j, &l,
-                 PMpair( PMarrayLen( &l, PMskipN( &j), PMint( &v1), PMskip()),
-                        PMarrayLen( &l, PMskipN( &j), PMintLE( &v2, &v1), PMskip())))
-               PMpairExprs( lb, ub)))
-        && ( l > 0 )) {
+          pat1 = PMretryAny( &i, &n,
+                             PMpair( 0, 2, PMarray( 1, PMAgetLen( &n),
+                                                    3, PMskip( 1, PMAn( &i)),
+                                                       PMvar( 1, PMAgetNode( &x),
+                                                              0),
+                                                       PMskip( 0)),
+                                           PMarray( 1, PMAhasLen( &n),
+                                                    3, PMskip( 1, PMAn( &i)),
+                                                       PMvar( 1, PMAisVar( &x),
+                                                              0),
+                                                       PMskip( 0))));
+          pat2 = PMretryAny( &i, &n,
+                             PMpair( 0, 2, PMarray( 1, PMAgetLen( &n),
+                                                    3, PMskip( 1, PMAn( &i)),
+                                                       PMint( 1, PMAgetIVal( &lk),
+                                                              0),
+                                                       PMskip( 0)),
+                                           PMarray( 1, PMAhasLen( &n),
+                                                    3, PMskip( 1, PMAn( &i)),
+                                                       PMint( 1, PMAleIVal( &lk),
+                                                              0),
+                                                       PMskip( 0))));
+          expr = PMpairExprs( lb, ub);
+          if( ( PMmatchFlat( pat1, expr)
+                || PMmatchFlat( pat2, expr))
+              && (n > 0) ) {
 
          */
         lb = ARRAY_AELEMS (lb);
@@ -804,20 +819,32 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 {
     node *lb;
     node *ub;
+    node *array;
     node *width;
+    pattern *pat;
 
     DBUG_ENTER ("WLSIMPgenerator");
 
+    pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
+
     lb = GENERATOR_BOUND1 (arg_node);
-    PMO (PMOarray (NULL, &lb, lb)); /* propagate N_array if found */
+    if (PMmatchFlat (pat, lb)) { /* propagate N_array if found */
+        lb = array;
+    }
 
     ub = GENERATOR_BOUND2 (arg_node);
-    PMO (PMOarray (NULL, &ub, ub)); /* propagate N_array if found */
+    if (PMmatchFlat (pat, ub)) { /* propagate N_array if found */
+        ub = array;
+    }
 
     width = GENERATOR_WIDTH (arg_node);
     if (width != NULL) {
-        PMO (PMOarray (NULL, &width, width)); /* propagate N_array if found */
+        if (PMmatchFlat (pat, width)) { /* propagate N_array if found */
+            width = array;
+        }
     }
+
+    pat = PMfree (pat);
 
     INFO_ZEROTRIP (arg_info) = CheckZeroTrip (lb, ub, width);
 

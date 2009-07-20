@@ -207,8 +207,8 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
      * iv : result is true iff iv is in ivs
      *
      */
-    pat1 = PMprf (1, PMAisPrf (F_cat_VxV), 2, PMvar (1, PMAgetNode (&iv1)),
-                  PMvar (1, PMAgetNode (&iv2)));
+    pat1 = PMprf (1, PMAisPrf (F_cat_VxV), 2, PMvar (1, PMAgetNode (&iv1), 0),
+                  PMvar (1, PMAgetNode (&iv2), 0));
     pat2 = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
     if (PMmatchFlat (pat1, index)) {
