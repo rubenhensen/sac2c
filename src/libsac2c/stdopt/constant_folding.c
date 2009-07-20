@@ -859,45 +859,45 @@ CFids (node *arg_node, info *arg_info)
  *     c = [[one,two], [one,two], [one,two]];
  *
  ******************************************************************************/
-static node *
-ScalarizeArray (node *exprs, bool *ok, constant **fs, ntype **etype)
-{
-    node *array;
-
-    if (exprs != NULL) {
-        *ok = *ok && PMO (PMOarray (fs, &array, EXPRS_EXPR (exprs)));
-        exprs = ScalarizeArray (EXPRS_NEXT (exprs), ok, fs, etype);
-        if (*ok) {
-            exprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), exprs);
-            *etype = ARRAY_ELEMTYPE (array);
-        }
-    }
-    return (exprs);
-}
-
 node *
 CFarray (node *arg_node, info *arg_info)
 {
     constant *fs = NULL;
     shape *fshp;
-    ntype *etype;
-    node *exprs, *res;
-    bool ok = TRUE;
+    node *exprs, *res, *array;
+    node *lexprs = NULL;
+    pattern *pat, *pat2;
 
     DBUG_ENTER ("CFarray");
 
     exprs = ARRAY_AELEMS (arg_node);
-    exprs = ScalarizeArray (exprs, &ok, &fs, &etype);
-    if (ok && (exprs != NULL)) { /* arg_node == [] => exprs == NULL! */
-        fshp = COconstant2Shape (fs);
-        res = TBmakeArray (TYcopyType (etype),
-                           SHappendShapes (ARRAY_FRAMESHAPE (arg_node), fshp), exprs);
+    pat = PMarray (0, 2, PMarray (1, PMAgetFS (&fs), 1, PMskip (0)), PMskip (0));
+
+    if (PMmatchFlat (pat, arg_node)) {
+
+        pat2 = PMarray (2, PMAhasFS (&fs), PMAgetNode (&array), 1, PMskip (0));
+
+        while ((exprs != NULL) && PMmatchFlat (pat2, EXPRS_EXPR (exprs))) {
+            lexprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), lexprs);
+            exprs = EXPRS_NEXT (exprs);
+        }
+
+        if (exprs == NULL) {
+            fshp = COconstant2Shape (fs);
+            res
+              = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (array)),
+                             SHappendShapes (ARRAY_FRAMESHAPE (arg_node), fshp), lexprs);
+            fshp = SHfreeShape (fshp);
+            arg_node = FREEdoFreeNode (arg_node);
+        } else {
+            res = arg_node;
+        }
         fs = COfreeConstant (fs);
-        fshp = SHfreeShape (fshp);
-        arg_node = FREEdoFreeNode (arg_node);
+        pat2 = PMfree (pat2);
     } else {
         res = arg_node;
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
