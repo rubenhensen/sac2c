@@ -276,6 +276,7 @@
 #include "compare_tree.h"
 
 static char *FAIL = "";
+static int matching_level;
 
 static enum pm_mode { PM_exact, PM_flat, PM_flatPseudo } mode;
 
@@ -323,6 +324,8 @@ makePattern (nodetype nt, matchFun f)
 
     return (res);
 }
+
+#define PMINDENT "     "
 
 /*******************************************************************************
  */
@@ -630,7 +633,8 @@ genericPatternMatcher (pattern *pat, node *stack)
     node *arg;
     int i;
 
-    DBUG_PRINT ("PM", ("trying to match %s:", global.mdb_nodetype[PAT_NT (pat)]));
+    DBUG_PRINT ("PM", ("<%2d>: matching %s:", matching_level,
+                       global.mdb_nodetype[PAT_NT (pat)]));
 
     stack = ExtractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
@@ -639,6 +643,10 @@ genericPatternMatcher (pattern *pat, node *stack)
 
     if ((arg != NULL) && (NODE_TYPE (arg) == PAT_NT (pat))) {
 
+        DBUG_PRINT ("PM", ("     : found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
+                           (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                           (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                           (NODE_TYPE (arg) == N_id ? "\"" : "")));
         for (i = 0; i < PAT_NA (pat); i++) {
             attr = PAT_PATTRS (pat)[i];
             if (!PMAmatch (attr, arg)) {
@@ -648,6 +656,7 @@ genericPatternMatcher (pattern *pat, node *stack)
         }
 
         if (PAT_NESTED (pat) && (stack != (node *)FAIL)) {
+            matching_level++;
             inner_stack = getInner (arg);
             for (i = 0; i < PAT_NP (pat); i++) {
                 inner_pat = PAT_PATS (pat)[i];
@@ -656,13 +665,15 @@ genericPatternMatcher (pattern *pat, node *stack)
                     i = PAT_NP (pat);
                 }
             }
+            matching_level--;
             stack = checkInnerMatchResult (inner_stack, stack);
         }
 
     } else {
-        DBUG_PRINT ("PM", ("%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
+        DBUG_PRINT ("PM", ("     : %s not found!", global.mdb_nodetype[PAT_NT (pat)]));
         stack = FailMatch (stack);
     }
+    DBUG_PRINT ("PM", ("<%2d>", matching_level));
 
     return (stack);
 }
@@ -980,6 +991,7 @@ int
 PMmatchExact (pattern *pat, node *expr)
 {
     mode = PM_exact;
+    matching_level = 0;
 
     return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }
@@ -988,6 +1000,7 @@ int
 PMmatchFlat (pattern *pat, node *expr)
 {
     mode = PM_flat;
+    matching_level = 0;
 
     return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }
@@ -996,6 +1009,7 @@ int
 PMmatchFlatPseudo (pattern *pat, node *expr)
 {
     mode = PM_flatPseudo;
+    matching_level = 0;
 
     return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
 }

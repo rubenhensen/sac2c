@@ -26,6 +26,7 @@
 #include "tree_compound.h"
 #include "constants.h"
 #include "shape.h"
+#include "str.h"
 
 typedef bool attribFun (attrib *, node *);
 
@@ -59,6 +60,9 @@ makeAttrib (nodetype nt, attribFun f)
 
     return (res);
 }
+
+#define PMINDENT "     "
+#define PMAINDENT PMINDENT "-------> "
 
 /** <!--*********************************************************************-->
  *
@@ -96,8 +100,17 @@ PMAmatch (attrib *attr, node *arg)
 bool
 attribGetNode (attrib *attr, node *arg)
 {
+    DBUG_PRINT ("PMA", (PMINDENT "applying PMAgetNode( " F_PTR " ):", PATTR_N1 (attr)));
+
     if (PATTR_N1 (attr) != NULL) {
         *PATTR_N1 (attr) = arg;
+        DBUG_PRINT ("PMA", (PMAINDENT "%s %s%s%s (" F_PTR ").",
+                            global.mdb_nodetype[NODE_TYPE (arg)],
+                            (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                            (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                            (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+    } else {
+        DBUG_PRINT ("PMA", (PMAINDENT "redundant PMAgetNode attribute!"));
     }
     return (TRUE);
 }
@@ -123,7 +136,19 @@ PMAgetNode (node **match)
 bool
 attribIsVar (attrib *attr, node *arg)
 {
-    return (ID_AVIS (arg) == ID_AVIS (*PATTR_N1 (attr)));
+    bool res;
+
+    DBUG_ASSERT (*PATTR_N1 (attr) != NULL, "var in PMAisVar compared without"
+                                           "being set yet!");
+    DBUG_ASSERT (NODE_TYPE (*PATTR_N1 (attr)) == N_id,
+                 "var in PMAisVar points to a non N_id node");
+    DBUG_PRINT ("PMA", (PMINDENT "applying PMAisVar( & \"%s\" (" F_PTR ") ):",
+                        ID_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr)));
+
+    res = ID_AVIS (arg) == ID_AVIS (*PATTR_N1 (attr));
+    DBUG_PRINT ("PMA", (PMAINDENT "%s", (res ? "match" : "fail")));
+
+    return (res);
 }
 
 attrib *
@@ -131,6 +156,7 @@ PMAisVar (node **var)
 {
     attrib *res;
 
+    DBUG_ASSERT (var != NULL, "PMAisVar called with NULL argument");
     res = makeAttrib (N_id, attribIsVar);
     PATTR_N1 (res) = var;
 
@@ -150,13 +176,21 @@ bool
 attribGetVal (attrib *attr, node *arg)
 {
     constant **c;
+#ifndef DBUG_OFF
+    char *co_str;
+#endif
+
+    DBUG_PRINT ("PMA", (PMINDENT "applying PMAgetVal( " F_PTR " ):", c));
 
     c = PATTR_C1 (attr);
     if (*c != NULL) {
+        DBUG_PRINT ("PMA", (PMAINDENT "pre-existing constant freed!"));
         *c = COfreeConstant (*c);
     }
     *c = COaST2Constant (arg);
-
+    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*c););
+    DBUG_PRINT ("PMA", (PMAINDENT "%s in *" F_PTR, co_str, c));
+    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
     return (TRUE);
 }
 
