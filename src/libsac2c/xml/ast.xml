@@ -3765,6 +3765,11 @@ N_structdef :
             TRUE iff the fixpoint of this function has been found in SOSSK.
           </description>
         </flag>
+        <flag name="IsStructConstr" default="FALSE">
+          <description>
+            TRUE iff this function was created by the HS pass as a constructor for structs.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--
