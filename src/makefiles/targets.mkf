@@ -80,7 +80,7 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         map_fun_trav check_node check_attribs remove_dfms \
                         sanity_checks pattern_match pattern_match_attribs \
                         prf_pvs_info map_avis_trav rename group_local_funs \
-                        ungroup_local_funs
+                        ungroup_local_funs pattern_match_old
 
 libsac2c_support     := dbug str ptr_buffer str_buffer system math_utils
 
