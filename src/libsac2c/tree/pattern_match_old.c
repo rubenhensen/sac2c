@@ -307,15 +307,6 @@ followId (node *arg_node, bool ignoreguards)
     DBUG_RETURN (arg_node);
 }
 
-bool
-isInPseudo (prf prfun)
-{
-    return ((prfun == F_guard) || (prfun == F_attachextrema)
-            || (prfun == F_attachintersect) || (prfun == F_non_neg_val_V)
-            || (prfun == F_val_lt_shape_VxA) || (prfun == F_shape_matches_dim_VxA)
-            || (prfun == F_val_le_val_VxV));
-}
-
 /** <!--*******************************************************************-->
  *
  * @fn node *FailMatch( node *stack)
