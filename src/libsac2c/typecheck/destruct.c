@@ -191,6 +191,48 @@ ExplodeRet (node *ret, node *selem)
     return newret;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *BodyForConstructor( node *constructor)
+ *
+ *   @brief  Gives this constructor a body that immediately returns all args.
+ *
+ ******************************************************************************/
+static node *
+BodyForConstructor (node *constructor)
+{
+    node *arg;
+    node *exprs;
+    node *id;
+    node *return_node;
+
+    /* Create a return() statement (N_return). */
+    return_node = TBmakeReturn (NULL);
+    /* Copy the arg list to an exprs list. */
+    /* This should probably be using the existing traversal mechanism instead of
+     * looping. Shame shame.
+     */
+    arg = FUNDEF_ARGS (constructor);
+    /* Create an N_id that is the same as this argument. */
+    id = TBmakeId (DUPdoDupNode (ARG_AVIS (arg)));
+    /* Append that N_id to the list of N_exprs for the return value. */
+    exprs = TBmakeExprs (id, NULL);
+    RETURN_EXPRS (return_node) = exprs;
+    /* Repeat for every successing element. */
+    while (ARG_NEXT (arg) != NULL) {
+        arg = ARG_NEXT (arg);
+        /* Create an N_id that is the same as this argument. */
+        id = TBmakeId (DUPdoDupNode (ARG_AVIS (arg)));
+        /* Append that N_id to the list of N_exprs for the return value. */
+        EXPRS_NEXT (exprs) = TBmakeExprs (id, NULL);
+        exprs = EXPRS_NEXT (exprs);
+    }
+    /* Create a function body (N_block) with one instruction (N_assign): that
+     * return statement.
+     */
+    return TBmakeBlock (TBmakeAssign (return_node, NULL), NULL);
+}
+
 /**
  * Public functions.
  */
@@ -252,31 +294,67 @@ DESmodule (node *arg_node, info *arg_info)
  *   @brief  If this function is a struct creator (created by the HideStruct
  *   phase) give it body.
  *
+ *   In this function, I do something horrible: I sometimes transform a function
+ *   declaration (IsExternal, Body = NULL) to a function definition (not
+ *   IsExternal, Body is an actual instruction chain) /in-place/. Then, in order
+ *   to get this on the right fundef stack on the module level, I return the
+ *   value of the next N_fundef to this one, thereby pulling this fundef out of
+ *   the stack it is currently in, and then I prepend it to the module's fundef
+ *   stack (which I get via arg_info).
+ *
+ *   I would love to create a copy and add that one to the module's fundef
+ *   stack, instead, but at this point all N_aps have their Fundef attribute
+ *   pointing towards this node (it seems). Therefore I can not just delete it.
+ *
  ******************************************************************************/
 node *
 DESfundef (node *arg_node, info *arg_info)
 {
     node *selem;
+    node *next_fundef;
 
     DBUG_ENTER ("DESfundef");
 
     /* Handle all sons (including the arguments list, return list, the body and
      * even the next fundef) before this one. This ensures the args are properly
      * exploded before creating the body. */
-    /* TODO: Is that actually necessary...? :P */
     arg_node = TRAVcont (arg_node, arg_info);
 
-    selem = FUNDEF_STRUCTGETTER (arg_node);
-    if (selem != NULL) {
+    /* Constructor. */
+    if (FUNDEF_ISSTRUCTCONSTR (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)) {
+        /* Create a single return() statement with a copy of the arg list. */
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL, ("Constructor already has a body."));
+        DBUG_ASSERT (FUNDEF_ISEXTERN (arg_node), ("Non-extern constructor."));
+        FUNDEF_BODY (arg_node) = BodyForConstructor (arg_node);
+        FUNDEF_ISEXTERN (arg_node) = FALSE;
+        DBUG_PRINT ("DES", ("Constructor %s now has body", FUNDEF_NAME (arg_node)));
+        /* Now, since this changed from a function declaration to a definition, it
+         * must be moved to the correct place in the N_module.
+         */
+        next_fundef = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (arg_node) = MODULE_FUNS (INFO_MODULE (arg_info));
+        MODULE_FUNS (INFO_MODULE (arg_info)) = arg_node;
+        /* Pull this node out of the current stack. */
+        DBUG_RETURN (next_fundef);
+    }
+
+    /* Getter. */
+    else if (FUNDEF_STRUCTGETTER (arg_node) != NULL) {
+        selem = FUNDEF_STRUCTGETTER (arg_node);
         /* TODO: Give body to the struct getter. */
+        DBUG_RETURN (arg_node);
     }
 
-    selem = FUNDEF_STRUCTSETTER (arg_node);
-    if (selem != NULL) {
+    /* Setter. */
+    else if (FUNDEF_STRUCTSETTER (arg_node) != NULL) {
+        selem = FUNDEF_STRUCTSETTER (arg_node);
         /* TODO: Give body to the struct setter. */
+        DBUG_RETURN (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
+    else {
+        DBUG_RETURN (arg_node);
+    }
 }
 
 /** <!--********************************************************************-->

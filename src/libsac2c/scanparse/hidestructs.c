@@ -188,6 +188,7 @@ HSstructdef (node *arg_node, info *arg_info)
     fundec = TBmakeFundef (STRcpy (STRUCTDEF_NAME (arg_node)), NULL, ret,
                            INFO_INIT_ARGS (arg_info), NULL, MODULE_FUNDECS (module));
     FUNDEF_ISEXTERN (fundec) = TRUE;
+    FUNDEF_ISSTRUCTCONSTR (fundec) = TRUE;
     MODULE_FUNDECS (module) = fundec;
     /* Second constructor (replace only the argument list). */
     fundec = DUPdoDupNode (fundec);
