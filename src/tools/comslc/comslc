@@ -5,7 +5,7 @@
 # Do not change bin/comslc change
 # src/tools/comslc/comslc
 
-backend=$1;
+backend=`echo $1|sed -e s/sl_//`
 shift
 
 while [ $# -gt 0 ]
