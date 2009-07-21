@@ -13,6 +13,9 @@
  * prefix: SCS
  *
  *****************************************************************************/
+extern void SCSinitSymbolicConstantSimplification ();
+extern void SCSfinalizeSymbolicConstantSimplification ();
+
 extern node *SCSprf_tob_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toi_S (node *arg_node, info *arg_info);

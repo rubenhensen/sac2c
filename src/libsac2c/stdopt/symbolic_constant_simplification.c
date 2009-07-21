@@ -88,10 +88,33 @@
 #include "constant_folding_info.h"
 #include "phase.h"
 
-/* local used helper functions */
+/*******************************************************************************
+ *  some static initialisation needed for pattern sharing across all functions
+ */
+static bool initialised = FALSE;
+static node *node_ptr;
+static pattern *prf_id_args_pat;
 
-#define MATCH_PRF_ARG1_PRF_ARG2(arg_node, glob)                                          \
-    PMO (PMOvar (&glob, PMOvar (&glob, PRF_ARGS (arg_node))))
+void
+SCSinitSymbolicConstantSimplification ()
+{
+    if (!initialised) {
+        prf_id_args_pat = PMprf (0, 2, PMvar (1, PMAgetNode (&node_ptr), 0),
+                                 PMvar (1, PMAisVar (&node_ptr), 0));
+        initialised = TRUE;
+    }
+}
+
+void
+SCSfinalizeSymbolicConstantSimplification ()
+{
+    if (initialised) {
+        prf_id_args_pat = PMfree (prf_id_args_pat);
+        initialised = FALSE;
+    }
+}
+
+/* local used helper functions */
 
 /******************************************************************************
  *
@@ -399,12 +422,11 @@ node *
 SCSprf_sub (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_sub");
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
-    } else if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /* X - X */
+    } else if (PMmatchFlat (prf_id_args_pat, arg_node)) { /* X - X */
         res = MakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -422,11 +444,10 @@ node *
 SCSprf_sub_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_sub_VxV");
     /* Can't do X - 0 unless we know argument shapes match */
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /* X - X */
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) { /* X - X */
         res = MakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -562,7 +583,6 @@ node *
 SCSprf_or_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_or_SxS");
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
@@ -577,7 +597,7 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
 
-    } else if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /* S | S */
+    } else if (PMmatchFlat (prf_id_args_pat, arg_node)) { /* S | S */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -635,10 +655,9 @@ node *
 SCSprf_or_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_or_VxV");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /*  X | X */
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) { /*  X | X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
@@ -658,7 +677,6 @@ node *
 SCSprf_and_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_and_SxS");
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
@@ -673,7 +691,7 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = MakeFalse (PRF_ARG2 (arg_node));
 
-    } else if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /* X & X */
+    } else if (PMmatchFlat (prf_id_args_pat, arg_node)) { /* X & X */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -731,10 +749,9 @@ node *
 SCSprf_and_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_and_VxV");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) { /*  X & X */
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) { /*  X & X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
@@ -875,10 +892,9 @@ node *
 SCSprf_minmax (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_minmax");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) {
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -951,10 +967,9 @@ node *
 SCSprf_nlege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_nlege");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) {
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) {
         res = MakeFalse (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1032,10 +1047,9 @@ node *
 SCSprf_lege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
 
     DBUG_ENTER ("SCSprf_lege");
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X)) {
+    if (PMmatchFlat (prf_id_args_pat, arg_node)) {
         res = MakeTrue (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1197,16 +1211,15 @@ node *
 SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *X = NULL;
     ntype *arg1type;
     ntype *arg2type;
 
     DBUG_ENTER ("SCSprf_same_shape_AxA");
     arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
     arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
-    if (MATCH_PRF_ARG1_PRF_ARG2 (arg_node, X) || /* same_shape(X, X) */
-        (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
-         && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
+    if (PMmatchFlat (prf_id_args_pat, arg_node) /* same_shape(X, X) */
+        || (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
+            && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
         res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
                            TBmakeExprs (DUPdoDupTree (PRF_ARG2 (arg_node)),
                                         TBmakeExprs (TBmakeBool (TRUE), NULL)));
