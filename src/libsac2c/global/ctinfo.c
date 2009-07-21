@@ -1022,7 +1022,7 @@ CTIterminateCompilation (node *syntax_tree)
         && ((global.break_after_phase < PHIlastPhase ())
             || (global.break_after_subphase < PHIlastPhase ())
             || (global.break_after_cyclephase < PHIlastPhase ()))) {
-        syntax_tree = PRTdoPrint (syntax_tree);
+        syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
     }
 
     /*

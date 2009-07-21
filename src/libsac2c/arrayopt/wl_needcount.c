@@ -384,7 +384,7 @@ WLNCid (node *arg_node, info *arg_info)
         switch (PRF_PRF (parent)) {
         case F_sel_VxA:
             avis = ID_AVIS (PRF_ARG2 (parent));
-            DBUG_EXECUTE ("WLNC", PRTdoPrintNode (parent););
+            DBUG_EXECUTE ("WLNC", PRTdoPrintNodeFile (stderr, parent););
             DBUG_PRINT ("WLNC", ("WLNCid looking at %s.", AVIS_NAME (avis)));
             if ((avis == ID_AVIS (arg_node))) {
                 incrementNeedcount (avis, arg_info);

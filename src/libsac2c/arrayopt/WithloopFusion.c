@@ -1730,7 +1730,8 @@ WLFSassign (node *arg_node, info *arg_info)
                  */
 
                 DBUG_PRINT ("WLFS", ("collect assign:"));
-                DBUG_EXECUTE ("WLFS", PRTdoPrintNode (ASSIGN_NEXT (arg_node)););
+                DBUG_EXECUTE ("WLFS",
+                              PRTdoPrintNodeFile (stderr, ASSIGN_NEXT (arg_node)););
 
                 assignn = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (ASSIGN_NEXT (arg_node));
@@ -1837,7 +1838,7 @@ WLFSid (node *arg_node, info *arg_info)
          */
         is_dependent = CheckDependency (arg_node, INFO_REFERENCES_FUSIONABLE (arg_info));
         if (is_dependent) {
-            DBUG_EXECUTE ("WLFS", PRTdoPrintNode (INFO_ASSIGN (arg_info)););
+            DBUG_EXECUTE ("WLFS", PRTdoPrintNodeFile (stderr, INFO_ASSIGN (arg_info)););
             DBUG_PRINT ("WLFS", ("%s references the fusionable With-Loop, note assign",
                                  ID_NAME (arg_node)));
 
@@ -1890,7 +1891,7 @@ WLFSwith (node *arg_node, info *arg_info)
     /*
      * try to fuse the current With-Loop
      */
-    DBUG_EXECUTE ("WLFS", PRTdoPrintNode (arg_node););
+    DBUG_EXECUTE ("WLFS", PRTdoPrintNodeFile (stderr, arg_node););
 
     /*
      * The second traversal into the N_CODEs ought to detect possible
@@ -1959,7 +1960,7 @@ WLFSwith (node *arg_node, info *arg_info)
                 DBUG_PRINT ("WLFS", ("starting fusion of both With-Loops"));
                 arg_node = FuseWithloops (arg_node, arg_info, fwl);
                 DBUG_PRINT ("WLFS", ("fused With-Loops:"));
-                DBUG_EXECUTE ("WLFS", PRTdoPrintNode (fwl););
+                DBUG_EXECUTE ("WLFS", PRTdoPrintNodeFile (stderr, fwl););
                 wl_action = WL_fused;
             }
         } else {

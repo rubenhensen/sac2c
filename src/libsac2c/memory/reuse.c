@@ -304,21 +304,21 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_idxs2offset:
         if (PRF_ARGS (arg_node) != NULL) {
             DBUG_PRINT ("RI", ("prf args"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (PRF_ARGS (arg_node)););
+            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, PRF_ARGS (arg_node)););
         }
 
         rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_LHS (arg_info));
 
         if (rhc != NULL) {
             DBUG_PRINT ("RI", ("rhc"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (rhc););
+            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, rhc););
         }
 
         INFO_RHSCAND (arg_info) = rhc;
 
         if (INFO_RHSCAND (arg_info) != NULL) {
             DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
+            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)););
         }
         break;
 
@@ -371,7 +371,7 @@ EMRIprf (node *arg_node, info *arg_info)
             INFO_RHSCAND (arg_info) = DUPdoDupTree (PRF_ARGS (arg_node));
 
             DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
+            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)););
         }
 
         rt = TYfreeType (rt);

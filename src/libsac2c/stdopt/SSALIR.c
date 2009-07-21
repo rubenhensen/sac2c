@@ -1586,11 +1586,6 @@ LIRwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRwithid");
 
-    /*
-    DBUG_PRINT("LIR", ("withid is"));
-    PRTdoPrint(arg_node);
-    */
-
     /* traverse all local definitions to mark their depth in withloops */
     INFO_FLAG (arg_info) = LIR_MOVELOCAL;
     INFO_SETDEPTH (arg_info) = INFO_WITHDEPTH (arg_info);

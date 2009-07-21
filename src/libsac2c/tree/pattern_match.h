@@ -6,6 +6,12 @@
 #ifndef _SAC_PATTERN_MATCH_H_
 #define _SAC_PATTERN_MATCH_H_
 
+#ifndef DBUG_OFF
+#define PMSTART "> %2d: "
+#define PMINDENT "      "
+#define PMEND "< %2d "
+#endif
+
 #include "types.h"
 #include "pattern_match_attribs.h"
 

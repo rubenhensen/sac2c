@@ -353,7 +353,7 @@ MakeDimArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNode (arg););
+        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -393,7 +393,7 @@ MakeShapeArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNode (arg););
+        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -436,7 +436,7 @@ MakeSizeArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNode (arg););
+        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -1664,7 +1664,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNode (arg_node););
+        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg_node););
         DBUG_ASSERT (FALSE, "unknown prf found!");
         break;
     }

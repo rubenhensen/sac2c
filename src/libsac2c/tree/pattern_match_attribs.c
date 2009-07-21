@@ -14,6 +14,7 @@
 
 #include <stdarg.h>
 #include "pattern_match_attribs.h"
+#include "pattern_match.h"
 
 #include "dbug.h"
 #include "memory.h"
@@ -61,8 +62,8 @@ makeAttrib (nodetype nt, attribFun f)
     return (res);
 }
 
-#define PMINDENT "     "
-#define PMAINDENT PMINDENT "-------> "
+#define PMASTART PMINDENT " attrib: "
+#define PMARESULT PMINDENT " ------> "
 
 /** <!--*********************************************************************-->
  *
@@ -100,17 +101,17 @@ PMAmatch (attrib *attr, node *arg)
 bool
 attribGetNode (attrib *attr, node *arg)
 {
-    DBUG_PRINT ("PMA", (PMINDENT "applying PMAgetNode( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetNode( " F_PTR " ):", PATTR_N1 (attr)));
 
     if (PATTR_N1 (attr) != NULL) {
         *PATTR_N1 (attr) = arg;
-        DBUG_PRINT ("PMA", (PMAINDENT "%s %s%s%s (" F_PTR ").",
+        DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
                             global.mdb_nodetype[NODE_TYPE (arg)],
                             (NODE_TYPE (arg) == N_id ? "\"" : ""),
                             (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
                             (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
     } else {
-        DBUG_PRINT ("PMA", (PMAINDENT "redundant PMAgetNode attribute!"));
+        DBUG_PRINT ("PMA", (PMARESULT "redundant PMAgetNode attribute!"));
     }
     return (TRUE);
 }
@@ -142,11 +143,11 @@ attribIsVar (attrib *attr, node *arg)
                                            "being set yet!");
     DBUG_ASSERT (NODE_TYPE (*PATTR_N1 (attr)) == N_id,
                  "var in PMAisVar points to a non N_id node");
-    DBUG_PRINT ("PMA", (PMINDENT "applying PMAisVar( & \"%s\" (" F_PTR ") ):",
+    DBUG_PRINT ("PMA", (PMASTART "PMAisVar( & \"%s\" (" F_PTR ") ):",
                         ID_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr)));
 
     res = ID_AVIS (arg) == ID_AVIS (*PATTR_N1 (attr));
-    DBUG_PRINT ("PMA", (PMAINDENT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
 
     return (res);
 }
@@ -180,16 +181,16 @@ attribGetVal (attrib *attr, node *arg)
     char *co_str;
 #endif
 
-    DBUG_PRINT ("PMA", (PMINDENT "applying PMAgetVal( " F_PTR " ):", c));
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetVal( " F_PTR " ):", c));
 
     c = PATTR_C1 (attr);
     if (*c != NULL) {
-        DBUG_PRINT ("PMA", (PMAINDENT "pre-existing constant freed!"));
+        DBUG_PRINT ("PMA", (PMARESULT "pre-existing constant freed!"));
         *c = COfreeConstant (*c);
     }
     *c = COaST2Constant (arg);
     DBUG_EXECUTE ("PMA", co_str = COconstant2String (*c););
-    DBUG_PRINT ("PMA", (PMAINDENT "%s in *" F_PTR, co_str, c));
+    DBUG_PRINT ("PMA", (PMARESULT "%s in *" F_PTR, co_str, c));
     DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
     return (TRUE);
 }

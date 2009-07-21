@@ -5030,7 +5030,6 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
             INFO_SEPARATE (arg_info) = 0;
         }
     } else {
-        global.outfile = stdout;
         fprintf (global.outfile, "\n-----------------------------------------------\n");
         TRAVdo (syntax_tree, arg_info);
         fprintf (global.outfile, "\n-----------------------------------------------\n");

@@ -219,9 +219,9 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
     info = FreeInfo (info);
 
     DBUG_PRINT ("WLS", ("Scalarization complete. New with-loop is:"));
-    DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
     DBUG_PRINT ("WLS", ("New fundef is:"));
-    DBUG_EXECUTE ("WLS", PRTdoPrintNode (fundef););
+    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, fundef););
 
     DBUG_RETURN (arg_node);
 }

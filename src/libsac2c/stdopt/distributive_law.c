@@ -688,7 +688,7 @@ OptimizeMop (node *mop)
                     mop = newmop;
                 }
 
-                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
                 global.optcounters.dl_expr++;
                 mop = OptimizeMop (mop);
             }
@@ -711,7 +711,7 @@ OptimizeMop (node *mop)
             }
 
             if (optimized) {
-                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
                 mop = OptimizeMop (mop);
             }
         }
@@ -902,7 +902,7 @@ DLprf (node *arg_node, info *arg_info)
               = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), INFO_LOCALMASK (arg_info));
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
-                DBUG_EXECUTE ("DL", PRTdoPrint (mop););
+                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
 
                 /*
                  * Optimize multi-operation
@@ -920,7 +920,7 @@ DLprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_EXECUTE ("DL", PRTdoPrint (mop););
+                    DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
                 }

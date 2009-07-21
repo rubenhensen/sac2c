@@ -382,7 +382,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             FUNDEF_RETURN (condfun) = ret;
             res = NULL;
 
-            DBUG_EXECUTE ("EMRB", PRTdoPrintNode (condfun););
+            DBUG_EXECUTE ("EMRB", PRTdoPrintNodeFile (stderr, condfun););
 
             /*
              * Create pattern:
@@ -466,7 +466,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                                 res);
             AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
 
-            DBUG_EXECUTE ("EMRB", PRTdoPrint (res););
+            DBUG_EXECUTE ("EMRB", PRTdoPrintFile (stderr, res););
         }
     }
 
@@ -544,7 +544,7 @@ EMRBassign (node *arg_node, info *arg_info)
              * Replace LHS of new assignment in order to match current funcion
              */
             DBUG_PRINT ("EMRB", ("New assignments: "));
-            DBUG_EXECUTE ("EMRB", PRTdoPrint (newass););
+            DBUG_EXECUTE ("EMRB", PRTdoPrintFile (stderr, newass););
 
             lastass = newass;
             while (ASSIGN_NEXT (lastass) != NULL) {

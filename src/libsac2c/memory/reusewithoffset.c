@@ -202,7 +202,7 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
             hotpart = IdentifyOtherPart (with, cand);
 
             if (hotpart != NULL) {
-                DBUG_EXECUTE ("RWO", PRTdoPrintNode (hotpart););
+                DBUG_EXECUTE ("RWO", PRTdoPrintNodeFile (stderr, hotpart););
                 node *hotcode, *oldnext;
                 info *arg_info;
 
@@ -302,7 +302,7 @@ RWOprf (node *arg_node, info *arg_info)
          */
         if ((ID_AVIS (PRF_ARG1 (arg_node))
              == IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info))))) {
-            DBUG_EXECUTE ("RWO", PRTdoPrintNode (arg_node););
+            DBUG_EXECUTE ("RWO", PRTdoPrintNodeFile (stderr, arg_node););
             traverse = FALSE;
         }
 
@@ -349,7 +349,8 @@ RWOprf (node *arg_node, info *arg_info)
                                 && (ID_AVIS (PRF_ARG1 (rhs)) == IDS_AVIS (ids))
                                 && (NODE_TYPE (PRF_ARG2 (rhs)) == N_num)
                                 && (abs (NUM_VAL (PRF_ARG2 (rhs))) >= gwval)) {
-                                DBUG_EXECUTE ("RWO", PRTdoPrintNode (arg_node););
+                                DBUG_EXECUTE ("RWO",
+                                              PRTdoPrintNodeFile (stderr, arg_node););
                                 traverse = FALSE;
                             }
 
@@ -358,7 +359,8 @@ RWOprf (node *arg_node, info *arg_info)
                                 && (ID_AVIS (PRF_ARG2 (rhs)) == IDS_AVIS (ids))
                                 && (NODE_TYPE (PRF_ARG1 (rhs)) == N_num)
                                 && (abs (NUM_VAL (PRF_ARG1 (rhs))) >= gwval)) {
-                                DBUG_EXECUTE ("RWO", PRTdoPrintNode (arg_node););
+                                DBUG_EXECUTE ("RWO",
+                                              PRTdoPrintNodeFile (stderr, arg_node););
                                 traverse = FALSE;
                             }
                         }

@@ -178,14 +178,14 @@ EMRCOassign (node *arg_node, info *arg_info)
 
     if (INFO_REMNEXT (arg_info)) {
         DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (ASSIGN_NEXT (arg_node)););
+        DBUG_EXECUTE ("EMRCO", PRTdoPrintNodeFile (stderr, ASSIGN_NEXT (arg_node)););
         ASSIGN_NEXT (arg_node) = FREEdoFreeNode (ASSIGN_NEXT (arg_node));
         INFO_REMNEXT (arg_info) = FALSE;
     }
 
     if (remassign || INFO_REMASSIGN (arg_info)) {
         DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (arg_node););
+        DBUG_EXECUTE ("EMRCO", PRTdoPrintNodeFile (stderr, arg_node););
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REMASSIGN (arg_info) = FALSE;
         INFO_NEXTEXPR (arg_info) = NULL;
@@ -385,7 +385,8 @@ EMRCOprf (node *arg_node, info *arg_info)
                 NUM_VAL (PRF_ARG1 (alloc)) += NUM_VAL (PRF_ARG2 (arg_node));
 
                 DBUG_PRINT ("EMRCO", ("Melted inc_rc into alloc!"));
-                DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (AVIS_SSAASSIGN (avis)););
+                DBUG_EXECUTE ("EMRCO",
+                              PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (avis)););
 
                 INFO_REMASSIGN (arg_info) = TRUE;
             }

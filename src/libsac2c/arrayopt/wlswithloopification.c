@@ -557,7 +557,7 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * 2. Insert copy with-loop (if required)
          */
-        DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+        DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
         if (INFO_MUSTCOPY (arg_info)) {
             node *avis;
             node *vardecs = NULL;
@@ -585,7 +585,7 @@ WLSWcode (node *arg_node, info *arg_info)
             CODE_CEXPRS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
 
             DBUG_PRINT ("WLS", ("New code after insertion of copy with-loop"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
         } else {
             DBUG_PRINT ("WLS", ("No copy with-loop required"));
         }
@@ -609,14 +609,14 @@ WLSWcode (node *arg_node, info *arg_info)
              */
             first = BLOCK_INSTR (CODE_CBLOCK (arg_node));
             last = first;
-            DBUG_EXECUTE ("WLS", PRTdoPrintNode (last););
-            DBUG_EXECUTE ("WLS", PRTdoPrintNode (
-                                   AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, last););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (ID_AVIS (
+                                                               CODE_CEXPR (arg_node)))););
 
             while (ASSIGN_NEXT (last)
                    != AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))) {
                 last = ASSIGN_NEXT (last);
-                DBUG_EXECUTE ("WLS", PRTdoPrintNode (last););
+                DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, last););
             }
 
             /*
@@ -626,11 +626,11 @@ WLSWcode (node *arg_node, info *arg_info)
             ASSIGN_NEXT (last) = NULL;
 
             DBUG_PRINT ("WLS", ("Intermediate code cut out"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
             DBUG_PRINT ("WLS", ("first"));
-            DBUG_EXECUTE ("WLS", PRTdoPrint (first););
+            DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, first););
             DBUG_PRINT ("WLS", ("last"););
-            DBUG_EXECUTE ("WLS", PRTdoPrint (last););
+            DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, last););
 
             /*
              * Insert the code fragment into all inner codes
@@ -852,7 +852,7 @@ WLSWwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
         DBUG_PRINT ("WLS", ("Withloopified with-loop:"));
-        DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+        DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
     } else {
         /*
          * Traversal of inner with-loop

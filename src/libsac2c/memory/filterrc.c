@@ -179,7 +179,7 @@ FilterRCs (node *arg_node, info *arg_info)
 
     alloc = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)));
 
-    DBUG_EXECUTE ("FRC", PRTdoPrint (alloc););
+    DBUG_EXECUTE ("FRC", PRTdoPrintFile (stderr, alloc););
 
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)

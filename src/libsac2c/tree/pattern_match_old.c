@@ -99,8 +99,8 @@ ExtractOneArg (node *stack, node **arg)
                 REF_SET (arg, stack);
                 stack = NULL;
             }
-            DBUG_PRINT ("PM", ("argument found:"));
-            DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *arg););
+            DBUG_PRINT ("PMO", ("argument found:"));
+            DBUG_EXECUTE ("PMO", PRTdoPrintFile (stderr, *arg););
         }
     } else {
         *arg = NULL;
@@ -141,8 +141,8 @@ ExtractTopFrame (node *stack, node **top)
 
 #ifndef DBUG_OFF
     if (*top != NULL) {
-        DBUG_PRINT ("PM", ("frame found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *top););
+        DBUG_PRINT ("PMO", ("frame found:"));
+        DBUG_EXECUTE ("PMO", PRTdoPrintFile (stderr, *top););
     }
 #endif
 
@@ -319,7 +319,7 @@ static node *
 FailMatch (node *stack)
 {
     DBUG_ENTER ("FailMatch");
-    DBUG_PRINT ("PM", ("match failed!"));
+    DBUG_PRINT ("PMO", ("match failed!"));
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
         stack = FREEdoFreeTree (stack);
     }

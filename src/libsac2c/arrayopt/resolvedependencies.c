@@ -169,7 +169,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
     DBUG_ENTER ("CheckPrfSel");
 
     DBUG_PRINT ("WLFS", ("consider following assignment:"));
-    DBUG_EXECUTE ("WLFS", PRTdoPrintNode (INFO_RDEPEND_ASSIGN (arg_info)););
+    DBUG_EXECUTE ("WLFS", PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)););
 
     /* first check first argument to detect direct dependency */
     PRF_ARG2 (arg_node) = SelId (PRF_ARG2 (arg_node), arg_info);
@@ -234,7 +234,8 @@ RDEPENDassign (node *arg_node, info *arg_info)
 
     if (INFO_RDEPEND_RESOLVED (arg_info)) {
         DBUG_PRINT ("WLFS", ("selection is resolved:"));
-        DBUG_EXECUTE ("WLFS", PRTdoPrintNode (INFO_RDEPEND_ASSIGN (arg_info)););
+        DBUG_EXECUTE ("WLFS",
+                      PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)););
         INFO_RDEPEND_RESOLVED (arg_info) = FALSE;
     }
 

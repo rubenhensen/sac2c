@@ -416,7 +416,7 @@ WLSwith (node *arg_node, info *arg_info)
     /*
      * Afterwards, try to scalarize the current with-loop
      */
-    DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
+    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
 
     /*
      * Scalarization is possible iff WLSCheck does not return 0

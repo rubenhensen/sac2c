@@ -325,8 +325,6 @@ makePattern (nodetype nt, matchFun f)
     return (res);
 }
 
-#define PMINDENT "     "
-
 /*******************************************************************************
  */
 
@@ -433,8 +431,8 @@ ExtractOneArg (node *stack, node **arg)
                 REF_SET (arg, stack);
                 stack = NULL;
             }
-            DBUG_PRINT ("PM", ("argument found:"));
-            DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *arg););
+            DBUG_PRINT ("PM", (PMINDENT "argument found:"));
+            DBUG_EXECUTE ("PM", PRTdoPrintNodeFile (stderr, *arg););
         }
     } else {
         *arg = NULL;
@@ -475,8 +473,8 @@ ExtractTopFrame (node *stack, node **top)
 
 #ifndef DBUG_OFF
     if (*top != NULL) {
-        DBUG_PRINT ("PM", ("frame found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintFile (stderr, *top););
+        DBUG_PRINT ("PM", (PMINDENT "frame found:"));
+        DBUG_EXECUTE ("PM", PRTdoPrintNodeFile (stderr, *top););
     }
 #endif
 
@@ -614,7 +612,7 @@ static node *
 FailMatch (node *stack)
 {
     DBUG_ENTER ("FailMatch");
-    DBUG_PRINT ("PM", ("match failed!"));
+    DBUG_PRINT ("PM", (PMINDENT "match failed!"));
     stack = freeStack (stack);
 
     DBUG_RETURN ((node *)FAIL);
@@ -631,7 +629,9 @@ static node *
 checkInnerMatchResult (node *inner_stack, node *stack)
 {
     if (inner_stack != NULL) {
-        DBUG_PRINT ("PM", ("inner match either failed or left unmatched items!"));
+        DBUG_PRINT ("PM", (PMINDENT "inner match %s",
+                           (inner_stack == (node *)FAIL ? "failed"
+                                                        : "left unmatched item(s)")));
         inner_stack = FailMatch (inner_stack);
         stack = FailMatch (stack);
     }
@@ -652,7 +652,7 @@ genericPatternMatcher (pattern *pat, node *stack)
     node *arg;
     int i;
 
-    DBUG_PRINT ("PM", ("<%2d>: matching %s:", matching_level,
+    DBUG_PRINT ("PM", (PMSTART "matching %s:", matching_level,
                        global.mdb_nodetype[PAT_NT (pat)]));
 
     stack = ExtractOneArg (stack, &arg);
@@ -662,10 +662,13 @@ genericPatternMatcher (pattern *pat, node *stack)
 
     if ((arg != NULL) && (NODE_TYPE (arg) == PAT_NT (pat))) {
 
-        DBUG_PRINT ("PM", ("     : found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
-                           (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                           (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                           (NODE_TYPE (arg) == N_id ? "\"" : "")));
+        DBUG_PRINT ("PM",
+                    (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
+                     (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                     (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                     (NODE_TYPE (arg) == N_id ? "\"" : "")));
+
+        DBUG_PRINT ("PM", (PMINDENT "checking attributes"));
         for (i = 0; i < PAT_NA (pat); i++) {
             attr = PAT_PATTRS (pat)[i];
             if (!PMAmatch (attr, arg)) {
@@ -675,6 +678,7 @@ genericPatternMatcher (pattern *pat, node *stack)
         }
 
         if (PAT_NESTED (pat) && (stack != (node *)FAIL)) {
+            DBUG_PRINT ("PM", (PMINDENT "checking inner pattern"));
             matching_level++;
             inner_stack = getInner (arg);
             for (i = 0; i < PAT_NP (pat); i++) {
@@ -689,10 +693,10 @@ genericPatternMatcher (pattern *pat, node *stack)
         }
 
     } else {
-        DBUG_PRINT ("PM", ("     : %s not found!", global.mdb_nodetype[PAT_NT (pat)]));
+        DBUG_PRINT ("PM", (PMINDENT "%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
         stack = FailMatch (stack);
     }
-    DBUG_PRINT ("PM", ("<%2d>", matching_level));
+    DBUG_PRINT ("PM", (PMEND, matching_level));
 
     return (stack);
 }
@@ -737,7 +741,7 @@ constMatcher (pattern *pat, node *stack)
     node *arg;
     int i;
 
-    DBUG_PRINT ("PM", ("trying to match a constant:"));
+    DBUG_PRINT ("PM", (PMSTART "matching a constant:", matching_level));
 
     stack = ExtractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
@@ -745,7 +749,7 @@ constMatcher (pattern *pat, node *stack)
     }
 
     if ((arg != NULL) && COisConstant (arg)) {
-        DBUG_PRINT ("PM", ("matching constant "));
+        DBUG_PRINT ("PM", (PMINDENT "constant found"));
         for (i = 0; i < PAT_NA (pat); i++) {
             attr = PAT_PATTRS (pat)[i];
             if (!PMAmatch (attr, arg)) {
@@ -754,9 +758,10 @@ constMatcher (pattern *pat, node *stack)
             }
         }
     } else {
-        DBUG_PRINT ("PM", ("no constant found!"));
+        DBUG_PRINT ("PM", (PMINDENT "no constant found!"));
         stack = FailMatch (stack);
     }
+    DBUG_PRINT ("PM", (PMEND, matching_level));
 
     return (stack);
 }
@@ -938,7 +943,7 @@ skipMatcher (pattern *pat, node *stack)
     node *match;
     int i;
 
-    DBUG_PRINT ("PM", ("skipping remaining elements!"));
+    DBUG_PRINT ("PM", (PMSTART "skipping remaining elements!", matching_level));
 
     stack = ExtractTopFrame (stack, &match);
 
@@ -958,6 +963,7 @@ skipMatcher (pattern *pat, node *stack)
         }
     }
 
+    DBUG_PRINT ("PM", (PMEND, matching_level));
     return (stack);
 }
 

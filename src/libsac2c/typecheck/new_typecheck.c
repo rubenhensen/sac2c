@@ -367,9 +367,6 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
 
-#if 0
-  arg_node = PRTdoPrint( arg_node);
-#endif
     arg_node = NTCdoNewReTypeCheck (arg_node);
 
     DBUG_RETURN (arg_node);
