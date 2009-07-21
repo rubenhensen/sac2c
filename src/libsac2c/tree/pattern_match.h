@@ -17,7 +17,7 @@ typedef struct PAT pattern;
  */
 extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
-extern bool PMmatchFlatPseudo (pattern *pat, node *expr);
+extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
 
 /**
  * Pattern-DSL:

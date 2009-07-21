@@ -1099,7 +1099,7 @@ COisNonNeg (constant *a, bool all)
     DBUG_ASSERT ((a != NULL), "COisNonNeg called with NULL pointer");
 
     /* create a "zero" constant with one element */
-    zero = COmakeOne (COgetType (a), SHmakeShape (0));
+    zero = COmakeZero (COgetType (a), SHmakeShape (0));
 
     /* check for correct constant */
     if (zero != NULL) {

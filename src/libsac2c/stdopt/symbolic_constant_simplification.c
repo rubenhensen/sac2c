@@ -1252,17 +1252,25 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
     node *arr = NULL;
     ntype *ivtype;
     ntype *arrtype;
+    pattern *pat;
 
     DBUG_ENTER ("SCSprf_shape_matches_dim_VxA");
 
-    if (PMO (PMOvar (&arr, PMOvar (&iv, PMOprf (F_shape_matches_dim_VxA, arg_node))))) {
+    pat = PMprf (1, PMAisPrf (F_shape_matches_dim_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                 PMvar (1, PMAgetNode (&arr), 0));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
         if (TUshapeKnown (ivtype) && TUdimKnown (arrtype)
             && SHgetExtent (TYgetShape (ivtype), 0) == TYgetDim (arrtype)) {
             res = TBmakeExprs (DUPdoDupTree (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("SCS", ("SCSprf_shape_matches_dim_VxA removed guard( %s, %s)",
+                                AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr))));
         }
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -1271,65 +1279,63 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
  * @fn node *SCSprf_non_neg_val_V( node *arg_node, info *arg_info)
  *
  * description:
- *  This primitive is check that iv is all non-negative.
+ *  This primitive is a check that iv is all non-negative.
  *  If so, this code replaces:
  *
- *   iv', pred = prf_non_neg_val_V( iv)
+ *      iv', pred = prf_non_neg_val_V( iv)
+ *
  *  by
- *   p = TRUE;
- *   iv', pred = iv, p;
+ *
+ *      p = TRUE;
+ *      iv', pred = iv, p;
+ *
  *  CFassign will turn this into:
- *   iv' = iv;
- *   pred = p;
+ *
+ *      iv' = iv;
+ *      pred = p;
  *
  *****************************************************************************/
 node *
 SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg1 = NULL;
     node *tmpivavis;
-    node *tmpivid;
-    constant *arg1c;
+    constant *arg1c = NULL;
     constant *scalarp;
-    constant *arg1frameshape = NULL;
+    pattern *pat;
 
     DBUG_ENTER ("SCSprf_non_neg_val_V");
-    if (PMO (PMOarray (&arg1frameshape, &arg1, PMOprf (F_non_neg_val_V, arg_node)))) {
-        arg1c = COaST2Constant (arg1);
-        arg1frameshape = COfreeConstant (arg1frameshape);
-        if ((NULL != arg1c) && COisNonNeg (arg1c, TRUE)) {
-            DBUG_PRINT ("CF", ("SCSprf_non_neg_val removed guard"));
 
-            /* Generate   p = TRUE; */
-            scalarp = COmakeTrue (SHmakeShape (0));
-            tmpivavis
-              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
-                            TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
+    pat = PMprf (1, PMAisPrf (F_non_neg_val_V), 1, PMconst (1, PMAgetVal (&arg1c)));
 
-            if (isSAAMode ()) {
-                AVIS_DIM (tmpivavis) = TBmakeNum (0);
-                AVIS_SHAPE (tmpivavis)
-                  = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
-            }
-            INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
-            INFO_PREASSIGN (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
-                                         COconstant2AST (scalarp)),
-                              INFO_PREASSIGN (arg_info));
+    if (PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (arg1c, TRUE)) {
+        DBUG_PRINT ("CF", ("SCSprf_non_neg_val removed guard"));
 
-            AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-            DBUG_PRINT ("CF", ("SCSprf_non_neg_val_V(%s) created TRUE pred %s",
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                               AVIS_NAME (tmpivavis)));
-            tmpivid = TBmakeId (tmpivavis);
-            res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (tmpivid, NULL));
+        /* Generate   p = TRUE; */
+        scalarp = COmakeTrue (SHmakeShape (0));
+        tmpivavis
+          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                        TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
+
+        if (isSAAMode ()) {
+            AVIS_DIM (tmpivavis) = TBmakeNum (0);
+            AVIS_SHAPE (tmpivavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
         }
-        if (NULL != arg1c) {
-            arg1c = COfreeConstant (arg1c);
-        }
+        INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
+        INFO_PREASSIGN (arg_info) = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
+                                                             COconstant2AST (scalarp)),
+                                                  INFO_PREASSIGN (arg_info));
+
+        AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
+        DBUG_PRINT ("CF",
+                    ("SCSprf_non_neg_val_V(%s) created TRUE pred %s",
+                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis)));
+        res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (TBmakeId (tmpivavis), NULL));
+        arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -1338,23 +1344,60 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
  * @fn node *SCSprf_val_lt_shape_VxA( node *arg_node, info *arg_info)
  *
  * description:
- *  This primitive is check that iv is less than the shape of M in M[iv].
+ *  This primitive is check that iv is less than the shape of arr in arr[iv].
  *  If so, this code replaces:
  *
- *   iv', pred = prf_val_lt_shape_VxA( iv, M)
+ *   iv', pred = prf_val_lt_shape_VxA( iv, arr)
+ *
  *  by
+ *
  *   iv', pred = iv, TRUE;
+ *
  *  CFassign will turn this into:
+ *
  *   iv' = iv;
  *   pred = TRUE;
+ *
+ * Note: We do not check that: shape(vi) == dim( arr).
+ *       This should have been done by an earlier guard.
  *
  *****************************************************************************/
 node *
 SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *iv;
+    constant *ivc = NULL;
+    constant *arrc = NULL;
+    node *arr = NULL;
+    ntype *ivtype;
+    ntype *arrtype;
+    shape *arrshp;
+    pattern *pat;
 
     DBUG_ENTER ("SCSprf_val_lt_shape_VxA");
+
+    pat = PMprf (1, PMAisPrf (F_val_lt_shape_VxA), 1, PMconst (1, PMAgetVal (&ivc)),
+                 PMvar (1, PMAgetNode (&arr), 0));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+        iv = PRF_ARG1 (arg_node);
+        ivtype = ID_NTYPE (iv);
+        arrtype = ID_NTYPE (arr);
+        if (TUdimKnown (arrtype)) {
+            arrshp = TYgetShape (arrtype);
+            arrc = COmakeConstantFromShape (arrshp);
+            if (COlt (ivc, arrc)) {
+                res = TBmakeExprs (DUPdoDupTree (iv),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+                DBUG_PRINT ("SCS", ("SCSprf_val_lt_shape_VxA removed guard( %s, %s)",
+                                    AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr))));
+            }
+        }
+    }
+    pat = PMfree (pat);
+    arrc = (NULL != arrc) ? COfreeConstant (arrc) : arrc;
+
     DBUG_RETURN (res);
 }
 

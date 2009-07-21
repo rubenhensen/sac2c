@@ -332,7 +332,7 @@ IsFullyConstantNode (node *arg_node)
  *
  * @fn node* CreateConstExprsFromType( ntype *type)
  *
- * @brief
+ * @brief Create AST exprs node for "type", which is known to be AKV.
  *
  *****************************************************************************/
 static node *
@@ -774,6 +774,8 @@ CFlet (node *arg_node, info *arg_info)
      */
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
     if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))
         && (NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)) {
         /**
@@ -793,9 +795,6 @@ CFlet (node *arg_node, info *arg_info)
             }
             global.optcounters.cf_expr += TYgetProductSize (INFO_LHSTYPE (arg_info));
         }
-
-    } else {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     INFO_LHSTYPE (arg_info) = TYfreeTypeConstructor (INFO_LHSTYPE (arg_info));

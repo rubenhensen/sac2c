@@ -125,7 +125,7 @@
  * There are several matching functions available. They differ in the
  * way they chase up N_id arguments such as "B" in the example b) above.
  *
- * Currently (19.07.2009), we have:
+ * Currently (2009-07-19), we have:
  * - PMmatchExact( pat, expr) which does not follow any definitions at all.
  *                            Using this matching function in the second
  *                            example above would NOT match!
@@ -134,18 +134,18 @@
  * - PMmatch...
  *
  * Note here, that the chasing of N_id nodes to their definitions happens
- * implicitly for all pattern. The only exception is PMvar which ALWAYS
+ * implicitly for all patterns. The only exception is PMvar which ALWAYS
  * matches an N_id node directly. However, PMvar enables further inspection
- * of its definition by an optional sub-pattern. For more details see below.
+ * of its definition by an optional sub-pattern. For more details, see below.
  *
- * Creating Pattern:
+ * Creating Patterns:
  * -----------------
  *
  * We have three categories of pattern:
- * - singleton pattern that match expressions without subexpressions
+ * - singleton patterns that match expressions without subexpressions,
  *   such as N_num.
  * - nested pattern that match constructor-expressions containing
- *   subexpressions such as N_prf, N_ap, or N_array.
+ *   subexpressions ,such as N_prf, N_ap, or N_array.
  * - iteration pattern that enable repeated matching with back-tracking
  *
  * All pattern constructing functions of the first 2 categories adhere to
@@ -154,18 +154,18 @@
  * pattern *PM<xyz>( int num_attribs, attr_1, ..., attr_{num_attribs},
  *                   int num_subpats, pat_1, ..., pat_{num_subpats} )
  *
- * However, singleton pattern do not expect any of the arguments in the
+ * However, singleton patterns do not expect any of the arguments in the
  * second line.
  *
  * Each pattern can come with an abitrary number of attributes which
  * refine their matching behaviour. For details on attributes see
  * below the section on "Attributes".
- * All nested pattern come with a list of subpattern which need to match
- * all subexpressions of the matched node. Note here, that we have pattern
- * that match more than one expression; so there is no need to have a
- * one-to-one correspondence between subpattern and subexpressions!
+ * All nested patterns come with a list of subpatterns which need to match
+ * all subexpressions of the matched node. Note here that we have patterns
+ * that match more than one expression, so there is no need to have a
+ * one-to-one correspondence between subpatterns and subexpressions!
  *
- * At the time being (18.7.09) we support the following pattern:
+ * At the time being (2009-07-18) we support the following patterns:
  *
  * SINGLETON PATTERN:
  * - PMconst   matches any constant expression (could be N_num, N_array, etc)
@@ -278,7 +278,7 @@
 static char *FAIL = "";
 static int matching_level;
 
-static enum pm_mode { PM_exact, PM_flat, PM_flatPseudo } mode;
+static enum pm_mode { PM_exact, PM_flat, PM_flatSkipExtrema } mode;
 
 typedef node *matchFun (pattern *, node *);
 
@@ -508,15 +508,34 @@ node *PushArgs( node *stack, node * args)
   }
   DBUG_RETURN( stack);
 }
-#endif
+#endif // 0
 
+/** <!--*******************************************************************-->
+ *
+ * @bool isInGuards( node *expr)
+ *
+ * @brief Predicate for determining that an N_prf is a guard or
+ *        extrema attachment.
+ *
+ *        FIXME: It may be that treating extrema and guards alike
+ *        is not a good idea. If we can concoct an example of
+ *        code, such as CF, that can defeat a guard, thereby
+ *        producing incorrect code or code that is likely to
+ *        fail, we'll have to tighten up this definition.
+ *
+ * @param N_prf
+ * @return True if N_prf is member of the set below.
+ *
+ *****************************************************************************/
 bool
-isInPseudo (prf prfun)
+isInGuards (prf prfun)
 {
-    return ((prfun == F_guard) || (prfun == F_attachextrema)
-            || (prfun == F_attachintersect) || (prfun == F_non_neg_val_V)
-            || (prfun == F_val_lt_shape_VxA) || (prfun == F_shape_matches_dim_VxA)
-            || (prfun == F_val_le_val_VxV));
+    return ((prfun == F_attachextrema) /* Attributes */
+            || (prfun == F_attachintersect)
+
+            || (prfun == F_guard) /* Guards */
+            || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
+            || (prfun == F_shape_matches_dim_VxA) || (prfun == F_val_le_val_VxV));
 }
 
 /** <!--*******************************************************************-->
@@ -543,10 +562,10 @@ skipVarDefs (node *expr)
                 expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
             }
             break;
-        case PM_flatPseudo:
+        case PM_flatSkipExtrema:
             while (
               ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
-              || ((NODE_TYPE (expr) == N_prf) && (isInPseudo (PRF_PRF (expr))))) {
+              || ((NODE_TYPE (expr) == N_prf) && (isInGuards (PRF_PRF (expr))))) {
                 if (NODE_TYPE (expr) == N_id) {
                     expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
                 } else {
@@ -1006,9 +1025,9 @@ PMmatchFlat (pattern *pat, node *expr)
 }
 
 int
-PMmatchFlatPseudo (pattern *pat, node *expr)
+PMmatchFlatSkipExtrema (pattern *pat, node *expr)
 {
-    mode = PM_flatPseudo;
+    mode = PM_flatSkipExtrema;
     matching_level = 0;
 
     return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);

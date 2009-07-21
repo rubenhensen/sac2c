@@ -125,7 +125,7 @@ StructOpSel (node *arg_node, info *arg_info)
     pat = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
                  PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlatPseudo (pat, arg_node)) {
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -186,10 +186,10 @@ StructOpSel (node *arg_node, info *arg_info)
  *
  * description:
  *   Eliminates structural constant reshape expression
- *      reshape( shp, arr)
+ *      _reshape_VxA_( shp, structcon)
 
  *   when it can determine that shp is a constant,
- *   and that ( times reduce shp) == times reduce shape(arr)
+ *   and that ( times reduce shp) == times reduce shape(structcon)
  *
  *****************************************************************************/
 node *
@@ -197,42 +197,39 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     shape *resshape;
-    constant *con1 = NULL;
-    constant *fs2 = NULL;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
+    constant *con = NULL;
+    node *structcon = NULL;
+    pattern *pat;
     int timesrhoarg2;
     int prodarg1;
 
     DBUG_ENTER ("SCCFprf_reshape");
-    /*  reshape(shp, arr):
-     *    constant shp, non-constant arr, with
-     *    arr having same element count prod(shp)
-     *    and rank-0 ELEMTYPE
-     */
-    if (PMO (
-          PMOarrayConstructorGuards (&fs2, &arg2,
-                                     PMOintConst (&con1, &arg1,
-                                                  PMOprf (F_reshape_VxA, arg_node))))) {
-        if (0 == TYgetDim (ARRAY_ELEMTYPE (arg2))) {
-            resshape = COconstant2Shape (con1);
+
+    pat = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMconst (1, PMAgetVal (&con)),
+                 PMarray (1, PMAgetNode (&structcon), 1, PMskip (0)));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+        if (0 == TYgetDim (ARRAY_ELEMTYPE (structcon))) {
+            resshape = COconstant2Shape (con);
             prodarg1 = SHgetUnrLen (resshape);
-            timesrhoarg2 = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
+            timesrhoarg2 = SHgetUnrLen (ARRAY_FRAMESHAPE (structcon));
             if (prodarg1 == timesrhoarg2) {
-                /* If the result is a scalar, return that. Otherwise,
-                 * create an N_array.
-                 */
+                /* If result is a scalar, return that. Else, create an N_array. */
                 if (0 == SHgetDim (resshape)) {
-                    res = DUPdoDupTree (TCgetNthExprsExpr (0, ARRAY_AELEMS (arg2)));
+                    res = DUPdoDupTree (TCgetNthExprsExpr (0, ARRAY_AELEMS (structcon)));
                 } else {
-                    res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)), resshape,
-                                       DUPdoDupTree (ARRAY_AELEMS (arg2)));
+                    res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (structcon)), resshape,
+                                       DUPdoDupTree (ARRAY_AELEMS (structcon)));
                 }
-                DBUG_PRINT ("CF", ("SCCFprf_reshape performed "));
+                DBUG_PRINT ("CF", ("SCCFprf_reshape performed _reshape_VxA_(%s, %s)",
+                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                   AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
             }
-            con1 = COfreeConstant (con1);
+            con = COfreeConstant (con);
         }
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -675,51 +672,94 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *
  * @param: arg_node is a _sel_ N_prf.
  *
- * @result: if the selection can be folded, the result is the
- * val from in the earlier modarray. Otherwise, NULL.
- *
  * @brief:
  *   tries a sel-modarray optimization for the following cases:
  *
- *  Case 1. iv is an unknown expression:
- *      b = modarray(arr, iv, val)
- *      c = b;              NB. Perhaps a few assigns in the way
- *      x = sel(iv, c)    ->   x = val;
+ *   FIXME: This optimization should, by all rights be
+ *   guarded by an array bounds on iv against M.
+ *   See Bug #356.
  *
- *      I do not know if other facilities (e.g., WLF) perform this
- *      optimization. If they do not, this opt is important for loop fusion
- *      and array contraction. Consider the example of vector-vector
- *      operations in:  Z = B + C * D;
+ *  Case 1. We have one of the following code patterns:
+ *
+ *    X = modarray_AxVxS_( M, iv, val);
+ *    z = sel_VxA( iv, X);
+ *
+ *     or
+ *
+ *    X = modarray_AxVxA_( M, iv, val);
+ *    z = sel_VxA( iv, X);
+ *
+ *     or
+ *
+ *    X = idx_modarray_AxVxS_( M, iv, val);
+ *    z = idx_sel_VxA( iv, X);
+ *
+ *    All of these will turn into:
+ *
+ *    z = val;
+ *
+ * @comments:
+ *
+ *      This opt is important for loop fusion
+ *      and array contraction. WLF has similar properties, but
+ *      this example may be clearer. Consider the example of vector-vector
+ *      operations in:
+ *
+ *      Z = B + C * D;
+ *
+ *      This becomes, roughly:
  *
  *        for (i=0; i<shape(C); i++) {
- *          t1     = C[i] * D[i];
- *          tmp[i] = t1;
+ *          c      = C[i];
+ *          d      = D[i];
+ *          t1     = c * d;
+ *          tmp1[i]= t1;
  *        }
  *        for (i=0; i<shape(B); i++) {
- *          t2     = B[i] + tmp[i];
- *          Z[i]   = t2;
+ *          t2     = tmp1[i];
+ *          b      = B[i];
+ *          t3     = b + t2;
+ *          Z[i]   = t3;
  *        }
  *
  *      Loop fusion will (assuming B and C have same shape)  turn this into:
  *        for (i=0; i<shape(C); i++) {
- *          t1     = C[i] * D[i];
- *          tmp[i] = t1;
- *          tmp2   = tmp;              NB. Just to complicate things a bit:
- *                                     NB. Hence, the N_array search in PM.
- *          t2     = B[i] + tmp2[i];
- *          Z[i]   = t2;
+ *          c      = C[i];
+ *          d      = D[i];
+ *          t1     = c * d;
+ *          tmp1[i]= t1;             NB. This is the modarray
+ *          t2     = tmp1[i];         NB. This is the sel()
+ *          b      = B[i];
+ *          t3     = b + t2;
+ *          Z[i]   = t3;
  *        }
  *
  *      Next, this case of SelModArray will turn the code into:
  *
  *        for (i=0; i<shape(C); i++) {
- *          t1     = C[i] * D[i];
- *          tmp[i] = t1;
- *          t2     = B[i] + t1;
- *          Z[i]   = t2;
+ *          c      = C[i];
+ *          d      = D[i];
+ *          t1     = c * d;
+ *          tmp1[i]= t1;             NB. This is the modarray
+ *          t2     = t1;
+ *          b      = B[i];
+ *          t3     = b + t2;
+ *          Z[i]   = t3;
  *        }
+ *
  *      After this point, tmp is likely dead, so DCR will remove it
- *      sometime later.
+ *      sometime later. CVP will also clean things up a bit more,
+ *      to produce:
+ *
+ *        for (i=0; i<shape(C); i++) {
+ *          c      = C[i];
+ *          d      = D[i];
+ *          t1     = c * d;
+ *          b      = B[i];
+ *          t3     = b + t1;
+ *          Z[i]   = t3;
+ *        }
+ *
  *
  *  Case 2. See below.
  *
@@ -732,6 +772,8 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *      any assertions about its relationship to constantiv.
  *      Hence, this case must not be optimized.
  *
+ * @result: If the selection can be folded, val from the modarray.
+ *          Else, NULL.
  *
  *****************************************************************************/
 
@@ -741,35 +783,37 @@ SelModarray (node *arg_node)
     node *res = NULL;
     node *iv = NULL;
     node *X = NULL;
-    node *M = NULL;
     node *val = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
 
     DBUG_ENTER ("SelModarray");
-    /* We are looking for one of:
-     *
-     *    X = modarray_AxVxS_( M, iv, val);
-     *     or
-     *    X = modarray_AxVxA_( M, iv, val);
-     *    sel_VxA( iv, X);
-     *     or
-     *    X = idx_modarray_AxVxS_( M, iv, val);
-     *    idx_sel_VxA( iv, X);
-     *
-     * NB: these ||'s do only work here as the execution order of these
-     *    is guaranteed to be left to right AND as PMvar( &val, ...)
-     *    is guaranteed not to be executed if PMprf does not match!!
-     */
 
-    if (PMO (PMOvar (&X, /* _sel_VxA_( iv, X) */
-                     PMOvar (&iv, PMOprf (F_sel_VxA, arg_node))))
-        &&
+    /* z = _sel_VxA_( iv, X); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&X), 0));
 
-        (PMO (PMOvar (&val, /* _modarray_AxVxS_( M, iv, val) */
-                      PMOvar (&iv, PMOvar (&M, PMOprf (F_modarray_AxVxS, X)))))
-         || PMO (PMOvar (&val, /* _modarray_AxSxA_( M, iv, val) */
-                         PMOvar (&iv, PMOvar (&M, PMOprf (F_modarray_AxVxA, X))))))) {
+    /* _X = modarray_AxVxS_( M, iv, val) */
+    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
+                  PMvar (1, PMAisVar (&iv), 0), PMvar (1, PMAgetNode (&val), 0));
+
+    /* _X = modarray_AxSxA_( M, iv, val) */
+    pat3 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
+                  PMvar (1, PMAisVar (&iv), 0), PMvar (1, PMAgetNode (&val), 0));
+
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)
+        && (PMmatchFlatSkipExtrema (pat2, X) || PMmatchFlatSkipExtrema (pat3, X))) {
+
         res = DUPdoDupTree (val);
+        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) by %s",
+                           AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
+                           AVIS_NAME (ID_AVIS (val))));
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
     DBUG_RETURN (res);
 }
 
@@ -786,48 +830,60 @@ SelModarray (node *arg_node)
  * @brief:
  *  Case 2. ivc is a constant:
  *      b = modarray(arr, ivc, val5);
- *      c = modarray(b, [3], val3);
- *      d = modarray(c, [2], val2);
- *      x = sel(ivc, d)   ->  x = val5;
+ *      three = [3];
+ *      c = modarray(b, three, val3);
+ *      two = [2];
+ *      d = modarray(c, two, val2);
+ *      z = sel(ivc, d)
+ *
+ *      This becomes:
+ *
+ *      z = val5;
  *
  *      In the above, if the statements setting c or d contain
- *      non-constants as ivc, then we must NOT perform the
+ *      non-constants (non-AKV) as ivc, then we must NOT perform the
  *      optimization, because we are unable to assert that
- *      the constant is not [5].
+ *      the constant ivc is not equal to, e.g, tow.
  *
  *****************************************************************************/
 static node *
 SelModarrayCase2 (node *arg_node)
 {
     node *res = NULL;
-    constant *iv1c = NULL;
-    constant *iv2c = NULL;
-    node *iv1 = NULL;
-    node *iv2 = NULL;
+    constant *ivc1 = NULL;
+    constant *ivc2 = NULL;
     node *val = NULL;
-    node *X2 = NULL;
     node *X = NULL;
+    node *X2 = NULL;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("SelModarrayCase2");
 
-    if (PMO (PMOvar (&X, /* _sel_VxA_( iv1, X) */
-                     PMOintConst (&iv1c, &iv1, PMOprf (F_sel_VxA, arg_node))))) {
+    /* z = _sel_VxA_( ivc1, X); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&ivc1)),
+                  PMvar (1, PMAgetNode (&X), 0));
 
-        while (PMO (PMOvar (&val, /* X = _modarray_AxVxS_( X2, iv2, val)  */
-                            PMOintConst (&iv2c, &iv2,
-                                         PMOvar (&X2, PMOprf (F_modarray_AxVxS, X)))))) {
+    /* X = _modarray_AxVxS_( M, ivc2, val)  */
+    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0), 2,
+                  PMconst (1, PMAgetVal (&ivc2)), PMvar (1, PMAgetNode (&val), 0));
+
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        while (PMmatchFlatSkipExtrema (pat1, X)) {
             /* FIXME: Bodo: Does this need an F_modarray_AxVxA case ?? */
-            if (COcompareConstants (iv1c, iv2c)) {
+            if (COcompareConstants (ivc1, ivc2)) {
                 break;
             } else { /* Chase the modarray chain */
                 val = NULL;
-                iv2c = NULL;
-                iv2 = NULL;
+                ivc1 = NULL;
+                ivc2 = NULL;
                 X = X2;
                 X2 = NULL;
             }
         }
         if (NULL != val) {
+            DBUG_PRINT ("CF", ("SelModArrayCase2 replaced _sel_VxA_(const, %s) by %s",
+                               AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val))));
             res = DUPdoDupTree (val);
         }
     }
@@ -906,6 +962,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
         }
 
         if (matches) {
+            DBUG_PRINT ("CF", ("SelArrayOfEqualEmements removed sel()"));
             res = DUPdoDupTree (elem);
         }
     }

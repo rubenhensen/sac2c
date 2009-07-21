@@ -262,6 +262,12 @@ CVPid (node *arg_node, info *arg_info)
                 || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
                     && (IsScalarConst (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))))) {
             arg_node = FREEdoFreeNode (arg_node);
+            DBUG_PRINT ("CVP", ("CVPid replacing %s", AVIS_NAME (avis)));
+            if (N_id == NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis)))) {
+                DBUG_PRINT ("CVP",
+                            ("by %s",
+                             AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))));
+            }
             arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
             global.optcounters.cvp_expr += 1;
         }
