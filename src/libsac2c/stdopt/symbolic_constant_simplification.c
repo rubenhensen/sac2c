@@ -1103,17 +1103,23 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
     node *res = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    constant *arg1fs = NULL;
     node *arr = NULL;
     node *scalar = NULL;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("SCSprf_sel_VxA");
 
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_sel_VxA expected N_id as PRF_ARG1");
-    if (PMO (PMOvar (&arg2, PMOvar (&arg1, PMOprf (F_sel_VxA, arg_node)))) &&
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
+                  PMarray (2, PMAgetNode (&arg1), PMAgetFS (&arg1fs), 1, PMskip (0)),
+                  PMvar (1, PMAgetNode (&arg2), 0));
 
-        /* Find the second argument's defining function */
-        PMO (PMOvar (&arr, PMOprf (F_shape_A, arg2)))) {
+    pat2 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAisVar (&arg2), 0));
+
+    if (PMmatchFlatSkipExtrema (pat1, arg_node) && PMmatchFlatSkipExtrema (pat2, arg2)) {
 
         /* Find the first element of the [scalar] */
         if (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))) { /* eschew IVs */
