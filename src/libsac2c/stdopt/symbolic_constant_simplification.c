@@ -1101,39 +1101,24 @@ node *
 SCSprf_sel_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg1 = NULL;
     node *arg2 = NULL;
-    constant *arg1fs = NULL;
-    node *arr = NULL;
     node *scalar = NULL;
     pattern *pat1;
-    pattern *pat2;
 
     DBUG_ENTER ("SCSprf_sel_VxA");
 
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_sel_VxA expected N_id as PRF_ARG1");
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                  PMarray (2, PMAgetNode (&arg1), PMAgetFS (&arg1fs), 1, PMskip (0)),
-                  PMvar (1, PMAgetNode (&arg2), 0));
+                  PMarray (0, 1, PMint (1, PMAgetNode (&scalar), 0)),
+                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
 
-    pat2 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAisVar (&arg2), 0));
-
-    if (PMmatchFlatSkipExtrema (pat1, arg_node) && PMmatchFlatSkipExtrema (pat2, arg2)) {
-
-        /* Find the first element of the [scalar] */
-        if (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1))) { /* eschew IVs */
-            scalar = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg1))));
-            if (N_array == NODE_TYPE (scalar)) {
-                scalar = EXPRS_EXPR (ARRAY_AELEMS (scalar));
-                if (N_num == NODE_TYPE (scalar)) {
-                    DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
-                    res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar),
-                                      DUPdoDupNode (arr));
-                }
-            }
-        }
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
     }
+    pat1 = PMfree (pat1);
+
     DBUG_RETURN (res);
 }
 
