@@ -5108,7 +5108,13 @@ PRTdoPrint (node *syntax_tree)
     /* we want to duplicate all sons */
     INFO_CONT (arg_info) = NULL;
 
-    syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+    if (global.outfile == NULL) {
+        global.outfile = stdout;
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+        global.outfile = NULL;
+    } else {
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+    }
 
     arg_info = FreeInfo (arg_info);
 
@@ -5136,7 +5142,13 @@ PRTdoPrintNode (node *syntax_tree)
     /* we want to duplicate all sons */
     INFO_CONT (arg_info) = syntax_tree;
 
-    syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+    if (global.outfile == NULL) {
+        global.outfile = stdout;
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+        global.outfile = NULL;
+    } else {
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+    }
 
     arg_info = FreeInfo (arg_info);
 
