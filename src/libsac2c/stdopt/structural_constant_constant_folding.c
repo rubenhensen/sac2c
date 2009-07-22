@@ -239,11 +239,10 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
  *   node *SCCFprf_take_SxV(node *arg_node, info *arg_info)
  *
  * description:
- *   computes structural undertake on array expressions with constant arg1.
- *   Implements take for constants
- *   If both arguments are constant, CF was done by the typechecker.
- *   This handles the case where arg1 is constant, and arg2 is
- *   an N_array.
+ *   Computes structural undertake on array expressions with constant arg1,
+ *   and arg2 an N_array.
+ *
+ *   [If both arguments are constant, CF was done by the typechecker.]
  *
  *****************************************************************************/
 node *
@@ -251,20 +250,22 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *tail;
-    node *arg1 = NULL;
     node *arg2 = NULL;
-    constant *con1 = NULL;
-    constant *fs2 = NULL;
+    constant *con = NULL;
+    pattern *pat;
+
     int takecount;
     int dropcount;
     int argxrho;
     int resxrho;
 
     DBUG_ENTER ("SCCFprf_take_SxV");
-    if (PMO (PMOarrayConstructorGuards (&fs2, &arg2,
-                                        PMOintConst (&con1, &arg1,
-                                                     PMOprf (F_take_SxV, arg_node))))) {
-        takecount = COconst2Int (con1);
+
+    pat = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
+                 PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+        takecount = COconst2Int (con);
         resxrho = abs (takecount);
         argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
         DBUG_ASSERT ((resxrho <= argxrho), ("SCCFprf_take_SxV attempted overtake"));
@@ -277,8 +278,10 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
         }
-        con1 = COfreeConstant (con1);
+        con = COfreeConstant (con);
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -299,20 +302,21 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *tail;
-    node *arg1 = NULL;
     node *arg2 = NULL;
-    constant *con1 = NULL;
-    constant *arg2fs = NULL;
+    constant *con = NULL;
+    pattern *pat;
     int dropcount;
     int dc;
     int resxrho;
     int arg2xrho;
 
     DBUG_ENTER ("SCCFprf_drop_SxV");
-    if (PMO (PMOarrayConstructorGuards (&arg2fs, &arg2,
-                                        PMOintConst (&con1, &arg1,
-                                                     PMOprf (F_drop_SxV, arg_node))))) {
-        dc = COconst2Int (con1);
+
+    pat = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMconst (1, PMAgetVal (&con)),
+                 PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+        dc = COconst2Int (con);
         if (0 == dc) {
             res = DUPdoDupTree (arg2);
         } else {
@@ -331,8 +335,10 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
         }
-        con1 = COfreeConstant (con1);
+        con = COfreeConstant (con);
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -358,6 +364,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     constant *emptyVec;
     constant *coiv = NULL;
     constant *fsX = NULL;
+    pattern *pat1;
+    pattern *pat2;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
@@ -379,6 +387,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      * match F_modarray_AxVxS( X, [], val)
      */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
+
     if (PMO (
           PMOvar (&val, PMOconst (&emptyVec, &iv,
                                   PMOvar (&X, PMOprf (F_modarray_AxVxS, arg_node)))))) {
@@ -825,10 +834,11 @@ SelModarray (node *arg_node)
  * @param: arg_node is a _sel_ N_prf.
  *
  * @result: if the selection can be folded, the result is the
- * val from in the earlier modarray. Otherwise, NULL.
+ * val5 from in the earlier modarray. Otherwise, NULL.
  *
  * @brief:
  *  Case 2. ivc is a constant:
+ *      ivc = [4];
  *      b = modarray(arr, ivc, val5);
  *      three = [3];
  *      c = modarray(b, three, val3);
@@ -865,17 +875,16 @@ SelModarrayCase2 (node *arg_node)
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* X = _modarray_AxVxS_( M, ivc2, val)  */
-    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0), 2,
+    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (1, PMAgetNode (&X2), 0),
                   PMconst (1, PMAgetVal (&ivc2)), PMvar (1, PMAgetNode (&val), 0));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        while (PMmatchFlatSkipExtrema (pat1, X)) {
+        while (PMmatchFlatSkipExtrema (pat2, X)) {
             /* FIXME: Bodo: Does this need an F_modarray_AxVxA case ?? */
             if (COcompareConstants (ivc1, ivc2)) {
                 break;
             } else { /* Chase the modarray chain */
                 val = NULL;
-                ivc1 = NULL;
                 ivc2 = NULL;
                 X = X2;
                 X2 = NULL;
