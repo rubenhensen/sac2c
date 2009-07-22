@@ -25,6 +25,8 @@ extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
 
+extern node *PMmultiExprs (int num_nodes, ...);
+
 /**
  * Pattern-DSL:
  */
@@ -33,10 +35,13 @@ extern pattern *PMconst (int num_attribs, ...);
 extern pattern *PMint (int num_attribs, ...);
 extern pattern *PMarray (int num_attribs, ...);
 extern pattern *PMprf (int num_attribs, ...);
-/* extern pattern *PMretryAny( int *i, int *l, int num_pats, ...); */
-/* extern pattern *PMretryAll( int *i, int *l, int num_pats, ...); */
+extern pattern *PMretryAny (int *i, int *l, ...);
+extern pattern *PMretryAll (int *i, int *l, ...);
 extern pattern *PMskip (int num_attribs, ...);
-/* extern pattern *PMpair( pattern *p1, pattern *p2); */
+#if 0
+extern pattern *PMskipN( int *n, int num_attribs, ...);
+extern pattern *PMmulti( int num_pats, ...);
+#endif
 
 /**
  * utils:
