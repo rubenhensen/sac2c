@@ -364,8 +364,6 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     constant *emptyVec;
     constant *coiv = NULL;
     constant *fsX = NULL;
-    pattern *pat1;
-    pattern *pat2;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
@@ -441,7 +439,6 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     node *res = NULL;
 
     node *X = NULL;
-    node *iv = NULL;
     node *val = NULL;
     node *exprs, *val_exprs;
     constant *emptyVec;
@@ -450,45 +447,51 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     constant *fsval = NULL;
     constant *ivlen = NULL;
     constant *fsX_tail = NULL;
+    pattern *pat, *pat2, *pat3, *pat4;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
 
     /**
-     * match F_modarray_AxVxA( X, [], val)
+     * match F_modarray_AxVxA( _, [], val)
      */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
-    if (PMO (
-          PMOvar (&val, PMOconst (&emptyVec, &iv,
-                                  PMOvar (&X, PMOprf (F_modarray_AxVxS, arg_node)))))) {
+    pat = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
+                 PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         res = DUPdoDupTree (val);
     } else {
         /**
-         *   match F_modarray_AxVxA( X = [...], iv = [c0,...,cn], val = [...])
+         *   match F_modarray_AxVxA( X = [...], [c0,...,cn], val)
          */
-        if (PMO (PMOarrayConstructorGuards (
-              &fsval, &val,
-              PMOconst (&coiv, &iv,
-                        PMOarrayConstructorGuards (&fsX, &X,
-                                                   PMOprf (F_modarray_AxVxA,
-                                                           arg_node)))))) {
-
-            /**
-             *  The only way to get this version of modarray is by means
-             *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <= dim(X)!
-             *  However, this does not guarantee that shape(iv) <= shape( frameshape( X))!
-             *  Example:
-             *    foo( int[2,2] a)
-             *    {
-             *      X = [a,a];
-             *      ...
-             *    }
-             *  => frameshape( X) = [2]  but shape(X) = [2,2,2] !!
-             */
+        pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3,
+                      PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
+                      PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
+        if (PMmatchFlatSkipExtrema (pat2, arg_node)) {
             DBUG_ASSERT ((COgetDim (fsX) == 1),
                          "illegal frameshape on first arg to modarray");
-            if ((COgetDim (coiv) == 1)
+            /**
+             * we distinguish 2 cases:
+             * val == [...]    and
+             * val == c
+             */
+            pat3 = PMarray (2, PMAgetNode (&val), PMAgetFS (&fsval), 1, PMskip (0));
+            pat4 = PMconst (1, PMAgetVal (&coiv));
+
+            if (PMmatchFlatSkipExtrema (pat3, val) && (COgetDim (coiv) == 1)
                 && (COgetExtent (coiv, 0) <= COgetExtent (fsX, 0))) {
+                /**
+                 *  NB: The only way to get this version of modarray is by means
+                 *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <=
+                 * dim(X)! However, this does not guarantee that shape(iv) <= shape(
+                 * frameshape( X))! Example: foo( int[2,2] a)
+                 *    {
+                 *      X = [a,a];
+                 *      ...
+                 *    }
+                 *  => frameshape( X) = [2]  but shape(X) = [2,2,2] !!
+                 */
                 DBUG_ASSERT ((COgetDim (fsval) == 1),
                              "illegal frameshape on last arg to modarray");
                 /**
@@ -543,48 +546,35 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                     ivlen = COfreeConstant (ivlen);
                     fsX_tail = COfreeConstant (fsX_tail);
                 }
-            }
-            fsX = COfreeConstant (fsX);
-            coiv = COfreeConstant (coiv);
-            fsval = COfreeConstant (fsval);
-        } else {
-            if (fsX != NULL) {
-                fsX = COfreeConstant (fsX);
-                if (coiv != NULL) {
-                    coiv = COfreeConstant (coiv);
-                    if (fsval != NULL) {
-                        fsval = COfreeConstant (fsval);
-                    }
-                }
-            }
-            /*
-             * match F_modarray_AxVxA( X = [...], iv = [co,...,cn], val = V)
-             *
-             * we only do the simple case (case a above) where V fits neatly
-             * into X as an element.
-             */
-            if (PMO (
-                  PMOvar (&val,
-                          PMOconst (&coiv, &iv,
-                                    PMOarrayConstructorGuards (&fsX, &X,
-                                                               PMOprf (F_modarray_AxVxA,
-                                                                       arg_node)))))
-                && (COgetExtent (coiv, 0) == COgetExtent (fsX, 0))) {
+            } else if (PMmatchFlatSkipExtrema (pat4, val)
+                       && (COgetExtent (coiv, 0) == COgetExtent (fsX, 0))) {
+                /*
+                 * match F_modarray_AxVxA( X = [...], iv = [co,...,cn], val = V)
+                 *
+                 * we only do the simple case (case a above) where V fits neatly
+                 * into X as an element.
+                 */
                 offset = COvect2offset (fsX, coiv);
                 res = DUPdoDupTree (X);
                 exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
                 EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
                 EXPRS_EXPR (exprs) = DUPdoDupTree (val);
-            } else {
-                if (fsX != NULL) {
-                    fsX = COfreeConstant (fsX);
-                    if (coiv != NULL) {
-                        coiv = COfreeConstant (coiv);
-                    }
+            }
+            pat3 = PMfree (pat3);
+            pat4 = PMfree (pat4);
+        }
+        pat2 = PMfree (pat2);
+        if (fsX != NULL) {
+            fsX = COfreeConstant (fsX);
+            if (coiv != NULL) {
+                coiv = COfreeConstant (coiv);
+                if (fsval != NULL) {
+                    fsval = COfreeConstant (fsval);
                 }
             }
         }
     }
+    pat = PMfree (pat);
     emptyVec = COfreeConstant (emptyVec);
     DBUG_RETURN (res);
 }
