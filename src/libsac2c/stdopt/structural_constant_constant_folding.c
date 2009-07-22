@@ -527,8 +527,9 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  *
                  * HOWEVER, currently we have implemented case a) only!
                  */
-                if ((COgetExtent (coiv, 0) + COgetExtent (fsval, 0))
-                    == COgetExtent (fsX, 0)) {
+                if ((COgetDim (coiv) == 1)
+                    && ((COgetExtent (coiv, 0) + COgetExtent (fsval, 0))
+                        == COgetExtent (fsX, 0))) {
                     ivlen = COmakeConstantFromInt (COgetExtent (coiv, 0));
                     fsX_tail = COdrop (ivlen, fsX);
                     if (COcompareConstants (fsval, fsX_tail)) {
@@ -546,7 +547,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                     ivlen = COfreeConstant (ivlen);
                     fsX_tail = COfreeConstant (fsX_tail);
                 }
-            } else if (PMmatchFlatSkipExtrema (pat4, val)
+            } else if (PMmatchFlatSkipExtrema (pat4, val) && (COgetDim (coiv) == 1)
                        && (COgetExtent (coiv, 0) == COgetExtent (fsX, 0))) {
                 /*
                  * match F_modarray_AxVxA( X = [...], iv = [co,...,cn], val = V)
