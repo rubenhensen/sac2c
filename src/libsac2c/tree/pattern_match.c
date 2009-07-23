@@ -661,13 +661,10 @@ genericSubPatternMatcher (pattern *pat, node *arg, node *stack)
         }
         matching_level--;
         if (inner_stack != NULL) {
-            if (inner_stack != (node *)FAIL) {
-                DBUG_PRINT ("PM",
-                            (PMINDENT "inner match %s",
-                             (inner_stack == (node *)FAIL ? "failed"
-                                                          : "left unmatched item(s)")));
-                stack = FailMatch (stack);
-            }
+            DBUG_PRINT ("PM", (PMINDENT "inner match %s",
+                               (inner_stack == (node *)FAIL ? "failed"
+                                                            : "left unmatched item(s)")));
+            stack = FailMatch (stack);
         }
     }
     DBUG_RETURN (stack);
