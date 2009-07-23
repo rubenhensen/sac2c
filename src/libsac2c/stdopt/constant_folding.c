@@ -895,11 +895,11 @@ CFarray (node *arg_node, info *arg_info)
         } else {
             res = arg_node;
         }
-        fs = COfreeConstant (fs);
         pat2 = PMfree (pat2);
     } else {
         res = arg_node;
     }
+    fs = (NULL != fs) ? COfreeConstant (fs) : fs;
     pat = PMfree (pat);
 
     DBUG_RETURN (res);
