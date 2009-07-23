@@ -306,75 +306,67 @@ CheckZeroTrip (node *lb, node *ub, node *width)
          *                   lk and uk are the same variable
          *                   || lk >= uk
          */
-        /**
-         * not yet PMish:
-         *
-    int i,j,l;
-    node *x = NULL;
+        int i, n, lk;
+        node *x = NULL;
+        pattern *pat1, *pat2;
 
-          pat1 = PMretryAny( &i, &n,
-                             PMpair( 0, 2, PMarray( 1, PMAgetLen( &n),
-                                                    3, PMskip( 1, PMAn( &i)),
-                                                       PMvar( 1, PMAgetNode( &x),
-                                                              0),
-                                                       PMskip( 0)),
-                                           PMarray( 1, PMAhasLen( &n),
-                                                    3, PMskip( 1, PMAn( &i)),
-                                                       PMvar( 1, PMAisVar( &x),
-                                                              0),
-                                                       PMskip( 0))));
-          pat2 = PMretryAny( &i, &n,
-                             PMpair( 0, 2, PMarray( 1, PMAgetLen( &n),
-                                                    3, PMskip( 1, PMAn( &i)),
-                                                       PMint( 1, PMAgetIVal( &lk),
-                                                              0),
-                                                       PMskip( 0)),
-                                           PMarray( 1, PMAhasLen( &n),
-                                                    3, PMskip( 1, PMAn( &i)),
-                                                       PMint( 1, PMAleIVal( &lk),
-                                                              0),
-                                                       PMskip( 0))));
-          expr = PMpairExprs( lb, ub);
-          if( ( PMmatchFlat( pat1, expr)
-                || PMmatchFlat( pat2, expr))
-              && (n > 0) ) {
+        pat1 = PMretryAny (&i, &n, 1,
+                           PMmulti (2,
+                                    PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
+                                             PMvar (1, PMAgetNode (&x), 0), PMskip (0)),
+                                    PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
+                                             PMvar (1, PMAisVar (&x), 0), PMskip (0))));
+        pat2 = PMretryAny (&i, &n, 1,
+                           PMmulti (2,
+                                    PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
+                                             PMint (1, PMAgetIVal (&lk), 0), PMskip (0)),
+                                    PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
+                                             PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
+        if ((PMmatchFlat (pat1, PMmultiExprs (2, lb, ub))
+             || PMmatchFlat (pat2, PMmultiExprs (2, lb, ub)))
+            && (n > 0)) {
 
-         */
-        lb = ARRAY_AELEMS (lb);
-        ub = ARRAY_AELEMS (ub);
+#if 0
+    lb = ARRAY_AELEMS( lb);
+    ub = ARRAY_AELEMS( ub);
 
-        while (lb != NULL) {
-            node *lb_elem, *ub_elem;
+    while ( lb != NULL) {
+      node *lb_elem, *ub_elem;
 
-            DBUG_ASSERT ((ub != NULL), "upper bound is shorter than lower bound");
-            lb_elem = EXPRS_EXPR (lb);
-            ub_elem = EXPRS_EXPR (ub);
+      DBUG_ASSERT( (ub != NULL), "upper bound is shorter than lower bound");
+      lb_elem = EXPRS_EXPR( lb);
+      ub_elem = EXPRS_EXPR( ub);
 
-            if ((NODE_TYPE (lb_elem) == N_id) && (NODE_TYPE (ub_elem) == N_id)
-                && (ID_AVIS (lb_elem) == ID_AVIS (ub_elem))) {
-                res = TRUE;
-            } else {
-                ntype *lbt, *ubt;
-                lbt = NTCnewTypeCheck_Expr (lb_elem);
-                ubt = NTCnewTypeCheck_Expr (ub_elem);
+      if ( ( NODE_TYPE( lb_elem) == N_id) &&
+           ( NODE_TYPE( ub_elem) == N_id) &&
+           ( ID_AVIS( lb_elem) == ID_AVIS( ub_elem))) {
+        res = TRUE;
+      } else {
+        ntype *lbt, *ubt;
+        lbt = NTCnewTypeCheck_Expr( lb_elem);
+        ubt = NTCnewTypeCheck_Expr( ub_elem);
 
-                if (TYisAKV (lbt) && TYisAKV (ubt)) {
-                    constant *lt = COlt (TYgetValue (lbt), TYgetValue (ubt));
-                    if (!COisTrue (lt, TRUE)) {
-                        res = TRUE;
-                    }
+        if ( TYisAKV( lbt) && TYisAKV( ubt)) {
+          constant *lt = COlt( TYgetValue( lbt), TYgetValue( ubt));
+          if ( !COisTrue( lt, TRUE)) {
+            res = TRUE;
+          }
 
-                    lt = COfreeConstant (lt);
-                }
-
-                lbt = TYfreeType (lbt);
-                ubt = TYfreeType (ubt);
-            }
-
-            lb = EXPRS_NEXT (lb);
-            ub = EXPRS_NEXT (ub);
+          lt = COfreeConstant( lt);
         }
-        DBUG_ASSERT ((ub == NULL), "upper bound is longer than lower bound");
+
+        lbt = TYfreeType( lbt);
+        ubt = TYfreeType( ubt);
+      }
+
+      lb = EXPRS_NEXT( lb);
+      ub = EXPRS_NEXT( ub);
+    }
+    DBUG_ASSERT( (ub == NULL), "upper bound is longer than lower bound");
+#endif
+            DBUG_PRINT ("WLSIMP", ("criterion 3 met!"));
+            res = TRUE;
+        }
     }
 
     if (width != NULL) {

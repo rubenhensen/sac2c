@@ -328,7 +328,6 @@ makePattern (nodetype nt, matchFun f)
 
 /*******************************************************************************
  */
-
 static pattern *
 genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
 {
@@ -357,6 +356,26 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
     return (res);
 }
 
+static pattern *
+genericFillPatternNoAttribs (pattern *res, int num_pats, va_list arg_p)
+{
+    va_list arg_p_copy;
+    int i;
+
+    va_copy (arg_p_copy, arg_p);
+
+    PAT_NA (res) = 0;
+    PAT_NP (res) = num_pats;
+    PAT_PATS (res) = (pattern **)MEMmalloc (PAT_NP (res) * sizeof (pattern *));
+    for (i = 0; i < PAT_NP (res); i++) {
+        PAT_PATS (res)[i] = va_arg (arg_p_copy, pattern *);
+    }
+
+    va_end (arg_p_copy);
+
+    return (res);
+}
+
 /*******************************************************************************
  */
 
@@ -375,6 +394,9 @@ getInner (node *arg_node)
     case N_prf:
         inner = PRF_ARGS (arg_node);
         break;
+    case N_set:
+        inner = arg_node; /* needed for PMmulti */
+        break;
     default:
         inner = arg_node;
         DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
@@ -390,6 +412,47 @@ getInner (node *arg_node)
  *
  * local helper functions:
  */
+
+static node *
+copyStack (node *stack)
+{
+    node *stack2;
+    DBUG_ENTER ("copyStack");
+    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
+        stack2 = DUPdoDupTree (stack);
+    } else {
+        stack2 = stack;
+    }
+    DBUG_RETURN (stack2);
+}
+
+static node *
+freeStack (node *stack)
+{
+    DBUG_ENTER ("freeStack");
+    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
+        stack = FREEdoFreeTree (stack);
+    }
+    DBUG_RETURN (stack);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *FailMatch( node *stack)
+ *
+ * @brief cleans up the remaining stack and creates a FAIL node
+ * @param stack: stack of exprs
+ @return FAIL node
+ *****************************************************************************/
+static node *
+FailMatch (node *stack)
+{
+    DBUG_ENTER ("FailMatch");
+    DBUG_PRINT ("PM", (PMINDENT "match failed!"));
+    stack = freeStack (stack);
+
+    DBUG_RETURN ((node *)FAIL);
+}
 
 /** <!--*******************************************************************-->
  *
@@ -437,7 +500,8 @@ ExtractOneArg (node *stack, node **arg)
         }
     } else {
         *arg = NULL;
-        stack = (node *)FAIL;
+        DBUG_PRINT ("PM", (PMINDENT "trying to match against empty stack"));
+        stack = FailMatch (stack);
     }
     DBUG_RETURN (stack);
 }
@@ -576,47 +640,6 @@ skipVarDefs (node *expr)
     DBUG_RETURN (expr);
 }
 
-static node *
-copyStack (node *stack)
-{
-    node *stack2;
-    DBUG_ENTER ("copyStack");
-    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
-        stack2 = DUPdoDupTree (stack);
-    } else {
-        stack2 = stack;
-    }
-    DBUG_RETURN (stack2);
-}
-
-static node *
-freeStack (node *stack)
-{
-    DBUG_ENTER ("freeStack");
-    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
-        stack = FREEdoFreeTree (stack);
-    }
-    DBUG_RETURN (stack);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn node *FailMatch( node *stack)
- *
- * @brief cleans up the remaining stack and creates a FAIL node
- * @param stack: stack of exprs
- * @return FAIL node
- *****************************************************************************/
-static node *
-FailMatch (node *stack)
-{
-    DBUG_ENTER ("FailMatch");
-    DBUG_PRINT ("PM", (PMINDENT "match failed!"));
-    stack = freeStack (stack);
-
-    DBUG_RETURN ((node *)FAIL);
-}
-
 /** <!--*********************************************************************-->
  *
  * Exported functions for pattern matching:
@@ -701,6 +724,39 @@ genericPatternMatcher (pattern *pat, node *stack)
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
     return (stack);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMmulti( int num_pats, ...)
+ *
+ * @brief matches num_pats inner pattern
+ *
+ ******************************************************************************/
+static node *
+multiMatcher (pattern *pat, node *stack)
+{
+    DBUG_PRINT ("PM", (PMSTART "multi match:", matching_level));
+
+    stack = genericSubPatternMatcher (pat, stack, stack);
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+
+    return (stack);
+}
+
+pattern *
+PMmulti (int num_pats, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_pats);
+    res
+      = genericFillPatternNoAttribs (makePattern (N_module, multiMatcher), num_pats, ap);
+    va_end (ap);
+
+    return (res);
 }
 
 /** <!-- ****************************************************************** -->
@@ -870,13 +926,14 @@ retryAnyMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMretryAny (int *i, int *l, ...)
+PMretryAny (int *i, int *l, int num_pats, ...)
 {
     va_list ap;
     pattern *res;
 
-    va_start (ap, l);
-    res = genericFillPattern (makePattern (N_module, retryAnyMatcher), TRUE, 0, ap);
+    va_start (ap, num_pats);
+    res = genericFillPatternNoAttribs (makePattern (N_module, retryAnyMatcher), num_pats,
+                                       ap);
     va_end (ap);
 
     PAT_I1 (res) = i;
@@ -913,13 +970,14 @@ retryAllMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMretryAll (int *i, int *l, ...)
+PMretryAll (int *i, int *l, int num_pats, ...)
 {
     va_list ap;
     pattern *res;
 
-    va_start (ap, l);
-    res = genericFillPattern (makePattern (N_module, retryAllMatcher), TRUE, 0, ap);
+    va_start (ap, num_pats);
+    res = genericFillPatternNoAttribs (makePattern (N_module, retryAllMatcher), num_pats,
+                                       ap);
     va_end (ap);
 
     PAT_I1 (res) = i;
@@ -969,6 +1027,51 @@ PMskip (int num_attribs, ...)
     va_start (ap, num_attribs);
     res = genericFillPattern (makePattern (N_exprs, skipMatcher), FALSE, num_attribs, ap);
     va_end (ap);
+
+    return (res);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn pattern *PMskipN(  int * n, int num_attribs, ...)
+ *
+ * @brief skipping pattern:   ...
+ *        consumes n entries from the stack
+ */
+
+static node *
+skipNMatcher (pattern *pat, node *stack)
+{
+    node *match;
+    node *arg;
+    int i;
+
+    DBUG_PRINT ("PM", (PMSTART "skipping %d elements!", matching_level, *PAT_I1 (pat)));
+
+    stack = genericAtribMatcher (pat, stack, stack);
+
+    if (stack != (node *)FAIL) {
+        for (i = 0; i < *PAT_I1 (pat); i++) {
+            stack = ExtractOneArg (stack, &arg);
+            DBUG_PRINT ("PM", (PMINDENT "deleting that argument"));
+        }
+    }
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+    return (stack);
+}
+
+pattern *
+PMskipN (int *n, int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res
+      = genericFillPattern (makePattern (N_exprs, skipNMatcher), FALSE, num_attribs, ap);
+    va_end (ap);
+    PAT_I1 (res) = n;
 
     return (res);
 }
@@ -1036,7 +1139,7 @@ node *
 PMmultiExprs (int num_nodes, ...)
 {
     va_list ap;
-    node *stack;
+    node *stack = NULL;
     int i;
 
     va_start (ap, num_nodes);

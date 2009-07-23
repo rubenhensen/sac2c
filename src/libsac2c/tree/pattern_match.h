@@ -35,13 +35,11 @@ extern pattern *PMconst (int num_attribs, ...);
 extern pattern *PMint (int num_attribs, ...);
 extern pattern *PMarray (int num_attribs, ...);
 extern pattern *PMprf (int num_attribs, ...);
-extern pattern *PMretryAny (int *i, int *l, ...);
-extern pattern *PMretryAll (int *i, int *l, ...);
+extern pattern *PMretryAny (int *i, int *l, int num_pats, ...);
+extern pattern *PMretryAll (int *i, int *l, int num_pats, ...);
 extern pattern *PMskip (int num_attribs, ...);
-#if 0
-extern pattern *PMskipN( int *n, int num_attribs, ...);
-extern pattern *PMmulti( int num_pats, ...);
-#endif
+extern pattern *PMskipN (int *n, int num_attribs, ...);
+extern pattern *PMmulti (int num_pats, ...);
 
 /**
  * utils:
