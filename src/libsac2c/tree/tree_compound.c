@@ -2504,6 +2504,26 @@ TCmakeIdCopyStringNt (const char *str, types *type)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *TCmakeIdCopyStringNtNew( const char *str, ntype *type)
+ *
+ *   @brief  Create an id with a name tuple derived from str and type.
+ *
+ *****************************************************************************/
+node *
+TCmakeIdCopyStringNtNew (const char *str, ntype *type)
+{
+    node *result;
+
+    DBUG_ENTER ("TCmakeIdCopyStringNtNew");
+
+    result = TCmakeIdCopyString (str);
+    ID_NT_TAG (result) = NTUcreateNtTagFromNType (str, type);
+
+    DBUG_RETURN (result);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

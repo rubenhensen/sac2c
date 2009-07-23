@@ -858,6 +858,7 @@ extern node *TCids2ExprsNt (node *ids_arg);
 
 extern node *TCmakeIdCopyString (const char *str);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
+extern node *TCmakeIdCopyStringNtNew (const char *str, ntype *type);
 
 /***************************************************************************
  *

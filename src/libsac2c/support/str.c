@@ -1,3 +1,4 @@
+
 /*
  *
  * $Id$
@@ -141,6 +142,45 @@ STRnull ()
 
     DBUG_RETURN (ret);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *STRsizeInt( )
+ *
+ * @brief return the size of an int when the int is a string.
+ *        does not count the sine (+-)!!
+ *
+ *****************************************************************************/
+int
+STRsizeInt ()
+{
+    int size = 0;
+    int s = sizeof (int) * 8;
+    DBUG_ENTER ("STRsizeInt");
+
+    switch (s) {
+    case 8:
+        size = 3;
+        break;
+    case 16:
+        size = 5;
+        break;
+    case 32:
+        size = 10;
+        break;
+    case 64:
+        size = 19;
+        break;
+    case 128:
+        size = 39;
+        break;
+    }
+
+    DBUG_ASSERT (size != 0, "Can not work out the size of an int when in a string");
+
+    DBUG_RETURN (size);
+}
+
 /*******************************************************************************
  *
  * Description: Concatenate two strings and allocate memory for new string.

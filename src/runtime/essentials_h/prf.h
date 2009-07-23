@@ -274,4 +274,83 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
+#define SAC_ND_PRF_TYPE_CONV__SCL(error, left_NT, right_NT)                              \
+    {                                                                                    \
+        if (0 != SAC_ND_A_DIM (right_NT)) {                                              \
+            SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
+        }                                                                                \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD_UNBOX (right_NT);                      \
+        SAC_ND_DEC_RC_FREE (right_NT, 1, )                                               \
+    }
+
+#define SAC_ND_PRF_TYPE_CONV__AKD_START(error, left_NT, right_NT)                        \
+    {                                                                                    \
+        if (SAC_ND_A_DIM (left_NT) != SAC_ND_A_DIM (right_NT)) {                         \
+            SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
+        }                                                                                \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                            \
+        SAC_ND_A_DESC (left_NT) = SAC_ND_A_DESC (right_NT);                              \
+        SAC_ND_A_MIRROR_SIZE (left_NT) = SAC_ND_A_SIZE (right_NT);
+
+#define SAC_ND_PRF_TYPE_CONV__AKD_SHAPE(num, left_NT, right_NT)                          \
+    SAC_ND_A_MIRROR_SHAPE (left_NT, num) = SAC_ND_A_SHAPE (right_NT, num);
+
+#define SAC_ND_PRF_TYPE_CONV__AKD_END(error, left_NT, right_NT) }
+
+#define SAC_ND_PRF_TYPE_CONV__AKS_START(error, left_NT, right_NT)                        \
+    {                                                                                    \
+        if (SAC_ND_A_DIM (left_NT) != SAC_ND_A_DIM (right_NT)) {                         \
+            SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
+        }                                                                                \
+        if (SAC_ND_A_DIM (left_NT) != SAC_ND_A_DIM (right_NT)) {                         \
+            SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
+        }                                                                                \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                            \
+        SAC_ND_A_DESC (left_NT) = SAC_ND_A_DESC (right_NT);                              \
+  if (
+
+#define SAC_ND_PRF_TYPE_CONV__AKS_COND(num, left_NT, right_NT)                           \
+    SAC_ND_A_SHAPE (left_NT, num) != SAC_ND_A_SHAPE (right_NT, num) ||
+
+#define SAC_ND_PRF_TYPE_CONV__AKS_END(error, left_NT, right_NT)                          \
+  0)                                                                                     \
+    {                                                                                    \
+        SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                    \
+    }                                                                                    \
+    SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                                \
+    SAC_ND_A_DESC (left_NT) = SAC_ND_A_DESC (right_NT);                                  \
+    }
+
+#define SAC_ND_PRF_TYPE_CONV__AUD__SHP(error, left_NT, right_NT)                         \
+    {                                                                                    \
+        if (0 == SAC_ND_A_DIM (right_NT)) {                                              \
+            SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
+        }                                                                                \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                            \
+        SAC_ND_A_DESC (left_NT) = SAC_ND_A_DESC (right_NT);                              \
+        SAC_ND_A_MIRROR_SIZE (left_NT) = SAC_ND_A_SIZE (right_NT);                       \
+        SAC_ND_A_MIRROR_DIM (left_NT) = SAC_ND_A_DIM (right_NT);                         \
+    }
+
+/* [*] -> [+] */
+
+#define SAC_ND_PRF_TYPE_CONV__AUD__AUD(error, left_NT, right_NT)                         \
+    {                                                                                    \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                            \
+        SAC_ND_A_DESC (left_NT) = SAC_ND_A_DESC (right_NT);                              \
+        SAC_ND_A_MIRROR_SIZE (left_NT) = SAC_ND_A_SIZE (right_NT);                       \
+        SAC_ND_A_MIRROR_DIM (left_NT) = SAC_ND_A_DIM (right_NT);                         \
+    }
+
+#define SAC_ND_PRF_TYPE_CONV_ERROR_NAME(name, tuple) #name
+
+#define SAC_ND_PRF_TYPE_CONV_ERROR(error, right_NT)                                      \
+    {                                                                                    \
+        SAC_Print (" *");                                                                \
+        SAC_ND_PRINT_SHAPE (right_NT);                                                   \
+        SAC_Print (" ");                                                                 \
+        SAC_Print (SAC_ND_PRF_TYPE_CONV_ERROR_NAME right_NT);                            \
+        SAC_RuntimeError (error);                                                        \
+    }
+
 #endif /* _SAC_PRF_H_ */

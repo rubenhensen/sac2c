@@ -232,7 +232,7 @@ JoinIdsExprs (node *arg_ids, node *exprs)
     if (IDS_NEXT (arg_ids) == NULL) {
         assign = NULL;
     } else {
-        assign = JoinIdsExprs (IDS_NEXT (ids), EXPRS_NEXT (exprs));
+        assign = JoinIdsExprs (IDS_NEXT (arg_ids), EXPRS_NEXT (exprs));
     }
 
     ids = DUPdoDupNode (arg_ids);

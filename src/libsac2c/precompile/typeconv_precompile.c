@@ -340,21 +340,21 @@ TCPprf (node *arg_node, info *arg_info)
     node *tmp;
 
     DBUG_ENTER ("TCPprf");
+#if 0 /* CAJ */
+  if (PRF_PRF( arg_node) == F_type_conv) {
+    /*
+     * replace expressions of form:
+     *     type_conv( <type>, <expr>)
+     * by
+     *     <expr>
+     */
+    tmp = arg_node;
+    arg_node = PRF_ARG2( tmp);
+    PRF_ARG2( tmp) = NULL;
 
-    if (PRF_PRF (arg_node) == F_type_conv) {
-        /*
-         * replace expressions of form:
-         *     type_conv( <type>, <expr>)
-         * by
-         *     <expr>
-         */
-        tmp = arg_node;
-        arg_node = PRF_ARG2 (tmp);
-        PRF_ARG2 (tmp) = NULL;
-
-        tmp = FREEdoFreeNode (tmp);
-    }
-
+    tmp = FREEdoFreeNode( tmp);
+  }
+#endif
     DBUG_RETURN (arg_node);
 }
 

@@ -141,6 +141,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
+#define SAC_ND_A_DESC__NULL(var_NT) NULL
+
 #define SAC_ND_A_DESC__DEFAULT(var_NT)                                                   \
     SAC_ND_GET_VAR (var_NT, SAC_ND_A_DESC_NAME (var_NT))
 
@@ -202,6 +204,8 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_A_FIELD__DEFAULT(var_NT) NT_NAME (var_NT)
+
+#define SAC_ND_A_FIELD__BOXED(var_NT) *SAC_ND_A_FIELD (var_NT)
 
 /*
  * SAC_ND_A_RC implementations (referenced by sac_std_gen.h)
@@ -917,6 +921,15 @@ typedef int *SAC_array_descriptor_t;
         SAC_HM_FREE (SAC_ND_GET_VAR (var_NT, SAC_ND_A_FIELD (var_NT)))                   \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
+    }
+
+#define SAC_ND_PRINT_SHAPE(nt)                                                           \
+    {                                                                                    \
+        if (SAC_ND_A_DESC_NULL (nt) != NULL) {                                           \
+            SAC_Print ((char *)SAC_PrintShape (SAC_ND_A_DESC (nt)));                     \
+        } else {                                                                         \
+            SAC_Print ("[]\n");                                                          \
+        }                                                                                \
     }
 
 /************************

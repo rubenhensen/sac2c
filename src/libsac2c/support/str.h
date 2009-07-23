@@ -27,6 +27,8 @@ extern char *STRonNull (char *alt, char *str);
 extern char *STRsubStr (const char *string, int start, int len);
 extern char *STRnull ();
 
+extern int STRsizeInt ();
+
 extern char *STRitoa (int number);
 extern char *STRitoa_oct (int number);
 extern char *STRitoa_hex (int number);

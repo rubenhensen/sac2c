@@ -2955,6 +2955,191 @@ COMPid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  types *GetType( node *arg_node)
+ *
+ * @brief  Return the type of an id or ids.
+ *
+ *****************************************************************************/
+
+/*
+ * This code is very bad style!!!!!
+ * Because of the way types are handled in this phases it is needed :(
+ * Hopfully with the removal of old types this can also be removed.
+ */
+static types *
+GetType (node *arg_node)
+{
+    types *type = NULL;
+    node *decl = NULL;
+
+    DBUG_ENTER ("GetType");
+
+    if (NODE_TYPE (arg_node) == N_ids) {
+        decl = IDS_DECL (arg_node);
+    } else if (NODE_TYPE (arg_node) == N_id) {
+        decl = ID_DECL (arg_node);
+    } else {
+        DBUG_ASSERT (0 == 1, "Unexpected node type\n");
+    }
+
+    if (NODE_TYPE (decl) == N_vardec) {
+        type = VARDEC_TYPE (decl);
+    } else if (NODE_TYPE (decl) == N_arg) {
+        type = ARG_TYPE (decl);
+    } else {
+        DBUG_ASSERT (0 == 1, "Unexpected node type\n");
+    }
+
+    DBUG_RETURN (type);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeIcm_PRF_TYPE_CONV_AKD( node *let_ids, node *id,
+ *                                       char *error)
+ *
+ * @brief  Produce all of the ICMs needed to implement PRF_TYPE_CONV_AKD
+ *
+ *****************************************************************************/
+static node *
+MakeIcm_PRF_TYPE_CONV_AKD (char *error, node *let_ids, node *id)
+{
+    int i;
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("MakeIcm_PRF_TYPE_CONV__AKD");
+
+    ret_node
+      = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKD_END", TBmakeStr (STRcpy (error)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                GetType (let_ids)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
+                          ret_node);
+
+    for (i = TCgetShapeDim (GetType (let_ids)) - 1; i >= 0; i--) {
+        ret_node = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKD_SHAPE", TBmakeNum (i),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                           GetType (let_ids)),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)),
+                                                           GetType (id)),
+                                     ret_node);
+    }
+
+    ret_node
+      = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKD_START", TBmakeStr (STRcpy (error)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                GetType (let_ids)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
+                          ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeIcm_PRF_TYPE_CONV_AKS( node *let_ids, node *id,
+ *                                       char *error)
+ *
+ * @brief  Produce all of the ICMs needed to implement PRF_TYPE_CONV_AKS
+ *
+ *****************************************************************************/
+static node *
+MakeIcm_PRF_TYPE_CONV_AKS (char *error, node *let_ids, node *id)
+{
+    int i;
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("MakeIcm_PRF_TYPE_CONV__AKS");
+
+    ret_node
+      = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKS_END", TBmakeStr (STRcpy (error)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                GetType (let_ids)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
+                          ret_node);
+
+    for (i = TCgetShapeDim (GetType (let_ids)) - 1; i >= 0; i--) {
+        ret_node = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKS_COND", TBmakeNum (i),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                           GetType (let_ids)),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)),
+                                                           GetType (id)),
+                                     ret_node);
+    }
+
+    ret_node
+      = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKS_START", TBmakeStr (STRcpy (error)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                GetType (let_ids)),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
+                          ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfTypeConv( node *arg_node, info *arg_info)
+ *
+ * @brief  Produce an icm to check if a type conversion can be performed
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ *****************************************************************************/
+static node *
+COMPprfTypeConv (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL, *let_ids = NULL;
+    char *lhs_type_string = NULL, *rhs_type_string = NULL;
+    char *error = NULL;
+    const char *fmt = "%s:%d\\nCan not assign %s %s to %s %s type mismatch\\n";
+    int error_len = 0;
+    node *id = NULL;
+
+    DBUG_ENTER ("COMPprfTypeConv");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    id = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
+
+    lhs_type_string = CVtype2String (GetType (let_ids), 0, FALSE);
+    rhs_type_string = CVtype2String (GetType (id), 0, FALSE);
+
+    error_len = STRlen (fmt) - (2 * 6) + STRlen (NODE_FILE (arg_node)) + STRsizeInt ()
+                + STRlen (rhs_type_string) + STRlen (AVIS_NAME (ID_AVIS (id)))
+                + STRlen (lhs_type_string) + STRlen (AVIS_NAME (IDS_AVIS (let_ids)));
+    error = (char *)MEMmalloc (sizeof (char) * error_len);
+
+    sprintf (error, fmt, NODE_FILE (arg_node), NODE_LINE (arg_node), rhs_type_string,
+             AVIS_NAME (ID_AVIS (id)), lhs_type_string, AVIS_NAME (IDS_AVIS (let_ids)));
+
+    if ((SCALAR != TCgetShapeDim (GetType (let_ids)))
+        && (KNOWN_SHAPE (TCgetShapeDim (GetType (let_ids)))
+            && (global.min_array_rep <= MAR_scl_aks))) {
+        /* ASK needs the mirror */
+        ret_node = MakeIcm_PRF_TYPE_CONV_AKS (error, let_ids, id);
+
+    } else if (SCALAR != TCgetShapeDim (GetType (let_ids))
+               && KNOWN_DIMENSION (TCgetShapeDim (GetType (let_ids)))
+               && (global.min_array_rep <= MAR_scl_akd)) {
+        /* ASK needs the mirror */
+        ret_node = MakeIcm_PRF_TYPE_CONV_AKD (error, let_ids, id);
+
+    } else {
+        ret_node = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV", TBmakeStr (STRcpy (error)),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
+                                                           GetType (let_ids)),
+                                     TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)),
+                                                           GetType (id)),
+                                     NULL);
+    }
+    MEMfree (lhs_type_string);
+    MEMfree (rhs_type_string);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfFromUnq( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a N_id node representing an application
