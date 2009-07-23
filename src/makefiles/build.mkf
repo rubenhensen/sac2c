@@ -470,9 +470,10 @@ global/build_$(STYLE).c: $(SUBTARGETS)
          fi
 	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $@)"
 	$(HIDE)$(YACC) $<
-	$(HIDE)mv y.tab.c $@
-	$(HIDE)$(RM) y.tab.h
-	$(HIDE)mv y.output $(dir $@)
+	$(HIDE)$(GREP) -v "#pragma ident" y.tab.c > $@
+	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
+               then $(RM) y.tab.h y.tab.c ; \
+               fi
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.tab.h: %.y 
@@ -483,9 +484,10 @@ global/build_$(STYLE).c: $(SUBTARGETS)
          fi
 	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $@)"
 	$(HIDE)$(YACC) $<
-	$(HIDE)mv y.tab.h $@
-	$(HIDE)$(RM) y.tab.c 
-	$(HIDE)mv y.output $(dir $@)
+	$(HIDE)$(CP) y.tab.h $@
+	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
+               then $(RM) y.tab.h y.tab.c ; \
+               fi
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 
