@@ -52,10 +52,10 @@ static const SAC_HM_size_unit_t binsize[]
  *   SAC code.
  */
 
-extern SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
-extern SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
-extern SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
-extern unsigned int SAC_HM_max_worker_threads;
+extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
+extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
+extern const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
+extern const unsigned int SAC_HM_max_worker_threads;
 
 /*
  * Locks for synchronisation of multi-threaded accesses to global
