@@ -394,9 +394,6 @@ getInner (node *arg_node)
     case N_prf:
         inner = PRF_ARGS (arg_node);
         break;
-    case N_set:
-        inner = arg_node; /* needed for PMmulti */
-        break;
     default:
         inner = arg_node;
         DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
@@ -663,18 +660,16 @@ genericAtribMatcher (pattern *pat, node *arg, node *stack)
     DBUG_RETURN (stack);
 }
 
-static node *
-genericSubPatternMatcher (pattern *pat, node *arg, node *stack)
+static bool
+genericSubPatternMatcher (pattern *pat, node *inner_stack)
 {
-    node *inner_stack;
     pattern *inner_pat;
     int i;
     DBUG_ENTER ("genericSubPatternMatcher");
 
-    if (PAT_NESTED (pat) && (stack != (node *)FAIL)) {
+    if (PAT_NESTED (pat)) {
         DBUG_PRINT ("PM", (PMINDENT "checking inner pattern"));
         matching_level++;
-        inner_stack = getInner (arg);
         for (i = 0; i < PAT_NP (pat); i++) {
             inner_pat = PAT_PATS (pat)[i];
             inner_stack = PAT_FUN (inner_pat) (inner_pat, inner_stack);
@@ -687,10 +682,11 @@ genericSubPatternMatcher (pattern *pat, node *arg, node *stack)
             DBUG_PRINT ("PM", (PMINDENT "inner match %s",
                                (inner_stack == (node *)FAIL ? "failed"
                                                             : "left unmatched item(s)")));
-            stack = FailMatch (stack);
+            inner_stack = freeStack (inner_stack);
+            inner_stack = (node *)FAIL;
         }
     }
-    DBUG_RETURN (stack);
+    DBUG_RETURN (inner_stack != (node *)FAIL);
 }
 
 static node *
@@ -715,7 +711,10 @@ genericPatternMatcher (pattern *pat, node *stack)
                      (NODE_TYPE (arg) == N_id ? "\"" : "")));
 
         stack = genericAtribMatcher (pat, arg, stack);
-        stack = genericSubPatternMatcher (pat, arg, stack);
+        if ((stack != (node *)FAIL) && PAT_NESTED (pat)
+            && !genericSubPatternMatcher (pat, getInner (arg))) {
+            stack = FailMatch (stack);
+        }
 
     } else {
         DBUG_PRINT ("PM", (PMINDENT "%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
@@ -738,7 +737,9 @@ multiMatcher (pattern *pat, node *stack)
 {
     DBUG_PRINT ("PM", (PMSTART "multi match:", matching_level));
 
-    stack = genericSubPatternMatcher (pat, stack, stack);
+    if (!genericSubPatternMatcher (pat, stack)) {
+        stack = FailMatch (stack);
+    }
 
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
@@ -907,22 +908,20 @@ PMprf (int num_attribs, ...)
 static node *
 retryAnyMatcher (pattern *pat, node *stack)
 {
-    node *stack2;
-
     *PAT_I1 (pat) = 0;
+    bool match;
 
     DBUG_PRINT ("PM", (PMSTART "retry any matcher start", matching_level));
     do {
         DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
-        stack2 = copyStack (stack);
-        stack2 = PAT_FUN (PAT_PATS (pat)[0]) (PAT_PATS (pat)[0], stack2);
+        match = genericSubPatternMatcher (pat, copyStack (stack));
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
-    } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (stack2 == (node *)FAIL));
+    } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (!match));
 
     stack = freeStack (stack);
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
-    return (stack2);
+    return (stack);
 }
 
 pattern *
@@ -951,22 +950,20 @@ PMretryAny (int *i, int *l, int num_pats, ...)
 static node *
 retryAllMatcher (pattern *pat, node *stack)
 {
-    node *stack2;
-
     *PAT_I1 (pat) = 0;
+    bool match;
 
     DBUG_PRINT ("PM", (PMSTART "retry all matcher start", matching_level));
     do {
         DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
-        stack2 = copyStack (stack);
-        stack2 = PAT_FUN (PAT_PATS (pat)[0]) (PAT_PATS (pat)[0], stack2);
+        match = genericSubPatternMatcher (pat, copyStack (stack));
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
-    } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (stack2 != (node *)FAIL));
+    } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && match);
 
     stack = freeStack (stack);
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
-    return (stack2);
+    return (stack);
 }
 
 pattern *
@@ -1042,7 +1039,6 @@ PMskip (int num_attribs, ...)
 static node *
 skipNMatcher (pattern *pat, node *stack)
 {
-    node *match;
     node *arg;
     int i;
 
