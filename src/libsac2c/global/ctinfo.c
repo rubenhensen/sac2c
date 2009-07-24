@@ -354,6 +354,12 @@ AbortCompilation ()
  *           DBUG_ENTER/RETURN are omitted on purpose to reduce risk of
  *           creating more errors during error handling.
  *
+ *           Likewise, we avoid all complex support functions and use
+ *           low-level string handling etc as far as possible.
+ *
+ *           NOTE: This function is NOT a good example of programming style
+ *                 that should be used throughout sac2c otherwise.
+ *
  *   @param sig  signal causing interrupt
  *
  ******************************************************************************/
@@ -362,29 +368,44 @@ static void
 InternalCompilerErrorBreak (int sig)
 {
     FILE *error_file;
+    char error_file_name[64];
     int i;
 
     fprintf (stderr, "\n\n"
-                     "OOOPS your program crashed the compiler 8-((\n"
-                     "Please send a bug report to bugs@sac-home.org.\n\n");
+                     "OOOOOOOPS, your program crashed the compiler 8-((\n\n"
+                     "Please, send a bug report to bugs@sac-home.org,\n"
+                     "or file a bug in the SaC-Zilla bug management system.\n\n");
 
-    error_file = fopen ("SACbugreport", "w");
+    error_file_name[0] = '\0';
+
+    if (global.puresacfilename != NULL) {
+        i = 0;
+        while ((i < 48) && (global.puresacfilename[i] != '\0')
+               && (global.puresacfilename[i] != '.')) {
+            error_file_name[i] = global.puresacfilename[i];
+            i++;
+        }
+        error_file_name[i] = '\0';
+    }
+    strcat (error_file_name, ".bugreport.sac");
+
+    error_file = fopen (error_file_name, "w");
 
     if (error_file != NULL) {
-        fprintf (error_file, "/*\n"
-                             " * SAC - bug report\n"
-                             " * ================\n"
-                             " *\n"
-                             " * automatically generated on ");
+        fprintf (error_file,
+                 "/**********************************************************************"
+                 "\n"
+                 " *\n"
+                 " * SAC bug report: %s\n"
+                 " *\n"
+                 " **********************************************************************"
+                 "\n"
+                 " *\n"
+                 " * Automatically generated on ",
+                 error_file_name);
         fclose (error_file);
-        system ("date >> SACbugreport");
-        /*
-         * We use system() here directly rather than the appropriate function
-         * from support/system.c in order to avoid complex program execution
-         * in an inconsistent program state.
-         */
-
-        error_file = fopen ("SACbugreport", "a");
+        SYScallNoErr ("date >> %s", error_file_name);
+        error_file = fopen (error_file_name, "a");
 
         fprintf (error_file, " *\n");
         fprintf (error_file, " * using sac2c %s rev %s for %s\n", global.version_id,
@@ -402,29 +423,75 @@ InternalCompilerErrorBreak (int sig)
         fprintf (error_file, "\n");
         fprintf (error_file, " *\n");
 
+        fprintf (error_file, " * The compiler crashed in\n");
+        fprintf (error_file, " *  phase: %s (%s)\n", PHIphaseName (global.compiler_phase),
+                 PHIphaseText (global.compiler_phase));
+
+        fprintf (error_file, " *  sub phase: %s (%s)\n",
+                 PHIphaseName (global.compiler_subphase),
+                 PHIphaseText (global.compiler_subphase));
+
+        if (PHIphaseType (global.compiler_subphase) == PHT_cycle) {
+            fprintf (error_file, " *  cycle phase: %s (%s)\n",
+                     PHIphaseName (global.compiler_cyclephase),
+                     PHIphaseText (global.compiler_cyclephase));
+        }
+
         if (global.sacfilename != NULL) {
-            fprintf (error_file, " * The contents of %s is:\n", global.sacfilename);
-            fprintf (error_file, " */\n\n");
+            fprintf (error_file,
+                     " *\n"
+                     " * What follows is the contents of %s.\n",
+                     global.sacfilename);
+            fprintf (error_file, " *\n"
+                                 " ******************************************************"
+                                 "****************/\n\n");
             fclose (error_file);
-            SYScallNoErr ("cat %s >> SACbugreport", global.sacfilename);
-            error_file = fopen ("SACbugreport", "a");
+            SYScallNoErr ("cat %s >> %s", global.sacfilename, error_file_name);
+            error_file = fopen (error_file_name, "a");
+            fprintf (error_file, "\n\n"
+                                 "/******************************************************"
+                                 "****************\n"
+                                 " *\n"
+                                 " * End of bug report\n"
+                                 " *\n"
+                                 " ******************************************************"
+                                 "****************/\n\n");
         } else {
-            fprintf (error_file, " * Compiler crashed before SAC file name could be "
-                                 "determined!\n");
-            fprintf (error_file, " */\n\n");
+            fprintf (error_file,
+                     " *\n"
+                     " * Compiler crashed before SAC file name could be determined !\n"
+                     " *\n"
+                     " ******************************************************************"
+                     "****\n"
+                     " *\n"
+                     " * End of bug report\n"
+                     " *\n"
+                     " ******************************************************************"
+                     "****/\n\n");
         }
 
         fclose (error_file);
 
         fprintf (stderr,
-                 "For your convenience, the compiler has pre-fabricated a bug report in\n"
-                 "the file \"SACbugreport\" which was created in the current directory!\n"
+                 "For your convenience, the compiler has pre-fabricated a bug report\n"
+                 "in the file \"./%s\" !\n\n"
                  "Besides some infos concerning the compiler version and its\n"
-                 "usage it contains the specified source file.\n"
-                 "If you want to send that bug report to us you may simply use\n\n"
-                 "  mail bugs@sac-home.org < SACbugreport\n\n");
+                 "usage it contains the specified source file.\n\n"
+                 "If you want to send that bug report to us, you may simply type\n"
+                 "  mail bugs@sac-home.org < %s\n\n"
+                 "If you decide to file a bug in SaC-Zilla, please go to\n"
+                 "  http://bugs.sac-home.org/.\n\n",
+                 error_file_name, error_file_name);
+        fprintf (stderr, "When filing a bug report, please copy/paste the initial "
+                         "comment section of\n"
+                         "the bug report into the plain text comment section of "
+                         "SaC-Zilla, and add\n"
+                         "the whole bug report file as an attachment.\n\n");
     } else {
-        fprintf (stderr, "Sorry, sac2c is unable to create a bug report file.\n");
+        fprintf (stderr, "Sorry, but sac2c is unable to create a bug report file.\n\n"
+                         "Please, send the source file, the exact compiler call and the\n"
+                         "compiler revision number along with the terminal output that\n"
+                         "led to this crash to bugs@sac-home.org\n\n");
     }
 
     CleanUpInterrupted ();
