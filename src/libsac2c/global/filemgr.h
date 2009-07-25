@@ -31,6 +31,7 @@ extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths ();
 extern const char *FMGRabsolutePathname (const char *path);
 extern FILE *FMGRwriteOpen (const char *format, ...);
+extern FILE *FMGRwriteOpenExecutable (const char *format, ...);
 extern FILE *FMGRappendOpen (const char *format, ...);
 extern FILE *FMGRclose (FILE *file);
 extern bool FMGRcheckExistFile (const char *dir, const char *name);

@@ -54,7 +54,7 @@ SYSstartTracking (void)
         syscalltrack = FMGRappendOpen ("%s.sac2c", global.outfilename);
     } else {
         CTInote ("Creating cc call shell script `%s.sac2c'", global.outfilename);
-        syscalltrack = FMGRwriteOpen ("%s.sac2c", global.outfilename);
+        syscalltrack = FMGRwriteOpenExecutable ("%s.sac2c", global.outfilename);
         fprintf (syscalltrack, "#! /bin/sh\n\n");
     }
 

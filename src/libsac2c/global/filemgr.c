@@ -23,6 +23,12 @@
 #include "tree_basic.h"
 #include "globals.h"
 
+#ifdef _POSIX_SOURCE
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 static char path_bufs[4][MAX_PATH_LEN];
 static int bufsize[4];
 
@@ -441,7 +447,7 @@ FMGRabsolutePathname (const char *path)
  *                  occurs and compilation is aborted.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : vsprintf, va_start, va_end, fopen
+ *  external funs : vsprintf, va_start, va_end, fopen,
  *  macros        : vararg macros, ERROR
  *
  *  remarks       :
@@ -462,6 +468,55 @@ FMGRwriteOpen (const char *format, ...)
     va_end (arg_p);
 
     file = fopen (buffer, "w");
+
+    if (file == NULL) {
+        CTIabort ("Unable to write file \"%s\"", buffer);
+    }
+
+    DBUG_RETURN (file);
+}
+
+/*
+ *
+ *  functionname  : FMGRwriteOpenExecutable
+ *  arguments     : 1) format string like that of printf
+ *                  2) variable argument list for 1)
+ *  description   : opens the given file for writing. If this fails,
+ *                  an error message
+ *                  occurs and compilation is aborted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : vsprintf, va_start, va_end, fopen, open, fdopen
+ *  macros        : vararg macros, ERROR
+ *
+ *  remarks       :
+ *
+ */
+
+FILE *
+FMGRwriteOpenExecutable (const char *format, ...)
+{
+    va_list arg_p;
+    static char buffer[MAX_PATH_LEN];
+    FILE *file;
+
+    DBUG_ENTER ("FMGRwriteOpenExecutable");
+
+    va_start (arg_p, format);
+    vsprintf (buffer, format, arg_p);
+    va_end (arg_p);
+
+#ifdef _POSIX_SOURCE
+    {
+        int fd;
+        fd = open (buffer, O_CREAT | O_WRONLY,
+                   S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+        file = fdopen (fd, "w");
+    }
+#else
+    file = fopen (buffer, "w");
+#endif
 
     if (file == NULL) {
         CTIabort ("Unable to write file \"%s\"", buffer);
