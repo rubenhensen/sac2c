@@ -923,13 +923,14 @@ typedef int *SAC_array_descriptor_t;
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
-#define SAC_ND_PRINT_SHAPE(nt)                                                           \
+#define SAC_ND_PRINT_SHAPE__SCL(nt)                                                      \
     {                                                                                    \
-        if (SAC_ND_A_DESC_NULL (nt) != NULL) {                                           \
-            SAC_Print ((char *)SAC_PrintShape (SAC_ND_A_DESC (nt)));                     \
-        } else {                                                                         \
-            SAC_Print ("[]\n");                                                          \
-        }                                                                                \
+        SAC_Print ("[]\n");                                                              \
+    }
+
+#define SAC_ND_PRINT_SHAPE__SHP(nt)                                                      \
+    {                                                                                    \
+        SAC_Print ((char *)SAC_PrintShape (SAC_ND_A_DESC (nt)));                         \
     }
 
 /************************

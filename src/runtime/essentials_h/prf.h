@@ -274,13 +274,17 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_TYPE_CONV__SCL(error, left_NT, right_NT)                              \
+#define SAC_ND_PRF_TYPE_CONV__SCL__SHP(error, left_NT, right_NT)                         \
     {                                                                                    \
         if (0 != SAC_ND_A_DIM (right_NT)) {                                              \
             SAC_ND_PRF_TYPE_CONV_ERROR (error, right_NT);                                \
         }                                                                                \
         SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD_UNBOX (right_NT);                      \
         SAC_ND_DEC_RC_FREE (right_NT, 1, )                                               \
+    }
+
+#define SAC_ND_PRF_TYPE_CONV__SCL__SCL(error, left_NT, right_NT)                         \
+    {                                                                                    \
     }
 
 #define SAC_ND_PRF_TYPE_CONV__AKD_START(error, left_NT, right_NT)                        \
