@@ -183,7 +183,7 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 $(PROJECT_ROOT)/lib/libsac2c.so: $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so
 	@$(ECHO) ""
 	@$(ECHO) "Using $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
-	${HIDE} $(CP) $< $@
+	$(HIDE) $(CP) $< $@
 
 $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
@@ -226,14 +226,29 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 
 $(PROJECT_ROOT)/lib/libsacpreludeTree.so \
 $(PROJECT_ROOT)/lib/libsacpreludeMod.so \
-$(PROJECT_ROOT)/lib/libsacpreludeMod.a: sacprelude.sac $(FINGERPRINT_FILE)
+$(PROJECT_ROOT)/lib/libsacpreludeMod.a: libsacpreludeTree.$($(STYLE)_short).so
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacpreludeTree.so " 
 	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.so " 
 	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.a"
-	$(HIDE) $(SAC2C) $(SAC2CFLAGS) -noprelude -o $(TARGETDIR) $<
+	$(HIDE) $(CP) libsacpreludeTree.$($(STYLE)_short).so \
+                      $(PROJECT_ROOT)/lib/libsacpreludeTree.so 
+	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).so \
+                      $(PROJECT_ROOT)/lib/libsacpreludeMod.so 
+	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).a \
+                      $(PROJECT_ROOT)/lib/libsacpreludeMod.a
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
+
+libsacpreludeTree.$($(STYLE)_short).so: sacprelude.sac $(FINGERPRINT_FILE)
+	@$(ECHO) ""
+	@$(ECHO) "Compiling $<"
+	$(HIDE) $(SAC2C) $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
+	$(HIDE) $(MV) libsacpreludeTree.so libsacpreludeTree.$($(STYLE)_short).so
+	$(HIDE) $(MV) libsacpreludeMod.so libsacpreludeMod.$($(STYLE)_short).so
+	$(HIDE) $(MV) libsacpreludeMod.a libsacpreludeMod.$($(STYLE)_short).a
+	@$(CLOCK_SKEW_ELIMINATION)  
+
 
 
 ################################################################################
@@ -458,8 +473,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating source code from LEX specification:  $(notdir $@)"
-	$(HIDE)$(LEX) $<
-	$(HIDE)mv lex.yy.c $@
+	$(HIDE) $(LEX) $<
+	$(HIDE) $(MV) lex.yy.c $@
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.tab.c: %.y 

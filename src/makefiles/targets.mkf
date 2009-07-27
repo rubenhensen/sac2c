@@ -249,13 +249,13 @@ libsacprelude_targets           := libsacpreludeTree.so libsacpreludeMod.a \
 libsacprelude_targetdir         := lib
 
 libsacprelude_subtarget_suffix  := .sac
-libsacprelude_defaultstyle      := devel
+libsacprelude_defaultstyle      := prod
 
 libsacprelude_extraclean_all    := 
 libsacprelude_extraclean_devel  := 
 libsacprelude_extraclean_prod   := 
 
-libsacprelude_sourcedirs        := 
+libsacprelude_sourcedirs        := .
 
 ###############################################################################
 
