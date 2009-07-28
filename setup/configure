@@ -3537,9 +3537,9 @@ fi
 if  test "$YACC" != "yacc" ; then
   { echo "$as_me:$LINENO: checking whether $YACC works" >&5
 echo $ECHO_N "checking whether $YACC works... $ECHO_C" >&6; }
-  mkdir .ac_yacc_test
+  mkdir -p .ac_yacc_test
   cd .ac_yacc_test
-  cp ../../src/libsac2c/scanparse/sac.y .
+  cp -f ../../src/libsac2c/scanparse/sac.y .
   if  $YACC sac.y >/dev/null 2>/dev/null ; then
     { echo "$as_me:$LINENO: result: ok" >&5
 echo "${ECHO_T}ok" >&6; }
