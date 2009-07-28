@@ -364,6 +364,21 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
     SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;
 #else
+
+#ifdef __cplusplus
+#define SAC_HM_DEFINE()                                                                  \
+    SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
+      = SAC_HM_SETUP_ARENAS ();                                                          \
+    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
+    static const unsigned int SAC_MT_mythread = 0;                                       \
+    extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size           \
+      = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
+    extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size           \
+      = SAC_SET_INITIAL_WORKER_HEAPSIZE;                                                 \
+    extern const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size                        \
+      = SAC_SET_INITIAL_UNIFIED_HEAPSIZE;                                                \
+    extern const unsigned int SAC_HM_max_worker_threads = SAC_SET_THREADS_MAX - 1;
+#else /*  __cplusplus */
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
@@ -376,6 +391,7 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
     const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size                               \
       = SAC_SET_INITIAL_UNIFIED_HEAPSIZE;                                                \
     const unsigned int SAC_HM_max_worker_threads = SAC_SET_THREADS_MAX - 1;
+#endif /*  __cplusplus */
 #endif
 /*
  * The above definition of SAC_MT_mythread is only done to assure that
