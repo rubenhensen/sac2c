@@ -918,7 +918,12 @@ retryAnyMatcher (pattern *pat, node *stack)
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (!match));
 
-    stack = freeStack (stack);
+    if (!match) {
+        stack = FailMatch (stack);
+    } else {
+        stack = freeStack (stack);
+    }
+
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
     return (stack);
@@ -960,7 +965,12 @@ retryAllMatcher (pattern *pat, node *stack)
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && match);
 
-    stack = freeStack (stack);
+    if (!match) {
+        stack = FailMatch (stack);
+    } else {
+        stack = freeStack (stack);
+    }
+
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
     return (stack);
@@ -1109,8 +1119,14 @@ PMmatchExact (pattern *pat, node *expr)
 {
     mode = PM_exact;
     matching_level = 0;
+    bool res;
+    DBUG_ENTER ("PMmatchExact");
 
-    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("starting exact match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("exact match %s!", (res ? "succeeded" : "failed")));
+
+    DBUG_RETURN (res);
 }
 
 int
@@ -1118,8 +1134,13 @@ PMmatchFlat (pattern *pat, node *expr)
 {
     mode = PM_flat;
     matching_level = 0;
+    bool res;
 
-    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("starting flat match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("flat match %s!", (res ? "succeeded" : "failed")));
+
+    return (res);
 }
 
 int
@@ -1127,8 +1148,13 @@ PMmatchFlatSkipExtrema (pattern *pat, node *expr)
 {
     mode = PM_flatSkipExtrema;
     matching_level = 0;
+    bool res;
 
-    return (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("starting flatSkipExtrema match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("flatSkipExtrema match %s!", (res ? "succeeded" : "failed")));
+
+    return (res);
 }
 
 node *
