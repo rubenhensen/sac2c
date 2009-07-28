@@ -149,7 +149,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         constant_folding \
                         structural_constant_constant_folding \
                         symbolic_constant_simplification wl_lock_optimization_marking \
-                        wl_lock_optimization_shifting
+                        wl_lock_optimization_shifting setfundefwasoptimized
 
                         
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \

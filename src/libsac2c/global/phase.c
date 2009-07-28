@@ -18,6 +18,7 @@
 #include "phase_drivers.h"
 #include "phase_info.h"
 #include "statistics.h"
+#include "setfundefwasoptimized.h"
 
 /*
  * static global variables
@@ -185,7 +186,7 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 }
 
 node *
-PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond)
+PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 {
     bool go_on;
 
@@ -206,6 +207,10 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond)
 #ifndef DBUG_OFF
         CheckEnableDbug (cycle);
 #endif
+
+        if (reset) {
+            syntax_tree = SFWOdoSetFundefWasOptimized (syntax_tree);
+        }
 
         STATcopyCounters (&oc_global, &global.optcounters);
         STATclearCounters (&global.optcounters);

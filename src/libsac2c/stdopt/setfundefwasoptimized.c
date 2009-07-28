@@ -38,28 +38,30 @@
  * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
- * @fn node *SFWOdoSetFundefWasOptimizedModule( node *arg_node)
+ * @fn node *SFWOdoSetFundefWasOptimized( node *arg_node)
  *
  *****************************************************************************/
+
 node *
-SFWOdoSetFundefWasOptimizedModule (node *arg_node)
+SFWOdoSetFundefWasOptimized (node *syntax_tree)
 {
 
-    DBUG_ENTER ("SFWOdoSetFundefWasOptimizedModule");
+    DBUG_ENTER ("SFWOdoSetFundefWasOptimized");
 
     DBUG_PRINT ("SFWO", ("Setting FUNDEF_WASOPTIMIZED flags starts"));
-    DBUG_ASSERT (N_module == NODE_TYPE (arg_node),
+    DBUG_ASSERT (N_module == NODE_TYPE (syntax_tree),
                  ("SFWOdoSetFundefWasOptimizedModule needs N_module node"));
 
     TRAVpush (TR_sfwo);
-    arg_node = TRAVdo (arg_node, NULL);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
     DBUG_PRINT ("SFWO", ("Setting FUNDEF_WASOPTIMIZED flags ends"));
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
@@ -84,15 +86,44 @@ SFWOdoSetFundefWasOptimizedModule (node *arg_node)
  *
  * @fn node *SFWOfundef(node *arg_node, info *arg_info)
  *
+ * @brief Traverses into fundef chain
+ *
+ *****************************************************************************/
+
+node *
+SFWOmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SFWOmodule");
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SFWOfundef(node *arg_node, info *arg_info)
+ *
  * @brief Sets FUNDEF_WASOPTIMIZED flag
  *
  *****************************************************************************/
+
 node *
 SFWOfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SFWOfundef");
 
     FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
+
+    if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+        FUNDEF_LOCALFUNS (arg_node) = TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

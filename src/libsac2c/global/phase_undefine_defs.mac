@@ -67,6 +67,10 @@
 #undef CYCLEphase
 #undef CYCLEphase__defined
 #endif
+#ifdef CYCLEreset__defined
+#undef CYCLEreset
+#undef CYCLEreset__defined
+#endif
 
 #ifdef FUNBEGIN__defined
 #undef FUNBEGIN
@@ -159,3 +163,9 @@
 #undef ENDCYCLE
 #undef ENDCYCLE__defined
 #endif
+
+#undef ALWAYS
+#undef NEVER
+#undef ONLYIF
+
+#undef RESET

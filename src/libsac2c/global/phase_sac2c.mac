@@ -236,7 +236,7 @@ SUBPHASE (isaa1, "Inserting symbolic array attributes", ISAAdoInsertShapeVariabl
 
 #ifdef BUG_356_FIXED
 
-CYCLE (saacyc1, "Symbolic array attribute cycle 1", global.optimize.dosaa, opt)
+CYCLE (saacyc1, "Symbolic array attribute cycle 1", global.optimize.dosaa, opt, RESET)
 
 CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
             global.optimize.doprfunr, opt, saacyc1)
@@ -285,7 +285,7 @@ SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemoval
 
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
-CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
+CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt, RESET)
 
 FUNBEGIN (cyc, opt, cyc)
 
@@ -426,7 +426,7 @@ ENDCYCLE (cyc)
 /*************************************************/
 
 CYCLE (scyc, "Type stabilization cycle",
-       global.run_stabilization_cycle &&global.optimize.doscyc, opt)
+       global.run_stabilization_cycle &&global.optimize.doscyc, opt, !RESET)
 
 FUNBEGIN (scyc, opt, scyc)
 
@@ -480,7 +480,7 @@ SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
 
 /*************************************************/
 
-CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaa, opt)
+CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaa, opt, RESET)
 
 CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
             global.optimize.doprfunr, opt, saacyc)

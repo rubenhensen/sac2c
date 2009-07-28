@@ -74,8 +74,8 @@
 #define SUBPHASE(name, text, fun, cond, phase)                                           \
     syntax_tree = PHrunSubPhase (PH_##phase##_##name, syntax_tree, cond);
 
-#define CYCLE(name, text, cond, phase)                                                   \
-    syntax_tree = PHrunCycle (PH_##phase##_##name, syntax_tree, cond);
+#define CYCLE(name, text, cond, phase, reset)                                            \
+    syntax_tree = PHrunCycle (PH_##phase##_##name, syntax_tree, cond, reset);
 
 #define ENDPHASE(name)                                                                   \
     DBUG_RETURN (syntax_tree);                                                           \

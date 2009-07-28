@@ -14,7 +14,8 @@ extern node *PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond);
 
 extern node *PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond);
 
-extern node *PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond);
+extern node *PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond,
+                         bool reset);
 
 extern node *PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond);
 

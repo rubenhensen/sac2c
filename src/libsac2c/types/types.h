@@ -115,7 +115,7 @@ typedef int usertype;
 
 #define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
 
-#define CYCLE(name, text, cond, phase) PH_##phase##_##name,
+#define CYCLE(name, text, cond, phase, setup) PH_##phase##_##name,
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
 

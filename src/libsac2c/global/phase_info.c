@@ -182,7 +182,7 @@ PHIphaseName (compiler_phase_t phase)
 
 #define SUBPHASE(name, text, fun, cond, phase) PH_##phase,
 
-#define CYCLE(name, text, cond, phase) PH_##phase,
+#define CYCLE(name, text, cond, phase, setup) PH_##phase,
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
 
@@ -219,7 +219,7 @@ PHIphaseParent (compiler_phase_t phase)
 
 #define SUBPHASE(name, text, fun, cond, phase) #phase ":" #name,
 
-#define CYCLE(name, text, cond, phase) #phase ":" #name,
+#define CYCLE(name, text, cond, phase, setup) #phase ":" #name,
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
 

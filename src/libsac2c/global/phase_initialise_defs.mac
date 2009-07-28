@@ -6,6 +6,8 @@
 #define NEVER FALSE
 #define ONLYIF(c) c
 
+#define RESET TRUE
+
 #ifndef PHASEname
 #define PHASEname(name)
 #define PHASEname__defined
@@ -83,9 +85,15 @@
 #define CYCLEphase__defined
 #endif
 
+#ifndef CYCLEreset
+#define CYCLEreset(reset)
+#define CYCLEreset__defined
+#endif
+
 #ifndef CYCLE
-#define CYCLE(name, text, cond, phase)                                                   \
-    CYCLEname (name) CYCLEtext (text) CYCLEcond (cond) CYCLEphase (phase)
+#define CYCLE(name, text, cond, phase, reset)                                            \
+    CYCLEname (name) CYCLEtext (text) CYCLEcond (cond) CYCLEphase (phase)                \
+      CYCLEreset (reset)
 #define CYCLE__defined
 #endif
 

@@ -86,6 +86,12 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="CUKNL" name="Create cuda kernel functions" default="sons" include="create_cuda_kernels.h" >
         <travuser>
           <node name="Let" />
