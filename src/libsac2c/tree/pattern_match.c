@@ -198,65 +198,60 @@
  * Some implementation issues:
  * ===========================
  *
- * The main question is how to represent patterns and
- * their attributes in a way that eases the matching
- * process. The central idea is to implement all
- * pattern as well as all attributes as partial function
- * applications, i.e., whenever a pattern function
- * PMxxx or an pattern attribute function PMAyyy is
- * applied to arguments a1, ..., an, we create a
- * record containing the arguments seen and a pointer
- * to the matching function. The matching function
- * then takes this record as well as an expression
- * to be matched against as parameters.
- * NB: using FP terminology, we create thunks here
- * which are evaluated as soon as the expression(s)
- * to be matched against become available.
+ * The main question is how to represent patterns and their attributes in a
+ * way that eases the matching process. The central idea is to implement all
+ * pattern as well as all attributes as partial function applications, i.e.,
+ * whenever a pattern function PMxxx or an pattern attribute function PMAyyy
+ * is applied to arguments a1, ..., an, we create a record containing the
+ * arguments seen and a pointer to the matching function. The matching
+ * function then takes this record as well as an expression to be matched
+ * against as parameters.
+ * NB: using FP terminology, we create thunks here which are evaluated as
+ * soon as the expression(s) to be matched against become available.
  *
- * These records are implemented by the types
- *  pattern *, and attrib *, for pattern and their
- * attributes, respectively.
- * All matching functions, i.e., the functions that
- * do the real matching work have to be of types
+ * These records are implemented by the types    pattern *, and attrib *,
+ * for pattern and their attributes, respectively.
+ * All matching functions, i.e., the functions that do the real matching
+ * work have to be of types
  *
  * typedef node *matchFun( pattern*, node *)     and
  * typedef bool attribFun( attrib*, node *)   , respectively.
  *
- * both obtain their record containing the pattern arguments
- * specified at pattern construction time as first argument
- * and the expression to match against as second argument.
- * In both cases, the expression to be matched against can
- * in fact be an entire stack of expressions.
- * However, while the pattern variant consumes expressions
- * from the stack, the attribute version does not.
- * This is reflected in the return values:
- * the pattern variant returns the stack as well as
- * boolean value which is encoded in the return value
- * (for details see below), whereas the attrib variant only
- * returns the boolean value.
+ * both obtain their record containing the pattern arguments specified at
+ * pattern construction time as first argument and the expression to match
+ * against as second argument. In both cases, the expression to be matched
+ * against can in fact be an entire stack of expressions. However, while
+ * the pattern variant consumes expressions from the stack, the attribute
+ * version does not. This is reflected in the return values:
+ * the pattern variant returns the stack as well as boolean value which is
+ * encoded in the return value (for details see below), whereas the attrib
+ * variant only returns the boolean value.
  *
- * Their are two main difficulties concerning the stack of
- * expressions to be matched:
+ * Their are two main difficulties concerning the stack of expressions to
+ * be matched:
  * a) how to maintain a stack of expressions WITHOUT fiddling
  *    around with the existing exprs chains in the AST?
  * b) how to return a modified stack AND a boolean matching flag
  *    without using a global variable and an "out-argument"?
  *
- * We solve a) by introducing a spine of N_set-nodes whenever
- * more than one expr or exprs chain is needed in the stack.
- * This is done dynamically by inserting these whenever we hit
- * a constructor-match (PushArgs) and by freeing these when pulling
- * out the last topmost expression of an N_set node (ExtractOneArg).
- * If the match goes through we expect all exprs to be consumed
- * and, therefore, all N_set nodes to be freed.
- * In case the match fails, FailMatch( stack)  is called which
- * explicitly frees any remaining N_set nodes.
+ * We solve a) by introducing a spine of N_set-nodes whenever more than one
+ * expr or exprs chain is needed in the stack. This is done dynamically by
+ * inserting these whenever we hit a constructor-match (pushArgs) and by
+ * freeing these when pulling out the last topmost expression of an N_set
+ * node (extractOneArg). If the match goes through we expect all exprs to be
+ * consumed and, therefore, all N_set nodes to be freed. In case the match
+ * fails, failMatch( stack)  is called which explicitly frees any remaining
+ * N_set nodes.
  *
- * b) is solved by creating a special static "node" FAIL which we
- * return instead of a proper stack whenever a match failed. All
- * matching functions therefore need to check agains a FAIL as stack
- * and they need to pass-on that FAIL.
+ * b) is solved by creating a special static "node" FAIL which we return
+ * instead of a proper stack whenever a match failed. All matching functions
+ * therefore need to check agains a FAIL as stack and they need to pass-on
+ * that FAIL.
+ */
+
+/** <!--*********************************************************************-->
  *
+ * includes, typedefs, and static variables:
  */
 
 #include <stdarg.h>
@@ -282,6 +277,11 @@ static int matching_level;
 static enum pm_mode { PM_exact, PM_flat, PM_flatSkipExtrema } mode;
 
 typedef node *matchFun (pattern *, node *);
+
+/** <!--*********************************************************************-->
+ *
+ * basic pattern handling functionality:
+ */
 
 struct PAT {
     nodetype nt;
@@ -326,14 +326,23 @@ makePattern (nodetype nt, matchFun f)
     return (res);
 }
 
-/*******************************************************************************
- */
+/** <!--*******************************************************************-->
+ *
+ * @fn pattern *genericFillPattern( pattern *res, bool nested,
+ *                                  int num_attribs, va_list arg_p)
+ *
+ * @brief fills the given pattern with the attribs and (if nested==TRUE)
+ *        the subsequent subpattern contained in va_list.
+ * @return the filled pattern
+ *
+ *****************************************************************************/
 static pattern *
 genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
 {
     va_list arg_p_copy;
     int i;
 
+    DBUG_ENTER ("genericFillPattern");
     va_copy (arg_p_copy, arg_p);
 
     PAT_NA (res) = num_attribs;
@@ -353,15 +362,25 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
     }
     va_end (arg_p_copy);
 
-    return (res);
+    DBUG_RETURN (res);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn pattern *genericFillPatternNoAttribs( pattern *res,
+ *                                           int num_pats, va_list arg_p)
+ *
+ * @brief fills the given pattern with the subpattern contained in va_list.
+ * @return the filled pattern
+ *
+ *****************************************************************************/
 static pattern *
 genericFillPatternNoAttribs (pattern *res, int num_pats, va_list arg_p)
 {
     va_list arg_p_copy;
     int i;
 
+    DBUG_ENTER ("genericFillPatternNoAttribs");
     va_copy (arg_p_copy, arg_p);
 
     PAT_NA (res) = 0;
@@ -373,43 +392,22 @@ genericFillPatternNoAttribs (pattern *res, int num_pats, va_list arg_p)
 
     va_end (arg_p_copy);
 
-    return (res);
+    DBUG_RETURN (res);
 }
-
-/*******************************************************************************
- */
-
-static node *
-getInner (node *arg_node)
-{
-    node *inner;
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_array:
-        inner = ARRAY_AELEMS (arg_node);
-        break;
-    case N_id:
-        inner = arg_node; /* needed for PMvar */
-        break;
-    case N_prf:
-        inner = PRF_ARGS (arg_node);
-        break;
-    default:
-        inner = arg_node;
-        DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
-        break;
-    }
-
-    return (inner);
-}
-/*******************************************************************************
- */
 
 /** <!--*********************************************************************-->
  *
- * local helper functions:
+ * stack handling functionality:
  */
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *copyStack( node *stack)
+ *
+ * @brief creates a copy of the "spine" of the stack
+ * @param stack
+ * @return copied stack
+ *****************************************************************************/
 static node *
 copyStack (node *stack)
 {
@@ -423,6 +421,14 @@ copyStack (node *stack)
     DBUG_RETURN (stack2);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *freeStack( node *stack)
+ *
+ * @brief frees the "spine" of the stack
+ * @param stack
+ * @return NULL pointer
+ *****************************************************************************/
 static node *
 freeStack (node *stack)
 {
@@ -435,16 +441,16 @@ freeStack (node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *FailMatch( node *stack)
+ * @fn node *failMatch( node *stack)
  *
  * @brief cleans up the remaining stack and creates a FAIL node
  * @param stack: stack of exprs
- @return FAIL node
+ * @return FAIL node
  *****************************************************************************/
 static node *
-FailMatch (node *stack)
+failMatch (node *stack)
 {
-    DBUG_ENTER ("FailMatch");
+    DBUG_ENTER ("failMatch");
     DBUG_PRINT ("PM", (PMINDENT "match failed!"));
     stack = freeStack (stack);
 
@@ -453,7 +459,7 @@ FailMatch (node *stack)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *ExtractOneArg( node *stack, node **arg)
+ * @fn node *extractOneArg( node *stack, node **arg)
  *
  * @brief extracts the first argument from the exprs stack.
  *        Note here, that stack can either be N_set (stack), an N_exprs or
@@ -470,15 +476,15 @@ FailMatch (node *stack)
     }
 
 static node *
-ExtractOneArg (node *stack, node **arg)
+extractOneArg (node *stack, node **arg)
 {
     node *next;
 
-    DBUG_ENTER ("ExtractOneArg");
+    DBUG_ENTER ("extractOneArg");
 
     if (stack != NULL) {
         if (NODE_TYPE (stack) == N_set) {
-            next = ExtractOneArg (SET_MEMBER (stack), arg);
+            next = extractOneArg (SET_MEMBER (stack), arg);
             if (next != NULL) {
                 SET_MEMBER (stack) = next;
             } else {
@@ -498,14 +504,14 @@ ExtractOneArg (node *stack, node **arg)
     } else {
         *arg = NULL;
         DBUG_PRINT ("PM", (PMINDENT "trying to match against empty stack"));
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     }
     DBUG_RETURN (stack);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *ExtractTopFrame( node *stack, node **top)
+ * @fn node *extractTopFrame( node *stack, node **top)
  *
  * @brief extracts the top frame from the stack, i.e., the topmost
  *        N_exprs chain. If none such exists, NULL is returned.
@@ -517,9 +523,9 @@ ExtractOneArg (node *stack, node **arg)
  *         stack via the normal return value.
  *****************************************************************************/
 static node *
-ExtractTopFrame (node *stack, node **top)
+extractTopFrame (node *stack, node **top)
 {
-    DBUG_ENTER ("ExtractTopFrame");
+    DBUG_ENTER ("extractTopFrame");
 
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
         && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
@@ -545,7 +551,7 @@ ExtractTopFrame (node *stack, node **top)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *PushArgs( node *stack, node * args)
+ * @fn node *pushArgs( node *stack, node * args)
  *
  * @brief if stack is non-empty, it pushes the args on top of the existing
  *        args in stack by means of N_set nodes. Note here, that stack
@@ -555,9 +561,9 @@ ExtractTopFrame (node *stack, node **top)
  * @return stacked exprs
  *****************************************************************************/
 static node *
-PushArgs (node *stack, node *args)
+pushArgs (node *stack, node *args)
 {
-    DBUG_ENTER ("PushArgs");
+    DBUG_ENTER ("pushArgs");
     if (stack == NULL) {
         stack = args;
     } else if (NODE_TYPE (stack) == N_set) {
@@ -568,9 +574,14 @@ PushArgs (node *stack, node *args)
     DBUG_RETURN (stack);
 }
 
+/** <!--*********************************************************************-->
+ *
+ * local helper functions:
+ */
+
 /** <!--*******************************************************************-->
  *
- * @bool isInGuards( node *expr)
+ * @fn bool isInGuards( node *expr)
  *
  * @brief Predicate for determining that an N_prf is a guard or
  *        extrema attachment.
@@ -588,12 +599,47 @@ PushArgs (node *stack, node *args)
 bool
 isInGuards (prf prfun)
 {
-    return ((prfun == F_attachextrema) /* Attributes */
-            || (prfun == F_attachintersect)
+    DBUG_ENTER ("isInGuards");
+    DBUG_RETURN ((prfun == F_attachextrema) /* Attributes */
+                 || (prfun == F_attachintersect)
 
-            || (prfun == F_guard) /* Guards */
-            || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
-            || (prfun == F_shape_matches_dim_VxA) || (prfun == F_val_le_val_VxV));
+                 || (prfun == F_guard) /* Guards */
+                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
+                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_val_le_val_VxV));
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *getInner( node *arg_node)
+ *
+ * @brief returns pointer to expr / N_exprs chain that constitutes a
+ *        "subexpression" of the given arg_node
+ * @return pointer to expr / N_exprs node
+ *
+ *****************************************************************************/
+static node *
+getInner (node *arg_node)
+{
+    node *inner;
+
+    DBUG_ENTER ("getInner");
+    switch (NODE_TYPE (arg_node)) {
+    case N_array:
+        inner = ARRAY_AELEMS (arg_node);
+        break;
+    case N_id:
+        inner = arg_node; /* needed for PMvar */
+        break;
+    case N_prf:
+        inner = PRF_ARGS (arg_node);
+        break;
+    default:
+        inner = arg_node;
+        DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
+        break;
+    }
+
+    DBUG_RETURN (inner);
 }
 
 /** <!--*******************************************************************-->
@@ -639,9 +685,16 @@ skipVarDefs (node *expr)
 
 /** <!--*********************************************************************-->
  *
- * Exported functions for pattern matching:
+ * local generic matching functions:
  */
-
+/** <!--*******************************************************************-->
+ *
+ * @fn node *genericAtribMatcher( pattern *pat, node *arg, node *stack)
+ *
+ * @brief matches all attribs contained in pat against the node arg.
+ *        in case of failure, the stack is changed accordingly
+ * @return potentially modified stack
+ *****************************************************************************/
 static node *
 genericAtribMatcher (pattern *pat, node *arg, node *stack)
 {
@@ -653,13 +706,21 @@ genericAtribMatcher (pattern *pat, node *arg, node *stack)
     for (i = 0; i < PAT_NA (pat); i++) {
         attr = PAT_PATTRS (pat)[i];
         if (!PMAmatch (attr, arg)) {
-            stack = FailMatch (stack);
+            stack = failMatch (stack);
             i = PAT_NA (pat);
         }
     }
     DBUG_RETURN (stack);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn bool genericSubPatternMatcher( pattern *pat, node *inner_stack)
+ *
+ * @brief matches all subpattern contained in pat against the nodes on stack.
+ *        stack is freed in this process.
+ * @return success of all matches
+ *****************************************************************************/
 static bool
 genericSubPatternMatcher (pattern *pat, node *inner_stack)
 {
@@ -689,15 +750,25 @@ genericSubPatternMatcher (pattern *pat, node *inner_stack)
     DBUG_RETURN (inner_stack != (node *)FAIL);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *genericPatternMatcher( pattern *pat, node *stack)
+ *
+ * @brief matches the top entry of stack against the node specified in pat;
+ *        Upon success, it checks attribs and subpattern against sub expressions
+ *        as well.
+ * @return potentially modified stack
+ *****************************************************************************/
 static node *
 genericPatternMatcher (pattern *pat, node *stack)
 {
     node *arg;
 
+    DBUG_ENTER ("genericPatternMatcher");
     DBUG_PRINT ("PM", (PMSTART "matching %s:", matching_level,
                        global.mdb_nodetype[PAT_NT (pat)]));
 
-    stack = ExtractOneArg (stack, &arg);
+    stack = extractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
         arg = skipVarDefs (arg);
     }
@@ -713,17 +784,22 @@ genericPatternMatcher (pattern *pat, node *stack)
         stack = genericAtribMatcher (pat, arg, stack);
         if ((stack != (node *)FAIL) && PAT_NESTED (pat)
             && !genericSubPatternMatcher (pat, getInner (arg))) {
-            stack = FailMatch (stack);
+            stack = failMatch (stack);
         }
 
     } else {
         DBUG_PRINT ("PM", (PMINDENT "%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     }
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
-    return (stack);
+    DBUG_RETURN (stack);
 }
+
+/** <!--*********************************************************************-->
+ *
+ * external PM functions:
+ */
 
 /** <!-- ****************************************************************** -->
  *
@@ -738,7 +814,7 @@ multiMatcher (pattern *pat, node *stack)
     DBUG_PRINT ("PM", (PMSTART "multi match:", matching_level));
 
     if (!genericSubPatternMatcher (pat, stack)) {
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     }
 
     DBUG_PRINT ("PM", (PMEND, matching_level));
@@ -797,19 +873,26 @@ static node *
 constMatcher (pattern *pat, node *stack)
 {
     node *arg;
+#ifndef DBUG_OFF
+    constant *c;
+    char *tmp_str;
+#endif
 
     DBUG_PRINT ("PM", (PMSTART "matching a constant:", matching_level));
 
-    stack = ExtractOneArg (stack, &arg);
+    stack = extractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
         arg = skipVarDefs (arg);
     }
 
     if ((arg != NULL) && COisConstant (arg)) {
+        DBUG_EXECUTE ("PM", c = COaST2Constant (arg); tmp_str = COconstant2String (c););
+        DBUG_PRINT ("PM", (PMINDENT "constant %s found!", tmp_str));
+        DBUG_EXECUTE ("PM", tmp_str = MEMfree (tmp_str); c = COfreeConstant (c););
         stack = genericAtribMatcher (pat, arg, stack);
     } else {
         DBUG_PRINT ("PM", (PMINDENT "no constant found!"));
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     }
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
@@ -919,8 +1002,9 @@ retryAnyMatcher (pattern *pat, node *stack)
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (!match));
 
     if (!match) {
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     } else {
+        DBUG_PRINT ("PM", (PMINDENT "success with i = %d!", *PAT_I1 (pat)));
         stack = freeStack (stack);
     }
 
@@ -966,8 +1050,10 @@ retryAllMatcher (pattern *pat, node *stack)
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && match);
 
     if (!match) {
-        stack = FailMatch (stack);
+        stack = failMatch (stack);
     } else {
+        DBUG_PRINT ("PM",
+                    (PMINDENT "success for all i in {o, ..., %d)!", (*PAT_I2 (pat)) - 1));
         stack = freeStack (stack);
     }
 
@@ -1009,7 +1095,7 @@ skipMatcher (pattern *pat, node *stack)
 
     DBUG_PRINT ("PM", (PMSTART "skipping remaining elements!", matching_level));
 
-    stack = ExtractTopFrame (stack, &match);
+    stack = extractTopFrame (stack, &match);
 
     stack = genericAtribMatcher (pat, match, stack);
 
@@ -1058,7 +1144,7 @@ skipNMatcher (pattern *pat, node *stack)
 
     if (stack != (node *)FAIL) {
         for (i = 0; i < *PAT_I1 (pat); i++) {
-            stack = ExtractOneArg (stack, &arg);
+            stack = extractOneArg (stack, &arg);
             DBUG_PRINT ("PM", (PMINDENT "deleting that argument"));
         }
     }
@@ -1082,10 +1168,13 @@ PMskipN (int *n, int num_attribs, ...)
     return (res);
 }
 
-/*******************************************************************************
+/** <!--*********************************************************************-->
  *
- */
-
+ * @fn pattern *PMfree( pattern *p)
+ *
+ * @brief frees the given pattern
+ * @return NULL pointer
+ *****************************************************************************/
 pattern *
 PMfree (pattern *p)
 {
@@ -1110,11 +1199,20 @@ PMfree (pattern *p)
     DBUG_RETURN (p);
 }
 
-/*******************************************************************************
+/** <!--*********************************************************************-->
  *
+ * the matching functions:
  */
 
-int
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchExact( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_exact
+ * @return success
+ *
+ *****************************************************************************/
+bool
 PMmatchExact (pattern *pat, node *expr)
 {
     mode = PM_exact;
@@ -1129,7 +1227,15 @@ PMmatchExact (pattern *pat, node *expr)
     DBUG_RETURN (res);
 }
 
-int
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchFlat( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_flat
+ * @return success
+ *
+ *****************************************************************************/
+bool
 PMmatchFlat (pattern *pat, node *expr)
 {
     mode = PM_flat;
@@ -1143,7 +1249,15 @@ PMmatchFlat (pattern *pat, node *expr)
     return (res);
 }
 
-int
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchFlatSkipExtrema( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_flatSkipExtrema
+ * @return success
+ *
+ *****************************************************************************/
+bool
 PMmatchFlatSkipExtrema (pattern *pat, node *expr)
 {
     mode = PM_flatSkipExtrema;
@@ -1157,6 +1271,14 @@ PMmatchFlatSkipExtrema (pattern *pat, node *expr)
     return (res);
 }
 
+/** <!--*********************************************************************-->
+ *
+ * @fn node *PMmultiExprs( int num_nodes, ...)
+ *
+ * @brief enables multiple expressions to be matched against at the same time
+ * @return stack suitable for the matching functions
+ *
+ *****************************************************************************/
 node *
 PMmultiExprs (int num_nodes, ...)
 {
@@ -1166,7 +1288,7 @@ PMmultiExprs (int num_nodes, ...)
 
     va_start (ap, num_nodes);
     for (i = 0; i < num_nodes; i++) {
-        stack = PushArgs (stack, va_arg (ap, node *));
+        stack = pushArgs (stack, va_arg (ap, node *));
     }
     va_end (ap);
 
