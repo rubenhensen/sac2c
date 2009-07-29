@@ -157,9 +157,9 @@ dnl
 
 if [ test "$YACC" != "yacc" ]; then
   AC_MSG_CHECKING([whether $YACC works])
-  mkdir .ac_yacc_test
+  mkdir -p .ac_yacc_test
   cd .ac_yacc_test
-  cp ../../src/libsac2c/scanparse/sac.y .
+  cp -f ../../src/libsac2c/scanparse/sac.y .
   if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
     AC_MSG_RESULT(ok)
   else
