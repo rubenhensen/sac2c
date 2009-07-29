@@ -700,6 +700,11 @@ GLOBAL (compiler_phase_t, compiler_anyphase, PH_initial)
  * Counter for any kind of compiler phase/subphase/cyclephase
  */
 
+GLOBAL (int, cycle_counter, 0)
+/*
+ * Counter for current cycle, made global for improved bug report
+ */
+
 GLOBAL (node *, current_fundef, NULL)
 /*
  * Counter for any kind of compiler phase/subphase/cyclephase

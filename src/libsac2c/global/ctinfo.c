@@ -435,6 +435,7 @@ InternalCompilerErrorBreak (int sig)
             fprintf (error_file, " *  cycle phase: %s (%s)\n",
                      PHIphaseName (global.compiler_cyclephase),
                      PHIphaseText (global.compiler_cyclephase));
+            fprintf (error_file, " *  cycle instance: %d\n", global.cycle_counter);
         }
 
         if (global.sacfilename != NULL) {

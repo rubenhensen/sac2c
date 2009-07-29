@@ -24,7 +24,6 @@
  * static global variables
  */
 
-static int cycle_counter;
 static optimize_counter_t oc_global;
 static optimize_counter_t oc_pass;
 
@@ -215,10 +214,10 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
         STATcopyCounters (&oc_global, &global.optcounters);
         STATclearCounters (&global.optcounters);
 
-        cycle_counter = 1;
+        global.cycle_counter = 1;
         do {
             CTInote (" ");
-            CTInote ("**** %s pass: %i", PHIphaseText (cycle), cycle_counter);
+            CTInote ("**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
             STATclearCounters (&oc_pass);
 
             syntax_tree = PHIphaseFun (cycle) (syntax_tree);
@@ -246,15 +245,15 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
                 CTInote (" ");
             }
 
-            cycle_counter += 1;
+            global.cycle_counter += 1;
 
-        } while (go_on && (cycle_counter <= global.max_optcycles)
-                 && ((cycle_counter <= global.break_cycle_specifier)
+        } while (go_on && (global.cycle_counter <= global.max_optcycles)
+                 && ((global.cycle_counter <= global.break_cycle_specifier)
                      || (global.break_after_cyclephase > global.compiler_cyclephase)));
 
         STATcopyCounters (&global.optcounters, &oc_global);
 
-        if (go_on && (cycle_counter == global.max_optcycles)) {
+        if (go_on && (global.cycle_counter == global.max_optcycles)) {
             CTIwarn ("Maximum number of optimization cycles reached");
             global.run_stabilization_cycle = TRUE;
         }
@@ -292,7 +291,7 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
 
     if (cond
         && ((cyclephase <= global.break_after_cyclephase)
-            || (cycle_counter < global.break_cycle_specifier))) {
+            || (global.cycle_counter < global.break_cycle_specifier))) {
         CTInote ("****** %s ...", PHIphaseText (cyclephase));
 
         syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
@@ -405,7 +404,7 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *arg_node, bool cond)
 
     if (cond
         && ((cyclephase <= global.break_after_cyclephase)
-            || (cycle_counter < global.break_cycle_specifier))) {
+            || (global.cycle_counter < global.break_cycle_specifier))) {
 
         CTItell (4, "         %s ...", PHIphaseText (cyclephase));
 
