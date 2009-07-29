@@ -26,6 +26,7 @@ extern attrib *PMAisVar (node **var);
  */
 extern attrib *PMAgetVal (constant **c);
 extern attrib *PMAisVal (constant **c);
+extern attrib *PMAanyLeVal (constant **c);
 
 /**
  * attrib matchers for PMint:

@@ -265,40 +265,49 @@ static bool
 CheckZeroTrip (node *lb, node *ub, node *width)
 {
     bool res = FALSE;
+    pattern *pat1, *pat2, *pat3, *pat4;
+    node *a, *x;
+    constant *c = NULL;
+    int n, i, lk;
 
     DBUG_ENTER ("CheckZeroTrip");
 
-    if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
+    pat1 = PMmulti (2, PMvar (1, PMAgetNode (&a), 0), PMvar (1, PMAisVar (&a), 0));
+    pat2 = PMmulti (2, PMconst (1, PMAgetVal (&c)), PMconst (1, PMAanyLeVal (&c)));
+    pat3 = PMretryAny (&i, &n, 1,
+                       PMmulti (2,
+                                PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
+                                         PMvar (1, PMAgetNode (&x), 0), PMskip (0)),
+                                PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
+                                         PMvar (1, PMAisVar (&x), 0), PMskip (0))));
+    pat4 = PMretryAny (&i, &n, 1,
+                       PMmulti (2,
+                                PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
+                                         PMint (1, PMAgetIVal (&lk), 0), PMskip (0)),
+                                PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
+                                         PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
 
+    if (PMmatchFlat (pat1, PMmultiExprs (2, lb, ub)) && (TUshapeKnown (ID_NTYPE (lb)))
+        && (TYgetDim (ID_NTYPE (lb)) == 1)
+        && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
         /**
          * criteria 1) (  a <= iv <  a)    where a::int[n]  with n>0  !
          */
-        if ((ID_AVIS (lb) == ID_AVIS (ub)) && (TUshapeKnown (ID_NTYPE (lb)))
-            && (TYgetDim (ID_NTYPE (lb)) == 1)
-            && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
-            res = TRUE;
-        } else {
-
-            /**
-             * criteria 2) ( lb <= iv < ub)    where lb::int[n]{vec1},
-             *                                       ub::int[n]{vec2},
-             *                                       vec1 >= vec2
-             *                                       n > 0!
-             */
-            if (TYisAKV (ID_NTYPE (lb)) && TYisAKV (ID_NTYPE (ub))) {
-
-                constant *lt
-                  = COlt (TYgetValue (ID_NTYPE (lb)), TYgetValue (ID_NTYPE (ub)));
-                shape *shp = TYgetShape (ID_NTYPE (lb));
-
-                if (!COisTrue (lt, TRUE) && (SHgetExtent (shp, 0) > 0)) {
-                    res = TRUE;
-                }
-
-                lt = COfreeConstant (lt);
-            }
-        }
-    } else if ((NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array)) {
+        DBUG_PRINT ("WLSIMP", ("criterion 1 met!"));
+        res = TRUE;
+    } else if (PMmatchFlat (pat2, PMmultiExprs (2, lb, ub))
+               && (SHgetExtent (COgetShape (c), 0) > 0)) {
+        /**
+         * criteria 2) ( lb <= iv < ub)    where lb::int[n]{vec1},
+         *                                       ub::int[n]{vec2},
+         *                                       vec1 >= vec2
+         *                                       n > 0!
+         */
+        DBUG_PRINT ("WLSIMP", ("criterion 2 met!"));
+        res = TRUE;
+    } else if ((PMmatchFlat (pat3, PMmultiExprs (2, lb, ub))
+                || PMmatchFlat (pat4, PMmultiExprs (2, lb, ub)))
+               && (n > 0)) {
         /**
          * criteria 3) ( [l1, ..., ln] <= iv < [u1, ..., un])
          *             where n > 0
@@ -306,94 +315,45 @@ CheckZeroTrip (node *lb, node *ub, node *width)
          *                   lk and uk are the same variable
          *                   || lk >= uk
          */
-        int i, n, lk;
-        node *x = NULL;
-        pattern *pat1, *pat2;
-
-        pat1 = PMretryAny (&i, &n, 1,
-                           PMmulti (2,
-                                    PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
-                                             PMvar (1, PMAgetNode (&x), 0), PMskip (0)),
-                                    PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
-                                             PMvar (1, PMAisVar (&x), 0), PMskip (0))));
-        pat2 = PMretryAny (&i, &n, 1,
-                           PMmulti (2,
-                                    PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
-                                             PMint (1, PMAgetIVal (&lk), 0), PMskip (0)),
-                                    PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
-                                             PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
-        if ((PMmatchFlat (pat1, PMmultiExprs (2, lb, ub))
-             || PMmatchFlat (pat2, PMmultiExprs (2, lb, ub)))
-            && (n > 0)) {
-
-#if 0
-    lb = ARRAY_AELEMS( lb);
-    ub = ARRAY_AELEMS( ub);
-
-    while ( lb != NULL) {
-      node *lb_elem, *ub_elem;
-
-      DBUG_ASSERT( (ub != NULL), "upper bound is shorter than lower bound");
-      lb_elem = EXPRS_EXPR( lb);
-      ub_elem = EXPRS_EXPR( ub);
-
-      if ( ( NODE_TYPE( lb_elem) == N_id) &&
-           ( NODE_TYPE( ub_elem) == N_id) &&
-           ( ID_AVIS( lb_elem) == ID_AVIS( ub_elem))) {
+        DBUG_PRINT ("WLSIMP", ("criterion 3 met!"));
         res = TRUE;
-      } else {
-        ntype *lbt, *ubt;
-        lbt = NTCnewTypeCheck_Expr( lb_elem);
-        ubt = NTCnewTypeCheck_Expr( ub_elem);
-
-        if ( TYisAKV( lbt) && TYisAKV( ubt)) {
-          constant *lt = COlt( TYgetValue( lbt), TYgetValue( ubt));
-          if ( !COisTrue( lt, TRUE)) {
-            res = TRUE;
-          }
-
-          lt = COfreeConstant( lt);
-        }
-
-        lbt = TYfreeType( lbt);
-        ubt = TYfreeType( ubt);
-      }
-
-      lb = EXPRS_NEXT( lb);
-      ub = EXPRS_NEXT( ub);
     }
-    DBUG_ASSERT( (ub == NULL), "upper bound is longer than lower bound");
-#endif
-            DBUG_PRINT ("WLSIMP", ("criterion 3 met!"));
-            res = TRUE;
-        }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
+    if (c != NULL) {
+        c = COfreeConstant (c);
     }
 
     if (width != NULL) {
-        if (NODE_TYPE (width) == N_id) {
+        pattern *pat1, *pat2;
+        constant *c = NULL;
+        int i, l, zero = 0;
+
+        pat1 = PMconst (1, PMAgetVal (&c));
+        pat2 = PMarray (1, PMAgetLen (&l), 1,
+                        PMretryAny (&i, &l, 3, PMskipN (&i, 0),
+                                    PMint (1, PMAisIVal (&zero)), PMskip (0)));
+        if (PMmatchFlat (pat1, width) && COisZero (c, FALSE)) {
             /**
              * criteria 4) ( lb <= iv <= ub width a)
              *              where a::int[n]{vec} and vec contains a 0
              */
-            if (TYisAKV (ID_NTYPE (width))
-                && COisZero (TYgetValue (ID_NTYPE (width)), FALSE)) {
-                res = TRUE;
-            }
-        } else {
-            constant *cnst;
-            DBUG_ASSERT ((NODE_TYPE (width) == N_array),
-                         "Width spec is neither N_id nor N_array");
+            DBUG_PRINT ("WLSIMP", ("criterion 4 met!"));
+            res = TRUE;
+        } else if (PMmatchFlat (pat2, width)) {
             /**
              * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
              *             where exists i such that vi == 0
              */
-            cnst = COaST2Constant (width);
-            if (cnst != NULL) {
-                if (COisZero (cnst, FALSE)) {
-                    res = TRUE;
-                }
-                cnst = COfreeConstant (cnst);
-            }
+            DBUG_PRINT ("WLSIMP", ("criterion 5 met!"));
+            res = TRUE;
+        }
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
+        if (c != NULL) {
+            c = COfreeConstant (c);
         }
     }
 

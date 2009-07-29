@@ -249,6 +249,50 @@ PMAisVal (constant **c)
 
 /** <!--*******************************************************************-->
  *
+ * @fn attrib *PMAanyLeVal( constant **c)
+ *
+ * @brief attrib for PMconst checks whether the found constant has any
+ *        component <= c
+ *
+ *****************************************************************************/
+bool
+attribAnyLeVal (attrib *attr, node *arg)
+{
+    bool res;
+    constant *c, *c2, *c3;
+#ifndef DBUG_OFF
+    char *co_str;
+#endif
+
+    c = *PATTR_C1 (attr);
+    DBUG_EXECUTE ("PMA", co_str = COconstant2String (c););
+    DBUG_PRINT ("PMA", (PMASTART "PMAanyLeVal( %s in *" F_PTR " ):", co_str, c));
+    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    c2 = COaST2Constant (arg);
+    c3 = COle (c, c2);
+
+    res = COisTrue (c3, FALSE);
+
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    c2 = COfreeConstant (c2);
+    c3 = COfreeConstant (c3);
+
+    return (res);
+}
+
+attrib *
+PMAanyLeVal (constant **c)
+{
+    attrib *res;
+
+    res = makeAttrib (N_module, attribAnyLeVal);
+    PATTR_C1 (res) = c;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn attrib *PMAgetIVal( int *i)
  *
  * @brief attrib for PMint creates and hands back integer i
