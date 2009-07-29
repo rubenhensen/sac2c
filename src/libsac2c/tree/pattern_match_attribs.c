@@ -181,9 +181,9 @@ attribGetVal (attrib *attr, node *arg)
     char *co_str;
 #endif
 
+    c = PATTR_C1 (attr);
     DBUG_PRINT ("PMA", (PMASTART "PMAgetVal( " F_PTR " ):", c));
 
-    c = PATTR_C1 (attr);
     if (*c != NULL) {
         DBUG_PRINT ("PMA", (PMARESULT "pre-existing constant freed!"));
         *c = COfreeConstant (*c);
@@ -219,11 +219,18 @@ attribIsVal (attrib *attr, node *arg)
     constant *c;
     constant *c2;
     bool res;
+#ifndef DBUG_OFF
+    char *co_str;
+#endif
 
     c = *PATTR_C1 (attr);
+    DBUG_EXECUTE ("PMA", co_str = COconstant2String (c););
+    DBUG_PRINT ("PMA", (PMASTART "PMAisVal( %s in *" F_PTR " ):", co_str, c));
+    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
     c2 = COaST2Constant (arg);
 
     res = COcompareConstants (c, c2);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
     c2 = COfreeConstant (c2);
 
     return (res);
@@ -250,7 +257,10 @@ PMAisVal (constant **c)
 bool
 attribGetIVal (attrib *attr, node *arg)
 {
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetVal( " F_PTR " ):", PATTR_I1 (attr)));
+
     *PATTR_I1 (attr) = NUM_VAL (arg);
+    DBUG_PRINT ("PMA", (PMARESULT "%d in *" F_PTR, NUM_VAL (arg), PATTR_I1 (attr)));
 
     return (TRUE);
 }
@@ -276,7 +286,15 @@ PMAgetIVal (int *i)
 bool
 attribIsIVal (attrib *attr, node *arg)
 {
-    return (*PATTR_I1 (attr) == NUM_VAL (arg));
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAisIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                        PATTR_I1 (attr)));
+    res = *PATTR_I1 (attr) == NUM_VAL (arg);
+    DBUG_PRINT ("PMA",
+                (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg)));
+
+    return (res);
 }
 
 attrib *
@@ -300,7 +318,16 @@ PMAisIVal (int *i)
 bool
 attribLeIVal (attrib *attr, node *arg)
 {
-    return (*PATTR_I1 (attr) <= NUM_VAL (arg));
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAisLEIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                        PATTR_I1 (attr)));
+    res = *PATTR_I1 (attr) <= NUM_VAL (arg);
+
+    DBUG_PRINT ("PMA",
+                (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg)));
+
+    return (res);
 }
 
 attrib *
@@ -324,7 +351,10 @@ PMAleIVal (int *i)
 bool
 attribGetLen (attrib *attr, node *arg)
 {
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetLen( " F_PTR " ):", PATTR_I1 (attr)));
+
     *PATTR_I1 (attr) = SHgetUnrLen (ARRAY_FRAMESHAPE (arg));
+    DBUG_PRINT ("PMA", (PMARESULT "%d in *" F_PTR, *PATTR_I1 (attr), PATTR_I1 (attr)));
 
     return (TRUE);
 }
@@ -350,7 +380,14 @@ PMAgetLen (int *l)
 bool
 attribHasLen (attrib *attr, node *arg)
 {
-    return (*PATTR_I1 (attr) == SHgetUnrLen (ARRAY_FRAMESHAPE (arg)));
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAhasLen( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                        PATTR_I1 (attr)));
+    res = *PATTR_I1 (attr) == SHgetUnrLen (ARRAY_FRAMESHAPE (arg));
+    DBUG_PRINT ("PMA", (PMARESULT "%s (length %d found)", (res ? "match" : "no match"),
+                        SHgetUnrLen (ARRAY_FRAMESHAPE (arg))));
+    return (res);
 }
 
 attrib *
@@ -375,10 +412,21 @@ PMAhasLen (int *l)
 bool
 attribGetFS (attrib *attr, node *arg)
 {
+#ifndef DBUG_OFF
+    char *co_str;
+#endif
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetFS( " F_PTR " ):", PATTR_C1 (attr)));
+
     if (*PATTR_C1 (attr) != NULL) {
+        DBUG_PRINT ("PMA", (PMARESULT "pre-existing frame shape freed!"));
         *PATTR_C1 (attr) = COfreeConstant (*PATTR_C1 (attr));
     }
     *PATTR_C1 (attr) = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
+
+    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*PATTR_C1 (attr)););
+    DBUG_PRINT ("PMA", (PMARESULT "%s in *" F_PTR, co_str, PATTR_C1 (attr)));
+    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
 
     return (TRUE);
 }
@@ -406,9 +454,18 @@ attribHasFS (attrib *attr, node *arg)
 {
     constant *c2;
     bool res;
+#ifndef DBUG_OFF
+    char *co_str;
+#endif
+
+    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*PATTR_C1 (attr)););
+    DBUG_PRINT ("PMA",
+                (PMASTART "PMAhasFS( %s in *" F_PTR " ):", co_str, PATTR_C1 (attr)));
+    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
 
     c2 = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
     res = COcompareConstants (c2, *PATTR_C1 (attr));
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
     c2 = COfreeConstant (c2);
 
     return (res);
@@ -435,7 +492,13 @@ PMAhasFS (constant **fs)
 bool
 attribIsPrf (attrib *attr, node *arg)
 {
-    return (PRF_PRF (arg) == PATTR_PRF (attr));
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMisPrf( %s)", global.prf_name[PATTR_PRF (attr)]));
+    res = PRF_PRF (arg) == PATTR_PRF (attr);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+
+    return (res);
 }
 
 attrib *
