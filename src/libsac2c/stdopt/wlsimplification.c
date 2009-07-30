@@ -287,6 +287,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
                                 PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
                                          PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
 
+    DBUG_PRINT ("WLSIMP", ("checking criteria 1, 2, and 3:"));
     if (PMmatchFlat (pat1, PMmultiExprs (2, lb, ub)) && (TUshapeKnown (ID_NTYPE (lb)))
         && (TYgetDim (ID_NTYPE (lb)) == 1)
         && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
@@ -335,6 +336,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
         pat2 = PMarray (1, PMAgetLen (&l), 1,
                         PMretryAny (&i, &l, 3, PMskipN (&i, 0),
                                     PMint (1, PMAisIVal (&zero)), PMskip (0)));
+        DBUG_PRINT ("WLSIMP", ("checking criteria 4 and 5:"));
         if (PMmatchFlat (pat1, width) && COisZero (c, FALSE)) {
             /**
              * criteria 4) ( lb <= iv <= ub width a)
