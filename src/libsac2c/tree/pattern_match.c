@@ -1004,7 +1004,7 @@ retryAnyMatcher (pattern *pat, node *stack)
     if (!match) {
         stack = failMatch (stack);
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "success with i = %d!", *PAT_I1 (pat)));
+        DBUG_PRINT ("PM", (PMINDENT "success with i = %d!", (*PAT_I1 (pat)) - 1));
         stack = freeStack (stack);
     }
 
