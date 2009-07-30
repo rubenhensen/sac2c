@@ -326,6 +326,7 @@ node *
 EMDRcode (node *arg_node, info *arg_info)
 {
     node *exprs;
+    pattern *pat;
 
     DBUG_ENTER ("EMDRcode");
 
@@ -425,11 +426,11 @@ EMDRcode (node *arg_node, info *arg_info)
              * the shape (arg 1) is by construction the
              * shape of A and B
              */
-            if (PMO (
-                  PMOvar (&mem, PMOprf (F_suballoc,
-                                        PMOexprs (&aexprs,
-                                                  PMOarray (NULL, NULL,
-                                                            PMOprf (F_fill, wlass))))))) {
+            pat = PMprf (1, PMAisPrf (F_fill), 2,
+                         PMarray (0, 1, PMskip (1, PMAgetNode (&aexprs))),
+                         PMprf (1, PMAisPrf (F_suballoc), 2,
+                                PMvar (1, PMAgetNode (&mem), 0), PMskip (0)));
+            if (PMmatchFlat (pat, wlass)) {
                 node *expr;
                 node *arr = NULL;
                 bool iscopy = TRUE;
