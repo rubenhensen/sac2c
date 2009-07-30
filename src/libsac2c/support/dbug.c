@@ -721,7 +721,7 @@ _db_ldoprnt_ (char *format, ...)
         (VOID) fflush (_db_fp_);
         (VOID) Delay (stack->delay);
     }
-    va_end (format);
+    va_end (args);
 }
 
 VOID _db_doprnt_assert_1_ (file, line, text) char *file;
@@ -748,7 +748,7 @@ _db_doprnt_assert_2_ (char *format, ...)
     fprintf (_db_fp_, "EXECUTION TERMINATED\n");
     fflush (_db_fp_);
 
-    va_end (format);
+    va_end (args);
 }
 
 /*
@@ -840,7 +840,7 @@ _db_doprnt_ (char *format, ...)
         (VOID) Delay (stack->delay);
     }
 
-    va_end (format);
+    va_end (args);
 }
 
 /*
