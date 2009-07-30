@@ -435,6 +435,8 @@ freeStack (node *stack)
     DBUG_ENTER ("freeStack");
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
         stack = FREEdoFreeTree (stack);
+    } else {
+        stack = NULL;
     }
     DBUG_RETURN (stack);
 }
@@ -719,9 +721,9 @@ genericAtribMatcher (pattern *pat, node *arg, node *stack)
  *
  * @brief matches all subpattern contained in pat against the nodes on stack.
  *        stack is freed in this process.
- * @return success of all matches
+ * @return either NULL or FAIL
  *****************************************************************************/
-static bool
+static node *
 genericSubPatternMatcher (pattern *pat, node *inner_stack)
 {
     pattern *inner_pat;
@@ -747,7 +749,7 @@ genericSubPatternMatcher (pattern *pat, node *inner_stack)
             inner_stack = (node *)FAIL;
         }
     }
-    DBUG_RETURN (inner_stack != (node *)FAIL);
+    DBUG_RETURN (inner_stack);
 }
 
 /** <!--*******************************************************************-->
@@ -783,7 +785,7 @@ genericPatternMatcher (pattern *pat, node *stack)
 
         stack = genericAtribMatcher (pat, arg, stack);
         if ((stack != (node *)FAIL) && PAT_NESTED (pat)
-            && !genericSubPatternMatcher (pat, getInner (arg))) {
+            && (genericSubPatternMatcher (pat, getInner (arg)) == (node *)FAIL)) {
             stack = failMatch (stack);
         }
 
@@ -813,9 +815,7 @@ multiMatcher (pattern *pat, node *stack)
 {
     DBUG_PRINT ("PM", (PMSTART "multi match:", matching_level));
 
-    if (!genericSubPatternMatcher (pat, stack)) {
-        stack = failMatch (stack);
-    }
+    stack = genericSubPatternMatcher (pat, stack);
 
     DBUG_PRINT ("PM", (PMEND, matching_level));
 
@@ -987,7 +987,7 @@ PMprf (int num_attribs, ...)
  * @fn pattern *PMretryAny( int *i, int *l, int num_pats, ...);
  *
  * @brief
- */
+ ******************************************************************************/
 static node *
 retryAnyMatcher (pattern *pat, node *stack)
 {
@@ -997,7 +997,7 @@ retryAnyMatcher (pattern *pat, node *stack)
     DBUG_PRINT ("PM", (PMSTART "retry any matcher start", matching_level));
     do {
         DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
-        match = genericSubPatternMatcher (pat, copyStack (stack));
+        match = (genericSubPatternMatcher (pat, copyStack (stack)) == NULL);
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (!match));
 
@@ -1035,7 +1035,7 @@ PMretryAny (int *i, int *l, int num_pats, ...)
  * @fn pattern *PMretryAll( int *i, int *l, int num_pats, ...);
  *
  * @brief
- */
+ ******************************************************************************/
 static node *
 retryAllMatcher (pattern *pat, node *stack)
 {
@@ -1045,7 +1045,7 @@ retryAllMatcher (pattern *pat, node *stack)
     DBUG_PRINT ("PM", (PMSTART "retry all matcher start", matching_level));
     do {
         DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
-        match = genericSubPatternMatcher (pat, copyStack (stack));
+        match = (genericSubPatternMatcher (pat, copyStack (stack)) == NULL);
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && match);
 
@@ -1100,11 +1100,7 @@ skipMatcher (pattern *pat, node *stack)
     stack = genericAtribMatcher (pat, match, stack);
 
     if (stack != (node *)FAIL) {
-        if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
-            stack = FREEdoFreeTree (stack);
-        } else {
-            stack = NULL;
-        }
+        stack = freeStack (stack);
     }
 
     DBUG_PRINT ("PM", (PMEND, matching_level));
