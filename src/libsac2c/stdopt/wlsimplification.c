@@ -268,7 +268,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
     pattern *pat1, *pat2, *pat3, *pat4;
     node *a, *x;
     constant *c = NULL;
-    int n, i, lk;
+    int n = 0, i, lk;
 
     DBUG_ENTER ("CheckZeroTrip");
 
