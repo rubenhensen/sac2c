@@ -881,7 +881,7 @@ CFarray (node *arg_node, info *arg_info)
         pat2 = PMarray (2, PMAhasFS (&fs), PMAgetNode (&array), 1, PMskip (0));
 
         while ((exprs != NULL) && PMmatchFlat (pat2, EXPRS_EXPR (exprs))) {
-            lexprs = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (array)), lexprs);
+            lexprs = TCappendExprs (lexprs, DUPdoDupTree (ARRAY_AELEMS (array)));
             exprs = EXPRS_NEXT (exprs);
         }
 
