@@ -386,8 +386,11 @@ InternalCompilerErrorBreak (int sig)
             i++;
         }
         error_file_name[i] = '\0';
+    } else {
+        strcpy (error_file_name, "unknown");
     }
-    strcat (error_file_name, ".bugreport.sac");
+
+    strcat (error_file_name, ".sacbugreport");
 
     error_file = fopen (error_file_name, "w");
 
