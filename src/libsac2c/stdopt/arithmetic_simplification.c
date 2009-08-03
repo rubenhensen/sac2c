@@ -211,6 +211,11 @@ Negate (node *arg_node, info *info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), negexpr), INFO_PREASSIGN (info));
     AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (info);
 
+    if (N_id == NODE_TYPE (arg_node)) {
+        AVIS_DIM (avis) = DUPdoDupNode (AVIS_DIM (ID_AVIS (arg_node)));
+        AVIS_SHAPE (avis) = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (arg_node)));
+    }
+
     TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
 
     DBUG_RETURN (TBmakeId (avis));
