@@ -300,6 +300,7 @@ FLATGfundef (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
     }
 
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     /*
      * Proceed with the next function...
      */
