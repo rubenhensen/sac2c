@@ -13,7 +13,7 @@
  * Prefix: IVEXP
  *
  *****************************************************************************/
-extern node *IVEXPdoIndexVectorExtremaPropModule (node *arg_node);
+extern node *IVEXPdoIndexVectorExtremaPropOneFunction (node *arg_node);
 
 extern node *IVEXPmodule (node *arg_node, info *arg_info);
 extern node *IVEXPfundef (node *arg_node, info *arg_info);

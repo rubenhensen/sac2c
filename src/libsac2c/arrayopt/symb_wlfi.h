@@ -13,7 +13,7 @@
  * Prefix: SWLFI
  *
  *****************************************************************************/
-extern node *SWLFIdoSymbolicWithLoopFolding (node *arg_node);
+extern node *SWLFIdoSymbolicWithLoopFoldingOneFunction (node *arg_node);
 
 extern node *SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      node *restypeavis);

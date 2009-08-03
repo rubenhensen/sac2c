@@ -4,6 +4,84 @@
 
 /** <!--********************************************************************-->
  *
+ *  Extrema Design Rules
+ *
+ *  This section describes what are believed to be the current rules
+ *  about contents and usage of extrema:
+ *
+ *  Definitions:
+ *
+ *   Extrema: The array-valued lower and upper bounds of values. In the case of
+ *            a constant, both bounds are the same.
+ *
+ *   AVIS_MINVAL: The lower bound of a value, represented as an N_avis pointer.
+ *
+ *   AVIS_MAXVAL: The upper bound of a value, represented as an N_avis pointer.
+ *
+ *   Precision: We would like extrema to be exact, but this turns out
+ *              to be impractical in practice. Hence, extrema are
+ *              conservative estimates of a value.
+ *
+ *   Overwriting: When a better estimate of an extremum becomes available,
+ *                IVEXP or other optimization will rewrite it.
+ *
+ * Examples:
+ *
+ *   Constant:
+ *
+ *     x = 5;
+ *
+ *     AVIS_MINVAL( x) = ID_AVIS( x);
+ *     AVIS_MAXVAL( x) = ID_AVIS( x);
+ *
+ *   WL index vector:
+ *     (lb <= iv=[i] < ub)...
+ *
+ *     AVIS_MINVAL( iv) = ID_AVIS( lb);
+ *     tmp = _sub_VxS_( ub, 1);
+ *     AVIS_MAXVAL( iv) = ID_AVIS( tmp);
+ *
+ * Rationale for non-exact extrema:
+ *
+ *   We wish to allow Constant Folding to remove a _non_neg_val_V guard.
+ *   The intermediate SAC code looks like this:
+ *
+ *     v = iota( id( 5));  NB. v is AKD; as id() hides value 5.
+ *     s = idx_shape_sel( 0, v);
+ *     s' = [ s];
+ *     s'', p = _neg_neg_val_V( s');
+ *
+ *   Looking at the code, it is clear that s is always non-negative.
+ *   However, if we have exact extrema, we are unable to pass
+ *   that information on to CF.
+ *
+ *   If we allow extrema to be conservative estimates, we can allow
+ *   the non-negative property of shape vector elements to be
+ *   propagated to s', in this way:
+ *
+ *     v = iota( id( 5));  NB. v is AKD; as id() hides value 5.
+ *     s = idx_shape_sel( 0, v);
+ *     minv = 0;
+ *     NB. We are unable to set maxv, as we have no idea of its value
+ *     s' = _attachextrema ( s, minv, NULL);
+ *     s'' = [ s'];
+ *     s''', p = _neg_neg_val_V( s'');
+ *
+ *   The minv extrema will propagate through the N_array this way:
+ *
+ *     minv' = [ AVIS_MINVAL( s)];
+ *     s'''' = [ s'];
+ *     s'' = _attachextrema( s'''', minv', NULL);
+ *     s''', p = _non_neg_val_V( s'');
+ *
+ *   When CF encounters the _non_neg_val_V, it will evaluate
+ *   AVIS_MINVAL, find it to be non_negative, at which point
+ *   it will eliminate the_non_neg_val_V guard.
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
  * @defgroup ivexi Index Vector Extrema Insertion Traversal
  *
  * This traversal inserts maxima and minima for index vector variables
@@ -138,6 +216,7 @@ struct INFO {
     lut_t *lutvars;
     lut_t *lutcodes;
     bool fromap;
+    bool onefundef;
 };
 
 /**
@@ -151,6 +230,7 @@ struct INFO {
 #define INFO_LUTVARS(n) ((n)->lutvars)
 #define INFO_LUTCODES(n) ((n)->lutcodes)
 #define INFO_FROMAP(n) ((n)->fromap)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo ()
@@ -169,6 +249,7 @@ MakeInfo ()
     INFO_LUTVARS (result) = NULL;
     INFO_LUTCODES (result) = NULL;
     INFO_FROMAP (result) = FALSE;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -218,6 +299,7 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
     arg_info = MakeInfo ();
     INFO_LUTVARS (arg_info) = LUTgenerateLut ();
     INFO_LUTCODES (arg_info) = LUTgenerateLut ();
+    INFO_ONEFUNDEF (arg_info) = FALSE;
 
     DBUG_PRINT ("IVEXI", ("Starting index vector extrema insertion traversal."));
 
@@ -242,38 +324,9 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
-#ifdef FIXME // DEAD CODE
 /** <!--********************************************************************-->
  *
- * @static fn void clearAvisSubst(node *arg_node)
- *
- *   @brief: Clear AVIS_SUBST field in all vardecs for arg_node.
- *
- *   @param: arg_node: N_fundef
- *
- *   @return  nada
- ******************************************************************************/
-static void
-clearAvisSubst (node *arg_node)
-{
-    node *vardec;
-
-    DBUG_ENTER ("clearAvisSubst");
-
-    vardec = FUNDEF_VARDEC (arg_node);
-
-    while (NULL != vardec) {
-        AVIS_SUBST (VARDEC_AVIS (vardec)) = NULL;
-        vardec = VARDEC_NEXT (vardec);
-    }
-
-    DBUG_VOID_RETURN;
-}
-#endif // FIXME   // DEAD CODE
-
-/** <!--********************************************************************-->
- *
- * @static fn node *makeIntScalar(int k, node **vardecs, node **preassigns)
+ * @fn node *IVEXImakeIntScalar(int k, node **vardecs, node **preassigns)
  *
  *   @brief Create flattened integer scalar of value k:
  *
@@ -284,15 +337,15 @@ clearAvisSubst (node *arg_node)
  *
  *   @return N_id node for fid.
  ******************************************************************************/
-static node *
-makeIntScalar (int k, node **vardecs, node **preassigns)
+node *
+IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
 {
     node *favis;
     node *fid;
     node *fids;
     node *fass;
 
-    DBUG_ENTER ("makeIntScalar");
+    DBUG_ENTER ("IVEXImakeIntScalar");
     favis
       = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     *vardecs = TBmakeVardec (favis, *vardecs);
@@ -312,182 +365,6 @@ makeIntScalar (int k, node **vardecs, node **preassigns)
     AVIS_MAXVAL (favis) = favis;
 
     DBUG_RETURN (fid);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *BuildExtremumNonnegval( node *arg_node, info *arg_info)
- *
- * @brief Construct Extremum computation for F_non_neg_val_V, unless
- *        it is already there.
- *
- *        In the former case, we start with:
- *
- *          v' =  F_non_neg_val_V( v);
- *
- *        And generate:
- *
- *          zr = 0;
- *          p = _ge_VxS_( v, zr);
- *          v' = F_non_neg_val_V( v, p);
- *
- *        If CF finds that p is constant and all TRUE, it will
- *        replace the guard by:
- *
- *          v' = v;
- *
- *        FIXME: someone has to set AVIS_MINVAL( ID_AVIS( v')) = 0 or better,
- *               to allow EWLF and friends to perform optimistic WLF.
- *
- * @param: arg_node: N_prf of F_non_neg_val_V.
- *         arg_info: your basic arg_info.
- *
- * @result: Possibly updated N_prf node.
- *
- *****************************************************************************/
-static node *
-BuildExtremumNonnegval (node *arg_node, info *arg_info)
-{
-    node *zr;
-    node *zavis;
-    node *zass;
-    node *zids;
-    int shp;
-
-    DBUG_ENTER ("BuildExtremumNonnegval");
-    DBUG_PRINT ("IVEXI", ("completely untested yet"));
-
-    if (NULL == PRF_ARG2 (arg_node)) { /* Do we already have extrema? */
-        /* Construct zr */
-        zr = makeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNSWITH (arg_info));
-
-        /* Construct Boolean vector, p */
-        shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (PRF_ARG1 (arg_node))));
-        zavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_bool),
-                                                      SHcreateShape (1, shp)));
-        INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
-        zids = TBmakeIds (zavis, NULL);
-        zass
-          = TBmakeAssign (TBmakeLet (zids,
-                                     TCmakePrf2 (F_ge_VxS,
-                                                 DUPdoDupNode (PRF_ARG1 (arg_node)), zr)),
-                          NULL);
-
-        /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
-
-        INFO_PREASSIGNSWITH (arg_info)
-          = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
-        AVIS_SSAASSIGN (zavis) = zass;
-        AVIS_MINVAL (zavis) = zavis;
-        AVIS_MAXVAL (zavis) = zavis;
-        if (isSAAMode ()) {
-            AVIS_DIM (zavis) = TBmakeNum (1);
-            AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (PRF_ARG1 (arg_node)));
-        }
-
-        /* Attach new extremum to N_prf */
-        PRF_ARG2 (arg_node) = TBmakeExprs (TBmakeId (zavis), NULL);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *BuildExtremumValLtShape( node *arg_node, info *arg_info)
- *
- * @brief Construct Extremum computation for F_val_lt_shape_VxA, unless
- *        it is already there.
- *
- *        In the former case, we start with:
- *
- *          v' =  F_val_lt_shape_VxA( v, arr);
- *
- *        And generate:
- *
- *          shp = _shape_A_( arr);
- *          p = _lt_VxV_( v, shp);
- *          v' = F_val_lt_shape_VxA( v, arr, p);
- *
- *        CF should not remove this guard, but
- *        the guard can be exploited by EWLF to generate
- *        better code when p is true. The guard should be removed
- *        after saacyc, IFF p is true.
- *
- *        FIXME: I am not sure what we can with AVIS_MINVAL( ID_AVIS( v')),
- *               if anything.
- *
- * @param: arg_node: N_prf
- *         arg_info: your basic arg_info.
- *
- * @result: Possibly updated N_prf node.
- *
- *****************************************************************************/
-static node *
-BuildExtremumValLtShape (node *arg_node, info *arg_info)
-{
-    node *shpavis;
-    node *shpass;
-    node *shpids;
-    node *pavis;
-    node *pass;
-    node *pids;
-    int shp;
-
-    DBUG_ENTER ("BuildExtremumValLtShape");
-
-    DBUG_PRINT ("IVEXI", ("completely untested yet"));
-    if (NULL == PRF_ARG3 (arg_node)) { /* Do we already have extrema? */
-
-        /* Generate shp */
-        shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (PRF_ARG1 (arg_node))));
-        shpavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                        SHcreateShape (1, shp)));
-        INFO_VARDECS (arg_info) = TBmakeVardec (shpavis, INFO_VARDECS (arg_info));
-        shpids = TBmakeIds (shpavis, NULL);
-        shpass
-          = TBmakeAssign (TBmakeLet (shpids,
-                                     TCmakePrf1 (F_shape_A,
-                                                 DUPdoDupNode (PRF_ARG2 (arg_node)))),
-                          NULL);
-        /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (shpass))) = TRUE;
-        INFO_PREASSIGNSWITH (arg_info)
-          = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), shpass);
-        AVIS_SSAASSIGN (shpavis) = shpass;
-        AVIS_MINVAL (shpavis) = shpavis;
-        AVIS_MAXVAL (shpavis) = shpavis;
-        if (isSAAMode ()) {
-            AVIS_DIM (shpavis) = TBmakeNum (1);
-            AVIS_SHAPE (shpavis) = DUPdoDupTree (AVIS_SHAPE (PRF_ARG1 (arg_node)));
-        }
-
-        /* Generate p */
-        pavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_bool),
-                                                      SHcreateShape (1, shp)));
-        INFO_VARDECS (arg_info) = TBmakeVardec (pavis, INFO_VARDECS (arg_info));
-        pids = TBmakeIds (pavis, NULL);
-        pass
-          = TBmakeAssign (TBmakeLet (pids, TCmakePrf2 (F_lt_VxV,
-                                                       DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                       DUPdoDupNode (shpids))),
-                          NULL);
-        /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (pass))) = TRUE;
-        INFO_PREASSIGNSWITH (arg_info)
-          = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), pass);
-        AVIS_SSAASSIGN (pavis) = pass;
-        AVIS_MINVAL (pavis) = pavis;
-        AVIS_MAXVAL (pavis) = pavis;
-        if (isSAAMode ()) {
-            AVIS_DIM (pavis) = TBmakeNum (1);
-            AVIS_SHAPE (pavis) = DUPdoDupTree (AVIS_SHAPE (PRF_ARG1 (arg_node)));
-        }
-
-        /* Attach new extremum to N_prf */
-        PRF_ARG3 (arg_node) = TBmakeExprs (TBmakeId (pavis), NULL);
-    }
-    DBUG_RETURN (arg_node);
 }
 
 #ifndef DBUG_OFF
@@ -776,7 +653,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
 
     /* Flatten k */
 
-    fid = makeIntScalar (k, &INFO_VARDECS (arg_info), &INFO_PREASSIGNSWITH (arg_info));
+    fid
+      = IVEXImakeIntScalar (k, &INFO_VARDECS (arg_info), &INFO_PREASSIGNSWITH (arg_info));
 
     /* Create k' = [k]; */
     kavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
@@ -1008,31 +886,6 @@ populateLUTVars (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- * static void clearFlag( node *arg_node)
- *
- * description:
- *  Clears FUNDEF flag that we use to ensure that we only
- *  traverse a lacfn once. We use the FALSE value to indicate
- *  that the lacfn has not yet been traversed.
- *
- ******************************************************************************/
-static void
-clearFlag (node *arg_node)
-{
-
-    DBUG_ENTER ("clearFlag");
-
-    while (NULL != arg_node) {
-        FUNDEF_ISNEEDED (arg_node) = FALSE;
-        arg_node = FUNDEF_NEXT (arg_node);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   node *IVEXImodule( node *arg_node, info *arg_info)
  *
  * description:
@@ -1043,9 +896,7 @@ IVEXImodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXImodule");
 
-    clearFlag (MODULE_FUNS (arg_node));
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-    clearFlag (MODULE_FUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1058,8 +909,6 @@ IVEXImodule (node *arg_node, info *arg_info)
  * description:
  *   Traverse a function.
  *   If the function is a lacfn and we are traversing it from
- *
- *
  *
  ******************************************************************************/
 node *
@@ -1074,18 +923,15 @@ IVEXIfundef (node *arg_node, info *arg_info)
 
     old_info = arg_info;
     arg_info = MakeInfo ();
-    INFO_FROMAP (old_info) = FALSE;
 
     INFO_FUNDEF (arg_info) = arg_node;
     INFO_FROMAP (arg_info) = INFO_FROMAP (old_info);
     INFO_LUTVARS (arg_info) = INFO_LUTVARS (old_info);
     INFO_LUTCODES (arg_info) = INFO_LUTCODES (old_info);
 
-    if ((!FUNDEF_ISNEEDED (arg_node))
-        && (((FUNDEF_ISLACFUN (arg_node)) && (INFO_FROMAP (arg_info)))
-            || (!FUNDEF_ISLACFUN (arg_node)))) {
+    if (((FUNDEF_ISLACFUN (arg_node)) && (INFO_FROMAP (arg_info)))
+        || (!FUNDEF_ISLACFUN (arg_node))) {
         INFO_FROMAP (arg_info) = FALSE;
-        FUNDEF_ISNEEDED (arg_node) = TRUE; /* Avoid lacfn traversal loops */
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -1105,6 +951,34 @@ IVEXIfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
     arg_info = FreeInfo (arg_info);
+    INFO_FROMAP (old_info) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IVEXIvardec( node *arg_node, info *arg_info)
+ *
+ * description:
+ *    Set extrema for all constant-valued vardecs.
+ *
+ ******************************************************************************/
+node *
+IVEXIvardec (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("IVEXIvardec");
+
+    avis = VARDEC_AVIS (arg_node);
+    if (TYisAKV (AVIS_TYPE (avis))) {
+        AVIS_MINVAL (avis) = avis;
+        AVIS_MAXVAL (avis) = avis;
+    }
+
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1116,6 +990,8 @@ IVEXIfundef (node *arg_node, info *arg_info)
  *
  * description:
  *    We get here from the fundef and from WLs.
+ *    Traverse into the block body.
+ *    Also, set extrema for all constant-valued vardecs.
  *
  ******************************************************************************/
 node *
@@ -1123,6 +999,8 @@ IVEXIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIblock");
 
+    DBUG_PRINT ("IVEXI", ("Traversing block"));
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1146,6 +1024,7 @@ IVEXIwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXIwith");
 
+    DBUG_PRINT ("IVEXI", ("Traversing with"));
     if (!WITH_EXTREMAATTACHED (arg_node)) {
         INFO_WITH (arg_info) = arg_node;
 
@@ -1173,29 +1052,6 @@ IVEXIlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEXIlet");
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *IVEXIavis( node *arg_node, info *arg_info)
- *
- * description:
- *  Set extrema for AKV avis nodes.
- *
- ******************************************************************************/
-node *
-IVEXIavis (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("IVEXIavis");
-
-    if (TYisAKV (AVIS_TYPE (arg_node))) {
-        AVIS_MINVAL (arg_node) = arg_node;
-        AVIS_MAXVAL (arg_node) = arg_node;
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1280,6 +1136,7 @@ IVEXIpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("IVEXIpart");
 
+    DBUG_PRINT ("IVEXI", ("Traversing part"));
     /* We will deal with our partition after looking inside it */
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
@@ -1322,13 +1179,8 @@ IVEXIpart (node *arg_node, info *arg_info)
  *   node *IVEXIprf( node *arg_node, info *arg_info)
  *
  * description:
- *   Insert extrema for guard primitives, if they do not
+ *   Insert extrema for some primitives, if they do not
  *   have them already.
- *
- * notes:
- *   We attach the extrema as extra PRF_ARGx nodes on the
- *   N_prf nodes. That is why we have somewhat strange-looking
- *   checks to see if a "non-existent" PRF_ARG is present.
  *
  ******************************************************************************/
 node *
@@ -1338,23 +1190,13 @@ IVEXIprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_non_neg_val_V:
-        arg_node = BuildExtremumNonnegval (arg_node, arg_info);
-        break;
-
     case F_val_lt_shape_VxA:
-        arg_node = BuildExtremumValLtShape (arg_node, arg_info);
-        break;
-
     case F_same_shape_AxA:
-        break;
-
     case F_shape_matches_dim_VxA:
-        break;
-
     case F_val_le_val_VxV:
-        break;
-
     case F_prod_matches_prod_shape_VxA:
+    case F_shape_A:
+    case F_idx_shape_sel:
         break;
 
     default:
@@ -1370,7 +1212,7 @@ IVEXIprf (node *arg_node, info *arg_info)
  *   node *IVEXIcond(node *arg_node, info *arg_info)
  *
  * description:
- *   traverse conditional parts in the given order.
+ *   Traverse an IF statement
  *
  ******************************************************************************/
 node *
@@ -1378,6 +1220,7 @@ IVEXIcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIcond");
 
+    DBUG_PRINT ("IVEXI", ("Traversing cond"));
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
@@ -1388,9 +1231,10 @@ IVEXIcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *IVEXIfuncond( node *arg_node, info *arg_info)
+ *   node *IVEXIfuncond(node *arg_node, info *arg_info)
  *
  * description:
+ *   Traverse an  x = cond ? trueval : falseval;
  *
  ******************************************************************************/
 node *
@@ -1398,13 +1242,13 @@ IVEXIfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIfuncond");
 
-    FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
+    DBUG_PRINT ("IVEXI", ("Traversing funcond"));
+    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
     FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
-
 /******************************************************************************
  *
  * function:
@@ -1418,6 +1262,7 @@ IVEXIwhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIwhile");
 
+    DBUG_PRINT ("IVEXI", ("Traversing while"));
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
@@ -1438,13 +1283,17 @@ IVEXIwhile (node *arg_node, info *arg_info)
  *   during the remainder of this traversal, so it must
  *   be handled here.
  *
+ *   Avoid the traversal if this is the recursive call within a loop-fun.
+ *
  ******************************************************************************/
 node *
 IVEXIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXIap");
 
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+    DBUG_PRINT ("IVEXI", ("Traversing ap"));
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         INFO_FROMAP (arg_info) = TRUE;
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         INFO_FROMAP (arg_info) = FALSE;

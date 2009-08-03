@@ -13,8 +13,7 @@
  * Prefix: SWLF
  *
  *****************************************************************************/
-extern node *SWLFdoSymbolicWithLoopFolding (node *arg_node);
-extern node *SWLFdoSymbolicWithLoopFoldingModule (node *arg_node);
+extern node *SWLFdoSymbolicWithLoopFoldingOneFunction (node *arg_node);
 extern bool isPrfArg1AttachExtrema (node *arg_node);
 extern bool isPrfArg1AttachIntersect (node *arg_node);
 

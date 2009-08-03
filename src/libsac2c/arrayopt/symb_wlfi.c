@@ -117,6 +117,7 @@ struct INFO {
                              */
     bool swlfoldablefoldee; /* foldeeWL may be legally foldable. */
                             /* (If index sets prove to be OK)     */
+    bool onefundef;         /* fundef-based traversal */
 };
 
 /**
@@ -129,6 +130,7 @@ struct INFO {
 #define INFO_FOLDERWL(n) ((n)->folderwl)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_SWLFOLDABLEFOLDEE(n) ((n)->swlfoldablefoldee)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo (node *fundef)
@@ -146,6 +148,7 @@ MakeInfo (node *fundef)
     INFO_FOLDERWL (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_SWLFOLDABLEFOLDEE (result) = FALSE;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -174,20 +177,19 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIdoSymbolicWithLoopFolding(node *module)
+ *   node *SWLFIdoSymbolicWithLoopFoldingOneFunction(node *arg_node)
  *
  * @brief Global entry point of symbolic With-Loop folding
- *        Applies symbolic WL folding to a module.
+ *        Applies symbolic WL folding to a fundef.
  *
  *****************************************************************************/
 node *
-SWLFIdoSymbolicWithLoopFolding (node *arg_node)
+SWLFIdoSymbolicWithLoopFoldingOneFunction (node *arg_node)
 {
+    DBUG_ENTER ("SWLFIdoSymbolicWithLoopFoldingOneFunction");
 
-    DBUG_ENTER ("SWLFIdoSymbolicWithLoopFolding");
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
-                 ("SWLFIdoSymbolicWithLoopFolding called for non-module"));
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 ("SWLFIdoSymbolicWithLoopFoldingOneFunction called for non-fundef"));
 
     TRAVpush (TR_swlfi);
     arg_node = TRAVdo (arg_node, NULL);
@@ -503,6 +505,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     node *idxavis;
 
     DBUG_ENTER ("attachIntersectCalc");
+
     DBUG_PRINT ("SWLFI", ("Inserting attachextrema computations"));
 
     /* Generate expressions for lower-bound intersection and
@@ -760,6 +763,7 @@ checkBothFoldable (node *arg_node, info *arg_info)
 node *
 SWLFIfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
 
     DBUG_ENTER ("SWLFIfundef");
 
@@ -769,16 +773,24 @@ SWLFIfundef (node *arg_node, info *arg_info)
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
 
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TRUE);
         arg_info = MakeInfo (arg_node);
+        old_onefundef = INFO_ONEFUNDEF (arg_info);
+        INFO_ONEFUNDEF (arg_info) = FALSE;
+
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TRUE);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
-
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+            /* If new vardecs were made, append them to the current set */
+            if (INFO_VARDECS (arg_info) != NULL) {
+                BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+                  = TCappendVardec (INFO_VARDECS (arg_info),
+                                    BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                INFO_VARDECS (arg_info) = NULL;
+            }
 
-            BLOCK_VARDEC (FUNDEF_BODY (arg_node)) = INFO_VARDECS (arg_info);
-            INFO_VARDECS (arg_info) = NULL;
+            INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
         arg_info = FreeInfo (arg_info);
@@ -786,8 +798,6 @@ SWLFIfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("SWLFI", ("Symbolic-With-Loop-Folding Inference in %s %s ends",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
-
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), NULL);
 

@@ -390,10 +390,17 @@ WLNCid (node *arg_node, info *arg_info)
                 incrementNeedcount (avis, arg_info);
             }
             break;
-        case F_idx_shape_sel: /* Don't count these */
+
+        case F_idx_shape_sel: /* Don't count these  */
         case F_shape_A:
         case F_saabind:
         case F_dim_A:
+        case F_non_neg_val_V:
+        case F_val_lt_shape_VxA:
+        case F_val_le_val_VxV:
+        case F_shape_matches_dim_VxA:
+        case F_afterguard:
+        case F_guard:
             break;
         default:
             break;

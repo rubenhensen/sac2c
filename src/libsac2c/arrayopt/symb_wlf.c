@@ -210,6 +210,7 @@ struct INFO {
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
+    bool onefundef;
 };
 
 /**
@@ -222,6 +223,7 @@ struct INFO {
 #define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo (node *fundef)
@@ -239,6 +241,7 @@ MakeInfo (node *fundef)
     INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -266,27 +269,27 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFdoSymbolicWithLoopFolding( node *fundef)
+ * @fn node *SWLFdoSymbolicWithLoopFoldingOneFunction( node *fundef)
  *
  * @brief global entry point of symbolic With-Loop folding
  *
- * @param fundef N_module to apply SWLF.
+ * @param N_fundef apply SWLF.
  *
- * @return optimized N_module
+ * @return optimized N_fundef
  *
  *****************************************************************************/
 node *
-SWLFdoSymbolicWithLoopFolding (node *arg_node)
+SWLFdoSymbolicWithLoopFoldingOneFunction (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SWLFdoSymbolicWithLoopFolding");
+    DBUG_ENTER ("SWLFdoSymbolicWithLoopFoldingOneFunction");
 
     arg_info = MakeInfo (NULL);
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_swlf);
-    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    arg_node = TRAVopt (arg_node, arg_info);
     TRAVpop ();
 
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
@@ -896,6 +899,7 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
 node *
 SWLFfundef (node *arg_node, info *arg_info)
 {
+    bool old_onefundef;
 
     DBUG_ENTER ("SWLFfundef");
 
@@ -909,6 +913,7 @@ SWLFfundef (node *arg_node, info *arg_info)
 
         arg_node = WLNCdoWLNeedCount (arg_node);
         arg_node = WLCCdoWLCostCheck (arg_node);
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /* If new vardecs were made, append them to the current set */
@@ -919,11 +924,14 @@ SWLFfundef (node *arg_node, info *arg_info)
             INFO_VARDECS (arg_info) = NULL;
         }
 
+        old_onefundef = INFO_ONEFUNDEF (arg_info);
+        INFO_ONEFUNDEF (arg_info) = FALSE;
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
         DBUG_PRINT ("SWLF", ("Symbolic With-Loop folding in %s %s ends",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                              FUNDEF_NAME (arg_node)));
-
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
     INFO_FUNDEF (arg_info) = NULL;
 
@@ -949,6 +957,7 @@ SWLFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFassign");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_assign"));
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     foldablefoldeepart = INFO_SWLFOLDABLEFOLDEEPART (arg_info);
     INFO_SWLFOLDABLEFOLDEEPART (arg_info) = NULL;
@@ -989,6 +998,7 @@ SWLFwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFwith");
 
+    DBUG_PRINT ("SWLF", ("Examining N_with"));
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_WL (arg_info) = arg_node;
@@ -1039,6 +1049,7 @@ SWLFcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFcode");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_code"));
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1056,6 +1067,7 @@ SWLFpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFpart");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_part"));
     INFO_PART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     INFO_PART (arg_info) = NULL;
@@ -1077,6 +1089,7 @@ SWLFids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFids");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_ids"));
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -1100,6 +1113,7 @@ SWLFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFprf");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_prf"));
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (isPrfArg1AttachIntersect (arg_node))) {
@@ -1129,6 +1143,7 @@ SWLFcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFcond");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_cond"));
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
     COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
@@ -1149,6 +1164,7 @@ SWLFfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFfuncond");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_funcond"));
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
     FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
@@ -1169,6 +1185,7 @@ SWLFwhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFwhile");
 
+    DBUG_PRINT ("SWLF", ("Traversing N_while"));
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
