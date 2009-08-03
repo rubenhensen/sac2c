@@ -603,13 +603,12 @@ isInGuards (prf prfun)
 {
     DBUG_ENTER ("isInGuards");
     DBUG_RETURN ((prfun == F_attachextrema) /* Attributes */
-                 || (prfun == F_attachintersect)
+                 || (prfun == F_attachextreman) || (prfun == F_attachintersect)
 
                  || (prfun == F_guard) /* Guards */
                  || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
                  || (prfun == F_shape_matches_dim_VxA) || (prfun == F_val_le_val_VxV));
 }
-
 /** <!--*******************************************************************-->
  *
  * @fn node *getInner( node *arg_node)
