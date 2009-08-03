@@ -17,17 +17,24 @@
  *   do-loop-invariant removal: assignments that depends only on constants and
  *   other loop-invariant expressions are itself loop invariant and can be
  *   moved up before the do loop.
- *   if we find an assignment in the loop body that is only referenced in the
+ *
+ *   If we find an assignment in the loop body that is only referenced in the
  *   else-conditional part of the loop, this assignment can be moved down
- *   behind the loop (if an assignment can be moved up and down at the same
- *   time it is moved up, because this let to fewer arguments/results).
- *   we have to analyse only one loop because one special fundef can contain
+ *   behind the loop. [I think the rationale here is that, because
+ *   the loop is recursive, an assignment in the ELSE part only affects
+ *   the state of affairs after the loop.]
+ *
+ *   If an assignment can be moved up and down at the same
+ *   time it is moved up, because this leads to fewer arguments/results.
+ *   We have to analyse only one loop because one special fundef can contain
  *   only one loop.
- *   to find the loop invariant args, SSAInferLoopInvariants() checks all
+ *
+ *   To find the loop invariant args, SSAInferLoopInvariants() checks all
  *   arg arguments that are used unchanged in the recursive loop function call.
- *   all loop invariant args arg marked as AVIS_SSALPINV(avis) == TRUE.
- *   this information is used in other optimization phases, too, e.g. constant
- *   propagation in SSACF, copy propagation in SSACSE, loop unrolling analysis
+ *   All loop-invariant args are marked as AVIS_SSALPINV(avis) == TRUE.
+ *
+ *   This information is used in other optimization phases, too, e.g. constant
+ *   folding in SSACF, copy propagation in SSACSE, loop-unrolling analysis
  *   in SSALUR.
  *
  *   example: do-loop invariant removal
@@ -52,9 +59,9 @@
  *   }                              }
  *
  *
- *   with-loop-invariant removal: assignments that depends only on expressions
- *   defined in outer level withloops we can move the assignment on the level
- *   with the minimal possible level.
+ *   With-loop-invariant removal: assignments that depends only on expressions
+ *   defined in outer level withloops can be moved to the level
+ *   with the minimal possible level:
  *
  *   c = 5;                    -->  c = 5;
  *   x = with(..iv1..) {            y = expr(5,c);
@@ -66,7 +73,7 @@
  *           } op(...);                     } op(...);
  *       } op(...);                     } op(...);
  *
- *   in the next optimization cycle the z = withloop will be moved out of the
+ *   In the next optimization cycle, the z = withloop will be moved out of the
  *   surrounding withloop:
  *                                  c = 5;
  *                                  y = expr(5,c);
@@ -78,15 +85,17 @@
  *                                      v = expr(c, iv1)
  *                                      } op(...);
  *
- * implementation notes:
- *   because loop invariant removal is a quite difficult task we need two
- *   traversals to implement it. in a first traversal we check expressions
- *   to be do-loop invariant and mark them, we also mark local identifiers,
- *   e.g. used in withloops. in this travseral we do the withloop independend
- *   removal, too. this is no problem, as we only can move up code in the
+ * Implementation notes:
+ *
+ *   Because loop invariant removal is a quite difficult task, we need two
+ *   traversals to implement it. A first traversal checks expressions
+ *   that are do-loop invariant and marks them; it also marks local identifiers,
+ *   e.g. used in withloops. In this traversal we do the withloop-independend
+ *   removal, too. This is no problem, as we only can move up code in the
  *   fundef itself, we need no vardec adjustment or other signature
  *   modifications.
- *   every assignment is tagged with the definition depth in stacked withloops.
+ *
+ *   Every assignment is tagged with its definition-depth in stacked withloops.
  *   if we get an expression that depends only on expressions with a smaller
  *   definition depth, we can move up the assignment in the context of the
  *   surrounding withloop with this depth. to do so, we add this assignments
@@ -94,33 +103,38 @@
  *   movement target level. when the withloop of one level has been processed
  *   all moved assignment are inserted in front of the withloop assignment.
  *   that is why we cannot move a withloop in the same step as other
- *   assignments because it can let to wrong code, when we move code together
+ *   assignments because it can lead to wrong code, when we move code together
  *   with the moved withloop do another level.
  *
  *   the do-loop-invariant marking allows three tags:
+ *
  *   move_up: an expression can be moved up in front of the do-loop, because it
  *               depends only on loop invariant expressions.
+ *
  *   move_down: an expression can be moved down behind the do-loop, because it
  *               is referenced only in the else part of the loop conditional.
+ *
  *   local: an expression is needed only in local usage, e.g. in withloops
  *
- *   on bottom up traversal we check, if all results of an assignment are
- *   marked for move-down, so we can move down the whole expression.
+ *   On bottom up traversal, we check if all results of an assignment are
+ *   marked for move-down. If so, we can move down the whole expression.
  *
  * Remark: because the concept of global objects cannot handle withloops
- *   correctly, assignments that define unique identifier are not moved
+ *   correctly, assignments that define unique identifiers are not moved
  *   at all. if this problem is fixed later you can set CREATE_UNIQUE_BY_HEAP
- *   to enable loop independent removal for unique identifier, too.
+ *   to enable loop-independent removal for unique identifiers, too.
  *
  *   in a second traversal (lirmov) the marked do-invariant expressions are
  *   moved in the surrounding fundef and the function signature is adjusted.
- *   we used DupTree() with a special LoopUpTable to do the code movement. in
+ *   we used DupTree() with a special LookUpTable to do the code movement. in
  *   the LUT we store pairs of internal/external vardec/avis/name to get the
  *   correct substitution when we copy the code.
+ *
  *   to have the correct replacements we need two LUTs, one for the general
  *   mapping between args and calling parameters and the moved local
  *   identifiers and a second one for the mapping between return expressions
  *   and results.
+ *
  *   the LUT is created freshly for each movement, because DupTree() modifies
  *   the LUT with additional entries. for move_up only the general LUT is
  *   needed but if we move down code we must update the entries of the general
@@ -473,6 +487,8 @@ CreateNewResult (node *avis, info *arg_info)
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
+    /* FIXME should set AVIS_DIM/SHAPE here */
+
     DBUG_VOID_RETURN;
 }
 
@@ -801,7 +817,7 @@ InsListGetFrame (nodelist *il, int depth)
  *
  * description:
  *   traverses fundef two times:
- *      first: infere expressions to move (and do WLIR in the local fundef)
+ *      first: infer expressions to move (and do WLIR in the local fundef)
  *     second: do the external code movement and fundef adjustment (lirmov_tab)
  *
  *****************************************************************************/
@@ -1032,7 +1048,7 @@ LIRblock (node *arg_node, info *arg_info)
  *   node* LIRassign(node *arg_node, info *arg_info)
  *
  * description:
- *   traverse assign instructions in top-down order to infere do LI-assignments,
+ *   traverse assign instructions in top-down order to infer do LI-assignments,
  *   mark move up expressions and do the WLIR movement on the bottom up
  *   return traversal.
  *
@@ -1072,7 +1088,7 @@ LIRassign (node *arg_node, info *arg_info)
     INFO_PREASSIGN (arg_info) = NULL;
 
     /*
-     * check for with loop independend expressions:
+     * check for with-loop-independent expressions:
      * if all used identifiers are defined on a outer level, we can move
      * up the whole assignment to this level. when moving a complete withloop
      * this can let to wrong programms if the withloop carries some preassign
@@ -1105,6 +1121,8 @@ LIRassign (node *arg_node, info *arg_info)
          */
         tmp = arg_node;
         arg_node = TBmakeAssign (NULL, ASSIGN_NEXT (arg_node));
+
+        /* FIXME : Should set AVIS_DIM/SHAPE AVIS_SSAASSIGN here !!*/
 
         DBUG_ASSERT ((remove_assign == FALSE), "wlur expression must not be removed");
 
@@ -1216,7 +1234,7 @@ LIRlet (node *arg_node, info *arg_info)
     }
 
     if (INFO_TOPBLOCK (arg_info)) {
-        /* in topblock mark let statement according to the infered data */
+        /* in topblock mark let statement according to the inferred data */
         if ((INFO_NONLIRUSE (arg_info) == 0)
             && (INFO_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND)
             && (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
@@ -1293,7 +1311,7 @@ LIRlet (node *arg_node, info *arg_info)
  *     creates a mapping between local vardec/avis/name and external result
  *     vardec/avis/name for later code movement with LUT. because we do not
  *     want this modification when we move up expressions, we cannot store
- *     these mapping in LUT directly. therefore we save the infered information
+ *     these mapping in LUT directly. therefore we save the inferred information
  *     in a nodelist RESULTMAP for later access on move_down operations.
  *
  *****************************************************************************/
