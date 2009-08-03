@@ -217,7 +217,14 @@ INFNCid (node *arg_node, info *arg_info)
             case F_shape_A:
             case F_saabind:
             case F_dim_A:
+            case F_non_neg_val_V:
+            case F_val_lt_shape_VxA:
+            case F_val_le_val_VxV:
+            case F_shape_matches_dim_VxA:
+            case F_afterguard:
+            case F_guard:
                 break;
+
             default:
                 AVIS_NEEDCOUNT (avis) += 1;
             }
