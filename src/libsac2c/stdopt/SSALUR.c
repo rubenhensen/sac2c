@@ -13,7 +13,7 @@
  *   so we have to deal only with the do loops.
  *   We also do the withloop unrolling by using the existing implementation
  *   in WLUnroll().
- *   If we can infere the number of loops and if this number is smaller than
+ *   If we can infer the number of loops and if this number is smaller than
  *   the specified maximum unrolling (maxlur and maxwlur parameter) we
  *   duplicate the code for this number of times.
  *
@@ -40,6 +40,7 @@
 #include "ctinfo.h"
 #include "SSAWLUnroll.h"
 #include "globals.h"
+#include "phase.h"
 
 /*
  * INFO structure and macros
@@ -1035,6 +1036,11 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
                             cond_assign);
     AVIS_SSAASSIGN (predavis) = predass;
 
+    if (isSAAMode ()) {
+        AVIS_DIM (predavis) = TBmakeNum (0);
+        AVIS_SHAPE (predavis) = TCmakeIntVector (NULL);
+    }
+
     COND_COND (ASSIGN_INSTR (cond_assign))
       = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
 
@@ -1095,6 +1101,8 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
         copy_assigns
           = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_chain), NULL), right_id),
                           copy_assigns);
+        AVIS_SSAASSIGN (arg_chain) = copy_assigns;
+
     } else {
         DBUG_ASSERT ((rec_chain == NULL),
                      "different chains of args and calling parameters");
