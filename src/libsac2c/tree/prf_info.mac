@@ -474,12 +474,12 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCnone, TEone, NULL, NULL),
 
   PRF (take_SxV, (PA_S, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_take_SxV, COtake,
-       COMPprfTake, NULL, SCCFprf_take_SxV, NULL, SAAdim_is_1, SAAshp_for_take, NULL, 0,
-       PPIgetPVTakeAndDrop, ICCvalMatchLen, TEone, NULL, NULL),
+       COMPprfTake, NULL, SCCFprf_take_SxV, SAACFprf_take_SxV, SAAdim_is_1,
+       SAAshp_for_take, NULL, 0, PPIgetPVTakeAndDrop, ICCvalMatchLen, TEone, NULL, NULL),
 
   PRF (drop_SxV, (PA_S, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_drop_SxV, COdrop,
-       COMPprfDrop, NULL, SCCFprf_drop_SxV, NULL, SAAdim_is_1, SAAshp_for_drop, NULL, 0,
-       PPIgetPVTakeAndDrop, ICCvalMatchLen, TEone, NULL, NULL),
+       COMPprfDrop, NULL, SCCFprf_drop_SxV, SAACFprf_drop_SxV, SAAdim_is_1,
+       SAAshp_for_drop, NULL, 0, PPIgetPVTakeAndDrop, ICCvalMatchLen, TEone, NULL, NULL),
 
 #endif /* PRF_INTERNAL_ONLY */
 
@@ -701,12 +701,12 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        SAACFprf_shape_matches_dim_VxA, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL,
-       COMPprfNonNegVal, SCSprf_non_neg_val_V, NULL, NULL, SAAdim_cc_inherit,
-       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+       COMPprfNonNegVal, SCSprf_non_neg_val_V, NULL, SAACFprf_non_neg_val_V,
+       SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_lt_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape, NULL,
-       COMPprfValLtShape, SCSprf_val_lt_shape_VxA, NULL, NULL, SAAdim_cc_inherit,
-       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+       COMPprfValLtShape, SCSprf_val_lt_shape_VxA, NULL, SAACFprf_val_lt_shape_VxA,
+       SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_le_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
        COMPprfValLeVal, SCSprf_val_le_val_VxV, NULL, NULL, SAAdim_cc_inherit,
