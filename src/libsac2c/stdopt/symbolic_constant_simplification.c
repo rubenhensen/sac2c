@@ -1368,7 +1368,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_val_lt_shape_VxA");
 
-    pat = PMprf (1, PMAisPrf (F_val_lt_shape_VxA), 1, PMconst (1, PMAgetVal (&ivc)),
+    pat = PMprf (1, PMAisPrf (F_val_lt_shape_VxA), 2, PMconst (1, PMAgetVal (&ivc)),
                  PMvar (1, PMAgetNode (&arr), 0));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node)) {
@@ -1378,7 +1378,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
         if (TUdimKnown (arrtype)) {
             arrshp = TYgetShape (arrtype);
             arrc = COmakeConstantFromShape (arrshp);
-            if (COlt (ivc, arrc)) {
+            if ((COgetExtent (ivc, 0) == COgetExtent (arrc, 0)) && COlt (ivc, arrc)) {
                 res = TBmakeExprs (DUPdoDupTree (iv),
                                    TBmakeExprs (TBmakeBool (TRUE), NULL));
                 DBUG_PRINT ("SCS", ("SCSprf_val_lt_shape_VxA removed guard( %s, %s)",
@@ -1401,8 +1401,27 @@ node *
 SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    constant *con1 = NULL;
+    constant *con2 = NULL;
+    pattern *pat;
 
     DBUG_ENTER ("SCSprf_val_le_val_VxV");
+
+    pat = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMconst (1, PMAgetVal (&con1)),
+                 PMconst (1, PMAgetVal (&con2), 0));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)
+        && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && COle (con1, con2)) {
+        res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("SCS", ("SCSprf_val_le_val_VxV removed guard( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+    }
+    pat = PMfree (pat);
+    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+
     DBUG_RETURN (res);
 }
 /** <!--********************************************************************-->
