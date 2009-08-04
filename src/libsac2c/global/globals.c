@@ -41,6 +41,8 @@
 #include "symbolic_constant_simplification.h"
 #include "structural_constant_constant_folding.h"
 #include "saa_constant_folding.h"
+#include "ctinfo.h"
+
 #include <limits.h>
 
 /*
@@ -533,6 +535,28 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 
     global.tool = tool;
     global.toolname = toolname;
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ * Initialize global variables from resource file entries
+ */
+
+void
+GLOBsetupBackend (void)
+{
+    DBUG_ENTER ("GLOBsetupBackend");
+
+    if (STReq (global.config.backend, "C99")) {
+        global.backend = BE_c99;
+    } else if (STReq (global.config.backend, "muTC")) {
+        global.backend = BE_mutc;
+    } else if (STReq (global.config.backend, "Cuda")) {
+        global.backend = BE_cuda;
+    } else {
+        CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
+    }
 
     DBUG_VOID_RETURN;
 }

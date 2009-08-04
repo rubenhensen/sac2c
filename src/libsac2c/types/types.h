@@ -634,6 +634,9 @@ typedef struct {
     char *ldflags;
     char *cclink;
     char *ccmtlink;
+
+    char *backend;
+
     char *opt_O0;
     char *opt_O1;
     char *opt_O2;

@@ -74,7 +74,7 @@
  *
  *  If you want to add any configurable resources, simply extend this table
  *  and the type definition of configuration_t which can be found in the file
- *  resource.h
+ *  types.h
  *
  *  Make sure that the last resource in the table is always the dummy "".
  *
@@ -92,6 +92,9 @@ static struct {
   {"LDFLAGS", str, &global.config.ldflags},
   {"CCLINK", str, &global.config.cclink},
   {"CCMTLINK", str, &global.config.ccmtlink},
+
+  {"BACKEND", str, &global.config.backend},
+
   {"OPT_O0", str, &global.config.opt_O0},
   {"OPT_O1", str, &global.config.opt_O1},
   {"OPT_O2", str, &global.config.opt_O2},

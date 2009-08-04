@@ -899,19 +899,20 @@ PrintCustomisationOptions (void)
       "\n\nCUSTOMIZATION OPTIONS:\n\n"
 
       "    -target <name>  Specify a particular compilation target.\n"
-      "                    Compilation targets are used to customize sac2c for\n"
+      "    -t <name>       Compilation targets are used to customize sac2c for\n"
       "                    various target architectures, operating systems, and C\n"
       "                    compilers.\n"
+      "\n"
       "                    The target description is either read from the\n"
       "                    installation specific file $SACBASE/runtime/sac2crc or\n"
       "                    from a file named .sac2crc within the user's home\n"
       "                    directory.\n"
       "\n"
-      "    -B <name>       Selects one of the different backends to use. Currently \n"
-      "                    sac2c supports the following backends: \n"
+      "                    Standard targets include the choice of a compiler backend:\n"
       "\n"
-      "                      c99       default backend that produces c99 code\n"
-      "                      mutc      backend for the mutc extension to C\n");
+      "                      c99       default backend to produce C99 code\n"
+      "                      mutc      backend to produce muTC code\n"
+      "                      cuda      backend to produce Cuda code\n");
 
     DBUG_VOID_RETURN;
 }

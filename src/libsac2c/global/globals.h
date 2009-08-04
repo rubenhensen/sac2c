@@ -38,5 +38,6 @@ extern FILE *yyin;
 extern global_t global;
 
 extern void GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname);
+extern void GLOBsetupBackend (void);
 
 #endif /* _SAC_GLOBALS_H_ */

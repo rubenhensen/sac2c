@@ -226,6 +226,8 @@ CCDIR            :=  "-I$SAC2CBASE/include/ "
 LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
+
+BACKEND          :=  "C99"
  
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
@@ -426,6 +428,48 @@ CCMTLINK        +=  "-lmtmalloc"
 target gnumalloc:
 
 CCMTLINK        +=  "-lglib"
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *******************************************************************************
+ ***
+ ***  TARGETS  for Alternate sac2c Compiler Backends
+ ***
+ ***/
+
+
+/*******************************************************************************
+ *
+ * Target cuda: use the CUDA backend of sac2c
+ *
+ */
+
+target c99:
+
+BACKEND         :=  "C99"
+
+
+/*******************************************************************************
+ *
+ * Target cuda: use the CUDA backend of sac2c
+ *
+ */
+
+target cuda:
+
+BACKEND         :=  "Cuda"
+
+
+/*******************************************************************************
+ *
+ * Target mutc: use the MUTC backend of sac2c
+ *
+ */
+
+target mutc:
+
+BACKEND         :=  "muTC"
 
 
  
