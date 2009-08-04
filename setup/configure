@@ -5362,7 +5362,7 @@ esac
 
 
 cat >>confdefs.h <<\_ACEOF
-#define MAX_PATH_LEN 1024
+#define MAX_PATH_LEN 10000
 _ACEOF
 
 

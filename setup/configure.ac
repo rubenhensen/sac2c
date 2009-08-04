@@ -497,7 +497,7 @@ dnl
 dnl static sac2c settings for config.h
 dnl
 
-AC_DEFINE( MAX_PATH_LEN, 1024, [set to maximum path length])
+AC_DEFINE( MAX_PATH_LEN, 10000, [set to maximum path length])
 AC_DEFINE( MAX_FILE_NAME, 256, [set to maximum file name length])
 AC_DEFINE( PF_MAXFUN, 100, [set to maximum number of sac functions for profiling])
 AC_DEFINE( PF_MAXFUNAP, 100, 
