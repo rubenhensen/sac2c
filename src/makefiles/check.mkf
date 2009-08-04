@@ -72,9 +72,9 @@ checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 	@ exit 1
 
 $(PROJECT_ROOT)/.revision.txt:
-	$(HIDE) if which svn > /dev/null ;  \
-                then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
-                else if [ ! -f $@ ] ; \
-                     then echo "???" > $@ ; \
-                     fi ; \
-                fi
+	@ if which svn > /dev/null ;  \
+          then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
+          else if [ ! -f $@ ] ; \
+                 then echo "???" > $@ ; \
+               fi ; \
+          fi
