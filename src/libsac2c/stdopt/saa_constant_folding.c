@@ -214,8 +214,12 @@ SAACFprf_shape (node *arg_node, info *arg_info)
     pattern *pat2;
 
     DBUG_ENTER ("SAACFprf_shape");
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SAACF_shape_ expected N_id node");
+
+#ifdef FIXME2 // stdlib crash?
+    nope
+
+      DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
+                   "SAACF_shape_ expected N_id node");
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != shp) {
         /* Case 1 */
@@ -241,6 +245,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
             }
         }
 
+#endif // FIXME2 // stdlib crash?
         DBUG_RETURN (res);
     }
 
@@ -319,6 +324,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
 
         DBUG_ENTER ("SAACFprf_take_SxV");
 
+#ifdef FIXME // stdlib crash?
         patarg1 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0),
                          PMskip (0));
 
@@ -335,6 +341,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
         patarg1 = PMfree (patarg1);
         patarg2 = PMfree (patarg2);
 
+#endif // FIXME // stdlib crash?
         DBUG_RETURN (res);
     }
 
@@ -371,6 +378,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
 
         DBUG_ENTER ("SAACFprf_drop_SxV");
 
+#ifdef FIXME // stdlib crash?
         pat1 = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0),
                       PMskip (0));
 
@@ -401,6 +409,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
         pat2 = PMfree (pat2);
         patarg2 = PMfree (patarg2);
 
+#endif //  FIXME // stdlib crash?
         DBUG_RETURN (res);
     }
 
