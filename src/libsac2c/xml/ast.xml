@@ -241,14 +241,15 @@
         <travuser>
           <node name="Fundef" />
           <node name="Block" />
+          <node name="Vardec" />
           <node name="Funcond" />
           <node name="Cond" />
           <node name="While" />
           <node name="Assign" />
           <node name="Let" />
+          <node name="Prf" />
           <node name="With" />
           <node name="Part" />
-          <node name="Avis" />
           <node name="Ap" />
         </travuser>
       </traversal> 
@@ -5603,7 +5604,7 @@ N_structdef :
           identifier (N_id) for AUD arrays.
           </description>
           <targets>
-            <target mandatory="no">
+            <target mandatory="yes">
               <set name="Expr" />
               <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
@@ -5622,7 +5623,7 @@ N_structdef :
 	  identifier (N_id) for AUD and some AKD arrays.
           </description>
           <targets>
-            <target mandatory="no">
+            <target mandatory="yes">
               <set name="Expr" />
               <phases>
                 <range from="opt_isaa1" to="opt_esaa1" />
