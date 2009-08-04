@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "prepare_inlining.h"
 #include "ctinfo.h"
+#include "DupTree.h"
 
 #include "lacinlining.h"
 
@@ -152,9 +153,17 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
                                              TBmakeId (newavis)),
                                   FUNDEF_INSTR (fundef));
+                AVIS_SSAASSIGN (newavis) = FUNDEF_INSTR (fundef);
 
                 FUNDEF_VARDEC (fundef)
                   = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
+                if (NULL != AVIS_DIM (ARG_AVIS (form_arg))) {
+                    AVIS_DIM (newavis) = DUPdoDupTree (AVIS_DIM (ARG_AVIS (form_arg)));
+                }
+                if (NULL != AVIS_SHAPE (ARG_AVIS (form_arg))) {
+                    AVIS_SHAPE (newavis)
+                      = DUPdoDupTree (AVIS_SHAPE (ARG_AVIS (form_arg)));
+                }
 
                 ARG_AVIS (form_arg) = newavis;
             } else {
@@ -174,12 +183,18 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                                                          TBmakeType (TYcopyType (ftype)),
                                                          TBmakeId (newavis))),
                                   FUNDEF_INSTR (fundef));
+                AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
 
                 FUNDEF_VARDEC (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDEC (fundef));
 
-                ARG_AVIS (form_arg) = newavis;
+                if (NULL != AVIS_DIM (oldavis)) {
+                    AVIS_DIM (newavis) = DUPdoDupTree (AVIS_DIM (oldavis));
+                }
+                if (NULL != AVIS_SHAPE (oldavis)) {
+                    AVIS_SHAPE (newavis) = DUPdoDupTree (AVIS_SHAPE (oldavis));
+                }
 
-                AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
+                ARG_AVIS (form_arg) = newavis;
             }
         }
 

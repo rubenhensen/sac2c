@@ -1469,10 +1469,18 @@ SSATids (node *arg_node, info *arg_info)
 
     AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
 
+#ifdef FIXME
+    /* The following breaks unit test SCSprf_sub.sac, because
+     * AVIS_SHAPE refers to a variable that is not yet traversed itself.
+     *
+     * I am not sure of the proper fix...
+     *
+     */
     AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+#endif // FIXME
 
-    /* traverese next ids */
+    /* traverse next ids */
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
