@@ -1227,8 +1227,8 @@ LIRlet (node *arg_node, info *arg_info)
      */
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
-        node *avis = IDS_AVIS (ids);
 #ifdef FIXME
+        node *avis = IDS_AVIS (ids);
 
     The following breaks unit test SCSprf_sub.sac (and many others)
     if AVIS_DIM/SHAPE are actually present. Disable for now, which
