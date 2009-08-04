@@ -125,6 +125,7 @@
 #include "globals.h"
 #include "pattern_match.h"
 #include "check.h"
+#include "phase.h"
 
 /**
  * INFO structure
@@ -243,6 +244,11 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
                                                  DUPdoDupNode (EXPRS_EXPR (lb_exprs)))),
                           INFO_PREASSIGN (arg_info));
         AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
+
+        if (isSAAMode ()) {
+            AVIS_DIM (diffavis) = TBmakeNum (0);
+            AVIS_SHAPE (diffavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
+        }
 
         exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (diffavis), NULL));
 
@@ -364,7 +370,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSIMPdoWithloopSimplification( node *fundef)
+ * @fn node *WLSIMPdoWithloopSimplificationOneFunction( node *fundef)
  *
  * @brief
  *
@@ -372,11 +378,11 @@ CheckZeroTrip (node *lb, node *ub, node *width)
  *
  *****************************************************************************/
 node *
-WLSIMPdoWithloopSimplification (node *fundef)
+WLSIMPdoWithloopSimplificationOneFunction (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("WLSIMPdoWithloopSimplification");
+    DBUG_ENTER ("WLSIMPdoWithloopSimplificationOneFunction");
 
     info = MakeInfo ();
 
@@ -563,6 +569,7 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
 {
     node *lhs, *empty;
     ntype *lhstype;
+    int shp;
 
     DBUG_ENTER ("WLSIMPgenarray");
 
@@ -575,6 +582,14 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
     INFO_PREASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), empty), INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
+
+    if (isSAAMode ()) {
+        shp = SHgetUnrLen (TYgetShape (lhstype));
+        AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
+        AVIS_SHAPE (IDS_AVIS (lhs))
+          = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+    }
+
     INFO_REPLACE (arg_info) = TRUE;
 
     DBUG_ASSERT (TUshapeKnown (lhstype),
@@ -601,6 +616,7 @@ node *
 WLSIMPmodarray (node *arg_node, info *arg_info)
 {
     node *lhs;
+    int shp;
 
     DBUG_ENTER ("WLSIMPmodarray");
 
@@ -611,6 +627,14 @@ WLSIMPmodarray (node *arg_node, info *arg_info)
                                  DUPdoDupNode (MODARRAY_ARRAY (arg_node))),
                       INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
+
+    if (isSAAMode ()) {
+        shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
+        AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
+        AVIS_SHAPE (IDS_AVIS (lhs))
+          = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+    }
+
     INFO_REPLACE (arg_info) = TRUE;
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
@@ -634,15 +658,30 @@ WLSIMPmodarray (node *arg_node, info *arg_info)
 node *
 WLSIMPfold (node *arg_node, info *arg_info)
 {
+    node *lhs;
+
     DBUG_ENTER ("WLSIMPfold");
 
     DBUG_PRINT ("WLSIMP", ("transforming N_fold"));
+    lhs = INFO_LHS (arg_info);
 
     INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
+      = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs),
                                  DUPdoDupNode (FOLD_NEUTRAL (arg_node))),
                       INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+
+#ifdef FIXME // I have no idea of dim/shape here */
+    int shp;
+
+    if (isSAAMode ()) {
+        shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
+        AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
+        AVIS_SHAPE (IDS_AVIS (lhs))
+          = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+    }
+#endif // FIXME // I have no idea what to do here */
+
     INFO_REPLACE (arg_info) = TRUE;
 
     if (FOLD_NEXT (arg_node) != NULL) {
@@ -693,6 +732,15 @@ WLSIMPpropagate (node *arg_node, info *arg_info)
     DBUG_ASSERT (IDS_NEXT (LET_IDS (ASSIGN_INSTR (INFO_PREASSIGN (arg_info)))) == NULL,
                  " DUPdoDupNode should not copy the IDS_NEXT!");
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
+
+#ifdef FIXME // I have no idea of dim/shape here */
+    if (isSAAMode ()) {
+        shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
+        AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
+        AVIS_SHAPE (IDS_AVIS (lhs))
+          = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
+    }
+#endif // FIXME // I have no idea what to do here */
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));

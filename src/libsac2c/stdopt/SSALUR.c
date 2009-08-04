@@ -1101,7 +1101,7 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
         copy_assigns
           = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_chain), NULL), right_id),
                           copy_assigns);
-        AVIS_SSAASSIGN (arg_chain) = copy_assigns;
+        AVIS_SSAASSIGN (ARG_AVIS (arg_chain)) = copy_assigns;
 
     } else {
         DBUG_ASSERT ((rec_chain == NULL),

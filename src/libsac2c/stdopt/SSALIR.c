@@ -1228,9 +1228,16 @@ LIRlet (node *arg_node, info *arg_info)
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
         node *avis = IDS_AVIS (ids);
-        AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
-        AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
-        ids = IDS_NEXT (ids);
+#ifdef FIXME
+
+    The following breaks unit test SCSprf_sub.sac (and many others)
+    if AVIS_DIM/SHAPE are actually present. Disable for now, which
+    will likely cause other sorts of problems...
+
+    AVIS_DIM( avis) = TRAVopt( AVIS_DIM( avis), arg_info);
+    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+#endif // FIXME
+    ids = IDS_NEXT (ids);
     }
 
     if (INFO_TOPBLOCK (arg_info)) {
