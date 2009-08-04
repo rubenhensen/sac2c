@@ -848,9 +848,10 @@ COconstant2AST (constant *a)
  *    converts a given node from the AST to a constant.
  *    return NULL if n is not a simple constant.
  *
- *    this funtion can deal with scalar types like
+ *    this function can deal with scalar types like
  *      N_num, N_double, N_float, N_bool
  *    arrays (N_array)
+ *    avis ( N_avis with akv type)
  *    and identifier (N_id with akv type)
  *
  ******************************************************************************/
@@ -909,8 +910,12 @@ COaST2Constant (node *n)
             break;
 
         case N_id:
-            if (TYisAKV (AVIS_TYPE (ID_AVIS (n)))) {
-                new_co = COcopyConstant (TYgetValue (AVIS_TYPE (ID_AVIS (n))));
+            n = ID_AVIS (n);
+            /* break intentionally omitted */
+
+        case N_avis:
+            if (TYisAKV (AVIS_TYPE (n))) {
+                new_co = COcopyConstant (TYgetValue (AVIS_TYPE (n)));
             } else {
                 new_co = NULL;
             }
@@ -939,6 +944,7 @@ COaST2Constant (node *n)
  *    this funtion can deal with scalar types like
  *      N_num, N_double, N_float, N_bool, N_char
  *    arrays (N_array)
+ *    avis nodes ( N_avis)
  *    and identifier (N_id with akv type)
  *
  ******************************************************************************/
@@ -968,7 +974,11 @@ COisConstant (node *n)
             break;
 
         case N_id:
-            res = (TYisAKV (AVIS_TYPE (ID_AVIS (n))));
+            n = ID_AVIS (n);
+            /* break omission is intentional */
+
+        case N_avis:
+            res = (TYisAKV (AVIS_TYPE (n)));
             break;
 
         default:
