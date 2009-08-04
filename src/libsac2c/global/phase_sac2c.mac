@@ -342,17 +342,6 @@ CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
 CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
                global.optimize.doswlf, opt, cyc)
 
-/* swlf does no good here any more; I am leaving this here
- * for the nonce, for future reference, though,
- * in case we are able to merge saacyc and cyc again.
- *
- *CYCLEPHASEFUN( swlf,
- *            "Applying symbolic with-loop folding",
- *            SWLFdoSymbolicWithLoopFolding,
- *            global.optimize.doswlf,
- *            opt, cyc)
- */
-
 CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
                global.optimize.doswlf, opt, cyc)
 
@@ -448,8 +437,6 @@ CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, s
 
 ENDCYCLE (scyc)
 
-SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
-
 /*************************************************/
 
 SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
@@ -482,366 +469,331 @@ SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
 
 CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaa, opt, RESET)
 
-CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
-            global.optimize.doprfunr, opt, saacyc)
+FUNBEGIN (saacyc, opt, saacyc)
 
-CYCLEPHASE (tup, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup, opt,
-            saacyc)
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
 
-CYCLEPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
-            global.optimize.dotup, opt, saacyc)
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup,
+               opt, saacyc)
 
-CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
-            global.optimize.dotup, opt, saacyc)
+CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
+               global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
-            opt, saacyc)
+CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
+               global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASE (cse, "Eliminating common subexpressions",
-            CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt, saacyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
+               global.optimize.docf, opt, saacyc)
 
-CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
-            global.optimize.docvp, opt, saacyc)
+CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+
+CYCLEPHASEFUN (ili, "Inferring loop invariant variables", ILIdoInferLoopInvariants,
+               ALWAYS, opt, saacyc)
+
+CYCLEPHASEFUN (cvp, "Propagating constants and variables",
+               CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, saacyc)
 
 /* This placement was completely arbitrary, so there may be a
- * better home for as2, al2, dl2 */
+ * better home for as, al, dl */
 
-CYCLEPHASE (esd2, "Eliminating subtraction and division operators", ESDdoElimSubDivModule,
-            global.optimize.dosde
-              && (global.optimize.doas || global.optimize.doal || global.optimize.dodl),
-            opt, saacyc)
+/* 2009-07-26 - FIXME. WLUR crashes CF unit test SCCFprf_modarray5.sac
+ * (and many others). Temporarily disabled for now.
+ */
+CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
+               NEVER &&global.optimize.dowlur, opt, saacyc)
+/* 2009-07-26 - FIXME. WLUR crashes CF unit test SCCFprf_modarray5.sac
+ * (and many others). Temporarily disabled for now.
+ */
+CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
+               SSATdoTransformOneFunction, global.optimize.dowlur, opt, saacyc)
 
-CYCLEPHASE (as2, "Arithmetic Simplification", ASdoArithmeticSimplificationModule,
-            global.optimize.doas, opt, saacyc)
+CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
+               global.optimize.dosde
+                 && (global.optimize.doas || global.optimize.doal
+                     || global.optimize.dodl),
+               opt, saacyc)
 
-CYCLEPHASE (al2, "Applying associative law", ALdoAssocLawOptimizationModule,
-            global.optimize.doal, opt, saacyc)
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, saacyc)
 
-CYCLEPHASE (dl2, "Applying distributive law", DLdoDistribLawOptimizationModule,
-            global.optimize.dodl, opt, saacyc)
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
+               global.optimize.doal, opt, saacyc)
 
-CYCLEPHASE (uesd2, "Reintroducing subtraction and division operators",
-            UESDdoUndoElimSubDivModule,
-            global.optimize.dosde
-              && (global.optimize.doas || global.optimize.doal || global.optimize.dodl),
-            opt, saacyc)
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,
+               global.optimize.dodl, opt, saacyc)
 
-CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
-            global.optimize.dowlpg, opt, saacyc)
+CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
+               UESDdoUndoElimSubDiv,
+               global.optimize.dosde
+                 && (global.optimize.doas || global.optimize.doal
+                     || global.optimize.dodl),
+               opt, saacyc)
 
-CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
-            global.optimize.dowlsimp, opt, saacyc)
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, saacyc)
 
-CYCLEPHASE (wls2, "Applying with-loop scalarization", WLSdoWithloopScalarization,
-            global.optimize.dowls, opt, saacyc)
+/* 2009-07-26 - FIXME. LIR crashes CF unit test SCCFprf_modarray5.sac
+ * (and many others). Temporarily disabled for now.
+ */
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
+               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
 
-CYCLEPHASE (ivexp, "Propagating index vector extrema",
-            IVEXPdoIndexVectorExtremaPropModule, global.optimize.doswlf, opt, saacyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
+               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
 
-CYCLEPHASE (swlfi, "Inferring symbolically foldable with-loops",
-            SWLFIdoSymbolicWithLoopFolding, global.optimize.doswlf, opt, saacyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, saacyc)
 
-CYCLEPHASE (swlf, "Applying symbolic with-loop folding", SWLFdoSymbolicWithLoopFolding,
-            global.optimize.doswlf, opt, saacyc)
+CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
+               global.optimize.dowls, opt, saacyc)
 
-#ifdef CRUD
-this kills sacprelude generation.CYCLEPHASE (wlur, "Applying withloop unrolling",
-                                             WLURdoWithloopUnrolling,
-                                             global.optimize.dowlur, opt, saacyc)
+CYCLEPHASEFUN (ivexp, "Propagating index vector extrema",
+               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doswlf, opt,
+               saacyc)
 
-  CYCLEPHASE (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
-              global.optimize.dowlur, opt, saacyc)
+CYCLEPHASEFUN (swlfi, "Inferring symbolically foldable with-loops",
+               SWLFIdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+               saacyc)
 
-#endif // CRUD
+CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding",
+               SWLFdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+               saacyc)
 
-    CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
-                global.optimize.dodcr, opt, saacyc)
+CYCLEPHASEFUN (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
+               global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
 
-      ENDCYCLE (saacyc)
+CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
+               global.optimize.dodcr, opt, saacyc)
 
-  /*************************************************/
+FUNEND (saacyc)
 
-  SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheck, ALWAYS, opt)
+ENDCYCLE (saacyc)
 
-    SUBPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes, ALWAYS, opt)
+/*************************************************/
 
-      SUBPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes, ALWAYS, opt)
+SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
-        SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion,
-                  global.optimize.dowlfs, opt)
+SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheck, ALWAYS, opt)
 
-          SUBPHASE (wlfscse, "Eliminating common subexpressions after fusion",
-                    CSEdoCommonSubexpressionEliminationModule,
-                    global.optimize.dowlfs &&global.optimize.docse, opt)
+SUBPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes, ALWAYS, opt)
 
-            SUBPHASE (wlfsdcr, "Removing dead code after fusion",
-                      DCRdoDeadCodeRemovalModule,
-                      global.optimize.dowlfs &&global.optimize.dodcr, opt)
+SUBPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes, ALWAYS, opt)
 
-  /*
-   * !!! If they should ever work again, WLAA, TSI, and AP must run here
-   */
+SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion, global.optimize.dowlfs,
+          opt)
 
-  SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
-            ALWAYS,
-            /*
-             * Another MANDATORY run of WLPG. This is necessary to prevent AKSIV
-             * with-loops to arrive at wltransform
-             */
-            opt)
+SUBPHASE (wlfscse, "Eliminating common subexpressions after fusion",
+          CSEdoCommonSubexpressionEliminationModule,
+          global.optimize.dowlfs &&global.optimize.docse, opt)
 
-    SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
-              WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
+SUBPHASE (wlfsdcr, "Removing dead code after fusion", DCRdoDeadCodeRemovalModule,
+          global.optimize.dowlfs &&global.optimize.dodcr, opt)
 
-      SUBPHASE (wlidx, "Annoting offset variable at with-loops",
-                WLIDXdoAnnotateWithloopIdxs, ALWAYS, opt)
+/*
+ * !!! If they should ever work again, WLAA, TSI, and AP must run here
+ */
 
-        SUBPHASE (ivexc, "Cleaning up index vector extrema",
-                  IVEXCdoIndexVectorExtremaCleanup, global.optimize.doswlf, opt)
+SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+          ALWAYS,
+          /*
+           * Another MANDATORY run of WLPG. This is necessary to prevent AKSIV
+           * with-loops to arrive at wltransform
+           */
+          opt)
 
-          SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
-                    SCCdoStripConformityChecks,
-                    global.doivext || global.optimize.doswlf
-                      || global.insertconformitychecks,
-                    opt)
+SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
+          WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
 
-            SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
-                      IVESPLITdoSplitSelections, global.optimize.doive, opt)
+SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithloopIdxs,
+          ALWAYS, opt)
 
-              SUBPHASE (ivecvp, "Propagating constants and variables (for IVE)",
-                        CVPdoConstVarPropagation,
-                        global.optimize.doive &&global.optimize.docvp, opt)
+SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
+          global.optimize.doswlf, opt)
 
-                SUBPHASE (iveras,
-                          "Eliminating index vectors (reuse WL-offsets and scalarize)",
-                          IVERASdoWithloopReuseAndOptimisation, global.optimize.doive,
-                          opt)
+SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
+          SCCdoStripConformityChecks,
+          global.doivext || global.optimize.doswlf || global.insertconformitychecks, opt)
 
-                  SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
-                            WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
+SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
+          IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
-                    SUBPHASE (esaa2, "Eliminating symbolic array attributes",
-                              ESVdoEliminateShapeVariables, global.optimize.dosaa, opt)
+SUBPHASE (ivecvp, "Propagating constants and variables (for IVE)",
+          CVPdoConstVarPropagation, global.optimize.doive &&global.optimize.docvp, opt)
 
-                      SUBPHASE (lir3, "Applying loop invariant removal",
-                                LIRdoLoopInvariantRemoval,
-                                (global.optimize.dosaa || global.optimize.doive)
-                                  && global.optimize.dolir,
-                                opt)
+SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
+          IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
 
-                        SUBPHASE (ussai, "Undo SSAIV Transform",
-                                  USSAIdoUndoSSAivTransform, global.ssaiv, opt)
+SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
+          WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
 
-                          SUBPHASE (cse2, "Eliminating common subexpression",
-                                    CSEdoCommonSubexpressionEliminationModule,
-                                    global.optimize.docse, opt)
+SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
+          global.optimize.dosaa, opt)
 
-                            SUBPHASE (dcr3, "Removing dead code",
-                                      DCRdoDeadCodeRemovalModule,
-                                      (global.optimize.dosaa || global.optimize.doive
-                                       || !global.runtimecheck.conformity)
-                                        && global.optimize.dodcr,
-                                      opt)
+SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
+          (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
-                              SUBPHASE (wllom, "Withloop lock optimization marking",
-                                        WLLOMdoLockOptimizationMarking,
-                                        global.optimize.dowllo, opt)
+SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
-                                SUBPHASE (wllos, "Withloop lock optimization shifting",
-                                          WLLOSdoLockOptimizationShifting,
-                                          global.optimize.dowllo, opt)
+SUBPHASE (cse2, "Eliminating common subexpression",
+          CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt)
 
-                                  SUBPHASE (fdi, "Freeing dispatch information",
-                                            FDIdoFreeDispatchInformation, ALWAYS, opt)
+SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
+          (global.optimize.dosaa || global.optimize.doive
+           || !global.runtimecheck.conformity)
+            && global.optimize.dodcr,
+          opt)
 
-                                    SUBPHASE (pfap, "Profiling function applications",
-                                              PFdoProfileFunCalls, global.doprofile, opt)
+SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMarking,
+          global.optimize.dowllo, opt)
 
-                                      SUBPHASE (stat,
-                                                "Displaying optimisation statistics",
-                                                STATdoPrintStatistics,
-                                                global.verbose_level >= 3, opt)
+SUBPHASE (wllos, "Withloop lock optimization shifting", WLLOSdoLockOptimizationShifting,
+          global.optimize.dowllo, opt)
 
-                                        ENDPHASE (opt)
+SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-  /******************************************************************************/
+SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
+          opt)
 
-  PHASE (wlt, "Transforming with-loop representation", ALWAYS)
+SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
+          global.verbose_level >= 3, opt)
 
-    SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
+ENDPHASE (opt)
 
-      SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt)
+/******************************************************************************/
 
-        SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
+PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
-          SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform,
-                    global.backend != BE_cuda, wlt)
+SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
 
-            SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS,
-                      wlt)
+SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt)
 
-              SUBPHASE (ssa, "Establishing static single assignment form",
-                        SSATdoTransform, ALWAYS, wlt)
+SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
 
-                SUBPHASE (wlsd, "Splitting withloops by dimensions",
-                          WLSDdoWithLoopSplitDimensions, global.backend == BE_mutc, wlt)
+SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform,
+          global.backend != BE_cuda, wlt)
 
-                  SUBPHASE (rw3, "Remove With3s", RW3doRemoveWith3,
-                            global.backend == BE_mutc && global.optimize.dorw3, wlt)
+SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
 
-                    SUBPHASE (cvp, "Propagating constants and variables",
-                              CVPdoConstVarPropagation, global.optimize.docvp, wlt)
+SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, wlt)
 
-                      SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
-                                global.optimize.dodcr, wlt)
+SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
+          global.backend == BE_mutc, wlt)
 
-                        SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
-                                  global.backend == BE_cuda, wlt)
+SUBPHASE (rw3, "Remove With3s", RW3doRemoveWith3,
+          global.backend == BE_mutc && global.optimize.dorw3, wlt)
 
-                          SUBPHASE (cutycv, "CUDA type conversion",
-                                    CUTYCVdoCUDAtypeConversion, global.backend == BE_cuda,
-                                    wlt)
+SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
+          global.optimize.docvp, wlt)
 
-                            ENDPHASE (wlt)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
+          wlt)
+
+SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
+          global.backend == BE_cuda, wlt)
+
+SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
+          global.backend == BE_cuda, wlt)
+
+ENDPHASE (wlt)
 
 /******************************************************************************/
 
 #ifndef PRODUCTION
 
-                              PHASE (mt3, "Running 3rd generation multithreading", NEVER)
+PHASE (mt3, "Running 3rd generation multithreading", NEVER)
 
-                                SUBPHASE (tem, "Tagging execution modes",
-                                          TEMdoTagExecutionmode, ALWAYS, mt3)
+SUBPHASE (tem, "Tagging execution modes", TEMdoTagExecutionmode, ALWAYS, mt3)
 
-                                  SUBPHASE (crwiw, "Creating with in with",
-                                            CRWIWdoCreateWithinwith, ALWAYS, mt3)
+SUBPHASE (crwiw, "Creating with in with", CRWIWdoCreateWithinwith, ALWAYS, mt3)
 
-                                    SUBPHASE (pem, "Propagating execution modes",
-                                              PEMdoPropagateExecutionmode, ALWAYS, mt3)
+SUBPHASE (pem, "Propagating execution modes", PEMdoPropagateExecutionmode, ALWAYS, mt3)
 
-                                      SUBPHASE (cdfg, "Creating data flow graph",
-                                                CDFGdoCreateDataflowgraph, ALWAYS, mt3)
+SUBPHASE (cdfg, "Creating data flow graph", CDFGdoCreateDataflowgraph, ALWAYS, mt3)
 
-                                        SUBPHASE (asmra, "Rearringing assignments",
-                                                  ASMRAdoAssignmentsRearrange, ALWAYS,
-                                                  mt3)
+SUBPHASE (asmra, "Rearringing assignments", ASMRAdoAssignmentsRearrange, ALWAYS, mt3)
 
-                                          SUBPHASE (crece,
-                                                    "Creating execution mode cells",
-                                                    CRECEdoCreateCells, ALWAYS, mt3)
+SUBPHASE (crece, "Creating execution mode cells", CRECEdoCreateCells, ALWAYS, mt3)
 
-                                            SUBPHASE (cegro,
-                                                      "Extending execution mode cells",
-                                                      CEGROdoCellGrowth, ALWAYS, mt3)
+SUBPHASE (cegro, "Extending execution mode cells", CEGROdoCellGrowth, ALWAYS, mt3)
 
-                                              SUBPHASE (repfun, "Replicating functions",
-                                                        REPFUNdoReplicateFunctions,
-                                                        ALWAYS, mt3)
+SUBPHASE (repfun, "Replicating functions", REPFUNdoReplicateFunctions, ALWAYS, mt3)
 
-                                                SUBPHASE (
-                                                  mtdfr, "Removing superfluous functions",
-                                                  DFRdoDeadFunctionRemoval, ALWAYS, mt3)
+SUBPHASE (mtdfr, "Removing superfluous functions", DFRdoDeadFunctionRemoval, ALWAYS, mt3)
 
-                                                  SUBPHASE (
-                                                    concel,
-                                                    "Consolidating execution mode cells",
-                                                    CONCELdoConsolidateCells, ALWAYS, mt3)
+SUBPHASE (concel, "Consolidating execution mode cells", CONCELdoConsolidateCells, ALWAYS,
+          mt3)
 
-                                                    SUBPHASE (abort,
-                                                              "Aborting MT3 compilation",
-                                                              MTABabort, ALWAYS, mt3)
+SUBPHASE (abort, "Aborting MT3 compilation", MTABabort, ALWAYS, mt3)
 
-                                                      ENDPHASE (mt3)
+ENDPHASE (mt3)
 
 #endif /* PRODUCTION */
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (mem, "Introducing memory management instructions", ALWAYS)
+PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
-    SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
+SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 
-      SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
+SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 
-        SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS,
-                  mem)
+SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS, mem)
 
-          SUBPHASE (racc, "Removing alias results from conformity checks",
-                    EMRACCdoRemoveAliasResultsFromConformityChecks,
-                    global.runtimecheck.conformity &&global.insertconformitychecks, mem)
+SUBPHASE (racc, "Removing alias results from conformity checks",
+          EMRACCdoRemoveAliasResultsFromConformityChecks,
+          global.runtimecheck.conformity &&global.insertconformitychecks, mem)
 
-            SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc,
-                      ALWAYS, mem)
+SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, mem)
 
-              SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
-                        global.optimize.dodcr, mem)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
+          mem)
 
-                SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference,
-                          global.optimize.douip, mem)
+SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference, global.optimize.douip,
+          mem)
 
-                  SUBPHASE (shal, "Activating display of alias information", SHALactivate,
-                            ALWAYS, mem)
+SUBPHASE (shal, "Activating display of alias information", SHALactivate, ALWAYS, mem)
 
-                    SUBPHASE (ia, "Interface aliasing analysis", EMIAdoInterfaceAnalysis,
-                              global.optimize.dosrf, mem)
+SUBPHASE (ia, "Interface aliasing analysis", EMIAdoInterfaceAnalysis,
+          global.optimize.dosrf, mem)
 
-                      SUBPHASE (lro, "Applying loop reuse optimization",
-                                EMLRdoLoopReuseOptimization,
-                                global.optimize.dosrf &&global.optimize.dolro, mem)
+SUBPHASE (lro, "Applying loop reuse optimization", EMLRdoLoopReuseOptimization,
+          global.optimize.dosrf &&global.optimize.dolro, mem)
 
-                        SUBPHASE (aa, "Aliasing analysis", EMAAdoAliasAnalysis,
-                                  global.optimize.dosrf, mem)
+SUBPHASE (aa, "Aliasing analysis", EMAAdoAliasAnalysis, global.optimize.dosrf, mem)
 
-                          SUBPHASE (srce, "Removing non-local reuse-candidates",
-                                    SRCEdoRemoveReuseCandidates, global.optimize.douip,
-                                    mem)
+SUBPHASE (srce, "Removing non-local reuse-candidates", SRCEdoRemoveReuseCandidates,
+          global.optimize.douip, mem)
 
-                            SUBPHASE (frc, "Removing invalid reuse candidates",
-                                      FRCdoFilterReuseCandidates, global.optimize.douip,
-                                      mem)
+SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
+          global.optimize.douip, mem)
 
-                              SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
-                                        global.optimize.douip &&global.optimize.dosrf,
-                                        mem)
+SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
+          global.optimize.douip &&global.optimize.dosrf, mem)
 
-                                SUBPHASE (rb, "Introducing reuse branches",
-                                          EMRBdoReuseBranching,
-                                          global.optimize.doipc
-                                            || (global.optimize.douip
-                                                && global.optimize.dodr),
-                                          mem)
+SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
+          global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
 
-                                  SUBPHASE (ipc, "Identifying in-place updates",
-                                            EMIPdoInplaceComputation,
-                                            global.optimize.doipc, mem)
+SUBPHASE (ipc, "Identifying in-place updates", EMIPdoInplaceComputation,
+          global.optimize.doipc, mem)
 
-                                    SUBPHASE (
-                                      dr, "Exploiting data reuse", EMDRdoDataReuse,
-                                      global.optimize.douip &&global.optimize.dodr, mem)
+SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
+          global.optimize.douip &&global.optimize.dodr, mem)
 
-                                      SUBPHASE (dcr2, "Removing dead code again",
-                                                DCRdoDeadCodeRemovalModule,
-                                                global.optimize.dodcr, mem)
+SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemovalModule,
+          global.optimize.dodcr, mem)
 
-                                        SUBPHASE (
-                                          unshal,
-                                          "Deactivating display of alias information",
-                                          SHALdeactivate, ALWAYS, mem)
+SUBPHASE (unshal, "Deactivating display of alias information", SHALdeactivate, ALWAYS,
+          mem)
 
-                                          SUBPHASE (rc,
-                                                    "Running reference count inference",
-                                                    RCIdoReferenceCounting, ALWAYS, mem)
+SUBPHASE (rc, "Running reference count inference", RCIdoReferenceCounting, ALWAYS, mem)
 
-                                            SUBPHASE (
-                                              rcm,
-                                              "Reducing reference counting instructions",
-                                              RCMdoRefcountMinimization, ALWAYS, mem)
+SUBPHASE (rcm, "Reducing reference counting instructions", RCMdoRefcountMinimization,
+          ALWAYS, mem)
 
-                                              SUBPHASE (rco,
-                                                        "Optimizing reference counting "
-                                                        "instructions",
-                                                        EMRCOdoRefCountOpt,
-                                                        global.optimize.dorco, mem)
+SUBPHASE (rco, "Optimizing reference counting instructions", EMRCOdoRefCountOpt,
+          global.optimize.dorco, mem)
 
 #if 0
 SUBPHASE( mvsmi,
@@ -851,24 +803,21 @@ SUBPHASE( mvsmi,
           mem)
 #endif
 
-                                                SUBPHASE (re,
-                                                          "Removing reuse instructions",
-                                                          EMREdoReuseElimination, ALWAYS,
-                                                          mem)
+SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
 
-                                                  ENDPHASE (mem)
+ENDPHASE (mem)
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (ussa, "Converting from static single assignment form", ALWAYS)
+PHASE (ussa, "Converting from static single assignment form", ALWAYS)
 
-    SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, ussa)
+SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, ussa)
 
-      SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, ussa)
+SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, ussa)
 
-        SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, ussa)
+SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, ussa)
 
-          SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, ussa)
+SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, ussa)
 
 #if 0
 SUBPHASE( spmdfix, 
@@ -878,109 +827,102 @@ SUBPHASE( spmdfix,
           ussa)
 #endif
 
-            SUBPHASE (rera, "Restoring reference arguments",
-                      RERAdoRestoreReferenceArguments, ALWAYS, ussa)
+SUBPHASE (rera, "Restoring reference arguments", RERAdoRestoreReferenceArguments, ALWAYS,
+          ussa)
 
-              SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS,
-                        ussa)
+SUBPHASE (reso, "Restoring global objects", RESOdoRestoreObjects, ALWAYS, ussa)
 
-                ENDPHASE (ussa)
+ENDPHASE (ussa)
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (mt, "Running automatic parallelisation",
-         (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
+PHASE (mt, "Running automatic parallelisation",
+       (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
 
-    SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
+SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
-      SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
+SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
-        SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
+SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 
 #ifdef TO_BE_DONE
 
-          SUBPHASE (mtdvr, "Removing superfluous variable declarations",
-                    MTDVRdoRemoveDeadVardecs, ALWAYS, mt)
+SUBPHASE (mtdvr, "Removing superfluous variable declarations", MTDVRdoRemoveDeadVardecs,
+          ALWAYS, mt)
 
 #endif
 
-            SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling,
-                      ALWAYS, mt)
+SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)
 
-              SUBPHASE (sspmdls, "Applying SPMD linksign pragma",
-                        SSPMDLSdoSetSpmdLinksign, ALWAYS, mt)
+SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign, ALWAYS, mt)
 
-                ENDPHASE (mt)
+ENDPHASE (mt)
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (pc, "Preparing C code generation", ALWAYS)
+PHASE (pc, "Preparing C code generation", ALWAYS)
 
-    SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels, NEVER, pc)
+SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels, NEVER, pc)
 
-      SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
-                global.backend == BE_mutc, pc)
+SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
+          global.backend == BE_mutc, pc)
 
-        SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
+SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
-          SUBPHASE (dst, "Computing static thread mapping", DSTdoDistributeThreads,
-                    ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)
+SUBPHASE (dst, "Computing static thread mapping", DSTdoDistributeThreads,
+          ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)
 
-            SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
+SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
 
-              SUBPHASE (moi, "Manage object initialisers", MOIdoManageObjectInitialisers,
-                        ALWAYS, pc)
+SUBPHASE (moi, "Manage object initialisers", MOIdoManageObjectInitialisers, ALWAYS, pc)
 
-                SUBPHASE (rcs, "Resolving code sharing in With-Loops",
-                          RCSdoResolveCodeSharing, ALWAYS, pc)
+SUBPHASE (rcs, "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing, ALWAYS,
+          pc)
 
-  /*
-   * WARNING: no phases that duplicate code below this line!
-   *          FPC builds the argtabs which CANNOT be maintained
-   *          by duptree!
-   */
+/*
+ * WARNING: no phases that duplicate code below this line!
+ *          FPC builds the argtabs which CANNOT be maintained
+ *          by duptree!
+ */
 
-  SUBPHASE (fpc, "Reorganising function prototypes", FPCdoFunctionPrecompile, ALWAYS, pc)
+SUBPHASE (fpc, "Reorganising function prototypes", FPCdoFunctionPrecompile, ALWAYS, pc)
 
-    SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
+SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 
-      SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
+SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
 
-        SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers,
-                  ALWAYS, pc)
+SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
 
-          ENDPHASE (pc)
+ENDPHASE (pc)
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (cg, "Generating Code", ALWAYS)
+PHASE (cg, "Generating Code", ALWAYS)
 
-    SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
+SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
 
-      SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes,
-                ALWAYS, cg)
+SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, ALWAYS,
+          cg)
 
-        SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, cg)
+SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, cg)
 
-          SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
+SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
 
-            SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree,
-                      ALWAYS, cg)
+SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, cg)
 
-              ENDPHASE (cg)
+ENDPHASE (cg)
 
-  /******************************************************************************/
+/******************************************************************************/
 
-  PHASE (icc, "Creating binary code", ALWAYS)
+PHASE (icc, "Creating binary code", ALWAYS)
 
-    SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
+SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
 
-      SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, icc)
+SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, icc)
 
-        SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary,
-                  global.filetype != F_prog, icc)
+SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != F_prog, icc)
 
-          ENDPHASE (icc)
+ENDPHASE (icc)
 
 /******************************************************************************/
 
