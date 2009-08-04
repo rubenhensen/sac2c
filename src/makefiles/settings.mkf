@@ -10,10 +10,6 @@
 
 PROJECT_NAME           := SAC
 
-REVISION               := $(shell svn info \
-                                  | grep Revision: \
-                                  | sed -e 's/Revision: //g')
-
 MAKEFLAGS              += --no-print-directory
 
 

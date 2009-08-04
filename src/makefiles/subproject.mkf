@@ -88,7 +88,7 @@ make_%: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) ($($*_long) version)"
-	@$(ECHO) "* revision $(REVISION)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
 	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(TOUCH) .make_track
@@ -121,7 +121,7 @@ clean_%:
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
-	@$(ECHO) "* revision $(REVISION)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
 	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
@@ -149,7 +149,7 @@ refactor:
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Refactoring $(PROJECT_NAME) $(SUBPROJECT)"
-	@$(ECHO) "* revision $(REVISION)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
 	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* \"$(PATTERN)\""

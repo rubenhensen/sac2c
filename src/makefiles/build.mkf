@@ -356,13 +356,13 @@ global/build_$(STYLE).c: $(SUBTARGETS)
                 fi
 	@$(ECHO) ""
 	@$(ECHO) "Creating revision data file:  $@"
-	@$(ECHO) "char build_style[] = \"$($(STYLE)_long)\";"        >  $@
-	@$(ECHO) "char build_date[]  = \"`date`\";"                  >> $@
-	@$(ECHO) "char build_user[]  = \"$(USER)\";"                 >> $@
-	@$(ECHO) "char build_host[]  = \"`hostname`\";"              >> $@
-	@$(ECHO) "char build_os[]    = \"$(OS)\";"                   >> $@
-	@$(ECHO) "char build_rev[]   = \"$(REVISION)\";"             >> $@
-	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"      >> $@
+	@$(ECHO) "char build_style[] = \"$($(STYLE)_long)\";"                    >  $@
+	@$(ECHO) "char build_date[]  = \"`date`\";"                              >> $@
+	@$(ECHO) "char build_user[]  = \"$(USER)\";"                             >> $@
+	@$(ECHO) "char build_host[]  = \"`hostname`\";"                          >> $@
+	@$(ECHO) "char build_os[]    = \"$(OS)\";"                               >> $@
+	@$(ECHO) "char build_rev[]   = \"`cat $(PROJECT_ROOT)/.revision.txt`\";" >> $@
+	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"                  >> $@
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 

@@ -14,6 +14,7 @@
 # Currently we check:
 #  - whether we need to re-configure first
 #  - whether we need to create a new configure script first
+#  - whether a revision number file exists; if not, it is created
 
 
 CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
@@ -30,7 +31,7 @@ AUTOCONFED   := $(PROJECT_ROOT)/setup/configure
 # Dummy rules:
 #
 
-.PHONY: checks
+.PHONY: checks $(PROJECT_ROOT)/.revision.txt
 
 
 #######################################################################################
@@ -38,7 +39,7 @@ AUTOCONFED   := $(PROJECT_ROOT)/setup/configure
 # Start rules:
 #
 
-checks: $(CONFIGURED)
+checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 
 
 #######################################################################################
@@ -70,3 +71,10 @@ checks: $(CONFIGURED)
 	@echo ""
 	@ exit 1
 
+$(PROJECT_ROOT)/.revision.txt:
+	$(HIDE) if which svn > /dev/null ;  \
+                then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
+                else if [ ! -f $@ ] ; \
+                     then echo "???" > $@ ; \
+                     fi ; \
+                fi
