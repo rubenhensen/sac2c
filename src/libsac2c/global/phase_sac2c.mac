@@ -474,8 +474,8 @@ FUNBEGIN (saacyc, opt, saacyc)
 CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                global.optimize.doprfunr, opt, saacyc)
 
-CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup,
-               opt, saacyc)
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+               global.optimize.dotup, opt, saacyc)
 
 CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
                global.optimize.dotup, opt, saacyc)
