@@ -143,6 +143,7 @@ SAACFprf_reshape (node *arg_node, info *arg_info)
              == CMPTdoCompareTree (ASSIGN_RHS (
                                      AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))),
                                    AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))))))) {
+        DBUG_PRINT ("CF", ("idempotent _reshape_ eliminated"));
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
@@ -175,6 +176,7 @@ SAACFprf_dim (node *arg_node, info *arg_info)
 
     dim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != dim) {
+        DBUG_PRINT ("CF", ("_dim_A replaced by AVIS_DIM"));
         res = DUPdoDupTree (dim);
     }
     DBUG_RETURN (res);
@@ -188,158 +190,397 @@ SAACFprf_dim (node *arg_node, info *arg_info)
  *
  * @param arg_node
  *
- * @result new arg_node if shape() operation could be replaced by
- *         the AVIS_SHAPE of the argument,
- *         else NULL
+ * @result 1. new arg_node if shape() operation could be replaced by
+ *            the AVIS_SHAPE of the argument,
+ *
+ *         2. new arg_node if we have:
+ *                 x = _saabind_(dimx, shapex, valx);
+ *                 z = _shape_A_(x);
+ *              in which case we return:
+ *                 z = shapex;
+ *
+ *         3.  else NULL
  *
  ********************************************************************/
 
 node *
 SAACFprf_shape (node *arg_node, info *arg_info)
 {
-    node *shp = NULL;
     node *res = NULL;
+    node *arg1 = NULL;
+    node *dm = NULL;
+    node *shp = NULL;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("SAACFprf_shape");
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SAACF_shape_ expected N_id node");
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != shp) {
+        /* Case 1 */
+        DBUG_PRINT ("CF", ("_shape_A replaced by AVIS_SHAPE"));
         res = DUPdoDupTree (shp);
+    } else {
+        /* Case 2 */
+        pat1 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg1), 0));
+        pat2 = PMprf (1, PMAisPrf (F_saabind), 1, PMvar (1, PMAgetNode (&dm), 0), 1,
+                      PMvar (1, PMAgetNode (&shp), 0), PMskip (0));
+
+#ifdef FIXME
+        if (PMmatchFlatSkipExtrema (pat1, arg_node)
+            && PMmatchFlatSkipExtrema (pat2, arg1)) {
+#endif // FIXME
+            if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+                if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+                    res = shp;
+                    pat1 = PMfree (pat1);
+                    pat2 = PMfree (pat2);
+                    DBUG_PRINT ("CF", ("_shape_A(_saabnd(dim,shp,val)) replaced by shp"));
+                }
+            }
+        }
+
+        DBUG_RETURN (res);
     }
-    DBUG_RETURN (res);
-}
 
-/**<!--*************************************************************-->
- *
- * @fn node *SAACFprf_shape_sel(node *arg_node, info *arg_info)
- *
- * @brief: performs saa constant-folding on shape primitive
- *
- * @param arg_node
- *
- * @result new arg_node if idx_shape_sel( idx, X) operation has a constant
- *         idx, and shape(X) is being kept as an N_array. If so, the
- *         operation is replaced by a reference to the appropriate element
- *         of the N_array.
- *         else NULL
- *
- ********************************************************************/
+    /**<!--*************************************************************-->
+     *
+     * @fn node *SAACFprf_shape_sel(node *arg_node, info *arg_info)
+     *
+     * @brief: performs saa constant-folding on shape primitive
+     *
+     * @param arg_node
+     *
+     * @result new arg_node if idx_shape_sel( idx, X) operation has a constant
+     *         idx, and shape(X) is being kept as an N_array. If so, the
+     *         operation is replaced by a reference to the appropriate element
+     *         of the N_array.
+     *         else NULL
+     *
+     ********************************************************************/
 
-node *
-SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
-{
-    node *shp = NULL;
-    node *res = NULL;
-    node *shpel;
-    constant *argconst;
-    int shape_elem;
+    node *SAACFprf_idx_shape_sel (node * arg_node, info * arg_info)
+    {
+        node *shp = NULL;
+        node *res = NULL;
+        node *shpel;
+        constant *argconst;
+        int shape_elem;
 
-    DBUG_ENTER ("SAACFprf_idx_shape_sel");
+        DBUG_ENTER ("SAACFprf_idx_shape_sel");
 
-    /* If idx is a constant, try the replacement */
-    argconst = COaST2Constant (PRF_ARG1 (arg_node));
-    if (NULL != argconst) {
-        shape_elem = ((int *)COgetDataVec (argconst))[0];
-        argconst = COfreeConstant (argconst);
+        /* If idx is a constant, try the replacement */
+        argconst = COaST2Constant (PRF_ARG1 (arg_node));
+        if (NULL != argconst) {
+            shape_elem = ((int *)COgetDataVec (argconst))[0];
+            argconst = COfreeConstant (argconst);
+
+            shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
+            if ((shp != NULL) && (NODE_TYPE (shp) == N_array)) {
+                shpel = TCgetNthExprsExpr (shape_elem, ARRAY_AELEMS (shp));
+                res = DUPdoDupTree (shpel);
+                DBUG_PRINT ("CF", ("idx_shape_sel replaced by N_array element"));
+            }
+        }
+        DBUG_RETURN (res);
+    }
+
+    /**<!--*************************************************************-->
+     *
+     * @fn node *SAACFprf_take_SxV(node *arg_node, info *arg_info)
+     *
+     * @brief: performs saa constant-folding on take primitive
+     *
+     *         1. Idempotent call:
+     *            If PRF_ARG1 matches AVIS_SHAPE( PRF_ARG2( arg_node))[0]:
+     *            return PRF_ARG2 as the result.
+     *            This means that AVIS_SHAPE must be, eventually, an N_array
+     *            node.
+     *
+     *         2. If PRF_ARG1 is 0:
+     *            Typechecker should get this one, because the result is AKV,
+     *            and PRF_ARG1 is constant.
+     *
+     * @param arg_node
+     *
+     * @result New arg_node if folding happens.
+     *
+     ********************************************************************/
+
+    node *SAACFprf_take_SxV (node * arg_node, info * arg_info)
+    {
+        node *res = NULL;
+        node *shp;
+        node *arg2 = NULL;
+        node *arg1 = NULL;
+        pattern *patarg1;
+        pattern *patarg2;
+
+        DBUG_ENTER ("SAACFprf_take_SxV");
+
+        patarg1 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                         PMskip (0));
+
+        patarg2 = PMarray (1, PMAgetNode (&arg2), 1, PMskip (0));
 
         shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
-        if ((shp != NULL) && (NODE_TYPE (shp) == N_array)) {
-            shpel = TCgetNthExprsExpr (shape_elem, ARRAY_AELEMS (shp));
-            res = DUPdoDupTree (shpel);
+
+        if ((NULL != shp) && PMmatchFlatSkipExtrema (patarg1, arg_node)
+            && PMmatchFlatSkipExtrema (patarg2, shp)) {
+            res = DUPdoDupTree (PRF_ARG2 (arg_node));
+            DBUG_PRINT ("CF", ("Take replaced by PRF_ARG2"));
         }
+
+        patarg1 = PMfree (patarg1);
+        patarg2 = PMfree (patarg2);
+
+        DBUG_RETURN (res);
     }
-    DBUG_RETURN (res);
-}
 
-/** <!--********************************************************************-->
- *
- * @fn node *SAACFprf_same_shape_AxA( node *arg_node, info *arg_info)
- *
- * If arguments B and C are same shape, replace:
- *   b', c', pred = prf_same_shape_AxA_(B,C)
- * by:
- *   b', c', pred = B,C,TRUE;
- *
- * CFassign will turn this into:
- *   b' = b;
- *   c' = c;
- *   pred = TRUE;
- *
- * This code catches the SAA case.
- *
- *
- *****************************************************************************/
+    /**<!--*************************************************************-->
+     *
+     * @fn node *SAACFprf_drop_SxV(node *arg_node, info *arg_info)
+     *
+     * @brief: performs saa constant-folding on drop primitive
+     *
+     *         1. If PRF_ARG1 matches AVIS_SHAPE( PRF_ARG2( arg_node))[0]:
+     *            return an empty vector of the type of PRF_ARG2.
+     *            Although this resembles the take() case just above,
+     *            typechecker can't do this much analysis.
+     *
+     *         2. If PRF_ARG1 is 0:
+     *            return PRF_ARG2 as the result.
+     *
+     * @param arg_node
+     *
+     * @result New arg_node if folding happens.
+     *
+     ********************************************************************/
 
-node *
-SAACFprf_same_shape_AxA (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *shp = NULL;
-
-    DBUG_ENTER ("SAACFprf_same_shape_AxA");
-    if (PMO (PMOsaashape (&shp, &arg2,
-                          PMOsaashape (&shp, &arg1,
-                                       PMOvar (&arg2,
-                                               PMOvar (&arg1, PMOprf (F_same_shape_AxA,
-                                                                      arg_node))))))) {
-        /* See if saa shapes match */
-
-        res = TBmakeExprs (DUPdoDupTree (arg1),
-                           TBmakeExprs (DUPdoDupTree (arg2),
-                                        TBmakeExprs (TBmakeBool (TRUE), NULL)));
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SAACFprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
- *
- * If shape(B) matches dim(C), replace:
- *   b', c', pred = prf_shape_matches_dim_VxS(B,C)
- * by:
- *   b', c', pred = B,C,TRUE;
- *
- * CFassign will turn this into:
- *   b' = b;
- *   c' = c;
- *   pred = TRUE;
- *
- * This code catches the SAA case.
- *
- *****************************************************************************/
-
-node *
-SAACFprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-#ifdef CRUD
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *shp = NULL;
-#endif // CRUD
-
-    DBUG_ENTER ("SAACFshape_matches_dim_VxA");
-#ifdef CRUD
-
-    FIXME
-      - write this
-          .if (PMO (PMOsaashape (&shp, &arg1,
-                                 PMOsaashape (&shp, &arg2,
-                                              PMOvar (&arg1,
-                                                      PMOvar (&arg2,
-                                                              PMOprf (F_same_shape_AxA,
-                                                                      arg_node)))))))
+    node *SAACFprf_drop_SxV (node * arg_node, info * arg_info)
     {
-        /* See if saa shapes match */
+        node *res = NULL;
+        node *shp;
+        node *arg2 = NULL;
+        node *arg1 = NULL;
+        pattern *pat1;
+        pattern *pat2;
+        pattern *patarg2;
+        constant *con = NULL;
 
-        res = TBmakeExprs (DUPdoDupTree (arg1),
-                           TBmakeExprs (DUPdoDupTree (arg2),
-                                        TBmakeExprs (TBmakeBool (TRUE), NULL)));
+        DBUG_ENTER ("SAACFprf_drop_SxV");
+
+        pat1 = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                      PMskip (0));
+
+        pat2 = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMconst (1, PMAgetVal (&con), 0),
+                      PMskip (0));
+
+        patarg2 = PMarray (1, PMAgetNode (&arg2), 1, PMskip (0));
+
+        shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
+
+        if ((NULL != shp) && PMmatchFlatSkipExtrema (pat1, arg_node)
+            && PMmatchFlatSkipExtrema (patarg2, shp)) {
+
+            /* Case 1: conjure up empty vector. */
+            res = TBmakeArray (TYmakeAKS (TYcopyType (
+                                            TYgetScalar (ID_NTYPE (PRF_ARG2 (arg_node)))),
+                                          SHcreateShape (0)),
+                               SHcreateShape (1, 0), NULL);
+            DBUG_PRINT ("CF", ("drop(shape(V), V)  replaced by empty vector"));
+        } else if (PMmatchFlatSkipExtrema (pat2, arg_node) && (COisZero (con, TRUE))) {
+            /* Case 2 */
+            res = DUPdoDupTree (PRF_ARG2 (arg_node));
+            con = COfreeConstant (con);
+            DBUG_PRINT ("CF", ("drop(0, V) replaced by V"));
+        }
+
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
+        patarg2 = PMfree (patarg2);
+
+        DBUG_RETURN (res);
     }
-#endif // CRUD
-    DBUG_RETURN (res);
-}
+
+    /**<!--*************************************************************-->
+     *
+     * @fn node *SAACFprf_non_neg_val_V(node *arg_node, info *arg_info)
+     *
+     * @brief: performs saa constant-folding on F_non_neg_val_V primitive
+     *         We start with:
+     *           v', p = F_non_neg_val( v);
+     *
+     *         If AVIS_MINVAL( v) exists and is constant, we compare it to
+     *         zero. If v turns out to be >= 0, we eliminate the guard,
+     *         and return:
+     *
+     *           v, TRUE;
+     *
+     * @param arg_node
+     *
+     * @result new arg_node if v is non_negative.
+     *
+     ********************************************************************/
+
+    node *SAACFprf_non_neg_val_V (node * arg_node, info * arg_info)
+    {
+        node *res = NULL;
+        node *minv;
+        constant *con;
+
+        DBUG_ENTER ("SAACFprf_non_neg_val_V");
+
+        minv = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+        if (NULL != minv) {
+            con = COaST2Constant (minv);
+            if ((NULL != con) && COisNonNeg (con, TRUE)) {
+                DBUG_PRINT ("CF", ("non_neg_val_V guard removed"));
+                con = COfreeConstant (con);
+                res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+            }
+        }
+        DBUG_RETURN (res);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *SAACFprf_same_shape_AxA( node *arg_node, info *arg_info)
+     *
+     * If arguments B and C are same shape, replace:
+     *   b', c', pred = prf_same_shape_AxA_(B,C)
+     * by:
+     *   b', c', pred = B,C,TRUE;
+     *
+     * CFassign will turn this into:
+     *   b' = b;
+     *   c' = c;
+     *   pred = TRUE;
+     *
+     * This code catches the SAA case.
+     *
+     *
+     *****************************************************************************/
+
+    node *SAACFprf_same_shape_AxA (node * arg_node, info * arg_info)
+    {
+        node *res = NULL;
+        node *arg1 = NULL;
+        node *arg2 = NULL;
+        node *shp = NULL;
+
+        DBUG_ENTER ("SAACFprf_same_shape_AxA");
+        if (PMO (
+              PMOsaashape (&shp, &arg2,
+                           PMOsaashape (&shp, &arg1,
+                                        PMOvar (&arg2,
+                                                PMOvar (&arg1, PMOprf (F_same_shape_AxA,
+                                                                       arg_node))))))) {
+            /* See if saa shapes match */
+
+            DBUG_PRINT ("CF", ("same_shape_AxA guard removed"));
+            res = TBmakeExprs (DUPdoDupTree (arg1),
+                               TBmakeExprs (DUPdoDupTree (arg2),
+                                            TBmakeExprs (TBmakeBool (TRUE), NULL)));
+        }
+        DBUG_RETURN (res);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *SAACFprf_shape_matches_dim_VxA( node *arg_node, info *arg_info)
+     *
+     * If shape(B) matches dim(C), replace:
+     *   b', c', pred = prf_shape_matches_dim_VxS(B,C)
+     * by:
+     *   b', c', pred = B,C,TRUE;
+     *
+     * CFassign will turn this into:
+     *   b' = b;
+     *   c' = c;
+     *   pred = TRUE;
+     *
+     * This code catches the SAA case.
+     *
+     *****************************************************************************/
+
+    node *SAACFprf_shape_matches_dim_VxA (node * arg_node, info * arg_info)
+    {
+        node *res = NULL;
+
+        DBUG_ENTER ("SAACFshape_matches_dim_VxA");
+
+        if ((NULL != AVIS_SHAPE (PRF_ARG1 (arg_node)))
+            && (NULL != AVIS_DIM (PRF_ARG2 (arg_node)))
+            && (AVIS_SHAPE (PRF_ARG1 (arg_node)) == AVIS_DIM (PRF_ARG2 (arg_node)))) {
+
+            DBUG_PRINT ("CF", ("shape_matches_dim  guard removed"));
+            res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (DUPdoDupTree (PRF_ARG2 (arg_node)),
+                                            TBmakeExprs (TBmakeBool (TRUE), NULL)));
+        }
+        DBUG_RETURN (res);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *SAACFprf_val_lt_shape( node *arg_node, info *arg_info)
+     *
+     * @brief: We start with:
+     *
+     *           idx', p = _val_lt_shape_VxA_( idx, arr);
+     *
+     *         If idx < shape(arr), return:
+     *
+     *           idx', p = idx, TRUE;
+     *
+     * @notes: The two cases we handle here are:
+     *           1. arg1 AKV
+     *           2. AVIS_MAXVAL( arg1) AKV
+     *         with AVIS_SHAPE( arr) AKV in both cases.
+     *
+     * #@return: possibly updated arg_node
+     *
+     *****************************************************************************/
+
+    node *SAACFprf_val_lt_shape_VxA (node * arg_node, info * arg_info)
+    {
+        node *res = NULL;
+        constant *val;
+        constant *shp;
+        node *maxv;
+        bool z = FALSE;
+
+        DBUG_ENTER ("SAACFprf_val_lt_shape_VxA");
+
+        if (NULL != AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)))) {
+            shp = COaST2Constant (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
+            if (NULL != shp) {
+                val = COaST2Constant (PRF_ARG1 (arg_node)); /* Case 1 */
+                if ((NULL != val) && COlt (val, shp)) {
+                    z = TRUE;
+                    val = COfreeConstant (val);
+                } else {
+                    maxv = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+                    if (NULL != maxv) {
+                        val = COaST2Constant (maxv); /* Case 2 */
+                        if ((NULL != val) && COlt (val, shp)) {
+                            z = TRUE;
+                            val = COfreeConstant (val);
+                        }
+                    }
+                }
+                if (z) {
+                    DBUG_PRINT ("CF", ("val_lt_shape_VxA guard removed"));
+                    res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                                       TBmakeExprs (TBmakeBool (TRUE), NULL));
+                }
+
+                shp = COfreeConstant (shp);
+            }
+        }
+
+        DBUG_RETURN (res);
+    }
