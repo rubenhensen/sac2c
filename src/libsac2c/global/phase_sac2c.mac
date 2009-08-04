@@ -263,7 +263,7 @@ CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation
 CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
             global.optimize.dowlpg, opt, saacyc1)
 
-CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
+CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
             global.optimize.dowlsimp, opt, saacyc1)
 
 CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,

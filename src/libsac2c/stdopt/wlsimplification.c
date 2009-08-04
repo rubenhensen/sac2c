@@ -370,7 +370,7 @@ CheckZeroTrip (node *lb, node *ub, node *width)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSIMPdoWithloopSimplificationOneFunction( node *fundef)
+ * @fn node *WLSIMPdoWithloopSimplification( node *fundef)
  *
  * @brief
  *
@@ -378,11 +378,11 @@ CheckZeroTrip (node *lb, node *ub, node *width)
  *
  *****************************************************************************/
 node *
-WLSIMPdoWithloopSimplificationOneFunction (node *fundef)
+WLSIMPdoWithloopSimplification (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("WLSIMPdoWithloopSimplificationOneFunction");
+    DBUG_ENTER ("WLSIMPdoWithloopSimplificationOne");
 
     info = MakeInfo ();
 
