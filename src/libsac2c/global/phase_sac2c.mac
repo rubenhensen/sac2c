@@ -467,7 +467,7 @@ SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
 
 /*************************************************/
 
-CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaa, opt, RESET)
+CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaacyc, opt, RESET)
 
 FUNBEGIN (saacyc, opt, saacyc)
 

@@ -101,6 +101,7 @@ OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, "with-loop propagation")
 OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")
 OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
 OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
+OPTIMIZE ("saacyc", saacyc, FALSE, FALSE, "run saa cycle")
 OPTIMIZE ("wllo", wllo, FALSE, FALSE, "run with-loop lock optimization")
 OPTIMIZE ("rw3", rw3, TRUE, TRUE, "remove with3 loops")
 
