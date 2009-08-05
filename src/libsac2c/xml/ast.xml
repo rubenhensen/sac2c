@@ -6479,7 +6479,7 @@ N_structdef :
       </attributes>
       <flags>
         <flag name="IsFoldable" />
-        <flag name="Cudarizable" default="TRUE" />
+        <flag name="Cudarizable" default="FALSE" />
 	    <flag name="IsDependent" />
         <flag name="ExtremaAttached" default ="FALSE">
           <description>
@@ -7009,7 +7009,7 @@ N_structdef :
 	<flag name="HasNaiveOrdering" default="FALSE">
 	  <description>True, iff the naive compilation scheme was used and thus the with-loop is not computed in canonical order.</description>
 	</flag>
-    <flag name="Cudarizable" default="TRUE" />
+    <flag name="Cudarizable" default="FALSE" />
       </flags>
     </node>
 <!--
