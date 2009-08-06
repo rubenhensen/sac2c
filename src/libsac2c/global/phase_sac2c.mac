@@ -845,7 +845,7 @@ SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, 
 
 SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 
-SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval, ALWAYS, mt)
+SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval, NEVER, mt)
 
 SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)
 
@@ -863,6 +863,9 @@ SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
           global.backend == BE_mutc, pc)
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
+
+SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
+          pc)
 
 SUBPHASE (dst, "Computing static thread mapping", DSTdoDistributeThreads,
           ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)

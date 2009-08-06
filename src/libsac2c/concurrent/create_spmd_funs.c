@@ -316,7 +316,6 @@ MTSPMDFid (node *arg_node, info *arg_info)
                   = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
                 INFO_LUT (arg_info)
                   = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-                AVIS_ISDEAD (avis) = TRUE;
 
                 DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", ID_NAME (arg_node)));
 
@@ -407,7 +406,6 @@ MTSPMDFids (node *arg_node, info *arg_info)
             new_avis = DUPdoDupNode (avis);
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            AVIS_ISDEAD (avis) = TRUE;
             DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
         }
     } else {

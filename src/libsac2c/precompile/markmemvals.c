@@ -59,7 +59,25 @@
  *              fold( op2, n2)
  *              genarray( shp);
  *
- * 3. For with3 loops, the results of fill operations of genarray operations
+ * 3. For all functions where output parameters are mapped to input parameters
+ *    the variable assigned to in an application is renamed to the variable in
+ *    the corresponding argument position.
+ *
+ *    Example:
+ *
+ *      a, b = foo( c, d, e);   where int, int foo( int x, int y, int z)
+ *                              and the first return value is mapped to the y
+ *                              parameter.
+ *
+ *    is transformed into
+ *
+ *      d, b = foo( c, d, e);
+ *
+ *    This transformation is used in two situations:
+ *    a) when the linksign pragma is used.
+ *    b) in SPMD functions
+ *
+ * 4. For with3 loops, the results of fill operations of genarray operations
  *    are removed from the return expression and the ret chain. As we have
  *    passed the memory in in the first place, there is no need to pass the
  *    change to a part of it back out again.
@@ -161,11 +179,6 @@ MMVblock (node *arg_node, info *arg_info)
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-    /*
-     * Traverse into VARDECs in order to remove unneeded ones
-     */
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -259,8 +272,7 @@ MMVmodule (node *arg_node, info *arg_info)
  * @fn MMVlet
  *
  *  @brief Traverses right hand side and substitutes left hand side
- *         identifiers. If a substitution is made, the old avis is marked
- *         as AVIS_ISDEAD.
+ *         identifiers.
  *
  *  @param arg_node
  *  @param arg_info
@@ -301,7 +313,6 @@ MMVids (node *arg_node, info *arg_info)
      */
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     while (newavis != IDS_AVIS (arg_node)) {
-        AVIS_ISDEAD (IDS_AVIS (arg_node)) = TRUE;
         IDS_AVIS (arg_node) = newavis;
         newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     }
@@ -893,32 +904,6 @@ MMVprf (node *arg_node, info *arg_info)
 
     default:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn MMVvardec
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-MMVvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MMVvardec");
-
-    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
-
-    if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
-        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
