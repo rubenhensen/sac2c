@@ -53,8 +53,69 @@ FreeInfo (info *info)
 }
 
 /*
+ * Anonymous traversal to clear IS_NEEDED flags
+ */
+
+static node *
+ATravDFRCmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravDFRCmodule");
+
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravDFRCfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravDFRCfundef");
+
+    FUNDEF_ISNEEDED (arg_node) = FALSE;
+
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravDFRCobjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravDFRCobjdef");
+
+    OBJDEF_ISNEEDED (arg_node) = FALSE;
+
+    OBJDEF_NEXT (arg_node) = TRAVopt (OBJDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ClearIsNeededFlags (node *syntax_tree)
+{
+    anontrav_t dfrc_trav[4] = {{N_module, &ATravDFRCmodule},
+                               {N_fundef, &ATravDFRCfundef},
+                               {N_objdef, &ATravDFRCobjdef},
+                               {0, NULL}};
+
+    DBUG_ENTER ("ClearIsNeededFlags");
+
+    TRAVpushAnonymous (dfrc_trav, &TRAVsons);
+
+    syntax_tree = TRAVopt (syntax_tree, NULL);
+
+    TRAVpop ();
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/*
  * helper functions
  */
+
 static node *
 tagFundefAsNeeded (node *fundef, info *info)
 {
@@ -288,38 +349,14 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 node *
 DFRmodule (node *arg_node, info *arg_info)
 {
-    node *fun;
-    node *objdef;
-
-    DBUG_ENTER ("DFRmodul");
+    DBUG_ENTER ("DFRmodule");
 
     /*
      * Step 1: Clear dfr flag in fundec and fundef chain.
      *         Clear dfr flar in objdefs
      */
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        fun = MODULE_FUNDECS (arg_node);
-        while (fun != NULL) {
-            FUNDEF_ISNEEDED (fun) = FALSE;
-            fun = FUNDEF_NEXT (fun);
-        }
-    }
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        fun = MODULE_FUNS (arg_node);
-        while (fun != NULL) {
-            FUNDEF_ISNEEDED (fun) = FALSE;
-            fun = FUNDEF_NEXT (fun);
-        }
-    }
-
-    if (MODULE_OBJS (arg_node) != NULL) {
-        objdef = MODULE_OBJS (arg_node);
-        while (objdef != NULL) {
-            OBJDEF_ISNEEDED (objdef) = FALSE;
-            objdef = OBJDEF_NEXT (objdef);
-        }
-    }
+    arg_node = ClearIsNeededFlags (arg_node);
 
     /*
      * Step 2: Search for needed fundecs, fundefs and objdefs in fundef bodies.
