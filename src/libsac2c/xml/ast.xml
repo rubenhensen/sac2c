@@ -2210,7 +2210,28 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-
+       <traversal id="MTDCR" name="MT dead code removal" default="sons" include="mtdcr.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+       <traversal id="MTDCI" name="MT dead code inference" default="sons" include="mtdci.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
         <travuser>
           <node name="Module" />

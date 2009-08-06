@@ -57,25 +57,29 @@ struct INFO {
     bool collect;
     bool lift;
     bool withid;
+    bool wlparallel;
+    bool allocneeded;
 };
 
 /**
  * INFO macros
  */
 
-#define INFO_SPMDFUNS(n) (n->spmdfuns)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_LUT(n) (n->lut)
-#define INFO_ARGS(n) (n->args)
-#define INFO_PARAMS(n) (n->params)
-#define INFO_VARDECS(n) (n->vardecs)
-#define INFO_RETS(n) (n->rets)
-#define INFO_RETEXPRS(n) (n->retexprs)
-#define INFO_ALLOCASSIGNS(n) (n->allocassigns)
-#define INFO_FREEASSIGNS(n) (n->freeassigns)
-#define INFO_COLLECT(n) (n->collect)
-#define INFO_LIFT(n) (n->lift)
-#define INFO_WITHID(n) (n->withid)
+#define INFO_SPMDFUNS(n) ((n)->spmdfuns)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LUT(n) ((n)->lut)
+#define INFO_ARGS(n) ((n)->args)
+#define INFO_PARAMS(n) ((n)->params)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_RETS(n) ((n)->rets)
+#define INFO_RETEXPRS(n) ((n)->retexprs)
+#define INFO_ALLOCASSIGNS(n) ((n)->allocassigns)
+#define INFO_FREEASSIGNS(n) ((n)->freeassigns)
+#define INFO_COLLECT(n) ((n)->collect)
+#define INFO_LIFT(n) ((n)->lift)
+#define INFO_WITHID(n) ((n)->withid)
+#define INFO_WLPARALLEL(n) ((n)->wlparallel)
+#define INFO_ALLOCNEEDED(n) ((n)->allocneeded)
 
 /**
  * INFO functions
@@ -103,6 +107,8 @@ MakeInfo ()
     INFO_COLLECT (result) = FALSE;
     INFO_LIFT (result) = FALSE;
     INFO_WITHID (result) = FALSE;
+    INFO_WLPARALLEL (result) = FALSE;
+    INFO_ALLOCNEEDED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -177,38 +183,6 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
     FUNDEF_RETURN (spmd_fundef) = retur;
 
     DBUG_RETURN (spmd_fundef);
-}
-
-/******************************************************************************
- *
- * @fn MTSPMDFdoCreateSpmdFuns( node *syntax_tree)
- *
- *  @brief initiates traversal for creating SPMD functions
- *
- *  @param syntax_tree
- *
- *  @return syntax_tree
- *
- *****************************************************************************/
-
-node *
-MTSPMDFdoCreateSpmdFuns (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("MTSPMDFdoCreateSpmdFuns");
-
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
-
-    info = MakeInfo ();
-
-    TRAVpush (TR_mtspmdf);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
@@ -325,56 +299,78 @@ MTSPMDFid (node *arg_node, info *arg_info)
     DBUG_ENTER ("MTSPMDFid");
 
     avis = ID_AVIS (arg_node);
-    new_avis = NULL;
-
-    ids = NULL;
-    dim = NULL;
-    shape = NULL;
-    alloc = NULL;
-    free = NULL;
 
     DBUG_PRINT ("MTSPMDF", ("ENTER id %s", ID_NAME (arg_node)));
 
     if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-            DBUG_PRINT ("MTSPMDF", ("  Not handled before..."));
-            new_avis = DUPdoDupNode (avis);
+        if (INFO_WITHID (arg_info)) {
+            /*
+             * As a withid this N_id node actually represents a left hand side variable.
+             */
+            DBUG_PRINT ("MTSPMDF", ("...is Withid-id"));
 
-            if (!INFO_WITHID (arg_info)) {
+            if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+                DBUG_PRINT ("MTSPMDF", ("  Not handled before..."));
+                new_avis = DUPdoDupNode (avis);
+                INFO_VARDECS (arg_info)
+                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+                AVIS_ISDEAD (avis) = TRUE;
+
+                DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", ID_NAME (arg_node)));
+
+                if (INFO_WLPARALLEL (arg_info) && INFO_ALLOCNEEDED (arg_info)) {
+                    /*
+                     * This is the top-level with-loop, which is to be parallelised.
+                     * We need to recreate the alloc and free statements for placement
+                     * inside the spmd function as the original such statements are
+                     * outside the with-loop and hence remain in the ST function, from
+                     * where they need to be cleared later.
+                     */
+
+                    if (TUdimKnown (AVIS_TYPE (new_avis))) {
+                        dim = TBmakeNum (TYgetDim (AVIS_TYPE (new_avis)));
+                    } else {
+                        dim = NULL;
+                    }
+
+                    if (TUshapeKnown (AVIS_TYPE (new_avis))) {
+                        shape = SHshape2Array (TYgetShape (AVIS_TYPE (new_avis)));
+                    } else {
+                        shape = NULL;
+                    }
+
+                    alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);
+
+                    ids = TBmakeIds (new_avis, NULL);
+
+                    INFO_ALLOCASSIGNS (arg_info)
+                      = TBmakeAssign (TBmakeLet (ids, alloc),
+                                      INFO_ALLOCASSIGNS (arg_info));
+
+                    free = TCmakePrf1 (F_free, TBmakeId (new_avis));
+                    INFO_FREEASSIGNS (arg_info)
+                      = TBmakeAssign (TBmakeLet (NULL, free),
+                                      INFO_FREEASSIGNS (arg_info));
+                }
+            }
+        } else {
+            if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+                DBUG_PRINT ("MTSPMDF", ("  Not handled before..."));
+                /*
+                 * A right hand side variable that has not been handled before must be a
+                 * free variable of the with-loop and that means it needs to become a
+                 * parameter of the spmd function to be created.
+                 */
+                new_avis = DUPdoDupNode (avis);
+
                 INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
                 INFO_PARAMS (arg_info)
                   = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
             }
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-        }
-
-        if (INFO_WITHID (arg_info)) {
-            DBUG_PRINT ("MTSPMDF", ("...is Withid-id"));
-            if (new_avis == NULL) {
-                new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
-            } else {
-                INFO_VARDECS (arg_info)
-                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-            }
-
-            ids = TBmakeIds (new_avis, NULL);
-
-            if (TUdimKnown (AVIS_TYPE (new_avis))) {
-                dim = TBmakeNum (TYgetDim (AVIS_TYPE (new_avis)));
-            }
-
-            if (TUshapeKnown (AVIS_TYPE (new_avis))) {
-                shape = SHshape2Array (TYgetShape (AVIS_TYPE (new_avis)));
-            }
-
-            alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);
-
-            INFO_ALLOCASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (ids, alloc), INFO_ALLOCASSIGNS (arg_info));
-
-            free = TCmakePrf1 (F_free, TBmakeId (new_avis));
-            INFO_FREEASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (NULL, free), INFO_FREEASSIGNS (arg_info));
         }
     }
 
@@ -411,6 +407,7 @@ MTSPMDFids (node *arg_node, info *arg_info)
             new_avis = DUPdoDupNode (avis);
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+            AVIS_ISDEAD (avis) = TRUE;
             DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
         }
     } else {
@@ -466,10 +463,14 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
          * Start collecting data flow information
          */
         INFO_COLLECT (arg_info) = TRUE;
+        INFO_WLPARALLEL (arg_info) = TRUE;
 
         WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+
+        INFO_WLPARALLEL (arg_info) = FALSE;
+
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
         INFO_COLLECT (arg_info) = FALSE;
@@ -522,10 +523,48 @@ MTSPMDFwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ("MTSPMDFwithid");
 
     INFO_WITHID (arg_info) = TRUE;
+    INFO_ALLOCNEEDED (arg_info) = WITHID_VECNEEDED (arg_node);
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    WITHID_VEC (arg_node) = TRAVopt (WITHID_VEC (arg_node), arg_info);
+
+    INFO_ALLOCNEEDED (arg_info) = FALSE;
+
+    WITHID_IDS (arg_node) = TRAVopt (WITHID_IDS (arg_node), arg_info);
+    WITHID_IDXS (arg_node) = TRAVopt (WITHID_IDXS (arg_node), arg_info);
 
     INFO_WITHID (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn MTSPMDFdoCreateSpmdFuns( node *syntax_tree)
+ *
+ *  @brief initiates traversal for creating SPMD functions
+ *
+ *  @param syntax_tree
+ *
+ *  @return syntax_tree
+ *
+ *****************************************************************************/
+
+node *
+MTSPMDFdoCreateSpmdFuns (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("MTSPMDFdoCreateSpmdFuns");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_mtspmdf);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
 }

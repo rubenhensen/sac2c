@@ -845,12 +845,7 @@ SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, 
 
 SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 
-#ifdef TO_BE_DONE
-
-SUBPHASE (mtdvr, "Removing superfluous variable declarations", MTDVRdoRemoveDeadVardecs,
-          ALWAYS, mt)
-
-#endif
+SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval, ALWAYS, mt)
 
 SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)
 
