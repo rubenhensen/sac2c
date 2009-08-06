@@ -188,7 +188,7 @@ $(PROJECT_ROOT)/lib/libsac2c.so: $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).
 $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
-#	@$(ECHO) "Linking $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
+	@$(TOUCH) $(FINGERPRINT_FILE)
 	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ \
                 $(SUBTARGETS) $^ \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_LEX)
@@ -226,7 +226,8 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 
 $(PROJECT_ROOT)/lib/libsacpreludeTree.so \
 $(PROJECT_ROOT)/lib/libsacpreludeMod.so \
-$(PROJECT_ROOT)/lib/libsacpreludeMod.a: libsacpreludeTree.$($(STYLE)_short).so
+$(PROJECT_ROOT)/lib/libsacpreludeMod.a: \
+ libsacpreludeTree.$($(STYLE)_short).so $(FINGERPRINT_FILE)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacpreludeTree.so " 
 	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.so " 
@@ -276,7 +277,7 @@ $(PROJECT_ROOT)/lib/lib%_seq_diag.a: $(SUBTARGETS_DIAG)
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq_diag.a ($($(STYLE)_long) version)"
 	$(HIDE) $(AR) $@ $^
 	$(HIDE) $(RANLIB) $@
-	@$(TOUCH) .done
+	@$(TOUCSH       ) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 $(PROJECT_ROOT)/lib/lib%_seq_diag.so: $(SUBTARGETS_DIAG) 
