@@ -59,6 +59,39 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *ETCdoEliminateTypeConversionsModule( node *arg_node)
+ *
+ * @brief starting point of F_type_conv elimination
+ *        This is non-GLF traversal.
+ *
+ * @param arg_node - N_module
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ETCdoEliminateTypeConversionsModule (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("ETCdoEliminateTypeConversionsModule");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "ETC expected N_module");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+
+    TRAVpush (TR_etc);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *ETCdoEliminateTypeConversions( node *arg_node)
  *
  * @brief starting point of F_type_conv elimination
@@ -75,8 +108,7 @@ ETCdoEliminateTypeConversions (node *arg_node)
 
     DBUG_ENTER ("ETCdoEliminateTypeConversions");
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "a second entry is required for calls on N_module");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ETC expected N_fundef");
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -146,6 +178,9 @@ ETCfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ETCfundef");
 
+    DBUG_PRINT ("CF", ("traversing body of (%s) %s",
+                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                       FUNDEF_NAME (arg_node)));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     one_fundef = INFO_ONEFUNDEF (arg_info);
@@ -160,14 +195,23 @@ ETCfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ *
+ * prefix: ETC
+ *
+ *****************************************************************************/
 node *
 ETCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ETCprf");
 
+    DBUG_PRINT ("ETC", ("Found N_prf"));
     switch (PRF_PRF (arg_node)) {
     case F_type_conv:
+        DBUG_PRINT ("ETC", ("Found F_type_conv"));
         if (TYleTypes (ID_NTYPE (PRF_ARG2 (arg_node)), TYPE_TYPE (PRF_ARG1 (arg_node)))) {
+            DBUG_PRINT ("ETC", ("Eliminated F_type_conv"));
             node *res = PRF_ARG2 (arg_node);
             PRF_ARG2 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
@@ -178,8 +222,10 @@ ETCprf (node *arg_node, info *arg_info)
         break;
 
     case F_saabind:
+        DBUG_PRINT ("ETC", ("Found F_saabind"));
         if (CompareDTypes (ID_AVIS (PRF_ARG3 (arg_node)), PRF_ARG1 (arg_node),
                            PRF_ARG2 (arg_node))) {
+            DBUG_PRINT ("ETC", ("Eliminated F_saabind"));
             node *res = PRF_ARG3 (arg_node);
             PRF_ARG3 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
