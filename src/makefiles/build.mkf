@@ -277,7 +277,7 @@ $(PROJECT_ROOT)/lib/lib%_seq_diag.a: $(SUBTARGETS_DIAG)
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq_diag.a ($($(STYLE)_long) version)"
 	$(HIDE) $(AR) $@ $^
 	$(HIDE) $(RANLIB) $@
-	@$(TOUCSH       ) .done
+	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 $(PROJECT_ROOT)/lib/lib%_seq_diag.so: $(SUBTARGETS_DIAG) 
