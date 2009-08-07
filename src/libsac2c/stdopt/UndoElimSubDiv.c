@@ -148,6 +148,7 @@ static prf
 TogglePrf (prf op)
 {
     prf result = F_noop;
+
     DBUG_ENTER ("TogglePrf");
 
     switch (op) {
@@ -177,6 +178,65 @@ TogglePrf (prf op)
 
     case F_mul_VxS:
         result = F_div_VxS;
+        break;
+
+    case F_mul_VxV:
+        result = F_div_VxV;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal argument prf!");
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**<!--****************************************************************-->
+ *
+ * @fn static prf TogglePrfSwap(prf op)
+ *
+ * @brief returns opposite primitive operator of op taking into account
+ *        that also the order of arguments is swapped.
+ *
+ * @param op primitive operator
+ *
+ * @return opposite primitive operator of op
+ *
+ ************************************************************************/
+static prf
+TogglePrfSwap (prf op)
+{
+    prf result = F_noop;
+
+    DBUG_ENTER ("TogglePrfSwap");
+
+    switch (op) {
+    case F_add_SxS:
+        result = F_sub_SxS;
+        break;
+
+    case F_add_SxV:
+        result = F_sub_VxS;
+        break;
+
+    case F_add_VxS:
+        result = F_sub_SxV;
+        break;
+
+    case F_add_VxV:
+        result = F_sub_VxV;
+        break;
+
+    case F_mul_SxS:
+        result = F_div_SxS;
+        break;
+
+    case F_mul_SxV:
+        result = F_div_VxS;
+        break;
+
+    case F_mul_VxS:
+        result = F_div_SxV;
         break;
 
     case F_mul_VxV:
@@ -432,7 +492,7 @@ UESDprf (node *arg_node, info *arg_info)
                 PRF_ARG1 (arg_node) = FREEdoFreeTree (PRF_ARG1 (arg_node));
                 PRF_ARG1 (arg_node) = PRF_ARG2 (arg_node);
                 PRF_ARG2 (arg_node) = DUPdoDupTree (id1);
-                PRF_PRF (arg_node) = TogglePrf (op);
+                PRF_PRF (arg_node) = TogglePrfSwap (op);
             } else if ((id1 != NULL) && (id2 != NULL)) {
                 /*
                  * convert !a op !b -> !( a op b)
