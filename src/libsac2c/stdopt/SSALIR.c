@@ -828,7 +828,7 @@ LIRfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LIRfundef");
 
-    DBUG_PRINT ("LIR", ("loop invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("LIR", ("loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
 
     if (((FUNDEF_ISLACFUN (arg_node))
          && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
@@ -909,8 +909,11 @@ LIRfundef (node *arg_node, info *arg_info)
     /**
      * traverse only in next fundef if traversal started in module node
      */
-    if ((INFO_TRAVSTART (arg_info) == TS_module) && (INFO_FUNDEF (arg_info) == NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_TRAVSTART (arg_info) == TS_module) {
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        if (INFO_FUNDEF (arg_info) == NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
