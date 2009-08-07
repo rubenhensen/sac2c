@@ -70,9 +70,9 @@ FreeInfo (info *info)
  *
  * @brief in do/while special functions: set the LIR attribute for the
  *        args by comparing the args with the corresponding identifier
- *        in the recursive call. if they are identical the args is a loop
- *        invariant arg and will be tagged.
- *        This function relieas on INFO_ILI_EXPRCHAIN to be set to the
+ *        in the recursive call. if they are identical, the args is a
+ *        loop-invariant arg, and will be tagged.
+ *        This function relies on INFO_ILI_EXPRCHAIN to be set to the
  *        N_exprs chain of the recusive calls' arguments. This is done in
  *        ILIap prior to traversing the args.
  *
@@ -86,7 +86,7 @@ ILIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ILIarg");
 
-    /* infere loop invarinat args */
+    /* Infer loop invariant args */
     DBUG_ASSERT ((INFO_ILI_EXPRCHAIN (arg_info) != NULL),
                  "reached ILIarg without having a link to the args "
                  "of the recursive call!");
@@ -95,10 +95,10 @@ ILIarg (node *arg_node, info *arg_info)
 
     /* compare arg and fun-ap argument */
     if (ARG_AVIS (arg_node) == ID_AVIS (EXPRS_EXPR (INFO_ILI_EXPRCHAIN (arg_info)))) {
-        DBUG_PRINT ("ILI", ("mark %s as loop invariant", ARG_NAME (arg_node)));
+        DBUG_PRINT ("ILI", ("mark %s as loop-invariant", ARG_NAME (arg_node)));
         AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
     } else {
-        DBUG_PRINT ("ILI", ("mark %s as non loop invariant", ARG_NAME (arg_node)));
+        DBUG_PRINT ("ILI", ("mark %s as non-loop-invariant", ARG_NAME (arg_node)));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
