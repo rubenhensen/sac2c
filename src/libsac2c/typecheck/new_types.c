@@ -3268,6 +3268,13 @@ TYisSymb (ntype *type)
     DBUG_RETURN (NTYPE_CON (type) == TC_symbol);
 }
 
+/*
+ * I hope the author of TYisScalar provides some documentation
+ * on what this predicated is intended to do.
+ * It does NOT mean: "This is a rank-0 array."
+ * For that, use TUisScalar( type).
+ */
+
 bool
 TYisScalar (ntype *type)
 {
