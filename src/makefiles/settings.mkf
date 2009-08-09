@@ -25,16 +25,14 @@ SETTINGS_DEVEL         := -DSHOW_MALLOC \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED \
                           -DCLEANMEM -DCHECK_NODE_ACCESS \
-                          -DINLINE_MACRO_CHECKS \
-                          -DBUG110_FIXED=1
+                          -DINLINE_MACRO_CHECKS 
 
 SETTINGS_PROD          := -DDBUG_OFF \
                           -DPRODUCTION \
                           -DWLAA_DEACTIVATED \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \
-                          -DPADT_DEACTIVATED \
-                          -DBUG110_FIXED=1
+                          -DPADT_DEACTIVATED 
 
 SETTINGS_MT            := -DMT 
 
