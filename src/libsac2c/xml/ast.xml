@@ -342,6 +342,7 @@
           <node name="Let" />
           <node name="Block" />
           <node name="Vardec" />
+          <node name="Avis" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Cond" />
@@ -5771,11 +5772,8 @@ N_structdef :
               <target mandatory="no">
                 <node name="Assign" />
                 <phases>
-                  <!-- 
-                  <range from="ptc_ssa" to="wlt_l2f" /> 
+                  <range from="ptc_ssa" to="wlt_ussa" /> 
                   <range from="wlt_ssa" to="ussa_ussa" /> 
-                  -->
-                  <range from="ptc_ssa" to="cg_frtr" />
                 </phases>
               </target>
             </targets>

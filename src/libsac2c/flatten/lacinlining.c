@@ -153,7 +153,10 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
                                              TBmakeId (newavis)),
                                   FUNDEF_INSTR (fundef));
-                AVIS_SSAASSIGN (newavis) = FUNDEF_INSTR (fundef);
+
+                if (global.valid_ssaform) {
+                    AVIS_SSAASSIGN (newavis) = FUNDEF_INSTR (fundef);
+                }
 
                 FUNDEF_VARDEC (fundef)
                   = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
@@ -183,7 +186,9 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                                                          TBmakeType (TYcopyType (ftype)),
                                                          TBmakeId (newavis))),
                                   FUNDEF_INSTR (fundef));
-                AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
+                if (global.valid_ssaform) {
+                    AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
+                }
 
                 FUNDEF_VARDEC (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDEC (fundef));
 

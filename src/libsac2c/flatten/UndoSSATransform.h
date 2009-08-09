@@ -1,26 +1,24 @@
-/*
- * $Log$
- * Revision 1.7  2005/04/19 17:36:18  ktr
- * Complete rewrite
+/*****************************************************************************
  *
- */
+ * $Id$
+ *
+ * file:   UndoSSATransform.h
+ *
+ * prefix: USSAT
+ *
+ * description: Undo SSA-Transform traversal ( ussa_tab)
+ *
+ *****************************************************************************/
 
 #ifndef _SAC_UNDOSSATRANSFORM_H_
 #define _SAC_UNDOSSATRANSFORM_H_
 
 #include "types.h"
 
-/*****************************************************************************
- *
- * Undo SSA-Transform traversal ( ussa_tab)
- *
- * prefix: USSAT
- *
- *
- *****************************************************************************/
 extern node *USSATdoUndoSsaTransform (node *syntax_tree);
 
 extern node *USSATvardec (node *arg_node, info *arg_info);
+extern node *USSATavis (node *arg_node, info *arg_info);
 extern node *USSATid (node *arg_node, info *arg_info);
 extern node *USSATids (node *arg_node, info *arg_info);
 extern node *USSATcond (node *arg_node, info *arg_info);

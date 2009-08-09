@@ -23,6 +23,14 @@
 #include "print.h"
 #include "globals.h"
 
+#define SSA_ASSIGN_BUG_FIXED 0
+/*
+ * All SSAASSIGN links should be removed in this phase, but for some reason
+ * compilation of the stdlib fails if so done. So, for now we only remove
+ * those links that belong to funcond defined variables, for which there is
+ * no one SSA_ASSIGN anyhow.
+ */
+
 /*
  * INFO structure
  */
@@ -125,20 +133,19 @@ USSATfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("USSATfundef");
 
-    if ((FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        if (FUNDEF_ISLACFUN (arg_node)) {
+            arg_node = UssaInitAvisFlags (arg_node);
 
-        arg_node = UssaInitAvisFlags (arg_node);
+            INFO_FUNDEF (arg_info) = arg_node;
+            INFO_LHS (arg_info) = NULL;
+            INFO_REMASSIGN (arg_info) = FALSE;
+            INFO_THENASS (arg_info) = NULL;
+            INFO_ELSEASS (arg_info) = NULL;
 
-        INFO_FUNDEF (arg_info) = arg_node;
-        INFO_LHS (arg_info) = NULL;
-        INFO_REMASSIGN (arg_info) = FALSE;
-        INFO_THENASS (arg_info) = NULL;
-        INFO_ELSEASS (arg_info) = NULL;
-
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        if (FUNDEF_VARDEC (arg_node) != NULL) {
-            FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        } else {
+            FUNDEF_VARDEC (arg_node) = TRAVopt (FUNDEF_VARDEC (arg_node), arg_info);
         }
     }
 
@@ -181,21 +188,46 @@ USSATblock (node *arg_node, info *arg_info)
  *
  * description:
  *   remove unnecessary vardecs
+ *   kill SSAASSIGN links
  *
  ******************************************************************************/
+
 node *
 USSATvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSATvardec");
 
+    VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
+
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
-    if ((VARDEC_AVIS (arg_node) == NULL)
-        || (AVIS_SUBST (VARDEC_AVIS (arg_node)) != NULL)) {
+    if (AVIS_SUBST (VARDEC_AVIS (arg_node)) != NULL) {
         arg_node = FREEdoFreeNode (arg_node);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *USSATavis(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   remove unnecessary aviss
+ *
+ ******************************************************************************/
+
+node *
+USSATavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSATavis");
+
+#if SSA_ASSIGN_BUG_FIXED
+    AVIS_SSAASSIGN (arg_node) = NULL;
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -424,26 +456,31 @@ IdGivenByFillOperation (node *idavis)
                 ops = WITHOP_NEXT (ops);
             }
 
-            res = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray))
+            res = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray)
+                    || (NODE_TYPE (ops) == N_break))
                    && (WITHOP_MEM (ops) != NULL));
         } break;
 
         case N_ap: {
-            node *rets = FUNDEF_RETS (AP_FUNDEF (expr));
+            if (FUNDEF_ISDOFUN (AP_FUNDEF (expr))) {
+                res = TRUE;
+            } else {
+                node *rets = FUNDEF_RETS (AP_FUNDEF (expr));
 
-            while ((IDS_AVIS (ids) != idavis) && (rets != NULL)) {
-                ids = IDS_NEXT (ids);
-                rets = RET_NEXT (rets);
-            }
+                while ((IDS_AVIS (ids) != idavis) && (rets != NULL)) {
+                    ids = IDS_NEXT (ids);
+                    rets = RET_NEXT (rets);
+                }
 
-            if ((rets != NULL) && (RET_HASLINKSIGNINFO (rets))) {
-                node *args = FUNDEF_ARGS (AP_FUNDEF (expr));
-                while (args != NULL) {
-                    if (ARG_HASLINKSIGNINFO (args)
-                        && (ARG_LINKSIGN (args) == RET_LINKSIGN (rets))) {
-                        res = TRUE;
+                if ((rets != NULL) && (RET_HASLINKSIGNINFO (rets))) {
+                    node *args = FUNDEF_ARGS (AP_FUNDEF (expr));
+                    while (args != NULL) {
+                        if (ARG_HASLINKSIGNINFO (args)
+                            && (ARG_LINKSIGN (args) == RET_LINKSIGN (rets))) {
+                            res = TRUE;
+                        }
+                        args = ARG_NEXT (args);
                     }
-                    args = ARG_NEXT (args);
                 }
             }
         } break;
@@ -586,6 +623,10 @@ USSATfuncond (node *arg_node, info *arg_info)
 
     INFO_REMASSIGN (arg_info) = TRUE;
 
+#if !SSA_ASSIGN_BUG_FIXED
+    AVIS_SSAASSIGN (rhsavis) = NULL;
+#endif
+
     DBUG_RETURN (arg_node);
 }
 
@@ -598,6 +639,7 @@ USSATfuncond (node *arg_node, info *arg_info)
  *   Starts traversal of AST to restore original artificial identifier.
  *
  ******************************************************************************/
+
 node *
 USSATdoUndoSsaTransform (node *module)
 {
