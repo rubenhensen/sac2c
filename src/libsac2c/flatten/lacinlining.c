@@ -129,18 +129,32 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
             DBUG_EXECUTE ("LINL", tmp_str = MEMfree (tmp_str);
                           tmp_str2 = MEMfree (tmp_str2););
 
-            if (TYisAKS (ftype) && TYisAKV (ctype)) {
-                /*
-                 * 1a) special case where we can just downgrade the
-                 *     type as there is no representational difference
-                 *     at all.
-                 */
-                DBUG_PRINT ("LINL", ("    >> downgrade AKV -> AKS"));
+#if 0
+      /* 
+       * The simplified coercion below seems to be like a good idea at first
+       * glance, but in fact it is not: The AKV variable in the calling context
+       * may have many uses, e.g. it could even be used in another argument
+       * position in the same LaC function. Downgrading the type eliminates AKV
+       * knowledge in all these applied occurrences of the variable as well,
+       * which is hardly what we want. So, in fact the general case below is
+       * the better choice.
+       */
+      if ( TYisAKS( ftype) && TYisAKV( ctype)) {
+        /*
+         * 1a) special case where we can just downgrade the
+         *     type as there is no representational difference
+         *     at all.
+         */
+        DBUG_PRINT( "LINL", ("    >> downgrade AKV -> AKS"));
 
-                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg)))
-                  = TYfreeType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))));
-                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))) = TYcopyType (ftype);
-            } else if (TYleTypes (ctype, ftype)) {
+        AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) =
+          TYfreeType( AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))));
+        AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) = 
+          TYcopyType( ftype);
+      }
+      else
+#endif
+            if (TYleTypes (ctype, ftype)) {
                 /*
                  * 1b) type of concrete arg < type of formal arg
                  */
@@ -154,9 +168,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                                              TBmakeId (newavis)),
                                   FUNDEF_INSTR (fundef));
 
-                if (global.valid_ssaform) {
-                    AVIS_SSAASSIGN (newavis) = FUNDEF_INSTR (fundef);
-                }
+                AVIS_SSAASSIGN (newavis) = FUNDEF_INSTR (fundef);
 
                 FUNDEF_VARDEC (fundef)
                   = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
@@ -186,9 +198,8 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                                                          TBmakeType (TYcopyType (ftype)),
                                                          TBmakeId (newavis))),
                                   FUNDEF_INSTR (fundef));
-                if (global.valid_ssaform) {
-                    AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
-                }
+
+                AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
 
                 FUNDEF_VARDEC (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDEC (fundef));
 
