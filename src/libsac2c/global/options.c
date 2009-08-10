@@ -79,7 +79,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 /******************************************************************************
  *
  * function:
- *   void CheckOptionConsistency()
+ *   void OPTcheckOptionConsistency(void)
  *
  * description:
  *   This function is called right after command line arguments
@@ -88,14 +88,14 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
  *
  ******************************************************************************/
 
-static void
-CheckOptionConsistency ()
+void
+OPTcheckOptionConsistency (void)
 {
-    DBUG_ENTER ("CheckOptionConsistency");
+    DBUG_ENTER ("OPTcheckOptionConsistency");
 
     if (global.backend == BE_mutc) {
         if (global.mtmode != MT_none) {
-            CTIabort ("Traditional MT modes are not available for the muTC "
+            CTIerror ("Traditional MT modes are not available for the muTC "
                       "backend.");
         }
 
@@ -118,10 +118,10 @@ CheckOptionConsistency ()
         }
     } else {
         if (global.mutc_fun_as_threads == TRUE) {
-            CTIabort ("-mutc_fun_threads only works with mutc backend");
+            CTIerror ("-mutc_fun_threads only works with mutc backend");
         }
         if (global.mutc_macros == TRUE) {
-            CTIabort ("-mutc_macros only works with mutc backend");
+            CTIerror ("-mutc_macros only works with mutc backend");
         }
     }
 
@@ -1066,8 +1066,6 @@ OPTanalyseCommandline (int argc, char *argv[])
         AnalyseCommandlineSac2tex (argc, argv);
         break;
     }
-
-    CheckOptionConsistency ();
 
     DBUG_VOID_RETURN;
 }

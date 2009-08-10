@@ -19,5 +19,6 @@
 
 extern void OPTanalyseCommandline (int argc, char *argv[]);
 extern void OPTcheckPreSetupOptions (int argc, char *argv[]);
+extern void OPTcheckOptionConsistency (void);
 
 #endif /* _SAC_OPTIONS_H_ */

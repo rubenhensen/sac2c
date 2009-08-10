@@ -49,6 +49,8 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     LIBSprintLibStat ();
 
+    OPTcheckOptionConsistency ();
+
     CTIabortOnError ();
 
     DBUG_RETURN (syntax_tree);
