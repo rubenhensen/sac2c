@@ -909,6 +909,11 @@ IVEXImodule (node *arg_node, info *arg_info)
  * description:
  *   Traverse a function.
  *   If the function is a lacfn and we are traversing it from
+ *   the N_ap call, handle it now. Otherwise, ignore it.
+ *
+ *   Implication: We do not have to traverse FUNDEF_LOCALFUNS
+ *   explicitly in this traversal, since all local functions will
+ *   be traversed when we encounter their invocation.
  *
  ******************************************************************************/
 node *
