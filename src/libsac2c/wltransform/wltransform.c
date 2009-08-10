@@ -2467,7 +2467,7 @@ static node *
 ToFirstComponent (node *array)
 {
     pattern *pat;
-    node *elems;
+    node *elems = NULL;
 
     DBUG_ENTER ("ToFirstComponent");
 
