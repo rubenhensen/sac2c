@@ -630,8 +630,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
      */
 
-    ARGS_OPTION ("t", global.target_name = ARG);
-
     ARGS_OPTION ("target", global.target_name = ARG);
 
     ARGS_FLAG ("tog", global.dotogstuff = TRUE);
@@ -648,6 +646,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     }
     ARGS_OPTION_END ("trace");
+
+    ARGS_OPTION ("t", global.target_name = ARG);
 
     /*
      * Options starting with uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu

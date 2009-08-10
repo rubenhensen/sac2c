@@ -3,15 +3,14 @@
  */
 
 /*
+ ****************************************************************************
+ *
  * File: get_options.h
  *
  * Description:
  *
  * This file contains a set of macro definitions that simplify the
  * analysis of command line arguments for C programs.
- *
- * Note that for these macros to work correctly you must link your executable
- * program with main_args.o derived from main_args.c !
  *
  ****************************************************************************
  *
@@ -102,6 +101,8 @@
  * ARG_RANGE() implements an integer argument which is automatically converted
  *             from the command line string an assigned to the given variable;
  *             the argument must be in the given range (both limits included).
+ *
+ ****************************************************************************
  *
  *
  */
@@ -287,12 +288,16 @@
         }
 
 /*
+ ****************************************************************************
+ *
  * In the remainder, we feature the definitions of two auxiliary functions,
  * declared in the beginning. It is not optimal to have plain C code in a
  * header file, but in this very case it allows us to have a pure include
  * based realisation of getoptions without the need to link with additional
  * libraries. Given the additional fact that programs typically include
  * getoptions.h exactly once, this seems to be a suitable trade-off.
+ *
+ ****************************************************************************
  */
 
 /******************************************************************************
