@@ -546,9 +546,12 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         if (!RefArgMatch (FUNDEF_ARGS (wrapper), FUNDEF_ARGS (arg_node))) {
             CTIabortLine (NODE_LINE (arg_node),
                           "Trying to overload function \"%s\" that expects %d "
-                          "argument(s) "
-                          "and %d return value(s) with a version that has a signature "
-                          "differing in the number or position of reference args only.",
+                          "argument(s) and yields "
+                          "%d return value(s) with an instance that expects the same "
+                          "number of "
+                          "arguments and yields the same number of return values but "
+                          "differs in the "
+                          "number or position of reference arguments.",
                           CTIitemName (wrapper),
                           TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
                           TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper)));
