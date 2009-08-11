@@ -130,7 +130,7 @@ tagFundefAsNeeded (node *fundef, info *info)
                  "tagFundefAsNeeded called on wrapper fun");
 
     if (!FUNDEF_ISNEEDED (fundef)) {
-        DBUG_PRINT ("DFR", (">>> tagging fundef %s", CTIitemName (fundef)));
+        DBUG_PRINT ("DFR", (">>> tagging fundef %s as needed", CTIitemName (fundef)));
 
         FUNDEF_ISNEEDED (fundef) = TRUE;
 
@@ -178,7 +178,7 @@ tagWrapperAsNeeded (node *wrapper, info *info)
                  "tagWrapperAsNeeded called on non-wrapper fun");
 
     if (!FUNDEF_ISNEEDED (wrapper)) {
-        DBUG_PRINT ("DFR", (">>> tagging wrapper %s", CTIitemName (wrapper)));
+        DBUG_PRINT ("DFR", (">>> tagging wrapper %s as needed", CTIitemName (wrapper)));
 
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
@@ -253,7 +253,7 @@ tagObjdefAsNeeded (node *objdef, info *info)
     DBUG_ENTER ("tagObjdefAsNeeded");
 
     if (!OBJDEF_ISNEEDED (objdef)) {
-        DBUG_PRINT ("DFR", (">>> tagging objdef %s", CTIitemName (objdef)));
+        DBUG_PRINT ("DFR", (">>> tagging objdef %s as needed", CTIitemName (objdef)));
 
         OBJDEF_ISNEEDED (objdef) = TRUE;
 
@@ -431,11 +431,11 @@ DFRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRfundef");
 
-    if (INFO_SPINE (arg_info)) {
-        DBUG_PRINT ("DFR", ("Dead Function Removal in %s: %s",
-                            (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                            CTIitemName (arg_node)));
+    DBUG_PRINT ("DFR", ("Dead Function Removal in %s: %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        CTIitemName (arg_node)));
 
+    if (INFO_SPINE (arg_info)) {
         /*
          * remark: main is always tagged as provided
          */
@@ -525,7 +525,11 @@ DFRap (node *arg_node, info *arg_info)
      * we have found a function application. SO move into the called
      * function and mark it as needed.
      */
+    DBUG_PRINT ("DFR",
+                ("Traversing N_ap for function %s", FUNDEF_NAME (AP_FUNDEF (arg_node))));
     AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+    DBUG_PRINT ("DFR", ("Return from traversing N_ap for function %s",
+                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
     DBUG_RETURN (arg_node);
 }
@@ -543,7 +547,7 @@ DFRap (node *arg_node, info *arg_info)
 node *
 DFRfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRwithop");
+    DBUG_ENTER ("DFRfold");
 
     FOLD_FUNDEF (arg_node) = TRAVdo (FOLD_FUNDEF (arg_node), arg_info);
 
