@@ -236,7 +236,11 @@ CHKLACFdoCheckLacFuns (node *arg_node)
     if (global.valid_ssaform) {
         if (NODE_TYPE (arg_node) == N_fundef) {
             syntax_tree = global.syntax_tree;
+        } else {
+            syntax_tree = arg_node;
         }
+
+        CTItell (4, "         Running LaC fun check");
 
         info = MakeInfo ();
 
