@@ -469,15 +469,6 @@ target cuda:
 BACKEND         :=  "Cuda"
 
 
-/*******************************************************************************
- *
- * Target mutc: use the MUTC backend of sac2c
- *
- */
-
-target mutc:
-
-BACKEND         :=  "muTC"
 
 
  

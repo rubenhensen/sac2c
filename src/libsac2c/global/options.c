@@ -93,7 +93,7 @@ OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ("OPTcheckOptionConsistency");
 
-    if (global.backend == BE_mutc) {
+    if (STReq (global.config.backend, "muTC")) {
         if (global.mtmode != MT_none) {
             CTIerror ("Traditional MT modes are not available for the muTC "
                       "backend.");
