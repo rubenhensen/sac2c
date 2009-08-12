@@ -3182,6 +3182,17 @@ DUPdupIdNt (node *arg_id)
     new_id = DUPdoDupNode (arg_id);
 
     DBUG_ASSERT ((ID_TYPE (arg_id) != NULL), "NT_TAG: no type found!");
+
+    /*
+      if((ID_TYPE( arg_id) != NULL))
+      {
+        printf("NOT NULL\n");
+      }
+      else
+      {
+        printf("NULL\n");
+      }
+    */
     ID_NT_TAG (new_id) = NTUcreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
 
     DBUG_RETURN (new_id);

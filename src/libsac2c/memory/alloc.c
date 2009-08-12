@@ -1746,10 +1746,18 @@ EMALwith (node *arg_node, info *arg_info)
     /*
      * Duplicate withid for the second part
      */
-    if (PART_NEXT (WITH_PART (arg_node)) != NULL) {
-        node *nextpart = PART_NEXT (WITH_PART (arg_node));
+    /*
+      if( PART_NEXT( WITH_PART( arg_node)) != NULL) {
+        node *nextpart = PART_NEXT( WITH_PART( arg_node));
+        PART_WITHID( nextpart) = FREEdoFreeNode( PART_WITHID( nextpart));
+        PART_WITHID( nextpart) = DUPdoDupNode( WITH_WITHID( arg_node));
+      }
+    */
+    node *nextpart = PART_NEXT (WITH_PART (arg_node));
+    while (nextpart != NULL) {
         PART_WITHID (nextpart) = FREEdoFreeNode (PART_WITHID (nextpart));
         PART_WITHID (nextpart) = DUPdoDupNode (WITH_WITHID (arg_node));
+        nextpart = PART_NEXT (nextpart);
     }
 
     DBUG_RETURN (arg_node);

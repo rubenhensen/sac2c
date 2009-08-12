@@ -614,10 +614,16 @@ FMGRsetFileNames (node *module)
 
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
-            global.cfilename = "a.out.c";
+            if (global.backend != BE_cuda)
+                global.cfilename = "a.out.c";
+            else
+                global.cfilename = "a.out.cu";
             global.targetdir = "";
         } else {
-            global.cfilename = STRcat (global.outfilename, ".c");
+            if (global.backend != BE_cuda)
+                global.cfilename = STRcat (global.outfilename, ".c");
+            else
+                global.cfilename = STRcat (global.outfilename, ".cu");
             global.targetdir = "";
         }
     } else {

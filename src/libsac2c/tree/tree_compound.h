@@ -915,6 +915,8 @@ extern node *TCmakePrf1 (prf prf, node *arg1);
 extern node *TCmakePrf2 (prf prf, node *arg1, node *arg2);
 extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 extern node *TCmakePrf4 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4);
+extern node *TCmakePrf5 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4,
+                         node *arg5);
 
 /*--------------------------------------------------------------------------*/
 

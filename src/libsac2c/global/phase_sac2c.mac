@@ -671,8 +671,13 @@ SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt
 
 SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
 
-SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform,
-          global.backend != BE_cuda, wlt)
+SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
+          global.backend == BE_cuda, wlt)
+
+SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
+
+SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
+          global.backend == BE_cuda, wlt)
 
 SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
 
@@ -690,11 +695,42 @@ SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
 
-SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
-          global.backend == BE_cuda, wlt)
+SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
+          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
+/*
+SUBPHASE( f2l2,
+          "Reintroducing loops and conditionals",
+          F2LdoFun2Lac,
+          global.backend == BE_cuda,
+          wlt)
+*/
 
-SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
-          global.backend == BE_cuda, wlt)
+/*
+SUBPHASE( l2f2,
+          "Eliminating loops and conditionals",
+          L2FdoLac2Fun,
+          global.backend == BE_cuda,
+          wlt)
+*/
+
+SUBPHASE (mtran, "Minimise the number of device-host data transfers",
+          MTRANdoMinimizeTransfers, global.backend == BE_cuda, wlt)
+
+/* These are two subphases invoked in the above pahse  */
+
+/*
+SUBPHASE( mstran,
+          "Minimise the number of sequential device-host data transfers",
+          MSTRANdoMinimizeTransfers,
+          global.backend == BE_cuda,
+          wlt)
+
+SUBPHASE( mltran,
+          "Minimise the number of device-host data transfers in a loop",
+          MLTRANdoMinimizeLoopTransfers,
+          global.backend == BE_cuda,
+          wlt)
+*/
 
 ENDPHASE (wlt)
 
@@ -857,15 +893,16 @@ ENDPHASE (mt)
 
 PHASE (pc, "Preparing C code generation", ALWAYS)
 
-SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels, NEVER, pc)
-
 SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
           global.backend == BE_mutc, pc)
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
-SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
-          pc)
+SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
+          global.backend == BE_cuda, pc)
+
+SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval,
+          global.backend != BE_cuda, pc)
 
 SUBPHASE (dst, "Computing static thread mapping", DSTdoDistributeThreads,
           ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)

@@ -166,6 +166,9 @@ PrintGlobalSwitches ()
              (global.mutc_fun_as_threads) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_MUTC_MACROS  %d\n",
              (global.backend == BE_mutc) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_CUDA_MACROS  %d\n",
+             (global.backend == BE_cuda) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     /* Expose backend mode to backend */
@@ -191,7 +194,9 @@ PrintGlobalSwitches ()
         fprintf (global.outfile, "#define SAC_GENERATE_CLIBRARY\n");
     }
     fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
-             (global.backend == BE_mutc) ? "" : "extern");
+             (global.backend == BE_mutc)
+               ? ""
+               : (global.backend == BE_cuda) ? "extern \"C\"" : "extern");
     fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
@@ -408,6 +413,10 @@ PrintGlobalSettings (node *syntax_tree)
              (global.profile_funcntr));
     fprintf (global.outfile, "#define SAC_SET_MAXFUNAP             %d\n",
              global.profile_funapmax);
+
+    fprintf (global.outfile, "#define SBLOCKSZ               %d\n", 16);
+
+    fprintf (global.outfile, "#define LBLOCKSZ               %d\n", 256);
 
     fprintf (global.outfile, "\n");
 
@@ -687,6 +696,9 @@ GSCprintMain ()
     case BE_mutc:
         GSCprintMainMuTC ();
         break;
+    case BE_cuda:
+        GSCprintMainC99 ();
+        break;
     default:
         DBUG_ASSERT (FALSE, "unknown backend");
     }
@@ -705,15 +717,29 @@ GSCprintSACargCopyFreeStubs ()
 
     if (global.backend != BE_mutc) {
 
-        fprintf (global.outfile, "/*\n"
-                                 " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
-                                 " */\n"
-                                 "extern void SACARGfreeDataUdt( int, void *);\n"
-                                 "extern void *SACARGcopyDataUdt( int, int, void *);\n"
-                                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
-                                 "void *SACARGcopyDataUdt( int type, int size, void "
-                                 "*data) { return ((void *) 0x0); } \n"
-                                 "\n");
+        if (global.backend != BE_cuda) {
+            fprintf (global.outfile,
+                     "/*\n"
+                     " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                     " */\n"
+                     "extern void SACARGfreeDataUdt( int, void *);\n"
+                     "extern void *SACARGcopyDataUdt( int, int, void *);\n"
+                     "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                     "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
+                     "((void *) 0x0); } \n"
+                     "\n");
+        } else {
+            fprintf (global.outfile,
+                     "/*\n"
+                     " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                     " */\n"
+                     "extern \"C\" void SACARGfreeDataUdt( int, void *);\n"
+                     "extern \"C\" void *SACARGcopyDataUdt( int, int, void *);\n"
+                     "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                     "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
+                     "((void *) 0x0); } \n"
+                     "\n");
+        }
     }
 
     DBUG_VOID_RETURN;

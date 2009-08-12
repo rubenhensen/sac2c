@@ -280,6 +280,7 @@ EMDRwith (node *arg_node, info *arg_info)
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
 
+    WITH_WITHID (arg_node) = TRAVopt (WITH_WITHID (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 

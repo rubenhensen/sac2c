@@ -86,6 +86,42 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="AMTRAN" name="Annoate a memory transfer" default="sons" include="annotate_memory_transfers.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Prf" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Arg" />
+        </travuser>
+      </traversal>
+      <traversal id="MTRAN" name="Minimise the number of device-host data transfers" default="sons" include="minimize_transfers.h" >
+        <travuser>
+        </travuser>
+      </traversal>
+      <traversal id="MLTRAN" name="Minimise the number of device-host data transfers in a loop" default="sons" include="minimize_loop_transfers.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Fundef" />
+          <node name="Prf" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Arg" />
+          <node name="Funcond" />
+          <node name="Return" />
+        </travuser>
+      </traversal>
+      <traversal id="MSTRAN" name="Minimise the number of sequential device-host data transfers" default="sons" include="minimize_sequential_transfers.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="With" />
+        </travuser>
+      </traversal>
       <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
         <travuser>
           <node name="Module" />
@@ -94,16 +130,28 @@
       </traversal>
       <traversal id="CUKNL" name="Create cuda kernel functions" default="sons" include="create_cuda_kernels.h" >
         <travuser>
+          <node name="Assign" />
           <node name="Let" />
           <node name="With" />
+          <node name="With2" />
           <node name="Withid" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Fundef" />
           <node name="Module" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Part" />
           <node name="Code" />
+          <node name="Generator" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="CNSTASS" name="Insert shape, lower bound and upper bound constant assignments" default="sons" include="create_constant_assignments.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Fundef" />
           <node name="Generator" />
         </travuser>
       </traversal>
@@ -111,21 +159,25 @@
         <travuser>
           <node name="Let" />
           <node name="Assign" />
-          <node name="With2" />
           <node name="With" />
+          <node name="With2" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Code" />
+          <node name="Prf" />
+          <node name="Do" />
         </travuser>
       </traversal>
       <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop.h" >
         <travuser>
           <node name="Assign" />
-          <node name="With2" />
           <node name="With" />
-          <node name="Let" />
           <node name="Code" />
           <node name="Fundef" />
-          <node name="Ids" />
+          <node name="Ap" />
+          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
@@ -1526,9 +1578,7 @@
           <node name="Assign"  />
           <node name="Let"  />
           <node name="Id"  />
-          <node name="Funcond" />
           <node name="Cond" />
-          <node name="While" />
           <node name="With"    />
           <node name="Modarray"    />
           <node name="Code"    />
@@ -1540,9 +1590,6 @@
      <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
        <travuser>
           <node name="Fundef"  />
-          <node name="Funcond" />
-          <node name="Cond" />
-          <node name="While" />
           <node name="Assign"  />
           <node name="With"    />
           <node name="Code"    />
@@ -3799,6 +3846,7 @@ N_structdef :
         <flag name="AllowsInfix" />
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
+	<flag name="HasStepWidthArgs" default="FALSE" />
 	<flag name="RefcountDots" default="FALSE" />
         <flag name="IsSpecialisation" />
         <flag name="IsTypeError">

@@ -104,7 +104,9 @@ DVRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DVRfundef");
 
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    if (!FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 

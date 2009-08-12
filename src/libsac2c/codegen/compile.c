@@ -237,6 +237,10 @@ GetBasetypeStr (types *type)
     if (basetype == T_user) {
         str = TYPES_NAME (type);
         DBUG_ASSERT ((str != NULL), "Name of user-defined type not found");
+    } else if (basetype == T_float_dev) {
+        str = "float";
+    } else if (basetype == T_int_dev) {
+        str = "int";
     } else {
         str = global.type_string[basetype];
     }
@@ -646,7 +650,13 @@ DupExprs_NT_AddReadIcms (node *exprs)
     DBUG_ENTER ("DupExprs_NT_AddReadIcms");
 
     if (exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+        // DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs), "no N_exprs node found!");
+
+        if ((NODE_TYPE (exprs) == N_exprs)) {
+
+        } else {
+            printf ("no N_exprs node found!\n");
+        }
 
         new_exprs = TBmakeExprs (DupExpr_NT_AddReadIcms (EXPRS_EXPR (exprs)),
                                  DupExprs_NT_AddReadIcms (EXPRS_NEXT (exprs)));
@@ -708,9 +718,18 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
             assigns = TCmakeAssignIcm2 ("ND_SET__RC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), assigns);
         } else {
-            assigns = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
-                                        TCmakeIdCopyString (GenericFun (GF_free, type)),
-                                        assigns);
+            if (TCgetBasetype (type) != T_float_dev
+                && TCgetBasetype (type) != T_int_dev) {
+                assigns
+                  = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
+                                      TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                      assigns);
+            } else {
+                assigns
+                  = TCmakeAssignIcm2 ("CUDA_FREE", TCmakeIdCopyStringNt (name, type),
+                                      TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                      assigns);
+            }
         }
     }
 
@@ -760,10 +779,19 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
     DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
 
     if (num > 0) {
-        assigns
-          = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
-                              TBmakeNum (num),
-                              TCmakeIdCopyString (GenericFun (GF_free, type)), assigns);
+        if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev) {
+            assigns
+              = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
+                                  TBmakeNum (num),
+                                  TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                  assigns);
+        } else {
+            assigns
+              = TCmakeAssignIcm3 ("CUDA_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
+                                  TBmakeNum (num),
+                                  TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                  assigns);
+        }
     }
 
     DBUG_RETURN (assigns);
@@ -793,19 +821,39 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
 
     if (RC_IS_ACTIVE (rc)) {
         if (pragma == NULL) {
+            /* This is an array that should be allocated on the device */
+            if (TCgetBasetype (type) == T_float_dev
+                || TCgetBasetype (type) == T_int_dev) {
 #if USE_COMPACT_ALLOC
-            assigns = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
-                                        TBmakeNum (rc), get_dim, set_shape_icm, assigns);
+                assigns
+                  = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
+                                      TBmakeNum (rc), get_dim, set_shape_icm, assigns);
 #else
-            assigns = TCmakeAssignIcm3 (
-              "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
-              get_dim,
-              TBmakeAssign (set_shape_icm,
-                            TCmakeAssignIcm3 ("ND_ALLOC_END",
-                                              TCmakeIdCopyStringNt (name, type),
-                                              TBmakeNum (rc), DUPdoDupTree (get_dim),
-                                              assigns)));
+                assigns = TCmakeAssignIcm4 (
+                  "CUDA_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+                  get_dim, MakeBasetypeArg (type),
+                  TBmakeAssign (set_shape_icm,
+                                TCmakeAssignIcm4 ("CUDA_ALLOC_END",
+                                                  TCmakeIdCopyStringNt (name, type),
+                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                                  MakeBasetypeArg (type), assigns)));
 #endif
+            } else {
+#if USE_COMPACT_ALLOC
+                assigns
+                  = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
+                                      TBmakeNum (rc), get_dim, set_shape_icm, assigns);
+#else
+                assigns = TCmakeAssignIcm4 (
+                  "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+                  get_dim, MakeBasetypeArg (type),
+                  TBmakeAssign (set_shape_icm,
+                                TCmakeAssignIcm4 ("ND_ALLOC_END",
+                                                  TCmakeIdCopyStringNt (name, type),
+                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                                  MakeBasetypeArg (type), assigns)));
+#endif
+            }
         } else {
             /*
              * ALLOC_PLACE does not seem to be implemented somewhere
@@ -1601,6 +1649,73 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     DBUG_RETURN (icm);
 }
 
+static node *
+MakeIcm_CUDA_FUN_DEC (node *fundef)
+{
+    argtab_t *argtab;
+    node *icm;
+    int size;
+    int i;
+    node *icm_args = NULL;
+
+    DBUG_ENTER ("MakeIcm_CUDA_FUN_DEC");
+
+    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
+                 "no fundef node found!");
+
+    argtab = FUNDEF_ARGTAB (fundef);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+
+    /* arguments */
+    for (i = argtab->size - 1; i >= 1; i--) {
+        char *name;
+        node *id;
+        types *type;
+
+        if (argtab->ptr_in[i] != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+                         "no N_arg node found in argtab");
+
+            name = ARG_NAME (argtab->ptr_in[i]);
+            type = ARG_TYPE (argtab->ptr_in[i]);
+            id = TCmakeIdCopyStringNt (STRonNull ("", name), type);
+        } else {
+            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
+            id = MakeArgNode (i, type);
+        }
+
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
+                         TBmakeExprs (MakeBasetypeArg (type),
+                                      TBmakeExprs (id, TBmakeExprs (TBmakeNum (
+                                                                      TYPES_DIM (type)),
+                                                                    icm_args))));
+    }
+    size = argtab->size - 1;
+
+    /* return value */
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
+    if (argtab->ptr_out[0] != NULL) {
+        types *type;
+        type = TYtype2OldType (RET_TYPE (argtab->ptr_out[0]));
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[0]]),
+                         TBmakeExprs (MakeBasetypeArg (type),
+                                      TBmakeExprs (MakeArgNode (0, type),
+                                                   TBmakeExprs (TBmakeNum (
+                                                                  TYPES_DIM (type)),
+                                                                icm_args))));
+        size++;
+    }
+
+    icm = TCmakeIcm3 ("CUDA_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                      TBmakeNum (size), icm_args);
+
+    DBUG_RETURN (icm);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *MakeFundefIcm( node *fundef, info *arg_info)
@@ -1618,6 +1733,8 @@ MakeFundefIcm (node *fundef, info *arg_info)
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        icm = MakeIcm_CUDA_FUN_DEC (fundef);
     } else {
         icm = MakeIcm_ND_FUN_DEC (fundef, FALSE);
     }
@@ -1642,6 +1759,8 @@ MakeFundeclIcm (node *fundef, info *arg_info)
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        icm = MakeIcm_CUDA_FUN_DEC (fundef);
     } else {
         icm = MakeIcm_ND_FUN_DEC (fundef, TRUE);
     }
@@ -1745,9 +1864,17 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
         if (argtab->ptr_out[i] != NULL) {
             exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);
 
-            exprs = TBmakeExprs (TCmakeIdCopyString (
-                                   GetBaseTypeFromExpr (argtab->ptr_out[i])),
-                                 exprs);
+            if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+                exprs = TBmakeExprs (TCmakeIdCopyString (
+                                       GetBaseTypeFromExpr (argtab->ptr_out[i])),
+                                     exprs);
+            } else {
+                exprs = TBmakeExprs (TCmakeIdCopyString (
+                                       GetBaseTypeFromExpr (argtab->ptr_out[i])),
+                                     TBmakeExprs (TBmakeNum (TYPES_DIM (
+                                                    IDS_TYPE (argtab->ptr_out[i]))),
+                                                  exprs));
+            }
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
@@ -1755,9 +1882,18 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
             if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id) {
                 exprs
                   = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
-                exprs = TBmakeExprs (TCmakeIdCopyString (
-                                       GetBaseTypeFromExpr (argtab->ptr_in[i])),
-                                     exprs);
+
+                if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+                    exprs = TBmakeExprs (TCmakeIdCopyString (
+                                           GetBaseTypeFromExpr (argtab->ptr_in[i])),
+                                         exprs);
+                } else {
+                    exprs = TBmakeExprs (TCmakeIdCopyString (
+                                           GetBaseTypeFromExpr (argtab->ptr_in[i])),
+                                         TBmakeExprs (TBmakeNum (TYPES_DIM (ID_TYPE (
+                                                        EXPRS_EXPR (argtab->ptr_in[i])))),
+                                                      exprs));
+                }
             } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
                 exprs
                   = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
@@ -1782,6 +1918,10 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
     if (FUNDEF_ISSPMDFUN (fundef)) {
         ret_node
           = TCmakeAssignIcm2 ("MT_SPMD_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                              icm_args, assigns);
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        ret_node
+          = TCmakeAssignIcm2 ("CUDA_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                               icm_args, assigns);
     } else {
         if (argtab->ptr_out[0] == NULL) {
@@ -2273,7 +2413,8 @@ COMPfundef (node *arg_node, info *arg_info)
         /*
          * traverse arguments
          */
-        if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_BODY (arg_node) != NULL)) {
+        if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_BODY (arg_node) != NULL)
+            && !FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
             assigns = COMPFundefArgs (arg_node, arg_info);
 
             /* new first assignment of body */
@@ -2283,7 +2424,8 @@ COMPfundef (node *arg_node, info *arg_info)
 
         FUNDEF_ICM (arg_node) = MakeFundefIcm (arg_node, arg_info);
         FUNDEF_ICMDECL (arg_node) = MakeFundeclIcm (arg_node, arg_info);
-        if (!FUNDEF_ISSPMDFUN (arg_node)) {
+
+        if (!FUNDEF_ISSPMDFUN (arg_node) && !FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
             FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_MUTC_END_DEF_FUN", NULL);
         } else {
             FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_NOOP", NULL);
@@ -2672,6 +2814,24 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+COMPCudaFunReturn (node *arg_node, info *arg_info)
+{
+    node *fundef;
+
+    DBUG_ENTER ("COMPCudaFunReturn");
+
+    fundef = INFO_FUNDEF (arg_info);
+    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
+                 "no fundef node found!");
+
+    arg_node = TCmakeIcm0 ("SAC_NOOP");
+
+    FUNDEF_RETURN (fundef) = arg_node;
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPreturn( node *arg_node, info *arg_info)
@@ -2691,6 +2851,8 @@ COMPreturn (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         arg_node = COMPSpmdFunReturn (arg_node, arg_info);
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        arg_node = COMPCudaFunReturn (arg_node, arg_info);
     } else {
         arg_node = COMPNormalFunReturn (arg_node, arg_info);
     }
@@ -3708,9 +3870,20 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
 
-    ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    if (global.backend == BE_c99) {
+        ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    }
+
+    if (global.backend == BE_cuda) {
+        ret_node
+          = TCmakeAssignIcm5 ("CUDA_WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                              TBmakeNum (TCgetShapeDim (IDS_TYPE (let_ids))),
+                              DUPdupIdNt (PRF_ARG1 (arg_node)),
+                              TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node)))),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    }
 
     if (global.backend == BE_mutc) {
         DBUG_ASSERT ((PRF_ARG3 (arg_node) != NULL),
@@ -3818,6 +3991,137 @@ COMPprfWLAssign (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* return the nth arg */
+static node *
+nthArg (node *args, int n)
+{
+    node *nth_arg;
+    int i = 0;
+
+    DBUG_ENTER ("nthArg");
+
+    nth_arg = args;
+
+    while (i != n) {
+        nth_arg = ARG_NEXT (nth_arg);
+        i++;
+    }
+
+    DBUG_RETURN (nth_arg);
+}
+
+static node *
+COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCUDAWLAssign");
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_WL_ASSIGN",
+                                 MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                               ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE,
+                                               FALSE, NULL),
+                                 MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
+                                               ID_TYPE (PRF_ARG2 (arg_node)), FALSE, TRUE,
+                                               FALSE, NULL),
+                                 DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfCUDAWLIdxs (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    int array_dim;
+
+    DBUG_ENTER ("COMPprfCUDAWLIdxs");
+
+    array_dim = NUM_VAL (PRF_ARG3 (arg_node));
+    DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
+
+    if (array_dim <= 2) {
+        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDXS",
+                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
+                                                   FALSE, FALSE, NULL),
+                                     MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
+                                                   ID_TYPE (PRF_ARG2 (arg_node)), FALSE,
+                                                   FALSE, FALSE, NULL),
+                                     TBmakeNum (array_dim),
+                                     DupExprs_NT_AddReadIcms (
+                                       EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
+                                     NULL);
+    } else {
+        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDXS",
+                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
+                                                   FALSE, FALSE, NULL),
+                                     MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
+                                                   ID_TYPE (PRF_ARG2 (arg_node)), FALSE,
+                                                   FALSE, FALSE, NULL),
+                                     TBmakeNum (array_dim),
+                                     DupExprs_NT_AddReadIcms (
+                                       EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
+                                     NULL);
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfCUDAWLIds (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    node *args;
+    int array_dim, dim;
+
+    DBUG_ENTER ("COMPprfCUDAWLIds");
+
+    array_dim = NUM_VAL (PRF_ARG3 (arg_node));
+    DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
+
+    args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
+
+    if (array_dim <= 2) {
+        dim = NUM_VAL (PRF_ARG2 (arg_node));
+        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDS",
+                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
+                                                   TRUE, FALSE, NULL),
+                                     TBmakeNum (array_dim), TBmakeNum (dim),
+                                     TBmakeBool (
+                                       FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
+                                     NULL);
+    } else {
+        dim = NUM_VAL (PRF_ARG2 (arg_node));
+        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDS",
+                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
+                                                   TRUE, FALSE, NULL),
+                                     TBmakeNum (array_dim), TBmakeNum (dim),
+                                     TBmakeBool (
+                                       FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
+                                     NULL);
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCUDAGridBlock");
+
+    ret_node = TCmakeAssignIcm2 ("CUDA_GRID_BLOCK",
+                                 TBmakeNum (TCcountExprs (PRF_ARGS (arg_node))),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node COMPprfWLBreak( node *arg_node, info *arg_info)
@@ -3864,16 +4168,41 @@ COMPprfCopy (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
+    simpletype src_basetype, dst_basetype;
 
     DBUG_ENTER ("COMPprfCopy");
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 TCmakeIdCopyString (
-                                   GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
-                                 NULL);
+    if (global.backend != BE_cuda) {
+        ret_node
+          = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
+                              DUPdupIdNt (PRF_ARG1 (arg_node)),
+                              TCmakeIdCopyString (
+                                GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
+                              NULL);
+    } else {
+        src_basetype = TCgetBasetype (ID_TYPE (PRF_ARG1 (arg_node)));
+        dst_basetype = TCgetBasetype (IDS_TYPE (let_ids));
+
+        if ((src_basetype == T_float_dev && dst_basetype == T_float_dev)
+            || (src_basetype == T_int_dev && dst_basetype == T_int_dev)) {
+            ret_node
+              = TCmakeAssignIcm4 ("CUDA_COPY__ARRAY", DUPdupIdsIdNt (let_ids),
+                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                  MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                  TCmakeIdCopyString (
+                                    GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
+                                  NULL);
+        } else {
+            ret_node
+              = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
+                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                  TCmakeIdCopyString (
+                                    GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
+                                  NULL);
+        }
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -4200,12 +4529,30 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     dim = TCgetDim (IDS_TYPE (let_ids));
     DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
 
+    /*
+      if( global.backend == BE_cuda &&
+          ( TCgetBasetype( ID_TYPE( arg2)) == T_float_dev ||
+            TCgetBasetype( ID_TYPE( arg2)) == T_int_dev) &&
+          !FUNDEF_ISCUDAGLOBALFUN( INFO_FUNDEF( arg_info))) {
+        ret_node = TCmakeAssignIcm2( "CUDA_PRF_IDX_SEL__DATA",
+                                     MakeTypeArgs( IDS_NAME( let_ids),
+                                                   IDS_TYPE( let_ids),
+                                                   FALSE, TRUE, FALSE,
+                                                   DUPdoDupTree( icm_args)),
+                                     MakeBasetypeArg( ID_TYPE(arg2)),
+                                     NULL);
+      }
+      else {
+    */
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                         TRUE, FALSE, DUPdoDupTree (icm_args)),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                           NULL);
+    /*
+      }
+    */
 
     DBUG_RETURN (ret_node);
 }
@@ -4252,6 +4599,26 @@ COMPprfIdxModarray_AxSxS (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "3rd arg of F_idx_modarray_AxSxS is a N_array!");
 
+    /*
+      if( global.backend == BE_cuda &&
+          ( TCgetBasetype( ID_TYPE( arg1)) == T_float_dev ||
+            TCgetBasetype( ID_TYPE( arg1)) == T_int_dev) &&
+          !FUNDEF_ISCUDAGLOBALFUN( INFO_FUNDEF( arg_info))) {
+        ret_node = TCmakeAssignIcm4( "CUDA_PRF_IDX_MODARRAY_AxSxS__DATA",
+                                     MakeTypeArgs( IDS_NAME( let_ids),
+                                                   IDS_TYPE( let_ids),
+                                                   FALSE, TRUE, FALSE,
+                                     MakeTypeArgs( ID_NAME( arg1),
+                                                   ID_TYPE( arg1),
+                                                   FALSE, TRUE, FALSE,
+                                     NULL)),
+                                     DUPdupNodeNt( arg2),
+                                     DUPdupNodeNt( arg3),
+                                     MakeBasetypeArg( ID_TYPE(arg1)),
+                   NULL);
+      }
+      else {
+    */
     ret_node
       = TCmakeAssignIcm4 ("ND_PRF_IDX_MODARRAY_AxSxS__DATA",
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
@@ -4261,7 +4628,9 @@ COMPprfIdxModarray_AxSxS (node *arg_node, info *arg_info)
                           DUPdupNodeNt (arg2), DUPdupNodeNt (arg3),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
                           NULL);
-
+    /*
+      }
+    */
     DBUG_RETURN (ret_node);
 }
 
@@ -4307,15 +4676,31 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "3rd arg of F_idx_modarray_AxSxA is a N_array!");
 
-    ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_IDX_MODARRAY_AxSxA__DATA",
-                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                        TRUE, FALSE,
-                                        MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                      FALSE, TRUE, FALSE, NULL)),
-                          DUPdupNodeNt (arg2), DUPdupNodeNt (arg3),
-                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
-                          NULL);
+    if (global.backend == BE_cuda
+        && (TCgetBasetype (ID_TYPE (arg1)) == T_float_dev
+            || TCgetBasetype (ID_TYPE (arg1)) == T_int_dev)
+        && (TCgetBasetype (ID_TYPE (arg3)) == T_float_dev
+            || TCgetBasetype (ID_TYPE (arg3)) == T_int_dev)
+        && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
+        ret_node
+          = TCmakeAssignIcm4 ("CUDA_PRF_IDX_MODARRAY_AxSxA__DATA",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE,
+                                            MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                          FALSE, TRUE, FALSE, NULL)),
+                              DUPdupNodeNt (arg2), DUPdupNodeNt (arg3),
+                              MakeBasetypeArg (ID_TYPE (arg1)), NULL);
+    } else {
+        ret_node
+          = TCmakeAssignIcm4 ("ND_PRF_IDX_MODARRAY_AxSxA__DATA",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE,
+                                            MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                          FALSE, TRUE, FALSE, NULL)),
+                              DUPdupNodeNt (arg2), DUPdupNodeNt (arg3),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
+                              NULL);
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -5496,15 +5881,37 @@ COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
 node *
 COMPprfDevice2Host (node *arg_node, info *arg_info)
 {
+    node *ret_node;
+    node *let_ids;
+
     DBUG_ENTER ("COMPprfDevice2Host");
-    DBUG_RETURN (arg_node);
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyDeviceToHost"), NULL);
+
+    DBUG_RETURN (ret_node);
 }
 
 node *
 COMPprfHost2Device (node *arg_node, info *arg_info)
 {
+    node *ret_node;
+    node *let_ids;
+
     DBUG_ENTER ("COMPprfHost2Device");
-    DBUG_RETURN (arg_node);
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyHostToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
 }
 
 /******************************************************************************

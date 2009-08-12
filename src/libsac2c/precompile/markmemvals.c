@@ -583,7 +583,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
      * leave the default element at the suballoc to be able to
      * issue the corresponding shape initialisation ICM later on.
      */
-    if (global.backend == BE_c99) {
+    if (global.backend == BE_c99 || global.backend == BE_cuda) {
         /*
          * Find subarray identifier for this suballoc
          */

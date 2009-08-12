@@ -162,8 +162,9 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         loop_scalarization withloop_flattening             \
                         ivextrema ivexpropagation ivexcleanup
 
-libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
-                        annotate_cuda_withloop cuda_type_conversion remove_with3
+libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions annotate_cuda_withloop remove_with3 \
+                        cuda_type_conversion create_constant_assignments minimize_transfers minimize_loop_transfers \
+                        minimize_sequential_transfers annotate_memory_transfers
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs mtdcr \
                         scheduling annotate_scheduling set_spmd_linksign 
@@ -193,7 +194,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
-                        icm2c_wl icm2c_error simd_infer tag_preparation
+                        icm2c_wl icm2c_error simd_infer tag_preparation icm2c_cuda
 
 libsac2c_print       := print convert
 
@@ -222,7 +223,7 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h
+runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h cuda_h
 
 ###############################################################################
 
@@ -237,6 +238,8 @@ runtime_mt_h           := mt mt_gen
 
 runtime_mutc_h         := mutc mutc_gen mutc_world mutc_tostring \
                           mutc_unin mutc_startup
+
+runtime_cuda_h         := cuda cuda_gen
 
 
 ###############################################################################

@@ -29,6 +29,8 @@
 #ifndef SAC_SIMD_COMPILATION
 #if SAC_MUTC_MACROS
 typedef int boolbool;
+#elif SAC_CUDA_MACROS
+typedef int boolboolbool;
 #else
 typedef int bool;
 #endif

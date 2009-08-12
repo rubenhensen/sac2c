@@ -2651,6 +2651,24 @@ TCmakePrf4 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4)
     DBUG_RETURN (res);
 }
 
+node *
+TCmakePrf5 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+{
+    node *res;
+
+    DBUG_ENTER ("TBmakePrf5");
+
+    res = TBmakePrf (
+      prf,
+      TBmakeExprs (arg1,
+                   TBmakeExprs (arg2,
+                                TBmakeExprs (arg3,
+                                             TBmakeExprs (arg4,
+                                                          TBmakeExprs (arg5, NULL))))));
+
+    DBUG_RETURN (res);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

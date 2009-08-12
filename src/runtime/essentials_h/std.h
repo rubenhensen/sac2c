@@ -747,12 +747,12 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_ALLOC_BEGIN implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ALLOC_BEGIN__DAO(var_NT, rc, dim)                                         \
+#define SAC_ND_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                               \
     {                                                                                    \
-        SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim)                                        \
+        SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim, basetype)                              \
         SAC_ND_SET__RC (var_NT, rc)
 
-#define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim)                                      \
+#define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                            \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
         SAC_ND_SET__RC (var_NT, rc)
@@ -761,11 +761,20 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_ALLOC_END implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ALLOC_END__DAO(var_NT, rc, dim) }
+#define SAC_ND_ALLOC_END__DAO(var_NT, rc, dim, basetype) }
 
-#define SAC_ND_ALLOC_END__NO_DAO(var_NT, rc, dim)                                        \
-    SAC_ND_ALLOC__DATA (var_NT)                                                          \
+#define SAC_ND_ALLOC_END__NO_DAO(var_NT, rc, dim, basetype)                              \
+    SAC_ND_ALLOC__DATA_BASETYPE (var_NT, basetype)                                       \
     }
+
+#define SAC_ND_ALLOC__DESC__NOOP_BASETYPE(var_NT, dim, basetype)                         \
+    SAC_ND_ALLOC__DESC__NOOP (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__FIXED_BASETYPE(var_NT, dim, basetype)                        \
+    SAC_ND_ALLOC__DESC__FIXED (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__AUD_BASETYPE(var_NT, dim, basetype)                          \
+    SAC_ND_ALLOC__DESC__AUD (var_NT, dim)
 
 /*
  * SAC_ND_ALLOC_DESC implementations (referenced by sac_std_gen.h)
@@ -779,7 +788,7 @@ typedef int *SAC_array_descriptor_t;
                          ("Inconsistant dimension for array %s found!",                  \
                           NT_STR (var_NT)));                                             \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
-                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))      \
+                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int) \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
@@ -788,15 +797,11 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
-        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim))                  \
+        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)             \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
-
-/*
- * SAC_ND_ALLOC_DATA implementations (referenced by sac_std_gen.h)
- */
 
 #define SAC_ND_ALLOC__DATA__NOOP(var_NT) SAC_NOOP ()
 
@@ -804,7 +809,8 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                               \
                                   SAC_ND_A_SIZE (var_NT)                                 \
-                                    * sizeof (*SAC_ND_A_FIELD (var_NT)))                 \
+                                    * sizeof (*SAC_ND_A_FIELD (var_NT)),                 \
+                                  void)                                                  \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
@@ -814,7 +820,32 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ALLOC__DATA__AKD_AUD(var_NT)                                              \
     {                                                                                    \
         SAC_HM_MALLOC (SAC_ND_A_FIELD (var_NT),                                          \
-                       SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)))       \
+                       SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)), void) \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
+    }
+
+#define SAC_ND_ALLOC__DATA_BASETYPE__NOOP(var_NT, basetype) SAC_NOOP ()
+
+#define SAC_ND_ALLOC__DATA_BASETYPE__AKS(var_NT, basetype)                               \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                               \
+                                  SAC_ND_A_SIZE (var_NT)                                 \
+                                    * sizeof (*SAC_ND_A_FIELD (var_NT)),                 \
+                                  basetype)                                              \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
+    }
+
+#define SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD(var_NT, basetype)                           \
+    {                                                                                    \
+        SAC_HM_MALLOC (SAC_ND_A_FIELD (var_NT),                                          \
+                       SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
+                       basetype)                                                         \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
@@ -825,7 +856,7 @@ typedef int *SAC_array_descriptor_t;
  * SAC_ND_ALLOC_DESC_AND_DATA implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_ALLOC__DESC_AND_DATA__AKS(var_NT, dim)                                    \
+#define SAC_ND_ALLOC__DESC_AND_DATA__AKS(var_NT, dim, basetype)                          \
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
@@ -834,7 +865,7 @@ typedef int *SAC_array_descriptor_t;
                                             SAC_ND_A_DESC (var_NT),                      \
                                             SAC_ND_A_MIRROR_SIZE (var_NT)                \
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
-                                            SAC_ND_A_MIRROR_DIM (var_NT))                \
+                                            SAC_ND_A_MIRROR_DIM (var_NT), basetype)      \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
@@ -843,7 +874,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
-#define SAC_ND_ALLOC__DESC_AND_DATA__UNDEF(var_NT, dim) SAC_ICM_UNDEF ();
+#define SAC_ND_ALLOC__DESC_AND_DATA__UNDEF(var_NT, dim, basetype) SAC_ICM_UNDEF ();
 
 /******************************************************************************
  *

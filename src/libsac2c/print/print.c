@@ -2236,6 +2236,15 @@ PRTassign (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("PRINT_PROFILE", trav_instr = TRUE;);
     }
 
+    if (NODE_TYPE (instr) == N_let) {
+        if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
+            if (PRF_PRF (LET_EXPR (instr)) == F_host2device
+                && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node)) {
+                fprintf (global.outfile, "/** Is not allowed to be moved up**/ ");
+            }
+        }
+    }
+
     if (trav_instr) {
         if (NODE_TYPE (instr) != N_icm) {
             INDENT;

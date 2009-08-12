@@ -28,9 +28,20 @@ GetCCCall ()
 
     buffer = SBUFcreate (128);
 
-    SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
-                global.config.ldflags, global.config.ccdir, global.tmp_dirname);
-
+    if (global.backend != BE_cuda) {
+        SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
+                    global.config.ldflags, global.config.ccdir, global.tmp_dirname);
+    } else {
+        SBUFprintf (buffer,
+                    "%s -Xcompiler -Wall -Xcompiler -Wno-unused -Xcompiler -fno-builtin "
+                    "-Xcompiler -std=c99 %s %s %s -L%s ",
+                    "nvcc",
+                    "--compiler-bindir=/home/jgo/others/cuda/bin --host-compilation=C",
+                    global.config.ldflags,
+                    "-I$SAC2CBASE/include/ -I$CUTIL -L$SAC2CBASE/lib/ -L$CUTIL_LIB ",
+                    global.tmp_dirname);
+    }
+    //-L$LD_LIBRARY_PATH
     result = SBUF2str (buffer);
 
     buffer = SBUFfree (buffer);
@@ -155,6 +166,16 @@ AddEfenceLib (str_buf *buffer)
     DBUG_VOID_RETURN;
 }
 
+static void
+AddCudaLib (str_buf *buffer)
+{
+    DBUG_ENTER ("AddCudaLib");
+
+    SBUFprintf (buffer, "%s ", "-lcutil -lcudart -lcublas");
+
+    DBUG_VOID_RETURN;
+}
+
 static char *
 GetLibs ()
 {
@@ -165,9 +186,16 @@ GetLibs ()
 
     buffer = SBUFcreate (256);
 
-    AddSacLibs (buffer);
-    AddCCLibs (buffer);
-    AddEfenceLib (buffer);
+    if (global.backend != BE_cuda) {
+        AddSacLibs (buffer);
+        AddCCLibs (buffer);
+        AddEfenceLib (buffer);
+    } else {
+        AddSacLibs (buffer);
+        AddCCLibs (buffer);
+        AddEfenceLib (buffer);
+        AddCudaLib (buffer);
+    }
 
     result = SBUF2str (buffer);
 
@@ -181,7 +209,14 @@ AddLibPath (const char *path, str_buf *buf)
 {
     DBUG_ENTER ("AddLibPath");
 
-    buf = SBUFprintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
+    if (global.backend != BE_cuda) {
+        buf = SBUFprintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
+    } else {
+        // buf = SBUFprintf( buf, "-L%s ", path);
+        // buf = SBUFprintf( buf, "-L%s -Xcompiler \"%s%s\" ", path,
+        // global.config.ld_path, path);
+        buf = SBUFprintf (buf, "-Xlinker -L%s -Xlinker -rpath=%s ", path, path);
+    }
 
     DBUG_RETURN (buf);
 }
