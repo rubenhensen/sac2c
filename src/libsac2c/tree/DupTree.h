@@ -62,7 +62,8 @@ extern node *DUPdupExprsNt (node *exprs);
  * Other functions for external use
  */
 /* handling of multiple used special functions */
-extern node *DUPgetCopiedSpecialFundefs ();
+extern node *DUPgetCopiedSpecialFundefs (void);
+extern node *DUPgetCopiedSpecialFundefsHook (void);
 
 /*
  * Functions for internal use during AST traversal only!

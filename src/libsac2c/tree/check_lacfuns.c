@@ -1,6 +1,6 @@
 /**
  *
- * $Id:
+ * $Id$
  *
  * file: check_lacfuns.c
  *
@@ -22,6 +22,7 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "memory.h"
+#include "DupTree.h"
 
 /**
  * INFO structure
@@ -75,10 +76,13 @@ FreeInfo (info *info)
 static node *
 ATravCHKLACFCmodule (node *arg_node, info *arg_info)
 {
+    node *foo;
+
     DBUG_ENTER ("ATravCHKLACFCmodule");
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    foo = TRAVopt (DUPgetCopiedSpecialFundefsHook (), arg_info);
 
     DBUG_RETURN (arg_node);
 }

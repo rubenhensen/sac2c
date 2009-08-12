@@ -3248,7 +3248,7 @@ DUPdupExprsNt (node *exprs)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DUPgetCopiedSpecialFundefs( )
+ * @fn node *DUPgetCopiedSpecialFundefs( void)
  *
  *   @brief  provides duplicated special functions for safe introduction
  *           into global fundef chain. By default this function is called
@@ -3259,7 +3259,7 @@ DUPdupExprsNt (node *exprs)
  *****************************************************************************/
 
 node *
-DUPgetCopiedSpecialFundefs ()
+DUPgetCopiedSpecialFundefs (void)
 {
     node *store;
 
@@ -3280,4 +3280,23 @@ DUPgetCopiedSpecialFundefs ()
     store_copied_special_fundefs = NULL;
 
     DBUG_RETURN (store);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPgetCopiedSpecialFundefsHook( void)
+ *
+ *   @brief  provides duplicated special functions hook for inspection.
+ *           This is needed in Lacfun check.
+ *
+ *   @return the N_fundef chain of duplicated special functions
+ *
+ *****************************************************************************/
+
+node *
+DUPgetCopiedSpecialFundefsHook (void)
+{
+    DBUG_ENTER ("DUPgetCopiedSpecialFundefsHook");
+
+    DBUG_RETURN (store_copied_special_fundefs);
 }
