@@ -358,12 +358,13 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     node *X = NULL;
-    node *iv = NULL;
     node *val = NULL;
     node *exprs;
     constant *emptyVec;
     constant *coiv = NULL;
     constant *fsX = NULL;
+    pattern *pat1;
+    pattern *pat2;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
@@ -377,47 +378,43 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      *      _type_conv_( type(X), val))
      * iff a is AKS! * cf bug246 !!!
      *
-     * 2008-05-09: We can ignore all the above, because the
-     * inclusion of guards via "sac2c -ecc" ensures this can never happen.
-     * It ensures that iv is valid, and that val is scalar.
      */
+
     /**
      * match F_modarray_AxVxS( X, [], val)
      */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
+    pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (1, PMAgetNode (&X), 0),
+                  PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
 
-    if (PMO (
-          PMOvar (&val, PMOconst (&emptyVec, &iv,
-                                  PMOvar (&X, PMOprf (F_modarray_AxVxS, arg_node)))))) {
+    if (PMmatchFlatSkipExtrema (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
+        && (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
         res = DUPdoDupTree (val);
+        DBUG_PRINT ("CF", ("_modarray_AxVxS (X, [], scalar) eliminated"));
     } else {
         /**
          * match F_modarray_AxVxS( X = [...], iv = [c0,...,cn], val)
          */
-        if (PMO (
-              PMOvar (&val, PMOconst (&coiv, &iv,
-                                      PMOarrayConstructorGuards (&fsX, &X,
-                                                                 PMOprf (F_modarray_AxVxS,
-                                                                         arg_node)))))) {
-            if (SHcompareShapes (COgetShape (fsX), COgetShape (coiv))) {
-                offset = COvect2offset (fsX, coiv);
-                res = DUPdoDupTree (X);
-                exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
-                EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
-                EXPRS_EXPR (exprs) = DUPdoDupTree (val);
-            }
-            fsX = COfreeConstant (fsX);
-            coiv = COfreeConstant (coiv);
-        } else {
-            if (fsX != NULL) {
-                fsX = COfreeConstant (fsX);
-                if (coiv != NULL) {
-                    coiv = COfreeConstant (coiv);
-                }
-            }
+        val = NULL;
+        X = NULL;
+        pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3,
+                      PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
+                      PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
+
+        if (PMmatchFlatSkipExtrema (pat2, arg_node)
+            && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
+            offset = COvect2offset (fsX, coiv);
+            res = DUPdoDupTree (X);
+            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+            EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
+            EXPRS_EXPR (exprs) = DUPdoDupTree (val);
+            DBUG_PRINT ("CF", ("_modarray_AxVxS (structcon, [..], val) eliminated"));
         }
     }
+    fsX = (fsX != NULL) ? COfreeConstant (fsX) : fsX;
+    coiv = (coiv != NULL) ? COfreeConstant (coiv) : coiv;
     emptyVec = COfreeConstant (emptyVec);
+
     DBUG_RETURN (res);
 }
 
@@ -806,7 +803,7 @@ SelModarray (node *arg_node)
         && (PMmatchFlatSkipExtrema (pat2, X) || PMmatchFlatSkipExtrema (pat3, X))) {
 
         res = DUPdoDupTree (val);
-        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) by %s",
+        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by %s",
                            AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
                            AVIS_NAME (ID_AVIS (val))));
     }
