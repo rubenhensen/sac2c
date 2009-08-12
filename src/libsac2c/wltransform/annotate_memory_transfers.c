@@ -353,9 +353,6 @@ AMTRANprf (node *arg_node, info *arg_info)
         switch (PRF_PRF (arg_node)) {
         case F_host2device:
             id = PRF_ARG1 (arg_node);
-            if (STReq (AVIS_NAME (ID_AVIS (id)), "_pinl_1963__f2l_1951_a"))
-                printf ("haha got you \n");
-
             if (NODE_TYPE (ID_DECL (id)) == N_arg) {
                 if (NLUTgetNum (INFO_NLUT (arg_info), ID_AVIS (id)) != 0) {
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info)) = TRUE;
