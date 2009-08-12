@@ -419,6 +419,15 @@
       <traversal id="CHK" name="Check the Tree" default="user" ifdef="show_malloc" include="check.h" />
       <traversal id="CHKTST" name="Check the TreeTest" default="user" ifdef="show_malloc" include="checktst.h" />
       <traversal id="CHKM" name="Check the memspace" default="user" postfun="CHKMpostfun" ifdef="show_malloc" include="check_node.h" />
+      <traversal id="CHKLACF" name="Check LaC functions" 
+               default="sons" include="check_lacfuns.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
       <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
         <travuser>
           <node name="SPMop" />
@@ -3703,6 +3712,21 @@ N_structdef :
             <targets>
               <target mandatory="no">
                 <node name="Structelem" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Callfun" default="NULL" inconstructor="no">
+          <description>
+          This attribute is used by check_lacfuns to determine unique call sites of LaC functions.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
                 <phases>
                   <all />
                 </phases>

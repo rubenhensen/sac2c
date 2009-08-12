@@ -538,6 +538,11 @@ GLOBAL (bool, treecheck, FALSE)
  * check syntax tree for consistency with xml specification
  */
 
+GLOBAL (bool, lacfuncheck, FALSE)
+/*
+ * check syntax tree single call property of LaC functions
+ */
+
 #ifdef PRODUCTION
 GLOBAL (bool, sancheck, FALSE)
 #else  /* PRODUCTION */

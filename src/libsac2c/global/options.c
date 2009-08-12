@@ -328,10 +328,13 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
+#ifndef DBUG_OFF
+
     ARGS_OPTION_BEGIN ("d")
     {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
+        ARG_CHOICE ("lacfuncheck", global.lacfuncheck = TRUE);
         ARG_CHOICE ("sancheck", global.sancheck = TRUE);
 #ifdef SHOW_MALLOC
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
@@ -344,6 +347,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("d");
+
+#endif /* DBUG_OFF */
 
     ARGS_OPTION_BEGIN ("D")
     {

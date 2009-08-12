@@ -19,6 +19,7 @@
 #include "phase_info.h"
 #include "statistics.h"
 #include "setfundefwasoptimized.h"
+#include "check_lacfuns.h"
 
 /*
  * static global variables
@@ -110,12 +111,18 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
         CTIabortOnError ();
 
-#ifdef SHOW_MALLOC
-        DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
-
+#ifndef DBUG_OFF
         if (global.treecheck && (syntax_tree != NULL)) {
             syntax_tree = CHKdoTreeCheck (syntax_tree);
         }
+
+        if (global.lacfuncheck && (syntax_tree != NULL)) {
+            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+        }
+#endif
+
+#ifdef SHOW_MALLOC
+        DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
 
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
@@ -128,6 +135,8 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 #ifndef DBUG_OFF
     CheckDisableDbug (phase);
 #endif
+
+    CTIabortOnError ();
 
     if (global.break_after_phase == phase) {
         CTIterminateCompilation (syntax_tree);
@@ -162,11 +171,17 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
         syntax_tree = PHIphaseFun (subphase) (syntax_tree);
         CTIabortOnError ();
 
-#ifdef SHOW_MALLOC
+#ifndef DBUG_OFF
         if (global.treecheck && (syntax_tree != NULL)) {
             syntax_tree = CHKdoTreeCheck (syntax_tree);
         }
 
+        if (global.lacfuncheck && (syntax_tree != NULL)) {
+            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+        }
+#endif
+
+#ifdef SHOW_MALLOC
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
@@ -176,6 +191,8 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 #ifndef DBUG_OFF
     CheckDisableDbug (subphase);
 #endif
+
+    CTIabortOnError ();
 
     if (global.break_after_subphase == subphase) {
         CTIterminateCompilation (syntax_tree);
@@ -224,12 +241,18 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 
             CTIabortOnError ();
 
-#ifdef SHOW_MALLOC
-            if (global.treecheck && (syntax_tree != NULL)) {
+#ifndef DBUG_OFF
+            if (global.treecheck) {
                 syntax_tree = CHKdoTreeCheck (syntax_tree);
             }
 
-            if (global.memcheck && (syntax_tree != NULL)) {
+            if (global.lacfuncheck) {
+                syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+            }
+#endif
+
+#ifdef SHOW_MALLOC
+            if (global.memcheck) {
                 syntax_tree = CHKMdoMemCheck (syntax_tree);
             }
 #endif
@@ -262,6 +285,8 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
         CheckDisableDbug (cycle);
 #endif
     }
+
+    CTIabortOnError ();
 
     if (global.break_after_subphase == cycle) {
         CTIterminateCompilation (syntax_tree);
@@ -297,6 +322,14 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
         syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
 
         CTIabortOnError ();
+
+#ifndef DBUG_OFF
+        if (global.lacfuncheck) {
+            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+        }
+
+        CTIabortOnError ();
+#endif
     }
 
 #ifndef DBUG_OFF
@@ -358,6 +391,14 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             }
 
             DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););
+
+#ifndef DBUG_OFF
+            if (global.lacfuncheck) {
+                fundef = CHKLACFdoCheckLacFuns (fundef);
+            }
+
+            CTIabortOnError ();
+#endif
         }
 
         if (FUNDEF_NEXT (fundef) == NULL) {
@@ -384,7 +425,7 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 }
 
 node *
-PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *arg_node, bool cond)
+PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 {
     DBUG_ENTER ("PHrunCyclePhaseFun");
 
@@ -392,7 +433,7 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *arg_node, bool cond)
                   ("PHrunCyclePhaseFun called with incompatible phase: %s",
                    PHIphaseIdent (cyclephase)));
 
-    DBUG_ASSERT ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_fundef),
+    DBUG_ASSERT ((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef),
                  "PHrunCyclePhaseFun called with wrong node type.");
 
     global.compiler_cyclephase = cyclephase;
@@ -408,14 +449,22 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *arg_node, bool cond)
 
         CTItell (4, "         %s ...", PHIphaseText (cyclephase));
 
-        arg_node = PHIphaseFun (cyclephase) (arg_node);
+        fundef = PHIphaseFun (cyclephase) (fundef);
 
         CTIabortOnError ();
+
+#ifndef DBUG_OFF
+        if (global.lacfuncheck) {
+            fundef = CHKLACFdoCheckLacFuns (fundef);
+        }
+
+        CTIabortOnError ();
+#endif
     }
 
 #ifndef DBUG_OFF
     CheckDisableDbug (cyclephase);
 #endif
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (fundef);
 }

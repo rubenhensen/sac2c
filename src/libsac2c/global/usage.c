@@ -605,9 +605,10 @@ PrintInternalDebugOptions (void)
 
     printf (
       "\n\nINTERNAL DEBUG OPTIONS:\n\n"
-      "    -d treecheck    Check syntax tree for consistency with xml specification. \n"
+      "    -d treecheck    Check syntax tree for consistency with xml specification.\n"
       "    -d memcheck     Check syntax tree for memory consistency.\n"
-      "    -d sancheck     Check syntax tree for structural consistency. \n"
+      "    -d sancheck     Check syntax tree for structural consistency.\n"
+      "    -d lacfuncheck  Check syntax tree for single call property of LaC functions.\n"
       "    -d nolacinline  Do not inline loop and conditional functions.\n"
       "    -d efence       Link executable with ElectricFence (malloc debugger).\n");
 
