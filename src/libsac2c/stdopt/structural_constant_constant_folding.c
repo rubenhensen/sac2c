@@ -363,8 +363,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     constant *emptyVec;
     constant *coiv = NULL;
     constant *fsX = NULL;
-    pattern *pat1;
-    pattern *pat2;
+    pattern *pat1 = NULL;
+    pattern *pat2 = NULL;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxS");
@@ -387,6 +387,10 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (1, PMAgetNode (&X), 0),
                   PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
 
+    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3,
+                  PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
+                  PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
+
     if (PMmatchFlatSkipExtrema (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
         res = DUPdoDupTree (val);
@@ -397,11 +401,9 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
          */
         val = NULL;
         X = NULL;
-        pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3,
-                      PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
-                      PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
 
         if (PMmatchFlatSkipExtrema (pat2, arg_node)
+            && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
             offset = COvect2offset (fsX, coiv);
             res = DUPdoDupTree (X);
@@ -413,6 +415,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     }
     fsX = (fsX != NULL) ? COfreeConstant (fsX) : fsX;
     coiv = (coiv != NULL) ? COfreeConstant (coiv) : coiv;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
     emptyVec = COfreeConstant (emptyVec);
 
     DBUG_RETURN (res);
@@ -444,7 +448,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     constant *fsval = NULL;
     constant *ivlen = NULL;
     constant *fsX_tail = NULL;
-    pattern *pat, *pat2, *pat3, *pat4;
+    pattern *pat1, *pat2, *pat3, *pat4;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
@@ -453,10 +457,10 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
      * match F_modarray_AxVxA( _, [], val)
      */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
-    pat = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
-                 PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
+    pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
+                  PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
 
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
         res = DUPdoDupTree (val);
     } else {
         /**
@@ -572,8 +576,12 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
             }
         }
     }
-    pat = PMfree (pat);
+    pat1 = (pat1 != NULL) ? PMfree (pat1) : pat1;
+    pat2 = (pat2 != NULL) ? PMfree (pat2) : pat2;
+    pat3 = (pat3 != NULL) ? PMfree (pat3) : pat3;
+    pat4 = (pat4 != NULL) ? PMfree (pat4) : pat4;
     emptyVec = COfreeConstant (emptyVec);
+
     DBUG_RETURN (res);
 }
 
@@ -884,6 +892,9 @@ SelModarrayCase2 (node *arg_node)
             res = DUPdoDupTree (val);
         }
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
     DBUG_RETURN (res);
 }
 
