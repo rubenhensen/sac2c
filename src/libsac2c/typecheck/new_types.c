@@ -3270,7 +3270,7 @@ TYisSymb (ntype *type)
 
 /*
  * I hope the author of TYisScalar provides some documentation
- * on what this predicated is intended to do.
+ * on what this predicate is intended to do.
  * It does NOT mean: "This is a rank-0 array."
  * For that, use TUisScalar( type).
  */
