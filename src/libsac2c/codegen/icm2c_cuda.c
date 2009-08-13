@@ -367,7 +367,7 @@ ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT, int to_dim,
 
     INDENT;
     fprintf (global.outfile,
-             "SAC_ND_GET_VAR(%s, SAC_ND_A_FIELD( %s)) = SAC_ND_GET_VAR( %s, "
+             "SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = SAC_ND_GETVAR( %s, "
              "SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0)",
              sub_NT, sub_NT, to_NT, to_NT, off_NT);
 

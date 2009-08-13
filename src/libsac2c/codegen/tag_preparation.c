@@ -30,11 +30,13 @@
  * INFO structure
  */
 struct INFO {
+    bool thread; /* In a thread function */
 };
 
 /**
  * INFO macros
  */
+#define INFO_THREAD(n) ((n)->thread)
 
 /**
  * INFO functions
@@ -47,6 +49,7 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
+    INFO_THREAD (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -83,7 +86,11 @@ TParg (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    type = TYsetMutcUsage (type, MUTC_US_PARAM);
+    if (INFO_THREAD (arg_info)) {
+        type = TYsetMutcUsage (type, MUTC_US_THREADPARAM);
+    } else {
+        type = TYsetMutcUsage (type, MUTC_US_FUNPARAM);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -106,12 +113,26 @@ TPfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TParg");
 
+    INFO_THREAD (arg_info) = FUNDEF_ISTHREADFUN (arg_node);
     arg_node = TRAVcont (arg_node, arg_info);
 
     argtab = FUNDEF_ARGTAB (arg_node);
     for (i = 1; i < argtab->size; i++) {
         if (argtab->tag[i] == ATG_inout) {
-            TYsetMutcUsage (AVIS_TYPE (ARG_AVIS (argtab->ptr_in[i])), MUTC_US_PARAMIO);
+            if (FUNDEF_ISTHREADFUN (arg_node)) {
+                TYsetMutcUsage (AVIS_TYPE (ARG_AVIS (argtab->ptr_in[i])),
+                                MUTC_US_THREADPARAMIO);
+            } else {
+                TYsetMutcUsage (AVIS_TYPE (ARG_AVIS (argtab->ptr_in[i])),
+                                MUTC_US_FUNPARAMIO);
+            }
+        }
+        if (argtab->tag[i] == ATG_out) {
+            if (FUNDEF_ISTHREADFUN (arg_node)) {
+                TYsetMutcUsage (RET_TYPE (argtab->ptr_out[i]), MUTC_US_THREADPARAM);
+            } else {
+                TYsetMutcUsage (RET_TYPE (argtab->ptr_out[i]), MUTC_US_FUNPARAM);
+            }
         }
     }
 

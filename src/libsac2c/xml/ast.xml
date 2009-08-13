@@ -3564,8 +3564,8 @@ N_structdef :
             </targets>
           </type>
 	</attribute>
-        <attribute name="Icm" inconstructor="no">
-          <description>ICM for function definitions</description>
+        <attribute name="IcmDefBegin" inconstructor="no">
+          <description>ICM for the beginning function definitions</description>
           <type name="Node">
             <targets>
               <target mandatory="yes">

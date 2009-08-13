@@ -40,7 +40,7 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_DEC( char *name, char *rettype_NT,
+ *   void ICMCompileND_FUN_DECL( char *name, char *rettype_NT,
  *                              int vararg_cnt, char **vararg)
  *
  * description:
@@ -64,28 +64,28 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
 
     INDENT;
 
-    fprintf (global.outfile, "SAC_MUTC_DECL_FUN2(");
+    fprintf (global.outfile, "SAC_ND_DECL_FUN2(");
 
     fprintf (global.outfile, "%s, ", name);
 
     if (rettype_NT[0] != '\0') {
-        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), NONVOID, ", rettype_NT);
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), ", rettype_NT);
     } else {
-        fprintf (global.outfile, "void, VOID, ");
+        fprintf (global.outfile, "void, ");
     }
 
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, FUN)",
-                          vararg[i], vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileND_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_DEF");
+    DBUG_ENTER ("ICMCompileND_FUN_DEF_BEGIN");
 
 #define ND_FUN_DEF
 #include "icm_comment.c"
@@ -94,19 +94,19 @@ ICMCompileND_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **varar
 
     INDENT;
 
-    fprintf (global.outfile, "SAC_MUTC_START_DEF_FUN2(");
+    fprintf (global.outfile, "SAC_ND_DEF_FUN_BEGIN2(");
 
     fprintf (global.outfile, "%s, ", name);
 
     if (rettype_NT[0] != '\0') {
-        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), NONVOID, ", rettype_NT);
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), ", rettype_NT);
     } else {
-        fprintf (global.outfile, "void, VOID, ");
+        fprintf (global.outfile, "void, ");
     }
 
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, FUN)",
-                          vararg[i], vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
@@ -114,22 +114,18 @@ ICMCompileND_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **varar
 
 /**<!--*********************************************************************-->
  *
- * @fn void ICMCompileND_THREAD_FUN_DEC( char *name, char *rettype_NT,
+ * @fn void ICMCompileMUTC_THREAD_FUN_DECL( char *name, char *rettype_NT,
  *                                       int vararg_cnt, char **vararg)
  *
  * @brief
- *   implements the compilation of the following ICM:
- *
- *   ND_FUN_DEC( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
- *
- *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+                                char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_THREAD_FUN_DEF");
+    DBUG_ENTER ("ICMCompileMUTC_THREAD_FUN_DECL");
 
 #define ND_FUN_DEC
 #include "icm_comment.c"
@@ -143,17 +139,18 @@ ICMCompileND_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char
 
     fprintf (global.outfile, "( %s, , ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, THREAD)",
-                          vararg[i], vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREAD_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+                                     char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_THREAD_FUN_DEF");
+    DBUG_ENTER ("ICMCompileMUTC_THREAD_FUN_DEF_BEGIN");
 
 #define ND_FUN_DEC
 #include "icm_comment.c"
@@ -163,12 +160,12 @@ ICMCompileND_THREAD_FUN_DEF (char *name, char *rettype_NT, int vararg_cnt, char 
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
     INDENT;
-    fprintf (global.outfile, "SAC_MUTC_START_DEF_THREADFUN2 ");
+    fprintf (global.outfile, "SAC_MUTC_DEF_THREADFUN_BEGIN2 ");
 
     fprintf (global.outfile, "( %s, , ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_FLAG_%s( %s, %s, THREAD)",
-                          vararg[i], vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
@@ -204,18 +201,18 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "%s = ", retname);
         fprintf (global.outfile, "%s(", name);
     } else {
-        fprintf (global.outfile, "SAC_MUTC_FUNAP2(");
+        fprintf (global.outfile, "SAC_ND_FUNAP2(");
         fprintf (global.outfile, "%s, ", name);
     }
 
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, FUN)", vararg[i],
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
 
     if (!STReq (retname, "")) {
         fprintf (global.outfile, ");");
     } else {
-        fprintf (global.outfile, ")"); /* SAC_MUTC_FUN_AP */
+        fprintf (global.outfile, ")");
     }
 
     fprintf (global.outfile, "\n");
@@ -226,24 +223,24 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_THREAD_AP( char *name,
- *                                char *retname,
- *                                int vararg_cnt,
- *                                char **vararg)
+ *   void ICMCompileMUTC_THREAD_AP( char *name,
+ *                                  char *retname,
+ *                                  int vararg_cnt,
+ *                                  char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_THREAD_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *   MUTC_THREAD_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_THREAD_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREAD_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_THREAD_AP");
+    DBUG_ENTER ("ICMCompileMUTC_THREAD_AP");
 
 #define ND_THREAD_AP
 #include "icm_comment.c"
@@ -256,8 +253,8 @@ ICMCompileND_THREAD_AP (char *name, char *retname, int vararg_cnt, char **vararg
 
     fprintf (global.outfile, "%s, ", name);
     ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_FLAG_%s( %s, %s, THREAD)",
-                          vararg[i], vararg[i + 2], vararg[i + 1]));
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
     fprintf (global.outfile, "\n");

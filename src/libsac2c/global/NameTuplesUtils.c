@@ -260,11 +260,17 @@ NTUgetMutcUsageFromTypes (types *type)
         z = C_unknowna;
     } else {
         switch (TYPES_MUTC_USAGE (type)) {
-        case MUTC_US_PARAMIO:
-            z = C_paramio;
+        case MUTC_US_THREADPARAMIO:
+            z = C_threadparamio;
             break;
-        case MUTC_US_PARAM:
-            z = C_param;
+        case MUTC_US_THREADPARAM:
+            z = C_threadparam;
+            break;
+        case MUTC_US_FUNPARAMIO:
+            z = C_funparamio;
+            break;
+        case MUTC_US_FUNPARAM:
+            z = C_funparam;
             break;
         default:
             z = C_none;
@@ -593,14 +599,21 @@ NTUgetMutcUsageFromNType (ntype *ntype)
     DBUG_ASSERT ((ntype != NULL), "No type found!");
 
     switch (TYgetMutcUsage (ntype)) {
-    case MUTC_US_PARAMIO:
-        z = C_paramio;
+    case MUTC_US_THREADPARAMIO:
+        z = C_threadparamio;
         break;
-    case MUTC_US_PARAM:
-        z = C_param;
+    case MUTC_US_THREADPARAM:
+        z = C_threadparam;
+        break;
+    case MUTC_US_FUNPARAMIO:
+        z = C_funparamio;
+        break;
+    case MUTC_US_FUNPARAM:
+        z = C_funparam;
         break;
     default:
         z = C_none;
+        break;
     }
 
     DBUG_RETURN (z);

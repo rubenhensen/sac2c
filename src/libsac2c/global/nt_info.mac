@@ -77,7 +77,8 @@ NTIF (C_global, "GLO"), NTIF (C_shared, "SHA"), NTIF (C_na, "N_A"), /* Not appli
 
 #elif (ATTRIB == NT_MUTC_USAGE_INDEX)
 
-NTIF (C_param, "PAR"), NTIF (C_paramio, "PIO"), NTIF (C_none, "NON"),
+NTIF (C_threadparam, "TPA"), NTIF (C_threadparamio, "TPO"), NTIF (C_funparam, "FPA"),
+  NTIF (C_funparamio, "FPO"), NTIF (C_none, "NON"),
   NTIF (C_unknowna, "???") /* should be the last entry! */
 
 #endif

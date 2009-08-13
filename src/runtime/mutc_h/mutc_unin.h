@@ -1,13 +1,13 @@
 #define SAC_MUTC_UNIN                                                                    \
-    SAC_MUTC_START_DEF_FUN2 (                                                            \
-      unin_double, void, VOID,                                                           \
+    SAC_ND_DEF_FUN_BEGIN2 (                                                              \
+      unin_double, void,                                                                 \
       SAC_ND_PARAM_out ((out,                                                            \
                          T_SHP (AKD,                                                     \
                                 T_HID (HID,                                              \
                                        T_UNQ (NUQ,                                       \
                                               T_REG (INT,                                \
                                                      T_SCO (GLO,                         \
-                                                            T_USG (PAR, T_EMPTY))))))),  \
+                                                            T_USG (FPA, T_EMPTY))))))),  \
                         double),                                                         \
       SAC_ND_PARAM_in ((in,                                                              \
                         T_SHP (SCL,                                                      \
@@ -15,7 +15,7 @@
                                       T_UNQ (NUQ,                                        \
                                              T_REG (INT,                                 \
                                                     T_SCO (GLO,                          \
-                                                           T_USG (PAR, T_EMPTY))))))),   \
+                                                           T_USG (FPA, T_EMPTY))))))),   \
                        int))                                                             \
     {                                                                                    \
         int SAC_ND_A_MIRROR_DIM (                                                        \
@@ -75,7 +75,7 @@
                                         T_UNQ (NUQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
-                                                             T_USG (PAR,                 \
+                                                             T_USG (FPA,                 \
                                                                     T_EMPTY))))))), );   \
         SAC_ND_A_DESC_SIZE (                                                             \
           (tmp,                                                                          \
@@ -88,7 +88,7 @@
                                         T_UNQ (NUQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
-                                                             T_USG (PAR,                 \
+                                                             T_USG (FPA,                 \
                                                                     T_EMPTY))))))), );   \
         SAC_ND_A_DESC_SHAPE ((tmp,                                                       \
                               T_SHP (AKD,                                                \
@@ -105,7 +105,7 @@
                                         T_UNQ (NUQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
-                                                             T_USG (PAR,                 \
+                                                             T_USG (FPA,                 \
                                                                     T_EMPTY))))))), );   \
         SAC_ND_ALLOC__DATA (                                                             \
           (tmp,                                                                          \
@@ -118,7 +118,7 @@
                                        T_UNQ (NUQ,                                       \
                                               T_REG (INT,                                \
                                                      T_SCO (GLO,                         \
-                                                            T_USG (PAR, T_EMPTY))))))),  \
+                                                            T_USG (FPA, T_EMPTY))))))),  \
                         (tmp,                                                            \
                          T_SHP (AKD,                                                     \
                                 T_HID (HID,                                              \
@@ -127,4 +127,4 @@
                                                      T_SCO (GLO,                         \
                                                             T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
-    SAC_MUTC_END_DEF_FUN ()
+    SAC_ND_DEF_FUN_END ()

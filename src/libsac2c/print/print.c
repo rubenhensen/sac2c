@@ -1640,8 +1640,8 @@ PRTfundef (node *arg_node, info *arg_info)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
                 fprintf (global.outfile, "%s ", PRINT_EXTERN);
 
-                if ((FUNDEF_ICM (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info, FALSE);
                 } else {
                     /* print N_icm ND_FUN_DEC */
@@ -1649,8 +1649,8 @@ PRTfundef (node *arg_node, info *arg_info)
                     TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
                 }
 
-                if (!((FUNDEF_ICM (arg_node) == NULL)
-                      || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm))) {
+                if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                      || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
                     fprintf (global.outfile, ";\n");
                 }
 
@@ -1767,12 +1767,11 @@ PRTfundef (node *arg_node, info *arg_info)
                          "**************/\n",
                          FUNDEF_NAME (arg_node));
 
-                if ((FUNDEF_ICM (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info, FALSE);
                 } else {
-                    /* print N_icm ND_FUN_DEC */
-                    TRAVdo (FUNDEF_ICM (arg_node), arg_info);
+                    TRAVdo (FUNDEF_ICMDEFBEGIN (arg_node), arg_info);
                 }
 
                 fprintf (global.outfile, "\n");
@@ -1796,8 +1795,8 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, "\n");
 
-                if (!((FUNDEF_ICM (arg_node) == NULL)
-                      || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm))) {
+                if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                      || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
                     TRAVdo (FUNDEF_ICMDEFEND (arg_node), arg_info);
                 }
 

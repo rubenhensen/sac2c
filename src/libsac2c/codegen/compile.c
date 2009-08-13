@@ -1437,14 +1437,15 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeArgNode( int idx, types *type)
+ * @fn  node *MakeArgNode( int idx, types *type, bool thread)
  *
  * @brief  ...
+ *         bool thread is this arg a mutc thread fun arg?
  *
  ******************************************************************************/
 
 static node *
-MakeArgNode (int idx, types *arg_type)
+MakeArgNode (int idx, types *arg_type, bool thread)
 {
     node *id;
     char *name;
@@ -1453,7 +1454,13 @@ MakeArgNode (int idx, types *arg_type)
     DBUG_ENTER ("MakeArgNode");
 
     type = DUPdupAllTypes (arg_type);
-    TYPES_MUTC_USAGE (type) = MUTC_US_PARAM;
+
+    /* Set usage tag of arg */
+    if (thread) {
+        TYPES_MUTC_USAGE (type) = MUTC_US_THREADPARAM;
+    } else {
+        TYPES_MUTC_USAGE (type) = MUTC_US_FUNPARAM;
+    }
 
     name = MEMmalloc (20 * sizeof (char));
     sprintf (name, "SAC_arg_%d", idx);
@@ -1471,113 +1478,6 @@ MakeArgNode (int idx, types *arg_type)
     type = FREEfreeAllTypes (type);
 
     DBUG_RETURN (id);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *MakeIcm_ND_FUN_DEC( node *fundef, bool decl)
- *
- * @brief  Creates a ND_FUN_DEF/ND_FUNDECL ICM, which has the following format:
- *         ND_FUN_DEC( name, rettype, narg, [TAG, type, arg]*),
- *
- * @param fundef
- * @param decl  Is this a function declaration or definition?
- *
- ******************************************************************************/
-
-static node *
-MakeIcm_ND_FUN_DEC (node *fundef, bool decl)
-{
-    node *ret_node;
-    argtab_t *argtab;
-    int i;
-    node *icm_args = NULL;
-
-    DBUG_ENTER ("MakeIcm_ND_FUN_DEC");
-
-    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
-                 "no fundef node found!");
-
-    argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
-
-    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
-        /*
-         * for ... arguments the name should expand to an empty string
-         *  -> replace 'tag' and 'id'
-         */
-
-        icm_args
-          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_notag]),
-                         TBmakeExprs (TCmakeIdCopyString ("..."),
-                                      TBmakeExprs (TCmakeIdCopyString (NULL), icm_args)));
-    }
-
-    /* arguments */
-    for (i = argtab->size - 1; i >= 1; i--) {
-        argtag_t tag;
-        types *type;
-        char *name;
-        node *id;
-
-        if (argtab->ptr_in[i] != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
-                         "no N_arg node found in argtab");
-
-            tag = argtab->tag[i];
-            type = ARG_TYPE (argtab->ptr_in[i]);
-            name = ARG_NAME (argtab->ptr_in[i]);
-            if (name != NULL) {
-                id = TCmakeIdCopyStringNt (name, type);
-            } else {
-                id = MakeArgNode (i, type);
-            }
-        } else {
-            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
-            tag = argtab->tag[i];
-            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type);
-        }
-
-        icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
-                                TBmakeExprs (MakeBasetypeArg (type),
-                                             TBmakeExprs (id, icm_args)));
-    }
-
-    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size), icm_args);
-    } else {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
-    }
-
-    /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
-    if (argtab->ptr_out[0] == NULL) {
-        icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
-    } else {
-        icm_args = TBmakeExprs (MakeBasetypeArg_NT (
-                                  TYtype2OldType (RET_TYPE (argtab->ptr_out[0]))),
-                                icm_args);
-    }
-
-    if (decl) {
-        if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DECL",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
-        } else {
-            ret_node = TCmakeIcm2 ("ND_FUN_DECL",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
-        }
-    } else {
-        if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeIcm2 ("ND_THREAD_FUN_DEF",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
-        } else {
-            ret_node = TCmakeIcm2 ("ND_FUN_DEF",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
-        }
-    }
-    DBUG_RETURN (ret_node);
 }
 
 /** <!--********************************************************************-->
@@ -1622,7 +1522,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         } else {
             DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type);
+            id = MakeArgNode (i, type, FALSE);
         }
 
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
@@ -1636,10 +1536,10 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     if (argtab->ptr_out[0] != NULL) {
         types *type;
         type = TYtype2OldType (RET_TYPE (argtab->ptr_out[0]));
-        icm_args
-          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[0]]),
-                         TBmakeExprs (MakeBasetypeArg (type),
-                                      TBmakeExprs (MakeArgNode (0, type), icm_args)));
+        icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[0]]),
+                                TBmakeExprs (MakeBasetypeArg (type),
+                                             TBmakeExprs (MakeArgNode (0, type, FALSE),
+                                                          icm_args)));
         size++;
     }
 
@@ -1683,7 +1583,7 @@ MakeIcm_CUDA_FUN_DEC (node *fundef)
         } else {
             DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type);
+            id = MakeArgNode (i, type, FALSE);
         }
 
         icm_args
@@ -1703,7 +1603,7 @@ MakeIcm_CUDA_FUN_DEC (node *fundef)
         icm_args
           = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[0]]),
                          TBmakeExprs (MakeBasetypeArg (type),
-                                      TBmakeExprs (MakeArgNode (0, type),
+                                      TBmakeExprs (MakeArgNode (0, type, FALSE),
                                                    TBmakeExprs (TBmakeNum (
                                                                   TYPES_DIM (type)),
                                                                 icm_args))));
@@ -1718,54 +1618,139 @@ MakeIcm_CUDA_FUN_DEC (node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFundefIcm( node *fundef, info *arg_info)
+ * @fn  node *MakeFunctionArgs( node *fundef, bool decl)
  *
- * @brief  ...
+ * @brief  Create the arguments to a function
+ *         By this stage all return values are pointer arguments.
  *
- ******************************************************************************/
-
+ *****************************************************************************/
 static node *
-MakeFundefIcm (node *fundef, info *arg_info)
+MakeFunctionArgs (node *fundef)
 {
-    node *icm;
+    node *icm_args = NULL;
+    argtab_t *argtab;
+    int i;
 
-    DBUG_ENTER ("MakeFundefIcm");
+    DBUG_ENTER ("MakeFunctionArgs");
 
-    if (FUNDEF_ISSPMDFUN (fundef)) {
-        icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
-    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-        icm = MakeIcm_CUDA_FUN_DEC (fundef);
-    } else {
-        icm = MakeIcm_ND_FUN_DEC (fundef, FALSE);
+    argtab = FUNDEF_ARGTAB (fundef);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
+        /*
+         * for ... arguments the name should expand to an empty string
+         *  -> replace 'tag' and 'id'
+         */
+
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_notag]),
+                         TBmakeExprs (TCmakeIdCopyString ("..."),
+                                      TBmakeExprs (TCmakeIdCopyString (NULL), icm_args)));
     }
 
-    DBUG_RETURN (icm);
+    /* arguments */
+    for (i = argtab->size - 1; i >= 1; i--) {
+        argtag_t tag;
+        types *type;
+        char *name;
+        node *id;
+
+        if (argtab->ptr_in[i] != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+                         "no N_arg node found in argtab");
+
+            tag = argtab->tag[i];
+            type = ARG_TYPE (argtab->ptr_in[i]);
+            name = ARG_NAME (argtab->ptr_in[i]);
+            if (name != NULL) {
+                id = TCmakeIdCopyStringNt (name, type);
+            } else {
+                id = MakeArgNode (i, type, FALSE);
+            }
+        } else {
+            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            tag = argtab->tag[i];
+            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
+            id = MakeArgNode (i, type, FALSE);
+        }
+
+        icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
+                                TBmakeExprs (MakeBasetypeArg (type),
+                                             TBmakeExprs (id, icm_args)));
+    }
+
+    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
+        icm_args = TBmakeExprs (TBmakeNum (argtab->size), icm_args);
+    } else {
+        icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+    }
+
+    /* return value */
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+    if (argtab->ptr_out[0] == NULL) {
+        icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+    } else {
+        icm_args = TBmakeExprs (MakeBasetypeArg_NT (
+                                  TYtype2OldType (RET_TYPE (argtab->ptr_out[0]))),
+                                icm_args);
+    }
+
+    DBUG_RETURN (icm_args);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFundeclIcm( node *fundef, info *arg_info)
+ * @fn  node *MakeFunctionSignature( node *fundef, bool decl)
  *
- * @brief  ...
+ * @brief  Create ICMs for the signature of a function
+ *         The result is normally needed for FUNDEF_ICMDECL and
+ *         FUNDEF_ICMDEFBEGIN
+ *
+ * @param fundef
+ * @param decl  Is this a function declaration or definition?
  *
  ******************************************************************************/
 
 static node *
-MakeFundeclIcm (node *fundef, info *arg_info)
+MakeFunctionSignature (node *fundef, bool decl)
 {
-    node *icm;
+    node *ret_node;
 
-    DBUG_ENTER ("MakeFundeclIcm");
+    DBUG_ENTER ("MakeFunctionSignature");
 
-    if (FUNDEF_ISSPMDFUN (fundef)) {
-        icm = MakeIcm_MT_SPMD_FUN_DEC (fundef);
-    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-        icm = MakeIcm_CUDA_FUN_DEC (fundef);
+    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
+                 "no fundef node found!");
+
+    if (decl) {
+        if (FUNDEF_ISTHREADFUN (fundef)) {
+            ret_node = TCmakeIcm2 ("MUTC_THREAD_FUN_DECL",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                   MakeFunctionArgs (fundef));
+        } else if (FUNDEF_ISSPMDFUN (fundef)) {
+            ret_node = MakeIcm_MT_SPMD_FUN_DEC (fundef);
+        } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+            ret_node = MakeIcm_CUDA_FUN_DEC (fundef);
+        } else {
+            ret_node
+              = TCmakeIcm2 ("ND_FUN_DECL", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                            MakeFunctionArgs (fundef));
+        }
     } else {
-        icm = MakeIcm_ND_FUN_DEC (fundef, TRUE);
+        if (FUNDEF_ISTHREADFUN (fundef)) {
+            ret_node = TCmakeIcm2 ("MUTC_THREAD_FUN_DEF_BEGIN",
+                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                   MakeFunctionArgs (fundef));
+        } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+            ret_node = MakeIcm_CUDA_FUN_DEC (fundef);
+        } else if (FUNDEF_ISSPMDFUN (fundef)) {
+            ret_node = MakeIcm_MT_SPMD_FUN_DEC (fundef);
+        } else {
+            ret_node
+              = TCmakeIcm2 ("ND_FUN_DEF_BEGIN", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                            MakeFunctionArgs (fundef));
+        }
     }
-
-    DBUG_RETURN (icm);
+    DBUG_RETURN (ret_node);
 }
 
 /** <!--********************************************************************-->
@@ -1930,7 +1915,7 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
             icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
         }
         if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeAssignIcm2 ("ND_THREAD_AP",
+            ret_node = TCmakeAssignIcm2 ("MUTC_THREAD_AP",
                                          TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                          icm_args, assigns);
         } else {
@@ -2422,14 +2407,10 @@ COMPfundef (node *arg_node, info *arg_info)
               = TCappendAssign (assigns, BLOCK_INSTR (FUNDEF_BODY (arg_node)));
         }
 
-        FUNDEF_ICM (arg_node) = MakeFundefIcm (arg_node, arg_info);
-        FUNDEF_ICMDECL (arg_node) = MakeFundeclIcm (arg_node, arg_info);
+        FUNDEF_ICMDEFBEGIN (arg_node) = MakeFunctionSignature (arg_node, FALSE);
+        FUNDEF_ICMDECL (arg_node) = MakeFunctionSignature (arg_node, TRUE);
 
-        if (!FUNDEF_ISSPMDFUN (arg_node) && !FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
-            FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_MUTC_END_DEF_FUN", NULL);
-        } else {
-            FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_NOOP", NULL);
-        }
+        FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_ND_DEF_FUN_END", NULL);
 
         /*
          * traverse next fundef
@@ -2444,11 +2425,11 @@ COMPfundef (node *arg_node, info *arg_info)
         if (FUNDEF_ISSPMDFUN (arg_node)) {
             node *icm;
 
-            icm = DUPdoDupNode (FUNDEF_ICM (arg_node));
+            icm = DUPdoDupNode (FUNDEF_ICMDEFBEGIN (arg_node));
             ICM_NAME (icm) = "MT_SPMD_FRAME_ELEMENT";
             INFO_SPMDFRAME (arg_info) = TBmakeAssign (icm, INFO_SPMDFRAME (arg_info));
 
-            icm = DUPdoDupNode (FUNDEF_ICM (arg_node));
+            icm = DUPdoDupNode (FUNDEF_ICMDEFBEGIN (arg_node));
             ICM_NAME (icm) = "MT_SPMD_BARRIER_ELEMENT";
             INFO_SPMDBARRIER (arg_info) = TBmakeAssign (icm, INFO_SPMDBARRIER (arg_info));
         }
@@ -2671,7 +2652,8 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
             new_args
               = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
                              TBmakeExprs (MakeArgNode (i,
-                                                       ID_TYPE (EXPRS_EXPR (ret_exprs))),
+                                                       ID_TYPE (EXPRS_EXPR (ret_exprs)),
+                                                       FALSE),
                                           TBmakeExprs (DUPdupIdNt (
                                                          EXPRS_EXPR (ret_exprs)),
                                                        NULL)));
@@ -3101,7 +3083,7 @@ COMPid (node *arg_node, info *arg_info)
     if (INFO_COND (arg_info)) {
         if (NODE_TYPE (arg_node) == N_id) {
             ret_node
-              = TBmakeIcm ("SAC_ND_GET_VAR",
+              = TBmakeIcm ("SAC_ND_GETVAR",
                            TBmakeExprs (DUPdupIdNt (arg_node),
                                         TBmakeExprs (DUPdoDupTree (arg_node), NULL)));
             FREEdoFreeTree (arg_node);
@@ -3857,7 +3839,7 @@ static node *
 COMPprfSuballoc (node *arg_node, info *arg_info)
 {
     node *let_ids;
-    node *ret_node;
+    node *ret_node = NULL;
     node *mem_id;
     shape_class_t sc;
     node *sub_get_dim;
@@ -3870,12 +3852,6 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
 
-    if (global.backend == BE_c99) {
-        ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
-                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
-    }
-
     if (global.backend == BE_cuda) {
         ret_node
           = TCmakeAssignIcm5 ("CUDA_WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
@@ -3883,6 +3859,10 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                               DUPdupIdNt (PRF_ARG1 (arg_node)),
                               TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node)))),
                               DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    } else {
+        ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
     }
 
     if (global.backend == BE_mutc) {
@@ -7169,7 +7149,7 @@ COMPrange (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_id) {
         RANGE_LOWERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_ND_GET_VAR",
+          = TCmakeAssignIcm2 ("SAC_ND_GETVAR",
                               TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
                                                     ID_TYPE (
                                                       RANGE_LOWERBOUND (arg_node))),
@@ -7179,7 +7159,7 @@ COMPrange (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_id) {
         RANGE_UPPERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_ND_GET_VAR",
+          = TCmakeAssignIcm2 ("SAC_ND_GETVAR",
                               TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
                                                     ID_TYPE (
                                                       RANGE_UPPERBOUND (arg_node))),

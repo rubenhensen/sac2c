@@ -137,28 +137,28 @@ rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `HID', `UNQ')
 rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 
-pat(`SAC_ND_PARAM_FLAG_in', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_PARAM_FLAG_in', `SAC_ND_PARAM_in__NODESC', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_PARAM_FLAG_in', `SAC_ND_PARAM_in__NODESC', `SCL', `HID', `UNQ')
-rule(`SAC_ND_PARAM_FLAG_in', `SAC_ND_PARAM_in__DESC', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_PARAM_in', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__DESC', `*SHP', `*HID', `*UNQ')
 
 
-pat(`SAC_ND_PARAM_FLAG_out', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_PARAM_FLAG_out', `SAC_ND_PARAM_out__NODESC', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_PARAM_FLAG_out', `SAC_ND_PARAM_out__NODESC', `SCL', `HID', `UNQ')
-rule(`SAC_ND_PARAM_FLAG_out', `SAC_ND_PARAM_out__DESC', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_PARAM_out', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
-pat(`SAC_ND_ARG_FLAG_in', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_ARG_FLAG_in', `SAC_ND_ARG_FLAG_in__NODESC', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_ARG_FLAG_in', `SAC_ND_ARG_FLAG_in__NODESC', `SCL', `HID', `UNQ')
-rule(`SAC_ND_ARG_FLAG_in', `SAC_ND_ARG_FLAG_in__DESC', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_ARG_in', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__DESC', `*SHP', `*HID', `*UNQ')
 
 
-pat(`SAC_ND_ARG_FLAG_out', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_ARG_FLAG_out', `SAC_ND_ARG_FLAG_out__NODESC', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_ARG_FLAG_out', `SAC_ND_ARG_FLAG_out__NODESC', `SCL', `HID', `UNQ')
-rule(`SAC_ND_ARG_FLAG_out', `SAC_ND_ARG_FLAG_out__DESC', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_ARG_out', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_RET_out', `1', `0', `NT_SHP', `NT_HID', `NT_UNQ')
@@ -167,10 +167,10 @@ rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `HID', `UNQ')
 rule(`SAC_ND_RET_out', `SAC_ND_RET_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
-pat(`SAC_ND_DECL_PARAM_FLAG_inout', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_DECL_PARAM_FLAG_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_DECL_PARAM_FLAG_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `HID', `UNQ')
-rule(`SAC_ND_DECL_PARAM_FLAG_inout', `SAC_ND_DECL_PARAM_inout__DESC', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_DECL_PARAM_inout', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_ALLOC', `0', `3', `NT_SHP')

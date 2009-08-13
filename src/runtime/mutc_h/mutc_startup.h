@@ -33,7 +33,7 @@
     sl_enddef
 
 #define SAC_MUTC_THE_WORLD_TAGS()                                                        \
-    T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_USG (PAR, T_EMPTY))))))
+    T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_USG (FPA, T_EMPTY))))))
 
 #define SAC_MUTC_STARTUP_ANON()                                                          \
     m4_define ([[_sl_anon_counter]], 0)                                                  \
@@ -61,8 +61,7 @@
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
         SAC_COMMANDLINE_SET (0, NULL);                                                   \
-        SAC_MUTC_FUNAP2 (SACwf__MAIN__main,                                              \
-                         SAC_ND_ARG_FLAG_out (SAC_MUTC_MAIN_RES_NT, int, FUN));          \
+        SAC_ND_FUNAP2 (SACwf__MAIN__main, SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));   \
     }                                                                                    \
     sl_enddef
 
