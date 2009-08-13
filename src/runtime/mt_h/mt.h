@@ -1599,9 +1599,10 @@ SAC_C_EXTERN void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
 
 #endif /* SAC_DO_THREADS_STATIC */
 
-#endif /* 0 */
 
 All above is dead !!!!!
+
+#endif /* 0 */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1858,11 +1859,11 @@ All above is dead !!!!!
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
-  /*
-   * Definition of synchronisation barrier data type.
-   */
+/*
+ * Definition of synchronisation barrier data type.
+ */
 
-  typedef struct ARRAY_DESC {
+typedef struct ARRAY_DESC {
     /*
      * REMARK:
      *

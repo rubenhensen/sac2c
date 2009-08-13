@@ -57,10 +57,10 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
 {
     DBUG_ENTER ("ICMCompileND_FUN_DECL");
 
-#define ND_FUN_DEF
+#define ND_FUN_DECL
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEF
+#undef ND_FUN_DECL
 
     INDENT;
 
@@ -82,15 +82,30 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_FUN_DEF_BEGIN( char *name, char *rettype_NT,
+ *                                    int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_FUN_DEF_BEGIN( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
 void
 ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ("ICMCompileND_FUN_DEF_BEGIN");
 
-#define ND_FUN_DEF
+#define ND_FUN_DEF_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEF
+#undef ND_FUN_DEF_BEGIN
 
     INDENT;
 
@@ -107,7 +122,49 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
-    fprintf (global.outfile, ")");
+    fprintf (global.outfile, ")\n");
+
+#if 0
+  INDENT;
+  fprintf( global.outfile, "{\n");
+  global.indent++;
+  
+  INDENT;
+  fprintf( global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+#endif
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_FUN_DEF_END( char *name, char *rettype_NT,
+ *                                  int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_FUN_DEF_END( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileND_FUN_DEF_END");
+
+#define ND_FUN_DEF_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_FUN_DEF_END
+
+    global.indent--;
+
+    INDENT;
+    fprintf (global.outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
