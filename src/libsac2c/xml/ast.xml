@@ -2694,11 +2694,18 @@
       <traversal id="DES" name="Remove Structs" default="sons"
                  include="destruct.h">
         <travuser>
+          <!-- This is work in progress, not tested enough to safely run them.
           <node name="Module" />
+          <node name="Typedef" />
           <node name="Fundef" />
           <node name="Arg" />
           <node name="Ret" />
+          <node name="Assign" />
           <node name="Exprs" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Vardec" />
+          -->
         </travuser>
       </traversal>
    </traversals>
@@ -2974,6 +2981,19 @@ N_structdef :
                 <any />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <!-- Reference to the copy-constructor. -->
+        <attribute name="CopyConstructor" default="NULL" inconstructor="no">
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <all/>
                 </phases>
               </target>
             </targets>

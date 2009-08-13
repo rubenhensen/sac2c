@@ -37,12 +37,14 @@
  *   in the current traversal stack.
  * - init_args: List of N_arg nodes that is rebuilt for every structdef. After
  *   deep traversal it is used to create a constructor fundec.
+ * - elemcount: Keep track of the number of elements during traversal.
  */
 struct INFO {
     node *module;
     node *init_args;
     node *structdef;
     ntype *structtype;
+    int elemcount;
 };
 
 /**
@@ -199,7 +201,10 @@ HSstructdef (node *arg_node, info *arg_info)
     }
     FUNDEF_ARGS (fundec) = arg;
     FUNDEF_NEXT (fundec) = MODULE_FUNDECS (module);
+    /* TODO: Instead of sticky, recreate on-demand in 9:des. */
+    FUNDEF_ISSTICKY (fundec) = TRUE;
     MODULE_FUNDECS (module) = fundec;
+    STRUCTDEF_COPYCONSTRUCTOR (arg_node) = fundec;
 
     INFO_INIT_ARGS (arg_info) = NULL;
     INFO_STRUCTDEF (arg_info) = NULL;
@@ -267,10 +272,10 @@ HSstructelem (node *arg_node, info *arg_info)
     STRUCTELEM_TYPEDEF (arg_node)
       = TBmakeTypedef (STRcatn (4, STRUCT_ELEM, STRUCTDEF_NAME (structdef), "_",
                                 elemname),
-                       NULL,
-                       TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED),
-                                  SHmakeShape (0)),
+                       NULL, TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (arg_node))),
                        MODULE_TYPES (module));
+    /* Store a pointer to this elem's structdef. */
+    TYPEDEF_STRUCTDEF (STRUCTELEM_TYPEDEF (arg_node)) = structdef;
     MODULE_TYPES (module) = STRUCTELEM_TYPEDEF (arg_node);
 
     /* Continue with the next structelem. */
