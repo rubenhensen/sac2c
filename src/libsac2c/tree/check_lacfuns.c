@@ -31,6 +31,7 @@
 struct INFO {
     bool spine;
     node *fundef;
+    node *regularfundef;
 };
 
 /**
@@ -39,6 +40,7 @@ struct INFO {
 
 #define INFO_SPINE(n) ((n)->spine)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_REGULARFUNDEF(n) ((n)->regularfundef)
 
 /**
  * INFO functions
@@ -55,6 +57,7 @@ MakeInfo ()
 
     INFO_SPINE (result) = TRUE;
     INFO_FUNDEF (result) = NULL;
+    INFO_REGULARFUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -142,17 +145,36 @@ CHKLACFmodule (node *arg_node, info *arg_info)
 node *
 CHKLACFfundef (node *arg_node, info *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("CHKLACFfundef");
 
     if (INFO_SPINE (arg_info)) {
         if (!FUNDEF_ISDOFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)) {
             INFO_FUNDEF (arg_info) = arg_node;
+            INFO_REGULARFUNDEF (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+            INFO_REGULARFUNDEF (arg_info) = NULL;
             INFO_FUNDEF (arg_info) = NULL;
         }
 
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
+        if (global.local_funs_grouped) {
+            fundef = FUNDEF_LOCALFUNS (INFO_REGULARFUNDEF (arg_info));
+            while ((fundef != NULL) && (fundef != arg_node)) {
+                fundef = FUNDEF_NEXT (fundef);
+            }
+
+            if (fundef == NULL) {
+                CTIerror ("LaC function %s called in regular function %s, "
+                          "but not a member of regular function's local "
+                          "function set",
+                          FUNDEF_NAME (arg_node),
+                          FUNDEF_NAME (INFO_REGULARFUNDEF (arg_info)));
+            }
+        }
+
         if (FUNDEF_CALLFUN (arg_node) == NULL) {
             FUNDEF_CALLFUN (arg_node) = INFO_FUNDEF (arg_info);
         } else {
