@@ -330,7 +330,7 @@ INLap (node *arg_node, info *arg_info)
             INFO_CODE (arg_info)
               = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                        INFO_LETIDS (arg_info), AP_ARGS (arg_node));
-            if (global.group_local_functions) {
+            if (global.local_funs_grouped) {
                 INFO_LACFUNS (arg_info) = TCappendFundef (DUPgetCopiedSpecialFundefs (),
                                                           INFO_LACFUNS (arg_info));
                 /*
