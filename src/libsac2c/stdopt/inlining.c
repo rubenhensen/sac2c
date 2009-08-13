@@ -42,8 +42,12 @@
 #include "memory.h"
 #include "type_utils.h"
 #include "prepare_inlining.h"
+#include "group_local_funs.h"
+#include "DupTree.h"
 
 #include "inlining.h"
+
+static bool inlining_function_based;
 
 /*
  * INFO structure
@@ -53,17 +57,19 @@ struct INFO {
     node *letids;
     node *code;
     node *vardecs;
-    int depth;
+    node *lacfuns;
+    bool spine;
 };
 
 /*
  * INFO macros
  */
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_LETIDS(n) (n->letids)
-#define INFO_CODE(n) (n->code)
-#define INFO_VARDECS(n) (n->vardecs)
-#define INFO_DEPTH(n) (n->depth)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LETIDS(n) ((n)->letids)
+#define INFO_CODE(n) ((n)->code)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_LACFUNS(n) ((n)->lacfuns)
+#define INFO_SPINE(n) ((n)->spine)
 
 /*
   INFO functions
@@ -81,7 +87,8 @@ MakeInfo ()
     INFO_LETIDS (result) = NULL;
     INFO_CODE (result) = NULL;
     INFO_VARDECS (result) = NULL;
-    INFO_DEPTH (result) = 0;
+    INFO_LACFUNS (result) = NULL;
+    INFO_SPINE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -128,9 +135,7 @@ INLmodule (node *arg_node, info *arg_info)
  *
  *  This function is used not only for traversing the fundef chain, but also
  *  for starting traversal of fundefs referenced in applications. The two
- *  cases can be distinguished by INFO_DEPTH, which keeps track of the nesting
- *  depth of function applications, i.e. INFO_DEPTH == 0 means we are on the
- *  top-level fundef chain.
+ *  cases can be distinguished by INFO_SPINE.
  *
  * @param arg_node
  * @param arg_info
@@ -150,7 +155,7 @@ INLfundef (node *arg_node, info *arg_info)
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
         && (!FUNDEF_ISWRAPPERFUN (arg_node))
-        && ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_DEPTH (arg_info) >= 1))) {
+        && ((!FUNDEF_ISLACFUN (arg_node)) || (!INFO_SPINE (arg_info)))) {
 
         old_info = arg_info;
         arg_info = MakeInfo ();
@@ -164,6 +169,15 @@ INLfundef (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("INL", ("Leaving body of %s", CTIitemName (arg_node)));
 
+        if (GLFisLocalFun (arg_node)) {
+            INFO_LACFUNS (old_info)
+              = TCappendFundef (INFO_LACFUNS (arg_info), INFO_LACFUNS (old_info));
+        } else {
+            FUNDEF_LOCALFUNS (arg_node)
+              = TCappendFundef (INFO_LACFUNS (arg_info), FUNDEF_LOCALFUNS (arg_node));
+        }
+        INFO_LACFUNS (arg_info) = NULL;
+
         FUNDEF_INLINECOUNTER (arg_node) -= 1;
         FreeInfo (arg_info);
         arg_info = old_info;
@@ -171,7 +185,7 @@ INLfundef (node *arg_node, info *arg_info)
         FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
     }
 
-    if (INFO_DEPTH (arg_info) == 0) {
+    if (INFO_SPINE (arg_info)) {
         /*
          * We only continue with traversing the next function if we are on
          * the top level fundef chain.
@@ -289,6 +303,8 @@ INLlet (node *arg_node, info *arg_info)
 node *
 INLap (node *arg_node, info *arg_info)
 {
+    bool spine;
+
     DBUG_ENTER ("INLap");
 
     DBUG_PRINT ("INL", ("Processing call of fun %s", CTIitemName (AP_FUNDEF (arg_node))));
@@ -299,12 +315,11 @@ INLap (node *arg_node, info *arg_info)
         && !TUretsAreConstant (FUNDEF_RETS (AP_FUNDEF (arg_node)))) {
 
         if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
-            || (FUNDEF_ISINLINE (AP_FUNDEF (arg_node)))) {
-            INFO_DEPTH (arg_info) += 1;
-
+            || ((FUNDEF_ISINLINE (AP_FUNDEF (arg_node))) && !inlining_function_based)) {
+            spine = INFO_SPINE (arg_info);
+            INFO_SPINE (arg_info) = FALSE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-
-            INFO_DEPTH (arg_info) -= 1;
+            INFO_SPINE (arg_info) = spine;
         }
 
         if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
@@ -315,6 +330,18 @@ INLap (node *arg_node, info *arg_info)
             INFO_CODE (arg_info)
               = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                        INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+            if (global.group_local_functions) {
+                INFO_LACFUNS (arg_info) = TCappendFundef (DUPgetCopiedSpecialFundefs (),
+                                                          INFO_LACFUNS (arg_info));
+                /*
+                 * Due to the weird traversal order of function inlining in conjunction
+                 * with grouping of local functions, the standard
+                 * mechanism for retrieving copied LaC functions from the hook does not
+                 * work here. So, we must collect such functions explicitly and carry
+                 * them around until we reach a regular function again, which es where
+                 * we can store them in the local function's chain.
+                 */
+            }
         }
     } else {
         /*
@@ -368,27 +395,38 @@ INLdoInlining (node *arg_node)
 
     DBUG_ENTER ("INLdoInlining");
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module || NODE_TYPE (arg_node) == N_fundef,
+                 "INLdoInlining called with wrong node type.");
+
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
 #endif
 
-    if ((NODE_TYPE (arg_node) == N_module)
-        || ((NODE_TYPE (arg_node) == N_fundef) && (!FUNDEF_ISLACFUN (arg_node)))) {
+    if (NODE_TYPE (arg_node) == N_module) {
         arg_info = MakeInfo ();
-
-        if (NODE_TYPE (arg_node) == N_fundef) {
-            /*
-             * Prevent traversal of FUNDEF_NEXT by faking nested traversal
-             */
-            INFO_DEPTH (arg_info) = 1;
-        }
+        INFO_SPINE (arg_info) = TRUE;
+        inlining_function_based = FALSE;
 
         TRAVpush (TR_inl);
         arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
 
-        FreeInfo (arg_info);
+        arg_info = FreeInfo (arg_info);
+    } else {
+        /* NODE_TYPE( arg_node) == N_fundef */
+
+        if (!FUNDEF_ISLACFUN (arg_node)) {
+            arg_info = MakeInfo ();
+            INFO_SPINE (arg_info) = FALSE;
+            inlining_function_based = TRUE;
+
+            TRAVpush (TR_inl);
+            arg_node = TRAVdo (arg_node, arg_info);
+            TRAVpop ();
+
+            arg_info = FreeInfo (arg_info);
+        }
     }
 
 #ifdef SHOW_MALLOC

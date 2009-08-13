@@ -3,6 +3,8 @@
  */
 
 #include "DeadFunctionRemoval.h"
+
+#include "DupTree.h"
 #include "tree_basic.h"
 #include "new_types.h"
 #include "str.h"
@@ -17,13 +19,15 @@
  * INFO structure
  */
 struct INFO {
-    bool flag;
+    bool spine;
+    bool localfuns;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SPINE(n) ((n)->flag)
+#define INFO_SPINE(n) ((n)->spine)
+#define INFO_LOCALFUNS(n) ((n)->localfuns)
 
 /*
  * INFO functions
@@ -38,6 +42,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_SPINE (result) = FALSE;
+    INFO_LOCALFUNS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -314,6 +319,9 @@ DFRdoDeadFunctionRemoval (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "DFR can only be called on entire modules");
 
+    DBUG_ASSERT (DUPgetCopiedSpecialFundefsHook () == NULL,
+                 "DFR found LaC funs on hook.");
+
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
@@ -465,12 +473,19 @@ DFRfundef (node *arg_node, info *arg_info)
             }
             arg_node = FREEdoFreeNode (arg_node);
         } else {
-            /*
-             * clean up for next run -- remove the tag
-             */
-            FUNDEF_ISNEEDED (arg_node) = FALSE;
+            /* search for dead local functions. */
+            INFO_LOCALFUNS (arg_info) = TRUE;
+            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+            INFO_LOCALFUNS (arg_info) = FALSE;
+        }
+    } else if (INFO_LOCALFUNS (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        if (!FUNDEF_ISNEEDED (arg_node)) {
+            DBUG_PRINT ("DFR", ("Going to delete %s", CTIitemName (arg_node)));
+            arg_node = FREEdoFreeNode (arg_node);
         }
     } else {
+        /* we came via AP_FUNDEF */
         if (!FUNDEF_ISNEEDED (arg_node)) {
             if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                 arg_node = tagWrapperAsNeeded (arg_node, arg_info);

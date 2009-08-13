@@ -567,8 +567,14 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
     DBUG_PRINT ("PINL", ("Inline preparing function %s", FUNDEF_NAME (fundef)));
 
     TRAVpush (TR_pinl);
-    fundef = TRAVdo (fundef, arg_info);
+    fundef = PINLfundef (fundef, arg_info);
     TRAVpop ();
+    /*
+     * It may seem very odd to call PINLfundef above right away instead of properly
+     * using the traversal mechanism, but a subtle dependency between the traversal
+     * mechanism the LaC function hook mechanism and the traversal order in inlining
+     * make this design necessary.
+     */
 
     *vardecs = INFO_VARDECS (arg_info);
     code = INFO_ASSIGNS (arg_info);

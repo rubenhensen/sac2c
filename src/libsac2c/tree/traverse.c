@@ -46,6 +46,8 @@ TRAVdo (node *arg_node, info *arg_info)
     nodetype arg_node_type;
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
+    static node *arg_last = NULL;
+    node *special_funs;
 
 #ifdef SANITYCHECKS
     if (global.sancheck && (travstack->traversal != TR_anonymous)) {
@@ -64,6 +66,20 @@ TRAVdo (node *arg_node, info *arg_info)
      * Save node type as it might be modified during traversal
      */
     arg_node_type = NODE_TYPE (arg_node);
+
+    if (global.local_funs_grouped && (travstack->traversal != TR_anonymous)
+        && (NODE_TYPE (arg_node) == N_fundef) && (!GLFisLocalFun (arg_node))) {
+        DBUG_ASSERT ((arg_last != NULL) || (DUPgetCopiedSpecialFundefsHook () == NULL),
+                     "arg_last unset in traverse.c but copied special funs exist");
+
+        special_funs = DUPgetCopiedSpecialFundefs ();
+        if (special_funs != NULL) {
+            FUNDEF_LOCALFUNS (arg_last)
+              = TCappendFundef (special_funs, FUNDEF_LOCALFUNS (arg_last));
+        }
+
+        arg_last = arg_node;
+    }
 
     if (pretable[travstack->traversal] != NULL) {
         arg_node = pretable[travstack->traversal](arg_node, arg_info);
