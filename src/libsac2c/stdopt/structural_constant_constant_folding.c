@@ -448,7 +448,10 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     constant *fsval = NULL;
     constant *ivlen = NULL;
     constant *fsX_tail = NULL;
-    pattern *pat1, *pat2, *pat3, *pat4;
+    pattern *pat1 = NULL;
+    pattern *pat2 = NULL;
+    pattern *pat3 = NULL;
+    pattern *pat4 = NULL;
     int offset;
 
     DBUG_ENTER ("SCCFprf_modarray_AxVxA");
@@ -562,10 +565,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                 EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
                 EXPRS_EXPR (exprs) = DUPdoDupTree (val);
             }
-            pat3 = PMfree (pat3);
-            pat4 = PMfree (pat4);
         }
-        pat2 = PMfree (pat2);
         if (fsX != NULL) {
             fsX = COfreeConstant (fsX);
             if (coiv != NULL) {
