@@ -33,15 +33,62 @@
 #include "free.h"
 #endif /* BEtest */
 
+#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < cnt * inc; i += inc) {                                           \
+            if (i > 0) {                                                                 \
+                fprintf (global.outfile, "%s", sep_str);                                 \
+                sep_code;                                                                \
+            }                                                                            \
+            code;                                                                        \
+        }                                                                                \
+    }
+
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_DEC( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DECL( char *name, int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_DEC( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *   MT_SPMDFUN_DECL( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements the declaration of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DECL");
+
+#define MT_SPMDFUN_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SPMDFUN_DECL
+
+    INDENT;
+    fprintf (global.outfile,
+             "SAC_MT_SPMDFUN_REAL_RETTYPE()"
+             " %s( SAC_MT_SPMDFUN_REAL_PARAM_LIST());\n",
+             funname);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SPMDFUN_DEF_BEGIN( char *name, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SPMDFUN_DEF_BEGIN( name, vararg_cnt, [ TAG, type, param_NT ]* )
  *
  *   This ICM implements the protoype of an spmd function. The first parameter
  *   specifies the name of this function.
@@ -50,22 +97,22 @@
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
+ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMD_FUN_DEC");
+    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DEF_BEGIN");
 
-#define MT_SPMD_FUN_DEC
+#define MT_SPMDFUN_DEF_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_FUN_DEC
+#undef MT_SPMDFUN_DEF_BEGIN
 
     INDENT;
     fprintf (global.outfile,
-             "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
-             " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST())\n",
+             "SAC_MT_SPMDFUN_REAL_RETTYPE()"
+             " %s( SAC_MT_SPMDFUN_REAL_PARAM_LIST())\n",
              funname);
 
     INDENT;
@@ -89,12 +136,45 @@ ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_AP( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DEF_END( char *name, int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_AP( name, vararg_cnt, [ TAG, param_NT ]* )
+ *   MT_SPMDFUN_DEF_END( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements end of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DEF_END");
+
+#define MT_SPMDFUN_DEF_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SPMDFUN_DEF_END
+
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SPMDFUN_AP( char *name, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SPMDFUN_AP( name, vararg_cnt, [ TAG, param_NT ]* )
  *
  *   This ICM implements the application of an spmd function. The first
  *   parameter specifies the name of this function.
@@ -103,17 +183,17 @@ ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
+ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMD_FUN_AP");
+    DBUG_ENTER ("ICMCompileMT_SPMDFUN_AP");
 
-#define MT_SPMD_FUN_AP
+#define MT_SPMDFUN_AP
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_FUN_AP
+#undef MT_SPMDFUN_AP
 
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
@@ -131,13 +211,13 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id,
+ *   void ICMCompileMT_SPMDFUN_RET( int barrier_id,
  *                                   int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_RET( barrier_id, vararg_cnt, [ tag, foldfun, param_NT ]* )
+ *   MT_SPMDFUN_RET( barrier_id, vararg_cnt, [ tag, foldfun, param_NT ]* )
  *
  *   This ICM implements the return statement of an spmd-function,
  *   i.e. it has to realize the return of several out parameters.
@@ -146,20 +226,21 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
+ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
 {
     int i, cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMD_FUN_RET");
+    DBUG_ENTER ("ICMCompileMT_SPMDFUN_RET");
 
-#define MT_SPMD_FUN_RET
+#define MT_SPMDFUN_RET
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_FUN_RET
+#undef MT_SPMDFUN_RET
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SYNC_WORKER_BEGIN();\n");
 
+    global.indent++;
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (STReq (vararg[i], "out")) {
@@ -168,6 +249,7 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
                      funname, cnt, vararg[i + 1], vararg[i + 2]);
         }
     }
+    global.indent--;
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SYNC_WORKER_END();\n");
@@ -177,6 +259,7 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
 
     cnt = 0;
 
+    global.indent++;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (STReq (vararg[i], "out")) {
             INDENT;
@@ -184,16 +267,229 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
                      funname, cnt, vararg[i + 1], vararg[i + 2]);
         }
     }
+    global.indent--;
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SYNC_MASTER_END();\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n");
+    fprintf (global.outfile, "SAC_MT_SPMDFUN_REAL_RETURN();\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MTFUN_DECL( char *funname, char *rettype_NT,
+ *                                 int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_MTFUN_DECL( name, rettype_NT, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements the declaration of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_MTFUN_DECL");
+
+#define MT_MTFUN_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MTFUN_DECL
+
+    INDENT;
+    if (rettype_NT[0] != '\0') {
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
+    } else {
+        fprintf (global.outfile, "void ");
+    }
+
+    fprintf (global.outfile, "%s(", funname);
+    fprintf (global.outfile, " SAC_MT_MYTHREAD_PARAM(), ");
+
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ");");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MTFUN_DEF_BEGIN( char *funname, char *rettype_NT,
+ *                                      int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_MTFUN_DEF_BEGIN( name, rettype_NT, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements the protoype of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
+                              char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_MTFUN_DEF_BEGIN");
+
+#define MT_MTFUN_DEF_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MTFUN_DEF_BEGIN
+
+    INDENT;
+    if (rettype_NT[0] != '\0') {
+        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
+    } else {
+        fprintf (global.outfile, "void ");
+    }
+
+    fprintf (global.outfile, "%s(", funname);
+    fprintf (global.outfile, " SAC_MT_MYTHREAD_PARAM(), ");
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")\n");
+
+    INDENT;
+    fprintf (global.outfile, "{");
+    global.indent++;
+
+    INDENT;
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MTFUN_DEF_END( char *name, char *rettype_NT,
+ *                                    int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_MTFUN_DEF_END( name, rettype_NT, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements end of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, int vararg_cnt,
+                            char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_MTFUN_DEF_END");
+
+#define MT_MTFUN_DEF_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MTFUN_DEF_END
 
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MTFUN_AP( char *name, char *retname_NT,
+ *                               int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_MTFUN_AP( name, retname_NT, vararg_cnt, [ TAG, param_NT ]* )
+ *
+ *   This ICM implements the application of an spmd function. The first
+ *   parameter specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_MTFUN_AP");
+
+#define MT_MTFUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MTFUN_AP
+
+    INDENT;
+    if (retname_NT[0] != '\0') {
+        fprintf (global.outfile, "%s = ", retname_NT);
+    }
+
+    fprintf (global.outfile, "%s(", funname);
+    fprintf (global.outfile, " SAC_MT_MYTHREAD(), ");
+    ScanArglist (vararg_cnt, 2, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
+                          vararg[i + 1]));
+    fprintf (global.outfile, ");\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MTFUN_RET( char *retname_NT, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_MTFUN_RET( retname_NT, vararg_cnt, [ TAG, arg_NT, decl_arg_NT ]* )
+ *
+ *   where TAG is element in { out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_MTFUN_RET (char *retname_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_MTFUN_RET");
+
+#define MT_MTFUN_RET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MTFUN_RET
+
+    INDENT;
+    ScanArglist (vararg_cnt, 3, "\n", INDENT,
+                 fprintf (global.outfile, "SAC_ND_RET_%s( %s, %s)", vararg[i],
+                          vararg[i + 1], vararg[i + 2]));
+    if (vararg_cnt > 0) {
+        fprintf (global.outfile, "\n");
+        INDENT;
+    }
+
+    if (retname_NT[0] != '\0') {
+        fprintf (global.outfile, "return( %s);", retname_NT);
+    } else {
+        fprintf (global.outfile, "return;");
+    }
 
     DBUG_VOID_RETURN;
 }

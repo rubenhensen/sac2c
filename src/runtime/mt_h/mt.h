@@ -630,6 +630,8 @@ typedef union {
 
 #define SAC_MT_SPMD_FUN_REAL_RETTYPE() static volatile unsigned int
 
+#define SAC_MT_MYTHREAD_PARAM() const unsigned int SAC_MT_mythread
+
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
@@ -1599,6 +1601,19 @@ SAC_C_EXTERN void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
 
 #endif /* 0 */
 
+All above is dead !!!!!
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 /*****************************************************************************/
 
 /*
@@ -1843,11 +1858,11 @@ SAC_C_EXTERN void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
-/*
- * Definition of synchronisation barrier data type.
- */
+  /*
+   * Definition of synchronisation barrier data type.
+   */
 
-typedef struct ARRAY_DESC {
+  typedef struct ARRAY_DESC {
     /*
      * REMARK:
      *
@@ -1992,8 +2007,10 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
     {                                                                                    \
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s started.", #name));       \
         SAC_MT_spmd_function = &name;                                                    \
+        SAC_MT_not_yet_parallel = 0;                                                     \
         SAC_MT_START_WORKERS ()                                                          \
         name (0, SAC_MT_MASTERCLASS (), 0);                                              \
+        SAC_MT_not_yet_parallel = 1;                                                     \
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s finished.", #name));      \
     }
 

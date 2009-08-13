@@ -771,28 +771,88 @@ ICM_END( WL_SIMD_END, ( cnt))
  * ICMs for compilation of multi-threaded applications
  */
 
-#if defined(MT_SPMD_FUN_DEC) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_FUN_DEC, ICM_TRACE_NONE)
+#if defined(MT_MTFUN_DECL) || defined(ICM_ALL)
+ICM_DEF( MT_MTFUN_DECL, ICM_TRACE_NONE)
   ICM_ID( funname)
+  ICM_NT( rettype_NT)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SPMD_FUN_DEC, (funname, vararg_cnt, vararg))
+ICM_END( MT_MTFUN_DECL, (funname, rettype_NT, vararg_cnt, vararg))
 #endif
 
-#if defined(MT_SPMD_FUN_RET) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_FUN_RET, ICM_TRACE_NONE)
+#if defined(MT_MTFUN_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_MTFUN_DEF_BEGIN, ICM_TRACE_NONE)
   ICM_ID( funname)
+  ICM_NT( rettype_NT)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SPMD_FUN_RET, (funname, vararg_cnt, vararg))
+ICM_END( MT_MTFUN_DEF_BEGIN, (funname, rettype_NT, vararg_cnt, vararg))
 #endif
 
-#if defined(MT_SPMD_FUN_AP) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_FUN_AP, ICM_TRACE_NONE)
+#if defined(MT_MTFUN_DEF_END) || defined(ICM_ALL)
+ICM_DEF( MT_MTFUN_DEF_END, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_MTFUN_DEF_END, (funname, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_MTFUN_AP) || defined(ICM_ALL)
+ICM_DEF( MT_MTFUN_AP, ICM_TRACE(fun))
+  ICM_ID( funname)
+  ICM_ID( retname_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_MTFUN_AP, (funname, retname_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_MTFUN_RET) || defined(ICM_ALL)
+ICM_DEF( MT_MTFUN_RET, ICM_TRACE(fun))
+  ICM_ID( retname_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_MTFUN_RET, (retname_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMDFUN_DECL) || defined(ICM_ALL)
+ICM_DEF( MT_SPMDFUN_DECL, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SPMD_FUN_AP, (funname, vararg_cnt, vararg))
+ICM_END( MT_SPMDFUN_DECL, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMDFUN_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SPMDFUN_DEF_BEGIN, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMDFUN_DEF_BEGIN, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMDFUN_DEF_END) || defined(ICM_ALL)
+ICM_DEF( MT_SPMDFUN_DEF_END, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMDFUN_DEF_END, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMDFUN_RET) || defined(ICM_ALL)
+ICM_DEF( MT_SPMDFUN_RET, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMDFUN_RET, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMDFUN_AP) || defined(ICM_ALL)
+ICM_DEF( MT_SPMDFUN_AP, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMDFUN_AP, (funname, vararg_cnt, vararg))
 #endif
 
 #if defined(MT_SPMD_FRAME_ELEMENT) || defined(ICM_ALL)
