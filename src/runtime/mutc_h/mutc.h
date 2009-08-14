@@ -52,7 +52,7 @@
 #endif
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#undef SAC_ND_DEF_FUN_END
+#undef SAC_ND_FUN_DEF_END
 #define SAC_ND_FUN_DEF_END(...) SAC_MUTC_DEF_THREADFUN_END ()
 #else  /* FUNAP_AS_CREATE */
 #endif /* FUNAP_AS_CREATE */
