@@ -628,7 +628,7 @@ GSCprintMainC99 ()
     INDENT;
     fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
 
-    fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
+    fprintf (global.outfile, "SAC_ND_ARG_out( %s, int)", res_NT);
     fprintf (global.outfile, ");\n\n");
     GSCprintMainEnd ();
     INDENT;
