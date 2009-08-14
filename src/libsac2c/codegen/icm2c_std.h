@@ -7,8 +7,6 @@ extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                    char **vararg);
 extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                         char **vararg);
-extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt,
-                                      char **vararg);
 extern void ICMCompileMUTC_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                             char **vararg);
 extern void ICMCompileMUTC_THREAD_FUN_DEF_BEGIN (char *name, char *rettype_NT,

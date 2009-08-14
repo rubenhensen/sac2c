@@ -136,39 +136,6 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_FUN_DEF_END( char *name, char *rettype_NT,
- *                                  int vararg_cnt, char **vararg)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_FUN_DEF_END( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
- *
- *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
- *
- ******************************************************************************/
-
-void
-ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
-{
-    DBUG_ENTER ("ICMCompileND_FUN_DEF_END");
-
-#define ND_FUN_DEF_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_FUN_DEF_END
-
-    global.indent--;
-
-    INDENT;
-    fprintf (global.outfile, "}\n");
-
-    DBUG_VOID_RETURN;
-}
-
 /**<!--*********************************************************************-->
  *
  * @fn void ICMCompileMUTC_THREAD_FUN_DECL( char *name, char *rettype_NT,

@@ -30,15 +30,6 @@ ICM_DEF( ND_FUN_DEF_BEGIN, ICM_TRACE_NONE)
 ICM_END( ND_FUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
-#if defined(ND_FUN_DEF_END) || defined(ICM_ALL)
-ICM_DEF( ND_FUN_DEF_END, ICM_TRACE_NONE)
-  ICM_ID( name)
-  ICM_NT( rettype_NT)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_FUN_DEF_END, (name, rettype_NT, vararg_cnt, vararg))
-#endif
-
 #if defined(MUTC_THREAD_FUN_DECL) || defined(ICM_ALL)
 ICM_DEF( MUTC_THREAD_FUN_DECL, ICM_TRACE_NONE)
   ICM_ID( name)

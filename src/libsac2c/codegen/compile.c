@@ -2410,7 +2410,7 @@ COMPfundef (node *arg_node, info *arg_info)
         FUNDEF_ICMDEFBEGIN (arg_node) = MakeFunctionSignature (arg_node, FALSE);
         FUNDEF_ICMDECL (arg_node) = MakeFunctionSignature (arg_node, TRUE);
 
-        FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_ND_DEF_FUN_END", NULL);
+        FUNDEF_ICMDEFEND (arg_node) = TBmakeIcm ("SAC_ND_FUN_DEF_END", NULL);
 
         /*
          * traverse next fundef
