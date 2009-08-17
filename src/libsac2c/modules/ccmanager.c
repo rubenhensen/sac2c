@@ -250,11 +250,13 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 
     switch (kind) {
     case STRS_saclib:
-        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
         if (global.backend == BE_mutc) {
             /* Support cross compiling */
+            result = MEMmalloc (sizeof (char)
+                                * (STRlen (lib) + STRlen (global.target_name) + 6));
             sprintf (result, "-l%sMod%s", lib, global.target_name);
         } else {
+            result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
             sprintf (result, "-l%sMod", lib);
         }
 
