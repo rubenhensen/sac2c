@@ -2,13 +2,15 @@
 
 #define _SAC_MUTC_STARTUP_H_
 
-#define SAC_MUTC_INCLUDE m4_include (sac_helpers.slh)
+#define MUTC 1
+#if SAC_BACKEND == MUTC
+#include "sac_helpers.h"
+#endif /* SAC_BACKEND */
+#undef MUTC
 
 #if SAC_DO_COMPILE_MODULE
 
-#define SAC_MUTC_STARTUP                                                                 \
-    SAC_MUTC_STARTUP_ANON ()                                                             \
-    SAC_MUTC_INCLUDE
+#define SAC_MUTC_STARTUP SAC_MUTC_STARTUP_ANON ()
 
 #else
 

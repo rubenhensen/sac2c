@@ -39,7 +39,6 @@ rule(`SAC_MUTC_PARAM', `SAC_MUTC_ND_PARAM_INT_SHA', `FLO', `SHA', `*SHP')
 
 #define MUTC 1
 #if SAC_BACKEND == MUTC
-#undef MUTC
 
 #define SAC_MUTC_C_GETVAR( ...) SAC_ND_GETVAR( __VA_ARGS__)
 #undef SAC_ND_GETVAR
@@ -57,5 +56,5 @@ rule(`SAC_ND_GETVAR_INOUT', `SAC_MUTC_GETTHREADPAR', `TPO')
 rule(`SAC_ND_GETVAR_INOUT', `SAC_MUTC_GETVAR', `*USG')
 
 #endif /* SAC_BACKEND */
-
+#undef MUTC
 end_icm_definition
