@@ -40,4 +40,4 @@ fi
 
 #gcc ${include} -E -P -o ${output}.sl ${infile}
 
-slc -b $backend ${arg_c} -o ${output} ${infile}
+slc -b ${backend} ${include} ${arg_c} -o ${output} ${infile}
