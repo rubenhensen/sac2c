@@ -237,7 +237,7 @@ runtime_phm_h          := phm
 runtime_mt_h           := mt mt_gen
 
 runtime_mutc_h         := mutc_gen mutc_world mutc_tostring \
-                          mutc_unin mutc_startup mutc
+                          mutc_unin  mutc mutc_startup
 
 runtime_cuda_h         := cuda cuda_gen
 

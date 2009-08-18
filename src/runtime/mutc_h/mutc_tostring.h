@@ -198,7 +198,7 @@
                                                      T_SCO (GLO,                         \
                                                             T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
-    SAC_ND_DEF_FUN_END ()
+    SAC_ND_FUN_DEF_END (to_string)
 
 #define SAC_STRING2ARRAY(array, string_arg)                                              \
     {                                                                                    \

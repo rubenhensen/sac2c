@@ -20,7 +20,7 @@
         SAC_ND_RET_out ((SAC_arg_1, (SCL, (NHD, (NUQ, (INT, (GLO, (FPA, ))))))),         \
                         (SACl_from, (SCL, (NHD, (NUQ, (INT, (GLO, (FPA, )))))))) return; \
     }                                                                                    \
-    SAC_ND_DEF_FUN_END ()                                                                \
+    SAC_ND_FUN_DEF_END (SACf_MutcIO__to_MUTC_IO__i)                                      \
     SAC_ND_DEF_FUN_BEGIN2 (SACf_MutcIO_CL_INIT__init_mutcWorld__SACt_MutcIO__MutcIO,     \
                            void,                                                         \
                            SAC_ND_PARAM_inout ((SACp_OI_object,                          \
@@ -82,4 +82,4 @@
                           (SACp_OI_object,                                               \
                            (SCL, (NHD, (NUQ, (INT, (GLO, (FPO, )))))))) return;          \
     }                                                                                    \
-    SAC_ND_DEF_FUN_END ()
+    SAC_ND_FUN_DEF_END (SACf_MutcIO_CL_INIT__init_mutcWorld__SACt_MutcIO__MutcIO)

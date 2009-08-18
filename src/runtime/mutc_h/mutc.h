@@ -5,7 +5,6 @@
 
 #define MUTC 1
 #if SAC_BACKEND == MUTC
-#undef MUTC
 
 #define bool boolbool
 
@@ -74,4 +73,5 @@
 #endif /* FUNAP_AS_CREATE */
 
 #endif /* BACKEND */
+#undef MUTC
 #endif /* _SAC_MUTC_H_ */
