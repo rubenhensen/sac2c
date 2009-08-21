@@ -370,6 +370,24 @@ CVPprf (node *arg_node, info *arg_info)
      * optimisations, CVP needs to be able to handle them correctly
      * as CVP is run after IVE, as well!
      */
+    case F_idxs2offset:
+    case F_vect2offset:
+        DBUG_ASSERT (global.compiler_subphase >= PH_opt_ivesplit,
+                     "F_idx2offset/vect2offset operations are not allowed during the "
+                     "optimizer!");
+
+        /*
+         * The first argument (the shape) may be an array constant. All others
+         * must be identifiers.
+         */
+
+        INFO_PROPMODE (arg_info) = PROP_variable | PROP_arrayconst | PROP_array;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_PROPMODE (arg_info) = PROP_variable;
+        PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
+        break;
+
     case F_idx_sel:
         DBUG_ASSERT (global.compiler_subphase >= PH_opt_ivesplit,
                      "F_idx_ operations are not allowed during the optimizer!");
