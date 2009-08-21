@@ -1707,65 +1707,6 @@ MakeFunctionArgs (node *fundef)
     DBUG_RETURN (icm_args);
 }
 
-#ifdef CARL
-
-/** <!--********************************************************************-->
- *
- * @fn  node *MakeFunctionSignature( node *fundef, bool decl)
- *
- * @brief  Create ICMs for the signature of a function
- *         The result is normally needed for FUNDEF_ICMDECL and
- *         FUNDEF_ICMDEFBEGIN
- *
- * @param fundef
- * @param decl  Is this a function declaration or definition?
- *
- ******************************************************************************/
-
-static node *
-MakeFunctionSignature (node *fundef, bool decl)
-{
-    node *ret_node;
-
-    DBUG_ENTER ("MakeFunctionSignature");
-
-    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
-                 "no fundef node found!");
-
-    if (decl) {
-        if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeIcm2 ("MUTC_THREAD_FUN_DECL",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                   MakeFunctionArgs (fundef));
-        } else if (FUNDEF_ISSPMDFUN (fundef)) {
-            ret_node = MakeIcm_MT_SPMD_FUN_DEC (fundef);
-        } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-            ret_node = MakeIcm_CUDA_FUN_DEC (fundef);
-        } else {
-            ret_node
-              = TCmakeIcm2 ("ND_FUN_DECL", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            MakeFunctionArgs (fundef));
-        }
-    } else {
-        if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeIcm2 ("MUTC_THREAD_FUN_DEF_BEGIN",
-                                   TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                   MakeFunctionArgs (fundef));
-        } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-            ret_node = MakeIcm_CUDA_FUN_DEC (fundef);
-        } else if (FUNDEF_ISSPMDFUN (fundef)) {
-            ret_node = MakeIcm_MT_SPMD_FUN_DEC (fundef);
-        } else {
-            ret_node
-              = TCmakeIcm2 ("ND_FUN_DEF_BEGIN", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            MakeFunctionArgs (fundef));
-        }
-    }
-    DBUG_RETURN (ret_node);
-}
-
-#endif
-
 /** <!--********************************************************************-->
  *
  * @fn  char *GetBaseTypeFromAvis( node *in)
@@ -2402,15 +2343,6 @@ COMPfundef (node *arg_node, info *arg_info)
               = TCappendAssign (assigns, BLOCK_INSTR (FUNDEF_BODY (arg_node)));
         }
 
-#ifdef CARL
-        FUNDEF_ICMDEFBEGIN (arg_node) = MakeFunctionSignature (arg_node, FALSE);
-        FUNDEF_ICMDECL (arg_node) = MakeFunctionSignature (arg_node, TRUE);
-        FUNDEF_ICMDEFEND (arg_node)
-          = TCmakeIcm2 ("SAC_ND_FUN_DEF_END", TCmakeIdCopyString (FUNDEF_NAME (arg_node)),
-                        MakeFunctionArgs (arg_node));
-
-#else
-
         if (FUNDEF_ISSPMDFUN (arg_node)) {
             icm_args = MakeFunctionArgsSpmd (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MT_SPMDFUN_DECL", icm_args);
@@ -2447,8 +2379,6 @@ COMPfundef (node *arg_node, info *arg_info)
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
         }
-
-#endif
 
         /*
          * traverse next fundef
