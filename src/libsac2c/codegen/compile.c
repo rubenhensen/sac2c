@@ -1482,22 +1482,21 @@ MakeArgNode (int idx, types *arg_type, bool thread)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeIcm_MT_SPMD_FUN_DEC( node *fundef)
+ * @fn  node *MakeFunctionArgsSpmd( node *fundef)
  *
- * @brief  Creates a MT_SPMD_FUN_DEC ICM.
+ * @brief  Creates ICM argument list for SPMDFUN ICMs
  *
  ******************************************************************************/
 
 static node *
-MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
+MakeFunctionArgsSpmd (node *fundef)
 {
     argtab_t *argtab;
-    node *icm;
     int size;
     int i;
     node *icm_args = NULL;
 
-    DBUG_ENTER ("MakeIcm_MT_SPMD_FUN_DEC");
+    DBUG_ENTER ("MakeFunctionArgsSpmd");
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
@@ -1543,22 +1542,29 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         size++;
     }
 
-    icm = TCmakeIcm3 ("MT_SPMD_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                      TBmakeNum (size), icm_args);
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                            TBmakeExprs (TBmakeNum (size), icm_args));
 
-    DBUG_RETURN (icm);
+    DBUG_RETURN (icm_args);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeFunctionArgsCuda( node *fundef)
+ *
+ * @brief  Creates ICM argument list for CUDA GLOBALFUN ICMs
+ *
+ ******************************************************************************/
+
 static node *
-MakeIcm_CUDA_FUN_DEC (node *fundef)
+MakeFunctionArgsCuda (node *fundef)
 {
     argtab_t *argtab;
-    node *icm;
     int size;
     int i;
     node *icm_args = NULL;
 
-    DBUG_ENTER ("MakeIcm_CUDA_FUN_DEC");
+    DBUG_ENTER ("MakeFunctionArgsCuda");
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
@@ -1610,20 +1616,21 @@ MakeIcm_CUDA_FUN_DEC (node *fundef)
         size++;
     }
 
-    icm = TCmakeIcm3 ("CUDA_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                      TBmakeNum (size), icm_args);
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                            TBmakeExprs (TBmakeNum (size), icm_args));
 
-    DBUG_RETURN (icm);
+    DBUG_RETURN (icm_args);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFunctionArgs( node *fundef, bool decl)
+ * @fn  node *MakeFunctionArgs( node *fundef)
  *
  * @brief  Create the arguments to a function
  *         By this stage all return values are pointer arguments.
  *
  *****************************************************************************/
+
 static node *
 MakeFunctionArgs (node *fundef)
 {
@@ -1695,8 +1702,12 @@ MakeFunctionArgs (node *fundef)
                                 icm_args);
     }
 
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+
     DBUG_RETURN (icm_args);
 }
+
+#ifdef CARL
 
 /** <!--********************************************************************-->
  *
@@ -1752,6 +1763,8 @@ MakeFunctionSignature (node *fundef, bool decl)
     }
     DBUG_RETURN (ret_node);
 }
+
+#endif
 
 /** <!--********************************************************************-->
  *
@@ -1818,26 +1831,25 @@ GetBaseTypeFromExpr (node *in)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeIcm_FUN_AP( node *ap, node *fundef, node *assigns)
+ * @fn  node *MakeFunApArgs( node *ap)
  *
- * @brief  Builds a N_assign node with the ND_FUN_AP icm.
+ * @brief  Builds N_exprs chain of ICM arguments for function applications
  *
  ******************************************************************************/
 
 static node *
-MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
+MakeFunApArgs (node *ap)
 {
-    node *ret_node;
     argtab_t *argtab;
     int i;
     node *icm_args = NULL;
+    node *fundef;
 
-    DBUG_ENTER ("MakeIcm_FUN_AP");
-
-    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
-                 "no fundef node found!");
+    DBUG_ENTER ("MakeFunApArgs");
 
     DBUG_ASSERT (((ap != NULL) && (NODE_TYPE (ap) == N_ap)), "no ap node found!");
+
+    fundef = AP_FUNDEF (ap);
 
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT ((argtab != NULL), "no argtab found!");
@@ -1897,35 +1909,17 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
 
     icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
 
-    /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
-
-    if (FUNDEF_ISSPMDFUN (fundef)) {
-        ret_node
-          = TCmakeAssignIcm2 ("MT_SPMD_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                              icm_args, assigns);
-    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-        ret_node
-          = TCmakeAssignIcm2 ("CUDA_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                              icm_args, assigns);
-    } else {
+    if (!FUNDEF_ISSPMDFUN (fundef) && !FUNDEF_ISCUDAGLOBALFUN (fundef)) {
         if (argtab->ptr_out[0] == NULL) {
             icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
         } else {
             icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
         }
-        if (FUNDEF_ISTHREADFUN (fundef)) {
-            ret_node = TCmakeAssignIcm2 ("MUTC_THREAD_AP",
-                                         TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                         icm_args, assigns);
-        } else {
-            ret_node
-              = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                  icm_args, assigns);
-        }
     }
 
-    DBUG_RETURN (ret_node);
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
+
+    DBUG_RETURN (icm_args);
 }
 
 /** <!--********************************************************************-->
@@ -2347,6 +2341,7 @@ COMPfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
     node *assigns;
+    node *icm_args;
 
     DBUG_ENTER ("COMPfundef");
 
@@ -2407,11 +2402,53 @@ COMPfundef (node *arg_node, info *arg_info)
               = TCappendAssign (assigns, BLOCK_INSTR (FUNDEF_BODY (arg_node)));
         }
 
+#ifdef CARL
         FUNDEF_ICMDEFBEGIN (arg_node) = MakeFunctionSignature (arg_node, FALSE);
         FUNDEF_ICMDECL (arg_node) = MakeFunctionSignature (arg_node, TRUE);
         FUNDEF_ICMDEFEND (arg_node)
           = TCmakeIcm2 ("SAC_ND_FUN_DEF_END", TCmakeIdCopyString (FUNDEF_NAME (arg_node)),
                         MakeFunctionArgs (arg_node));
+
+#else
+
+        if (FUNDEF_ISSPMDFUN (arg_node)) {
+            icm_args = MakeFunctionArgsSpmd (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MT_SPMDFUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("MT_SPMDFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("MT_SPMDFUN_DEF_END", DUPdoDupTree (icm_args));
+        } else if (FUNDEF_ISMTFUN (arg_node)) {
+            icm_args = MakeFunctionArgs (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MT_MTFUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("MT_MTFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("MT_MTFUN_DEF_END", DUPdoDupTree (icm_args));
+        } else if (FUNDEF_ISTHREADFUN (arg_node)) {
+            icm_args = MakeFunctionArgs (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MUTC_THREADFUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("MUTC_THREADFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("MUTC_THREADFUN_DEF_END", DUPdoDupTree (icm_args));
+        } else if (FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
+            icm_args = MakeFunctionArgsCuda (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("CUDA_GLOBALFUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("CUDA_GLOBALFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("CUDA_GLOBALFUN_DEF_END", DUPdoDupTree (icm_args));
+        } else {
+            icm_args = MakeFunctionArgs (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
+        }
+
+#endif
 
         /*
          * traverse next fundef
@@ -2595,15 +2632,14 @@ COMPassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPNormalFunReturn( node *arg_node, info *arg_info)
+ * @fn  static node *MakeFunRetArgs( node *arg_node, info *arg_info)
  *
- * @brief  Generates ICMs for N_return-node found in body of a
- *         non-SPMD-function.
+ * @brief  Generates ICM args for N_return-node
  *
  ******************************************************************************/
 
 static node *
-COMPNormalFunReturn (node *arg_node, info *arg_info)
+MakeFunRetArgs (node *arg_node, info *arg_info)
 {
     node *fundef;
     argtab_t *argtab;
@@ -2617,7 +2653,7 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
     node *icm_args = NULL;
     node *last_arg = NULL;
 
-    DBUG_ENTER ("COMPNormalFunReturn");
+    DBUG_ENTER ("MakeFunRetArgs");
 
     fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
@@ -2702,34 +2738,27 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
         funargs = ARG_NEXT (funargs);
     }
 
-    /*
-     * replace N_return node by a new N_icm node
-     */
+    icm_args = TBmakeExprs (TBmakeNum (ret_cnt), icm_args);
 
-    DBUG_ASSERT ((FUNDEF_RETURN (fundef) == arg_node),
-                 "FUNDEF_RETURN not found via 'arg_info'!");
-
-    arg_node = FREEdoFreeTree (arg_node);
     if (cret_node == NULL) {
-        cret_node = TCmakeIdCopyString (NULL);
+        icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+    } else {
+        icm_args = TBmakeExprs (cret_node, icm_args);
     }
-    arg_node = TCmakeIcm3 ("ND_FUN_RET", cret_node, TBmakeNum (ret_cnt), icm_args);
 
-    FUNDEF_RETURN (fundef) = arg_node;
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (icm_args);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPSpmdFunReturn( node *arg_node, info *arg_info)
+ * @fn  node *MakeFunRetArgsSpmd( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return-node found in body of a SPMD-function.
  *
  ******************************************************************************/
 
 static node *
-COMPSpmdFunReturn (node *arg_node, info *arg_info)
+MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
 {
     node *fundef;
     argtab_t *argtab;
@@ -2740,7 +2769,7 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
     node *icm_args = NULL;
     node *last_arg = NULL;
 
-    DBUG_ENTER ("COMPSpmdFunReturn");
+    DBUG_ENTER ("MakeFunRetArgsSpmd");
 
     fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
@@ -2788,29 +2817,8 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
         }
     }
 
-    arg_node = TCmakeIcm3 ("MT_SPMD_FUN_RET",
-                           TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
-                           TBmakeNum (ret_cnt), icm_args);
-
-    FUNDEF_RETURN (fundef) = arg_node;
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-COMPCudaFunReturn (node *arg_node, info *arg_info)
-{
-    node *fundef;
-
-    DBUG_ENTER ("COMPCudaFunReturn");
-
-    fundef = INFO_FUNDEF (arg_info);
-    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
-                 "no fundef node found!");
-
-    arg_node = TCmakeIcm0 ("SAC_NOOP");
-
-    FUNDEF_RETURN (fundef) = arg_node;
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
+                            TBmakeExprs (TBmakeNum (ret_cnt), icm_args));
 
     DBUG_RETURN (arg_node);
 }
@@ -2819,34 +2827,37 @@ COMPCudaFunReturn (node *arg_node, info *arg_info)
  *
  * @fn  node *COMPreturn( node *arg_node, info *arg_info)
  *
- * @brief  Generates ICMs for N_return of a function (ND or MT).
+ * @brief  Generates ICMs for N_return of a function.
  *
  ******************************************************************************/
 
 node *
 COMPreturn (node *arg_node, info *arg_info)
 {
-    node *fundef;
+    node *fundef, *icm;
 
     DBUG_ENTER ("COMPreturn");
 
     fundef = INFO_FUNDEF (arg_info);
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
-        arg_node = COMPSpmdFunReturn (arg_node, arg_info);
+        icm = TBmakeIcm ("MT_SPMDFUN_RET", MakeFunRetArgsSpmd (arg_node, arg_info));
+    } else if (FUNDEF_ISMTFUN (fundef)) {
+        icm = TBmakeIcm ("MT_MTFUN_RET", MakeFunRetArgs (arg_node, arg_info));
+    } else if (FUNDEF_ISTHREADFUN (fundef)) {
+        icm = TBmakeIcm ("MUTC_THREADFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
-        arg_node = COMPCudaFunReturn (arg_node, arg_info);
+        icm = TBmakeIcm ("CUDA_GLOBALFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else {
-        arg_node = COMPNormalFunReturn (arg_node, arg_info);
+        icm = TBmakeIcm ("ND_FUN_RET", MakeFunRetArgs (arg_node, arg_info));
     }
 
+    FUNDEF_RETURN (fundef) = icm;
+
+    arg_node = TBmakeAssign (icm, NULL);
+
     if (INFO_POSTFUN (arg_info) != NULL) {
-        /*
-         * Fuse in POSTFUN icms. COMPassign takes care of the rest
-         * when finding an N_assign chain.
-         */
-        arg_node
-          = TCappendAssign (INFO_POSTFUN (arg_info), TBmakeAssign (arg_node, NULL));
+        arg_node = TCappendAssign (INFO_POSTFUN (arg_info), arg_node);
         INFO_POSTFUN (arg_info) = NULL;
     }
 
@@ -3030,10 +3041,9 @@ COMPApArgs (node *ap, info *arg_info)
 node *
 COMPap (node *arg_node, info *arg_info)
 {
-    node *let_ids;
+    node *let_ids, *icm, *icm_args;
     node *fundef;
-    node *ret_node;
-    node *assigns1, *assigns2;
+    node *assigns, *assigns1, *assigns2;
 
     DBUG_ENTER ("COMPap");
 
@@ -3054,12 +3064,29 @@ COMPap (node *arg_node, info *arg_info)
      */
     assigns2 = COMPApArgs (arg_node, arg_info);
 
-    ret_node = TCappendAssign (assigns1, assigns2);
+    assigns = TCappendAssign (assigns1, assigns2);
 
-    /* insert ND_FUN_AP icm at head of assignment chain */
-    ret_node = MakeIcm_FUN_AP (arg_node, fundef, ret_node);
+    icm_args = MakeFunApArgs (arg_node);
 
-    DBUG_RETURN (ret_node);
+    if (FUNDEF_ISSPMDFUN (fundef)) {
+        icm = TBmakeIcm ("MT_SPMDFUN_AP", icm_args);
+    } else if (FUNDEF_ISMTFUN (fundef)) {
+        icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
+    } else if (FUNDEF_ISTHREADFUN (fundef)) {
+        icm = TBmakeIcm ("MUTC_THREADFUN_AP", icm_args);
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        icm = TBmakeIcm ("CUDA_GLOBALFUN_AP", icm_args);
+    } else {
+        icm = TBmakeIcm ("ND_FUN_AP", icm_args);
+    }
+
+    /*
+     * We return an N_assign chain here rather than an N_ap node.
+     * The surrounding COMPlet takes care of this.
+     */
+    arg_node = TBmakeAssign (icm, assigns);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
