@@ -900,7 +900,11 @@ PRTmodule (node *arg_node, info *arg_info)
         global.outfile = FMGRwriteOpen ("%s/header.h", global.tmp_dirname);
         GSCprintFileHeader (arg_node);
 
-        /* TODO: Also check for MODULE_STRUCTDEFS (arg_node)? */
+        if (NULL != MODULE_STRUCTS (arg_node)) {
+            fprintf (global.outfile, "\n\n");
+            /* print structdefs */
+            TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
+        }
 
         if (NULL != MODULE_TYPES (arg_node)) {
             fprintf (global.outfile, "\n\n");
@@ -1039,7 +1043,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
         }
 
-        /* TODO: Also check for MODULE_STRUCTDEFS (arg_node)? */
+        if (MODULE_STRUCTS (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  struct definitions\n"
+                                     " */\n\n");
+            /* print structdefs */
+            TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
+        }
 
         if (MODULE_TYPES (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
@@ -1167,8 +1178,41 @@ PRTstructdef (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    /* TODO: Also print the structelems. */
-    fprintf (global.outfile, "struct %s {...}", STRUCTDEF_NAME (arg_node));
+    fprintf (global.outfile, "struct %s {\n", STRUCTDEF_NAME (arg_node));
+    global.indent++;
+    arg_node = TRAVcont (arg_node, arg_info);
+    global.indent--;
+    fprintf (global.outfile, "};");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTstructelem( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTstructelem (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTstructelem");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    INDENT;
+
+    fprintf (global.outfile, "%s %s;\n",
+             TYtype2String (AVIS_TYPE (STRUCTELEM_AVIS (arg_node)), FALSE, 0),
+             AVIS_NAME (STRUCTELEM_AVIS (arg_node)));
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1955,35 +1999,6 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, ",");
         PRINT_CONT (TRAVdo (ARG_NEXT (arg_node), arg_info), ;);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PRTstructelem( node *arg_node, info *arg_info)
- *
- * Description:
- *   TODO: This should print a pretty representation of the structdef.
- *
- *
- ******************************************************************************/
-
-node *
-PRTstructelem (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTstructelem");
-
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    INDENT;
-
-    fprintf (global.outfile, "%s %s;",
-             TYtype2String (AVIS_TYPE (STRUCTELEM_AVIS (arg_node)), FALSE, 0),
-             AVIS_NAME (STRUCTELEM_AVIS (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
