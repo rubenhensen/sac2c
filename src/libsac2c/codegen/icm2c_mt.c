@@ -318,7 +318,7 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt, char *
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
-    fprintf (global.outfile, ");");
+    fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
 }
@@ -444,9 +444,9 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt, char **v
 
     fprintf (global.outfile, "%s(", funname);
     fprintf (global.outfile, " SAC_MT_MYTHREAD(), ");
-    ScanArglist (vararg_cnt, 2, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
-                          vararg[i + 1]));
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");\n");
 
     DBUG_VOID_RETURN;

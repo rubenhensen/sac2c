@@ -630,8 +630,6 @@ typedef union {
 
 #define SAC_MT_SPMD_FUN_REAL_RETTYPE() static volatile unsigned int
 
-#define SAC_MT_MYTHREAD_PARAM() const unsigned int SAC_MT_mythread
-
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
@@ -2024,15 +2022,17 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
         SAC_MT_worker_flag = SAC_MT_master_flag;                                         \
     }
 
-#define SAC_MT_SPMD_FUN_REAL_PARAM_LIST()                                                \
+#define SAC_MT_SPMDFUN_REAL_PARAM_LIST()                                                 \
     const unsigned int SAC_MT_mythread, const unsigned int SAC_MT_myworkerclass,         \
       unsigned int SAC_MT_worker_flag
 
-#define SAC_MT_SPMD_FUN_REAL_RETURN() return (SAC_MT_worker_flag);
+#define SAC_MT_SPMDFUN_REAL_RETURN() return (SAC_MT_worker_flag);
 
-#define SAC_MT_SPMD_FUN_REAL_RETTYPE() static unsigned int
+#define SAC_MT_SPMDFUN_REAL_RETTYPE() unsigned int
 
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
+
+#define SAC_MT_MYTHREAD_PARAM() const unsigned int SAC_MT_mythread
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
 
