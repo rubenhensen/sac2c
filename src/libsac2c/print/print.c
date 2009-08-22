@@ -1180,9 +1180,11 @@ PRTstructdef (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "struct %s {\n", STRUCTDEF_NAME (arg_node));
     global.indent++;
-    arg_node = TRAVcont (arg_node, arg_info);
+    STRUCTDEF_STRUCTELEM (arg_node) = TRAVopt (STRUCTDEF_STRUCTELEM (arg_node), arg_info);
     global.indent--;
-    fprintf (global.outfile, "};");
+    fprintf (global.outfile, "};\n\n");
+
+    STRUCTDEF_NEXT (arg_node) = TRAVopt (STRUCTDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
