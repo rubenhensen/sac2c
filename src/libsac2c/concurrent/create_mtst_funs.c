@@ -268,13 +268,17 @@ HandleApFold (node *callee, info *arg_info)
     } else {
         /*
          * This function has not yet been processed at all.
-         * We turn it into the right mode and continue traversal in the callee.
+         * We turn it into the right mode and continue traversal in the callee,
+         * unless it is an external function that cannot be replicated for either
+         * mode.
          */
 
-        FUNDEF_ISMTFUN (callee) = INFO_MTCONTEXT (arg_info);
-        FUNDEF_ISSTFUN (callee) = !INFO_MTCONTEXT (arg_info);
+        if (!FUNDEF_ISEXTERN (callee)) {
+            FUNDEF_ISMTFUN (callee) = INFO_MTCONTEXT (arg_info);
+            FUNDEF_ISSTFUN (callee) = !INFO_MTCONTEXT (arg_info);
 
-        callee = TRAVdo (callee, arg_info);
+            callee = TRAVdo (callee, arg_info);
+        }
     }
 
     DBUG_RETURN (callee);
@@ -395,8 +399,9 @@ MTSTFfundef (node *arg_node, info *arg_info)
              * We have now processed all functions. If functions are left that are
              * neither tagged ST nor MT, they are neither exported/provided nor used
              * internally. They should have been removed by DFR, but maybe DFR was
-             * disabled. To continue compilation in an ordered manner, we tag these
-             * functions ST.
+             * disabled. Another source of such functions are external functions that
+             * only exist in one version. To continue compilation in an ordered manner,
+             * we tag these functions ST.
              */
         }
 
