@@ -172,6 +172,27 @@ ENDPHASE (unq)
 
 PHASE (cwc, "Creating Wrapper Code and Eliminating User-Defined Types", ALWAYS)
 
+#ifdef CG_STRUCT_TRY
+
+SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
+          cwc)
+
+SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
+          cwc)
+
+SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
+
+SUBPHASE (ewt, "Extending dispatch information", EWTdoExtendWrapperTypes, ALWAYS, cwc)
+
+SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
+
+SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
+
+SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
+          SSATdoTransformAllowGOs, ALWAYS, cwc)
+
+#else /*  CG_STRUCT_TRY */
+
 SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
 
 SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
@@ -183,6 +204,8 @@ SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls,
           cwc)
 
 SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
+
+#endif /*  CG_STRUCT_TRY */
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
