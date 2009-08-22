@@ -2750,7 +2750,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
                             TBmakeExprs (TBmakeNum (ret_cnt), icm_args));
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (icm_args);
 }
 
 /** <!--********************************************************************-->
