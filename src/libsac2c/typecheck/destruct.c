@@ -394,6 +394,10 @@ Fundecl2Fundef (node *fundec, node *body, node *module)
     FUNDEF_BODY (fundec) = body;
     FUNDEF_ISEXTERN (fundec) = FALSE;
     FUNDEF_ISINLINE (fundec) = TRUE;
+    /* The copy constructors used to be sticky but now that their use has been
+     * determined the unused ones can safely be removed.
+     */
+    FUNDEF_ISSTICKY (fundec) = FALSE;
     /* Now, since this changed from a function declaration to a definition, it
      * must be moved to the correct place in the N_module.
      */
