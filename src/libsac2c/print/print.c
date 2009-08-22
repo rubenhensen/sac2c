@@ -2125,6 +2125,16 @@ PRTblock (node *arg_node, info *arg_info)
     fprintf (global.outfile, "{ \n");
     global.indent++;
 
+    if (BLOCK_ISMTPARALLELBRANCH (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/* MT parallel branch */\n");
+    }
+
+    if (BLOCK_ISMTSEQUENTIALBRANCH (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/* MT sequential branch */\n");
+    }
+
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         INDENT;
         fprintf (global.outfile, "#pragma cachesim \"%s\"\n\n",

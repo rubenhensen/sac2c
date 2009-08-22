@@ -2279,6 +2279,17 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+       <traversal id="MTRMI" name="Restore memory instructions" default="sons" include="restore_mem_instr.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="With2" />
+          <node name="Id" />
+          <node name="Withid" />
+        </travuser>
+      </traversal>
       <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
         <travuser>
           <node name="Module" />
@@ -4140,7 +4151,14 @@ N_structdef :
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsMtParallelBranch">
+          <description>This block contains the parallel branch of a conditional that implements dynamic parallelisation decisions in the MT backend..</description>
+        </flag>
+        <flag name="IsMtSequentialBranch">
+          <description>This block contains the sequential branch of a conditional that implements dynamic parallelisation decisions in the MT backend..</description>
+        </flag>
+      </flags>
     </node>
 <!--
 

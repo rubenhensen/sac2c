@@ -1114,6 +1114,9 @@ DUPblock (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    BLOCK_ISMTSEQUENTIALBRANCH (new_node) = BLOCK_ISMTSEQUENTIALBRANCH (arg_node);
+    BLOCK_ISMTPARALLELBRANCH (new_node) = BLOCK_ISMTPARALLELBRANCH (arg_node);
+
     /* Have to defer updating extrema until all vardecs in place */
     v = BLOCK_VARDEC (new_node);
 

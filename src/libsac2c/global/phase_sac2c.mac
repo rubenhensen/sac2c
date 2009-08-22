@@ -881,6 +881,8 @@ SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, 
 
 SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
 
+SUBPHASE (mtrmi, "Restoring memory instructions", MTRMIdoRestoreMemoryInstrs, ALWAYS, mt)
+
 SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval, ALWAYS, mt)
 
 SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)

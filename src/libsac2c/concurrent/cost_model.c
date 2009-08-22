@@ -225,6 +225,7 @@ MTCMassign (node *arg_node, info *arg_info)
     node *preassign;
     node *new_instr;
     node *new_node = arg_node;
+    node *parblock, *seqblock;
 
     DBUG_ENTER ("MTCMassign");
 
@@ -236,11 +237,13 @@ MTCMassign (node *arg_node, info *arg_info)
 
         INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
 
-        new_instr
-          = TBmakeCond (TBmakeId (new_avis),
-                        TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL),
-                        TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL),
-                                     NULL));
+        parblock = TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL);
+        BLOCK_ISMTPARALLELBRANCH (parblock) = TRUE;
+
+        seqblock = TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL), NULL);
+        BLOCK_ISMTSEQUENTIALBRANCH (seqblock) = TRUE;
+
+        new_instr = TBmakeCond (TBmakeId (new_avis), parblock, seqblock);
 
         preassign = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
                                              INFO_CONDITION (arg_info)),
