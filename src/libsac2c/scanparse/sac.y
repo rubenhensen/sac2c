@@ -1263,15 +1263,14 @@ expr: DOT                        { $$ = TBmakeDot( 1);        }
     ;
 
 
-/* This works on my machine but not on the masterrun, so it is left commented
- * out for now.
+/* This used to call trouble on Solaris.
  */
-subexpr: /*subexpr DOT ID %prec STRUCTELEM
+subexpr: subexpr DOT ID %prec STRUCTELEM
                {
                  $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
                          TBmakeExprs( $$, NULL));
                }
-       |*/ nostrexpr %prec NOSTRUCTELEM { $$ = $1; }
+       | nostrexpr %prec NOSTRUCTELEM { $$ = $1; }
        ;
 
 
