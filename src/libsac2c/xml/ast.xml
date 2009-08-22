@@ -2694,9 +2694,10 @@
       <traversal id="DES" name="Remove Structs" default="sons"
                  include="destruct.h">
         <travuser>
-          <!-- This is work in progress, not tested enough to safely run them.
           <node name="Module" />
           <node name="Typedef" />
+          <node name="Structdef" />
+          <node name="Structelem" />
           <node name="Fundef" />
           <node name="Arg" />
           <node name="Ret" />
@@ -2705,7 +2706,6 @@
           <node name="Let" />
           <node name="Ids" />
           <node name="Vardec" />
-          -->
         </travuser>
       </traversal>
    </traversals>
@@ -2988,7 +2988,7 @@ N_structdef :
         </attribute>
         <!-- Reference to the copy-constructor. -->
         <attribute name="CopyConstructor" default="NULL" inconstructor="no">
-          <type name="Node">
+          <type name="Link">
             <targets>
               <target mandatory="no">
                 <node name="Fundef" />
@@ -4173,7 +4173,10 @@ N_structdef :
       </sons>
       <attributes>
         <attribute name="Typedef" default="NULL" inconstructor="no">
-          <type name="ExtLink">
+          <!-- TODO: Perhaps making these normal Node types would clean them up
+               automatically during the `destruct' phase instead of having to
+               check every typedef explicitly. -->
+          <type name="Link">
             <targets>
               <target mandatory="yes">
                 <node name="Typedef" />

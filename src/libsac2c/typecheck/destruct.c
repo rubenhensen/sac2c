@@ -26,28 +26,45 @@
  *
  * Remove all traces of struct usage.
  *
- * Currently only explodes argument and return value lists.
  */
+
+/**
+ * INFO_makeset structure, used by DESfuncond when giving body to setter
+ * functions to pass data about which element etc to DESstructelem.
+ * - newavis: Pointer to N_avis node of the N_arg that is the new value.
+ * - retexprs: Pointer to N_exprs for the N_return of the setter.
+ */
+struct INFO_makeset {
+    node *newavis;
+    node *retexprs;
+};
 
 /**
  * INFO structure
  * - cleanup: Boolean indicating cleanup mode state.
  * - inlet: Boolean: the traversal is now in a child of a N_let.
  * - module: Pointer to the N_module.
+ * - makeset: See struct INFO_makeset.
+ * - nonrecursive: Prevent DESarg from doing recursive expansion.
  */
 struct INFO {
+    struct INFO_makeset makeset;
     int cleanup;
     int inlet;
     int incondfun;
+    int nonrecursive;
     node *module;
 };
 
 /**
  * INFO macros
  */
+#define INFO_MAKESET_NEWAVIS(n) ((n)->makeset.newavis)
+#define INFO_MAKESET_RETEXPRS(n) ((n)->makeset.retexprs)
 #define INFO_CLEANUP(n) ((n)->cleanup)
 #define INFO_INLET(n) ((n)->inlet)
 #define INFO_INCONDFUN(n) ((n)->incondfun)
+#define INFO_NONRECURSIVE(n) ((n)->nonrecursive)
 #define INFO_MODULE(n) ((n)->module)
 
 /**
@@ -62,9 +79,12 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_MAKESET_NEWAVIS (result) = NULL;
+    INFO_MAKESET_RETEXPRS (result) = NULL;
     INFO_CLEANUP (result) = 0;
     INFO_INLET (result) = 0;
     INFO_INCONDFUN (result) = 0;
+    INFO_NONRECURSIVE (result) = 0;
     INFO_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
@@ -364,7 +384,8 @@ BodyForConstructor (node *constructor)
  *
  *   @brief  Give body to this function declaration (make it a fundef).
  *
- *   Also moves the node from the module's fundecl stack to the fundef stack.
+ *   Also moves the node from the module's fundecl stack to the fundef stack and
+ *   marks it as `inline'.
  *
  ******************************************************************************/
 static node *
@@ -372,6 +393,7 @@ Fundecl2Fundef (node *fundec, node *body, node *module)
 {
     FUNDEF_BODY (fundec) = body;
     FUNDEF_ISEXTERN (fundec) = FALSE;
+    FUNDEF_ISINLINE (fundec) = TRUE;
     /* Now, since this changed from a function declaration to a definition, it
      * must be moved to the correct place in the N_module.
      */
@@ -430,6 +452,7 @@ DESmodule (node *arg_node, info *arg_info)
     arg_node = TRAVcont (arg_node, arg_info);
 
     INFO_CLEANUP (arg_info) = TRUE;
+    MODULE_STRUCTS (arg_node) = TRAVopt (MODULE_STRUCTS (arg_node), arg_info);
     MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
     INFO_CLEANUP (arg_info) = FALSE;
 
@@ -449,18 +472,73 @@ DESmodule (node *arg_node, info *arg_info)
 node *
 DEStypedef (node *arg_node, info *arg_info)
 {
-    node *n;
+    node *next;
 
     DBUG_ENTER ("DEStypedef");
 
+    if (INFO_CLEANUP (arg_info)) {
+        if (TYPEDEF_STRUCTDEF (arg_node) != NULL) {
+            DBUG_PRINT ("DES", ("Cleaning up typedef %s.", TYPEDEF_NAME (arg_node)));
+            next = FREEdoFreeNode (arg_node);
+            arg_node = TRAVopt (next, arg_info);
+        }
+    } else {
+        /* Not in cleanup but in normal (first) traversal. */
+        arg_node = TRAVcont (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DESstructdef( node *arg_node, info *arg_info)
+ *
+ *   @brief  At the end of this phase, delete the struct definitions.
+ *
+ *
+ ******************************************************************************/
+node *
+DESstructdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DESstructdef");
+
+    if (INFO_CLEANUP (arg_info)) {
+        DBUG_PRINT ("DES", ("Cleaning up structdefs."));
+        arg_node = FREEdoFreeTree (arg_node);
+        DBUG_ASSERT (arg_node == NULL, "Structdefs not properly freed.");
+    } else {
+        arg_node = TRAVcont (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DESstructelem( node *arg_node, info *arg_info)
+ *
+ *   @brief  Dummy.
+ *
+ *
+ ******************************************************************************/
+node *
+DESstructelem (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DESstructelem");
+
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_CLEANUP (arg_info) && TYPEDEF_STRUCTDEF (arg_node) != NULL) {
-        DBUG_PRINT ("DES", ("Cleaning up typedef %s.", TYPEDEF_NAME (arg_node)));
-        n = TYPEDEF_NEXT (arg_node);
-        FREEdoFreeNode (arg_node);
-        arg_node = n;
-    }
+#if 0
+  if ( INFO_MAKESET_SELEM( arg_info) != NULL) {
+    id = TBmakeId( DUPdoDupNode( STRUCTELEM_AVIS( arg_node)));
+    ID_NAME( id) = MEMfree( ID_NAME( id));
+    /* Setters always have `s' as the argument name for the struct. */
+    ID_NAME( id) = STRcat( "_s_", AVIS_NAME( STRUCTELEM_AVIS( arg_node)));
+    retexprs = INFO_MAKESET_RETEXPRS( arg_info);
+    INFO_MAKESET_RETEXPRS( arg_info) = TBmakeExprs( id, retexprs);
+  }
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -490,9 +568,11 @@ DESfundef (node *arg_node, info *arg_info)
 {
     node *avis;
     node *body;
+    node *structdef;
     node *selem;
     node *next_fundecl;
     node *next_fundef;
+    node *e;
     char *ret_name;
 
     DBUG_ENTER ("DESfundef");
@@ -508,6 +588,7 @@ DESfundef (node *arg_node, info *arg_info)
             DBUG_RETURN (arg_node);
         }
         selem = FUNDEF_STRUCTGETTER (arg_node);
+        /* TODO: The argument's name is known: `s'. */
         ret_name = STRcatn (4, "_", ARG_NAME (FUNDEF_ARGS (arg_node)), "_",
                             AVIS_NAME (STRUCTELEM_AVIS (selem)));
         avis = TBmakeAvis (ret_name, TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (selem))));
@@ -525,6 +606,37 @@ DESfundef (node *arg_node, info *arg_info)
          * must continue on the child-nodes of this fundef. TRAVcont also operates
          * on the NEXT attribute, which is undesirable. (note: fundef != fundecl)
          */
+        next_fundef = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (arg_node) = NULL;
+        arg_node = TRAVcont (arg_node, arg_info);
+        FUNDEF_NEXT (arg_node) = next_fundef;
+        DBUG_RETURN (TRAVopt (next_fundecl, arg_info));
+    }
+
+    /* Setter. */
+    else if (FUNDEF_STRUCTSETTER (arg_node) != NULL) {
+        /* Build an expression list for the new body's return expression using the
+         * traversal mechanism.
+         */
+        /* Get the struct definition of the entire struct this getter is for. */
+        structdef = TYPEDEF_STRUCTDEF (UTgetTdef (
+          TYgetUserType (TYgetScalar (ARG_NTYPE (ARG_NEXT (FUNDEF_ARGS (arg_node)))))));
+        /* The first argument is the new value (`e'), the second is the struct
+         * (`s').
+         */
+        e = FUNDEF_ARGS (arg_node);
+        INFO_MAKESET_NEWAVIS (arg_info) = ARG_AVIS (e);
+        INFO_NONRECURSIVE (arg_info) = TRUE;
+        ARG_NEXT (e) = TRAVdo (ARG_NEXT (e), arg_info);
+        body = TBmakeBlock (TBmakeAssign (TBmakeReturn (INFO_MAKESET_RETEXPRS (arg_info)),
+                                          NULL),
+                            NULL);
+        INFO_MAKESET_NEWAVIS (arg_info) = NULL;
+        INFO_MAKESET_RETEXPRS (arg_info) = NULL;
+        INFO_NONRECURSIVE (arg_info) = FALSE;
+        next_fundecl = FUNDEF_NEXT (arg_node);
+        arg_node = Fundecl2Fundef (arg_node, body, INFO_MODULE (arg_info));
+        DBUG_PRINT ("DES", ("Setter %s now has body", FUNDEF_NAME (arg_node)));
         next_fundef = FUNDEF_NEXT (arg_node);
         FUNDEF_NEXT (arg_node) = NULL;
         arg_node = TRAVcont (arg_node, arg_info);
@@ -559,12 +671,6 @@ DESfundef (node *arg_node, info *arg_info)
         arg_node = next_fundecl;
     }
 
-    /* Setter. */
-    else if (FUNDEF_STRUCTSETTER (arg_node) != NULL) {
-        selem = FUNDEF_STRUCTSETTER (arg_node);
-        /* TODO: Give body to the struct setter. */
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -574,9 +680,11 @@ DESfundef (node *arg_node, info *arg_info)
  *
  *   @brief  If this argument value is a struct, expand it to its elements.
  *
- *   Do note that this means an empty struct will expand to zero return values.
- *   If this occurs, the next node in the N_ret list is returned by this
- *   function. If there is no other next argument, NULL is returned.
+ *   Do note that this means an empty struct will expand to zero arguments.  If
+ *   this occurs, the next node in the N_arg list is returned by this function.
+ *   If there is no other next argument, NULL is returned.
+ *
+ *   Does not operate recursively if the INFO_NONRECURSIVE flag is set.
  *
  ******************************************************************************/
 node *
@@ -614,13 +722,19 @@ DESarg (node *arg_node, info *arg_info)
     }
 
     if (arg_node != NULL) {
-        if (sd != NULL) {
+        if (sd != NULL && !INFO_NONRECURSIVE (arg_info)) {
             /* If this was a struct type argument originally, that node has been
              * removed and the traversal needs to continue on this arg_node.
              */
             arg_node = TRAVdo (arg_node, arg_info);
         } else {
             ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
+        }
+        if (INFO_MAKESET_NEWAVIS (arg_info) != NULL) {
+            /* Bottom-up building of expression list for DESfundef. */
+            INFO_MAKESET_RETEXPRS (arg_info)
+              = TBmakeExprs (TBmakeId (DUPdoDupNode (ARG_AVIS (arg_node))),
+                             INFO_MAKESET_RETEXPRS (arg_info));
         }
     }
 
@@ -696,17 +810,27 @@ DESassign (node *arg_node, info *arg_info)
     node *ids;
 
     DBUG_ENTER ("DESassign");
-
-    newassign = NULL;
-    instr = ASSIGN_INSTR (arg_node);
+    DBUG_PRINT ("DES", ("Entering DESassign."));
 
     /* Only deal with possible N_funcond if it's in a lifted conditional function.
      */
     if (!INFO_INCONDFUN (arg_info)) {
+        arg_node = TRAVcont (arg_node, arg_info);
+        DBUG_PRINT ("DES", ("Shortcutting DESassign."));
         DBUG_RETURN (arg_node);
     }
 
-    if (NODE_TYPE (instr) == N_let) {
+    DBUG_ASSERT (arg_node != NULL, ("Empty N_assign in N_funcond."));
+    newassign = NULL;
+    instr = ASSIGN_INSTR (arg_node);
+
+    if (instr == NULL) {
+        DBUG_PRINT ("DES", ("N_assign with empty instruction."));
+    } else if (NODE_TYPE (instr) == N_let && LET_IDS (instr) != NULL) {
+        /* In some cases, N_let nodes of void functions can still occur here. This
+         * means that there is no IDS node being assigned to, so those situations
+         * can be skipped.
+         */
         expr = LET_EXPR (instr);
         ids = LET_IDS (instr);
         type = IDS_NTYPE (ids);
@@ -731,6 +855,7 @@ DESassign (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
     }
 
+    DBUG_PRINT ("DES", ("Leaving DESassign."));
     DBUG_RETURN (arg_node);
 }
 
@@ -756,6 +881,7 @@ DESexprs (node *arg_node, info *arg_info)
     sd = NULL;
     expr = EXPRS_EXPR (arg_node);
     if (NODE_TYPE (expr) != N_id) {
+        arg_node = TRAVcont (arg_node, arg_info);
         DBUG_RETURN (arg_node);
     }
 
@@ -770,6 +896,7 @@ DESexprs (node *arg_node, info *arg_info)
             old_exprs = arg_node;
             arg_node = ExplodeExprs (old_exprs, STRUCTDEF_STRUCTELEM (sd));
             DBUG_PRINT ("DES", ("Done exploding N_id of type %s.", typestr));
+            /* TODO: Is freeing old_exprs safe, here? */
         }
     }
 
@@ -874,7 +1001,7 @@ DESids (node *arg_node, info *arg_info)
     if (arg_node != NULL && sd != NULL && INFO_INLET (arg_info)) {
         arg_node = TRAVdo (arg_node, arg_info);
     } else {
-        IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+        arg_node = TRAVcont (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);

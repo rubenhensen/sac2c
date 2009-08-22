@@ -232,6 +232,7 @@ HSstructelem (node *arg_node, info *arg_info)
     node *module;
     node *structdef;
     ntype *structtype;
+    ntype *elemtype;
     char *elemname;
 
     DBUG_ENTER ("HSstructelem");
@@ -243,6 +244,7 @@ HSstructelem (node *arg_node, info *arg_info)
     structtype = INFO_STRUCTTYPE (arg_info);
     DBUG_ASSERT (structtype != NULL, ("No struct set for this struct element."));
     elemname = AVIS_NAME (STRUCTELEM_AVIS (arg_node));
+    elemtype = AVIS_TYPE (STRUCTELEM_AVIS (arg_node));
     /* Create getter as new external fundec. */
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
@@ -254,20 +256,17 @@ HSstructelem (node *arg_node, info *arg_info)
     /* Push the getter on the module's fundec stack. */
     MODULE_FUNDECS (module) = fundec;
     /* Setter. */
-    fundec = DUPdoDupNode (fundec);
-    MEMfree (FUNDEF_NAME (fundec));
-    FUNDEF_NAME (fundec) = STRcat (STRUCT_SET, elemname);
-    arg = TBmakeArg (DUPdoDupNode (STRUCTELEM_AVIS (arg_node)), NULL);
-    ARG_NEXT (FUNDEF_ARGS (fundec)) = arg;
-    MEMfree (FUNDEF_RETS (fundec));
-    FUNDEF_RETS (fundec) = TBmakeRet (TYcopyType (structtype), NULL);
-    FUNDEF_STRUCTGETTER (fundec) = NULL;
+    arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
+    AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
+    arg = TBmakeArg (TBmakeAvis (STRcpy ("e"), TYcopyType (elemtype)), arg);
+    AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (elemtype);
+    ret = TBmakeRet (TYcopyType (structtype), NULL);
+    fundec = TBmakeFundef (STRcat (STRUCT_SET, elemname), NULL, ret, arg, NULL,
+                           MODULE_FUNDECS (module));
+    FUNDEF_ISEXTERN (fundec) = TRUE;
     FUNDEF_STRUCTSETTER (fundec) = arg_node;
-    /* Setter on the stack (hahaha). */
-    FUNDEF_NEXT (fundec) = MODULE_FUNDECS (module);
+    /* Setter on the stack. */
     MODULE_FUNDECS (module) = fundec;
-    /* Make a safe copy of the arg for later use. */
-    arg = DUPdoDupNode (arg);
     /* Create a typedef for this struct element. */
     STRUCTELEM_TYPEDEF (arg_node)
       = TBmakeTypedef (STRcatn (4, STRUCT_ELEM, STRUCTDEF_NAME (structdef), "_",
@@ -285,7 +284,8 @@ HSstructelem (node *arg_node, info *arg_info)
      * be done bottom-up to honour the order of the arg declarations in the
      * structdef.
      */
-    ARG_NEXT (arg) = INFO_INIT_ARGS (arg_info);
+    arg
+      = TBmakeArg (DUPdoDupNode (STRUCTELEM_AVIS (arg_node)), INFO_INIT_ARGS (arg_info));
     INFO_INIT_ARGS (arg_info) = arg;
 
     DBUG_RETURN (arg_node);

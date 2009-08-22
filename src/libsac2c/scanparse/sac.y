@@ -154,9 +154,10 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
-%type <node> exprs subexpr expr /*expr_structelem*/ expr_with expr_ap opt_arguments expr_ar expr_sel
-     with generator  steps  width  nwithops nwithop  withop  wlassignblock  genidx 
-     part  parts npart nparts nums returntypes returndectypes ntypes varntypes
+%type <node> exprs expr subexpr nostrexpr expr_with expr_ap opt_arguments
+     expr_ar expr_sel with generator  steps  width  nwithops nwithop  withop
+     wlassignblock  genidx part  parts npart nparts nums returntypes
+     returndectypes ntypes varntypes
 %type <prf> genop prf
 
 %type <id> reservedid  string ext_id
@@ -201,6 +202,10 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <inheritence_list_t> inherits
 %type <resource_list_t> resources
 
+%nonassoc STRUCTSET
+%left STRUCTELEM
+%nonassoc NOSTRUCTELEM
+%left DOT
 
 %right QUESTION COLON
 %right LAZYOR
@@ -1095,21 +1100,18 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
            { $$ = TBmakeLet( $1, $4);
              NODE_LINE( $$) = $<cint>3;
            }
-/*
- * This is too ugly.
- */
-/*
+         /* Struct element assignment. */
+         /* qual_ext_id DOT ID LET { $<cint>$ = global.linenum; } expr */
          | qual_ext_id DOT ID LET { $<cint>$ = global.linenum; } expr
            {
              node *funcall;
              node *exprs;
 
-             exprs = TBmakeExprs( DUPdoDupNode( $1), TBmakeExprs( $6, NULL));
+             exprs = TBmakeExprs( $6, TBmakeExprs( DUPdoDupNode( $1), NULL));
              funcall = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_SET, $3)), exprs);
              $$ = TBmakeLet( TBmakeSpids( STRcpy( SPID_NAME( $1)), NULL), funcall);
              NODE_LINE( $$) = $<cint>5;
            }
-*/
          | ID SQBR_L exprs SQBR_R LET { $<cint>$ = global.linenum; } expr
            { node *id, *ids, *ap;
 
@@ -1254,11 +1256,28 @@ exprs: expr COMMA exprs          { $$ = TBmakeExprs( $1, $3);   }
      | expr                      { $$ = TBmakeExprs( $1, NULL); }
      ;
 
-expr: subexpr { $$ = $1; }
 
-subexpr: qual_ext_id                { $$ = $1;                   }
-    | DOT                        { $$ = TBmakeDot( 1);        }
+expr: DOT                        { $$ = TBmakeDot( 1);        }
     | DOT DOT DOT                { $$ = TBmakeDot( 3);        }
+    | subexpr %prec STRUCTELEM   { $$ = $1;                   }
+    ;
+
+
+/* This works on my machine but not on the masterrun, so it is left commented
+ * out for now.
+ */
+subexpr: /*subexpr DOT ID %prec STRUCTELEM
+               {
+                 $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
+                         TBmakeExprs( $$, NULL));
+               }
+       |*/ nostrexpr %prec NOSTRUCTELEM { $$ = $1; }
+       ;
+
+
+/* Expression without struct-style member access (x.y). */
+nostrexpr:
+      qual_ext_id                { $$ = $1; }
     | NUM                        { $$ = TBmakeNum( $1);       }
     | FLOAT                      { $$ = TBmakeFloat( $1);     }
     | DOUBLE                     { $$ = TBmakeDouble( $1);    }
@@ -1319,7 +1338,6 @@ subexpr: qual_ext_id                { $$ = $1;                   }
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
     | expr_ap                     { $$ = $1; }   /* prefix function calls */
-/*  | expr_structelem             { $$ = $1; }    * struct element        */
     | expr_with                   { $$ = $1; }   /* with loops            */
     | expr_ar                     { $$ = $1; }   /* constant arrays       */
     | BRACKET_L COLON ntype BRACKET_R expr   %prec CAST
@@ -1332,20 +1350,6 @@ subexpr: qual_ext_id                { $$ = $1;                   }
       { $$ = TBmakeSetwl( $3, $6);
       }
     ;
-
-/*
- * This rule creates a shift/reduce conflict (13, actually). I assume it has
- * something to do with the fact that an expression can also be a dot itself,
- * but closer inspection is due. In the mean time, commented out to prevent
- * errors in the trunk.
- */
-/*
-expr_structelem: expr DOT ID
-               {
-                 $$ = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_GET, $3)),
-                 TBmakeExprs( $1, NULL));
-               };
-*/
       
 expr_with: NWITH { $<cint>$ = global.linenum; } with
       { $$ = $3;
