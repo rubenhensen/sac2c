@@ -2708,7 +2708,6 @@
           <node name="Module" />
           <node name="Typedef" />
           <node name="Structdef" />
-          <node name="Structelem" />
           <node name="Fundef" />
           <node name="Arg" />
           <node name="Ret" />

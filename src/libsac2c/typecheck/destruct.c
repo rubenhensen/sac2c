@@ -29,42 +29,35 @@
  */
 
 /**
- * INFO_makeset structure, used by DESfuncond when giving body to setter
- * functions to pass data about which element etc to DESstructelem.
- * - newavis: Pointer to N_avis node of the N_arg that is the new value.
- * - retexprs: Pointer to N_exprs for the N_return of the setter.
- */
-struct INFO_makeset {
-    node *newavis;
-    node *retexprs;
-};
-
-/**
  * INFO structure
  * - cleanup: Boolean indicating cleanup mode state.
  * - inlet: Boolean: the traversal is now in a child of a N_let.
  * - module: Pointer to the N_module.
  * - makeset: See struct INFO_makeset.
+ * - args2exprs: Flag for DESarg to store a list of N_ids as N_exprs instead of
+ *   doing expansion.
+ * - retexprs: Pointer to said N_exprs from DESarg.
  * - nonrecursive: Prevent DESarg from doing recursive expansion.
  */
 struct INFO {
-    struct INFO_makeset makeset;
     int cleanup;
     int inlet;
     int incondfun;
     int nonrecursive;
+    int args2exprs;
+    node *argexprs;
     node *module;
 };
 
 /**
  * INFO macros
  */
-#define INFO_MAKESET_NEWAVIS(n) ((n)->makeset.newavis)
-#define INFO_MAKESET_RETEXPRS(n) ((n)->makeset.retexprs)
 #define INFO_CLEANUP(n) ((n)->cleanup)
 #define INFO_INLET(n) ((n)->inlet)
 #define INFO_INCONDFUN(n) ((n)->incondfun)
 #define INFO_NONRECURSIVE(n) ((n)->nonrecursive)
+#define INFO_ARGS2EXPRS(n) ((n)->args2exprs)
+#define INFO_ARGEXPRS(n) ((n)->argexprs)
 #define INFO_MODULE(n) ((n)->module)
 
 /**
@@ -79,12 +72,12 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_MAKESET_NEWAVIS (result) = NULL;
-    INFO_MAKESET_RETEXPRS (result) = NULL;
     INFO_CLEANUP (result) = 0;
     INFO_INLET (result) = 0;
     INFO_INCONDFUN (result) = 0;
     INFO_NONRECURSIVE (result) = 0;
+    INFO_ARGS2EXPRS (result) = 0;
+    INFO_ARGEXPRS (result) = NULL;
     INFO_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
@@ -338,48 +331,6 @@ CreateFCAssignChain (node *assign, node *selem)
 
 /** <!--********************************************************************-->
  *
- * @fn node *BodyForConstructor( node *constructor)
- *
- *   @brief  Gives this constructor a body that immediately returns all args.
- *
- ******************************************************************************/
-static node *
-BodyForConstructor (node *constructor)
-{
-    node *arg;
-    node *exprs;
-    node *id;
-    node *return_node;
-
-    /* Create a return() statement (N_return). */
-    return_node = TBmakeReturn (NULL);
-    /* Copy the arg list to an exprs list. */
-    /* This should probably be using the existing traversal mechanism instead of
-     * looping. Shame shame.
-     */
-    arg = FUNDEF_ARGS (constructor);
-    /* Create an N_id that is the same as this argument. */
-    id = TBmakeId (DUPdoDupNode (ARG_AVIS (arg)));
-    /* Append that N_id to the list of N_exprs for the return value. */
-    exprs = TBmakeExprs (id, NULL);
-    RETURN_EXPRS (return_node) = exprs;
-    /* Repeat for every successing element. */
-    while (ARG_NEXT (arg) != NULL) {
-        arg = ARG_NEXT (arg);
-        /* Create an N_id that is the same as this argument. */
-        id = TBmakeId (DUPdoDupNode (ARG_AVIS (arg)));
-        /* Append that N_id to the list of N_exprs for the return value. */
-        EXPRS_NEXT (exprs) = TBmakeExprs (id, NULL);
-        exprs = EXPRS_NEXT (exprs);
-    }
-    /* Create a function body (N_block) with one instruction (N_assign): that
-     * return statement.
-     */
-    return TBmakeBlock (TBmakeAssign (return_node, NULL), NULL);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *Fundecl2Fundef( node *fundec, node *body, node *module)
  *
  *   @brief  Give body to this function declaration (make it a fundef).
@@ -404,6 +355,73 @@ Fundecl2Fundef (node *fundec, node *body, node *module)
     FUNDEF_NEXT (fundec) = MODULE_FUNS (module);
     MODULE_FUNS (module) = fundec;
     return fundec;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MakeConstructor( node *constructor, info *arg_info)
+ *
+ *   @brief  Gives this constructor a body that immediately returns all args.
+ *
+ * Returns the new constructor.
+ *
+ ******************************************************************************/
+static node *
+MakeConstructor (node *constructor, info *arg_info)
+{
+    node *body;
+
+    DBUG_PRINT ("DES", ("Giving constructor %s a body...", FUNDEF_NAME (constructor)));
+    /* Copy the arg list to an exprs list. */
+    DBUG_ASSERT ((INFO_ARGS2EXPRS (arg_info) == FALSE
+                  && INFO_ARGEXPRS (arg_info) == NULL),
+                 "Garbage traversal data encountered.");
+    INFO_ARGS2EXPRS (arg_info) = TRUE;
+    FUNDEF_ARGS (constructor) = TRAVopt (FUNDEF_ARGS (constructor), arg_info);
+    INFO_ARGS2EXPRS (arg_info) = FALSE;
+    /* Create a function body (N_block) with one instruction (N_assign): the
+     * return statement.
+     */
+    body
+      = TBmakeBlock (TBmakeAssign (TBmakeReturn (INFO_ARGEXPRS (arg_info)), NULL), NULL);
+    INFO_ARGEXPRS (arg_info) = NULL;
+    return Fundecl2Fundef (constructor, body, INFO_MODULE (arg_info));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MakeSetter( node *setter, info *arg_info)
+ *
+ *   @brief  Gives this setter an appropriate body.
+ *
+ * Returns the new setter.
+ *
+ ******************************************************************************/
+static node *
+MakeSetter (node *setter, info *arg_info)
+{
+    node *body;
+    /* node * structdef; */
+    node *e;
+
+    DBUG_PRINT ("DES", ("Giving setter %s a body...", FUNDEF_NAME (setter)));
+#if 0
+  /* Get the struct definition of the entire struct this getter is for. */
+  structdef = TYPEDEF_STRUCTDEF( UTgetTdef( TYgetUserType( TYgetScalar(
+            ARG_NTYPE( ARG_NEXT( FUNDEF_ARGS( setter)))))));
+#endif
+    /* The first argument is the new value (`e'), the second is the struct
+     * (`s').
+     */
+    e = FUNDEF_ARGS (setter);
+    /* TODO: INFO_MAKESET_NEWAVIS( arg_info) = ARG_AVIS( e); */
+    INFO_ARGS2EXPRS (arg_info) = TRUE;
+    ARG_NEXT (e) = TRAVdo (ARG_NEXT (e), arg_info);
+    INFO_ARGS2EXPRS (arg_info) = FALSE;
+    body
+      = TBmakeBlock (TBmakeAssign (TBmakeReturn (INFO_ARGEXPRS (arg_info)), NULL), NULL);
+    INFO_ARGEXPRS (arg_info) = NULL;
+    return Fundecl2Fundef (setter, body, INFO_MODULE (arg_info));
 }
 
 /**
@@ -509,40 +527,12 @@ DESstructdef (node *arg_node, info *arg_info)
 
     if (INFO_CLEANUP (arg_info)) {
         DBUG_PRINT ("DES", ("Cleaning up structdefs."));
+        /* This operation frees the entire list right away. */
         arg_node = FREEdoFreeTree (arg_node);
         DBUG_ASSERT (arg_node == NULL, "Structdefs not properly freed.");
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DESstructelem( node *arg_node, info *arg_info)
- *
- *   @brief  Dummy.
- *
- *
- ******************************************************************************/
-node *
-DESstructelem (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DESstructelem");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-#if 0
-  if ( INFO_MAKESET_SELEM( arg_info) != NULL) {
-    id = TBmakeId( DUPdoDupNode( STRUCTELEM_AVIS( arg_node)));
-    ID_NAME( id) = MEMfree( ID_NAME( id));
-    /* Setters always have `s' as the argument name for the struct. */
-    ID_NAME( id) = STRcat( "_s_", AVIS_NAME( STRUCTELEM_AVIS( arg_node)));
-    retexprs = INFO_MAKESET_RETEXPRS( arg_info);
-    INFO_MAKESET_RETEXPRS( arg_info) = TBmakeExprs( id, retexprs);
-  }
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -572,14 +562,19 @@ DESfundef (node *arg_node, info *arg_info)
 {
     node *avis;
     node *body;
-    node *structdef;
     node *selem;
     node *next_fundecl;
     node *next_fundef;
-    node *e;
     char *ret_name;
 
     DBUG_ENTER ("DESfundef");
+
+    /* No matter what kind of function this is, it will want at least a
+     * non-recursive expansion of the argument list.
+     */
+    INFO_NONRECURSIVE (arg_info) = TRUE;
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    INFO_NONRECURSIVE (arg_info) = FALSE;
 
     /* Getter. */
     if (FUNDEF_STRUCTGETTER (arg_node) != NULL && !FUNDEF_ISWRAPPERFUN (arg_node)) {
@@ -619,28 +614,8 @@ DESfundef (node *arg_node, info *arg_info)
 
     /* Setter. */
     else if (FUNDEF_STRUCTSETTER (arg_node) != NULL) {
-        /* Build an expression list for the new body's return expression using the
-         * traversal mechanism.
-         */
-        /* Get the struct definition of the entire struct this getter is for. */
-        structdef = TYPEDEF_STRUCTDEF (UTgetTdef (
-          TYgetUserType (TYgetScalar (ARG_NTYPE (ARG_NEXT (FUNDEF_ARGS (arg_node)))))));
-        /* The first argument is the new value (`e'), the second is the struct
-         * (`s').
-         */
-        e = FUNDEF_ARGS (arg_node);
-        INFO_MAKESET_NEWAVIS (arg_info) = ARG_AVIS (e);
-        INFO_NONRECURSIVE (arg_info) = TRUE;
-        ARG_NEXT (e) = TRAVdo (ARG_NEXT (e), arg_info);
-        body = TBmakeBlock (TBmakeAssign (TBmakeReturn (INFO_MAKESET_RETEXPRS (arg_info)),
-                                          NULL),
-                            NULL);
-        INFO_MAKESET_NEWAVIS (arg_info) = NULL;
-        INFO_MAKESET_RETEXPRS (arg_info) = NULL;
-        INFO_NONRECURSIVE (arg_info) = FALSE;
         next_fundecl = FUNDEF_NEXT (arg_node);
-        arg_node = Fundecl2Fundef (arg_node, body, INFO_MODULE (arg_info));
-        DBUG_PRINT ("DES", ("Setter %s now has body", FUNDEF_NAME (arg_node)));
+        arg_node = MakeSetter (arg_node, arg_info);
         next_fundef = FUNDEF_NEXT (arg_node);
         FUNDEF_NEXT (arg_node) = NULL;
         arg_node = TRAVcont (arg_node, arg_info);
@@ -663,12 +638,10 @@ DESfundef (node *arg_node, info *arg_info)
 
     /* Constructor. */
     if (FUNDEF_ISSTRUCTCONSTR (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)) {
-        /* Create a single return() statement with a copy of the arg list. */
         DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL, ("Constructor already has a body."));
         DBUG_ASSERT (FUNDEF_ISEXTERN (arg_node), ("Non-extern constructor."));
-        body = BodyForConstructor (arg_node);
         next_fundecl = FUNDEF_NEXT (arg_node);
-        arg_node = Fundecl2Fundef (arg_node, body, INFO_MODULE (arg_info));
+        arg_node = MakeConstructor (arg_node, arg_info);
         DBUG_PRINT ("DES", ("Constructor %s now has body", FUNDEF_NAME (arg_node)));
         /* Traversal has already done the next node (this part is bottom-up), so no
          * need to repeat traversal on the next node. */
@@ -702,6 +675,15 @@ DESarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DESarg");
 
+    /* Special task of DESarg: copying arg list to exprs list. */
+    if (INFO_ARGS2EXPRS (arg_info) == TRUE) {
+        arg_node = TRAVcont (arg_node, arg_info);
+        INFO_ARGEXPRS (arg_info)
+          = TBmakeExprs (TBmakeId (DUPdoDupNode (ARG_AVIS (arg_node))),
+                         INFO_ARGEXPRS (arg_info));
+        DBUG_RETURN (arg_node);
+    }
+
     sd = NULL;
     type = ARG_NTYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -733,12 +715,6 @@ DESarg (node *arg_node, info *arg_info)
             arg_node = TRAVdo (arg_node, arg_info);
         } else {
             ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
-        }
-        if (INFO_MAKESET_NEWAVIS (arg_info) != NULL) {
-            /* Bottom-up building of expression list for DESfundef. */
-            INFO_MAKESET_RETEXPRS (arg_info)
-              = TBmakeExprs (TBmakeId (DUPdoDupNode (ARG_AVIS (arg_node))),
-                             INFO_MAKESET_RETEXPRS (arg_info));
         }
     }
 
