@@ -1472,6 +1472,13 @@ SCSprf_shape (node *arg_node, info *arg_info)
     int i;
 
     DBUG_ENTER ("SCSprf_shape");
+#ifdef BUG524
+
+    /* This code should never have gone live. It absolutely trashes
+     * the performance of MANY benchmarks, by about a factor of 3-4X.
+     *
+     */
+
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_shape_ expected N_id node");
     /* If AKD, replace the shape() operation by a list of idx_shape_sel() ops */
@@ -1520,6 +1527,7 @@ SCSprf_shape (node *arg_node, info *arg_info)
 
         AVIS_SSAASSIGN (resavis) = resassign;
     }
+#endif //  BUG524
     DBUG_RETURN (resid);
 }
 
