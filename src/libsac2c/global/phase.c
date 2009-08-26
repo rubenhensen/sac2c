@@ -292,6 +292,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
         CTIterminateCompilation (syntax_tree);
     }
 
+    global.cycle_counter = 0; /* Give each cycle an equal chance */
     DBUG_RETURN (syntax_tree);
 }
 
