@@ -494,8 +494,11 @@ CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaacyc, opt
 
 FUNBEGIN (saacyc, opt, saacyc)
 
-CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-               global.optimize.doprfunr, opt, saacyc)
+CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+
+CYCLEPHASEFUN (ili, "Inferring loop invariant variables", ILIdoInferLoopInvariants,
+               ALWAYS, opt, saacyc)
 
 CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
                global.optimize.dotup, opt, saacyc)
@@ -506,31 +509,72 @@ CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
 CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, saacyc)
 
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
+               ALWAYS, opt, saacyc)
+
+CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
+               saacyc)
+
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
                global.optimize.docf, opt, saacyc)
 
-CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
-               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
-
-CYCLEPHASEFUN (ili, "Inferring loop invariant variables", ILIdoInferLoopInvariants,
-               ALWAYS, opt, saacyc)
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, saacyc)
 
 CYCLEPHASEFUN (cvp, "Propagating constants and variables",
                CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, saacyc)
 
-/* This placement was completely arbitrary, so there may be a
- * better home for as, al, dl */
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
+               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
 
-/* 2009-07-26 - FIXME. WLUR crashes CF unit test SCCFprf_modarray5.sac
- * (and many others). Temporarily disabled for now.
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, saacyc)
+
+CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
+               global.optimize.docwle, opt, saacyc)
+
+CYCLEPHASEFUN (ivexp, "Propagating index vector extrema",
+               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doswlf, opt,
+               saacyc)
+
+CYCLEPHASEFUN (swlfi, "Inferring symbolically foldable with-loops",
+               SWLFIdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+               saacyc)
+
+CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding",
+               SWLFdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+               saacyc)
+
+CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
+               global.optimize.dodcr, opt, saacyc)
+
+CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, saacyc)
+
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
+               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
+
+CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
+               global.optimize.dowls, opt, saacyc)
+
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
+
+/* 2009-07-26 - FIXME. WLUR crashes
+ *  It crashes nsvbug.sac in the swlf unit tests.
+ *   The immediate cause is a corrupted AP_FUNDEF node.
  */
 CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
-               NEVER &&global.optimize.dowlur, opt, saacyc)
-/* 2009-07-26 - FIXME. WLUR crashes CF unit test SCCFprf_modarray5.sac
+               global.optimize.dowlur, opt, saacyc)
+/* 2009-07-26 - FIXME.
  * (and many others). Temporarily disabled for now.
  */
+
 CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
                SSATdoTransformOneFunction, global.optimize.dowlur, opt, saacyc)
+
+CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
+               global.optimize.doetc, opt, saacyc)
 
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.dosde
@@ -554,41 +598,16 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                      || global.optimize.dodl),
                opt, saacyc)
 
-CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
+               global.optimize.dodcr, opt, saacyc)
+
+CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, saacyc)
-
-/* 2009-07-26 - FIXME. LIR crashes CF unit test SCCFprf_modarray5.sac
- * (and many others). Temporarily disabled for now.
- */
-CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
-               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
-
-CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
-               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
-
-CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
-               global.optimize.dowlsimp, opt, saacyc)
-
-CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
-               global.optimize.dowls, opt, saacyc)
-
-CYCLEPHASEFUN (ivexp, "Propagating index vector extrema",
-               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doswlf, opt,
-               saacyc)
-
-CYCLEPHASEFUN (swlfi, "Inferring symbolically foldable with-loops",
-               SWLFIdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
-               saacyc)
-
-CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding",
-               SWLFdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
-               saacyc)
 
 CYCLEPHASEFUN (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
                global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
 
-CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
-               global.optimize.dodcr, opt, saacyc)
+CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, saacyc)
 
 FUNEND (saacyc)
 
