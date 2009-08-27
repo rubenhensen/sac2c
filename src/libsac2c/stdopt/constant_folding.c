@@ -767,7 +767,7 @@ CFlet (node *arg_node, info *arg_info)
 
     /*
      * What's intended here is that the typechecker may determine
-     * that the lhs is of of type AKV, so it knows the value of the lhs.
+     * that the lhs is of type AKV, so it knows the value of the lhs.
      * Hence, it can discard the RHS and replace it by the now-known lhs value.
      */
     DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "empty LHS of let found in CF");
@@ -790,6 +790,7 @@ CFlet (node *arg_node, info *arg_info)
          *     Therefore we HAVE TO traverse the RHS if these are funconds.
          */
 
+        DBUG_PRINT ("CF", ("LHS is AKS: replacing RHS by constant"));
         if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
             if (TYgetProductSize (INFO_LHSTYPE (arg_info)) == 1) {
