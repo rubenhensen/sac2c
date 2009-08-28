@@ -424,8 +424,12 @@ RW3range (node *arg_node, info *arg_info)
         }
     }
 
-    clower = COfreeConstant (clower);
-    cupper = COfreeConstant (cupper);
+    if (clower != NULL) {
+        clower = COfreeConstant (clower);
+    }
+    if (cupper != NULL) {
+        cupper = COfreeConstant (cupper);
+    }
 
     DBUG_RETURN (arg_node);
 }
