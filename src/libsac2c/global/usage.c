@@ -429,12 +429,14 @@ PrintOptimisationOptions (void)
             "                    not given. (default: %d)\n\n",
             global.maxwls);
 
-    printf ("    -nofoldfusion   Eliminate fusion of with-loops with fold operator.\n\n"
-            "    -maxnewgens <n> Set the maximum number of new created generators while\n"
-            "                    intersection of generatorsets from two with-loops in\n"
-            "                    with-loop fusion to <n>.\n"
-            "                      (default: %d)\n\n",
-            global.max_newgens);
+    printf (
+      "    -dofoldfusion   Enable fusion of with-loops with fold operator (default).\n"
+      "    -nofoldfusion   Disable fusion of with-loops with fold operator.\n\n"
+      "    -maxnewgens <n> Set the maximum number of new created generators while\n"
+      "                    intersection of generatorsets from two with-loops in\n"
+      "                    with-loop fusion to <n>.\n"
+      "                      (default: %d)\n\n",
+      global.max_newgens);
 
     printf ("    -sigspec <strat>   Specify strategy for specialization of function "
             "sigantures:\n"
@@ -503,7 +505,8 @@ PrintMultithreadOptions (void)
             "                    number is determined at runtime.\n"
             "                      (default: %d)\n"
             "\n"
-            "    -nofoldparallel Disable parallelization of fold with-loops.\n"
+            "    -dofoldparallel Enable parallelization of fold with-loops.\n"
+            "    -nofoldparallel Disable parallelization of fold with-loops (default).\n"
             "\n"
             "    -maxsync <n>    Specify maximum number of fold with-loops to be "
             "combined\n"

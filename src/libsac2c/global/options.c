@@ -312,6 +312,10 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("ds", global.dynamic_shapes = TRUE);
 
+    ARGS_FLAG ("dofoldfusion", global.no_fold_fusion = FALSE);
+
+    ARGS_FLAG ("dofoldparallel", global.no_fold_parallel = FALSE);
+
     ARGS_OPTION_BEGIN ("do")
     {
         ARG_CHOICE_BEGIN ();

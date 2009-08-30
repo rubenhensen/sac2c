@@ -241,7 +241,7 @@ GLOBAL (int, num_threads, 1)
  *  >1 : exact number of threads to be started
  */
 
-GLOBAL (bool, no_fold_parallel, FALSE)
+GLOBAL (bool, no_fold_parallel, TRUE)
 /*
  * Switch whether or not to parallelize fold with-loops.
  */
