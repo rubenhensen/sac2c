@@ -1101,15 +1101,14 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
              NODE_LINE( $$) = $<cint>3;
            }
          /* Struct element assignment. */
-         /* qual_ext_id DOT ID LET { $<cint>$ = global.linenum; } expr */
-         | qual_ext_id DOT ID LET { $<cint>$ = global.linenum; } expr
+         | ID DOT ID LET { $<cint>$ = global.linenum; } expr
            {
              node *funcall;
              node *exprs;
 
-             exprs = TBmakeExprs( $6, TBmakeExprs( DUPdoDupNode( $1), NULL));
+             exprs = TBmakeExprs( $6, TBmakeExprs( TBmakeSpid( NULL, STRcpy($1)), NULL));
              funcall = TBmakeSpap( TBmakeSpid( NULL, STRcat( STRUCT_SET, $3)), exprs);
-             $$ = TBmakeLet( TBmakeSpids( STRcpy( SPID_NAME( $1)), NULL), funcall);
+             $$ = TBmakeLet( TBmakeSpids( STRcpy( $1), NULL), funcall);
              NODE_LINE( $$) = $<cint>5;
            }
          | ID SQBR_L exprs SQBR_R LET { $<cint>$ = global.linenum; } expr
