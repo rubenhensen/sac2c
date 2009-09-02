@@ -129,8 +129,8 @@
  *              - the GETxyz - functions for extracting components of ntypes
  *
  * - The only functions for freeing an ntype constructor are
- *     TYFreeTypeConstructor  for freeing the topmost constructor only, and
- *     TYFreeType             for freeing the entire type.
+ *     TYfreeTypeConstructor  for freeing the topmost constructor only, and
+ *     TYfreeType             for freeing the entire type.
  *
  * - If the result is an ntype structure, it has been freshly allocated!
  *

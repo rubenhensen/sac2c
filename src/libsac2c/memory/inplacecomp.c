@@ -183,6 +183,35 @@ copyOrArray (node *val)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *idArray(node *arg_node)
+ *
+ * @brief Is this an array containing an id?
+ *
+ *****************************************************************************/
+
+static bool
+idArray (node *array)
+{
+    bool ok = TRUE;
+    DBUG_ENTER ("idArray");
+
+    while (NODE_TYPE (array) == N_array) {
+        DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (array)) == N_exprs), "Broken ast?");
+        if (NULL != EXPRS_NEXT (ARRAY_AELEMS (array))) {
+            ok = FALSE;
+        }
+        array = EXPRS_EXPR (ARRAY_AELEMS (array));
+    }
+
+    if (NODE_TYPE (array) != N_id) {
+        ok = FALSE;
+    }
+
+    DBUG_RETURN (ok);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *HandleBlock(node *arg_node)
  *
  * @brief The main part of this traversal
@@ -214,9 +243,10 @@ HandleBlock (node *block, node *rets, info *arg_info)
             rhs = ASSIGN_RHS (wlass);
 
             if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
-                && (((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
-                     && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy))
-                    || (NODE_TYPE (PRF_ARG1 (rhs)) == N_array))) {
+                && ((((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
+                      && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)))
+                    || ((NODE_TYPE (PRF_ARG1 (rhs)) == N_array)
+                        && idArray (PRF_ARG1 (rhs))))) {
                 /*
                  * Search for suballoc situation
                  *
@@ -370,9 +400,8 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         type
                           = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))));
                         if (TUisScalar (type)) {
-                            type = TYmakeAKS (type, SHcreateShape (1, 1));
                             AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))))
-                              = type;
+                              = TYmakeAKS (TYgetScalar (type), SHcreateShape (1, 1));
                         }
 
                         /*
