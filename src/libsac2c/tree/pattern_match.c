@@ -981,6 +981,29 @@ PMprf (int num_attribs, ...)
     return (res);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMwith3( int num_attribs, ..., int num_pats, ...)
+ *
+ * @brief with3 pattern:  prf( sub_pat_1, ..., sub_pat_{num_pats})
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+pattern *
+PMwith3 (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_with3, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+
 /** <!--*********************************************************************-->
  *
  * @fn pattern *PMretryAny( int *i, int *l, int num_pats, ...);

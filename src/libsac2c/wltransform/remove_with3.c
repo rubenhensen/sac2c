@@ -237,8 +237,7 @@ JoinIdsExprs (node *arg_ids, node *exprs)
 
     ids = DUPdoDupNode (arg_ids);
 
-    let = TBmakeLet (ids, TBmakeArray (TYcopyType (IDS_NTYPE (ids)),
-                                       SHcopyShape (TYgetShape (IDS_NTYPE (ids))),
+    let = TBmakeLet (ids, TBmakeArray (TYcopyType (IDS_NTYPE (ids)), SHmakeShape (1),
                                        DUPdoDupNode (exprs)));
 
     assign = TBmakeAssign (let, assign);

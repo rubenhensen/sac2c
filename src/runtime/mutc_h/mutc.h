@@ -16,7 +16,7 @@
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
 #define SAC_MUTC_DEF_THREADFUN_BEGIN2(name, anon, ...) sl_def (name, void, __VA_ARGS__)
-#define SAC_MUTC_DEF_THREADFUN_END() sl_enddef
+#define SAC_MUTC_THREADFUN_DEF_END(...) sl_enddef
 #define SAC_MUTC_UNLOCK_SHARED(nt) sl_setp (NT_NAME (nt), 1);
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));
 
@@ -52,7 +52,7 @@
 
 #if SAC_MUTC_FUNAP_AS_CREATE
 #undef SAC_ND_FUN_DEF_END
-#define SAC_ND_FUN_DEF_END(...) SAC_MUTC_DEF_THREADFUN_END ()
+#define SAC_ND_FUN_DEF_END(...) SAC_MUTC_THREADFUN_DEF_END ()
 #else  /* FUNAP_AS_CREATE */
 #endif /* FUNAP_AS_CREATE */
 

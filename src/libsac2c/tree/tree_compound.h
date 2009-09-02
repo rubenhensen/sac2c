@@ -1314,6 +1314,15 @@ extern int TCcountWithops (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_with :  *and*  N_with2 *and* N_with3 :
+ ***/
+
+#define WITH_OR_WITH2_OR_WITH3_WITHOP(n)                                                 \
+    ((NODE_TYPE (n) == N_with3) ? WITH3_OPERATIONS (n) : WITH_OR_WITH2_WITHOP (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_wlseg :
  ***/
 

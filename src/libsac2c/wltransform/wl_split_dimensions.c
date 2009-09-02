@@ -98,6 +98,9 @@ struct INFO {
     node *vardecs;
     node *preassigns;
     lut_t *lut;
+
+    bool nip_result;
+    node *nip_lhs; /* pointer info with2_lhs*/
 };
 
 #define INFO_WITH2_IVECT(n) ((n)->with2_ivect)
@@ -115,6 +118,8 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_NIP_RESULT(n) ((n)->nip_result)
+#define INFO_NIP_LHS(n) ((n)->nip_lhs)
 
 static info *
 MakeInfo ()
@@ -141,6 +146,9 @@ MakeInfo ()
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = LUTgenerateLut ();
 
+    INFO_NIP_RESULT (result) = FALSE;
+    INFO_NIP_LHS (result) = NULL;
+
     DBUG_RETURN (result);
 }
 
@@ -152,6 +160,35 @@ FreeInfo (info *info)
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
 
     info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
+
+static info *
+MakeNipInfo (info *info)
+{
+    DBUG_ENTER ("MakeNipInfo");
+
+    DBUG_ASSERT (info != NULL, "Need an info to crate a nip info");
+    DBUG_ASSERT (INFO_WITH2_LHS (info) != NULL, "Need a lhs to create a nip info");
+
+    INFO_NIP_LHS (info) = INFO_WITH2_LHS (info);
+    INFO_NIP_RESULT (info) = FALSE;
+
+    DBUG_RETURN (info);
+}
+
+static info *
+FreeNipInfo (info *info)
+{
+    DBUG_ENTER ("FreeNipInfo");
+
+    /* Do not realy free the nip info as it is just an extention of the main
+     * info.  Therefor just set all values to defaults.
+     */
+
+    INFO_NIP_LHS (info) = NULL;
+    INFO_NIP_RESULT (info) = FALSE;
 
     DBUG_RETURN (info);
 }
@@ -1424,36 +1461,72 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
 static node *
 ATravNIfail (node *arg_node, info *arg_info)
 {
-    bool *result = (bool *)arg_info;
-
     DBUG_ENTER ("ATravNIfail");
 
-    *result = TRUE;
+    INFO_NIP_RESULT (arg_info) = TRUE;
+
+    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravNIpass (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravNIpass");
+
+    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravNIfold (node *arg_node, info *arg_info)
+{
+    ntype *type;
+    DBUG_ENTER ("ATravNIfold");
+
+    type = IDS_NTYPE (INFO_NIP_LHS (arg_info));
+
+    if (!(TYisScalar (type) || TYisAKS (type))) {
+        /* Only support folds where we now the memory requirement of the result */
+        INFO_NIP_RESULT (arg_info) = TRUE;
+    }
+
+    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
 
 static bool
-NotImplemented (node *with)
+NotImplemented (node *with, info *arg_info)
 {
-    bool result = FALSE;
+    bool result;
+    info *info;
     anontrav_t nip_trav[6]
-      = {{N_genarray, &TRAVcont}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfail},
-         {N_break, &ATravNIfail}, {N_propagate, &ATravNIfail}, {0, NULL}};
+      = {{N_genarray, &ATravNIpass}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfold},
+         {N_break, &ATravNIfail},    {N_propagate, &ATravNIfail}, {0, NULL}};
     anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
 
+    info = MakeNipInfo (arg_info);
+
     TRAVpushAnonymous (nip_trav, &TRAVnone);
     /* check for genarray only */
-    WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), (info *)&result);
+    WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), info);
     TRAVpop ();
-    if (!result) {
+
+    if (!INFO_NIP_RESULT (info)) {
         /* check for no ap in body due to memory management problems */
         TRAVpushAnonymous (nap_trav, &TRAVsons);
-        WITH2_CODE (with) = TRAVdo (WITH2_CODE (with), (info *)&result);
+        WITH2_CODE (with) = TRAVdo (WITH2_CODE (with), info);
         TRAVpop ();
     }
+
+    result = INFO_NIP_RESULT (info);
+
+    info = FreeNipInfo (info);
 
     DBUG_RETURN (result);
 }
@@ -1589,7 +1662,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
         CTIwarnLine (NODE_LINE (arg_node),
                      "Cannot transform with-loop with naive ordering");
     }
-    if (NotImplemented (arg_node)) {
+    if (NotImplemented (arg_node, arg_info)) {
         CTIwarnLine (NODE_LINE (arg_node),
                      "Cannot transform with-loop due to unsupported operation");
     } else {

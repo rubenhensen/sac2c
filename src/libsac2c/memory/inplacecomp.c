@@ -33,6 +33,8 @@
 #include "memory.h"
 #include "free.h"
 #include "new_types.h"
+#include "type_utils.h"
+#include "shape.h"
 
 /** <!--********************************************************************-->
  *
@@ -52,6 +54,7 @@ struct INFO {
     node *nouse;
     node *noap;
     node *lastsafe;
+    bool changed;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -64,6 +67,7 @@ struct INFO {
 #define INFO_NOUSE(n) ((n)->nouse)
 #define INFO_NOAP(n) ((n)->noap)
 #define INFO_LASTSAFE(n) ((n)->lastsafe)
+#define INFO_CHANGED(n) ((n)->changed)
 
 static info *
 MakeInfo (node *fundef)
@@ -84,6 +88,7 @@ MakeInfo (node *fundef)
     INFO_NOUSE (result) = NULL;
     INFO_NOAP (result) = NULL;
     INFO_LASTSAFE (result) = NULL;
+    INFO_CHANGED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -148,6 +153,36 @@ EMIPdoInplaceComputation (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *copyOrArray(node *arg_node)
+ *
+ * @brief Get id in first place of prf
+ *
+ *****************************************************************************/
+
+static node *
+copyOrArray (node *val)
+{
+    DBUG_ENTER ("copyOrArray");
+
+    if (NODE_TYPE (val) == N_prf) {
+        DBUG_ASSERT ((PRF_PRF (val) == F_copy), "Expected copy prf");
+        val = PRF_ARG1 (val);
+    } else if (NODE_TYPE (val) == N_array) {
+        while (NODE_TYPE (val) == N_array) {
+            DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (val)) == N_exprs), "Broken ast?");
+            val = EXPRS_EXPR (ARRAY_AELEMS (val));
+        }
+    } else {
+        DBUG_ASSERT (FALSE, "Unexpected node");
+    }
+
+    DBUG_ASSERT (NODE_TYPE (val) == N_id, "Unexpected node expected an N_id");
+
+    DBUG_RETURN (val);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *HandleBlock(node *arg_node)
  *
  * @brief The main part of this traversal
@@ -179,8 +214,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
             rhs = ASSIGN_RHS (wlass);
 
             if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
-                && (NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
-                && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)) {
+                && (((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
+                     && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy))
+                    || (NODE_TYPE (PRF_ARG1 (rhs)) == N_array))) {
                 /*
                  * Search for suballoc situation
                  *
@@ -188,10 +224,16 @@ HandleBlock (node *block, node *rets, info *arg_info)
                  *   m' = suballoc( A, iv);
                  *   m  = fill( copy( a), m');
                  * }: m
+                 *
+                 * or (as appears in with3 loops:
+                 *
+                 *   a  = ...
+                 *   m' = suballoc( A, iv);
+                 *   m  = fill( [ a], m');
                  */
                 val = PRF_ARG1 (rhs);
                 mem = PRF_ARG2 (rhs);
-                cval = PRF_ARG1 (val);
+                cval = copyOrArray (val);
                 avis = ID_AVIS (cval);
                 memass = AVIS_SSAASSIGN (ID_AVIS (mem));
                 memop = LET_EXPR (ASSIGN_INSTR (memass));
@@ -270,7 +312,8 @@ HandleBlock (node *block, node *rets, info *arg_info)
 
                             case N_with:
                             case N_with2:
-                                withop = WITH_OR_WITH2_WITHOP (defrhs);
+                            case N_with3:
+                                withop = WITH_OR_WITH2_OR_WITH3_WITHOP (defrhs);
                                 ids = ASSIGN_LHS (def);
                                 while (IDS_AVIS (ids) != avis) {
                                     ids = IDS_NEXT (ids);
@@ -311,6 +354,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
 
                     if (INFO_LASTSAFE (arg_info) != NULL) {
                         node *n;
+                        ntype *type = NULL;
                         /*
                          * Replace some alloc or reuse or alloc_or_reuse with
                          * suballoc
@@ -318,6 +362,18 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         ASSIGN_RHS (INFO_LASTSAFE (arg_info))
                           = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
                         ASSIGN_RHS (INFO_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
+
+                        /*
+                         * Are we suballocing a scaler?
+                         * If so make it a [1] array.
+                         */
+                        type
+                          = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))));
+                        if (TUisScalar (type)) {
+                            type = TYmakeAKS (type, SHcreateShape (1, 1));
+                            AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))))
+                              = type;
+                        }
 
                         /*
                          * Replace CEXPR
@@ -334,6 +390,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         }
                         ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
                         ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
+                        INFO_CHANGED (arg_info) = TRUE;
                     }
                 }
                 break;
@@ -469,7 +526,7 @@ EMIPcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPcode( node *arg_node, info *arg_info)
+ * @fn node *EMIPrange( node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -481,7 +538,11 @@ EMIPrange (node *arg_node, info *arg_info)
 
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
-    HandleBlock (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node), arg_info);
+    INFO_CHANGED (arg_info) = TRUE;
+    while (INFO_CHANGED (arg_info)) {
+        INFO_CHANGED (arg_info) = FALSE;
+        HandleBlock (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node), arg_info);
+    }
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 

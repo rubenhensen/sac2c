@@ -138,23 +138,23 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 
 /**<!--*********************************************************************-->
  *
- * @fn void ICMCompileMUTC_THREAD_FUN_DECL( char *name, char *rettype_NT,
- *                                       int vararg_cnt, char **vararg)
+ * @fn void ICMCompileMUTC_THREADFUN_DECL( char *name, char *rettype_NT,
+ *                                         int vararg_cnt, char **vararg)
  *
  * @brief
  *
  ******************************************************************************/
 
 void
-ICMCompileMUTC_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
-                                char **vararg)
+ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+                               char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREAD_FUN_DECL");
+    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_DECL");
 
-#define ND_FUN_DEC
+#define MUTC_THREADFUN_DECL
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEC
+#undef MUTC_THREADFUN_DECL
 
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
@@ -171,15 +171,15 @@ ICMCompileMUTC_THREAD_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
 }
 
 void
-ICMCompileMUTC_THREAD_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
-                                     char **vararg)
+ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+                                    char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREAD_FUN_DEF_BEGIN");
+    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_DEF_BEGIN");
 
-#define ND_FUN_DEC
+#define MUTC_THREADFUN_DEF_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEC
+#undef MUTC_THREADFUN_DEF_BEGIN
 
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
@@ -247,10 +247,10 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMUTC_THREAD_AP( char *name,
- *                                  char *retname,
- *                                  int vararg_cnt,
- *                                  char **vararg)
+ *   void ICMCompileMUTC_THREADFUN_AP( char *name,
+ *                                     char *retname,
+ *                                     int vararg_cnt,
+ *                                     char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -262,14 +262,14 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMUTC_THREAD_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREAD_AP");
+    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_AP");
 
-#define ND_THREAD_AP
+#define MUTC_THREADFUN_AP
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_THREAD_AP
+#undef MUTC_THREADFUN_AP
 
     INDENT;
 
@@ -309,6 +309,49 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_FUN_RET
+
+    INDENT;
+    ScanArglist (vararg_cnt, 3, "\n", INDENT,
+                 fprintf (global.outfile, "SAC_ND_RET_%s( %s, %s)", vararg[i],
+                          vararg[i + 1], vararg[i + 2]));
+    if (vararg_cnt > 0) {
+        fprintf (global.outfile, "\n");
+        INDENT;
+    }
+
+    if (!STReq (retname, "")) {
+        fprintf (global.outfile, "return( %s);", retname);
+    } else {
+        fprintf (global.outfile, "return;");
+    }
+
+    DBUG_VOID_RETURN;
+}
+/**<!--*********************************************************************-->
+ *
+ * function:
+ *   void ICMCompileMUTC_THREADFUN_RET( char *retname,
+ *                                      int vararg_cnt,
+ *                                      char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MUTC_THREADFUN_RET( retname, vararg_cnt, [ TAG, arg_NT, decl_arg_NT ]* )
+ *
+ *   where TAG is element in { out, inout }.
+ *
+ *****************************************************************************/
+
+void
+ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_RET");
+
+#define MUTC_THREADFUN_RET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MUTC_THREADFUN_RET
 
     INDENT;
     ScanArglist (vararg_cnt, 3, "\n", INDENT,
