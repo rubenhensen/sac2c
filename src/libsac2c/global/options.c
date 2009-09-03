@@ -102,14 +102,10 @@ OPTcheckOptionConsistency (void)
         CTInote ("Disabling reference counting optimisations not suitable "
                  "for mutc backend.");
         global.optimize.dosrf = FALSE;
-        //    global.optimize.doipc = FALSE;
+        /* global.optimize.doipc = FALSE; */
         global.optimize.douip = FALSE;
         global.optimize.dodr = FALSE;
         global.optimize.dorco = FALSE;
-
-        /* CTInote( "Disabling 'Propagating constants and variables' as does not "
-                 "play nice with muTC");
-        global.optimize.docvp = FALSE;*/
 
         if (global.optimize.dophm) {
             CTInote ("Private heap management has been disabled due to use "

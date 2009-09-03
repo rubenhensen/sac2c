@@ -81,6 +81,14 @@
  *                             the current assign.
  * INFO_LUT:                   lut used sharedly for renaming. Needs always to
  *                             be cleared before traversing on.
+ * INFO_FUNDEF:                stores the current fundef node for compatability
+ *                             with DupTree
+ *
+ * INFO_NIP_RESULT:            Used in anonymous traversal NI to check for
+ *                             not yet implemented with-loop operators.
+ * INFO_NIP_LHS:               Points to left-hand side of with3 loop that
+ *                             is checked for compliance with the current
+ *                             implementation status.
  *****************************************************************************/
 struct INFO {
     node *with2_ivect;
@@ -98,6 +106,7 @@ struct INFO {
     node *vardecs;
     node *preassigns;
     lut_t *lut;
+    node *fundef;
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
@@ -118,6 +127,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
 
@@ -145,6 +155,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = LUTgenerateLut ();
+    INFO_FUNDEF (result) = NULL;
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
@@ -164,10 +175,21 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn info *InitialiseNipInfo( info *info)
+ *
+ * @brief Initialises the INFO_NIP_LHS and INFO_NIP_RESULT fields to the LHS
+ *        of the current with2 and FALSE, respectively.
+ *
+ * @param info current traversal state
+ *
+ * @return updated traversal state
+ ******************************************************************************/
+
 static info *
-MakeNipInfo (info *info)
+InitialiseNipInfo (info *info)
 {
-    DBUG_ENTER ("MakeNipInfo");
+    DBUG_ENTER ("InitialiseNipInfo");
 
     DBUG_ASSERT (info != NULL, "Need an info to crate a nip info");
     DBUG_ASSERT (INFO_WITH2_LHS (info) != NULL, "Need a lhs to create a nip info");
@@ -178,14 +200,19 @@ MakeNipInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn info *ResetNipInfo( info *info)
+ *
+ * @brief Resets the INFO_NIP_* fields of the info structure to their defaults.
+ *
+ * @param info current traversal state
+ *
+ * @return updated traversal state
+ ******************************************************************************/
 static info *
-FreeNipInfo (info *info)
+ResetNipInfo (info *info)
 {
-    DBUG_ENTER ("FreeNipInfo");
-
-    /* Do not realy free the nip info as it is just an extention of the main
-     * info.  Therefor just set all values to defaults.
-     */
+    DBUG_ENTER ("ResetNipInfo");
 
     INFO_NIP_LHS (info) = NULL;
     INFO_NIP_RESULT (info) = FALSE;
@@ -1365,10 +1392,12 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
 
 /** <!-- ****************************************************************** -->
  * @fn node *ProcessGrid( int level, int dim, node *lower, node *upper,
- *                        node *nextdim, node *code, node *next,
+ *                        node *nextdim, node **code, node *next,
  *                        info *arg_info)
  *
- * @brief Computes a range node corresponding to the given grid node.
+ * @brief Computes a range node corresponding to the given grid node. Note
+ *        that the code link is consumed, i.e., it is set to NULL and the
+ *        CODE_USED counter is decremented.
  *
  * @param level    level attribute of N_wlgrid/N_wlgridvar node
  * @param dim      dim attribute of N_wlgrid/N_wlgridvar node
@@ -1382,7 +1411,7 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
  * @return N_range node corresponding to the given grid.
  ******************************************************************************/
 static node *
-ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *code,
+ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node **code,
              node *next, info *arg_info)
 {
     node *index, *max, *body, *res, *result, *rangeoffsets;
@@ -1400,7 +1429,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
     max = ComputeMax (lower, upper, &INFO_PREASSIGNS (arg_info), arg_info);
 
-    if (code != NULL) {
+    if (*code != NULL) {
         node *preassigns = NULL;
         node *iv_avis, *old_iv_avis, *final_offsets;
         lut_t *lut;
@@ -1428,17 +1457,29 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         old_iv_avis = IDS_AVIS (INFO_INDICES (arg_info));
         IDS_AVIS (INFO_INDICES (arg_info)) = iv_avis;
         lut = PrepareCopyLut (INFO_LUT (arg_info), final_offsets, &preassigns, arg_info);
-        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (code))) == N_empty) {
+        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (*code))) == N_empty) {
             body = TBmakeBlock (preassigns, NULL);
         } else {
-            body = DUPdoDupTreeLut (CODE_CBLOCK (code), lut);
+            if (CODE_USED (*code) > 1) {
+                body
+                  = DUPdoDupTreeLutSsa (CODE_CBLOCK (*code), lut, INFO_FUNDEF (arg_info));
+            } else {
+                DBUG_ASSERT ((CODE_USED (*code) == 1), "used counter out of sync!");
+
+                body = DUPdoDupTreeLut (CODE_CBLOCK (*code), lut);
+            }
             BLOCK_INSTR (body) = TCappendAssign (preassigns, BLOCK_INSTR (body));
         }
 
-        res = DUPdoDupTreeLut (CODE_CEXPRS (code), lut);
+        res = DUPdoDupTreeLut (CODE_CEXPRS (*code), lut);
+
+        /* consume this reference */
+        CODE_USED (*code)--;
+        *code = NULL;
 
         /* only remove contents! the lut is reused! */
         lut = LUTremoveContentLut (lut);
+
         IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     } else {
         DBUG_ASSERT ((nextdim != NULL), "neither code nor nextdim?");
@@ -1489,7 +1530,7 @@ ATravNIfold (node *arg_node, info *arg_info)
     type = IDS_NTYPE (INFO_NIP_LHS (arg_info));
 
     if (!(TYisScalar (type) || TYisAKS (type))) {
-        /* Only support folds where we now the memory requirement of the result */
+        /* Only support folds where we know the memory requirement of the result */
         INFO_NIP_RESULT (arg_info) = TRUE;
     }
 
@@ -1510,10 +1551,10 @@ NotImplemented (node *with, info *arg_info)
 
     DBUG_ENTER ("NotImplemented");
 
-    info = MakeNipInfo (arg_info);
+    info = InitialiseNipInfo (arg_info);
 
     TRAVpushAnonymous (nip_trav, &TRAVnone);
-    /* check for genarray only */
+    /* check for genarray or AKS-fold only */
     WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), info);
     TRAVpop ();
 
@@ -1526,7 +1567,7 @@ NotImplemented (node *with, info *arg_info)
 
     result = INFO_NIP_RESULT (info);
 
-    info = FreeNipInfo (info);
+    info = ResetNipInfo (info);
 
     DBUG_RETURN (result);
 }
@@ -1556,6 +1597,7 @@ WLSDfundef (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((INFO_VARDECS (arg_info) == NULL), "leftover vardecs found.");
 
+    INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
@@ -1563,6 +1605,8 @@ WLSDfundef (node *arg_node, info *arg_info)
           = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
         INFO_VARDECS (arg_info) = NULL;
     }
+
+    INFO_FUNDEF (arg_info) = NULL;
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -1886,7 +1930,7 @@ WLSDwlgrid (node *arg_node, info *arg_info)
         bound2 = TBmakeNum (WLGRID_BOUND2 (arg_node));
 
         result = ProcessGrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node), bound1,
-                              bound2, WLGRID_NEXTDIM (arg_node), WLGRID_CODE (arg_node),
+                              bound2, WLGRID_NEXTDIM (arg_node), &WLGRID_CODE (arg_node),
                               result, arg_info);
     }
 
@@ -1916,7 +1960,7 @@ WLSDwlgridvar (node *arg_node, info *arg_info)
 
         result = ProcessGrid (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
                               bound1, bound2, WLGRIDVAR_NEXTDIM (arg_node),
-                              WLGRIDVAR_CODE (arg_node), result, arg_info);
+                              &WLGRIDVAR_CODE (arg_node), result, arg_info);
     }
 
     DBUG_RETURN (result);
