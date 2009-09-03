@@ -274,14 +274,16 @@ DFCfundef (node *arg_node, info *arg_info)
 
     /**
      * we do not dispatch within wrapper functions, and we only look at
-     * LaC functions if we are in one-fundef mode. The reason here is
-     * that in one-fundef mode and only in that mode, we treat LAC-funs
-     * as inline (cf DFCap). This choice became necessary to be able to tag the correct
+     * LaC functions if we are in one-fundef mode and not at the top level or
+     * if we are currently at the top level. The reason here is * that in
+     * one-fundef mode and only in that mode, we treat LAC-funs as inline
+     * (cf DFCap). This choice became necessary to be able to tag the correct
      * callgraph for LaCfuns as FUNDEF_ISINLINECOMPLETED( arg_node) = FALSE
      * which is required for a proper inlining in fundef mode.
      */
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
-        && (INFO_ONEFUNDEF (arg_info) || !FUNDEF_ISLACFUN (arg_node))) {
+        && ((INFO_ONEFUNDEF (arg_info) && (INFO_FUNDEF (arg_info) != NULL))
+            || !FUNDEF_ISLACFUN (arg_node) || !INFO_ONEFUNDEF (arg_info))) {
         DBUG_PRINT ("DFC", ("traversing function body of %s", CTIitemName (arg_node)));
         old_fundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
