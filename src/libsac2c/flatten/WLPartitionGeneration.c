@@ -338,8 +338,8 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
           = TBmakeVardec (lbavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
         nas
           = TBmakeAssign (TBmakeLet (TBmakeIds (lbavis, NULL), DUPdoDupTree (lb)), NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         AVIS_SSAASSIGN (lbavis) = nas;
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         lbid = TBmakeId (lbavis);
 
         /* Create flattened WL upper bound */
@@ -349,8 +349,8 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
           = TBmakeVardec (ubavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
         nas
           = TBmakeAssign (TBmakeLet (TBmakeIds (ubavis, NULL), DUPdoDupTree (ub)), NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         AVIS_SSAASSIGN (ubavis) = nas;
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         ubid = TBmakeId (ubavis);
 
         /* TODO: Probably should treat STEP and WIDTH the same as BOUNDs */
@@ -549,8 +549,8 @@ flattenBound (node *arg_node, info *arg_info)
           = TBmakeVardec (bavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), DUPdoDupTree (arg_node)),
                             NULL);
-        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         AVIS_SSAASSIGN (bavis) = nas;
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nas);
         bid = TBmakeId (bavis);
         FREEdoFreeTree (arg_node);
         arg_node = bid;
@@ -1798,7 +1798,6 @@ WLPGwith (node *arg_node, info *arg_info)
                                                SHshape2Array (exprshape)),
                                     NULL);
                 AVIS_SSAASSIGN (defshpavis) = ass;
-
                 INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
             } else {
                 /*
@@ -1823,7 +1822,6 @@ WLPGwith (node *arg_node, info *arg_info)
 
                 ass = TBmakeAssign (TBmakeLet (TBmakeIds (defshpavis, NULL), rhs), NULL);
                 AVIS_SSAASSIGN (defshpavis) = ass;
-
                 INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
             }
 

@@ -23,7 +23,7 @@
 #include "handle_condexpr.h"
 #include "namespaces.h"
 #include "shape.h"
-
+#include "phase.h"
 #include "flatten.h"
 
 /*
@@ -181,12 +181,14 @@ FLATGflattenBound (node *arg_node, info *arg_info)
             nas
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
                               NULL);
-            INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
             AVIS_SSAASSIGN (avis) = nas;
-#ifdef SAAMODE
-            AVIS_DIM (avis) = TBmakeNum (1);
-            AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (xrho), NULL));
-#endif // SAAMODE
+            INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
+            if (isSAAMode ()) {
+                AVIS_DIM (avis) = TBmakeNum (1);
+                AVIS_SHAPE (avis)
+                  = TCmakeIntVector (TBmakeExprs (TBmakeNum (xrho), NULL));
+            }
+
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
             DBUG_PRINT ("FLATG",
