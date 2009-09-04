@@ -1506,7 +1506,9 @@ ATravNIfail (node *arg_node, info *arg_info)
 
     INFO_NIP_RESULT (arg_info) = TRUE;
 
-    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    if (INFO_NIP_LHS (arg_info) != NULL) {
+        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1521,6 +1523,8 @@ ATravNIpass (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#if FOLD_SUPPORTED
+
 static node *
 ATravNIfold (node *arg_node, info *arg_info)
 {
@@ -1534,10 +1538,14 @@ ATravNIfold (node *arg_node, info *arg_info)
         INFO_NIP_RESULT (arg_info) = TRUE;
     }
 
-    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    if (INFO_NIP_LHS (arg_info) != NULL) {
+        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
+
+#endif
 
 static bool
 NotImplemented (node *with, info *arg_info)
@@ -1545,7 +1553,7 @@ NotImplemented (node *with, info *arg_info)
     bool result;
     info *info;
     anontrav_t nip_trav[6]
-      = {{N_genarray, &ATravNIpass}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfold},
+      = {{N_genarray, &ATravNIpass}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfail},
          {N_break, &ATravNIfail},    {N_propagate, &ATravNIfail}, {0, NULL}};
     anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
