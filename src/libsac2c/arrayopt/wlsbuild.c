@@ -350,7 +350,8 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     /*
      * Flatten the result
      */
-    res = WLSflattenBound (res, INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
+    res = WLSflattenBound (res, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                           &INFO_PREASSIGNS (arg_info));
     DBUG_RETURN (res);
 }
 

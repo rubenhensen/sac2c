@@ -3902,6 +3902,9 @@ N_structdef :
           </description>
         </flag>
       </flags>
+    <checks>
+      <check name="CHKfundefVardecExtrema" />
+    </checks>
     </node>
 <!--
 
@@ -6679,6 +6682,15 @@ N_structdef :
       </attributes>
       <flags>
         <flag name="IsCopy" />
+        <flag name="HasExtrema"  default="FALSE">
+          <description> 
+            Set to true if the WITHIDs for this partition have
+            extrema attached to them. The requirement for this arises
+            from a need to know which partitions of a just-sliced
+            WL need to have extrema attached to them.
+	  </description>
+	</flag>
+        <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
 <!--

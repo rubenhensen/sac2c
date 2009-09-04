@@ -21,6 +21,10 @@
  *   Precision: We would like extrema to be exact, but this turns out
  *              to be impractical in practice. Hence, extrema are
  *              conservative estimates of a value.
+ *              For example, AVIS_MINVAL of the result of a
+ *              F_non_negval_A guard will be [0]. Guard removal
+ *              may upgrade AVIS_MINVAL to a better estimate or
+ *              known value.
  *
  *   Overwriting: When a better estimate of an extremum becomes available,
  *                IVEXP or other optimization will rewrite it.
@@ -87,8 +91,12 @@
  * This traversal inserts maxima and minima for index vector variables
  * in with-loops and for other code, such as constraint guard removal.
  *
+ * It is part of SAACYC because SWLF may slice a folderWL partition
+ * into sub-partitions, and we will have to generate extrema for
+ * those partitions
+ *
  * Later optimizations will propagate these maxima
- * and minima, and use then as input for other optimizations,
+ * and minima, and use then as guidance for other optimizations,
  * such as with-loop folding and guard removal.
  *
  * Because -ssaiv is likely never to work unless one of us wins
@@ -115,8 +123,8 @@
  *             AVIS_MINVAL(ID_AVIS(tmp)) = GENERATOR_BOUND1(wl)
  *             AVIS_MAXVAL(ID_AVIS(tmp)) = GENERATOR_BOUND2(wl) - 1 ;
  *
- * Note that the extrema are exact. This makes computation
- * on them much easier.
+ * Note that the MAXVAL extremum is not the same as the generator
+ * bound. This makes computation on extrema much easier.
  *
  * With any luck, these min/val values will be propagated down to the
  * X[tmp], at which point SWLFI can introduce inferences on them
@@ -126,9 +134,7 @@
  *
  *              X[ (k*tmp) + offset ];
  *
- * They do, however, mark the end of shared N_code blocks in WLs,
- * just as -ssaiv does.
- *
+ * They do, however, mark the end of shared N_code blocks in WLs.
  *
  * Some notes on phase ordering for ivextrema, ivexpropagate,
  * swlfi, and swlf:
@@ -165,7 +171,6 @@
  *       This is the approach we have taken.
  *       It uses the INFO_FROMAP flag to mark each traversal taking
  *       place in an N_ap call.
- *
  *
  * @ingroup ivexi
  *
@@ -486,13 +491,14 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
                           AVIS_NAME (lhsavis), AVIS_NAME (ivavis)));
+    global.optcounters.ivexp_attach++;
     DBUG_RETURN (lhsavis);
 }
 
 /** <!--********************************************************************-->
  *
  *
- * @fn node *IVEXIadjustExtremaBound(node *arg_node, int k,
+ * @fn node *IVEXIadjustExtremaBound(node *arg_node, info *arg_info, int k,
  *                             node **vardecs, node **preassigns)
  *
  *   @brief arg_node is the N_avis of a GENERATOR_BOUND2 node, which
@@ -517,14 +523,18 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
  *
  ******************************************************************************/
 node *
-IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassigns)
+IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
+                         node **preassigns)
 {
     node *zavis;
     node *zids;
     node *zass;
+    node *kid;
     int op;
 
     DBUG_ENTER ("IVEXIadjustExtremaBound");
+
+    kid = IVEXImakeIntScalar (k, vardecs, preassigns);
 
     zavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYcopyType (AVIS_TYPE (arg_node)));
@@ -534,9 +544,8 @@ IVEXIadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
     *vardecs = TBmakeVardec (zavis, *vardecs);
     zids = TBmakeIds (zavis, NULL);
     op = TUisScalar (AVIS_TYPE (arg_node)) ? F_add_SxS : F_add_VxS;
-    zass = TBmakeAssign (TBmakeLet (zids,
-                                    TCmakePrf2 (op, TBmakeId (arg_node), TBmakeNum (k))),
-                         NULL);
+    zass
+      = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (op, TBmakeId (arg_node), kid)), NULL);
 
     /* Keep us from trying to add extrema to the extrema calculations.  */
     PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
@@ -586,7 +595,6 @@ printLHS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * stolen from WithLoopFusion.c
  *
  * @fn node *removeUnusedCodes(node *codes)
  *
@@ -594,6 +602,9 @@ printLHS (node *arg_node, info *arg_info)
  *
  *   @param  node *codes : N_code chain
  *   @return node *      : modified N_code chain
+ *
+ * stolen from WithLoopFusion.c
+ *
  ******************************************************************************/
 static node *
 removeUnusedCodes (node *codes)
@@ -754,7 +765,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
     DBUG_ASSERT (N_id == NODE_TYPE (b2),
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
-    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), -1, &INFO_VARDECS (arg_info),
+    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), arg_info, -1, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNSWITH (arg_info));
 
     avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
@@ -803,7 +814,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
 
     b1 = TBmakeId (generateSelect (ID_AVIS (b1), arg_info, k));
     b2 = generateSelect (ID_AVIS (b2), arg_info, k);
-    b2 = TBmakeId (IVEXIadjustExtremaBound (b2, -1, &INFO_VARDECS (arg_info),
+    b2 = TBmakeId (IVEXIadjustExtremaBound (b2, arg_info, -1, &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNSWITH (arg_info)));
 
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
@@ -1148,6 +1159,7 @@ IVEXIpart (node *arg_node, info *arg_info)
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
     if ((N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))))
+        && (!PART_HASEXTREMA (arg_node))
         && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 
         populateLUTVars (arg_node, arg_info);
@@ -1171,6 +1183,7 @@ IVEXIpart (node *arg_node, info *arg_info)
                                 BLOCK_INSTR (CODE_CBLOCK (newcode)));
             INFO_PREASSIGNSPART (arg_info) = NULL;
         }
+        PART_HASEXTREMA (arg_node) = TRUE;
     }
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);

@@ -191,6 +191,7 @@
 #include "new_types.h"
 #include "phase.h"
 #include "check.h"
+#include "wls.h"
 
 /** <!--********************************************************************-->
  *
@@ -210,6 +211,11 @@ struct INFO {
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
+    node *preassigns;
+    node *intersectb1;
+    node *intersectb2;
+    node *idxbound1;
+    node *idxbound2;
     bool onefundef;
 };
 
@@ -223,6 +229,11 @@ struct INFO {
 #define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_INTERSECTB1(n) ((n)->intersectb1)
+#define INFO_INTERSECTB2(n) ((n)->intersectb2)
+#define INFO_IDXBOUND1(n) ((n)->idxbound1)
+#define INFO_IDXBOUND2(n) ((n)->idxbound2)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -241,6 +252,11 @@ MakeInfo (node *fundef)
     INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_INTERSECTB1 (result) = NULL;
+    INFO_INTERSECTB2 (result) = NULL;
+    INFO_IDXBOUND1 (result) = NULL;
+    INFO_IDXBOUND2 (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -420,35 +436,50 @@ matchGeneratorField (node *fa, node *fb)
     node *fbv = NULL;
     constant *fafs = NULL;
     constant *fbfs = NULL;
-    bool mat = FALSE;
+    constant *fac;
+    constant *fbc;
+    bool z = FALSE;
     ;
 
     DBUG_ENTER ("matchGeneratorField");
 
     if (fa == fb) { /* SAA should do it this way most of the time */
-        mat = TRUE;
-    } else {
-        if ((NULL != fa) && (NULL != fb)) {
-            if (fa == fb) {
-                mat = TRUE;
-            } else {
-                if (PMO (PMOarray (&fafs, &fav, fa))
-                    && PMO (PMOarray (&fbfs, &fbv, fb))) {
-                    mat = fav == fbv;
-                }
-            }
-        }
+        z = TRUE;
+    }
+
+    if ((!z) && (NULL != fa) && (NULL != fb)
+        && (PMO (PMOarray (&fafs, &fav, fa)) && (PMO (PMOarray (&fbfs, &fbv, fb))))) {
+        z = fav == fbv;
+    }
+
+    /* If one field is local and the other is a function argument,
+     * we can have both AKV, but they will not be merged, at
+     * last in saacyc today. If that ever gets fixed, we can
+     * remove this check. This is a workaround for a performance
+     * problem in sac/apex/buildv/buildv.sac
+     */
+    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (fa))
+        && TYisAKV (AVIS_TYPE (fb))) {
+        fac = COaST2Constant (fa);
+        fbc = COaST2Constant (fa);
+        z = COcompareConstants (fac, fbc);
+        fac = COfreeConstant (fac);
+        fbc = COfreeConstant (fbc);
     }
 
     fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
     fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
 
-    if (mat) {
-        DBUG_PRINT ("SWLF", ("matchGeneratorField matched PMOarray"));
-    } else {
-        DBUG_PRINT ("SWLF", ("matchGeneratorField could not match PMOarray"));
+    if ((NULL != fa) && (NULL != fb)) {
+        if (z) {
+            DBUG_PRINT ("SWLF", ("matchGeneratorField %s and %s matched", AVIS_NAME (fa),
+                                 AVIS_NAME (fb)));
+        } else {
+            DBUG_PRINT ("SWLF", ("matchGeneratorField %s and %s did not match",
+                                 AVIS_NAME (fa), AVIS_NAME (fb)));
+        }
     }
-    DBUG_RETURN (mat);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -473,6 +504,7 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
 {
     node *bnd;
     node *dfg;
+    node *val = NULL;
 
     DBUG_ENTER ("ExtractNthWLIntersection");
 
@@ -482,7 +514,62 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
                  ("FindMatchingPart wanted F_attachintersect as idx parent"));
     /* expressions are bound1, bound2 for each partition. */
     bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 2), PRF_ARGS (dfg));
-    DBUG_RETURN (bnd);
+
+    if (!(PMO (PMOlastVarGuards (&val, bnd)))) {
+        DBUG_ASSERT (FALSE, ("ExtractNthWLIntersection could not find var!"));
+    }
+
+    DBUG_RETURN (val);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static
+ * void MarkPartitionSliceNeeded( node *folderpart,
+ *                                node *intersectb1, node *intersectb2,
+ *                                node *idxbound1, idxbound2,
+ *                                info *arg_info);
+ *
+ * @brief Possibly mark current folderWL partition as requiring slicing.
+ *
+ *        The partition requires slicing if:
+ *          - intersects and bounds are N_array nodes.
+ *          - the intersect is not NULL.
+ *          - the intersects and bounds do not match.
+ *            [Since we only get called when this is the case,
+ *             they are guaranteed not to match.]
+ *
+ * @params: folderpart: folderWL partition that may need slicing
+ *          intersectb1: lower bound of intersection between folderWL
+ *                       sel operation index set and foldeeWL partition
+ *                       bounds.
+ *          intersectb2: upper bound of same.
+ *          idxbound1:   lower bound of folderWL sel operation index set.
+ *          idxboundi2:  lower bound of same.
+ *          arg_info:    your basic arg_info node.
+ *
+ * @result: None.
+ *
+ * @note: It may happen that more than one partition in the folderWL
+ *        requires slicing.
+ *
+ *****************************************************************************/
+static void
+MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2,
+                          node *idxbound1, node *idxbound2, info *arg_info)
+{
+    DBUG_ENTER ("MarkPartitionSliceNeeded");
+    if ((N_array == NODE_TYPE (intersectb1)) && (N_array == NODE_TYPE (intersectb2))
+        && (N_array == NODE_TYPE (idxbound1)) && (N_array == NODE_TYPE (idxbound2))) {
+
+        DBUG_PRINT ("SWLF", ("FIXME: check for NULL intersection"));
+        INFO_INTERSECTB1 (arg_info) = intersectb1;
+        INFO_INTERSECTB2 (arg_info) = intersectb2;
+        INFO_IDXBOUND1 (arg_info) = idxbound1;
+        INFO_IDXBOUND2 (arg_info) = idxbound2;
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -517,7 +604,7 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *
  *****************************************************************************/
 static node *
-FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
+FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldeeWL)
 {
     node *folderpg;
     node *gee;
@@ -530,7 +617,114 @@ FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
     node *idxassign;
     node *idxparent;
     bool matched = FALSE;
-    bool m1 = FALSE;
+    int partno = 0;
+
+    DBUG_ENTER ("FindMatchingPart");
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
+                 ("FindMatchingPart expected N_prf arg_node"));
+    DBUG_ASSERT (N_with == NODE_TYPE (foldeeWL),
+                 ("FindMatchingPart expected N_with foldeeWL"));
+    DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
+                 ("FindMatchingPart expected N_part folderpart"));
+
+    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, foldeeWL) */
+    idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
+    DBUG_ASSERT (NULL != idxassign, ("FindMatchingPart found NULL SSAASSIGN"));
+    idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
+    DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
+                 ("FindMatchingPart expected F_attachintersect as idx parent"));
+
+    /* I know this looks weird. We have to turn idx's AVIS_MAXVAL into
+     * generator-bounds form. So, we add 1 to it, and make it
+     * PRF_ARG2 of the attachintersect. If you have a cleaner
+     * idea, I'm all for it!
+     */
+    idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+    idxbound2 = ID_AVIS (PRF_ARG2 (idxparent));
+
+    folderpg = PART_GENERATOR (folderpart);
+    partee = WITH_PART (foldeeWL);
+
+    while ((!matched) && partee != NULL) {
+        gee = PART_GENERATOR (partee);
+        intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
+        intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
+        DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
+                             AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
+        DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
+                             AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
+        if (
+          /* Find and match Referents for generators, skipping default partitions */
+          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
+          && (matchGeneratorField (idxbound1, intersectb1))
+          && (matchGeneratorField (idxbound2, intersectb2)) &&
+
+          (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
+          && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
+            matched = TRUE;
+            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
+        } else {
+            partee = PART_NEXT (partee);
+            partno++;
+        }
+    }
+
+    if (matched) {
+        DBUG_PRINT ("SWLF", ("FindMatchingPart matches"));
+    } else {
+        partee = NULL;
+        DBUG_PRINT ("SWLF", ("FindMatchingPart does not match"));
+    }
+
+    DBUG_RETURN (partee);
+}
+
+#ifdef BROKE
+/** <!--********************************************************************-->
+ *
+ *
+ * @fn node * FindMatchingPart(...
+ *
+ * @brief check if a WL has a legal foldee partition.
+ *        The requirements for folding are:
+ *           - The WL foldeeWL operator is a genarray or modarray.
+ *
+ *           - The WL is a single-operator WL.
+ *
+ *           - The current folderWL's sel(idx, foldeeWL) index set matches
+ *             the index set of some partition of the foldeeWL,
+ *             or is a subset of that partition.
+ *             We have already computed the intersection of those
+ *             index sets, and they hang off the F_attachintersect node.
+ *             The Nth foldeeWL partition can be folded if the
+ *             Nth intersection set matches the index set of the
+ *             folderWL partition. We don't even look
+ *             at the foldeeWL any more, except it comes along for
+ *             the ride as an easy way to pick the correct
+ *             foldeeWL partition when we do find a match.
+ *
+ * @params *arg_node: the N_prf of the sel(idx, foldeeWL).
+ *         *folderpart: the folderWL partition containing arg_node.
+ *         *foldeeWL: the N_with of the foldeeWL.
+ *
+ * @result: The address of the matching foldee partition, if any.
+ *          NULL if none is found.
+ *
+ *****************************************************************************/
+static node *
+FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldeeWL)
+{
+    node *folderpg;
+    node *gee;
+    node *partee;
+    node *intersectb1;
+    node *intersectb2;
+    node *idx;
+    node *idxbound1;
+    node *idxbound2;
+    node *idxassign;
+    node *idxparent;
+    bool matched = FALSE;
     int partno = 0;
 
     DBUG_ENTER ("FindMatchingPart");
@@ -560,22 +754,20 @@ FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
         if (
           /* Find and match Referents for generators, skipping default partitions */
           ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
-          && (idxbound1 == intersectb1) && (idxbound2 == intersectb2) &&
-
-          (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
+          && (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
           && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
-            m1 = TRUE;
-            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
-        } else { /* Ye olde school way */
-            m1 = (CMPT_EQ == CMPTdoCompareTree (folderpg, gee));
-            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match, olde school"));
+            DBUG_PRINT ("SWLF", ("FindMatchingPart STEP/WIDTH match"));
+            if ((idxbound1 == intersectb1) && (idxbound2 == intersectb2)) {
+                DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
+                matched = TRUE;
+            } else {
+                DBUG_PRINT ("SWLF", ("FindMatchingPart intersects do not match"));
+                MarkPartitionSliceNeeded (folderpart, intersectb1, intersectb2, idxbound1,
+                                          idxbound2, arg_info);
+            }
         }
 
-        if (m1 && (WITHOP_NEXT (WITH_WITHOP (foldeeWL)) == NULL)
-            && ((NODE_TYPE (WITH_WITHOP (foldeeWL)) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (foldeeWL)) == N_modarray))) {
-            matched = TRUE;
-        } else {
+        if (!matched) {
             partee = PART_NEXT (partee);
             partno++;
         }
@@ -590,6 +782,7 @@ FindMatchingPart (node *arg_node, node *folderpart, node *foldeeWL)
 
     DBUG_RETURN (partee);
 }
+#endif // BROKE
 
 /** <!--********************************************************************-->
  *
@@ -633,11 +826,11 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
                                  AVIS_WL_NEEDCOUNT (foldeeavis)));
 
             if (AVIS_NEEDCOUNT (foldeeavis) == AVIS_WL_NEEDCOUNT (foldeeavis)) {
-                foldeepart = FindMatchingPart (arg_node, folderpart, foldeewl);
+                foldeepart = FindMatchingPart (arg_node, arg_info, folderpart, foldeewl);
             }
         }
     } else {
-        DBUG_PRINT ("SWLF", ("WL %s will not fold. AVIS_DEFDEPTH: %d, lavel: %d",
+        DBUG_PRINT ("SWLF", ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
                              AVIS_NAME (foldeeavis), AVIS_DEFDEPTH (foldeeavis), level));
     }
 
@@ -850,16 +1043,6 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
           ? NULL
           : DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
-#ifdef JUNK // ????
-    /* If new vardecs were made, append them to the current set */
-    if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-          = TCappendVardec (INFO_VARDECS (arg_info),
-                            BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
-        INFO_VARDECS (arg_info) = NULL;
-    }
-#endif //  JUNK // ????
-
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
 
@@ -877,6 +1060,206 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     arg_node = TCappendAssign (idxassigns, arg_node);
 
     DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *AppendPart(node *partz, node *newpart)
+ *
+ * @params: partz: an N_part, the current chain of new partitions
+ *          newpart: an N_part, a new partition to be added to the chain.
+ *
+ * @brief: append newpart to partz.
+
+ *****************************************************************************/
+static node *
+AppendPart (node *partz, node *newpart)
+{
+    DBUG_ENTER ("AppendPart");
+
+    if (NULL == partz) {
+        partz = newpart;
+    } else {
+        PART_NEXT (partz) = newpart;
+    }
+
+    DBUG_RETURN (partz);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *PartitionSlicer(...)
+ *
+ * @params partn: an N_part of the folderWL.
+ *         idx: an N_array, representing the intersect of the
+ *              folderWL index set and a foldeeWL partition.
+ *         idx must be the same shape as the partn generators.
+ *         d: the axis which we are going to slice. e.g., for matrix,
+ *            d = 0 --> slice rows
+ *            d = 1 --> slice columns
+ *            etc.
+ *
+ * @result: 1-3 N_part nodes, depending on the value of idx.
+ *
+ * @brief Slice a WL partition into 1-3 partitions.
+ *
+ * We have a WL partition, partn, and an intersection index set, idx,
+ * for the partition that is smaller than the partition. We wish
+ * to slice partn into sub-partitions, in order that AWLF
+ * can operate on the sub-partition(s).
+ *
+ * idx is known to lie totally within partn, as it arises from
+ * the WL index set intersection bounds.
+ *
+ * In the simplest situation, there are three possible
+ * cases of intersect. The rectangle represents partn;
+ * the xxxx's represent the array covered by idx.
+ *
+ *   alpha        beta        gamma
+ *  __________   __________  _________
+ *  |xxxxxxxxx| | partA   | | partA   |
+ *  |xxpartIxx| |         | |         |
+ *  |         | |xxxxxxxxx| |         |
+ *  |         | |xxpartIxx| |         |
+ *  | partC   | |         | |xxxxxxxxx|
+ *  |         | | partC   | |xxxxxxxxx|
+ *  |_________| |_________| |xxpartIxx|
+ *
+ *  For cases alpha and gamma, we split partn into two parts.
+ *  For case beta, we split it into three parts. In each case,
+ *  one of the partitions is guaranteed to match idx.
+ *
+ * Because the intersection is multi-dimensional, we perform
+ * the splitting on one axis at a time. Hence, we may end up
+ * with each axis generating 1-3 new partitions for each
+ * partition it gets as input.
+ *
+ * Here are the cases for splitting along axis 1 (columns) in a rank-2 array;
+ * an x denotes partI:
+ *
+ * alpha   alpha  alpha
+ *
+ * x..     .x.    ..x
+ * ...     ...    ...
+ * ...     ...    ...
+ *
+ *
+ * beta    beta   beta
+ * ...     ...    ...
+ * x..     .x.    ..x
+ * ...     ...    ...
+ *
+ * gamma  gamma   gamma
+ * ...    ...     ...
+ * ...    ...     ...
+ * x..    .x.     ..x
+ *
+ *
+ *
+ * Note: This code bears some resemblance to that of CutSlices.
+ *       This is simpler, because we know more
+ *       about the index set intersection.
+ *
+ * Note: Re the question of when to perform partition slicing.
+ *       I'm not sure, but let's start here:
+ *       We want to avoid a situation in which we slice
+ *       a partition before we know that slicing is required.
+ *       These are the requirements:
+ *
+ *        - The folderWL index set is an N_array.
+ *        - The intersect of the folderWL index set with
+ *          the foldeeWL partition bounds is:
+ *            . non-empty  (or we are looking at a total mismatch)
+ *            . not an exact match (because it could fold as is).
+ *
+ *****************************************************************************/
+static node *
+PartitionSlicer (node *partn, node *lb, node *ub, int d, info *arg_info)
+{
+    node *partz = NULL;
+    node *newpart = NULL;
+    node *lbpart;
+    node *ubpart;
+    node *step;
+    node *width;
+    node *withid;
+    node *newlb;
+    node *newub;
+    node *genn;
+    node *coden;
+    node *ilb;
+    node *iub;
+    node *plb;
+    node *pub;
+
+    DBUG_ENTER ("PartitionSlicer");
+
+    DBUG_ASSERT (N_part == NODE_TYPE (partn), "Partition Slicer expected N_part partn");
+    DBUG_ASSERT (N_array == NODE_TYPE (lb), "Partition Slicer expected N_array lb");
+    DBUG_ASSERT (N_array == NODE_TYPE (ub), "Partition Slicer expected N_array ub");
+    lbpart = GENERATOR_BOUND1 (PART_GENERATOR (partn));
+    ubpart = GENERATOR_BOUND2 (PART_GENERATOR (partn));
+    step = GENERATOR_STEP (PART_GENERATOR (partn));
+    width = GENERATOR_WIDTH (PART_GENERATOR (partn));
+    coden = PART_CODE (partn);
+    withid = PART_WITHID (partn);
+
+    ilb = TCgetNthExprs (d, lb);
+    iub = TCgetNthExprs (d, ub);
+    plb = TCgetNthExprs (d, lbpart);
+    pub = TCgetNthExprs (d, ubpart);
+
+    /* Cases beta, gamma need partA */
+    if (ilb != plb) { /*           this compare may have to be fancier */
+        newlb = DUPdoDupTree (lbpart);
+        newlb = WLSflattenBound (newlb, &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info));
+
+        newub = DUPdoDupTree (ubpart);
+        /* newub[d] = iub */
+        EXPRS_EXPR (newub) = FREEdoFreeTree (EXPRS_EXPR (newub));
+        EXPRS_EXPR (newub) = DUPdoDupTree (EXPRS_EXPR (iub));
+        newub = WLSflattenBound (newub, &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info));
+
+        genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
+                                DUPdoDupTree (width));
+        newpart = TBmakePart (coden, DUPdoDupTree (withid), genn);
+        CODE_INC_USED (coden);
+        partz = AppendPart (partz, newpart);
+    }
+
+    /* All cases need partI */
+    newlb = DUPdoDupTree (lb);
+    newlb
+      = WLSflattenBound (newlb, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
+    newub = DUPdoDupTree (ub);
+    newub
+      = WLSflattenBound (newub, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
+
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
+                            DUPdoDupTree (width));
+    newpart = TBmakePart (coden, DUPdoDupTree (withid), genn);
+    CODE_INC_USED (coden);
+    partz = AppendPart (partz, newpart);
+
+    /* Case alpha, beta need partC */
+    if (iub != pub) { /* this compare may have to be fancier */
+        newlb = DUPdoDupTree (lb);
+        newlb = WLSflattenBound (newlb, &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info));
+
+        newub = DUPdoDupTree (ubpart);
+        newub = WLSflattenBound (newub, &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info));
+
+        genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
+                                DUPdoDupTree (width));
+        newpart = TBmakePart (coden, DUPdoDupTree (withid), genn);
+        CODE_INC_USED (coden);
+        partz = AppendPart (partz, newpart);
+    }
+    DBUG_RETURN (partz);
 }
 
 /** <!--********************************************************************-->
@@ -957,10 +1340,14 @@ SWLFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFassign");
 
+#ifdef VERBOSE
     DBUG_PRINT ("SWLF", ("Traversing N_assign"));
+#endif // VERBOSE
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     foldablefoldeepart = INFO_SWLFOLDABLEFOLDEEPART (arg_info);
     INFO_SWLFOLDABLEFOLDEEPART (arg_info) = NULL;
+    DBUG_ASSERT ((NULL == INFO_PREASSIGNS (arg_info)),
+                 "SWLFassign INFO_PREASSIGNS not NULL");
 
     /*
      * Top-down traversal
@@ -975,6 +1362,11 @@ SWLFassign (node *arg_node, info *arg_info)
                                   INFO_PART (arg_info), arg_info);
 
         global.optcounters.swlf_expr += 1;
+    }
+
+    if (NULL != INFO_PREASSIGNS (arg_info)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -1005,6 +1397,7 @@ SWLFwith (node *arg_node, info *arg_info)
     INFO_LUT (arg_info) = INFO_LUT (old_info);
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
+    INFO_PREASSIGNS (arg_info) = INFO_PREASSIGNS (old_info);
 
     WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
@@ -1032,6 +1425,7 @@ SWLFwith (node *arg_node, info *arg_info)
 
     INFO_WL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
+    INFO_PREASSIGNS (old_info) = INFO_PREASSIGNS (arg_info);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1089,7 +1483,9 @@ SWLFids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFids");
 
+#ifdef VERBOSE
     DBUG_PRINT ("SWLF", ("Traversing N_ids"));
+#endif // VERBOSE
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -1101,9 +1497,14 @@ SWLFids (node *arg_node, info *arg_info)
  * @fn node *SWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all X[iv] primitives to see if iv is current folderWL iv.
- *   If the iv does not have an SSAASSIGN, it means iv is a WITHID,
- *   and so SWLFI has not yet inserted an F_attachextrema for it.
+ *   Examine all _sel_VxA_( idx, foldeeWL)  primitives to see if
+ *   the _sel_VxA_ is contained inside a WL, and that idx has
+ *   intersect information attached to it.
+ *   If so, foldeeWL may be a candidate for folding into this WL.
+ *
+ *   If idx does not have an SSAASSIGN, it means idx is a WITHID.
+ *   If so, we will visit here again, after extrema have been
+ *   attached to idx, and idx renamed.
  *
  *****************************************************************************/
 node *
@@ -1113,7 +1514,9 @@ SWLFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWLFprf");
 
+#ifdef VERBOSE
     DBUG_PRINT ("SWLF", ("Traversing N_prf"));
+#endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (isPrfArg1AttachIntersect (arg_node))) {

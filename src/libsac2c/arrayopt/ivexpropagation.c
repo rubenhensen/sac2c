@@ -516,15 +516,18 @@ static bool
 isConstantValue (node *arg_node)
 {
     constant *con = NULL;
-    node *val = NULL;
+    pattern *pat;
     bool z = FALSE;
 
     DBUG_ENTER ("isConstantValue");
 
-    if (PMO (PMOconst (&con, &val, arg_node))) {
+    pat = PMconst (1, PMAgetVal (&con));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         con = COfreeConstant (con);
         z = TRUE;
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -677,13 +680,18 @@ buildExtremaChain (node *exprs, int minmax)
  *          If all N_array elements have non_null extrema,
  *          build LHS extrema values as follows:
  *
- *            minv = AVIS_MINVAL( I), AVIS_MINVAL( J), AVIS_MINVAL( K)
- *            maxv = AVIS_MAXVAL( I), AVIS_MAXVAL( J), AVIS_MAXVAL( K)
+ *            minv = [ AVIS_MINVAL( I), AVIS_MINVAL( J), AVIS_MINVAL( K) ]
+ *            maxv = [ AVIS_MAXVAL( I), AVIS_MAXVAL( J), AVIS_MAXVAL( K) ]
+ *    CRAP
  *            I' = _attachextreman( I, minv, maxv);
  *            NB. minv and maxv are N_exprs chains in the guard.
  *            V = [ I', J, K];   NB. With minv and maxv as extrema of V.
  *
  *          The extrema are attached to I for convenicnce only.
+ *   UNCRAP
+ *            V' = [ I', J, K];
+ *            V = _attachextrema( V', minv, maxv);
+ *
  *
  ******************************************************************************/
 static node *
@@ -706,7 +714,7 @@ PropagateNarray (node *arg_node, info *arg_info)
 
     /* Check that we have extrema for all array elements.
      * We allow N_id elements only. All others are rejected.
-     * We may have to come back and extend this to support N_num nodes...
+     * FIXME.  We may have to come back and extend this to support N_num nodes...
      */
     allex = TRUE;
     exprs = ARRAY_AELEMS (v);
@@ -741,7 +749,7 @@ PropagateNarray (node *arg_node, info *arg_info)
         DBUG_ASSERT (N_id == NODE_TYPE (aelemI),
                      ("PropagateNarray expected N_id in N_array"));
 
-        DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextreman"));
+        DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextrema"));
         Iprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
                                                &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGNS (arg_info),
@@ -961,7 +969,9 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
     case F_dim_A:
         INFO_MINVAL (arg_info)
           = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
-        INFO_MAXVAL (arg_info) = INFO_MINVAL (arg_info);
+        /* this is just plain wrong. FIXME
+        INFO_MAXVAL( arg_info) = INFO_MINVAL( arg_info);
+        */
         break;
 
         /* FIXME

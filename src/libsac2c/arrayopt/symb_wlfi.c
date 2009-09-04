@@ -479,7 +479,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *   z = _sel_(iv', foldeeWL);
  *
  *   We have to compute ivmax as the AVIS_MAXVAL( iv) + 1, because
- *   extrema are exact, and generator bounds 1 higher.
+ *   extrema are exact, and generator bounds are 1 higher.
  *
  *   This function also appends vardecs to the INFO chain,
  *   and assigns to the preassigns chain.
@@ -516,8 +516,9 @@ attachIntersectCalc (node *arg_node, info *arg_info)
 
     /* Convert exact extrema upper bound into N_generator form */
     idxavis = ID_AVIS (ivid);
-    ivmax = IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), 1, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info));
+    ivmax
+      = IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), arg_info, 1,
+                                 &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
 
     lbicalc
       = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1, AVIS_MINVAL (idxavis));
@@ -543,6 +544,9 @@ attachIntersectCalc (node *arg_node, info *arg_info)
         AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ID_AVIS (ivid)));
         AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (ivid)));
     }
+
+    global.optcounters.swlfi_insert++;
+
     DBUG_RETURN (ividprime);
 }
 
@@ -678,23 +682,6 @@ checkFolderFoldable (node *arg_node, info *arg_info)
     /* idx has extrema or F_attachintersect */
     z = ((NULL != AVIS_MINVAL (idxavis)) && (NULL != AVIS_MAXVAL (idxavis)))
         || isPrfArg1AttachIntersect (arg_node);
-
-#ifdef DEADER // We put the F_attachintersect in later! */
-    node *instr;
-    if (NULL != AVIS_SSAASSIGN (idxavis)) {
-        instr = ASSIGN_INSTR (AVIS_SSAASSIGN (idxavis));
-        z = (N_let == NODE_TYPE (instr)) && (N_prf == NODE_TYPE (LET_EXPR (instr)))
-            && (F_attachintersect == PRF_PRF (LET_EXPR (instr)));
-    }
-    if (z) {
-        DBUG_PRINT ("SWLFI", ("FolderWL %s extrema found: WL may be foldable.",
-                              AVIS_NAME (idxavis)));
-    } else {
-        DBUG_PRINT ("SWLFI", ("FolderWL %s extrema not found: WL is not foldable.",
-                              AVIS_NAME (idxavis)));
-    }
-#endif // DEADER
-
     DBUG_RETURN (z);
 }
 

@@ -249,7 +249,7 @@ SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           opt)
 
-SUBPHASE (lir, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
+SUBPHASE (lir, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
 
 SUBPHASE (isaa1, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
@@ -374,8 +374,8 @@ CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunctio
 CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, cyc)
 
-CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
-               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
+CYCLEPHASEFUN (lir, "Applying do-loop/with-loop invariant removal",
+               LIRdoLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, cyc)
@@ -462,17 +462,17 @@ ENDCYCLE (scyc)
 
 /*************************************************/
 
+SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
+          global.optimize.doswlf || global.doivext, opt)
+
 SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
           opt)
 
-SUBPHASE (lir2, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
+SUBPHASE (lir2, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
 
 SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
-
-SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
-          global.optimize.doswlf || global.doivext, opt)
 
 SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
           global.optimize.dosaa, opt)
@@ -515,6 +515,9 @@ CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneF
 CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                saacyc)
 
+CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
+               global.optimize.dowlprop, opt, saacyc)
+
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
                global.optimize.docf, opt, saacyc)
 
@@ -551,8 +554,8 @@ CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
 CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
-               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
+CYCLEPHASEFUN (lir, "Applying do-loop/with-loop invariant removal",
+               LIRdoLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
@@ -560,15 +563,14 @@ CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarizati
 CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                global.optimize.doprfunr, opt, saacyc)
 
-/* 2009-07-26 - FIXME. WLUR crashes
- *  It crashes nsvbug.sac in the swlf unit tests.
- *   The immediate cause is a corrupted AP_FUNDEF node.
- */
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
+               opt, saacyc)
+
+CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling",
+               SSATdoTransformOneFunction, global.optimize.dolur, opt, saacyc)
+
 CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
                global.optimize.dowlur, opt, saacyc)
-/* 2009-07-26 - FIXME.
- * (and many others). Temporarily disabled for now.
- */
 
 CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
                SSATdoTransformOneFunction, global.optimize.dowlur, opt, saacyc)
@@ -673,7 +675,7 @@ SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
 SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
 
-SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
+SUBPHASE (lir3, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
 SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)

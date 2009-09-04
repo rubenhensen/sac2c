@@ -171,7 +171,7 @@ FreeInfo (info *info)
  *  NB. THIS IS A CLONE OF CODE FROM ../flatten/WLPartitionGeneration.c.
  *      Perhaps we need a single function to do this stuff?
  *
- * @fn node *WLSflattenBound( node *arg_node, node *fundef, node **preassigns)
+ * @fn node *WLSflattenBound( node *arg_node, node **preassigns, node **vardecs)
  *
  *   @brief  Flattens the WL bound at arg_node.
  *           I.e., if the generator looks like this on entry:
@@ -199,15 +199,13 @@ FreeInfo (info *info)
  *          folder to remove guards and do other swell optimizations.
  *
  *   @param  node *arg_node: a WL PART BOUND to be flattened.
- *           node *fundef:   the N_fundef code this function is in.
+ *           node **vardecs: The address of the vardecs chain.
  *           node **preassigns: The address of a preassigns chain.
- *             We can't use arg_info, because different callers
- *             have different INFO node structures.
  *
  *   @return node *node:      N_id node for flattened bound
  ******************************************************************************/
 node *
-WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
+WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
 {
     node *avis;
     node *assgn;
@@ -222,10 +220,7 @@ WLSflattenBound (node *arg_node, node *fundef, node **preassigns)
         /* Result is always an integer vector */
         avis = TBmakeAvis (TRAVtmpVar (),
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
-        /* This is dirty, but given the three different arg_info nodes
-         * involved, I don't have a better idea.
-         */
-        FUNDEF_VARDEC (fundef) = TBmakeVardec (avis, FUNDEF_VARDEC (fundef));
+        *vardecs = TBmakeVardec (avis, *vardecs);
         assgn = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
                               NULL);
         AVIS_SSAASSIGN (avis) = assgn;
