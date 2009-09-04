@@ -834,7 +834,7 @@ LIRfundef (node *arg_node, info *arg_info)
          && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
         || (!FUNDEF_ISLACFUN (arg_node))) {
         /**
-         * only traverse fundef node if fundef is no lacfun or traversal
+         * only traverse fundef node if fundef is not lacfun, or if traversal
          * was initialized in ap-node (travinlac == TRUE)
          */
         info = MakeInfo ();
@@ -866,6 +866,7 @@ LIRfundef (node *arg_node, info *arg_info)
         }
 
         /* traverse args */
+        DBUG_PRINT ("LIR", ("Traversing FUNDEF_ARGS for %s", FUNDEF_NAME (arg_node)));
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
         /* top level (not [directly] contained in any withloop) */
@@ -876,6 +877,7 @@ LIRfundef (node *arg_node, info *arg_info)
 
         /* traverse function body */
         if (FUNDEF_BODY (arg_node) != NULL) {
+            DBUG_PRINT ("LIR", ("Traversing FUNDEF_BODY for %s", FUNDEF_NAME (arg_node)));
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
             if (INFO_TRAVSTART (arg_info) == TS_module) {
@@ -1205,7 +1207,7 @@ LIRassign (node *arg_node, info *arg_info)
  *
  * description:
  *   traverse let expression and result identifiers
- *   checks, if the dependend used identifiers are loop invariant and marks the
+ *   checks, if the dependent used identifiers are loop invariant and marks the
  *   expression for move_up (only in topblock). expressions in with loops
  *   that only depends on local identifiers are marked as local, too.
  *   all other expressions are marked as normal, which means nothing special.
@@ -1223,6 +1225,8 @@ LIRlet (node *arg_node, info *arg_info)
         INFO_NONLIRUSE (arg_info) = 0;
     }
 
+    DBUG_PRINT ("LIR",
+                ("LIRlet looking at: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
@@ -1252,7 +1256,7 @@ LIRlet (node *arg_node, info *arg_info)
                   && (INFO_PREASSIGN (arg_info) != NULL)))) {
 
             DBUG_PRINT ("LIR",
-                        ("loop-independend expression detected - mark it for moving up"));
+                        ("loop-independent expression detected - mark it for moving up"));
             /*
              * expression is  not in a condition and uses only LI
              * arguments -> mark expression for move up in front of loop
@@ -2145,20 +2149,20 @@ FreeLIRInformation (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node* LIRdoWithLoopInvariantRemovalOneFundef(node* fundef)
+ *   node* LIRdoLoopInvariantRemovalOneFundef(node* fundef)
  *
  * description:
- *   starts the with-loop invariant removal for fundef nodes.
+ *   starts the do-loop/with-loop invariant removal for fundef nodes.
  *
  *****************************************************************************/
 node *
-LIRdoWithLoopInvariantRemovalOneFundef (node *fundef)
+LIRdoLoopInvariantRemovalOneFundef (node *fundef)
 {
     info *info;
-    DBUG_ENTER ("LIRdoWithLoopInvariantRemovalOneFundef");
+    DBUG_ENTER ("LIRdoLoopInvariantRemovalOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "LIRdoWithLoopInvariantRemovalOneFundef called for non-fundef node");
+                 "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
 
     info = MakeInfo ();
 
