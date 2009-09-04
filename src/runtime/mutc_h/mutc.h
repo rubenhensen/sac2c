@@ -8,6 +8,24 @@
 
 #define bool boolbool
 
+#define SAC_MUTC_TIME_BEGIN                                                              \
+    {                                                                                    \
+        uint64_t TIME_begin;                                                             \
+        uint64_t TIME_end;                                                               \
+        TIME_begin = get_cycles ();
+
+#define SAC_MUTC_TIME_END                                                                \
+    {                                                                                    \
+        TIME_end = get_cycles ();                                                        \
+        int n = TIME_end - TIME_begin;                                                   \
+                                                                                         \
+        sl_proccall (svp_io_puts, sl_glarg (const char *, sl_anon, "\nCYCLES: "));       \
+        sl_proccall (sac_svp_io_putn, sl_glarg (int, sl_anon, n),                        \
+                     sl_glarg (int, sl_anon, 10));                                       \
+        sl_proccall (svp_io_puts, sl_glarg (const char *, sl_anon, "\n"));               \
+    }                                                                                    \
+    }
+
 #define SAC_MUTC_DECL_FAMILY(name) sl_family_t family_##name;
 #define SAC_MUTC_DECL_INDEX(name) sl_index (name);
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
