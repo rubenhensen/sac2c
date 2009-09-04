@@ -338,7 +338,7 @@ INLap (node *arg_node, info *arg_info)
                  * with grouping of local functions, the standard
                  * mechanism for retrieving copied LaC functions from the hook does not
                  * work here. So, we must collect such functions explicitly and carry
-                 * them around until we reach a regular function again, which es where
+                 * them around until we reach a regular function again, which is where
                  * we can store them in the local function's chain.
                  */
             }
