@@ -204,6 +204,7 @@
 #include "pattern_match.h"
 #include "LookUpTable.h"
 #include "phase.h"
+#include "globals.h"
 #include "check.h"
 
 /** <!--********************************************************************-->

@@ -1173,8 +1173,8 @@ static node *
 IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
 {
     node *rhs;
-    node *minv;
-    node *maxv;
+    node *minv = NULL;
+    node *maxv = NULL;
     node *minarg1;
     node *minarg2;
     node *maxarg1;
@@ -1182,10 +1182,10 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
     node *lhsavis;
     node *nca = NULL;
     node *swp;
-    bool arg1c;
-    bool arg2c;
-    bool arg1e;
-    bool arg2e;
+    bool arg1c = FALSE;
+    bool arg2c = FALSE;
+    bool arg1e = FALSE;
+    bool arg2e = FALSE;
     bool docalc = FALSE;
 
     DBUG_ENTER ("IntroducePrfExtremaCalc");
