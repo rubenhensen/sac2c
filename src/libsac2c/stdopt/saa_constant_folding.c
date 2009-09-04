@@ -370,6 +370,10 @@ node *
 SAACFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_drop_SxV");
+
+#ifdef FIXME
     node *shp;
     node *arg1 = NULL;
     node *arg2 = NULL;
@@ -378,8 +382,6 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
     pattern *patarg2;
     constant *con = NULL;
 
-    DBUG_ENTER ("SAACFprf_drop_SxV");
-#ifdef FIXME
     stdlib build failure
 
       pat1
