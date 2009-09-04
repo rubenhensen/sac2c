@@ -1464,20 +1464,22 @@ node *
 SCSprf_shape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *avis;
-    node *resid = NULL;
-    node *resavis;
-    node *resassign;
-    int arg1dim;
-    int i;
 
     DBUG_ENTER ("SCSprf_shape");
+
 #ifdef BUG524
 
     /* This code should never have gone live. It absolutely trashes
      * the performance of MANY benchmarks, by about a factor of 3-4X.
      *
      */
+
+    node *avis;
+    node *resid = NULL;
+    node *resavis;
+    node *resassign;
+    int arg1dim;
+    int i;
 
     DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
                  "SCSprf_shape_ expected N_id node");
@@ -1528,7 +1530,8 @@ SCSprf_shape (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (resavis) = resassign;
     }
 #endif //  BUG524
-    DBUG_RETURN (resid);
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
