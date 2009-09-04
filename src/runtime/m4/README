@@ -15,7 +15,7 @@
 +---------------+                 +----------------+                          
         |                                  |                                  
         |  m4 transformation               |                                  
-        |  speed of this is stage          |                                  
+        |  speed of this stage             |                                  
         |  is of low importance            |                                  
         V                                  |                                  
 +---------------+                          |                                  
@@ -30,8 +30,8 @@
                                            |                                  
                                            V        It is the time that the   
 +---------------+                     -----------   CPP takes at this stage   
-| sac program   |------------------->(  CPP      )  that is considered a      
-+---------------+                     -----------   problem                   
+| sac program   |------------------->(  CPP      )  that is considered      
++---------------+                     -----------   inportant                  
                                            |                                  
                                            V                                  
                                    +---------------+                          
@@ -41,7 +41,7 @@
                                                                               
                                                                               
 The size of sac.h contributes a significant amount of time to the             
-runtime of sac2c.                                                             
+runtime of sac2c (at the cpp stage).
                                                                               
                                                                               
 Formally icm + tag -> icm rules where defined as:
@@ -92,10 +92,8 @@ The current way of defining icm + tag -> icm rules is:
 The accessors to the name tuples should be in the same order as the
 patterns that will be described with rule.
 
-It is not required to specify the number of arguments after the NT.
-
 "rule" defines a mapping from one ICM to another ICM when the desired
-tags patch the paten.
+tags match the pattern.
 
 +-----------------------------------------------------------------------------+
 |                                                                             |
@@ -106,8 +104,8 @@ tags patch the paten.
 +-----------------------------------------------------------------------------+
 
 When any value of a tag can be accepted then *TAGNAME should be used.
-If more than one value is acceptable for a tag then ether two rules
-can be used or the tags may be "," separated:
+If more than one value is acceptable for a tag then two rules
+can be used:
 
 +-----------------------------------------------------------------------------+
 |                                                                             |
@@ -118,16 +116,6 @@ can be used or the tags may be "," separated:
 |                                                                             |
 +-----------------------------------------------------------------------------+
                                                                               
-Is the same as: 
-               
-+-----------------------------------------------------------------------------+
-|                                                                             |
-| pat( `IN_ICM', `0', `NT_SHP')                                               |
-|                                                                             |
-| rule( `IN_ICM', `OUT_ICM', `AKV, AKS')                                      |
-|                                                                             |
-+-----------------------------------------------------------------------------+
-               
 When there are more than one matching rule then the first one is accepted.
 
 DO NOT
@@ -138,3 +126,28 @@ The following produce undefined behavior:
 Pass tags in rule in a different order than pat.
 Using pat more than once with the same ICM.
 Specifying illegal accessors.
+
+Extending values of a tag
+=========================
+
+To extend the number of accepted values for a tag in the name tuple
+update the definition of the `_star' m4 macro at the start of icm.m4.
+
+The _star macro consists of a table of definitions for each tag:
+
+`$1', `*REG', `INT, FLO, ___',
+        ^      ^         ^< The default entry for the tag is always ___
+        ^      ^< `,' separated list of posible values for the tag.
+        ^< Name of the tag
+
+Adding a new tag
+================
+
+To add a new tag a a new entry to the _star m4 macro.  _star is
+described in `Extending values of a tag'.
+
+Update tupple.h
+
+Add a new macro called NT_tagname, where tagname is the name of the
+tag.
+

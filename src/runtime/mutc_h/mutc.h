@@ -25,10 +25,22 @@
 #define SAC_MUTC_ND_PARAM_INT_SHA(t, name, nt) sl_shparm (t, name)
 #define SAC_MUTC_ND_PARAM_FLO_SHA(t, name, nt) sl_shfparm (t, name)
 
+#if SAC_MUTC_FUNAP_AS_CREATE
+#define SAC_MUTC_PARAM_FUN(t, name, nt) SAC_MUTC_PARAM_THREAD (t, name, nt)
+#else
+#define SAC_MUTC_PARAM_FUN(t, name, nt) t name
+#endif
+
 #define SAC_MUTC_ND_ARG_INT_GLO(name, nt, t) sl_glarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_FLO_GLO(name, nt, t) sl_glfarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_INT_SHA(name, nt, t) sl_sharg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sl_anon, name)
+
+#if SAC_MUTC_FUNAP_AS_CREATE
+#define SAC_MUTC_ARG_FUN(name, nt, t) SAC_MUTC_ARG_THREAD (t, name, nt)
+#else
+#define SAC_MUTC_ARG_FUN(name, nt, t) name
+#endif
 
 #undef SAC_ND_REAL_PARAM
 #define SAC_ND_REAL_PARAM(type, name, nt) SAC_MUTC_PARAM (type, name, nt)
