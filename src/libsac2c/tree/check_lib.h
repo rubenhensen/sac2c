@@ -23,6 +23,7 @@ extern node *CHKnotExist (void *son_attribute, node *arg_node, char *string);
 extern node *CHKcorrectTypeInsertError (node *arg_node, char *string);
 
 extern node *CHKassignAvisSSAAssign (node *arg_node);
+extern node *CHKfundefVardecExtrema (node *arg_node);
 #endif /* SHOW_MALLOC */
 
 #endif /*_SAC_CHECK_LIB_H_ */

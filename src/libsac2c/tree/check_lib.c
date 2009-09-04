@@ -171,3 +171,127 @@ CHKassignAvisSSAAssign (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--**********************************************************************-->
+ *
+ * @fn static bool isMemberVardecs( node *arg_node, node *fundef )
+ *
+ * @brief: Predicate to determine if N_avis arg_node
+ *         is a member of fundef's N_vardec chain.
+ *
+ * @params: arg_node: The N_avis of interest.
+ *          fundef: The N_fundef node for this fundef.
+ *
+ * @return: True if the N_avis is found; else false.
+ *
+ *****************************************************************************/
+static bool
+isMemberVardecs (node *arg_node, node *fundef)
+{
+    node *vardecs;
+    bool z = FALSE;
+
+    DBUG_ENTER ("isMemberVardecs");
+
+    vardecs = FUNDEF_BODY (fundef);
+    if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
+        vardecs = BLOCK_VARDEC (vardecs);
+        while ((~z) && NULL != vardecs) {
+            if (arg_node == vardecs) {
+                z = TRUE;
+            } else {
+                vardecs = VARDEC_NEXT (vardecs);
+            }
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn static bool isMemberArgs( node *arg_node, node *fundef )
+ *
+ * @brief: Predicate to determine if N_avis arg_node
+ *         is a member of fundef's N_args chain.
+ *
+ * @params: arg_node: The N_avis of interest.
+ *          fundef: The N_fundef node for this fundef.
+ *
+ * @return: True if the N_avis is found; else false.
+ *
+ *****************************************************************************/
+static bool
+isMemberArgs (node *arg_node, node *fundef)
+{
+    node *args;
+    bool z = FALSE;
+
+    DBUG_ENTER ("isMemberVardecs");
+
+    args = FUNDEF_ARGS (fundef);
+    while ((~z) && NULL != args) {
+        if (arg_node == args) {
+            z = TRUE;
+        } else {
+            args = ARG_NEXT (args);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKfundefVardecExtrema( node *arg_node)
+ *
+ * @brief: Check all vardecs in this function, to ensure that
+ *         AVIS_MINVAL and AVIS_MAXVAL point to a vardec in this function,
+ *         or to one of the N_args.
+ *
+ *
+ * @params: arg_node: The N_fundef node for this fundef.
+ *
+ * @return: VOID;
+ *
+ *****************************************************************************/
+node *
+CHKfundefVardecExtrema (node *arg_node)
+{
+    node *curvardec;
+    node *minmax;
+    node *vardecs;
+
+    DBUG_ENTER ("CHKfundefVardecExtrema");
+
+    if (NULL != arg_node) {
+
+        vardecs = FUNDEF_BODY (arg_node);
+        if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
+            vardecs = BLOCK_VARDEC (vardecs);
+            curvardec = vardecs;
+            while (NULL != curvardec) {
+                minmax = AVIS_MINVAL (VARDEC_AVIS (curvardec));
+                if (!(isMemberVardecs (minmax, arg_node)
+                      || isMemberArgs (minmax, arg_node))) {
+                    DBUG_PRINT (
+                      "CHK",
+                      ("AVIS_MINVAL(%s) does not point to an N_avis in fundef %s",
+                       AVIS_NAME (VARDEC_AVIS (curvardec)), FUNDEF_NAME (arg_node)));
+                }
+
+                minmax = AVIS_MAXVAL (VARDEC_AVIS (curvardec));
+                if (!(isMemberVardecs (minmax, arg_node)
+                      || isMemberArgs (minmax, arg_node))) {
+                    DBUG_PRINT (
+                      "CHK",
+                      ("AVIS_MAXVAL(%s) does not point to an N_avis in fundef %s",
+                       AVIS_NAME (VARDEC_AVIS (curvardec)), FUNDEF_NAME (arg_node)));
+                }
+                curvardec = VARDEC_NEXT (curvardec);
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}

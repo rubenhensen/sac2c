@@ -97,7 +97,13 @@ ATravCHKLACFCfundef (node *arg_node, info *arg_info)
 
     FUNDEF_CALLFUN (arg_node) = NULL;
 
+    DBUG_ASSERT (((NULL == FUNDEF_LOCALFUNS (arg_node))
+                  || (N_fundef == NODE_TYPE (FUNDEF_LOCALFUNS (arg_node)))),
+                 "Non-N_fundef on FUNDEF_LOCALFUNS chain");
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    DBUG_ASSERT (((NULL == FUNDEF_NEXT (arg_node))
+                  || (N_fundef == NODE_TYPE (FUNDEF_NEXT (arg_node)))),
+                 "Non-N_fundef on FUNDEF_NEXT chain");
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
