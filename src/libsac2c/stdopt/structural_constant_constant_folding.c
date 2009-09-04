@@ -293,8 +293,12 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
  * description:
  *   Implements drop for constants
  *   If both arguments are constant, CF was done by the typechecker.
- *   This handles the case where arg1 is constant, and arg2 is
- *   an N_array.
+ *   This handles the first two following cases:
+ *
+ *     1. arg1 is constant zero.
+ *     2. arg1 is constant non-zero, and arg2 is an N_array.
+ *     3. arg1 is constant, of value matching shape of arg2:
+ *        Handled by saaconstant_folding.
  *
  *****************************************************************************/
 node *
@@ -303,8 +307,10 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
     node *tail;
     node *arg2 = NULL;
+    node *arg2array = NULL;
     constant *con = NULL;
     pattern *pat;
+    pattern *pat2;
     int dropcount;
     int dc;
     int resxrho;
@@ -313,31 +319,36 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCCFprf_drop_SxV");
 
     pat = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMconst (1, PMAgetVal (&con)),
-                 PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
+                 PMvar (1, PMAgetNode (&arg2), 0));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         dc = COconst2Int (con);
         if (0 == dc) {
-            res = DUPdoDupTree (arg2);
+            res = DUPdoDupTree (arg2); /* Case 1 */
         } else {
-            dropcount = (dc < 0) ? 0 : dc;
-            arg2xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
-            resxrho = arg2xrho - abs (dc);
-            if (resxrho < 0) {
-                CTIerrorLine (global.linenum,
-                              "SCCFprf_drop_SxV attempted overdrop of size %d on vector "
-                              "of shape %d",
-                              resxrho, arg2xrho);
-                CTIabort ("Compilation terminated");
+            pat2 = PMarray (1, PMAgetNode (&arg2array), 0);
+
+            if (PMmatchFlatSkipExtrema (pat2, arg2)) { /* Case 2 */
+                dropcount = (dc < 0) ? 0 : dc;
+                arg2xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2array));
+                resxrho = arg2xrho - abs (dc);
+                if (resxrho < 0) {
+                    CTIerrorLine (global.linenum,
+                                  "SCCFprf_drop_SxV tried overdrop of size %d on vector "
+                                  "of shape %d",
+                                  resxrho, arg2xrho);
+                    CTIabort ("Compilation terminated");
+                }
+                tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));
+                DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
+                res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2array)),
+                                   SHcreateShape (1, resxrho), tail);
             }
-            tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
-            DBUG_PRINT ("CF", ("SCCFprf_drop performed "));
-            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
-                               SHcreateShape (1, resxrho), tail);
+            con = COfreeConstant (con);
+            pat2 = PMfree (pat2);
         }
-        con = COfreeConstant (con);
+        pat = PMfree (pat);
     }
-    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
