@@ -1,5 +1,25 @@
 /*
  * $Id$
+ *
+ * @brief:
+ *   1. Replaces sequence:
+ *       c = F_esdneg( b);
+ *       d = F_esdneg( c);
+ *
+ *     by:
+ *
+ *       d = b;
+ *
+ *   2. Replaces sequence:
+ *       c = add( a, const);    NB.  and others
+ *       d = F_esdneg( c);
+ *
+ *     by:
+ *
+ *       a' = F_esdneg( a);
+ *       b' = F_esdneg( b);
+ *       d = add( a', b');
+ *
  */
 
 #include "tree_basic.h"
@@ -349,7 +369,9 @@ ASprf (node *arg_node, info *arg_info)
             arg_node
               = TCmakePrf2 (PRF_PRF (contained), Negate (PRF_ARG1 (contained), arg_info),
                             Negate (PRF_ARG2 (contained), arg_info));
+            DBUG_PRINT ("AS", ("Negating both arguments"));
         } else if (IsNegationOfNegation (contained)) {
+            DBUG_PRINT ("AS", ("Replacing negation of negation"));
             contained = PRF_ARG1 (contained);
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = DUPdoDupTree (contained);
