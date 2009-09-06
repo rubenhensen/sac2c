@@ -3929,25 +3929,6 @@ COMPprfWLAssign (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
-/* return the nth arg */
-static node *
-nthArg (node *args, int n)
-{
-    node *nth_arg;
-    int i = 0;
-
-    DBUG_ENTER ("nthArg");
-
-    nth_arg = args;
-
-    while (i != n) {
-        nth_arg = ARG_NEXT (nth_arg);
-        i++;
-    }
-
-    DBUG_RETURN (nth_arg);
-}
-
 static node *
 COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
 {
@@ -5848,6 +5829,24 @@ COMPprfHost2Device (node *arg_node, info *arg_info)
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
                                  TCmakeIdCopyString ("cudaMemcpyHostToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDevice2Device (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfDevice2Device");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyDeviceToDevice"), NULL);
 
     DBUG_RETURN (ret_node);
 }

@@ -1,7 +1,7 @@
 /*****************************************************************************
  *
  *
- * file:   annotate_cuda_withloop.c
+ * file:   create_constant_assignment.c
  *
  * prefix: CNSTASS
  *
@@ -19,13 +19,11 @@
 #include "DupTree.h"
 #include "free.h"
 #include "memory.h"
-#include "LookUpTable.h"
-#include "namespaces.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "shape.h"
 #include "str.h"
-#include "ConstVarPropagation.h"
+#include "flattengenerators.h"
 
 struct INFO {
     node *constassigns;
@@ -71,6 +69,55 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static node *
+UnflattenGeneratorComponent (node *id)
+{
+    node *ssaassign;
+    node *res;
+
+    DBUG_ENTER ("UnflattenGeneratorComponent");
+
+    ssaassign = AVIS_SSAASSIGN (ID_AVIS (id));
+
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
+                 "Unflattened generator component must be an N_array node!");
+
+    id = FREEdoFreeNode (id);
+    res = DUPdoDupNode (ASSIGN_RHS (ssaassign));
+
+    DBUG_RETURN (res);
+}
+
+static void
+FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
+{
+    node *avis;
+    node *ids, *vardec;
+
+    DBUG_ENTER ("UnflattenBoundStepWidthElements");
+
+    while (exprs != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num) {
+            avis = TBmakeAvis (TRAVtmpVarName (suffix),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            vardec = TBmakeVardec (avis, NULL);
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
+
+            ids = TBmakeIds (avis, NULL);
+
+            INFO_CONSTASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (exprs)),
+                              INFO_CONSTASSIGNS (arg_info));
+            EXPRS_EXPR (exprs) = TBmakeId (avis);
+        }
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn
@@ -91,10 +138,12 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-    syntax_tree = CVPdoConstVarPropagation (syntax_tree);
+    /* This traversal makes sure that all lower bounds
+     * and upper bounds of a generator are now N_ids.
+     */
+    syntax_tree = FLATGdoFlatten (syntax_tree);
 
     info = MakeInfo ();
-
     TRAVpush (TR_cnstass);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
@@ -108,7 +157,7 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
  *
  * @fn
  *
- * @brief node *CNSTASSfundef( node *syntax_tree)
+ * @brief node *CNSTASSfundef( node *arg_node, info *arg_info)
  *
  * @param
  * @param
@@ -122,15 +171,8 @@ CNSTASSfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    INFO_FUNDEF (arg_info) = NULL;
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -139,7 +181,7 @@ CNSTASSfundef (node *arg_node, info *arg_info)
  *
  * @fn
  *
- * @brief node *CNSTASSassign( node *syntax_tree)
+ * @brief node *CNSTASSassign( node *arg_node, info *arg_info)
  *
  * @param
  * @param
@@ -151,9 +193,7 @@ CNSTASSassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CNSTASSassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -169,7 +209,7 @@ CNSTASSassign (node *arg_node, info *arg_info)
  *
  * @fn
  *
- * @brief node *CNSTASSwith( node *syntax_tree)
+ * @brief node *CNSTASSwith( node *arg_node, info *arg_info)
  *
  * @param
  * @param
@@ -181,10 +221,9 @@ CNSTASSwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CNSTASSwith");
 
-    /* Only look at Withloops that are cudarizable */
+    /* Only traverse cudarizable WL */
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_COLLECT (arg_info) = TRUE;
-        // WITH_WITHOP( arg_node) = TRAVdo(  WITH_WITHOP( arg_node), arg_info);
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
         INFO_COLLECT (arg_info) = FALSE;
     }
@@ -196,7 +235,7 @@ CNSTASSwith (node *arg_node, info *arg_info)
  *
  * @fn
  *
- * @brief node *CNSTASSgenerator( node *syntax_tree)
+ * @brief node *CNSTASSgenerator( node *arg_node, info *arg_info)
  *
  * @param
  * @param
@@ -206,173 +245,47 @@ CNSTASSwith (node *arg_node, info *arg_info)
 node *
 CNSTASSgenerator (node *arg_node, info *arg_info)
 {
+    node *lower_bound_elements = NULL, *upper_bound_elements = NULL;
+    node *step_elements = NULL, *width_elements = NULL;
+
     DBUG_ENTER ("CNSTASSgenerator");
 
-    // constant *lower_bound_cnst, *upper_bound_cnst;
-    node *lower_bound, *upper_bound;
-    node *step, *width;
-    node *lower_bound_elements, *upper_bound_elements;
-    node *step_elements = NULL, *width_elements = NULL;
-    node *avis;
-    node *ids, *vardec;
+    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id),
+                 "Lower bound should be an N_id node!");
+    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_id),
+                 "Upper bound should be an N_id node!");
 
-    /* Handle Lowerbound and Upperbound */
-
-    lower_bound = GENERATOR_BOUND1 (arg_node);
-    upper_bound = GENERATOR_BOUND2 (arg_node);
-
-    if (NODE_TYPE (lower_bound) == N_id) {
-        node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (lower_bound));
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
-                     "Lower bound should be an N_array node!");
-        GENERATOR_BOUND1 (arg_node) = FREEdoFreeNode (GENERATOR_BOUND1 (arg_node));
-        GENERATOR_BOUND1 (arg_node) = DUPdoDupNode (ASSIGN_RHS (ssaassign));
-    }
-
-    if (NODE_TYPE (upper_bound) == N_id) {
-        node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (upper_bound));
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
-                     "Upper bound should be an N_array node!");
-        GENERATOR_BOUND2 (arg_node) = FREEdoFreeNode (GENERATOR_BOUND2 (arg_node));
-        GENERATOR_BOUND2 (arg_node) = DUPdoDupNode (ASSIGN_RHS (ssaassign));
-    }
+    GENERATOR_BOUND1 (arg_node)
+      = UnflattenGeneratorComponent (GENERATOR_BOUND1 (arg_node));
+    GENERATOR_BOUND2 (arg_node)
+      = UnflattenGeneratorComponent (GENERATOR_BOUND2 (arg_node));
 
     lower_bound_elements = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
     upper_bound_elements = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
 
-    while (lower_bound_elements != NULL && upper_bound_elements != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (upper_bound_elements)) == N_num) {
-            avis = TBmakeAvis (TRAVtmpVarName ("ub"),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-            vardec = TBmakeVardec (avis, NULL);
+    DBUG_ASSERT (TCcountExprs (lower_bound_elements)
+                   == TCcountExprs (upper_bound_elements),
+                 "Lower and upper bound must have same number of elements");
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
-
-            ids = TBmakeIds (avis, NULL);
-
-            INFO_CONSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (upper_bound_elements)),
-                              INFO_CONSTASSIGNS (arg_info));
-            EXPRS_EXPR (upper_bound_elements) = TBmakeId (avis);
-        }
-
-        if (NODE_TYPE (EXPRS_EXPR (lower_bound_elements)) == N_num) {
-            avis = TBmakeAvis (TRAVtmpVarName ("lb"),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-            vardec = TBmakeVardec (avis, NULL);
-
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
-
-            ids = TBmakeIds (avis, NULL);
-
-            INFO_CONSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (lower_bound_elements)),
-                              INFO_CONSTASSIGNS (arg_info));
-            EXPRS_EXPR (lower_bound_elements) = TBmakeId (avis);
-        }
-        lower_bound_elements = EXPRS_NEXT (lower_bound_elements);
-        upper_bound_elements = EXPRS_NEXT (upper_bound_elements);
-    }
+    FlattenBoundStepWidthElements (upper_bound_elements, "ub", arg_info);
+    FlattenBoundStepWidthElements (lower_bound_elements, "lb", arg_info);
 
     /* Handle Step and Width */
 
-    step = GENERATOR_STEP (arg_node);
-    width = GENERATOR_WIDTH (arg_node);
-
-    if (step != NULL) {
-        if (NODE_TYPE (step) == N_id) {
-            node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (step));
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
-                         "Step should be an N_array node!");
-            GENERATOR_STEP (arg_node) = FREEdoFreeNode (GENERATOR_STEP (arg_node));
-            GENERATOR_STEP (arg_node) = DUPdoDupNode (ASSIGN_RHS (ssaassign));
-        }
+    if (GENERATOR_STEP (arg_node) != NULL) {
+        GENERATOR_STEP (arg_node)
+          = UnflattenGeneratorComponent (GENERATOR_STEP (arg_node));
         step_elements = ARRAY_AELEMS (GENERATOR_STEP (arg_node));
     }
 
-    if (width != NULL) {
-        if (NODE_TYPE (width) == N_id) {
-            node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (width));
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
-                         "Width should be an N_array node!");
-            GENERATOR_WIDTH (arg_node) = FREEdoFreeNode (GENERATOR_WIDTH (arg_node));
-            GENERATOR_WIDTH (arg_node) = DUPdoDupNode (ASSIGN_RHS (ssaassign));
-        }
+    if (GENERATOR_WIDTH (arg_node) != NULL) {
+        GENERATOR_WIDTH (arg_node)
+          = UnflattenGeneratorComponent (GENERATOR_WIDTH (arg_node));
         width_elements = ARRAY_AELEMS (GENERATOR_WIDTH (arg_node));
     }
 
-    while (step_elements != NULL && width_elements != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (step_elements)) == N_num) {
-            avis = TBmakeAvis (TRAVtmpVarName ("step"),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-            vardec = TBmakeVardec (avis, NULL);
-
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
-
-            ids = TBmakeIds (avis, NULL);
-
-            INFO_CONSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (step_elements)),
-                              INFO_CONSTASSIGNS (arg_info));
-            EXPRS_EXPR (step_elements) = TBmakeId (avis);
-        }
-
-        if (NODE_TYPE (EXPRS_EXPR (width_elements)) == N_num) {
-            avis = TBmakeAvis (TRAVtmpVarName ("width"),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-            vardec = TBmakeVardec (avis, NULL);
-
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
-
-            ids = TBmakeIds (avis, NULL);
-
-            INFO_CONSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (width_elements)),
-                              INFO_CONSTASSIGNS (arg_info));
-            EXPRS_EXPR (width_elements) = TBmakeId (avis);
-        }
-        step_elements = EXPRS_NEXT (step_elements);
-        width_elements = EXPRS_NEXT (width_elements);
-    }
+    FlattenBoundStepWidthElements (step_elements, "step", arg_info);
+    FlattenBoundStepWidthElements (width_elements, "width", arg_info);
 
     DBUG_RETURN (arg_node);
 }
-
-/*
-node *CNSTASSgenarray( node *arg_node, info *arg_info)
-{
-  node *shp, *shp_elements;
-  node *avis, *vardec, *ids;
-
-  DBUG_ENTER("CNSTASSgenarray");
-
-  shp = GENARRAY_SHAPE( arg_node);
-
-  shp_elements = ARRAY_AELEMS( shp);
-
-  while(  shp_elements != NULL)
-  {
-    if( NODE_TYPE( EXPRS_EXPR(  shp_elements)) == N_num)
-    {
-      avis = TBmakeAvis( TRAVtmpVarName( "shp"), TYmakeAKS( TYmakeSimpleType( T_int),
-SHmakeShape(0))); vardec = TBmakeVardec( avis, NULL);
-
-      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) = TCappendVardec( FUNDEF_VARDEC( INFO_FUNDEF(
-arg_info)), vardec);
-
-      ids = TBmakeIds(avis, NULL);
-
-      INFO_CONSTASSIGNS(arg_info) = TBmakeAssign( TBmakeLet(ids, EXPRS_EXPR(
-shp_elements)), INFO_CONSTASSIGNS(arg_info)); EXPRS_EXPR(  shp_elements) = TBmakeId(
-avis);
-    }
-    shp_elements = EXPRS_NEXT(  shp_elements);
-  }
-
-  DBUG_RETURN(arg_node);
-}
-*/

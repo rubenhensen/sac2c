@@ -86,6 +86,32 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="CULKNL" name="Create CUDA loop kernels" default="sons" include="create_loop_kernels.h" >
+        <travuser>
+          <node name="Do" />
+        </travuser>
+      </traversal>
+      <traversal id="PKNLG" name="Prepare cuda kernel generation" default="sons" include="prepare_kernel_generation.h" >
+        <travuser>
+          <node name="Do" />
+          <node name="With" />
+          <node name="Part" />
+        </travuser>
+      </traversal>
+      <traversal id="ACUL" name="Annotate CUDA loops" default="sons" include="annotate_cuda_loop.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Genarray" />
+        </travuser>
+      </traversal>
+      <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="AMTRAN" name="Annoate a memory transfer" default="sons" include="annotate_memory_transfers.h" >
         <travuser>
           <node name="Assign" />
@@ -94,6 +120,8 @@
           <node name="Ap" />
           <node name="Id" />
           <node name="Arg" />
+          <node name="Let" />
+          <node name="Funcond" />
         </travuser>
       </traversal>
       <traversal id="MTRAN" name="Minimise the number of device-host data transfers" default="sons" include="minimize_transfers.h" >
@@ -113,7 +141,7 @@
           <node name="Return" />
         </travuser>
       </traversal>
-      <traversal id="MSTRAN" name="Minimise the number of sequential device-host data transfers" default="sons" include="minimize_sequential_transfers.h" >
+      <traversal id="MBTRAN" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
@@ -133,7 +161,6 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="With" />
-          <node name="With2" />
           <node name="Withid" />
           <node name="Id" />
           <node name="Ids" />
@@ -172,12 +199,12 @@
       </traversal>
       <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop.h" >
         <travuser>
-          <node name="Assign" />
           <node name="With" />
           <node name="Code" />
           <node name="Fundef" />
           <node name="Ap" />
-          <node name="Prf" />
+          <node name="Fold" />
+          <node name="Id" />
         </travuser>
       </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
@@ -3901,6 +3928,11 @@ N_structdef :
             TRUE iff this function was created by the HS pass as a constructor for structs.
           </description>
         </flag>
+        <flag name="IsCudarizable" default="FALSE">
+          <description>
+            TRUE iff this function is a loop fun and can be executed on the CUDA card.
+          </description>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -4699,7 +4731,13 @@ N_structdef :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsCudarizable" default="FALSE">
+          <description>
+            TRUE iff this loop can be executed on the CUDA card.
+          </description>
+        </flag>
+      </flags>
     </node>
 <!--
 
@@ -6691,6 +6729,7 @@ N_structdef :
 	  </description>
 	</flag>
         <flag name="IsRefcounted" default="TRUE" />
+        <flag name="Cudarizable" default="FALSE" />
       </flags>
     </node>
 <!--

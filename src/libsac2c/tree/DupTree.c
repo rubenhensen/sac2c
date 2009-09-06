@@ -1355,6 +1355,8 @@ DUPdo (node *arg_node, info *arg_info)
     DO_LABEL (new_node)
       = (DO_LABEL (arg_node) != NULL ? TRAVtmpVarName (DO_LABEL (arg_node)) : NULL);
 
+    DO_ISCUDARIZABLE (new_node) = DO_ISCUDARIZABLE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);

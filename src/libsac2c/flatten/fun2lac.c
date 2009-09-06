@@ -433,6 +433,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     loop = TBmakeDo (loop_pred, TBmakeBlock (loop_body, NULL));
 
+    DO_ISCUDARIZABLE (loop) = FUNDEF_ISCUDARIZABLE (arg_node);
+
     if (then_assigns != NULL) {
         DO_SKIP (loop) = TBmakeBlock (then_assigns, NULL);
         DO_LABEL (loop) = TRAVtmpVarName ("label");

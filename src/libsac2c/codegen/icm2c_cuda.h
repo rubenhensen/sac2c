@@ -4,8 +4,16 @@
 
 #include "types.h"
 
-extern void ICMCompileCUDA_FUN_AP (char *funname, int vararg_cnt, char **vararg);
-extern void ICMCompileCUDA_FUN_DEC (char *funname, int vararg_cnt, char **vararg);
+extern void ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg);
+
+extern void ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg);
+extern void ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt,
+                                                char **vararg);
+extern void ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt,
+                                              char **vararg);
+extern void ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg);
+extern void ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg);
+
 extern void ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim,
                                   int wlids_dim, char *hasstepwith);
 extern void ICMCompileCUDA_WLIDXS (char *wlidxs_NT, char *array_NT, int array_dim,

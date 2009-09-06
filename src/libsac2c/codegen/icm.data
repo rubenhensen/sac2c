@@ -889,20 +889,44 @@ ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
  * ICMs for compilation of CUDA applications
  */
 
-#if defined(CUDA_FUN_AP) || defined(ICM_ALL)
-ICM_DEF( CUDA_FUN_AP, ICM_TRACE_NONE)
+#if defined(CUDA_GLOBALFUN_AP) || defined(ICM_ALL)
+ICM_DEF( CUDA_GLOBALFUN_AP, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (4*vararg_cnt), vararg)
-ICM_END( CUDA_FUN_AP, (funname, vararg_cnt, vararg))
+ICM_END( CUDA_GLOBALFUN_AP, (funname, vararg_cnt, vararg))
 #endif
 
-#if defined(CUDA_FUN_DEC) || defined(ICM_ALL)
-ICM_DEF( CUDA_FUN_DEC, ICM_TRACE_NONE)
+#if defined(CUDA_GLOBALFUN_RET) || defined(ICM_ALL)
+ICM_DEF( CUDA_GLOBALFUN_RET, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( CUDA_GLOBALFUN_RET, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(CUDA_GLOBALFUN_DECL) || defined(ICM_ALL)
+ICM_DEF( CUDA_GLOBALFUN_DECL, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (4*vararg_cnt), vararg)
-ICM_END( CUDA_FUN_DEC, (funname, vararg_cnt, vararg))
+ICM_END( CUDA_GLOBALFUN_DECL, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(CUDA_GLOBALFUN_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( CUDA_GLOBALFUN_DEF_BEGIN, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (4*vararg_cnt), vararg)
+ICM_END( CUDA_GLOBALFUN_DEF_BEGIN, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(CUDA_GLOBALFUN_DEF_END) || defined(ICM_ALL)
+ICM_DEF( CUDA_GLOBALFUN_DEF_END, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (4*vararg_cnt), vararg)
+ICM_END( CUDA_GLOBALFUN_DEF_END, (funname, vararg_cnt, vararg))
 #endif
 
 #if defined(CUDA_WLIDS) || defined(ICM_ALL)

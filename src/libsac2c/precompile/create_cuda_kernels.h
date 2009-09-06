@@ -1,10 +1,9 @@
 /*****************************************************************************
  *
- * $Id: create_spmd_funs.h 15844 2008-11-04 00:11:37Z cg $
  *
- * Creating SPMD functions
+ * Creating CUDA kernel functions
  *
- * prefix: MTSPMDF
+ * prefix: CUKNL
  *
  *****************************************************************************/
 
@@ -19,7 +18,6 @@ extern node *CUKNLmodule (node *arg_node, info *arg_info);
 extern node *CUKNLfundef (node *arg_node, info *arg_info);
 extern node *CUKNLassign (node *arg_node, info *arg_info);
 extern node *CUKNLwith (node *arg_node, info *arg_info);
-extern node *CUKNLwith2 (node *arg_node, info *arg_info);
 extern node *CUKNLlet (node *arg_node, info *arg_info);
 extern node *CUKNLid (node *arg_node, info *arg_info);
 extern node *CUKNLids (node *arg_node, info *arg_info);

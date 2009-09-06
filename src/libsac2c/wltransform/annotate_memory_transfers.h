@@ -10,5 +10,7 @@ extern node *AMTRANap (node *arg_node, info *arg_info);
 extern node *AMTRANfundef (node *arg_node, info *arg_info);
 extern node *AMTRANid (node *arg_node, info *arg_info);
 extern node *AMTRANarg (node *arg_node, info *arg_info);
+extern node *AMTRANlet (node *arg_node, info *arg_info);
+extern node *AMTRANfuncond (node *arg_node, info *arg_info);
 
 #endif

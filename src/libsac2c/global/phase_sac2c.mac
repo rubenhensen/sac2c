@@ -711,6 +711,9 @@ PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
 SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
 
+SUBPHASE (acul, "Annotate CUDA loops", ACULdoAnnotateCUDALoop, global.backend == BE_cuda,
+          wlt)
+
 SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt)
 
 SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
@@ -738,6 +741,9 @@ SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
+
+SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
+          global.backend == BE_cuda, wlt)
 
 SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
           CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
@@ -944,11 +950,22 @@ SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
+/*
+SUBPHASE( pknlg,
+          "Prepare kernel generation",
+          PKNLGdoPrepareKernelGeneration,
+          global.backend == BE_cuda,
+          pc)
+*/
+
 SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           global.backend == BE_cuda, pc)
 
-SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval,
-          global.backend != BE_cuda, pc)
+SUBPHASE (culknl, "Create Cuda loop kernel functions", CULKNLdoCreateCudaLoopKernels,
+          global.backend == BE_cuda, pc)
+
+SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
+          pc)
 
 SUBPHASE (dst, "Computing static thread mapping", DSTdoDistributeThreads,
           ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)

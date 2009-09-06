@@ -1789,6 +1789,10 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
                 }
 
+                if (FUNDEF_ISCUDARIZABLE (arg_node)) {
+                    fprintf (global.outfile, " * CUDA loop function:\n");
+                }
+
                 if (FUNDEF_ISMTFUN (arg_node)) {
                     fprintf (global.outfile, " * MT function:\n");
                 } else if (FUNDEF_ISSTFUN (arg_node)) {
@@ -2243,7 +2247,11 @@ PRTassign (node *arg_node, info *arg_info)
         if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
             if (PRF_PRF (LET_EXPR (instr)) == F_host2device
                 && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node)) {
-                fprintf (global.outfile, "/** Is not allowed to be moved up**/ ");
+                fprintf (global.outfile, "/** Is not allowed to be moved up**/\n");
+            }
+            if (PRF_PRF (LET_EXPR (instr)) == F_device2host
+                && ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node)) {
+                fprintf (global.outfile, "/** Is not allowed to be moved down**/\n");
             }
         }
     }
@@ -2287,6 +2295,11 @@ PRTdo (node *arg_node, info *arg_info)
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    if (DO_ISCUDARIZABLE (arg_node)) {
+        fprintf (global.outfile, "/********** Cudarizable do loop **********/\n");
+        INDENT;
     }
 
     if (DO_LABEL (arg_node) != NULL) {
@@ -3914,6 +3927,10 @@ PRTpart (node *arg_node, info *arg_info)
 
     tmp_npart = INFO_NPART (arg_info);
     INFO_NPART (arg_info) = arg_node;
+
+    if (PART_CUDARIZABLE (arg_node)) {
+        fprintf (global.outfile, "/*** CUDA Partition ***/\n");
+    }
 
     /* print generator */
     INDENT; /* each gen in a new line. */

@@ -67,6 +67,10 @@
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
     }
+//----------------------------------------------------------------------------
+
+#define SAC_CUDA_FUN_DEF_END(...)
+
 //-------------------------------------------------------------------------------------------------------
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \

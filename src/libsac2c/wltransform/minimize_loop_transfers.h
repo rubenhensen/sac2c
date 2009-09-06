@@ -5,8 +5,7 @@
 
 #include "types.h"
 
-extern node *MLTRANdoMinimizeLoopTransfers (node *arg_node, bool *flag);
-// extern node *MLTRANdoMinimizeLoopTransfers(node *arg_node);
+extern node *MLTRANdoMinimizeLoopTransfers (node *arg_node);
 extern node *MLTRANprf (node *arg_node, info *arg_info);
 extern node *MLTRANassign (node *arg_node, info *arg_info);
 extern node *MLTRANlet (node *arg_node, info *arg_info);
@@ -16,8 +15,5 @@ extern node *MLTRANid (node *arg_node, info *arg_info);
 extern node *MLTRANarg (node *arg_node, info *arg_info);
 extern node *MLTRANfuncond (node *arg_node, info *arg_info);
 extern node *MLTRANreturn (node *arg_node, info *arg_info);
-/*
-extern node *MLTRANid(node *arg_node, info *arg_info);
-extern node *MLTRANwith(node *arg_node, info *arg_info);
-*/
+
 #endif

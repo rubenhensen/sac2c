@@ -4,6 +4,6 @@
 
 #include "types.h"
 
-extern node *MTRANdoMinimizeTransfers (node *arg_node);
+extern node *MTRANdoMinimizeTransfers (node *syntax_tree);
 
 #endif
