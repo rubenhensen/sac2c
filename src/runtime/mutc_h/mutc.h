@@ -55,7 +55,7 @@
 #define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sl_anon, name)
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#define SAC_MUTC_ARG_FUN(name, nt, t) SAC_MUTC_ARG_THREAD (t, name, nt)
+#define SAC_MUTC_ARG_FUN(name, nt, t) SAC_MUTC_ARG_THREAD (name, nt, t)
 #else
 #define SAC_MUTC_ARG_FUN(name, nt, t) name
 #endif
