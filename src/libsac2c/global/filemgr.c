@@ -206,6 +206,30 @@ FMGRcheckExistFile (const char *dir, const char *name)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool FMGRcheckExistDir(const char *dir)
+ *
+ * @brief The function checks whether the given directory path exists.
+ *
+ * @param dir directory path
+ *
+ * @return TRUE if the directory exists and is writeable.
+ ******************************************************************************/
+bool
+FMGRcheckExistDir (const char *dir)
+{
+    int status;
+    struct stat buffer;
+
+    DBUG_ENTER ("FMGRcheckExistDir");
+
+    DBUG_ASSERT ((dir != NULL), "Function FMGRcheckExistDir() called with dir NULL");
+
+    status = stat (dir, &buffer);
+
+    DBUG_RETURN ((status == 0));
+}
+
 /*
  *
  *  functionname  : FMGRappendPath
@@ -614,16 +638,18 @@ FMGRsetFileNames (node *module)
 
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
-            if (global.backend != BE_cuda)
+            if (global.backend != BE_cuda) {
                 global.cfilename = "a.out.c";
-            else
+            } else {
                 global.cfilename = "a.out.cu";
+            }
             global.targetdir = "";
         } else {
-            if (global.backend != BE_cuda)
+            if (global.backend != BE_cuda) {
                 global.cfilename = STRcat (global.outfilename, ".c");
-            else
+            } else {
                 global.cfilename = STRcat (global.outfilename, ".cu");
+            }
             global.targetdir = "";
         }
     } else {
@@ -648,6 +674,9 @@ FMGRsetFileNames (node *module)
             global.targetdir = "";
         } else {
             global.targetdir = STRcat (global.outfilename, "/");
+            if (!FMGRcheckExistDir (global.targetdir)) {
+                CTIabort ("Target directory `%s' does not exist.", global.targetdir);
+            }
         }
 
         global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
