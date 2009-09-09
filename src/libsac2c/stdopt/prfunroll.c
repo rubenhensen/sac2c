@@ -486,6 +486,7 @@ UPRFprf (node *arg_node, info *arg_info)
 
             scl = TYfreeType (scl);
 
+            global.optcounters.prfunr_prf++;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TCmakeVector (TYmakeAKS (TYcopyType (TYgetScalar (
                                                   IDS_NTYPE (INFO_LHS (arg_info)))),

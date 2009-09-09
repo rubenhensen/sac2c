@@ -122,10 +122,10 @@
 #include "shape.h"
 #include "DupTree.h"
 #include "constants.h"
-#include "globals.h"
 #include "pattern_match.h"
 #include "check.h"
 #include "phase.h"
+#include "ctinfo.h"
 
 /**
  * INFO structure
@@ -671,16 +671,16 @@ WLSIMPfold (node *arg_node, info *arg_info)
                       INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
 
-#ifdef FIXME // I have no idea of dim/shape here */
-    int shp;
-
     if (isSAAMode ()) {
+        CTIwarn ("WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
+#ifdef FIXME // I have no idea of dim/shape here */
+        int shp;
         shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
         AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
         AVIS_SHAPE (IDS_AVIS (lhs))
           = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
-    }
 #endif // FIXME // I have no idea what to do here */
+    }
 
     INFO_REPLACE (arg_info) = TRUE;
 
@@ -733,14 +733,15 @@ WLSIMPpropagate (node *arg_node, info *arg_info)
                  " DUPdoDupNode should not copy the IDS_NEXT!");
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
 
-#ifdef FIXME // I have no idea of dim/shape here */
     if (isSAAMode ()) {
+        CTIwarn ("WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
+#ifdef FIXME // I have no idea of dim/shape here */
         shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
         AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);
         AVIS_SHAPE (IDS_AVIS (lhs))
           = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
-    }
 #endif // FIXME // I have no idea what to do here */
+    }
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -797,6 +798,7 @@ WLSIMPpart (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         INFO_ZEROTRIP (arg_info) = FALSE;
         INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) - 1;
+        global.optcounters.wlsimp_wl++;
     }
 
     DBUG_RETURN (arg_node);

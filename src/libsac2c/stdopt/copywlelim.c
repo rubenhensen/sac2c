@@ -350,6 +350,7 @@ CWLEwith (node *arg_node, info *arg_info)
                                        AVIS_SHAPE (INFO_RHSAVIS (arg_info)))) {
             DBUG_PRINT ("CWLE", ("everything ok. replacing wl with %s",
                                  AVIS_NAME (INFO_RHSAVIS (arg_info))));
+            global.optcounters.cwle_wl++;
 
             /*
              * 1. free the with-loop, we do not need it anymore.

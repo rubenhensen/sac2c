@@ -133,6 +133,9 @@ OPTCOUNTER (tup_upgrades, TRUE, "type(s) upgraded")
 OPTCOUNTER (tup_rtu_expr, TRUE, "type(s) upgraded reversely")
 OPTCOUNTER (sisi_expr, TRUE, "unused or constant function argument(s) removed")
 OPTCOUNTER (wlprop_expr, TRUE, "withloop(s) propagated")
+OPTCOUNTER (cwle_wl, TRUE, "copy-with-loop(s) eliminated")
+OPTCOUNTER (prfunr_prf, TRUE, "primitive function(s) unrolled")
+OPTCOUNTER (wlsimp_wl, TRUE, "with-loop(s) simplified")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
