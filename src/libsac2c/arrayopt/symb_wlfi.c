@@ -946,7 +946,7 @@ SWLFIid (node *arg_node, info *arg_info)
     DBUG_ENTER ("SWLFIid");
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
 #ifdef NOISY
-    DBUG_PRINT ("SWLFI", ("WLIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_PRINT ("SWLFI", ("SWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     foldeewl = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
@@ -957,7 +957,7 @@ SWLFIid (node *arg_node, info *arg_info)
         /* First reference to this WL. */
         WITH_REFERENCED_FOLDERWL (foldeewl) = INFO_FOLDERWL (arg_info);
         WITH_REFERENCED_FOLD (foldeewl) = 0;
-        DBUG_PRINT ("SWLFI", ("WLIid found first reference to %s",
+        DBUG_PRINT ("SWLFI", ("SWLFIid found first reference to %s",
                               AVIS_NAME (ID_AVIS (arg_node))));
     }
 
@@ -970,12 +970,12 @@ SWLFIid (node *arg_node, info *arg_info)
         && (WITH_REFERENCED_FOLDERWL (foldeewl) == INFO_FOLDERWL (arg_info))) {
         (WITH_REFERENCED_FOLD (foldeewl)) += 1;
         DBUG_PRINT ("SWLFI",
-                    ("WLIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
+                    ("SWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
                      AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (foldeewl)));
     } else {
 #ifdef NOISY
-        DBUG_PRINT ("SWLFI",
-                    ("WLIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("SWLFI", ("SWLFIid %s is not defined by a WL",
+                              AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
     }
 
@@ -1082,7 +1082,7 @@ SWLFImodarray (node *arg_node, info *arg_info)
         foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (foldeeavis));
         foldeewl = LET_EXPR (foldeeassign);
         (WITH_REFERENCED_FOLD (foldeewl))++;
-        DBUG_PRINT ("SWLFI", ("WLImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+        DBUG_PRINT ("SWLFI", ("SWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
                               AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (foldeewl)));
     }
 
