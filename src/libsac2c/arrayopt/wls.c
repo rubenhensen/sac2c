@@ -299,24 +299,12 @@ node *
 WLSassign (node *arg_node, info *arg_info)
 {
     node *oldnassign;
-#ifdef FIXME
-    node *L;
-#endif // FIXME
 
     DBUG_ENTER ("WLSassign");
 
     /*
      * Bottom-up traversal
      */
-
-#ifdef FIXME
-    /* FIXME DEBUG OINLY NEXT FEW LINES */
-    L = ASSIGN_INSTR (arg_node);
-    if (N_let == NODE_TYPE (L)) {
-        DBUG_ASSERT (AVIS_SSAASSIGN ((IDS_AVIS (LET_IDS (L)))) == arg_node,
-                     ("AVIS_SSAASSIGN pointers do not reflect."));
-    }
-#endif // FIXME
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
