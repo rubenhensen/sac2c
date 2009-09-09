@@ -4,8 +4,18 @@
  *
  * @file ElimSubDiv.c
  *
- * @brief replaces subtraction and division by introducing special
- * primitive negation and reciprocal operator (F_esd_neg, F_esd_rec)
+ * @brief replaces subtraction introducing special
+ *        primitive negation operator (F_esd_neg):
+ *
+ *      d = sub( b, c);
+ *
+ *    by:
+ *
+ *      c' = F_esdneg( c);
+ *      d  = add( b, c);
+ *
+ *  This opt was also supposed to replace division by multiplication,
+ *  but that is deactivated. See below.
  *
  */
 #include "ElimSubDiv.h"
@@ -220,6 +230,9 @@ ESDfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
+    DBUG_PRINT ("ESD", ("traversing body of (%s) %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        FUNDEF_NAME (arg_node)));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -337,6 +350,9 @@ ESDprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ESDprf");
 
+    DBUG_PRINT ("ESD",
+                ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+
     st = TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info))));
 
     /*
@@ -400,6 +416,8 @@ ESDprf (node *arg_node, info *arg_info)
          */
         EXPRS_NEXT (PRF_ARGS (arg_node)) = TBmakeExprs (TBmakeId (avis), NULL);
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
+        DBUG_PRINT ("ESD",
+                    ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
     }
 
     DBUG_RETURN (arg_node);
