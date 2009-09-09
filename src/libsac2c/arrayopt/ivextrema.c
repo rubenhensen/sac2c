@@ -505,7 +505,7 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
  *   @brief arg_node is the N_avis of a GENERATOR_BOUND2 node, which
  *          we will adjust to be an exact extrema value
  *          by adding/subtracting 1 from it. This makes life
- *          easier downstream, when we start to do arithmetic
+ *          easier downstream, when we start to do intersection calculation
  *          on the extrema.
  *          Actually, arg_node can also be a WITHID_IDS node,
  *          so we have to decide whether to generate vector
@@ -513,10 +513,12 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
  *
  *          We generate, along with a vardec for b2':
  *
- *          b2' = _add_VxS_( b2, k);
+ *          b2' = _add_VxS_( b2, 1);   NB. k=1
+ *          b2' = _sub_VxS_( b2, 1);   NB. k=-1
+ *
  *
  *   @param  arg_node: a GENERATOR_BOUND2 N_avis node.
- *           int n:    Constant value to be used as
+ *           int k:    Constant value to be used.
  *           vardecs:  Address of a vardecs chain that we will append to.
  *           preassigns: Address of a preassigns chain we will append to.
  *
@@ -535,7 +537,7 @@ IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
 
     DBUG_ENTER ("IVEXIadjustExtremaBound");
 
-    kid = IVEXImakeIntScalar (k, vardecs, preassigns);
+    kid = IVEXImakeIntScalar (abs (k), vardecs, preassigns);
 
     zavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYcopyType (AVIS_TYPE (arg_node)));
@@ -544,7 +546,11 @@ IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
 
     *vardecs = TBmakeVardec (zavis, *vardecs);
     zids = TBmakeIds (zavis, NULL);
-    op = TUisScalar (AVIS_TYPE (arg_node)) ? F_add_SxS : F_add_VxS;
+    if (1 == k) {
+        op = TUisScalar (AVIS_TYPE (arg_node)) ? F_add_SxS : F_add_VxS;
+    } else {
+        op = TUisScalar (AVIS_TYPE (arg_node)) ? F_sub_SxS : F_sub_VxS;
+    }
     zass
       = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (op, TBmakeId (arg_node), kid)), NULL);
 
