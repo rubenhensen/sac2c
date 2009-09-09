@@ -290,7 +290,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
                 arg_node = new_node;
 #ifdef WARN_MISSING_SAA
             } else {
-                CTIwarn ("Cannot split modarray due to missing symbolic "
+                CTIwarn ("Cannot split modarray_AxVxS due to missing symbolic "
                          "information");
 #endif
             }
@@ -310,7 +310,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
                 arg_node = new_node;
 #ifdef WARN_MISSING_SAA
             } else {
-                CTIwarn ("Cannot split modarray due to missing symbolic "
+                CTIwarn ("Cannot split modarray_AxVxA due to missing symbolic "
                          "information");
 #endif
             }
