@@ -540,7 +540,7 @@ isConstantValue (node *arg_node)
  * description: Predicate for determining if an N_avis node has known extrema.
  *
  * @params  arg_node: an N_avis node.
- * @result: True if the node has both extrema present.
+ * @result: True if the node has either extremum present.
  *
  ******************************************************************************/
 static bool
@@ -687,9 +687,9 @@ buildExtremaChain (node *exprs, int minmax)
  *            NB. minv and maxv are N_exprs chains in the guard.
  *            V = [ I', J, K];   NB. With minv and maxv as extrema of V.
  *
- *          The extrema are attached to I for convenicnce only.
+ *          The extrema are attached to I for convenience only.
  *   UNCRAP
- *            V' = [ I', J, K];
+ *            V' = [ I, J, K];
  *            V = _attachextrema( V', minv, maxv);
  *
  *
@@ -747,7 +747,7 @@ PropagateNarray (node *arg_node, info *arg_info)
          */
         aelemI = DUPdoDupNode (EXPRS_EXPR (ARRAY_AELEMS (v)));
         DBUG_ASSERT (N_id == NODE_TYPE (aelemI),
-                     ("PropagateNarray expected N_id in N_array"));
+                     ("PropagateNarray expected N_id as N_array element"));
 
         DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextrema"));
         Iprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
@@ -756,7 +756,7 @@ PropagateNarray (node *arg_node, info *arg_info)
                                                F_attachextreman, NULL));
 
         /*
-         *       V = [ I', J, K]; NB. With extrema on V.
+         *       V = [ I, J, K]; NB. With extrema on V.
          *
          */
 
