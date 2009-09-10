@@ -23,7 +23,7 @@
 #include "tree_basic.h"
 #include "globals.h"
 
-#ifdef _POSIX_SOURCE
+#if _POSIX_VERSION >= 199009
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -530,7 +530,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     vsprintf (buffer, format, arg_p);
     va_end (arg_p);
 
-#ifdef _POSIX_SOURCE
+#if _POSIX_VERSION >= 199009
     {
         int fd;
         fd = open (buffer, O_CREAT | O_WRONLY,
