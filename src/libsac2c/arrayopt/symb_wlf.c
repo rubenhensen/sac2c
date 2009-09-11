@@ -522,6 +522,7 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
     DBUG_RETURN (val);
 }
 
+#ifdef BROKE
 /** <!--********************************************************************-->
  *
  * @fn static
@@ -571,6 +572,7 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
 
     DBUG_VOID_RETURN;
 }
+#endif // BROKE
 
 /** <!--********************************************************************-->
  *
@@ -1062,6 +1064,7 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     DBUG_RETURN (arg_node);
 }
 
+#ifdef BROKE
 /** <!--********************************************************************-->
  *
  * @fn static node *AppendPart(node *partz, node *newpart)
@@ -1261,6 +1264,7 @@ PartitionSlicer (node *partn, node *lb, node *ub, int d, info *arg_info)
     }
     DBUG_RETURN (partz);
 }
+#endif // BROKE
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
