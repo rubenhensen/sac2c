@@ -229,7 +229,7 @@ node *
 IVESPLITprf (node *arg_node, info *arg_info)
 {
     node *new_node;
-    node *shpprf2;
+    node *shpprf2 = NULL;
     node *avis;
 
     DBUG_ENTER ("IVESPLITprf");
