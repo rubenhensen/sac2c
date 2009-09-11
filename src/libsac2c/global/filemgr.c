@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <regex.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "dbug.h"
 #include "system.h"
@@ -22,12 +25,6 @@
 #include "namespaces.h"
 #include "tree_basic.h"
 #include "globals.h"
-
-#if _POSIX_VERSION >= 199009
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
 
 static char path_bufs[4][MAX_PATH_LEN];
 static int bufsize[4];
@@ -523,6 +520,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     va_list arg_p;
     static char buffer[MAX_PATH_LEN];
     FILE *file;
+    int fd;
 
     DBUG_ENTER ("FMGRwriteOpenExecutable");
 
@@ -530,17 +528,10 @@ FMGRwriteOpenExecutable (const char *format, ...)
     vsprintf (buffer, format, arg_p);
     va_end (arg_p);
 
-#if _POSIX_VERSION >= 199009
-    {
-        int fd;
-        fd = open (buffer, O_CREAT | O_WRONLY,
-                   S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    fd = open (buffer, O_CREAT | O_WRONLY,
+               S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
-        file = fdopen (fd, "w");
-    }
-#else
-    file = fopen (buffer, "w");
-#endif
+    file = fdopen (fd, "w");
 
     if (file == NULL) {
         CTIabort ("Unable to write file \"%s\"", buffer);
