@@ -1204,7 +1204,9 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     node *let_ids, *last_ids;
     node *wlop;
     int dim, i;
-    node *lb, *ub, *lbe, *ube;
+    node *lb = NULL;
+    node *ub = NULL;
+    node *lbe, *ube;
     node *code;
     node *tmpn, *assignn, *blockn, *cexpr;
     node *nassigns = NULL;
