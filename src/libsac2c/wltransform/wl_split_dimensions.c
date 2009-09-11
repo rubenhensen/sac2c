@@ -650,7 +650,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *shape = NULL;
-    node *sexpr;
+    node *sexpr = NULL;
     node *array = NULL;
     pattern *pat;
     int sizeoffset;
