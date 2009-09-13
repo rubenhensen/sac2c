@@ -33,8 +33,16 @@
 #define SAC_MUTC_DECL_THREADFUN2(name, anon, ...) sl_decl (name, void, __VA_ARGS__)
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
-#define SAC_MUTC_DEF_THREADFUN_BEGIN2(name, anon, ...) sl_def (name, void, __VA_ARGS__)
-#define SAC_MUTC_THREADFUN_DEF_END(...) sl_enddef
+
+#define SAC_MUTC_DEF_THREADFUN_BEGIN2(name, anon, ...)                                   \
+    sl_def (name, void, __VA_ARGS__)                                                     \
+    {                                                                                    \
+        SAC_MUTC_THREAD_INIT
+#define SAC_MUTC_THREADFUN_DEF_END(...)                                                  \
+    SAC_MUTC_THREAD_CLEANUP                                                              \
+    }                                                                                    \
+    sl_enddef
+
 #define SAC_MUTC_UNLOCK_SHARED(nt) sl_setp (NT_NAME (nt), 1);
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));
 
@@ -103,6 +111,30 @@
 #define SAC_MUTC_DEF_FUN_BEGIN2_void(name, type, ...)                                    \
     SAC_MUTC_DEF_THREADFUN_BEGIN2 (name, type, __VA_ARGS__)
 #endif /* FUNAP_AS_CREATE */
+
+#if SAC_MUTC_THREAD_MALLOC
+#include "tls_malloc.h"
+#ifdef SAC_HM_MALLOC
+#undef SAC_HM_MALLOC
+#endif
+#define SAC_HM_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
+
+#ifdef SAC_HM_FREE
+#undef SAC_HM_FREE
+#endif
+#define SAC_HM_FREE(var)
+
+#define SAC_MUTC_THREAD_INIT_MALLOC tls_malloc_init ();
+#define SAC_MUTC_THREAD_CLEANUP_MALLOC tls_malloc_cleanup ();
+#else
+#define SAC_MUTC_THREAD_INIT_MALLOC
+#define SAC_MUTC_THREAD_CLEANUP_MALLOC
+
+#endif /* SAC_MUTC_THREAD_MALLOC */
+
+#define SAC_MUTC_THREAD_INIT SAC_MUTC_THREAD_INIT_MALLOC
+
+#define SAC_MUTC_THREAD_CLEANUP SAC_MUTC_THREAD_CLEANUP_MALLOC
 
 #endif /* BACKEND */
 #undef MUTC

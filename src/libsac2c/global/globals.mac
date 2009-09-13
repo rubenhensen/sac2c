@@ -901,8 +901,8 @@ GLOBAL (stringset_t *, dependencies, NULL);
  */
 
 GLOBAL (bool, mutc_fun_as_threads, FALSE);
-GLOBAL (bool, mutc_macros, FALSE);
 GLOBAL (bool, mutc_requires_mutc, FALSE);
+GLOBAL (bool, mutc_thread_mem, FALSE);
 
 #undef GLOBALtype
 #undef GLOBALname
