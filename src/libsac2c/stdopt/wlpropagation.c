@@ -17,7 +17,7 @@
  * - The with-loop contains no selections (no expensive memory access)
  * - The with-loop contains just one selection but is used only
  *   once (that means: as argument of a function application).
- * Then it is assumed to be save to do with-loop propagation.
+ * Then it is assumed to be safe to do with-loop propagation.
  *
  **************************************************************************/
 
@@ -37,6 +37,7 @@
 #include "DataFlowMask.h"
 #include "infer_dfms.h"
 #include "SSAInferLI.h"
+#include "phase.h"
 
 #include "wlpropagation.h"
 
@@ -413,6 +414,9 @@ WLPROPexprs (node *arg_node, info *arg_info)
 node *
 WLPROPid (node *arg_node, info *arg_info)
 {
+    node *newids;
+    node *d;
+
     DBUG_ENTER ("WLPROPid");
 
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
@@ -519,8 +523,8 @@ WLPROPid (node *arg_node, info *arg_info)
                   = DUPdoDupTreeLutSsa (withloop, lut, AP_FUNDEF (INFO_AP (arg_info)));
 
                 witharg = INFO_CORRESPONDINGFUNARG (arg_info);
-                new_withloop
-                  = TBmakeLet (TBmakeIds (ARG_AVIS (witharg), NULL), new_withloop);
+                newids = TBmakeIds (ARG_AVIS (witharg), NULL);
+                new_withloop = TBmakeLet (newids, new_withloop);
                 new_withloop
                   = TBmakeAssign (new_withloop,
                                   FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))));
@@ -528,6 +532,18 @@ WLPROPid (node *arg_node, info *arg_info)
                 FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))) = new_withloop;
 
                 AVIS_SSAASSIGN (ARG_AVIS (witharg)) = new_withloop;
+
+                if (isSAAMode ()) {
+                    d = AVIS_DIM (ARG_AVIS (witharg));
+                    d = (NULL != d) ? FREEdoFreeTree (d) : NULL;
+                    d = AVIS_SHAPE (ARG_AVIS (witharg));
+                    d = (NULL != d) ? FREEdoFreeTree (d) : NULL;
+
+                    AVIS_DIM (ARG_AVIS (witharg))
+                      = DUPdoDupTree (AVIS_DIM (ID_AVIS (arg_node)));
+                    AVIS_SHAPE (ARG_AVIS (witharg))
+                      = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (arg_node)));
+                }
 
                 /*
                  * Now the withloop definition was moved into the body
