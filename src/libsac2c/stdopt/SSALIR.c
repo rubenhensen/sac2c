@@ -14,8 +14,8 @@
  *   the While2Do() transformation called in optimize.c
  *
  * details:
- *   do-loop-invariant removal: assignments that depends only on constants and
- *   other loop-invariant expressions are itself loop invariant and can be
+ *   do-loop-invariant removal: an assignment that depends only on constants
+ *   and other loop-invariant expressions is itself loop invariant and can be
  *   moved up before the do loop.
  *
  *   If we find an assignment in the loop body that is only referenced in the
@@ -90,7 +90,7 @@
  *   Because loop invariant removal is a quite difficult task, we need two
  *   traversals to implement it. A first traversal checks expressions
  *   that are do-loop invariant and marks them; it also marks local identifiers,
- *   e.g. used in withloops. In this traversal we do the withloop-independend
+ *   e.g. used in withloops. In this traversal we do the withloop-independent
  *   removal, too. This is no problem, as we only can move up code in the
  *   fundef itself, we need no vardec adjustment or other signature
  *   modifications.
@@ -100,7 +100,7 @@
  *   definition depth, we can move up the assignment in the context of the
  *   surrounding withloop with this depth. to do so, we add this assignments
  *   to a stack of assignment chains (one for each definition level) in the
- *   movement target level. when the withloop of one level has been processed
+ *   movement target level. When the withloop of one level has been processed,
  *   all moved assignment are inserted in front of the withloop assignment.
  *   that is why we cannot move a withloop in the same step as other
  *   assignments because it can lead to wrong code, when we move code together
@@ -116,7 +116,7 @@
  *
  *   local: an expression is needed only in local usage, e.g. in withloops
  *
- *   On bottom up traversal, we check if all results of an assignment are
+ *   On bottom-up traversal, we check if all results of an assignment are
  *   marked for move-down. If so, we can move down the whole expression.
  *
  * Remark: because the concept of global objects cannot handle withloops
@@ -137,8 +137,22 @@
  *
  *   the LUT is created freshly for each movement, because DupTree() modifies
  *   the LUT with additional entries. for move_up only the general LUT is
- *   needed but if we move down code we must update the entries of the general
+ *   needed but if we move code down, we must update the entries of the general
  *   LUT with the entries of the result mapping LUT.
+ *
+ * Remark on LIR fundef traversal:
+ *
+ *   LACFUNs are only traversed from their single point of call, i.e.,
+ *   the N_ap in the calling function. The recursive call in a LOOPfun
+ *   is never traversed.
+ *
+ *   This means that:
+ *     In non-GLF mode, we ignore LACFUNs in LIRfundef.
+ *     This only happens at the N_module-level invocation of LIR.
+ *
+ *     In GLF mode, it means we never traverse LOCALFUNS.
+ *     Hence, the only way for a LACFUN to end up in LIRfundef
+ *     is via the N_ap of its caller.
  *
  *****************************************************************************/
 #include "SSALIR.h"
@@ -155,6 +169,8 @@
 #include "change_signature.h"
 #include "globals.h"
 #include "new_types.h"
+#include "phase.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -487,7 +503,10 @@ CreateNewResult (node *avis, info *arg_info)
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
-    /* FIXME should set AVIS_DIM/SHAPE here */
+    if (isSAAMode ()) {
+        /* FIXME should set AVIS_DIM/SHAPE here */
+        CTIwarn ("CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -912,7 +931,6 @@ LIRfundef (node *arg_node, info *arg_info)
      * traverse only in next fundef if traversal started in module node
      */
     if (INFO_TRAVSTART (arg_info) == TS_module) {
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         if (INFO_FUNDEF (arg_info) == NULL) {
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
@@ -1126,8 +1144,6 @@ LIRassign (node *arg_node, info *arg_info)
          */
         tmp = arg_node;
         arg_node = TBmakeAssign (NULL, ASSIGN_NEXT (arg_node));
-
-        /* FIXME : Should set AVIS_DIM/SHAPE AVIS_SSAASSIGN here !!*/
 
         DBUG_ASSERT ((remove_assign == FALSE), "wlur expression must not be removed");
 
@@ -1429,8 +1445,12 @@ LIRid (node *arg_node, info *arg_info)
  *   node* LIRap(node *arg_node, info *arg_info)
  *
  * description:
- *   traverses in dependend special function and integrates pre/post-assignment
+ *   traverses in dependent special function and integrates pre/post-assignment
  *   code.
+ *
+ *   We never traverse from any function into a normal function,
+ *   because we do not know the number of call points, and things
+ *   would generally get nasty.
  *
  *****************************************************************************/
 node *
@@ -1442,12 +1462,11 @@ LIRap (node *arg_node, info *arg_info)
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     /*
-     * traverse special fundef without recursion when doing module-wise
-     * optimization
+     * Always traverse LACFUNs, but avoid the recursive loopfun call
+     *
      */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))
-        && (INFO_TRAVSTART (arg_info) == TS_module)) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("LIR", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
@@ -1821,7 +1840,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
             /* free temp. LUT */
             move_table = LUTremoveLut (move_table);
 
-            /* one loop invarinat expression removed */
+            /* one loop invarinant expression removed */
             global.optcounters.lir_expr++;
 
             /* move up expression can be removed - no further references */
@@ -1849,7 +1868,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
             /* free temp. LUT */
             move_table = LUTremoveLut (move_table);
 
-            /* one loop invarinat expression moved */
+            /* one loop invarinant expression moved */
             global.optcounters.lir_expr++;
 
             /*
