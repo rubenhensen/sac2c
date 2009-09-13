@@ -133,23 +133,25 @@ LIBBcreateLibrary (node *syntax_tree)
         SYSstartTracking ();
     }
 
-    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
+    if (global.backend == BE_mutc || (!global.mutc_requires_mutc)) {
+        deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
-    CreateStaticLibrary (deplibs);
+        CreateStaticLibrary (deplibs);
 
-    CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
+        CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
 
-    libraryName = STRcatn (3, "lib", global.modulename, "Mod.so");
-    ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
+        libraryName = STRcatn (3, "lib", global.modulename, "Mod.so");
+        ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
 
-    DBUG_PRINT ("LIBB", ("linker command: %s", ldCmd));
+        DBUG_PRINT ("LIBB", ("linker command: %s", ldCmd));
 
-    SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
-             libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
+        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
+                 libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
 
-    libraryName = MEMfree (libraryName);
-    ldCmd = MEMfree (ldCmd);
-    deplibs = MEMfree (deplibs);
+        libraryName = MEMfree (libraryName);
+        ldCmd = MEMfree (ldCmd);
+        deplibs = MEMfree (deplibs);
+    }
 
     CTInote ("Creating shared SAC library `lib%sTree.so'", global.modulename);
 

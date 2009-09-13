@@ -23,6 +23,17 @@
 
 #endif
 
+#ifdef SAC_MUTC_FUNAP_AS_CREATE
+
+#define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
+    void svp_io_putn (long long a, int t);                                               \
+    void sac_svp_io_putn (int a, int t)                                                  \
+    {                                                                                    \
+        svp_io_putn ((long long)a, t);                                                   \
+    }
+
+#else
+
 #define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
     sl_decl (svp_io_putn, void, sl_glparm (long long, a), sl_glparm (int, t));           \
     sl_def (sac_svp_io_putn, void, sl_glparm (int, a), sl_glparm (int, t))               \
@@ -32,6 +43,8 @@
                      sl_glarg (int, sl_anon, sl_getp (t)));                              \
     }                                                                                    \
     sl_enddef
+
+#endif
 
 #define SAC_MUTC_THE_WORLD_TAGS()                                                        \
     T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_USG (FPA, T_EMPTY))))))
@@ -62,7 +75,8 @@
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
         SAC_COMMANDLINE_SET (0, NULL);                                                   \
-        SAC_ND_FUNAP2 (SACwf__MAIN__main, SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));   \
+        SAC_MUTC_THREAD_FUNAP (SACwf__MAIN__main,                                        \
+                               SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));              \
     }                                                                                    \
     sl_enddef
 

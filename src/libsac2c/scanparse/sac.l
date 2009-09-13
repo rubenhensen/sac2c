@@ -253,6 +253,7 @@ int charpos = 0;
 "wlcomp"                   { FILTER( WLCOMP); }
 "cachesim"                 { FILTER( CACHESIM); }
 "specialize"               { FILTER( SPECIALIZE); }
+"mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
 
 "int"                      { FILTER( TYPE_INT); }
 "float"                    { FILTER( TYPE_FLOAT); }

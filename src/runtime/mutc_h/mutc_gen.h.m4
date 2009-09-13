@@ -23,8 +23,9 @@ start_icm_definition(mutc_gen)
  */
 
 pat(`SAC_MUTC_ARG', `1', `1', `NT_USG')
-rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_FUN', `FPA')
-rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_FUN', `FPO')
+rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_FUN', `FRROR')
+rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_FUN', `FRROR')
+rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_FUN', `FAG')
 rule(`SAC_MUTC_ARG', `SAC_MUTC_ARG_THREAD', `*USG')
 
 pat(`SAC_MUTC_ARG_THREAD', `1', `1', `NT_REG', `NT_SCO', `NT_SHP')

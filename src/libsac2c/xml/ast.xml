@@ -381,6 +381,11 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="TMFT" name="Tag main function as thread function" default="sons" include="tag_main_fun_thread.h">
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="TP" name="Tag Preparation" default="sons" include="tag_preparation.h" >
         <travuser>
           <node name="Arg" />
@@ -2979,7 +2984,7 @@
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags/>
     </node>
 <!--
 
@@ -3868,7 +3873,10 @@ N_structdef :
           <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
         </flag>
         <flag name="IsThreadFun">
-          <description>This is a lifited with3.  The function is only referenced once by the with3 it was lifted from.</description>
+          <description>This function is a mutc thread function.</description>
+        </flag>
+        <flag name="IsFunThreadFun">
+          <description>This function is a mutc thread function behaving as a normal function.  Lifted with3s should never have this set as they are only called from one context!  These functions are part of the FunDecs chain not the ThreadFuns chain</description>
         </flag>
         <flag name="IsDoFun">
           <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
@@ -5666,6 +5674,7 @@ N_structdef :
        </attributes>
       <flags>
         <flag name="RefcountDots" default="FALSE" />
+        <flag name="MutcThreadFun" default="FALSE" />
       </flags>
     </node>
 <!--

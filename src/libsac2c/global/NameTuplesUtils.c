@@ -272,6 +272,9 @@ NTUgetMutcUsageFromTypes (types *type)
         case MUTC_US_FUNPARAM:
             z = C_funparam;
             break;
+        case MUTC_US_FUNARG:
+            z = C_funarg;
+            break;
         default:
             z = C_none;
             break;
@@ -610,6 +613,9 @@ NTUgetMutcUsageFromNType (ntype *ntype)
         break;
     case MUTC_US_FUNPARAM:
         z = C_funparam;
+        break;
+    case MUTC_US_FUNARG:
+        z = C_funarg;
         break;
     default:
         z = C_none;

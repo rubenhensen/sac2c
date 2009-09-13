@@ -255,7 +255,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MUTC_THREAD_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *   MUTC_THREADFUN_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
@@ -274,6 +274,48 @@ ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **v
     INDENT;
 
     fprintf (global.outfile, "SAC_MUTC_THREAD_AP2(");
+
+    fprintf (global.outfile, "%s, ", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
+
+    fprintf (global.outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMUTC_FUNTHREADFUN_AP( char *name,
+ *                                     char *retname,
+ *                                     int vararg_cnt,
+ *                                     char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MUTC_FUNTHREADFUN_AP( name, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMUTC_FUNTHREADFUN_AP");
+
+#define MUTC_FUNTHREADFUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MUTC_FUNTHREADFUN_AP
+
+    INDENT;
+
+    fprintf (global.outfile, "SAC_MUTC_THREAD_FUNAP(");
 
     fprintf (global.outfile, "%s, ", name);
     ScanArglist (vararg_cnt, 3, ",", ,

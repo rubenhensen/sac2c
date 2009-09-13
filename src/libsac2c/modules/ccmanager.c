@@ -353,18 +353,25 @@ InvokeCCModule (char *cccall, char *ccflags)
     callstring = STRcat (cccall, ccflags);
 
     /*
-     * compile non-PIC code
+     * Do not comple with the C compiler if we have calls to external
+     * function that are thread functions.
+     * Note: We can still compile the tree.
      */
-    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
-                 (void (*) (const char *, const char *, void *))CompileOneFile);
-    CompileOneFile (global.tmp_dirname, "globals.c", callstring);
+    if (global.backend == BE_mutc || (!global.mutc_requires_mutc)) {
+        /*
+         * compile non-PIC code
+         */
+        FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                     (void (*) (const char *, const char *, void *))CompileOneFile);
+        CompileOneFile (global.tmp_dirname, "globals.c", callstring);
 
-    /*
-     * compile PIC code
-     */
-    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
-                 (void (*) (const char *, const char *, void *))CompileOneFilePIC);
-    CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
+        /*
+         * compile PIC code
+         */
+        FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                     (void (*) (const char *, const char *, void *))CompileOneFilePIC);
+        CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
+    }
 
     SYScall ("cd %s; %s %s -c serialize.c", global.tmp_dirname, cccall,
              global.config.genpic);

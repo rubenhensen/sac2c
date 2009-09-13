@@ -113,6 +113,10 @@ TPfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TParg");
 
+    DBUG_PRINT ("TP",
+                ("taging %s function: %s", FUNDEF_ISTHREADFUN (arg_node) ? "thread" : "",
+                 FUNDEF_NAME (arg_node)));
+
     INFO_THREAD (arg_info) = FUNDEF_ISTHREADFUN (arg_node);
     arg_node = TRAVcont (arg_node, arg_info);
 

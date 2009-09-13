@@ -60,10 +60,10 @@
                                      0)                                                  \
         SAC_ND_FUNAP2 (SACf_MutcIO__to_MUTC_IO__i,                                       \
                        SAC_ND_ARG_out ((SACp_OI_object__SSA0_1,                          \
-                                        (SCL, (NHD, (NUQ, (INT, (GLO, (NON, ))))))),     \
+                                        (SCL, (NHD, (NUQ, (INT, (GLO, (FAG, ))))))),     \
                                        int),                                             \
                        SAC_ND_ARG_in ((SACp_emal_2726__isaa_1643__OI_object,             \
-                                       (SCL, (NHD, (NUQ, (INT, (GLO, (NON, ))))))),      \
+                                       (SCL, (NHD, (NUQ, (INT, (GLO, (FAG, ))))))),      \
                                       int))                                              \
         SAC_NOOP ()                                                                      \
         SAC_ASSURE_TYPE_LINE ((SAC_ND_A_DIM (                                            \

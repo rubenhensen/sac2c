@@ -1672,13 +1672,13 @@ MakeFunctionArgs (node *fundef)
             if (name != NULL) {
                 id = TCmakeIdCopyStringNt (name, type);
             } else {
-                id = MakeArgNode (i, type, FALSE);
+                id = MakeArgNode (i, type, FUNDEF_ISTHREADFUN (fundef));
             }
         } else {
             DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
             tag = argtab->tag[i];
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type, FALSE);
+            id = MakeArgNode (i, type, FUNDEF_ISTHREADFUN (fundef));
         }
 
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
@@ -1772,6 +1772,58 @@ GetBaseTypeFromExpr (node *in)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *MakeFunApArgIdsNt( node *ids)
+ *
+ * @brief  Create a function application argument
+ *         This function create a new id node and does not consume the ids node
+ *
+ ****************************************************************************/
+static node *
+MakeFunApArgIdsNt (node *ids)
+{
+    node *new_id;
+    mutcUsage old_usg;
+    DBUG_ENTER ("MakeFunApArgIdsNt");
+
+    old_usg = TYPES_MUTC_USAGE (IDS_TYPE (ids));
+
+    TYPES_MUTC_USAGE (IDS_TYPE (ids)) = MUTC_US_FUNARG;
+
+    new_id = DUPdupIdsIdNt (ids);
+
+    TYPES_MUTC_USAGE (IDS_TYPE (ids)) = old_usg;
+
+    DBUG_RETURN (new_id);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeFunApArgIdNt( node *id)
+ *
+ * @brief  Create a function application argument
+ *         This function create a new id node and does not consume the id node
+ *
+ ****************************************************************************/
+static node *
+MakeFunApArgIdNt (node *id)
+{
+    node *new_id;
+    mutcUsage old_usg;
+    DBUG_ENTER ("MakeFunApArgIdNt");
+
+    old_usg = TYPES_MUTC_USAGE (ID_TYPE (id));
+
+    TYPES_MUTC_USAGE (ID_TYPE (id)) = MUTC_US_FUNARG;
+
+    new_id = DUPdupIdNt (id);
+
+    TYPES_MUTC_USAGE (ID_TYPE (id)) = old_usg;
+
+    DBUG_RETURN (new_id);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *MakeFunApArgs( node *ap)
  *
  * @brief  Builds N_exprs chain of ICM arguments for function applications
@@ -1800,7 +1852,11 @@ MakeFunApArgs (node *ap)
         node *exprs = NULL;
 
         if (argtab->ptr_out[i] != NULL) {
-            exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);
+            if (!FUNDEF_ISTHREADFUN (fundef)) {
+                exprs = TBmakeExprs (MakeFunApArgIdsNt (argtab->ptr_out[i]), icm_args);
+            } else {
+                exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);
+            }
 
             if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
                 exprs = TBmakeExprs (TCmakeIdCopyString (
@@ -1818,8 +1874,14 @@ MakeFunApArgs (node *ap)
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
                          "no N_exprs node found in argtab");
             if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id) {
-                exprs
-                  = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+                if (!FUNDEF_ISTHREADFUN (fundef)) {
+                    exprs
+                      = TBmakeExprs (MakeFunApArgIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
+                                     icm_args);
+                } else {
+                    exprs = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
+                                         icm_args);
+                }
 
                 if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
                     exprs = TBmakeExprs (TCmakeIdCopyString (
@@ -1833,8 +1895,10 @@ MakeFunApArgs (node *ap)
                                                       exprs));
                 }
             } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
-                exprs
-                  = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+                exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG", TCmakeIdCopyString ("FAG"),
+                                                 DUPdoDupNode (
+                                                   EXPRS_EXPR (argtab->ptr_in[i]))),
+                                     icm_args);
                 exprs = TBmakeExprs (TCmakeIdCopyString (
                                        GetBaseTypeFromExpr (argtab->ptr_in[i])),
                                      exprs);
@@ -2620,7 +2684,7 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
               = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
                              TBmakeExprs (MakeArgNode (i,
                                                        ID_TYPE (EXPRS_EXPR (ret_exprs)),
-                                                       FALSE),
+                                                       FUNDEF_ISTHREADFUN (fundef)),
                                           TBmakeExprs (DUPdupIdNt (
                                                          EXPRS_EXPR (ret_exprs)),
                                                        NULL)));
@@ -3003,7 +3067,11 @@ COMPap (node *arg_node, info *arg_info)
     } else if (FUNDEF_ISMTFUN (fundef)) {
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
-        icm = TBmakeIcm ("MUTC_THREADFUN_AP", icm_args);
+        if (FUNDEF_ISFUNTHREADFUN (fundef)) {
+            icm = TBmakeIcm ("MUTC_FUNTHREADFUN_AP", icm_args);
+        } else {
+            icm = TBmakeIcm ("MUTC_THREADFUN_AP", icm_args);
+        }
     } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
         icm = TBmakeIcm ("CUDA_GLOBALFUN_AP", icm_args);
     } else {

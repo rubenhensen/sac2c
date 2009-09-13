@@ -99,7 +99,8 @@ INC  DEC  ADDON  SUBON  MULON  DIVON  MODON
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
-HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING  REFCOUNTDOTS
+HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT MUTCTHREADFUN  REFCOUNTING
+REFCOUNTDOTS
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
@@ -927,6 +928,15 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           PRAGMA_EFFECT( store_pragma) = $3;
+        }
+      | hash_pragma MUTCTHREADFUN
+        { if( pragma_type != PRAG_fundec) {
+            yyerror( "pragma \"mutcthreadfun\" not allowed here");
+          }
+          if (store_pragma == NULL) {
+            store_pragma = TBmakePragma();
+          }
+          PRAGMA_MUTCTHREADFUN( store_pragma) = TRUE;
         }
       | hash_pragma COPYFUN string
         { if( pragma_type != PRAG_typedef) {

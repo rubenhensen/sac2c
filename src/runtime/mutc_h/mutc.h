@@ -68,16 +68,18 @@
 
 #if SAC_MUTC_FUNAP_AS_CREATE
 #undef SAC_ND_FUNAP2
-#define SAC_ND_FUNAP2(name, ...) sl_proccall (name, __VA_ARGS__);
+#define SAC_ND_FUNAP2(name, ...) SAC_MUTC_THREAD_FUNAP (name, __VA_ARGS__);
 #endif /* FUNAP_AS_CREATE */
+
+#define SAC_MUTC_THREAD_FUNAP(name, ...) sl_proccall (name, __VA_ARGS__);
 
 #define SAC_MUTC_GETVAR(var_NT, name) name
 #define SAC_MUTC_GETTHREADPAR(var_NT, name) sl_getp (name)
 
-#ifdef SAC_MUTC_FUNAP_AS_CREATE
+#if SAC_MUTC_FUNAP_AS_CREATE
 #define SAC_MUTC_GETFUNPAR(var_NT, name) SAC_MUTC_GETTHREADPAR (var_NT, name)
 #else
-#define SAC_MUTC_GETFUNPAR(...) SAC_MUTC_C_GETVAR (__VA_ARGS__)
+#define SAC_MUTC_GETFUNPAR(var_NT, name) name
 #endif
 
 #if SAC_MUTC_FUNAP_AS_CREATE

@@ -15,6 +15,8 @@ extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
 extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt,
                                          char **vararg);
+extern void ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt,
+                                            char **vararg);
 extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);
 
 extern void ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg);

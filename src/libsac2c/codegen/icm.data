@@ -66,6 +66,15 @@ ICM_DEF( MUTC_THREADFUN_AP, ICM_TRACE(fun))
 ICM_END( MUTC_THREADFUN_AP, (name, retname, vararg_cnt, vararg))
 #endif
 
+#if defined(MUTC_FUNTHREADFUN_AP) || defined(ICM_ALL)
+ICM_DEF( MUTC_FUNTHREADFUN_AP, ICM_TRACE(fun))
+  ICM_ID( name)
+  ICM_ID( retname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MUTC_FUNTHREADFUN_AP, (name, retname, vararg_cnt, vararg))
+#endif
+
 #if defined(ND_FUN_RET) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_RET, ICM_TRACE(fun))
   ICM_ID( retname)

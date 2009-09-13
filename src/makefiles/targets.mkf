@@ -194,7 +194,8 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         remove_external_code mark_noop_grids \
                         resolve_code_sharing lift_with3_bodies \
                         distribute_threads create_cuda_kernels \
-                        prepare_kernel_generation create_loop_kernels
+                        prepare_kernel_generation create_loop_kernels \
+                        tag_main_fun_thread
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
@@ -241,8 +242,8 @@ runtime_phm_h          := phm
 
 runtime_mt_h           := mt mt_gen
 
-runtime_mutc_h         := mutc_gen mutc_world mutc_tostring \
-                          mutc_unin  mutc mutc_startup
+runtime_mutc_h         := mutc_gen mutc mutc_world mutc_tostring \
+                          mutc_unin mutc_startup
 
 runtime_cuda_h         := cuda cuda_gen
 

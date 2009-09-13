@@ -989,6 +989,9 @@ SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 
 SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
 
+SUBPHASE (tmft, "MUTC tag main function as thread function", TMFTdoTagMainFunThread,
+          ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)
+
 SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
 
 ENDPHASE (pc)
