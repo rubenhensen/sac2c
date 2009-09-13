@@ -9,12 +9,13 @@
  * This file prepares a function definition for being inlined at a concrete
  * application position. This functionality is used by the optimization function
  * inlining, for the inlining of loop and conditional special functions and
- * last but not least for the preparation of fold functions to be inserted into
- * the synchronization barrier code in the case of multithreaded code generation.
+ * last, but not least, for the preparation of fold functions to be
+ * inserted into the synchronization barrier code in the case
+ * of multithreaded code generation.
  *
  * The basic idea is to avoid the introduction of renaming assignments (a=b;)
  * as far as possible. Instead the "interface variables", i.e. the function's
- * formal parameters and the variables that occur in the return-statement, are
+ * formal parameters and the variables that occur in the return statement, are
  * renamed to match those variables that appear at the corresponding syntactic
  * positions of the function application. All other variables, i.e. those being
  * local to the function are consistently renamed to avoid name clashes.
@@ -24,6 +25,38 @@
  * body. This is exploited for an elegant implementation by carefully setting
  * up a look-up table beforehand, that controls all renaming activities as well
  * the establishment of back links appropriate in the inlining context.
+ *
+ * The function to be inlined is a LACFUN, so it has only one calling
+ * point in the calling function. Assume the LACFUN function is this:
+ *
+ *   res1, res2, res3 = LACFUN( cond, parm1, parm2, parm3)
+ *  {
+ *     ...
+ *     return( z1, z2, z2);
+ *  }
+ *
+ *  and the calling site is:
+ *
+ *  callz1, callz2, callz3 = LACFUN( condarg, arg1, arg2, arg3);
+ *
+ * Several types of renaming take place within LACFUN:
+ *
+ *  a. References to formal parameters are replaced by the arguments
+ *     in the LACFUN call:
+ *
+ *      z1, z2, z3 = LACFUN( cond, parm1, parm2, parm3)
+ *
+ *  b. The return values in the LACFUN are renamed to the
+ *     names of calling site results, except where a name
+ *     appears more than once in the return statement, in which
+ *     case an additional assignment is created in the LACFUN.
+ *     Hence, the following renames and assigns take place:
+ *
+ *      z1 --> callz1;
+ *      z2 --> callz2;
+ *
+ *      callz3 = z2;
+ *
  */
 
 #include "tree_basic.h"
@@ -36,7 +69,7 @@
 #include "memory.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
-#include "globals.h"
+#include "phase.h"
 
 #include "prepare_inlining.h"
 
@@ -122,12 +155,12 @@ PINLfundef (node *arg_node, info *arg_info)
     DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
                  "Prepare inlining started on function declaration.");
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    /* Map formal argument names to calling-site names. */
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
     DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
+    /* Rename some vardec names to calling-site names. */
     if (FUNDEF_VARDEC (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut);
     }
@@ -136,12 +169,14 @@ PINLfundef (node *arg_node, info *arg_info)
 
     keep_letids = INFO_LETIDS (arg_info);
 
+    /* Update return var names in LUT; generate new assigns, if needed */
     FUNDEF_RETURN (arg_node) = TRAVdo (FUNDEF_RETURN (arg_node), arg_info);
 
     INFO_LETIDS (arg_info) = keep_letids;
 
     DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
+    /* Perform renames of code in function body. */
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -151,8 +186,9 @@ PINLfundef (node *arg_node, info *arg_info)
  *
  * @fn node *PINLarg( node *arg_node, info *arg_info)
  *
- * @brief puts pairs consisting of formal paramter and corresponding application
- *        argument in a preconstructed look-up table.
+ * @brief puts pairs consisting of formal parameters and
+ *        corresponding application arguments into
+ *         a preconstructed look-up table.
  *
  *
  * @param arg_node
@@ -192,7 +228,7 @@ PINLarg (node *arg_node, info *arg_info)
  *
  *  We first traverse into vardecs to complete setup of the look-up table.
  *  Then we copy the assignment chain with the look-up table in effect.
- *  Finally, the trailing return-statement is eliminated from the copied
+ *  Finally, the trailing return statement is eliminated from the copied
  *  assignment chain and it is stored in the info structure.
  *
  * @param arg_node
@@ -207,14 +243,12 @@ PINLblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PINLblock");
 
-    if (INFO_VARDECS (arg_info) != NULL) {
-        INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
-    }
+    INFO_VARDECS (arg_info) = TRAVopt (INFO_VARDECS (arg_info), arg_info);
 
     INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_INSTR (arg_node), inline_lut);
 
     /*
-     * Due to the construction of the LUT all identifiers' AVIS nodes will
+     * Due to the construction of the LUT, all identifiers' AVIS nodes will
      * be redirected to either AVIS nodes in the calling context or to copies
      * created during copying the vardec chain.
      */
@@ -222,12 +256,10 @@ PINLblock (node *arg_node, info *arg_info)
     INFO_ASSIGNS (arg_info) = TRAVdo (INFO_ASSIGNS (arg_info), arg_info);
     /*
      * Here, we merely traverse the assignment chain to eliminate the trailing
-     * return-statement and to append renaming assignments created beforehand.
+     * return statement and to append renaming assignments created beforehand.
      */
 
-    if (INFO_LETIDS (arg_info) != NULL) {
-        INFO_LETIDS (arg_info) = TRAVdo (INFO_LETIDS (arg_info), arg_info);
-    }
+    INFO_LETIDS (arg_info) = TRAVopt (INFO_LETIDS (arg_info), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -236,9 +268,9 @@ PINLblock (node *arg_node, info *arg_info)
  *
  * @fn node *PINLvardec( node *arg_node, info *arg_info)
  *
- * @brief A variable declaration is either eliminated if it belongs to a
- *        variable that appears in the return-statement, or it is renamed
- *        by traversing into avis node.
+ * @brief A variable declaration is eliminated if it belongs to a
+ *        variable that appears in the return statement; otherwise,
+ *        it is renamed by traversing into avis node.
  *
  * @param arg_node
  * @param arg_info
@@ -252,14 +284,12 @@ PINLvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PINLvardec");
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         /*
          * Since this identifier is marked dead, it must have occurred
-         * in the return-statement. This identifier is renamed to a let-bound
+         * in the return statement. This identifier is renamed to a let-bound
          * variable in the calling context. Hence, the vardec must be eliminated.
          */
         DBUG_PRINT ("PINL", ("Removing vardec %p avis %p (%s)", arg_node,
@@ -268,7 +298,7 @@ PINLvardec (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
     } else {
         /*
-         * This identifier was not found in the return-statement. Hence,
+         * This identifier was not found in the return statement. Hence,
          * it is simply renamed to a fresh name to avoid name clashes
          * in the calling context.
          */
@@ -282,7 +312,9 @@ PINLvardec (node *arg_node, info *arg_info)
  *
  * @fn node *PINLavis( node *arg_node, info *arg_info)
  *
- * @brief Varible name is replaced by a fresh identifier.
+ * @brief Variable name is replaced by a fresh identifier.
+ *        We also traverse the sons and extrema of the AVIS, unless
+ *        we are the same node.
  *
  *
  * @param arg_node
@@ -306,6 +338,21 @@ PINLavis (node *arg_node, info *arg_info)
     MEMfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = name;
 
+#ifdef GARBAGE
+    AVIS_DIM (arg_node) = TRAVopt (AVIS_DIM (arg_node), arg_info);
+    AVIS_SHAPE (arg_node) = TRAVopt (AVIS_SHAPE (arg_node), arg_info);
+
+    this is completely wrong.
+
+      if ((NULL != AVIS_MINVAL (arg_node)) && (arg_node != AVIS_MINVAL (arg_node)))
+    {
+        AVIS_MINVAL (arg_node) = TRAVdo (AVIS_MINVAL (arg_node), arg_info);
+    }
+    if ((NULL != AVIS_MAXVAL (arg_node)) && (arg_node != AVIS_MAXVAL (arg_node))) {
+        AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
+    }
+#endif //  GARBAGE
+
     DBUG_RETURN (arg_node);
 }
 
@@ -313,7 +360,7 @@ PINLavis (node *arg_node, info *arg_info)
  *
  * @fn node *PINLassign( node *arg_node, info *arg_info)
  *
- * @brief traverses assignment chain until the trailing return-statement
+ * @brief traverses assignment chain until the trailing return statement
  *        and eliminates the latter.
  *
  * @param arg_node
@@ -333,9 +380,7 @@ PINLassign (node *arg_node, info *arg_info)
         arg_node = INFO_INSERT (arg_info);
         INFO_INSERT (arg_info) = NULL;
     } else {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -345,15 +390,15 @@ PINLassign (node *arg_node, info *arg_info)
  *
  * @fn node *PINLid( node *arg_node, info *arg_info)
  *
- * @brief Handling of identifiers in return-statement
+ * @brief Handling of identifiers in return statement
  *
  *  Since we never traverse into expression positions otherwise, this code
- *  is only effective in a functions's return-statement.
+ *  is a traversal into a functions's return statement.
  *
  *  Pairs consisting of the return identifier and the variable bound to it in
  *  the application context are put into the preconstructed look-up table.
  *  Additional renaming assignments are inserted if the same variable is
- *  multiply returned by a function or the returned variable also is a formal
+ *  multiply-returned by a function or if the returned variable is a formal
  *  parameter of the function.
  *
  * @param arg_node
@@ -367,6 +412,7 @@ node *
 PINLid (node *arg_node, info *arg_info)
 {
     node *new_avis;
+    node *old_id;
 
     DBUG_ENTER ("PINLid");
 
@@ -375,7 +421,7 @@ PINLid (node *arg_node, info *arg_info)
                  "number of let-bound variables.");
 
     /*
-     * Here, we are definitely inside a return-statement.
+     * Here, we are definitely inside a return statement.
      */
 
     if (NODE_TYPE (AVIS_DECL (ID_AVIS (arg_node))) == N_vardec) {
@@ -392,13 +438,14 @@ PINLid (node *arg_node, info *arg_info)
             == LUTsearchInLutPp (inline_lut, AVIS_NAME (ID_AVIS (arg_node)))) {
             /*
              * If AVIS_NAME is not in the LUT, it has not previously occured
-             * in the return-statement. Therefore, we simply "replace" the ID with that
-             * used in the calling context. Since the copied vardec is no longer needed
+             * in the return statement. Therefore, we simply "replace" the ID
+             * with that used in the calling context.
+             * Since the copied vardec is no longer needed
              * in this case, we mark it as dead and remove it later on.
              *
              * We insert AVIS_NAME into the LUT to keep
              * track of multiple occurrences of the same identifier in the
-             * return-statement. This is the only purpose for storing the name
+             * return statement. This is the only purpose for storing the name
              * string in the LUT.
              */
 
@@ -426,24 +473,31 @@ PINLid (node *arg_node, info *arg_info)
 
         } else {
             /*
-             * This identifier has previously occurred in the return-statement.
-             * Therefore, we cannot simply rename it to the let-variable in the calling
-             * context as that would overwrite the previous binding. Instead, we
-             * create a corresponding assignment, which will later on be appended to
-             * the assignment chain.
+             * This identifier has previously occurred in the return statement.
+             * Therefore, we cannot simply rename it to the let-variable
+             * in the calling context as that would overwrite
+             * the previous binding. Instead, we create a corresponding assignment,
+             * which will later on be appended to the assignment chain.
              */
             DBUG_PRINT ("PINL", ("Return id previously found in return"));
 
+            old_id = TBmakeId (new_avis);
             INFO_INSERT (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (INFO_LETIDS (arg_info)),
                                                     NULL),
-                                         TBmakeId (new_avis)),
+                                         old_id),
                               INFO_INSERT (arg_info));
 
             DBUG_PRINT ("PINL", ("Created new assignment to var %s",
                                  AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
             AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+            if (isSAAMode ()) {
+                AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
+                  = DUPdoDupTree (AVIS_DIM (ID_AVIS (old_id)));
+                AVIS_SHAPE (IDS_AVIS (INFO_LETIDS (arg_info)))
+                  = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (old_id)));
+            }
 
             DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
                                  IDS_AVIS (INFO_LETIDS (arg_info)),
@@ -452,7 +506,7 @@ PINLid (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * The return variable is in fact a parameter of the function to be inlined.
+         * The return variable is also a parameter of the function to be inlined.
          * Therefore, we create an assignment renaming the argument variable to the
          * let variable both in the calling context. This assignment will later on
          * be appended to the assignment chain.
@@ -460,16 +514,23 @@ PINLid (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("PINL", ("Return id is parameter of inline function"));
 
+        old_id = TBmakeId (LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node)));
         INFO_INSERT (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (INFO_LETIDS (arg_info)), NULL),
-                                     TBmakeId (LUTsearchInLutPp (inline_lut,
-                                                                 ID_AVIS (arg_node)))),
+                                     old_id),
                           INFO_INSERT (arg_info));
 
         DBUG_PRINT ("PINL", ("Created new assignment to var %s",
                              AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
         AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+
+        if (isSAAMode ()) {
+            AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
+              = DUPdoDupTree (AVIS_DIM (ID_AVIS (old_id)));
+            AVIS_SHAPE (IDS_AVIS (INFO_LETIDS (arg_info)))
+              = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (old_id)));
+        }
 
         DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
                              IDS_AVIS (INFO_LETIDS (arg_info)),
@@ -514,18 +575,16 @@ PINLids (node *arg_node, info *arg_info)
 #endif
 
     if (new_ssaassign != old_ssaassign) {
-        DBUG_PRINT ("PINL",
-                    ("SSA_ASSIGN corrected for %s.\n", AVIS_NAME (IDS_AVIS (arg_node))));
+        DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN corrected for %s.\n",
+                             AVIS_NAME (IDS_AVIS (arg_node))));
     } else {
-        DBUG_PRINT ("PINL", ("SSA_ASSIGN not corrected for %s.\n",
+        DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN not corrected for %s.\n",
                              AVIS_NAME (IDS_AVIS (arg_node))));
     }
 
     AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = new_ssaassign;
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -570,17 +629,17 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
     fundef = PINLfundef (fundef, arg_info);
     TRAVpop ();
     /*
-     * It may seem very odd to call PINLfundef above right away instead of properly
-     * using the traversal mechanism, but a subtle dependency between the traversal
-     * mechanism the LaC function hook mechanism and the traversal order in inlining
-     * make this design necessary.
+     * It may seem very odd to call PINLfundef right away instead of properly
+     * using the traversal mechanism, but a subtle dependency between the
+     * traversal mechanism, the LaC function hook mechanism, and the
+     * traversal order in inlining make this design necessary.
      */
 
     *vardecs = INFO_VARDECS (arg_info);
     code = INFO_ASSIGNS (arg_info);
 
     arg_info = FreeInfo (arg_info);
-    inline_lut = LUTremoveContentLut (inline_lut);
+    inline_lut = LUTremoveLut (inline_lut);
 
     DBUG_RETURN (code);
 }
