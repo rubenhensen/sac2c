@@ -25,5 +25,9 @@ extern node *FLATGwith (node *arg_node, info *arg_info);
 extern node *FLATGpart (node *arg_node, info *arg_info);
 extern node *FLATGgenerator (node *arg_node, info *arg_info);
 extern node *FLATGassign (node *arg_node, info *arg_info);
+extern node *FLATGcond (node *arg_node, info *arg_info);
+extern node *FLATGdo (node *arg_node, info *arg_info);
+extern node *FLATGwhile (node *arg_node, info *arg_info);
+extern node *FLATGfuncond (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FLATTENGENERATORS_H_ */

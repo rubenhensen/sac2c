@@ -250,9 +250,7 @@ FLATGmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FLATGmodule");
 
-    if (MODULE_FUNS (arg_node)) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -284,13 +282,12 @@ FLATGfundef (node *arg_node, info *arg_info)
      * Furthermore, imported code contains IDS nodes instead of SPIDS nodes!
      * This may lead to problems when this traversal is run.
      */
+    DBUG_PRINT ("FLATG", ("Looking at function %s:", FUNDEF_NAME (arg_node)));
     if ((FUNDEF_BODY (arg_node) != NULL) && !FUNDEF_WASIMPORTED (arg_node)
         && FUNDEF_ISLOCAL (arg_node)) {
         INFO_VARDECS (arg_info) = NULL;
         DBUG_PRINT ("FLATG", ("flattening function %s:", FUNDEF_NAME (arg_node)));
-        if (FUNDEF_ARGS (arg_node)) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -306,9 +303,7 @@ FLATGfundef (node *arg_node, info *arg_info)
     /*
      * Proceed with the next function...
      */
-    if (FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -363,9 +358,7 @@ FLATGpart (node *arg_node, info *arg_info)
     }
 
     /* We have to traverse the generators last */
-    if (PART_GENERATOR (arg_node) != NULL) {
-        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-    }
+    PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -463,6 +456,89 @@ FLATGgenerator (node *arg_node, info *arg_info)
       = FLATGflattenBound (GENERATOR_BOUND2 (arg_node), arg_info);
     GENERATOR_STEP (arg_node) = FLATGflattenBound (GENERATOR_STEP (arg_node), arg_info);
     GENERATOR_WIDTH (arg_node) = FLATGflattenBound (GENERATOR_WIDTH (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGcond(node *arg_node, info *arg_info)
+ *
+ * description: Traverse conditional
+ *
+ ******************************************************************************/
+
+node *
+FLATGcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGcond");
+
+    COND_COND (arg_node) = TRAVopt (COND_COND (arg_node), arg_info);
+    COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGfuncond(node *arg_node, info *arg_info)
+ *
+ * description: Traverse funcond
+ *
+ ******************************************************************************/
+
+node *
+FLATGfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGfuncond");
+
+    FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
+    FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
+    FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGdo(node *arg_node, info *arg_info)
+ *
+ * description: Traverse do-loop
+ *
+ ******************************************************************************/
+
+node *
+FLATGdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGdo");
+
+    DO_COND (arg_node) = TRAVopt (DO_COND (arg_node), arg_info);
+    DO_BODY (arg_node) = TRAVopt (DO_BODY (arg_node), arg_info);
+    DO_SKIP (arg_node) = TRAVopt (DO_SKIP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGwhile(node *arg_node, info *arg_info)
+ *
+ * description: Traverse while-loop
+ *
+ ******************************************************************************/
+
+node *
+FLATGwhile (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGwhile");
+
+    WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
+    WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
