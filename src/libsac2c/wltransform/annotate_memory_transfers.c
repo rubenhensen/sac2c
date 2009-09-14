@@ -1,21 +1,26 @@
 /*****************************************************************************
  *
+ * @defgroup Annotate the memory transfers that are allowed to be
+ *           lifted from a do-fun.
  *
- * file:   annotate_memory_transfers.c
  *
- * prefix: AMTRAN
- *
- * description:
- *   This module decides which <host2device> and <device2host>
- *   can be moved out of the enclosing do-fun. Since host<->device transfers
- *   are expensive operations to perform in CUDA programs, and transfers within
- *   loop make it even more severe, eliminating transfers within loops as
- *   much as possible is crucial to program performance. For detailed explanation
- *   of what transfers can be moved out and what cannot, please see commets
- *   in the code.
+ *   This module decides which <host2device> and <device2host> can be
+ *   lifted out of the enclosing do-fun. Since host<->device transfers
+ *   are expensive operations to perform in CUDA programs, and transfers
+ *   within loop make it even more severe, eliminating transfers within
+ *   loops as much as possible is crucial to program performance. For
+ *   detailed explanation of what transfers can be moved out and what
+ *   cannot, please see commets in the code.
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file annotate_memory_transfers.c
+ *
+ * Prefix: AMTRAN
+ *
+ *****************************************************************************/
 #include "annotate_memory_transfers.h"
 
 #include <stdlib.h>
@@ -27,11 +32,18 @@
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
 
+/* Two traverse mode:
+ *   tarv_collect: we collect variable usage information.
+ *   trav_annoate: we annoate which memory transfer can be lifted out.
+ */
 enum traverse_mode { trav_collect, trav_annotate };
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     bool indofun;
     nlut_t *nlut;
@@ -45,10 +57,6 @@ struct INFO {
     node *letids;
 };
 
-/*
- * INFO macros
- */
-
 #define INFO_NLUT(n) (n->nlut)
 #define INFO_TRAVMODE(n) (n->travmode)
 #define INFO_FUNARGNUM(n) (n->funargnum)
@@ -60,9 +68,6 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_INFUNCOND(n) (n->infuncond)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -97,14 +102,18 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief node *AMTRANdoAnnotateMemoryTransfers( node *syntax_tree)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *AMTRANdoAnnotateMemoryTransfers( node *syntax_tree)
  *
  *****************************************************************************/
 node *
@@ -123,14 +132,21 @@ AMTRANdoAnnotateMemoryTransfers (node *syntax_tree)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *AMTRANfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *AMTRANfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -166,13 +182,10 @@ AMTRANfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANarg( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANarg( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -193,13 +206,10 @@ AMTRANarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANassign( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANassign( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -216,13 +226,10 @@ AMTRANassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANlet( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANlet( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -238,13 +245,10 @@ AMTRANlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANfuncond( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANfuncond( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -255,8 +259,7 @@ AMTRANfuncond (node *arg_node, info *arg_info)
     /* N_funcond can only appear after the recurive do-fun application(?).
      * The N_funcond selects either the value returned from the
      * recursive do-fun application or a value defined in the do-fun body
-     * as the return value of the enclosing do-fun.
-     */
+     * as the return value of the enclosing do-fun. */
     if (INFO_INDOFUN (arg_info)) {
         /* Set flag to TRUE so that AMTRANid knows the current N_id
          * appears in a N_funcond node */
@@ -271,13 +274,10 @@ AMTRANfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANap( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANap( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -285,43 +285,38 @@ AMTRANap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AMTRANap");
 
-    /* If the N_ap is a recursive do-fun application
-     * and the traverse mode is collect.
-     */
-    if (INFO_INDOFUN (arg_info) && INFO_FUNDEF (arg_info) == AP_FUNDEF (arg_node)
-        && INFO_TRAVMODE (arg_info) == trav_collect) {
-        /* The arguments of the recursive do-fun application
-         * need to be stored and will be used in the annotate
-         * traversal.
-         */
-        INFO_RECURSIVE_APARGS (arg_info) = AP_ARGS (arg_node);
+    if (INFO_INDOFUN (arg_info)) {
+        /* If the N_ap is a recursive do-fun application
+         * and the traverse mode is collect. */
+        if (INFO_FUNDEF (arg_info) == AP_FUNDEF (arg_node)
+            && INFO_TRAVMODE (arg_info) == trav_collect) {
+            /* The arguments of the recursive do-fun application
+             * need to be stored and will be used in the annotate
+             * traversal. */
+            INFO_RECURSIVE_APARGS (arg_info) = AP_ARGS (arg_node);
 
-        /* We indicate to AMTRANid that the current N_id is traverses
-         * is actually an argument to the recursive do-fun application.
-         * Therefore, it can decide whether to increment the reference
-         * count of the variable or not, i.e. if the N_id is an argument
-         * of the recursive do-fun application, we do NOT increment
-         * it's reference count.
-         */
-        INFO_INRECURSIVEAPARGS (arg_info) = TRUE;
-        AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
-        INFO_INRECURSIVEAPARGS (arg_info) = FALSE;
-    } else {
-        AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+            /* We indicate to AMTRANid that the current N_id it traverses
+             * is actually an argument of the recursive do-fun application.
+             * Therefore, it can decide whether to increment the reference
+             * count of the variable or not, i.e. if the N_id is an argument
+             * of the recursive do-fun application, we do NOT increment
+             * it's reference count. */
+            INFO_INRECURSIVEAPARGS (arg_info) = TRUE;
+            AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+            INFO_INRECURSIVEAPARGS (arg_info) = FALSE;
+        } else {
+            AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+        }
     }
-
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANid( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANid( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -331,7 +326,6 @@ AMTRANid (node *arg_node, info *arg_info)
 
     if (INFO_INDOFUN (arg_info)) {
         if (INFO_TRAVMODE (arg_info) == trav_collect) {
-
             /* If the N_id is:
              * (1) In the argument list of the recursive do-fun
              *     application or
@@ -371,7 +365,7 @@ AMTRANid (node *arg_node, info *arg_info)
              *
              *    float[*] loop_fun( ...) {
              *      ...
-             *      a_host = host2device( a_dev);
+             *      a_host = device2host( a_dev);
              *      ... (No reference of a_host)
              *      b_host = loop_fun( ... );
              *      c_host = cond ? b_host : a_host;
@@ -400,13 +394,10 @@ AMTRANid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *AMTRANprf( node *arg_node, info *arg_info)
  *
- * @brief node *AMTRANprf( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -426,30 +417,26 @@ AMTRANprf (node *arg_node, info *arg_info)
             /* If we are in trav_annotate traverse mode */
             if (INFO_TRAVMODE (arg_info) == trav_annotate) {
                 id = PRF_ARG1 (arg_node);
-                /* We only look at <host2device> whose host variable
+                /* We only look at <host2device> whose host N_id
                  * is passed in as an argument of the do-fun*/
                 if (NODE_TYPE (ID_DECL (id)) == N_arg) {
                     /* We obtain the N_id in the recursive application argument list
-                     * at the same position as the host variable is in the N_fundef
-                     * argument list.
-                     */
+                     * at the same position as that of the host variable in the N_fundef
+                     * argument list. */
                     node *ap_arg = CUnthApArg (INFO_RECURSIVE_APARGS (arg_info),
                                                ARG_LINKSIGN (ID_DECL (id)));
 
-                    /* If the reference count of the host variable is not 0,
-                     * we annotates the transfer to be not allowed to be moved out.
-                     */
+                    /* If the reference count of the host N_id is not 0,
+                     * we annotates the transfer to be not allowed to be moved out. */
                     if (NLUTgetNum (INFO_NLUT (arg_info), ID_AVIS (id)) != 0) {
                         ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))
                           = TRUE;
                     } else {
                         /* If the declaration of the N_ap argument is not the same as
                          * as that of the host variable (this can happen if the argument
-                         * is a locally defined variable or it's a N_fundef argument at
-                         * some different position), the <host2device> can only be moved
-                         * out if the N_ap argument is defined by a <device2host> i.e.
-                         * its SSA assign is <device2host>:
-                         *    e.g.
+                         * is a locally defined variable), the <host2device> can only be
+                         * moved out if the N_ap argument is defined by a <device2host>
+                         * i.e. its SSA assign is <device2host>: e.g.
                          *
                          *    loop_fun( *, a_host, *, *) {
                          *      ... (No reference of a_host)
@@ -497,8 +484,7 @@ AMTRANprf (node *arg_node, info *arg_info)
                     }
                 }
                 /* If the host variable is not passed as an argument to the do-fun,
-                 * the <host2device> CANNOT be moved out of the do-fun.
-                 */
+                 * the <host2device> CANNOT be moved out of the do-fun. */
                 else {
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info)) = TRUE;
                 }
@@ -511,9 +497,8 @@ AMTRANprf (node *arg_node, info *arg_info)
                 ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (INFO_LASTASSIGN (arg_info)) = FALSE;
             }
             if (INFO_TRAVMODE (arg_info) == trav_annotate) {
-                /* If the reference count of the host variable is not 0,
-                 * we annotates the transfer to be not allowed to be moved out.
-                 */
+                /* If the reference count of the host N_id is not 0,
+                 * we annotates the transfer to be not allowed to be moved out. */
                 if (NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (INFO_LETIDS (arg_info)))
                     != 0) {
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (INFO_LASTASSIGN (arg_info)) = TRUE;
@@ -527,3 +512,11 @@ AMTRANprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

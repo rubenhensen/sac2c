@@ -112,6 +112,9 @@ PKNLGwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PKNLGwith");
 
+    /* If a N_with is in a cudarizable do-loop, it's no
+     * longer cudarizable. Since CUDA doesn't not support
+     * hierachical thread creation */
     if (INFO_INCUDADOLOOP (arg_info)) {
         WITH_CUDARIZABLE (arg_node) = FALSE;
         INFO_WITH (arg_info) = arg_node;
@@ -127,6 +130,8 @@ PKNLGpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PKNLGpart");
 
+    /* If the N_with is no cudarizable, all its partitions
+     * are not cudarizable either */
     if (!WITH_CUDARIZABLE (INFO_WITH (arg_info))) {
         PART_CUDARIZABLE (arg_node) = FALSE;
         PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);

@@ -1,11 +1,7 @@
 /*****************************************************************************
  *
+ * @defgroup Lift memory transfers in loops whenever possible
  *
- * file:   minimize_loop_transfers.c
- *
- * prefix: MLTRAN
- *
- * description:
  *
  *   This module implements the transformation of lifting memory transfers
  *   (<host2device>/<device2host>) out of a do-fun. Memory transfers that
@@ -15,6 +11,13 @@
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file minimize_loop_transfers.c
+ *
+ * Prefix: MLTRAN
+ *
+ *****************************************************************************/
 #include "minimize_loop_transfers.h"
 
 #include <stdlib.h>
@@ -47,9 +50,12 @@
 
 enum traverse_mode { trav_normalfun, trav_dofun };
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     bool indofun;
     node *letids;
@@ -69,10 +75,6 @@ struct INFO {
     node *recursiveapargs;
 };
 
-/*
- * INFO macros
- */
-
 #define INFO_INDOFUN(n) (n->indofun)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_LASTASSIGN(n) (n->lastassign)
@@ -90,9 +92,6 @@ struct INFO {
 #define INFO_ISRECURSIVEAPARGS(n) (n->isrecursiveapargs)
 #define INFO_RECURSIVEAPARGS(n) (n->recursiveapargs)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -133,14 +132,18 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief node *MLTRANdoMinimizeLoopTransfers( node *syntax_tree)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *MLTRANdoMinimizeLoopTransfers( node *syntax_tree)
  *
  *****************************************************************************/
 node *
@@ -163,14 +166,21 @@ MLTRANdoMinimizeLoopTransfers (node *syntax_tree)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *MLTRANfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *MLTRANfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -210,13 +220,10 @@ MLTRANfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANarg( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANarg( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -234,13 +241,10 @@ MLTRANarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANassign( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANassign( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -262,10 +266,9 @@ MLTRANassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    /* If the RHS of this assign is a N_ap and we have finished traversing
+    /* If the RHS of this N_assign is an N_ap and we have finished traversing
      * the N_ap->N_fundef, add lifted memory transfer instructions (if
-     * there's any) to a assigned chain and also any new N_vardec nodes.
-     */
+     * there's any) to a assigned chain and also any new N_vardec nodes. */
     if (INFO_FUNAPDONE (arg_info)) {
         old_next = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
@@ -305,13 +308,10 @@ MLTRANassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANlet( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANlet( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -328,13 +328,10 @@ MLTRANlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANap( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANap( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -351,7 +348,7 @@ MLTRANap (node *arg_node, info *arg_info)
     if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))) {
         /* If this is NOT a recursive application of the enclosing do-fun */
         if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
-            /* Traverse the do-fun arguments first */
+            /* Traverse the N_ap arguments first */
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
             /* Stack info */
@@ -400,13 +397,10 @@ MLTRANap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANid( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANid( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -419,11 +413,10 @@ MLTRANid (node *arg_node, info *arg_info)
     if (INFO_INDOFUN (arg_info)) {
         /* If this N_id occurs in a place other than the argument list
          * of a recursive application of the enclosing do-fun, reset its
-         * N_avis to the (possibly) new N_avis. This is necessary when
+         * N_avis to the new N_avis. This is necessary when
          * a <host2device> is lifted out of the do-fun, and therefore
          * the device variable is passed to the do-fun as an argument
-         * instead of a locally declared/defined variable.
-         */
+         * instead of a locally declared/defined variable. */
         if (!INFO_ISRECURSIVEAPARGS (arg_info)) {
             avis = LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
             if (avis != ID_AVIS (arg_node)) {
@@ -431,14 +424,12 @@ MLTRANid (node *arg_node, info *arg_info)
             }
         } else {
             /* If this N_id occurs in the argument list of the
-             * recursive application of the enclosing do-fun.
-             */
+             * recursive application of the enclosing do-fun. */
             ssaassign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
             if (ISDEVICE2HOST (ssaassign)
                 && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
                 /* If the SSA of this argument is <device2host>, and this
-                 * <device2host> can be moved out of the do-fun.
-                 */
+                 * <device2host> can be moved out of the do-fun. */
                 avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (arg_node));
                 ID_AVIS (arg_node) = avis;
             }
@@ -448,8 +439,7 @@ MLTRANid (node *arg_node, info *arg_info)
              * arguments are host variables. However, since the argument of
              * the N_fundef might changed to a device variable due to an earlier
              * <host2device>, resetting the avis ensures that we pass the
-             * right argument to the recursive do-fun application.
-             */
+             * right argument to the recursive do-fun application. */
             if (NODE_TYPE (AVIS_DECL (ID_AVIS (arg_node))) == N_arg) {
                 ID_AVIS (arg_node) = ARG_AVIS (AVIS_DECL (ID_AVIS (arg_node)));
             }
@@ -461,13 +451,10 @@ MLTRANid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANfuncond( node *syntax_tree)
  *
- * @brief node *MLTRANfuncond( node *syntax_tree)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -493,15 +480,13 @@ MLTRANfuncond (node *arg_node, info *arg_info)
 
         /* The 'then' part of a N_funcond is result returned from the recursive
          * application of the do-fun and the 'else' part is result computed
-         * within the do-fun.
-         */
+         * within the do-fun. */
         ssaassign = AVIS_SSAASSIGN (ID_AVIS (else_id));
         if (ISDEVICE2HOST (ssaassign) && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
             avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
             if (avis != ID_AVIS (else_id)) {
                 /* If the 'else' part is a host variable defined by <device2host>,
-                 * it can be replaced by the corresponding device varaible.
-                 */
+                 * it can be replaced by the corresponding device varaible. */
                 ID_AVIS (else_id) = avis;
 
                 /* Also change the 'then' part and N_ids to device type variables */
@@ -525,13 +510,10 @@ MLTRANfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANreturn( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANreturn( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -557,16 +539,14 @@ MLTRANreturn (node *arg_node, info *arg_info)
             id = EXPRS_EXPR (ret_exprs);
             DBUG_ASSERT ((NODE_TYPE (id) == N_id), "Return value must be a N_id node!");
             /* Set the simple type of N_ret to the simple type of the
-             * corresponding return value (N_id).
-             */
+             * corresponding return value (N_id). */
             simty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ID_AVIS (id))));
             TYsetSimpleType (TYgetScalar (RET_TYPE (fun_rets)), simty);
 
             /* If the return value is of device type while the corresponding
              * N_ids in the calling context is not, we need to insert a
              * <device2host> memory transfer after the do-fun application
-             * in the calling context.
-             */
+             * in the calling context. */
             if (CUisDeviceType (AVIS_TYPE (ID_AVIS (id)))
                 && !TYeqTypes (AVIS_TYPE (IDS_AVIS (ap_ids)), AVIS_TYPE (ID_AVIS (id)))) {
                 node *new_avis = DUPdoDupNode (IDS_AVIS (ap_ids));
@@ -598,13 +578,10 @@ MLTRANreturn (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MLTRANprf( node *arg_node, info *arg_info)
  *
- * @brief node *MLTRANprf( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -620,7 +597,7 @@ MLTRANprf (node *arg_node, info *arg_info)
             if (!ASSIGN_ISNOTALLOWEDTOBEMOVEDUP ((INFO_LASTASSIGN (arg_info)))) {
                 id = PRF_ARG1 (arg_node);
                 DBUG_ASSERT (NODE_TYPE (ID_DECL (id)) == N_arg,
-                             "Host variable of is not a N_arg!");
+                             "Host variable of is not declared as an N_arg!");
                 /* If the <host2device> is allowed to be moved out of the do-fun,
                  * the host variable argument can be replaced by the device variable.
                  * Note that if <host2device> can be moved out, the host variable
@@ -636,9 +613,9 @@ MLTRANprf (node *arg_node, info *arg_info)
                  *
                  *   ==>
                  *
+                 *   a_dev = host2device( a_host);
                  *   loop_fun(..., a_dev, ...) {
                  *     ...
-                 *     a_dev = host2device( a_host);
                  *     ...
                  *   }
                  *
@@ -653,8 +630,7 @@ MLTRANprf (node *arg_node, info *arg_info)
 
                 /* Insert pair [N_vardec->avis] -> [N_arg->avis] into H2D
                  * table. Therefore, N_vardec->avis of any subsequent N_id
-                 * nodes will be replaced by N_arg->avis.
-                 */
+                 * nodes will be replaced by N_arg->avis. */
                 INFO_H2DLUT (arg_info)
                   = LUTinsertIntoLutP (INFO_H2DLUT (arg_info), VARDEC_AVIS (vardec),
                                        ARG_AVIS (arg));
@@ -667,9 +643,8 @@ MLTRANprf (node *arg_node, info *arg_info)
 
                 /* Get the argument of the N_ap in calling context corresponding
                  * to the N_arg of the N_fundef being replaced. Since we've already
-                 * assigned each N_arg a sequential number in the (Linksign) field,
-                 * finding the N_ap argument at the same position is easy.
-                 */
+                 * assigned each N_arg a sequential number in the Linksign field,
+                 * finding the N_ap argument at the same position is easy. */
                 node *ap_arg = CUnthApArg (INFO_APARGS (arg_info), ARG_LINKSIGN (arg));
                 DBUG_ASSERT ((NODE_TYPE (ap_arg) == N_id),
                              "Arguments of N_ap must be N_id nodes!");
@@ -681,6 +656,8 @@ MLTRANprf (node *arg_node, info *arg_info)
                                                                        ID_AVIS (ap_arg)),
                                                                      NULL))),
                                   INFO_APPREASSIGNS (arg_info));
+
+                /* Replace the N_avis of ap_arg to the new device N_avis */
                 ID_AVIS (ap_arg) = new_avis;
                 /* Maintain SSA property */
                 AVIS_SSAASSIGN (new_avis) = INFO_APPREASSIGNS (arg_info);
@@ -703,3 +680,11 @@ MLTRANprf (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

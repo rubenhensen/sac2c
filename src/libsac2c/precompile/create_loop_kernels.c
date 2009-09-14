@@ -103,6 +103,15 @@ CULKNLdo (node *arg_node, info *arg_info)
     DBUG_ENTER ("CULKNLdo");
 
     if (DO_ISCUDARIZABLE (arg_node)) {
+
+        FILE *fout = fopen ("maskout.c", "a");
+
+        if (STReq (DO_LABEL (arg_node), "_dup_13193____f2l_10925_label")) {
+            DFMprintMask (fout, "%s\n", DO_IN_MASK (arg_node));
+            // DFMprintMaskDetailed( fout, DO_OUT_MASK( arg_node));
+            // DFMprintMaskDetailed( fout, DO_LOCAL_MASK( arg_node));
+        }
+
         old_incudadoloop = INFO_INCUDADOLOOP (arg_info);
         INFO_INCUDADOLOOP (arg_info) = TRUE;
         DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);

@@ -1,19 +1,21 @@
 /*****************************************************************************
  *
+ * @defgroup
  *
- * file:   annotate_cuda_withloop.c
- *
- * prefix: ACUWL
- *
- * description:
  *
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file annotate_cuda_partition.c
+ *
+ * Prefix: ACUPTN
+ *
+ *****************************************************************************/
 #include "annotate_cuda_partition.h"
 
 #include <stdlib.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -67,9 +69,12 @@ typedef struct ARRAYLIST_STRUCT {
 
 typedef enum { mark_potential, unmark_potential } travmode_t;
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     travmode_t mode;
     node *arrayavis;
@@ -77,17 +82,11 @@ struct INFO {
     node *maxarrayavis;
 };
 
-/*
- * INFO macros
- */
 #define INFO_MODE(n) (n->mode)
 #define INFO_ARRAYAVIS(n) (n->arrayavis)
 #define INFO_ARRAYLIST(n) (n->arraylist)
 #define INFO_MAXARRAYAVIS(n) (n->maxarrayavis)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -97,7 +96,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    // INFO_MODE( result)     =  mark_potential;
     INFO_ARRAYAVIS (result) = NULL;
     INFO_ARRAYLIST (result) = NULL;
     INFO_MAXARRAYAVIS (result) = NULL;
@@ -115,10 +113,55 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--******************************************************************-->
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
+ * @name Entry functions
+ * @{
  *
- ***************************************************************************/
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *ACUPTNdoAnnotateCUDAPartition( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *
+ACUPTNdoAnnotateCUDAPartition (node *syntax_tree)
+{
+    info *info;
+    DBUG_ENTER ("ACUPTNdoAnnotateCUDAPartition");
+
+    info = MakeInfo ();
+    INFO_MODE (info) = mark_potential;
+    TRAVpush (TR_acuptn);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn arraylist_struct *MakeALS( arraylist_struct *als, node *avis, int size)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static arraylist_struct *
 MakeALS (arraylist_struct *als, node *avis, int size)
 {
@@ -135,21 +178,19 @@ MakeALS (arraylist_struct *als, node *avis, int size)
     DBUG_RETURN (res);
 }
 
-/** <!--******************************************************************-->
+/** <!--********************************************************************-->
  *
+ * @fn arraylist_struct *FreeALS( arraylist_struct *als)
  *
- ***************************************************************************/
+ * @brief
+ *
+ *****************************************************************************/
 static arraylist_struct *
 FreeALS (arraylist_struct *als)
 {
     DBUG_ENTER ("FreeALS");
 
     if (als != NULL) {
-        /*
-            if (als->avis != NULL) {
-              als->avis = FREEdoFreeNode( als->avis);
-            }
-        */
         if (als->next != NULL) {
             als->next = FreeALS (als->next);
         }
@@ -162,10 +203,9 @@ FreeALS (arraylist_struct *als)
 
 /** <!--******************************************************************-->
  *
- * @fn bool ArraylistContains( arraylist_struct *als, node *avis)
+ * @fn arraylist_struct *ArraylistContains( arraylist_struct *als, node *avis)
  *
- *  @brief Checks wheter the given arraylist contains an entry for the
- *         designated element.
+ * @brief
  *
  ***************************************************************************/
 static arraylist_struct *
@@ -188,6 +228,13 @@ ArraylistContains (arraylist_struct *als, node *avis)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ArraylistMaxSizeAvis( arraylist_struct *als)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static node *
 ArraylistMaxSizeAvis (arraylist_struct *als)
 {
@@ -212,6 +259,13 @@ ArraylistMaxSizeAvis (arraylist_struct *als)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn arraylist_struct *ArraylistIncSize( arraylist_struct *als, int size)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static arraylist_struct *
 ArraylistIncSize (arraylist_struct *als, int size)
 {
@@ -222,6 +276,13 @@ ArraylistIncSize (arraylist_struct *als, int size)
     DBUG_RETURN (als);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn int GetPartitionSize( node *lb_elements, node *ub_elements)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static int
 GetPartitionSize (node *lb_elements, node *ub_elements)
 {
@@ -247,41 +308,21 @@ GetPartitionSize (node *lb_elements, node *ub_elements)
 }
 
 /** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *ACUWLdoAnnotateCUDAWL( node *syntax_tree)
- *
- * @param
- * @param
- * @return
- *
+ * @}  <!-- Static helper functions -->
  *****************************************************************************/
-node *
-ACUPTNdoAnnotateCUDAPartition (node *syntax_tree)
-{
-    info *info;
-    DBUG_ENTER ("ACUPTNdoAnnotateCUDAPartition");
-
-    info = MakeInfo ();
-    INFO_MODE (info) = mark_potential;
-    TRAVpush (TR_acuptn);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
-}
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief ACUWLwith( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *ACUPTNwith( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -305,13 +346,10 @@ ACUPTNwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLap( node *arg_node, info *arg_info)
  *
- * @brief ACUWLap( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -370,13 +408,10 @@ ACUPTNpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node* ACUPTNgenerator( node *arg_node, info *arg_info)
  *
- * @brief ACUPTNgenerator( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -420,3 +455,11 @@ ACUPTNgenerator (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

@@ -13,8 +13,6 @@
 #include "types.h"
 
 extern node *CUKNLdoCreateCudaKernels (node *syntax_tree);
-
-extern node *CUKNLmodule (node *arg_node, info *arg_info);
 extern node *CUKNLfundef (node *arg_node, info *arg_info);
 extern node *CUKNLassign (node *arg_node, info *arg_info);
 extern node *CUKNLwith (node *arg_node, info *arg_info);

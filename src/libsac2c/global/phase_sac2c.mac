@@ -711,8 +711,13 @@ PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
 SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
 
-SUBPHASE (acul, "Annotate CUDA loops", ACULdoAnnotateCUDALoop, global.backend == BE_cuda,
+#if 0
+SUBPHASE( acul,
+          "Annotate CUDA loops",
+          ACULdoAnnotateCUDALoop, 
+          global.backend == BE_cuda,
           wlt)
+#endif
 
 SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt)
 
@@ -723,12 +728,12 @@ SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
-SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
-          global.backend == BE_cuda, wlt)
-
 SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
 
 SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, wlt)
+
+SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
+          global.backend == BE_cuda, wlt)
 
 SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           global.backend == BE_mutc, wlt)
@@ -747,40 +752,9 @@ SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
 
 SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
           CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
-/*
-SUBPHASE( f2l2,
-          "Reintroducing loops and conditionals",
-          F2LdoFun2Lac,
-          global.backend == BE_cuda,
-          wlt)
-*/
-
-/*
-SUBPHASE( l2f2,
-          "Eliminating loops and conditionals",
-          L2FdoLac2Fun,
-          global.backend == BE_cuda,
-          wlt)
-*/
 
 SUBPHASE (mtran, "Minimise the number of device-host data transfers",
           MTRANdoMinimizeTransfers, global.backend == BE_cuda, wlt)
-
-/* These are two subphases invoked in the above pahse  */
-
-/*
-SUBPHASE( mstran,
-          "Minimise the number of sequential device-host data transfers",
-          MSTRANdoMinimizeTransfers,
-          global.backend == BE_cuda,
-          wlt)
-
-SUBPHASE( mltran,
-          "Minimise the number of device-host data transfers in a loop",
-          MLTRANdoMinimizeLoopTransfers,
-          global.backend == BE_cuda,
-          wlt)
-*/
 
 ENDPHASE (wlt)
 
@@ -950,19 +924,24 @@ SUBPHASE (lw3, "Lifting With-Loop bodies into threads", LW3doLiftWith3,
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
-/*
+#if 0
 SUBPHASE( pknlg,
           "Prepare kernel generation",
           PKNLGdoPrepareKernelGeneration,
           global.backend == BE_cuda,
           pc)
-*/
+#endif
 
 SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           global.backend == BE_cuda, pc)
 
-SUBPHASE (culknl, "Create Cuda loop kernel functions", CULKNLdoCreateCudaLoopKernels,
-          global.backend == BE_cuda, pc)
+#if 0
+SUBPHASE( culknl,
+          "Create Cuda loop kernel functions",
+          CULKNLdoCreateCudaLoopKernels,
+          global.backend == BE_cuda,
+          pc)
+#endif
 
 SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
           pc)

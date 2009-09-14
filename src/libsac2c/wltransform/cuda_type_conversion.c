@@ -1,11 +1,7 @@
-/*****************************************************************************
+/** <!--********************************************************************-->
  *
+ * @defgroup Insert CUDA type conversion primitives
  *
- * file:   cuda_type_conversion.c
- *
- * prefix: CUTYCV
- *
- * description:
  *
  *   This module inserts CUDA type conversion primitives before and after
  *   each cudarizable N_with. The two primitives are <host2device> and
@@ -31,19 +27,31 @@
  *              ... = b_dev;
  *              ... = c_dev;
  *              ... = d_dev;
- *            }:genarray(shp);
+ *            }:genarray( shp);
  *   a_host = device2host( a_dev);
  *
  *   Note that simple scalar variables need not be type converted since they
  *   can be passed as function parameters directly to CUDA kernels.
  *
+ * @ingroup
+ *
+ * @{
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file cuda_type_conversion.c
+ *
+ * Prefix: CUTYCV
+ *
+ *****************************************************************************/
 #include "annotate_cuda_withloop.h"
 
+/*
+ * Other includes go here
+ */
 #include <stdlib.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -63,35 +71,51 @@
 #include "type_utils.h"
 #include "cuda_utils.h"
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
     bool in_cudawl;
-    bool travids;
+    bool create_d2h;
     node *postassigns;
     node *preassigns;
     lut_t *lut;
-    node *doloop;
-    bool indoloop;
+    node *let_expr;
 };
 
 /*
- * INFO macros
+ * INFO_FUNDEF        N_fundef node of the enclosing function
+ *
+ * INFO_INCUDAWL      Flag indicating whether the code currently being
+ *                    traversed is in a cudarizable N_with
+ *
+ * INFO_CREATE_D2H    Flag indicating whether <device2host> needs to be
+ *                    created for the N_let->N_ids
+ *
+ * INFO_POSTASSIGNS   Chain of <device2host> that needs to be appended
+ *                    at the end of the current N_assign
+ *
+ * INFO_PREASSIGNS    Chain of <host2device> that needs to be prepended
+ *                    at the beginning of the current N_assign
+ *
+ * INFO_LUT           Lookup table storing pairs of Avis(host)->Avis(device)
+ *                    e.g. Given a_dev = host2device( a_host),
+ *                    Avis(a_host)->Avis(a_dev) will be stored into the table
+ *
  */
+
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_INCUDAWL(n) (n->in_cudawl)
-#define INFO_TRAVIDS(n) (n->travids)
+#define INFO_CREATE_D2H(n) (n->create_d2h)
 #define INFO_POSTASSIGNS(n) (n->postassigns)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_LUT(n) (n->lut)
-#define INFO_DOLOOP(n) (n->doloop)
-#define INFO_INDOLOOP(n) (n->indoloop)
+#define INFO_LETEXPR(n) (n->let_expr)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -103,12 +127,10 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_INCUDAWL (result) = FALSE;
-    INFO_TRAVIDS (result) = FALSE;
+    INFO_CREATE_D2H (result) = FALSE;
     INFO_POSTASSIGNS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = NULL;
-    INFO_DOLOOP (result) = NULL;
-    INFO_INDOLOOP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -123,67 +145,19 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static void
-HandlePrf (node *id, bool set_travids, int must_cuda_doloop, info *arg_info)
-{
-    node *new_avis;
-    ntype *dev_type, *scalar_type;
-    simpletype sty;
-    bool cond;
-
-    DBUG_ENTER ("HandlePrf");
-
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "HandlePrf receives a non-id parameters!");
-
-    cond = INFO_INDOLOOP (arg_info) && !INFO_INCUDAWL (arg_info);
-
-    /* For some primitives, we can only insert type conversion
-     * if they are in a CUDA do-loop since the whole do-loop
-     * will be executed on the device */
-    if (must_cuda_doloop) {
-        cond = cond && DO_ISCUDARIZABLE (INFO_DOLOOP (arg_info));
-    }
-
-    /* We only insert <host2device> and <device2host> type conversion
-     * for the following primitives that are in a cudarizable do
-     * loop and is not in a N_with. The reason we do this is to make
-     * all operations on arrays in the loop deal with device arrays
-     * only. This makes it possible to execute the loop on the device
-     * in a single thread. Making all type conversion explicit helps
-     * transfer optimization to lift them all out of the loop.
-     */
-    if (cond) {
-        dev_type = TYcopyType (AVIS_TYPE (ID_AVIS (id)));
-        scalar_type = TYgetScalar (dev_type);
-        sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-        scalar_type = TYsetSimpleType (scalar_type, sty);
-
-        new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        INFO_PREASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
-                                     TBmakePrf (F_host2device,
-                                                TBmakeExprs (TBmakeId (ID_AVIS (id)),
-                                                             NULL))),
-                          INFO_PREASSIGNS (arg_info));
-        AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
-        ID_AVIS (id) = new_avis;
-
-        INFO_TRAVIDS (arg_info) = set_travids;
-    }
-    DBUG_VOID_RETURN;
-}
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief node *CUTYCVdoCUDAtypeConversion( node *syntax_tree)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *CUTYCVdoCUDAtypeConversion( node *syntax_tree)
  *
  *****************************************************************************/
 node *
@@ -205,14 +179,102 @@ CUTYCVdoCUDAtypeConversion (node *syntax_tree)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Static helper functions
+ * @{
  *
- * @brief node *CUTYCVfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node* TypeConvert( node *host_avis)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+static ntype *
+TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
+{
+    ntype *scalar_type, *dev_type = NULL;
+    simpletype sty;
+
+    DBUG_ENTER ("TypeConvert");
+
+    if (nty == N_id) {
+        /* If the N_ids is of known dimension and is not a scalar */
+        DBUG_ASSERT (TUdimKnown (host_type), "AUD N_id found in cudarizable N_with!");
+        if (TYgetDim (host_type) > 0) {
+            /* If the scalar type is simple, e.g. int, float ... */
+            if (TYisSimple (TYgetScalar (host_type))) {
+                dev_type = TYcopyType (host_type);
+                scalar_type = TYgetScalar (dev_type);
+                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
+                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
+                /* Set the device simple type */
+                scalar_type = TYsetSimpleType (scalar_type, sty);
+            }
+        }
+    }
+    /* If the node to be type converted is N_ids, its original type
+     * can be AUD as well as long as the N_with on the RHS is cudarizable.
+     * The reason a cudarizbale can produce a AUD result illustrated by
+     * the following example:
+     *
+     *   cond_fun()
+     *   {
+     *     int[*] aa;
+     *     int bb;
+     *
+     *     if( cond) {
+     *       aa = with {}:genarray( shp); (cudarizable N_with)
+     *     }
+     *     else {
+     *       bb = 1;
+     *     }
+     *     ret = cond ? aa : bb;
+     *   }
+     *
+     */
+    else if (nty == N_ids) {
+        if (NODE_TYPE (INFO_LETEXPR (arg_info)) == N_with) {
+            /* If the scalar type is simple, e.g. int, float ... */
+            if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))
+                && TYisSimple (TYgetScalar (host_type))) {
+                dev_type = TYcopyType (host_type);
+                scalar_type = TYgetScalar (dev_type);
+                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
+                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
+                /* Set the device simple type */
+                scalar_type = TYsetSimpleType (scalar_type, sty);
+            }
+        }
+    } else {
+        DBUG_ASSERT ((0), "Neither N_id nor N_ids passed to TypeConvert!");
+    }
+
+    DBUG_RETURN (dev_type);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUTYCVfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -229,13 +291,10 @@ CUTYCVfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVassign( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVassign( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief  Add newly created <host2device> and <device2host> to
+ *         the assign chain.
  *
  *****************************************************************************/
 node *
@@ -243,13 +302,12 @@ CUTYCVassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTYCVassign");
 
-    /* We do a bottom-up traversal */
+    /* Bottom-up traversal */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    /* If we finish traversing a cudarizable N_with, preppend and
-     * append type conversion primitives (if there's any).
-     */
+    /* If we finish traversing a cudarizable N_with, insert <host2device>
+     * and <device2host> (if there's any) into the AST. */
     if (!INFO_INCUDAWL (arg_info)) {
         if (INFO_POSTASSIGNS (arg_info) != NULL) {
             ASSIGN_NEXT (arg_node)
@@ -268,13 +326,9 @@ CUTYCVassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVlet( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVlet( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -283,25 +337,17 @@ CUTYCVlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUTYCVlet");
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    /* N_ids is only traversed if <device2host> need to be inserted. */
-    if (INFO_TRAVIDS (arg_info)) {
-        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-        INFO_TRAVIDS (arg_info) = FALSE;
-    }
+    INFO_LETEXPR (arg_info) = LET_EXPR (arg_node);
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVwith( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVwith( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief Traverse both withop and N_code of a cudarizable N_with
  *
  *****************************************************************************/
 node *
@@ -316,32 +362,20 @@ CUTYCVwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INCUDAWL (arg_info) = FALSE;
-        /* Indicate to N_let that we need to traverse the N_ids as
-         * well since <device2host> need to be inserted. */
-        INFO_TRAVIDS (arg_info) = TRUE;
         INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+
+        /* We need to create <device2host> for N_ids on the LHS */
+        INFO_CREATE_D2H (arg_info) = TRUE;
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-CUTYCVwith2 (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUTYCVwith2");
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVcode( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVcode( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief Traverse the code block
  *
  *****************************************************************************/
 node *
@@ -349,21 +383,19 @@ CUTYCVcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTYCVcode");
 
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+    if (INFO_INCUDAWL (arg_info)) {
+        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+        CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVgenarray( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVgenarray( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief Traverse default element of a N_genarray
  *
  *****************************************************************************/
 node *
@@ -371,93 +403,81 @@ CUTYCVgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTYCVgenarray");
 
-    /* Be careful not to traverse the N_genarray->shape. Because
-     * itan be a N_id node and we do not want to insert
-     * <host2device> for it in this case. Therefore, the only thing
-     * in N_genarray we want to traverse is the default elment.
-     */
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
-                     "Non-id default element found for N_genarray!");
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    if (INFO_INCUDAWL (arg_info)) {
+        /* Note that we do not traverse N_genarray->shape. This is
+         * because it can be an N_id node and we do not want to insert
+         * <host2device> for it in this case. Therefore, the only son
+         * of N_genarray we traverse is the default element. */
+        if (GENARRAY_DEFAULT (arg_node) != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
+                         "Non N_id default element found in N_genarray!");
+            GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+        }
+        GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     }
-
-    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVids( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVids( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief For N_ids needed to be type converted, create <device2host>.
  *
  *****************************************************************************/
 node *
 CUTYCVids (node *arg_node, info *arg_info)
 {
-    node *new_avis, *old_avis, *ids_avis;
-    ntype *ids_type, *dev_type, *scalar_type;
-    simpletype sty;
+    node *new_avis, *ids_avis;
+    ntype *ids_type, *dev_type;
 
     DBUG_ENTER ("CUTYCVids");
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
 
-    /* If the N_ids is of known dimension and is not a scalar */
-    if (TUdimKnown (ids_type) && TYgetDim (ids_type) > 0) {
-        /* If the scalar type is simple, e.g. int, float ... */
-        if (TYisSimple (TYgetScalar (ids_type))) {
-            dev_type = TYcopyType (ids_type);
-            scalar_type = TYgetScalar (dev_type);
-            /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-            sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-            scalar_type = TYsetSimpleType (scalar_type, sty);
-
+    if (INFO_CREATE_D2H (arg_info)) {
+        dev_type = TypeConvert (ids_type, NODE_TYPE (arg_node), arg_info);
+        if (dev_type != NULL) {
             new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
-            old_avis = ids_avis;
             IDS_AVIS (arg_node) = new_avis;
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            DBUG_PRINT ("CUTYCV",
+                        ("Creating F_device2host for N_ids %s", AVIS_NAME (ids_avis)));
             INFO_POSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (old_avis, NULL),
+              = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
                                          TBmakePrf (F_device2host,
                                                     TBmakeExprs (TBmakeId (new_avis),
                                                                  NULL))),
                               INFO_POSTASSIGNS (arg_info));
             /* Maintain SSA property */
-            AVIS_SSAASSIGN (old_avis) = INFO_POSTASSIGNS (arg_info);
+            AVIS_SSAASSIGN (new_avis) = AVIS_SSAASSIGN (ids_avis);
+            AVIS_SSAASSIGN (ids_avis) = INFO_POSTASSIGNS (arg_info);
         }
+        IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+        INFO_CREATE_D2H (arg_info) = FALSE;
     }
-
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUTYCVid( node *arg_node, info *arg_info)
  *
- * @brief node *CUTYCVid( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief For each host array N_id in the cudarizable N_with, either create
+ *        type conversion for it (i.e. <host2device>) or set its N_avis to
+ *        that of an already converted device array N_id depending on whether
+ *        the N_id is encountered for the first time or not.
  *
  *****************************************************************************/
 node *
 CUTYCVid (node *arg_node, info *arg_info)
 {
-    node *new_avis, *old_avis, *id_avis;
-    ntype *id_type, *dev_type, *scalar_type;
-    simpletype sty;
+    node *new_avis, *avis, *id_avis;
+    ntype *dev_type, *id_type;
 
     DBUG_ENTER ("CUTYCVid");
 
@@ -466,123 +486,40 @@ CUTYCVid (node *arg_node, info *arg_info)
 
     /* if we are in cudarizable N_with */
     if (INFO_INCUDAWL (arg_info)) {
-        old_avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
-        /* if the N_id node hasn't been come across before */
-        if (old_avis == id_avis) {
-            /* Only arrays with known dimension need to be type converted */
-            if (TUdimKnown (id_type) && TYgetDim (id_type) > 0) {
-                /* If the scalar type is simple, e.g int, float... */
-                if (TYisSimple (TYgetScalar (id_type))) {
-                    /* Create device type */
-                    dev_type = TYcopyType (id_type);
-                    scalar_type = TYgetScalar (dev_type);
-                    /* Get the corresponding device simple type e.g. int_dev,
-                     * float_dev...*/
-                    sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-                    /* Set the simple type of the scalar type to device simple
-                     * type, e.g int_dev, float_dev ... */
-                    scalar_type = TYsetSimpleType (scalar_type, sty);
-
-                    new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
-                    ID_AVIS (arg_node) = new_avis;
-                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                      = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-                    INFO_PREASSIGNS (arg_info)
-                      = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
-                                                 TBmakePrf (F_host2device,
-                                                            TBmakeExprs (TBmakeId (
-                                                                           old_avis),
-                                                                         NULL))),
-                                      INFO_PREASSIGNS (arg_info));
-                    /* Insert the pair host_avis->dev_avis into lookup table. */
-                    INFO_LUT (arg_info)
-                      = LUTinsertIntoLutP (INFO_LUT (arg_info), old_avis, new_avis);
-                    /* Maintain SSA property */
-                    AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
-                }
+        avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+        /* if the N_avis node hasn't been come across before */
+        if (avis == id_avis) {
+            dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
+            if (dev_type != NULL) {
+                new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                ID_AVIS (arg_node) = new_avis;
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                INFO_PREASSIGNS (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                             TBmakePrf (F_host2device,
+                                                        TBmakeExprs (TBmakeId (id_avis),
+                                                                     NULL))),
+                                  INFO_PREASSIGNS (arg_info));
+                /* Maintain SSA property */
+                AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
+                /* Insert pair host_avis->dev_avis into lookup table. */
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), id_avis, new_avis);
             }
         } else {
-            /* If the N_id has been come across before, replace its
-             * N_avis by the device N_avis.
-             */
-            ID_AVIS (arg_node) = old_avis;
+            /* If the N_avis has been come across before, replace its
+             * N_avis by the device N_avis */
+            ID_AVIS (arg_node) = avis;
         }
     }
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUTYCVdo( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
+ * @}  <!-- Traversal functions -->
  *****************************************************************************/
-node *
-CUTYCVdo (node *arg_node, info *arg_info)
-{
-    bool old_indoloop;
-    node *old_doloop;
-
-    DBUG_ENTER ("CUTYCVdo");
-
-    /* Stack info */
-    old_indoloop = INFO_INDOLOOP (arg_info);
-    old_doloop = INFO_DOLOOP (arg_info);
-
-    INFO_INDOLOOP (arg_info) = TRUE;
-    INFO_DOLOOP (arg_info) = arg_node;
-
-    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
-    DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    DO_SKIP (arg_node) = TRAVopt (DO_SKIP (arg_node), arg_info);
-
-    /* Pop info */
-    INFO_INDOLOOP (arg_info) = old_indoloop;
-    INFO_DOLOOP (arg_info) = old_doloop;
-
-    DBUG_RETURN (arg_node);
-}
 
 /** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUTYCVprf( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
+ * @}  <!-- Traversal template -->
  *****************************************************************************/
-node *
-CUTYCVprf (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUTYCVprf");
-
-    switch (PRF_PRF (arg_node)) {
-    case F_idx_sel:
-        HandlePrf (PRF_ARG2 (arg_node), FALSE, TRUE, arg_info);
-        break;
-    case F_shape_A:
-        HandlePrf (PRF_ARG1 (arg_node), FALSE, TRUE, arg_info);
-        break;
-    case F_idx_modarray_AxSxS:
-        HandlePrf (PRF_ARG1 (arg_node), TRUE, TRUE, arg_info);
-        break;
-    case F_idx_modarray_AxSxA:
-        HandlePrf (PRF_ARG1 (arg_node), TRUE, FALSE, arg_info);
-        HandlePrf (PRF_ARG3 (arg_node), TRUE, FALSE, arg_info);
-        break;
-    default:
-        break;
-    }
-
-    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}

@@ -1,15 +1,42 @@
-/*****************************************************************************
+/** <!--********************************************************************-->
+ *
+ * @defgroup Minimize the number of host<->device transfers in a
+ *           sequential block of instructions.
+ *
+ *   This modules tries to eliminate <host2device>/<device2host> instructions
+ *   in a sequential block of code. Two difference cases expose the opportunities
+ *   for elimination:
+ *
+ *   1) a_host = device2host( b_dev);
+ *      ...
+ *      ...
+ *      a_dev = host2device( a_host);
+ *
+ *      The second memory transfer, i.e. a_dev = host2device( a_host)
+ *      can be eliminated. Any reference to a_dev after it will be
+ *      replaced by b_dev.
  *
  *
- * file:   minimize_block_transfers.c
  *
- * prefix: MBTRAN
+ *   2) b_dev = host2device( a_host);
+ *      ...
+ *      ...
+ *      c_dev = host2device( a_host);
  *
- * description:
+ *      The second memory transfer, i.e. c_dev = host2device( a_host)
+ *      can be eliminated. Any reference to c_dev after it will be
+ *      replaced by b_dev.
  *
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file minimize_block_transfers.c
+ *
+ * Prefix: MBTRAN
+ *
+ *****************************************************************************/
 #include "minimize_block_transfers.h"
 
 #include <stdlib.h>
@@ -24,9 +51,12 @@
 #include "deadcoderemoval.h"
 #include "cuda_utils.h"
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *lastassign;
     node *letids;
@@ -34,18 +64,11 @@ struct INFO {
     lut_t *lut;
 };
 
-/*
- * INFO macros
- */
-
 #define INFO_LASTASSIGN(n) (n->lastassign)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_INCUDAWL(n) (n->incudawl)
 #define INFO_LUT(n) (n->lut)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -74,14 +97,20 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief node *MBTRANdoMinimizeBlockTransfers( node *syntax_tree)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *MBTRANdoMinimizeBlockTransfers( node *syntax_tree)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -98,20 +127,29 @@ MBTRANdoMinimizeBlockTransfers (node *syntax_tree)
 
     info = FreeInfo (info);
 
+    /* We rely on Dead Code Removal to remove the
+     * unused <host2device>/<device2host> */
     syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *MBTRANfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *MBTRANfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -119,6 +157,7 @@ MBTRANfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MBTRANfundef");
 
+    /* We create a lookup table for each N_fundef */
     INFO_LUT (arg_info) = LUTgenerateLut ();
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
@@ -130,13 +169,9 @@ MBTRANfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MBTRANassign( node *arg_node, info *arg_info)
  *
- * @brief node *MBTRANassign( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -154,13 +189,42 @@ MBTRANassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MBTRANcond( node *arg_node, info *arg_info)
  *
- * @brief node *MBTRANlet( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
+ *****************************************************************************/
+node *
+MBTRANcond (node *arg_node, info *arg_info)
+{
+    lut_t *old_lut;
+
+    DBUG_ENTER ("MBTRANcond");
+
+    /* Stack LUT */
+    old_lut = INFO_LUT (arg_info);
+
+    /* For a conditional, we traverse it's two branches
+     * independently, each with its own lookup table. */
+    INFO_LUT (arg_info) = LUTgenerateLut ();
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+
+    INFO_LUT (arg_info) = LUTgenerateLut ();
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+
+    /* Pop LUT */
+    INFO_LUT (arg_info) = old_lut;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MBTRANlet( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -177,13 +241,10 @@ MBTRANlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MBTRANwith( node *arg_node, info *arg_info)
  *
- * @brief node *MBTRANwith( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -193,7 +254,7 @@ MBTRANwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MBTRANwith");
 
-    /* We only traverse cudarizable WL */
+    /* We only traverse cudarizable N_with */
     if (WITH_CUDARIZABLE (arg_node)) {
         old_incudawl = INFO_INCUDAWL (arg_info);
         INFO_INCUDAWL (arg_info) = TRUE;
@@ -208,13 +269,9 @@ MBTRANwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *MBTRANid( node *arg_node, info *arg_info)
  *
- * @brief node *MBTRANid( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -227,73 +284,66 @@ MBTRANid (node *arg_node, info *arg_info)
     if (ISHOST2DEVICE (INFO_LASTASSIGN (arg_info))) {
         /*
          * e.g. a_dev = host2device( a_host);
-         * If the a search of a_host in the table hits, it means
-         * there's a a_host = device2host( b_dev);
-         * executed before. In this case, insert pair a_dev->b_dev
-         * into the table. Thereafter, each later reference to
-         * a_dev will be replaced by b_dev.
-         * However, if the search doesn't hit, insert a_host->a_dev
-         * into the table. Therefore a subsequent transfer such as
-         * c_dev = host2device( a_host) will cause the pair c_dev->a_dev
-         * being inserted into the table.
+         * If the a search of N_avis(host) in the table hits, it means
+         * either one of the following instruction has been executed
+         * before:
+         * 1) a_host = device2host( b_dev);
+         * 2) b_dev = host2device( a_host);
+         *
+         * This is becuase 1) everytime we come across <device2host>,
+         * we insert N_avis(host)->N_avis(dev) into the table and 2)
+         * everytime we come across <host2device> and the N_avis(host)
+         * is not in the table yet, we insert N_avis(host)->N_avis(dev)
+         * into the table. If the search hits, the accociated N_avis must
+         * be a device N_avis. We then insert pair N_avis(a_dev)->N_avis(b_dev)
+         * into the table. Thereafter, each later reference to a_dev
+         * will be replaced by b_dev.
+         *
+         * If the search doesn't hit, insert N_avis(host)->N_avis(dev)
+         * into the table, i.e. case 2) above.
          */
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
-        /* a_host has been transfered from device before and there's
-         * no reference of a_host between these two transfers, i.e no pair
-         * of avis->N_empty exists in the table. For example:
-         *
-         *   a_host = device2host( b_dev);
-         *   ...
-         *   ... (Arbitary code containing no reference to a_host)
-         *   ...
-         *   a_dev = host2device( a_host);
-         *
-         * will cause a_dev->b_dev being inserted into the table. Therefor,
-         * later code such as:
-         *
-         *   c_dev = with { ...a_dev... }:genarray( shp);
-         *
-         * will be transformed into:
-         *
-         *   c_dev = with { ...b_dev... }:genarray( shp);
-         */
-        if (avis != ID_AVIS (arg_node) && NODE_TYPE (avis) != N_empty) {
+        /* If the search hit in the table */
+        if (avis != ID_AVIS (arg_node)) {
             INFO_LUT (arg_info)
               = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LETIDS (arg_info)),
                                    avis);
-        } else if (avis == ID_AVIS (arg_node) && NODE_TYPE (avis) != N_empty) {
+        }
+        /* If the search doesn't hit in the table */
+        else {
             INFO_LUT (arg_info)
               = LUTinsertIntoLutP (INFO_LUT (arg_info), ID_AVIS (arg_node),
                                    IDS_AVIS (INFO_LETIDS (arg_info)));
         }
     } else if (ISDEVICE2HOST (INFO_LASTASSIGN (arg_info))) {
-        /* Insert the pair a_host -> a_dev */
+        /* Insert the pair N_avis(host) -> N_avis(dev) */
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LETIDS (arg_info)),
                                ID_AVIS (arg_node));
     } else {
+        /* If the N_id is not in <host2device>/<device2host> */
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
-        if (avis != ID_AVIS (arg_node) && NODE_TYPE (avis) != N_empty) {
+        /* If the N_avis hits in the table */
+        if (avis != ID_AVIS (arg_node)) {
             if (INFO_INCUDAWL (arg_info)) {
-                /* If the ID is in a CUDA Withloop, we replace its AVIS with
-                 * the AVIS of the corresponding device variable AVIS.
-                 */
+                /* If the N_id is in a cudarizbale N_with, we update its N_avis */
                 ID_AVIS (arg_node) = avis;
             } else {
-                /* if their types are equal, i.e. they are all of device tyoe */
+                /* if their types are equal, i.e. they are all of device type */
                 if (TYeqTypes (AVIS_TYPE (avis), AVIS_TYPE (ID_AVIS (arg_node)))) {
                     ID_AVIS (arg_node) = avis;
-                } else {
-                    /* If the ID occurs in code other than a CUDA Withloop, we
-                     * insert a pair avis -> N_empty to indicate that the following
-                     * host2device primitive cannot be removed.
-                     */
-                    INFO_LUT (arg_info)
-                      = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, TBmakeEmpty ());
                 }
             }
         }
     }
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

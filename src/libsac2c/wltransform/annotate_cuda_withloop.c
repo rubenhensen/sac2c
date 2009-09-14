@@ -1,17 +1,13 @@
 /*****************************************************************************
  *
+ * @defgroup
  *
- * file:   annotate_cuda_withloop.c
- *
- * prefix: ACUWL
  *
  * description:
- *   This module annotates N_withs which can be executed on the
+ *   This module annotates N_with which can be executed on the
  *   CUDA device in parallel. Currently, cudarizable N_withs are
  *   limited as follows:
- *     1) A N_with must not contain any inner N_withs. However,
- *        in the future, even outer the innermost N_withs should
- *        be cudarized
+ *     1) A N_with must not contain any inner N_withs.
  *     2) Fold N_with is currently not supported.
  *     3) Function applications are not allowed in a cudarizable
  *        N_with except primitive mathematical functions.
@@ -19,10 +15,16 @@
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file annotate_cuda_withloop.c
+ *
+ * Prefix: ACUWL
+ *
+ *****************************************************************************/
 #include "annotate_cuda_withloop.h"
 
 #include <stdlib.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -35,23 +37,20 @@
 #include "namespaces.h"
 #include "new_types.h"
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     bool inwl;
     bool cudarizable;
 };
 
-/*
- * INFO macros
- */
 #define INFO_INWL(n) (n->inwl)
 #define INFO_CUDARIZABLE(n) (n->cudarizable)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -78,14 +77,18 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief node *ACUWLdoAnnotateCUDAWL( node *syntax_tree)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *ACUWLdoAnnotateCUDAWL( node *syntax_tree)
  *
  *****************************************************************************/
 node *
@@ -105,14 +108,21 @@ ACUWLdoAnnotateCUDAWL (node *syntax_tree)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *ACUWLfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *ACUWLfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -132,18 +142,17 @@ ACUWLfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLwith( node *arg_node, info *arg_info)
  *
- * @brief ACUWLwith( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
 ACUWLwith (node *arg_node, info *arg_info)
 {
+    bool old_cudarizable;
+
     DBUG_ENTER ("ACUWLwith");
 
     if (!INFO_INWL (arg_info)) {
@@ -154,23 +163,30 @@ ACUWLwith (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = FALSE;
         WITH_CUDARIZABLE (arg_node) = INFO_CUDARIZABLE (arg_info);
     } else {
-        /* If we are already in a N_with, the current N_with
-         * is tagged as not cudarizable as its an inner N_with */
-        WITH_CUDARIZABLE (arg_node) = FALSE;
+        // The inner N_with makes the outer N_with uncudarizable and
+        // there's no need to traverse further into the sons of this
+        // inner N_with
+        INFO_CUDARIZABLE (arg_info) = FALSE;
     }
+
+    /*
+      old_cudarizable = INFO_CUDARIZABLE( arg_info);
+      INFO_CUDARIZABLE( arg_info) = TRUE;
+      WITH_WITHOP( arg_node) = TRAVdo( WITH_WITHOP( arg_node), arg_info);
+      WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info);
+      WITH_CUDARIZABLE( arg_node) = INFO_CUDARIZABLE( arg_info);
+      INFO_CUDARIZABLE( arg_info) = old_cudarizable && !INFO_CUDARIZABLE( arg_info);
+    */
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLfold( node *arg_node, info *arg_info)
  *
- * @brief ACUWLfold( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -178,7 +194,7 @@ ACUWLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ACUWLfold");
 
-    /* Currently, we do not support cudaraizable fold */
+    /* Currently, we do not support fold N_with */
     INFO_CUDARIZABLE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
@@ -186,13 +202,10 @@ ACUWLfold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLcode( node *arg_node, info *arg_info)
  *
- * @brief ACUWLcode( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -209,13 +222,10 @@ ACUWLcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLid( node *arg_node, info *arg_info)
  *
- * @brief ACUWLid( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -233,18 +243,16 @@ ACUWLid (node *arg_node, info *arg_info)
             INFO_CUDARIZABLE (arg_info) = FALSE;
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *ACUWLap( node *arg_node, info *arg_info)
  *
- * @brief ACUWLap( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -256,13 +264,11 @@ ACUWLap (node *arg_node, info *arg_info)
 
     /* Found a function application within a N_with, not cudarizable. Also,
      * since we are in a phase after f2l, no LaC functions exist, so we
-     * do not need to worry about them.
-     */
+     * do not need to worry about them. */
     if (INFO_INWL (arg_info)) {
         /* The only function application allowed in a cudarizbale N_with
          * is mathematical functions. However, the check below is ugly
-         * and a better way needs to be found.
-         */
+         * and a better way needs to be found. */
         ns = FUNDEF_NS (AP_FUNDEF (arg_node)); /* ns could be NULL */
         if (ns == NULL || !STReq (NSgetModule (ns), "Math")) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -273,3 +279,11 @@ ACUWLap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

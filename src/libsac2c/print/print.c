@@ -2245,13 +2245,20 @@ PRTassign (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (instr) == N_let) {
         if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
-            if (PRF_PRF (LET_EXPR (instr)) == F_host2device
-                && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node)) {
-                fprintf (global.outfile, "/** Is not allowed to be moved up**/\n");
+            if (PRF_PRF (LET_EXPR (instr)) == F_host2device) {
+                if (ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node)) {
+                    fprintf (global.outfile, "/** Is NOT allowed to be moved up **/\n");
+                } else {
+                    fprintf (global.outfile, "/** Is allowed to be moved up **/\n");
+                }
             }
-            if (PRF_PRF (LET_EXPR (instr)) == F_device2host
-                && ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node)) {
-                fprintf (global.outfile, "/** Is not allowed to be moved down**/\n");
+            if (PRF_PRF (LET_EXPR (instr)) == F_device2host) {
+                if (PRF_PRF (LET_EXPR (instr)) == F_device2host
+                    && ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node)) {
+                    fprintf (global.outfile, "/** Is NOT allowed to be moved down **/\n");
+                } else {
+                    fprintf (global.outfile, "/** Is allowed to be moved down **/\n");
+                }
             }
         }
     }

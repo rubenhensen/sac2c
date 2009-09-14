@@ -20,28 +20,13 @@
 #include "free.h"
 #endif /* BEtest */
 
-/******************************************************************************
- *
- * function:
- *   void ICMCompileCUDA_GLOBALFUN_DECL( char *funname,
- *                                       int vararg_cnt,
- *                                       char **vararg)
- *
- * description:
- *
- ******************************************************************************/
-void
-ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
+static void
+CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
 {
     int i, j, cnt, dim;
     char *basetype;
 
     DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DECL");
-
-#define CUDA_GLOBALFUN_DECL
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef CUDA_GLOBALFUN_DECL
 
     INDENT;
     fprintf (global.outfile, "__global__ void %s(", funname);
@@ -73,7 +58,34 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
             fprintf (global.outfile, ", ");
         }
     }
-    fprintf (global.outfile, ");\n");
+    fprintf (global.outfile, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_GLOBALFUN_DECL( char *funname,
+ *                                       int vararg_cnt,
+ *                                       char **vararg)
+ *
+ * description:
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DECL");
+
+#define CUDA_GLOBALFUN_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_GLOBALFUN_DECL
+
+    CompileCUDA_GLOBALFUN_HEADER (funname, vararg_cnt, vararg);
+
+    fprintf (global.outfile, ";\n");
 
     DBUG_VOID_RETURN;
 }
@@ -91,9 +103,6 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
 {
-    int i, j, cnt, dim;
-    char *basetype;
-
     DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DEF_BEGIN");
 
 #define CUDA_GLOBALFUN_DEF_BEGIN
@@ -101,39 +110,8 @@ ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg
 #include "icm_trace.c"
 #undef CUDA_GLOBALFUN_DEF_BEGIN
 
-    INDENT;
-    fprintf (global.outfile, "__global__ void %s(", funname);
+    CompileCUDA_GLOBALFUN_HEADER (funname, vararg_cnt, vararg);
 
-    cnt = 0;
-    for (i = 0; i < 4 * vararg_cnt; i += 4) {
-
-        if (STReq (vararg[i + 1], "float_dev")) {
-            basetype = "float";
-        } else if (STReq (vararg[i + 1], "int_dev")) {
-            basetype = "int";
-        } else {
-            basetype = vararg[i + 1];
-        }
-
-        INDENT;
-        fprintf (global.outfile, "SAC_CUDA_PARAM( %s, %s)", vararg[i + 2], basetype);
-
-        dim = DIM_NO_OFFSET (atoi (vararg[i + 3]));
-        if (dim > 0) {
-            fprintf (global.outfile, ", ");
-            for (j = 0; j < dim; j++) {
-                fprintf (global.outfile, "int SAC_ND_A_MIRROR_SHAPE(%s, %d), ",
-                         vararg[i + 2], j);
-            }
-            fprintf (global.outfile, "int SAC_ND_A_MIRROR_SIZE(%s), ", vararg[i + 2]);
-            fprintf (global.outfile, "int SAC_ND_A_MIRROR_DIM(%s)", vararg[i + 2]);
-        }
-        if (i != 4 * (vararg_cnt - 1)) {
-            fprintf (global.outfile, ", ");
-        }
-    }
-    fprintf (global.outfile, ")\n");
-    INDENT;
     fprintf (global.outfile, "{\n");
 
     DBUG_VOID_RETURN;
@@ -268,9 +246,10 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 
     array_dim = bounds_count / 2;
 
+    INDENT;
+    fprintf (global.outfile, "{\n");
+
     if (array_dim == 1) {
-        INDENT;
-        fprintf (global.outfile, "{\n");
         INDENT;
         INDENT;
         fprintf (global.outfile, "dim3 grid((%s-%s)/LBLOCKSZ+1);\n", var_ANY[0],
@@ -279,8 +258,6 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
         INDENT;
         fprintf (global.outfile, "dim3 block(LBLOCKSZ);");
     } else if (array_dim == 2) {
-        INDENT;
-        fprintf (global.outfile, "{\n");
         INDENT;
         INDENT;
         fprintf (global.outfile, "dim3 grid((%s-%s)/SBLOCKSZ+1, (%s-%s)/SBLOCKSZ+1);\n",
@@ -291,8 +268,6 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     } else {
         if (array_dim == 3) {
             INDENT;
-            fprintf (global.outfile, "{\n");
-            INDENT;
             INDENT;
             fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[2],
                      var_ANY[5], var_ANY[1], var_ANY[4]);
@@ -300,8 +275,6 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
             INDENT;
             fprintf (global.outfile, "dim3 block((%s-%s));", var_ANY[0], var_ANY[3]);
         } else if (array_dim == 4) {
-            INDENT;
-            fprintf (global.outfile, "{\n");
             INDENT;
             INDENT;
             fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[3],
@@ -311,8 +284,6 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
             fprintf (global.outfile, "dim3 block((%s-%s), (%s-%s));", var_ANY[1],
                      var_ANY[5], var_ANY[0], var_ANY[4]);
         } else {
-            INDENT;
-            fprintf (global.outfile, "{\n");
             INDENT;
             INDENT;
             fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[4],
@@ -338,7 +309,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim,
+ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim_pos,
                       char *hasstepwidth)
 {
     DBUG_ENTER ("ICMCompileCUDA_WLIDS");
@@ -350,22 +321,30 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
 
     if (array_dim <= 2) {
         INDENT;
-        fprintf (global.outfile, "SAC_CUDA_WLIDS_%dD_%d( %s, %d, SACp_lb_%d)\n",
-                 array_dim, wlids_dim, wlids_NT, wlids_NT_dim, wlids_dim);
-
-        COND1 (fprintf (global.outfile, "SAC_ND_READ( %s, %d) >= SACp_ub_%d", wlids_NT,
-                        wlids_NT_dim, wlids_dim);
-               , fprintf (global.outfile, "return;"););
+        if (STReq (hasstepwidth, "true")) {
+            fprintf (global.outfile,
+                     "SAC_CUDA_WLIDS_%dD_SW_%d( %s, %d, SACp_step_%d, SACp_width_%d, "
+                     "SACp_lb_%d, SACp_ub_%d)\n",
+                     array_dim, wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos,
+                     wlids_dim_pos, wlids_dim_pos, wlids_dim_pos);
+        } else {
+            fprintf (global.outfile,
+                     "SAC_CUDA_WLIDS_%dD_%d( %s, %d, SACp_lb_%d, SACp_ub_%d)\n",
+                     array_dim, wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos,
+                     wlids_dim_pos);
+        }
     } else {
         INDENT;
         if (STReq (hasstepwidth, "true")) {
             fprintf (global.outfile,
                      "SAC_CUDA_WLIDS_ND_SW_%d( %s, %d, SACp_step_%d, SACp_width_%d, "
-                     "SACp_lb_%d)\n",
-                     wlids_dim, wlids_NT, wlids_NT_dim, wlids_dim, wlids_dim, wlids_dim);
+                     "SACp_lb_%d, SACp_ub_%d)\n",
+                     wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos,
+                     wlids_dim_pos, wlids_dim_pos);
         } else {
-            fprintf (global.outfile, "SAC_CUDA_WLIDS_ND_%d( %s, %d, SACp_lb_%d)\n",
-                     wlids_dim, wlids_NT, wlids_NT_dim, wlids_dim);
+            fprintf (global.outfile,
+                     "SAC_CUDA_WLIDS_ND_%d( %s, %d, SACp_lb_%d, SACp_ub_%d)\n",
+                     wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos);
         }
     }
     DBUG_VOID_RETURN;
@@ -381,7 +360,8 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_WLIDXS (char *wlidxs_NT, char *array_NT, int array_dim, char **var_ANY)
+ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int array_dim,
+                       char **var_ANY)
 {
     DBUG_ENTER ("ICMCompileCUDA_WLIDXS");
 
@@ -392,16 +372,17 @@ ICMCompileCUDA_WLIDXS (char *wlidxs_NT, char *array_NT, int array_dim, char **va
 
     if (array_dim == 1) {
         INDENT;
-        fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = %s;\n", wlidxs_NT, var_ANY[0]);
+        fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = %s;\n", wlidxs_NT,
+                 wlidxs_NT_dim, var_ANY[0]);
     } else if (array_dim == 2) {
         INDENT;
         fprintf (global.outfile,
-                 "SAC_ND_A_FIELD( %s) = %s * SAC_ND_A_MIRROR_SHAPE(%s, 1) + %s;\n",
-                 wlidxs_NT, var_ANY[0], array_NT, var_ANY[1]);
+                 "SAC_ND_WRITE( %s, %d) = %s * SAC_ND_A_MIRROR_SHAPE(%s, 1) + %s;\n",
+                 wlidxs_NT, wlidxs_NT_dim, var_ANY[0], array_NT, var_ANY[1]);
     } else {
         int i, j;
         INDENT;
-        fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = ", wlidxs_NT);
+        fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = ", wlidxs_NT, wlidxs_NT_dim);
         for (i = 0; i < array_dim; i++) {
             fprintf (global.outfile, "%s", var_ANY[i]);
             for (j = i + 1; j < array_dim; j++) {
@@ -535,42 +516,39 @@ ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT, int to_dim,
  * description:
  *
  ******************************************************************************/
-void
-ICMCompileCUDA_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                                  char *idx_ANY, char *basetype)
+/*
+void ICMCompileCUDA_PRF_IDX_SEL__DATA( char *to_NT, int to_sdim,
+                                       char *from_NT, int from_sdim,
+                                       char *idx_ANY, char *basetype)
 {
-    int to_dim = DIM_NO_OFFSET (to_sdim);
+  int to_dim = DIM_NO_OFFSET( to_sdim);
 
-    DBUG_ENTER ("ICMCompileCUDA_PRF_IDX_SEL__DATA");
+  DBUG_ENTER( "ICMCompileCUDA_PRF_IDX_SEL__DATA");
 
 #define CUDA_PRF_IDX_SEL__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef CUDA_PRF_IDX_SEL__DATA
 
-    /*
-     * CAUTION:
-     * 'idx_ANY' is either a tagged identifier (representing a scalar)
-     * or a constant scalar!
-     */
+  if (idx_ANY[0] == '(') {
+    ASSURE_TYPE_ASS(
+      fprintf( global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+    ,
+      fprintf( global.outfile, "1st argument of %s is not a scalar!",
+                        global.prf_name[F_idx_sel]);
+    );
+  }
 
-    if (idx_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         , fprintf (global.outfile, "1st argument of %s is not a scalar!",
-                                    global.prf_name[F_idx_sel]););
-    }
+  if (to_dim == 0) {
+    INDENT;
+    fprintf( global.outfile, "SAC_CUDA_MEM_TRANSFER_AxS(%s, ", to_NT);
+    ReadScalar( idx_ANY, NULL, 0);
+    fprintf( global.outfile, ", %s, %s)", from_NT, basetype);
 
-    if (to_dim == 0) {
-        /*
-         * 'to_NT' is scalar
-         */
-        INDENT;
-        fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_AxS(%s, ", to_NT);
-        ReadScalar (idx_ANY, NULL, 0);
-        fprintf (global.outfile, ", %s, %s)", from_NT, basetype);
-    }
-    DBUG_VOID_RETURN;
+  }
+  DBUG_VOID_RETURN;
 }
+*/
 
 /******************************************************************************
  *
@@ -586,33 +564,42 @@ ICMCompileCUDA_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int f
  * description:
  *
  ******************************************************************************/
-void
-ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_NT,
-                                             int from_sdim, char *idx_ANY,
-                                             char *val_scalar, char *basetype)
+/*
+void ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxS__DATA( char *to_NT,
+                                                  int to_sdim,
+                                                  char *from_NT,
+                                                  int from_sdim,
+                                                  char *idx_ANY,
+                                                  char *val_scalar,
+                                                  char *basetype)
 {
-    DBUG_ENTER ("ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxS__DATA");
+  DBUG_ENTER( "ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxS__DATA");
 
 #define CUDA_PRF_IDX_MODARRAY_AxSxS__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef CUDA_PRF_IDX_MODARRAY_AxSxS__DATA
 
-    if (idx_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
-                                    global.prf_name[F_idx_modarray_AxSxS]););
-    }
+  if (idx_ANY[0] == '(') {
+    ASSURE_TYPE_ASS(
+      fprintf( global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+    ,
+      fprintf( global.outfile, "2nd argument of %s is not a scalar!",
+               global.prf_name[F_idx_modarray_AxSxS]);
+    );
+  }
 
-    INDENT;
-    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_SxA(%s, ", to_NT);
-    ReadScalar (idx_ANY, NULL, 0);
-    fprintf (global.outfile, ",");
-    ReadScalar (val_scalar, NULL, 0);
-    fprintf (global.outfile, ", %s)", basetype);
+  INDENT;
+  fprintf( global.outfile, "SAC_CUDA_MEM_TRANSFER_SxA(%s, ", to_NT);
+  ReadScalar( idx_ANY, NULL, 0);
+  fprintf( global.outfile, ",");
+  ReadScalar( val_scalar, NULL, 0);
+  fprintf( global.outfile, ", %s)", basetype);
 
-    DBUG_VOID_RETURN;
+
+  DBUG_VOID_RETURN;
 }
+*/
 
 /******************************************************************************
  *

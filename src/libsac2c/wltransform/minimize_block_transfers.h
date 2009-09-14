@@ -11,5 +11,6 @@ extern node *MBTRANlet (node *arg_node, info *arg_info);
 extern node *MBTRANid (node *arg_node, info *arg_info);
 extern node *MBTRANwith (node *arg_node, info *arg_info);
 extern node *MBTRANfundef (node *arg_node, info *arg_info);
+extern node *MBTRANcond (node *arg_node, info *arg_info);
 
 #endif

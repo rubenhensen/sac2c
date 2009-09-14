@@ -1,17 +1,18 @@
 /*****************************************************************************
  *
- *
- * file:   create_constant_assignment.c
- *
- * prefix: CNSTASS
- *
- * description:
+ * @defgroup
  *
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file create_constant_assignment.c
+ *
+ * Prefix: CNSTASS
+ *
+ *****************************************************************************/
 #include "create_constant_assignments.h"
-
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -25,23 +26,21 @@
 #include "str.h"
 #include "flattengenerators.h"
 
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *constassigns;
     node *fundef;
     bool collect;
 };
 
-/**
- * INFO macros
- */
-
 #define INFO_CONSTASSIGNS(n) (n->constassigns)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_COLLECT(n) (n->collect)
-
-/**
- * INFO functions
- */
 
 static info *
 MakeInfo ()
@@ -69,6 +68,63 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *CNSTASSdoCUDAconstantAssignment( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *
+CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("CNSTASSdoCUDAconstantAssignment");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+
+    /* This traversal makes sure that all lower bounds
+     * and upper bounds of a generator are now N_ids.
+     */
+    syntax_tree = FLATGdoFlatten (syntax_tree);
+
+    info = MakeInfo ();
+    TRAVpush (TR_cnstass);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node* UnflattenGeneratorComponent( node *host_avis)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static node *
 UnflattenGeneratorComponent (node *id)
 {
@@ -88,6 +144,13 @@ UnflattenGeneratorComponent (node *id)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node* FlattenBoundStepWidthElements( node *host_avis)
+ *
+ * @brief
+ *
+ *****************************************************************************/
 static void
 FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
 {
@@ -119,49 +182,21 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
 }
 
 /** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CNSTASSdoCUDAconstantAssignment( node *syntax_tree)
- *
- * @param
- * @param
- * @return
- *
+ * @}  <!-- Static helper functions -->
  *****************************************************************************/
-node *
-CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("CNSTASSdoCUDAconstantAssignment");
-
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
-
-    /* This traversal makes sure that all lower bounds
-     * and upper bounds of a generator are now N_ids.
-     */
-    syntax_tree = FLATGdoFlatten (syntax_tree);
-
-    info = MakeInfo ();
-    TRAVpush (TR_cnstass);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
-}
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *CNSTASSfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *CNSTASSfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -179,13 +214,10 @@ CNSTASSfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CNSTASSassign( node *arg_node, info *arg_info)
  *
- * @brief node *CNSTASSassign( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -207,13 +239,10 @@ CNSTASSassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CNSTASSwith( node *arg_node, info *arg_info)
  *
- * @brief node *CNSTASSwith( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -233,13 +262,10 @@ CNSTASSwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CNSTASSgenerator( node *arg_node, info *arg_info)
  *
- * @brief node *CNSTASSgenerator( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
  *
  *****************************************************************************/
 node *
@@ -289,3 +315,11 @@ CNSTASSgenerator (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

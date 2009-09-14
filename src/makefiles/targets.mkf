@@ -167,7 +167,7 @@ libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
                         cuda_type_conversion create_constant_assignments minimize_transfers \
                         minimize_loop_transfers \
                         minimize_block_transfers annotate_memory_transfers annotate_cuda_partition \
-                        annotate_cuda_loop cuda_utils
+                        annotate_cuda_loop cuda_utils annotate_cond_transfers
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs mtdcr \
                         scheduling annotate_scheduling set_spmd_linksign \

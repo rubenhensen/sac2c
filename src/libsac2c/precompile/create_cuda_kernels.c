@@ -1,26 +1,25 @@
-/*****************************************************************************
+/** <!--********************************************************************-->
  *
- * file:   create_cuda_kernels.c
+ * @defgroup Insert CUDA type conversion primitives
  *
- * prefix: CUKNL
  *
- * description:
- *   This module creates CUDA kernel functions from N_with nodes. Each
- *   partition of N_with is created as a CUDA kernel and the code of
+ *
+ *   This module creates CUDA kernel functions from cudarizable N_with
+ *   nodes. Each partition is created as a CUDA kernel and the code of
  *   partition becomes the body the kernel function. For exmaple:
  *
  *   in_var1 = ...
  *   in_var2 = ...
  *   a_mem = with
  *           {
- *             [l0,l1,l2] <= iv < [u0,u1,u2]
+ *             [l0,l1,l2] <= iv = [eat1, eat2, eat3](IDXS:_wlidx) < [u0,u1,u2]
  *             {
  *               ... = var1;
  *               local_var1 = ...;
  *               ...
  *               res1 = ...;
  *             }:res1;
- *             [l3,l4,l5] <= iv < [u3,u4,u5]
+ *             [l3,l4,l5] <= iv = [eat1, eat2, eat3](IDXS:_wlidx) < [u3,u4,u5]
  *             {
  *               ... = var2;
  *               local_var2 = ...;
@@ -33,11 +32,18 @@
  *
  *   in_var1 = ...
  *   in_var2 = ...
- *   a_mem = CUDA_kenerl1( a_mem, l0, l1, l2, u0, u1, u2, var1);
- *   a_mem = CUDA_kenerl2( a_mem, l3, l4, l5, u3, u4, u5, var2);
+ *   _cuda_grid_block_( u0, u1, u2, l0, l1, l2);
+ *   a_mem = CUDA_kernel1( a_mem, l0, l1, l2, u0, u1, u2, var1);
+ *   _cuda_grid_block_( u0, u1, u2, l0, l1, l2);
+ *   a_mem = CUDA_kernel2( a_mem, l3, l4, l5, u3, u4, u5, var2);
  *
- *   void CUDA_kenerl1( a_mem, l0, l1, l2, u0, u1, u2, var1)
+ *   dev[*] CUDA_kernel1( a_mem, l0, l1, l2, u0, u1, u2, var1)
  *   {
+ *     _cuda_wlids_( eat1);
+ *     _cuda_wlids_( eat2);
+ *     _cuda_wlids_( eat3);
+ *     _cuda_wlidxs_( _wlidx, a_mem, eat1, eat2, eat3);
+ *
  *     ... = var1;
  *     local_var1 = ...;
  *     ...
@@ -45,8 +51,13 @@
  *     return a_mem;
  *   }
  *
- *   void CUDA_kenerl2( a_mem, l3, l4, l5, u3, u4, u5, var2)
+ *   dev[*] CUDA_kernel2( a_mem, l3, l4, l5, u3, u4, u5, var2)
  *   {
+ *     _cuda_wlids_( eat1);
+ *     _cuda_wlids_( eat2);
+ *     _cuda_wlids_( eat3);
+ *     _cuda_wlidxs_( _wlidx, a_mem, eat1, eat2, eat3);
+ *
  *     ... = var2;
  *     local_var2 = ...;
  *     ...
@@ -54,9 +65,26 @@
  *     return a_mem;
  *   }
  *
+ *   Note that in the trasformed code, serveral primitives are also
+ *   inserted. F_cuda_grid_block inserted before CUDA kernel applicatino
+ *   is used to create the CUDA kernel configuration parameters in
+ *   the backend. F_cuda_wlids and F_cuda_wlidxs inserted at the beginning
+ *   of each CUDA kernel are use to generate the correct index value
+ *   in the backend.
+ *
+ * @ingroup
+ *
+ * @{
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file create_cuda_kernels.c
+ *
+ * Prefix: CUKNL
+ *
+ *****************************************************************************/
 #include "create_cuda_kernels.h"
 
 #include "dbug.h"
@@ -73,12 +101,12 @@
 #include "shape.h"
 #include "str.h"
 
-static int ids_dim = 0;
-
-/**
- * INFO structure
- */
-
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *cudakernels;
     node *cudaaps;
@@ -92,9 +120,6 @@ struct INFO {
     bool collect;
     node *allocassigns;
     node *freeassigns;
-    bool is_wlids;
-    node *wlids;
-    bool is_wlidxs;
     node *prfwlids;
     node *prfwlidxs;
     node *prfgridblock;
@@ -107,11 +132,8 @@ struct INFO {
     bool lift_done;
     bool in_withop;
     node *withop;
+    bool trav_mem;
 };
-
-/**
- * INFO macros
- */
 
 #define INFO_CUDAKERNELS(n) (n->cudakernels)
 #define INFO_CUDAAPS(n) (n->cudaaps)
@@ -125,9 +147,6 @@ struct INFO {
 #define INFO_COLLECT(n) (n->collect)
 #define INFO_ALLOCASSIGNS(n) (n->allocassigns)
 #define INFO_FREEASSIGNS(n) (n->freeassigns)
-#define INFO_IS_WLIDS(n) (n->is_wlids)
-#define INFO_WLIDS(n) (n->wlids)
-#define INFO_IS_WLIDXS(n) (n->is_wlidxs)
 #define INFO_PRFWLIDS(n) (n->prfwlids)
 #define INFO_PRFWLIDXS(n) (n->prfwlidxs)
 #define INFO_PRFGRIDBLOCK(n) (n->prfgridblock)
@@ -140,10 +159,7 @@ struct INFO {
 #define INFO_LIFTDONE(n) (n->lift_done)
 #define INFO_INWITHOP(n) (n->in_withop)
 #define INFO_WITHOP(n) (n->withop)
-
-/**
- * INFO functions
- */
+#define INFO_TRAVMEM(n) (n->trav_mem)
 
 static info *
 MakeInfo ()
@@ -166,9 +182,6 @@ MakeInfo ()
     INFO_COLLECT (result) = FALSE;
     INFO_ALLOCASSIGNS (result) = NULL;
     INFO_FREEASSIGNS (result) = NULL;
-    INFO_IS_WLIDS (result) = FALSE;
-    INFO_WLIDS (result) = NULL;
-    INFO_IS_WLIDXS (result) = FALSE;
     INFO_PRFWLIDS (result) = NULL;
     INFO_PRFWLIDXS (result) = NULL;
     INFO_PRFGRIDBLOCK (result) = NULL;
@@ -181,6 +194,7 @@ MakeInfo ()
     INFO_LIFTDONE (result) = FALSE;
     INFO_INWITHOP (result) = FALSE;
     INFO_WITHOP (result) = NULL;
+    INFO_TRAVMEM (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -196,14 +210,55 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Entry functions
+ * @{
  *
- * @brief static void  SetLinksignInfo( node *args, info *arg_info)
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *CUKNLdoCreateCudaKernels( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *
+CUKNLdoCreateCudaKernels (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("CUKNLdoCreateCudaKernels");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_cuknl);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn static void  SetLinksignInfo( node *args, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 static void
@@ -229,16 +284,12 @@ SetLinksignInfo (node *args, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn static node *HandleBoundStepWidthExprs( node *expr,
+ *                                             node **gridblock_exprs,
+ *                                             char *name,
+ *                                             info *arg_info)
  *
- * @brief static node *HandleBoundStepWidthExprs( node *expr,
- *                                                node **gridblock_exprs,
- *                                                char *name,
- *                                                info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 static node *
@@ -283,13 +334,9 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn static node* CreateCudaKernelDef( node *code, info *arg_info)
  *
- * @brief static node* CreateCudaKernelDef( node *code, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 static node *
@@ -343,70 +390,90 @@ CreateCudaKernelDef (node *code, info *arg_info)
     INFO_HASSTEPWIDTH (arg_info) = FALSE;
     FUNDEF_RETURN (cuda_kerneldef) = retur;
 
-    DBUG_RETURN (cuda_kerneldef);
+    INFO_CUDAKERNELS (arg_info)
+      = TCappendFundef (cuda_kerneldef, INFO_CUDAKERNELS (arg_info));
+
+    DBUG_RETURN (INFO_CUDAKERNELS (arg_info));
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn void CreateAllocAndFree( node *avis, info *arg_info)
  *
- * @brief node *CUKNLdoCreateCudaKernels( node *syntax_tree)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
-node *
-CUKNLdoCreateCudaKernels (node *syntax_tree)
+static void
+CreateAllocAndFree (node *avis, info *arg_info)
 {
-    info *info;
+    node *alloc, *free, *dim, *shape;
 
-    DBUG_ENTER ("CUKNLdoCreateCudaKernels");
+    DBUG_ENTER ("CreateAllocAndFree");
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+    if (TUdimKnown (AVIS_TYPE (avis))) {
+        dim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
+    }
 
-    info = MakeInfo ();
+    if (TUshapeKnown (AVIS_TYPE (avis))) {
+        shape = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
+    }
 
-    TRAVpush (TR_cuknl);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
+    /* Create F_alloc and F_free for N_withid->ids and N_withid->idxs */
+    alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);
+    INFO_ALLOCASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), alloc),
+                      INFO_ALLOCASSIGNS (arg_info));
 
-    info = FreeInfo (info);
+    free = TCmakePrf1 (F_free, TBmakeId (avis));
+    INFO_FREEASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (NULL, free), INFO_FREEASSIGNS (arg_info));
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *PreprocessWithid( node *id, info *arg_info)
  *
- * @brief node *CUKNLmodule( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
-node *
-CUKNLmodule (node *arg_node, info *arg_info)
+static node *
+PreprocessWithid (node *id, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLmodule");
+    node *avis, *new_avis;
 
-    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+    DBUG_ENTER ("PreprocessWithid");
 
-    DBUG_RETURN (arg_node);
+    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                 "Non N_id node found in N_withid->ids or N_withid->idxs!");
+    avis = ID_AVIS (id);
+    new_avis = DUPdoDupNode (avis);
+    INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+
+    CreateAllocAndFree (new_avis, arg_info);
+
+    DBUG_RETURN (new_avis);
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @fn
+ * @name Traversal functions
+ * @{
  *
- * @brief node *CUKNLfundef( node *arg_node, info *arg_info)
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * @param
- * @param
- * @return
+ * @fn node *CUKNLfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -415,7 +482,7 @@ CUKNLfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUKNLfundef");
 
     if (!FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
-        /* Only Non CUDA function may contain N_with to be lifted. */
+        /* Only Non CUDA kernels may contain cudarizable N_with */
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
@@ -434,43 +501,37 @@ CUKNLfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLassign( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLassign( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief  For cudarizable N_with, remove the old N_assign and insert
+ *         the newly created CUDA kernel N_aps into the assign chain.
  *
  *****************************************************************************/
 node *
 CUKNLassign (node *arg_node, info *arg_info)
 {
+    node *next, *new_lastassign;
+
     DBUG_ENTER ("CUKNLassign");
-
-    node *ret_node = NULL;
-    node *next = NULL;
-    node *new_lastassign;
-
-    next = ASSIGN_NEXT (arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* If we are not in collect mode and the RHS has been
      * lifted as a chain of CUDA kernel applications */
     if (!INFO_COLLECT (arg_info) && INFO_LIFTDONE (arg_info)) {
-        /* Free the current N_assign */
-        arg_node = FREEdoFreeNode (arg_node);
+        /* Free the current N_assign and store the
+         * next N_assign in 'next' */
+        next = FREEdoFreeNode (arg_node);
 
         /* If there is a <device2device> to be prepended */
         if (INFO_D2DTRANSFER (arg_info) != NULL) {
-            ret_node
+            arg_node
               = TCappendAssign (INFO_D2DTRANSFER (arg_info), INFO_CUDAAPS (arg_info));
         } else {
-            ret_node = INFO_CUDAAPS (arg_info);
+            arg_node = INFO_CUDAAPS (arg_info);
         }
 
-        new_lastassign = ret_node;
+        new_lastassign = arg_node;
         while (ASSIGN_NEXT (new_lastassign) != NULL) {
             new_lastassign = ASSIGN_NEXT (new_lastassign);
         }
@@ -483,21 +544,16 @@ CUKNLassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (new_lastassign) = TRAVopt (ASSIGN_NEXT (new_lastassign), arg_info);
     } else {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-        ret_node = arg_node;
     }
 
-    DBUG_RETURN (ret_node);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLlet( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLlet( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -505,6 +561,7 @@ CUKNLlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUKNLlet");
 
+    /* Save LHS */
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
@@ -515,171 +572,9 @@ CUKNLlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLwith( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLid(node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLid (node *arg_node, info *arg_info)
-{
-    node *avis, *new_avis, *dim, *shape;
-    node *alloc, *free;
-    node *prf_wlids, *prf_wlidxs;
-    bool in_withid;
-
-    DBUG_ENTER ("CUKNLid");
-
-    avis = ID_AVIS (arg_node);
-    in_withid = (INFO_IS_WLIDS (arg_info) || INFO_IS_WLIDXS (arg_info));
-
-    new_avis = NULL;
-    dim = NULL;
-    shape = NULL;
-    alloc = NULL;
-    free = NULL;
-
-    DBUG_PRINT ("CUKNL", ("ENTER id %s", ID_NAME (arg_node)));
-
-    if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-            new_avis = DUPdoDupNode (avis);
-
-            /* If the N_id is not in N_withid, we create
-             * N_fundef/N_ap arguments from it. */
-            if (!in_withid) {
-                INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
-                INFO_PARAMS (arg_info)
-                  = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
-
-                if (INFO_INWITHOP (arg_info)) {
-                    ARG_LINKSIGN (INFO_ARGS (arg_info)) = INFO_LS_NUM (arg_info);
-                    ARG_HASLINKSIGNINFO (INFO_ARGS (arg_info)) = TRUE;
-                    INFO_LS_NUM (arg_info) += 1;
-                } else {
-                    /* We only set the new avis if the N_id is
-                     * NOT in N_genarray/N_modarray */
-                    ID_AVIS (arg_node) = new_avis;
-                }
-            }
-
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-        } else {
-            ID_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
-        }
-
-        if (in_withid) {
-            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-
-            if (TUdimKnown (AVIS_TYPE (new_avis))) {
-                dim = TBmakeNum (TYgetDim (AVIS_TYPE (new_avis)));
-            }
-
-            if (TUshapeKnown (AVIS_TYPE (new_avis))) {
-                shape = SHshape2Array (TYgetShape (AVIS_TYPE (new_avis)));
-            }
-
-            /* Create F_alloc and F_free for N_withid->ids and N_withid->idxs */
-            alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);
-            INFO_ALLOCASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), alloc),
-                              INFO_ALLOCASSIGNS (arg_info));
-
-            free = TCmakePrf1 (F_free, TBmakeId (new_avis));
-            INFO_FREEASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (NULL, free), INFO_FREEASSIGNS (arg_info));
-
-            /* Create F_cuda_wlids and F_cuda_wlidxs */
-            if (INFO_IS_WLIDS (arg_info)) {
-                prf_wlids
-                  = TCmakePrf3 (F_cuda_wlids, TBmakeId (new_avis), TBmakeNum (ids_dim),
-                                TBmakeNum (TCcountExprs (INFO_WLIDS (arg_info))));
-                INFO_PRFWLIDS (arg_info)
-                  = TBmakeAssign (TBmakeLet (NULL, prf_wlids), INFO_PRFWLIDS (arg_info));
-                ids_dim++;
-            }
-
-            if (INFO_IS_WLIDXS (arg_info)) {
-                node *exprs = NULL;
-                /* The avis of the returned device variable */
-                node *dev_avis = ARG_AVIS (INFO_ARGS (arg_info));
-                node *wlids = INFO_WLIDS (arg_info);
-                node *wlids_avis;
-                while (wlids != NULL) {
-                    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (wlids)) == N_id,
-                                 "N_withid->ids is not a list of N_id nodes!");
-                    wlids_avis = LUTsearchInLutPp (INFO_LUT (arg_info),
-                                                   ID_AVIS (EXPRS_EXPR (wlids)));
-                    exprs
-                      = TCappendExprs (exprs, TBmakeExprs (TBmakeId (wlids_avis), NULL));
-                    wlids = EXPRS_NEXT (wlids);
-                }
-                exprs
-                  = TBmakeExprs (TBmakeNum (TCcountExprs (INFO_WLIDS (arg_info))), exprs);
-                exprs = TBmakeExprs (TBmakeId (dev_avis), exprs);
-                exprs = TBmakeExprs (TBmakeId (new_avis), exprs);
-                prf_wlidxs = TBmakePrf (F_cuda_wlidxs, exprs);
-                INFO_PRFWLIDXS (arg_info) = TBmakeAssign (TBmakeLet (NULL, prf_wlidxs),
-                                                          INFO_PRFWLIDXS (arg_info));
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLids( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLids (node *arg_node, info *arg_info)
-{
-    node *avis, *new_avis;
-
-    DBUG_ENTER ("CUKNLids");
-
-    avis = IDS_AVIS (arg_node);
-
-    DBUG_PRINT ("CUKNL", ("ENTER ids %s", IDS_NAME (arg_node)));
-
-    if (INFO_COLLECT (arg_info) && PART_CUDARIZABLE (INFO_PART (arg_info))) {
-        /* Not come across before */
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-            new_avis = DUPdoDupNode (avis);
-            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-            AVIS_DECL (new_avis) = INFO_VARDECS (arg_info);
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            DBUG_PRINT ("CUKNL", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
-        }
-        IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
-    }
-
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLwith( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -690,9 +585,14 @@ CUKNLwith (node *arg_node, info *arg_info)
     if (WITH_CUDARIZABLE (arg_node)) {
         /* Start collecting data flow information */
         INFO_COLLECT (arg_info) = TRUE;
+        /* Save withop. This withop will be traverse in the
+         * traversal of each N_part. See CUKNLpart */
         INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        INFO_WITHOP (arg_info) = NULL;
         INFO_COLLECT (arg_info) = FALSE;
+        /* Indicate to N_assign that a chain of CUDA kernel N_aps
+         * has been created and needs to be inserted into the AST */
         INFO_LIFTDONE (arg_info) = TRUE;
     }
     DBUG_RETURN (arg_node);
@@ -700,169 +600,17 @@ CUKNLwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLpart( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLgenarray( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLgenarray (node *arg_node, info *arg_info)
-{
-    node *avis, *new_avis;
-
-    DBUG_ENTER ("CUKNLgenarray");
-
-    if (INFO_COLLECT (arg_info)) {
-        GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
-        GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
-
-        avis = ID_AVIS (GENARRAY_MEM (arg_node));
-
-        /* The memval in N_genarray is the return value */
-        INFO_RETS (arg_info)
-          = TCappendRet (TBmakeRet (TYeliminateAKV (AVIS_TYPE (avis)), NULL),
-                         INFO_RETS (arg_info));
-
-        /* Set the linksign to the linksign of the return memval */
-        RET_LINKSIGN (INFO_RETS (arg_info)) = ARG_LINKSIGN (INFO_ARGS (arg_info));
-        RET_HASLINKSIGNINFO (INFO_RETS (arg_info)) = TRUE;
-
-        /* Set the declaration of the return N_id to the memval argument */
-        new_avis = DUPdoDupNode (avis);
-        AVIS_DECL (new_avis) = INFO_ARGS (arg_info);
-        INFO_RETEXPRS (arg_info) = TCappendExprs (TBmakeExprs (TBmakeId (new_avis), NULL),
-                                                  INFO_RETEXPRS (arg_info));
-
-        GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLmodarray( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLmodarray (node *arg_node, info *arg_info)
-{
-    node *avis, *new_avis;
-
-    DBUG_ENTER ("CUKNLmodarray");
-
-    if (INFO_COLLECT (arg_info)) {
-        MODARRAY_SUB (arg_node) = TRAVopt (MODARRAY_SUB (arg_node), arg_info);
-        MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
-
-        avis = ID_AVIS (MODARRAY_MEM (arg_node));
-
-        /* The memval in N_modarray is the return value */
-        INFO_RETS (arg_info)
-          = TCappendRet (TBmakeRet (TYeliminateAKV (AVIS_TYPE (DUPdoDupNode (avis))),
-                                    NULL),
-                         INFO_RETS (arg_info));
-
-        /* Set the linksign to the linksign of the return memval */
-        RET_LINKSIGN (INFO_RETS (arg_info)) = ARG_LINKSIGN (INFO_ARGS (arg_info));
-        RET_HASLINKSIGNINFO (INFO_RETS (arg_info)) = TRUE;
-
-        /* Set the declaration of the return N_id to the memval argument */
-        new_avis = DUPdoDupNode (avis);
-        AVIS_DECL (new_avis) = INFO_ARGS (arg_info);
-        INFO_RETEXPRS (arg_info) = TCappendExprs (TBmakeExprs (TBmakeId (new_avis), NULL),
-                                                  INFO_RETEXPRS (arg_info));
-
-        MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLwithid( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUKNLwithid");
-
-    if (INFO_COLLECT (arg_info)) {
-        INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
-
-        /* Traverse order of N_withid->ids and N_with->idxs must
-         * not be changed because N_with->idxs need N_withid->ids */
-        ids_dim = 0;
-        INFO_IS_WLIDS (arg_info) = TRUE;
-        WITHID_IDS (arg_node) = TRAVopt (WITHID_IDS (arg_node), arg_info);
-        INFO_IS_WLIDS (arg_info) = FALSE;
-
-        INFO_IS_WLIDXS (arg_info) = TRUE;
-        WITHID_IDXS (arg_node) = TRAVopt (WITHID_IDXS (arg_node), arg_info);
-        INFO_IS_WLIDXS (arg_info) = FALSE;
-
-        INFO_WLIDS (arg_info) = NULL;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLcode( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-CUKNLcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUKNLcode");
-
-    if (INFO_COLLECT (arg_info)) {
-        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *CUKNLpart( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
+ * @brief Traverse each N_part (including the withop of the enclosing N_with)
+ *        and create both CUDA kernel and kernel application for it.
  *
  *****************************************************************************/
 node *
 CUKNLpart (node *arg_node, info *arg_info)
 {
     node *cuda_kernel, *cuda_funap;
-    node *old_ids, *code;
+    node *old_ids, *dup_code;
 
     DBUG_ENTER ("CUKNLpart");
 
@@ -870,33 +618,55 @@ CUKNLpart (node *arg_node, info *arg_info)
         INFO_PART (arg_info) = arg_node;
         /* For each cudarizable partition, we create a CUDA kernel */
         if (PART_CUDARIZABLE (arg_node)) {
+            /* We create a lookup table for the traversal of each partition */
             INFO_LUT (arg_info) = LUTgenerateLut ();
 
+            /* Since each CUDA kernel created from an N_part may
+             * potentially need the sons of withop as arguments and
+             * it's created independently, traversal of each N_part
+             * must also traverse the withop associated with the
+             * N_with. */
             INFO_INWITHOP (arg_info) = TRUE;
             INFO_WITHOP (arg_info) = TRAVdo (INFO_WITHOP (arg_info), arg_info);
             INFO_INWITHOP (arg_info) = FALSE;
 
             old_ids = INFO_LETIDS (arg_info);
 
+            /********* Begin traversal of N_part Sons/Attributes *********/
+
             PART_WITHID (arg_node) = TRAVopt (PART_WITHID (arg_node), arg_info);
-            code = DUPdoDupNode (PART_CODE (arg_node));
-            code = TRAVopt (code, arg_info);
+
+            /* Since each CUDA kernel contains the code originally in each
+             * N_part and since N_code can be shared between more than one
+             * N_part, we duplicate it before traversing into it */
+            dup_code = DUPdoDupNode (PART_CODE (arg_node));
+            dup_code = TRAVopt (dup_code, arg_info);
+
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+
+            /********** End traversal of N_part Sons/Attributes **********/
 
             INFO_LETIDS (arg_info) = old_ids;
 
-            cuda_kernel = CreateCudaKernelDef (code, arg_info);
-            FUNDEF_NEXT (cuda_kernel) = INFO_CUDAKERNELS (arg_info);
-            INFO_CUDAKERNELS (arg_info) = cuda_kernel;
+            /****** Begin creating CUDA kernel and its application ******/
+
+            cuda_kernel = CreateCudaKernelDef (dup_code, arg_info);
 
             cuda_funap
               = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
                                          TBmakeAp (cuda_kernel, INFO_PARAMS (arg_info))),
                               NULL);
+
+            /* Each CUDA kernel N_ap is preceeded by a primitive F_grid_block.
+             * This is used in the later code generation to create the correct
+             * CUDA configuration parameters, i.e. shape of grid and block. */
             INFO_CUDAAPS (arg_info)
               = TCappendAssign (INFO_PRFGRIDBLOCK (arg_info),
                                 TCappendAssign (cuda_funap, INFO_CUDAAPS (arg_info)));
 
+            /******* End creating CUDA kernel and its application *******/
+
+            /* Clean up */
             INFO_ARGS (arg_info) = NULL;
             INFO_PARAMS (arg_info) = NULL;
             INFO_RETS (arg_info) = NULL;
@@ -923,13 +693,156 @@ CUKNLpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLgenarray( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLgenerator( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
+ *****************************************************************************/
+node *
+CUKNLgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUKNLgenarray");
+
+    if (INFO_COLLECT (arg_info)) {
+        GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
+
+        INFO_TRAVMEM (arg_info) = TRUE;
+        GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
+        INFO_TRAVMEM (arg_info) = FALSE;
+
+        GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUKNLmodarray");
+
+    if (INFO_COLLECT (arg_info)) {
+        INFO_TRAVMEM (arg_info) = TRUE;
+        MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
+        INFO_TRAVMEM (arg_info) = FALSE;
+
+        MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLwithid( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLwithid (node *arg_node, info *arg_info)
+{
+    node *wlids, *wlidxs, *wlvec, *id, *withop;
+    node *new_wlids = NULL;
+    node *new_avis;
+    int dim, iter = 0;
+    node *prf_wlids, *prf_wlidxs, *prf_wlidxs_args = NULL;
+
+    DBUG_ENTER ("CUKNLwithid");
+
+    wlids = WITHID_IDS (arg_node);
+    wlidxs = WITHID_IDXS (arg_node);
+    wlvec = WITHID_VEC (arg_node);
+    withop = INFO_WITHOP (arg_info);
+
+    if (INFO_COLLECT (arg_info)) {
+        DBUG_ASSERT ((NODE_TYPE (wlvec) == N_id),
+                     "Non N_id node found in N_withid->vec!");
+        /* Get the dimentionality of the N_with */
+        dim = SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (wlvec))), 0);
+
+        while (wlids != NULL) {
+            id = EXPRS_EXPR (wlids);
+            new_avis = PreprocessWithid (id, arg_info);
+
+            /* Create primitives F_cuda_wlids */
+            prf_wlids = TCmakePrf3 (F_cuda_wlids, TBmakeId (new_avis), TBmakeNum (iter),
+                                    TBmakeNum (dim));
+            INFO_PRFWLIDS (arg_info)
+              = TBmakeAssign (TBmakeLet (NULL, prf_wlids), INFO_PRFWLIDS (arg_info));
+
+            /* Build an N_exprs containing all N_id in N_withid->ids,
+             * each N_ids contain the new avis. This N_exprs will be
+             * used to construct primitive F_cuda_wlidxs (See below) */
+            new_wlids
+              = TCappendExprs (new_wlids, TBmakeExprs (TBmakeId (new_avis), NULL));
+            iter++;
+            wlids = EXPRS_NEXT (wlids);
+        }
+
+        while (wlidxs != NULL && withop != NULL) {
+            id = EXPRS_EXPR (wlidxs);
+            new_avis = PreprocessWithid (id, arg_info);
+
+            node *mem_id = WITHOP_MEM (withop);
+            DBUG_ASSERT ((NODE_TYPE (mem_id) == N_id),
+                         "Non N_id node found in withop->mem");
+            node *mem_avis = ID_AVIS (mem_id);
+            node *new_mem_avis = LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
+            DBUG_ASSERT ((new_mem_avis != mem_avis),
+                         "Withop->mem has not been traversed before!");
+
+            prf_wlidxs_args = TBmakeExprs (TBmakeNum (dim), DUPdoDupTree (new_wlids));
+            prf_wlidxs_args = TBmakeExprs (TBmakeId (new_mem_avis), prf_wlidxs_args);
+            prf_wlidxs_args = TBmakeExprs (TBmakeId (new_avis), prf_wlidxs_args);
+
+            /* Create primitives F_cuda_wlidxs */
+            prf_wlidxs = TBmakePrf (F_cuda_wlidxs, prf_wlidxs_args);
+            INFO_PRFWLIDXS (arg_info)
+              = TBmakeAssign (TBmakeLet (NULL, prf_wlidxs), INFO_PRFWLIDXS (arg_info));
+
+            wlidxs = EXPRS_NEXT (wlidxs);
+            withop = WITHOP_NEXT (withop);
+            DBUG_ASSERT (((wlidxs == NULL && withop == NULL)
+                          || (wlidxs != NULL && withop != NULL)),
+                         "#withop != #N_withid->wlidxs!");
+        }
+        new_wlids = FREEdoFreeTree (new_wlids);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUKNLcode");
+
+    /* We only traverse N_code if we are in collect mode */
+    if (INFO_COLLECT (arg_info)) {
+        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLgenerator( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -967,13 +880,109 @@ CUKNLgenerator (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *CUKNLid( node *arg_node, info *arg_info)
  *
- * @brief node *CUKNLprf( node *arg_node, info *arg_info)
+ * @brief
  *
- * @param
- * @param
- * @return
+ *****************************************************************************/
+node *
+CUKNLid (node *arg_node, info *arg_info)
+{
+    node *avis, *new_avis;
+
+    DBUG_ENTER ("CUKNLid");
+
+    avis = ID_AVIS (arg_node);
+
+    new_avis = NULL;
+
+    DBUG_PRINT ("CUKNL", ("ENTER id %s", ID_NAME (arg_node)));
+
+    if (INFO_COLLECT (arg_info)) {
+        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+            new_avis = DUPdoDupNode (avis);
+            INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
+            INFO_PARAMS (arg_info)
+              = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+
+            if (INFO_INWITHOP (arg_info)) {
+                ARG_LINKSIGN (INFO_ARGS (arg_info)) = INFO_LS_NUM (arg_info);
+                ARG_HASLINKSIGNINFO (INFO_ARGS (arg_info)) = TRUE;
+
+                /* If we are traversing withop->Mem, create N_ret/N_return
+                 * and set the linksign properly */
+                if (INFO_TRAVMEM (arg_info)) {
+                    /* The type of 'Mem' in withop is the return type */
+                    INFO_RETS (arg_info)
+                      = TCappendRet (TBmakeRet (TYeliminateAKV (AVIS_TYPE (new_avis)),
+                                                NULL),
+                                     INFO_RETS (arg_info));
+
+                    /* Set the correct linksign value for N_ret */
+                    RET_LINKSIGN (INFO_RETS (arg_info)) = INFO_LS_NUM (arg_info);
+                    RET_HASLINKSIGNINFO (INFO_RETS (arg_info)) = TRUE;
+
+                    /* Create a return N_id */
+                    INFO_RETEXPRS (arg_info)
+                      = TCappendExprs (TBmakeExprs (TBmakeId (new_avis), NULL),
+                                       INFO_RETEXPRS (arg_info));
+                }
+                INFO_LS_NUM (arg_info) += 1;
+            } else {
+                /* We only set the new avis if the N_id is NOT in
+                 * N_genarray/N_modarray.  */
+                ID_AVIS (arg_node) = new_avis;
+            }
+
+            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+        } else {
+            ID_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLids( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLids (node *arg_node, info *arg_info)
+{
+    node *avis, *new_avis;
+
+    DBUG_ENTER ("CUKNLids");
+
+    avis = IDS_AVIS (arg_node);
+
+    DBUG_PRINT ("CUKNL", ("ENTER ids %s", IDS_NAME (arg_node)));
+
+    if (INFO_COLLECT (arg_info) && PART_CUDARIZABLE (INFO_PART (arg_info))) {
+        /* Not come across before */
+        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+            new_avis = DUPdoDupNode (avis);
+            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+            AVIS_DECL (new_avis) = INFO_VARDECS (arg_info);
+            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+            DBUG_PRINT ("CUKNL", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
+        }
+        IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+    }
+
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLprf( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -1036,3 +1045,11 @@ CUKNLprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (ret_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

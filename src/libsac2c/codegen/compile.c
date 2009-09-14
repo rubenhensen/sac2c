@@ -4027,31 +4027,17 @@ COMPprfCUDAWLIdxs (node *arg_node, info *arg_info)
     array_dim = NUM_VAL (PRF_ARG3 (arg_node));
     DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
 
-    if (array_dim <= 2) {
-        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDXS",
-                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
-                                                   FALSE, FALSE, NULL),
-                                     MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
-                                                   ID_TYPE (PRF_ARG2 (arg_node)), FALSE,
-                                                   FALSE, FALSE, NULL),
-                                     TBmakeNum (array_dim),
-                                     DupExprs_NT_AddReadIcms (
-                                       EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
-                                     NULL);
-    } else {
-        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDXS",
-                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
-                                                   FALSE, FALSE, NULL),
-                                     MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
-                                                   ID_TYPE (PRF_ARG2 (arg_node)), FALSE,
-                                                   FALSE, FALSE, NULL),
-                                     TBmakeNum (array_dim),
-                                     DupExprs_NT_AddReadIcms (
-                                       EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
-                                     NULL);
-    }
+    ret_node
+      = TCmakeAssignIcm4 ("CUDA_WLIDXS",
+                          MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                        ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
+                                        NULL),
+                          MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
+                                        ID_TYPE (PRF_ARG2 (arg_node)), FALSE, FALSE,
+                                        FALSE, NULL),
+                          TBmakeNum (array_dim),
+                          DupExprs_NT_AddReadIcms (EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4061,7 +4047,7 @@ COMPprfCUDAWLIds (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
     node *args;
-    int array_dim, dim;
+    int array_dim, dim_pos;
 
     DBUG_ENTER ("COMPprfCUDAWLIds");
 
@@ -4070,27 +4056,15 @@ COMPprfCUDAWLIds (node *arg_node, info *arg_info)
 
     args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
 
-    if (array_dim <= 2) {
-        dim = NUM_VAL (PRF_ARG2 (arg_node));
-        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDS",
-                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
-                                                   TRUE, FALSE, NULL),
-                                     TBmakeNum (array_dim), TBmakeNum (dim),
-                                     TBmakeBool (
-                                       FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
-                                     NULL);
-    } else {
-        dim = NUM_VAL (PRF_ARG2 (arg_node));
-        ret_node = TCmakeAssignIcm4 ("CUDA_WLIDS",
-                                     MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                                   ID_TYPE (PRF_ARG1 (arg_node)), FALSE,
-                                                   TRUE, FALSE, NULL),
-                                     TBmakeNum (array_dim), TBmakeNum (dim),
-                                     TBmakeBool (
-                                       FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
-                                     NULL);
-    }
+    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+    ret_node
+      = TCmakeAssignIcm4 ("CUDA_WLIDS",
+                          MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                        ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
+                                        NULL),
+                          TBmakeNum (array_dim), TBmakeNum (dim_pos),
+                          TBmakeBool (FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }

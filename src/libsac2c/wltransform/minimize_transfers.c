@@ -1,11 +1,8 @@
 /*****************************************************************************
  *
+ * @defgroup
  *
- * file:   minimize_transfers.c
  *
- * prefix: MTRAN
- *
- * description:
  *   This is a driver module for three transformations aiming at minimizing
  *   the number of host<->device memory transfers. These three transformations
  *   are applied in a cyclic fashion since one optimization might expose more
@@ -18,6 +15,13 @@
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file minimize_transfers.c
+ *
+ * Prefix: MTRAN
+ *
+ *****************************************************************************/
 #include "minimize_transfers.h"
 
 #include <stdlib.h>
@@ -26,13 +30,24 @@
 #include "annotate_memory_transfers.h"
 #include "minimize_loop_transfers.h"
 
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *MLTRANdoMinimizeLoopTransfers( node *syntax_tree)
+ *
+ *****************************************************************************/
 node *
 MTRANdoMinimizeTransfers (node *syntax_tree)
 {
     DBUG_ENTER ("MTRANdoMinimizeTransfers");
 
     int i = 0;
-    while (i < 10) {
+    while (i < 1) {
         syntax_tree = MBTRANdoMinimizeBlockTransfers (syntax_tree);
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
@@ -40,3 +55,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
     }
     DBUG_RETURN (syntax_tree);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
