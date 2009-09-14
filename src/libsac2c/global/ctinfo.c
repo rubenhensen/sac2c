@@ -326,16 +326,21 @@ CleanUpInterrupted ()
 static void
 AbortCompilation ()
 {
+    int ecode = (int)global.compiler_phase;
     DBUG_ENTER ("AbortCompilation");
+
+    if (ecode == 0) {
+        ecode = 255;
+    }
 
     CleanUp ();
 
     fprintf (stderr, "\n*** Compilation failed ***\n");
-    fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,
+    fprintf (stderr, "*** Exit code %d (%s)\n", ecode,
              PHIphaseText (global.compiler_phase));
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
 
-    exit ((int)global.compiler_phase);
+    exit (ecode);
 
     DBUG_VOID_RETURN;
 }
