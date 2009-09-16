@@ -930,7 +930,7 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_EFFECT( store_pragma) = $3;
         }
       | hash_pragma MUTCTHREADFUN
-        { if( pragma_type != PRAG_fundec) {
+        { if( pragma_type != PRAG_fundec && pragma_type != PRAG_fundef) {
             yyerror( "pragma \"mutcthreadfun\" not allowed here");
           }
           if (store_pragma == NULL) {
