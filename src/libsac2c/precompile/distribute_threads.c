@@ -345,7 +345,7 @@ DSTwith3 (node *arg_node, info *arg_info)
 
 #ifdef USE_CONCURRENT_RANGES
     WITH3_USECONCURRENTRANGES (arg_node) = TRUE;
-#else
+#else  /* USE_CONCURRENT_RANGES */
     WITH3_USECONCURRENTRANGES (arg_node) = FALSE;
 #endif /* USE_CONCURRENT_RANGES */
 
@@ -386,7 +386,7 @@ DSTrange (node *arg_node, info *arg_info)
 #ifdef USE_CONCURRENT_RANGES
     INFO_AVAIL (arg_info)
       = INFO_AVAIL (arg_info) / INFO_WIDTH (arg_info) - INFO_THROTTLE (arg_info);
-#else
+#else  /* USE_CONCURRENT_RANGES */
     INFO_AVAIL (arg_info) = INFO_AVAIL (arg_info) - INFO_THROTTLE (arg_info);
 #endif /* USE_CONCURRENT_RANGES */
 
@@ -400,14 +400,18 @@ DSTrange (node *arg_node, info *arg_info)
     INFO_UP (arg_info)++;
 
     /*
-     * annotate ressources
+     * annotate resources
      */
     if (INFO_UP (arg_info) == INFINITE) {
         /* fall back */
         RANGE_BLOCKSIZE (arg_node) = 1;
     } else if (INFO_UP (arg_info) == 1) {
         /* bottom level -> take it all */
+#ifdef USE_CONCURRENT_RANGES
         RANGE_BLOCKSIZE (arg_node) = old_avail / current_width;
+#else  /* USE_CONCURRENT_RANGES */
+        RANGE_BLOCKSIZE (arg_node) = old_avail;
+#endif /* USE_CONCURRENT_RANGES */
         if (RANGE_BLOCKSIZE (arg_node) < INFO_THROTTLE (arg_info)) {
             RANGE_BLOCKSIZE (arg_node) = INFO_THROTTLE (arg_info);
             INFO_FAILED (arg_info) = TRUE;
