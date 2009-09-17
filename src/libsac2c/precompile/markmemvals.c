@@ -109,16 +109,15 @@ struct INFO {
     node *withop;
     node *fundef;
     node *prop_in;
-    bool toplevel;
+    bool insidewith3;
 };
 
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_LHS_WL(n) ((n)->lhs_wl)
 #define INFO_WITHOP(n) ((n)->withop)
-#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PROP_IN(n) ((n)->prop_in)
-#define INFO_TOPLEVEL(n) ((n)->toplevel)
+#define INFO_INSIDEWITH3(n) ((n)->insidewith3)
 
 /**
  * INFO functions
@@ -136,9 +135,8 @@ MakeInfo ()
     INFO_LHS (result) = NULL;
     INFO_LHS_WL (result) = NULL;
     INFO_WITHOP (result) = NULL;
-    INFO_FUNDEF (result) = NULL;
     INFO_PROP_IN (result) = NULL;
-    INFO_TOPLEVEL (result) = TRUE;
+    INFO_INSIDEWITH3 (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -226,20 +224,24 @@ MMVfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVfundef");
 
     /*
-     * traverse body
+     * Regular functions are traversed top-level.
+     * Thread functions are traversed inline (!toplevel) and their
+     * rets need to be fixed.
      */
-    INFO_FUNDEF (arg_info) = arg_node;
+    if (!INFO_INSIDEWITH3 (arg_info) && !FUNDEF_ISTHREADFUN (arg_node)) {
+        /*
+         * traverse body and go on.
+         */
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-    /*
-     * for regular functions go on, otherwise fix rets
-     */
-    if (INFO_TOPLEVEL (arg_info)) {
         INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
 
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    } else {
+    } else if (INFO_INSIDEWITH3 (arg_info) && FUNDEF_ISTHREADFUN (arg_node)) {
+        /*
+         * traverse body, fix rets and stop.
+         */
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
     }
 
@@ -367,7 +369,7 @@ node *
 MMVap (node *arg_node, info *arg_info)
 {
     node *exprs, *args;
-    bool toplevel;
+    bool inwith3;
 
     DBUG_ENTER ("MMVap");
 
@@ -375,12 +377,12 @@ MMVap (node *arg_node, info *arg_info)
      * traverse special thread functions inline
      */
     if (FUNDEF_ISTHREADFUN (AP_FUNDEF (arg_node))) {
-        toplevel = INFO_TOPLEVEL (arg_info);
-        INFO_TOPLEVEL (arg_info) = FALSE;
+        inwith3 = INFO_INSIDEWITH3 (arg_info);
+        INFO_INSIDEWITH3 (arg_info) = TRUE;
 
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-        INFO_TOPLEVEL (arg_info) = toplevel;
+        INFO_INSIDEWITH3 (arg_info) = inwith3;
     }
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
@@ -1355,7 +1357,7 @@ MMVreturn (node *arg_node, info *arg_info)
      */
     RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
 
-    if (!INFO_TOPLEVEL (arg_info)) {
+    if (INFO_INSIDEWITH3 (arg_info)) {
         /*
          * 2) remove results of genarray fill operation as
          *    the memory has been passed in and doesn't need
