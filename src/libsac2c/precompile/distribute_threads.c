@@ -31,7 +31,8 @@
  *
  *****************************************************************************/
 
-#undef USE_CONCURRENT_RANGES
+#define FAMILYTABLESIZE 32
+#define GLOBAL_THRESHOLD 32
 
 /** <!--********************************************************************-->
  *
@@ -64,6 +65,9 @@
 
 #define MAX_HEIGHT(a, b) ((a == INFINITE) || (b == INFINITE)) ? a : ((a > b) ? a : b)
 
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
 struct INFO {
     int down;
     int up;
@@ -71,8 +75,10 @@ struct INFO {
     node *main;
     int width;
     int avail;
+    int used;
     int throttle;
     bool failed;
+    int globals;
 };
 
 /**
@@ -84,8 +90,10 @@ struct INFO {
 #define INFO_MAIN(n) ((n)->main)
 #define INFO_WIDTH(n) ((n)->width)
 #define INFO_AVAIL(n) ((n)->avail)
+#define INFO_USED(n) ((n)->used)
 #define INFO_THROTTLE(n) ((n)->throttle)
 #define INFO_FAILED(n) ((n)->failed)
+#define INFO_GLOBALS(n) ((n)->globals)
 
 static info *
 MakeInfo ()
@@ -102,8 +110,10 @@ MakeInfo ()
     INFO_MAIN (result) = NULL;
     INFO_WIDTH (result) = 0;
     INFO_AVAIL (result) = 0;
+    INFO_USED (result) = 0;
     INFO_THROTTLE (result) = 1;
     INFO_FAILED (result) = FALSE;
+    INFO_GLOBALS (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -256,7 +266,7 @@ DSTfundef (node *arg_node, info *arg_info)
 
         if (FUNDEF_HEIGHT (arg_node) == PROCESSING) {
             /* recursive function, we don't know how deep it will go,
-             * so the we bump up the upwards level to infinite
+             * so we bump up the upwards level to infinite
              */
             DBUG_PRINT ("DST", ("      recursive function!"));
             INFO_UP (arg_info) = INFINITE;
@@ -364,14 +374,57 @@ DSTwith3 (node *arg_node, info *arg_info)
 node *
 DSTrange (node *arg_node, info *arg_info)
 {
-    int previous_height, current_width, old_avail;
+    int previous_height, current_width, old_global, num_elements;
+    int init_avail, level_avail;
+    int level_used;
 
     DBUG_ENTER ("DSTrange");
 
     /* count width */
     INFO_WIDTH (arg_info)++;
+    /* remember how many threads we can _conceptually_ use on this level */
+    init_avail = INFO_AVAIL (arg_info);
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    /* remember how many threads surrounding ranges use */
+    level_used = INFO_USED (arg_info);
+    /* remember how many threads are _actually_ left by concurrent ranges */
+    level_avail = INFO_AVAIL (arg_info);
+    INFO_AVAIL (arg_info) = init_avail;
+
+    /*
+     * manage thread distribution
+     */
+
+    old_global = INFO_GLOBALS (arg_info);
+
+    if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
+        && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
+        num_elements
+          = NUM_VAL (RANGE_UPPERBOUND (arg_node)) - NUM_VAL (RANGE_LOWERBOUND (arg_node));
+
+        if (num_elements <= 1) {
+            /* do not distribute 1 element creates -> no point */
+            RANGE_ISGLOBAL (arg_node) = FALSE;
+        } else if ((INFO_GLOBALS (arg_info)) < GLOBAL_THRESHOLD) {
+            RANGE_ISGLOBAL (arg_node) = TRUE;
+            INFO_GLOBALS (arg_info) *= num_elements;
+        } else {
+            RANGE_ISGLOBAL (arg_node) = FALSE;
+        }
+    } else {
+        if (INFO_GLOBALS (arg_info) < GLOBAL_THRESHOLD) {
+            /*
+             * we don't know how this will change the distribution, so we
+             * just inhibit further global creates
+             */
+            RANGE_ISGLOBAL (arg_node) = TRUE;
+            INFO_GLOBALS (arg_info) = GLOBAL_THRESHOLD;
+        } else {
+            RANGE_ISGLOBAL (arg_node) = FALSE;
+        }
+    }
 
     /*
      * we go down a new branch of the concurrency tree, so we start
@@ -382,16 +435,23 @@ DSTrange (node *arg_node, info *arg_info)
      * branches.
      */
     previous_height = INFO_UP (arg_info);
-    old_avail = INFO_AVAIL (arg_info);
 #ifdef USE_CONCURRENT_RANGES
+    /*
+     * split threads equally amongst ranges and reserve
+     * at least THROTTLE many for us
+     */
     INFO_AVAIL (arg_info)
       = INFO_AVAIL (arg_info) / INFO_WIDTH (arg_info) - INFO_THROTTLE (arg_info);
 #else  /* USE_CONCURRENT_RANGES */
-    INFO_AVAIL (arg_info) = INFO_AVAIL (arg_info) - INFO_THROTTLE (arg_info);
+    /*
+     * reserve at least one so that we can continue computation
+     */
+    INFO_AVAIL (arg_info) = INFO_AVAIL (arg_info) - 1;
 #endif /* USE_CONCURRENT_RANGES */
 
     current_width = INFO_WIDTH (arg_info);
     INFO_WIDTH (arg_info) = UNKNOWN;
+    INFO_USED (arg_info) = 1;
 
     INFO_UP (arg_info) = UNKNOWN;
     INFO_DOWN (arg_info)++;
@@ -403,15 +463,13 @@ DSTrange (node *arg_node, info *arg_info)
      * annotate resources
      */
     if (INFO_UP (arg_info) == INFINITE) {
-        /* fall back */
+        /* fall back, use the on we reserved */
         RANGE_BLOCKSIZE (arg_node) = 1;
+#ifdef USE_CONCURRENT_RANGES
     } else if (INFO_UP (arg_info) == 1) {
         /* bottom level -> take it all */
-#ifdef USE_CONCURRENT_RANGES
-        RANGE_BLOCKSIZE (arg_node) = old_avail / current_width;
-#else  /* USE_CONCURRENT_RANGES */
-        RANGE_BLOCKSIZE (arg_node) = old_avail;
-#endif /* USE_CONCURRENT_RANGES */
+        RANGE_BLOCKSIZE (arg_node) = init_avail / current_width;
+
         if (RANGE_BLOCKSIZE (arg_node) < INFO_THROTTLE (arg_info)) {
             RANGE_BLOCKSIZE (arg_node) = INFO_THROTTLE (arg_info);
             INFO_FAILED (arg_info) = TRUE;
@@ -419,16 +477,62 @@ DSTrange (node *arg_node, info *arg_info)
     } else {
         /* take the throttle level */
         RANGE_BLOCKSIZE (arg_node) = INFO_THROTTLE (arg_info);
-    }
+#else  /* USE_CONCURRENT_RANGES */
+    } else {
+        /*
+         * we could use all the ones available. But maybe that is too much.
+         */
+        /* first give back the one we reserved */
+        INFO_AVAIL (arg_info)++;
+        /* check how many we need */
+        if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
+            && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
+            num_elements = NUM_VAL (RANGE_UPPERBOUND (arg_node))
+                           - NUM_VAL (RANGE_LOWERBOUND (arg_node));
 
-    /*
-     * only outer levels are distributed globally
-     */
-    RANGE_ISGLOBAL (arg_node) = (INFO_DOWN (arg_info) == 0);
+            /*
+             * Use no more than we can sustain (num_elements).
+             * As a further constraint, we can only use so many that the threads
+             * used by the tree below us still can compute!
+             */
+            RANGE_BLOCKSIZE (arg_node)
+              = MIN (INFO_AVAIL (arg_info) / INFO_USED (arg_info), num_elements);
+
+            INFO_AVAIL (arg_info) -= RANGE_BLOCKSIZE (arg_node);
+        } else {
+            /* We don't know. Let's use half of them. If this range turns out to
+             * be small, we still have enough threads to use a BS of 2 above.
+             */
+            RANGE_BLOCKSIZE (arg_node)
+              = MAX ((INFO_AVAIL (arg_info) / INFO_USED (arg_info) / 2), 1);
+            INFO_AVAIL (arg_info) -= RANGE_BLOCKSIZE (arg_node);
+        }
+
+        /*
+         * if this create is global, it may not use more than
+         * THREADTABLESIZE / FAMILYTABLESIZE many threads to ensure that
+         * there is enough space left for other creates to succeed!
+         */
+        if ((RANGE_ISGLOBAL (arg_node))
+            && (RANGE_BLOCKSIZE (arg_node) > (global.max_threads / FAMILYTABLESIZE))) {
+            /* give some back */
+            INFO_AVAIL (arg_info)
+              += RANGE_BLOCKSIZE (arg_node) - (global.max_threads / FAMILYTABLESIZE);
+            RANGE_BLOCKSIZE (arg_node) = global.max_threads / FAMILYTABLESIZE;
+        }
+        INFO_USED (arg_info) *= RANGE_BLOCKSIZE (arg_node);
+#endif /* USE_CONCURRENT_RANGES */
+    }
 
     INFO_UP (arg_info) = MAX_HEIGHT (INFO_UP (arg_info), previous_height);
     INFO_WIDTH (arg_info) = current_width;
-    INFO_AVAIL (arg_info) = old_avail;
+#ifdef USE_CONCURRENT_RANGES
+    INFO_AVAIL (arg_info) = init_avail;
+#else  /* USE_CONCURRENT_RANGES */
+    INFO_AVAIL (arg_info) = MIN (INFO_AVAIL (arg_info), level_avail);
+    INFO_USED (arg_info) = MAX (INFO_USED (arg_info), level_used);
+#endif /* USE_CONCURRENT_RANGES */
+    INFO_GLOBALS (arg_info) = old_global;
 
     DBUG_RETURN (arg_node);
 }
