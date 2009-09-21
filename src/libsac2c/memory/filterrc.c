@@ -503,6 +503,24 @@ FRCwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FRCwith3( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+FRCwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FRCwith3");
+
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *FRCbreak( node *arg_node, info *arg_info)
  *
  * @brief
@@ -609,6 +627,32 @@ FRCcode (node *arg_node, info *arg_info)
 
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FRCrange( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+FRCrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FRCrange");
+
+    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVopt (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_LOWERBOUND (arg_node) = TRAVopt (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
+
+    if (RANGE_BODY (arg_node) != NULL) {
+        RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
+    }
+
+    if (RANGE_NEXT (arg_node) != NULL) {
+        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

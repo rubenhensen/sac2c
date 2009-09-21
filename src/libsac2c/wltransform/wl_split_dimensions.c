@@ -692,7 +692,94 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     new_node = TBmakeGenarray (shape, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
     GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
 
+    /*
+     * copy over reuse information if we are at the top level!
+     */
+    if (INFO_CURRENT_DIM (arg_info) == 0) {
+        GENARRAY_RC (new_node) = DUPdoDupTree (GENARRAY_RC (arg_node));
+    }
+
     GENARRAY_NEXT (new_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (new_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravCNWmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief Computes a new genarray withop from the current dimension, current
+ *        size and the original with2 modarray withop. Furthermore,
+ *        a shape expression is computed and annotated at the withop/added
+ *        to the info structure. Used in an anonymous traversal by
+ *        ComputeNewWithops.
+ *
+ * @param arg_node N_modarray node
+ * @param arg_info info structure
+ *
+ * @return new N_genarray node
+ ******************************************************************************/
+static node *
+ATravCNWmodarray (node *arg_node, info *arg_info)
+{
+    node *new_node;
+    ntype *atype;
+    node *shape = NULL;
+    node *sexpr = NULL;
+    int sizeoffset;
+    int cnt;
+
+    DBUG_ENTER ("ATravCNWmodarray");
+
+    DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id),
+                 "Unexpected MODARRAY_ARRAY node");
+
+    atype = AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)));
+
+    if (TUshapeKnown (atype)) {
+        sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
+
+        /*
+         * If the surrounding WL has a chunksize, this determines
+         * the shape of the inner genarray. Otherwise, the
+         * shape is the shape only taking the current dimension
+         * into account.
+         */
+        if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+            shape = TBmakeExprs (DUPdoDupNode (INFO_CURRENT_SIZE (arg_info)), NULL);
+        } else {
+            shape = TBmakeExprs (TBmakeNum (SHgetExtent (TYgetShape (atype),
+                                                         INFO_CURRENT_DIM (arg_info))),
+                                 NULL);
+        }
+        shape = TCmakeIntVector (shape);
+
+        /*
+         * the shapeexpression is everything from the current dimension
+         * onwards.
+         */
+        sexpr = SHshape2Exprs (TYgetShape (atype));
+
+        for (cnt = 0; cnt < INFO_CURRENT_DIM (arg_info); cnt++) {
+            DBUG_ASSERT ((sexpr != NULL), "Ooops, ran out of shape elements!");
+            sexpr = FREEdoFreeNode (sexpr);
+        }
+
+        sexpr = TCmakeIntVector (sexpr);
+    }
+
+    DBUG_ASSERT ((shape != NULL), "no shape info for modarray constructed");
+
+    new_node = TBmakeGenarray (shape, NULL);
+    GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
+
+    /*
+     * copy over reuse information if we are at the top level!
+     */
+    if (INFO_CURRENT_DIM (arg_info) == 0) {
+        GENARRAY_RC (new_node) = DUPdoDupTree (MODARRAY_RC (arg_node));
+    }
+
+    GENARRAY_NEXT (new_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -712,9 +799,12 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 static node *
 ComputeNewWithops (node *withops, info *arg_info)
 {
-    anontrav_t cnw_trav[6]
-      = {{N_genarray, &ATravCNWgenarray}, {N_modarray, &TRAVerror}, {N_fold, &TRAVerror},
-         {N_propagate, &TRAVerror},       {N_break, &TRAVerror},    {0, NULL}};
+    anontrav_t cnw_trav[6] = {{N_genarray, &ATravCNWgenarray},
+                              {N_modarray, &ATravCNWmodarray},
+                              {N_fold, &TRAVerror},
+                              {N_propagate, &TRAVerror},
+                              {N_break, &TRAVerror},
+                              {0, NULL}};
     node *ops;
 
     DBUG_ENTER ("ComputeNewWithops");
@@ -743,14 +833,14 @@ ComputeNewWithops (node *withops, info *arg_info)
  * @return chain of N_ids node
  ******************************************************************************/
 static node *
-ATravCNLgenarray (node *arg_node, info *arg_info)
+ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 {
     node *new_node;
     ntype *old_type, *new_type;
     node *avis;
     node *mylhs;
 
-    DBUG_ENTER ("ATravCNLgenarray");
+    DBUG_ENTER ("ATravCNLgenOrModArray");
 
     mylhs = INFO_WITH2_LHS (arg_info);
 
@@ -759,7 +849,7 @@ ATravCNLgenarray (node *arg_node, info *arg_info)
      * again as it will be needed multiple times.
      */
     INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
-    new_node = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+    new_node = TRAVopt (WITHOP_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = mylhs;
 
     old_type = AVIS_TYPE (IDS_AVIS (mylhs));
@@ -820,9 +910,12 @@ ATravCNLgenarray (node *arg_node, info *arg_info)
 static node *
 ComputeNewLhs (node *withops, info *arg_info)
 {
-    anontrav_t cnw_trav[6]
-      = {{N_genarray, &ATravCNLgenarray}, {N_modarray, &TRAVerror}, {N_fold, &TRAVerror},
-         {N_propagate, &TRAVerror},       {N_break, &TRAVerror},    {0, NULL}};
+    anontrav_t cnw_trav[6] = {{N_genarray, &ATravCNLgenOrModArray},
+                              {N_modarray, &ATravCNLgenOrModArray},
+                              {N_fold, &TRAVerror},
+                              {N_propagate, &TRAVerror},
+                              {N_break, &TRAVerror},
+                              {0, NULL}};
     node *lhs;
 
     DBUG_ENTER ("ComputeNewLhs");
@@ -947,6 +1040,60 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *ATravCDLmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief Used by anonymous traversal in ComputeLengths to compute the lengths
+ *        for a N_genarray operator.
+ *
+ * @param arg_node N_modarray node
+ * @param arg_info info structure
+ *
+ * @return N_set node with lengths for this operator.
+ ******************************************************************************/
+static node *
+ATravCDLmodarray (node *arg_node, info *arg_info)
+{
+    node *set, *inner, *exprs, *lhs, *sexprs;
+    shape *shape;
+    int outerdims;
+
+    DBUG_ENTER ("ATravCDLmodarray");
+
+    lhs = INFO_WITH2_LHS (arg_info);
+    INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
+    set = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
+    INFO_WITH2_LHS (arg_info) = lhs;
+
+    /*
+     * We need to figure out the size of the inner elements. For
+     * modarrays we do this by looking at the type of the result and
+     * the length of the index vector. The latter is checked by
+     * looking at the index scalars.
+     */
+    if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (lhs)))) {
+        outerdims = TCcountIds (INFO_WITH2_ISCLS (arg_info));
+        shape = SHdropFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
+        inner = TBmakeNum (SHgetUnrLen (shape));
+        shape = SHfreeShape (shape);
+
+        shape = SHtakeFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
+        sexprs = SHshape2Exprs (shape);
+        shape = SHfreeShape (shape);
+    } else {
+        DBUG_ASSERT (FALSE, "non-AKS modarray not implemented!");
+    }
+
+    exprs = ComputeOneLengthVector (sexprs, inner, arg_info);
+
+    set = TBmakeSet (exprs, set);
+
+    /* inner is consumed but exprs is not! */
+    sexprs = FREEdoFreeTree (sexprs);
+
+    DBUG_RETURN (set);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ComputeLengths( node *withops, info *arg_info)
  *
  * @brief Computes the unrolling lengths of one element on each dimension of
@@ -971,7 +1118,7 @@ ComputeLengths (node *withops, info *arg_info)
     node *result;
 
     anontrav_t len_trav[3]
-      = {{N_genarray, &ATravCDLgenarray}, {N_modarray, &TRAVerror}, {0, NULL}};
+      = {{N_genarray, &ATravCDLgenarray}, {N_modarray, &ATravCDLmodarray}, {0, NULL}};
 
     DBUG_ENTER ("ComputeLengths");
 
@@ -1506,19 +1653,31 @@ ATravNIfail (node *arg_node, info *arg_info)
 
     INFO_NIP_RESULT (arg_info) = TRUE;
 
-    if (INFO_NIP_LHS (arg_info) != NULL) {
-        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
-    }
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravNIgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravNIgenarray");
+
+    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 static node *
-ATravNIpass (node *arg_node, info *arg_info)
+ATravNImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIpass");
+    DBUG_ENTER ("ATravNImodarray");
 
-    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
+        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
+    } else {
+        INFO_NIP_RESULT (arg_info) = TRUE;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1538,9 +1697,8 @@ ATravNIfold (node *arg_node, info *arg_info)
         INFO_NIP_RESULT (arg_info) = TRUE;
     }
 
-    if (INFO_NIP_LHS (arg_info) != NULL) {
-        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
-    }
+    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1553,8 +1711,9 @@ NotImplemented (node *with, info *arg_info)
     bool result;
     info *info;
     anontrav_t nip_trav[6]
-      = {{N_genarray, &ATravNIpass}, {N_modarray, &ATravNIfail},  {N_fold, &ATravNIfail},
-         {N_break, &ATravNIfail},    {N_propagate, &ATravNIfail}, {0, NULL}};
+      = {{N_genarray, &ATravNIgenarray}, {N_modarray, &ATravNImodarray},
+         {N_fold, &ATravNIfail},         {N_break, &ATravNIfail},
+         {N_propagate, &ATravNIfail},    {0, NULL}};
     anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
@@ -1562,7 +1721,7 @@ NotImplemented (node *with, info *arg_info)
     info = InitialiseNipInfo (arg_info);
 
     TRAVpushAnonymous (nip_trav, &TRAVnone);
-    /* check for genarray or AKS-fold only */
+    /* check for genarray or AKS-modarray only */
     WITH2_WITHOP (with) = TRAVdo (WITH2_WITHOP (with), info);
     TRAVpop ();
 

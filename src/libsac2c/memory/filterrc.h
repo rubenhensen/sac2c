@@ -28,7 +28,9 @@ extern node *FRCgenarray (node *arg_node, info *arg_info);
 extern node *FRCid (node *arg_node, info *arg_info);
 extern node *FRCmodarray (node *arg_node, info *arg_info);
 extern node *FRCprf (node *arg_node, info *arg_info);
+extern node *FRCrange (node *arg_node, info *arg_info);
 extern node *FRCwith (node *arg_node, info *arg_info);
 extern node *FRCwith2 (node *arg_node, info *arg_info);
+extern node *FRCwith3 (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FILTERRC_H_ */

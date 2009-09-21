@@ -103,7 +103,7 @@ OPTcheckOptionConsistency (void)
                  "for mutc backend.");
         global.optimize.dosrf = FALSE;
         /* global.optimize.doipc = FALSE; */
-        global.optimize.douip = FALSE;
+        /* global.optimize.douip = FALSE; */
         global.optimize.dodr = FALSE;
         global.optimize.dorco = FALSE;
 
