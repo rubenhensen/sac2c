@@ -138,20 +138,26 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeAccuAssign( node *assign, info *arg_info)
+ * @fn node *MakeAccuAssign( node *code, info *arg_info)
  *
  *   @brief creates new assignment containing prf F_accu
  *
- *   @param  node *assign   :  first N_assign in code block
+ *   @param  node *code     :  code block
  *           info *arg_info :  context info
- *   @return node *         :  new N_assign node
+ *   @return node *         :  updated code node
  ******************************************************************************/
 static node *
-MakeAccuAssign (node *assign, info *arg_info)
+MakeAccuAssign (node *code, info *arg_info)
 {
-    node *lhs_ids, *avis;
+    node *lhs_ids, *avis, *assign;
 
     DBUG_ENTER ("MakeAccuAssign");
+
+    /* grab assign and get rid of N_empty nodes if one is there */
+    assign = BLOCK_INSTR (CODE_CBLOCK (code));
+    if (NODE_TYPE (assign) == N_empty) {
+        assign = FREEdoFreeNode (assign);
+    }
 
     /* create avis */
     lhs_ids = INFO_FOLD_LHS (arg_info);
@@ -174,7 +180,10 @@ MakeAccuAssign (node *assign, info *arg_info)
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
-    DBUG_RETURN (assign);
+    /* put back assign */
+    BLOCK_INSTR (CODE_CBLOCK (code)) = assign;
+
+    DBUG_RETURN (code);
 }
 
 /** <!--********************************************************************-->
@@ -330,10 +339,6 @@ node *
 EAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAassign");
-
-    if (INFO_FOLD_LHS (arg_info) != NULL) {
-        arg_node = MakeAccuAssign (arg_node, arg_info);
-    }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -510,6 +515,10 @@ node *
 EAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAcode");
+
+    if (INFO_FOLD_LHS (arg_info) != NULL) {
+        arg_node = MakeAccuAssign (arg_node, arg_info);
+    }
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
