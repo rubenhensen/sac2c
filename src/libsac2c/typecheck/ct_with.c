@@ -207,6 +207,39 @@ NTCCTwl_multicode (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTwl_multifoldcode( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTwl_multifoldcode (te_info *info, ntype *args)
+{
+    ntype *expr1, *expr2, *res;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTwl_multifoldcode");
+
+    expr1 = TYgetProductMember (args, 0);
+    expr2 = TYgetProductMember (args, 1);
+
+    TEassureSameScalarType ("one generator body expression", expr1,
+                            "another generator body expression", expr2);
+
+    res = TYlubOfTypes (expr1, expr2);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTwl_gen( te_info *info, ntype *args)
  *
  * description:

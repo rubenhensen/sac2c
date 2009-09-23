@@ -92,7 +92,7 @@ struct INFO {
     int num_exprs_sofar;
     node *last_assign;
     node *ptr_return;
-    node *ptr_objdefs;
+    node *wl_ops;
     ntype *accu;
     ntype *prop_objs;
     int prop_cnt;
@@ -108,6 +108,7 @@ struct INFO {
 #define INFO_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
 #define INFO_LAST_ASSIGN(n) (n->last_assign)
 #define INFO_RETURN(n) (n->ptr_return)
+#define INFO_WL_OPS(n) (n->wl_ops)
 #define INFO_EXP_ACCU(n) (n->accu)
 #define INFO_PROP_OBJS(n) (n->prop_objs)
 #define INFO_ACT_PROP_OBJ(n) (n->prop_cnt)
@@ -131,6 +132,7 @@ MakeInfo ()
     INFO_NUM_EXPRS_SOFAR (result) = 0;
     INFO_LAST_ASSIGN (result) = NULL;
     INFO_RETURN (result) = NULL;
+    INFO_WL_OPS (result) = NULL;
     INFO_EXP_ACCU (result) = NULL;
     INFO_PROP_OBJS (result) = NULL;
     INFO_ACT_PROP_OBJ (result) = 0;
@@ -1736,6 +1738,14 @@ NTCwith (node *arg_node, info *arg_info)
     mem_outer_prop_objs = INFO_PROP_OBJS (arg_info);
     INFO_PROP_OBJS (arg_info) = NULL;
 
+    /**
+     * we need to communicate the withops to the code as multi
+     * generator WLs need to be treted differently depending
+     * on whether we are dealing with fold-withloops ( where
+     * we do NOT require shape conformity) and the others.
+     */
+    INFO_WL_OPS (arg_info) = WITH_WITHOP (arg_node);
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     body = INFO_TYPE (arg_info);
     INFO_TYPE (arg_info) = NULL;
@@ -1977,8 +1987,12 @@ NTCcode (node *arg_node, info *arg_info)
     ntype *remaining_blocks, *this_block, *blocks, *res_i, *res;
     int num_ops, i;
     te_info *info;
+    node *wl_ops;
 
     DBUG_ENTER ("NTCcode");
+
+    wl_ops = INFO_WL_OPS (arg_info);
+    INFO_WL_OPS (arg_info) = NULL;
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
@@ -1990,6 +2004,7 @@ NTCcode (node *arg_node, info *arg_info)
         this_block = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
+        INFO_WL_OPS (arg_info) = wl_ops;
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
         remaining_blocks = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
@@ -2003,7 +2018,14 @@ NTCcode (node *arg_node, info *arg_info)
             info = TEmakeInfo (global.linenum, TE_with, "multi generator");
             blocks = TYmakeProductType (2, TYgetProductMember (this_block, i),
                                         TYgetProductMember (remaining_blocks, i));
-            res_i = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
+            DBUG_ASSERT (wl_ops != NULL,
+                         "number of return values does not match withloop ops");
+            if (NODE_TYPE (wl_ops) == N_fold) {
+                res_i = NTCCTcomputeType (NTCCTwl_multifoldcode, info, blocks);
+            } else {
+                res_i = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
+            }
+            wl_ops = WITHOP_NEXT (wl_ops);
             TYsetProductMember (res, i, TYgetProductMember (res_i, 0));
             res_i = TYfreeTypeConstructor (res_i);
         }
