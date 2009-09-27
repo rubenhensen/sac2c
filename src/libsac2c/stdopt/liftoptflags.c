@@ -20,12 +20,14 @@
  */
 struct INFO {
     bool optflag;
+    bool onefundef;
 };
 
 /*
  * INFO macros
  */
 #define INFO_OPTFLAG(n) (n->optflag)
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 
 /*
  * INFO functions
@@ -40,6 +42,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_OPTFLAG (result) = FALSE;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -62,17 +65,50 @@ FreeInfo (info *info)
 node *
 LOFdoLiftOptFlags (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ("LOFdoLiftOptFlags");
 
+    arg_info = MakeInfo ();
     TRAVpush (TR_lof);
 
-    arg_node = TRAVopt (arg_node, NULL);
+    arg_node = TRAVopt (arg_node, arg_info);
 
     TRAVpop ();
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *LOFdoLiftOptFlagsOneFundef( node *arg_node)
+ *
+ *****************************************************************************/
+node *
+LOFdoLiftOptFlagsOneFundef (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("LOFdoLiftOptFlagsOneFundef");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+    TRAVpush (TR_lof);
+
+    arg_node = TRAVopt (arg_node, arg_info);
+
+    TRAVpop ();
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *InferOptFlags( node *arg_node)
+ *
+ *****************************************************************************/
 static node *
 InferOptFlag (node *arg_node, info *arg_info)
 {
@@ -105,8 +141,6 @@ LOFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("LOFfundef");
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
-        arg_info = MakeInfo ();
-
         INFO_OPTFLAG (arg_info) = FUNDEF_WASOPTIMIZED (arg_node);
         arg_info = MCGdoMapCallGraph (arg_node, InferOptFlag, NULL,
                                       MCGcontLacFunAndOneLevel, arg_info);
@@ -118,11 +152,12 @@ LOFfundef (node *arg_node, info *arg_info)
               = MCGdoMapCallGraph (arg_node, SetOptFlag, NULL, MCGcontLacFun, arg_info);
             SetOptFlag (arg_node, arg_info);
         }
-        arg_info = FreeInfo (arg_info);
     }
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

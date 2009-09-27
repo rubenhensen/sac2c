@@ -15,6 +15,7 @@
 #include "types.h"
 
 extern node *LOFdoLiftOptFlags (node *arg_node);
+extern node *LOFdoLiftOptFlagsOneFundef (node *arg_node);
 
 extern node *LOFfundef (node *arg_node, info *arg_info);
 

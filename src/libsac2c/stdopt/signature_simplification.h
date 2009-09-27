@@ -13,6 +13,7 @@
 #include "types.h"
 
 node *SISIdoSignatureSimplification (node *module);
+node *SISIdoSignatureSimplificationOneFundef (node *arg_node);
 
 node *SISImodule (node *arg_node, info *arg_info);
 node *SISIfundef (node *arg_node, info *arg_info);

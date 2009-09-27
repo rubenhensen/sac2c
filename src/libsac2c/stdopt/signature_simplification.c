@@ -58,6 +58,7 @@ struct INFO {
     bool idslet;
     node *postassign;
     travphases travphase;
+    bool onefundef;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -70,6 +71,7 @@ struct INFO {
 #define INFO_POSTASSIGN(n) (n->postassign)
 
 #define INFO_TRAVPHASE(n) (n->travphase)
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 
 static info *
 MakeInfo ()
@@ -89,6 +91,7 @@ MakeInfo ()
     INFO_POSTASSIGN (result) = NULL;
 
     INFO_TRAVPHASE (result) = infer;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -129,6 +132,35 @@ SISIdoSignatureSimplification (node *module)
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (module);
+}
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIdoSignatureSimplificationOneFundef(node *arg_node)
+ *
+ * @brief starting point of traversal
+ *
+ * @param N_fundef to be traversed
+ *
+ * @result
+ *
+ ******************************************************************************/
+node *
+SISIdoSignatureSimplificationOneFundef (node *arg_node)
+{
+    info *arg_info;
+    DBUG_ENTER ("SISIdoSignatureSimplificationOneFundef");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+
+    TRAVpush (TR_sisi);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /**<!--***********************************************************************-->
@@ -177,9 +209,7 @@ SISIfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("SISIfundef");
 
     if (INFO_TRAVPHASE (arg_info) == infer) {
-
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, FALSE);
-
     } else if (INFO_TRAVPHASE (arg_info) == simplify) {
         INFO_FUNDEF (arg_info) = arg_node;
 
@@ -188,7 +218,9 @@ SISIfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        if (!INFO_ONEFUNDEF (arg_info)) {
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
 
         INFO_FUNDEF (arg_info) = arg_node;
 
