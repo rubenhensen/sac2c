@@ -606,10 +606,12 @@ CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
 CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUN (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
+CYCLEPHASEFUN (sisi, "Simplifying function signatures",
+               SISIdoSignatureSimplificationOneFundef,
                global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
 
-CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, saacyc)
+CYCLEPHASEFUN (lof, "Lifting optimization flags", LOFdoLiftOptFlagsOneFundef, ALWAYS, opt,
+               saacyc)
 
 FUNEND (saacyc)
 
