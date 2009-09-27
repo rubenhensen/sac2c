@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "compare_tree.h"
 #include "globals.h"
+#include "pattern_match.h"
 
 /**
  * forward declarations
@@ -328,6 +329,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
 {
     node *result = NULL;
     offsetinfo *oinfo;
+    pattern *pat;
+    node *arrayRestA, *arrayRestB;
+    int one = 1;
 
     DBUG_ENTER ("FindIVOffset");
 
@@ -337,15 +341,23 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
         info = WITHIV_NEXT (info);
     }
 
+    pat
+      = PMmulti (2,
+                 PMarray (0, /* don't care for attributes */
+                          2, PMskipN (&one, 0), PMskip (1, PMAgetNode (&arrayRestA))),
+                 PMarray (0, 2, PMskipN (&one, 0), PMskip (1, PMAgetNode (&arrayRestB))));
+
     if (info != NULL) {
         /*
          * search global wl-offset-vars
          */
         oinfo = WITHIV_OFFSETS (info);
 
-        while (
-          (oinfo != NULL)
-          && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo)) != CMPT_EQ)) {
+        while ((oinfo != NULL)
+               && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo)) != CMPT_EQ)
+               && (!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
+                                                    WITHOFFSET_SHAPEEXPR (oinfo))))
+               && (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ)) {
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -357,9 +369,12 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
              */
             oinfo = WITHIV_LOCALOFFSETS (info);
 
-            while ((oinfo != NULL)
-                   && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo))
-                       != CMPT_EQ)) {
+            while (
+              (oinfo != NULL)
+              && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo)) != CMPT_EQ)
+              && (!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
+                                                   WITHOFFSET_SHAPEEXPR (oinfo))))
+              && (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ)) {
                 oinfo = WITHOFFSET_NEXT (oinfo);
             }
 
@@ -368,6 +383,8 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
             }
         }
     }
+
+    pat = PMfree (pat);
 
     DBUG_RETURN (result);
 }
