@@ -503,10 +503,10 @@ CYCLEPHASEFUN (ili, "Inferring loop invariant variables", ILIdoInferLoopInvarian
 CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
                global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
+CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypesOneFunction,
                global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
+CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypesOneFunction,
                global.optimize.dotup, opt, saacyc)
 
 CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
