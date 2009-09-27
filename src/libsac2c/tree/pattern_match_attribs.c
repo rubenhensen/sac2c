@@ -166,6 +166,38 @@ PMAisVar (node **var)
 
 /** <!--*******************************************************************-->
  *
+ * @fn attrib *PMAgetSaaShape( node **shp)
+ *
+ * @brief attrib for PMvar. Matches if AVIS-SHAPE exists and hands it back.
+ *
+ *****************************************************************************/
+bool
+attribgetSaaShape (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetSAAShape( " F_PTR " ):", PATTR_N1 (attr)));
+
+    *PATTR_N1 (attr) = AVIS_SHAPE (ID_AVIS (arg));
+    res = ((*PATTR_N1 (attr)) != NULL);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+
+    return (res);
+}
+
+attrib *
+PMAgetSAAShape (node **shp)
+{
+    attrib *res;
+
+    res = makeAttrib (N_id, attribgetSaaShape);
+    PATTR_N1 (res) = shp;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn attrib *PMAgetVal( constant **c)
  *
  * @brief attrib for PMconst creates and hands back constant c

@@ -20,6 +20,7 @@ extern attrib *PMAgetNode (node **match);
  * attrib matchers for PMvar:
  */
 extern attrib *PMAisVar (node **var);
+extern attrib *PMAgetSaaShape (node **shp);
 
 /**
  * attrib matchers for PMconst:
