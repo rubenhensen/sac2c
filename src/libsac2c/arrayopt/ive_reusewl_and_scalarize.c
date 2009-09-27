@@ -355,9 +355,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
 
         while ((oinfo != NULL)
                && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo)) != CMPT_EQ)
-               && (!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
-                                                    WITHOFFSET_SHAPEEXPR (oinfo))))
-               && (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ)) {
+               && ((!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
+                                                     WITHOFFSET_SHAPEEXPR (oinfo))))
+                   || (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ))) {
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -372,9 +372,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
             while (
               (oinfo != NULL)
               && (CMPTdoCompareTree (shapeexpr, WITHOFFSET_SHAPEEXPR (oinfo)) != CMPT_EQ)
-              && (!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
-                                                   WITHOFFSET_SHAPEEXPR (oinfo))))
-              && (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ)) {
+              && ((!PMmatchFlat (pat, PMmultiExprs (2, shapeexpr,
+                                                    WITHOFFSET_SHAPEEXPR (oinfo))))
+                  || (CMPTdoCompareTree (arrayRestA, arrayRestB) != CMPT_EQ))) {
                 oinfo = WITHOFFSET_NEXT (oinfo);
             }
 
