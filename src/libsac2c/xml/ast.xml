@@ -6635,24 +6635,18 @@ N_structdef :
           </type>
         </attribute>
         <attribute name="SelMax" inconstructor="no" >
+          <description>
+            Maximum number of F_sel_VxA_ selections found in any of
+            the code parts. This information is inferred by the WLSELC
+            (WithLoopSelectionCount) traversal.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />
                 <phases>
                   <phase name="opt_cyc_wlprop" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="isSWLFFoldable" inconstructor="no" >
-          <type name="Bool">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="opt_cyc_swlf" />
+                  <phase name="opt_cyc_wlprop" />
                 </phases>
               </target>
             </targets>
@@ -6674,7 +6668,15 @@ N_structdef :
       <flags>
         <flag name="IsFoldable" />
         <flag name="Cudarizable" default="FALSE" />
-	    <flag name="IsDependent" />
+        <flag name="IsDependent" />
+        <flag name="isSWLFFoldable" default="FALSE" />
+        <flag name="containsFunAps" >
+          <description>
+             indicates whether any partition contains an application
+             of a user defined function. This information is inferred in
+             the WLSELC (WithLoopSelectionCount) traversal.
+          </description>
+        </flag>
         <flag name="ExtremaAttached" default ="FALSE">
           <description>
           True if IVEXI has already attached extrema variables
