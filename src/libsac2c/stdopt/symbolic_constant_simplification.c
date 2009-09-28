@@ -1124,6 +1124,40 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_reshape( node *arg_node, info *arg_info)
+ *
+ * @brief: Replace _reshape_VxA_( shp1, _reshape_VxA_( shp2, X))
+ *         by
+ *                 _reshape_VxA_( shp1, X);
+ *
+ *****************************************************************************/
+node *
+SCSprf_reshape (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    pattern *pat;
+    node *shp1;
+    node *shp2;
+    node *X;
+
+    DBUG_ENTER ("SCSprf_reshape");
+
+    pat = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp1), 0),
+                 PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp2), 0),
+                        PMvar (1, PMAgetNode (&X), 0)));
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+        DBUG_PRINT ("SCS", ("Replacing reshape of reshape"));
+
+        res = DUPdoDupTree (arg_node);
+        shp2 = FREEdoFreeNode (PRF_ARG2 (res));
+        PRF_ARG2 (res) = DUPdoDupNode (X);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  *  Functions for removing array operation conformability checks
  *
  *****************************************************************************/

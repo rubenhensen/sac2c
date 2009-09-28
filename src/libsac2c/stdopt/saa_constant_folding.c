@@ -69,9 +69,9 @@
 node *
 SAACF_ids (node *arg_node, info *arg_info)
 {
+    node *res = NULL;
 
     DBUG_ENTER ("SAACF_ids");
-    node *res = NULL;
 
 #if SAACFIDS
     /*
@@ -202,12 +202,16 @@ SAACFprf_dim (node *arg_node, info *arg_info)
  *         3.  else NULL
  *
  ********************************************************************/
-
 node *
 SAACFprf_shape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *shp = NULL;
+    node *arg1 = NULL;
+    node *dm = NULL;
+    node *rhs;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("SAACFprf_shape");
 
@@ -218,32 +222,25 @@ SAACFprf_shape (node *arg_node, info *arg_info)
         /* Case 1 */
         DBUG_PRINT ("CF", ("_shape_A replaced by AVIS_SHAPE"));
         res = DUPdoDupTree (shp);
-    }
+    } else {
+        /* Case 2 */
+        pat1 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg1), 0));
+        pat2 = PMprf (1, PMAisPrf (F_saabind), 1, PMvar (1, PMAgetNode (&dm), 0), 1,
+                      PMvar (1, PMAgetNode (&shp), 0), PMskip (0));
 
-#ifdef FIXME
-    node *arg1 = NULL;
-    node *dm = NULL;
-    pattern *pat1;
-    pattern *pat2;
-}
-else
-{
-    /* Case 2 */
-    pat1 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg1), 0));
-    pat2 = PMprf (1, PMAisPrf (F_saabind), 1, PMvar (1, PMAgetNode (&dm), 0), 1,
-                  PMvar (1, PMAgetNode (&shp), 0), PMskip (0));
-
-    if (PMmatchFlatSkipExtrema (pat1, arg_node) && PMmatchFlatSkipExtrema (pat2, arg1)) {
         if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-            if (PMmatchFlatSkipExtrema (pat2, arg1)) {
-                res = shp;
-                pat1 = PMfree (pat1);
-                pat2 = PMfree (pat2);
-                DBUG_PRINT ("CF", ("_shape_A(_saabnd(dim,shp,val)) replaced by shp"));
+            rhs = AVIS_SSAASSIGN (ID_AVIS (arg1));
+            if (NULL != rhs) {
+                rhs = LET_EXPR (ASSIGN_INSTR (rhs));
+                if (PMmatchFlatSkipExtrema (pat2, rhs)) {
+                    res = shp;
+                    DBUG_PRINT ("CF", ("_shape_A(_saabnd(dim,shp,val)) replaced by shp"));
+                }
             }
         }
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
     }
-#endif // FIXME
 
     DBUG_RETURN (res);
 }
@@ -356,7 +353,11 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
  *            Although this resembles the take() case just above,
  *            typechecker can't do this much analysis.
  *
- *         2. _drop_SxV_( 0, V);
+ *         2. _drop_SxV_( N , V);
+ *            If [N] == AVIS_SHAPE( PRF_ARG2( arg_node)),
+ *            treat as case 1.
+ *
+ *         3. _drop_SxV_( 0, V);
  *            If PRF_ARG1 is 0:
  *            return PRF_ARG2 as the result.
  *
@@ -370,39 +371,34 @@ node *
 SAACFprf_drop_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    pattern *pat4;
+    node *N;
+    node *V;
+    node *shpV;
+    constant *con = NULL;
 
     DBUG_ENTER ("SAACFprf_drop_SxV");
 
-#ifdef FIXME
-    node *shp;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    pattern *pat1;
-    pattern *pat2;
-    pattern *patarg2;
-    constant *con = NULL;
-
-    stdlib build failure
-
-      pat1
-      = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0), PMskip (0));
+    pat1 = PMprf (1, PMAisPrf (F_drop_SxV), 2,
+                  PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMvar (0, 0),
+                         PMvar (1, PMAgetNode (&V), 0)),
+                  PMvar (1, PMAisVar (&V), 0));
 
     pat2
       = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMconst (1, PMAgetVal (&con), 0), PMskip (0));
 
-    patarg2 = PMarray (1, PMAgetNode (&arg2), 1, PMskip (0));
+    pat3 = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMvar (1, PMAgetNode (&N), 0),
+                  PMvar (1, PMAgetSaaShape (&shpV), 0));
 
-    shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
+    pat4 = PMarray (0, 1, PMvar (1, PMAisVar (&N), 0));
 
-    /* Case 1 disabled, because it kills sacprelude build in C compiler
-     * 2009-08-05
-     *   the patarg2 match does not make the shape check correctly
-     *   (or at all, for that matter).
-     */
-    if ((NULL != shp) && PMmatchFlatSkipExtrema (pat1, arg_node)
-        && PMmatchFlatSkipExtrema (patarg2, shp)) {
-
-        /* Case 1: conjure up empty vector. */
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)
+        || (PMmatchFlatSkipExtrema (pat3, arg_node)
+            && PMmatchFlatSkipExtrema (pat4, shpV))) {
+        /* Case 1 and Case 2: conjure up empty vector. */
         res = TBmakeArray (TYmakeAKS (TYcopyType (
                                         TYgetScalar (ID_NTYPE (PRF_ARG2 (arg_node)))),
                                       SHcreateShape (0)),
@@ -410,7 +406,7 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
         DBUG_PRINT ("CF", ("drop(shape(V), V)  replaced by empty vector"));
 
     } else if (PMmatchFlatSkipExtrema (pat2, arg_node) && (COisZero (con, TRUE))) {
-        /* Case 2 */
+        /* Case 3 */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
         con = COfreeConstant (con);
         DBUG_PRINT ("CF", ("drop(0, V) replaced by V"));
@@ -418,9 +414,6 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
-    patarg2 = PMfree (patarg2);
-
-#endif // FIXME
 
     DBUG_RETURN (res);
 }
