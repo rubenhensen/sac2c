@@ -275,7 +275,7 @@ MTSPMDFlet (node *arg_node, info *arg_info)
 node *
 MTSPMDFid (node *arg_node, info *arg_info)
 {
-    node *avis, *new_avis, *ids, *dim, *shape, *alloc, *free;
+    node *avis, *new_avis;
 
     DBUG_ENTER ("MTSPMDFid");
 
