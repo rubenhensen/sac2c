@@ -105,11 +105,15 @@ attribGetNode (attrib *attr, node *arg)
 
     if (PATTR_N1 (attr) != NULL) {
         *PATTR_N1 (attr) = arg;
-        DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
-                            global.mdb_nodetype[NODE_TYPE (arg)],
-                            (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                            (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                            (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+        if (arg != NULL) {
+            DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
+                                global.mdb_nodetype[NODE_TYPE (arg)],
+                                (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                                (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                                (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+        } else {
+            DBUG_PRINT ("PMA", (PMARESULT "NULL"));
+        }
     } else {
         DBUG_PRINT ("PMA", (PMARESULT "redundant PMAgetNode attribute!"));
     }

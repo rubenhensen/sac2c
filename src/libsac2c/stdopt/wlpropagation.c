@@ -471,9 +471,10 @@ WLPROPid (node *arg_node, info *arg_info)
              * Does the with-loop fulfil the required selection
              * conditions?
              */
-            if ((WITH_SELMAX (withloop) == 0)
-                || ((AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 1)
-                    && (WITH_SELMAX (withloop) == 1))) {
+            if (!WITH_CONTAINSFUNAPS (withloop)
+                && ((WITH_SELMAX (withloop) == 0)
+                    || ((AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 1)
+                        && (WITH_SELMAX (withloop) == 1)))) {
 
                 dfmask_t *inmask;
                 lut_t *lut;

@@ -5,6 +5,50 @@
  *
  * @file wlselcount.c
  *
+ * This traversal infers two WIth-Loop attributes:
+ *
+ *        WITH_SELMAX and WITH_CONTAINSFUNAPS
+ *
+ * They are typically used as a crude cost estimate for Wls.
+ *
+ * WITH_SELMAX is the maximum number of statically identifyable
+ * selections (F_sel_VxA_) performed at each iteration of
+ * the With-Loop.
+ *
+ * A few examples:
+ *
+ *  a = with {
+ *        ( a <= iv < b) : ... x[y] ... x[z]....k[p]...;
+ *      } : modarray(...);
+ *
+ *  yields 3
+ *
+ *  a = with {
+ *        ( c <= iv < d) : ... x[z]....k[p]...;
+ *        ( a <= iv < b) : ... x[y] ... x[z]....k[p]...;
+ *      } : modarray(...);
+ *
+ *  yields 3
+ *
+ *  a = with {
+ *        ( a <= iv < b) : ... x[y] ... x[z]....k[p]...;
+ *        ( c <= iv < d) {
+ *          A = with {
+ *                ( c <= iv < d) : ... x[z]....k[p]...;
+ *                ( a <= iv < b) : ... x[y] ... x[z]....k[p]...;
+ *              } : modarray(...);
+ *        } : A + x[iv] ;
+ *        ( e <= iv < f) {
+ *          A = with {
+ *                ( c <= iv < d) : ... x[z]....k[p]...;
+ *              } : modarray(...);
+ *        } : A;
+ *      } : modarray(...);
+ *
+ *  yields 4 (second partition)
+ *
+ * WITH_CONTAINSFUNAPS is just a boolean flag indicating whether
+ * ANY partition contains ANY call to a user defined function.
  *
  **************************************************************************/
 
@@ -44,7 +88,7 @@ MakeInfo ()
 
     INFO_WLSELSMAX (result) = 0;
     INFO_WLSELS (result) = 0;
-    INFO_WLFUNAPPS (result) = 0;
+    INFO_WLFUNAPPS (result) = FALSE;
     INFO_ISWLCODE (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -59,6 +103,8 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+#define MAX(A, B) ((A) < (B) ? B : A)
 
 /**<!--*************************************************************-->
  *
@@ -80,6 +126,8 @@ WLSELCdoWithloopSelectionCount (node *fundef)
 
     DBUG_ENTER ("WLSELCdoWithloopSelection");
 
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "WLSELCdoWithloopSelection called on non N_fundef node!");
     arg_info = MakeInfo ();
 
     TRAVpush (TR_wlselc);
@@ -109,9 +157,8 @@ WLSELCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSELCfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -145,30 +192,28 @@ WLSELCwith (node *arg_node, info *arg_info)
     old = INFO_WLSELSMAX (arg_info);
     INFO_WLSELSMAX (arg_info) = 0;
 
+    DBUG_PRINT ("WLSELC", ("> analysing With-Loop in line %d", NODE_LINE (arg_node)));
     /**
      * traverse into with-loop
      */
-
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    /**
-     * assign max-value to with-loop
-     */
-    if (INFO_WLFUNAPPS (arg_info)) {
-        INFO_WLSELSMAX (arg_info) = -1;
-    }
+    WITH_CONTAINSFUNAPS (arg_node) = INFO_WLFUNAPPS (arg_info);
+    DBUG_PRINT ("WLSELC", ("  containsFunAps flag set to %s",
+                           (WITH_CONTAINSFUNAPS (arg_node) ? "true" : "false")));
     WITH_SELMAX (arg_node) = INFO_WLSELSMAX (arg_info);
+    DBUG_PRINT ("WLSELC", ("  selmax counter set to %d", WITH_SELMAX (arg_node)));
+
     INFO_WLSELSMAX (arg_info) = old;
-    if (WITH_SELMAX (arg_node) >= 0) {
-        INFO_WLSELS (arg_info) = INFO_WLSELS (arg_info) + WITH_SELMAX (arg_node);
-    } else {
-        INFO_WLSELS (arg_info) = -1;
+    INFO_WLFUNAPPS (arg_info) = old_funapps;
+
+    if (INFO_ISWLCODE (arg_info)) {
+        INFO_WLSELS (arg_info) += WITH_SELMAX (arg_node);
+        INFO_WLFUNAPPS (arg_info)
+          = INFO_WLFUNAPPS (arg_info) || WITH_CONTAINSFUNAPS (arg_node);
     }
 
-    INFO_WLFUNAPPS (arg_info) = old_funapps;
-    if (INFO_ISWLCODE (arg_info)) {
-        INFO_WLFUNAPPS (arg_info) = TRUE;
-    }
+    DBUG_PRINT ("WLSELC", ("< done with With-Loop in line %d", NODE_LINE (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -199,22 +244,19 @@ WLSELCcode (node *arg_node, info *arg_info)
     old_wlsels = INFO_WLSELS (arg_info);
     old_iswlcode = INFO_ISWLCODE (arg_info);
     INFO_WLSELS (arg_info) = 0;
-    INFO_ISWLCODE (arg_info) = TRUE;
 
     /**
      * traverse into cblock
      * manipulate 'local' counters
      */
+    INFO_ISWLCODE (arg_info) = TRUE;
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    INFO_ISWLCODE (arg_info) = FALSE;
 
     /**
      * set max-counter according to values of 'local' counters
      */
-    INFO_WLSELSMAX (arg_info) = (INFO_WLSELS (arg_info) < INFO_WLSELSMAX (arg_info))
-                                  ? (INFO_WLSELSMAX (arg_info))
-                                  : (INFO_WLSELS (arg_info));
-
-    INFO_ISWLCODE (arg_info) = FALSE;
+    INFO_WLSELSMAX (arg_info) = MAX (INFO_WLSELS (arg_info), INFO_WLSELSMAX (arg_info));
 
     /**
      * traverse into other sub-structures
@@ -249,7 +291,7 @@ WLSELCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSELCprf");
 
     if ((INFO_ISWLCODE (arg_info)) && (F_sel_VxA == PRF_PRF (arg_node))) {
-        INFO_WLSELS (arg_info) = INFO_WLSELS (arg_info) + 1;
+        INFO_WLSELS (arg_info)++;
     }
 
     DBUG_RETURN (arg_node);
