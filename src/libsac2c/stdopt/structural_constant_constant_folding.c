@@ -627,6 +627,9 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
                  ("SCCFprf_cat_VxV arg1 not N_id"));
     DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG2 (arg_node))),
                  ("SCCFprf_cat_VxV arg2 not N_id"));
+    DBUG_PRINT ("CF", ("SCCFprf_cat_VxV PRF_ARG1=%s, PRF_ARG2=%s",
+                       AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                       AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
 
     /* This catches the empty-vector case when one argument is not an N_array */
     if (TUisEmptyVect (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))))) {
