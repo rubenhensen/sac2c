@@ -19,6 +19,38 @@
  *   once (that means: as argument of a function application).
  * Then it is assumed to be safe to do with-loop propagation.
  *
+ * The rationale of with-loop propagation is the following:
+ *
+ * In the presence of with-loop folding it sometimes makes sense to not
+ * lift a loop-invariant with-loop out of a do-loop. More precisely, it
+ * may make sense to move a with-loop actively into a do-loop. This is
+ * the case if the with-loop can be folded with an existing with-loop in
+ * the do-loop body, thus avoiding the actual creation of a temporary
+ * array outside the do-loop.
+ *
+ * Consider the following example:
+ *
+ * A = with {
+ *       ([0] <= iv < [100]) : 0;
+ *     } genarray( [100]);
+ *
+ * do {
+ *   B = with {
+ *         ([0] <= iv < [100]) : B[iv] + A[iv];
+ *       } genarray( [100]);
+ * } while (...)
+ *
+ * Propagating the upper with-loop into the do-loop allows it to be folded
+ * with the lower with-loop and thus pretty much disappear.
+ *
+ * Of course, with-loop propagation is a speculative optimisation in the
+ * sense that we do not a-priori check whether folding will be successful.
+ * This would be relatively difficult per se and also difficult to keep in
+ * sync with the actual implementation (or better implementations) of
+ * with-loop folding. Therefore, we limit our checks to the ones mentioned
+ * before. In case, with-loop folding does not happen eventually, a further
+ * run of with-loop invariant removal will re-establish the original code.
+ *
  **************************************************************************/
 
 #include "tree_basic.h"
