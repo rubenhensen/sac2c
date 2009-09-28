@@ -16,8 +16,8 @@
  * prefix: INFNC
  *
  *****************************************************************************/
-extern node *INFNCdoInferNeedCounters (node *arg_node);
-extern node *INFNCdoInferNeedCountersOneFundef (node *arg_node, bool selonly);
+extern node *INFNCdoInferNeedCounters (node *arg_node, trav_t trav);
+extern node *INFNCdoInferNeedCountersOneFundef (node *arg_node, trav_t trav);
 
 extern node *INFNCfundef (node *arg_node, info *arg_info);
 extern node *INFNCblock (node *arg_node, info *arg_info);

@@ -1,13 +1,18 @@
 /*
  * $Id$
  *
- * This module sums, into AVIS_NEEDCOUNT, the total number of N_id nodes
- * that refer to that N_avis.
- * An argument to INFNCdoInferNeedCountersOneFundef permits counting
- * of only those N_id nodes that refer to the data part of
- * an array. At present, this ignores references in _idx_shape_sel ops.
- * This permits symbolic WLF to count only
- * array references, and ignore shape and dim references.
+ * This module infers how often each variable is used in RHS expressions
+ * and puts the value found into each variable's AVIS_NEEDCOUNT.
+ * This information, IN PRINCIPLE, is needed by several optimisations
+ * to base the decisions on. Amongst thes are at the time being
+ * (2009) AL, DL, SISI, SWLF, and WLPROP.
+ * Since some of these optimisations actually would prefer to
+ * exclude certain RHS occurances, the entry function takes a further
+ * parameter, the traversal table TR_xx itself!
+ * The actual decision as to whether exclude or not a certain occurence
+ * happens in the function
+ *                  exclusionDueToHostTraversal
+ * This eases reverse engineering if needed :-)
  *
  */
 
@@ -25,9 +30,7 @@
 struct INFO {
     node *prf;
     bool onefundef;
-    bool dro; /* data reference only:
-               * If true, ignore references to array shape or dim.
-               */
+    trav_t traversal;
 };
 
 /*
@@ -35,13 +38,13 @@ struct INFO {
  */
 #define INFO_PRF(n) ((n)->prf)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
-#define INFO_DRO(n) ((n)->dro)
+#define INFO_TRAV(n) ((n)->traversal)
 
 /*
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (trav_t trav)
 {
     info *result;
 
@@ -51,7 +54,7 @@ MakeInfo ()
 
     INFO_PRF (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
-    INFO_DRO (result) = FALSE;
+    INFO_TRAV (result) = trav;
 
     DBUG_RETURN (result);
 }
@@ -66,6 +69,41 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+bool
+exclusionDueToHostTraversal (node *arg_node, info *arg_info)
+{
+    bool res = FALSE;
+    node *parent;
+    DBUG_ENTER ("exclusionDueToHostTraversal");
+
+    if (INFO_TRAV (arg_info) == TR_swlf) {
+        parent = INFO_PRF (arg_info);
+        if ((parent != NULL) && (NODE_TYPE (parent) == N_prf)) {
+            switch
+                PRF_PRF (parent)
+                {
+                case F_idx_shape_sel: /* Don't count these */
+                case F_shape_A:
+                case F_saabind:
+                case F_dim_A:
+                case F_non_neg_val_V:
+                case F_val_lt_shape_VxA:
+                case F_val_le_val_VxV:
+                case F_shape_matches_dim_VxA:
+                case F_afterguard:
+                case F_guard:
+                    res = TRUE;
+                    break;
+
+                default:
+                    res = FALSE;
+                }
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *INFNCdoInferNeedCounters( node *arg_node)
@@ -78,13 +116,13 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-INFNCdoInferNeedCounters (node *arg_node)
+INFNCdoInferNeedCounters (node *arg_node, trav_t trav)
 {
     info *info;
 
     DBUG_ENTER ("INFNCdoInferNeedCounters");
 
-    info = MakeInfo ();
+    info = MakeInfo (trav);
 
     TRAVpush (TR_infnc);
     arg_node = TRAVdo (arg_node, info);
@@ -110,15 +148,14 @@ INFNCdoInferNeedCounters (node *arg_node)
  *
  *****************************************************************************/
 node *
-INFNCdoInferNeedCountersOneFundef (node *arg_node, bool dro)
+INFNCdoInferNeedCountersOneFundef (node *arg_node, trav_t trav)
 {
     info *info;
 
     DBUG_ENTER ("INFNCdoInferNeedCountersOneFundef");
 
-    info = MakeInfo ();
+    info = MakeInfo (trav);
     INFO_ONEFUNDEF (info) = TRUE;
-    INFO_DRO (info) = dro;
 
     TRAVpush (TR_infnc);
     arg_node = TRAVdo (arg_node, info);
@@ -201,34 +238,12 @@ node *
 INFNCid (node *arg_node, info *arg_info)
 {
     node *avis;
-    node *parent;
 
     DBUG_ENTER ("INFNCid");
 
     avis = ID_AVIS (arg_node);
-    parent = INFO_PRF (arg_info);
 
-    if ((parent != NULL) && (NODE_TYPE (parent) == N_prf)) {
-
-        switch
-            PRF_PRF (parent)
-            {
-            case F_idx_shape_sel: /* Don't count these */
-            case F_shape_A:
-            case F_saabind:
-            case F_dim_A:
-            case F_non_neg_val_V:
-            case F_val_lt_shape_VxA:
-            case F_val_le_val_VxV:
-            case F_shape_matches_dim_VxA:
-            case F_afterguard:
-            case F_guard:
-                break;
-
-            default:
-                AVIS_NEEDCOUNT (avis) += 1;
-            }
-    } else {
+    if (!exclusionDueToHostTraversal (arg_node, arg_info)) {
         AVIS_NEEDCOUNT (avis) += 1;
     }
 

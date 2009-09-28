@@ -764,7 +764,7 @@ SWLFIfundef (node *arg_node, info *arg_info)
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
 
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TRUE);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_swlfi);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);

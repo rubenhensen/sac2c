@@ -232,7 +232,7 @@ WLPROPfundef (node *arg_node, info *arg_info)
      *     in with-loops
      *   - infer loop invariant arguments
      */
-    arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, FALSE);
+    arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_wlprop);
     arg_node = WLSELCdoWithloopSelectionCount (arg_node);
     arg_node = ILIdoInferLoopInvariants (arg_node);
 

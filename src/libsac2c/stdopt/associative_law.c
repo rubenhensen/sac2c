@@ -623,7 +623,7 @@ ALfundef (node *arg_node, info *arg_info)
         /*
          * Infer need counters
          */
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, FALSE);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_al);
 
         INFO_FUNDEF (arg_info) = arg_node;
         INFO_DFMBASE (arg_info)

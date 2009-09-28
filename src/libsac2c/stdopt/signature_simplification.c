@@ -209,7 +209,7 @@ SISIfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("SISIfundef");
 
     if (INFO_TRAVPHASE (arg_info) == infer) {
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, FALSE);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_sisi);
     } else if (INFO_TRAVPHASE (arg_info) == simplify) {
         INFO_FUNDEF (arg_info) = arg_node;
 
