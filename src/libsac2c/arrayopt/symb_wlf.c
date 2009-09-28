@@ -651,10 +651,12 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
         gee = PART_GENERATOR (partee);
         intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
         intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
+#ifdef NEEDSNULLCHECK
         DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
                              AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
         DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
                              AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
+#endif // NEEDSNULLCHECK
         if (
           /* Find and match Referents for generators, skipping default partitions */
           ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
