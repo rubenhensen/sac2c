@@ -457,8 +457,9 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        NULL, 0, PPIgetPVShape, ICCnone, TEone, NULL, NULL),
 
   PRF (reshape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_reshape_VxA, COreshape,
-       COMPprfReshape, NULL, SCCFprf_reshape, SAACFprf_reshape, SAAdim_is_arg1_0,
-       SAAshp_is_arg1, NULL, 0, PPIgetPVReshape, ICCreshape, TEone, NULL, NULL),
+       COMPprfReshape, SCSprf_reshape, SCCFprf_reshape, SAACFprf_reshape,
+       SAAdim_is_arg1_0, SAAshp_is_arg1, NULL, 0, PPIgetPVReshape, ICCreshape, TEone,
+       NULL, NULL),
 
   PRF (sel_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_sel_VxA, COsel, COMPprfSel,
        SCSprf_sel_VxA, SCCFprf_sel, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
