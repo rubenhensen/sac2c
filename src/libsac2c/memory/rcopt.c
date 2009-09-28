@@ -350,9 +350,24 @@ EMRCOprf (node *arg_node, info *arg_info)
             INFO_SECONDTRAV (arg_info) = TRUE;
             break;
 
+        case F_resize:
+            /*
+             * Mark reused variable in NOFREEMASK such that it will not be
+             * statically freed
+             */
+            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info), NULL,
+                                ID_AVIS (PRF_ARG4 (arg_node)));
+
+            /*
+             * This node must be revisited in bottom-up traversal
+             */
+            INFO_SECONDTRAV (arg_info) = TRUE;
+            break;
+
         case F_alloc:
         case F_alloc_or_reuse:
         case F_alloc_or_reshape:
+        case F_alloc_or_resize:
             /*
              * This node must be revisited in bottom-up traversal
              */
@@ -412,6 +427,8 @@ EMRCOprf (node *arg_node, info *arg_info)
             case F_alloc:
             case F_alloc_or_reuse:
             case F_reuse:
+            case F_alloc_or_resize:
+            case F_resize:
             case F_alloc_or_reshape:
             case F_reshape_VxA:
                 if ((PRF_PRF (prf) == F_dec_rc)

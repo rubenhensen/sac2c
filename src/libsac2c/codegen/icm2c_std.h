@@ -38,6 +38,9 @@ extern void ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim);
 extern void ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT,
                                       int from_sdim, char *copyfun);
 
+extern void ICMCompileND_CHECK_RESIZE (char *to_NT, int to_sdim, char *from_NT,
+                                       int from_sdim, char *copyfun);
+
 extern void ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT);
 
 extern void ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY);

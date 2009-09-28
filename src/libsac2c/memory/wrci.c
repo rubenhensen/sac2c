@@ -30,6 +30,8 @@
 #include "memory.h"
 #include "free.h"
 #include "new_types.h"
+#include "type_utils.h"
+#include "shape.h"
 #include "ReuseWithArrays.h"
 #include "reusewithoffset.h"
 #include "compare_tree.h"
@@ -179,6 +181,24 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
             || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))
             || ((modarray != NULL)
                 && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
+            match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
+        }
+    }
+
+    DBUG_RETURN (match);
+}
+
+static node *
+MatchingPRCs (node *rcs, node *ids)
+{
+    node *match = NULL;
+
+    DBUG_ENTER ("MatchingRCs");
+
+    if (rcs != NULL) {
+        match = MatchingPRCs (EXPRS_NEXT (rcs), ids);
+
+        if (TUravelsHaveSameStructure (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
         }
     }
@@ -338,6 +358,13 @@ WRCIgenarray (node *arg_node, info *arg_info)
      * Annotate reuse candidates.
      */
     GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+
+    if (global.optimize.dopr) {
+        /*
+         * Annotate partial reuse candidates
+         */
+        GENARRAY_PRC (arg_node) = MatchingPRCs (INFO_RC (arg_info), INFO_LHS (arg_info));
+    }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));

@@ -72,6 +72,7 @@ OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
 OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
 OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
+OPTIMIZE ("pr", pr, FALSE, FALSE, "partial reuse")
 #ifdef DISABLE_PHM
 OPTIMIZE ("phm", phm, FALSE, FALSE, "private heap management")
 OPTIMIZE ("aps", aps, FALSE, FALSE, "arena preselection (requires -dophm)")

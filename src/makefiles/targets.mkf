@@ -187,7 +187,7 @@ libsac2c_memory      := rcopt filterrc alloc referencecounting \
                         reusebranching ReuseWithArrays inplacecomp audscldist \
                         rcminimize NumLookUpTable wrci reusewithoffset \
                         movesharedmeminstr scoperce show_alias \
-                        rm_alias_results_cc
+                        rm_alias_results_cc filter_partial_reuse_candidates
 
 libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign dead_vardec_removal \

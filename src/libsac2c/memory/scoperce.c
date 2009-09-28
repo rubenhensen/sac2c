@@ -314,7 +314,8 @@ SRCEprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("SRCEprf");
 
     if ((PRF_PRF (arg_node) == F_alloc_or_reuse)
-        || (PRF_PRF (arg_node) == F_alloc_or_reshape)) {
+        || (PRF_PRF (arg_node) == F_alloc_or_reshape)
+        || (PRF_PRF (arg_node) == F_alloc_or_resize)) {
 
         INFO_RCELIM (arg_info) = TRUE;
 

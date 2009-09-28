@@ -599,6 +599,13 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        COMPprfAllocOrReshape, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
+  PRF (alloc_or_resize, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfAllocOrResize, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (resize, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL, COMPprfResize,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
   PRF (isreused, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfIsReused, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),

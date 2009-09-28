@@ -1140,6 +1140,61 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
 }
 
 /** <!-- ****************************************************************** -->
+ * @brief Returns true if the ravels of arrays of type t1 and t2 have a
+ *        compatible structure wrt. to indexing operations, i.e., that
+ *        for t1 A and t2 B and iv an index vector, A[iv] and B[iv] use the
+ *        same index offset.
+ *
+ * @param t1 type of array
+ * @param t2 type of array
+ *
+ * @return true if t1 and t2 are compatible
+ ******************************************************************************/
+bool
+TUravelsHaveSameStructure (ntype *t1, ntype *t2)
+{
+    ntype *aks1, *aks2;
+    shape *shp1, *shp2;
+
+    bool res = FALSE;
+
+    DBUG_ENTER ("TUravelsHaveSameStructure");
+
+    aks1 = TYeliminateAKV (t1);
+    aks2 = TYeliminateAKV (t2);
+
+    /*
+     * We check whether the ravel has a compatible structure,
+     * i.e., we need to know that the shape only differs
+     * on the outermost dimension. For vectors, this is
+     * always true (AKD case). Otherwise, we have to
+     * inspect the shape here.
+     */
+    if (TUdimKnown (aks1) && TUdimKnown (aks2) && (TYgetDim (aks1) == TYgetDim (aks2))) {
+        /* vector case */
+        res = TRUE;
+    } else if (TYisAKS (aks1) && TYisAKS (aks2) && (TYgetDim (aks1) > 1)
+               && (TYgetDim (aks2) > 1)) {
+        /*
+         * AKS non-vector case.
+         * Check that drop(1, shape( aks1)) == drop(1, shape( aks2))
+         */
+        shp1 = SHdropFromShape (1, TYgetShape (aks1));
+        shp2 = SHdropFromShape (1, TYgetShape (aks2));
+
+        res = SHcompareShapes (shp1, shp2);
+
+        shp1 = SHfreeShape (shp1);
+        shp2 = SHfreeShape (shp2);
+    }
+
+    aks1 = TYfreeType (aks1);
+    aks2 = TYfreeType (aks2);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn bool TUretsContainBottom( node *rets)
  *
  * @brief Returns true iff at least one return has a bottom type assigned.

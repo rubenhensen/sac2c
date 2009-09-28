@@ -186,6 +186,7 @@ FilterRCs (node *arg_node, info *arg_info)
                        || (PRF_PRF (alloc) == F_alloc_or_reuse)
                        || (PRF_PRF (alloc) == F_reuse)
                        || (PRF_PRF (alloc) == F_alloc_or_reshape)
+                       || (PRF_PRF (alloc) == F_alloc_or_resize)
                        || (PRF_PRF (alloc) == F_suballoc)),
                  "Illegal node type!");
 

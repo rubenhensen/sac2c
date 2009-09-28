@@ -4011,6 +4011,12 @@ PRTgenarray (node *arg_node, info *arg_info)
         fprintf (global.outfile, ")");
     }
 
+    if (GENARRAY_PRC (arg_node) != NULL) {
+        fprintf (global.outfile, ", PRC(");
+        TRAVdo (GENARRAY_PRC (arg_node), arg_info);
+        fprintf (global.outfile, ")");
+    }
+
     if (GENARRAY_IDX (arg_node) != NULL) {
         fprintf (global.outfile, ", IDX(%s)", AVIS_NAME (GENARRAY_IDX (arg_node)));
     }

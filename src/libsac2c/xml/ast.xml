@@ -2032,6 +2032,20 @@
           <node name="Objdef" />
         </travnone>   
       </traversal>
+      <traversal id="FPRC" name="Filter Partial Reuse Candidates" default="sons" include="filter_partial_reuse_candidates.h" >
+        <travuser>
+          <node name="Block" />
+          <node name="Avis" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Id" />
+          <node name="Prf" />
+	</travuser>
+	<traverror>
+          <node name="With2" />
+	</traverror>
+      </traversal>
       <traversal id="EMIA" name="Interface Analysis" default="none" include="interfaceanalysis.h" >
         <travuser>
           <node name="Ap" />
@@ -6339,6 +6353,8 @@ N_structdef :
           <description>Used by Loop Scalarization to determine whether
           a variable is used otherwise than within array position of
           selections.
+	  Furthermore, used by partial reuse candidate filtering to check
+	  whether a reuse candidate appears somewhere other than in selections.
           </description>
         </flag>
         <flag name="BelongingAssignmentIsNotAllowedToBeMovedUp" default="FALSE">
@@ -7281,6 +7297,26 @@ N_structdef :
                    be stored in xxx. This information is inferred at the end
                    of the optimisations, IIRC but only used later on 
                    in reference counting to perform memory reuse.
+                </description>
+
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="opt_wrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+	</son>
+        <son name="PRC" default="NULL">
+                <description>
+                   PRC(xxx) encodes that xxx is a partial reuse candidate for 
+		   this WL, i.e., that the result of this WL or, more 
+		   specifically, the operator the PRC(xxx) is attached to, 
+		   can potentially be stored in an extension of xxx. This 
+		   information is inferred at the end of the optimisations, 
+		   but only used later on in reference counting to perform 
+		   data reuse of xxx is a prefix of the result.
                 </description>
 
           <targets>

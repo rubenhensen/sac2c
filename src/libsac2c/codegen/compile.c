@@ -939,6 +939,104 @@ MakeCheckReuseIcm (char *name, types *type, node *reuse_id, node *assigns)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *MakeReAllocIcm( char *name, types *type,
+ *                            char *sname, types *stype, int rc,
+ *                            node *get_dim, node *set_shape_icm,
+ *                            node *pragma, node *assign)
+ *
+ * @brief  Builds a ND_REALLOC icm.
+ *         The given node 'assigns' is appended to the created assignment.
+ *
+ ******************************************************************************/
+
+static node *
+MakeReAllocIcm (char *name, types *type, char *sname, types *stype, int rc, node *get_dim,
+                node *set_shape_icm, node *pragma, node *assigns)
+{
+    DBUG_ENTER ("MakeReAllocIcm");
+
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+    DBUG_ASSERT ((get_dim != NULL), "no dimension found!");
+    DBUG_ASSERT (((set_shape_icm != NULL) && (NODE_TYPE (set_shape_icm) == N_icm)),
+                 "no N_icm node found!");
+    DBUG_ASSERT ((pragma == NULL), "realloc has no pragma support");
+
+    if (RC_IS_ACTIVE (rc)) {
+        /* This is an array that should be allocated on the device */
+        if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev) {
+#if USE_COMPACT_ALLOC
+            assigns = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
+                                        TBmakeNum (rc), get_dim, set_shape_icm, assigns);
+#else
+            assigns = TCmakeAssignIcm4 (
+              "CUDA_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+              get_dim, MakeBasetypeArg (type),
+              TBmakeAssign (set_shape_icm,
+                            TCmakeAssignIcm4 ("CUDA_ALLOC_END",
+                                              TCmakeIdCopyStringNt (name, type),
+                                              TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                              MakeBasetypeArg (type), assigns)));
+#endif
+        } else {
+#if USE_COMPACT_ALLOC
+            assigns = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
+                                        TBmakeNum (rc), get_dim, set_shape_icm, assigns);
+#else
+            assigns = TCmakeAssignIcm5 (
+              "ND_REALLOC_BEGIN", TCmakeIdCopyStringNt (name, type),
+              TCmakeIdCopyStringNt (sname, stype), TBmakeNum (rc), get_dim,
+              MakeBasetypeArg (type),
+              TBmakeAssign (set_shape_icm,
+                            TCmakeAssignIcm5 ("ND_REALLOC_END",
+                                              TCmakeIdCopyStringNt (name, type),
+                                              TCmakeIdCopyStringNt (sname, stype),
+                                              TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                              MakeBasetypeArg (type), assigns)));
+#endif
+        }
+    } else {
+        get_dim = FREEdoFreeTree (get_dim);
+        set_shape_icm = FREEdoFreeTree (set_shape_icm);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeCheckResizeIcm( char *name, types *type, node *reuse_id,
+ *                                node *assigns);
+ *
+ * @brief  Builds a CHECK_RESIZE icm which checks whether reuse_id can be
+ *         reused via a realloc at runtime.
+ *         The given node 'assigns' is appended to the created assignment.
+ *
+ ******************************************************************************/
+
+static node *
+MakeCheckResizeIcm (char *name, types *type, node *reuse_id, int rc, node *get_dim,
+                    node *set_shape_icm, node *assigns)
+{
+    DBUG_ENTER ("MakeCheckResizeIcm");
+
+    assigns
+      = TCmakeAssignIcm1 ("SAC_IS_LASTREF__BLOCK_ELSE",
+                          TCmakeIdCopyStringNt (ID_NAME (reuse_id), ID_TYPE (reuse_id)),
+                          assigns);
+
+    assigns = MakeReAllocIcm (name, type, ID_NAME (reuse_id), ID_TYPE (reuse_id), rc,
+                              get_dim, set_shape_icm, NULL, assigns);
+
+    assigns
+      = TCmakeAssignIcm1 ("SAC_IS_LASTREF__BLOCK_BEGIN",
+                          TCmakeIdCopyStringNt (ID_NAME (reuse_id), ID_TYPE (reuse_id)),
+                          assigns);
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node MakeGetDimIcm( node *arg_node)
  *
  * @brief  Creates an ICM for calculating the dimension of an allocated
@@ -3814,6 +3912,106 @@ COMPprfAllocOrReuse (node *arg_node, info *arg_info)
     while (cand != NULL) {
         ret_node = MakeCheckReuseIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                       EXPRS_EXPR (cand), ret_node);
+        cand = EXPRS_NEXT (cand);
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprfResize( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_resize.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfResize (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *ret_node;
+    int rc;
+    node *get_dim;
+    node *set_shape;
+    node *resizecand;
+
+    DBUG_ENTER ("COMPprfResize");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    rc = NUM_VAL (PRF_ARG1 (arg_node));
+    get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
+    set_shape = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
+    resizecand = PRF_ARG4 (arg_node);
+
+    DBUG_ASSERT ((resizecand != NULL), "no source for resize found!");
+
+    ret_node
+      = MakeReAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), ID_NAME (resizecand),
+                        ID_TYPE (resizecand), rc, get_dim, set_shape, NULL, NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprfAllocOrResize( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_alloc_or_resize.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfAllocOrResize (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *ret_node = NULL;
+    int rc;
+    node *get_dim;
+    node *set_shape;
+    node *cand;
+
+    DBUG_ENTER ("COMPprfAllocOrResize");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    rc = NUM_VAL (PRF_ARG1 (arg_node));
+    get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
+    set_shape = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
+    cand = EXPRS_EXPRS4 (PRF_ARGS (arg_node));
+
+    /*
+     * We have to do the incrc explicitly, as we do not know whether
+     * we use the allocated or resized data.
+     */
+    ret_node = MakeIncRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc, ret_node);
+
+    if (cand != NULL) {
+        ret_node = TCmakeAssignIcm1 ("SAC_IS_LASTREF__BLOCK_END",
+                                     TCmakeIdCopyStringNt (ID_NAME (EXPRS_EXPR (cand)),
+                                                           ID_TYPE (EXPRS_EXPR (cand))),
+                                     ret_node);
+    }
+
+    ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                             0, /* done by explicit incrc */
+                             get_dim, set_shape, NULL, ret_node);
+
+    while (cand != NULL) {
+        ret_node = MakeCheckResizeIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                       EXPRS_EXPR (cand), rc, DUPdoDupTree (get_dim),
+                                       DUPdoDupTree (set_shape), ret_node);
         cand = EXPRS_NEXT (cand);
     }
 

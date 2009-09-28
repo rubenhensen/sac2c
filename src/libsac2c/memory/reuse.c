@@ -33,7 +33,10 @@
 /**
  * traversal modes
  */
-typedef enum { ri_default, ri_annotate } ri_mode;
+typedef enum {
+    ri_default,
+    ri_annotate,
+} ri_mode;
 
 /**
  * INFO structure
@@ -42,14 +45,16 @@ struct INFO {
     node *rhscand;
     node *lhs;
     ri_mode travmode;
+    prf allocator;
 };
 
 /**
  * INFO macros
  */
-#define INFO_LHS(n) (n->lhs)
-#define INFO_TRAVMODE(n) (n->travmode)
-#define INFO_RHSCAND(n) (n->rhscand)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_TRAVMODE(n) ((n)->travmode)
+#define INFO_RHSCAND(n) ((n)->rhscand)
+#define INFO_ALLOCATOR(n) ((n)->allocator)
 
 /**
  * INFO functions
@@ -66,6 +71,7 @@ MakeInfo ()
     INFO_RHSCAND (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_TRAVMODE (result) = ri_default;
+    INFO_ALLOCATOR (result) = F_unknown;
 
     DBUG_RETURN (result);
 }
@@ -341,11 +347,20 @@ EMRIprf (node *arg_node, info *arg_info)
 
     case F_alloc:
     case F_alloc_or_reuse:
+    case F_alloc_or_resize:
         if (INFO_TRAVMODE (arg_info) == ri_annotate) {
-            PRF_PRF (arg_node) = F_alloc_or_reuse;
-            PRF_ARGS (arg_node)
-              = TCappendExprs (PRF_ARGS (arg_node), INFO_RHSCAND (arg_info));
-            INFO_RHSCAND (arg_info) = NULL;
+            /*
+             * we can only extend reuses or resizes but not have both at
+             * the same time right now.
+             */
+            if ((PRF_PRF (arg_node) == F_alloc)
+                || (PRF_PRF (arg_node) == INFO_ALLOCATOR (arg_info))) {
+                PRF_PRF (arg_node) = INFO_ALLOCATOR (arg_info);
+                PRF_ARGS (arg_node)
+                  = TCappendExprs (PRF_ARGS (arg_node), INFO_RHSCAND (arg_info));
+                INFO_RHSCAND (arg_info) = NULL;
+            } else {
+            }
         }
         break;
 
@@ -354,9 +369,11 @@ EMRIprf (node *arg_node, info *arg_info)
 
         if (INFO_RHSCAND (arg_info) != NULL) {
             INFO_TRAVMODE (arg_info) = ri_annotate;
+            INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
               = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
             INFO_TRAVMODE (arg_info) = ri_default;
+            INFO_ALLOCATOR (arg_info) = F_unknown;
         }
         break;
 
@@ -400,9 +417,20 @@ EMRIgenarray (node *arg_node, info *arg_info)
 
     if (INFO_RHSCAND (arg_info) != NULL) {
         INFO_TRAVMODE (arg_info) = ri_annotate;
+        INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
         AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
+        INFO_ALLOCATOR (arg_info) = F_unknown;
+    } else {
+        INFO_RHSCAND (arg_info) = GENARRAY_PRC (arg_node);
+        GENARRAY_PRC (arg_node) = NULL;
+        INFO_TRAVMODE (arg_info) = ri_annotate;
+        INFO_ALLOCATOR (arg_info) = F_alloc_or_resize;
+        AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
+          = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
+        INFO_TRAVMODE (arg_info) = ri_default;
+        INFO_ALLOCATOR (arg_info) = F_unknown;
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
@@ -427,9 +455,11 @@ EMRImodarray (node *arg_node, info *arg_info)
 
     if (INFO_RHSCAND (arg_info) != NULL) {
         INFO_TRAVMODE (arg_info) = ri_annotate;
+        INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
         AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
+        INFO_ALLOCATOR (arg_info) = F_unknown;
     }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {

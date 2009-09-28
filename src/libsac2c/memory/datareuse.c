@@ -727,6 +727,16 @@ EMDRprf (node *arg_node, info *arg_info)
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
+    case F_resize:
+        /*
+         * b = resize( rc, dim, shp, a);
+         *
+         * Insert (b, a) into REUSELUT
+         */
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                           ID_AVIS (PRF_ARG4 (arg_node)));
+        break;
+
     case F_reshape_VxA:
         /*
          * b = reshape( dim, shp, a);

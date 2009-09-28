@@ -698,6 +698,8 @@ typedef int *SAC_array_descriptor_t;
 
 /* ND_CHECK_REUSE( ...)  is a C-ICM */
 
+/* ND_CHECK_RESIZE( ...) is a C-ICM */
+
 /*
  * DAO: descriptor and data vector are allocated together.
  *
@@ -754,14 +756,34 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_ALLOC__DATA_BASETYPE (var_NT, basetype)                                       \
     }
 
-#define SAC_ND_ALLOC__DESC__NOOP_BASETYPE(var_NT, dim, basetype)                         \
-    SAC_ND_ALLOC__DESC__NOOP (var_NT, dim)
+/*
+ * SAC_ND_REALLOC_BEGIN implementations (referenced by sac_std_gen.h)
+ */
 
-#define SAC_ND_ALLOC__DESC__FIXED_BASETYPE(var_NT, dim, basetype)                        \
-    SAC_ND_ALLOC__DESC__FIXED (var_NT, dim)
+#define SAC_ND_REALLOC_BEGIN__DAO(dest_NT, src_NT, rc, dim, basetype)                    \
+    {                                                                                    \
+        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);                                \
+        SAC_ND_A_FIELD (dest_NT)                                                         \
+          = realloc (SAC_ND_A_FIELD (src_NT),                                            \
+                     (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));    \
+        SAC_ND_SET__RC (dest_NT, rc)
 
-#define SAC_ND_ALLOC__DESC__AUD_BASETYPE(var_NT, dim, basetype)                          \
-    SAC_ND_ALLOC__DESC__AUD (var_NT, dim)
+#define SAC_ND_REALLOC_BEGIN__NO_DAO(dest_NT, src_NT, rc, dim, basetype)                 \
+    {                                                                                    \
+        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);                                \
+        SAC_ND_SET__RC (dest_NT, rc)
+
+/*
+ * SAC_ND_REALLOC_END implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_REALLOC_END__DAO(dest_NT, src_NT, rc, dim, basetype) }
+
+#define SAC_ND_REALLOC_END__NO_DAO(dest_NT, src_NT, rc, dim, basetype)                   \
+    SAC_ND_A_FIELD (dest_NT)                                                             \
+      = realloc (SAC_ND_A_FIELD (src_NT),                                                \
+                 (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));        \
+    }
 
 /*
  * SAC_ND_ALLOC_DESC implementations (referenced by sac_std_gen.h)
@@ -789,6 +811,15 @@ typedef int *SAC_array_descriptor_t;
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
+
+#define SAC_ND_ALLOC__DESC__NOOP_BASETYPE(var_NT, dim, basetype)                         \
+    SAC_ND_ALLOC__DESC__NOOP (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__FIXED_BASETYPE(var_NT, dim, basetype)                        \
+    SAC_ND_ALLOC__DESC__FIXED (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__AUD_BASETYPE(var_NT, dim, basetype)                          \
+    SAC_ND_ALLOC__DESC__AUD (var_NT, dim)
 
 #define SAC_ND_ALLOC__DATA__NOOP(var_NT) SAC_NOOP ()
 

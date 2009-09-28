@@ -691,6 +691,9 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
             && global.optimize.dodcr,
           opt)
 
+SUBPHASE (fprc, "Filtering partial reuse candidates", FPRCdoFilterPartialReuseCandidates,
+          (global.optimize.douip && global.optimize.dopr), opt)
+
 SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMarking,
           global.optimize.dowllo, opt)
 

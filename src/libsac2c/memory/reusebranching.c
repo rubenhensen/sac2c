@@ -177,8 +177,8 @@ GetReuseBranches (dfmask_t *drcs, node *memop)
 
     DBUG_ENTER ("GetReuseBranches");
 
-    if ((PRF_PRF (memop) == F_alloc_or_reuse)
-        || (PRF_PRF (memop) == F_alloc_or_reshape)) {
+    if ((PRF_PRF (memop) == F_alloc_or_reuse) || (PRF_PRF (memop) == F_alloc_or_reshape)
+        || (PRF_PRF (memop) == F_alloc_or_resize)) {
         node *rcs = PRF_EXPRS3 (memop);
 
         while (rcs != NULL) {

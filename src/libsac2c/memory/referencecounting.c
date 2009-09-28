@@ -563,6 +563,8 @@ RCIprf (node *arg_node, info *arg_info)
     case F_reshape_VxA:
     case F_alloc_or_reshape:
     case F_reuse:
+    case F_alloc_or_resize:
+    case F_resize:
         /*
          * alloc( dim, shp)
          *

@@ -80,7 +80,8 @@ EMSRprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMSRprf");
 
     if ((PRF_PRF (arg_node) == F_alloc_or_reuse)
-        || (PRF_PRF (arg_node) == F_alloc_or_reshape)) {
+        || (PRF_PRF (arg_node) == F_alloc_or_reshape)
+        || (PRF_PRF (arg_node) == F_alloc_or_resize)) {
         node *rcexprs = PRF_EXPRS3 (arg_node);
 
         while (rcexprs != NULL) {
@@ -97,13 +98,21 @@ EMSRprf (node *arg_node, info *arg_info)
                     node *new_node = TCmakePrf1 (F_reuse, DUPdoDupNode (rc));
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = new_node;
-                }
-
-                if (PRF_PRF (arg_node) == F_alloc_or_reshape) {
+                } else if (PRF_PRF (arg_node) == F_alloc_or_reshape) {
                     /*
                      * a = reshape( dim, shape, b);
                      */
                     PRF_PRF (arg_node) = F_reshape_VxA;
+                } else if (PRF_PRF (arg_node) == F_alloc_or_resize) {
+                    /*
+                     * a = resize( b, shp)
+                     */
+                    node *new_node
+                      = TCmakePrf3 (F_resize, DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                    DUPdoDupNode (PRF_ARG2 (arg_node)),
+                                    DUPdoDupNode (rc));
+                    arg_node = FREEdoFreeNode (arg_node);
+                    arg_node = new_node;
                 }
                 break;
             }
