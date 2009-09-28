@@ -50,6 +50,7 @@ MakeInfo ()
     INFO_NUMS (result) = NULL;
     INFO_COUNTER (result) = 0;
     INFO_TRAVMODE (result) = RSP_default;
+    INFO_MUTCDEPENDENCES (result) = FALSE;
 
     DBUG_RETURN (result);
 }
