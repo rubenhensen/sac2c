@@ -176,7 +176,7 @@ attribgetSaaShape (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetSAAShape( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetSaaShape( " F_PTR " ):", PATTR_N1 (attr)));
 
     *PATTR_N1 (attr) = AVIS_SHAPE (ID_AVIS (arg));
     res = ((*PATTR_N1 (attr)) != NULL);
@@ -186,7 +186,7 @@ attribgetSaaShape (attrib *attr, node *arg)
 }
 
 attrib *
-PMAgetSAAShape (node **shp)
+PMAgetSaaShape (node **shp)
 {
     attrib *res;
 
