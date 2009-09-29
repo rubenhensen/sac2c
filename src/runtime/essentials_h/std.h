@@ -763,7 +763,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_REALLOC_BEGIN__DAO(dest_NT, src_NT, rc, dim, basetype)                    \
     {                                                                                    \
         SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);                                \
-        SAC_ND_A_FIELD (dest_NT)                                                         \
+        SAC_ND_A_FIELD (src_NT) = SAC_ND_A_FIELD (dest_NT)                               \
           = realloc (SAC_ND_A_FIELD (src_NT),                                            \
                      (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));    \
         SAC_ND_SET__RC (dest_NT, rc)
@@ -780,7 +780,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_REALLOC_END__DAO(dest_NT, src_NT, rc, dim, basetype) }
 
 #define SAC_ND_REALLOC_END__NO_DAO(dest_NT, src_NT, rc, dim, basetype)                   \
-    SAC_ND_A_FIELD (dest_NT)                                                             \
+    SAC_ND_A_FIELD (src_NT) = SAC_ND_A_FIELD (dest_NT)                                   \
       = realloc (SAC_ND_A_FIELD (src_NT),                                                \
                  (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));        \
     }
