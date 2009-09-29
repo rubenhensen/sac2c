@@ -462,9 +462,6 @@ ENDCYCLE (scyc)
 
 /*************************************************/
 
-SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
-          global.optimize.doswlf || global.doivext, opt)
-
 SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
           opt)
 
@@ -476,6 +473,9 @@ SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
 
 SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
           global.optimize.dosaa, opt)
+
+SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
+          global.optimize.doswlf || global.doivext, opt)
 
 SUBPHASE (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
           global.doivext, opt)
