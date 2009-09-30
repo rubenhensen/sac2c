@@ -67,13 +67,23 @@
  * 
  *  LD_DYNAMIC      Linker call required to build a dynamic library. The 
  *                  compiler replaces all occurences of %libname% with the
- *                  filename of the library.
+ *                  filename of the library. If LD_DYNAMIC is empty, no 
+ *                  dynamic library will be built.
  *                  
  *  CCLINK          CCLINK specifies the libraries an executable always has to
  *                  be linked with. 
  *                  
  *  CCMTLINK        CCMTLINK specifies the libraries a multi-threaded executable
  *                  has to be linked with, additionally. 
+ *
+ *  TREE_CC         Specifies the C compiler call required to build a component
+ *                  of the syntax tree representation used in modules. This 
+ *                  needs to be the same as used when compiling the compiler 
+ *                  itself.
+ *
+ *  TREE_LD         Specifies the linker call required to assemble the syntax
+ *                  tree part of a compiled module. This needs to be the same
+ *                  as used when compiling the compiler itself.
  *   
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
@@ -226,6 +236,9 @@ CCDIR            :=  "-I$SAC2CBASE/include/ "
 LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
+
+TREE_CC          :=  "@CC@"
+TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
 
 BACKEND          :=  "C99"
  
