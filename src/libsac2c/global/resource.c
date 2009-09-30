@@ -95,6 +95,11 @@ static struct {
 
   {"BACKEND", str, &global.config.backend},
 
+  {"TREE_CC", str, &global.config.tree_cc},
+  {"TREE_LD", str, &global.config.tree_ld},
+  {"TREE_LD_PATH", str, &global.config.tree_ld_path},
+  {"LIB_VARIANT", str, &global.config.lib_variant},
+
   {"OPT_O0", str, &global.config.opt_O0},
   {"OPT_O1", str, &global.config.opt_O1},
   {"OPT_O2", str, &global.config.opt_O2},

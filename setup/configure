@@ -5290,7 +5290,7 @@ case "$target_os" in
   solaris*)
     OSFLAGS="-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"
     LD_DYNAMIC="-G -dy"
-    LD_PATH="-R"
+    LD_PATH="-L%path% -R%path%"
     LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"
     { echo "$as_me:$LINENO: result: solaris settings" >&5
 echo "${ECHO_T}solaris settings" >&6; }
@@ -5298,7 +5298,7 @@ echo "${ECHO_T}solaris settings" >&6; }
   *linux*)
     OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
     LD_DYNAMIC="-dy -shared -allow-shlib-undefined"
-    LD_PATH="-Wl,-rpath,"
+    LD_PATH="-L%path% -Wl,-rpath,%path%"
     LD_FLAGS="-Wl,-allow-shlib-undefined"
     { echo "$as_me:$LINENO: result: linux settings" >&5
 echo "${ECHO_T}linux settings" >&6; }
@@ -5306,7 +5306,7 @@ echo "${ECHO_T}linux settings" >&6; }
   *osf*)
     OSFLAGS="-D_OSF_SOURCE"
     LD_DYNAMIC=""
-    LD_PATH=""
+    LD_PATH="-L%path%"
     LD_FLAGS=""
     { echo "$as_me:$LINENO: result: OSF settings" >&5
 echo "${ECHO_T}OSF settings" >&6; }
@@ -5323,14 +5323,14 @@ _ACEOF
     case "$target_os" in
       *darwin9\.*)
         LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
-        LD_PATH="-Wl,-rpath,"
+        LD_PATH="-L%path% -Wl,-rpath,%path%"
         LD_FLAGS=""
         { echo "$as_me:$LINENO: result: darwin 9.x settings" >&5
 echo "${ECHO_T}darwin 9.x settings" >&6; }
         ;;
       *darwin[6-8]\.*)
         LD_DYNAMIC="-undefined suppress -flat_namespace -bundle"
-        LD_PATH="-L"
+        LD_PATH="-L%path%"
         LD_FLAGS=""
         { echo "$as_me:$LINENO: result: darwin 7.x/8.x settings" >&5
 echo "${ECHO_T}darwin 7.x/8.x settings" >&6; }
@@ -5343,7 +5343,7 @@ echo "${ECHO_T}unknown darwin system" >&6; }
   *bsd*)
     OSFLAGS="-fpic"
     LD_DYNAMIC="ld -dy -shared -symbolic"
-    LD_PATH="-Wl,-rpath,"
+    LD_PATH="-L -Wl,-rpath,%path%"
     LD_FLAGS=""
     { echo "$as_me:$LINENO: result: BSD settings" >&5
 echo "${ECHO_T}BSD settings" >&6; }

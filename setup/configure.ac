@@ -435,21 +435,21 @@ case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
     LD_DYNAMIC=["-G -dy"]
-    LD_PATH=["-R"]
+    LD_PATH=["-L%path% -R%path%"]
     LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
     LD_DYNAMIC=["-dy -shared -allow-shlib-undefined"]
-    LD_PATH=["-Wl,-rpath,"]
+    LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined"
     AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
     OSFLAGS=["-D_OSF_SOURCE"]
     LD_DYNAMIC=[""]
-    LD_PATH=[""]
+    LD_PATH=["-L%path%"]
     LD_FLAGS=""
     AC_MSG_RESULT([OSF settings])
     ;;
@@ -462,13 +462,13 @@ case "$target_os" in
     case "$target_os" in
       *darwin9\.*)
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
-        LD_PATH=["-Wl,-rpath,"]
+        LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
         AC_MSG_RESULT([darwin 9.x settings])
         ;;
       [*darwin[6-8]\.*)]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
-        LD_PATH=["-L"]
+        LD_PATH=["-L%path%"]
         LD_FLAGS=""
         AC_MSG_RESULT([darwin 7.x/8.x settings])
       ;;
@@ -479,7 +479,7 @@ case "$target_os" in
   *bsd*)
     OSFLAGS=["-fpic"]
     LD_DYNAMIC=["ld -dy -shared -symbolic"]
-    LD_PATH=["-Wl,-rpath,"]
+    LD_PATH=["-L -Wl,-rpath,%path%"]
     LD_FLAGS=""
     AC_MSG_RESULT([BSD settings])
     ;;

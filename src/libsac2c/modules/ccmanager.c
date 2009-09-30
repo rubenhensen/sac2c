@@ -28,20 +28,9 @@ GetCCCall ()
 
     buffer = SBUFcreate (128);
 
-    if (global.backend != BE_cuda) {
-        SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
-                    global.config.ldflags, global.config.ccdir, global.tmp_dirname);
-    } else {
-        SBUFprintf (buffer,
-                    "%s -Xcompiler -Wall -Xcompiler -Wno-unused -Xcompiler -fno-builtin "
-                    "-Xcompiler -std=c99 %s %s %s -L%s ",
-                    "nvcc",
-                    "--compiler-bindir=/home/jgo/others/cuda/bin --host-compilation=C",
-                    global.config.ldflags,
-                    "-I$SAC2CBASE/include/ -I$CUTIL -L$SAC2CBASE/lib/ -L$CUTIL_LIB ",
-                    global.tmp_dirname);
-    }
-    //-L$LD_LIBRARY_PATH
+    SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
+                global.config.ldflags, global.config.ccdir, global.tmp_dirname);
+
     result = SBUF2str (buffer);
 
     buffer = SBUFfree (buffer);
@@ -166,16 +155,6 @@ AddEfenceLib (str_buf *buffer)
     DBUG_VOID_RETURN;
 }
 
-static void
-AddCudaLib (str_buf *buffer)
-{
-    DBUG_ENTER ("AddCudaLib");
-
-    SBUFprintf (buffer, "%s ", "-lcutil -lcudart -lcublas");
-
-    DBUG_VOID_RETURN;
-}
-
 static char *
 GetLibs ()
 {
@@ -186,16 +165,9 @@ GetLibs ()
 
     buffer = SBUFcreate (256);
 
-    if (global.backend != BE_cuda) {
-        AddSacLibs (buffer);
-        AddCCLibs (buffer);
-        AddEfenceLib (buffer);
-    } else {
-        AddSacLibs (buffer);
-        AddCCLibs (buffer);
-        AddEfenceLib (buffer);
-        AddCudaLib (buffer);
-    }
+    AddSacLibs (buffer);
+    AddCCLibs (buffer);
+    AddEfenceLib (buffer);
 
     result = SBUF2str (buffer);
 
@@ -207,16 +179,13 @@ GetLibs ()
 static str_buf *
 AddLibPath (const char *path, str_buf *buf)
 {
+    char *flag;
+
     DBUG_ENTER ("AddLibPath");
 
-    if (global.backend != BE_cuda) {
-        buf = SBUFprintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
-    } else {
-        // buf = SBUFprintf( buf, "-L%s ", path);
-        // buf = SBUFprintf( buf, "-L%s -Xcompiler \"%s%s\" ", path,
-        // global.config.ld_path, path);
-        buf = SBUFprintf (buf, "-Xlinker -L%s -Xlinker -rpath=%s ", path, path);
-    }
+    flag = STRsubstToken (global.config.ld_path, "%path%", path);
+    buf = SBUFprintf (buf, "%s ", flag);
+    flag = MEMfree (flag);
 
     DBUG_RETURN (buf);
 }
@@ -250,15 +219,8 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 
     switch (kind) {
     case STRS_saclib:
-        if (global.backend == BE_mutc) {
-            /* Support cross compiling */
-            result = MEMmalloc (sizeof (char)
-                                * (STRlen (lib) + STRlen (global.target_name) + 6));
-            sprintf (result, "-l%sMod%s", lib, global.target_name);
-        } else {
-            result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
-            sprintf (result, "-l%sMod", lib);
-        }
+        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
+        sprintf (result, "-l%sMod%s", lib, global.config.lib_variant);
 
         break;
     case STRS_extlib:
@@ -353,36 +315,31 @@ InvokeCCModule (char *cccall, char *ccflags)
     callstring = STRcat (cccall, ccflags);
 
     /*
-     * Do not comple with the C compiler if we have calls to external
-     * function that are thread functions.
-     * Note: We can still compile the tree.
+     * compile non-PIC code
      */
-    if (global.backend == BE_mutc || (!global.mutc_requires_mutc)) {
-        /*
-         * compile non-PIC code
-         */
-        FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
-                     (void (*) (const char *, const char *, void *))CompileOneFile);
-        CompileOneFile (global.tmp_dirname, "globals.c", callstring);
+    FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
+                 (void (*) (const char *, const char *, void *))CompileOneFile);
+    CompileOneFile (global.tmp_dirname, "globals.c", callstring);
 
+    if (!STReq (global.config.ld_dynamic, "")) {
         /*
-         * compile PIC code
+         * compile PIC code for shared libs if needed
          */
         FMGRforEach (global.tmp_dirname, "fun.*\\.c", callstring,
                      (void (*) (const char *, const char *, void *))CompileOneFilePIC);
         CompileOneFilePIC (global.tmp_dirname, "globals.c", callstring);
     }
 
-    SYScall ("cd %s; %s %s -c serialize.c", global.tmp_dirname, cccall,
-             global.config.genpic);
-    SYScall ("cd %s; %s %s -c filenames.c", global.tmp_dirname, cccall,
-             global.config.genpic);
-    SYScall ("cd %s; %s %s -c namespacemap.c", global.tmp_dirname, cccall,
-             global.config.genpic);
-    SYScall ("cd %s; %s %s -c symboltable.c", global.tmp_dirname, cccall,
-             global.config.genpic);
-    SYScall ("cd %s; %s %s -c dependencytable.c", global.tmp_dirname, cccall,
-             global.config.genpic);
+    SYScall ("cd %s; %s %s -c serialize.c", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccdir);
+    SYScall ("cd %s; %s %s -c filenames.c", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccdir);
+    SYScall ("cd %s; %s %s -c namespacemap.c", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccdir);
+    SYScall ("cd %s; %s %s -c symboltable.c", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccdir);
+    SYScall ("cd %s; %s %s -c dependencytable.c", global.tmp_dirname,
+             global.config.tree_cc, global.config.ccdir);
 
     callstring = MEMfree (callstring);
 

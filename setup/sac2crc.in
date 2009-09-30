@@ -69,6 +69,10 @@
  *                  compiler replaces all occurences of %libname% with the
  *                  filename of the library. If LD_DYNAMIC is empty, no 
  *                  dynamic library will be built.
+ *
+ *  LD_PATH         Defines how to set the search path of the linker. All
+ *                  occurrences of %path% will be replaced by the path to add.
+ *                  The string is repeated for each path.
  *                  
  *  CCLINK          CCLINK specifies the libraries an executable always has to
  *                  be linked with. 
@@ -84,6 +88,19 @@
  *  TREE_LD         Specifies the linker call required to assemble the syntax
  *                  tree part of a compiled module. This needs to be the same
  *                  as used when compiling the compiler itself.
+ *
+ *  LD_PATH         Defines how to set the search path of the linker when
+ *                  linking the tree representation of a module. All 
+ *                  occurrences of %path% will be replaced by the path to add.
+ *                  The string is repeated for each path; it needs to be the 
+ *                  same as used when compiling the compiler itself.
+ *
+ *  BACKEND         Defines which backend to use for a target. 
+ *
+ *  LIB_VARIANT     Gives a tag that will be added to the name of each
+ *                  library that result of the compilation of a SAC module
+ *                  file. Useful to keep multiple versions of the standard
+ *                  library for different targets.
  *   
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
@@ -237,10 +254,12 @@ LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
 
-TREE_CC          :=  "@CC@"
+TREE_CC          :=  "@CC@ @GENPIC@"
 TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
+TREE_LD_PATH     :=  "@LD_PATH@"
 
 BACKEND          :=  "C99"
+LIB_VARIANT      :=  ""
  
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
@@ -318,7 +337,8 @@ target sl:
 
 BACKEND          :=  "muTC"
 CC               :=  "comslc seqc"
-LD_DYNAMIC       :=  "echo 'Not making dynamic library for sl: '"
+LD_DYNAMIC       :=  ""
+LIB_VARIANT      := "mutc-seqc"
 
 target mutc::sl:
 
@@ -327,10 +347,12 @@ target sl_ppp::sl:
 CC               := "comslc ppp"
 AR_CREATE        := "mtalpha-linux-gnu-ar cr"
 RANLIB           := "mtalpha-linux-gnu-ranlib"
+LIB_VARIANT      := "mutc-ppp"
 
 target sl_ptl::sl:
 
 CC               := "comslc ptl"
+LIB_VARIANT      := "mutc-ptl"
 
 target sl_seqc::sl:
 
@@ -339,6 +361,7 @@ CC               := "comslc seqc"
 target sl_utc::sl:
 
 CC               := "comslc utc0"
+LIB_VARIANT      := "mutc-utc0"
  
 /*****************************************************************************
  * cuda targets
@@ -346,6 +369,12 @@ CC               := "comslc utc0"
 target cuda:
 
 BACKEND          :=  "Cuda"
+CC               :=  "nvcc"
+CCFLAGS          :=  "-Xcompiler -Wall -Xcompiler -Wno-unused -Xcompiler -fno-builtin -Xcompiler -std=c99"
+CCDIR            :=  "-I$SAC2CBASE/include/ -I$CUTIL -L$SAC2CBASE/lib/ -L$CUTIL_LIB"
+CCLINK           :=  "-lcutil -lcudart -lcublas"
+LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
+
 
 /*******************************************************************************
  *******************************************************************************

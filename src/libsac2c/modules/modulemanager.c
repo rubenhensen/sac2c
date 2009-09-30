@@ -204,8 +204,9 @@ AddModuleToPool (const char *name)
 
     result = MEMmalloc (sizeof (module_t));
 
-    tmp = MEMmalloc (sizeof (char) * (STRlen (name) + 11));
-    sprintf (tmp, "lib%sTree.so", name);
+    tmp = MEMmalloc (sizeof (char)
+                     * (STRlen (name) + STRlen (global.config.lib_variant) + 11));
+    sprintf (tmp, "lib%sTree%s.so", name, global.config.lib_variant);
 
     result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
 

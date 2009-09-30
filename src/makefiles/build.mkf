@@ -170,7 +170,7 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
                 $(filter $*/%,$^) \
                 $(LIBDIRS) $(LIBS) $(LIB_MAKETOOLS) \
-                $(addprefix $(LD_PATH),$(realpath $(subst -L,,$(LIBDIRS))))
+                $(foreach dir, $(realpath $(subst -L,,$(LIBDIRS))), $(subst %path%,$(dir),$(LD_PATH)))
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
@@ -332,7 +332,7 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
                       $(filter $*/%,$^) \
                       $(LIBDIRS) $(LIBS) $(LIB_TOOLS) \
-                      $(addprefix $(LD_PATH),$(realpath $(subst -L,,$(LIBDIRS))))
+                      $(foreach dir, $(realpath $(subst -L,,$(LIBDIRS))), $(subst %path%,$(dir),$(LD_PATH)))
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 

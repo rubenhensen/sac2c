@@ -644,6 +644,11 @@ typedef struct {
 
     char *backend;
 
+    char *tree_cc;
+    char *tree_ld;
+    char *tree_ld_path;
+    char *lib_variant;
+
     char *opt_O0;
     char *opt_O1;
     char *opt_O2;

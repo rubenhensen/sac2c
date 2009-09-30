@@ -185,7 +185,8 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
              * alldeps rules, in particular, the empty rule in
              * doPrintLibDependencies
              */
-            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree.so)\n\n", entry, libdir, entry);
+            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree%s.so)\n\n", entry, libdir, entry,
+                    global.config.lib_variant);
         }
 
         libfile = MEMfree (libfile);

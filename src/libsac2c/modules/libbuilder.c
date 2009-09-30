@@ -21,7 +21,7 @@
  *                                  strstype_t kind,
  *                                  void *rest)
  *
- * @brief fold funciton to generate a string of modules to link with.
+ * @brief fold function to generate a string of modules to link with.
  *
  *****************************************************************************/
 
@@ -29,91 +29,29 @@ static void *
 BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 {
     char *result = NULL;
-    char *llib = NULL;
+    const char *select;
 
     DBUG_ENTER ("BuildDepLibsStringMod");
 
-    llib = STRcpy (lib);
-
     switch (kind) {
     case STRS_objfile:
-        if (global.backend == BE_mutc) {
-            char *tmp;
-            DBUG_ASSERT (STRsuffix (".o", llib),
-                         "found linkwith that does not end in .o");
-
-            /* remove .o */
-            tmp = llib;
-            llib = STRsubStr (llib, 0, -2);
-            MEMfree (tmp);
-
-            /* add target to file name */
-            tmp = llib;
-            llib = STRcat (llib, global.target_name);
-            MEMfree (tmp);
-
-            /* add .o back */
-            tmp = llib;
-            llib = STRcat (llib, ".o");
-            MEMfree (tmp);
-        }
-        result = STRcpy (llib);
+        select = lib;
         break;
     default:
-        result = STRnull ();
+        select = NULL;
         break;
     }
 
-    if (rest != NULL) {
-        char *temp
-          = MEMmalloc (sizeof (char) * (STRlen ((char *)rest) + STRlen (result) + 2));
-
-        sprintf (temp, "%s %s", (char *)rest, result);
-        result = MEMfree (result);
+    if ((rest != NULL) && (select != NULL)) {
+        result = STRcatn (3, (char *)rest, " ", select);
         rest = MEMfree (rest);
-        result = temp;
+    } else if (select != NULL) {
+        result = STRcpy (select);
+    } else { /* rest != NULL */
+        result = (char *)rest;
     }
-
-    llib = MEMfree (llib);
 
     DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CreateStaticLibrary(node *deplibs)
- *
- * @brief Create a static library for a module.
- *     or Create a cross compiled static library for a module for sl.
- *
- *****************************************************************************/
-static void
-CreateStaticLibrary (char *deplibs)
-{
-    DBUG_ENTER ("CreateStaticLibrary");
-
-    CTInote ("Creating static SAC library `lib%sMod.a'", global.modulename);
-
-    if (global.backend == BE_mutc) {
-        /* Support cross compiling */
-        SYScall ("%s %slib%sMod%s.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
-                 global.config.ar_create, global.targetdir, global.modulename,
-                 global.target_name, global.tmp_dirname, global.tmp_dirname, deplibs);
-        if (global.config.ranlib[0] != '\0') {
-            SYScall ("%s %slib%sMod%s.a", global.config.ranlib, global.targetdir,
-                     global.modulename, global.target_name);
-        }
-    } else {
-        SYScall ("%s %slib%sMod.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
-                 global.config.ar_create, global.targetdir, global.modulename,
-                 global.tmp_dirname, global.tmp_dirname, deplibs);
-        if (global.config.ranlib[0] != '\0') {
-            SYScall ("%s %slib%sMod.a", global.config.ranlib, global.targetdir,
-                     global.modulename);
-        }
-    }
-
-    DBUG_VOID_RETURN;
 }
 
 node *
@@ -133,14 +71,27 @@ LIBBcreateLibrary (node *syntax_tree)
         SYSstartTracking ();
     }
 
-    if (global.backend == BE_mutc || (!global.mutc_requires_mutc)) {
-        deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
+    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
-        CreateStaticLibrary (deplibs);
+    CTInote ("Creating static SAC library `lib%sMod%s.a'", global.modulename,
+             global.config.lib_variant);
 
-        CTInote ("Creating shared SAC library `lib%sMod.so'", global.modulename);
+    SYScall ("%s %slib%sMod%s.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
+             global.config.ar_create, global.targetdir, global.modulename,
+             global.config.lib_variant, global.tmp_dirname, global.tmp_dirname, deplibs);
+    if (global.config.ranlib[0] != '\0') {
+        SYScall ("%s %slib%sMod%s.a", global.config.ranlib, global.targetdir,
+                 global.modulename, global.config.lib_variant);
+    }
 
-        libraryName = STRcatn (3, "lib", global.modulename, "Mod.so");
+    if (STReq (global.config.ld_dynamic, "")) {
+        CTInote ("Shared libraries are not supported by the target.");
+    } else {
+        CTInote ("Creating shared SAC library `lib%sMod%s.so'", global.modulename,
+                 global.config.lib_variant);
+
+        libraryName = STRcatn (5, "lib", global.modulename, "Mod",
+                               global.config.lib_variant, ".so");
         ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
 
         DBUG_PRINT ("LIBB", ("linker command: %s", ldCmd));
@@ -150,13 +101,16 @@ LIBBcreateLibrary (node *syntax_tree)
 
         libraryName = MEMfree (libraryName);
         ldCmd = MEMfree (ldCmd);
-        deplibs = MEMfree (deplibs);
     }
 
-    CTInote ("Creating shared SAC library `lib%sTree.so'", global.modulename);
+    deplibs = MEMfree (deplibs);
 
-    libraryName = STRcatn (3, "lib", global.modulename, "Tree.so");
-    ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
+    CTInote ("Creating shared SAC library `lib%sTree%s.so'", global.modulename,
+             global.config.lib_variant);
+
+    libraryName
+      = STRcatn (5, "lib", global.modulename, "Tree", global.config.lib_variant, ".so");
+    ldCmd = STRsubstToken (global.config.tree_ld, "%libname%", libraryName);
 
     SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
              " %s/dependencytable.o %s/namespacemap.o %s/filenames.o",
