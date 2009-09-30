@@ -134,29 +134,30 @@
                                                                 T_USG (NON,              \
                                                                        T_EMPTY))))))),   \
                             1)                                                           \
-            SAC_ND_A_FIELD (                                                             \
-              (str,                                                                      \
-               T_SHP (SCL,                                                               \
-                      T_HID (HID,                                                        \
-                             T_UNQ (NUQ,                                                 \
-                                    T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY))))))))  \
-              = (void *)SAC_MALLOC (                                                     \
-                SAC_ND_GETVAR (                                                          \
+            SAC_HM_MALLOC (                                                              \
+              SAC_ND_A_FIELD (                                                           \
+                (str,                                                                    \
+                 T_SHP (SCL,                                                             \
+                        T_HID (HID,                                                      \
+                               T_UNQ (NUQ,                                               \
+                                      T_REG (INT,                                        \
+                                             T_SCO (GLO, T_USG (NON, T_EMPTY)))))))),    \
+              SAC_ND_GETVAR (                                                            \
+                (length,                                                                 \
+                 T_SHP (SCL,                                                             \
+                        T_HID (NHD,                                                      \
+                               T_UNQ (UNQ,                                               \
+                                      T_REG (INT,                                        \
+                                             T_SCO (GLO, T_USG (FPA, T_EMPTY))))))),     \
+                SAC_ND_A_FIELD (                                                         \
                   (length,                                                               \
                    T_SHP (SCL,                                                           \
                           T_HID (NHD,                                                    \
                                  T_UNQ (UNQ,                                             \
                                         T_REG (INT,                                      \
-                                               T_SCO (GLO, T_USG (FPA, T_EMPTY))))))),   \
-                  SAC_ND_A_FIELD (                                                       \
-                    (length,                                                             \
-                     T_SHP (SCL,                                                         \
-                            T_HID (NHD,                                                  \
-                                   T_UNQ (UNQ,                                           \
-                                          T_REG (INT,                                    \
-                                                 T_SCO (GLO,                             \
-                                                        T_USG (FPA, T_EMPTY)))))))))     \
-                + 1);                                                                    \
+                                               T_SCO (GLO, T_USG (FPA, T_EMPTY)))))))))  \
+                + 1,                                                                     \
+              void *);                                                                   \
             strncpy (SAC_ND_GETVAR (                                                     \
                        (str,                                                             \
                         T_SHP (SCL,                                                      \

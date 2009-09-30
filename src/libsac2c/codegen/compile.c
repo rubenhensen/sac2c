@@ -36,6 +36,7 @@
 #include "math_utils.h"
 #include "types.h"
 
+#define USE_STATIC_RESOURCE_ANNOTATIONS 1
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
 /*
@@ -3165,7 +3166,7 @@ COMPap (node *arg_node, info *arg_info)
     } else if (FUNDEF_ISMTFUN (fundef)) {
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
-        if (FUNDEF_ISFUNTHREADFUN (fundef)) {
+        if (!FUNDEF_WASWITH3BODY (fundef)) {
             icm = TBmakeIcm ("MUTC_FUNTHREADFUN_AP", icm_args);
         } else {
             icm = TBmakeIcm ("MUTC_THREADFUN_AP", icm_args);

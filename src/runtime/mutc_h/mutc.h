@@ -8,6 +8,8 @@
 
 #define bool boolbool
 
+#include <svp/perf.h>
+
 #define SAC_MUTC_TIME_BEGIN                                                              \
     {                                                                                    \
         uint64_t TIME_begin;                                                             \
@@ -17,10 +19,10 @@
 #define SAC_MUTC_TIME_END                                                                \
     {                                                                                    \
         TIME_end = get_cycles ();                                                        \
-        int n = TIME_end - TIME_begin;                                                   \
+        long long n = TIME_end - TIME_begin;                                             \
                                                                                          \
         sl_proccall (svp_io_puts, sl_glarg (const char *, sl_anon, "\nCYCLES: "));       \
-        sl_proccall (sac_svp_io_putn, sl_glarg (int, sl_anon, n),                        \
+        sl_proccall (svp_io_putn, sl_glarg (long long, sl_anon, n),                      \
                      sl_glarg (int, sl_anon, 10));                                       \
         sl_proccall (svp_io_puts, sl_glarg (const char *, sl_anon, "\n"));               \
     }                                                                                    \

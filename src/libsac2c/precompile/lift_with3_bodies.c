@@ -163,7 +163,7 @@ CreateThreadFunction (node *block, node *index, info *arg_info)
 
     FUNDEF_RETURN (threadfun) = ASSIGN_INSTR (retassign);
     FUNDEF_ISTHREADFUN (threadfun) = TRUE;
-
+    FUNDEF_WASWITH3BODY (threadfun) = TRUE;
     /*
      * tag the index variable
      */

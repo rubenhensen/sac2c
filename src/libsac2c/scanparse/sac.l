@@ -225,6 +225,7 @@ int charpos = 0;
 "fold"                     { FILTER( FOLD); }
 "propagate"                { FILTER( PROPAGATE); }
 "inline"                   { FILTER( INLINE); }
+"thread"                   { FILTER( THREAD); }
 
 "module"                   { FILTER( MODULE); }
 "class"                    { FILTER( CLASS); }

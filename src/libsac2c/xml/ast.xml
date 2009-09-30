@@ -3906,6 +3906,8 @@ N_structdef :
         <flag name="IsFunThreadFun">
           <description>This function is a mutc thread function behaving as a normal function.  Lifted with3s should never have this set as they are only called from one context!  These functions are part of the FunDecs chain not the ThreadFuns chain</description>
         </flag>
+        <flag name="WasWith3Body">
+        </flag>
         <flag name="IsDoFun">
           <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
         </flag>
