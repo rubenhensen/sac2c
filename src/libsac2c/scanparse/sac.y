@@ -149,7 +149,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %type <node> objdef extobjdef
 
-%type <node> fundef  fundef1  fundef2  main
+%type <node> fundef  fundef1  fundef2  fundef3  main
 %type <node> fundec fundec2
 %type <node> mainargs  fundecargs fundefargs  args  arg varargs
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
@@ -594,17 +594,25 @@ fundef: INLINE fundef1
         { $$ = $2;
           FUNDEF_ISINLINE( $$) = TRUE;
         }
-      | THREAD fundef1
-        { $$ = $2;
-          FUNDEF_ISTHREADFUN( $$) = TRUE;
-        }
       | fundef1
         { $$ = $1;
           FUNDEF_ISINLINE( $$) = FALSE;
         }
-      ;
 
-fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
+fundef1: THREAD fundef2
+         { $$ = $2;
+           if (global.backend != BE_mutc) {
+             yyerror( "function qualifier \"thread\" not allowed with selected backend");
+           }
+           FUNDEF_ISTHREADFUN( $$) = TRUE;
+         }
+       | fundef2
+         { $$ = $1;
+           FUNDEF_ISTHREADFUN( $$) = FALSE;
+         }
+       ;
+
+fundef2: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef3
          { $$ = $6;
            FUNDEF_RETS( $$) = $1; /* result type(s) */
            FUNDEF_NAME( $$) = $3; /* function name  */
@@ -620,7 +628,7 @@ fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
                         FUNDEF_NAME( $$)));
 
          }
-       | returntypes ext_id BRACKET_L fundef2
+       | returntypes ext_id BRACKET_L fundef3
          { $$ = $4;
            FUNDEF_RETS( $$) = $1;   /* result type(s) */
            FUNDEF_NAME( $$) = $2;    /* function name  */
@@ -638,7 +646,7 @@ fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
          }
        ;
 
-fundef2: fundefargs BRACKET_R
+fundef3: fundefargs BRACKET_R
          { $<node>$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
@@ -934,7 +942,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_EFFECT( store_pragma) = $3;
         }
       | hash_pragma MUTCTHREADFUN
-        { if( pragma_type != PRAG_fundec && pragma_type != PRAG_fundef) {
+        { if (global.backend != BE_mutc) {
+            yyerror( "pragma \"mutcthreadfun\" not allowed with selected backend");
+          }
+          if (pragma_type != PRAG_fundec && pragma_type != PRAG_fundef) {
             yyerror( "pragma \"mutcthreadfun\" not allowed here");
           }
           if (store_pragma == NULL) {

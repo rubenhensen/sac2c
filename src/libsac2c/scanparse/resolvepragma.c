@@ -23,7 +23,6 @@
 struct INFO {
     node *nums;
     int counter;
-    bool mutcDependences;
     enum { RSP_default, RSP_refcnt, RSP_linksign } travmode;
 };
 
@@ -33,7 +32,6 @@ struct INFO {
 #define INFO_NUMS(n) ((n)->nums)
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_TRAVMODE(n) ((n)->travmode)
-#define INFO_MUTCDEPENDENCES(n) ((n)->mutcDependences)
 
 /*
  * INFO functions
@@ -50,7 +48,6 @@ MakeInfo ()
     INFO_NUMS (result) = NULL;
     INFO_COUNTER (result) = 0;
     INFO_TRAVMODE (result) = RSP_default;
-    INFO_MUTCDEPENDENCES (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -419,7 +416,6 @@ RSPfundef (node *arg_node, info *arg_info)
         if (PRAGMA_MUTCTHREADFUN (pragma)) {
             FUNDEF_ISTHREADFUN (arg_node) = TRUE;
             FUNDEF_ISFUNTHREADFUN (arg_node) = TRUE;
-            INFO_MUTCDEPENDENCES (arg_info) = TRUE;
         }
 
         /*
@@ -486,8 +482,6 @@ RSPmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
-
-    global.mutc_requires_mutc = INFO_MUTCDEPENDENCES (arg_info);
 
     DBUG_RETURN (arg_node);
 }
