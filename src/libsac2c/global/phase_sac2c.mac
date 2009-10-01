@@ -743,7 +743,7 @@ SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
 SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           global.backend == BE_mutc, wlt)
 
-SUBPHASE (rw3, "Remove With3s", RW3doRemoveWith3,
+SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           global.backend == BE_mutc && global.optimize.dorw3, wlt)
 
 SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
