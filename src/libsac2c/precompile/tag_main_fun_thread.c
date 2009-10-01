@@ -163,7 +163,6 @@ TMFTfundef (node *arg_node, info *arg_info)
 
     if (STReq (FUNDEF_NAME (arg_node), "main")) {
         FUNDEF_ISTHREADFUN (arg_node) = TRUE;
-        FUNDEF_ISFUNTHREADFUN (arg_node) = TRUE;
         INFO_FOUND (arg_info) = INFO_FOUND (arg_info) + 1;
     }
 

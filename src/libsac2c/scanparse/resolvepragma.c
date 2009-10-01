@@ -415,7 +415,6 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_MUTCTHREADFUN (pragma)) {
             FUNDEF_ISTHREADFUN (arg_node) = TRUE;
-            FUNDEF_ISFUNTHREADFUN (arg_node) = TRUE;
         }
 
         /*
