@@ -604,6 +604,11 @@ GLOBAL (bool, makelibdeps, FALSE)
  * Don't actually compile, but infer extended module dependencies.
  */
 
+GLOBAL (bool, makelibvariant, FALSE)
+/*
+ * Don't actually compile, but print lib_variant
+ */
+
 GLOBAL (bool, gen_cccall, FALSE)
 /*
  * Generate shell script '.sac2c' in current directory

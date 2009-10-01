@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "dbug.h"
@@ -92,6 +93,11 @@ void
 OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ("OPTcheckOptionConsistency");
+
+    if (global.makelibvariant) {
+        printf ("%s", global.config.lib_variant);
+        exit (0);
+    }
 
     if (STReq (global.config.backend, "muTC")) {
         if (global.mtmode != MT_none) {
@@ -508,6 +514,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("M", global.makedeps = TRUE);
     ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
+    ARGS_FLAG ("Mlib_variant", global.makelibvariant = TRUE);
 
     /* mutc options */
     ARGS_FLAG ("mutc_fun_threads", global.mutc_fun_as_threads = TRUE);
