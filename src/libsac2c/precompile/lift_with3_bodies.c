@@ -8,7 +8,7 @@
  *
  * Description:
  *
- *   This traversal lifts with3 bodies into functions
+ *   This traversal lifts with3 bodies into thread functions
  *
  * usage of arg_info (INFO_...):
  *
@@ -112,9 +112,10 @@ CreateThreadFunName (info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *CreateThreadFunction(node *block, info *arg_info)
+ * @fn node *CreateThreadFunction(node *block, node *index, info *arg_info)
  *
- * @brief Lifts the body argument into a thread function.
+ * @brief Lifts the body argument into a thread function. Change variables
+ *        so that they have new avis as they are now in a different context.
  *
  * @param block    block to be lifted into the function
  * @param index    avis of index variable of this range
@@ -139,7 +140,7 @@ CreateThreadFunction (node *block, node *index, info *arg_info)
     /*
      * We have to massage the masks slightly to make the index an
      * artificial local variable that we will later explicitly
-     * tag as an index. We can do so, as we no longer are in SSA
+     * tag as an index. We can do so, as we are no longer in SSA
      * form, so no actual defining assignment is needed.
      */
     ret_mask = DFMgenMaskMinus (BLOCK_OUT_MASK (block), BLOCK_IN_MASK (block));
@@ -183,14 +184,52 @@ CreateThreadFunction (node *block, node *index, info *arg_info)
     DBUG_RETURN (ap);
 }
 
-/******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @fn node *LW3doLiftWith3( node *syntax_tree)
  *
- * function:
- *   node *LW3module( node *syntax_tree)
+ * @brief Lifts out the bodies of with3s into functions.
  *
- * description:
+ * @param syntax_tree N_module node of current syntax tree
  *
+ * @return module with all with3 bodies lifted into thread functions.
+ *****************************************************************************/
+node *
+LW3doLiftWith3 (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("LW3doLiftWith3");
+
+    /*
+     * Infer dataflow masks
+     */
+    syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_WITH3);
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_lw3);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    /*
+     * clean up tree
+     */
+    syntax_tree = CUDdoCleanupDecls (syntax_tree);
+    syntax_tree = RDFMSdoRemoveDfms (syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *LW3module( node *arg_node, info *arg_info)
  *
+ * @brief Find out the namespave of this module.
+ *        Save generated thread funs.
+ *
+ * @param arg_node module node
+ * @param arg_info info structure
  *****************************************************************************/
 node *
 LW3module (node *arg_node, info *arg_info)
@@ -220,7 +259,7 @@ LW3module (node *arg_node, info *arg_info)
  * @param arg_info info structure
  *
  * @return N_range node with lifted body
- ******************************************************************************/
+ *****************************************************************************/
 node *
 LW3range (node *arg_node, info *arg_info)
 {
@@ -231,6 +270,8 @@ LW3range (node *arg_node, info *arg_info)
      */
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
+    RANGE_RESULTS (arg_node) = FREEdoFreeTree (RANGE_RESULTS (arg_node));
+
     RANGE_RESULTS (arg_node)
       = CreateThreadFunction (RANGE_BODY (arg_node), ID_AVIS (RANGE_INDEX (arg_node)),
                               arg_info);
@@ -240,42 +281,4 @@ LW3range (node *arg_node, info *arg_info)
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *LW3doLiftWith3( node *syntax_tree)
- *
- * @brief Lifts out the bodies of with loop3s into functions.
- *
- * @param syntax_tree N_module node of current syntax tree
- *
- * @return module with all with3 bodies lifted into thread functions.
- ******************************************************************************/
-node *
-LW3doLiftWith3 (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("LW3doLiftWith3");
-
-    /*
-     * Infer dataflow masks
-     */
-    syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_WITH3);
-
-    info = MakeInfo ();
-
-    TRAVpush (TR_lw3);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    /*
-     * clean up tree
-     */
-    syntax_tree = CUDdoCleanupDecls (syntax_tree);
-    syntax_tree = RDFMSdoRemoveDfms (syntax_tree);
-
-    DBUG_RETURN (syntax_tree);
 }
