@@ -111,6 +111,12 @@ DEPENDENCY_FILES := $(addsuffix .d,\
 
 FINGERPRINT_FILE := $(PROJECT_ROOT)/src/include/.fingerprint
 
+ifdef CROSS
+  CROSS_TARGET = "-target $CROSS"
+  CROSS_VARIANT = `$SAC2C $CROSS_TARGET -Mlib_variant`
+else
+endif
+
   
 ###############################################################################
 #
@@ -224,33 +230,51 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building libsacprelude
 #
 
-$(PROJECT_ROOT)/lib/libsacpreludeTree.so \
-$(PROJECT_ROOT)/lib/libsacpreludeMod.so \
-$(PROJECT_ROOT)/lib/libsacpreludeMod.a: \
- libsacpreludeTree.$($(STYLE)_short).so $(FINGERPRINT_FILE)
-	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacpreludeTree.so " 
-	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.so " 
-	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.a"
-	$(HIDE) $(CP) libsacpreludeTree.$($(STYLE)_short).so \
-                      $(PROJECT_ROOT)/lib/libsacpreludeTree.so 
-	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).so \
-                      $(PROJECT_ROOT)/lib/libsacpreludeMod.so 
-	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).a \
-                      $(PROJECT_ROOT)/lib/libsacpreludeMod.a
-	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
+#$(PROJECT_ROOT)/lib/libsacpreludeTree.so \
+#$(PROJECT_ROOT)/lib/libsacpreludeMod.so \
+#$(PROJECT_ROOT)/lib/libsacpreludeMod.a: \
+# libsacpreludeTree.$($(STYLE)_short).so $(FINGERPRINT_FILE)
+#	@$(ECHO) ""
+#	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacpreludeTree.so " 
+#	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.so " 
+#	@$(ECHO) "         $(PREFIX_ROOT)lib/libsacpreludeMod.a"
+#	$(HIDE) $(CP) libsacpreludeTree.$($(STYLE)_short).so \
+#                      $(PROJECT_ROOT)/lib/libsacpreludeTree.so 
+#	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).so \
+#                      $(PROJECT_ROOT)/lib/libsacpreludeMod.so 
+#	$(HIDE) $(CP) libsacpreludeMod.$($(STYLE)_short).a \
+#                      $(PROJECT_ROOT)/lib/libsacpreludeMod.a
+#	@$(TOUCH) .done
+#	@$(CLOCK_SKEW_ELIMINATION)  
+#
+#libsacpreludeTree.$($(STYLE)_short).so: sacprelude.sac $(FINGERPRINT_FILE)
+#	@$(ECHO) ""
+#	@$(ECHO) "Compiling $<"
+#	$(HIDE) $(SAC2C) $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
+#	$(HIDE) $(MV) libsacpreludeTree.so libsacpreludeTree.$($(STYLE)_short).so
+#	$(HIDE) $(MV) libsacpreludeMod.so libsacpreludeMod.$($(STYLE)_short).so
+#	$(HIDE) $(MV) libsacpreludeMod.a libsacpreludeMod.$($(STYLE)_short).a
+#	@$(CLOCK_SKEW_ELIMINATION)  
 
-libsacpreludeTree.$($(STYLE)_short).so: sacprelude.sac $(FINGERPRINT_FILE)
-	@$(ECHO) ""
+$(PROJECT_ROOT)/lib/libsacprelude%: \
+  $(STYLE)/libsacprelude%
+	@$(ECHO) "Creating $@"
+	$(HIDE) $(CP) $< $@
+	@$(CLOCK_SKEW_ELIMINATION)
+
+
+$(STYLE)/libsacpreludeMod.a $(STYLE)/libsacpreludeMod.so: \
+  $(STYLE)/libsacpreludeTree.so
+
+$(STYLE)/libsacpreludeMod%.a $(STYLE)/libsacpreludeMod%.so: \
+  $(STYLE)/libsacpreludeTree%.so
+
+$(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so: \
+  sacprelude.sac $(FINGERPRINT_FILE)
 	@$(ECHO) "Compiling $<"
-	$(HIDE) $(SAC2C) $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
-	$(HIDE) $(MV) libsacpreludeTree.so libsacpreludeTree.$($(STYLE)_short).so
-	$(HIDE) $(MV) libsacpreludeMod.so libsacpreludeMod.$($(STYLE)_short).so
-	$(HIDE) $(MV) libsacpreludeMod.a libsacpreludeMod.$($(STYLE)_short).a
-	@$(CLOCK_SKEW_ELIMINATION)  
-
-
+	$(HIDE) $(SAC2C) -o $(STYLE) $(CROSS_TARGET) \
+                         $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
+	@$(CLOCK_SKEW_ELIMINATION)
 
 ################################################################################
 #
