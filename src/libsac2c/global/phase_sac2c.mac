@@ -252,60 +252,6 @@ SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize
 SUBPHASE (lir, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
 
-SUBPHASE (isaa1, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
-          global.optimize.dosaa, opt)
-
-/*************************************************/
-
-#ifdef BUG_356_FIXED
-
-CYCLE (saacyc1, "Symbolic array attribute cycle 1", global.optimize.dosaa, opt, RESET)
-
-CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
-            global.optimize.doprfunr, opt, saacyc1)
-
-CYCLEPHASE (tup, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup, opt,
-            saacyc1)
-
-CYCLEPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
-            global.optimize.dotup, opt, saacyc1)
-
-CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
-            global.optimize.dotup, opt, saacyc1)
-
-CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
-            opt, saacyc1)
-
-CYCLEPHASE (cse, "Eliminating common subexpressions",
-            CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt,
-            saacyc1)
-
-CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
-            global.optimize.docvp, opt, saacyc1)
-
-CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
-            global.optimize.dowlpg, opt, saacyc1)
-
-CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
-            global.optimize.dowlsimp, opt, saacyc1)
-
-CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-            opt, saacyc1)
-
-ENDCYCLE (saacyc1)
-
-#endif /* BUG_356_FIXED */
-
-/*************************************************/
-
-SUBPHASE (esaa1, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
-          global.optimize.dosaa, opt)
-
-SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemovalModule,
-          global.optimize.dodcr &&global.optimize.dosaa, opt)
-
-/*************************************************/
-
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt, RESET)
@@ -341,8 +287,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
 CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, cyc)
 
-CYCLEPHASEFUN (cvp, "Propagating constants and variables",
-               CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, cyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
+               global.optimize.docvp, opt, cyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
                WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, cyc)
@@ -524,8 +470,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
 CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
                global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUN (cvp, "Propagating constants and variables",
-               CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, saacyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
+               global.optimize.docvp, opt, saacyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
                WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
@@ -665,8 +611,11 @@ SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
-SUBPHASE (ivecvp, "Propagating constants and variables (for IVE)",
-          CVPdoConstVarPropagation, global.optimize.doive &&global.optimize.docvp, opt)
+SUBPHASE (ivevp, "Propagating variables (for IVE)", VPdoVarPropagation,
+          global.optimize.doive &&global.optimize.docvp, opt)
+
+SUBPHASE (ivecp, "Propagating constants (for IVE)", CVPdoConstVarPropagation,
+          global.optimize.doive &&global.optimize.docvp, opt)
 
 SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
           IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
@@ -746,8 +695,10 @@ SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensio
 SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           global.backend == BE_mutc && global.optimize.dorw3, wlt)
 
-SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
-          global.optimize.docvp, wlt)
+SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.docvp, wlt)
+
+SUBPHASE (cp, "Propagating constants", CVPdoConstVarPropagation, global.optimize.docvp,
+          wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)

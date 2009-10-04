@@ -1284,6 +1284,27 @@
           <node name="Withid" />
         </travnone>
       </traversal>
+      <traversal id="VP" name="Variable Propagation" default="sons" include="variablepropagation.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Code" />
+	  <node name="Range" />
+	  <node name="Cond" />
+	  <node name="Generator" />
+	  <node name="Genarray" />
+	  <node name="Modarray" />
+	  <node name="Fold" />
+	  <node name="Ap" />
+	  <node name="Prf" />
+	  <node name="Id" />
+	  <node name="Return" />
+	  <node name="Array" />
+	  <node name="Funcond" />
+          <node name="Avis" />
+	</travuser>
+      </traversal>
       <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
 	  <node name="Fundef" />
@@ -5817,7 +5838,6 @@ N_structdef :
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
                 <range from="opt_isaa2" to="opt_esaa2" />
               </phases>
             </target>
@@ -5836,7 +5856,6 @@ N_structdef :
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
                 <range from="opt_isaa2" to="opt_esaa2" />
               </phases>
             </target>
@@ -6277,7 +6296,6 @@ N_structdef :
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
                 <range from="opt_ivexi" to="opt_esaa2" />
                 </phases>
               </target>
@@ -6299,7 +6317,6 @@ N_structdef :
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                <range from="opt_isaa1" to="opt_esaa1" />
                 <range from="opt_ivexi" to="opt_esaa2" />
                 </phases>
               </target>
