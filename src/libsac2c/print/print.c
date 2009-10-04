@@ -4175,6 +4175,11 @@ PRTfold (node *arg_node, info *arg_info)
     fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
     TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
+    if (FOLD_INITIAL (arg_node) != NULL) {
+        fprintf (global.outfile, ", ");
+        FOLD_INITIAL (arg_node) = TRAVdo (FOLD_INITIAL (arg_node), arg_info);
+    }
+
     fprintf (global.outfile, ")");
 
     if (FOLD_GUARD (arg_node) != NULL) {
@@ -4936,25 +4941,24 @@ PRTwith3 (node *arg_node, info *arg_info)
     global.indent++;
     fprintf (global.outfile, "with3 {\n");
 
-    global.indent++;
     if (WITH3_USECONCURRENTRANGES (arg_node)) {
+        INDENT;
         fprintf (global.outfile, "/* concurrent */\n");
     }
 
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+
     global.indent--;
-
     INDENT;
-    fprintf (global.outfile, "} : ( ");
-
+    fprintf (global.outfile, "} : ( \n");
+    global.indent++;
     if (WITH3_OPERATIONS (arg_node) != NULL) {
         WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
     } else {
         fprintf (global.outfile, "void");
     }
-
-    fprintf (global.outfile, ")");
     global.indent--;
+    fprintf (global.outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
@@ -5000,9 +5004,8 @@ PRTrange (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ") ");
 
-    fprintf (global.outfile, "/* (BS: %d) */ ", RANGE_BLOCKSIZE (arg_node));
+    fprintf (global.outfile, "/* (BS: %d) */ \n", RANGE_BLOCKSIZE (arg_node));
 
-    global.indent++;
     if (RANGE_BODY (arg_node) != NULL) {
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
     }
@@ -5014,7 +5017,6 @@ PRTrange (node *arg_node, info *arg_info)
         fprintf (global.outfile, "void");
     }
     fprintf (global.outfile, ";\n");
-    global.indent--;
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
