@@ -44,10 +44,8 @@ isSAAMode (void)
     DBUG_ENTER ("isSAAMode");
 
     z = global.optimize.dosaa
-        && (((global.compiler_anyphase >= PH_opt_isaa1)
-             && (global.compiler_anyphase < PH_opt_esaa1))
-            || ((global.compiler_anyphase >= PH_opt_isaa2)
-                && (global.compiler_anyphase < PH_opt_esaa2)));
+        && ((global.compiler_anyphase >= PH_opt_isaa2)
+            && (global.compiler_anyphase < PH_opt_esaa2));
     DBUG_RETURN (z);
 }
 
