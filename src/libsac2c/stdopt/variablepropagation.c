@@ -96,29 +96,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static bool
-IsScalarConst (node *arg_node)
-{
-    bool res;
-
-    DBUG_ENTER ("IsScalarConst");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_float:
-    case N_double:
-    case N_bool:
-    case N_num:
-    case N_char:
-        res = TRUE;
-        break;
-
-    default:
-        res = FALSE;
-        break;
-    }
-
-    DBUG_RETURN (res);
-}
 /******************************************************************************
  *
  * function:
