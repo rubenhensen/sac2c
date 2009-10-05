@@ -364,8 +364,11 @@ IVESPLITprf (node *arg_node, info *arg_info)
         case F_modarray_AxVxA:
             avis = AddVect2Offset (PRF_ARG2 (arg_node), shpprf2, arg_info);
 
-            new_node = TCmakePrf3 (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                   TBmakeId (avis), PRF_ARG3 (arg_node));
+            new_node
+              = TCmakePrf3 ((PRF_PRF (arg_node) == F_modarray_AxVxS)
+                              ? F_idx_modarray_AxSxS
+                              : F_idx_modarray_AxSxA,
+                            PRF_ARG1 (arg_node), TBmakeId (avis), PRF_ARG3 (arg_node));
 
             PRF_ARG1 (arg_node) = NULL;
             PRF_ARG3 (arg_node) = NULL;
