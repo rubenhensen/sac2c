@@ -2,11 +2,9 @@
  * $Id$
  */
 
-// #define DAOEN
-
 /** <!--********************************************************************-->
  *
- * @defgroup swlf Extended With-Loop Folding
+ * @defgroup awlf Algebraic With-Loop Folding
  *
  * @terminology:
  *        Foldee-WL, or foldee: The WL that will no longer
@@ -16,11 +14,10 @@
  *        Folder-WL: the WL that will absorb the block(s) from
  *        the foldeeWL. In the example below, B is the folderWL.
  *
- * @brief Extended With-Loop Folding
- *        This performs WLF on some arrays that are not foldable
- *        by WLF.
+ * @brief Algebraic With-Loop Folding
+ *        This performs WLF on AKD arrays, not foldable by WLF.
  *
- *        The features of EWLF are:
+ *        The features of AWLF are:
  *
  *            - Ability to fold arrays whose shapes are not
  *              known statically. Specifically, if the index
@@ -41,7 +38,9 @@
  *             present.
  *
  *           - the foldeeWL must have a DEPDEPTH value of 1??
- *             Not sure what this means yet...
+ *             I think the idea here is to ensure that we do not
+ *             pull a foldeeWL inside a loop, which could cause
+ *             increased computation.
  *
  *           - The folderWL must refer to the foldee WL via
  *              _sel_VxA_(idx, foldee)
@@ -64,15 +63,15 @@
  *               z = with([0,0], <= iv < shape(x)) :  x[iv];
  *
  *             The bounds of x are int[1], while the bounds of z are int[2].
- *             It is important that EWLFI not generate a partition
+ *             It is important that AWLFI not generate a partition
  *             intersection expression such as:
  *
- *              _swlfi_789 = _max_VxV_( bound1(x), bound1(z));
+ *              _awlf = _max_VxV_( bound1(x), bound1(z));
  *
  *             because TUP will get very confused about the length
  *             error. As I did...
  *
- * An example for Symbolic With-Loop Folding is given below:
+ * An example for Algebraic With-Loop Folding is given below:
  *
  * <pre>
  *  1  A = with( iv)             NB. Foldee WL
@@ -116,12 +115,12 @@
  * Then lines 1-5 are removed by DCR(Dead Code Removal).
  *
  *  TODO:
- *   1. At present, SWLF does not occur unless ALL references
- *      to the foldeeWL are in the folderWL. Here is an extension
+ *   1. At present, AWLF does not occur unless ALL references
+ *      to the foldeeWL are in the folderWL. Here is a possible extension
  *      to allow small computations to be folded into several
  *      folderWLs:
  *
- *      Introduce cost function into WLNC. The idea here is
+ *      Introduce a cost function into WLNC. The idea here is
  *      to provide a crude measure of the cost of computing
  *      a single WL result element. We start by giving
  *      each primitive a cost:
@@ -134,8 +133,8 @@
  *        etc.
  *
  *      The wl_needcount code will sum the cost of the code
- *      in each WL. Hmm. This looks like the cost should
- *      reside in the WL-partition.
+ *      in each WL. Hmm. The cost must be associated with the
+ *      WL-partition.
  *
  *      If the foldeeWL is otherwise ripe for folding, we allow
  *      the fold to occur if the cost is less than some threshold,
@@ -161,13 +160,13 @@
 
 /** <!--********************************************************************-->
  *
- * @file symb_wlf.c
+ * @file algebraic_wlf.c
  *
- * Prefix: SWLF
+ * Prefix: AWLF
  *
  *****************************************************************************/
-#include "symb_wlf.h"
-#include "symb_wlfi.h"
+#include "algebraic_wlf.h"
+#include "algebraic_wlfi.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -207,7 +206,7 @@ struct INFO {
     /* This is the current folderWL. */
     int level;
     /* This is the current nesting level of WLs */
-    node *swlfoldablefoldeepart;
+    node *awlfoldablefoldeepart;
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
@@ -226,7 +225,7 @@ struct INFO {
 #define INFO_PART(n) ((n)->part)
 #define INFO_WL(n) ((n)->wl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_SWLFOLDABLEFOLDEEPART(n) ((n)->swlfoldablefoldeepart)
+#define INFO_AWLFOLDABLEFOLDEEPART(n) ((n)->awlfoldablefoldeepart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
@@ -249,7 +248,7 @@ MakeInfo (node *fundef)
     INFO_PART (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_SWLFOLDABLEFOLDEEPART (result) = NULL;
+    INFO_AWLFOLDABLEFOLDEEPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
@@ -285,26 +284,26 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFdoSymbolicWithLoopFoldingOneFunction( node *fundef)
+ * @fn node *AWLFdoAlgebraicWithLoopFoldingOneFunction( node *fundef)
  *
- * @brief global entry point of symbolic With-Loop folding
+ * @brief global entry point of Algebraic With-Loop folding
  *
- * @param N_fundef apply SWLF.
+ * @param N_fundef apply AWLF.
  *
  * @return optimized N_fundef
  *
  *****************************************************************************/
 node *
-SWLFdoSymbolicWithLoopFoldingOneFunction (node *arg_node)
+AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SWLFdoSymbolicWithLoopFoldingOneFunction");
+    DBUG_ENTER ("AWLFdoAlgebraicWithLoopFoldingOneFunction");
 
     arg_info = MakeInfo (NULL);
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
-    TRAVpush (TR_swlf);
+    TRAVpush (TR_awlf);
     arg_node = TRAVopt (arg_node, arg_info);
     TRAVpop ();
 
@@ -438,19 +437,18 @@ matchGeneratorField (node *fa, node *fb)
     constant *fbfs = NULL;
     constant *fac;
     constant *fbc;
-    bool z = FALSE;
-    ;
+    bool z;
 
     DBUG_ENTER ("matchGeneratorField");
 
-    if (fa == fb) { /* SAA should do it this way most of the time */
-        z = TRUE;
-    }
+    z = (fa == fb); /* SAA should do it this way most of the time */
 
     if ((!z) && (NULL != fa) && (NULL != fb)
         && (PMO (PMOarray (&fafs, &fav, fa)) && (PMO (PMOarray (&fbfs, &fbv, fb))))) {
-        z = fav == fbv;
+        z = (fav == fbv);
     }
+    fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
+    fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
 
     /* If one field is local and the other is a function argument,
      * we can have both AKV, but they will not be merged, at
@@ -467,15 +465,12 @@ matchGeneratorField (node *fa, node *fb)
         fbc = COfreeConstant (fbc);
     }
 
-    fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
-    fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
-
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("SWLF", ("matchGeneratorField %s and %s matched", AVIS_NAME (fa),
+            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s matched", AVIS_NAME (fa),
                                  AVIS_NAME (fb)));
         } else {
-            DBUG_PRINT ("SWLF", ("matchGeneratorField %s and %s did not match",
+            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s did not match",
                                  AVIS_NAME (fa), AVIS_NAME (fb)));
         }
     }
@@ -563,7 +558,7 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
     if ((N_array == NODE_TYPE (intersectb1)) && (N_array == NODE_TYPE (intersectb2))
         && (N_array == NODE_TYPE (idxbound1)) && (N_array == NODE_TYPE (idxbound2))) {
 
-        DBUG_PRINT ("SWLF", ("FIXME: check for NULL intersection"));
+        DBUG_PRINT ("AWLF", ("FIXME: check for NULL intersection"));
         INFO_INTERSECTB1 (arg_info) = intersectb1;
         INFO_INTERSECTB2 (arg_info) = intersectb2;
         INFO_IDXBOUND1 (arg_info) = idxbound1;
@@ -652,9 +647,9 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
         intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
         intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
 #ifdef NEEDSNULLCHECK
-        DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
+        DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
                              AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
-        DBUG_PRINT ("SWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
+        DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
                              AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
 #endif // NEEDSNULLCHECK
         if (
@@ -666,7 +661,7 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
           (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
           && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
             matched = TRUE;
-            DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
+            DBUG_PRINT ("AWLF", ("FindMatchingPart referents all match"));
         } else {
             partee = PART_NEXT (partee);
             partno++;
@@ -674,10 +669,10 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
     }
 
     if (matched) {
-        DBUG_PRINT ("SWLF", ("FindMatchingPart matches"));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart matches"));
     } else {
         partee = NULL;
-        DBUG_PRINT ("SWLF", ("FindMatchingPart does not match"));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
     }
 
     DBUG_RETURN (partee);
@@ -760,12 +755,12 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
           ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
           && (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
           && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
-            DBUG_PRINT ("SWLF", ("FindMatchingPart STEP/WIDTH match"));
+            DBUG_PRINT ("AWLF", ("FindMatchingPart STEP/WIDTH match"));
             if ((idxbound1 == intersectb1) && (idxbound2 == intersectb2)) {
-                DBUG_PRINT ("SWLF", ("FindMatchingPart referents all match"));
+                DBUG_PRINT ("AWLF", ("FindMatchingPart referents all match"));
                 matched = TRUE;
             } else {
-                DBUG_PRINT ("SWLF", ("FindMatchingPart intersects do not match"));
+                DBUG_PRINT ("AWLF", ("FindMatchingPart intersects do not match"));
                 MarkPartitionSliceNeeded (folderpart, intersectb1, intersectb2, idxbound1,
                                           idxbound2, arg_info);
             }
@@ -778,10 +773,10 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
     }
 
     if (matched) {
-        DBUG_PRINT ("SWLF", ("FindMatchingPart matches"));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart matches"));
     } else {
         partee = NULL;
-        DBUG_PRINT ("SWLF", ("FindMatchingPart does not match"));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
     }
 
     DBUG_RETURN (partee);
@@ -790,12 +785,12 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkSWLFoldable( node *arg_node, info *arg_info,
+ * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node * folderpart, int level)
  *
  * @brief check if _sel_VxA_(idx, foldee), appearing in folder WL
  *        partition, part, is foldable into the folder WL.
- *        Most checks have already been made by SWLFI.
+ *        Most checks have already been made by AWLFI.
  *        Here, we check that the generators match,
  *        and that the only references to the foldeeWL result are
  *        in the folderWL.
@@ -808,7 +803,7 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
  *
  *****************************************************************************/
 static node *
-checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
+checkAWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
 {
     node *foldeeid;
     node *foldeeavis;
@@ -816,7 +811,7 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
     node *foldeewl;
     node *foldeepart = NULL;
 
-    DBUG_ENTER ("checkSWLFoldable");
+    DBUG_ENTER ("checkAWLFoldable");
 
     foldeeid = PRF_ARG2 (arg_node);
     foldeeavis = ID_AVIS (foldeeid);
@@ -825,7 +820,7 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
         foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
         if (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with) {
             foldeewl = LET_EXPR (foldeeassign);
-            DBUG_PRINT ("SWLF", ("WL %s: AVIS_NEEDCOUNT=%d; AVIS_WL_NEEDCOUNT=%d",
+            DBUG_PRINT ("AWLF", ("WL %s: AVIS_NEEDCOUNT=%d; AVIS_WL_NEEDCOUNT=%d",
                                  AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
                                  AVIS_WL_NEEDCOUNT (foldeeavis)));
 
@@ -834,15 +829,15 @@ checkSWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
             }
         }
     } else {
-        DBUG_PRINT ("SWLF", ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
+        DBUG_PRINT ("AWLF", ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
                              AVIS_NAME (foldeeavis), AVIS_DEFDEPTH (foldeeavis), level));
     }
 
     if (NULL != foldeepart) {
         AVIS_ISWLFOLDED (foldeeavis) = TRUE;
-        DBUG_PRINT ("SWLF", ("WL %s will be folded.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("AWLF", ("WL %s will be folded.", AVIS_NAME (foldeeavis)));
     } else {
-        DBUG_PRINT ("SWLF", ("WLs %s will not be folded.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("AWLF", ("WLs %s will not be folded.", AVIS_NAME (foldeeavis)));
     }
 
     DBUG_RETURN (foldeepart);
@@ -896,7 +891,7 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
     INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
     LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, navis);
 
-    DBUG_PRINT ("SWLF", ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
+    DBUG_PRINT ("AWLF", ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
                          AVIS_NAME (arg_node), AVIS_NAME (navis)));
 
     DBUG_RETURN (navis);
@@ -960,7 +955,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
         INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
 
         lhsavis = populateLut (IDS_AVIS (ids), arg_info, SHcreateShape (0));
-        DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
+        DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
                              AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
 
         sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
@@ -984,7 +979,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
     lhsavis = populateLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
     z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), DUPdoDupNode (idxid)), z);
     AVIS_SSAASSIGN (lhsavis) = z;
-    DBUG_PRINT ("SWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
+    DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
                          AVIS_NAME (ID_AVIS (idxid))));
 
     if (isSAAMode ()) {
@@ -997,7 +992,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 
 /** <!--********************************************************************-->
  *
- * @fn node *doSWLFreplace( ... )
+ * @fn node *doAWLFreplace( ... )
  *
  * @brief
  *   In
@@ -1024,7 +1019,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
  *    folder: N_part node of folder.
  *****************************************************************************/
 static node *
-doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *arg_info)
+doAWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *arg_info)
 {
     node *oldblock;
     node *newblock;
@@ -1032,7 +1027,7 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     node *idxassigns;
     node *expravis;
 
-    DBUG_ENTER ("doSWLFreplace");
+    DBUG_ENTER ("doAWLFreplace");
 
     oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (foldee)));
 
@@ -1066,7 +1061,6 @@ doSWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
     DBUG_RETURN (arg_node);
 }
 
-#ifdef BROKE
 /** <!--********************************************************************-->
  *
  * @fn static node *AppendPart(node *partz, node *newpart)
@@ -1266,7 +1260,6 @@ PartitionSlicer (node *partn, node *lb, node *ub, int d, info *arg_info)
     }
     DBUG_RETURN (partz);
 }
-#endif // BROKE
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -1280,21 +1273,21 @@ PartitionSlicer (node *partn, node *lb, node *ub, int d, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFfundef(node *arg_node, info *arg_info)
+ * @fn node *AWLFfundef(node *arg_node, info *arg_info)
  *
- * @brief applies SWLF to a given fundef.
+ * @brief applies AWLF to a given fundef.
  *
  *****************************************************************************/
 node *
-SWLFfundef (node *arg_node, info *arg_info)
+AWLFfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("SWLFfundef");
+    DBUG_ENTER ("AWLFfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        DBUG_PRINT ("SWLF", ("Symbolic With-Loop folding in %s %s begins",
+        DBUG_PRINT ("AWLF", ("Algebraic With-Loop folding in %s %s begins",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                              FUNDEF_NAME (arg_node)));
 
@@ -1318,7 +1311,7 @@ SWLFfundef (node *arg_node, info *arg_info)
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-        DBUG_PRINT ("SWLF", ("Symbolic With-Loop folding in %s %s ends",
+        DBUG_PRINT ("AWLF", ("Algebraic With-Loop folding in %s %s ends",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                              FUNDEF_NAME (arg_node)));
     }
@@ -1333,27 +1326,27 @@ SWLFfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node SWLFassign( node *arg_node, info *arg_info)
+ * @fn node AWLFassign( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
  *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
  *
  *****************************************************************************/
 node *
-SWLFassign (node *arg_node, info *arg_info)
+AWLFassign (node *arg_node, info *arg_info)
 {
     node *foldablefoldeepart;
 
-    DBUG_ENTER ("SWLFassign");
+    DBUG_ENTER ("AWLFassign");
 
 #ifdef VERBOSE
-    DBUG_PRINT ("SWLF", ("Traversing N_assign"));
+    DBUG_PRINT ("AWLF", ("Traversing N_assign"));
 #endif // VERBOSE
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    foldablefoldeepart = INFO_SWLFOLDABLEFOLDEEPART (arg_info);
-    INFO_SWLFOLDABLEFOLDEEPART (arg_info) = NULL;
+    foldablefoldeepart = INFO_AWLFOLDABLEFOLDEEPART (arg_info);
+    INFO_AWLFOLDABLEFOLDEEPART (arg_info) = NULL;
     DBUG_ASSERT ((NULL == INFO_PREASSIGNS (arg_info)),
-                 "SWLFassign INFO_PREASSIGNS not NULL");
+                 "AWLFassign INFO_PREASSIGNS not NULL");
 
     /*
      * Top-down traversal
@@ -1364,10 +1357,10 @@ SWLFassign (node *arg_node, info *arg_info)
      * Append the new cloned block
      */
     if (NULL != foldablefoldeepart) {
-        arg_node = doSWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
+        arg_node = doAWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
                                   INFO_PART (arg_info), arg_info);
 
-        global.optcounters.swlf_expr += 1;
+        global.optcounters.awlf_expr += 1;
     }
 
     if (NULL != INFO_PREASSIGNS (arg_info)) {
@@ -1380,13 +1373,13 @@ SWLFassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFwith( node *arg_node, info *arg_info)
+ * @fn node *AWLFwith( node *arg_node, info *arg_info)
  *
- * @brief applies SWLF to a with-loop in a top-down manner.
+ * @brief applies AWLF to a with-loop in a top-down manner.
  *
  *****************************************************************************/
 node *
-SWLFwith (node *arg_node, info *arg_info)
+AWLFwith (node *arg_node, info *arg_info)
 {
     node *nextop;
     node *genop;
@@ -1394,9 +1387,9 @@ SWLFwith (node *arg_node, info *arg_info)
     node *foldeeshape;
     info *old_info;
 
-    DBUG_ENTER ("SWLFwith");
+    DBUG_ENTER ("AWLFwith");
 
-    DBUG_PRINT ("SWLF", ("Examining N_with"));
+    DBUG_PRINT ("AWLF", ("Examining N_with"));
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_WL (arg_info) = arg_node;
@@ -1426,7 +1419,7 @@ SWLFwith (node *arg_node, info *arg_info)
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (folderop);
         nextop = FREEdoFreeNode (folderop);
         WITH_WITHOP (arg_node) = genop;
-        DBUG_PRINT ("SWLF", ("Replacing modarray by genarray"));
+        DBUG_PRINT ("AWLF", ("Replacing modarray by genarray"));
     }
 
     INFO_WL (old_info) = NULL;
@@ -1439,17 +1432,17 @@ SWLFwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFcode( node *arg_node, info *arg_info)
+ * @fn node *AWLFcode( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-SWLFcode (node *arg_node, info *arg_info)
+AWLFcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFcode");
+    DBUG_ENTER ("AWLFcode");
 
-    DBUG_PRINT ("SWLF", ("Traversing N_code"));
+    DBUG_PRINT ("AWLF", ("Traversing N_code"));
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1457,17 +1450,17 @@ SWLFcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFpart( node *arg_node, info *arg_info)
+ * @fn node *AWLFpart( node *arg_node, info *arg_info)
  *
  * @brief Traverse each partition of a WL.
  *
  *****************************************************************************/
 node *
-SWLFpart (node *arg_node, info *arg_info)
+AWLFpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFpart");
+    DBUG_ENTER ("AWLFpart");
 
-    DBUG_PRINT ("SWLF", ("Traversing N_part"));
+    DBUG_PRINT ("AWLF", ("Traversing N_part"));
     INFO_PART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     INFO_PART (arg_info) = NULL;
@@ -1479,18 +1472,18 @@ SWLFpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFids( node *arg_node, info *arg_info)
+ * @fn node *AWLFids( node *arg_node, info *arg_info)
  *
  * @brief set current With-Loop level as ids defDepth attribute
  *
  *****************************************************************************/
 node *
-SWLFids (node *arg_node, info *arg_info)
+AWLFids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFids");
+    DBUG_ENTER ("AWLFids");
 
 #ifdef VERBOSE
-    DBUG_PRINT ("SWLF", ("Traversing N_ids"));
+    DBUG_PRINT ("AWLF", ("Traversing N_ids"));
 #endif // VERBOSE
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -1500,7 +1493,7 @@ SWLFids (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFprf( node *arg_node, info *arg_info)
+ * @fn node *AWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
  *   Examine all _sel_VxA_( idx, foldeeWL)  primitives to see if
@@ -1514,20 +1507,20 @@ SWLFids (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SWLFprf (node *arg_node, info *arg_info)
+AWLFprf (node *arg_node, info *arg_info)
 {
     node *arg1;
 
-    DBUG_ENTER ("SWLFprf");
+    DBUG_ENTER ("AWLFprf");
 
 #ifdef VERBOSE
-    DBUG_PRINT ("SWLF", ("Traversing N_prf"));
+    DBUG_PRINT ("AWLF", ("Traversing N_prf"));
 #endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (isPrfArg1AttachIntersect (arg_node))) {
-        INFO_SWLFOLDABLEFOLDEEPART (arg_info)
-          = checkSWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
+        INFO_AWLFOLDABLEFOLDEEPART (arg_info)
+          = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }
 
@@ -1541,18 +1534,18 @@ SWLFprf (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFcond(node *arg_node, info *arg_info)
+ *   node *AWLFcond(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse conditional parts in the given order.
  *
  ******************************************************************************/
 node *
-SWLFcond (node *arg_node, info *arg_info)
+AWLFcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFcond");
+    DBUG_ENTER ("AWLFcond");
 
-    DBUG_PRINT ("SWLF", ("Traversing N_cond"));
+    DBUG_PRINT ("AWLF", ("Traversing N_cond"));
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
     COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
@@ -1563,17 +1556,17 @@ SWLFcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFfuncond( node *arg_node, info *arg_info)
+ *   node *AWLFfuncond( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFfuncond (node *arg_node, info *arg_info)
+AWLFfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFfuncond");
+    DBUG_ENTER ("AWLFfuncond");
 
-    DBUG_PRINT ("SWLF", ("Traversing N_funcond"));
+    DBUG_PRINT ("AWLF", ("Traversing N_funcond"));
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
     FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
@@ -1584,17 +1577,17 @@ SWLFfuncond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFwhile( node *arg_node, info *arg_info)
+ *   node *AWLFwhile( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFwhile (node *arg_node, info *arg_info)
+AWLFwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFwhile");
+    DBUG_ENTER ("AWLFwhile");
 
-    DBUG_PRINT ("SWLF", ("Traversing N_while"));
+    DBUG_PRINT ("AWLF", ("Traversing N_while"));
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
@@ -1602,5 +1595,5 @@ SWLFwhile (node *arg_node, info *arg_info)
 }
 
 /** <!--********************************************************************-->
- * @}  <!-- Symbolic with loop folding -->
+ * @}  <!-- Algebraic with loop folding -->
  *****************************************************************************/

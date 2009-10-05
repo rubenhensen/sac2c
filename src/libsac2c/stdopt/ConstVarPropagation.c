@@ -21,6 +21,12 @@
 /*
  * optimization phase: Constant and Variable Propagation (CVP)
  *
+ * 2009-10-05: This traversal SHOULD no longer handle variable propagation.
+ * That is now handled by VP. This code needs trimming, so that
+ * it only propagages constants. That has not been done yet. Sorry...
+ * Theoretically, this traversal is only called post-optimizer, so
+ * the VP part should be harmless.
+ *
  * CVP is used to eliminate the usage of assignment arguments (RHS N_id nodes),
  * whose definition has only a single value (N_id, N_num, ...) as a right hand
  * side. So we can avoid the usage of unnecessary copy assignments.

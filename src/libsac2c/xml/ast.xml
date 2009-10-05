@@ -1636,7 +1636,7 @@
           <node name="Code" />
 	</travuser>
      </traversal>
-     <traversal id="SWLFI" name="Symbolic With-Loop-Folding Inference" default="sons" include="symb_wlfi.h" >
+     <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
        <travuser>
           <node name="Fundef"  />
           <node name="Block"   />
@@ -1652,7 +1652,7 @@
           <node name="Prf"     />
        </travuser>
      </traversal>
-     <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
+     <traversal id="AWLF" name="Algebraic With-Loop-Folding" default="sons" include="algebraic_wlf.h" >
        <travuser>
           <node name="Fundef"  />
           <node name="Assign"  />
@@ -6084,7 +6084,7 @@ N_structdef :
             This field is the number of references to the foldeeWL that
             created this value, from one, arbitrary-chosen folderWL.
             The field is used as a crude cost function on the foldeeWL,
-            so that the EWLF is performed only if all references to the
+            so that the AWLF is performed only if all references to the
             foldeeWL are from one other (folderWL) WL.
           </description>
         </attribute>
@@ -6185,7 +6185,7 @@ N_structdef :
                 <any />
                 <phases>
                   <phase name="lir" />
-                  <phase name="swlf" />
+                  <phase name="awlf" />
                 </phases>
               </target>
             </targets>
@@ -6610,7 +6610,7 @@ N_structdef :
                 <any />
                 <phases>
                   <range from="opt_cyc_wlf"     to="opt_cyc_wlf" />
-                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                  <range from="opt_saacyc_awlfi" to="opt_saacyc_awlf" />
                 </phases>
               </target>
             </targets>
@@ -6620,7 +6620,7 @@ N_structdef :
           <description>
             The number of RHS references, within a potential folderWL,  
             to the result of this WL, by the WL at
-            Referenced_Folderwl. WLF and EWLF can fold WLs only
+            Referenced_Folderwl. WLF and AWLF can fold WLs only
             if this field and WITH_REFERENCED are equal.
             The only rationale for this restriction is that it prevents
             the same foldeeWL element from being computed more than once.
@@ -6631,7 +6631,7 @@ N_structdef :
                 <any />
                 <phases>
                   <range from="opt_cyc_wlf"      to="opt_cyc_wlf" />
-                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                  <range from="opt_saacyc_awlfi" to="opt_saacyc_awlf" />
                 </phases>
               </target>
             </targets>
@@ -6648,7 +6648,7 @@ N_structdef :
                 <node name="Avis" />
                 <unknown />
                 <phases>
-                  <range from="opt_saacyc_swlfi" to="opt_saacyc_swlf" />
+                  <range from="opt_saacyc_awlfi" to="opt_saacyc_awlf" />
                 </phases>
               </target>
             </targets>
@@ -6690,7 +6690,7 @@ N_structdef :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="opt_cyc_swlf" />
+                  <phase name="opt_cyc_awlf" />
                 </phases>
               </target>
             </targets>
@@ -6701,7 +6701,7 @@ N_structdef :
         <flag name="IsFoldable" />
         <flag name="Cudarizable" default="FALSE" />
         <flag name="IsDependent" />
-        <flag name="isSWLFFoldable" default="FALSE" />
+        <flag name="isAWLFFoldable" default="FALSE" />
         <flag name="containsFunAps" >
           <description>
              indicates whether any partition contains an application

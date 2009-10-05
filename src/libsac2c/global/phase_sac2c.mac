@@ -309,10 +309,10 @@ CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
                SSATdoTransformOneFunction, global.optimize.dowlf, opt, cyc)
 
 CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
-               global.optimize.doswlf, opt, cyc)
+               global.optimize.doawlf, opt, cyc)
 
 CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
-               global.optimize.doswlf, opt, cyc)
+               global.optimize.doawlf, opt, cyc)
 
 CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
                global.optimize.dodcr, opt, cyc)
@@ -421,13 +421,13 @@ SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariabl
           global.optimize.dosaa, opt)
 
 SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
-          global.optimize.doswlf || global.doivext, opt)
+          global.optimize.doawlf || global.doivext, opt)
 
 SUBPHASE (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
           global.doivext, opt)
 
 /* See comments in arrayopt/ivextrema.c regarding phase
- * ordering for ivext, dcr2, ivexp, swlfi, swlf, dcr4, scc.
+ * ordering for ivext, dcr2, ivexp, awlfi, awlf, dcr4, scc.
  *  DCR must follow ivexi almost immediately.
  */
 
@@ -483,15 +483,15 @@ CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
                global.optimize.docwle, opt, saacyc)
 
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema",
-               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doswlf, opt,
+               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doawlf, opt,
                saacyc)
 
-CYCLEPHASEFUN (swlfi, "Inferring symbolically foldable with-loops",
-               SWLFIdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
+               AWLFIdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
                saacyc)
 
-CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding",
-               SWLFdoSymbolicWithLoopFoldingOneFunction, global.optimize.doswlf, opt,
+CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
+               AWLFdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
                saacyc)
 
 CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
@@ -602,11 +602,11 @@ SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithlo
           ALWAYS, opt)
 
 SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
-          global.optimize.doswlf, opt)
+          global.optimize.doawlf, opt)
 
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
-          global.doivext || global.optimize.doswlf || global.insertconformitychecks, opt)
+          global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
 
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)

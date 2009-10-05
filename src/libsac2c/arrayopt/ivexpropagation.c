@@ -49,7 +49,7 @@
 #include "tree_compound.h"
 #include "pattern_match.h"
 #include "ivextrema.h"
-#include "symb_wlfi.h"
+#include "algebraic_wlfi.h"
 #include "DupTree.h"
 #include "check.h"
 #include "phase.h"
@@ -495,7 +495,7 @@ makeNarray (node *extrema, info *arg_info, int arrxrho)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
 
-    zavis = SWLFIflattenExpression (narr, &INFO_VARDECS (arg_info),
+    zavis = AWLFIflattenExpression (narr, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), resavis);
     DBUG_RETURN (zavis);
 }
@@ -1222,9 +1222,9 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     minv = TCmakePrf1 (PRF_PRF (rhs), maxarg1);
                     PRF_NOEXTREMAWANTED (minv) = TRUE;
                     PRF_NOEXTREMAWANTED (maxv) = TRUE;
-                    minv = SWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
+                    minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
-                    maxv = SWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                    maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
                 }
                 break;
@@ -1300,7 +1300,7 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     minv = TCmakePrf2 (PRF_PRF (rhs), minarg1, minarg2);
                     PRF_NOEXTREMAWANTED (minv) = TRUE;
 
-                    minv = SWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
+                    minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
 
                     maxarg1 = arg1c ? DUPdoDupTree (PRF_ARG1 (rhs))
@@ -1312,7 +1312,7 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     maxv = TCmakePrf2 (PRF_PRF (rhs), maxarg1, maxarg2);
                     PRF_NOEXTREMAWANTED (maxv) = TRUE;
 
-                    maxv = SWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                    maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), lhsavis);
                 }
                 break;

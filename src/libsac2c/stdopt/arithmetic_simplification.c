@@ -104,17 +104,21 @@ node *
 ContainedPrf (node *arg_node)
 {
     node *val = NULL;
+    pattern *pat;
 
     DBUG_ENTER ("ContainedPrf");
 
-    /* chase back over assigns and guards, then look for any primitive */
-    if (PMO (PMOlastVarGuards (&val, arg_node))) {
+    pat = PMvar (1, PMAgetNode (&val), 0);
+
+    /* chase back over assigns and guards, looking for F_esd_neg */
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         val = AVIS_SSAASSIGN (ID_AVIS (val));
         if (NULL != val) {
             val = LET_EXPR (ASSIGN_INSTR (val));
             val = (N_prf == NODE_TYPE (val)) ? val : NULL;
         }
     }
+    PMfree (pat);
 
     DBUG_RETURN (val);
 }
@@ -143,13 +147,13 @@ ContainedPrf (node *arg_node)
 bool
 IsSuitableForPropagation (node *expression)
 {
-    node *val1 = NULL;
-    node *val2 = NULL;
-    constant *con1 = NULL;
-    constant *con2 = NULL;
+    constant *con = NULL;
+    pattern *pat;
     bool result = FALSE;
 
     DBUG_ENTER ("IsSuitableForPropagation");
+
+    pat = PMconst (1, PMAgetVal (&con));
 
     if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)
@@ -157,13 +161,14 @@ IsSuitableForPropagation (node *expression)
             || (PRF_PRF (expression) == F_add_VxS)
             || (PRF_PRF (expression) == F_add_VxV))) {
 
-        if (PMO (PMOconst (&con1, &val1, PRF_ARG1 (expression)))
-            || PMO (PMOconst (&con2, &val2, PRF_ARG2 (expression)))) {
+        if (PMmatchFlatSkipExtrema (pat, PRF_ARG1 (expression))
+            || PMmatchFlatSkipExtrema (pat, PRF_ARG2 (expression))) {
             result = TRUE;
+            DBUG_PRINT ("AS", ("IsSuitableForPropagation found TRUE expn"));
+            con = (NULL != con) ? COfreeConstant (con) : NULL;
         }
-        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
-        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
     }
+    PMfree (pat);
 
     DBUG_RETURN (result);
 }
@@ -179,8 +184,10 @@ IsNegationOfNegation (node *expression)
         && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
         result
           = ((NODE_TYPE (expression) == N_prf) && (PRF_PRF (expression) == F_esd_neg));
+        DBUG_PRINT ("AS", ("IsNegationOfNegation found TRUE expn"));
     } else {
         result = FALSE;
+        DBUG_PRINT ("AS", ("IsNegationOfNegation found FALSE expn"));
     }
 
     DBUG_RETURN (result);
@@ -204,14 +211,16 @@ Negate (node *arg_node, info *info)
     node *negexpr;
     ntype *negtype;
     node *avis;
-    node *val = NULL;
     constant *cexpr = NULL;
     constant *negcexpr;
     ntype *prodtype;
+    pattern *pat;
 
     DBUG_ENTER ("Negate");
 
-    if (PMO (PMOconst (&cexpr, &val, arg_node))) {
+    pat = PMconst (1, PMAgetVal (&cexpr));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
         /* Create negexpr */
         negcexpr = COneg (cexpr);
         negexpr = COconstant2AST (negcexpr);
@@ -224,6 +233,7 @@ Negate (node *arg_node, info *info)
         negtype = TYcopyType (TYgetProductMember (prodtype, 0));
         prodtype = TYfreeType (prodtype);
     }
+    PMfree (pat);
 
     avis = TBmakeAvis (TRAVtmpVar (), negtype);
 
@@ -237,6 +247,7 @@ Negate (node *arg_node, info *info)
     }
 
     TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
+    DBUG_PRINT ("AS", ("Replacing PRF_ARG by esd_neg( arg_node"));
 
     DBUG_RETURN (TBmakeId (avis));
 }
@@ -315,6 +326,9 @@ ASfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
+    DBUG_PRINT ("AS", ("traversing body of (%s) %s",
+                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                       FUNDEF_NAME (arg_node)));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -361,20 +375,21 @@ ASprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ASprf");
 
-    contained = ContainedPrf (PRF_ARG1 (arg_node));
-    if ((PRF_PRF (arg_node) == F_esd_neg) && (NULL != contained)) {
-
-        if (IsSuitableForPropagation (contained)) {
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node
-              = TCmakePrf2 (PRF_PRF (contained), Negate (PRF_ARG1 (contained), arg_info),
-                            Negate (PRF_ARG2 (contained), arg_info));
-            DBUG_PRINT ("AS", ("Negating both arguments"));
-        } else if (IsNegationOfNegation (contained)) {
-            DBUG_PRINT ("AS", ("Replacing negation of negation"));
-            contained = PRF_ARG1 (contained);
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = DUPdoDupTree (contained);
+    if (PRF_PRF (arg_node) == F_esd_neg) {
+        contained = ContainedPrf (PRF_ARG1 (arg_node));
+        if (NULL != contained) {
+            if (IsSuitableForPropagation (contained)) {
+                arg_node = FREEdoFreeTree (arg_node);
+                arg_node = TCmakePrf2 (PRF_PRF (contained),
+                                       Negate (PRF_ARG1 (contained), arg_info),
+                                       Negate (PRF_ARG2 (contained), arg_info));
+                DBUG_PRINT ("AS", ("Negating both arguments"));
+            } else if (IsNegationOfNegation (contained)) {
+                DBUG_PRINT ("AS", ("Replacing negation of negation"));
+                contained = PRF_ARG1 (contained);
+                arg_node = FREEdoFreeTree (arg_node);
+                arg_node = DUPdoDupTree (contained);
+            }
         }
     }
 

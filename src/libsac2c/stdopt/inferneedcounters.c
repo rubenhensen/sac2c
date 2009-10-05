@@ -76,7 +76,7 @@ exclusionDueToHostTraversal (node *arg_node, info *arg_info)
     node *parent;
     DBUG_ENTER ("exclusionDueToHostTraversal");
 
-    if (INFO_TRAV (arg_info) == TR_swlf) {
+    if (INFO_TRAV (arg_info) == TR_awlf) {
         parent = INFO_PRF (arg_info);
         if ((parent != NULL) && (NODE_TYPE (parent) == N_prf)) {
             switch

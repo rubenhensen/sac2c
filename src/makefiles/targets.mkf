@@ -158,9 +158,10 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         wlsbuild wlswithloopification SSAWithloopFolding \
                         SSAWLI SSAWLF WithloopFusion detectdependencies \
                         pad pad_collect pad_infer pad_transform pad_info \
-                        tagdependencies resolvedependencies symb_wlf \
-                        symb_wlfi wl_cost_check wl_needcount show_wl_cost \
-                        loop_scalarization withloop_flattening             \
+                        tagdependencies resolvedependencies \
+                        algebraic_wlfi algebraic_wlf                        \
+                        wl_cost_check wl_needcount show_wl_cost             \
+                        loop_scalarization withloop_flattening              \
                         ivextrema ivexpropagation ivexcleanup
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \

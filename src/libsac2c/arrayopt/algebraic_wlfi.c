@@ -1,10 +1,10 @@
 /*
- * $Id: symb_wlf.c 16030 2009-04-09 19:40:34Z rbe $
+ * $Id: algebraic_wlfi.c 16030 2009-04-09 19:40:34Z rbe $
  */
 
 /** <!--********************************************************************-->
  *
- * @defgroup swlf Extended (Symbolic) With-Loop Folding Inference
+ * @defgroup awlfi Algebraic With-Loop Folding Inference
  *
  * @terminology:
  *        FoldeeWL, or foldee: The WL that will no longer
@@ -18,9 +18,9 @@
  *        specifies the set of index vectors in one WL partition
  *        that are present in a partition of another WL.
  *
- * @brief Extended With-Loop Folding
- *        EWLF performs WLF on some arrays that are not foldable
- *        by WLF. Features of extended WLF are described in symb_wlf.c
+ * @brief Algebraic With-Loop Folding (AWLF)
+ *        AWLF performs WLF on some arrays that are not foldable
+ *        by WLF. Features of AWLF are described in algebraic_wlf.c
  *
  *        This phase begins by computing AVIS_NEEDCOUNT for
  *        all N_id nodes. It then makes a depth-first traversal
@@ -64,13 +64,13 @@
 
 /** <!--********************************************************************-->
  *
- * @file symb_wlfi.c
+ * @file algebraic_wlfi.c
  *
- * Prefix: SWLFI
+ * Prefix: AWLFI
  *
  *****************************************************************************/
-#include "symb_wlfi.h"
-#include "symb_wlf.h"
+#include "algebraic_wlfi.h"
+#include "algebraic_wlf.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -115,7 +115,7 @@ struct INFO {
                              * block, rather than to a WL within this
                              * WL. I think...
                              */
-    bool swlfoldablefoldee; /* foldeeWL may be legally foldable. */
+    bool awlfoldablefoldee; /* foldeeWL may be legally foldable. */
                             /* (If index sets prove to be OK)     */
     bool onefundef;         /* fundef-based traversal */
 };
@@ -129,7 +129,7 @@ struct INFO {
 #define INFO_PART(n) ((n)->part)
 #define INFO_FOLDERWL(n) ((n)->folderwl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_SWLFOLDABLEFOLDEE(n) ((n)->swlfoldablefoldee)
+#define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldablefoldee)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -147,7 +147,7 @@ MakeInfo (node *fundef)
     INFO_PART (result) = NULL;
     INFO_FOLDERWL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_SWLFOLDABLEFOLDEE (result) = FALSE;
+    INFO_AWLFOLDABLEFOLDEE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -177,21 +177,21 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIdoSymbolicWithLoopFoldingOneFunction(node *arg_node)
+ *   node *AWLFIdoAlgebraicWithLoopFoldingOneFunction(node *arg_node)
  *
- * @brief Global entry point of symbolic With-Loop folding
- *        Applies symbolic WL folding to a fundef.
+ * @brief Global entry point of Algebraic With-Loop folding
+ *        Applies Algebraic WL folding to a fundef.
  *
  *****************************************************************************/
 node *
-SWLFIdoSymbolicWithLoopFoldingOneFunction (node *arg_node)
+AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 {
-    DBUG_ENTER ("SWLFIdoSymbolicWithLoopFoldingOneFunction");
+    DBUG_ENTER ("AWLFIdoAlgebraicWithLoopFoldingOneFunction");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 ("SWLFIdoSymbolicWithLoopFoldingOneFunction called for non-fundef"));
+                 ("AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef"));
 
-    TRAVpush (TR_swlfi);
+    TRAVpush (TR_awlfi);
     arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
 
@@ -240,7 +240,7 @@ noDefaultPartition (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIflattenExpression(node *arg_node, node **vardecs,
+ * @fn node *AWLFIflattenExpression(node *arg_node, node **vardecs,
  *                                  node **preassigns, node *restypeavis)
  *
  *   @brief  Flattens the expression at arg_node.
@@ -266,13 +266,13 @@ noDefaultPartition (node *arg_node)
  *
  ******************************************************************************/
 node *
-SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
+AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                         node *restypeavis)
 {
     node *avis;
     node *nas;
 
-    DBUG_ENTER ("SWLFIflattenExpression");
+    DBUG_ENTER ("AWLFIflattenExpression");
 
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (restypeavis)));
     *vardecs = TBmakeVardec (avis, *vardecs);
@@ -283,8 +283,8 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
         AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
         AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
     }
-    DBUG_PRINT ("SWLFI",
-                ("SWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
+    DBUG_PRINT ("AWLFI",
+                ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
 
     DBUG_RETURN (avis);
 }
@@ -327,7 +327,7 @@ SWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *        The ivmaxpref calculation adjusts AVIS_MAXVAL to match
  *        the canonical generator bounds. This is used as
  *        shown above, but the value glued to the guard is
- *        also needed by FindMatchingPart in SWLF.
+ *        also needed by FindMatchingPart in AWLF.
  *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params foldeepart: An N_part of the foldeeWL.
@@ -381,12 +381,12 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 
     takeres = TCmakePrf2 (F_take_SxV, TBmakeId (genshpavis), TBmakeId (ivminmax));
 
-    takeresavis = SWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
+    takeresavis = AWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info), genshpavis);
 
     expn = TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, TBmakeId (takeresavis),
                        DUPdoDupTree (boundee));
-    resavis = SWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
+    resavis = AWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info), genshpavis);
 
     DBUG_RETURN (resavis);
@@ -436,7 +436,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
     /* Emit:  genshp = _shape_A_(GENERATOR_BOUND1( foldee)); */
     gen = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
     genshp = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupTree (gen));
-    genshpavis = SWLFIflattenExpression (genshp, &INFO_VARDECS (arg_info),
+    genshpavis = AWLFIflattenExpression (genshp, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info), ID_AVIS (gen));
 
     partn = WITH_PART (foldeewl);
@@ -506,7 +506,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("attachIntersectCalc");
 
-    DBUG_PRINT ("SWLFI", ("Inserting attachextrema computations"));
+    DBUG_PRINT ("AWLFI", ("Inserting attachextrema computations"));
 
     /* Generate expressions for lower-bound intersection and
      * upper-bound intersection calculation.
@@ -545,7 +545,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
         AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (ivid)));
     }
 
-    global.optcounters.swlfi_insert++;
+    global.optcounters.awlfi_insert++;
 
     DBUG_RETURN (ividprime);
 }
@@ -562,7 +562,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  *
  *        This function concerns itself only with the characteristics
  *        of the entire foldeeWL: partition-dependent characteristics
- *        are determined by the SWLF phase later on.
+ *        are determined by the AWLF phase later on.
  *
  *        The requirements for folding are:
  *
@@ -593,7 +593,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  *        The expressions hanging from the attachextrema inserted
  *        by attachExtremaCalc are intended to determine if this
  *        requirement is met. CF, CVP, and other optimizations
- *        should simplify those expressions and give SWLF
+ *        should simplify those expressions and give AWLF
  *        the information it needs to determine if the index
  *        set requirements are met.
  *
@@ -623,7 +623,7 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
         foldeewl = ASSIGN_RHS (rhs);
         foldeeassign = ASSIGN_INSTR (rhs);
 
-        DBUG_PRINT ("SWLFI", ("FoldeeWL:%s: WITH_REFERENCED_FOLD=%d",
+        DBUG_PRINT ("AWLFI", ("FoldeeWL:%s: WITH_REFERENCED_FOLD=%d",
                               AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (foldeewl)));
 
         if ((NODE_TYPE (foldeeassign) == N_let)
@@ -637,10 +637,10 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
     }
 
     if (z) {
-        DBUG_PRINT ("SWLFI",
+        DBUG_PRINT ("AWLFI",
                     ("Foldee WL %s is suitable for folding.", AVIS_NAME (foldeeavis)));
     } else {
-        DBUG_PRINT ("SWLFI", ("Foldee WL %s is not suitable for folding.",
+        DBUG_PRINT ("AWLFI", ("Foldee WL %s is not suitable for folding.",
                               AVIS_NAME (foldeeavis)));
     }
 
@@ -731,10 +731,10 @@ checkBothFoldable (node *arg_node, info *arg_info)
     z = SHcompareShapes (TYgetShape (AVIS_TYPE (ID_AVIS (b1))),
                          TYgetShape (AVIS_TYPE (ID_AVIS (b2))));
     if (z) {
-        DBUG_PRINT ("SWLFI", ("FolderWL & FoldeeWL %s generator shapes match.",
+        DBUG_PRINT ("AWLFI", ("FolderWL & FoldeeWL %s generator shapes match.",
                               AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     } else {
-        DBUG_PRINT ("SWLFI", ("FolderWL & FoldeeWL %s generator shapes do not match.",
+        DBUG_PRINT ("AWLFI", ("FolderWL & FoldeeWL %s generator shapes do not match.",
                               AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
 #endif // FIXME
@@ -742,21 +742,21 @@ checkBothFoldable (node *arg_node, info *arg_info)
 }
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIfundef(node *arg_node, info *arg_info)
+ * @fn node *AWLFIfundef(node *arg_node, info *arg_info)
  *
- * @brief applies SWLFI to a given fundef.
+ * @brief applies AWLFI to a given fundef.
  *
  *****************************************************************************/
 node *
-SWLFIfundef (node *arg_node, info *arg_info)
+AWLFIfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("SWLFIfundef");
+    DBUG_ENTER ("AWLFIfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        DBUG_PRINT ("SWLFI", ("Symbolic-With-Loop-Folding Inference in %s %s begins",
+        DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s begins",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
 
@@ -764,7 +764,7 @@ SWLFIfundef (node *arg_node, info *arg_info)
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
 
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_swlfi);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -782,7 +782,7 @@ SWLFIfundef (node *arg_node, info *arg_info)
 
         arg_info = FreeInfo (arg_info);
 
-        DBUG_PRINT ("SWLFI", ("Symbolic-With-Loop-Folding Inference in %s %s ends",
+        DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s ends",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
     }
@@ -793,17 +793,17 @@ SWLFIfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node SWLFIassign( node *arg_node, info *arg_info)
+ * @fn node AWLFIassign( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
  *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
  *
  *****************************************************************************/
 node *
-SWLFIassign (node *arg_node, info *arg_info)
+AWLFIassign (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("SWLFIassign");
+    DBUG_ENTER ("AWLFIassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -822,9 +822,9 @@ SWLFIassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIwith( node *arg_node, info *arg_info)
+ * @fn node *AWLFIwith( node *arg_node, info *arg_info)
  *
- * @brief applies SWLFI to a with-loop in a top-down manner.
+ * @brief applies AWLFI to a with-loop in a top-down manner.
  *
  *        When we return here, we will have counted all the
  *        references to any potential foldeeWL that we
@@ -835,11 +835,11 @@ SWLFIassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SWLFIwith (node *arg_node, info *arg_info)
+AWLFIwith (node *arg_node, info *arg_info)
 {
     info *old_arg_info;
 
-    DBUG_ENTER ("SWLFIwith");
+    DBUG_ENTER ("AWLFIwith");
 
     old_arg_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
@@ -847,7 +847,7 @@ SWLFIwith (node *arg_node, info *arg_info)
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
     INFO_FOLDERWL (arg_info) = arg_node;
 
-    DBUG_PRINT ("SWLFI", ("Resetting WITH_REFERENCED_FOLDERWL, etc."));
+    DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_FOLDERWL, etc."));
     WITH_REFERENCED_FOLD (arg_node) = 0;
     WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
     WITH_REFERENCES_FOLDED (arg_node) = 0;
@@ -865,15 +865,15 @@ SWLFIwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIcode( node *arg_node, info *arg_info)
+ * @fn node *AWLFIcode( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-SWLFIcode (node *arg_node, info *arg_info)
+AWLFIcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIcode");
+    DBUG_ENTER ("AWLFIcode");
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
@@ -883,15 +883,15 @@ SWLFIcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIpart( node *arg_node, info *arg_info)
+ * @fn node *AWLFIpart( node *arg_node, info *arg_info)
  *
  * @brief Traverse each partition of a WL.
  *
  *****************************************************************************/
 node *
-SWLFIpart (node *arg_node, info *arg_info)
+AWLFIpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIpart");
+    DBUG_ENTER ("AWLFIpart");
 
     INFO_PART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
@@ -904,15 +904,15 @@ SWLFIpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIids( node *arg_node, info *arg_info)
+ * @fn node *AWLFIids( node *arg_node, info *arg_info)
  *
  * @brief set current With-Loop level as ids defDepth attribute
  *
  *****************************************************************************/
 node *
-SWLFIids (node *arg_node, info *arg_info)
+AWLFIids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIids");
+    DBUG_ENTER ("AWLFIids");
 
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -924,7 +924,7 @@ SWLFIids (node *arg_node, info *arg_info)
  *  (cloned from SSAWLI)
  *
  * function:
- *   node *SWLFIid(node *arg_node, info *arg_info)
+ *   node *AWLFIid(node *arg_node, info *arg_info)
  *
  * description:
  *   If this Id is a reference to a WL (N_with) we want to increment
@@ -934,19 +934,19 @@ SWLFIids (node *arg_node, info *arg_info)
  *   We want to end up with WITH_REFERENCED_FOLD counting only
  *   references from a single WL. Hence, the checking on
  *   WITH_REFERENCED_FOLDERWL
- *   SWLF will disallow folding if WITH_REFERENCED_FOLD != AVIS_NEEDCOUNT.
+ *   AWLF will disallow folding if WITH_REFERENCED_FOLD != AVIS_NEEDCOUNT.
  *
  ******************************************************************************/
 node *
-SWLFIid (node *arg_node, info *arg_info)
+AWLFIid (node *arg_node, info *arg_info)
 {
     node *assignn;
     node *foldeewl;
 
-    DBUG_ENTER ("SWLFIid");
+    DBUG_ENTER ("AWLFIid");
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
 #ifdef NOISY
-    DBUG_PRINT ("SWLFI", ("SWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_PRINT ("AWLFI", ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     foldeewl = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
@@ -957,7 +957,7 @@ SWLFIid (node *arg_node, info *arg_info)
         /* First reference to this WL. */
         WITH_REFERENCED_FOLDERWL (foldeewl) = INFO_FOLDERWL (arg_info);
         WITH_REFERENCED_FOLD (foldeewl) = 0;
-        DBUG_PRINT ("SWLFI", ("SWLFIid found first reference to %s",
+        DBUG_PRINT ("AWLFI", ("AWLFIid found first reference to %s",
                               AVIS_NAME (ID_AVIS (arg_node))));
     }
 
@@ -969,12 +969,12 @@ SWLFIid (node *arg_node, info *arg_info)
     if ((NULL != foldeewl) && (NULL != INFO_FOLDERWL (arg_info))
         && (WITH_REFERENCED_FOLDERWL (foldeewl) == INFO_FOLDERWL (arg_info))) {
         (WITH_REFERENCED_FOLD (foldeewl)) += 1;
-        DBUG_PRINT ("SWLFI",
-                    ("SWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
+        DBUG_PRINT ("AWLFI",
+                    ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
                      AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (foldeewl)));
     } else {
 #ifdef NOISY
-        DBUG_PRINT ("SWLFI", ("SWLFIid %s is not defined by a WL",
+        DBUG_PRINT ("AWLFI", ("AWLFIid %s is not defined by a WL",
                               AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
     }
@@ -984,7 +984,7 @@ SWLFIid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFIprf( node *arg_node, info *arg_info)
+ * @fn node *AWLFIprf( node *arg_node, info *arg_info)
  *
  * @brief
  *   Examine all _sel_VxA_(idx, foldeeWL) primitives to see if
@@ -992,7 +992,7 @@ SWLFIid (node *arg_node, info *arg_info)
  *   the _sel_ is within a potential folderWL.
  *
  *   We don't find out if all the conditions for folding can
- *   be met until this phase completes, so SWLF makes the
+ *   be met until this phase completes, so AWLF makes the
  *   final decision on folding.
  *
  *   When we do encounter an eligible sel() operation,
@@ -1004,29 +1004,29 @@ SWLFIid (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SWLFIprf (node *arg_node, info *arg_info)
+AWLFIprf (node *arg_node, info *arg_info)
 {
     node *z;
 
-    DBUG_ENTER ("SWLFIprf");
+    DBUG_ENTER ("AWLFIprf");
 
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
-        INFO_SWLFOLDABLEFOLDEE (arg_info) = checkFolderFoldable (arg_node, arg_info)
+        INFO_AWLFOLDABLEFOLDEE (arg_info) = checkFolderFoldable (arg_node, arg_info)
                                             && checkFoldeeFoldable (arg_node, arg_info)
                                             && checkBothFoldable (arg_node, arg_info);
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         /* Maybe attach intersect calculations now. */
-        if ((INFO_SWLFOLDABLEFOLDEE (arg_info))
+        if ((INFO_AWLFOLDABLEFOLDEE (arg_info))
             && (!isPrfArg1AttachIntersect (arg_node))) {
             z = attachIntersectCalc (arg_node, arg_info);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
             PRF_ARG1 (arg_node) = z;
-            DBUG_PRINT ("SWLFI", ("SWLFIprf inserted F_attachintersect at _sel_VxA_"));
+            DBUG_PRINT ("AWLFI", ("AWLFIprf inserted F_attachintersect at _sel_VxA_"));
         }
     }
 
@@ -1036,16 +1036,16 @@ SWLFIprf (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIcond(node *arg_node, info *arg_info)
+ *   node *AWLFIcond(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse conditional parts in the given order.
  *
  ******************************************************************************/
 node *
-SWLFIcond (node *arg_node, info *arg_info)
+AWLFIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIcond");
+    DBUG_ENTER ("AWLFIcond");
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
@@ -1057,7 +1057,7 @@ SWLFIcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFImodarray(node *arg_node, info *arg_info)
+ *   node *AWLFImodarray(node *arg_node, info *arg_info)
  *
  * description:
  *   if op is modarray( foldee_wl), we increment
@@ -1065,14 +1065,14 @@ SWLFIcond (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SWLFImodarray (node *arg_node, info *arg_info)
+AWLFImodarray (node *arg_node, info *arg_info)
 {
     node *foldeewlid;
     node *foldeeavis;
     node *foldeeassign;
     node *foldeewl;
 
-    DBUG_ENTER ("SWLFImodarray");
+    DBUG_ENTER ("AWLFImodarray");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -1082,7 +1082,7 @@ SWLFImodarray (node *arg_node, info *arg_info)
         foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (foldeeavis));
         foldeewl = LET_EXPR (foldeeassign);
         (WITH_REFERENCED_FOLD (foldeewl))++;
-        DBUG_PRINT ("SWLFI", ("SWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+        DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
                               AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (foldeewl)));
     }
 
@@ -1092,15 +1092,15 @@ SWLFImodarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIlet(node *arg_node, info *arg_info)
+ *   node *AWLFIlet(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFIlet (node *arg_node, info *arg_info)
+AWLFIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIlet");
+    DBUG_ENTER ("AWLFIlet");
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -1108,15 +1108,15 @@ SWLFIlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIblock(node *arg_node, info *arg_info)
+ *   node *AWLFIblock(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFIblock (node *arg_node, info *arg_info)
+AWLFIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIblock");
+    DBUG_ENTER ("AWLFIblock");
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -1124,16 +1124,16 @@ SWLFIblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIavis(node *arg_node, info *arg_info)
+ *   node *AWLFIavis(node *arg_node, info *arg_info)
  *
  * description:
  *    Zero the AVIS_NEEDCOUNT values before traversing any code.
  *
  ******************************************************************************/
 node *
-SWLFIavis (node *arg_node, info *arg_info)
+AWLFIavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIavis");
+    DBUG_ENTER ("AWLFIavis");
 
     AVIS_NEEDCOUNT (arg_node) = 0;
     AVIS_ISWLFOLDED (arg_node) = FALSE;
@@ -1144,15 +1144,15 @@ SWLFIavis (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIfuncond( node *arg_node, info *arg_info)
+ *   node *AWLFIfuncond( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFIfuncond (node *arg_node, info *arg_info)
+AWLFIfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIfuncond");
+    DBUG_ENTER ("AWLFIfuncond");
 
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
@@ -1164,15 +1164,15 @@ SWLFIfuncond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SWLFIwhile( node *arg_node, info *arg_info)
+ *   node *AWLFIwhile( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 node *
-SWLFIwhile (node *arg_node, info *arg_info)
+AWLFIwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWLFIwhile");
+    DBUG_ENTER ("AWLFIwhile");
 
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
@@ -1181,5 +1181,5 @@ SWLFIwhile (node *arg_node, info *arg_info)
 }
 
 /** <!--********************************************************************-->
- * @}  <!-- Symbolic with loop folding inference -->
+ * @}  <!-- Algebraic with loop folding inference -->
  *****************************************************************************/
