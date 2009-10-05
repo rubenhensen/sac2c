@@ -983,6 +983,26 @@ TUleShapeInfo (ntype *a, ntype *b)
     DBUG_RETURN (result);
 }
 
+bool
+TUeqElementSize (ntype *a, ntype *b)
+{
+    bool result;
+
+    DBUG_ENTER ("TUeqElementSize");
+
+    DBUG_ASSERT (TYisArray (a), "first argument is not an array type");
+    DBUG_ASSERT (TYisArray (b), "second argument is not an array type");
+    DBUG_ASSERT (TYisSimple (TYgetScalar (a)),
+                 "first argument is not an array of a built-in type");
+    DBUG_ASSERT (TYisSimple (TYgetScalar (b)),
+                 "second argument is not an array of a built-in type");
+
+    result = global.basetype_size[TYgetSimpleType (TYgetScalar (a))]
+             == global.basetype_size[TYgetSimpleType (TYgetScalar (b))];
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn ntype *TUcomputeImplementationType( ntype *ty)

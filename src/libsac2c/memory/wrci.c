@@ -149,12 +149,12 @@ ElimDupes (node *exprs)
 }
 
 static bool
-TypeMatch (ntype *t1, ntype *t2)
+ShapeMatch (ntype *t1, ntype *t2)
 {
     ntype *aks1, *aks2;
     bool res;
 
-    DBUG_ENTER ("TypeMatch");
+    DBUG_ENTER ("ShapeMatch");
 
     aks1 = TYeliminateAKV (t1);
     aks2 = TYeliminateAKV (t2);
@@ -177,8 +177,9 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
 
-        if (TypeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
-            || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))
+        if (((ShapeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+              || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids)))
+             && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids)))
             || ((modarray != NULL)
                 && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
@@ -198,7 +199,8 @@ MatchingPRCs (node *rcs, node *ids)
     if (rcs != NULL) {
         match = MatchingPRCs (EXPRS_NEXT (rcs), ids);
 
-        if (TUravelsHaveSameStructure (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))) {
+        if (TUravelsHaveSameStructure (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+            && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
         }
     }

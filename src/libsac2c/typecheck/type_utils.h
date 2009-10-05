@@ -40,6 +40,7 @@ extern bool TUisBoxed (ntype *type);
 extern bool TUisPolymorphic (ntype *type);
 extern bool TUeqShapes (ntype *a, ntype *b);
 extern bool TUleShapeInfo (ntype *a, ntype *b);
+extern bool TUeqElementSize (ntype *a, ntype *b);
 extern bool TUravelsHaveSameStructure (ntype *a, ntype *b);
 extern ntype *TUstripImplicitNestingOperations (ntype *poly);
 extern ntype *TUcomputeImplementationType (ntype *ty);
