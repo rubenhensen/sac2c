@@ -316,7 +316,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
     node *new_node;
     node *shpprf2 = NULL;
     node *avis;
-    node *array;
+    node *array = NULL;
 
     DBUG_ENTER ("IVESPLITprf");
 
@@ -324,13 +324,15 @@ IVESPLITprf (node *arg_node, info *arg_info)
     case F_sel_VxA:
     case F_modarray_AxVxS:
     case F_modarray_AxVxA:
-        if ((NULL != PRF_ARG2 (arg_node)) && (N_id == NODE_TYPE (PRF_ARG2 (arg_node)))) {
-            if (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL) {
-                shpprf2 = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
-            } else if ((TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
-                       || (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
-                shpprf2 = SHshape2Array (
-                  TYgetShape (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))));
+        array
+          = (PRF_PRF (arg_node) == F_sel_VxA) ? PRF_ARG2 (arg_node) : PRF_ARG1 (arg_node);
+
+        if ((NULL != array) && (N_id == NODE_TYPE (array))) {
+            if (AVIS_SHAPE (ID_AVIS (array)) != NULL) {
+                shpprf2 = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (array)));
+            } else if ((TYisAKS (AVIS_TYPE (ID_AVIS (array))))
+                       || (TYisAKV (AVIS_TYPE (ID_AVIS (array))))) {
+                shpprf2 = SHshape2Array (TYgetShape (AVIS_TYPE (ID_AVIS (array))));
             }
         }
         if (NULL == shpprf2) {
@@ -338,20 +340,6 @@ IVESPLITprf (node *arg_node, info *arg_info)
             CTIwarn ("Insufficient symbolic shape information available. "
                      "Using explicit information to split index operation.");
 #endif
-            switch (PRF_PRF (arg_node)) {
-            case F_modarray_AxVxS:
-            case F_modarray_AxVxA:
-                array = PRF_ARG1 (arg_node);
-                break;
-
-            case F_sel_VxA:
-                array = PRF_ARG2 (arg_node);
-                break;
-
-            default:
-                array = NULL;
-            }
-
             shpprf2 = TBmakeId (AddShapeComputation (array, arg_info));
         }
         break;
@@ -373,21 +361,10 @@ IVESPLITprf (node *arg_node, info *arg_info)
             break;
 
         case F_modarray_AxVxS:
-            avis = AddVect2Offset (PRF_ARG2 (arg_node), shpprf2, arg_info);
-
-            new_node = TCmakePrf3 (F_idx_modarray_AxSxS, PRF_ARG1 (arg_node),
-                                   TBmakeId (avis), PRF_ARG3 (arg_node));
-
-            PRF_ARG1 (arg_node) = NULL;
-            PRF_ARG3 (arg_node) = NULL;
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = new_node;
-            break;
-
         case F_modarray_AxVxA:
             avis = AddVect2Offset (PRF_ARG2 (arg_node), shpprf2, arg_info);
 
-            new_node = TCmakePrf3 (F_idx_modarray_AxSxA, PRF_ARG1 (arg_node),
+            new_node = TCmakePrf3 (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
                                    TBmakeId (avis), PRF_ARG3 (arg_node));
 
             PRF_ARG1 (arg_node) = NULL;
