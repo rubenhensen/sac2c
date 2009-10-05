@@ -7621,6 +7621,16 @@ N_structdef :
             </target>
           </targets>
         </son>
+        <son name="Initial" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <range from="wlt_wlsd" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Fundef" inconstructor="yes">
