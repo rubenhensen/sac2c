@@ -16,7 +16,7 @@
 #include "new_types.h"
 #include "globals.h"
 
-#include "variablepropagation.h"
+#include "variable_propagation.h"
 
 /*
  * optimization phase: Variable Propagation (VP)

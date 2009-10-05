@@ -288,7 +288,7 @@ CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneF
                global.lacinline, opt, cyc)
 
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
-               global.optimize.docvp, opt, cyc)
+               global.optimize.dovp, opt, cyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
                WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, cyc)
@@ -471,7 +471,7 @@ CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneF
                global.lacinline, opt, saacyc)
 
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
-               global.optimize.docvp, opt, saacyc)
+               global.optimize.dovp, opt, saacyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
                WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
@@ -612,10 +612,10 @@ SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
 SUBPHASE (ivevp, "Propagating variables (for IVE)", VPdoVarPropagation,
-          global.optimize.doive &&global.optimize.docvp, opt)
+          global.optimize.doive &&global.optimize.dovp, opt)
 
-SUBPHASE (ivecp, "Propagating constants (for IVE)", CVPdoConstVarPropagation,
-          global.optimize.doive &&global.optimize.docvp, opt)
+SUBPHASE (ivecp, "Propagating constants (for IVE)", CPdoConstantPropagation,
+          global.optimize.doive &&global.optimize.docp, opt)
 
 SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
           IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
@@ -695,10 +695,9 @@ SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensio
 SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           global.backend == BE_mutc && global.optimize.dorw3, wlt)
 
-SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.docvp, wlt)
+SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
-SUBPHASE (cp, "Propagating constants", CVPdoConstVarPropagation, global.optimize.docvp,
-          wlt)
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)

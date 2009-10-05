@@ -16,51 +16,50 @@
 #include "new_types.h"
 #include "globals.h"
 
-#include "ConstVarPropagation.h"
+#include "constant_propagation.h"
 
 /*
- * optimization phase: Constant and Variable Propagation (CVP)
+ * optimization phase: Constant Propagation (CP)
  *
- * 2009-10-05: This traversal SHOULD no longer handle variable propagation.
- * That is now handled by VP. This code needs trimming, so that
- * it only propagages constants. That has not been done yet. Sorry...
- * Theoretically, this traversal is only called post-optimizer, so
- * the VP part should be harmless.
- *
- * CVP is used to eliminate the usage of assignment arguments (RHS N_id nodes),
+ * CP is used to eliminate the usage of assignment arguments (RHS N_id nodes),
  * whose definition has only a single value (N_id, N_num, ...) as a right hand
  * side. So we can avoid the usage of unnecessary copy assignments.
+ * This phase is only used post-optimization. During optimization,
+ * we never want to drive simple scalars (N_num, N_char...) into
+ * RHS nodes.
  *
  * Example:
  *    a = 7;                a = 7;
  *    b = a;          =>    b = a;
- *    c = fun(b);           c = fun(a);
+ *    c = fun(b);           c = fun(7);
  *
- * Obsolete definitions of assignments are removed by the DeadCodeRemoval.
+ * Obsolete definitions of assignments are removed by DeadCodeRemoval.
  *
  * Implementation:
  *   This optimization phase is rather simple.
  *   For every function (fundef-node) we start a top-down traversal of the AST.
  *   We traverse in every assignment until we reach an id node. For every id
- *   node we either try do replace it with a constant scalar / constant array
- *   if it is allowed in the current context, or with another id.
+ *   node we try to replace it with a constant scalar / constant array
+ *   if it is allowed in the current context.
+ *
+ *   Some of the PROP_nothing traversals can likely be deleted now.
  */
 
 /*
- * NOTE: Similar optimizations are implemented in SSACSE.[ch] and
- *       SSAConstantFolding.[ch].
- *       CVP should separate the constant and variable propagation out of these
- *       optimizations, because the scope between them is different.
+ * NOTE: Similar optimizations are implemented in SSACSE.[ch],
+ *       SSAConstantFolding.[ch], and variable_propagation.[ch].
+ *       CP performs constant propagation only
+ *       because the scope between them is different.
  *       But because the implementation of SSACSE and SSAConstantFolding
  *       remains untouched, they still provide these functionality.
  *       So its enough to change the implemenation of this file if you want to
- *       modify the constant and variable propagation. Only if the
+ *       modify the constant and variable propagation. If the
  *       implementation of SSACSE or SSAConstantFolding interfere with your
- *       modifications, you have to take a look at these files...
+ *       modifications, you should take a look at these files...
+ *
  */
 
 const int PROP_nothing = 0;
-const int PROP_variable = 1;
 const int PROP_scalarconst = 2;
 const int PROP_arrayconst = 4;
 const int PROP_array = 8;
@@ -133,19 +132,19 @@ IsScalarConst (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node* CVParray( node *arg_node, info *arg_info)
+ *   node* CParray( node *arg_node, info *arg_info)
  *
  * description:
  *   propagate scalars and variables into ARRAY_AELEMS
  *
  *****************************************************************************/
 node *
-CVParray (node *arg_node, info *arg_info)
+CParray (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVParray");
+    DBUG_ENTER ("CParray");
 
-    INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+    INFO_PROPMODE (arg_info) = PROP_scalarconst;
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -153,36 +152,33 @@ CVParray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CVPavis( node *arg_node, info *arg_info)
+ * @fn node *CPavis( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPavis (node *arg_node, info *arg_info)
+CPavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPavis");
+    DBUG_ENTER ("CPavis");
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
 
     if (AVIS_DIM (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         AVIS_DIM (arg_node) = TRAVdo (AVIS_DIM (arg_node), arg_info);
     }
 
     if (AVIS_SHAPE (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info)
-          = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_SHAPE (arg_node) = TRAVdo (AVIS_SHAPE (arg_node), arg_info);
     }
 
     if ((AVIS_MINVAL (arg_node) != NULL) && (arg_node != AVIS_MINVAL (arg_node))) {
-        INFO_PROPMODE (arg_info)
-          = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MINVAL (arg_node) = TRAVdo (AVIS_MINVAL (arg_node), arg_info);
     }
 
     if ((AVIS_MAXVAL (arg_node) != NULL) && (arg_node != AVIS_MAXVAL (arg_node))) {
-        INFO_PROPMODE (arg_info)
-          = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
     }
 
@@ -192,19 +188,19 @@ CVPavis (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CVPreturn(node *arg_node, info *arg_info)
+ *   node* CPreturn(node *arg_node, info *arg_info)
  *
  * description:
- *   only propagate variables into RETURN_EXPRS
+ *   (only propagate variables into RETURN_EXPRS)
  *
  *****************************************************************************/
 node *
-CVPreturn (node *arg_node, info *arg_info)
+CPreturn (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPreturn");
+    DBUG_ENTER ("CPreturn");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -213,19 +209,19 @@ CVPreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CVPfuncond(node *arg_node, info *arg_info)
+ *   node* CPfuncond(node *arg_node, info *arg_info)
  *
  * description:
- *   only propagate variables into sons of N_funcond
+ *   (only propagate variables into sons of N_funcond)
  *
  *****************************************************************************/
 node *
-CVPfuncond (node *arg_node, info *arg_info)
+CPfuncond (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPfuncond");
+    DBUG_ENTER ("CPfuncond");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -234,21 +230,20 @@ CVPfuncond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPid( node *arg_node, info *arg_info)
+ *   node *CPid( node *arg_node, info *arg_info)
  *
  * description:
  *   Depending on the propagation mode, try to replace this N_id node by
  *    - a constant scalar ( PROP_scalarconst is set)
  *    - an array constant ( PROP_arrayconst is set)
- *    - another identifier ( PROP_variable is set)
  *
  *****************************************************************************/
 node *
-CVPid (node *arg_node, info *arg_info)
+CPid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CVPid");
+    DBUG_ENTER ("CPid");
 
     avis = ID_AVIS (arg_node);
     if (TYisAKV (AVIS_TYPE (avis))
@@ -258,24 +253,22 @@ CVPid (node *arg_node, info *arg_info)
                 && (TYgetDim (AVIS_TYPE (avis)) == 0)))) {
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
-        global.optcounters.cvp_expr += 1;
+        global.optcounters.cp_expr += 1;
     } else {
         if ((AVIS_SSAASSIGN (avis) != NULL)
-            && (((INFO_PROPMODE (arg_info) & PROP_variable)
-                 && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id))
-                || ((INFO_PROPMODE (arg_info) & PROP_array)
-                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_array))
+            && (((INFO_PROPMODE (arg_info) & PROP_array)
+                 && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_array))
                 || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
                     && (IsScalarConst (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))))) {
             arg_node = FREEdoFreeNode (arg_node);
-            DBUG_PRINT ("CVP", ("CVPid replacing %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("CP", ("CPid replacing %s", AVIS_NAME (avis)));
             if (N_id == NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis)))) {
-                DBUG_PRINT ("CVP",
+                DBUG_PRINT ("CP",
                             ("by %s",
                              AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))));
             }
             arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
-            global.optcounters.cvp_expr += 1;
+            global.optcounters.cp_expr += 1;
         }
     }
 
@@ -285,7 +278,7 @@ CVPid (node *arg_node, info *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node* CVPprf(node *arg_node, info *arg_info)
+ *   node* CPprf(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the arguments of the prf node
@@ -295,10 +288,10 @@ CVPid (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CVPprf (node *arg_node, info *arg_info)
+CPprf (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPprf");
+    DBUG_ENTER ("CPprf");
 
     /*
      * Depending on the primitive function, different arguments
@@ -329,17 +322,18 @@ CVPprf (node *arg_node, info *arg_info)
     case F_attachintersect:
         /*
          * Only propagate variables here
+         *  This can probably be deleted...
          */
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         break;
 
     case F_saabind:
-        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
 
@@ -349,10 +343,10 @@ CVPprf (node *arg_node, info *arg_info)
         /*
          * Only the first argument may be a scalar constant
          */
-        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         EXPRS_EXPRS2 (PRF_ARGS (arg_node))
           = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
@@ -362,19 +356,19 @@ CVPprf (node *arg_node, info *arg_info)
          * The first two arguments of modarray must be variable
          * the other one can as well be a constant scalar
          */
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
 
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
 
         break;
 
     /**
      * Although the following operations do not exist during the
-     * optimisations, CVP needs to be able to handle them correctly
-     * as CVP is run after IVE, as well!
+     * optimisations, CP needs to be able to handle them correctly
+     * as CP is run after IVE, as well!
      */
     case F_idxs2offset:
     case F_vect2offset:
@@ -387,10 +381,10 @@ CVPprf (node *arg_node, info *arg_info)
          * must be identifiers.
          */
 
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_arrayconst | PROP_array;
+        INFO_PROPMODE (arg_info) = PROP_arrayconst | PROP_array;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
         break;
 
@@ -401,10 +395,10 @@ CVPprf (node *arg_node, info *arg_info)
          * The second argument of idx_sel must be variable
          * the others can as well be constant scalars
          */
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
@@ -417,10 +411,10 @@ CVPprf (node *arg_node, info *arg_info)
          * The first argument of idx_modarray must be variable
          * the others can as well be constant scalars
          */
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
@@ -431,7 +425,7 @@ CVPprf (node *arg_node, info *arg_info)
          * In the default case, NO prf arguments may be constant scalars
          * during saacyc optimization and thereabouts.
          */
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -440,7 +434,7 @@ CVPprf (node *arg_node, info *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPap(node *arg_node, info *arg_info)
+ *   node* CPap(node *arg_node, info *arg_info)
  *
  * description:
  *   only propagate variables into the application arguments
@@ -448,12 +442,12 @@ CVPprf (node *arg_node, info *arg_info)
  ********************************************************************/
 
 node *
-CVPap (node *arg_node, info *arg_info)
+CPap (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPap");
+    DBUG_ENTER ("CPap");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -462,7 +456,7 @@ CVPap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPcond(node *arg_node, info *arg_info)
+ *   node *CPcond(node *arg_node, info *arg_info)
  *
  * description:
  *   only propagate variables into COND_COND
@@ -470,11 +464,11 @@ CVPap (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CVPcond (node *arg_node, info *arg_info)
+CPcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPcond");
+    DBUG_ENTER ("CPcond");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
@@ -485,32 +479,32 @@ CVPcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CVPgenerator( node *arg_node, info *arg_info)
+ * @fn node *CPgenerator( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPgenerator (node *arg_node, info *arg_info)
+CPgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPgenerator");
+    DBUG_ENTER ("CPgenerator");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
 
     if (GENERATOR_STEP (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         GENERATOR_STEP (arg_node) = TRAVdo (GENERATOR_STEP (arg_node), arg_info);
     }
 
     if (GENERATOR_WIDTH (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
     }
 
     if (GENERATOR_GENWIDTH (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         GENERATOR_GENWIDTH (arg_node) = TRAVdo (GENERATOR_GENWIDTH (arg_node), arg_info);
     }
 
@@ -520,7 +514,7 @@ CVPgenerator (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPgenarray(node *arg_node, info *arg_info)
+ *   node *CPgenarray(node *arg_node, info *arg_info)
  *
  * description:
  *   GENARRAY_SHAPE may be an array constant
@@ -528,15 +522,15 @@ CVPgenerator (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPgenarray (node *arg_node, info *arg_info)
+CPgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPgenarray");
+    DBUG_ENTER ("CPgenarray");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_variable;
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
@@ -550,18 +544,18 @@ CVPgenarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPmodarray(node *arg_node, info *arg_info)
+ *   node *CPmodarray(node *arg_node, info *arg_info)
  *
  * description:
  *   only variables are allowed in MODARRAY_ARRAY
  *
  *****************************************************************************/
 node *
-CVPmodarray (node *arg_node, info *arg_info)
+CPmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPmodarray");
+    DBUG_ENTER ("CPmodarray");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
@@ -572,19 +566,19 @@ CVPmodarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPfold(node *arg_node, info *arg_info)
+ *   node *CPfold(node *arg_node, info *arg_info)
  *
  * description:
  *  only variables are allowed as neutral elements
  *
  *****************************************************************************/
 node *
-CVPfold (node *arg_node, info *arg_info)
+CPfold (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPfold");
+    DBUG_ENTER ("CPfold");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
@@ -595,7 +589,7 @@ CVPfold (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPcode(node *arg_node, info *arg_info)
+ *   node *CPcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse codeblock and expression for each Ncode node
@@ -603,15 +597,15 @@ CVPfold (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPcode (node *arg_node, info *arg_info)
+CPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPcode");
+    DBUG_ENTER ("CPcode");
 
     /* traverse codeblock */
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /* traverse expression to do variable substitution */
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /* traverse to next node */
@@ -623,7 +617,7 @@ CVPcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPrange(node *arg_node, info *arg_info)
+ *   node *CPrange(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse body and expression for each range node
@@ -631,15 +625,15 @@ CVPcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPrange (node *arg_node, info *arg_info)
+CPrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPrange");
+    DBUG_ENTER ("CPrange");
 
     /* traverse body of range */
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
     /* traverse expression to do variable substitution */
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
     /* traverse to next node */
@@ -651,7 +645,7 @@ CVPrange (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CVPlet(node *arg_node, info *arg_info)
+ *   node* CPlet(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the expr of the let node
@@ -659,12 +653,12 @@ CVPrange (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CVPlet (node *arg_node, info *arg_info)
+CPlet (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPlet");
+    DBUG_ENTER ("CPlet");
 
-    INFO_PROPMODE (arg_info) = PROP_variable;
+    INFO_PROPMODE (arg_info) = PROP_nothing;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -673,7 +667,7 @@ CVPlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CVPassign(node *arg_node, info *arg_info)
+ *   node* CPassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the instr of the assign node
@@ -681,13 +675,12 @@ CVPlet (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CVPassign (node *arg_node, info *arg_info)
+CPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPassign");
+    DBUG_ENTER ("CPassign");
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -696,7 +689,7 @@ CVPassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CVPfundef(node *arg_node, info *arg_info)
+ *   node* CPfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the body of the fundef node
@@ -704,11 +697,11 @@ CVPassign (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-CVPfundef (node *arg_node, info *arg_info)
+CPfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("CVPfundef");
+    DBUG_ENTER ("CPfundef");
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -727,7 +720,7 @@ CVPfundef (node *arg_node, info *arg_info)
 /********************************************************************
  *
  * function:
- *   node* ConstVarPropagation(node *arg_node)
+ *   node* CPdoConstantPropagation(node *arg_node)
  *
  * description:
  *   This function is called to start this optimization.
@@ -736,17 +729,17 @@ CVPfundef (node *arg_node, info *arg_info)
  ********************************************************************/
 
 node *
-CVPdoConstVarPropagation (node *arg_node)
+CPdoConstantPropagation (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ConstVarPropagation");
+    DBUG_ENTER ("CPdoConstantPropagation");
 
     arg_info = MakeInfo ();
 
     INFO_ONEFUNDEF (arg_info) = FALSE;
 
-    TRAVpush (TR_cvp);
+    TRAVpush (TR_cp);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
@@ -758,7 +751,7 @@ CVPdoConstVarPropagation (node *arg_node)
 /********************************************************************
  *
  * function:
- *   node* ConstVarPropagationOneFundef(node *arg_node)
+ *   node* CPdoConstantPropagationOneFundef(node *arg_node)
  *
  * description:
  *   This function is called to start this optimization.
@@ -767,17 +760,17 @@ CVPdoConstVarPropagation (node *arg_node)
  ********************************************************************/
 
 node *
-CVPdoConstVarPropagationOneFundef (node *arg_node)
+CPdoConstantPropagationOneFundef (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ConstVarPropagation");
+    DBUG_ENTER ("CPdoConstantPropagationOneFundef");
 
     arg_info = MakeInfo ();
 
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
-    TRAVpush (TR_cvp);
+    TRAVpush (TR_cp);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 

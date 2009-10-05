@@ -1284,7 +1284,7 @@
           <node name="Withid" />
         </travnone>
       </traversal>
-      <traversal id="VP" name="Variable Propagation" default="sons" include="variablepropagation.h" >
+      <traversal id="VP" name="Variable Propagation" default="sons" include="variable_propagation.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
@@ -1305,7 +1305,7 @@
           <node name="Avis" />
 	</travuser>
       </traversal>
-      <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
+      <traversal id="CP" name="Constant Propagation" default="sons" include="constant_propagation.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
