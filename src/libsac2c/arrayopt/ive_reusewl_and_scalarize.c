@@ -6,6 +6,9 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "new_types.h"
+#include "type_utils.h"
+#include "shape.h"
 #include "DupTree.h"
 #include "free.h"
 #include "str.h"
@@ -504,6 +507,7 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
     node *result;
     node *ivassign;
     node *idxs;
+    node *shape;
 
     DBUG_ENTER ("ReplaceByIdx2Offset");
 
@@ -517,12 +521,25 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array),
                  "ReplaceByIdx2Offset with non N_array AVIS_SSAASSIGN");
 
-    DBUG_PRINT ("IVERAS", ("replacing by idxs2offset"));
-
     idxs = ARRAY_AELEMS (ASSIGN_RHS (ivassign));
+    shape = PRF_ARG1 (arg_node);
 
-    result = TBmakePrf (F_idxs2offset, TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                    DUPdoDupTree (idxs)));
+    if ((TCcountExprs (idxs) == 1)
+        && (((NODE_TYPE (shape) == N_id) && (TUshapeKnown (AVIS_TYPE (ID_AVIS (shape))))
+             && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (shape))), 0) == 1))
+            || ((NODE_TYPE (shape) == N_array)
+                && (TCcountExprs (ARRAY_AELEMS (shape)) == 1)))) {
+        /* trivial case: the index is the offset :-) */
+        DBUG_PRINT ("IVERAS", ("replacing by trivial offset (1d case)"));
+
+        result = DUPdoDupTree (EXPRS_EXPR (idxs));
+    } else {
+        DBUG_PRINT ("IVERAS", ("replacing by idxs2offset"));
+
+        result
+          = TBmakePrf (F_idxs2offset, TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                                   DUPdoDupTree (idxs)));
+    }
 
     arg_node = FREEdoFreeNode (arg_node);
 
