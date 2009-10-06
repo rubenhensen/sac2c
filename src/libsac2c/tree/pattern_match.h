@@ -31,6 +31,8 @@ extern node *PMmultiExprs (int num_nodes, ...);
  * Pattern-DSL:
  */
 extern pattern *PMvar (int num_attribs, ...);
+
+extern pattern *PMany (int num_attribs, ...);
 extern pattern *PMconst (int num_attribs, ...);
 extern pattern *PMint (int num_attribs, ...);
 extern pattern *PMarray (int num_attribs, ...);

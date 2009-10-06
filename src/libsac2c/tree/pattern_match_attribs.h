@@ -15,6 +15,7 @@ typedef struct PATTR attrib;
  * generic attrib matchers:
  */
 extern attrib *PMAgetNode (node **match);
+extern attrib *PMAisNode (node **match);
 
 /**
  * attrib matchers for PMvar:

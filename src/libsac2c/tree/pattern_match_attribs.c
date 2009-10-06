@@ -133,6 +133,40 @@ PMAgetNode (node **match)
 
 /** <!--*******************************************************************-->
  *
+ * @fn attrib *PMAisNode( node **match)
+ *
+ * @brief generic attrib checks for pointer equality
+ *
+ *****************************************************************************/
+bool
+attribIsNode (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_ASSERT (*PATTR_N1 (attr) != NULL, "node in PMAisNode compared without"
+                                           "being set yet!");
+    DBUG_PRINT ("PMA", (PMASTART "PMAisNode( " F_PTR " ):", *PATTR_N1 (attr)));
+
+    res = (arg == *PATTR_N1 (attr));
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+
+    return (res);
+}
+
+attrib *
+PMAisNode (node **match)
+{
+    attrib *res;
+
+    DBUG_ASSERT (match != NULL, "PMAisNode called with NULL argument");
+    res = makeAttrib (N_module, attribIsNode);
+    PATTR_N1 (res) = match;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn attrib *PMAisVar( node **var)
  *
  * @brief attrib for PMvar checks for equality

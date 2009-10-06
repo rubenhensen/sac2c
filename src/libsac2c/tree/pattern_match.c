@@ -168,6 +168,7 @@
  * At the time being (2009-07-18) we support the following patterns:
  *
  * SINGLETON PATTERN:
+ * - PMany     matches any node      (BUT follows N_id nodes!)
  * - PMconst   matches any constant expression (could be N_num, N_array, etc)
  * - PMint     matches an N_num
  * - PMskip    matches ALL expressions left to be matched ( '...'-pattern)
@@ -855,6 +856,58 @@ PMvar (int num_attribs, ...)
     va_end (ap);
 
     PAT_DOFOLLOW (res) = FALSE;
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMany( int num_attribs, ... );
+ *
+ * @brief matches any node ...
+ *        - no inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+static node *
+anyMatcher (pattern *pat, node *stack)
+{
+    node *arg;
+
+    DBUG_ENTER ("anyMatcher");
+    DBUG_PRINT ("PM", (PMSTART "matching any node:", matching_level));
+
+    stack = extractOneArg (stack, &arg);
+    arg = skipVarDefs (arg);
+
+    if (arg != NULL) {
+
+        DBUG_PRINT ("PM",
+                    (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
+                     (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                     (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                     (NODE_TYPE (arg) == N_id ? "\"" : "")));
+
+        stack = genericAtribMatcher (pat, arg, stack);
+
+    } else {
+        DBUG_PRINT ("PM", (PMINDENT "nothing found!"));
+        stack = failMatch (stack);
+    }
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+
+    DBUG_RETURN (stack);
+}
+
+pattern *
+PMany (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_module, anyMatcher), FALSE, num_attribs, ap);
+    va_end (ap);
 
     return (res);
 }
