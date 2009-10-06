@@ -23,8 +23,6 @@
 #ifndef _SAC_STD_H_
 #define _SAC_STD_H_
 
-#include <stdlib.h>
-
 /*
  * Positional parameters for name tuples (nt):
  *   name,class,unique
