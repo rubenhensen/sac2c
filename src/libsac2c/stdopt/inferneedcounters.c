@@ -69,14 +69,26 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-bool
+/** <!--********************************************************************-->
+ *
+ * @fn static bool exclusionDueToHostTraversal( node *arg_node, info* arg_info)
+ *
+ * @brief Don't count references to array descriptors; only count
+ *        array value references, IFF in AWLFI.
+ *
+ * @param arg_node
+ *
+ * @return TRUE if reference should not be counted.
+ *
+ *****************************************************************************/
+static bool
 exclusionDueToHostTraversal (node *arg_node, info *arg_info)
 {
     bool res = FALSE;
     node *parent;
     DBUG_ENTER ("exclusionDueToHostTraversal");
 
-    if (INFO_TRAV (arg_info) == TR_awlf) {
+    if (INFO_TRAV (arg_info) == TR_awlfi) {
         parent = INFO_PRF (arg_info);
         if ((parent != NULL) && (NODE_TYPE (parent) == N_prf)) {
             switch
