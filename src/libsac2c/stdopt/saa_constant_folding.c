@@ -268,6 +268,8 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
     node *res = NULL;
     node *shpel;
     constant *argconst;
+    pattern *pat;
+    node *narray;
     int shape_elem;
 
     DBUG_ENTER ("SAACFprf_idx_shape_sel");
@@ -279,10 +281,14 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
         argconst = COfreeConstant (argconst);
 
         shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
-        if ((shp != NULL) && (NODE_TYPE (shp) == N_array)) {
-            shpel = TCgetNthExprsExpr (shape_elem, ARRAY_AELEMS (shp));
-            res = DUPdoDupTree (shpel);
-            DBUG_PRINT ("CF", ("idx_shape_sel replaced by N_array element"));
+        if (shp != NULL) {
+            pat = PMarray (1, PMAgetNode (&narray), 1, PMskip (0));
+            if (PMmatchFlatSkipExtrema (pat, shp)) {
+                shpel = TCgetNthExprsExpr (shape_elem, ARRAY_AELEMS (narray));
+                res = DUPdoDupTree (shpel);
+                DBUG_PRINT ("CF", ("idx_shape_sel replaced by N_array element"));
+            }
+            PMfree (pat);
         }
     }
     DBUG_RETURN (res);
