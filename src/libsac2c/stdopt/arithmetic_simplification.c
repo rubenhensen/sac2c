@@ -108,15 +108,11 @@ ContainedPrf (node *arg_node)
 
     DBUG_ENTER ("ContainedPrf");
 
-    pat = PMvar (1, PMAgetNode (&val), 0);
+    pat = PMany (1, PMAgetNode (&val), 0);
 
     /* chase back over assigns and guards, looking for F_esd_neg */
     if (PMmatchFlatSkipExtrema (pat, arg_node)) {
-        val = AVIS_SSAASSIGN (ID_AVIS (val));
-        if (NULL != val) {
-            val = LET_EXPR (ASSIGN_INSTR (val));
-            val = (N_prf == NODE_TYPE (val)) ? val : NULL;
-        }
+        val = (N_prf == NODE_TYPE (val)) ? val : NULL;
     }
     PMfree (pat);
 
