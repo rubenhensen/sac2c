@@ -413,7 +413,7 @@ isSameTypeShape (node *ida, node *idb)
  *      Insert a temp, its vardec, and an assign for id,
  *      along with the extrema values minv and maxv, using the
  *      guard function nprf. Typically, nprf will be
- *      F_attachextrema or F_attachextreman.
+ *      F_attachextrema.
  *
  *      We start with an N_id, id:
  *
@@ -459,11 +459,9 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     DBUG_ASSERT (N_id == NODE_TYPE (maxv), "IVEXIattachExtrema expected N_id for maxv");
 
     /* breaks in confusing manner. */
-    DBUG_ASSERT ((F_attachextreman == nprf)
-                   || (((F_attachextrema == nprf) && (isSameTypeShape (id, minv)))),
+    DBUG_ASSERT (((F_attachextrema == nprf) && (isSameTypeShape (id, minv))),
                  ("IVEXIattachExtrema type mismatch: id, minv"));
-    DBUG_ASSERT ((F_attachextreman == nprf)
-                   || (((F_attachextrema == nprf) && (isSameTypeShape (id, maxv)))),
+    DBUG_ASSERT (((F_attachextrema == nprf) && (isSameTypeShape (id, maxv))),
                  ("IVEXIattachExtrema type mismatch: id, maxv"));
     ivavis = ID_AVIS (id);
 

@@ -673,22 +673,17 @@ buildExtremaChain (node *exprs, int minmax)
  *
  * @params  arg_node: an N_let node pointing to an N_array node.
  *
- * @result: Consider an N_array:
+ * @result: Result is new RHS N_id for the N_let, or the original RHS.
+ *
+ *          We start with this N_let:
  *
  *               V = [ I, J, K];
  *
  *          If all N_array elements have non_null extrema,
- *          build LHS extrema values as follows:
+ *          we build LHS extrema values as follows:
  *
  *            minv = [ AVIS_MINVAL( I), AVIS_MINVAL( J), AVIS_MINVAL( K) ]
  *            maxv = [ AVIS_MAXVAL( I), AVIS_MAXVAL( J), AVIS_MAXVAL( K) ]
- *    CRAP
- *            I' = _attachextreman( I, minv, maxv);
- *            NB. minv and maxv are N_exprs chains in the guard.
- *            V = [ I', J, K];   NB. With minv and maxv as extrema of V.
- *
- *          The extrema are attached to I for convenience only.
- *   UNCRAP
  *            V' = [ I, J, K];
  *            V = _attachextrema( V', minv, maxv);
  *
@@ -697,27 +692,23 @@ buildExtremaChain (node *exprs, int minmax)
 static node *
 PropagateNarray (node *arg_node, info *arg_info)
 {
-    node *v;
-    node *lhsavis;
+    node *rhs;
     node *minv = NULL;
     node *maxv = NULL;
     node *exprs;
-    node *aelemI;
-    node *Iprime;
-    node *newexprs;
+    node *vprime;
     bool allex;
     int arrxrho;
 
     DBUG_ENTER ("PropagateNarray");
 
-    v = LET_EXPR (arg_node);
+    rhs = LET_EXPR (arg_node);
 
     /* Check that we have extrema for all array elements.
-     * We allow N_id elements only. All others are rejected.
-     * FIXME.  We may have to come back and extend this to support N_num nodes...
+     * All N_array elements must be N_id nodes.
      */
     allex = TRUE;
-    exprs = ARRAY_AELEMS (v);
+    exprs = ARRAY_AELEMS (rhs);
     DBUG_ASSERT (NULL != exprs, ("PropagateNarray got empty array joke"));
     allex = (NULL != exprs); /* No funny biz with [:int] */
     while (allex && (exprs != NULL)) {
@@ -728,51 +719,39 @@ PropagateNarray (node *arg_node, info *arg_info)
         }
         exprs = EXPRS_NEXT (exprs);
     }
+
     if (allex) {
         /* Build exprs chains of minima and maxima. */
-        minv = buildExtremaChain (ARRAY_AELEMS (v), 0);
-        maxv = buildExtremaChain (ARRAY_AELEMS (v), 1);
+        minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
+        maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
 
         /* At this point, we have two N_exprs chains of extrema.
          * Make these N_array nodes and give them names, then attach
          * them, via dataflow, to the N_let LHS.
          */
-        arrxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (v));
-        lhsavis = IDS_AVIS (LET_IDS (arg_node));
+        arrxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (rhs));
         minv = makeNarray (minv, arg_info, arrxrho);
         maxv = makeNarray (maxv, arg_info, arrxrho);
 
-        /*     I' = _attachextreman( I, minv, maxv);
-         *      V = [I', J, K];      NB. Decorated with minv, maxv.
-         */
-        aelemI = DUPdoDupNode (EXPRS_EXPR (ARRAY_AELEMS (v)));
-        DBUG_ASSERT (N_id == NODE_TYPE (aelemI),
-                     ("PropagateNarray expected N_id as N_array element"));
-
-        DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextrema"));
-        Iprime = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), aelemI,
-                                               &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info),
-                                               F_attachextreman, NULL));
-
         /*
-         *       V = [ I, J, K]; NB. With extrema on V.
+         *            V' = [ I, J, K];
+         *            V = _attachextrema( V', minv, maxv);
          *
          */
+        vprime = TBmakeId (AWLFIflattenExpression (rhs, &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   IDS_AVIS (LET_IDS (arg_node))));
+        AVIS_MINVAL (ID_AVIS (vprime)) = minv;
+        AVIS_MAXVAL (ID_AVIS (vprime)) = maxv;
 
-        newexprs = DUPdoDupTree (ARRAY_AELEMS (v));
-        FREEdoFreeNode (EXPRS_EXPR (newexprs));
-        EXPRS_EXPR (newexprs) = Iprime;
-
-        ARRAY_AELEMS (LET_EXPR (arg_node))
-          = FREEdoFreeTree (ARRAY_AELEMS (LET_EXPR (arg_node)));
-        ARRAY_AELEMS (LET_EXPR (arg_node)) = newexprs;
-
-        AVIS_MINVAL (lhsavis) = minv;
-        AVIS_MAXVAL (lhsavis) = maxv;
+        DBUG_PRINT ("IVEXP", ("PropagateNarray generated F_attachextrema"));
+        rhs = TBmakeId (IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), vprime,
+                                            &INFO_VARDECS (arg_info),
+                                            &INFO_PREASSIGNS (arg_info), F_attachextrema,
+                                            NULL));
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (rhs);
 }
 
 /******************************************************************************
@@ -794,51 +773,6 @@ isResultHasExtrema (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("isResultHasExtrema");
     z = isAvisHasExtrema (IDS_AVIS (LET_IDS (arg_node)));
-
-    DBUG_RETURN (z);
-}
-
-/******************************************************************************
- *
- * function:
- * static
- * node *ExtractedNarrayExtrema( node *arg_node, info *arg_info)
- *
- * description:
- *    The N_let arg_node RHS is an N_array.
- *    If element N_array[0] derives immediately from
- *    an F_attachextreman, then the extrema on the
- *    F_attachextrema belong to the N_array LHS.
- *
- * @params  arg_node: an N_let node.
- * @result:  Pointer to N_prf of the F_attachextreman, if it
- *           is of right one. Else NULL.
- *
- ******************************************************************************/
-static node *
-ExtractedNarrayExtrema (node *arg_node, info *arg_info)
-{
-    node *prf;
-    node *el0;
-    node *nar;
-    node *z = NULL;
-
-    DBUG_ENTER ("ExtractedNarrayExtrema");
-
-    nar = ARRAY_AELEMS (LET_EXPR (arg_node));
-    if (NULL != nar) { /* Empty array joke */
-        el0 = EXPRS_EXPR (nar);
-        if (N_id == NODE_TYPE (el0)) {
-            el0 = AVIS_SSAASSIGN (ID_AVIS (el0));
-            /* missing SSAASSIGN in N_ap parameter today FIXME */
-            if ((NULL != el0) && (N_let == NODE_TYPE (ASSIGN_INSTR (el0)))) {
-                prf = LET_EXPR (ASSIGN_INSTR (el0));
-                if ((N_prf == NODE_TYPE (prf)) && (F_attachextreman == PRF_PRF (prf))) {
-                    z = prf;
-                }
-            }
-        }
-    }
 
     DBUG_RETURN (z);
 }
@@ -1033,6 +967,8 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
  * @params: minv: the avis of the minv-calculating expression.
  * @params: maxv: the avis of the maxv-calculating expression.
  *
+ * @result: none
+ *
  ******************************************************************************/
 static void
 AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, node *maxv)
@@ -1050,6 +986,8 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
     ssas = AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node)));
     LET_IDS (arg_node) = TBmakeIds (newlhsavis, NULL);
     AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))) = ssas;
+    AVIS_DIM (newlhsavis) = DUPdoDupTree (AVIS_DIM (lhsavis));
+    AVIS_SHAPE (newlhsavis) = DUPdoDupTree (AVIS_SHAPE (lhsavis));
 
     /* We don't need this result. It's all done with smoke,
      * mirrors, and side effects.
@@ -1057,6 +995,9 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
     z = IVEXIattachExtrema (TBmakeId (minv), TBmakeId (maxv), TBmakeId (newlhsavis),
                             &INFO_VARDECS (arg_info), &INFO_POSTASSIGNS (arg_info),
                             F_attachextrema, lhsavis);
+    AVIS_MINVAL (newlhsavis) = minv;
+    AVIS_MAXVAL (newlhsavis) = maxv;
+
     DBUG_VOID_RETURN;
 }
 
@@ -1428,7 +1369,6 @@ IVEXPlet (node *arg_node, info *arg_info)
     node *rhs;
     node *lhsavis;
     node *rhsavis;
-    node *extr;
 
     DBUG_ENTER ("IVEXPlet");
 
@@ -1505,32 +1445,19 @@ IVEXPlet (node *arg_node, info *arg_info)
 
         /* We are unable to help these poor souls */
         case N_ap:
-
             break;
 
         case N_with:
             /* We have to descend into the depths here */
             rhs = TRAVdo (rhs, arg_info);
             LET_EXPR (arg_node) = rhs;
-
             break;
 
         case N_array:
-            /* If the LHS value is constant, this is easy */
-            lhsavis = IDS_AVIS (LET_IDS (arg_node));
-            if (TYisAKV (AVIS_TYPE (lhsavis))) {
-                AVIS_MINVAL (lhsavis) = lhsavis;
-                AVIS_MAXVAL (lhsavis) = lhsavis;
-            } else {
-                extr = ExtractedNarrayExtrema (arg_node, arg_info);
-                if (NULL != extr) {
-                    AVIS_MINVAL (lhsavis) = ID_AVIS (PRF_ARG2 (extr));
-                    AVIS_MAXVAL (lhsavis) = ID_AVIS (PRF_ARG3 (extr));
-                } else {
-                    arg_node = PropagateNarray (arg_node, arg_info);
-                }
+            if (!TYisAKV (AVIS_TYPE (lhsavis))) {
+                rhs = PropagateNarray (arg_node, arg_info);
+                LET_EXPR (arg_node) = rhs;
             }
-
             break;
 
         default:
@@ -1677,10 +1604,11 @@ IVEXPfundef (node *arg_node, info *arg_info)
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
+    INFO_FUNDEF (arg_info) = NULL;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    INFO_FUNDEF (arg_info) = NULL;
+    INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 

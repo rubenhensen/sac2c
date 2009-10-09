@@ -820,9 +820,10 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
         foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
         if (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with) {
             foldeewl = LET_EXPR (foldeeassign);
-            DBUG_PRINT ("AWLF", ("WL %s: AVIS_NEEDCOUNT=%d; AVIS_WL_NEEDCOUNT=%d",
-                                 AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
-                                 AVIS_WL_NEEDCOUNT (foldeeavis)));
+            DBUG_PRINT ("AWLF",
+                        ("folderWL %s: foldeeWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                         AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
+                         AVIS_WL_NEEDCOUNT (foldeeavis)));
 
             if (AVIS_NEEDCOUNT (foldeeavis) == AVIS_WL_NEEDCOUNT (foldeeavis)) {
                 foldeepart = FindMatchingPart (arg_node, arg_info, folderpart, foldeewl);
