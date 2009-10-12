@@ -1537,6 +1537,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_not_V:
     case F_neg_V:
     case F_abs_V:
+    case F_syncin:
+    case F_syncout:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
@@ -2391,7 +2393,9 @@ EMALrange (node *arg_node, info *arg_info)
          * anymore, so lets free both
          */
         INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
-        RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
+        if (RANGE_IDXS (arg_node) != NULL) {
+            RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
+        }
 
         if (assign != NULL) {
             BLOCK_INSTR (RANGE_BODY (arg_node))

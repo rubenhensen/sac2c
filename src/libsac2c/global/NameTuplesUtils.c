@@ -17,7 +17,7 @@
 
 /** <!--********************************************************************-->
  *
- * @fn mutcStorageClass TBsimpletype2mutcStorageClass( simpletype st)
+ * @fn mutcStorageClass simpletype2mutcStorageClass( simpletype st)
  *
  *   @brief  Convert a simpletype into mutcStorageClass
  *
@@ -228,7 +228,13 @@ NTUgetMutcScopeFromTypes (types *type)
         DBUG_ASSERT ((0), "illegal scope found!");
         z = C_unknowno;
     } else {
-        z = C_global;
+        switch (TYPES_MUTC_SCOPE (type)) {
+        case MUTC_SHARED:
+            z = C_shared;
+            break;
+        default:
+            z = C_global;
+        }
     }
 
     DBUG_RETURN (z);
@@ -571,6 +577,9 @@ NTUgetMutcScopeFromNType (ntype *ntype)
     switch (TYgetMutcScope (ntype)) {
     case MUTC_GLOBAL:
         z = C_global;
+        break;
+    case MUTC_SHARED:
+        z = C_shared;
         break;
     case MUTC_LOCAL:
         z = C_shared;

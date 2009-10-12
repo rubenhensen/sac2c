@@ -14,6 +14,7 @@
  *
  *****************************************************************************/
 
+#define FOLD_SUPPORTED
 /** <!--********************************************************************-->
  *
  * @file wl_split_dimensions.c
@@ -59,7 +60,7 @@
  * INFO_WITH2_LHS:             Points to the lhs ids of the with2 loop that is
  *                             being transformed.
  * INFO_WITH2_LENGTHS:         Holds an N_set chain of N_exprs nodes encoding
- *                             the unrolling lenght of each dimension for each
+ *                             the unrolling length of each dimension for each
  *                             operator that has an index.
  * INFO_CURRENT_DIM:           Dimension currently being transformed.
  * INFO_CURRENT_SIZE:          Length of current subarray to be computed (used
@@ -83,6 +84,10 @@
  *                             be cleared before traversing on.
  * INFO_FUNDEF:                stores the current fundef node for compatability
  *                             with DupTree
+ * INFO_WITH3_NESTING:         The level of with3 body that we are creating
+ *                             1 is outer most body.
+ *
+ * NOT IMPLEMENTED TRAVERSAL
  *
  * INFO_NIP_RESULT:            Used in anonymous traversal NI to check for
  *                             not yet implemented with-loop operators.
@@ -107,6 +112,7 @@ struct INFO {
     node *preassigns;
     lut_t *lut;
     node *fundef;
+    int with3_nesting;
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
@@ -130,6 +136,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
+#define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
 
 static info *
 MakeInfo ()
@@ -156,6 +163,7 @@ MakeInfo ()
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = LUTgenerateLut ();
     INFO_FUNDEF (result) = NULL;
+    INFO_WITH3_NESTING (result) = 0;
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
@@ -785,6 +793,26 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *ATravCNWfold( node *arg_node, info *arg_info)
+ *
+ * @brief Copy fold. No changes needed
+ *
+ * @return copy of fold
+ *****************************************************************************/
+static node *
+ATravCNWfold (node *arg_node, info *arg_info)
+{
+    node *res;
+    DBUG_ENTER ("ATravCNWfols");
+
+    res = DUPdoDupNode (arg_node);
+
+    FOLD_NEXT (res) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ComputeNewWithops( node *withops, info *arg_info)
  *
  * @brief Computes a chain of withops for the with3 at the current nesting
@@ -799,12 +827,14 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
 static node *
 ComputeNewWithops (node *withops, info *arg_info)
 {
-    anontrav_t cnw_trav[6] = {{N_genarray, &ATravCNWgenarray},
-                              {N_modarray, &ATravCNWmodarray},
-                              {N_fold, &TRAVerror},
-                              {N_propagate, &TRAVerror},
-                              {N_break, &TRAVerror},
-                              {0, NULL}};
+    anontrav_t cnw_trav[6]
+      = {{N_genarray, &ATravCNWgenarray}, {N_modarray, &ATravCNWmodarray},
+#ifdef FOLD_SUPPORTED
+         {N_fold, &ATravCNWfold},
+#else
+                            {N_fold, &TRAVerror},
+#endif
+         {N_propagate, &TRAVerror},       {N_break, &TRAVerror},           {0, NULL}};
     node *ops;
 
     DBUG_ENTER ("ComputeNewWithops");
@@ -897,6 +927,42 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *ATravCNLfold( node *arg_node, info *arg_info)
+ *
+ * @brief return a new lhs with the same type as the old lhs.
+ *
+ * @param arg_node current withop
+ * @param arg_info current state of transformation in info structure
+ *
+ * @return lhs for this fold
+ *****************************************************************************/
+
+static node *
+ATravCNLfold (node *arg_node, info *arg_info)
+{
+    node *mylhs, *next, *avis;
+    DBUG_ENTER ("ATravCNLfold");
+    mylhs = INFO_WITH2_LHS (arg_info);
+
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_WITH2_LHS (arg_info)))));
+    AVIS_SSAASSIGN (avis) = INFO_WITH3_ASSIGN (arg_info);
+    /*
+     * go to next withop with next lhs. We have to reset the info structure
+     * again as it will be needed multiple times.
+     */
+    INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
+    next = TRAVopt (WITHOP_NEXT (arg_node), arg_info);
+    INFO_WITH2_LHS (arg_info) = mylhs;
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    mylhs = TBmakeIds (avis, next);
+
+    DBUG_RETURN (mylhs);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ComputeNewLhs( node *withops, info *arg_info)
  *
  * @brief Computes from a chain of withops and the current traversal state
@@ -912,7 +978,11 @@ ComputeNewLhs (node *withops, info *arg_info)
 {
     anontrav_t cnw_trav[6] = {{N_genarray, &ATravCNLgenOrModArray},
                               {N_modarray, &ATravCNLgenOrModArray},
+#ifdef FOLD_SUPPORTED
+                              {N_fold, &ATravCNLfold},
+#else
                               {N_fold, &TRAVerror},
+#endif
                               {N_propagate, &TRAVerror},
                               {N_break, &TRAVerror},
                               {0, NULL}};
@@ -1023,11 +1093,11 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
         inner = TBmakeNum (SHgetUnrLen (shape));
         shape = SHfreeShape (shape);
     } else {
+        node *size;
         DBUG_ASSERT ((GENARRAY_DEFAULT (arg_node) != NULL), "default element needed!");
 
-        inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
-                             TCmakePrf1 (F_size_A,
-                                         DUPdoDupNode (GENARRAY_DEFAULT (arg_node))),
+        size = TCmakePrf1 (F_size_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+        inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), size,
                              &INFO_PREASSIGNS (arg_info));
         inner = TBmakeId (inner);
     }
@@ -1094,6 +1164,30 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *ATravCDLfold( node *arg_node, info *arg_info)
+ *
+ * @brief Lengths are not needed for folds as there is no offsets.
+ *
+ * @param arg_node N_fold node
+ * @param arg_info info structure
+ *****************************************************************************/
+static node *
+ATravCDLfold (node *arg_node, info *arg_info)
+{
+    node *set, *lhs;
+    DBUG_ENTER ("ATravCDLfold");
+
+    lhs = INFO_WITH2_LHS (arg_info);
+
+    INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
+    set = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+
+    INFO_WITH2_LHS (arg_info) = lhs;
+
+    DBUG_RETURN (set);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ComputeLengths( node *withops, info *arg_info)
  *
  * @brief Computes the unrolling lengths of one element on each dimension of
@@ -1117,8 +1211,14 @@ ComputeLengths (node *withops, info *arg_info)
 {
     node *result;
 
-    anontrav_t len_trav[3]
-      = {{N_genarray, &ATravCDLgenarray}, {N_modarray, &ATravCDLmodarray}, {0, NULL}};
+    anontrav_t len_trav[4] = {{N_genarray, &ATravCDLgenarray},
+                              {N_modarray, &ATravCDLmodarray},
+#ifdef FOLD_SUPPORTED
+                              {N_fold, &ATravCDLfold},
+#else
+                              {N_fold, &TRAVerror},
+#endif
+                              {0, NULL}};
 
     DBUG_ENTER ("ComputeLengths");
 
@@ -1208,7 +1308,8 @@ UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengt
                                      SET_NEXT (lengths), assigns, localoffsets, arg_info);
 
         len = TCgetNthExprsExpr (dim, SET_MEMBER (lengths));
-        DBUG_ASSERT ((len != NULL), "no length found");
+
+        DBUG_ASSERT ((len != NULL), "No length found");
 
         if (IsNum (len) && (GetNum (len) == 1)) {
             /*
@@ -1357,6 +1458,105 @@ PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *CreateFoldAccumulatorsAvis( node *assign, node *lhs, node *ops,
+ *                                       info *arg_info)
+ *
+ * @brief Create a chain of ids for the lhs of accu
+ *
+ * @param assign     assign for the created avis ssaassign
+ * @param lhs        lhs of with2
+ * @param ops        with3's withops
+ * @param arg_info   state of current transformation
+ *
+ *****************************************************************************/
+static node *
+CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
+{
+    node *newLhs = NULL;
+    node *avis;
+    DBUG_ENTER ("CreateFoldAccumulatorsAvis");
+
+    DBUG_ASSERT ((lhs != NULL), "No left hand side (arg == NULL)");
+    DBUG_ASSERT ((ops != NULL), "No withops (arg == NULL)");
+
+    if (NODE_TYPE (ops) == N_fold) {
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (lhs))));
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+        AVIS_SSAASSIGN (avis) = assign;
+
+        FOLD_INITIAL (ops) = TBmakeId (avis);
+    }
+
+    if (IDS_NEXT (lhs) != NULL) {
+        newLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
+                                             arg_info);
+    }
+
+    newLhs = TBmakeIds (avis, newLhs);
+
+    DBUG_RETURN (newLhs);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn void CreateFoldAccumulators( node *index, node *lhs, node *ops,
+ *                                  info *arg_info)
+ *
+ * @brief Create
+ *          var = _accu_(iv);
+ *
+ * @param index      index in current range
+ * @param lhs        lhs of with2
+ * @param ops        with3's withops
+ * @param arg_info   state of current transformation
+ *
+ *****************************************************************************/
+static void
+CreateFoldAccumulators (node *index, node *lhs, node *ops, info *arg_info)
+{
+    node *accuLhs;
+    node *assign;
+    DBUG_ENTER ("CreateFoldAccumulators");
+
+    /* Create assign to be used in aviss ssaassign*/
+    assign = TBmakeAssign (NULL, NULL);
+
+    accuLhs = CreateFoldAccumulatorsAvis (assign, lhs, ops, arg_info);
+
+    if (accuLhs != NULL) {
+        ASSIGN_INSTR (assign)
+          = TBmakeLet (accuLhs,
+                       TBmakePrf (F_accu,
+                                  TBmakeExprs (TBmakeId (IDS_AVIS (index)), NULL)));
+
+        ASSIGN_NEXT (assign) = INFO_PREASSIGNS (arg_info);
+        INFO_PREASSIGNS (arg_info) = assign;
+    } else {
+        /* Did not need assign, cleanup */
+        assign = FREEdoFreeTree (assign);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static bool
+AnyFold (node *ops)
+{
+    bool ret = FALSE;
+    DBUG_ENTER ("AnyFold");
+
+    if (WITHOP_NEXT (ops) != NULL) {
+        ret = AnyFold (WITHOP_NEXT (ops));
+    }
+
+    ret = (NODE_TYPE (ops) == N_fold) || ret;
+    ;
+
+    DBUG_RETURN (ret);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *MakeRangeBody( node *outerindex, node *contents, node *size,
  *                          node **results, node **offsets, info *arg_info)
  *
@@ -1389,7 +1589,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     node *iv_assigns = NULL;
 
     DBUG_ENTER ("MakeRangeBody");
-
+    INFO_WITH3_NESTING (arg_info)++;
     /*
      * compute current offset
      */
@@ -1436,6 +1636,10 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
         arg_info = PopDim (arg_info);
     }
 
+    if (AnyFold (ops)) {
+        CreateFoldAccumulators (INFO_INDICES (arg_info), INFO_WITH2_LHS (arg_info), ops,
+                                arg_info);
+    }
     /*
      * produce with3
      */
@@ -1462,10 +1666,13 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     INFO_PREASSIGNS (arg_info) = old_preassigns;
     INFO_CURRENT_SIZE (arg_info) = old_size;
-    INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
+    if (INFO_OFFSETS (arg_info) != NULL) {
+        INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
+    }
     INFO_OFFSETS (arg_info) = old_offsets;
     INFO_WITH3_ASSIGN (arg_info) = old_with3_assign;
 
+    INFO_WITH3_NESTING (arg_info)--;
     DBUG_RETURN (body);
 }
 
@@ -1682,28 +1889,16 @@ ATravNImodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#if FOLD_SUPPORTED
-
 static node *
 ATravNIfold (node *arg_node, info *arg_info)
 {
-    ntype *type;
     DBUG_ENTER ("ATravNIfold");
-
-    type = IDS_NTYPE (INFO_NIP_LHS (arg_info));
-
-    if (!(TYisScalar (type) || TYisAKS (type))) {
-        /* Only support folds where we know the memory requirement of the result */
-        INFO_NIP_RESULT (arg_info) = TRUE;
-    }
 
     INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
-
-#endif
 
 static bool
 NotImplemented (node *with, info *arg_info)
@@ -1712,8 +1907,12 @@ NotImplemented (node *with, info *arg_info)
     info *info;
     anontrav_t nip_trav[6]
       = {{N_genarray, &ATravNIgenarray}, {N_modarray, &ATravNImodarray},
-         {N_fold, &ATravNIfail},         {N_break, &ATravNIfail},
-         {N_propagate, &ATravNIfail},    {0, NULL}};
+#ifdef FOLD_SUPPORTED
+         {N_fold, &ATravNIfold},
+#else
+         {N_fold, &ATravNIfail},
+#endif
+         {N_break, &ATravNIfail},        {N_propagate, &ATravNIfail},    {0, NULL}};
     anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
@@ -1930,8 +2129,13 @@ WLSDwith2 (node *arg_node, info *arg_info)
          * memory leaks.
          */
         INFO_INDICES (arg_info) = FREEdoFreeTree (INFO_INDICES (arg_info));
-        INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
-        INFO_WITH2_LENGTHS (arg_info) = FREEdoFreeTree (INFO_WITH2_LENGTHS (arg_info));
+        if (INFO_OFFSETS (arg_info) != NULL) {
+            INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
+        }
+        if (INFO_WITH2_LENGTHS (arg_info) != NULL) {
+            INFO_WITH2_LENGTHS (arg_info)
+              = FREEdoFreeTree (INFO_WITH2_LENGTHS (arg_info));
+        }
         INFO_WITH2_WITHOPS (arg_info) = NULL;
         INFO_WITH2_IVECT (arg_info) = NULL;
         INFO_WITH2_ISCLS (arg_info) = NULL;

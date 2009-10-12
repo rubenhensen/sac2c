@@ -10,6 +10,31 @@
  *
  *   This traversal lifts with3 bodies into thread functions
  *
+ *
+ *
+ *  res = with3{
+ *     ( lb <= i < ub) {
+ *       <code1>
+ *     } : id;
+ *     ...
+ *   } : withop;
+ *
+ *
+ *  type( id) threadFun0(FV(<code1>)\{i}){
+ *   index i;
+ *   <code1>
+ *   return( id);
+ *  }
+ *
+ *  res = with3 {
+ *    ( lb <= i < ub) : threadFun0(FV(<code1>)\{i});
+ *    ...
+ *  } : withop;
+ *
+ *  withop can be modarray genarray.
+ *
+ *  The function FV is..
+ *
  * usage of arg_info (INFO_...):
  *
  *    ...THREADS    pointer to a chain of thread fundefs to be added to the
@@ -45,6 +70,7 @@ struct INFO {
     node *threads;
     int threadno;
     namespace_t *ns;
+    node *fundef;
 };
 
 /*
@@ -53,6 +79,7 @@ struct INFO {
 #define INFO_THREADS(n) ((n)->threads)
 #define INFO_THREADNO(n) ((n)->threadno)
 #define INFO_NS(n) ((n)->ns)
+#define INFO_FUNDEF(n) ((n)->fundef)
 
 /*
  * INFO functions
@@ -69,6 +96,7 @@ MakeInfo ()
     INFO_THREADS (result) = NULL;
     INFO_THREADNO (result) = 0;
     INFO_NS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -111,21 +139,47 @@ CreateThreadFunName (info *arg_info)
     DBUG_RETURN (name);
 }
 
+static node *
+InitFolds (node *exprs)
+{
+    DBUG_ENTER ("InitFolds");
+
+    if (EXPRS_NEXT (exprs) != NULL) {
+        EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs));
+    }
+
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
+
+    if (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs))) != NULL) {
+        if (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))) == NULL) {
+            ID_AVIS (EXPRS_EXPR (exprs))
+              = ID_AVIS (FOLD_NEUTRAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+        } else {
+            ID_AVIS (EXPRS_EXPR (exprs))
+              = ID_AVIS (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+        }
+    }
+
+    DBUG_RETURN (exprs);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *CreateThreadFunction(node *block, node *index, info *arg_info)
  *
- * @brief Lifts the body argument into a thread function. Change variables
+ * @brief Lifts the body argument into a thread function which is prepended
+ *        to INFO_THREADFUNS to be added to module node. Change variables
  *        so that they have new avis as they are now in a different context.
  *
- * @param block    block to be lifted into the function
+ * @param block    block to be lifted into the function ( consumed)
+ * @param results  results of the range                 ( consumed)
  * @param index    avis of index variable of this range
  * @param arg_info info structure to store new function
  *
- * @return N_ap node for outer context to call the newly created thread
- *         function
+ * @return N_ap node to be used as new result of the range for use in the
+ *              outer context.
  ******************************************************************************/
 static node *
-CreateThreadFunction (node *block, node *index, info *arg_info)
+CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
 {
     lut_t *lut;
     node *args, *rets, *retassign, *threadfun, *ap, *vardecs, *assigns;
@@ -175,11 +229,15 @@ CreateThreadFunction (node *block, node *index, info *arg_info)
 
     lut = LUTremoveLut (lut);
 
-    ap = TBmakeAp (threadfun, DFMUdfm2ApArgs (arg_mask, NULL));
+    /* Create ap for OUTER context */
+    ap = TBmakeAp (threadfun, InitFolds (DFMUdfm2ApArgs (arg_mask, NULL)));
 
     ret_mask = DFMremoveMask (ret_mask);
     arg_mask = DFMremoveMask (arg_mask);
     local_mask = DFMremoveMask (local_mask);
+
+    block = FREEdoFreeTree (block);
+    results = FREEdoFreeTree (results);
 
     DBUG_RETURN (ap);
 }
@@ -200,6 +258,9 @@ LW3doLiftWith3 (node *syntax_tree)
 
     DBUG_ENTER ("LW3doLiftWith3");
 
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+                 "LW3 Called with non module node");
+
     /*
      * Infer dataflow masks
      */
@@ -214,7 +275,10 @@ LW3doLiftWith3 (node *syntax_tree)
     info = FreeInfo (info);
 
     /*
-     * clean up tree
+     * Clean up tree
+     *   Remove unneeded vardecs as some vardecs may nolonger be needed as they
+     *     were in the lifted code.
+     *   Remove dataflow mask
      */
     syntax_tree = CUDdoCleanupDecls (syntax_tree);
     syntax_tree = RDFMSdoRemoveDfms (syntax_tree);
@@ -225,8 +289,8 @@ LW3doLiftWith3 (node *syntax_tree)
 /** <!-- ****************************************************************** -->
  * @fn node *LW3module( node *arg_node, info *arg_info)
  *
- * @brief Find out the namespave of this module.
- *        Save generated thread funs.
+ * @brief Find out the namespace of this module and save in info struct.
+ *        After traver...
  *
  * @param arg_node module node
  * @param arg_info info structure
@@ -246,6 +310,23 @@ LW3module (node *arg_node, info *arg_info)
     MODULE_THREADFUNS (arg_node) = INFO_THREADS (arg_info);
 
     INFO_THREADS (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+LW3fundef (node *arg_node, info *arg_info)
+{
+    node *stack;
+    DBUG_ENTER ("LW3fundef");
+
+    stack = INFO_FUNDEF (arg_info);
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_FUNDEF (arg_info) = stack;
 
     DBUG_RETURN (arg_node);
 }
@@ -270,11 +351,14 @@ LW3range (node *arg_node, info *arg_info)
      */
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
-    RANGE_RESULTS (arg_node) = FREEdoFreeTree (RANGE_RESULTS (arg_node));
+    /* Re compute dfm to account for init of folds */
+    INFO_FUNDEF (arg_info)
+      = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
+                            HIDE_LOCALS_WITH3);
 
     RANGE_RESULTS (arg_node)
-      = CreateThreadFunction (RANGE_BODY (arg_node), ID_AVIS (RANGE_INDEX (arg_node)),
-                              arg_info);
+      = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
+                              ID_AVIS (RANGE_INDEX (arg_node)), arg_info);
 
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 

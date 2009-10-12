@@ -243,6 +243,7 @@
         <travuser>
           <node name="Module" />
           <node name="Range" />
+          <node name="Fundef" />
         </travuser>
       </traversal>
       <traversal id="DST" name="Distribute threads" default="sons" include="distribute_threads.h" >
@@ -1843,6 +1844,13 @@
 	  <node name="WLblock" />
 	  <node name="WLublock" />
 	</traverror>
+      </traversal>
+      <traversal id="ASS" name="Add Syncs" default="sons" include="addSyncs.h">
+        <travuser>
+          <node name="Vardec" />
+          <node name="Range" />
+          <node name="With3" />
+        </travuser>
       </traversal>
       <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
         <travuser> 
@@ -6318,6 +6326,18 @@ N_structdef :
                 <node name="Avis" />
                 <phases>
                 <range from="opt_ivexi" to="opt_esaa2" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="With3Fold" inconstructor="no" >
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Fold" />
+                <phases>
+                 <range from="wlt_ass" to="pc_lw3" />
                 </phases>
               </target>
             </targets>

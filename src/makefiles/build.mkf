@@ -52,6 +52,7 @@ else
   TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
 endif
 
+#libsacprelude
 ifdef CROSS
   CROSS := sl
   CROSS_TARGET := -target $(CROSS)

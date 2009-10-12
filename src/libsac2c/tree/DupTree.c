@@ -2071,6 +2071,10 @@ DUPfold (node *arg_node, info *arg_info)
 
     FOLD_NEXT (new_node) = DUPCONT (FOLD_NEXT (arg_node));
 
+    if (FOLD_INITIAL (arg_node) != NULL) {
+        FOLD_INITIAL (new_node) = DUPTRAV (FOLD_INITIAL (arg_node));
+    }
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);

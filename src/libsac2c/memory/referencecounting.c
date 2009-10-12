@@ -1122,6 +1122,8 @@ RCIfold (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_apuse;
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
+    FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
+
     if (FOLD_NEXT (arg_node) != NULL) {
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }

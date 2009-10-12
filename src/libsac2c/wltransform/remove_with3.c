@@ -14,6 +14,8 @@
  *
  * This traversal matains ssa form.
  *
+ * The with3 must not have any fold withops.
+ *
  * if (upperbound - lowerbound) == 1
  * and if count(N_range) == 1
  *
@@ -67,6 +69,11 @@ struct INFO {
     node *loopIndex;
     node *savedResults;
     int ranges;
+    node *withops;
+    /* Find Accu anon trav */
+    bool fa_prf_accu;
+    node *fa_init;
+    node *fa_lhs;
 };
 
 /**
@@ -95,6 +102,15 @@ struct INFO {
  *
  * INFO_RANGES          Number of ranges in this with3 loop
  *
+ * INFO_WITHOPS         The withops of this with loop
+ *
+ * INFO_ACCU            The accu of the with loop N_let
+ *
+ * ** Find Accu anon trav **
+ * INFO_FA_PRF_ACCU     Looking at an ACCU prf
+ * INFO_FA_INIT         Initial value of folds
+ * INFO_FA_LHS          LHS of accu
+ *
  */
 #define INFO_ASSIGNS(info) (info->assigns)
 #define INFO_RESULTS(info) (info->results) /* pointer */
@@ -104,6 +120,11 @@ struct INFO {
 #define INFO_LOOP_ASSIGNS(info) (info->loopAssigns) /* pointer */
 #define INFO_LOOP_INDEX(info) (info->loopIndex)     /* pointer */
 #define INFO_RANGES(info) (info->ranges)
+#define INFO_WITHOPS(info) (info->withops)
+
+#define INFO_FA_PRF_ACCU(info) (info->fa_prf_accu)
+#define INFO_FA_INIT(info) (info->fa_init)
+#define INFO_FA_LHS(info) (info->fa_lhs)
 
 static info *
 MakeInfo ()
@@ -121,6 +142,11 @@ MakeInfo ()
     INFO_LOOP_INDEX (result) = NULL;
     INFO_SAVED_RESULTS (result) = NULL;
     INFO_RANGES (result) = 0;
+    INFO_WITHOPS (result) = NULL;
+
+    INFO_FA_PRF_ACCU (result) = FALSE;
+    INFO_FA_INIT (result) = NULL;
+    INFO_FA_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -135,6 +161,12 @@ FreeInfo (info *info)
 
     DBUG_ASSERT ((INFO_SAVED_RESULTS (info) == NULL),
                  "Trying to free info which still contains saved results");
+
+    DBUG_ASSERT ((INFO_FA_INIT (info) == NULL),
+                 "Trying to free info which still contains initals of folds");
+
+    DBUG_ASSERT ((INFO_FA_LHS (info) == NULL),
+                 "Trying to free info which still has lhss");
 
     info = MEMfree (info);
 
@@ -193,7 +225,6 @@ RW3doRemoveWith3 (node *syntax_tree)
  * @fn node *JoinIdsExprs( node *ids, node *exprs)
  *
  * @brief Join ids and exprs into (assign->let)s
- *        Wrap all exprs into arrays
  *        The output sub ast is in ssa form.
  *
  * Input:
@@ -206,24 +237,21 @@ RW3doRemoveWith3 (node *syntax_tree)
  *        [assign]
  *         | +> [let]
  *         |     | +> ids
- *         |     +> [array]
  *         |          +> exprs
  *         +> [assign]
  *             | +> [let]
  *             |     | +> ids
- *             |     +> [array]
  *             |          +> exprs
  *             +> [assign]
  *                   +> [let]
  *                       | +> ids
- *                       +> [array]
  *                            +> exprs
  *
  *****************************************************************************/
 static node *
 JoinIdsExprs (node *arg_ids, node *exprs)
 {
-    node *let, *assign, *ids;
+    node *assign, *ids, *rhs;
     DBUG_ENTER ("JoinIdsExprs");
 
     DBUG_ASSERT ((arg_ids != NULL), "ids missing");
@@ -234,13 +262,15 @@ JoinIdsExprs (node *arg_ids, node *exprs)
     } else {
         assign = JoinIdsExprs (IDS_NEXT (arg_ids), EXPRS_NEXT (exprs));
     }
-
     ids = DUPdoDupNode (arg_ids);
+    rhs = DUPdoDupNode (EXPRS_EXPR (exprs));
 
-    let = TBmakeLet (ids, TBmakeArray (TYcopyType (IDS_NTYPE (ids)), SHmakeShape (1),
-                                       DUPdoDupNode (exprs)));
+    if (TYgetDim (IDS_NTYPE (ids)) > TYgetDim (AVIS_TYPE (ID_AVIS (rhs)))) {
+        rhs = TBmakeArray (TYcopyType (IDS_NTYPE (ids)), SHmakeShape (1),
+                           TBmakeExprs (rhs, NULL));
+    }
 
-    assign = TBmakeAssign (let, assign);
+    assign = TBmakeAssign (TBmakeLet (ids, rhs), assign);
 
     /* avis->ssaassign needed to keep the AST legal */
     AVIS_SSAASSIGN (IDS_AVIS (ids)) = assign;
@@ -271,6 +301,123 @@ ResetInfo (info *arg_info)
     INFO_REMOVABLE_RANGE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_info);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FAlet( node *arg_node, info *arg_info)
+ *
+ * @brief Save let in ast if let of accu
+ *
+ *****************************************************************************/
+static node *
+FAlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FAlet");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_FA_PRF_ACCU (arg_info)) {
+        INFO_FA_LHS (arg_info) = LET_IDS (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FAprf( node *arg_node, info *arg_info)
+ *
+ * @brief Is this prf an accu?
+ *        If so note in arg_info
+ *
+ *****************************************************************************/
+static node *
+FAprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FAprf");
+
+    if (INFO_FA_PRF_ACCU (arg_info) == FALSE) {
+        INFO_FA_PRF_ACCU (arg_info) = (PRF_PRF (arg_node) == F_accu);
+    } else {
+        DBUG_ASSERT ((PRF_PRF (arg_node) != F_accu), "Found too many _accu_s");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+FAassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FAassign");
+
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_FA_PRF_ACCU (arg_info)) {
+        node *old = arg_node;
+        arg_node = TCappendAssign (JoinIdsExprs (INFO_FA_LHS (arg_info),
+                                                 INFO_FA_INIT (arg_info)),
+                                   ASSIGN_NEXT (arg_node));
+        old = FREEdoFreeNode (old);
+        INFO_FA_LHS (arg_info) = NULL;
+        INFO_FA_INIT (arg_info) = NULL;
+        INFO_FA_PRF_ACCU (arg_info) = FALSE;
+    }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+FAfold (node *arg_node, info *arg_info)
+{
+    node *init;
+    DBUG_ENTER ("FAfold");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    init = FOLD_INITIAL (arg_node);
+    if (init == NULL) {
+        init = FOLD_NEUTRAL (arg_node);
+    }
+
+    INFO_FA_INIT (arg_info) = TBmakeExprs (init, INFO_FA_INIT (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ReplaceAccu( node *tree, node *ops)
+ *
+ * @brief Replace the accu by a chain of assigns of the initial value of the
+ *        fold.
+ *
+ * @param tree ast to replace accus in
+ * @param ops  chain of withops to get inital value from
+ *****************************************************************************/
+static node *
+ReplaceAccu (node *tree, node *ops)
+{
+    info *local_info;
+    anontrav_t trav[] = {{N_let, &FAlet},      {N_assign, &FAassign},
+                         {N_prf, &FAprf},      {N_fold, &FAfold},
+
+                         {N_with, &TRAVnone},  {N_with2, &TRAVnone},
+                         {N_with3, &TRAVnone}, {0, NULL}};
+    DBUG_ENTER ("FindAccu");
+
+    TRAVpushAnonymous (trav, &TRAVsons);
+
+    local_info = MakeInfo ();
+
+    ops = TRAVopt (ops, local_info);
+    tree = TRAVopt (tree, local_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (tree);
 }
 
 /** <!--********************************************************************-->
@@ -353,16 +500,21 @@ RW3with3 (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((INFO_RANGES (arg_info) == 0), "Counted ranges that where not expected");
 
+    WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
+
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     DBUG_ASSERT ((INFO_RANGES (arg_info) >= 1),
                  "At least one range expected in a with3 loop");
 
+    INFO_WITHOPS (arg_info) = DUPdoDupTree (WITH3_OPERATIONS (arg_node));
+
     if ((INFO_RANGES (arg_info) == 1) && (INFO_REMOVABLE_RANGE (arg_info) == TRUE)) {
 
         /* Save the body of the with3 loop */
         INFO_ASSIGNS (arg_info)
-          = TCappendAssign (DUPdoDupTree (INFO_LOOP_ASSIGNS (arg_info)),
+          = TCappendAssign (ReplaceAccu (DUPdoDupTree (INFO_LOOP_ASSIGNS (arg_info)),
+                                         WITH3_OPERATIONS (arg_node)),
                             INFO_ASSIGNS (arg_info));
 
         /* set index to lower bound */

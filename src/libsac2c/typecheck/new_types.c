@@ -615,6 +615,16 @@ TYsetMutcUsage (ntype *type, mutcUsage usage)
     DBUG_RETURN (type);
 }
 
+ntype *
+TYsetMutcScope (ntype *type, mutcScope scope)
+{
+    DBUG_ENTER ("TYsetMutcUsage");
+
+    NTYPE_MUTC_SCOPE (type) = scope;
+
+    DBUG_RETURN (type);
+}
+
 /******************************************************************************
  *
  * function:
@@ -4603,6 +4613,10 @@ TYcopyType (ntype *type)
     DBUG_PRINT ("NTY_MEM", ("size of type copied by TYcopyType: %u",
                             global.current_allocated_mem - mem_entry));
 #endif
+
+    if (res != NULL) {
+        res = TYsetMutcScope (res, TYgetMutcScope (type));
+    }
 
     DBUG_RETURN (res);
 }

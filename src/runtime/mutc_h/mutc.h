@@ -4,7 +4,7 @@
 #define _SAC_MUTC_H_
 
 #define MUTC 1
-#if SAC_BACKEND == MUTC
+#if SAC_MUTC_MACROS
 
 #define bool boolbool
 
@@ -36,6 +36,10 @@
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
 
+#define SAC_MUTC_SAVE(nt) NT_NAME (nt) = sl_geta (sh1);
+#define SAC_MUTC_CREATE_BLOCK_START() {
+#define SAC_MUTC_CREATE_BLOCK_END() }
+
 #define SAC_MUTC_DEF_THREADFUN_BEGIN2(name, anon, ...)                                   \
     sl_def (name, void, __VA_ARGS__)                                                     \
     {                                                                                    \
@@ -47,6 +51,9 @@
 
 #define SAC_MUTC_UNLOCK_SHARED(nt) sl_setp (NT_NAME (nt), 1);
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));
+
+#define SAC_ND_PRF_SYNCIN(nt, sh) NT_NAME (nt) = sl_getp (NT_NAME (sh));
+#define SAC_ND_PRF_SYNCOUT(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
 
 #define SAC_MUTC_ND_PARAM_INT_GLO(t, name, nt) sl_glparm (t, name)
 #define SAC_MUTC_ND_PARAM_FLO_GLO(t, name, nt) sl_glfparm (t, name)
@@ -61,7 +68,7 @@
 
 #define SAC_MUTC_ND_ARG_INT_GLO(name, nt, t) sl_glarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_FLO_GLO(name, nt, t) sl_glfarg (t, sl_anon, name)
-#define SAC_MUTC_ND_ARG_INT_SHA(name, nt, t) sl_sharg (t, sl_anon, name)
+#define SAC_MUTC_ND_ARG_INT_SHA(name, nt, t) sl_sharg (t, sh1, name)
 #define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sl_anon, name)
 
 #if SAC_MUTC_FUNAP_AS_CREATE

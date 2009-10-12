@@ -110,6 +110,7 @@ struct INFO {
     node *fundef;
     node *prop_in;
     bool toplevel;
+    int with;
 };
 
 #define INFO_LUT(n) ((n)->lut)
@@ -119,6 +120,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PROP_IN(n) ((n)->prop_in)
 #define INFO_TOPLEVEL(n) ((n)->toplevel)
+#define INFO_WITH(n) ((n)->with)
 
 /**
  * INFO functions
@@ -139,6 +141,7 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_PROP_IN (result) = NULL;
     INFO_TOPLEVEL (result) = TRUE;
+    INFO_WITH (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -508,28 +511,32 @@ MMVprfAccu (node *arg_node, info *arg_info)
      *
      *     rename: a -> A
      */
+    /*
+     * Do not change with3 accu as thread function creates new scope.
+     */
+    if (INFO_WITH (arg_info) != 3) {
+        ids_assign = INFO_LHS (arg_info);
+        ids_wl = INFO_LHS_WL (arg_info);
+        withop = INFO_WITHOP (arg_info);
 
-    ids_assign = INFO_LHS (arg_info);
-    ids_wl = INFO_LHS_WL (arg_info);
-    withop = INFO_WITHOP (arg_info);
+        DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
 
-    DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
+        while (withop != NULL) {
+            if (NODE_TYPE (withop) == N_fold) {
+                DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
+                DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
 
-    while (withop != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
-            DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
-            DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+                LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
+                                   IDS_NAME (ids_wl));
 
-            LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
-                               IDS_NAME (ids_wl));
+                LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
+                                   IDS_AVIS (ids_wl));
 
-            LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
-                               IDS_AVIS (ids_wl));
-
-            ids_assign = IDS_NEXT (ids_assign);
+                ids_assign = IDS_NEXT (ids_assign);
+            }
+            ids_wl = IDS_NEXT (ids_wl);
+            withop = WITHOP_NEXT (withop);
         }
-        ids_wl = IDS_NEXT (ids_wl);
-        withop = WITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (arg_node);
@@ -927,6 +934,7 @@ MMVwith (node *arg_node, info *arg_info)
     node *withop;
     node *lhs;
     node *prop_in;
+    int with;
 
     DBUG_ENTER ("MMVwith");
 
@@ -934,9 +942,11 @@ MMVwith (node *arg_node, info *arg_info)
     lhs = INFO_LHS_WL (arg_info);
     withop = INFO_WITHOP (arg_info);
     prop_in = INFO_PROP_IN (arg_info);
+    with = INFO_WITH (arg_info);
 
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
+    INFO_WITH (arg_info) = 1;
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -947,6 +957,7 @@ MMVwith (node *arg_node, info *arg_info)
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
     INFO_PROP_IN (arg_info) = prop_in;
+    INFO_WITH (arg_info) = with;
 
     DBUG_RETURN (arg_node);
 }
@@ -969,6 +980,7 @@ MMVwith2 (node *arg_node, info *arg_info)
     node *withop;
     node *lhs;
     node *prop_in;
+    int with;
 
     DBUG_ENTER ("MMVwith2");
 
@@ -978,9 +990,11 @@ MMVwith2 (node *arg_node, info *arg_info)
     lhs = INFO_LHS_WL (arg_info);
     withop = INFO_WITHOP (arg_info);
     prop_in = INFO_PROP_IN (arg_info);
+    with = INFO_WITH (arg_info);
 
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
+    INFO_WITH (arg_info) = 2;
 
     WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
     WITH2_SEGS (arg_node) = TRAVopt (WITH2_SEGS (arg_node), arg_info);
@@ -989,6 +1003,7 @@ MMVwith2 (node *arg_node, info *arg_info)
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
     INFO_PROP_IN (arg_info) = prop_in;
+    INFO_WITH (arg_info) = with;
 
     DBUG_RETURN (arg_node);
 }
@@ -1011,6 +1026,7 @@ MMVwith3 (node *arg_node, info *arg_info)
     node *withop;
     node *lhs;
     node *prop_in;
+    int with;
 
     DBUG_ENTER ("MMVwith3");
 
@@ -1020,9 +1036,11 @@ MMVwith3 (node *arg_node, info *arg_info)
     lhs = INFO_LHS_WL (arg_info);
     withop = INFO_WITHOP (arg_info);
     prop_in = INFO_PROP_IN (arg_info);
+    with = INFO_WITH (arg_info);
 
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH3_OPERATIONS (arg_node);
+    INFO_WITH (arg_info) = 3;
 
     WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
@@ -1030,6 +1048,7 @@ MMVwith3 (node *arg_node, info *arg_info)
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
     INFO_PROP_IN (arg_info) = prop_in;
+    INFO_WITH (arg_info) = with;
 
     DBUG_RETURN (arg_node);
 }
@@ -1259,6 +1278,7 @@ MMVfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVfold");
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
 
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -1361,7 +1381,6 @@ MMVreturn (node *arg_node, info *arg_info)
          *    the memory has been passed in and doesn't need
          *    to be passed out again
          *
-         *    For Fold, this might be a different story TODO MUTC
          */
         withops = INFO_WITHOP (arg_info);
         exprs = RETURN_EXPRS (arg_node);
@@ -1369,7 +1388,7 @@ MMVreturn (node *arg_node, info *arg_info)
         while (exprs != NULL) {
             DBUG_ASSERT ((withops != NULL), "more results in threadfun than withops!");
 
-            if (NODE_TYPE (withops) == N_genarray) {
+            if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_fold)) {
                 /*
                  * handle first in chain properly
                  */
@@ -1420,9 +1439,8 @@ MMVret (node *arg_node, info *arg_info)
     /*
      * For genarrays, we remove the correspoding return.
      *
-     * For fold, this might be a different story! TODO MUTC
      */
-    if (NODE_TYPE (withops) == N_genarray) {
+    if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_fold)) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 

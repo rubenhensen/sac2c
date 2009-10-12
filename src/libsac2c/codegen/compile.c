@@ -90,6 +90,7 @@ struct INFO {
     node *postfun;
     bool concurrentranges;
     bool cond;
+    node *with3folds;
 };
 
 /*
@@ -114,7 +115,7 @@ struct INFO {
 #define INFO_POSTFUN(n) ((n)->postfun)
 #define INFO_CONCURRENTRANGES(n) ((n)->concurrentranges)
 #define INFO_COND(n) ((n)->cond)
-
+#define INFO_WITH3_FOLDS(n) ((n)->with3folds)
 /*
  * INFO functions
  */
@@ -144,6 +145,7 @@ MakeInfo ()
     INFO_FOLDLUT (result) = NULL;
     INFO_POSTFUN (result) = NULL;
     INFO_COND (result) = FALSE;
+    INFO_WITH3_FOLDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -215,6 +217,23 @@ static char *prf_ccode_tab[] = {
 #define PRFccode(ccode) "SAC_ND_PRF_" #ccode
 #include "prf_info.mac"
 };
+
+static node *
+With3Folds (node *ids, node *ops)
+{
+    node *res = NULL;
+    DBUG_ENTER ("With3Folds");
+
+    if (IDS_NEXT (ids) != NULL) {
+        res = With3Folds (IDS_NEXT (ids), WITHOP_NEXT (ops));
+    }
+
+    if (NODE_TYPE (ops) == N_fold) {
+        res = TBmakeIds (IDS_AVIS (ids), res);
+    }
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  *
@@ -1978,8 +1997,17 @@ MakeFunApArgs (node *ap)
                       = TBmakeExprs (MakeFunApArgIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
                                      icm_args);
                 } else {
-                    exprs = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
-                                         icm_args);
+                    if ((ARG_TYPE (FUNDEF_ARGTAB (fundef)->ptr_in[i]))->scope
+                        == MUTC_SHARED) {
+                        exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_SCO",
+                                                         TCmakeIdCopyString ("SHA"),
+                                                         DUPdupIdNt (EXPRS_EXPR (
+                                                           argtab->ptr_in[i]))),
+                                             icm_args);
+                    } else {
+                        exprs = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
+                                             icm_args);
+                    }
                 }
 
                 if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
@@ -3343,6 +3371,27 @@ MakeIcm_PRF_TYPE_CONV_AKS (char *error, node *let_ids, node *id)
                           TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
                           ret_node);
 
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfSyncIn (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprfSyncIn");
+    ret_node
+      = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCIN", DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
+                          DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfSyncOut (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprfSyncOut");
+    ret_node = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
     DBUG_RETURN (ret_node);
 }
 
@@ -7309,7 +7358,10 @@ COMPwith3 (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPwith3");
 
     INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
+    INFO_WITH3_FOLDS (arg_info)
+      = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
     arg_node = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
     INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
 
     DBUG_RETURN (arg_node);
@@ -7386,10 +7438,31 @@ COMPrange (node *arg_node, info *arg_info)
 
     family = TCappendAssign (family, create);
     if (INFO_CONCURRENTRANGES (arg_info)) {
+        DBUG_ASSERT ((INFO_WITH3_FOLDS (arg_info) == NULL),
+                     "Fold and concurrent not supported");
         family = TCappendAssign (family, next);
         family = TCappendAssign (family, sync);
     } else {
+        node *start, *end;
         family = TCappendAssign (family, sync);
+        start = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_START", NULL);
+        end = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_END", NULL);
+
+        family = TCappendAssign (start, family);
+
+        if (INFO_WITH3_FOLDS (arg_info) != NULL) {
+            node *save;
+            DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
+                         "Only single fold with3 loops supported");
+            save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
+                                     TCmakeIdCopyStringNt (IDS_NAME (
+                                                             INFO_WITH3_FOLDS (arg_info)),
+                                                           IDS_TYPE (INFO_WITH3_FOLDS (
+                                                             arg_info))),
+                                     NULL);
+            family = TCappendAssign (family, save);
+        }
+        family = TCappendAssign (family, end);
         family = TCappendAssign (family, next);
     }
 
