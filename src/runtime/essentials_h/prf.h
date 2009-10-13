@@ -218,10 +218,13 @@
 #define SAC_ND_PRF_IS_REUSED(to_NT, from_NT, from2_NT)                                   \
     CAT17 (SAC_ND_PRF_IS_REUSED__, NT_SHP (from_NT) BuildArgs3 (to_NT, from_NT, from2_NT))
 
-#define SAC_ND_PRF_IS_REUSED__SCL(to_NT, from_NT, from2_NT) SAC_ND_A_FIELD (to_NT) = 0;
+#define SAC_ND_PRF_IS_REUSED__SCL(to_NT, from_NT, from2_NT)                              \
+    SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT)) = 0;
 
 #define SAC_ND_PRF_IS_REUSED__AKS(to_NT, from_NT, from2_NT)                              \
-    SAC_ND_A_FIELD (to_NT) = (SAC_ND_A_FIELD (from_NT) == SAC_ND_A_FIELD (from2_NT));
+    SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))                                        \
+      = (SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))                               \
+         == SAC_ND_GETVAR (from2_NT, SAC_ND_A_FIELD (from2_NT)));
 
 #define SAC_ND_PRF_IS_REUSED__AKD(to_NT, from_NT, from2_NT)                              \
     SAC_ND_PRF_IS_REUSED__AKS (to_NT, from_NT, from2_NT)

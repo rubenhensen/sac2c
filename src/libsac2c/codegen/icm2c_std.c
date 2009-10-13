@@ -840,8 +840,8 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
         fprintf (global.outfile,
                  "SAC_TR_MEM_PRINT("
                  " (\"reuse memory of %s at %%p for %s\","
-                 " SAC_ND_A_FIELD( %s)))\n",
-                 from_NT, to_NT, from_NT);
+                 " SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))))\n",
+                 from_NT, to_NT, from_NT, from_NT);
         global.indent--;
         INDENT;
         fprintf (global.outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);

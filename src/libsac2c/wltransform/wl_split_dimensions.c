@@ -1096,15 +1096,12 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
         node *size;
         DBUG_ASSERT ((GENARRAY_DEFAULT (arg_node) != NULL), "default element needed!");
 
-#if 0
-    if ( TYgetDim( ID_NTYPE( arg_node)) == 0){
-      size = TBmakeNum( 1);
-    } else {
-#endif
-        size = TCmakePrf1 (F_size_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
-#if 0
-    }
-#endif
+        if (TYgetDim (ID_NTYPE (GENARRAY_DEFAULT (arg_node))) == 0) {
+            size = TBmakeNum (1);
+        } else {
+            size = TCmakePrf1 (F_size_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+        }
+
         inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), size,
                              &INFO_PREASSIGNS (arg_info));
         inner = TBmakeId (inner);

@@ -1899,19 +1899,18 @@ GetBaseTypeFromExpr (node *in)
 static node *
 MakeFunApArgIdsNt (node *ids)
 {
-    node *new_id;
-    mutcUsage old_usg;
+    node *icm, *id = NULL;
     DBUG_ENTER ("MakeFunApArgIdsNt");
 
-    old_usg = TYPES_MUTC_USAGE (IDS_TYPE (ids));
+    if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_FUNPARAM) {
+        id = TCmakeIdCopyString ("FPA");
+    } else {
+        id = TCmakeIdCopyString ("FAG");
+    }
 
-    TYPES_MUTC_USAGE (IDS_TYPE (ids)) = MUTC_US_FUNARG;
+    icm = TCmakeIcm2 ("SET_NT_USG", id, DUPdupIdsIdNt (ids));
 
-    new_id = DUPdupIdsIdNt (ids);
-
-    TYPES_MUTC_USAGE (IDS_TYPE (ids)) = old_usg;
-
-    DBUG_RETURN (new_id);
+    DBUG_RETURN (icm);
 }
 
 /** <!--********************************************************************-->
@@ -1925,19 +1924,18 @@ MakeFunApArgIdsNt (node *ids)
 static node *
 MakeFunApArgIdNt (node *id)
 {
-    node *new_id;
-    mutcUsage old_usg;
+    node *icm, *st = NULL;
     DBUG_ENTER ("MakeFunApArgIdNt");
 
-    old_usg = TYPES_MUTC_USAGE (ID_TYPE (id));
+    if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_FUNPARAM) {
+        st = TCmakeIdCopyString ("FPA");
+    } else {
+        st = TCmakeIdCopyString ("FAG");
+    }
 
-    TYPES_MUTC_USAGE (ID_TYPE (id)) = MUTC_US_FUNARG;
+    icm = TCmakeIcm2 ("SET_NT_USG", st, DUPdupIdNt (id));
 
-    new_id = DUPdupIdNt (id);
-
-    TYPES_MUTC_USAGE (ID_TYPE (id)) = old_usg;
-
-    DBUG_RETURN (new_id);
+    DBUG_RETURN (icm);
 }
 
 /** <!--********************************************************************-->
@@ -4140,8 +4138,10 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
     }
 
     if (global.backend == BE_mutc) {
-        DBUG_ASSERT ((PRF_ARG3 (arg_node) != NULL),
-                     "suballoc lacking default information in mutc backend");
+#if 0 /* Still may be present if not canonical */
+    DBUG_ASSERT( (PRF_ARG3( arg_node) != NULL),
+                 "suballoc lacking default information in mutc backend");
+#endif
         /*
          * We need to allocate a descriptor and set the shape
          *
@@ -4150,22 +4150,27 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          *    the dimensionality of the memvar. The third arg
          *    of the suballoc holds this information.
          */
-        sub_get_dim = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
-                                  TCmakeIcm1 ("ND_A_DIM", DUPdupIdNt (mem_id)),
-                                  DUPdoDupNode (PRF_ARG3 (arg_node)));
-
+        if (TCcountExprs (PRF_ARGS (arg_node)) >= 3) {
+            sub_get_dim = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
+                                      TCmakeIcm1 ("ND_A_DIM", DUPdupIdNt (mem_id)),
+                                      DUPdoDupNode (PRF_ARG3 (arg_node)));
+        }
         /*
          * 2) annotate shape for suballoc, if information present and
          *    dynamic shape required.
          *    TODO MUTC: As we only support genarray for now, this
          *               information always has to be present!
          */
-        if (TCgetShapeDim (IDS_TYPE (let_ids)) < 0) {
-            DBUG_ASSERT ((PRF_ARG4 (arg_node) != NULL),
-                         "missing shape information for suballoc");
+        if (TCcountExprs (PRF_ARGS (arg_node)) >= 4) {
+            if (TCgetShapeDim (IDS_TYPE (let_ids)) < 0) {
+#if 0 /* Still may be present if not canonical */
+        DBUG_ASSERT( (PRF_ARG4( arg_node) != NULL),
+                     "missing shape information for suballoc");
+#endif
 
-            ret_node
-              = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids), ret_node);
+                ret_node = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids),
+                                         ret_node);
+            }
         }
 
 #if 0
@@ -7361,7 +7366,11 @@ COMPwith3 (node *arg_node, info *arg_info)
     INFO_WITH3_FOLDS (arg_info)
       = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
     arg_node = TRAVdo (WITH3_RANGES (arg_node), arg_info);
-    INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
+
+    if (INFO_WITH3_FOLDS (arg_info) != NULL) {
+        INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
+    }
+
     INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
 
     DBUG_RETURN (arg_node);
