@@ -1123,7 +1123,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
 static node *
 ATravCDLmodarray (node *arg_node, info *arg_info)
 {
-    node *set, *inner, *exprs, *lhs, *sexprs;
+    node *set, *inner = NULL, *exprs, *lhs, *sexprs = NULL;
     shape *shape;
     int outerdims;
 
@@ -1492,9 +1492,8 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
     if (IDS_NEXT (lhs) != NULL) {
         newLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
                                              arg_info);
+        newLhs = TBmakeIds (avis, newLhs);
     }
-
-    newLhs = TBmakeIds (avis, newLhs);
 
     DBUG_RETURN (newLhs);
 }
