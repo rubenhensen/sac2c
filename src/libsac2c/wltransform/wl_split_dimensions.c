@@ -1096,7 +1096,15 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
         node *size;
         DBUG_ASSERT ((GENARRAY_DEFAULT (arg_node) != NULL), "default element needed!");
 
+#if 0
+    if ( TYgetDim( ID_NTYPE( arg_node)) == 0){
+      size = TBmakeNum( 1);
+    } else {
+#endif
         size = TCmakePrf1 (F_size_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+#if 0
+    }
+#endif
         inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), size,
                              &INFO_PREASSIGNS (arg_info));
         inner = TBmakeId (inner);
@@ -1492,14 +1500,15 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
     if (IDS_NEXT (lhs) != NULL) {
         newLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
                                              arg_info);
-        newLhs = TBmakeIds (avis, newLhs);
     }
+
+    newLhs = TBmakeIds (avis, newLhs);
 
     DBUG_RETURN (newLhs);
 }
 
 /** <!-- ****************************************************************** -->
- * @fn void CreateFoldAccumulators( node *index, node *lhs, node *ops,
+ * @fn node *CreateFoldAccumulators( node *index, node *lhs, node *ops,
  *                                  info *arg_info)
  *
  * @brief Create
@@ -1511,11 +1520,11 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
  * @param arg_info   state of current transformation
  *
  *****************************************************************************/
-static void
+static node *
 CreateFoldAccumulators (node *index, node *lhs, node *ops, info *arg_info)
 {
     node *accuLhs;
-    node *assign;
+    node *assign = NULL;
     DBUG_ENTER ("CreateFoldAccumulators");
 
     /* Create assign to be used in aviss ssaassign*/
@@ -1528,15 +1537,12 @@ CreateFoldAccumulators (node *index, node *lhs, node *ops, info *arg_info)
           = TBmakeLet (accuLhs,
                        TBmakePrf (F_accu,
                                   TBmakeExprs (TBmakeId (IDS_AVIS (index)), NULL)));
-
-        ASSIGN_NEXT (assign) = INFO_PREASSIGNS (arg_info);
-        INFO_PREASSIGNS (arg_info) = assign;
     } else {
         /* Did not need assign, cleanup */
         assign = FREEdoFreeTree (assign);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (assign);
 }
 
 static bool
@@ -1581,7 +1587,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
                node **offsets, info *arg_info)
 {
     node *body, *ranges, *ops, *lhs, *with3;
-    node *assigns = NULL;
+    node *assigns = NULL, *accu = NULL;
     node *old_size, *old_preassigns;
     node *old_offsets, *old_with3_assign;
     node *iv_avis, *old_iv_avis;
@@ -1636,8 +1642,8 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     }
 
     if (AnyFold (ops)) {
-        CreateFoldAccumulators (INFO_INDICES (arg_info), INFO_WITH2_LHS (arg_info), ops,
-                                arg_info);
+        accu = CreateFoldAccumulators (INFO_INDICES (arg_info), INFO_WITH2_LHS (arg_info),
+                                       ops, arg_info);
     }
     /*
      * produce with3
@@ -1652,6 +1658,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     /*
      * glue it all together
      */
+    assigns = TCappendAssign (accu, assigns);
     assigns = TCappendAssign (INFO_PREASSIGNS (arg_info), assigns);
     assigns = TCappendAssign (iv_assigns, assigns);
 
