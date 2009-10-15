@@ -1,5 +1,7 @@
 divert(-1)
 
+dnl To add new tags or new values for tags update the define _star
+
 dnl Definition of all * tags
 dnl Return definition of given * tag 
 dnl
@@ -9,9 +11,21 @@ define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `$1', `*UNQ', `NUQ, UNQ, ___',
                       `$1', `*REG', `INT, FLO, ___',
                       `$1', `*SCO', `SHR, GLO, ___',
-                      `$1', `*USG', `TPA, TPO, FPA, FPO, FAG, NON, ___',
+                      `$1', `*USG', `TPM, TPA, TAG, TPO, FTA, FPM, FPA, FPO, FAG, NON, ___',
                       `errprint(`Unknown wild card "$1"
 ')')')
+
+dnl TPM Thread param
+dnl TPA Thread param Thread arg
+dnl TAG Thread arg
+dnl TPO Thread out param
+dnl FTA Funtion param thread arg
+dnl FPM Funtion param
+dnl FPA Funtion param function arg
+dnl FPO Funtion out param
+dnl FAG Funtion arg
+dnl NON None of the above
+dnl ___ Undefined
 
 dnl Start ifndef block
 dnl Remember namespace for use with cat macros.
@@ -22,8 +36,8 @@ define(`start_icm_definition', `define(`CAT_M4_NAME', $1)' `define(`CAT_M4_COUNT
 `#'define DEF_FILE_$1'
 )dnl
 
-dnl End of ifndef block
 dnl Define CAT macros
+dnl End of ifndef block
 define(`end_icm_definition', def_cat
 `#endif'
 );
@@ -187,7 +201,7 @@ define(`def_cat', `_def_cat(CAT_M4_COUNT)')
 
 dnl Define 0 or more cat macros
 dnl
-dnl $1  name space to use for cat macros
+dnl $1  Number of cat macros to define
 define(`_def_cat', `ifelse($1, 0, `', `__def_cat(`'CAT_M4_NAME`'_$1) _def_cat(eval($1-1)) ')')
 
 dnl Define a cat macro

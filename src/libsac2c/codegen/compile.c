@@ -1915,6 +1915,32 @@ MakeFunApArgIdsNt (node *ids)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *MakeFunApArgIdsNtThread( node *ids)
+ *
+ * @brief  Create a MUTC thread function application argument
+ *         This function create a new id node and does not consume the ids
+ *         node
+ *
+ ****************************************************************************/
+static node *
+MakeFunApArgIdsNtThread (node *ids)
+{
+    node *icm, *id = NULL;
+    DBUG_ENTER ("MakeFunApArgIdsNtThread");
+
+    if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_THREADPARAM) {
+        id = TCmakeIdCopyString ("TPA");
+    } else {
+        id = TCmakeIdCopyString ("TAG");
+    }
+
+    icm = TCmakeIcm2 ("SET_NT_USG", id, DUPdupIdsIdNt (ids));
+
+    DBUG_RETURN (icm);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *MakeFunApArgIdNt( node *id)
  *
  * @brief  Create a function application argument
@@ -1931,6 +1957,33 @@ MakeFunApArgIdNt (node *id)
         st = TCmakeIdCopyString ("FPA");
     } else {
         st = TCmakeIdCopyString ("FAG");
+    }
+
+    icm = TCmakeIcm2 ("SET_NT_USG", st, DUPdupIdNt (id));
+
+    DBUG_RETURN (icm);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn  node *MakeFunApArgIdNtThread( node *id)
+ *
+ * @brief  Create a MUTC thread function application argument
+ *         This function create a new id node and does not consume the id node
+ *
+ ****************************************************************************/
+static node *
+MakeFunApArgIdNtThread (node *id)
+{
+    node *icm, *st = NULL;
+    DBUG_ENTER ("MakeFunApArgIdNtThread");
+
+    if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_THREADPARAM) {
+        st = TCmakeIdCopyString ("TPA");
+    } else if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_FUNPARAM) {
+        st = TCmakeIdCopyString ("FTA");
+    } else {
+        st = TCmakeIdCopyString ("TAG");
     }
 
     icm = TCmakeIcm2 ("SET_NT_USG", st, DUPdupIdNt (id));
@@ -1971,7 +2024,8 @@ MakeFunApArgs (node *ap)
             if (!FUNDEF_ISTHREADFUN (fundef)) {
                 exprs = TBmakeExprs (MakeFunApArgIdsNt (argtab->ptr_out[i]), icm_args);
             } else {
-                exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);
+                exprs
+                  = TBmakeExprs (MakeFunApArgIdsNtThread (argtab->ptr_out[i]), icm_args);
             }
 
             if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
@@ -1997,13 +2051,15 @@ MakeFunApArgs (node *ap)
                 } else {
                     if ((ARG_TYPE (FUNDEF_ARGTAB (fundef)->ptr_in[i]))->scope
                         == MUTC_SHARED) {
-                        exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_SCO",
-                                                         TCmakeIdCopyString ("SHA"),
-                                                         DUPdupIdNt (EXPRS_EXPR (
-                                                           argtab->ptr_in[i]))),
-                                             icm_args);
+                        exprs
+                          = TBmakeExprs (TCmakeIcm2 ("SET_NT_SCO",
+                                                     TCmakeIdCopyString ("SHA"),
+                                                     MakeFunApArgIdNtThread (
+                                                       EXPRS_EXPR (argtab->ptr_in[i]))),
+                                         icm_args);
                     } else {
-                        exprs = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])),
+                        exprs = TBmakeExprs (MakeFunApArgIdNtThread (
+                                               EXPRS_EXPR (argtab->ptr_in[i])),
                                              icm_args);
                     }
                 }
