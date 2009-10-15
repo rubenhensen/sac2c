@@ -13,8 +13,7 @@
  * @{
  *
  *****************************************************************************/
-
-#define FOLD_SUPPORTED
+/*#define MUTC_MODARRAY*/
 /** <!--********************************************************************-->
  *
  * @file wl_split_dimensions.c
@@ -639,6 +638,67 @@ ComputeMax (node *nodea, node *nodeb, node **assigns, info *arg_info)
     DBUG_RETURN (max);
 }
 
+/*
+ * int i = _sel_VxA( int n, int[.] vec);
+ */
+static node *
+MakeSel (int n, node *vec, info *arg_info)
+{
+    node *avis, *assign;
+    DBUG_ENTER ("MakeSel");
+
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TBmakePrf (F_idx_shape_sel,
+                                                 TBmakeExprs (TBmakeNum (n),
+                                                              TBmakeExprs (TBmakeId (vec),
+                                                                           NULL)))),
+                           NULL);
+
+    AVIS_SSAASSIGN (avis) = assign;
+
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), assign);
+
+    DBUG_RETURN (avis);
+}
+
+/** <!-- **************************************************************** -->
+ * @fn node *MakeModarrayShape( node *array, info *arg_info)
+ *
+ * @brief
+ *
+ * @param array    The array that we want the shape of
+ * @param arg_info State of the traversal
+ ****************************************************************************/
+static node *
+MakeModarrayShape (node *array, info *arg_info)
+{
+    node *shapeAvis;
+    DBUG_ENTER ("MakeModarrayShape");
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "ID expected");
+
+    shapeAvis
+      = TBmakeAvis (TRAVtmpVar (),
+                    TYmakeAKS (TYmakeSimpleType (T_int),
+                               SHcreateShape (1,
+                                              TYgetDim (AVIS_TYPE (ID_AVIS (array))))));
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (shapeAvis, INFO_VARDECS (arg_info));
+
+    INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (shapeAvis, NULL),
+                                 TBmakePrf (F_shape_A,
+                                            TBmakeExprs (DUPdoDupTree (array), NULL))),
+                      INFO_PREASSIGNS (arg_info));
+    AVIS_SSAASSIGN (shapeAvis) = INFO_PREASSIGNS (arg_info);
+
+    DBUG_RETURN (shapeAvis);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *ATravCNWgenarray( node *arg_node, info *arg_info)
  *
@@ -661,15 +721,12 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     node *sexpr = NULL;
     node *array = NULL;
     pattern *pat;
-    int sizeoffset;
 
     DBUG_ENTER ("ATravCNWgenarray");
 
     pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
     if (PMmatchFlat (pat, GENARRAY_SHAPE (arg_node))) {
-        sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
-
         /*
          * If the surrounding WL has a chunksize, this determines
          * the shape of the inner genarray. Otherwise, the
@@ -715,7 +772,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 /** <!-- ****************************************************************** -->
  * @fn node *ATravCNWmodarray( node *arg_node, info *arg_info)
  *
- * @brief Computes a new genarray withop from the current dimension, current
+ * @brief Computes a new GENARRAY withop from the current dimension, current
  *        size and the original with2 modarray withop. Furthermore,
  *        a shape expression is computed and annotated at the withop/added
  *        to the info structure. Used in an anonymous traversal by
@@ -733,7 +790,6 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
     ntype *atype;
     node *shape = NULL;
     node *sexpr = NULL;
-    int sizeoffset;
     int cnt;
 
     DBUG_ENTER ("ATravCNWmodarray");
@@ -744,8 +800,6 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
     atype = AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)));
 
     if (TUshapeKnown (atype)) {
-        sizeoffset = (INFO_CURRENT_SIZE (arg_info) == NULL) ? 0 : 1;
-
         /*
          * If the surrounding WL has a chunksize, this determines
          * the shape of the inner genarray. Otherwise, the
@@ -759,7 +813,6 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
                                                          INFO_CURRENT_DIM (arg_info))),
                                  NULL);
         }
-        shape = TCmakeIntVector (shape);
 
         /*
          * the shapeexpression is everything from the current dimension
@@ -773,9 +826,36 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
         }
 
         sexpr = TCmakeIntVector (sexpr);
+    } else {
+        /* AKS */
+        /*
+         * If the surrounding WL has a chunksize, this determines
+         * the shape of the inner genarray. Otherwise, the
+         * shape is the shape only taking the current dimension
+         * into account.
+         */
+        if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+            shape = TBmakeExprs (DUPdoDupNode (INFO_CURRENT_SIZE (arg_info)), NULL);
+        } else {
+            shape = TBmakeExprs (TBmakeId (MakeSel (INFO_CURRENT_DIM (arg_info),
+                                                    ID_AVIS (MODARRAY_ARRAY (arg_node)),
+                                                    arg_info)),
+                                 NULL);
+        }
+        sexpr = NULL;
+        for (cnt = (INFO_CURRENT_DIM (arg_info));
+             cnt < TYgetDim (AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)))); cnt++) {
+            sexpr
+              = TBmakeExprs (TBmakeId (MakeSel (cnt, ID_AVIS (MODARRAY_ARRAY (arg_node)),
+                                                arg_info)),
+                             sexpr);
+        }
+        sexpr = TCmakeIntVector (sexpr);
     }
 
     DBUG_ASSERT ((shape != NULL), "no shape info for modarray constructed");
+
+    shape = TCmakeIntVector (shape);
 
     new_node = TBmakeGenarray (shape, NULL);
     GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
@@ -829,12 +909,8 @@ ComputeNewWithops (node *withops, info *arg_info)
 {
     anontrav_t cnw_trav[6]
       = {{N_genarray, &ATravCNWgenarray}, {N_modarray, &ATravCNWmodarray},
-#ifdef FOLD_SUPPORTED
-         {N_fold, &ATravCNWfold},
-#else
-                            {N_fold, &TRAVerror},
-#endif
-         {N_propagate, &TRAVerror},       {N_break, &TRAVerror},           {0, NULL}};
+         {N_fold, &ATravCNWfold},         {N_propagate, &TRAVerror},
+         {N_break, &TRAVerror},           {0, NULL}};
     node *ops;
 
     DBUG_ENTER ("ComputeNewWithops");
@@ -978,11 +1054,7 @@ ComputeNewLhs (node *withops, info *arg_info)
 {
     anontrav_t cnw_trav[6] = {{N_genarray, &ATravCNLgenOrModArray},
                               {N_modarray, &ATravCNLgenOrModArray},
-#ifdef FOLD_SUPPORTED
                               {N_fold, &ATravCNLfold},
-#else
-                              {N_fold, &TRAVerror},
-#endif
                               {N_propagate, &TRAVerror},
                               {N_break, &TRAVerror},
                               {0, NULL}};
@@ -1042,6 +1114,80 @@ ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
     } else {
         exprs = TBmakeExprs (inner, NULL);
     }
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+MakeSelExpr (int dim, node *array, info *arg_info, node *next)
+{
+    DBUG_ENTER ("MakeSel");
+
+    next = TBmakeExprs (TBmakeId (MakeSel (dim, array, arg_info)), next);
+
+    DBUG_RETURN (next);
+}
+
+static node *
+MakeModarrayExprs (int dropDims, node *array, info *arg_info)
+{
+    node *exprs = NULL;
+    int i;
+    DBUG_ENTER ("MakeModarrayExprs");
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_avis), "Expected avis");
+
+    for (i = (dropDims - 1); i >= 0; i--) {
+        exprs = MakeSelExpr (i, array, arg_info, exprs);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+ModarrayInnerAccu (int skip, node *array, info *arg_info)
+{
+    int i, length;
+    node *accu = NULL;
+    DBUG_ENTER ("ModarrayInnerAccu");
+
+    length = TYgetDim (AVIS_TYPE (array));
+
+    accu = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
+    AssignValue (accu, TBmakeNum (1), &INFO_PREASSIGNS (arg_info));
+
+    for (i = (skip); i < length; i++) {
+        node *newAccu, *assign;
+        newAccu = TBmakeAvis (TRAVtmpVar (),
+                              TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+        INFO_VARDECS (arg_info) = TBmakeVardec (newAccu, INFO_VARDECS (arg_info));
+        /*
+         * newAccu = _mul_SxS_( accu, _sel_VxA_( [i], shape));
+         */
+        assign = TBmakeAssign (
+          TBmakeLet (TBmakeIds (newAccu, NULL),
+                     TBmakePrf (F_mul_SxS,
+                                TBmakeExprs (TBmakeId (accu),
+                                             TBmakeExprs (TBmakeId (
+                                                            MakeSel (i, array, arg_info)),
+                                                          NULL)))),
+          NULL);
+        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), assign);
+        accu = newAccu;
+    }
+
+    DBUG_RETURN (accu);
+}
+
+static node *
+ModarrayInner (int dims, node *array, info *arg_info)
+{
+    node *prod, *exprs;
+    DBUG_ENTER ("ModarrayInner");
+
+    prod = ModarrayInnerAccu (dims, array, arg_info);
+    exprs = TBmakeId (prod);
 
     DBUG_RETURN (exprs);
 }
@@ -1139,6 +1285,7 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
     set = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
+    outerdims = TCcountIds (INFO_WITH2_ISCLS (arg_info));
     /*
      * We need to figure out the size of the inner elements. For
      * modarrays we do this by looking at the type of the result and
@@ -1146,7 +1293,6 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
      * looking at the index scalars.
      */
     if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (lhs)))) {
-        outerdims = TCcountIds (INFO_WITH2_ISCLS (arg_info));
         shape = SHdropFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
         inner = TBmakeNum (SHgetUnrLen (shape));
         shape = SHfreeShape (shape);
@@ -1154,8 +1300,13 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
         shape = SHtakeFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
         sexprs = SHshape2Exprs (shape);
         shape = SHfreeShape (shape);
+    } else if (TUdimKnown (AVIS_TYPE (IDS_AVIS (lhs)))) { /* AKS */
+        sexprs
+          = MakeModarrayExprs (outerdims, ID_AVIS (MODARRAY_ARRAY (arg_node)), arg_info);
+        /* prod( drop( count(ids), shape( mod))) */
+        inner = ModarrayInner (outerdims, ID_AVIS (MODARRAY_ARRAY (arg_node)), arg_info);
     } else {
-        DBUG_ASSERT (FALSE, "non-AKS modarray not implemented!");
+        DBUG_ASSERT (FALSE, "non-AKD modarray not implemented!");
     }
 
     exprs = ComputeOneLengthVector (sexprs, inner, arg_info);
@@ -1218,11 +1369,7 @@ ComputeLengths (node *withops, info *arg_info)
 
     anontrav_t len_trav[4] = {{N_genarray, &ATravCDLgenarray},
                               {N_modarray, &ATravCDLmodarray},
-#ifdef FOLD_SUPPORTED
                               {N_fold, &ATravCDLfold},
-#else
-                              {N_fold, &TRAVerror},
-#endif
                               {0, NULL}};
 
     DBUG_ENTER ("ComputeLengths");
@@ -1882,7 +2029,11 @@ ATravNImodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravNImodarray");
 
+#ifdef MUTCMODARRAY
+    if (TUdimKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
+#else
     if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
+#endif
         INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     } else {
@@ -1910,12 +2061,8 @@ NotImplemented (node *with, info *arg_info)
     info *info;
     anontrav_t nip_trav[6]
       = {{N_genarray, &ATravNIgenarray}, {N_modarray, &ATravNImodarray},
-#ifdef FOLD_SUPPORTED
-         {N_fold, &ATravNIfold},
-#else
-         {N_fold, &ATravNIfail},
-#endif
-         {N_break, &ATravNIfail},        {N_propagate, &ATravNIfail},    {0, NULL}};
+         {N_fold, &ATravNIfold},         {N_break, &ATravNIfail},
+         {N_propagate, &ATravNIfail},    {0, NULL}};
     anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
