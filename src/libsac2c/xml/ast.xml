@@ -5206,7 +5206,12 @@ N_structdef :
         </attribute>
       </attributes>
       <flags>
-        <flag name="IsSclPrf" />
+        <flag name="IsSclPrf" >
+          <description>
+                  Set by AL and DL to indicate that the N_id is the result of
+                  a primitive dyadic function operating on simple scalars.
+          </description>
+        </flag>
       </flags>
 
 
