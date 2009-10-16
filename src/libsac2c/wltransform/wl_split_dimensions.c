@@ -665,40 +665,45 @@ MakeSel (int n, node *vec, info *arg_info)
     DBUG_RETURN (avis);
 }
 
+#if 0
 /** <!-- **************************************************************** -->
  * @fn node *MakeModarrayShape( node *array, info *arg_info)
  *
- * @brief
+ * @brief 
  *
  * @param array    The array that we want the shape of
  * @param arg_info State of the traversal
  ****************************************************************************/
-static node *
-MakeModarrayShape (node *array, info *arg_info)
+static
+node *MakeModarrayShape( node *array, info *arg_info)
 {
-    node *shapeAvis;
-    DBUG_ENTER ("MakeModarrayShape");
+  node *shapeAvis;
+  DBUG_ENTER( "MakeModarrayShape");
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "ID expected");
+  DBUG_ASSERT( ( NODE_TYPE( array) == N_id),
+               "ID expected");
+  
+  shapeAvis = 
+    TBmakeAvis( TRAVtmpVar(), 
+                TYmakeAKS( 
+                  TYmakeSimpleType( T_int),
+                  SHcreateShape( 1, 
+                                 TYgetDim( AVIS_TYPE( ID_AVIS( array))))));
+  
+  INFO_VARDECS( arg_info) = TBmakeVardec( shapeAvis, 
+                                          INFO_VARDECS( arg_info));
+  
+  INFO_PREASSIGNS( arg_info) = 
+    TBmakeAssign( TBmakeLet( TBmakeIds( shapeAvis, NULL),
+                             TBmakePrf( F_shape_A,
+                                        TBmakeExprs( DUPdoDupTree( array),
+                                                     NULL))),
+                  INFO_PREASSIGNS( arg_info));
+  AVIS_SSAASSIGN( shapeAvis) = INFO_PREASSIGNS( arg_info);
 
-    shapeAvis
-      = TBmakeAvis (TRAVtmpVar (),
-                    TYmakeAKS (TYmakeSimpleType (T_int),
-                               SHcreateShape (1,
-                                              TYgetDim (AVIS_TYPE (ID_AVIS (array))))));
-
-    INFO_VARDECS (arg_info) = TBmakeVardec (shapeAvis, INFO_VARDECS (arg_info));
-
-    INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (shapeAvis, NULL),
-                                 TBmakePrf (F_shape_A,
-                                            TBmakeExprs (DUPdoDupTree (array), NULL))),
-                      INFO_PREASSIGNS (arg_info));
-    AVIS_SSAASSIGN (shapeAvis) = INFO_PREASSIGNS (arg_info);
-
-    DBUG_RETURN (shapeAvis);
+  DBUG_RETURN( shapeAvis);
 }
-
+#endif
 /** <!-- ****************************************************************** -->
  * @fn node *ATravCNWgenarray( node *arg_node, info *arg_info)
  *
@@ -1639,14 +1644,13 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
         AVIS_SSAASSIGN (avis) = assign;
 
         FOLD_INITIAL (ops) = TBmakeId (avis);
+        newLhs = TBmakeIds (avis, newLhs);
     }
 
     if (IDS_NEXT (lhs) != NULL) {
         newLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
                                              arg_info);
     }
-
-    newLhs = TBmakeIds (avis, newLhs);
 
     DBUG_RETURN (newLhs);
 }
@@ -2029,10 +2033,10 @@ ATravNImodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravNImodarray");
 
-#ifdef MUTCMODARRAY
-    if (TUdimKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
-#else
+#ifdef MUTC_MODARRAY
     if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
+#else
+    if (TUdimKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
 #endif
         INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
