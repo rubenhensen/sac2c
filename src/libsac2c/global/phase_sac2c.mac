@@ -614,9 +614,6 @@ SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
 SUBPHASE (ivevp, "Propagating variables (for IVE)", VPdoVarPropagation,
           global.optimize.doive &&global.optimize.dovp, opt)
 
-SUBPHASE (ivecp, "Propagating constants (for IVE)", CPdoConstantPropagation,
-          global.optimize.doive &&global.optimize.docp, opt)
-
 SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
           IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
 
