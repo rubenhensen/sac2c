@@ -250,7 +250,8 @@ SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize
           opt)
 
 SUBPHASE (lir, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
-          global.optimize.dolir, opt)
+          FALSE, // global.optimize.dolir,
+          opt)
 
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
@@ -696,8 +697,6 @@ SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs, global.backend == BE_mutc, wlt)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
-SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, wlt)
-
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
 
@@ -750,6 +749,8 @@ ENDPHASE (mt3)
 PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
 SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
+
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, wlt)
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 
