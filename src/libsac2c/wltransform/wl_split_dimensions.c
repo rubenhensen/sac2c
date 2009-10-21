@@ -2052,8 +2052,13 @@ ATravNIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravNIfold");
 
-    INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
-    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+    if (TYisAKS (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))
+        || TYisAKV (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
+        INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+    } else {
+        INFO_NIP_RESULT (arg_info) = TRUE;
+    }
 
     DBUG_RETURN (arg_node);
 }
