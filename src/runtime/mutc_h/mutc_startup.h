@@ -23,16 +23,7 @@
 
 #endif
 
-#ifdef SAC_MUTC_FUNAP_AS_CREATE
-
-#define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
-    void svp_io_putn (long long a, int t);                                               \
-    void sac_svp_io_putn (int a, int t)                                                  \
-    {                                                                                    \
-        svp_io_putn ((long long)a, t);                                                   \
-    }
-
-#else
+#if SAC_MUTC_FUNAP_AS_CREATE
 
 #define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
     sl_decl (svp_io_putn, void, sl_glparm (long long, a), sl_glparm (int, t));           \
@@ -43,6 +34,15 @@
                      sl_glarg (int, sl_anon, sl_getp (t)));                              \
     }                                                                                    \
     sl_enddef
+
+#else
+
+#define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
+    void svp_io_putn (long long a, int t);                                               \
+    void sac_svp_io_putn (int a, int t)                                                  \
+    {                                                                                    \
+        svp_io_putn ((long long)a, t);                                                   \
+    }
 
 #endif
 

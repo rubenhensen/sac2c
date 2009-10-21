@@ -62,6 +62,7 @@
 #include "tree_compound.h"
 #include "infer_dfms.h"
 #include "free.h"
+#include "new_types.h"
 
 /*
  * INFO structure
@@ -71,6 +72,13 @@ struct INFO {
     int threadno;
     namespace_t *ns;
     node *fundef;
+    node *vardecs;
+    node *lhs;
+    node *withops;
+
+    lut_t *at_lut;
+    lut_t *at_init_lut;
+    node *at_exprs_ids;
 };
 
 /*
@@ -80,6 +88,14 @@ struct INFO {
 #define INFO_THREADNO(n) ((n)->threadno)
 #define INFO_NS(n) ((n)->ns)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_WITHOPS(n) ((n)->withops)
+
+/* Special meaning for anon traversal */
+#define INFO_AT_LUT(n) ((n)->at_lut)
+#define INFO_AT_INIT_LUT(n) ((n)->at_init_lut)
+#define INFO_AT_EXPRS_IDS(n) ((n)->at_exprs_ids)
 
 /*
  * INFO functions
@@ -97,6 +113,13 @@ MakeInfo ()
     INFO_THREADNO (result) = 0;
     INFO_NS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_WITHOPS (result) = NULL;
+
+    INFO_AT_LUT (result) = LUTgenerateLut ();
+    INFO_AT_INIT_LUT (result) = LUTgenerateLut ();
+    INFO_AT_EXPRS_IDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -106,9 +129,335 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
+    DBUG_ASSERT ((INFO_AT_EXPRS_IDS (info) == NULL),
+                 "Leaking memory in AT_EXPRS_IDS chain");
+
+    INFO_AT_LUT (info) = LUTremoveLut (INFO_AT_LUT (info));
+    INFO_AT_INIT_LUT (info) = LUTremoveLut (INFO_AT_INIT_LUT (info));
+
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravFundef( node *arg_node, info *arg_info)
+ *
+ * @brief Insert any generated vardecs into ast.
+ *****************************************************************************/
+static node *
+ATravFundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravFundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        FUNDEF_VARDEC (arg_node)
+          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *Exprs2IdsWhenFold( node *exprs, node *ops)
+ *
+ * @brief Convert a chain of exprs->id into a chain of ids removing all exprs
+ *        that are not associated with a fold
+ *
+ *        expr -> id -> avis1             fold
+ *         |                               |
+ *         +-> expr -> id -> avis2         +-> genarray
+ *              |                             |
+ *              +-> expr -> id ->avis3        +-> fold
+ *
+ *        becomes:
+ *
+ *        ids -> avis1
+ *         |
+ *         +-> ids -> avis3
+ *
+ *        NOTE: avis3 is discarded as it is not associated with a fold
+ *
+ * @param exprs Chain of exprs where each expr is an Id
+ * @param ops   Chain of withops
+ *
+ * @return Chain of ids
+ *****************************************************************************/
+static node *
+Exprs2IdsWhenFold (node *exprs, node *ops, lut_t *lut)
+{
+    node *ids = NULL;
+    node *next;
+    DBUG_ENTER ("Exprs2IdsWhenFold");
+
+    if (exprs != NULL) {
+        DBUG_ASSERT ((ops != NULL), "Results and withops have different lengths");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id),
+                     "Expected an id in result");
+
+        next = Exprs2IdsWhenFold (EXPRS_NEXT (exprs), WITHOP_NEXT (ops), lut);
+
+        if (NODE_TYPE (ops) == N_fold) {
+            ids = TBmakeIds (ID_AVIS (EXPRS_EXPR (exprs)), next);
+            lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids), ops);
+        }
+    }
+    /*
+     * ops may be longer as there may be more non folds
+     * should this be checked for?
+     */
+
+    DBUG_RETURN (ids);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravWith3( node *arg_node, info *arg_info)
+ *
+ * @brief Save withops into info
+ *****************************************************************************/
+static node *
+ATravWith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravWith3");
+
+    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravRange( node *arg_node, info *arg_info)
+ *
+ * @brief Save fold results of this range into info as a chain of ids
+ *****************************************************************************/
+static node *
+ATravRange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravRange");
+
+    INFO_AT_EXPRS_IDS (arg_info)
+      = Exprs2IdsWhenFold (RANGE_RESULTS (arg_node), INFO_WITHOPS (arg_info),
+                           INFO_AT_INIT_LUT (arg_info));
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn char *IdsIdsToshareds( node *ids, node *ids2, lut_t *lut)
+ *
+ * @brief For each ids ids2 pair create a shared with the same type.
+ *        Save the new avis( ids) and avis( ids2) into the lut pointing to
+ *        the new shared avis.
+ *
+ * @param ids  Chain of ids' that are to be assisted with shareds
+ * @param ids2 Chain of ids' that are to be assisted with shareds
+ *             also results of range.
+ * @param lut  Look up table to store mappings of avis -> avis ( shared) in
+ *
+ * @return Chain of vardecs for new shareds.
+ *****************************************************************************/
+static node *
+IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
+{
+    node *avis;
+    node *vardec = NULL;
+    ntype *type;
+    node *fold;
+    DBUG_ENTER ("IdsIdsToShareds");
+
+    if (ids != NULL) {
+        DBUG_ASSERT ((ids2 != NULL), "Expected two lists of the same length");
+
+        DBUG_ASSERT ((TYeqTypes (AVIS_TYPE (IDS_AVIS (ids)),
+                                 AVIS_TYPE (IDS_AVIS (ids2)))),
+                     "Expected both types to be equal");
+
+        vardec = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
+
+        type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids)));
+        type = TYsetMutcScope (type, MUTC_SHARED);
+        avis = TBmakeAvis (TRAVtmpVar (), type);
+        vardec = TBmakeVardec (avis, vardec);
+
+        fold = LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
+        DBUG_ASSERT ((fold != NULL), "Lost information about fold");
+
+        AVIS_WITH3FOLD (avis) = fold;
+
+        lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids), avis);
+        lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids2), avis);
+    } else {
+        DBUG_ASSERT ((ids2 == NULL), "Expected two lists of the same length");
+    }
+
+    DBUG_RETURN (vardec);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravPrfAccu( node *arg_node, info *arg_info)
+ *
+ * @brief We have found an accu using this accus lhs and the fold results of
+ *        this with loop create the shareds that we need.
+ *****************************************************************************/
+static node *
+ATravPrfAccu (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravPrfAccu");
+
+    INFO_VARDECS (arg_info)
+      = TCappendVardec (INFO_VARDECS (arg_info),
+                        IdsIdsToShareds (INFO_LHS (arg_info),
+                                         INFO_AT_EXPRS_IDS (arg_info),
+                                         INFO_AT_LUT (arg_info),
+                                         INFO_AT_INIT_LUT (arg_info)));
+
+    INFO_AT_EXPRS_IDS (arg_info) = FREEdoFreeTree (INFO_AT_EXPRS_IDS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravPrfSyncIn( node *arg_node, info *arg_info)
+ *
+ * @brief Add shared variable to syncIn as 2nd argument
+ *****************************************************************************/
+static node *
+ATravPrfSyncIn (node *arg_node, info *arg_info)
+{
+    node *avis;
+    DBUG_ENTER ("ATravPrfSyncIn");
+
+    DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+                 "Expected syncin to have one argument");
+
+    avis = LUTsearchInLutPp (INFO_AT_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+
+    DBUG_ASSERT ((avis != NULL), "Could not create shared for syncIn");
+
+    PRF_ARGS (arg_node)
+      = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravPrfSyncOut( node *arg_node, info *arg_info)
+ *
+ * @brief Add shared variable to syncOut as 2nd argument
+ *****************************************************************************/
+static node *
+ATravPrfSyncOut (node *arg_node, info *arg_info)
+{
+    node *avis;
+    DBUG_ENTER ("ATravPrfSyncOut");
+
+    DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+                 "Expected syncout to have one argument");
+
+    avis = LUTsearchInLutPp (INFO_AT_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
+
+    DBUG_ASSERT ((avis != NULL), "Could not create a shared for syncout");
+
+    PRF_ARGS (arg_node)
+      = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravPrf( node *arg_node, info *arg_info)
+ *
+ * @brief Handle the three different prfs that are intresting when adding syncs
+ *        accu
+ *        syncIn
+ *        syncOut
+ *****************************************************************************/
+static node *
+ATravPrf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravPrf");
+    switch (PRF_PRF (arg_node)) {
+    case F_accu:
+        ATravPrfAccu (arg_node, arg_info);
+        break;
+    case F_syncin:
+        ATravPrfSyncIn (arg_node, arg_info);
+        break;
+    case F_syncout:
+        ATravPrfSyncOut (arg_node, arg_info);
+        break;
+    default:
+        arg_node = TRAVcont (arg_node, arg_info);
+        break;
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravLet( node *arg_node, info *arg_info)
+ *
+ * @brief Rember the lhs of the current let
+ *****************************************************************************/
+static node *
+ATravLet (node *arg_node, info *arg_info)
+{
+    node *stack;
+    DBUG_ENTER ("ATravLet");
+
+    stack = INFO_LHS (arg_info);
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_LHS (arg_info) = stack;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *addShareds( node *syntax_tree)
+ *
+ * @brief Add shared varables to the syntax tree for sync ins and sync outs.
+ *
+ * @return syntax tree with sharded variables added
+ *****************************************************************************/
+static node *
+addShareds (node *syntax_tree)
+{
+    anontrav_t atrav[6]
+      = {{N_prf, &ATravPrf}, {N_range, &ATravRange}, {N_fundef, &ATravFundef},
+         {N_let, &ATravLet}, {N_with3, &ATravWith3}, {0, NULL}};
+    info *anon_info;
+
+    DBUG_ENTER ("addShareds");
+
+    /* Need to pass fundef nodes to add vardecs */
+    DBUG_ASSERT (((NODE_TYPE (syntax_tree) == N_module)
+                  || (NODE_TYPE (syntax_tree) == N_fundef)),
+                 "addShareds can only be run on module or fundef");
+
+    TRAVpushAnonymous (atrav, &TRAVsons);
+
+    anon_info = MakeInfo ();
+
+    syntax_tree = TRAVdo (syntax_tree, anon_info);
+
+    anon_info = FreeInfo (anon_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /** <!-- ****************************************************************** -->
@@ -119,7 +468,7 @@ FreeInfo (info *info)
  * @param arg_info info structure to access global counter of thread functions
  *
  * @return the newly created name
- ******************************************************************************/
+ *****************************************************************************/
 static char *
 CreateThreadFunName (info *arg_info)
 {
@@ -144,19 +493,22 @@ InitFolds (node *exprs)
 {
     DBUG_ENTER ("InitFolds");
 
-    if (EXPRS_NEXT (exprs) != NULL) {
-        EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs));
-    }
+    if (exprs != NULL) {
 
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
+        if (EXPRS_NEXT (exprs) != NULL) {
+            EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs));
+        }
 
-    if (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs))) != NULL) {
-        if (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))) == NULL) {
-            ID_AVIS (EXPRS_EXPR (exprs))
-              = ID_AVIS (FOLD_NEUTRAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
-        } else {
-            ID_AVIS (EXPRS_EXPR (exprs))
-              = ID_AVIS (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
+
+        if (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs))) != NULL) {
+            if (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))) == NULL) {
+                ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (
+                  FOLD_NEUTRAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+            } else {
+                ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (
+                  FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+            }
         }
     }
 
@@ -260,6 +612,8 @@ LW3doLiftWith3 (node *syntax_tree)
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "LW3 Called with non module node");
+
+    syntax_tree = addShareds (syntax_tree);
 
     /*
      * Infer dataflow masks

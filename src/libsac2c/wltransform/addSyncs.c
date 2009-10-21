@@ -50,7 +50,6 @@ struct INFO {
     node *lhsold;
     node *lhsnew;
     node *assign;
-    node *shareds;
     node *withops;
     node *results;
 };
@@ -65,7 +64,6 @@ struct INFO {
 #define INFO_LHSOLD(n) ((n)->lhsold)
 #define INFO_LHSNEW(n) ((n)->lhsnew)
 #define INFO_ASSIGN(n) ((n)->assign)
-#define INFO_SHAREDS(n) ((n)->shareds)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_RESULTS(n) ((n)->results)
 
@@ -84,7 +82,6 @@ MakeInfo ()
     INFO_LHSOLD (result) = NULL;
     INFO_LHSNEW (result) = NULL;
     INFO_ASSIGN (result) = NULL;
-    INFO_SHAREDS (result) = NULL;
     INFO_WITHOPS (result) = NULL;
     INFO_RESULTS (result) = NULL;
 
@@ -153,6 +150,18 @@ ASdoAddSyncs (node *syntax_tree)
  * @{
  *
  *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *createIn(node *lhsnew, node *lhsold, node *next, info *arg_info)
+ *
+ * @brief
+ *
+ * @param lhsnew   The new lhs of accu
+ * @param lhsold   The old lhs of accu that will now be the lhs of syncIns
+ * @param next     The assigns to go after syncIns
+ * @param arg_info The state of the traversal
+ *
+ *****************************************************************************/
 
 static node *
 createIn (node *lhsnew, node *lhsold, node *next, info *arg_info)
@@ -165,19 +174,11 @@ createIn (node *lhsnew, node *lhsold, node *next, info *arg_info)
         /*assert*/
     } else {
         /*assert*/
-        node *avissh;
-        avissh = TBmakeAvis (TRAVtmpVar (),
-                             TYsetMutcScope (TYcopyType (AVIS_TYPE (IDS_AVIS (lhsold))),
-                                             MUTC_SHARED));
-        INFO_SHAREDS (arg_info) = TBmakeIds (avissh, INFO_SHAREDS (arg_info));
-        INFO_VARDECS (arg_info) = TBmakeVardec (avissh, INFO_VARDECS (arg_info));
         assign
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhsold),
                                      TBmakePrf (F_syncin,
                                                 TBmakeExprs (TBmakeId (IDS_AVIS (lhsnew)),
-                                                             TBmakeExprs (TBmakeId (
-                                                                            avissh),
-                                                                          NULL)))),
+                                                             NULL))),
                           createIn (IDS_NEXT (lhsnew), IDS_NEXT (lhsold), next,
                                     arg_info));
     }
@@ -269,7 +270,7 @@ ATravPrf (node *arg_node, info *arg_info)
 }
 
 static node *
-createSyncOut (node *rets, node *shareds, node *ops, info *arg_info)
+createSyncOut (node *rets, node *ops, info *arg_info)
 {
     node *res;
     DBUG_ENTER ("createSyncOut");
@@ -280,27 +281,27 @@ createSyncOut (node *rets, node *shareds, node *ops, info *arg_info)
         node *next;
 
         if (NODE_TYPE (ops) == N_fold) {
-            node *avis
-              = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (shareds))));
-
-            AVIS_WITH3FOLD (IDS_AVIS (shareds)) = ops;
-
-            next = createSyncOut (EXPRS_NEXT (rets), IDS_NEXT (shareds),
-                                  WITHOP_NEXT (ops), arg_info);
+            node *avis;
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (rets)) == N_id),
+                         "Expected an id for the results of range");
+            avis = TBmakeAvis (TRAVtmpVar (),
+                               TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (rets)))));
+            next = createSyncOut (EXPRS_NEXT (rets), WITHOP_NEXT (ops), arg_info);
 
             INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
-            INFO_POSTASSIGN (arg_info) = TBmakeAssign (
-              TBmakeLet (TBmakeIds (avis, NULL),
-                         TBmakePrf (F_syncout,
-                                    TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (rets)),
-                                                 TBmakeExprs (TBmakeId (
-                                                                IDS_AVIS (shareds)),
-                                                              NULL)))),
-              INFO_POSTASSIGN (arg_info));
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                         TBmakePrf (F_syncout,
+                                                    TBmakeExprs (DUPdoDupNode (
+                                                                   EXPRS_EXPR (rets)),
+                                                                 NULL))),
+                              INFO_POSTASSIGN (arg_info));
+            AVIS_SSAASSIGN (avis) = INFO_POSTASSIGN (arg_info);
+
             res = TBmakeExprs (TBmakeId (avis), next);
         } else {
             EXPRS_NEXT (rets)
-              = createSyncOut (EXPRS_NEXT (rets), shareds, WITHOP_NEXT (ops), arg_info);
+              = createSyncOut (EXPRS_NEXT (rets), WITHOP_NEXT (ops), arg_info);
             res = rets;
         }
     }
@@ -335,8 +336,7 @@ AddSyncs (node *assign, node *rets, info *arg_info)
 
     TRAVpop ();
 
-    INFO_RESULTS (arg_info)
-      = createSyncOut (rets, INFO_SHAREDS (arg_info), INFO_WITHOPS (arg_info), arg_info);
+    INFO_RESULTS (arg_info) = createSyncOut (rets, INFO_WITHOPS (arg_info), arg_info);
 
     assign = TCappendAssign (assign, INFO_POSTASSIGN (arg_info));
     INFO_POSTASSIGN (arg_info) = NULL;

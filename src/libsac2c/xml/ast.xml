@@ -7647,6 +7647,9 @@ N_structdef :
           </targets>
         </son>
         <son name="Initial" default="NULL">
+          <description>
+            MUTC the value to start folding from.
+          </description>
           <targets>
             <target mandatory="no">
               <node name="Id" />

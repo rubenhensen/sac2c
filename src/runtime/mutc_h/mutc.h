@@ -69,7 +69,7 @@
 #define SAC_MUTC_ND_ARG_INT_GLO(name, nt, t) sl_glarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_FLO_GLO(name, nt, t) sl_glfarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_INT_SHA(name, nt, t) sl_sharg (t, sh1, name)
-#define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sl_anon, name)
+#define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sh1, name)
 
 #if SAC_MUTC_FUNAP_AS_CREATE
 #define SAC_MUTC_ARG_FUN(name, nt, t) SAC_MUTC_ARG_THREAD (name, nt, t)
