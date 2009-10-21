@@ -75,6 +75,8 @@ struct INFO {
     node *vardecs;
     node *lhs;
     node *withops;
+    lut_t *withops_ids;
+    int ranges;
 
     lut_t *at_lut;
     lut_t *at_init_lut;
@@ -91,7 +93,8 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHOPS(n) ((n)->withops)
-
+#define INFO_WITHOPS_IDS(n) ((n)->withops_ids)
+#define INFO_RANGES(n) ((n)->ranges)
 /* Special meaning for anon traversal */
 #define INFO_AT_LUT(n) ((n)->at_lut)
 #define INFO_AT_INIT_LUT(n) ((n)->at_init_lut)
@@ -116,6 +119,8 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHOPS (result) = NULL;
+    INFO_WITHOPS_IDS (result) = LUTgenerateLut ();
+    INFO_RANGES (result) = 0;
 
     INFO_AT_LUT (result) = LUTgenerateLut ();
     INFO_AT_INIT_LUT (result) = LUTgenerateLut ();
@@ -219,6 +224,26 @@ Exprs2IdsWhenFold (node *exprs, node *ops, lut_t *lut)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *PairWithopsIds( node *arg_node, info *arg_info)
+ *
+ * @brief Pair withops with ids in to a lut
+ *        withop -> ids
+ *****************************************************************************/
+static lut_t *
+PairWithopsIds (lut_t *lut, node *withops, node *ids)
+{
+    DBUG_ENTER ("PairWithopsIds");
+
+    if (withops != NULL) {
+        DBUG_ASSERT ((ids != NULL), "Less ids than withops");
+        lut = LUTinsertIntoLutP (lut, withops, ids);
+
+        lut = PairWithopsIds (lut, WITHOP_NEXT (withops), IDS_NEXT (ids));
+    }
+
+    DBUG_RETURN (lut);
+}
+/** <!-- ****************************************************************** -->
  * @fn node *ATravWith3( node *arg_node, info *arg_info)
  *
  * @brief Save withops into info
@@ -232,8 +257,13 @@ ATravWith3 (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
+    INFO_WITHOPS_IDS (arg_info)
+      = PairWithopsIds (INFO_WITHOPS_IDS (arg_info), WITH3_OPERATIONS (arg_node),
+                        INFO_LHS (arg_info));
+
     DBUG_RETURN (arg_node);
 }
+
 /** <!-- ****************************************************************** -->
  * @fn node *ATravRange( node *arg_node, info *arg_info)
  *
@@ -426,14 +456,14 @@ ATravLet (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *addShareds( node *syntax_tree)
+ * @fn node *addShareds( node *syntax_tree, info *arg_info)
  *
  * @brief Add shared varables to the syntax tree for sync ins and sync outs.
  *
  * @return syntax tree with sharded variables added
  *****************************************************************************/
 static node *
-addShareds (node *syntax_tree)
+addShareds (node *syntax_tree, info *arg_info)
 {
     anontrav_t atrav[6]
       = {{N_prf, &ATravPrf}, {N_range, &ATravRange}, {N_fundef, &ATravFundef},
@@ -450,9 +480,9 @@ addShareds (node *syntax_tree)
     TRAVpushAnonymous (atrav, &TRAVsons);
 
     anon_info = MakeInfo ();
-
+    INFO_WITHOPS_IDS (anon_info) = INFO_WITHOPS_IDS (arg_info);
     syntax_tree = TRAVdo (syntax_tree, anon_info);
-
+    INFO_WITHOPS_IDS (arg_info) = INFO_WITHOPS_IDS (anon_info);
     anon_info = FreeInfo (anon_info);
 
     TRAVpop ();
@@ -489,25 +519,30 @@ CreateThreadFunName (info *arg_info)
 }
 
 static node *
-InitFolds (node *exprs)
+InitFolds (node *exprs, bool first, lut_t *lut)
 {
     DBUG_ENTER ("InitFolds");
 
     if (exprs != NULL) {
+        node *fold;
 
         if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs));
+            EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs), first, lut);
         }
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
 
-        if (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs))) != NULL) {
-            if (FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))) == NULL) {
-                ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (
-                  FOLD_NEUTRAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+        fold = AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)));
+
+        if (fold != NULL) {
+            if (first) {
+                if (FOLD_INITIAL (fold) == NULL) {
+                    ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (FOLD_NEUTRAL (fold));
+                } else {
+                    ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (FOLD_INITIAL (fold));
+                }
             } else {
-                ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (
-                  FOLD_INITIAL (AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)))));
+                ID_AVIS (EXPRS_EXPR (exprs)) = IDS_AVIS (LUTsearchInLutPp (lut, fold));
             }
         }
     }
@@ -522,16 +557,18 @@ InitFolds (node *exprs)
  *        to INFO_THREADFUNS to be added to module node. Change variables
  *        so that they have new avis as they are now in a different context.
  *
- * @param block    block to be lifted into the function ( consumed)
- * @param results  results of the range                 ( consumed)
- * @param index    avis of index variable of this range
- * @param arg_info info structure to store new function
+ * @param block      block to be lifted into the function ( consumed)
+ * @param results    results of the range                 ( consumed)
+ * @param index      avis of index variable of this range
+ * @param fistRanges is this the first range in a with3 loop?
+ * @param arg_info   info structure to store new function
  *
  * @return N_ap node to be used as new result of the range for use in the
  *              outer context.
  ******************************************************************************/
 static node *
-CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
+CreateThreadFunction (node *block, node *results, node *index, bool firstRange,
+                      info *arg_info)
 {
     lut_t *lut;
     node *args, *rets, *retassign, *threadfun, *ap, *vardecs, *assigns;
@@ -582,7 +619,8 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
     lut = LUTremoveLut (lut);
 
     /* Create ap for OUTER context */
-    ap = TBmakeAp (threadfun, InitFolds (DFMUdfm2ApArgs (arg_mask, NULL)));
+    ap = TBmakeAp (threadfun, InitFolds (DFMUdfm2ApArgs (arg_mask, NULL), firstRange,
+                                         INFO_WITHOPS_IDS (arg_info)));
 
     ret_mask = DFMremoveMask (ret_mask);
     arg_mask = DFMremoveMask (arg_mask);
@@ -613,14 +651,13 @@ LW3doLiftWith3 (node *syntax_tree)
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "LW3 Called with non module node");
 
-    syntax_tree = addShareds (syntax_tree);
+    info = MakeInfo ();
+    syntax_tree = addShareds (syntax_tree, info);
 
     /*
      * Infer dataflow masks
      */
     syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_WITH3);
-
-    info = MakeInfo ();
 
     TRAVpush (TR_lw3);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -700,6 +737,8 @@ LW3range (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LW3range");
 
+    INFO_RANGES (arg_info)++;
+
     /*
      * we perform the transformation depth first / bottom up
      */
@@ -712,11 +751,31 @@ LW3range (node *arg_node, info *arg_info)
 
     RANGE_RESULTS (arg_node)
       = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
-                              ID_AVIS (RANGE_INDEX (arg_node)), arg_info);
+                              ID_AVIS (RANGE_INDEX (arg_node)),
+                              (INFO_RANGES (arg_info) == 1), arg_info);
 
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *LW3range( node *arg_node, info *arg_info)
+ *
+ * @brief Stack the count of number of ranges.
+ *****************************************************************************/
+node *
+LW3with3 (node *arg_node, info *arg_info)
+{
+    int ranges;
+    DBUG_ENTER ("LW3with3");
+
+    ranges = INFO_RANGES (arg_info);
+    INFO_RANGES (arg_info) = 0;
+    arg_node = TRAVcont (arg_node, arg_info);
+    INFO_RANGES (arg_info) = ranges;
 
     DBUG_RETURN (arg_node);
 }
