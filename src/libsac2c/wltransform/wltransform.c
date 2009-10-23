@@ -7152,8 +7152,14 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("WLtrans", CTInote (">>> >>> entering with-loop"););
 
-    if (WITH_CUDARIZABLE (arg_node))
+    if (WITH_CUDARIZABLE (arg_node)) {
+        info_tmp = arg_info;
+        arg_info = MakeInfo ();
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        arg_info = FreeInfo (arg_info);
+        arg_info = info_tmp;
         DBUG_RETURN (arg_node);
+    }
 
     /* stack arg_info */
     info_tmp = arg_info;

@@ -218,6 +218,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
         }
     }
     fprintf (global.outfile, ");\n");
+
+    fprintf (global.outfile, "cutStopTimer(timer);\n");
+    fprintf (global.outfile, "printf(\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
+             funname);
+    fprintf (global.outfile, "cutResetTimer(timer);\n");
+
     INDENT;
     fprintf (global.outfile, "}\n");
 
@@ -295,6 +301,12 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
         }
     }
 
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "unsigned int timer;\n");
+    fprintf (global.outfile, "cutCreateTimer(&timer);\n");
+    fprintf (global.outfile, "cutStartTimer(timer);\n");
+
     DBUG_VOID_RETURN;
 }
 
@@ -303,14 +315,14 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
  * function:
  *   void ICMCompileCUDA_WLIDS( char *wlids_NT, int wlids_NT_dim,
  *                              int array_dim, int wlids_dim,
- *                              char *hasstepwidth)
+ *                              char *iv_NT, char *hasstepwidth)
  *
  * description:
  *
  ******************************************************************************/
 void
 ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim_pos,
-                      char *hasstepwidth)
+                      char *iv_NT, char *hasstepwidth)
 {
     DBUG_ENTER ("ICMCompileCUDA_WLIDS");
 
@@ -347,6 +359,10 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
                      wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos);
         }
     }
+
+    fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_READ( %s, 0);\n", iv_NT,
+             wlids_dim_pos, wlids_NT);
+
     DBUG_VOID_RETURN;
 }
 
@@ -638,6 +654,54 @@ ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *fro
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_D2D( %s, ", to_NT);
     ReadScalar (idx_ANY, NULL, 0);
     fprintf (global.outfile, ", %s, %s)", val_array, basetype);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_DECL_KERNEL_ARRAY( char *var_NT, char *basetype,
+ *                                          int sdim, int *shp)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *  CUDA_DECL_KERNEL_ARRAY( var_NT, basetype, sdim, [ shp ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *shp)
+{
+    int i;
+    shape_class_t sc = ICUGetShapeClass (var_NT);
+    int dim = DIM_NO_OFFSET (sdim);
+
+    DBUG_ENTER ("ICMCompileCUDA_DECL_KERNEL_ARRAY");
+
+#define CUDA_DECL_KERNEL_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_DECL_KERNEL_ARRAY
+
+    switch (sc) {
+    case C_aks:
+        INDENT;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        fprintf (global.outfile, "%s SAC_ND_A_FIELD( %s)[", basetype, var_NT);
+        for (i = 0; i < dim; i++) {
+            fprintf (global.outfile, "%d", shp[i]);
+            if (i != dim - 1) {
+                fprintf (global.outfile, ", ");
+            }
+        }
+        fprintf (global.outfile, "];\n");
+        break;
+    default:
+        DBUG_ASSERT ((0), "Non-AKS array found in CUDA kernel!");
+        break;
+    }
 
     DBUG_VOID_RETURN;
 }

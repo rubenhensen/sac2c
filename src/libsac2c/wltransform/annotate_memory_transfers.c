@@ -31,12 +31,13 @@
 #include "memory.h"
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
+#include "pattern_match.h"
 
 /* Two traverse mode:
  *   tarv_collect: we collect variable usage information.
  *   trav_annoate: we annoate which memory transfer can be lifted out.
  */
-enum traverse_mode { trav_collect, trav_annotate };
+enum traverse_mode { trav_collect, trav_consolidate, trav_annotate };
 
 /** <!--********************************************************************-->
  *
@@ -165,6 +166,9 @@ AMTRANfundef (node *arg_node, info *arg_info)
         INFO_TRAVMODE (arg_info) = trav_collect;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
+        INFO_TRAVMODE (arg_info) = trav_consolidate;
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
         /* Second traversal, annotate <host2device> and <device2host> */
         INFO_TRAVMODE (arg_info) = trav_annotate;
         INFO_FUNARGNUM (arg_info) = 0;
@@ -217,9 +221,15 @@ AMTRANassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AMTRANassign");
 
-    INFO_LASTASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    if (INFO_TRAVMODE (arg_info) == trav_consolidate) {
+        /* Bottom-up traversal */
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    } else {
+        INFO_LASTASSIGN (arg_info) = arg_node;
+        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -237,8 +247,31 @@ AMTRANlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AMTRANlet");
 
-    INFO_LETIDS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    if (INFO_TRAVMODE (arg_info) == trav_consolidate) {
+        /* If we have assignment such as A = B; and the use count
+         * of A is 0, we set the use count of B also to 0 for the
+         * following reason:
+         *
+         * e.g.  a = device2host( a_dev);
+         *       ....
+         *       b = a;
+         *       .... (no use of b)
+         *
+         * In this case, wif we do nothing, than use count of a will
+         * be greated than 0 and this may prevent lifting the device2host
+         * However, since the rest of the program other than the recursive
+         * loop fun application contains no reference to b, this device2host
+         * may be lifted out as well. That's why we need to set 'a' and 'b'
+         * use count to 0;
+         */
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_id
+            && NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node))) == 0) {
+            NLUTsetNum (INFO_NLUT (arg_info), ID_AVIS (LET_EXPR (arg_node)), 0);
+        }
+    } else {
+        INFO_LETIDS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -417,6 +450,7 @@ AMTRANprf (node *arg_node, info *arg_info)
             /* If we are in trav_annotate traverse mode */
             if (INFO_TRAVMODE (arg_info) == trav_annotate) {
                 id = PRF_ARG1 (arg_node);
+
                 /* We only look at <host2device> whose host N_id
                  * is passed in as an argument of the do-fun*/
                 if (NODE_TYPE (ID_DECL (id)) == N_arg) {
@@ -456,11 +490,18 @@ AMTRANprf (node *arg_node, info *arg_info)
                          *      loop_fun( ..., c_dev ,...);
                          *    }
                          */
-                        if (ID_DECL (ap_arg) != ID_DECL (id)
-                            && !ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))) {
+
+                        pattern *pat;
+                        pat = PMprf (1, PMAisPrf (F_device2host), 1, PMvar (0, 0));
+
+                        if (ID_DECL (ap_arg) != ID_DECL (id) &&
+                            //! ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg)))) {
+                            !PMmatchFlat (pat, ap_arg)) {
                             ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))
                               = TRUE;
                         }
+
+                        pat = PMfree (pat);
                     }
 
                     /* If the N_ap argument is defined by <device2host> and the N_fundef
@@ -476,12 +517,29 @@ AMTRANprf (node *arg_node, info *arg_info)
                      *      loop_fun( *, c_host , *, *);
                      *    }
                      */
-                    if (ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
+                    /*
+                                if( ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg))) &&
+                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
+                       arg_info))) { ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( AVIS_SSAASSIGN(
+                       ID_AVIS( ap_arg))) = TRUE;
+                                }
+                    */
+                    pattern *pat;
+                    pat = PMprf (1, PMAisPrf (F_device2host), 1, PMvar (0, 0));
+
+                    if (PMmatchFlat (pat, ap_arg)
                         && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))) {
-                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (
-                          AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
-                          = TRUE;
+                        node *d2h_assign = AVIS_SSAASSIGN (ID_AVIS (ap_arg));
+                        node *rhs = ASSIGN_RHS (d2h_assign);
+                        while (NODE_TYPE (rhs) != N_prf) {
+                            DBUG_ASSERT (NODE_TYPE (rhs) == N_id, "Non-id node found!");
+                            d2h_assign = AVIS_SSAASSIGN (ID_AVIS (rhs));
+                            rhs = ASSIGN_RHS (d2h_assign);
+                        }
+                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (d2h_assign) = TRUE;
                     }
+
+                    pat = PMfree (pat);
                 }
                 /* If the host variable is not passed as an argument to the do-fun,
                  * the <host2device> CANNOT be moved out of the do-fun. */

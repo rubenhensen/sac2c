@@ -1203,6 +1203,20 @@ extern int TCcountWithops (node *withop);
        ? GENARRAY_IDX (n)                                                                \
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_IDX (n) : NULL)
 
+#define L_WITHOP_IDX(n, rhs)                                                             \
+    switch                                                                               \
+        NODE_TYPE (n)                                                                    \
+        {                                                                                \
+        case N_genarray:                                                                 \
+            GENARRAY_IDX (n) = rhs;                                                      \
+            break;                                                                       \
+        case N_modarray:                                                                 \
+            MODARRAY_IDX (n) = rhs;                                                      \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+        }
+
 #define WITHOP_SUB(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_SUB (n)                                                                \

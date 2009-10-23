@@ -52,14 +52,40 @@ CUh2dSimpleTypeConversion (simpletype sty)
 }
 
 bool
-CUisDeviceType (ntype *ty)
+CUisDeviceTypeNew (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisDeviceType");
+    DBUG_ENTER ("CUisDeviceTypeNew");
 
     res = TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev;
+
+    DBUG_RETURN (res);
+}
+
+bool
+CUisDeviceTypeOld (types *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("CUisDeviceTypeOld");
+
+    res = TCgetBasetype (ty) == T_float_dev || TCgetBasetype (ty) == T_int_dev;
+
+    DBUG_RETURN (res);
+}
+
+bool
+CUisDeviceArrayTypeNew (ntype *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("CUisDeviceArrayTypeNew");
+
+    res = (TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
+           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev)
+          && TYisArray (ty);
 
     DBUG_RETURN (res);
 }

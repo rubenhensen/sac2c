@@ -16,6 +16,7 @@ extern node *CUKNLdoCreateCudaKernels (node *syntax_tree);
 extern node *CUKNLfundef (node *arg_node, info *arg_info);
 extern node *CUKNLassign (node *arg_node, info *arg_info);
 extern node *CUKNLwith (node *arg_node, info *arg_info);
+extern node *CUKNLwith2 (node *arg_node, info *arg_info);
 extern node *CUKNLlet (node *arg_node, info *arg_info);
 extern node *CUKNLid (node *arg_node, info *arg_info);
 extern node *CUKNLids (node *arg_node, info *arg_info);

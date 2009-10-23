@@ -26,9 +26,11 @@
 
 #include <stdlib.h>
 #include "dbug.h"
+#include "minimize_block_transfers2.h"
 #include "minimize_block_transfers.h"
 #include "annotate_memory_transfers.h"
 #include "minimize_loop_transfers.h"
+#include "wl_descalarization.h"
 
 /** <!--********************************************************************-->
  *
@@ -47,12 +49,15 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
     DBUG_ENTER ("MTRANdoMinimizeTransfers");
 
     int i = 0;
-    while (i < 1) {
-        syntax_tree = MBTRANdoMinimizeBlockTransfers (syntax_tree);
+    while (i < 10) {
+        syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
         i++;
     }
+
+    // syntax_tree = WLDSdoWithloopDescalarization( syntax_tree);
+
     DBUG_RETURN (syntax_tree);
 }
 

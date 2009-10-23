@@ -1,6 +1,6 @@
 /** <!--********************************************************************-->
  *
- * @defgroup Insert CUDA type conversion primitives
+ * @defgroup Create CUDA kernel functions
  *
  *
  *
@@ -100,6 +100,8 @@
 #include "type_utils.h"
 #include "shape.h"
 #include "str.h"
+#include "cuda_utils.h"
+#include "cleanup_cuda_kernels.h"
 
 /** <!--********************************************************************-->
  *
@@ -130,9 +132,12 @@ struct INFO {
     lut_t *lut;
     int ls_num;
     bool lift_done;
+    node *with;
     bool in_withop;
     node *withop;
     bool trav_mem;
+    bool suballoc_rhs;
+    bool in_cuda_partition;
 };
 
 #define INFO_CUDAKERNELS(n) (n->cudakernels)
@@ -160,6 +165,9 @@ struct INFO {
 #define INFO_INWITHOP(n) (n->in_withop)
 #define INFO_WITHOP(n) (n->withop)
 #define INFO_TRAVMEM(n) (n->trav_mem)
+#define INFO_SUBALLOC_RHS(n) (n->suballoc_rhs)
+#define INFO_IN_CUDA_PARTITION(n) (n->in_cuda_partition)
+#define INFO_WITH(n) (n->with)
 
 static info *
 MakeInfo ()
@@ -195,6 +203,9 @@ MakeInfo ()
     INFO_INWITHOP (result) = FALSE;
     INFO_WITHOP (result) = NULL;
     INFO_TRAVMEM (result) = FALSE;
+    INFO_SUBALLOC_RHS (result) = FALSE;
+    INFO_IN_CUDA_PARTITION (result) = FALSE;
+    INFO_WITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -240,6 +251,8 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    syntax_tree = CLKNLdoCleanupCUDAKernels (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -313,17 +326,24 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
     while (elements != NULL) {
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (elements)) == N_id),
                      "Should be an array of N_id nodes");
-        avis = ID_AVIS (EXPRS_EXPR (elements));
-        INFO_PARAMS (arg_info) = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
-        new_avis = DUPdoDupNode (avis);
-        AVIS_NAME (new_avis) = MEMfree (AVIS_NAME (new_avis));
-        bound_name = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 2));
-        sprintf (bound_name, "%s%d", name, dim);
-        AVIS_NAME (new_avis) = bound_name;
-        INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
 
-        if (is_bound) {
-            (*gridblock_exprs) = TBmakeExprs (TBmakeId (avis), (*gridblock_exprs));
+        if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            EXPRS_EXPR (elements) = TRAVdo (EXPRS_EXPR (elements), arg_info);
+        } else {
+            avis = ID_AVIS (EXPRS_EXPR (elements));
+
+            INFO_PARAMS (arg_info)
+              = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+            new_avis = DUPdoDupNode (avis);
+            AVIS_NAME (new_avis) = MEMfree (AVIS_NAME (new_avis));
+            bound_name = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 2));
+            sprintf (bound_name, "%s%d", name, dim);
+            AVIS_NAME (new_avis) = bound_name;
+            INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
+
+            if (is_bound) {
+                (*gridblock_exprs) = TBmakeExprs (TBmakeId (avis), (*gridblock_exprs));
+            }
         }
         elements = EXPRS_NEXT (elements);
         dim++;
@@ -453,8 +473,6 @@ PreprocessWithid (node *id, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
 
-    CreateAllocAndFree (new_avis, arg_info);
-
     DBUG_RETURN (new_avis);
 }
 
@@ -580,6 +598,7 @@ CUKNLlet (node *arg_node, info *arg_info)
 node *
 CUKNLwith (node *arg_node, info *arg_info)
 {
+    node *old_with;
     DBUG_ENTER ("CUKNLwith");
 
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -588,13 +607,51 @@ CUKNLwith (node *arg_node, info *arg_info)
         /* Save withop. This withop will be traverse in the
          * traversal of each N_part. See CUKNLpart */
         INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
+        old_with = INFO_WITH (arg_info);
+        INFO_WITH (arg_info) = arg_node;
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        INFO_WITH (arg_info) = old_with;
         INFO_WITHOP (arg_info) = NULL;
         INFO_COLLECT (arg_info) = FALSE;
         /* Indicate to N_assign that a chain of CUDA kernel N_aps
          * has been created and needs to be inserted into the AST */
         INFO_LIFTDONE (arg_info) = TRUE;
+    } else if (INFO_IN_CUDA_PARTITION (arg_info)) {
+        old_with = INFO_WITH (arg_info);
+        INFO_WITH (arg_info) = arg_node;
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        INFO_WITH (arg_info) = old_with;
+        // WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLwith2( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLwith2 (node *arg_node, info *arg_info)
+{
+    node *old_with;
+
+    DBUG_ENTER ("CUKNLwith2");
+
+    old_with = INFO_WITH (arg_info);
+    INFO_WITH (arg_info) = arg_node;
+
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+
+    INFO_WITH (arg_info) = old_with;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -640,7 +697,9 @@ CUKNLpart (node *arg_node, info *arg_info)
              * N_part and since N_code can be shared between more than one
              * N_part, we duplicate it before traversing into it */
             dup_code = DUPdoDupNode (PART_CODE (arg_node));
+            INFO_IN_CUDA_PARTITION (arg_info) = TRUE;
             dup_code = TRAVopt (dup_code, arg_info);
+            INFO_IN_CUDA_PARTITION (arg_info) = FALSE;
 
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
 
@@ -673,6 +732,10 @@ CUKNLpart (node *arg_node, info *arg_info)
             INFO_RETEXPRS (arg_info) = NULL;
             INFO_PRFGRIDBLOCK (arg_info) = NULL;
             INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+        } else if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            PART_WITHID (arg_node) = TRAVopt (PART_WITHID (arg_node), arg_info);
+            PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+            PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         } else {
             /* For non-cudarizable partition, we traverse its code
              * and create a <device2device>. Note that we only traverse
@@ -704,12 +767,17 @@ CUKNLgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUKNLgenarray");
 
     if (INFO_COLLECT (arg_info)) {
-        GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
-
-        INFO_TRAVMEM (arg_info) = TRUE;
-        GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
-        INFO_TRAVMEM (arg_info) = FALSE;
-
+        if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
+            GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
+            GENARRAY_IDX (arg_node)
+              = LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
+        } else {
+            GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
+            INFO_TRAVMEM (arg_info) = TRUE;
+            GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
+            INFO_TRAVMEM (arg_info) = FALSE;
+        }
         GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -728,10 +796,15 @@ CUKNLmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUKNLmodarray");
 
     if (INFO_COLLECT (arg_info)) {
-        INFO_TRAVMEM (arg_info) = TRUE;
-        MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
-        INFO_TRAVMEM (arg_info) = FALSE;
-
+        if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
+            MODARRAY_IDX (arg_node)
+              = LUTsearchInLutPp (INFO_LUT (arg_info), MODARRAY_IDX (arg_node));
+        } else {
+            INFO_TRAVMEM (arg_info) = TRUE;
+            MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
+            INFO_TRAVMEM (arg_info) = FALSE;
+        }
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -749,7 +822,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
 {
     node *wlids, *wlidxs, *wlvec, *id, *withop;
     node *new_wlids = NULL;
-    node *new_avis;
+    node *new_avis, *iv_new_avis;
     int dim, iter = 0;
     node *prf_wlids, *prf_wlidxs, *prf_wlidxs_args = NULL;
 
@@ -761,58 +834,84 @@ CUKNLwithid (node *arg_node, info *arg_info)
     withop = INFO_WITHOP (arg_info);
 
     if (INFO_COLLECT (arg_info)) {
-        DBUG_ASSERT ((NODE_TYPE (wlvec) == N_id),
-                     "Non N_id node found in N_withid->vec!");
-        /* Get the dimentionality of the N_with */
-        dim = SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (wlvec))), 0);
 
-        while (wlids != NULL) {
-            id = EXPRS_EXPR (wlids);
-            new_avis = PreprocessWithid (id, arg_info);
+        if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            WITHID_IDS (arg_node) = TRAVopt (WITHID_IDS (arg_node), arg_info);
+            WITHID_IDXS (arg_node) = TRAVopt (WITHID_IDXS (arg_node), arg_info);
+            if (LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (WITHID_VEC (arg_node)))
+                == ID_AVIS (WITHID_VEC (arg_node))) {
+                /* We need to create N_vardec for the iv of the inner N_with2. However
+                 * Due to the potential absence of alloc of iv, we need to deal with it
+                 * specially here. */
+                new_avis = PreprocessWithid (WITHID_VEC (arg_node), arg_info);
+                ID_AVIS (WITHID_VEC (arg_node)) = new_avis;
+            }
+        } else {
 
-            /* Create primitives F_cuda_wlids */
-            prf_wlids = TCmakePrf3 (F_cuda_wlids, TBmakeId (new_avis), TBmakeNum (iter),
-                                    TBmakeNum (dim));
-            INFO_PRFWLIDS (arg_info)
-              = TBmakeAssign (TBmakeLet (NULL, prf_wlids), INFO_PRFWLIDS (arg_info));
+            DBUG_ASSERT ((NODE_TYPE (wlvec) == N_id),
+                         "Non N_id node found in N_withid->vec!");
+            /* Get the dimentionality of the N_with */
+            dim = SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (wlvec))), 0);
 
-            /* Build an N_exprs containing all N_id in N_withid->ids,
-             * each N_ids contain the new avis. This N_exprs will be
-             * used to construct primitive F_cuda_wlidxs (See below) */
-            new_wlids
-              = TCappendExprs (new_wlids, TBmakeExprs (TBmakeId (new_avis), NULL));
-            iter++;
-            wlids = EXPRS_NEXT (wlids);
+            /* In the kernel, we statically create an array to store the
+             * index vector of a withloop, e.g. int[3] iv;  */
+            iv_new_avis = PreprocessWithid (WITHID_VEC (arg_node), arg_info);
+
+            while (wlids != NULL) {
+                id = EXPRS_EXPR (wlids);
+                new_avis = PreprocessWithid (id, arg_info);
+                CreateAllocAndFree (new_avis, arg_info);
+
+                /* Create primitives F_cuda_wlids */
+                prf_wlids = TCmakePrf3 (F_cuda_wlids, TBmakeNum (iter), TBmakeNum (dim),
+                                        TBmakeId (iv_new_avis));
+                INFO_PRFWLIDS (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), prf_wlids),
+                                  INFO_PRFWLIDS (arg_info));
+
+                /* Build an N_exprs containing all N_id in N_withid->ids,
+                 * each N_ids contain the new avis. This N_exprs will be
+                 * used to construct primitive F_cuda_wlidxs (See below) */
+                new_wlids
+                  = TCappendExprs (new_wlids, TBmakeExprs (TBmakeId (new_avis), NULL));
+                iter++;
+                wlids = EXPRS_NEXT (wlids);
+            }
+
+            while (wlidxs != NULL && withop != NULL) {
+                id = EXPRS_EXPR (wlidxs);
+                new_avis = PreprocessWithid (id, arg_info);
+                CreateAllocAndFree (new_avis, arg_info);
+
+                node *mem_id = WITHOP_MEM (withop);
+                DBUG_ASSERT ((NODE_TYPE (mem_id) == N_id),
+                             "Non N_id node found in withop->mem");
+                node *mem_avis = ID_AVIS (mem_id);
+                node *new_mem_avis = LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
+                DBUG_ASSERT ((new_mem_avis != mem_avis),
+                             "Withop->mem has not been traversed before!");
+
+                // prf_wlidxs_args = TBmakeExprs( TBmakeNum( dim), DUPdoDupTree(
+                // new_wlids));  prf_wlidxs_args = TBmakeExprs( TBmakeId( new_mem_avis),
+                // prf_wlidxs_args);  prf_wlidxs_args = TBmakeExprs( TBmakeId( new_avis),
+                // prf_wlidxs_args);
+                prf_wlidxs_args
+                  = TBmakeExprs (TBmakeId (new_mem_avis), DUPdoDupTree (new_wlids));
+
+                /* Create primitives F_array_idxs2offset */
+                prf_wlidxs = TBmakePrf (F_array_idxs2offset, prf_wlidxs_args);
+                INFO_PRFWLIDXS (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), prf_wlidxs),
+                                  INFO_PRFWLIDXS (arg_info));
+
+                wlidxs = EXPRS_NEXT (wlidxs);
+                withop = WITHOP_NEXT (withop);
+                DBUG_ASSERT (((wlidxs == NULL && withop == NULL)
+                              || (wlidxs != NULL && withop != NULL)),
+                             "#withop != #N_withid->wlidxs!");
+            }
+            new_wlids = FREEdoFreeTree (new_wlids);
         }
-
-        while (wlidxs != NULL && withop != NULL) {
-            id = EXPRS_EXPR (wlidxs);
-            new_avis = PreprocessWithid (id, arg_info);
-
-            node *mem_id = WITHOP_MEM (withop);
-            DBUG_ASSERT ((NODE_TYPE (mem_id) == N_id),
-                         "Non N_id node found in withop->mem");
-            node *mem_avis = ID_AVIS (mem_id);
-            node *new_mem_avis = LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
-            DBUG_ASSERT ((new_mem_avis != mem_avis),
-                         "Withop->mem has not been traversed before!");
-
-            prf_wlidxs_args = TBmakeExprs (TBmakeNum (dim), DUPdoDupTree (new_wlids));
-            prf_wlidxs_args = TBmakeExprs (TBmakeId (new_mem_avis), prf_wlidxs_args);
-            prf_wlidxs_args = TBmakeExprs (TBmakeId (new_avis), prf_wlidxs_args);
-
-            /* Create primitives F_cuda_wlidxs */
-            prf_wlidxs = TBmakePrf (F_cuda_wlidxs, prf_wlidxs_args);
-            INFO_PRFWLIDXS (arg_info)
-              = TBmakeAssign (TBmakeLet (NULL, prf_wlidxs), INFO_PRFWLIDXS (arg_info));
-
-            wlidxs = EXPRS_NEXT (wlidxs);
-            withop = WITHOP_NEXT (withop);
-            DBUG_ASSERT (((wlidxs == NULL && withop == NULL)
-                          || (wlidxs != NULL && withop != NULL)),
-                         "#withop != #N_withid->wlidxs!");
-        }
-        new_wlids = FREEdoFreeTree (new_wlids);
     }
 
     DBUG_RETURN (arg_node);
@@ -831,8 +930,16 @@ CUKNLcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUKNLcode");
 
     /* We only traverse N_code if we are in collect mode */
-    if (INFO_COLLECT (arg_info)) {
-        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    // if( INFO_COLLECT( arg_info)) {
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    //}
+
+    if (INFO_IN_CUDA_PARTITION (arg_info)) {
+        CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+    }
+
+    if (NODE_TYPE (INFO_WITH (arg_info)) == N_with2) {
+        CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -861,10 +968,12 @@ CUKNLgenerator (node *arg_node, info *arg_info)
         HandleBoundStepWidthExprs (lower_bound, &gridblock_exprs, "_lb_", arg_info);
         HandleBoundStepWidthExprs (upper_bound, &gridblock_exprs, "_ub_", arg_info);
 
-        INFO_PRFGRIDBLOCK (arg_info)
-          = TBmakeAssign (TBmakeLet (NULL,
-                                     TBmakePrf (F_cuda_grid_block, gridblock_exprs)),
-                          NULL);
+        if (!INFO_IN_CUDA_PARTITION (arg_info)) {
+            INFO_PRFGRIDBLOCK (arg_info)
+              = TBmakeAssign (TBmakeLet (NULL,
+                                         TBmakePrf (F_cuda_grid_block, gridblock_exprs)),
+                              NULL);
+        }
 
         step = GENERATOR_STEP (arg_node);
         width = GENERATOR_WIDTH (arg_node);
@@ -961,10 +1070,22 @@ CUKNLids (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("CUKNL", ("ENTER ids %s", IDS_NAME (arg_node)));
 
-    if (INFO_COLLECT (arg_info) && PART_CUDARIZABLE (INFO_PART (arg_info))) {
+    if (INFO_COLLECT (arg_info)
+        && (PART_CUDARIZABLE (INFO_PART (arg_info))
+            || INFO_IN_CUDA_PARTITION (arg_info))) {
         /* Not come across before */
         if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
             new_avis = DUPdoDupNode (avis);
+            if (INFO_SUBALLOC_RHS (arg_info)) {
+                if (!CUisDeviceTypeNew (AVIS_TYPE (new_avis))) {
+                    ntype *scalar_type = TYgetScalar (AVIS_TYPE (new_avis));
+                    simpletype sty = TYgetSimpleType (scalar_type);
+                    scalar_type
+                      = TYsetSimpleType (scalar_type, CUh2dSimpleTypeConversion (sty));
+                }
+                INFO_SUBALLOC_RHS (arg_info) = FALSE;
+            }
+
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             AVIS_DECL (new_avis) = INFO_VARDECS (arg_info);
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
@@ -995,17 +1116,32 @@ CUKNLprf (node *arg_node, info *arg_info)
     if (INFO_COLLECT (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_wl_assign:
-            if (PART_CUDARIZABLE (INFO_PART (arg_info))) {
+            if (PART_CUDARIZABLE (INFO_PART (arg_info))
+                || INFO_IN_CUDA_PARTITION (arg_info)) {
                 /* Replace the F_wlassign by a new F_cuda_wlassign which
                  * doesn't contain N_withid->vec */
-                args = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                    TBmakeExprs (DUPdoDupNode (PRF_ARG2 (arg_node)),
-                                                 TBmakeExprs (DUPdoDupNode (
-                                                                PRF_ARG4 (arg_node)),
-                                                              NULL)));
+
+                if (PART_INNERWLIDXASSIGN (INFO_PART (arg_info)) != NULL) {
+                    ID_AVIS (PRF_ARG4 (arg_node)) = IDS_AVIS (
+                      ASSIGN_LHS (PART_INNERWLIDXASSIGN (INFO_PART (arg_info))));
+                }
+
+                node *mem_id = DUPdoDupNode (PRF_ARG2 (arg_node));
+                args
+                  = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                 TBmakeExprs (mem_id, TBmakeExprs (DUPdoDupNode (
+                                                                     PRF_ARG4 (arg_node)),
+                                                                   NULL)));
+                IDS_AVIS (INFO_LETIDS (arg_info)) = ID_AVIS (mem_id);
                 ret_node = TBmakePrf (F_cuda_wl_assign, args);
                 arg_node = FREEdoFreeTree (arg_node);
                 PRF_ARGS (ret_node) = TRAVdo (PRF_ARGS (ret_node), arg_info);
+                /*
+                          node *mem_id = DUPdoDupNode( PRF_ARG2( arg_node));
+                          IDS_AVIS( INFO_LETIDS( arg_info)) = ID_AVIS( mem_id);
+                          PRF_ARGS( arg_node) = TRAVdo( PRF_ARGS( arg_node), arg_info);
+                          ret_node = arg_node;
+                */
             } else {
                 /* We only create a <device2device> primitive if this is the
                  * first non-cudarizable partition we come across. */
@@ -1022,7 +1158,8 @@ CUKNLprf (node *arg_node, info *arg_info)
             }
             break;
         case F_idx_sel:
-            if (PART_CUDARIZABLE (INFO_PART (arg_info))) {
+            if (PART_CUDARIZABLE (INFO_PART (arg_info))
+                || INFO_IN_CUDA_PARTITION (arg_info)) {
                 PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
             } else {
                 /* If the N_part is not cudarizable, no CUDA kernel needs
@@ -1032,6 +1169,11 @@ CUKNLprf (node *arg_node, info *arg_info)
                  * to create the <device2device>. */
                 INFO_D2DSOURCE (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
             }
+            ret_node = arg_node;
+            break;
+        case F_suballoc:
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+            INFO_SUBALLOC_RHS (arg_info) = TRUE;
             ret_node = arg_node;
             break;
         default:

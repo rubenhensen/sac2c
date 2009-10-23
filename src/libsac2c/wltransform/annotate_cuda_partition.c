@@ -162,21 +162,22 @@ ACUPTNdoAnnotateCUDAPartition (node *syntax_tree)
  * @brief
  *
  *****************************************************************************/
-static arraylist_struct *
-MakeALS (arraylist_struct *als, node *avis, int size)
+/*
+static arraylist_struct *MakeALS( arraylist_struct *als, node *avis, int size)
 {
-    arraylist_struct *res;
+  arraylist_struct *res;
 
-    DBUG_ENTER ("MakeALS");
+  DBUG_ENTER( "MakeALS");
 
-    res = MEMmalloc (sizeof (arraylist_struct));
+  res = MEMmalloc( sizeof( arraylist_struct));
 
-    res->avis = avis;
-    res->size = size;
-    res->next = als;
+  res->avis = avis;
+  res->size = size;
+  res->next = als;
 
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+*/
 
 /** <!--********************************************************************-->
  *
@@ -339,6 +340,8 @@ ACUPTNwith (node *arg_node, info *arg_info)
 
         INFO_MODE (arg_info) = unmark_potential;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+    } else {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -355,52 +358,56 @@ ACUPTNwith (node *arg_node, info *arg_info)
 node *
 ACUPTNpart (node *arg_node, info *arg_info)
 {
-    node *block_instr;
+    // node *block_instr;
 
     DBUG_ENTER ("ACUPTNpart");
 
-    block_instr = BLOCK_INSTR (PART_CBLOCK (arg_node));
+    /* For now, we mark each partition as true since the implementation
+     * is not stable yet */
+    PART_CUDARIZABLE (arg_node) = TRUE;
 
-    if (INFO_MODE (arg_info) == mark_potential) {
-        if (NODE_TYPE (block_instr) == N_empty) {
-            PART_CUDARIZABLE (arg_node) = TRUE;
-        } else if (NODE_TYPE (block_instr) == N_assign) {
-            int assign_count;
-            assign_count = TCcountAssigns (block_instr);
-            if (assign_count > 1) {
-                PART_CUDARIZABLE (arg_node) = TRUE;
-            } else {
-                if (NODE_TYPE (ASSIGN_INSTR (block_instr)) == N_let
-                    && NODE_TYPE (ASSIGN_RHS (block_instr)) == N_prf
-                    && PRF_PRF (ASSIGN_RHS (block_instr)) == F_idx_sel) {
-                    PART_CUDARIZABLE (arg_node) = FALSE;
-                    INFO_ARRAYAVIS (arg_info)
-                      = ID_AVIS (PRF_ARG2 (ASSIGN_RHS (block_instr)));
-                    if (ArraylistContains (INFO_ARRAYLIST (arg_info),
-                                           INFO_ARRAYAVIS (arg_info))
-                        == NULL) {
-                        INFO_ARRAYLIST (arg_info)
-                          = MakeALS (INFO_ARRAYLIST (arg_info), INFO_ARRAYAVIS (arg_info),
-                                     0);
-                    }
-                } else {
-                    PART_CUDARIZABLE (arg_node) = TRUE;
-                }
+    /*
+      block_instr = BLOCK_INSTR( PART_CBLOCK( arg_node));
+
+      if( INFO_MODE( arg_info) == mark_potential) {
+        if( NODE_TYPE( block_instr) == N_empty) {
+          PART_CUDARIZABLE( arg_node) = TRUE;
+        }
+        else if( NODE_TYPE( block_instr) == N_assign) {
+          int assign_count;
+          assign_count = TCcountAssigns( block_instr);
+          if( assign_count > 1) {
+            PART_CUDARIZABLE( arg_node) = TRUE;
+          }
+          else {
+            if( NODE_TYPE( ASSIGN_INSTR( block_instr)) == N_let &&
+                NODE_TYPE( ASSIGN_RHS( block_instr)) == N_prf &&
+                PRF_PRF( ASSIGN_RHS( block_instr)) == F_idx_sel) {
+              PART_CUDARIZABLE( arg_node) = FALSE;
+              INFO_ARRAYAVIS( arg_info) = ID_AVIS( PRF_ARG2( ASSIGN_RHS( block_instr)));
+              if( ArraylistContains( INFO_ARRAYLIST( arg_info), INFO_ARRAYAVIS( arg_info))
+      == NULL) { INFO_ARRAYLIST( arg_info) = MakeALS( INFO_ARRAYLIST( arg_info),
+      INFO_ARRAYAVIS( arg_info), 0);
+              }
             }
-        }
-
-        if (!PART_CUDARIZABLE (arg_node)) {
-            PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
-        }
-    } else if (INFO_MODE (arg_info) == unmark_potential) {
-        if (!PART_CUDARIZABLE (arg_node) && INFO_MAXARRAYAVIS (arg_info) != NULL) {
-            if (ID_AVIS (PRF_ARG2 (ASSIGN_RHS (block_instr)))
-                != INFO_MAXARRAYAVIS (arg_info)) {
-                PART_CUDARIZABLE (arg_node) = TRUE;
+            else {
+              PART_CUDARIZABLE( arg_node) = TRUE;
             }
+          }
         }
-    }
 
+        if( !PART_CUDARIZABLE( arg_node)) {
+          PART_GENERATOR( arg_node) = TRAVopt( PART_GENERATOR( arg_node), arg_info);
+        }
+      }
+      else if( INFO_MODE( arg_info) == unmark_potential) {
+        if( !PART_CUDARIZABLE( arg_node) && INFO_MAXARRAYAVIS( arg_info) != NULL) {
+          if( ID_AVIS( PRF_ARG2( ASSIGN_RHS( block_instr))) != INFO_MAXARRAYAVIS(
+      arg_info)) { PART_CUDARIZABLE( arg_node) = TRUE;
+          }
+        }
+      }
+    */
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

@@ -4175,11 +4175,12 @@ PRTfold (node *arg_node, info *arg_info)
     fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
     TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-    if (FOLD_INITIAL (arg_node) != NULL) {
-        fprintf (global.outfile, ", ");
-        FOLD_INITIAL (arg_node) = TRAVdo (FOLD_INITIAL (arg_node), arg_info);
-    }
-
+    /*
+      if ( FOLD_INITIAL( arg_node) != NULL){
+        fprintf( global.outfile, ", ");
+        FOLD_INITIAL( arg_node) = TRAVdo( FOLD_INITIAL( arg_node), arg_info);
+      }
+    */
     fprintf (global.outfile, ")");
 
     if (FOLD_GUARD (arg_node) != NULL) {

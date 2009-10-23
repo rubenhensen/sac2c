@@ -86,6 +86,33 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="CLKNL" name="Cleanup CUDA kernels" default="sons" include="cleanup_cuda_kernels.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="SCUWL" name="Split Cudarizable withloop" default="sons" include="split_cuda_withloop.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Modarray" />
+          <node name="Genarray" />
+        </travuser>
+      </traversal>
+      <traversal id="WLDS" name="Descalarize cudarizbale withloops" default="sons" include="wl_descalarization.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Withid" />
+        </travuser>
+      </traversal>
       <traversal id="CULKNL" name="Create CUDA loop kernels" default="sons" include="create_loop_kernels.h" >
         <travuser>
           <node name="Do" />
@@ -162,6 +189,11 @@
           <node name="Cond" />
         </travuser>
       </traversal>
+      <traversal id="MBTRAN2" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers2.h" >
+        <travuser>
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
         <travuser>
           <node name="Module" />
@@ -173,6 +205,7 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="With" />
+          <node name="With2" />
           <node name="Withid" />
           <node name="Id" />
           <node name="Ids" />
@@ -193,15 +226,18 @@
           <node name="Generator" />
         </travuser>
       </traversal>
-      <traversal id="CUTYCV" name="CUDA type conversion" default="sons" include="cuda_type_conversion.h" >
+      <traversal id="IMEM" name="Insert CUDA memory transfer primitives" default="sons" include="insert_memory_transfers.h" >
         <travuser>
           <node name="Let" />
           <node name="Assign" />
           <node name="With" />
+          <node name="Part" />
+          <node name="Withid" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Fundef" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Code" />
         </travuser>
       </traversal>
@@ -212,7 +248,10 @@
           <node name="Fundef" />
           <node name="Ap" />
           <node name="Fold" />
+          <node name="Break" />
+          <node name="Propagate" />
           <node name="Id" />
+          <node name="Let" />
         </travuser>
       </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
@@ -4471,6 +4510,18 @@ N_structdef :
             </targets>
           </type>
         </attribute>
+        <attribute name="Containing_Block" inconstructor="no">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Block" />
+                <phases>
+                  <phase name="imem" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsUnused" />
@@ -6795,6 +6846,15 @@ N_structdef :
                 <phases>
                   <all />
                 </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="InnerWlidxAssign" inconstructor="no">
+         <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Assign" />
               </target>
             </targets>
           </type>

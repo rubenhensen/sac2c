@@ -659,6 +659,55 @@ ENDPHASE (opt)
 
 /******************************************************************************/
 
+PHASE (cuda, "CUDA related transformations", global.backend == BE_cuda)
+
+SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
+          global.backend == BE_cuda, cuda)
+
+/*
+SUBPHASE( scuwl,
+          "Split cudarizable withloop",
+          SCUWLdoSplitCudaWithloops,
+          global.backend == BE_cuda,
+          cuda)
+*/
+
+SUBPHASE (imem, "Insert CUDA memory transfer primitives", IMEMdoInsertMemoryTransfers,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
+          global.backend == BE_cuda, cuda)
+
+SUBPHASE (mtran, "Minimise the number of device-host data transfers",
+          MTRANdoMinimizeTransfers, global.backend == BE_cuda, cuda)
+
+/*
+SUBPHASE( wlds,
+          "Unscalarize cudarizbale withloops",
+          WLDSdoWithloopDescalarization,
+          global.backend == BE_cuda,
+          cuda)
+*/
+
+ENDPHASE (cuda)
+
+/******************************************************************************/
+
 PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
 SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
@@ -675,17 +724,11 @@ SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt
 
 SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
 
-SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
-          global.backend == BE_cuda, wlt)
-
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
 SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
 
 SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, wlt)
-
-SUBPHASE (cutycv, "CUDA type conversion", CUTYCVdoCUDAtypeConversion,
-          global.backend == BE_cuda, wlt)
 
 SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           global.backend == BE_mutc, wlt)
@@ -699,15 +742,6 @@ SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)
-
-SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
-          global.backend == BE_cuda, wlt)
-
-SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
-          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
-
-SUBPHASE (mtran, "Minimise the number of device-host data transfers",
-          MTRANdoMinimizeTransfers, global.backend == BE_cuda, wlt)
 
 ENDPHASE (wlt)
 
@@ -819,6 +853,9 @@ SUBPHASE( mvsmi,
 #endif
 
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
+
+SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
+          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
 
 ENDPHASE (mem)
 

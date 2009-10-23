@@ -35,6 +35,7 @@
 #include "convert.h"
 #include "math_utils.h"
 #include "types.h"
+#include "cuda_utils.h"
 
 #define USE_STATIC_RESOURCE_ANNOTATIONS 1
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
@@ -90,6 +91,7 @@ struct INFO {
     node *postfun;
     bool concurrentranges;
     bool cond;
+    node *withloop;
     node *with3folds;
 };
 
@@ -115,7 +117,9 @@ struct INFO {
 #define INFO_POSTFUN(n) ((n)->postfun)
 #define INFO_CONCURRENTRANGES(n) ((n)->concurrentranges)
 #define INFO_COND(n) ((n)->cond)
+#define INFO_WITHLOOP(n) ((n)->withloop)
 #define INFO_WITH3_FOLDS(n) ((n)->with3folds)
+
 /*
  * INFO functions
  */
@@ -145,6 +149,7 @@ MakeInfo ()
     INFO_FOLDLUT (result) = NULL;
     INFO_POSTFUN (result) = NULL;
     INFO_COND (result) = FALSE;
+    INFO_WITHLOOP (result) = NULL;
     INFO_WITH3_FOLDS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -2675,10 +2680,16 @@ node *
 COMPvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPvardec");
-
     if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
         VARDEC_ICM (arg_node) = TCmakeIcm1 ("SAC_MUTC_DECL_INDEX",
                                             TCmakeIdCopyString (VARDEC_NAME (arg_node)));
+    } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))
+               && !CUisDeviceTypeOld (VARDEC_TYPE (arg_node))
+               && TCgetShapeDim (VARDEC_TYPE (arg_node)) > 0) {
+        VARDEC_ICM (arg_node)
+          = TCmakeIcm1 ("CUDA_DECL_KERNEL_ARRAY",
+                        MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                      TRUE, TRUE, TRUE, NULL));
     } else {
         VARDEC_ICM (arg_node)
           = TCmakeIcm1 ("ND_DECL",
@@ -4180,7 +4191,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
 
-    if (global.backend == BE_cuda) {
+    if (INFO_WITHLOOP (arg_info) != NULL && WITH_CUDARIZABLE (INFO_WITHLOOP (arg_info))) {
         ret_node
           = TCmakeAssignIcm5 ("CUDA_WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
                               TBmakeNum (TCgetShapeDim (IDS_TYPE (let_ids))),
@@ -4357,21 +4368,27 @@ COMPprfCUDAWLIds (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     node *args;
     int array_dim, dim_pos;
+    node *let_ids;
+    node *iv;
 
     DBUG_ENTER ("COMPprfCUDAWLIds");
 
-    array_dim = NUM_VAL (PRF_ARG3 (arg_node));
+    let_ids = INFO_LASTIDS (arg_info);
+
+    array_dim = NUM_VAL (PRF_ARG2 (arg_node));
     DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
 
     args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
 
-    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+    iv = PRF_ARG3 (arg_node);
+    dim_pos = NUM_VAL (PRF_ARG1 (arg_node));
     ret_node
-      = TCmakeAssignIcm4 ("CUDA_WLIDS",
-                          MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                        ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
-                                        NULL),
+      = TCmakeAssignIcm5 ("CUDA_WLIDS",
+                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                        TRUE, FALSE, NULL),
                           TBmakeNum (array_dim), TBmakeNum (dim_pos),
+                          MakeTypeArgs (ID_NAME (iv), ID_TYPE (iv), FALSE, FALSE, FALSE,
+                                        NULL),
                           TBmakeBool (FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
                           NULL);
 
@@ -5805,6 +5822,80 @@ COMPprfIdxs2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPprfArrayIdxs2Offset( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfArrayIdxs2Offset (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *icm = NULL;
+    node *array;
+    node *idxs_exprs;
+
+    DBUG_ENTER ("COMPprfArrayIdxs2Offset");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    array = PRF_ARG1 (arg_node);
+    idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_id),
+                 "First argument of F_array_idxs2offset must be an N_id Node!");
+
+    icm = TCmakeIcm5 ("ND_ARRAY_IDXS2OFFSET_id", DUPdupIdsIdNt (let_ids),
+                      TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
+                      MakeDimArg (PRF_ARG1 (arg_node), TRUE),
+                      DUPdupIdNt (PRF_ARG1 (arg_node)));
+
+    DBUG_RETURN (TBmakeAssign (icm, NULL));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfArrayIdxs2Offset( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfArrayVect2Offset (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *icm = NULL;
+    node *array;
+    node *iv_vect;
+
+    DBUG_ENTER ("COMPprfArrayVect2Offset");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    array = PRF_ARG1 (arg_node);
+    iv_vect = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_id),
+                 "First argument of F_array_vect2offset must be an N_id Node!");
+
+    icm = TCmakeIcm5 ("ND_ARRAY_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
+                      TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
+                      DUPdupIdNt (iv_vect), MakeDimArg (PRF_ARG1 (arg_node), TRUE),
+                      DUPdupIdNt (PRF_ARG1 (arg_node)));
+    /*
+        icm = TCmakeIcm5( "ND_VECT2OFFSET_id",
+                          DUPdupIdsIdNt( let_ids),
+                          TBmakeNum( TCgetTypesLength( ID_TYPE( iv_vect))),
+                          DUPdupIdNt( iv_vect),
+                          MakeSizeArg( PRF_ARG1( arg_node), TRUE),
+                          DUPdupIdNt( PRF_ARG1( arg_node)));
+    */
+
+    DBUG_RETURN (TBmakeAssign (icm, NULL));
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfVect2Offset( node *arg_node, info *arg_info)
  *
  * @brief  ...
@@ -6803,10 +6894,14 @@ COMPwith (node *arg_node, info *arg_info)
     node *res_ids, *idx_id, *lower_id, *upper_id;
     node *offs_id = NULL;
     bool isfold;
+    node *old_withloop;
 
     DBUG_ENTER ("COMPwith");
 
     res_ids = INFO_LASTIDS (arg_info);
+
+    old_withloop = INFO_WITHLOOP (arg_info);
+    INFO_WITHLOOP (arg_info) = arg_node;
 
     /**
      * First, we traverse the partition.
@@ -7007,6 +7102,8 @@ COMPwith (node *arg_node, info *arg_info)
                                           sub_get_dim, icm_chain);
         }
     }
+
+    INFO_WITHLOOP (arg_info) = old_withloop;
 
     DBUG_RETURN (icm_chain);
 }

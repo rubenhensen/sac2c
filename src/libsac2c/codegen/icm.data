@@ -623,6 +623,26 @@ ICM_DEF( ND_IDXS2OFFSET_id, ICM_TRACE(prf))
 ICM_END( ND_IDXS2OFFSET_id, (off_NT, idxs_size, idxs_ANY, shp_size, shp_NT))
 #endif
 
+#if defined(ND_ARRAY_IDXS2OFFSET_id) || defined(ICM_ALL)
+ICM_DEF( ND_ARRAY_IDXS2OFFSET_id, ICM_TRACE(prf))
+  ICM_NT( off_NT)
+  ICM_INT( idxs_size)
+  ICM_VARANY( idxs_size, idxs_ANY)
+  ICM_INT( arr_dim)
+  ICM_NT( arr_NT)
+ICM_END( ND_ARRAY_IDXS2OFFSET_id, (off_NT, idxs_size, idxs_ANY, arr_dim, arr_NT))
+#endif
+
+#if defined(ND_ARRAY_VECT2OFFSET_id) || defined(ICM_ALL)
+ICM_DEF( ND_ARRAY_VECT2OFFSET_id, ICM_TRACE(prf))
+  ICM_NT( off_NT)
+  ICM_INT( from_size)
+  ICM_NT( from_NT)
+  ICM_INT( arr_dim)
+  ICM_NT( arr_NT)
+ICM_END( ND_ARRAY_VECT2OFFSET_id, (off_NT, from_size, from_NT, arr_dim, arr_NT))
+#endif
+
 
 /*
  * ICMs for compilation of new with-loop
@@ -944,8 +964,9 @@ ICM_DEF( CUDA_WLIDS, ICM_TRACE_NONE)
   ICM_INT( wlids_NT_dim)
   ICM_INT( array_dim)
   ICM_INT( wlids_dim_pos)
+  ICM_NT( iv_NT)
   ICM_ANY( hasstepwidth)
-ICM_END( CUDA_WLIDS, (wlids_NT, wlids_NT_dim, array_dim, wlids_dim_pos, hasstepwidth))
+ICM_END( CUDA_WLIDS, (wlids_NT, wlids_NT_dim, array_dim, wlids_dim_pos, iv_NT, hasstepwidth))
 #endif
 
 
@@ -994,6 +1015,15 @@ ICM_DEF( CUDA_WL_SUBALLOC, ICM_TRACE_NONE)
   ICM_INT( to_dim)
   ICM_NT( off_NT)
 ICM_END( CUDA_WL_SUBALLOC, (sub_NT, sub_dim, to_NT, to_dim, off_NT))
+#endif
+
+#if defined(CUDA_DECL_KERNEL_ARRAY) || defined(ICM_ALL)
+ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
 #endif
 
 /*

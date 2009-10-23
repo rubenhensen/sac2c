@@ -242,4 +242,13 @@
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Z + lb_var;
 
+/*****************************************************************************
+ *
+ * ICMs for CUDA kernel array decalaration
+ * =================
+ *
+ *****************************************************************************/
+#define SAC_CUDA_DECL_KERNEL_ARRAY(var_NT, basetype, dim)                                \
+    basetype[dim] SAC_ND_A_FIELD (var_NT);
+
 #endif

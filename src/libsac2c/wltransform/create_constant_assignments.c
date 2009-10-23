@@ -25,6 +25,8 @@
 #include "shape.h"
 #include "str.h"
 #include "flattengenerators.h"
+#include "deadcoderemoval.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  *
@@ -35,12 +37,14 @@
 struct INFO {
     node *constassigns;
     node *fundef;
-    bool collect;
+    bool in_cudawl;
+    bool add_assigns;
 };
 
 #define INFO_CONSTASSIGNS(n) (n->constassigns)
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_COLLECT(n) (n->collect)
+#define INFO_INCUDAWL(n) (n->in_cudawl)
+#define INFO_ADD_ASSIGNS(n) (n->add_assigns)
 
 static info *
 MakeInfo ()
@@ -53,7 +57,8 @@ MakeInfo ()
 
     INFO_CONSTASSIGNS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
-    INFO_COLLECT (result) = FALSE;
+    INFO_INCUDAWL (result) = FALSE;
+    INFO_ADD_ASSIGNS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -104,6 +109,8 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
 
     info = FreeInfo (info);
 
+    syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
+
     DBUG_RETURN (syntax_tree);
 }
 
@@ -133,13 +140,19 @@ UnflattenGeneratorComponent (node *id)
 
     DBUG_ENTER ("UnflattenGeneratorComponent");
 
-    ssaassign = AVIS_SSAASSIGN (ID_AVIS (id));
+    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) == N_arg) {
+        DBUG_ASSERT (TYisAKV (AVIS_TYPE (ID_AVIS (id))), "Non-AKS CUDA N_with found!");
+        res = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (id))));
+        id = FREEdoFreeNode (id);
+    } else {
+        ssaassign = AVIS_SSAASSIGN (ID_AVIS (id));
 
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
-                 "Unflattened generator component must be an N_array node!");
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
+                     "Unflattened generator component must be an N_array node!");
 
-    id = FREEdoFreeNode (id);
-    res = DUPdoDupNode (ASSIGN_RHS (ssaassign));
+        id = FREEdoFreeNode (id);
+        res = DUPdoDupNode (ASSIGN_RHS (ssaassign));
+    }
 
     DBUG_RETURN (res);
 }
@@ -174,6 +187,7 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
               = TBmakeAssign (TBmakeLet (ids, EXPRS_EXPR (exprs)),
                               INFO_CONSTASSIGNS (arg_info));
             EXPRS_EXPR (exprs) = TBmakeId (avis);
+            AVIS_SSAASSIGN (avis) = INFO_CONSTASSIGNS (arg_info);
         }
         exprs = EXPRS_NEXT (exprs);
     }
@@ -223,16 +237,21 @@ CNSTASSfundef (node *arg_node, info *arg_info)
 node *
 CNSTASSassign (node *arg_node, info *arg_info)
 {
+    bool old_add_assigns;
+
     DBUG_ENTER ("CNSTASSassign");
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
+    old_add_assigns = INFO_ADD_ASSIGNS (arg_info);
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_CONSTASSIGNS (arg_info) != NULL && !INFO_COLLECT (arg_info)) {
+    if (INFO_CONSTASSIGNS (arg_info) != NULL && INFO_ADD_ASSIGNS (arg_info)) {
         arg_node = TCappendAssign (INFO_CONSTASSIGNS (arg_info), arg_node);
         INFO_CONSTASSIGNS (arg_info) = NULL;
     }
+
+    INFO_ADD_ASSIGNS (arg_info) = old_add_assigns;
 
     DBUG_RETURN (arg_node);
 }
@@ -248,13 +267,26 @@ CNSTASSassign (node *arg_node, info *arg_info)
 node *
 CNSTASSwith (node *arg_node, info *arg_info)
 {
+    node *old_assigns;
+
     DBUG_ENTER ("CNSTASSwith");
 
-    /* Only traverse cudarizable WL */
     if (WITH_CUDARIZABLE (arg_node)) {
-        INFO_COLLECT (arg_info) = TRUE;
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        INFO_COLLECT (arg_info) = FALSE;
+
+        old_assigns = INFO_CONSTASSIGNS (arg_info);
+
+        INFO_CONSTASSIGNS (arg_info) = NULL;
+        INFO_INCUDAWL (arg_info) = TRUE;
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_INCUDAWL (arg_info) = FALSE;
+        INFO_CONSTASSIGNS (arg_info) = old_assigns;
+
+        INFO_ADD_ASSIGNS (arg_info) = TRUE;
+    } else if (INFO_INCUDAWL (arg_info)) {
+        /* For N_with in cudarizable N_with, we only traverse its N_part */
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        INFO_ADD_ASSIGNS (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);

@@ -89,4 +89,11 @@ extern void ICMCompileND_IDXS2OFFSET_arr (char *off_NT, int idxs_size, char **id
 extern void ICMCompileND_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY,
                                          int shp_size, char *shp_NT);
 
+extern void ICMCompileND_ARRAY_IDXS2OFFSET_id (char *off_NT, int idxs_size,
+                                               char **idxs_ANY, int arr_size,
+                                               char *arr_NT);
+
+extern void ICMCompileND_ARRAY_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT,
+                                               int arr_dim, char *arr_NT);
+
 #endif /* _SAC_ICM2C_STD_H_ */
