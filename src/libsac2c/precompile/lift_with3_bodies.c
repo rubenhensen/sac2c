@@ -542,7 +542,8 @@ InitFolds (node *exprs, bool first, lut_t *lut)
                     ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (FOLD_INITIAL (fold));
                 }
             } else {
-                ID_AVIS (EXPRS_EXPR (exprs)) = IDS_AVIS (LUTsearchInLutPp (lut, fold));
+                ID_AVIS (EXPRS_EXPR (exprs))
+                  = IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold));
             }
         }
     }
