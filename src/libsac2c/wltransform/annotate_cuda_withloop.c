@@ -192,8 +192,8 @@ ACUWLwith (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = TRUE;
         INFO_CUDARIZABLE (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         /* We only cudarize AKS N_with */
         avis = IDS_AVIS (INFO_LETIDS (arg_info));
@@ -239,6 +239,7 @@ ACUWLfold (node *arg_node, info *arg_info)
     /* An inner fold N_with doesn't stop the outer
      * N_with from being cudarzied. */
     if (!INFO_INWL (arg_info)) {
+        printf ("Setting fold to FALSE\n");
         INFO_CUDARIZABLE (arg_info) = FALSE;
     } else {
         if (INFO_CUDARIZABLE (arg_info)) {
