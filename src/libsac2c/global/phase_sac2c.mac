@@ -5,7 +5,6 @@
 #include "phase_initialise_defs.mac"
 
 /******************************************************************************/
-
 PHASE (scp, "Loading SAC program", ALWAYS)
 
 SUBPHASE (loc, "Locating source code", SPdoLocateSource, ALWAYS, scp)
@@ -784,7 +783,10 @@ PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
 SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 
-SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, wlt)
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
+
+SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
+          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, mem)
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 
@@ -853,9 +855,6 @@ SUBPHASE( mvsmi,
 #endif
 
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
-
-SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
-          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, wlt)
 
 ENDPHASE (mem)
 
