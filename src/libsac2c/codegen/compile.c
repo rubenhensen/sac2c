@@ -2024,6 +2024,7 @@ MakeFunApArgs (node *ap)
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
         node *exprs = NULL;
+        bool shared = FALSE; /* MUTC shared paramitor? */
 
         if (argtab->ptr_out[i] != NULL) {
             if (!FUNDEF_ISTHREADFUN (fundef)) {
@@ -2056,6 +2057,7 @@ MakeFunApArgs (node *ap)
                 } else {
                     if ((ARG_TYPE (FUNDEF_ARGTAB (fundef)->ptr_in[i]))->scope
                         == MUTC_SHARED) {
+                        shared = TRUE;
                         exprs
                           = TBmakeExprs (TCmakeIcm2 ("SET_NT_SCO",
                                                      TCmakeIdCopyString ("SHA"),
@@ -2094,8 +2096,13 @@ MakeFunApArgs (node *ap)
 #endif
             }
         }
-        icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
-                                exprs);
+        if (shared) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString ("shared"), exprs);
+        } else {
+            icm_args
+              = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
+                             exprs);
+        }
     }
 
     icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);

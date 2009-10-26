@@ -75,8 +75,8 @@ struct INFO {
     node *vardecs;
     node *lhs;
     node *withops;
+    node *preassigns;
     lut_t *withops_ids;
-    int ranges;
 
     lut_t *at_lut;
     lut_t *at_init_lut;
@@ -93,8 +93,8 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHOPS(n) ((n)->withops)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_WITHOPS_IDS(n) ((n)->withops_ids)
-#define INFO_RANGES(n) ((n)->ranges)
 /* Special meaning for anon traversal */
 #define INFO_AT_LUT(n) ((n)->at_lut)
 #define INFO_AT_INIT_LUT(n) ((n)->at_init_lut)
@@ -119,8 +119,8 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHOPS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_WITHOPS_IDS (result) = LUTgenerateLut ();
-    INFO_RANGES (result) = 0;
 
     INFO_AT_LUT (result) = LUTgenerateLut ();
     INFO_AT_INIT_LUT (result) = LUTgenerateLut ();
@@ -136,6 +136,7 @@ FreeInfo (info *info)
 
     DBUG_ASSERT ((INFO_AT_EXPRS_IDS (info) == NULL),
                  "Leaking memory in AT_EXPRS_IDS chain");
+    DBUG_ASSERT ((INFO_PREASSIGNS (info) == NULL), "Leaking memory in PREASSIGNS");
 
     INFO_AT_LUT (info) = LUTremoveLut (INFO_AT_LUT (info));
     INFO_AT_INIT_LUT (info) = LUTremoveLut (INFO_AT_INIT_LUT (info));
@@ -490,6 +491,96 @@ addShareds (node *syntax_tree, info *arg_info)
     DBUG_RETURN (syntax_tree);
 }
 
+static node *
+ATravInitAssign (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    DBUG_ENTER ("ATravInitAssign");
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ret_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+    INFO_PREASSIGNS (arg_info) = NULL;
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+ATravInitLet (node *arg_node, info *arg_info)
+{
+    node *stack;
+    DBUG_ENTER ("ATravInitLet");
+
+    stack = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    arg_node = TRAVcont (arg_node, arg_info);
+    INFO_LHS (arg_info) = stack;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+GenerateWith3Assigns (node *ids, node *withop)
+{
+    node *assigns = NULL;
+    DBUG_ENTER ("GenerateWith3Assigns");
+
+    if (IDS_NEXT (ids) != NULL) {
+        assigns = GenerateWith3Assigns (IDS_NEXT (ids), WITHOP_NEXT (withop));
+    }
+
+    if (NODE_TYPE (withop) == N_fold) {
+        node *init = FOLD_INITIAL (withop);
+        if (init == NULL) {
+            init = FOLD_NEUTRAL (withop);
+        }
+        DBUG_ASSERT ((init != NULL), "Do not know what to start the fold withloop with");
+        DBUG_ASSERT ((NODE_TYPE (init) == N_id),
+                     "Can not start fold withloop without id");
+        assigns = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids), NULL),
+                                           TBmakeId (ID_AVIS (init))),
+                                assigns);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+static node *
+ATravInitWith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravInitWith3");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_PREASSIGNS (arg_info)
+      = TCappendAssign (INFO_PREASSIGNS (arg_info),
+                        GenerateWith3Assigns (INFO_LHS (arg_info),
+                                              WITH3_OPERATIONS (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+InitFolds (node *syntax_tree)
+{
+    info *anon_info;
+    anontrav_t atrav[4] = {{N_with3, &ATravInitWith3},
+                           {N_let, &ATravInitLet},
+                           {N_assign, &ATravInitAssign},
+                           {0, NULL}};
+    DBUG_ENTER ("InitFolds");
+
+    TRAVpushAnonymous (atrav, &TRAVsons);
+    anon_info = MakeInfo ();
+    syntax_tree = TRAVdo (syntax_tree, anon_info);
+    anon_info = FreeInfo (anon_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (syntax_tree);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn char *CreateThreadFunName(info *arg_info)
  *
@@ -519,15 +610,15 @@ CreateThreadFunName (info *arg_info)
 }
 
 static node *
-InitFolds (node *exprs, bool first, lut_t *lut)
+ShareFolds (node *exprs, lut_t *lut)
 {
-    DBUG_ENTER ("InitFolds");
+    DBUG_ENTER ("ShareFolds");
 
     if (exprs != NULL) {
         node *fold;
 
         if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = InitFolds (EXPRS_NEXT (exprs), first, lut);
+            EXPRS_NEXT (exprs) = ShareFolds (EXPRS_NEXT (exprs), lut);
         }
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
@@ -535,16 +626,7 @@ InitFolds (node *exprs, bool first, lut_t *lut)
         fold = AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)));
 
         if (fold != NULL) {
-            if (first) {
-                if (FOLD_INITIAL (fold) == NULL) {
-                    ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (FOLD_NEUTRAL (fold));
-                } else {
-                    ID_AVIS (EXPRS_EXPR (exprs)) = ID_AVIS (FOLD_INITIAL (fold));
-                }
-            } else {
-                ID_AVIS (EXPRS_EXPR (exprs))
-                  = IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold));
-            }
+            ID_AVIS (EXPRS_EXPR (exprs)) = IDS_AVIS (LUTsearchInLutPp (lut, fold));
         }
     }
 
@@ -568,8 +650,7 @@ InitFolds (node *exprs, bool first, lut_t *lut)
  *              outer context.
  ******************************************************************************/
 static node *
-CreateThreadFunction (node *block, node *results, node *index, bool firstRange,
-                      info *arg_info)
+CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
 {
     lut_t *lut;
     node *args, *rets, *retassign, *threadfun, *ap, *vardecs, *assigns;
@@ -620,8 +701,8 @@ CreateThreadFunction (node *block, node *results, node *index, bool firstRange,
     lut = LUTremoveLut (lut);
 
     /* Create ap for OUTER context */
-    ap = TBmakeAp (threadfun, InitFolds (DFMUdfm2ApArgs (arg_mask, NULL), firstRange,
-                                         INFO_WITHOPS_IDS (arg_info)));
+    ap = TBmakeAp (threadfun, ShareFolds (DFMUdfm2ApArgs (arg_mask, NULL),
+                                          INFO_WITHOPS_IDS (arg_info)));
 
     ret_mask = DFMremoveMask (ret_mask);
     arg_mask = DFMremoveMask (arg_mask);
@@ -654,7 +735,7 @@ LW3doLiftWith3 (node *syntax_tree)
 
     info = MakeInfo ();
     syntax_tree = addShareds (syntax_tree, info);
-
+    syntax_tree = InitFolds (syntax_tree);
     /*
      * Infer dataflow masks
      */
@@ -738,8 +819,6 @@ LW3range (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LW3range");
 
-    INFO_RANGES (arg_info)++;
-
     /*
      * we perform the transformation depth first / bottom up
      */
@@ -752,31 +831,11 @@ LW3range (node *arg_node, info *arg_info)
 
     RANGE_RESULTS (arg_node)
       = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
-                              ID_AVIS (RANGE_INDEX (arg_node)),
-                              (INFO_RANGES (arg_info) == 1), arg_info);
+                              ID_AVIS (RANGE_INDEX (arg_node)), arg_info);
 
     RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *LW3range( node *arg_node, info *arg_info)
- *
- * @brief Stack the count of number of ranges.
- *****************************************************************************/
-node *
-LW3with3 (node *arg_node, info *arg_info)
-{
-    int ranges;
-    DBUG_ENTER ("LW3with3");
-
-    ranges = INFO_RANGES (arg_info);
-    INFO_RANGES (arg_info) = 0;
-    arg_node = TRAVcont (arg_node, arg_info);
-    INFO_RANGES (arg_info) = ranges;
 
     DBUG_RETURN (arg_node);
 }

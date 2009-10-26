@@ -54,7 +54,6 @@ endif
 
 #libsacprelude
 ifdef CROSS
-  CROSS := sl
   CROSS_TARGET := -target $(CROSS)
   CROSS_VARIANT := $(shell $(SAC2C) $(CROSS_TARGET) -Mlib_variant )
   CROSS_FOR := for $(CROSS_VARIANT)

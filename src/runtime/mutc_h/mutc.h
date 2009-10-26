@@ -36,7 +36,7 @@
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
 
-#define SAC_MUTC_SAVE(nt) NT_NAME (nt) = sl_geta (sh1);
+#define SAC_MUTC_SAVE(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
 #define SAC_MUTC_CREATE_BLOCK_START() {
 #define SAC_MUTC_CREATE_BLOCK_END() }
 
@@ -52,8 +52,17 @@
 #define SAC_MUTC_UNLOCK_SHARED(nt) sl_setp (NT_NAME (nt), 1);
 #define SAC_MUTC_LOCK_SHARED(nt) sl_getp (NT_NAME (nt));
 
-#define SAC_ND_PRF_SYNCIN(nt, sh) NT_NAME (nt) = sl_getp (NT_NAME (sh));
-#define SAC_ND_PRF_SYNCOUT(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
+#define SAC_ND_PRF_SYNCIN_NODESC(nt, sh) NT_NAME (nt) = sl_getp (NT_NAME (sh));
+
+#define SAC_ND_PRF_SYNCIN_DESC(nt, sh)                                                   \
+    SAC_ND_PRF_SYNCIN_NODESC (nt, sh)                                                    \
+    SAC_ND_DESC_NAME (nt) = sl_getp (SAC_ND_DESC_NAME (sh));
+
+#define SAC_ND_PRF_SYNCOUT_NODESC(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
+
+#define SAC_ND_PRF_SYNCOUT_DESC(nt, sh)                                                  \
+    SAC_ND_PRF_SYNCOUT_NODESC (nt, sh)                                                   \
+    sl_setp (SAC_ND_DESC_NAME (sh), SAC_ND_DESC_NAME (nt));
 
 #define SAC_MUTC_ND_PARAM_INT_GLO(t, name, nt) sl_glparm (t, name)
 #define SAC_MUTC_ND_PARAM_FLO_GLO(t, name, nt) sl_glfparm (t, name)
@@ -68,8 +77,29 @@
 
 #define SAC_MUTC_ND_ARG_INT_GLO(name, nt, t) sl_glarg (t, sl_anon, name)
 #define SAC_MUTC_ND_ARG_FLO_GLO(name, nt, t) sl_glfarg (t, sl_anon, name)
+
 #define SAC_MUTC_ND_ARG_INT_SHA(name, nt, t) sl_sharg (t, sh1, name)
 #define SAC_MUTC_ND_ARG_FLO_SHA(name, nt, t) sl_shfarg (t, sh1, name)
+
+#define SAC_MUTC_ARG_SHA(tag, type, name1, name2)                                        \
+    CAT0 (CAT1 (sl_sh, tag), arg) (type, name1, name2)
+
+#define SAC_MUTC_ARG_DESC(nt)                                                            \
+    SAC_MUTC_ARG_SHA (, SAC_ND_DESC_TYPE (nt), CAT0 (SAC_ND_A_DESC_NAME (nt), _sh),      \
+                      SAC_ND_A_DESC_NAME (nt))
+
+#define SAC_MUTC_ARG_NAME(tag, nt, t)                                                    \
+    SAC_MUTC_ARG_SHA (, SAC_ND_TYPE (nt, t), CAT0 (SAC_ND_A_FIELD (nt), _sh),            \
+                      SAC_ND_A_FIELD (nt))
+
+#define SAC_MUTC_ARG_SHARED_DESC_INT(nt, t)                                              \
+    SAC_MUTC_ARG_DESC (nt), SAC_MUTC_ARG_NAME (, nt, t)
+#define SAC_MUTC_ARG_SHARED_DESC_FLO(nt, t)                                              \
+    SAC_MUTC_ARG_DESC (nt), SAC_MUTC_ARG_NAME (f, nt, t)
+#define SAC_MUTC_ARG_SHARED_NODESC_INT(nt, t) SAC_MUTC_ARG_NAME (, nt, t)
+#define SAC_MUTC_ARG_SHARED_NODESC_FLO(nt, t) SAC_MUTC_ARG_NAME (f, nt, t)
+
+#define SAC_ND_ARG_shared(nt, t) SAC_MUTC_ARG_SHARED (nt, t)
 
 #if SAC_MUTC_FUNAP_AS_CREATE
 #define SAC_MUTC_ARG_FUN(name, nt, t) SAC_MUTC_ARG_THREAD (name, nt, t)
