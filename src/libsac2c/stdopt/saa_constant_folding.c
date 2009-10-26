@@ -321,7 +321,6 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *shp;
-    node *arg2 = NULL;
     node *arg1 = NULL;
     pattern *patarg1;
     pattern *patarg2;
@@ -331,7 +330,7 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
     patarg1
       = PMprf (1, PMAisPrf (F_take_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0), PMskip (0));
 
-    patarg2 = PMarray (1, PMAgetNode (&arg2), 1, PMskip (0));
+    patarg2 = PMarray (1, PMAisNode (&arg1), 1, PMskip (0));
 
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
 
