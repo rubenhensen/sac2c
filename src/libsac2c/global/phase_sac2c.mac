@@ -689,6 +689,12 @@ SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun,
 SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform,
           global.backend == BE_cuda, cuda)
 
+SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
+          global.backend == BE_cuda, cuda)
+
 SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
           global.backend == BE_cuda, cuda)
 

@@ -6,7 +6,6 @@
 extern node *ACTRANdoAnnotateCondTransfers (node *arg_node);
 extern node *ACTRANprf (node *arg_node, info *arg_info);
 extern node *ACTRANassign (node *arg_node, info *arg_info);
-extern node *ACTRANap (node *arg_node, info *arg_info);
 extern node *ACTRANfundef (node *arg_node, info *arg_info);
 extern node *ACTRANid (node *arg_node, info *arg_info);
 extern node *ACTRANlet (node *arg_node, info *arg_info);

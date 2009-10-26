@@ -29,7 +29,9 @@
 #include "minimize_block_transfers2.h"
 #include "minimize_block_transfers.h"
 #include "annotate_memory_transfers.h"
+#include "annotate_cond_transfers.h"
 #include "minimize_loop_transfers.h"
+#include "minimize_cond_transfers.h"
 #include "wl_descalarization.h"
 
 /** <!--********************************************************************-->
@@ -51,6 +53,8 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
     int i = 0;
     while (i < 10) {
         syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
+        syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
+        syntax_tree = MCTRANdoMinimizeCondTransfers (syntax_tree);
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
         i++;

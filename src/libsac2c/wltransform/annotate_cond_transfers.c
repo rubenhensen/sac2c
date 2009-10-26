@@ -5,14 +5,6 @@
  *
  * prefix: AMTRAN
  *
- * description:
- *   This module decides which <host2device> and <device2host>
- *   can be moved out of the enclosing do-fun. Since host<->device transfers
- *   are expensive operations to perform in CUDA programs, and transfers within
- *   loop make it even more severe, eliminating transfers within loops as
- *   much as possible is crucial to program performance. For detailed explanation
- *   of what transfers can be moved out and what cannot, please see commets
- *   in the code.
  *
  *****************************************************************************/
 
@@ -27,6 +19,7 @@
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
 #include "new_types.h"
+#include "pattern_match.h"
 
 enum traverse_mode { trav_collect, trav_annotate };
 
@@ -222,7 +215,7 @@ node *
 ACTRANfuncond (node *arg_node, info *arg_info)
 {
     node *then_id, *else_id;
-    ntype *then_type, *else_type;
+    /* ntype *then_type, *else_type; */
     bool cond;
     node *then_ssaassign, *else_ssaassign;
 
@@ -232,58 +225,49 @@ ACTRANfuncond (node *arg_node, info *arg_info)
      * The N_funcond selects value from either branch of the N_cond
      * as the return value of the cond-fun.
      */
-    /*
-      if( INFO_INCONDFUN( arg_info)) {
-        // Set flag to TRUE so that ACTRANid knows the current N_id
-        // appears in a N_funcond node
-        INFO_INFUNCOND( arg_info) = TRUE;
-        FUNCOND_IF( arg_node) = TRAVdo( FUNCOND_IF( arg_node), arg_info);
-        FUNCOND_THEN( arg_node) = TRAVdo( FUNCOND_THEN( arg_node), arg_info);
-        FUNCOND_ELSE( arg_node) = TRAVdo( FUNCOND_ELSE( arg_node), arg_info);
-        INFO_INFUNCOND( arg_info) = FALSE;
-      }
-    */
     if (INFO_INCONDFUN (arg_info)) {
         if (INFO_TRAVMODE (arg_info) == trav_annotate) {
             then_id = FUNCOND_THEN (arg_node);
             else_id = FUNCOND_ELSE (arg_node);
             DBUG_ASSERT ((NODE_TYPE (then_id) == N_id && NODE_TYPE (else_id) == N_id),
                          "N_funcond has non N_id node in either THEN or ELSE!");
-            then_type = AVIS_TYPE (ID_AVIS (then_id));
-            else_type = AVIS_TYPE (ID_AVIS (else_id));
-            cond = !TYisAUD (then_type) && !TYisAUD (else_type)
-                   && TYeqTypes (then_type, else_type);
+            /*
+                  then_type = AVIS_TYPE( ID_AVIS( then_id));
+                  else_type = AVIS_TYPE( ID_AVIS( else_id));
+                  cond = !TYisAUD( then_type) &&
+                         !TYisAUD( else_type) &&
+                         TYeqTypes( then_type, else_type);
+            */
+
             then_ssaassign = AVIS_SSAASSIGN (ID_AVIS (then_id));
             else_ssaassign = AVIS_SSAASSIGN (ID_AVIS (else_id));
-            if (ISDEVICE2HOST (then_ssaassign) && !cond) {
-                ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = TRUE;
-            }
-            if (ISDEVICE2HOST (else_ssaassign) && !cond) {
-                ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = TRUE;
+
+            if (ISDEVICE2HOST (then_ssaassign) && ISDEVICE2HOST (else_ssaassign)) {
+                ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = FALSE;
+                ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = FALSE;
+            } else if (ISDEVICE2HOST (then_ssaassign)) {
+                if (NODE_TYPE (AVIS_DECL (ID_AVIS (else_id)))) {
+                    if (NLUTgetNum (INFO_NLUT (arg_info), ARG_AVIS (ID_DECL (else_id)))
+                        != 0) {
+                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = TRUE;
+                    }
+                } else {
+                    ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = TRUE;
+                }
+            } else if (ISDEVICE2HOST (else_ssaassign)) {
+                if (NODE_TYPE (AVIS_DECL (ID_AVIS (then_id)))) {
+                    if (NLUTgetNum (INFO_NLUT (arg_info), ARG_AVIS (ID_DECL (then_id)))
+                        != 0) {
+                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = TRUE;
+                    }
+                } else {
+                    ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = TRUE;
+                }
+            } else {
+                /* Do nothing */
             }
         }
     }
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn
- *
- * @brief node *AMTRANap( node *arg_node, info *arg_info)
- *
- * @param
- * @param
- * @return
- *
- *****************************************************************************/
-node *
-ACTRANap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("ACTRANap");
-
-    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -305,67 +289,7 @@ ACTRANid (node *arg_node, info *arg_info)
 
     if (INFO_INCONDFUN (arg_info)) {
         if (INFO_TRAVMODE (arg_info) == trav_collect) {
-
-            /* If the N_id is:
-             * (1) In the argument list of the recursive do-fun
-             *     application or
-             * (2) In the N_funcond node
-             * we do NOT increment its reference count. Otherwise,
-             * we increments its reference count by one. This is
-             * because of the following reasons:
-             * a) For <host2device>, if the only reference to its
-             *    host variable is an argument in the recursive
-             *    application of the enclosing do-fun, it can still
-             *    be moved out of the do-fun and the the arguments
-             *    in N_ap and N_fundef can be replaced by the device
-             *    variable.
-             *    e.g.
-             *
-             *    loop_fun( ..., a_host, ...) {
-             *      ... (No reference of a_host)
-             *      b_dev = host2device( a_host);
-             *      ... (No reference of a_host)
-             *      loop_fun( ..., a_host ,...);
-             *    }
-             *
-             *    ==>
-             *
-             *    b_dev = host2device( a_host);
-             *    loop_fun( ..., b_dev , ...) {
-             *      ... (No reference of a_host)
-             *      ... (No reference of a_host)
-             *      loop_fun( ..., b_dev ,...);
-             *    }
-             *
-             *
-             * b) For <device2host>, if the only reference to its
-             *    host variable is in the N_funcond, it can be
-             *    moved out of the do-fun
-             *    e.g.
-             *
-             *    float[*] loop_fun( ...) {
-             *      ...
-             *      a_host = device2host( a_dev);
-             *      ... (No reference of a_host)
-             *      b_host = loop_fun( ... );
-             *      c_host = cond ? b_host : a_host;
-             *      return c_host;
-             *    }
-             *
-             *    ==>
-             *
-             *    float_dev[*] loop_fun( ...) {
-             *      ...
-             *      ... (No reference of a_host)
-             *      b_dev = loop_fun( ... );
-             *      c_dev = cond ? b_dev : a_dev;
-             *      return c_dev;
-             *    }
-             *    a_host = host2device( a_dev);
-             */
-            // if( !INFO_INFUNCOND( arg_info)) {
             NLUTincNum (INFO_NLUT (arg_info), ID_AVIS (arg_node), 1);
-            //}
         }
     }
 
@@ -401,7 +325,7 @@ ACTRANprf (node *arg_node, info *arg_info)
             if (INFO_TRAVMODE (arg_info) == trav_annotate) {
                 id = PRF_ARG1 (arg_node);
                 /* We only look at <host2device> whose host variable
-                 * is passed in as an argument of the do-fun*/
+                 * is passed in as an argument of the cond-fun*/
                 if (NODE_TYPE (ID_DECL (id)) == N_arg) {
 
                     /* If the reference count of the host variable is not 0,
@@ -412,8 +336,8 @@ ACTRANprf (node *arg_node, info *arg_info)
                           = TRUE;
                     }
                 }
-                /* If the host variable is not passed as an argument to the do-fun,
-                 * the <host2device> CANNOT be moved out of the do-fun.
+                /* If the host variable is not passed as an argument to the cond-fun,
+                 * the <host2device> CANNOT be moved out of the cond-fun.
                  */
                 else {
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info)) = TRUE;

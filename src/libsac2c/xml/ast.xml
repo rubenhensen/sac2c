@@ -144,7 +144,6 @@
           <node name="Assign" />
           <node name="Fundef" />
           <node name="Prf" />
-          <node name="Ap" />
           <node name="Id" />
           <node name="Let" />
           <node name="Funcond" />
@@ -167,6 +166,19 @@
         </travuser>
       </traversal>
       <traversal id="MLTRAN" name="Minimise the number of device-host data transfers in a loop" default="sons" include="minimize_loop_transfers.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Fundef" />
+          <node name="Prf" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Arg" />
+          <node name="Funcond" />
+          <node name="Return" />
+        </travuser>
+      </traversal>
+      <traversal id="MCTRAN" name="Minimise the number of device-host data transfers in a cond-fun" default="sons" include="minimize_cond_transfers.h" >
         <travuser>
           <node name="Assign" />
           <node name="Let" />
