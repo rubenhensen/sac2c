@@ -321,7 +321,7 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
         avis = TBmakeAvis (TRAVtmpVar (), type);
         vardec = TBmakeVardec (avis, vardec);
 
-        fold = LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
+        fold = (node *)LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
         DBUG_ASSERT ((fold != NULL), "Lost information about fold");
 
         AVIS_WITH3FOLD (avis) = fold;
@@ -372,7 +372,8 @@ ATravPrfSyncIn (node *arg_node, info *arg_info)
     DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
                  "Expected syncin to have one argument");
 
-    avis = LUTsearchInLutPp (INFO_AT_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+    avis
+      = (node *)LUTsearchInLutPp (INFO_AT_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
 
     DBUG_ASSERT ((avis != NULL), "Could not create shared for syncIn");
 
@@ -396,7 +397,8 @@ ATravPrfSyncOut (node *arg_node, info *arg_info)
     DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
                  "Expected syncout to have one argument");
 
-    avis = LUTsearchInLutPp (INFO_AT_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
+    avis
+      = (node *)LUTsearchInLutPp (INFO_AT_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
     DBUG_ASSERT ((avis != NULL), "Could not create a shared for syncout");
 
@@ -626,7 +628,8 @@ ShareFolds (node *exprs, lut_t *lut)
         fold = AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)));
 
         if (fold != NULL) {
-            ID_AVIS (EXPRS_EXPR (exprs)) = IDS_AVIS (LUTsearchInLutPp (lut, fold));
+            ID_AVIS (EXPRS_EXPR (exprs))
+              = IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold));
         }
     }
 
@@ -693,7 +696,7 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
     /*
      * tag the index variable
      */
-    innerindex = LUTsearchInLutPp (lut, index);
+    innerindex = (node *)LUTsearchInLutPp (lut, index);
     if (innerindex != index) {
         AVIS_ISTHREADINDEX (innerindex) = TRUE;
     }
