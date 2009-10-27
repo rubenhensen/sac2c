@@ -246,7 +246,7 @@ ACTRANfuncond (node *arg_node, info *arg_info)
                 ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = FALSE;
                 ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = FALSE;
             } else if (ISDEVICE2HOST (then_ssaassign)) {
-                if (NODE_TYPE (AVIS_DECL (ID_AVIS (else_id)))) {
+                if (NODE_TYPE (AVIS_DECL (ID_AVIS (else_id))) == N_arg) {
                     if (NLUTgetNum (INFO_NLUT (arg_info), ARG_AVIS (ID_DECL (else_id)))
                         != 0) {
                         ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = TRUE;
@@ -255,7 +255,7 @@ ACTRANfuncond (node *arg_node, info *arg_info)
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign) = TRUE;
                 }
             } else if (ISDEVICE2HOST (else_ssaassign)) {
-                if (NODE_TYPE (AVIS_DECL (ID_AVIS (then_id)))) {
+                if (NODE_TYPE (AVIS_DECL (ID_AVIS (then_id))) == N_arg) {
                     if (NLUTgetNum (INFO_NLUT (arg_info), ARG_AVIS (ID_DECL (then_id)))
                         != 0) {
                         ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign) = TRUE;
