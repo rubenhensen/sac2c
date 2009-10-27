@@ -7568,22 +7568,18 @@ COMPrange (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_id) {
         RANGE_LOWERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_ND_GETVAR",
-                              TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
-                                                    ID_TYPE (
-                                                      RANGE_LOWERBOUND (arg_node))),
-                              TCmakeIdCopyString (ID_NAME (RANGE_LOWERBOUND (arg_node))),
-                              NULL);
+          = TCmakeIcm2 ("SAC_ND_GETVAR",
+                        TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
+                                              ID_TYPE (RANGE_LOWERBOUND (arg_node))),
+                        TCmakeIdCopyString (ID_NAME (RANGE_LOWERBOUND (arg_node))));
     }
 
     if (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_id) {
         RANGE_UPPERBOUND (arg_node)
-          = TCmakeAssignIcm2 ("SAC_ND_GETVAR",
-                              TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
-                                                    ID_TYPE (
-                                                      RANGE_UPPERBOUND (arg_node))),
-                              TCmakeIdCopyString (ID_NAME (RANGE_UPPERBOUND (arg_node))),
-                              NULL);
+          = TCmakeIcm2 ("SAC_ND_GETVAR",
+                        TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
+                                              ID_TYPE (RANGE_UPPERBOUND (arg_node))),
+                        TCmakeIdCopyString (ID_NAME (RANGE_UPPERBOUND (arg_node))));
     }
 
     create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
