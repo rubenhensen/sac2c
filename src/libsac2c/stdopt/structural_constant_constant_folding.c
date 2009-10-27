@@ -623,6 +623,7 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
     int arg2xrho;
 
     DBUG_ENTER ("SCCFprf_cat_VxV");
+
     DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG1 (arg_node))),
                  ("SCCFprf_cat_VxV arg1 not N_id"));
     DBUG_ASSERT ((N_id == NODE_TYPE (PRF_ARG2 (arg_node))),
@@ -1076,8 +1077,7 @@ IsProxySel (constant *idx, void *sels, void *template)
 static node *
 SelProxyArray (node *arg_node, info *arg_info)
 {
-    node *var_P = NULL;
-    node *iv = NULL;
+    node *aelems_iv = NULL;
     node *aelems_P = NULL;
     node *arr_P = NULL;
     node *tmp;
@@ -1090,29 +1090,44 @@ SelProxyArray (node *arg_node, info *arg_info)
     shape *iter_shp;
     node *iv_avis;
     bool all_sels = TRUE;
-    bool match;
     int pos, off, tlen, flen;
+    pattern *pat, *pat_e1, *pat_en;
 
     node *res = NULL;
 
     DBUG_ENTER ("SelProxyArray");
 
-    if (PMO (PMOvar (&var_P, PMOarrayConstructorGuards (&fs_iv, &iv,
-                                                        PMOprf (F_sel_VxA, arg_node))))
-        && PMO (PMOexprs (&aelems_P, PMOarray (&fs_P, &arr_P, var_P)))
-        && (aelems_P != NULL)) {
+    pat = PMprf (1, PMAisPrf (F_sel_VxA), 2,
+                 PMarray (1, PMAgetFS (&fs_iv), 1, PMskip (1, PMAgetNode (&aelems_iv))),
+                 PMarray (2, PMAgetFS (&fs_P), PMAgetNode (&arr_P), 1,
+                          PMskip (1, PMAgetNode (&aelems_P))));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
         /*
          * before we check that P is a proxy, we check whether it is defined
          * by sel operations on a single source array. This test is way
          * cheaper, so testing twice is worth it.
          */
         DBUG_PRINT ("CF_PROXY", ("Found matching sel!"));
+
+        pat_e1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
+                        PMarray (0, 1, PMskip (1, PMAgetNode (&template))),
+                        PMvar (1, PMAgetNode (&var_A), 0));
+
+        pat_en = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (0, 1, PMskip (0)),
+                        PMvar (1, PMAisVar (&var_A), 0));
+
         tmp = aelems_P;
+        all_sels = PMmatchFlat (pat_e1, EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+
         while (all_sels && (tmp != NULL)) {
-            all_sels = PMO (
-              PMOvar (&var_A, PMOany (NULL, PMOprf (F_sel_VxA, EXPRS_EXPR (tmp)))));
+            all_sels = PMmatchFlat (pat_en, EXPRS_EXPR (tmp));
             tmp = EXPRS_NEXT (tmp);
         }
+
+        pat_e1 = PMfree (pat_e1);
+        pat_en = PMfree (pat_en);
 
         if (all_sels) {
             DBUG_PRINT ("CF_PROXY", ("Might have found a proxy!"));
@@ -1122,7 +1137,7 @@ SelProxyArray (node *arg_node, info *arg_info)
              * to a 1 extent dimension in P and the corresponding elements
              * from the frameshape of P to get the iteration space over A
              */
-            filter_iv = DUPdoDupTree (ARRAY_AELEMS (iv));
+            filter_iv = DUPdoDupTree (aelems_iv);
             fs_P_shp = ARRAY_FRAMESHAPE (arr_P);
 
             pos = 0;
@@ -1149,13 +1164,7 @@ SelProxyArray (node *arg_node, info *arg_info)
              *
              * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
              *
-             * To do so, we first extract a template for the v1, ..., vn
-             * from the first element in the array.
              */
-            match = PMO (
-              PMOexprs (&template, PMOarray (NULL, NULL, PMOprf (F_sel_VxA, aelems_P))));
-
-            DBUG_ASSERT (match, "code has unexpected pattern!");
 
             tlen = TCcountExprs (template);
             DBUG_ASSERT ((tlen >= flen), "sel operations do not match!");
@@ -1213,6 +1222,7 @@ SelProxyArray (node *arg_node, info *arg_info)
             }
         }
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
