@@ -11,8 +11,8 @@
                         double),                                                         \
       SAC_ND_PARAM_in ((in,                                                              \
                         T_SHP (SCL,                                                      \
-                               T_HID (HID,                                               \
-                                      T_UNQ (NUQ,                                        \
+                               T_HID (NHD,                                               \
+                                      T_UNQ (UNQ,                                        \
                                              T_REG (INT,                                 \
                                                     T_SCO (GLO,                          \
                                                            T_USG (FPA, T_EMPTY))))))),   \
@@ -71,8 +71,8 @@
                          T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
           = SAC_ND_READ ((in,                                                            \
                           T_SHP (SCL,                                                    \
-                                 T_HID (HID,                                             \
-                                        T_UNQ (NUQ,                                      \
+                                 T_HID (NHD,                                             \
+                                        T_UNQ (UNQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
                                                              T_USG (FPA,                 \
@@ -84,8 +84,8 @@
                          T_UNQ (NUQ, T_REG (INT, T_SCO (GLO, T_USG (NON, T_EMPTY)))))))) \
           = SAC_ND_READ ((in,                                                            \
                           T_SHP (SCL,                                                    \
-                                 T_HID (HID,                                             \
-                                        T_UNQ (NUQ,                                      \
+                                 T_HID (NHD,                                             \
+                                        T_UNQ (UNQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
                                                              T_USG (FPA,                 \
@@ -101,8 +101,8 @@
                              0)                                                          \
           = SAC_ND_READ ((in,                                                            \
                           T_SHP (SCL,                                                    \
-                                 T_HID (HID,                                             \
-                                        T_UNQ (NUQ,                                      \
+                                 T_HID (NHD,                                             \
+                                        T_UNQ (UNQ,                                      \
                                                T_REG (INT,                               \
                                                       T_SCO (GLO,                        \
                                                              T_USG (FPA,                 \

@@ -84,20 +84,20 @@
 #define SAC_MUTC_ARG_SHA(tag, type, name1, name2)                                        \
     CAT0 (CAT1 (sl_sh, tag), arg) (type, name1, name2)
 
-#define SAC_MUTC_ARG_DESC(nt)                                                            \
+#define SAC_MUTC_ARG_SHA_DESC(nt)                                                        \
     SAC_MUTC_ARG_SHA (, SAC_ND_DESC_TYPE (nt), CAT0 (SAC_ND_A_DESC_NAME (nt), _sh),      \
                       SAC_ND_A_DESC_NAME (nt))
 
-#define SAC_MUTC_ARG_NAME(tag, nt, t)                                                    \
-    SAC_MUTC_ARG_SHA (, SAC_ND_TYPE (nt, t), CAT0 (SAC_ND_A_FIELD (nt), _sh),            \
+#define SAC_MUTC_ARG_SHA_NAME(tag, nt, t)                                                \
+    SAC_MUTC_ARG_SHA (tag, SAC_ND_TYPE (nt, t), CAT0 (SAC_ND_A_FIELD (nt), _sh),         \
                       SAC_ND_A_FIELD (nt))
 
 #define SAC_MUTC_ARG_SHARED_DESC_INT(nt, t)                                              \
-    SAC_MUTC_ARG_DESC (nt), SAC_MUTC_ARG_NAME (, nt, t)
+    SAC_MUTC_ARG_SHA_DESC (nt), SAC_MUTC_ARG_SHA_NAME (, nt, t)
 #define SAC_MUTC_ARG_SHARED_DESC_FLO(nt, t)                                              \
-    SAC_MUTC_ARG_DESC (nt), SAC_MUTC_ARG_NAME (f, nt, t)
-#define SAC_MUTC_ARG_SHARED_NODESC_INT(nt, t) SAC_MUTC_ARG_NAME (, nt, t)
-#define SAC_MUTC_ARG_SHARED_NODESC_FLO(nt, t) SAC_MUTC_ARG_NAME (f, nt, t)
+    SAC_MUTC_ARG_SHA_DESC (nt), SAC_MUTC_ARG_SHA_NAME (f, nt, t)
+#define SAC_MUTC_ARG_SHARED_NODESC_INT(nt, t) SAC_MUTC_ARG_SHA_NAME (, nt, t)
+#define SAC_MUTC_ARG_SHARED_NODESC_FLO(nt, t) SAC_MUTC_ARG_SHA_NAME (f, nt, t)
 
 #define SAC_ND_ARG_shared(nt, t) SAC_MUTC_ARG_SHARED (nt, t)
 
