@@ -1150,12 +1150,9 @@ SelProxyArray (node *arg_node, info *arg_info)
 
             flen = TCcountExprs (filter_iv);
             iter_shp = SHmakeShape (flen);
-            off = 0;
-            for (pos = 0; pos < SHgetDim (fs_P_shp); pos++) {
-                if (SHgetExtent (fs_P_shp, pos) == 0) {
-                    SHsetExtent (iter_shp, off, SHgetExtent (fs_P_shp, pos));
-                    off++;
-                }
+            off = SHgetDim (fs_P_shp) - flen;
+            for (pos = 0; pos < flen; pos++) {
+                SHsetExtent (iter_shp, pos, SHgetExtent (fs_P_shp, pos + off));
             }
             /*
              * now the final step:
