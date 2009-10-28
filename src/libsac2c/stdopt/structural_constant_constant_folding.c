@@ -1090,7 +1090,7 @@ SelProxyArray (node *arg_node, info *arg_info)
     shape *iter_shp;
     node *iv_avis;
     bool all_sels = TRUE;
-    int pos, off, tlen, flen;
+    int pos, tlen, flen;
     pattern *pat, *pat_e1, *pat_en;
 
     node *res = NULL;
@@ -1149,11 +1149,7 @@ SelProxyArray (node *arg_node, info *arg_info)
             DBUG_ASSERT ((filter_iv != NULL), "selection from weird array!");
 
             flen = TCcountExprs (filter_iv);
-            iter_shp = SHmakeShape (flen);
-            off = SHgetDim (fs_P_shp) - flen;
-            for (pos = 0; pos < flen; pos++) {
-                SHsetExtent (iter_shp, pos, SHgetExtent (fs_P_shp, pos + off));
-            }
+            iter_shp = SHdropFromShape (SHgetDim (fs_P_shp) - flen, fs_P_shp);
             /*
              * now the final step:
              *
