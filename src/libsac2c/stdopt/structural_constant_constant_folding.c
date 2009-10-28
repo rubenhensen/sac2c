@@ -1287,7 +1287,6 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
     node *y;
     constant *xfs = NULL;
     pattern *pat;
-    node *curp;
     node *curel;
     bool b;
     constant *c;
