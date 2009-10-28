@@ -324,20 +324,27 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
     node *arg1 = NULL;
     pattern *patarg1;
     pattern *patarg2;
+    node *arg2shp;
+    node *shpel;
 
     DBUG_ENTER ("SAACFprf_take_SxV");
 
     patarg1
       = PMprf (1, PMAisPrf (F_take_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0), PMskip (0));
 
-    patarg2 = PMarray (1, PMAisNode (&arg1), 1, PMskip (0));
+    patarg2 = PMarray (1, PMAgetNode (&arg2shp), 1, PMskip (0));
 
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
 
     if ((NULL != shp) && PMmatchFlatSkipExtrema (patarg1, arg_node)
         && PMmatchFlatSkipExtrema (patarg2, shp)) {
-        res = DUPdoDupTree (PRF_ARG2 (arg_node));
-        DBUG_PRINT ("CF", ("Take replaced by PRF_ARG2"));
+        shpel = EXPRS_EXPR (ARRAY_AELEMS (arg2shp));
+        if ((shpel == arg1)
+            || ((N_id == NODE_TYPE (shpel)) && (N_id == NODE_TYPE (arg1))
+                && (ID_AVIS (arg1) == ID_AVIS (shpel)))) {
+            res = DUPdoDupTree (PRF_ARG2 (arg_node));
+            DBUG_PRINT ("CF", ("Take replaced by PRF_ARG2"));
+        }
     }
 
     patarg1 = PMfree (patarg1);
