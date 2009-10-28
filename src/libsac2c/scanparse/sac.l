@@ -203,6 +203,8 @@ int charpos = 0;
 "_toi_S_"                  { FILTER( PRF_TOI_S); }
 "_tof_S_"                  { FILTER( PRF_TOF_S); }
 "_tod_S_"                  { FILTER( PRF_TOD_S); }
+"_toc_S_"                  { FILTER( PRF_TOC_S); }
+"_tob_S_"                  { FILTER( PRF_TOB_S); }
 
 
 "struct"                   { FILTER( STRUCT); }
