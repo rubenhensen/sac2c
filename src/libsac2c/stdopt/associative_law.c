@@ -15,6 +15,7 @@
 #include "DataFlowMask.h"
 #include "DupTree.h"
 #include "inferneedcounters.h"
+#include "pattern_match.h"
 
 #include "associative_law.h"
 
@@ -145,6 +146,96 @@ ALdoAssocLawOptimizationOneFundef (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
+
+static node *
+getInverse (prf prf, node *exprs)
+{
+    node *var, *res;
+    pattern *pat;
+
+    DBUG_ENTER ("getInverse");
+
+    var = NULL;
+
+    pat = PMprf (1, PMAisPrf (prf), 1, PMvar (1, PMAgetNode (&var), 0));
+
+    if (PMmatchFlat (pat, EXPRS_EXPR (exprs))) {
+        DBUG_ASSERT ((var == NULL) || NODE_TYPE (var) == N_id,
+                     "Result has wrong node type.");
+        res = ID_AVIS (var);
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static node *
+getElement (node *exprs)
+{
+    node *res;
+
+    DBUG_ENTER ("getElement");
+
+    res = ID_AVIS (EXPRS_EXPR (exprs));
+
+    DBUG_ASSERT (NODE_TYPE (res) == N_avis, "Result has wrong node type.");
+
+    DBUG_RETURN (res);
+}
+
+static node *
+identifyInverses (prf inverse_prf, node **head)
+{
+    node *left, *right, *res, *tmp, *left_last, *right_last;
+    node *left_inv, *right_inv, *left_elem, *right_elem;
+
+    DBUG_ENTER ("identifyInverses");
+
+    left = *head;
+    left_last = NULL;
+
+    res = NULL;
+
+    while (left != NULL) {
+        right = EXPRS_NEXT (left);
+        right_last = left;
+
+        while (right != NULL) {
+            left_elem = getElement (left);
+            left_inv = getInverse (inverse_prf, left);
+            right_elem = getElement (right);
+            right_inv = getInverse (inverse_prf, right);
+
+            if ((left_elem == right_inv) || (left_inv == right_elem)) {
+                EXPRS_NEXT (right_last) = EXPRS_NEXT (right);
+                EXPRS_NEXT (right) = res;
+                tmp = EXPRS_NEXT (left);
+                EXPRS_NEXT (left) = right;
+                res = left;
+                if (left_last != NULL) {
+                    EXPRS_NEXT (left_last) = tmp;
+                } else {
+                    *head = tmp;
+                }
+
+                left = tmp;
+                break;
+            } else {
+                right_last = right;
+                right = EXPRS_NEXT (right);
+            }
+        }
+
+        if (right == NULL) {
+            left_last = left;
+            left = EXPRS_NEXT (left);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 static bool
 isAssociativeAndCommutativePrf (prf prf)
 {
@@ -182,6 +273,52 @@ isAssociativeAndCommutativePrf (prf prf)
     case F_or_SxV:
     case F_or_VxS:
     case F_or_VxV:
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+isPrfAdd (prf prf)
+{
+    bool res;
+
+    DBUG_ENTER ("isPrfAdd");
+
+    switch (prf) {
+    case F_add_SxS:
+    case F_add_SxV:
+    case F_add_VxS:
+    case F_add_VxV:
+
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+isPrfMul (prf prf)
+{
+    bool res;
+
+    DBUG_ENTER ("isPrfMul");
+
+    switch (prf) {
+    case F_mul_SxS:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+
         res = TRUE;
         break;
 
@@ -235,18 +372,6 @@ isNonConstScalar (node *n)
     } else {
         res = FALSE;
     }
-
-    DBUG_RETURN (res);
-}
-
-static bool
-isNonConstArray (node *n)
-{
-    bool res;
-
-    DBUG_ENTER ("isNonConstArray");
-
-    res = !(isConst (n) || isNonConstScalar (n));
 
     DBUG_RETURN (res);
 }
@@ -442,32 +567,6 @@ isSingletonOrEmpty (node *expr)
     DBUG_RETURN (res);
 }
 
-static bool
-isSingleton (node *expr)
-{
-    bool res;
-
-    DBUG_ENTER ("isSingleton");
-
-    res = ((expr != NULL) && (EXPRS_NEXT (expr) == NULL));
-
-    DBUG_RETURN (res);
-}
-
-static bool
-eqClass (node *expr1, node *expr2)
-{
-    bool res;
-
-    DBUG_ENTER ("eqClass");
-
-    res = ((isConst (expr1) && isConst (expr2))
-           || (isNonConstScalar (expr1) && isNonConstScalar (expr2))
-           || (isNonConstArray (expr1) && isNonConstArray (expr2)));
-
-    DBUG_RETURN (res);
-}
-
 static node *
 consumeHead (node **exprs)
 {
@@ -588,14 +687,20 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
                                      localmask);
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
                                       localmask);
-                if (!isSingleton (left) || !isSingleton (right)
-                    || !eqClass (EXPRS_EXPR (left), EXPRS_EXPR (right))) {
-                    res = FREEdoFreeTree (res);
-                    res = TCappendExprs (left, right);
-                } else {
-                    left = FREEdoFreeTree (left);
-                    right = FREEdoFreeTree (right);
-                }
+#if 0
+        if (  !isSingleton( left) || !isSingleton( right) ||
+              !eqClass( EXPRS_EXPR( left), EXPRS_EXPR( right))) {
+          res = FREEdoFreeTree( res);
+          res = TCappendExprs( left, right);
+        }
+        else {
+          left = FREEdoFreeTree( left);
+          right = FREEdoFreeTree( right);
+        }
+#else
+                res = FREEdoFreeTree (res);
+                res = TCappendExprs (left, right);
+#endif
                 AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
             }
             break;
@@ -737,17 +842,19 @@ ALprf (node *arg_node, info *arg_info)
         if ((!global.enforce_ieee)
             || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
-            prf p;
-            node *exprs;
+            prf prf;
+            node *exprs, *tmp;
             node *consts, *ncss;
             node *constid, *ncsid, *arrayid;
+            node *ncss_inv, *ncss_inv_id, *array_inv, *array_inv_id;
 
-            p = PRF_PRF (arg_node);
+            prf = PRF_PRF (arg_node);
 
-            exprs = TCappendExprs (CollectExprs (p, PRF_ARG1 (arg_node), isArg1Scl (p),
-                                                 INFO_LOCALMASK (arg_info)),
-                                   CollectExprs (p, PRF_ARG2 (arg_node), isArg2Scl (p),
-                                                 INFO_LOCALMASK (arg_info)));
+            exprs
+              = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf),
+                                             INFO_LOCALMASK (arg_info)),
+                               CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf),
+                                             INFO_LOCALMASK (arg_info)));
 
             /*
              * The optimization can only be performed if the combined expression
@@ -767,17 +874,44 @@ ALprf (node *arg_node, info *arg_info)
                     if (ncss != NULL)
                         ncss = FREEdoFreeTree (ncss);
                 } else {
-                    constid = Exprs2PrfTree (p, consts, arg_info);
-                    ncsid = Exprs2PrfTree (p, ncss, arg_info);
-                    arrayid = Exprs2PrfTree (p, exprs, arg_info);
+                    if (isPrfAdd (prf)) {
+                        ncss_inv = identifyInverses (F_esd_neg, &ncss);
+                        array_inv = identifyInverses (F_esd_neg, &exprs);
+                    } else if (isPrfMul (prf)) {
+                        ncss_inv = identifyInverses (F_esd_rec, &ncss);
+                        array_inv = identifyInverses (F_esd_rec, &exprs);
+                    } else {
+                        ncss_inv = NULL;
+                        array_inv = NULL;
+                    }
+
+                    constid = Exprs2PrfTree (prf, consts, arg_info);
+                    ncsid = Exprs2PrfTree (prf, ncss, arg_info);
+                    arrayid = Exprs2PrfTree (prf, exprs, arg_info);
 
                     exprs = NULL;
                     exprs = TCcombineExprs (arrayid, exprs);
                     exprs = TCcombineExprs (ncsid, exprs);
                     exprs = TCcombineExprs (constid, exprs);
 
+                    while (ncss_inv != NULL) {
+                        tmp = EXPRS_NEXT (EXPRS_NEXT (ncss_inv));
+                        EXPRS_NEXT (EXPRS_NEXT (ncss_inv)) = NULL;
+                        ncss_inv_id = Exprs2PrfTree (prf, ncss_inv, arg_info);
+                        exprs = TCcombineExprs (ncss_inv_id, exprs);
+                        ncss_inv = tmp;
+                    }
+
+                    while (array_inv != NULL) {
+                        tmp = EXPRS_NEXT (EXPRS_NEXT (array_inv));
+                        EXPRS_NEXT (EXPRS_NEXT (array_inv)) = NULL;
+                        array_inv_id = Exprs2PrfTree (prf, array_inv, arg_info);
+                        exprs = TCcombineExprs (array_inv_id, exprs);
+                        array_inv = tmp;
+                    }
+
                     arg_node = FREEdoFreeNode (arg_node);
-                    arg_node = Exprs2PrfTree (p, exprs, arg_info);
+                    arg_node = Exprs2PrfTree (prf, exprs, arg_info);
 
                     /*
                      * update the maskbase
