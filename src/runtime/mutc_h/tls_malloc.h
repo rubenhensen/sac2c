@@ -57,7 +57,7 @@ tls_malloc (size_t sz)
 
 #else
 #define tls_malloc_cleanup() ((void)0)
-#define tls_malloc(...) malloc (__VA_ARGS__)
+#define tls_malloc(...) alloca (__VA_ARGS__)
 #define tls_malloc_init() ((void)0)
 #endif
 
