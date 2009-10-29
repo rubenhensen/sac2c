@@ -468,9 +468,10 @@ ATravLet (node *arg_node, info *arg_info)
 static node *
 addShareds (node *syntax_tree, info *arg_info)
 {
-    anontrav_t atrav[6]
-      = {{N_prf, &ATravPrf}, {N_range, &ATravRange}, {N_fundef, &ATravFundef},
-         {N_let, &ATravLet}, {N_with3, &ATravWith3}, {0, NULL}};
+    anontrav_t atrav[8] = {{N_prf, &ATravPrf},       {N_range, &ATravRange},
+                           {N_fundef, &ATravFundef}, {N_let, &ATravLet},
+                           {N_with, &TRAVnone},      {N_with2, &TRAVnone},
+                           {N_with3, &ATravWith3},   {0, NULL}};
     info *anon_info;
 
     DBUG_ENTER ("addShareds");

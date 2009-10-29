@@ -692,20 +692,19 @@ DupExprs_NT_AddReadIcms (node *exprs)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeAllocDescIcm( char *name, types *type, int rc,
- *                              node *get_dim,
- *                              node *assigns)
+ * @fn  node *MakeAnAllocDescIcm( char *name, types *type, int rc,
+ *                                node *get_dim,
+ *                                node *assigns)
  *
- * @brief  Builds a ND_ALLOC__DESC( name) icm if needed.
+ * @brief  Builds a *_ALLOC__DESC( name) icm if needed.
  *
- ******************************************************************************/
-
+ *****************************************************************************/
 static node *
-MakeAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
+MakeAnAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns,
+                    char *icm)
 {
     int dim;
-
-    DBUG_ENTER ("MakeAllocDescIcm");
+    DBUG_ENTER ("MakeAnAllocDescIcm");
 
     DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
 
@@ -716,10 +715,43 @@ MakeAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
             get_dim = TBmakeNum (dim);
         }
 
-        assigns = TCmakeAssignIcm2 ("ND_ALLOC__DESC", TCmakeIdCopyStringNt (name, type),
-                                    get_dim, assigns);
+        assigns
+          = TCmakeAssignIcm2 (icm, TCmakeIdCopyStringNt (name, type), get_dim, assigns);
     }
+    DBUG_RETURN (assigns);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeAllocDescIcm( char *name, types *type, int rc,
+ *                              node *get_dim,
+ *                              node *assigns)
+ *
+ * @brief  Builds a ND_ALLOC__DESC( name) icm if needed.
+ *
+ *****************************************************************************/
 
+static node *
+MakeAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
+{
+    DBUG_ENTER ("MakeAllocDescIcm");
+    assigns = MakeAnAllocDescIcm (name, type, rc, get_dim, assigns, "ND_ALLOC__DESC");
+    DBUG_RETURN (assigns);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeMutcLocalAllocDescIcm( char *name, types *type, int rc,
+ *                                       node *get_dim,
+ *                                       node *assigns)
+ *
+ * @brief  Builds a MUTC_LOCAL_ALLOC__DESC( name) icm if needed.
+ *
+ *****************************************************************************/
+static node *
+MakeMutcLocalAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
+{
+    DBUG_ENTER ("MakeMutcLocalAllocDescIcm");
+    assigns
+      = MakeAnAllocDescIcm (name, type, rc, get_dim, assigns, "MUTC_LOCAL_ALLOC__DESC");
     DBUG_RETURN (assigns);
 }
 
@@ -4247,25 +4279,14 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
             }
         }
 
-#if 0
-    /*
-     * (CAJ) I do not think that points 3 & 4 are needed.
-     *
-     * If they are then they can not be implemented like this as they
-     * always results in a call to malloc which is unacceptable in a
-     * loop.  If these are needed then the descriptor should be put on
-     * the stack.
-     */
-
-    /*
-     * 3) produce the descriptor allocation
-     */
-    ret_node = MakeAllocDescIcm( IDS_NAME( let_ids),
-                                 IDS_TYPE( let_ids),
-                                 1,
-                                 sub_get_dim,
-                                 ret_node);
-
+        /*
+         * 3) produce the descriptor allocation
+         *
+         * Allocate the desc local as it will not go out of scope
+         */
+        ret_node = MakeMutcLocalAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
+                                              sub_get_dim, ret_node);
+#if 0 /* As allocated local do not free */
     /*
      * 4) add a corresponding descriptor free to the 
      *    postfun icm chain

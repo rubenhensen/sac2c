@@ -151,23 +151,45 @@
     SAC_MUTC_DEF_THREADFUN_BEGIN2 (name, type, __VA_ARGS__)
 #endif /* FUNAP_AS_CREATE */
 
+#define SAC_MUTC_LOCAL_ALLOC__DESC__NOOP(var_NT, dim) SAC_NOOP ()
+
+#define SAC_MUTC_LOCAL_ALLOC__DESC__FIXED(var_NT, dim)                                   \
+    {                                                                                    \
+        SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
+                         ("Inconsistant dimension for array %s found!",                  \
+                          NT_STR (var_NT)));                                             \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
+                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int) \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
+                           SAC_ND_A_DESC (var_NT)))                                      \
+    }
+
+#define SAC_MUTC_LOCAL_ALLOC__DESC__AUD(var_NT, dim)                                     \
+    {                                                                                    \
+        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+                         ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
+        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)             \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
+                           SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
+    }
+
+/*#include "tls_malloc.h"*/
+#define SAC_MUTC_THREAD_INIT_MALLOC tls_malloc_init ();
+#define SAC_MUTC_THREAD_CLEANUP_MALLOC tls_malloc_cleanup ();
+#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
+
 #if SAC_MUTC_THREAD_MALLOC
-#include "tls_malloc.h"
+
 #ifdef SAC_HM_MALLOC
 #undef SAC_HM_MALLOC
 #endif
-#define SAC_HM_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
+#define SAC_HM_MALLOC(var, size, basetype) SAC_MUTC_LOCAL_MALLOC (var, size, basetype)
 
 #ifdef SAC_HM_FREE
 #undef SAC_HM_FREE
 #endif
 #define SAC_HM_FREE(var)
-
-#define SAC_MUTC_THREAD_INIT_MALLOC tls_malloc_init ();
-#define SAC_MUTC_THREAD_CLEANUP_MALLOC tls_malloc_cleanup ();
-#else
-#define SAC_MUTC_THREAD_INIT_MALLOC
-#define SAC_MUTC_THREAD_CLEANUP_MALLOC
 
 #endif /* SAC_MUTC_THREAD_MALLOC */
 
