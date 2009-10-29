@@ -53,7 +53,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "SSAInferLI.h"
+#include "iteration_invariant_parameter_inference.h"
 
 /*
  * INFO structure

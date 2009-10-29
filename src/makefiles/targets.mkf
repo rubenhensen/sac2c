@@ -136,7 +136,8 @@ libsac2c_generics    := remove_generic_definitions \
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         deadcoderemoval SSACSE SSALIR \
-                        SSALUR SSAInferLI SSAWLUnroll rmcasts \
+                        SSALUR iteration_invariant_parameter_inference \
+                        SSAWLUnroll rmcasts \
                         ElimSubDiv wlpropagation UndoElimSubDiv \
                         constant_propagation \
                         variable_propagation \
