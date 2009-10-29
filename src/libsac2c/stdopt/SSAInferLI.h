@@ -2,24 +2,26 @@
  *
  * $Id$
  *
- * Infer Loop Invariants
+ * Iteration Invariant Parameter Inference
  *
- * Prefix: ILI
+ * Prefix: IIPI
  *
  * description:
  *
- *   This module infers the loop invariant args of do and while loops.
+ *   This module identifies parameters of loop functions that are passed on
+ *   directly to the recursive call. Typically, these are a result of a
+ *   previously successfull application of LIR.
  *
  *****************************************************************************/
-#ifndef _SAC_SSAINFERELI_H_
-#define _SAC_SSAINFERELI_H_
+#ifndef _SAC_ITERATION_INVARIANT_PARAMETER_INFERENCE_H_
+#define _SAC_ITERATION_INVARIANT_PARAMETER_INFERENCE_H_
 
 #include "types.h"
 
-extern node *ILIdoInferLoopInvariants (node *fundef);
+extern node *IIPIdoIterationInvariantParameterInference (node *fundef);
 
-extern node *ILIarg (node *arg_node, info *arg_info);
-extern node *ILIfundef (node *arg_node, info *arg_info);
-extern node *ILIap (node *arg_node, info *arg_info);
+extern node *IIPIarg (node *arg_node, info *arg_info);
+extern node *IIPIfundef (node *arg_node, info *arg_info);
+extern node *IIPIap (node *arg_node, info *arg_info);
 
-#endif /* _SAC_SSAINFERELI_H_ */
+#endif /* _SAC_ITERATION_INVARIANT_PARAMETER_INFERENCE_H_ */

@@ -266,7 +266,7 @@ WLPROPfundef (node *arg_node, info *arg_info)
      */
     arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_wlprop);
     arg_node = WLSELCdoWithloopSelectionCount (arg_node);
-    arg_node = ILIdoInferLoopInvariants (arg_node);
+    arg_node = IIPIdoIterationInvariantParameterInference (arg_node);
 
     /**
      * do actual traversal

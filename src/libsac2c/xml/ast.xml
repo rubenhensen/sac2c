@@ -1440,7 +1440,7 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
-      <traversal id="ILI" name="InferLoopInvariants" default="sons" include="SSAInferLI.h" >
+      <traversal id="IIPI" name="Iteration Invariant Parameter Inference" default="sons" include="iteration_invariant_parameter_inference.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Arg" />
