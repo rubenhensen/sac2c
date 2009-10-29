@@ -68,7 +68,7 @@
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
 #include "infer_dfms.h"
-#include "SSAInferLI.h"
+#include "iteration_invariant_parameter_inference.h"
 #include "phase.h"
 
 #include "wlpropagation.h"
