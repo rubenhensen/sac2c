@@ -36,20 +36,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "dbug.h"
 #include "tree_basic.h"
 #include "node_basic.h"
-#include "globals.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "new_types.h"
-#include "dbug.h"
-#include "str.h"
+#include "shape.h"
 #include "memory.h"
 #include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
-#include "SSATransform.h"
-#include "shape.h"
 
 #include "UndoElimSubDiv.h"
 

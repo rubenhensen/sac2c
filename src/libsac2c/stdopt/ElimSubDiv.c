@@ -25,6 +25,7 @@
 #include "dbug.h"
 #include "memory.h"
 #include "new_typecheck.h"
+#include "globals.h"
 
 /*
  * INFO structure
