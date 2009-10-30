@@ -23,10 +23,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "str.h"
 #include "memory.h"
-#include "free.h"
-#include "DupTree.h"
 #include "new_typecheck.h"
 
 /*
