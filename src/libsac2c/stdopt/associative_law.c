@@ -147,6 +147,28 @@ ALdoAssocLawOptimizationOneFundef (node *syntax_tree)
  *
  *****************************************************************************/
 
+static prf
+AltPrf (prf op)
+{
+    prf res;
+
+    DBUG_ENTER ("AltPrf");
+
+    switch (op) {
+    case F_neg_S:
+        res = F_neg_V;
+        break;
+    case F_reciproc_S:
+        res = F_reciproc_V;
+        break;
+    default:
+        res = F_noop;
+        DBUG_ASSERT (FALSE, "We should never get here.");
+    }
+
+    DBUG_RETURN (res);
+}
+
 static node *
 getInverse (prf prf, node *exprs)
 {
@@ -156,6 +178,7 @@ getInverse (prf prf, node *exprs)
     DBUG_ENTER ("getInverse");
 
     var = NULL;
+    res = NULL;
 
     pat = PMprf (1, PMAisPrf (prf), 1, PMvar (1, PMAgetNode (&var), 0));
 
@@ -164,8 +187,20 @@ getInverse (prf prf, node *exprs)
                      "Result has wrong node type.");
         res = ID_AVIS (var);
     } else {
-        res = NULL;
+        pat = PMfree (pat);
+
+        pat = PMprf (1, PMAisPrf (AltPrf (prf)), 1, PMvar (1, PMAgetNode (&var), 0));
+
+        if (PMmatchFlat (pat, EXPRS_EXPR (exprs))) {
+            DBUG_ASSERT ((var == NULL) || NODE_TYPE (var) == N_id,
+                         "Result has wrong node type.");
+            res = ID_AVIS (var);
+        } else {
+            res = NULL;
+        }
     }
+
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -875,11 +910,11 @@ ALprf (node *arg_node, info *arg_info)
                         ncss = FREEdoFreeTree (ncss);
                 } else {
                     if (isPrfAdd (prf)) {
-                        ncss_inv = identifyInverses (F_esd_neg, &ncss);
-                        array_inv = identifyInverses (F_esd_neg, &exprs);
+                        ncss_inv = identifyInverses (F_neg_S, &ncss);
+                        array_inv = identifyInverses (F_neg_S, &exprs);
                     } else if (isPrfMul (prf)) {
-                        ncss_inv = identifyInverses (F_esd_rec, &ncss);
-                        array_inv = identifyInverses (F_esd_rec, &exprs);
+                        ncss_inv = identifyInverses (F_reciproc_S, &ncss);
+                        array_inv = identifyInverses (F_reciproc_S, &exprs);
                     } else {
                         ncss_inv = NULL;
                         array_inv = NULL;

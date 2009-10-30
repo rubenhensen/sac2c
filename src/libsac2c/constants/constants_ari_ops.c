@@ -672,7 +672,7 @@ COneg (constant *a)
 
 /** <!--********************************************************************-->
  *
- * @fn constant *COrec( constant *a)
+ * @fn constant *COreciproc( constant *a)
  *
  *   @brief  yields reciprocal of all elements of a
  *
@@ -682,15 +682,15 @@ COneg (constant *a)
  ******************************************************************************/
 
 constant *
-COrec (constant *a)
+COreciproc (constant *a)
 {
     constant *one;
     constant *res;
 
-    DBUG_ENTER ("COrec");
+    DBUG_ENTER ("COreciproc");
     one = COmakeOne (COgetType (a), COgetShape (a));
     res = COzip (global.zipcv_div, one, a, T_unknown);
     one = COfreeConstant (one);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COrec", a, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COreciproc", a, res););
     DBUG_RETURN (res);
 }

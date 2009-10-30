@@ -741,8 +741,11 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
   PRF (esd_neg, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_ari_op_A, COneg, NULL, NULL,
        NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
-  PRF (esd_rec, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_ari_op_A, COrec, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+  PRF (reciproc_S, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_ari_op_S, COreciproc,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (reciproc_V, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_ari_op_V, COreciproc,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Multithreaded code generation:

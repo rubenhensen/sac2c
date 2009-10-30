@@ -164,7 +164,7 @@ extern constant *COtof (constant *a);
 extern constant *COtod (constant *a);
 extern constant *COabs (constant *a);
 extern constant *COneg (constant *a);
-extern constant *COrec (constant *a);
+extern constant *COreciproc (constant *a);
 
 // Not sure where this stuff belongs, really. Neither fish nor fowl
 // These should go!!! please use COvect2offset instead!!!

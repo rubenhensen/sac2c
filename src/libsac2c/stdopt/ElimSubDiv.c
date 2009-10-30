@@ -4,20 +4,18 @@
  *
  * @file ElimSubDiv.c
  *
- * @brief replaces subtraction introducing special
- *        primitive negation operator (F_esd_neg):
+ * @brief replace subtraction by addition and division by multiplication
  *
- *      d = sub( b, c);
+ * We do the following transformations:
  *
- *    by:
+ *  a - b  =>  a + -b  // Here, - is a unary negation operator
+ *  a / b  =>  a * /b  // Here, / is a unary reciprocal operator
  *
- *      c' = F_esdneg( c);
- *      d  = add( b, c);
- *
- *  This opt was also supposed to replace division by multiplication,
- *  but that is deactivated. See below.
- *
+ * The rationale for this transformation is to create an extended domain
+ * for associative law optimisation. It will be undone by the complementary
+ * UndoElimSubDiv traversal.
  */
+
 #include "ElimSubDiv.h"
 
 #include "new_types.h"
@@ -140,6 +138,65 @@ TogglePrf (prf op)
     }
 
     DBUG_RETURN (result);
+}
+
+/**<!--**************************************************************-->
+ *
+ * @fn static prf InversionPrf(prf op)
+ *
+ * @brief returns opposite primitive operator of op
+ *
+ * @param op primitive operator
+ *
+ * @return opposite primitive operator of op
+ *
+ **********************************************************************/
+
+static prf
+InversionPrf (prf op, simpletype stype)
+{
+    prf inv_prf;
+
+    DBUG_ENTER ("InversionPrf");
+
+    switch (stype) {
+    case T_float:
+    case T_double:
+        if (!global.enforce_ieee) {
+            switch (op) {
+            case F_div_SxS:
+            case F_div_VxS:
+                inv_prf = F_reciproc_S;
+                break;
+            case F_div_SxV:
+            case F_div_VxV:
+                inv_prf = F_reciproc_V;
+                break;
+            default:
+                inv_prf = F_unknown;
+            }
+        }
+        /* There is no break missing here. */
+
+    case T_int:
+        switch (op) {
+        case F_sub_SxS:
+        case F_sub_VxS:
+            inv_prf = F_neg_S;
+            break;
+        case F_sub_SxV:
+        case F_sub_VxV:
+            inv_prf = F_neg_V;
+            break;
+        default:
+            inv_prf = F_unknown;
+        }
+        break;
+    default:
+        inv_prf = F_unknown;
+    }
+
+    DBUG_RETURN (inv_prf);
 }
 
 /**<!--**************************************************************-->
@@ -342,51 +399,21 @@ ESDlet (node *arg_node, info *arg_info)
  * @return
  *
  **********************************************************************/
+
 node *
 ESDprf (node *arg_node, info *arg_info)
 {
-    simpletype st;
-    prf op = F_noop;
+    prf op = F_unknown;
 
     DBUG_ENTER ("ESDprf");
 
     DBUG_PRINT ("ESD",
                 ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
 
-    st = TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info))));
+    op = InversionPrf (PRF_PRF (arg_node),
+                       TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))));
 
-    /*
-     * Determine inverse prf
-     */
-    switch (PRF_PRF (arg_node)) {
-
-    case F_sub_SxS:
-    case F_sub_VxS:
-    case F_sub_SxV:
-    case F_sub_VxV:
-        if ((st == T_int) || (st == T_float) || (st == T_double)) {
-            op = F_esd_neg;
-        }
-        break;
-
-#if 0
-    /*
-     * Deactivated for the time being as this might lead to
-     * errornous results especially when evaluated by the TC
-     */
-  case F_div_SxS:
-  case F_div_VxS:
-  case F_div_SxV:
-  case F_div_VxV:
-    op = F_esd_rec;
-    break;
-#endif
-
-    default:
-        break;
-    }
-
-    if (op != F_noop) {
+    if (op != F_unknown) {
         node *avis, *vardec;
         node *prf = NULL;
         ntype *ptype;
@@ -416,6 +443,7 @@ ESDprf (node *arg_node, info *arg_info)
          */
         EXPRS_NEXT (PRF_ARGS (arg_node)) = TBmakeExprs (TBmakeId (avis), NULL);
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
+
         DBUG_PRINT ("ESD",
                     ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
     }

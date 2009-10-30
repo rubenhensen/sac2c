@@ -9,6 +9,28 @@
  * @brief Replaces all occurences of primitive negation and reciprocal operators
  *        introduced by ElimSubDiv with subtraction and division.
  *
+ * More precisely, we look for the following patterns:
+ *
+ *  a + -b  =>  a - b
+ *  -a + b  =>  b - a
+ *  -a + -b => -a - b
+ *
+ *  a * /b  =>  a / b
+ *  /a * b  =>  b / a
+ *  /a * /b => /a / b
+ *
+ *  /a      =>  1 / a
+ *
+ *  Whereas all occurrences of F_reciproc are eliminted, we lieve F_neg
+ *  in the code because it is supported by the backend.
+ *
+ *  Since both neg and reciproc are standard prfs, why do we remove them
+ *  at all during the optimisation cycle rather than keeping them until
+ *  the end? The main reason is that legacy optimisation, e.g. with-loop
+ *  folding or any form of array indexing analysis, look for patterns
+ *  like iv - x, but hardly for iv + -x. If this changes in the future
+ *  or is shown to be irrelevant, then we could move UndoElimSubDiv to
+ *  the end of the optimisation phase.
  */
 
 #include <stdio.h>
@@ -27,6 +49,7 @@
 #include "DataFlowMask.h"
 #include "DupTree.h"
 #include "SSATransform.h"
+#include "shape.h"
 
 #include "UndoElimSubDiv.h"
 
@@ -36,8 +59,8 @@
 struct INFO {
     node *fundef;
     bool onefundef;
-    node *postassign;
-    node *let;
+    node *preassign;
+    node *lhs;
     bool topdown;
 };
 
@@ -46,9 +69,10 @@ struct INFO {
  */
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_POSTASSIGN(n) (n->postassign)
-#define INFO_LET(n) (n->let)
+#define INFO_PREASSIGN(n) (n->preassign)
+#define INFO_LHS(n) (n->lhs)
 #define INFO_TOPDOWN(n) (n->topdown)
+
 /*
  * INFO functions
  */
@@ -62,8 +86,9 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_POSTASSIGN (result) = NULL;
-    INFO_LET (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
+    INFO_LHS (result) = NULL;
+
     INFO_TOPDOWN (result) = TRUE;
 
     DBUG_RETURN (result);
@@ -84,7 +109,7 @@ FreeInfo (info *info)
  * @fn static node *CheckExpr(node *expr, prf op)
  *
  * @brief checks if definiton of argument fullfils special conditions
- *        (is an assignment with  primitive of type esd_rec or esd_neg)
+ *        (is an assignment with primitive neg or reciproc
  *
  * @param expr argument of primitive operation
  * @param op current prf
@@ -95,39 +120,45 @@ FreeInfo (info *info)
 static node *
 CheckExpr (node *expr, prf op)
 {
-    node *result = NULL;
+    node *result;
+    prf prfop1, prfop2;
 
     DBUG_ENTER ("CheckExpr");
 
     if ((N_id == NODE_TYPE (expr)) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
 
         node *assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-        prf prfop = F_noop;
 
         switch (op) {
         case F_add_SxS:
         case F_add_VxS:
         case F_add_SxV:
         case F_add_VxV:
-            prfop = F_esd_neg;
+            prfop1 = F_neg_S;
+            prfop2 = F_neg_V;
             break;
         case F_mul_SxS:
         case F_mul_VxS:
         case F_mul_SxV:
         case F_mul_VxV:
-            prfop = F_esd_rec;
+            prfop1 = F_reciproc_S;
+            prfop2 = F_reciproc_V;
             break;
         default:
-            break;
+            prfop1 = F_unknown;
+            prfop2 = F_unknown;
         }
 
-        if ((prfop != F_noop) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
-            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))) {
-
-            if (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop) {
-                result = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (assign)));
-            }
+        if ((prfop1 != F_unknown) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
+            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))
+            && ((PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop1)
+                || (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop2))) {
+            result = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (assign)));
+        } else {
+            result = NULL;
         }
+    } else {
+        result = NULL;
     }
 
     DBUG_RETURN (result);
@@ -147,7 +178,7 @@ CheckExpr (node *expr, prf op)
 static prf
 TogglePrf (prf op)
 {
-    prf result = F_noop;
+    prf result = F_unknown;
 
     DBUG_ENTER ("TogglePrf");
 
@@ -206,7 +237,7 @@ TogglePrf (prf op)
 static prf
 TogglePrfSwap (prf op)
 {
-    prf result = F_noop;
+    prf result = F_unknown;
 
     DBUG_ENTER ("TogglePrfSwap");
 
@@ -382,16 +413,11 @@ UESDblock (node *arg_node, info *arg_info)
 node *
 UESDassign (node *arg_node, info *arg_info)
 {
-    node *postassign = NULL;
-
     DBUG_ENTER ("UESDassign");
 
     INFO_TOPDOWN (arg_info) = TRUE;
-    INFO_POSTASSIGN (arg_info) = NULL;
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
-
-    postassign = INFO_POSTASSIGN (arg_info);
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -399,9 +425,10 @@ UESDassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (postassign != NULL) {
-        ASSIGN_NEXT (postassign) = arg_node;
-        arg_node = postassign;
+    if (INFO_PREASSIGN (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_PREASSIGN (arg_info)) = arg_node;
+        arg_node = INFO_PREASSIGN (arg_info);
+        INFO_PREASSIGN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -424,9 +451,11 @@ UESDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UESDlet");
 
-    INFO_LET (arg_info) = arg_node;
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -443,90 +472,44 @@ UESDlet (node *arg_node, info *arg_info)
  * @return
  *
  ************************************************************************/
+
 node *
 UESDprf (node *arg_node, info *arg_info)
 {
-    prf op, newop;
+    prf op;
     node *id1, *id2;
-    bool add = FALSE;
-    ntype *type;
 
     DBUG_ENTER ("UESDprf");
 
     op = PRF_PRF (arg_node);
 
     if (INFO_TOPDOWN (arg_info)) {
-        switch (op) {
+        /*
+         * top-down traversal
+         */
 
+        switch (op) {
         case F_add_SxS:
         case F_add_VxS:
         case F_add_SxV:
         case F_add_VxV:
-            add = TRUE;
-
         case F_mul_SxS:
         case F_mul_VxS:
         case F_mul_SxV:
         case F_mul_VxV:
-            /*
-             * handel add and div seperatly
-             */
             id1 = CheckExpr (EXPRS_EXPR (PRF_ARGS (arg_node)), op);
             id2 = CheckExpr (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), op);
 
-            if ((id1 == NULL) && (id2 == NULL)) {
-                /*
-                 * nothing to do
-                 */
-            } else if ((id1 == NULL) && (id2 != NULL)) {
-                /*
-                 * convert a op !b -> a !op b
-                 */
+            if (id2 != NULL) {
                 PRF_ARG2 (arg_node) = FREEdoFreeTree (PRF_ARG2 (arg_node));
                 PRF_ARG2 (arg_node) = DUPdoDupTree (id2);
                 PRF_PRF (arg_node) = TogglePrf (op);
-            } else if ((id1 != NULL) && (id2 == NULL)) {
-                /*
-                 * convert !a op b -> b !op a
-                 */
+            } else if (id1 != NULL) {
                 PRF_ARG1 (arg_node) = FREEdoFreeTree (PRF_ARG1 (arg_node));
                 PRF_ARG1 (arg_node) = PRF_ARG2 (arg_node);
                 PRF_ARG2 (arg_node) = DUPdoDupTree (id1);
                 PRF_PRF (arg_node) = TogglePrfSwap (op);
-            } else if ((id1 != NULL) && (id2 != NULL)) {
-                /*
-                 * convert !a op !b -> !( a op b)
-                 */
-                node *avis;
-                node *tmp;
-
-                tmp = TCmakePrf2 (op, DUPdoDupTree (id1), DUPdoDupTree (id2));
-
-                avis
-                  = TBmakeAvis (TRAVtmpVar (),
-                                TYcopyType (IDS_NTYPE (LET_IDS (INFO_LET (arg_info)))));
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                tmp = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), tmp), NULL);
-                AVIS_SSAASSIGN (avis) = tmp;
-
-                /*
-                 * change current prf
-                 */
-                PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
-                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
-
-                if (add) {
-                    PRF_PRF (arg_node) = F_esd_neg;
-                } else {
-                    PRF_PRF (arg_node) = F_esd_rec;
-                }
-
-                INFO_POSTASSIGN (arg_info) = tmp;
             }
-
-            break;
         default:
             break;
         }
@@ -534,69 +517,32 @@ UESDprf (node *arg_node, info *arg_info)
         /*
          * bottom-up traversal
          */
+        simpletype stype;
+        node *avis, *exp;
 
-        type = AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info))));
+        if ((op == F_reciproc_S) || (op == F_reciproc_V)) {
+            stype = TYgetSimpleType (
+              TYgetScalar (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)))));
+            avis = TBmakeAvis (TRAVtmpVar (),
+                               TYmakeAKS (TYmakeSimpleType (stype), SHmakeShape (0)));
+            PRF_ARGS (arg_node) = TBmakeExprs (TBmakeId (avis), PRF_ARGS (arg_node));
+            PRF_PRF (arg_node) = (op == F_reciproc_S) ? F_div_SxS : F_div_SxV;
 
-        if (PRF_PRF (arg_node) == F_esd_neg) {
-
-            if (TYisAUD (type)) {
-                newop = F_sub_SxV;
-            } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
-                newop = F_sub_SxV;
-            } else {
-                newop = F_sub_SxS;
+            switch (stype) {
+            case T_float:
+                exp = TBmakeFloat (1.0);
+                break;
+            case T_double:
+                exp = TBmakeDouble (1.0);
+                break;
+            default:
+                exp = NULL;
+                DBUG_ASSERT (FALSE, "We should never reach here.");
             }
-            PRF_PRF (arg_node) = newop;
-
-            /*
-             * construct an appropriate zero
-             */
-            if ((TYisArray (type) && (T_int == TYgetSimpleType (TYgetScalar (type))))
-                || (!TYisArray (type) && (T_int == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (0), PRF_ARGS (arg_node));
-            } else if ((TYisArray (type)
-                        && (T_float == TYgetSimpleType (TYgetScalar (type))))
-                       || (!TYisArray (type) && (T_float == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node)
-                  = TBmakeExprs (TBmakeFloat (0.0), PRF_ARGS (arg_node));
-            } else if ((TYisArray (type)
-                        && (T_double == TYgetSimpleType (TYgetScalar (type))))
-                       || (!TYisArray (type) && (T_double == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node)
-                  = TBmakeExprs (TBmakeDouble (0.0), PRF_ARGS (arg_node));
-            } else {
-                DBUG_ASSERT ((FALSE), "unexpected simpletype");
-            }
-        } else if (PRF_PRF (arg_node) == F_esd_rec) {
-
-            if (TYisAUD (type)) {
-                newop = F_div_SxV;
-            } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
-                newop = F_div_SxV;
-            } else {
-                newop = F_div_SxS;
-            }
-            PRF_PRF (arg_node) = newop;
-
-            /*
-             * construct an appropriate one
-             */
-            if ((TYisArray (type) && (T_int == TYgetSimpleType (TYgetScalar (type))))
-                || (!TYisArray (type) && (T_int == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
-            } else if ((TYisArray (type)
-                        && (T_float == TYgetSimpleType (TYgetScalar (type))))
-                       || (!TYisArray (type) && (T_float == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node)
-                  = TBmakeExprs (TBmakeFloat (1.0), PRF_ARGS (arg_node));
-            } else if ((TYisArray (type)
-                        && (T_double == TYgetSimpleType (TYgetScalar (type))))
-                       || (!TYisArray (type) && (T_double == TYgetSimpleType (type)))) {
-                PRF_ARGS (arg_node)
-                  = TBmakeExprs (TBmakeDouble (1.0), PRF_ARGS (arg_node));
-            } else {
-                DBUG_ASSERT ((FALSE), "unexpected simpletype");
-            }
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), exp), NULL);
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
         }
     }
 
