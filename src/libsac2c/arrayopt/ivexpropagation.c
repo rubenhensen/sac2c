@@ -1067,9 +1067,9 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
  *      into:
  *
  *          offset = 42;
- *          minv = _add_SxS__( offset, AVIS_MINVAL( iv));
- *          maxv = _add_SxS__( offset, AVIS_MAXVAL( iv));
- *          lhs' = _add_SxS_( offset, iv);
+ *          minv = _add_SxV__( offset, AVIS_MINVAL( iv));
+ *          maxv = _add_SxV__( offset, AVIS_MAXVAL( iv));
+ *          lhs' = _add_SxV_( offset, iv);
  *          lhs = _attachextrema( lhs', minv, maxv);
  *
  *          This requires that we (a) rename the result of the
@@ -1081,15 +1081,15 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
  *      Note that we swap minv and max in the attach. The N_prf is:
  *
  *          offset = 42;
- *          lhs = _sub_SxS_( offset, iv);
+ *          lhs = _sub_SxV_( offset, iv);
  *
  *      We know that iv' has extrema attached, so we transform this
  *      into:
  *
  *          offset = 42;
- *          minv = _sub_SxS__( offset, AVIS_MINVAL( iv));
- *          maxv = _sub_SxS__( offset, AVIS_MAXVAL( iv));
- *          lhs' = _sub_SxS_( offset, iv);
+ *          minv = _sub_SxV__( offset, AVIS_MINVAL( iv));
+ *          maxv = _sub_SxV__( offset, AVIS_MAXVAL( iv));
+ *          lhs' = _sub_SxV_( offset, iv);
  *          lhs = _attachextrema( lhs', maxv, minv );
  *
  * Example 3:
@@ -1098,15 +1098,15 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
  *      The N_prf is:
  *
  *          offset = 42;
- *          lhs = _sub_SxS_( iv, offset);
+ *          lhs = _sub_VxS_( iv, offset);
  *
  *      We know that iv' has extrema attached, so we transform this
  *      into:
  *
  *          offset = 42;
- *          minv = _sub_SxS__( AVIS_MINVAL( iv), offset);
- *          maxv = _sub_SxS__( AVIS_MAXVAL( iv), offset);
- *          lhs' = _sub_SxS_( iv, offset);
+ *          minv = _sub_VxS__( AVIS_MINVAL( iv), offset);
+ *          maxv = _sub_VxS__( AVIS_MAXVAL( iv), offset);
+ *          lhs' = _sub_VxS_( iv, offset);
  *          lhs = _attachextrema( lhs', minv, maxv );
  *
  ******************************************************************************/

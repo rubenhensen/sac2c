@@ -1293,7 +1293,6 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
     node *z = NULL;
 
     DBUG_ENTER ("SCCFprf_mesh_VxVxV");
-#ifdef RBECANTCODE
 
     pat = PMprf (1, PMAisPrf (F_mesh_VxVxV), 3,
                  PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
@@ -1320,6 +1319,5 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
         }
         ARRAY_AELEMS (res) = z;
     }
-#endif // RBECANTCODE
     DBUG_RETURN (res);
 }

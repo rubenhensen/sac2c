@@ -23,34 +23,36 @@
  *        by WLF. Features of AWLF are described in algebraic_wlf.c
  *
  *        This phase begins by computing AVIS_NEEDCOUNT for
- *        all N_id nodes. It then makes a depth-first traversal
+ *        all N_id nodes. This is done as a cost-function
+ *        heuristic to prevent the same foldeeWL element
+ *        from being computed repeatedly.
+ *        [ We could develop a better cost function. For example,
+ *          iota(N) has a cost of zero, because the foldeeWL
+ *          element cost is just an access to the WITH_ID.]
+ *
+ *        The phase then makes a depth-first traversal
  *        of the function, computing WL_REFERENCED_FOLD(foldeeWL)++
  *        for all sel() operations in WLs that are of the form:
  *
  *             _sel_VxA_(iv, foldeeWL)
  *
  *        where foldeeWL is the result of another WL.
- *        Only one folderWL is allowed to contribute to the
- *        total. The intent here is to prevent foldeeWL
- *        computations of the same result element
- *        from being folded into several WLs, thereby
- *        increasing the total amount of computation required.
- *        EWLF will permit the folding to occur if, among
+ *        At present, only one folderWL is allowed to contribute to the
+ *        total. AWLF will permit the folding to occur if, among
  *        other requirements:
  *
  *         AVIS_NEEDCOUNT(foldeeWL) == WL_REFERENCED_FOLD(foldeeWL)
  *
  *        This phase inserts _attachextrema "intersection expressions"
- *        before certain _sel_(iv, X) statements. Specifically, iv must
- *        be a function of the WITH_ID(folderWL),
- *        and X must be the result of a foldeeWL.
+ *        before _sel_(iv, X) statements, if iv is a function of
+ *        the WITH_ID(folderWL) and X is the result of a foldeeWL.
  *
  *        An intersection expression provides the information required
  *        to cut a folderWL partition so that its index set
  *        is entirely contained with the index set of
  *        one partition of the foldeeWL.
  *
- *        Once the cutting has been performed, folding of the
+ *        Once the cutting, if needed, has been performed, folding of the
  *        foldeeWL into the folderWL can be performed directly,
  *        by replacing the above _sel_(iv, X) expression with
  *        the code from the foldeeWL partition, and performing
@@ -313,11 +315,34 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *          genshp = _shape_A_(GENERATOR_BOUND1( foldee));
  *
  *          ivmin = _take_SxV( genshp, AVIS_MINVAL( iv'));
- *          intlo = _max_VxV_( AVIS_MINVAL( ivmin), GENERATOR_BOUND1(foldee));
+ *
+ *          (The next few lines compute:
+ *           intlo = _max_VxV_( AVIS_MINVAL( ivmin), GENERATOR_BOUND1(foldee));
+ *          but the optimizers are unable to compute common
+ *          expressions such as:
+ *           _max_VxV_( iv, iv + 1)
+ *          Hence, we use the following:
+ *
+ *           xl = AVIS_MINVAL( ivmin);
+ *           yl = GENERATOR_BOUND1( foldee);
+ *           d  = _sub_VxV_( xl, yl);
+ *           zero = 0;
+ *           p = _gt_VxS_( d, zero);
+ *           intlo = _mesh_( p, xl, yl);
+ *           )
  *
  *          ivmax = _take_SxV( genshp, AVIS_MAXVAL( iv');
  *          ivmax' = _add_VxS_( ivmax, 1);
- *          inthi  = _min_VxV_( ivmax', GENERATOR_BOUND2(foldee));
+ *
+ *          ( Similar treatment to _max_VxV_ above:
+ *             inthi  = _min_VxV_( ivmax', GENERATOR_BOUND2(foldee));
+ *
+ *          yh = GENERATOR_BOUND2( foldee);
+ *          d'  = _sub_VxV_( ivmax', yh);
+ *          p' = _lt_VxS_( d', zero);
+ *          inthi = _mesh_( p', ivmax', yh);
+ *          )
+ *
  *          iv'' = _attachextrema_(iv', ivmax', intlo, inthi);
  *          sel( iv'', foldeeWL)
  *
@@ -330,10 +355,10 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *        also needed by FindMatchingPart in AWLF.
  *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
- * @params foldeepart: An N_part of the foldeeWL.
  * @params arg_info.
+ * @params foldeepart: An N_part of the foldeeWL.
  * @params boundnum: 1 for bound1,     or 2 for bound2
- * @parame bounder: AVIS_MINVAL( idx) or ( AVIS_MAXVAL( idx) + 1)
+ * @params ivminmax: AVIS_MINVAL( idx) or ( AVIS_MAXVAL( idx) + 1)
  * @param  genshpavis: the N_avis for the above genshp computation.
  *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
@@ -346,12 +371,22 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 {
     node *boundee;
     node *folderpart;
-    node *expn;
+    node *pexpr;
     node *idxavis;
     node *idxassign;
+    node *ivid;
     node *resavis;
     node *takeres;
     node *takeresavis;
+    node *genshpid;
+    node *takeresid;
+    node *boundeeid;
+    node *pid;
+    node *pavis;
+    node *subexpr;
+    node *expnm;
+    node *szeroid;
+    node *subid;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
@@ -367,26 +402,33 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     DBUG_ASSERT (N_id == NODE_TYPE (boundee),
                  "IntersectBoundsBuilderOne expected N_id WL-generator boundee");
 
-    /* Now, replace the folderWL iv by the appropriate bound.
-     * If we started with
-     *
-     *   _sel_VxA_((k*iv) + offset, foldee)
-     *
-     * We will end up with:
-     *
-     *   (k*folderbound1) + offset
-     * and
-     *   (k*folderbound2) + offset
-     */
-
-    takeres = TCmakePrf2 (F_take_SxV, TBmakeId (genshpavis), TBmakeId (ivminmax));
+    ivid = TBmakeId (ivminmax);
+    genshpid = TBmakeId (genshpavis);
+    takeres = TCmakePrf2 (F_take_SxV, genshpid, ivid);
 
     takeresavis = AWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info), genshpavis);
+    takeresid = TBmakeId (takeresavis);
+    boundeeid = DUPdoDupTree (boundee);
 
-    expn = TCmakePrf2 ((boundnum == 1) ? F_max_VxV : F_min_VxV, TBmakeId (takeresavis),
-                       DUPdoDupTree (boundee));
-    resavis = AWLFIflattenExpression (expn, &INFO_VARDECS (arg_info),
+    subexpr = TCmakePrf2 (F_sub_VxV, takeresid, boundeeid);
+
+    subid = TBmakeId (AWLFIflattenExpression (subexpr, &INFO_VARDECS (arg_info),
+                                              &INFO_PREASSIGNS (arg_info), genshpavis));
+
+    szeroid
+      = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
+
+    pexpr = TCmakePrf2 ((boundnum == 1) ? F_gt_VxS : F_lt_VxS, subid, szeroid);
+
+    pavis = AWLFIflattenExpression (pexpr, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), ID_AVIS (boundeeid));
+    pid = TBmakeId (pavis);
+
+    expnm = TCmakePrf3 (F_mesh_VxVxV, pid, DUPdoDupNode (takeresid),
+                        DUPdoDupNode (boundeeid));
+
+    resavis = AWLFIflattenExpression (expnm, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info), genshpavis);
 
     DBUG_RETURN (resavis);

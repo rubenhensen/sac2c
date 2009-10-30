@@ -55,5 +55,7 @@ extern node *SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
 extern node *SCSprf_sel_VxA (node *arg_node, info *arg_info);
 extern node *SCSprf_idx_shape_sel (node *arg_node, info *arg_info);
 extern node *SCSprf_reshape (node *arg_node, info *arg_info);
+extern node *SCSprf_neg_S (node *arg_node, info *arg_info);
+extern node *SCSprf_neg_V (node *arg_node, info *arg_info);
 
 #endif /* symbolic_constant_simplification.h */

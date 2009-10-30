@@ -488,10 +488,10 @@ NTCCTprf_attachextrema (te_info *info, ntype *args)
  *    ntype *NTCCTprf_attachintersect( te_info *info, ntype *elems)
  *
  * description:
- *   This guard acts as a holder for index vector intersect
+ *   This guard acts as an anchor for index vector intersect
  *   computations, preceeding an _sel_( idx, foldeeWL) operation.
  *
- *   This is intended as a data-flow approach to
+ *   This is intended as a data-flow approach for
  *   adding ancillary information to the ast.
  *
  *   The semantics of the _attachintersect are:
@@ -2716,4 +2716,32 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_mesh_VxVxV( te_info *info, ntype *elems)
+ *
+ * description:
+ *    _mesh_VxVxV_( p, x, y) meshes the values of x and y,
+ *     based on the boolean predicate, p. It selects x[i] if
+ *     p[i], else y[i]. All arguments must be the same shape.
+ *     This is an internal-use-only primitive, used as part of AWLF.
+ *     It does not survive the optimization phase.
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_mesh_VxVxV (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTprf_mesh_VxVxV");
+
+    arg = TYgetProductMember (args, 1);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+    DBUG_RETURN (res);
 }
