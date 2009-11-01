@@ -117,6 +117,7 @@ PRF_MIN_SxS  PRF_MIN_SxV  PRF_MIN_VxS  PRF_MIN_VxV
 PRF_MAX_SxS  PRF_MAX_SxV  PRF_MAX_VxS  PRF_MAX_VxV
 PRF_ABS_S  PRF_ABS_V
 PRF_NEG_S  PRF_NEG_V
+PRF_RECIPROC_S  PRF_RECIPROC_V
 PRF_EQ_SxS   PRF_EQ_SxV  PRF_EQ_VxS  PRF_EQ_VxV
 PRF_NEQ_SxS  PRF_NEQ_SxV  PRF_NEQ_VxS  PRF_NEQ_VxV
 PRF_LE_SxS   PRF_LE_SxV  PRF_LE_VxS  PRF_LE_VxV
@@ -1757,6 +1758,8 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_ABS_V          { $$ = F_abs_V;   }
    | PRF_NEG_S          { $$ = F_neg_S;   }
    | PRF_NEG_V          { $$ = F_neg_V;   }
+   | PRF_RECIPROC_S     { $$ = F_reciproc_S;   }
+   | PRF_RECIPROC_V     { $$ = F_reciproc_V;   }
    | PRF_MIN_SxS        { $$ = F_min_SxS; }
    | PRF_MIN_SxV        { $$ = F_min_SxV; }
    | PRF_MIN_VxS        { $$ = F_min_VxS; }

@@ -157,6 +157,9 @@ int charpos = 0;
 "_neg_S_"                  { FILTER( PRF_NEG_S); }
 "_neg_V_"                  { FILTER( PRF_NEG_V); }
 
+"_reciproc_S_"             { FILTER( PRF_RECIPROC_S); }
+"_reciproc_V_"             { FILTER( PRF_RECIPROC_V); }
+
 "_eq_SxS_"                 { FILTER( PRF_EQ_SxS);  }
 "_eq_SxV_"                 { FILTER( PRF_EQ_SxV);  }
 "_eq_VxS_"                 { FILTER( PRF_EQ_VxS);  }

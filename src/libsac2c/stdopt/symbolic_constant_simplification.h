@@ -24,11 +24,13 @@ extern node *SCSprf_tod_S (node *arg_node, info *arg_info);
 extern node *SCSprf_add_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_add_SxV (node *arg_node, info *arg_info);
 extern node *SCSprf_add_VxS (node *arg_node, info *arg_info);
+extern node *SCSprf_add_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_sub (node *arg_node, info *arg_info);
 extern node *SCSprf_sub_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_mul_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_mul_SxV (node *arg_node, info *arg_info);
 extern node *SCSprf_mul_VxS (node *arg_node, info *arg_info);
+extern node *SCSprf_mul_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_div (node *arg_node, info *arg_info);
 extern node *SCSprf_not (node *arg_node, info *arg_info);
 extern node *SCSprf_and_SxS (node *arg_node, info *arg_info);
@@ -57,5 +59,7 @@ extern node *SCSprf_idx_shape_sel (node *arg_node, info *arg_info);
 extern node *SCSprf_reshape (node *arg_node, info *arg_info);
 extern node *SCSprf_neg_S (node *arg_node, info *arg_info);
 extern node *SCSprf_neg_V (node *arg_node, info *arg_info);
+extern node *SCSprf_reciproc_S (node *arg_node, info *arg_info);
+extern node *SCSprf_reciproc_V (node *arg_node, info *arg_info);
 
 #endif /* symbolic_constant_simplification.h */
