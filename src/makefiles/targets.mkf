@@ -133,7 +133,6 @@ libsac2c_generics    := remove_generic_definitions \
                         check_and_simplify_generic_definitions \
                         generate_generic_type_conversions
 
-
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         deadcoderemoval SSACSE SSALIR \
                         SSALUR iteration_invariant_parameter_inference \
@@ -146,14 +145,11 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         wlsimplification copywlelim prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
                         makeshapeexpr remove_vardecs \
-                        statistics arithmetic_simplification \
-                        saa_constant_folding \
-                        constant_folding \
+                        statistics saa_constant_folding constant_folding \
                         structural_constant_constant_folding \
                         symbolic_constant_simplification wl_lock_optimization_marking \
                         wl_lock_optimization_shifting setfundefwasoptimized
 
-                        
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         wl_access_analyze tile_size_inference wls wlscheck \
                         wlsbuild wlswithloopification SSAWithloopFolding \

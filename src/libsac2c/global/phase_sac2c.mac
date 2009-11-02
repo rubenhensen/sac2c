@@ -345,13 +345,18 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
                global.optimize.doetc, opt, cyc)
 
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-               global.optimize.dosde
-                 && (global.optimize.doas || global.optimize.doal
-                     || global.optimize.dodl),
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
 
-CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
-               global.optimize.doas, opt, cyc)
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)",
+               CFdoConstantFoldingOneFundef,
+               (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
+               opt, cyc)
+
+CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
+               CSEdoCommonSubexpressionElimination,
+               (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
+               opt, cyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
@@ -361,9 +366,7 @@ CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFun
 
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                UESDdoUndoElimSubDiv,
-               global.optimize.dosde
-                 && (global.optimize.doas || global.optimize.doal
-                     || global.optimize.dodl),
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
 
 CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
@@ -525,13 +528,18 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
                global.optimize.doetc, opt, saacyc)
 
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-               global.optimize.dosde
-                 && (global.optimize.doas || global.optimize.doal
-                     || global.optimize.dodl),
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
 
-CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
-               global.optimize.doas, opt, saacyc)
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)",
+               CFdoConstantFoldingOneFundef,
+               (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
+               opt, saacyc)
+
+CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
+               CSEdoCommonSubexpressionElimination,
+               (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
+               opt, saacyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
                global.optimize.doal, opt, saacyc)
@@ -541,9 +549,7 @@ CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFun
 
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                UESDdoUndoElimSubDiv,
-               global.optimize.dosde
-                 && (global.optimize.doas || global.optimize.doal
-                     || global.optimize.dodl),
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
 
 CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,

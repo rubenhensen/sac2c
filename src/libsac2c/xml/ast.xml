@@ -1207,13 +1207,6 @@
 	  <node name="Id" />
 	</travuser>
       </traversal>
-      <traversal id="AS" name="Arithmetic Simplification" default="sons" include="arithmetic_simplification.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Prf" />
-	</travuser>
-      </traversal>
       <traversal id="AL" name="Associative Law Optimization" default="sons" include="associative_law.h" >
 	<travuser>
 	  <node name="Fundef" />
