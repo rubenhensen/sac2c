@@ -87,6 +87,7 @@ struct INFO {
     lut_t *block_lut;
     node *let_expr;
     bool is_modarr;
+    bool in_cexprs;
 };
 
 /*
@@ -122,6 +123,7 @@ struct INFO {
 #define INFO_BLOCK_LUT(n) (n->block_lut)
 #define INFO_LETEXPR(n) (n->let_expr)
 #define INFO_IS_MODARR(n) (n->is_modarr)
+#define INFO_IN_CEXPRS(n) (n->in_cexprs)
 
 static info *
 MakeInfo ()
@@ -140,6 +142,7 @@ MakeInfo ()
     INFO_LUT (result) = NULL;
     INFO_BLOCK_LUT (result) = NULL;
     INFO_IS_MODARR (result) = FALSE;
+    INFO_IN_CEXPRS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -482,6 +485,11 @@ IMEMcode (node *arg_node, info *arg_info)
     // if( INFO_INCUDAWL( arg_info)) {
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    INFO_IN_CEXPRS (arg_info) = TRUE;
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+    INFO_IN_CEXPRS (arg_info) = FALSE;
+
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
     //}
 
@@ -619,8 +627,19 @@ IMEMid (node *arg_node, info *arg_info)
     /* if we are in cudarizable N_with */
     if (INFO_INCUDAWL (arg_info)) {
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
-        /* if the N_avis node hasn't been come across before */
-        if (avis == id_avis) {
+
+        /* if the N_avis node hasn't been come across before AND the id is
+         * NOT in cexprs. This is because we don't want to create a host2device
+         * for N_id in the cexprs. However, if the N_id has been come across
+         * before, even if it's in cexprs, we still need to replace its avis
+         * by the new avis, i.e. the transferred device variable (See the
+         * "else" case). This might happen that the N_id in cexprs is not
+         * a scalar and it's a default element of the withloop. Therefore,
+         * a early traverse of the withop will insert a host2device for this
+         * N_id and we here simply need to set it's avis to the device variable
+         * avis. (This is fix to the bug discovered in compiling tvd2d.sac) */
+
+        if (avis == id_avis && !INFO_IN_CEXPRS (arg_info)) {
             dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
             /* Definition of the N_id must not be in the same block as
              * reference of the N_id. Otherwise, no host2device will be

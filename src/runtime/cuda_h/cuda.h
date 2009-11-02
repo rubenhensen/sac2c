@@ -248,7 +248,9 @@
  * =================
  *
  *****************************************************************************/
-#define SAC_CUDA_DECL_KERNEL_ARRAY(var_NT, basetype, dim)                                \
-    basetype[dim] SAC_ND_A_FIELD (var_NT);
+/*
+#define SAC_CUDA_DECL_KERNEL_ARRAY( var_NT, basetype, dim) \
+  basetype[dim] SAC_ND_A_FIELD( var_NT);
+*/
 
 #endif

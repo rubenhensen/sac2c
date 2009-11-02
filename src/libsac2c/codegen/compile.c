@@ -4500,8 +4500,9 @@ COMPprfCopy (node *arg_node, info *arg_info)
         src_basetype = TCgetBasetype (ID_TYPE (PRF_ARG1 (arg_node)));
         dst_basetype = TCgetBasetype (IDS_TYPE (let_ids));
 
-        if ((src_basetype == T_float_dev && dst_basetype == T_float_dev)
-            || (src_basetype == T_int_dev && dst_basetype == T_int_dev)) {
+        if (((src_basetype == T_float_dev && dst_basetype == T_float_dev)
+             || (src_basetype == T_int_dev && dst_basetype == T_int_dev))
+            && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
             ret_node
               = TCmakeAssignIcm4 ("CUDA_COPY__ARRAY", DUPdupIdsIdNt (let_ids),
                                   DUPdupIdNt (PRF_ARG1 (arg_node)),

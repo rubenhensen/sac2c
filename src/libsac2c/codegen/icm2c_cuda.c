@@ -4,6 +4,7 @@
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
 #include "icm2c_cuda.h"
+#include "icm2c_std.h"
 
 #include "dbug.h"
 #include "convert.h"
@@ -697,6 +698,11 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
             }
         }
         fprintf (global.outfile, "];\n");
+
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
+
+        ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
         break;
     default:
         DBUG_ASSERT ((0), "Non-AKS array found in CUDA kernel!");
@@ -705,3 +711,38 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_DECL_KERNEL_ARRAY( char *var_NT, char *basetype, int sdim, int
+ **shp)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL( var_NT, basetype, sdim, [ shp ]* )
+ *
+ ******************************************************************************/
+/*
+void ICMCompileCUDA_DECL_KERNEL_ARRAY( char *var_NT, char *basetype, int sdim, int *shp)
+{
+  DBUG_ENTER( "ICMCompileCUDA_DECL_KERNEL_ARRAY");
+
+#define CUDA_DECL_KERNEL_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_DECL_KERNEL_ARRAY
+
+  INDENT;
+  fprintf( global.outfile, "SAC_CUDA_DECL_KERNEL_ARRAY( %s, %s, %d)\n", var_NT, basetype,
+sdim);
+
+  INDENT;
+  fprintf( global.outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
+
+  ICMCompileND_DECL__MIRROR( var_NT, sdim, shp);
+
+  DBUG_VOID_RETURN;
+}
+*/

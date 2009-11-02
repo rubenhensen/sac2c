@@ -90,6 +90,7 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="Prf" />
         </travuser>
       </traversal>

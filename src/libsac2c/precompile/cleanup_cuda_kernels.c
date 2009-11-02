@@ -120,31 +120,63 @@ CLKNLassign (node *arg_node, info *arg_info)
 }
 
 node *
+CLKNLlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CLKNLlet");
+
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
+        if (TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
+            node *avis = ID_AVIS (LET_EXPR (arg_node));
+            LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
+            LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
+        }
+    } else {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 CLKNLprf (node *arg_node, info *arg_info)
 {
-    node *num_node, *free_var;
-    int dim;
+    node *dim, *free_var;
+    int dim_num;
     ntype *type;
 
     DBUG_ENTER ("CLKNLprf");
 
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
-        num_node = PRF_ARG2 (arg_node);
-        DBUG_ASSERT ((NODE_TYPE (num_node) == N_num),
-                     "Second argument of F_alloc is not a constant!");
-        dim = NUM_VAL (num_node);
-        if (dim > 0) {
-            INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+        dim = PRF_ARG2 (arg_node);
+        if ((NODE_TYPE (dim) == N_num)) {
+            dim_num = NUM_VAL (dim);
+            if (dim_num > 0) {
+                INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+            }
+        } else if ((NODE_TYPE (dim) == N_prf)) {
+            if (PRF_PRF (dim) == F_dim_A) {
+                node *arr = PRF_ARG1 (dim);
+                DBUG_ASSERT ((NODE_TYPE (arr) == N_id),
+                             "Non N_id node found for arguemnt of F_dim_A!");
+                DBUG_ASSERT (TYgetDim (AVIS_TYPE (ID_AVIS (arr))) == 0,
+                             "Non scalar found for F_dim_A as the second arguemnt of "
+                             "F_alloc!");
+            } else {
+                DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
+            }
+        } else {
+            DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
         }
+
         break;
     case F_free:
         free_var = PRF_ARG1 (arg_node);
         type = AVIS_TYPE (ID_AVIS (free_var));
         DBUG_ASSERT ((TYisAKV (type) || TYisAKS (type)),
                      "Non AKV and AKS node found in CUDA kernels!");
-        dim = TYgetDim (type);
-        if (dim > 0) {
+        dim_num = TYgetDim (type);
+        if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
         }
         break;

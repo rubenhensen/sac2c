@@ -8,6 +8,7 @@
 extern node *CLKNLdoCleanupCUDAKernels (node *arg_node);
 extern node *CLKNLfundef (node *arg_node, info *arg_info);
 extern node *CLKNLassign (node *arg_node, info *arg_info);
+extern node *CLKNLlet (node *arg_node, info *arg_info);
 extern node *CLKNLprf (node *arg_node, info *arg_info);
 
 #endif

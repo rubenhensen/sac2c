@@ -1017,15 +1017,6 @@ ICM_DEF( CUDA_WL_SUBALLOC, ICM_TRACE_NONE)
 ICM_END( CUDA_WL_SUBALLOC, (sub_NT, sub_dim, to_NT, to_dim, off_NT))
 #endif
 
-#if defined(CUDA_DECL_KERNEL_ARRAY) || defined(ICM_ALL)
-ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
-  ICM_NT( var_NT)
-  ICM_ID( basetype)
-  ICM_INT( sdim)
-  ICM_VARINT( sdim, shp)
-ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
-#endif
-
 /*
 #if defined(CUDA_PRF_IDX_SEL__DATA) || defined(ICM_ALL)
 ICM_DEF( CUDA_PRF_IDX_SEL__DATA, ICM_TRACE_NONE)
@@ -1064,6 +1055,16 @@ ICM_DEF( CUDA_PRF_IDX_MODARRAY_AxSxA__DATA, ICM_TRACE_NONE)
   ICM_ID( basetype)
 ICM_END( CUDA_PRF_IDX_MODARRAY_AxSxA__DATA, (to_NT, to_sdim, from_NT, from_sdim,
                                              idx_ANY, val_array, basetype))
+#endif
+
+
+#if defined(CUDA_DECL_KERNEL_ARRAY) || defined(ICM_ALL)
+ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
 #endif
 
 /*
