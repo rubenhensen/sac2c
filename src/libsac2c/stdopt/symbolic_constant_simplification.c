@@ -1725,12 +1725,11 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtrema (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupTree (arg1p);
-            DBUG_PRINT ("CF", ("reciproc_S Case 1 replacing %s by %s",
+            DBUG_PRINT ("CF", ("SCSprf_reciproc_S Case 1 replacing %s by %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (ID_AVIS (arg1p))));
         } else {
-            /* FIXME - needs run-time code */
-            if (FALSE && PMmatchFlatSkipExtrema (pat3, arg1)) {
+            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg1p)),
@@ -1759,7 +1758,11 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
  * @fn node *SCSprf_reciproc_V( node *arg_node, info *arg_info)
  *
  * description:
- *  Replace _reciproc_V( _reciproc_V( VEC)) by VEC
+ *
+ *   Case 1: Replace _reciproc_V( _reciproc_V( V1)) by
+ *                   V1
+ *   Case 2: Replace _reciproc_V( V1 * V2)   by
+ *                   _reciproc_V_( V1)  * _reciproc_V_( V2)
  *
  *****************************************************************************/
 node *
@@ -1768,23 +1771,49 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
     node *res = NULL;
     node *arg1 = NULL;
     node *arg1p = NULL;
+    node *arg2p = NULL;
+    node *p1;
+    node *p2;
     pattern *pat1;
     pattern *pat2;
+    pattern *pat3;
 
     DBUG_ENTER ("SCSprf_reciproc_V");
 
     pat1 = PMprf (1, PMAisPrf (F_reciproc_V), 1, PMvar (1, PMAgetNode (&arg1), 0));
     pat2 = PMprf (1, PMAisPrf (F_reciproc_V), 1, PMvar (1, PMAgetNode (&arg1p), 0));
+    pat3 = PMprf (1, PMAisPrf (F_mul_VxV), 2, PMvar (1, PMAgetNode (&arg1p), 0),
+                  PMvar (1, PMAgetNode (&arg2p), 0));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node) && PMmatchFlatSkipExtrema (pat2, arg1)) {
-
-        res = DUPdoDupTree (arg1p);
-        DBUG_PRINT ("CF", ("SCSprf_reciproc_V replacing %s by %s",
-                           AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                           AVIS_NAME (ID_AVIS (arg1p))));
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+            /* Case 1 */
+            res = DUPdoDupTree (arg1p);
+            DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 1 replacing %s by %s",
+                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                               AVIS_NAME (ID_AVIS (arg1p))));
+        } else {
+            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
+                /* Case 2 */
+                p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
+                                                         DUPdoDupNode (arg1p)),
+                                             &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                p2 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
+                                                         DUPdoDupNode (arg2p)),
+                                             &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                res = TCmakePrf2 (F_mul_VxV, TBmakeId (p1), TBmakeId (p2));
+                DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 2 replacing %s by %s",
+                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                   AVIS_NAME (ID_AVIS (arg1p))));
+            }
+        }
     }
+
     PMfree (pat1);
     PMfree (pat2);
+    PMfree (pat3);
 
     DBUG_RETURN (res);
 }
