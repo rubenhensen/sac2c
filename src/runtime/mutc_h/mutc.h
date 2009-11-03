@@ -158,8 +158,8 @@
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
                           NT_STR (var_NT)));                                             \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
-                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int) \
+        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT),                                   \
+                               BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int)    \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
@@ -168,7 +168,7 @@
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
-        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)             \
+        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)     \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
