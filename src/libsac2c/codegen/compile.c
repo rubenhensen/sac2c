@@ -4220,7 +4220,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     node *mem_id;
     shape_class_t sc;
-    node *sub_get_dim;
+    node *sub_get_dim = NULL;
 
     DBUG_ENTER ("COMPprfSuballoc");
 
