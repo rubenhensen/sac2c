@@ -185,6 +185,18 @@ USSavis (node *arg_node, info *arg_info)
 }
 
 node *
+USScast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USScast");
+
+    if (CAST_NTYPE (arg_node) != NULL) {
+        CAST_NTYPE (arg_node) = USSntype (CAST_NTYPE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 USSarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSarray");
