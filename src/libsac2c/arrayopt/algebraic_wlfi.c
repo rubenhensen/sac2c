@@ -276,17 +276,21 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
 
     DBUG_ENTER ("AWLFIflattenExpression");
 
-    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (restypeavis)));
-    *vardecs = TBmakeVardec (avis, *vardecs);
-    nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
-    *preassigns = TCappendAssign (*preassigns, nas);
-    AVIS_SSAASSIGN (avis) = nas;
-    if (isSAAMode ()) {
-        AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
-        AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
+    if (N_id == NODE_TYPE (arg_node)) {
+        avis = ID_AVIS (arg_node);
+    } else {
+        avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (restypeavis)));
+        *vardecs = TBmakeVardec (avis, *vardecs);
+        nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
+        *preassigns = TCappendAssign (*preassigns, nas);
+        AVIS_SSAASSIGN (avis) = nas;
+        if (isSAAMode ()) {
+            AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
+            AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
+        }
+        DBUG_PRINT ("AWLFI",
+                    ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
     }
-    DBUG_PRINT ("AWLFI",
-                ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
 
     DBUG_RETURN (avis);
 }
@@ -332,27 +336,21 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *           )
  *
  *          ivmax = _take_SxV( genshp, AVIS_MAXVAL( iv');
- *          ivmax' = _add_VxS_( ivmax, 1);
  *
- *          ( Similar treatment to _max_VxV_ above:
- *             inthi  = _min_VxV_( ivmax', GENERATOR_BOUND2(foldee));
+ *          ( Similar treatment for _max_VxV_ as above:
  *
+ *          xh = AVIS_MAXVAL( ivmin);
  *          yh = GENERATOR_BOUND2( foldee);
- *          d'  = _sub_VxV_( ivmax', yh);
+ *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
- *          inthi = _mesh_( p', ivmax', yh);
+ *          inthi = _mesh_( p', xh, yh);
  *          )
  *
- *          iv'' = _attachextrema_(iv', ivmax', intlo, inthi);
+ *          iv'' = _attachextrema_(iv', intlo, inthi);
  *          sel( iv'', foldeeWL)
  *
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection.
- *
- *        The ivmaxpref calculation adjusts AVIS_MAXVAL to match
- *        the canonical generator bounds. This is used as
- *        shown above, but the value glued to the guard is
- *        also needed by FindMatchingPart in AWLF.
  *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params arg_info.
@@ -409,7 +407,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     takeresavis = AWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info), genshpavis);
     takeresid = TBmakeId (takeresavis);
-    boundeeid = DUPdoDupTree (boundee);
+    boundeeid = TBmakeId (ID_AVIS (boundee));
 
     subexpr = TCmakePrf2 (F_sub_VxV, takeresid, boundeeid);
 
@@ -477,7 +475,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
 
     /* Emit:  genshp = _shape_A_(GENERATOR_BOUND1( foldee)); */
     gen = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
-    genshp = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupTree (gen));
+    genshp = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), TBmakeId (ID_AVIS (gen)));
     genshpavis = AWLFIflattenExpression (genshp, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info), ID_AVIS (gen));
 
@@ -513,15 +511,12 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *
  *   by
  *
- *   minv0 = _max_VxV( AVIS_MINVAL( idx)    , GENERATOR_BOUND1( foldeepart)
- *   maxv0 = _min_VxV( AVIS_MAXVAL( idx) + 1, GENERATOR_BOUND2( foldeepart)
+ *   minv0 = _max_VxV( AVIS_MINVAL( idx), GENERATOR_BOUND1( foldeepart)
+ *   maxv0 = _min_VxV( AVIS_MAXVAL( idx), GENERATOR_BOUND2( foldeepart)
  *   ... ( above 2 lines for each partition)
  *
- *   iv' = _attachintersect( iv, ivmax, minv0, maxv0, minv1, maxv1,...);
+ *   iv' = _attachintersect( iv, minv0, maxv0, minv1, maxv1,...);
  *   z = _sel_(iv', foldeeWL);
- *
- *   We have to compute ivmax as the AVIS_MAXVAL( iv) + 1, because
- *   extrema are exact, and generator bounds are 1 higher.
  *
  *   This function also appends vardecs to the INFO chain,
  *   and assigns to the preassigns chain.
@@ -539,7 +534,6 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     int ivshape;
     node *ivid;
     node *ividprime;
-    node *ivmax;
     node *lbicalc;
     node *ubicalc;
     node *foldeewl;
@@ -556,23 +550,18 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     ivid = PRF_ARG1 (arg_node);
     foldeewl = PRF_ARG2 (arg_node);
 
-    /* Convert exact extrema upper bound into N_generator form */
     idxavis = ID_AVIS (ivid);
-    ivmax
-      = IVEXIadjustExtremaBound (AVIS_MAXVAL (idxavis), arg_info, 1,
-                                 &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
-
     lbicalc
       = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1, AVIS_MINVAL (idxavis));
-    ubicalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2, ivmax);
-    args = TCappendExprs (TBmakeExprs (DUPdoDupTree (ivid),
-                                       TBmakeExprs (TBmakeId (ivmax), NULL)),
-                          lbicalc);
+    ubicalc
+      = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2, AVIS_MAXVAL (idxavis));
+    args = TBmakeExprs (TBmakeId (ID_AVIS (ivid)), NULL);
+    args = TCappendExprs (args, lbicalc);
     args = TCappendExprs (args, ubicalc);
 
     ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
     ivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (ivid))),
-                         TYcopyType (AVIS_TYPE (ID_AVIS (ivid))));
+                         TYeliminateAKV (AVIS_TYPE (ID_AVIS (ivid))));
 
     INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
     ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),

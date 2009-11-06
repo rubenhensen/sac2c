@@ -6376,10 +6376,11 @@ N_structdef :
 
         <attribute name="MaxVal" default="NULL">
           <description>
-         See MinVal description; MAXVAL points to the avis of the maximum, rather
-         than the minimum, value of a WL index vector.
+           See MinVal description; MAXVAL points to the avis of the maximum, 
+           rather than the minimum, value of a WL index vector.
          However, like WL index vectors, MAXVAL is
-         part of a semi-closed interval; MAXVAL(X) is at least 1+maxreduce(X).
+         part of a semi-closed interval; MAXVAL(X) is at least 1+maxreduce(X),
+         much the same as GENERATOR_BOUND2 in a with-loop.
          A typical use of MAXVAL is to allow the constant folder to
          eliminate an F_val_le_val_VxV call.
           </description>

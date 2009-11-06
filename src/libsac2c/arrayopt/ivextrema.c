@@ -11,15 +11,17 @@
  *
  *  Definitions:
  *
- *   Extrema: The array-valued lower and upper bounds of values. In the case of
- *            a constant, both bounds are the same.
+ *   Extrema: The array-valued lower and upper bounds of index
+ *            vectors and their descendants. These are represented
+ *            as the semi-open interval [ min, max), in the same
+ *            way that GENERATORBOUND1/2 are.
  *
  *   AVIS_MINVAL: The lower bound of a value, represented as an N_avis pointer.
  *
  *   AVIS_MAXVAL: The upper bound of a value, represented as an N_avis pointer.
  *
- *   Precision: We would like extrema to be exact, but this turns out
- *              to be impractical in practice. Hence, extrema are
+ *   Precision: We would like extrema to be precise, but this turns out
+ *              to be impractical in practice. Hence, extrema may be
  *              conservative estimates of a value.
  *              For example, AVIS_MINVAL of the result of a
  *              F_non_negval_A guard will be [0]. Guard removal
@@ -31,19 +33,11 @@
  *
  * Examples:
  *
- *   Constant:
- *
- *     x = 5;
- *
- *     AVIS_MINVAL( x) = ID_AVIS( x);
- *     AVIS_MAXVAL( x) = ID_AVIS( x);
- *
  *   WL index vector:
  *     (lb <= iv=[i] < ub)...
  *
  *     AVIS_MINVAL( iv) = ID_AVIS( lb);
- *     tmp = _sub_VxS_( ub, 1);
- *     AVIS_MAXVAL( iv) = ID_AVIS( tmp);
+ *     AVIS_MAXVAL( iv) = ID_AVIS( ub);
  *
  * Rationale for non-exact extrema:
  *
@@ -121,10 +115,7 @@
  * We then set the extrema values:
  *
  *             AVIS_MINVAL(ID_AVIS(tmp)) = GENERATOR_BOUND1(wl)
- *             AVIS_MAXVAL(ID_AVIS(tmp)) = GENERATOR_BOUND2(wl) - 1 ;
- *
- * Note that the MAXVAL extremum is not the same as the generator
- * bound. This makes computation on extrema much easier.
+ *             AVIS_MAXVAL(ID_AVIS(tmp)) = GENERATOR_BOUND2(wl);
  *
  * With any luck, these min/val values will be propagated down to the
  * X[tmp], at which point SWLFI can introduce inferences on them
@@ -466,7 +457,7 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     ivavis = ID_AVIS (id);
 
     if (NULL == lhsavis) {
-        lhsavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ivavis)));
+        lhsavis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (ivavis)));
         *vardecs = TBmakeVardec (lhsavis, *vardecs);
     }
 
@@ -494,6 +485,7 @@ IVEXIattachExtrema (node *minv, node *maxv, node *id, node **vardecs, node **pre
     DBUG_RETURN (lhsavis);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  *
@@ -538,7 +530,7 @@ IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
     kid = IVEXImakeIntScalar (abs (k), vardecs, preassigns);
 
     zavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
-                        TYcopyType (AVIS_TYPE (arg_node)));
+                        TYeliminateAKV (AVIS_TYPE (arg_node)));
     DBUG_PRINT ("IVEXI", ("IVEXIadjustExtremaBound introducing adjustment: %s for: %s",
                           AVIS_NAME (zavis), AVIS_NAME (arg_node)));
 
@@ -565,6 +557,7 @@ IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
     }
     DBUG_RETURN (zavis);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -770,10 +763,8 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND1");
     DBUG_ASSERT (N_id == NODE_TYPE (b2),
                  "IVEXItmpVec expected N_id for GENERATOR_BOUND2");
-    b2 = IVEXIadjustExtremaBound (ID_AVIS (b2), arg_info, -1, &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNSWITH (arg_info));
 
-    avis = IVEXIattachExtrema (DUPdoDupTree (b1), TBmakeId (b2), TBmakeId (ivavis),
+    avis = IVEXIattachExtrema (DUPdoDupTree (b1), DUPdoDupTree (b2), TBmakeId (ivavis),
                                &INFO_VARDECS (arg_info), &INFO_PREASSIGNSPART (arg_info),
                                F_attachextrema, NULL);
     DBUG_RETURN (avis);
@@ -818,9 +809,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *oldavis, int k)
                  "IVEXItmpIds expected N_id for GENERATOR_BOUND2");
 
     b1 = TBmakeId (generateSelect (ID_AVIS (b1), arg_info, k));
-    b2 = generateSelect (ID_AVIS (b2), arg_info, k);
-    b2 = TBmakeId (IVEXIadjustExtremaBound (b2, arg_info, -1, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNSWITH (arg_info)));
+    b2 = TBmakeId (generateSelect (ID_AVIS (b2), arg_info, k));
 
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
@@ -983,21 +972,13 @@ IVEXIfundef (node *arg_node, info *arg_info)
  *   node *IVEXIvardec( node *arg_node, info *arg_info)
  *
  * description:
- *    Set extrema for all constant-valued vardecs.
+ *   Dead code FIXME - just delete this
  *
  ******************************************************************************/
 node *
 IVEXIvardec (node *arg_node, info *arg_info)
 {
-    node *avis;
-
     DBUG_ENTER ("IVEXIvardec");
-
-    avis = VARDEC_AVIS (arg_node);
-    if (TYisAKV (AVIS_TYPE (avis))) {
-        AVIS_MINVAL (avis) = avis;
-        AVIS_MAXVAL (avis) = avis;
-    }
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 

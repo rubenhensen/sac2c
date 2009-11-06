@@ -27,8 +27,10 @@
  *
  *           - the foldeeWL must have an SSAASSIGN.
  *
- *           - the foldeeWL must have a NEEDCOUNT of 1. I.e.,
- *             there must be no other references to the foldeeWL.
+ *           - the foldeeWL must have an empty code block (so that the cost
+ *             must have of duplicating it is zero), or it must have
+ *             a NEEDCOUNT of 1.
+ *             There must be no other references to the foldeeWL.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
  *             This code includes a little trick to convert a modarray(foldee)
@@ -116,7 +118,8 @@
  *
  *  TODO:
  *   1. At present, AWLF does not occur unless ALL references
- *      to the foldeeWL are in the folderWL. Here is a possible extension
+ *      to the foldeeWL are in the folderWL, or unless the
+ *      foldeeWL has an empty code block. Here is a possible extension
  *      to allow small computations to be folded into several
  *      folderWLs:
  *
@@ -488,8 +491,7 @@ matchGeneratorField (node *fa, node *fb)
  *         boundnum: 0 for BOUND1, 1 for BOUND2.
  *         idx: the index vector for the _sel_VxA( idx, foldee).
  *         The intersection calculations hang off the F_attachextrema
- *         that is the parent of idx, after the idx and its idxmax
- *         entries.
+ *         that is the parent of idx, after the idx entry.
  *
  * @result: The lower/upper bounds of the WL intersection.
  *
@@ -506,9 +508,9 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
     dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
     dfg = LET_EXPR (ASSIGN_INSTR (dfg));
     DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
-                 ("FindMatchingPart wanted F_attachintersect as idx parent"));
+                 ("ExtractNthWLIntersection wanted F_attachintersect as idx parent"));
     /* expressions are bound1, bound2 for each partition. */
-    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 2), PRF_ARGS (dfg));
+    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 1), PRF_ARGS (dfg));
 
     if (!(PMO (PMOlastVarGuards (&val, bnd)))) {
         DBUG_ASSERT (FALSE, ("ExtractNthWLIntersection could not find var!"));
@@ -631,13 +633,8 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
     DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
                  ("FindMatchingPart expected F_attachintersect as idx parent"));
 
-    /* I know this looks weird. We have to turn idx's AVIS_MAXVAL into
-     * generator-bounds form. So, we add 1 to it, and make it
-     * PRF_ARG2 of the attachintersect. If you have a cleaner
-     * idea, I'm all for it!
-     */
     idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
-    idxbound2 = ID_AVIS (PRF_ARG2 (idxparent));
+    idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
 
     folderpg = PART_GENERATOR (folderpart);
     partee = WITH_PART (foldeeWL);
@@ -785,6 +782,27 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
 
 /** <!--********************************************************************-->
  *
+ * @fn bool isEmptyPartitionCodeBlock( node *partn)
+ *
+ * @brief Predicate for finding N_part node with no code block.
+ * @param N_part
+ * @result TRUE if code block is empty
+ *
+ *****************************************************************************/
+static bool
+isEmptyPartitionCodeBlock (node *partn)
+{
+    bool z;
+
+    DBUG_ENTER ("isEmptyPartitionCodeBlock");
+
+    z = (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (partn)))));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node * folderpart, int level)
  *
@@ -824,9 +842,16 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
                         ("folderWL %s: foldeeWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                          AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
                          AVIS_WL_NEEDCOUNT (foldeeavis)));
-
-            if (AVIS_NEEDCOUNT (foldeeavis) == AVIS_WL_NEEDCOUNT (foldeeavis)) {
-                foldeepart = FindMatchingPart (arg_node, arg_info, folderpart, foldeewl);
+            foldeepart = FindMatchingPart (arg_node, arg_info, folderpart, foldeewl);
+            /* Allow fold if needcounts match OR if foldeepartition
+             * has empty code block. This is a crude cost function:
+             * We should allow "cheap" foldee partitions to fold.
+             * E.g., toi(iota(N)), but I'm in a hurry...
+             */
+            if ((NULL != foldeepart)
+                && ((AVIS_NEEDCOUNT (foldeeavis) != AVIS_WL_NEEDCOUNT (foldeeavis)))
+                && (!isEmptyPartitionCodeBlock (foldeepart))) {
+                foldeepart = NULL;
             }
         }
     } else {
