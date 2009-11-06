@@ -465,7 +465,7 @@ TRAVtmpVarName (char *postfix)
 
     if ((STRlen (postfix) > (STRlen (tmp) + 1)) && (postfix[0] == '_')
         && STRprefix (tmp, postfix + 1)) {
-        postfix = postfix + STRlen (tmp) + 2;
+        postfix = postfix + STRlen (tmp) + 1;
         while (postfix[0] != '_') {
             postfix++;
         }
