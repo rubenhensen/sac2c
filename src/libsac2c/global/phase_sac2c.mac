@@ -666,15 +666,6 @@ ENDPHASE (opt)
 
 PHASE (cuda, "CUDA related transformations", global.backend == BE_cuda)
 
-SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform,
-          global.backend == BE_cuda, cuda)
-
-SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac,
-          global.backend == BE_cuda, cuda)
-
-SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, global.backend == BE_cuda,
-          cuda)
-
 SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
@@ -687,12 +678,6 @@ SUBPHASE( scuwl,
 */
 
 SUBPHASE (imem, "Insert CUDA memory transfer primitives", IMEMdoInsertMemoryTransfers,
-          global.backend == BE_cuda, cuda)
-
-SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun,
-          global.backend == BE_cuda, cuda)
-
-SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform,
           global.backend == BE_cuda, cuda)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,

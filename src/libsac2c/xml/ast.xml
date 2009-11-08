@@ -249,15 +249,16 @@
           <node name="Id" />
           <node name="Ids" />
           <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Cond" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Code" />
         </travuser>
       </traversal>
-      <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop.h" >
+      <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop2.h" >
         <travuser>
           <node name="With" />
-          <node name="Code" />
           <node name="Fundef" />
           <node name="Ap" />
           <node name="Fold" />

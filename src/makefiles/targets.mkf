@@ -162,7 +162,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         ivextrema ivexpropagation ivexcleanup
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
-                        annotate_cuda_withloop remove_with3 \
+                        annotate_cuda_withloop2 remove_with3 \
                         insert_memory_transfers create_constant_assignments minimize_transfers \
                         minimize_loop_transfers minimize_cond_transfers \
                         minimize_block_transfers annotate_memory_transfers annotate_cuda_partition \
