@@ -193,6 +193,8 @@ USScast (node *arg_node, info *arg_info)
         CAST_NTYPE (arg_node) = USSntype (CAST_NTYPE (arg_node), arg_info);
     }
 
+    CAST_EXPR (arg_node) = TRAVdo (CAST_EXPR (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
