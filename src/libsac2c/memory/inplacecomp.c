@@ -35,7 +35,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "shape.h"
-
+#include "pattern_match.h"
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -160,7 +160,7 @@ EMIPdoInplaceComputation (node *syntax_tree)
  *****************************************************************************/
 
 static node *
-copyOrArray (node *val)
+copyOrArray (node *val, int *depth)
 {
     DBUG_ENTER ("copyOrArray");
 
@@ -170,6 +170,9 @@ copyOrArray (node *val)
     } else if (NODE_TYPE (val) == N_array) {
         while (NODE_TYPE (val) == N_array) {
             DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (val)) == N_exprs), "Broken ast?");
+            DBUG_ASSERT ((EXPRS_NEXT (ARRAY_AELEMS (val)) == NULL),
+                         "Can not perform ipc on [ a, b]");
+            (*depth)++;
             val = EXPRS_EXPR (ARRAY_AELEMS (val));
         }
     } else {
@@ -209,6 +212,48 @@ idArray (node *array)
 
     DBUG_RETURN (ok);
 }
+/** <!--********************************************************************-->
+ *
+ * @fn node *removeArrayIndirectionFromSuballoc( node *node, int *depth)
+ *
+ * @brief Remove the array indirection from suballoc.
+ *
+ *****************************************************************************/
+static node *
+removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
+{
+    int one = 1, three = 3;
+    DBUG_ENTER ("removeArrayIndirectionFromSuballoc");
+
+    if ((depth > 0) && (TCcountExprs (PRF_ARGS (suballoc))) >= 4) {
+        node *array, *exprs;
+        pattern *pat;
+
+        pat = PMprf (1, PMAisPrf (F_suballoc), 2, PMskipN (&three, 0),
+                     PMprf (1, PMAisPrf (F_shape_A), 1,
+                            PMprf (1, PMAisPrf (F_genarray), 2,
+                                   PMarray (1, PMAgetNode (&array), 0),
+                                   PMskipN (&one, 0))));
+
+        if (PMmatchFlat (pat, suballoc)) {
+        }
+
+        DBUG_ASSERT ((NODE_TYPE (array) == N_array),
+                     "Can not remove array indirection if "
+                     "I can not find the array");
+
+        exprs = ARRAY_AELEMS (array);
+
+        while (depth > 0) {
+            exprs = FREEdoFreeNode (exprs);
+            depth--;
+        }
+
+        ARRAY_AELEMS (array) = exprs;
+    }
+
+    DBUG_RETURN (suballoc);
+}
 
 /** <!--********************************************************************-->
  *
@@ -221,6 +266,7 @@ idArray (node *array)
 static node *
 HandleBlock (node *block, node *rets, info *arg_info)
 {
+    int depth = 0;
     DBUG_ENTER ("HandleBlock");
 
     while (rets != NULL) {
@@ -263,7 +309,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                  */
                 val = PRF_ARG1 (rhs);
                 mem = PRF_ARG2 (rhs);
-                cval = copyOrArray (val);
+                cval = copyOrArray (val, &depth);
                 avis = ID_AVIS (cval);
                 memass = AVIS_SSAASSIGN (ID_AVIS (mem));
                 memop = LET_EXPR (ASSIGN_INSTR (memass));
@@ -391,7 +437,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
                          */
                         ASSIGN_RHS (INFO_LASTSAFE (arg_info))
                           = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
-                        ASSIGN_RHS (INFO_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
+                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
+                          = removeArrayIndirectionFromSuballoc (DUPdoDupNode (memop),
+                                                                depth);
 
                         /*
                          * Are we suballocing a scaler?

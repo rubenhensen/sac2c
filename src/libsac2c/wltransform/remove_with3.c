@@ -394,6 +394,9 @@ FAfold (node *arg_node, info *arg_info)
  * @brief Replace the accu by a chain of assigns of the initial value of the
  *        fold.
  *
+ *        Do not traverse into nested with loops or we would replace the wrong
+ *        folds.
+ *
  * @param tree ast to replace accus in
  * @param ops  chain of withops to get inital value from
  *****************************************************************************/
