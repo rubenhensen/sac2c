@@ -117,7 +117,7 @@ make_%: checks
 
 clean: clean_all
 
-clean_%: 
+clean_%: $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
@@ -141,7 +141,7 @@ clean_%:
 # Rules for refactoring source files
 #
 
-refactor:
+refactor: $(PROJECT_ROOT)/.revision.txt
 	$(HIDE) if [ "$(PATTERN)" == "" ] ; \
                 then $(ECHO) "No pattern for refactoring specified!" ; \
                      exit 1 ; \

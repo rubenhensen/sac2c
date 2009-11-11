@@ -31,7 +31,7 @@ AUTOCONFED   := $(PROJECT_ROOT)/setup/configure
 # Dummy rules:
 #
 
-.PHONY: checks $(PROJECT_ROOT)/.revision.txt
+.PHONY: checks $(PROJECT_ROOT)/.revision.txt.PHONY
 
 
 #######################################################################################
@@ -71,10 +71,33 @@ checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 	@echo ""
 	@ exit 1
 
-$(PROJECT_ROOT)/.revision.txt:
-	@ if which svn > /dev/null ;  \
-          then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
-          else if [ ! -f $@ ] ; \
-                 then echo "???" > $@ ; \
-               fi ; \
-          fi
+#$(PROJECT_ROOT)/.revision.txt:
+#	@ if which svn > /dev/null ;  \
+#          then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
+#          else if [ ! -f $@ ] ; \
+#                 then echo "???" > $@ ; \
+#               fi ; \
+#          fi
+
+$(PROJECT_ROOT)/.revision.txt.PHONY:
+
+# Use indirect phony and non mod time changing rule ( when version unchanged)
+# to prevent needless rebuilds of the compiler.
+$(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
+	@ if [ ! -f $@ ];     \
+	  then                \
+	    echo "?????" >$@; \
+	  fi
+	@ if which svnversion > /dev/null;          \
+	  then                                      \
+	    svnversion | sed -e 's/M/ MODIFIED/g'   \
+              | sed -e 's/S/ SWITCHED/g' > $@.new ; \
+	  fi 
+	@ if which diff >/dev/null;         \
+	  then                              \
+            if ! diff $@ $@.new >/dev/null; \
+	      then mv $@.new $@;            \
+	      else rm $@.new; 	            \
+            fi	                            \
+          else rm $@.new;                   \
+          fi                                          
