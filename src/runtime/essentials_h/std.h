@@ -459,8 +459,14 @@ typedef int *SAC_array_descriptor_t;
 
 /* ND_DECL_EXTERN( ...)  is a C-ICM */
 
+/*
+ * Init to 0 to prevent C compiler complaining that the variable
+ * may be uninit as it is used to receive the return value
+ */
+
 #define SAC_ND_DECL__DATA(var_NT, basetype, decoration)                                  \
-    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
+    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT)                    \
+      = (SAC_ND_TYPE (var_NT, basetype))0;
 
 /* ND_DECL__MIRROR( ...)  is a C-ICM */
 
@@ -474,8 +480,14 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_DECL__DESC__NONE(var_NT, decoration) SAC_NOTHING ()
 
+/*
+ * Init to 0 to prevent C compiler complaining that the variable
+ * may be uninit as it is used to receive the return value
+ */
+
 #define SAC_ND_DECL__DESC__DEFAULT(var_NT, decoration)                                   \
-    decoration SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT);
+    decoration SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT)                          \
+      = (SAC_ND_DESC_TYPE (var_NT))0;
 
 /******************************************************************************
  *
