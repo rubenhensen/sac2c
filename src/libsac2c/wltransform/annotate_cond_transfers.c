@@ -216,7 +216,6 @@ ACTRANfuncond (node *arg_node, info *arg_info)
 {
     node *then_id, *else_id;
     /* ntype *then_type, *else_type; */
-    bool cond;
     node *then_ssaassign, *else_ssaassign;
 
     DBUG_ENTER ("ACTRANfuncond");

@@ -140,7 +140,7 @@ CLKNLlet (node *arg_node, info *arg_info)
 node *
 CLKNLprf (node *arg_node, info *arg_info)
 {
-    node *dim, *free_var;
+    node *dim, *free_var, *arr;
     int dim_num;
     ntype *type;
 
@@ -156,7 +156,7 @@ CLKNLprf (node *arg_node, info *arg_info)
             }
         } else if ((NODE_TYPE (dim) == N_prf)) {
             if (PRF_PRF (dim) == F_dim_A) {
-                node *arr = PRF_ARG1 (dim);
+                arr = PRF_ARG1 (dim);
                 DBUG_ASSERT ((NODE_TYPE (arr) == N_id),
                              "Non N_id node found for arguemnt of F_dim_A!");
                 DBUG_ASSERT (TYgetDim (AVIS_TYPE (ID_AVIS (arr))) == 0,

@@ -430,13 +430,21 @@ CreateAllocAndFree (node *avis, info *arg_info)
 
     DBUG_ENTER ("CreateAllocAndFree");
 
-    if (TUdimKnown (AVIS_TYPE (avis))) {
-        dim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
-    }
+    /*
+      if( TUdimKnown( AVIS_TYPE( avis))) {
+        dim = TBmakeNum( TYgetDim( AVIS_TYPE( avis)));
+      }
 
-    if (TUshapeKnown (AVIS_TYPE (avis))) {
-        shape = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
-    }
+      if( TUshapeKnown( AVIS_TYPE( avis))) {
+        shape = SHshape2Array( TYgetShape( AVIS_TYPE( avis)));
+      }
+    */
+
+    DBUG_ASSERT ((TUdimKnown (AVIS_TYPE (avis))), "Dimension is not known!");
+    dim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
+
+    DBUG_ASSERT ((TUdimKnown (AVIS_TYPE (avis))), "Shape is not known!");
+    shape = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
 
     /* Create F_alloc and F_free for N_withid->ids and N_withid->idxs */
     alloc = TCmakePrf3 (F_alloc, TBmakeNum (1), dim, shape);

@@ -34,7 +34,7 @@ CUnthApArg (node *args, int n)
 simpletype
 CUh2dSimpleTypeConversion (simpletype sty)
 {
-    simpletype res;
+    simpletype res = T_unknown;
 
     DBUG_ENTER ("CUh2dSimpleTypeConversion");
 
