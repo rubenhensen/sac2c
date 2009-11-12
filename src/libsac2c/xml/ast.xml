@@ -86,6 +86,13 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="SPTN" name="Split partitions" default="sons" include="split_partitions.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="CLKNL" name="Cleanup CUDA kernels" default="sons" include="cleanup_cuda_kernels.h" >
         <travuser>
           <node name="Fundef" />

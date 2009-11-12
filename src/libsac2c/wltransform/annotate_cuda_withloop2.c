@@ -201,8 +201,8 @@ ACUWLwith (node *arg_node, info *arg_info)
     INFO_CUDARIZABLE (arg_info) = TRUE;
 
     if (!INFO_INWL (arg_info)) {
-        INFO_INWL (arg_info) = TRUE;
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        INFO_INWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
 
@@ -214,13 +214,23 @@ ACUWLwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-        /* We only cudarize AKS N_with */
-        WITH_CUDARIZABLE (arg_node)
+        /*
+            // We only cudarize AKS N_with
+            WITH_CUDARIZABLE( arg_node) =
+              TYisAKS( AVIS_TYPE( IDS_AVIS( INFO_LETIDS( arg_info)))) &&
+              INFO_CUDARIZABLE( arg_info);
+
+            // The inner N_with makes the outer N_with uncudarizable
+            INFO_CUDARIZABLE( arg_info) = FALSE;
+        */
+
+        /* Since we only try to cudarize outermost N_with, any
+         * inner N_with is tagged as not cudarizbale */
+
+        WITH_CUDARIZABLE (arg_node) = FALSE;
+        INFO_CUDARIZABLE (arg_info)
           = TYisAKS (AVIS_TYPE (IDS_AVIS (INFO_LETIDS (arg_info))))
             && INFO_CUDARIZABLE (arg_info);
-
-        /* The inner N_with makes the outer N_with uncudarizable */
-        INFO_CUDARIZABLE (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -240,7 +250,9 @@ ACUWLfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("ACUWLfold");
 
     /* Currently, we do not support fold N_with */
-    INFO_CUDARIZABLE (arg_info) = FALSE;
+    if (!INFO_INWL (arg_info)) {
+        INFO_CUDARIZABLE (arg_info) = FALSE;
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -664,9 +664,9 @@ ENDPHASE (opt)
 
 /******************************************************************************/
 
-PHASE (cuda, "CUDA related transformations", global.backend == BE_cuda)
+PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
 
-SUBPHASE (acuwl, "Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
+SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
 /*
@@ -677,19 +677,25 @@ SUBPHASE( scuwl,
           cuda)
 */
 
-SUBPHASE (imem, "Insert CUDA memory transfer primitives", IMEMdoInsertMemoryTransfers,
-          global.backend == BE_cuda, cuda)
+SUBPHASE (imem, "CUDA Insert CUDA memory transfer primitives",
+          IMEMdoInsertMemoryTransfers, global.backend == BE_cuda, cuda)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
           cuda)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
           global.backend == BE_cuda, cuda)
 
-SUBPHASE (acuptn, "Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
+SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions, global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
           global.backend == BE_cuda, cuda)
 
-SUBPHASE (mtran, "Minimise the number of device-host data transfers",
+SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
           MTRANdoMinimizeTransfers, global.backend == BE_cuda, cuda)
 
 /*
@@ -782,8 +788,8 @@ SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
-SUBPHASE (cnstass, "Insert shape, lower bound and upper bound constant assignments",
-          CNSTASSdoCUDAconstantAssignment, global.backend == BE_cuda, mem)
+SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
+          global.backend == BE_cuda, mem)
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 
@@ -920,7 +926,7 @@ SUBPHASE( pknlg,
           pc)
 #endif
 
-SUBPHASE (cuknl, "Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
+SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           global.backend == BE_cuda, pc)
 
 #if 0
