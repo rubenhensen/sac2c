@@ -124,6 +124,13 @@ OPTcheckOptionConsistency (void)
         }
         if (global.mutc_thread_mem == TRUE) {
             CTIerror ("-mutc_thread_mem only works with mutc backend");
+            if (global.mutc_disable_thread_mem == TRUE) {
+                CTIerror ("-mutc_thread_mem can not be used with "
+                          "-mutc_disable_thread_mem");
+            }
+        }
+        if (global.mutc_disable_thread_mem == TRUE) {
+            CTIerror ("-mutc_disable_thread_mem only works with mutc backend");
         }
     }
 
@@ -519,6 +526,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /* mutc options */
     ARGS_FLAG ("mutc_fun_threads", global.mutc_fun_as_threads = TRUE);
     ARGS_FLAG ("mutc_thread_mem", global.mutc_thread_mem = TRUE);
+    ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn

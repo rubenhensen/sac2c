@@ -454,12 +454,14 @@ static void
 PrintMutcOptions (void)
 {
     DBUG_ENTER ("PrintMutcOptions");
-
-    printf ("\n\nMUTC OPTIONS:\n\n"
-            "    -mutc_fun_threads Convert all functions to thread functions and use\n"
-            "                      singleton creates\n\n"
-            "    -mutc_thread_mem  Use thread local memory every where not global \n"
-            "                      memory\n\n");
+    /*      12345678901234567890123456789012345678901234567890123456789012345678901234567890*/
+    printf (
+      "\n\nMUTC OPTIONS:\n\n"
+      "    -mutc_fun_threads        Convert all functions to thread functions and use\n"
+      "                             singleton creates\n\n"
+      "    -mutc_thread_mem         Use thread local memory every where not global \n"
+      "                             memory\n\n"
+      "    -mutc_disable_thread_mem Disable creation of thread local memory\n");
 
     DBUG_VOID_RETURN;
 }

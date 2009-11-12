@@ -166,6 +166,9 @@ PrintGlobalSwitches ()
              (global.mutc_fun_as_threads) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_MUTC_THREAD_MALLOC %d\n",
              (global.mutc_thread_mem) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_MUTC_DISABLE_THREAD_MEM %d\n",
+             (global.mutc_disable_thread_mem) ? 1 : 0);
+
     fprintf (global.outfile, "#define SAC_MUTC_MACROS  %d\n",
              (global.backend == BE_mutc) ? 1 : 0);
 
