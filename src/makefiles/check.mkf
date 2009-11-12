@@ -90,8 +90,8 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
 	  fi
 	@ if which svnversion > /dev/null;          \
 	  then                                      \
-	    svnversion | sed -e 's/M/ MODIFIED/g'   \
-              | sed -e 's/S/ SWITCHED/g' > $@.new ; \
+	    svnversion | sed -e 's/M/:MODIFIED/g'   \
+              | sed -e 's/S/:SWITCHED/g' > $@.new ; \
 	  fi 
 	@ if which diff >/dev/null;         \
 	  then                              \
