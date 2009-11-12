@@ -350,7 +350,7 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 # revision data file and, thereupon, relink snetc.
 #
 
-global/build_$(STYLE).c: $(SUBTARGETS) 
+global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	$(HIDE) $(FINGERPRINTER_CALL) > .fingerprint
 	$(HIDE) if [ -f $(FINGERPRINT_FILE) ] ; \
                 then if [ "`cat $(FINGERPRINT_FILE)`" != "`cat .fingerprint`" ] ; \
