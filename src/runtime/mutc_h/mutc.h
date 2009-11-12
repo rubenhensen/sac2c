@@ -174,10 +174,15 @@
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
-/*#include "tls_malloc.h"*/
+#if SAC_MUTC_DISABLE_THREAD_MEM
+#define SAC_MUTC_THREAD_INIT_MALLOC
+#define SAC_MUTC_THREAD_CLEANUP_MALLOC
+#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)malloc (size);
+#else
 #define SAC_MUTC_THREAD_INIT_MALLOC tls_malloc_init ();
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC tls_malloc_cleanup ();
 #define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
+#endif
 
 #if SAC_MUTC_THREAD_MALLOC
 
