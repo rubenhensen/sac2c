@@ -6,6 +6,29 @@
  *
  * @defgroup temp Traversal template
  *
+ * <pre>
+ * Property                                | should be | y/n |  who  |  when
+ * =============================================================================
+ * can be called on N_module               |   -----   |     |       |
+ * can be called on N_fundef               |   -----   |     |       |
+ * expects LaC funs                        |   -----   |     |       |
+ * follows N_ap to LaC funs                |   -----   |     |       |
+ * =============================================================================
+ * deals with GLF properly                 |    yes    |     |       |
+ * =============================================================================
+ * is aware of potential SAA annotations   |    yes    |     |       |
+ * utilises SAA annotations                |   -----   |     |       |
+ * =============================================================================
+ * tolerates flattened N_array             |    yes    |     |       |
+ * tolerates flattened Generators          |    yes    |     |       |
+ * tolerates flattened operation parts     |    yes    |     |       |
+ * tolerates different generator variables
+ *           in individual WL partitions   |    yes    |     |       |
+ * =============================================================================
+ * tolerates multi-operator WLs            |    yes    |     |       |
+ * =============================================================================
+ * </pre>
+ *
  * Module description goes here.
  *
  * For an example, take a look at src/refcount/explicitcopy.c
