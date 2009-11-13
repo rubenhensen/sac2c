@@ -308,26 +308,22 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *           iv' = (k*iv) + ivoffset;
  *           sel( iv', foldeeWL)
  *
- *        The intersection calculation is made slightly more complex
- *        by the fact that iv' has shape of:
- *         GENERATOR_BOUND1(foldeepart) ++ cellshape(foldeepart)
- *        Instead of computing this, we take the prefix of iv'.
- *
  *        We determine the intersection of the folderWL iv'
  *        index set with the foldeeWL's partition bounds this way:
  *
  *          genshp = _shape_A_(GENERATOR_BOUND1( foldee));
  *
- *          ivmin = _take_SxV( genshp, AVIS_MINVAL( iv'));
- *
  *          (The next few lines compute:
- *           intlo = _max_VxV_( AVIS_MINVAL( ivmin), GENERATOR_BOUND1(foldee));
+ *           intlo = _max_VxV_( AVIS_MINVAL( iv'), GENERATOR_BOUND1(foldee));
+ *
  *          but the optimizers are unable to compute common
  *          expressions such as:
+ *
  *           _max_VxV_( iv, iv + 1)
+ *
  *          Hence, we use the following:
  *
- *           xl = AVIS_MINVAL( ivmin);
+ *           xl = AVIS_MINVAL( iv');
  *           yl = GENERATOR_BOUND1( foldee);
  *           d  = _sub_VxV_( xl, yl);
  *           zero = 0;
@@ -335,11 +331,9 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *           intlo = _mesh_( p, xl, yl);
  *           )
  *
- *          ivmax = _take_SxV( genshp, AVIS_MAXVAL( iv');
+ *          ( Similar treatment for _min_VxV_ as above:
  *
- *          ( Similar treatment for _max_VxV_ as above:
- *
- *          xh = AVIS_MAXVAL( ivmin);
+ *          xh = AVIS_MAXVAL( iv');
  *          yh = GENERATOR_BOUND2( foldee);
  *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
@@ -351,12 +345,14 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  *
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection.
+ *        NB. ALL lower bounds preceed all upper bounds in the
+ *            _attach_extrema_ arguments.
  *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params arg_info.
  * @params foldeepart: An N_part of the foldeeWL.
  * @params boundnum: 1 for bound1,     or 2 for bound2
- * @params ivminmax: AVIS_MINVAL( idx) or ( AVIS_MAXVAL( idx) + 1)
+ * @params ivminmax: AVIS_MINVAL( idx) or AVIS_MAXVAL( idx)
  * @param  genshpavis: the N_avis for the above genshp computation.
  *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
@@ -374,10 +370,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *idxassign;
     node *ivid;
     node *resavis;
-    node *takeres;
-    node *takeresavis;
     node *genshpid;
-    node *takeresid;
     node *boundeeid;
     node *pid;
     node *pavis;
@@ -402,15 +395,9 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 
     ivid = TBmakeId (ivminmax);
     genshpid = TBmakeId (genshpavis);
-    takeres = TCmakePrf2 (F_take_SxV, genshpid, ivid);
-
-    takeresavis = AWLFIflattenExpression (takeres, &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info), genshpavis);
-    takeresid = TBmakeId (takeresavis);
     boundeeid = TBmakeId (ID_AVIS (boundee));
 
-    subexpr = TCmakePrf2 (F_sub_VxV, takeresid, boundeeid);
-
+    subexpr = TCmakePrf2 (F_sub_VxV, ivid, boundeeid);
     subid = TBmakeId (AWLFIflattenExpression (subexpr, &INFO_VARDECS (arg_info),
                                               &INFO_PREASSIGNS (arg_info), genshpavis));
 
@@ -423,8 +410,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
                                     &INFO_PREASSIGNS (arg_info), ID_AVIS (boundeeid));
     pid = TBmakeId (pavis);
 
-    expnm = TCmakePrf3 (F_mesh_VxVxV, pid, DUPdoDupNode (takeresid),
-                        DUPdoDupNode (boundeeid));
+    expnm = TCmakePrf3 (F_mesh_VxVxV, pid, DUPdoDupNode (ivid), DUPdoDupNode (boundeeid));
 
     resavis = AWLFIflattenExpression (expnm, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info), genshpavis);
@@ -435,8 +421,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
- *                                   node *foldeepart, int boundnum,
- *                                   node *ivminmax)
+ *                                   node *foldeepart, node *idxavis)
  *
  * @brief Build a set of expressions for intersecting the bounds of
  *        all foldeeWL partitions with folderWL index set, of the form:
@@ -450,14 +435,15 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
  * @params foldeeid: The N_id created by the foldeeWL.
  * @params arg_info.
  * @params boundnum: 1 for bound1,        2 for bound2
- * @params ivminmax: AVIS_MINVAL( idx) or (AVIS_MAXVAL( idx) + 1)
- * @return An N_exprs node containing the (two*#foldee partitions) intersect expressions.
+ * @params idxavis: the N_avis of the index vector used by the sel() operation.
+ * @return An N_exprs node containing the (two * # foldee partitions)
+ *         intersect expressions, in the form:
+ *              p0 lb, p0 up, p1 lb, p1 ub,...
  *
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boundnum,
-                        node *ivminmax)
+IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *idxavis)
 {
     node *expn = NULL;
     node *partn;
@@ -481,8 +467,11 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
 
     partn = WITH_PART (foldeewl);
     while (NULL != partn) {
-        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, boundnum,
-                                             ivminmax, genshpavis);
+        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 1,
+                                             AVIS_MINVAL (idxavis), genshpavis);
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+        curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 2,
+                                             AVIS_MAXVAL (idxavis), genshpavis);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         partn = PART_NEXT (partn);
     }
@@ -505,23 +494,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, int boun
  *         We create new idx' from idx, to hold the result
  *         of the intersect computations that we build here.
  *
- *   Replace:
+ *      See IntersectBoundsBuilderOne for details.
  *
- *   z = _sel_(idx, foldeeWL);
- *
- *   by
- *
- *   minv0 = _max_VxV( AVIS_MINVAL( idx), GENERATOR_BOUND1( foldeepart)
- *   maxv0 = _min_VxV( AVIS_MAXVAL( idx), GENERATOR_BOUND2( foldeepart)
- *   ... ( above 2 lines for each partition)
- *
- *   iv' = _attachintersect( iv, minv0, maxv0, minv1, maxv1,...);
- *   z = _sel_(iv', foldeeWL);
- *
- *   This function also appends vardecs to the INFO chain,
- *   and assigns to the preassigns chain.
- *
- * @params arg_node: the N_prf node of the sel() operation.
  * @return A pointer to the newly created N_id node for iv'.
  *
  *****************************************************************************/
@@ -534,8 +508,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     int ivshape;
     node *ivid;
     node *ividprime;
-    node *lbicalc;
-    node *ubicalc;
+    node *intersectcalc;
     node *foldeewl;
     node *args;
     node *idxavis;
@@ -551,13 +524,9 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     foldeewl = PRF_ARG2 (arg_node);
 
     idxavis = ID_AVIS (ivid);
-    lbicalc
-      = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 1, AVIS_MINVAL (idxavis));
-    ubicalc
-      = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, 2, AVIS_MAXVAL (idxavis));
+    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, idxavis);
     args = TBmakeExprs (TBmakeId (ID_AVIS (ivid)), NULL);
-    args = TCappendExprs (args, lbicalc);
-    args = TCappendExprs (args, ubicalc);
+    args = TCappendExprs (args, intersectcalc);
 
     ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
     ivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (ivid))),
@@ -723,7 +692,7 @@ checkFolderFoldable (node *arg_node, info *arg_info)
  * @brief Make any early checks we can that may show that
  *        the foldeeWL and folderWL are not foldable.
  *
- *        At present, we only check that the generator bounds
+ *        At present, we check that the generator bounds
  *        of both WLs are of the same shape.
  *
  *        We presume that earlier phases have ensured that
@@ -737,23 +706,14 @@ checkFolderFoldable (node *arg_node, info *arg_info)
 static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
-#ifdef FIXME
     node *folderwl;
     node *foldeewl;
     node *b1;
     node *b2;
-#endif // FIXME
     bool z;
 
     DBUG_ENTER ("checkBothFoldable");
 
-    z = TRUE; /* We no longer care about generator bounds.
-               * All folding checks are now based on the
-               * intersection between idx index set and
-               * foldeeWL partition intersection generator
-               * limits, catenated to cell shape.
-               */
-#ifdef FIXME
     foldeewl = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
     folderwl = INFO_FOLDERWL (arg_info);
 
@@ -768,7 +728,6 @@ checkBothFoldable (node *arg_node, info *arg_info)
         DBUG_PRINT ("AWLFI", ("FolderWL & FoldeeWL %s generator shapes do not match.",
                               AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
-#endif // FIXME
     DBUG_RETURN (z);
 }
 /** <!--********************************************************************-->

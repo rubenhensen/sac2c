@@ -358,9 +358,6 @@ IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
         AVIS_SHAPE (favis) = TCmakeIntVector (NULL);
     }
 
-    AVIS_MINVAL (favis) = favis;
-    AVIS_MAXVAL (favis) = favis;
-
     DBUG_RETURN (fid);
 }
 
@@ -551,10 +548,12 @@ IVEXIadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
     AVIS_SSAASSIGN (zavis) = zass;
     AVIS_MINVAL (zavis) = zavis;
     AVIS_MAXVAL (zavis) = zavis;
+
     if (isSAAMode ()) {
         AVIS_DIM (zavis) = DUPdoDupTree (AVIS_DIM (arg_node));
         AVIS_SHAPE (zavis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
     }
+
     DBUG_RETURN (zavis);
 }
 #endif // DEADCODE
