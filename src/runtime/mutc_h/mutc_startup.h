@@ -19,7 +19,8 @@
     SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \
-    SAC_MUTC_SAC_SVP_IO_PUTN
+    SAC_MUTC_SAC_SVP_IO_PUTN                                                             \
+    SAC_MUTC_BENCHMARK
 
 #endif
 
@@ -68,8 +69,8 @@
 
 #define SAC_MUTC_MAIN_RES_NT                                                             \
     (SAC_res, T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_EMPTY))))))
-#define SAC_MUTC_MAIN                                                                    \
-    sl_def (t_main, void)                                                                \
+#define SAC_MUTC_SAC_MAIN                                                                \
+    sl_def (sac_main, void)                                                              \
     {                                                                                    \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
@@ -79,6 +80,32 @@
                                SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));              \
     }                                                                                    \
     sl_enddef
+
+#if SAC_MUTC_BENCH
+struct benchmark_state *sac_state;
+#define SAC_MUTC_T_MAIN                                                                  \
+    sl_def (b_main, void, sl_glparm (struct benchmark_state *, state))                   \
+    {                                                                                    \
+        sac_state = sl_getp (state);                                                     \
+        sl_proccall (sac_main);                                                          \
+    }                                                                                    \
+    sl_enddef sl_def (t_main, void)                                                      \
+    {                                                                                    \
+        struct benchmark b                                                               \
+          = {"SaC Program", "SaC2C", "", NULL, NULL, &b_main, NULL, NULL};               \
+        sl_proccall (run_benchmark, sl_glarg (struct benchmark *, b, &b));               \
+    }                                                                                    \
+    sl_enddef
+#else
+#define SAC_MUTC_T_MAIN                                                                  \
+    sl_def (t_main, void)                                                                \
+    {                                                                                    \
+        SAC_MUTC_THREAD_FUNAP (sac_main);                                                \
+    }                                                                                    \
+    sl_enddef
+#endif
+
+#define SAC_MUTC_MAIN SAC_MUTC_SAC_MAIN SAC_MUTC_T_MAIN
 
 #if SAC_MUTC_MACROS
 SAC_MUTC_STARTUP

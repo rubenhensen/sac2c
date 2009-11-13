@@ -461,7 +461,8 @@ PrintMutcOptions (void)
       "                             singleton creates\n\n"
       "    -mutc_thread_mem         Use thread local memory every where not global \n"
       "                             memory\n\n"
-      "    -mutc_disable_thread_mem Disable creation of thread local memory\n");
+      "    -mutc_disable_thread_mem Disable creation of thread local memory\n\n"
+      "    -mutc_benchmark          Enable mutc benchmarking support\n\n");
 
     DBUG_VOID_RETURN;
 }
