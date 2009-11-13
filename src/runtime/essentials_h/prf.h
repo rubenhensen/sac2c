@@ -64,7 +64,7 @@
  *
  * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_SIZE_A__DATE( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_SIZE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
  * ND_PRF_RESHAPE_VxA__SHAPE_id( to_NT, to_sdim, shp_NT)
  * ND_PRF_RESHAPE_VxA__SHAPE_arr( to_NT, to_sdim, shp_size, ...shp_ANY...)

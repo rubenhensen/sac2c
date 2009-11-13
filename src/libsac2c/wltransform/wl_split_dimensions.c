@@ -1236,26 +1236,38 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
      *
      * a) computing the size from the result type and the length of
      *    the shape vector or
-     * b) by computing size( default)
+     * b) by using the default element to infer the size.
      */
     if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (lhs)))) {
         outerdims = TCcountExprs (ARRAY_AELEMS (sarray));
         shape = SHdropFromShape (outerdims, TYgetShape (AVIS_TYPE (IDS_AVIS (lhs))));
         inner = TBmakeNum (SHgetUnrLen (shape));
         shape = SHfreeShape (shape);
-    } else {
-        node *size;
-        DBUG_ASSERT ((GENARRAY_DEFAULT (arg_node) != NULL), "default element needed!");
+    } else if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
+                     "default value of genarray is not an id!");
 
-        if (TYgetDim (ID_NTYPE (GENARRAY_DEFAULT (arg_node))) == 0) {
-            size = TBmakeNum (1);
+        if (TUisScalar (AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (arg_node))))) {
+            /*
+             * If the default element is scalar the size of one element is 1.
+             */
+            inner = TBmakeNum (1);
         } else {
-            size = TCmakePrf1 (F_size_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+            /*
+             * Else, we use the size_A_ function to compute the size at runtime.
+             */
+            inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)),
+                                 TCmakePrf1 (F_size_A,
+                                             DUPdoDupNode (GENARRAY_DEFAULT (arg_node))),
+                                 &INFO_PREASSIGNS (arg_info));
+            inner = TBmakeId (inner);
         }
-
-        inner = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), size,
-                             &INFO_PREASSIGNS (arg_info));
-        inner = TBmakeId (inner);
+    } else {
+        /*
+         * We are out of options here. All we can do it tell the world that
+         * we need a default element and stop compilation.
+         */
+        CTIerror ("Default element required in genarray with-loop.");
     }
 
     exprs = ComputeOneLengthVector (ARRAY_AELEMS (sarray), inner, arg_info);
