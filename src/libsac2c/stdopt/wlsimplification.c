@@ -39,23 +39,8 @@
  *
  * A) handling zero-trip generators
  *
- * The criteria for emptiness (as implemented in CheckZeroTrip) are:
- *
- *  1) (  a <= iv <  a)    where a::int[n]  with n>0  !
- *  2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
- *                               and all( vec1 >= vec2)
- *                               and n>0!
- *  3) ( [l1, ..., ln] <= iv < [u1, ..., un])
- *                         where n > 0
- *                         and exists k>=0 so that:
- *                               lk and uk are the same variable
- *                               or lk >= uk
- *  4) ( lb <= iv <= ub width a)
- *                         where a::int[n]{vec} and vec contains a 0
- *  5) ( lb <= iv <= ub width [v1,...,vn])
- *                         where exists i such that vi == 0
- *
- * In case one of the above criteria holds, INFO_ZEROTRIP( arg_info)
+ * We use TULSisZeroTripGenerator from the tree_utils module here in order
+ * to identify zero-trip generators. If identified, INFO_ZEROTRIP( arg_info)
  * is being set which signals WLSIMPpart to delete that partition.
  *
  * After all partitions  have been inspected, we inspect whether all
@@ -126,6 +111,7 @@
 #include "check.h"
 #include "phase.h"
 #include "ctinfo.h"
+#include "tree_utils.h"
 
 /**
  * INFO structure
@@ -258,114 +244,6 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
     DBUG_ASSERT ((ub_exprs == NULL), "upper bound longer than lower bound!");
 
     DBUG_RETURN (TCmakeIntVector (exprs));
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool CheckZeroTrip( node *lb, node *ub, node *width)
- *
- * @brief checks the 5 criteria explained in the main comment block
- *
- *****************************************************************************/
-static bool
-CheckZeroTrip (node *lb, node *ub, node *width)
-{
-    bool res = FALSE;
-    pattern *pat1, *pat2, *pat3, *pat4;
-    node *a, *x;
-    constant *c = NULL;
-    int n = 0, i, lk;
-
-    DBUG_ENTER ("CheckZeroTrip");
-
-    pat1 = PMmulti (2, PMvar (1, PMAgetNode (&a), 0), PMvar (1, PMAisVar (&a), 0));
-    pat2 = PMmulti (2, PMconst (1, PMAgetVal (&c)), PMconst (1, PMAanyLeVal (&c)));
-    pat3 = PMretryAny (&i, &n, 1,
-                       PMmulti (2,
-                                PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
-                                         PMvar (1, PMAgetNode (&x), 0), PMskip (0)),
-                                PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
-                                         PMvar (1, PMAisVar (&x), 0), PMskip (0))));
-    pat4 = PMretryAny (&i, &n, 1,
-                       PMmulti (2,
-                                PMarray (1, PMAgetLen (&n), 3, PMskipN (&i, 0),
-                                         PMint (1, PMAgetIVal (&lk), 0), PMskip (0)),
-                                PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
-                                         PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
-
-    DBUG_PRINT ("WLSIMP", ("checking criteria 1, 2, and 3:"));
-    if (PMmatchFlat (pat1, PMmultiExprs (2, lb, ub)) && (TUshapeKnown (ID_NTYPE (lb)))
-        && (TYgetDim (ID_NTYPE (lb)) == 1)
-        && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
-        /**
-         * criteria 1) (  a <= iv <  a)    where a::int[n]  with n>0  !
-         */
-        DBUG_PRINT ("WLSIMP", ("criterion 1 met!"));
-        res = TRUE;
-    } else if (PMmatchFlat (pat2, PMmultiExprs (2, lb, ub))
-               && (SHgetExtent (COgetShape (c), 0) > 0)) {
-        /**
-         * criteria 2) ( lb <= iv < ub)    where lb::int[n]{vec1},
-         *                                       ub::int[n]{vec2},
-         *                                       vec1 >= vec2
-         *                                       n > 0!
-         */
-        DBUG_PRINT ("WLSIMP", ("criterion 2 met!"));
-        res = TRUE;
-    } else if ((PMmatchFlat (pat3, PMmultiExprs (2, lb, ub))
-                || PMmatchFlat (pat4, PMmultiExprs (2, lb, ub)))
-               && (n > 0)) {
-        /**
-         * criteria 3) ( [l1, ..., ln] <= iv < [u1, ..., un])
-         *             where n > 0
-         *             and exists k>=0 so that:
-         *                   lk and uk are the same variable
-         *                   || lk >= uk
-         */
-        DBUG_PRINT ("WLSIMP", ("criterion 3 met!"));
-        res = TRUE;
-    }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-    pat3 = PMfree (pat3);
-    pat4 = PMfree (pat4);
-    if (c != NULL) {
-        c = COfreeConstant (c);
-    }
-
-    if (width != NULL) {
-        pattern *pat1, *pat2;
-        constant *c = NULL;
-        int i, l, zero = 0;
-
-        pat1 = PMconst (1, PMAgetVal (&c));
-        pat2 = PMarray (1, PMAgetLen (&l), 1,
-                        PMretryAny (&i, &l, 3, PMskipN (&i, 0),
-                                    PMint (1, PMAisIVal (&zero)), PMskip (0)));
-        DBUG_PRINT ("WLSIMP", ("checking criteria 4 and 5:"));
-        if (PMmatchFlat (pat1, width) && COisZero (c, FALSE)) {
-            /**
-             * criteria 4) ( lb <= iv <= ub width a)
-             *              where a::int[n]{vec} and vec contains a 0
-             */
-            DBUG_PRINT ("WLSIMP", ("criterion 4 met!"));
-            res = TRUE;
-        } else if (PMmatchFlat (pat2, width)) {
-            /**
-             * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
-             *             where exists i such that vi == 0
-             */
-            DBUG_PRINT ("WLSIMP", ("criterion 5 met!"));
-            res = TRUE;
-        }
-        pat1 = PMfree (pat1);
-        pat2 = PMfree (pat2);
-        if (c != NULL) {
-            c = COfreeConstant (c);
-        }
-    }
-
-    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -850,7 +728,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
     pat = PMfree (pat);
 
-    INFO_ZEROTRIP (arg_info) = CheckZeroTrip (lb, ub, width);
+    INFO_ZEROTRIP (arg_info) = TULSisZeroTripGenerator (lb, ub, width);
 
     if (global.optimize.douip && (GENERATOR_GENWIDTH (arg_node) == NULL)
         && (NODE_TYPE (lb) == N_array) && (NODE_TYPE (ub) == N_array)) {
