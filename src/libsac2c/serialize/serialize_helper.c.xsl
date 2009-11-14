@@ -95,7 +95,9 @@ version="1.0">
   <xsl:value-of select="'node *SHLPmakeNode( nodetype node_type, int lineno, char* sfile, ...) {'" />
   <xsl:value-of select="'node *this = NULL;'" />
   <xsl:value-of select="'va_list args;'" />
-  <xsl:value-of select="'int cnt, max;'" />
+  <xsl:if test="key(&quot;arraytypes&quot;, //syntaxtree//type/@name)">
+    <xsl:value-of select="'int cnt, max;'" />
+  </xsl:if>
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
