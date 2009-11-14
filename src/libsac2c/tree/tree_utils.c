@@ -6,6 +6,17 @@
  * ASTs or their elements.
  */
 
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "tree_utils.h"
+#include "types.h"
+#include "new_types.h"
+#include "pattern_match.h"
+#include "dbug.h"
+#include "constants.h"
+#include "shape.h"
+#include "type_utils.h"
+
 /**
  *
  * Functions for dealing with With-Loops:
