@@ -93,7 +93,7 @@ static int prf_arity[] = {
 %token PARSE_PRG  PARSE_RC
 
 %token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON DCOLON SEMIC 
-COMMA  AMPERS  DOT  QUESTION  RIGHTARROW LEFTARROW 
+COMMA  AMPERS  DOT TWODOTS THREEDOTS QUESTION  RIGHTARROW LEFTARROW 
 INLINE THREAD  LET  STRUCT  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
@@ -686,7 +686,7 @@ fundefargs: args        { $$ = $1;   }
 
 fundecargs: varargs     { $$ = $1;   }
           | TYPE_VOID   { $$ = NULL; }
-          | DOT DOT DOT { $$ = NULL; has_dot_args = TRUE; }
+          | THREEDOTS   { $$ = NULL; has_dot_args = TRUE; }
           ;
 
 
@@ -706,7 +706,7 @@ varargs: arg COMMA varargs
        | arg
         { $$ = $1;
          }
-       | arg COMMA DOT DOT DOT
+       | arg COMMA THREEDOTS
          { $$ = $1;
            has_dot_args = TRUE;
          }
@@ -1283,7 +1283,7 @@ exprs: expr COMMA exprs          { $$ = TBmakeExprs( $1, $3);   }
 
 
 expr: DOT                        { $$ = TBmakeDot( 1);        }
-    | DOT DOT DOT                { $$ = TBmakeDot( 3);        }
+    | THREEDOTS                  { $$ = TBmakeDot( 3);        }
     | subexpr %prec STRUCTELEM   { $$ = $1;                   }
     ;
 
@@ -1884,8 +1884,8 @@ returntypes: TYPE_VOID   { $$ = NULL; }
            ;
 
 returndectypes: TYPE_VOID   { $$ = NULL; }
-              | varntypes      { $$ = $1;   }
-              | DOT DOT DOT { $$ = NULL; has_dot_rets = TRUE; }
+              | varntypes   { $$ = $1;   }
+              | THREEDOTS   { $$ = NULL; has_dot_rets = TRUE; }
               ;
 
 ntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
@@ -1894,7 +1894,7 @@ ntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
 
 varntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
          | ntype { $$ = TBmakeRet( $1,NULL); }
-         | ntype COMMA DOT DOT DOT
+         | ntype COMMA THREEDOTS
          { $$ = TBmakeRet( $1,NULL);
            has_dot_rets = TRUE;
          }

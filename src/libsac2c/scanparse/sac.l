@@ -84,6 +84,8 @@ int charpos = 0;
 ","                        { FILTER( COMMA); }
 "="                        { FILTER( LET); }
 "."                        { FILTER( DOT); }
+".."                       { FILTER( TWODOTS); }
+"..."                      { FILTER( THREEDOTS); }
 "->"                       { FILTER( RIGHTARROW); }
 "<-"                       { FILTER( LEFTARROW); }
 
