@@ -549,7 +549,7 @@ IMEMwith (node *arg_node, info *arg_info)
         /* The following traversal has been commented out because if the outermost
          * N_with is not cudarizable, none of its inner N_withs (if
          * there is any) will be cudarizable since we only cudarize
-         * the outermost N_with.
+         * the outermost N_with. */
 
         /* WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info); */
     }
