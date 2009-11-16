@@ -4420,6 +4420,9 @@ N_structdef :
         <flag name="HasBeenEliminated" >
 	  <description>Used in ArrayElimination to mark vardecs that are not used anymore. These are later freed by DCR</description>
 	</flag>
+        <flag name="IsSticky" default="FALSE">
+          <description>This vardec should not be removed by DeadFunctionRemoval. This is exclusively used by MT code generation within SPMD functions to ensure that dummy vardecs in intriduced when creating the SPMD functions that only become vital during code generation do not vanish until then.</description>
+        </flag>
       </flags>
     </node>
 <!--
