@@ -3,7 +3,7 @@ module sacprelude;
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
          unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, 
-         wrap, prod};
+         wrap, prod, partitionSlicer};
 
 external typedef SACarg;
   #pragma freefun "SACARGfree"
@@ -93,6 +93,22 @@ int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
   return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
             i : i[iv]));
 }
+
+inline 
+int[.], int[.], int[.], int[.]
+partitionSlicer( int[.] min, int[.] max, int axis, int[.] lb, int[.] ub)
+{
+  lb_i = _sel_VxA_( [axis], lb);
+  ub_i = _max_SxS_( lb_i, _sel_VxA_( [axis], ub));
+  max_lower = _modarray_AxVxS_( max, [axis], lb_i);
+  min_upper = _modarray_AxVxS_( min, [axis], ub_i);
+
+  new_min = _modarray_AxVxS_( min, [axis], lb_i);
+  new_max = _modarray_AxVxS_( max, [axis], ub_i);
+
+  return( max_lower, min_upper, new_min, new_max);
+}
+
 
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"
