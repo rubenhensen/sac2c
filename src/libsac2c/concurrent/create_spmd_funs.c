@@ -111,6 +111,64 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static node *
+ATravCAVexprs (node *arg_node, info *arg_info)
+{
+    node *vardecs, *vardec;
+
+    DBUG_ENTER ("ATravCAVexprs");
+
+    vardecs = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
+
+    vardec = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+
+    VARDEC_NEXT (vardec) = vardecs;
+
+    DBUG_RETURN (vardec);
+}
+
+static node *
+ATravCAVid (node *arg_node, info *arg_info)
+{
+    node *vardec;
+
+    DBUG_ENTER ("ATravCAVid");
+
+    vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (ID_NAME (arg_node)),
+                                       TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)))),
+                           NULL);
+    VARDEC_ISSTICKY (vardec) = TRUE;
+
+    DBUG_RETURN (vardec);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *CreateAuxiliaryVardecsFromRets( node *rets)
+ *
+ * @brief generates one fresh vardec for each return identifier. These will
+ *   later be used during code generation for the final folding code within
+ *   the synchronisation barrier of the SPMD function.
+ *
+ *****************************************************************************/
+
+static node *
+CreateAuxiliaryVardecsFromRetExprs (node *retexprs)
+{
+    anontrav_t cav_trav[3] = {{N_exprs, &ATravCAVexprs}, {N_id, &ATravCAVid}, {0, NULL}};
+    node *vardecs;
+
+    DBUG_ENTER ("CreateAuxiliaryVardecsFromRetExprs");
+
+    TRAVpushAnonymous (cav_trav, &TRAVsons);
+
+    vardecs = TRAVopt (retexprs, NULL);
+
+    TRAVpop ();
+
+    DBUG_RETURN (vardecs);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn static node *CreateSpmdFundef( node *arg_node, info *arg_info)
@@ -144,6 +202,8 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
 
     args = INFO_ARGS (arg_info);
     INFO_ARGS (arg_info) = NULL;
+
+    vardecs = TCappendVardec (CreateAuxiliaryVardecsFromRetExprs (retexprs), vardecs);
 
     withlet = DUPdoDupTreeLut (arg_node, INFO_LUT (arg_info));
     INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
