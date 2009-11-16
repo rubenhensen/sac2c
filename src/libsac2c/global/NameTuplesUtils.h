@@ -1,4 +1,8 @@
-/* $Log$ */
+/*
+ *
+ * $Id$
+ *
+ */
 
 #ifndef _SAC_NAMETUPLESUTILS_H_
 #define _SAC_NAMETUPLESUTILS_H_
@@ -12,6 +16,7 @@
  * Prefix: NTU
  *
  *****************************************************************************/
+
 extern char *NTUcreateNtTag (const char *name, types *type);
 
 extern node *NTUaddNtTag (node *id);
