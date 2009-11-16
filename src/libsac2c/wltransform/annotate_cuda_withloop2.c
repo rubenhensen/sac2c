@@ -143,7 +143,7 @@ ACUWLfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("ACUWLfundef");
 
     /* During the main traversal, we only look at non-lac functions */
-    if (!FUNDEF_ISCONDFUN (arg_node) && !FUNDEF_ISDOFUN (arg_node)) {
+    if (!FUNDEF_ISLACFUN (arg_node)) {
         /* Need to find out why the function must not be sticky */
         if (!FUNDEF_ISSTICKY (arg_node)) {
             INFO_FUNDEF (arg_info) = arg_node;
@@ -155,7 +155,7 @@ ACUWLfundef (node *arg_node, info *arg_info)
         if (INFO_FROM_AP (arg_info)) {
             old_fundef = INFO_FUNDEF (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
-            /* Traversal of lac functions are initiated from the calling site */
+            /* Traversal of lac functions is initiated from the calling site */
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_FUNDEF (arg_info) = old_fundef;
         } else {
@@ -226,7 +226,6 @@ ACUWLwith (node *arg_node, info *arg_info)
 
         /* Since we only try to cudarize outermost N_with, any
          * inner N_with is tagged as not cudarizbale */
-
         WITH_CUDARIZABLE (arg_node) = FALSE;
         INFO_CUDARIZABLE (arg_info)
           = TYisAKS (AVIS_TYPE (IDS_AVIS (INFO_LETIDS (arg_info))))
@@ -249,7 +248,9 @@ ACUWLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ACUWLfold");
 
-    /* Currently, we do not support fold N_with */
+    /* An outermost fold N_with is currently not cudarizable;
+     * however, if the fold is within an N_with, we do not signal
+     * uncudarizeable to the enclosing N_with. */
     if (!INFO_INWL (arg_info)) {
         INFO_CUDARIZABLE (arg_info) = FALSE;
     }
@@ -306,15 +307,16 @@ ACUWLpropagate (node *arg_node, info *arg_info)
 node *
 ACUWLid (node *arg_node, info *arg_info)
 {
-    node *avis;
+    ntype *type;
 
     DBUG_ENTER ("ACUWLid");
 
-    avis = ID_AVIS (arg_node);
+    type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (INFO_INWL (arg_info)) {
-        /* We do not cudarize AUD N_with */
-        if (TYisAUD (AVIS_TYPE (avis)) || TYisAUDGZ (AVIS_TYPE (avis))) {
+        /* We do not cudarize any N_with which contains arrays
+         * other than AKS arrays */
+        if (!TYisScalar (type) && !TYisAKV (type) && !TYisAKS (type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
         }
     }
@@ -333,17 +335,18 @@ ACUWLid (node *arg_node, info *arg_info)
 node *
 ACUWLap (node *arg_node, info *arg_info)
 {
+    node *fundef;
     namespace_t *ns;
     bool traverse_lac_fun, old_from_ap;
 
     DBUG_ENTER ("ACUWLap");
 
+    fundef = AP_FUNDEF (arg_node);
+
     /* For us to traverse a function from calling site, it must be a
      * condictional function or a loop function and must not be the
      * recursive function call in the loop function. */
-    traverse_lac_fun
-      = (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)) || FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
-        && AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info);
+    traverse_lac_fun = (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info));
 
     old_from_ap = INFO_FROM_AP (arg_info);
     INFO_FROM_AP (arg_info) = TRUE;
@@ -353,23 +356,45 @@ ACUWLap (node *arg_node, info *arg_info)
      * functions. For the former, we traversal into the corresponding N_fundef
      * and for the later we need to check whether it prevents the current
      * N_with from being cudarized. */
-    if (INFO_INWL (arg_info)) {
-        if (traverse_lac_fun) {
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-        } else {
-            /* The only function application allowed in a cudarizbale N_with
-             * is mathematical functions. However, the check below is ugly
-             * and a better way needs to be found. */
-            ns = FUNDEF_NS (AP_FUNDEF (arg_node)); /* ns could be NULL */
-            if (ns == NULL || !STReq (NSgetModule (ns), "Math")) {
-                INFO_CUDARIZABLE (arg_info) = FALSE;
-            }
+
+    /*
+      if( INFO_INWL( arg_info)) {
+        if( traverse_lac_fun) {
+           AP_FUNDEF( arg_node) = TRAVdo( AP_FUNDEF( arg_node), arg_info);
         }
-    } else {
-        if (traverse_lac_fun) {
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        else {
+          // The only function application allowed in a cudarizbale N_with
+          // is mathematical functions. However, the check below is ugly
+          // and a better way needs to be found.
+          ns = FUNDEF_NS( AP_FUNDEF( arg_node));
+          if( ns == NULL || !STReq( NSgetModule( ns), "Math")) {
+            INFO_CUDARIZABLE( arg_info) = FALSE;
+          }
+        }
+      }
+      else {
+        if( traverse_lac_fun) {
+          AP_FUNDEF( arg_node) = TRAVdo( AP_FUNDEF( arg_node), arg_info);
+        }
+      }
+    */
+
+    if (traverse_lac_fun) {
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+    } else if (INFO_INWL (arg_info)) {
+        /* The only function application allowed in a cudarizbale N_with
+         * is mathematical functions. However, the check below is ugly
+         * and a better way needs to be found. */
+        ns = FUNDEF_NS (AP_FUNDEF (arg_node)); /* ns could be NULL */
+        if (ns == NULL || !STReq (NSgetModule (ns), "Math")) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
         }
     }
+
+    /* We need to traverse N_ap arguments because they might
+     * contain Non-AKS arrays */
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+
     INFO_FROM_AP (arg_info) = old_from_ap;
 
     DBUG_RETURN (arg_node);

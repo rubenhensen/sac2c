@@ -12,13 +12,9 @@ extern node *IMEMid (node *arg_node, info *arg_info);
 extern node *IMEMlet (node *arg_node, info *arg_info);
 extern node *IMEMassign (node *arg_node, info *arg_info);
 extern node *IMEMwith (node *arg_node, info *arg_info);
-extern node *IMEMpart (node *arg_node, info *arg_info);
-extern node *IMEMwithid (node *arg_node, info *arg_info);
 extern node *IMEMids (node *arg_node, info *arg_info);
 extern node *IMEMgenarray (node *arg_node, info *arg_info);
 extern node *IMEMmodarray (node *arg_node, info *arg_info);
 extern node *IMEMcode (node *arg_node, info *arg_info);
-
-extern node *IMEMcond (node *arg_node, info *arg_info);
 
 #endif

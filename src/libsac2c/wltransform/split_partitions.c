@@ -1,6 +1,8 @@
 
 #include "dbug.h"
 
+#include "split_partitions.h"
+
 #include "globals.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -18,10 +20,40 @@
 #include "constants.h"
 #include "types.h"
 
-#include "split_partitions.h"
+typedef struct seg {
+    int offset;
+    int extent;
+    struct seg *next;
+} seg_t;
+
+typedef struct partition {
+    int segs_cnt;
+    int extents[3];
+    seg_t *segs[3];
+} partition_t;
 
 #define MAX_BLOCK_THREADS 512
-#define OPTIMAL_BLOCK_THREADS 256
+#define OPTIMAL_SEG_EXTENT_3D 256
+#define OPTIMAL_SEG_EXTENT_4D 16
+#define OPTIMAL_SEG_EXTENT_5D 8
+
+static const int optimal_seg_extents[3]
+  = {OPTIMAL_SEG_EXTENT_3D, OPTIMAL_SEG_EXTENT_4D, OPTIMAL_SEG_EXTENT_5D};
+
+#define SET_DIM(lb, ub, i, seg_iter)                                                     \
+    NUM_VAL (EXPRS_EXPR##i (ARRAY_AELEMS (lb))) = SEG_OFFSET (seg_iter);                 \
+    NUM_VAL (EXPRS_EXPR##i (ARRAY_AELEMS (ub)))                                          \
+      = SEG_OFFSET (seg_iter) + SEG_EXTENT (seg_iter);
+
+#define OPTIMAL_SEG_EXTENT(dims) (optimal_seg_extents[dims - 3])
+
+#define SEG_OFFSET(s) (s->offset)
+#define SEG_EXTENT(s) (s->extent)
+#define SEG_NEXT(s) (s->next)
+
+#define PARTITION_SEGS_CNT(p) (p->segs_cnt)
+#define PARTITION_SEG(p, i) (p->segs[i])
+#define PARTITION_EXTENT(p, i) (p->extents[i])
 
 /**
  * INFO structure
@@ -29,6 +61,7 @@
 struct INFO {
     node *part;
     node *new_parts;
+    int wl_dim;
 };
 
 /**
@@ -36,6 +69,7 @@ struct INFO {
  */
 #define INFO_PART(n) (n->part)
 #define INFO_NEW_PARTS(n) (n->new_parts)
+#define INFO_WL_DIM(n) (n->wl_dim)
 
 /**
  * INFO functions
@@ -51,6 +85,7 @@ MakeInfo ()
 
     INFO_PART (result) = NULL;
     INFO_NEW_PARTS (result) = NULL;
+    INFO_WL_DIM (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -65,67 +100,400 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--**********************************************************************
+ *
+ * @fn void CheckGeneratorHelper( node *bound, **bound_array)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
 static node *
-getArrayLastElement (node *array)
-{
-    node *last_elem;
-    node *array_elems;
-    int elem_count;
-
-    DBUG_ENTER ("getArrayLastElement");
-
-    array_elems = ARRAY_AELEMS (array);
-    elem_count = TCcountExprs (array_elems);
-
-    last_elem = TCgetNthExprsExpr (elem_count - 1, array_elems);
-
-    DBUG_RETURN (last_elem);
-}
-
-static void
-checkGenerator (node *lb, node *ub, node *step, node *width, node **lb_array,
-                node **ub_array, node **step_array, node **width_array)
+CheckAndGetBound (node *bound)
 {
     pattern *pat;
-    node *array;
+    node *array = NULL;
 
-    DBUG_ENTER ("checkGenerator");
+    DBUG_ENTER ("CheckGeneratorHelper");
 
     pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
-    if (PMmatchFlat (pat, lb)) {
-        *lb_array = array;
+    if (PMmatchFlat (pat, bound)) {
         /* Since we are after constant propogation, we expect
          * the bounds of an AKS N_with (which is also a cudarizable
          * N_with) to be constant arrays */
-        DBUG_ASSERT ((COisConstant (*lb_array)), "Lower bound must be constant!");
+        DBUG_ASSERT ((COisConstant (array)),
+                     "N_gnerator must be contain only constant N_array!");
     } else {
-        DBUG_ASSERT (FALSE, ("Non N_array node found for lower bound!"));
+        DBUG_ASSERT (FALSE, ("Non constant N_array node found in N_generator!"));
     }
 
-    if (PMmatchFlat (pat, ub)) {
-        *ub_array = array;
-        DBUG_ASSERT ((COisConstant (*ub_array)), "Upper bound must be constant!");
-    } else {
-        DBUG_ASSERT (FALSE, ("Non N_array node found for upper bound!"));
+    pat = PMfree (pat);
+
+    DBUG_RETURN (array);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn seg_t *MakeSeg( seg_t *seg, int offset, int extent)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static seg_t *
+MakeSeg (seg_t *seg, int offset, int extent)
+{
+    seg_t *new_seg;
+
+    DBUG_ENTER ("MakeSeg");
+
+    new_seg = MEMmalloc (sizeof (seg_t));
+
+    new_seg->offset = offset;
+    new_seg->extent = extent;
+    new_seg->next = seg;
+
+    DBUG_RETURN (new_seg);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn seg_t *FreeSeg( seg_t *seg)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static seg_t *
+FreeSeg (seg_t *seg)
+{
+    DBUG_ENTER ("FreeSeg");
+
+    if (seg != NULL) {
+        if (SEG_NEXT (seg) != NULL) {
+            SEG_NEXT (seg) = FreeSeg (SEG_NEXT (seg));
+        }
+        seg = MEMfree (seg);
     }
+
+    DBUG_RETURN (seg);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn partition_t *MakePartition( int segs_cnt)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static partition_t *
+MakePartition (int segs_cnt)
+{
+    partition_t *new_part;
+
+    DBUG_ENTER ("MakePartition");
+
+    new_part = MEMmalloc (sizeof (partition_t));
+
+    new_part->segs_cnt = segs_cnt;
+
+    new_part->segs[0] = NULL;
+    new_part->segs[1] = NULL;
+    new_part->segs[2] = NULL;
+    new_part->extents[0] = 0;
+    new_part->extents[1] = 0;
+    new_part->extents[2] = 0;
+
+    DBUG_RETURN (new_part);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn partition_t *FreePartition( partition *part)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static partition_t *
+FreePartition (partition_t *part)
+{
+    DBUG_ENTER ("FreePartition");
+
+    if (part != NULL) {
+        int i = 0;
+        while (i < PARTITION_SEGS_CNT (part)) {
+            part->segs[i] = FreeSeg (part->segs[i]);
+            i++;
+        }
+        part = MEMfree (part);
+    }
+
+    DBUG_RETURN (part);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn bool PartitionNeedsSplit( partition_t *part)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static bool
+PartitionNeedsSplit (partition_t *part)
+{
+    int total_volume = 1;
+    int i = 0;
+    bool res;
+
+    DBUG_ENTER ("PartitionNeedsSplit");
+
+    while (i < PARTITION_SEGS_CNT (part)) {
+        total_volume *= PARTITION_EXTENT (part, i);
+        i++;
+    }
+
+    res = (total_volume > MAX_BLOCK_THREADS);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn partition_t *CreatePartitionsAndSegs( node *lb, node *ub, int dims)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static partition_t *
+CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
+{
+    partition_t *part;
+    seg_t *segs = NULL;
+    node *lb_rem_dims = NULL, *ub_rem_dims = NULL;
+    node *step_rem_dims = NULL, *width_rem_dims = NULL;
+    int opt_seg_ext;
+    int lb_num, ub_num, step_num, width_num;
+    bool has_step_width = FALSE;
+
+    DBUG_ENTER ("CreatePartitionsAndSegs");
+
+    part = MakePartition (dims - 2);
+
+    opt_seg_ext = OPTIMAL_SEG_EXTENT (dims);
+
+    lb_rem_dims = EXPRS_EXPRS3 (ARRAY_AELEMS (lb));
+    ub_rem_dims = EXPRS_EXPRS3 (ARRAY_AELEMS (ub));
 
     if (step != NULL) {
-        if (PMmatchFlat (pat, step)) {
-            *step_array = array;
-            DBUG_ASSERT ((COisConstant (*step_array)), "Step must be constant!");
-        } else {
-            DBUG_ASSERT (FALSE, ("Non N_array node found for step!"));
-        }
+        has_step_width = TRUE;
+        step_rem_dims = EXPRS_EXPRS3 (ARRAY_AELEMS (step));
+        width_rem_dims = EXPRS_EXPRS3 (ARRAY_AELEMS (width));
     }
 
-    if (width != NULL) {
-        if (PMmatchFlat (pat, width)) {
-            *width_array = array;
-            DBUG_ASSERT ((COisConstant (*width_array)), "Width must be constant!");
-        } else {
-            DBUG_ASSERT (FALSE, ("Non N_array node found for width!"));
+    int i = 0;
+    while (lb_rem_dims != NULL) {
+        DBUG_ASSERT ((ub_rem_dims != NULL),
+                     "Lower bound and upper bound have different number of elements!");
+
+        if (has_step_width) {
+            DBUG_ASSERT ((step_rem_dims != NULL && width_rem_dims != NULL),
+                         "Step and width have different number of elements as bounds!");
         }
+
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (lb_rem_dims)) == N_num
+                      && NODE_TYPE (EXPRS_EXPR (ub_rem_dims)) == N_num),
+                     "Non constant found in the elements of lower or upper bounds!");
+
+        lb_num = NUM_VAL (EXPRS_EXPR (lb_rem_dims));
+        ub_num = NUM_VAL (EXPRS_EXPR (ub_rem_dims));
+
+        if (has_step_width) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (step_rem_dims)) == N_num
+                          && NODE_TYPE (EXPRS_EXPR (width_rem_dims)) == N_num),
+                         "Non constant found in the elements of step or width!");
+            step_num = NUM_VAL (EXPRS_EXPR (step_rem_dims));
+            width_num = NUM_VAL (EXPRS_EXPR (width_rem_dims));
+            opt_seg_ext = ((int)(opt_seg_ext / step_num)) * step_num;
+        }
+
+        PARTITION_EXTENT (part, i) = ub_num - lb_num;
+
+        int extent;
+        while (lb_num < ub_num) {
+            extent = ((lb_num + opt_seg_ext) > ub_num ? (ub_num - lb_num) : opt_seg_ext);
+            segs = MakeSeg (segs, lb_num, extent);
+            lb_num += extent;
+        }
+
+        PARTITION_SEG (part, i) = segs;
+        segs = NULL;
+
+        lb_rem_dims = EXPRS_NEXT (lb_rem_dims);
+        ub_rem_dims = EXPRS_NEXT (ub_rem_dims);
+        if (has_step_width) {
+            step_rem_dims = EXPRS_NEXT (step_rem_dims);
+            width_rem_dims = EXPRS_NEXT (width_rem_dims);
+        }
+
+        i++;
+    }
+    DBUG_RETURN (part);
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn void CreateWithloopPartitionsHelper( node *lb, node *ub, info* arg_info)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static void
+CreateWithloopPartitionsHelper (node *lb, node *ub, node *step, node *width,
+                                info *arg_info)
+{
+    node *new_generator, *new_withid, *new_partition, *old_partition;
+
+    DBUG_ENTER ("CreateWithloopPartitionsHelper");
+
+    old_partition = INFO_PART (arg_info);
+
+    new_generator = TBmakeGenerator (F_wl_le, F_wl_lt, lb, ub, step, width);
+    new_withid = DUPdoDupNode (PART_WITHID (old_partition));
+    new_partition = TBmakePart (PART_CODE (old_partition), new_withid, new_generator);
+    CODE_USED (PART_CODE (old_partition))++;
+
+    PART_NEXT (new_partition) = INFO_NEW_PARTS (arg_info);
+    INFO_NEW_PARTS (arg_info) = new_partition;
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--**********************************************************************
+ *
+ * @fn void CreateWithloopPartitions( node *lb_array, node *ub_array,
+ *                                    partition_t *part, info* arg_info)
+ *
+ *
+ * @param
+ *
+ * @return
+ *
+ *****************************************************************************/
+static void
+CreateWithloopPartitions (node *lb_array, node *ub_array, node *step_array,
+                          node *width_array, partition_t *part, info *arg_info)
+{
+    node *lb, *ub, *step = NULL, *width = NULL;
+    seg_t *seg1, *seg2, *seg3;
+    seg_t *seg1_iter, *seg2_iter, *seg3_iter;
+
+    DBUG_ENTER ("CreateWithloopPartitions");
+
+    if (PARTITION_SEGS_CNT (part) == 1) { /* For 3D N_with */
+        seg1 = PARTITION_SEG (part, 0);
+
+        DBUG_ASSERT (seg1 != NULL, "Found partition with NULL segment!");
+
+        seg1_iter = seg1;
+        while (seg1_iter != NULL) {
+            lb = DUPdoDupNode (lb_array);
+            ub = DUPdoDupNode (ub_array);
+
+            if (step_array != NULL) {
+                step = DUPdoDupNode (step_array);
+                width = DUPdoDupNode (width_array);
+            }
+
+            SET_DIM (lb, ub, 3, seg1_iter)
+
+            CreateWithloopPartitionsHelper (lb, ub, step, width, arg_info);
+
+            seg1_iter = SEG_NEXT (seg1_iter);
+        }
+    } else if (PARTITION_SEGS_CNT (part) == 2) { /* For 4D N_with */
+        seg1 = PARTITION_SEG (part, 0);
+        seg2 = PARTITION_SEG (part, 1);
+
+        DBUG_ASSERT ((seg1 != NULL && seg2 != NULL),
+                     "Found partition with NULL segment!");
+
+        seg1_iter = seg1;
+        while (seg1_iter != NULL) {
+            seg2_iter = seg2;
+            while (seg2_iter != NULL) {
+                lb = DUPdoDupNode (lb_array);
+                ub = DUPdoDupNode (ub_array);
+                if (step_array != NULL) {
+                    step = DUPdoDupNode (step_array);
+                    width = DUPdoDupNode (width_array);
+                }
+
+                SET_DIM (lb, ub, 3, seg1_iter)
+                SET_DIM (lb, ub, 4, seg2_iter)
+
+                CreateWithloopPartitionsHelper (lb, ub, step, width, arg_info);
+
+                seg2_iter = SEG_NEXT (seg2_iter);
+            }
+            seg1_iter = SEG_NEXT (seg1_iter);
+        }
+    } else if (PARTITION_SEGS_CNT (part) == 3) { /* For 5D N_with */
+        seg1 = PARTITION_SEG (part, 0);
+        seg2 = PARTITION_SEG (part, 1);
+        seg3 = PARTITION_SEG (part, 2);
+
+        DBUG_ASSERT ((seg1 != NULL && seg2 != NULL && seg3 != NULL),
+                     "Found partition with NULL segment!");
+
+        seg1_iter = seg1;
+        while (seg1_iter != NULL) {
+            seg2_iter = seg2;
+            while (seg2_iter != NULL) {
+                seg3_iter = seg3;
+                while (seg3_iter != NULL) {
+                    lb = DUPdoDupNode (lb_array);
+                    ub = DUPdoDupNode (ub_array);
+                    if (step_array != NULL) {
+                        step = DUPdoDupNode (step_array);
+                        width = DUPdoDupNode (width_array);
+                    }
+
+                    SET_DIM (lb, ub, 3, seg1_iter)
+                    SET_DIM (lb, ub, 4, seg2_iter)
+                    SET_DIM (lb, ub, 5, seg3_iter)
+
+                    CreateWithloopPartitionsHelper (lb, ub, step, width, arg_info);
+
+                    seg3_iter = SEG_NEXT (seg3_iter);
+                }
+                seg2_iter = SEG_NEXT (seg2_iter);
+            }
+            seg1_iter = SEG_NEXT (seg1_iter);
+        }
+    } else {
+        DBUG_ASSERT (FALSE, "Wrong number of segments!");
     }
 
     DBUG_VOID_RETURN;
@@ -175,6 +543,7 @@ SPTNwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("SPTNwith");
 
     if (WITH_CUDARIZABLE (arg_node)) {
+        INFO_WL_DIM (arg_info) = TCcountIds (WITH_IDS (arg_node));
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     }
 
@@ -194,26 +563,21 @@ SPTNwith (node *arg_node, info *arg_info)
 node *
 SPTNpart (node *arg_node, info *arg_info)
 {
-    node *with_ids;
-
     DBUG_ENTER ("SPTNpart");
 
-    with_ids = WITHID_IDS (PART_WITHID (arg_node));
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
-    /* For the experiment, we only look at partition with
-     * dimentionality 3 */
-    if (TCcountIds (with_ids) == 3) {
+    if (INFO_WL_DIM (arg_info) >= 3) {
         INFO_PART (arg_info) = arg_node;
+        INFO_NEW_PARTS (arg_info) = NULL;
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
         INFO_PART (arg_info) = NULL;
-    }
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    } else {
-        /* Append new partitions to the N_with */
-        PART_NEXT (arg_node) = INFO_NEW_PARTS (arg_info);
-        INFO_NEW_PARTS (arg_info) = NULL;
+        if (INFO_NEW_PARTS (arg_info) != NULL) {
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = INFO_NEW_PARTS (arg_info);
+            INFO_NEW_PARTS (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -234,83 +598,50 @@ SPTNgenerator (node *arg_node, info *arg_info)
 {
     node *lb, *ub, *step, *width;
     node *lb_array, *ub_array, *step_array, *width_array;
-    node *last_lb_elem, *last_ub_elem;
-    int trip_count, partition_count, remaining_trip_count;
-    int next_part_lb, i;
-    node *old_partition, *new_withid, *new_generator, *new_partition;
+    partition_t *part;
 
     DBUG_ENTER ("SPTNgenerator");
+
+    DBUG_ASSERT ((INFO_WL_DIM (arg_info) <= 5),
+                 "N_with with dimension larger than 5 found!");
 
     lb = GENERATOR_BOUND1 (arg_node);
     ub = GENERATOR_BOUND2 (arg_node);
     step = GENERATOR_STEP (arg_node);
     width = GENERATOR_WIDTH (arg_node);
 
-    checkGenerator (lb, ub, step, width, &lb_array, &ub_array, &step_array, &width_array);
+    /* After call to the checkGenerator, lb_array, ub_array, step_array
+     * and width_array are all assumed to be constant arrays (Since)
+     * the N_with is a AKS N_with */
+    lb_array = CheckAndGetBound (lb);
+    ub_array = CheckAndGetBound (ub);
 
     /* We only have to manipulate the lower bound and the upper bound */
     if (step == NULL) {
         DBUG_ASSERT ((width == NULL), "step is NULL while width is not NULL!");
 
-        /* We find the last element in the bound array.
-         * This is the dimention we want to check against
-         * (only in case of 3D N_with) */
-        last_lb_elem = getArrayLastElement (lb_array);
-        last_ub_elem = getArrayLastElement (ub_array);
+        part = CreatePartitionsAndSegs (lb_array, ub_array, NULL, NULL,
+                                        INFO_WL_DIM (arg_info));
 
-        DBUG_ASSERT ((NODE_TYPE (last_lb_elem) == N_num
-                      && NODE_TYPE (last_ub_elem) == N_num),
-                     "Non constant found in the last element of bounds!");
-
-        /* We need to split the partition if the trip count of the last
-         * dimention is greater than MAX_BLOCK_THREADS (512) */
-        trip_count = NUM_VAL (last_ub_elem) - NUM_VAL (last_lb_elem);
-
-        if (trip_count > MAX_BLOCK_THREADS) {
-            /* Get the orginal N_part that this N_generator belongs to */
-            old_partition = INFO_PART (arg_info);
-
-            remaining_trip_count = trip_count % OPTIMAL_BLOCK_THREADS;
-            partition_count
-              = ((remaining_trip_count == 0) ? trip_count / OPTIMAL_BLOCK_THREADS
-                                             : trip_count / OPTIMAL_BLOCK_THREADS + 1);
-
-            NUM_VAL (last_ub_elem) = NUM_VAL (last_lb_elem) + OPTIMAL_BLOCK_THREADS;
-            next_part_lb = NUM_VAL (last_ub_elem);
-
-            /* The reason we start from 1 here is because the orginal
-             * partiton is 'reused' as one of the partitions */
-            i = 1;
-            while (i < partition_count) {
-                lb_array = DUPdoDupNode (lb_array);
-                ub_array = DUPdoDupNode (ub_array);
-                last_lb_elem = getArrayLastElement (lb_array);
-                last_ub_elem = getArrayLastElement (ub_array);
-
-                NUM_VAL (last_lb_elem) = next_part_lb;
-                if (i == partition_count - 1 && remaining_trip_count != 0) {
-                    NUM_VAL (last_ub_elem) = next_part_lb + remaining_trip_count;
-                } else {
-                    NUM_VAL (last_ub_elem) = next_part_lb + OPTIMAL_BLOCK_THREADS;
-                }
-                next_part_lb = NUM_VAL (last_ub_elem);
-
-                new_generator
-                  = TBmakeGenerator (F_wl_le, F_wl_lt, lb_array, ub_array, NULL, NULL);
-                new_withid = DUPdoDupNode (PART_WITHID (old_partition));
-                new_partition
-                  = TBmakePart (PART_CODE (old_partition), new_withid, new_generator);
-                CODE_USED (PART_CODE (old_partition))++;
-
-                PART_NEXT (new_partition) = INFO_NEW_PARTS (arg_info);
-                INFO_NEW_PARTS (arg_info) = new_partition;
-
-                i++;
-            }
+        if (PartitionNeedsSplit (part)) {
+            CreateWithloopPartitions (lb_array, ub_array, NULL, NULL, part, arg_info);
         }
+        part = FreePartition (part);
     } else {
+        DBUG_ASSERT ((width != NULL), "Found step but width is NULL!s");
         /* Ooops, there's step and width, more
          * sophisticated analysis is required */
+        step_array = CheckAndGetBound (step);
+        width_array = CheckAndGetBound (width);
+
+        part = CreatePartitionsAndSegs (lb_array, ub_array, step_array, width_array,
+                                        INFO_WL_DIM (arg_info));
+
+        if (PartitionNeedsSplit (part)) {
+            CreateWithloopPartitions (lb_array, ub_array, step_array, width_array, part,
+                                      arg_info);
+        }
+        part = FreePartition (part);
     }
 
     DBUG_RETURN (arg_node);

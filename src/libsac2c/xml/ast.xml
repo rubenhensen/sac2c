@@ -251,13 +251,10 @@
           <node name="Let" />
           <node name="Assign" />
           <node name="With" />
-          <node name="Part" />
-          <node name="Withid" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Fundef" />
           <node name="Ap" />
-          <node name="Cond" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Code" />
@@ -1344,19 +1341,11 @@
 	  <node name="Fundef" />
 	  <node name="Assign" />
 	  <node name="Let" />
-	  <node name="Code" />
 	  <node name="Range" />
-	  <node name="Cond" />
-	  <node name="Generator" />
 	  <node name="Genarray" />
 	  <node name="Modarray" />
 	  <node name="Fold" />
-	  <node name="Ap" />
-	  <node name="Prf" />
 	  <node name="Id" />
-	  <node name="Return" />
-	  <node name="Array" />
-	  <node name="Funcond" />
           <node name="Avis" />
 	</travuser>
       </traversal>

@@ -96,26 +96,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/******************************************************************************
- *
- * function:
- *   node* VParray( node *arg_node, info *arg_info)
- *
- * description:
- *   propagate scalars and variables into ARRAY_AELEMS
- *
- *****************************************************************************/
-node *
-VParray (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VParray");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *VPavis( node *arg_node, info *arg_info)
@@ -137,46 +117,6 @@ VPavis (node *arg_node, info *arg_info)
     if ((AVIS_MAXVAL (arg_node) != NULL) && (arg_node != AVIS_MAXVAL (arg_node))) {
         AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* VPreturn(node *arg_node, info *arg_info)
- *
- * description:
- *   only propagate variables into RETURN_EXPRS
- *
- *****************************************************************************/
-node *
-VPreturn (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VPreturn");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* VPfuncond(node *arg_node, info *arg_info)
- *
- * description:
- *   propagate variables into sons of N_funcond
- *
- *****************************************************************************/
-node *
-VPfuncond (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VPfuncond");
-
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -210,89 +150,6 @@ VPid (node *arg_node, info *arg_info)
         arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
         global.optcounters.vp_expr += 1;
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node* VPprf(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse in the arguments of the prf node
- *
- *****************************************************************************/
-
-node *
-VPprf (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VPprf");
-
-    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/********************************************************************
- *
- * function:
- *   node* VPap(node *arg_node, info *arg_info)
- *
- * description:
- *   only propagate variables into the application arguments
- *
- ********************************************************************/
-
-node *
-VPap (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VPap");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *VPcond(node *arg_node, info *arg_info)
- *
- * description:
- *   only propagate variables into COND_COND
- *
- *****************************************************************************/
-
-node *
-VPcond (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("VPcond");
-
-    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *VPgenerator( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-VPgenerator (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("VPgenerator");
-
-    GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
-    GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
-    GENERATOR_STEP (arg_node) = TRAVopt (GENERATOR_STEP (arg_node), arg_info);
-    GENERATOR_WIDTH (arg_node) = TRAVopt (GENERATOR_WIDTH (arg_node), arg_info);
-    GENERATOR_GENWIDTH (arg_node) = TRAVopt (GENERATOR_GENWIDTH (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -355,33 +212,6 @@ VPfold (node *arg_node, info *arg_info)
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *VPcode(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse codeblock and expression for each Ncode node
- *
- *
- *****************************************************************************/
-node *
-VPcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("VPcode");
-
-    /* traverse codeblock */
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-
-    /* traverse expression to do variable substitution */
-    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-
-    /* traverse to next node */
-    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
