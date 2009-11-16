@@ -507,6 +507,7 @@ MTSTFwith2 (node *arg_node, info *arg_info)
             WITH2_PARALLELIZE (arg_node) = FALSE;
         }
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     } else {
         /*
          * We are not yet in a parallel context. Hence, we traverse the SPMD
@@ -519,9 +520,11 @@ MTSTFwith2 (node *arg_node, info *arg_info)
         if (WITH2_PARALLELIZE (arg_node)) {
             INFO_MTCONTEXT (arg_info) = TRUE;
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+            WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
             INFO_MTCONTEXT (arg_info) = FALSE;
         } else {
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+            WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         }
     }
 
