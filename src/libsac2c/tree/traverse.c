@@ -379,13 +379,18 @@ const char *
 TRAVgetName ()
 {
     const char *result;
+    travstack_t *tmp;
 
     DBUG_ENTER ("TRAVgetName");
 
     if (travstack == NULL) {
         result = "no_active_traversal";
     } else {
-        result = travnames[travstack->traversal];
+        tmp = travstack;
+        while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
+            tmp = tmp->next;
+        }
+        result = travnames[tmp->traversal];
     }
 
     DBUG_RETURN (result);

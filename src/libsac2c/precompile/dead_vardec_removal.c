@@ -155,7 +155,7 @@ DVRvardec (node *arg_node, info *arg_info)
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     if (INFO_KILL (arg_info)) {
-        if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
+        if (!VARDEC_ISSTICKY (arg_node) && AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
             arg_node = FREEdoFreeNode (arg_node);
         }
     }

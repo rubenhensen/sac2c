@@ -517,7 +517,7 @@ DCRvardec (node *arg_node, info *arg_info)
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     /* process vardec and remove it, if dead code */
-    if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
+    if (!VARDEC_ISSTICKY (arg_node) && AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         DBUG_PRINT ("DCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
         global.optcounters.dead_var++;
