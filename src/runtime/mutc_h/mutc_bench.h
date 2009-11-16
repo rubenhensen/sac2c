@@ -1,3 +1,8 @@
+#ifndef _MUTC_BENCH_H_
+#define _MUTC_BENCH_H_
+
+#if SAC_MUTC_BENCH
+
 #define SAC_MUTC_BENCHMARK                                                               \
     SAC_ND_DEF_FUN_BEGIN2 (benchStart, void)                                             \
     {                                                                                    \
@@ -16,3 +21,11 @@
         return;                                                                          \
     }                                                                                    \
     SAC_ND_FUN_DEF_END ()
+
+#else
+
+#define SAC_MUTC_BENCHMARK
+
+#endif
+
+#endif
