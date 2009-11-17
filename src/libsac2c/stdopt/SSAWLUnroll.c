@@ -93,10 +93,11 @@ FreeInfo (info *info)
  ******************************************************************************/
 
 static node *
-CreateBodyCode (node *partn, node *index)
+CreateBodyCode (node *partn, node *index, ntype *def_type)
 {
     node *res, *letn, *coden;
     node *_ids;
+    node *cexpr_avis;
 
     DBUG_ENTER ("CreateBodyCode");
 
@@ -121,6 +122,22 @@ CreateBodyCode (node *partn, node *index)
 
         index = EXPRS_NEXT (index);
         _ids = IDS_NEXT (_ids);
+    }
+
+    if (def_type != NULL) {
+        /*
+         * we insert a type conversion to the default type at the very end.
+         */
+        cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)));
+        res
+          = TCappendAssign (res,
+                            TBmakeAssign (TBmakeLet (TBmakeIds (cexpr_avis, NULL),
+                                                     TCmakePrf2 (F_type_conv,
+                                                                 TBmakeType (
+                                                                   TYeliminateAKV (
+                                                                     def_type)),
+                                                                 TBmakeId (cexpr_avis))),
+                                          NULL));
     }
 
     DBUG_RETURN (res);
@@ -457,6 +474,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
     int count, act_w, i;
     static int ind[SHP_SEG_SIZE];
     node *index, *bodycode;
+    ntype *def_type;
 
     DBUG_ENTER ("ForEachElementHelp");
 
@@ -476,7 +494,16 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             /* Create a fresh copy of the bodycode, then hand it over to
              * each of the withops to mutate. Finally, append it to the
              * assign chain. */
-            bodycode = CreateBodyCode (partn, index);
+            /* In case of genarray-WLs, we also pass along the type of the default
+             * element as this can play a vital role for improved type knowledge
+             * (cf bug 556).
+             */
+            if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL) {
+                def_type = ID_NTYPE (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
+            } else {
+                def_type = NULL;
+            }
+            bodycode = CreateBodyCode (partn, index, def_type);
             bodycode = ForEachElementWithop (bodycode, wln, partn, index, arg_info);
             assignn = TCappendAssign (assignn, bodycode);
         } else {
@@ -512,6 +539,7 @@ ForEachElement (node *assignn, node *wln, node *partn, info *arg_info)
 {
     node *index, *bodycode;
     int maxdim, *l, *u, *s, *w;
+    ntype *def_type;
 
     DBUG_ENTER ("ForEachElement");
 
@@ -536,7 +564,16 @@ ForEachElement (node *assignn, node *wln, node *partn, info *arg_info)
         /* Create a fresh copy of the bodycode, then hand it over to
          * each of the withops to mutate. Finally, append it to the
          * assign chain. */
-        bodycode = CreateBodyCode (partn, index);
+        /* In case of genarray-WLs, we also pass along the type of the default
+         * element as this can play a vital role for improved type knowledge
+         * (cf bug 556).
+         */
+        if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL) {
+            def_type = ID_NTYPE (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
+        } else {
+            def_type = NULL;
+        }
+        bodycode = CreateBodyCode (partn, index, def_type);
         bodycode = ForEachElementWithop (bodycode, wln, partn, index, arg_info);
         assignn = TCappendAssign (assignn, bodycode);
     } else {
