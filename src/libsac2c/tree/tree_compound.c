@@ -2983,11 +2983,15 @@ TCappendPart (node *parts1, node *parts2)
     node *current;
 
     DBUG_ENTER ("TCappendPart");
-    current = parts1;
-    while (PART_NEXT (current) != NULL) {
-        current = PART_NEXT (current);
+    if (parts1 == NULL) {
+        parts1 = parts2;
+    } else {
+        current = parts1;
+        while (PART_NEXT (current) != NULL) {
+            current = PART_NEXT (current);
+        }
+        PART_NEXT (current) = parts2;
     }
-    PART_NEXT (current) = parts2;
     DBUG_RETURN (parts1);
 }
 
