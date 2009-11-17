@@ -7640,34 +7640,38 @@ COMPrange (node *arg_node, info *arg_info)
     next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     family = TCappendAssign (family, create);
-    if (INFO_CONCURRENTRANGES (arg_info)) {
-        DBUG_ASSERT ((INFO_WITH3_FOLDS (arg_info) == NULL),
-                     "Fold and concurrent not supported");
-        family = TCappendAssign (family, next);
-        family = TCappendAssign (family, sync);
-    } else {
-        node *start, *end;
-        family = TCappendAssign (family, sync);
-        start = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_START", NULL);
-        end = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_END", NULL);
+#if 0
+  if (INFO_CONCURRENTRANGES( arg_info)) {
+    DBUG_ASSERT( ( INFO_WITH3_FOLDS( arg_info) == NULL),
+                 "Fold and concurrent not supported");
+    family = TCappendAssign(family, next);
+    family = TCappendAssign(family, sync);
+  } else {
+#endif
+    node *start, *end;
+    family = TCappendAssign (family, sync);
+    start = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_START", NULL);
+    end = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_END", NULL);
 
-        family = TCappendAssign (start, family);
+    family = TCappendAssign (start, family);
 
-        if (INFO_WITH3_FOLDS (arg_info) != NULL) {
-            node *save;
-            DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
-                         "Only single fold with3 loops supported");
-            save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
-                                     TCmakeIdCopyStringNt (IDS_NAME (
-                                                             INFO_WITH3_FOLDS (arg_info)),
-                                                           IDS_TYPE (INFO_WITH3_FOLDS (
-                                                             arg_info))),
-                                     NULL);
-            family = TCappendAssign (family, save);
-        }
-        family = TCappendAssign (family, end);
-        family = TCappendAssign (family, next);
+    if (INFO_WITH3_FOLDS (arg_info) != NULL) {
+        node *save;
+        DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
+                     "Only single fold with3 loops supported");
+        save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
+                                 TCmakeIdCopyStringNt (IDS_NAME (
+                                                         INFO_WITH3_FOLDS (arg_info)),
+                                                       IDS_TYPE (
+                                                         INFO_WITH3_FOLDS (arg_info))),
+                                 NULL);
+        family = TCappendAssign (family, save);
     }
+    family = TCappendAssign (family, end);
+    family = TCappendAssign (family, next);
+#if 0
+  }
+#endif
 
     /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
     FREEdoFreeTree (thread_fun);
