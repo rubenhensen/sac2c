@@ -1112,6 +1112,14 @@
           <node name="With" />
         </travuser>
       </traversal>
+      <traversal id="WLBSC" name="With-Loop Bounds 2 Structure Constants" default="sons" include="wlbounds2structconsts.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h" >
         <travuser>
           <node name="With" />
