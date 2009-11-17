@@ -1340,11 +1340,6 @@
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Range" />
-	  <node name="Genarray" />
-	  <node name="Modarray" />
-	  <node name="Fold" />
 	  <node name="Id" />
           <node name="Avis" />
 	</travuser>
@@ -1353,20 +1348,9 @@
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Code" />
-	  <node name="Range" />
-	  <node name="Cond" />
-	  <node name="Generator" />
-	  <node name="Genarray" />
-	  <node name="Modarray" />
-	  <node name="Fold" />
-	  <node name="Ap" />
 	  <node name="Prf" />
 	  <node name="Id" />
-	  <node name="Return" />
 	  <node name="Array" />
-	  <node name="Funcond" />
           <node name="Avis" />
 	</travuser>
       </traversal>

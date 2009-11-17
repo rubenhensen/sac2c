@@ -28,10 +28,6 @@
  * we never want to drive simple scalars (N_num, N_char...) into
  * RHS nodes.
  *
- * Example:
- *    a = 7;                a = 7;
- *    b = a;          =>    b = a;
- *    c = fun(b);           c = fun(7);
  *
  * Obsolete definitions of assignments are removed by DeadCodeRemoval.
  *
@@ -181,48 +177,6 @@ CPavis (node *arg_node, info *arg_info)
         INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
         AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CPreturn(node *arg_node, info *arg_info)
- *
- * description:
- *   (only propagate variables into RETURN_EXPRS)
- *
- *****************************************************************************/
-node *
-CPreturn (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CPreturn");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CPfuncond(node *arg_node, info *arg_info)
- *
- * description:
- *   (only propagate variables into sons of N_funcond)
- *
- *****************************************************************************/
-node *
-CPfuncond (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CPfuncond");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -428,238 +382,6 @@ CPprf (node *arg_node, info *arg_info)
         INFO_PROPMODE (arg_info) = PROP_scalarconst;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
-    DBUG_RETURN (arg_node);
-}
-
-/********************************************************************
- *
- * function:
- *   node* CPap(node *arg_node, info *arg_info)
- *
- * description:
- *   only propagate variables into the application arguments
- *
- ********************************************************************/
-
-node *
-CPap (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CPap");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPcond(node *arg_node, info *arg_info)
- *
- * description:
- *   only propagate variables into COND_COND
- *
- *****************************************************************************/
-
-node *
-CPcond (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPcond");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-
-    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CPgenerator( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-CPgenerator (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPgenerator");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
-
-    if (GENERATOR_STEP (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_nothing;
-        GENERATOR_STEP (arg_node) = TRAVdo (GENERATOR_STEP (arg_node), arg_info);
-    }
-
-    if (GENERATOR_WIDTH (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_nothing;
-        GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
-    }
-
-    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_nothing;
-        GENERATOR_GENWIDTH (arg_node) = TRAVdo (GENERATOR_GENWIDTH (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPgenarray(node *arg_node, info *arg_info)
- *
- * description:
- *   GENARRAY_SHAPE may be an array constant
- *   the default element must be a variable if present
- *
- *****************************************************************************/
-node *
-CPgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPgenarray");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        INFO_PROPMODE (arg_info) = PROP_nothing;
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
-
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPmodarray(node *arg_node, info *arg_info)
- *
- * description:
- *   only variables are allowed in MODARRAY_ARRAY
- *
- *****************************************************************************/
-node *
-CPmodarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPmodarray");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-
-    MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPfold(node *arg_node, info *arg_info)
- *
- * description:
- *  only variables are allowed as neutral elements
- *
- *****************************************************************************/
-node *
-CPfold (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CPfold");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-
-    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPcode(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse codeblock and expression for each Ncode node
- *
- *
- *****************************************************************************/
-node *
-CPcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPcode");
-
-    /* traverse codeblock */
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-
-    /* traverse expression to do variable substitution */
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-
-    /* traverse to next node */
-    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CPrange(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse body and expression for each range node
- *
- *
- *****************************************************************************/
-node *
-CPrange (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CPrange");
-
-    /* traverse body of range */
-    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
-
-    /* traverse expression to do variable substitution */
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
-
-    /* traverse to next node */
-    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CPlet(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse in the expr of the let node
- *
- *****************************************************************************/
-
-node *
-CPlet (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CPlet");
-
-    INFO_PROPMODE (arg_info) = PROP_nothing;
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -681,6 +403,11 @@ CPassign (node *arg_node, info *arg_info)
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    /* Reset the mode the PROP_nothing because the traverse
+     * of instr might change the mode */
+    INFO_PROPMODE (arg_info) = PROP_nothing;
+
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
