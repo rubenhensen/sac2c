@@ -64,8 +64,8 @@
     SAC_ND_PRF_SYNCOUT_NODESC (nt, sh)                                                   \
     sl_setp (SAC_ND_DESC_NAME (sh), SAC_ND_DESC_NAME (nt));
 
-#define SAC_MUTC_ND_PARAM_INT_GLO(t, name, nt) sl_glparm (t, name)
-#define SAC_MUTC_ND_PARAM_FLO_GLO(t, name, nt) sl_glfparm (t, name)
+#define SAC_MUTC_ND_PARAM_INT_GLO(t, name, nt) sl_glparm_mutable (t, name)
+#define SAC_MUTC_ND_PARAM_FLO_GLO(t, name, nt) sl_glfparm_mutable (t, name)
 #define SAC_MUTC_ND_PARAM_INT_SHA(t, name, nt) sl_shparm (t, name)
 #define SAC_MUTC_ND_PARAM_FLO_SHA(t, name, nt) sl_shfparm (t, name)
 

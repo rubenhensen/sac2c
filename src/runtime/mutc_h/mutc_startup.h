@@ -3,18 +3,21 @@
 #define _SAC_MUTC_STARTUP_H_
 
 #define MUTC 1
-#if SAC_BACKEND == MUTC
+#if SAC_MUTC_MACROS
 #include "sac_helpers.h"
 #endif /* SAC_BACKEND */
 #undef MUTC
 
 #if SAC_DO_COMPILE_MODULE
 
-#define SAC_MUTC_STARTUP SAC_MUTC_STARTUP_ANON ()
+#define SAC_MUTC_STARTUP                                                                 \
+    SAC_MUTC_STARTUP_ANON ()                                                             \
+    SAC_MUTC_COMPATIBLE ()
 
 #else
 
 #define SAC_MUTC_STARTUP                                                                 \
+    SAC_MUTC_COMPATIBLE ()                                                               \
     SAC_MUTC_STARTUP_ANON ()                                                             \
     SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
@@ -54,6 +57,12 @@
     m4_define ([[_sl_anon_counter]], 0)                                                  \
       m4_define ([[sl_anon]],                                                            \
                  [[m4_step ([[_sl_anon_counter]]) _sl_anonarg[[]] _sl_anon_counter]])
+
+#define SAC_MUTC_COMPATIBLE()                                                            \
+    m4_ifndef ([[sl_glparm_mutable]],                                                    \
+               [[m4_copy ([[sl_glparm]], [[sl_glparm_mutable]])]])                       \
+      m4_ifndef ([[sl_glfparm_mutable]],                                                 \
+                 [[m4_copy ([[sl_glfparm]], [[sl_glfparm_mutable]])]])
 
 #define SAC_MUTC_CLIB_STRNCPY                                                            \
     m4_define ([[strncpy]], [[({                                                         \
