@@ -142,6 +142,7 @@ CParray (node *arg_node, info *arg_info)
 
     INFO_PROPMODE (arg_info) = PROP_scalarconst;
     arg_node = TRAVcont (arg_node, arg_info);
+    INFO_PROPMODE (arg_info) = PROP_nothing;
 
     DBUG_RETURN (arg_node);
 }

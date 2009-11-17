@@ -429,36 +429,37 @@ MLTRANid (node *arg_node, info *arg_info)
             /* If this N_id occurs in the argument list of the
              * recursive application of the enclosing do-fun. */
 
-            /*
-                  ssaassign = AVIS_SSAASSIGN( ID_AVIS( arg_node));
-                  if( ISDEVICE2HOST( ssaassign) &&
-                      !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( ssaassign)) {
-                    // If the SSA of this argument is <device2host>, and this
-                    // <device2host> can be moved out of the do-fun.
-                    avis = LUTsearchInLutPp( INFO_D2HLUT( arg_info), ID_AVIS( arg_node));
-                    ID_AVIS( arg_node) = avis;
-                  }
-            */
+            ssaassign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
+            if (ISDEVICE2HOST (ssaassign)
+                && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
+                /* If the SSA of this argument is <device2host>, and this
+                 * <device2host> can be moved out of the do-fun. */
+                avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (arg_node));
+                ID_AVIS (arg_node) = avis;
+            }
 
             /**************** Ugly Code !!! **********************/
-            pattern *pat;
-            pat = PMprf (1, PMAisPrf (F_device2host), 1, PMvar (0, 0));
+            /*
+                  pattern *pat;
+                  pat = PMprf( 1, PMAisPrf( F_device2host),
+                               1, PMvar( 0, 0));
 
-            if (PMmatchFlat (pat, arg_node)) {
-                ssaassign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
-                node *rhs = ASSIGN_RHS (ssaassign);
-                while (NODE_TYPE (rhs) != N_prf) {
-                    DBUG_ASSERT (NODE_TYPE (rhs) == N_id, "Non-id node found!");
-                    ssaassign = AVIS_SSAASSIGN (ID_AVIS (rhs));
-                    rhs = ASSIGN_RHS (ssaassign);
-                }
-                if (!ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
-                    // If the SSA of this argument is <device2host>, and this
-                    // <device2host> can be moved out of the do-fun.
-                    ID_AVIS (arg_node) = ID_AVIS (PRF_ARG1 (ASSIGN_RHS (ssaassign)));
-                }
-            }
-            pat = PMfree (pat);
+                  if( PMmatchFlat( pat, arg_node)) {
+                    ssaassign = AVIS_SSAASSIGN( ID_AVIS( arg_node));
+                    node *rhs = ASSIGN_RHS( ssaassign);
+                    while( NODE_TYPE( rhs) != N_prf) {
+                     DBUG_ASSERT( NODE_TYPE( rhs) == N_id, "Non-id node found!");
+                     ssaassign = AVIS_SSAASSIGN( ID_AVIS( rhs));
+                     rhs = ASSIGN_RHS( ssaassign);
+                    }
+                    if( !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( ssaassign)) {
+                      // If the SSA of this argument is <device2host>, and this
+                      // <device2host> can be moved out of the do-fun.
+                      ID_AVIS( arg_node) = ID_AVIS( PRF_ARG1( ASSIGN_RHS( ssaassign)));
+                    }
+                  }
+                  pat = PMfree( pat);
+            */
 
             /*****************************************************/
 

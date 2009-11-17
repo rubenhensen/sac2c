@@ -19,7 +19,6 @@
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
 #include "new_types.h"
-#include "pattern_match.h"
 
 enum traverse_mode { trav_collect, trav_annotate };
 

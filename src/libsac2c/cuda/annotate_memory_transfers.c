@@ -517,29 +517,31 @@ AMTRANprf (node *arg_node, info *arg_info)
                      *      loop_fun( *, c_host , *, *);
                      *    }
                      */
-                    /*
-                                if( ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg))) &&
-                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
-                       arg_info))) { ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( AVIS_SSAASSIGN(
-                       ID_AVIS( ap_arg))) = TRUE;
-                                }
-                    */
-                    pattern *pat;
-                    pat = PMprf (1, PMAisPrf (F_device2host), 1, PMvar (0, 0));
-
-                    if (PMmatchFlat (pat, ap_arg)
+                    if (ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
                         && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))) {
-                        node *d2h_assign = AVIS_SSAASSIGN (ID_AVIS (ap_arg));
-                        node *rhs = ASSIGN_RHS (d2h_assign);
-                        while (NODE_TYPE (rhs) != N_prf) {
-                            DBUG_ASSERT (NODE_TYPE (rhs) == N_id, "Non-id node found!");
-                            d2h_assign = AVIS_SSAASSIGN (ID_AVIS (rhs));
-                            rhs = ASSIGN_RHS (d2h_assign);
-                        }
-                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (d2h_assign) = TRUE;
+                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (
+                          AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
+                          = TRUE;
                     }
+                    /*
+                                pattern *pat;
+                                pat = PMprf( 1, PMAisPrf( F_device2host),
+                                             1, PMvar( 0, 0));
 
-                    pat = PMfree (pat);
+                                if( PMmatchFlat( pat, ap_arg) &&
+                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
+                       arg_info))) { node *d2h_assign = AVIS_SSAASSIGN( ID_AVIS( ap_arg));
+                                  node *rhs = ASSIGN_RHS( d2h_assign);
+                                  while( NODE_TYPE( rhs) != N_prf) {
+                                    DBUG_ASSERT( NODE_TYPE( rhs) == N_id, "Non-id node
+                       found!"); d2h_assign = AVIS_SSAASSIGN( ID_AVIS( rhs)); rhs =
+                       ASSIGN_RHS( d2h_assign);
+                                  }
+                                  ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( d2h_assign) = TRUE;
+                                }
+
+                                pat = PMfree( pat);
+                    */
                 }
                 /* If the host variable is not passed as an argument to the do-fun,
                  * the <host2device> CANNOT be moved out of the do-fun. */

@@ -168,7 +168,9 @@ libsac2c_cuda        := annotate_cuda_withloop2 insert_memory_transfers create_c
                         minimize_transfers minimize_loop_transfers minimize_cond_transfers \
                         minimize_block_transfers annotate_memory_transfers annotate_cuda_partition \
                         annotate_cuda_loop cuda_utils annotate_cond_transfers split_partitions \
-                        minimize_block_transfers2 wl_descalarization split_cuda_withloop 
+                        minimize_block_transfers2 wl_descalarization split_cuda_withloop \
+                        create_cuda_kernels cleanup_cuda_kernels \
+                        prepare_kernel_generation create_loop_kernels 
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs mtdcr \
                         scheduling annotate_scheduling set_spmd_linksign \
@@ -194,9 +196,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign dead_vardec_removal \
                         remove_external_code mark_noop_grids \
                         resolve_code_sharing lift_with3_bodies \
-                        distribute_threads create_cuda_kernels \
-                        prepare_kernel_generation create_loop_kernels \
-                        tag_main_fun_thread cleanup_cuda_kernels
+                        distribute_threads tag_main_fun_thread 
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
