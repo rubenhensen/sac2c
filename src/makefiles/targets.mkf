@@ -62,7 +62,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
                               memory precompile codegen print \
-                              cinterface generics constraints 
+                              cinterface generics constraints cuda
 
 ###############################################################################
 
@@ -162,14 +162,13 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         ivextrema ivexpropagation ivexcleanup
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
-                        annotate_cuda_withloop2 remove_with3 \
-                        insert_memory_transfers create_constant_assignments minimize_transfers \
-                        minimize_loop_transfers minimize_cond_transfers \
+                        remove_with3 addSyncs 
+                        
+libsac2c_cuda        := annotate_cuda_withloop2 insert_memory_transfers create_constant_assignments \
+                        minimize_transfers minimize_loop_transfers minimize_cond_transfers \
                         minimize_block_transfers annotate_memory_transfers annotate_cuda_partition \
-                        annotate_cuda_loop cuda_utils annotate_cond_transfers \
-                        minimize_block_transfers2 wl_descalarization split_cuda_withloop addSyncs \
-                        split_partitions
-
+                        annotate_cuda_loop cuda_utils annotate_cond_transfers split_partitions \
+                        minimize_block_transfers2 wl_descalarization split_cuda_withloop 
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs mtdcr \
                         scheduling annotate_scheduling set_spmd_linksign \

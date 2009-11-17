@@ -22,8 +22,8 @@
  * optimization phase: Constant Propagation (CP)
  *
  * CP is used to eliminate the usage of assignment arguments (RHS N_id nodes),
- * whose definition has only a single value (N_id, N_num, ...) as a right hand
- * side. So we can avoid the usage of unnecessary copy assignments.
+ * whose definition has only a single constant value (N_num or constant N_array)
+ * as a right hand side. So we can avoid the usage of unnecessary copy assignments.
  * This phase is only used post-optimization. During optimization,
  * we never want to drive simple scalars (N_num, N_char...) into
  * RHS nodes.
