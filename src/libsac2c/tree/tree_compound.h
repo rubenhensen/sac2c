@@ -1117,6 +1117,8 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
 extern int TCcountParts (node *parts);
+extern node *TCappendPart (node *parts1, node *parts2);
+extern bool TCcontainsDefaultPartition (node *parts);
 
 /*--------------------------------------------------------------------------*/
 

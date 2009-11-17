@@ -2966,6 +2966,54 @@ TCcountParts (node *parts)
     DBUG_RETURN (counter);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node * TCappendPart( node *parts1, node *parts2)
+ *
+ * @brief
+ *
+ * @param parts
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+TCappendPart (node *parts1, node *parts2)
+{
+    node *current;
+
+    DBUG_ENTER ("TCappendPart");
+    current = parts1;
+    while (PART_NEXT (current) != NULL) {
+        current = PART_NEXT (current);
+    }
+    PART_NEXT (current) = parts2;
+    DBUG_RETURN (parts1);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TCcontainsDefaultPartition( node *parts)
+ *
+ * @brief
+ *
+ * @param parts
+ *
+ * @return
+ *
+ *****************************************************************************/
+bool
+TCcontainsDefaultPartition (node *parts)
+{
+    DBUG_ENTER ("TCcontainsDefaultPartition");
+
+    while ((parts != NULL) && (NODE_TYPE (PART_GENERATOR (parts)) != N_default)) {
+        parts = PART_NEXT (parts);
+    }
+
+    DBUG_RETURN (parts != NULL);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
