@@ -353,14 +353,6 @@ PrintGlobalSettings (node *syntax_tree)
              CalcMasterclass (global.num_threads));
     fprintf (global.outfile, "#endif\n\n");
 
-    if (global.max_sync_fold == -1) {
-        fprintf (global.outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n",
-                 global.needed_sync_fold);
-    } else {
-        fprintf (global.outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n",
-                 global.max_sync_fold);
-    }
-
     fprintf (global.outfile, "#define SAC_SET_NUM_SCHEDULERS       %d\n\n",
              global.max_schedulers);
 

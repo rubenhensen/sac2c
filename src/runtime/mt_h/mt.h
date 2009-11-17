@@ -33,10 +33,6 @@
  ***   Definitions and declarations for the multi-threaded runtime system
  ***/
 
-#ifndef SAC_SET_MAX_SYNC_FOLD
-#define SAC_SET_MAX_SYNC_FOLD 0
-#endif
-
 #ifndef SAC_SET_CACHE_1_LINE
 #define SAC_SET_CACHE_1_LINE 0
 #endif

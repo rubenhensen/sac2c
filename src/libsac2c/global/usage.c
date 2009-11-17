@@ -509,20 +509,8 @@ PrintMultithreadOptions (void)
             "                    number is determined at runtime.\n"
             "                      (default: %d)\n"
             "\n"
-            "    -dofoldparallel Enable parallelization of fold with-loops.\n"
-            "    -nofoldparallel Disable parallelization of fold with-loops (default).\n"
-            "\n"
-            "    -maxsync <n>    Specify maximum number of fold with-loops to be "
-            "combined\n"
-            "                    into a single synchronisation block.\n"
-            "                    Legal values:\n"
-            "                      -1: maximum number needed (mechanically infered).\n"
-            "                       0: no fold-with-loops are allowed.\n"
-            "                          (This implies that fold-with-loops are not "
-            "executed\n"
-            "                           in parallel.)\n"
-            "                      >0: maximum number set to <n>.\n"
-            "                      (default: %d)\n"
+            "    -dofoldparallel Enable parallelization of fold with-loops (default).\n"
+            "    -nofoldparallel Disable parallelization of fold with-loops.\n"
             "\n"
             "    -minmtsize <n>  Specify minimum generator set size for parallel "
             "execution\n"
@@ -534,8 +522,8 @@ PrintMultithreadOptions (void)
             "                      (default: %d)\n"
             "                    Option applies to \"-mtn\" style parallelization "
             "only.\n",
-            (int)MT_startstop, global.max_threads, global.max_sync_fold,
-            global.min_parallel_size, global.max_replication_size);
+            (int)MT_startstop, global.max_threads, global.min_parallel_size,
+            global.max_replication_size);
 
     DBUG_VOID_RETURN;
 }

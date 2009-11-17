@@ -246,21 +246,6 @@ GLOBAL (bool, no_fold_parallel, FALSE)
  * Switch whether or not to parallelize fold with-loops.
  */
 
-GLOBAL (int, max_sync_fold, -1)
-/*
- * Maximum number of fold operations in a single synchronisation block.
- *   -1 => value of infered needed_sync_fold will be used
- *    0 => no fold-with-loops, will be executed concurrently,
- *         because no fold are allowed to be contained in a spmd/sync-block.
- *   >0 => as much folds will be contained in one sync-block as maximum.
- */
-
-GLOBAL (int, needed_sync_fold, 0)
-/*
- * Maximum number of fold operations in a single synchronisation block,
- * will be infered mechanically.
- */
-
 GLOBAL (int, max_threads, 32)
 /*
  * Maximum number of threads if exact number is determined dynamically.

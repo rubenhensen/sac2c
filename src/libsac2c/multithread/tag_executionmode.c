@@ -466,9 +466,7 @@ IsMTAllowed (node *withloop)
     DBUG_ASSERT ((NODE_TYPE (withloop) == N_with2),
                  "IsMTAllowed expects a N_with2 as argument");
 
-    /* max_sync_fold is a global variable - for further info see globals.c
-       if 0 -> no parallelization of fold-with-loops */
-    if ((NODE_TYPE (WITH2_WITHOP (withloop)) == N_fold) && (global.max_sync_fold == 0)) {
+    if ((NODE_TYPE (WITH2_WITHOP (withloop)) == N_fold) && global.no_fold_parallel) {
         is_allowed = FALSE;
     } else {
         is_allowed = TRUE;

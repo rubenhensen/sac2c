@@ -503,8 +503,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("maxthreads", ARG_NUM (global.max_threads));
 
-    ARGS_OPTION ("maxsync", ARG_RANGE (global.max_sync_fold, -1, 64));
-
     ARGS_OPTION ("maxae", ARG_NUM (global.minarray));
 
     ARGS_OPTION ("minmtsize", ARG_NUM (global.min_parallel_size));
