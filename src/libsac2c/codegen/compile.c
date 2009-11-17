@@ -494,7 +494,7 @@ GenericFun (generic_fun_t which, types *type)
 
     DBUG_EXECUTE ("COMP", tmp = CVtype2String (type, 0, FALSE); switch (which) {
         case GF_copy:
-            DBUG_PRINT ("COMP", ("Looking for generic copy functioni for type %s", tmp));
+            DBUG_PRINT ("COMP", ("Looking for generic copy function for type %s", tmp));
             break;
         case GF_free:
             DBUG_PRINT ("COMP", ("Looking for generic free function for type %s", tmp));
@@ -2056,7 +2056,7 @@ MakeFunApArgs (node *ap)
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
         node *exprs = NULL;
-        bool shared = FALSE; /* MUTC shared paramitor? */
+        bool shared = FALSE; /* MUTC shared parameter? */
 
         if (argtab->ptr_out[i] != NULL) {
             if (!FUNDEF_ISTHREADFUN (fundef)) {
@@ -2993,6 +2993,9 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     int i;
     node *icm_args = NULL;
     node *last_arg = NULL;
+    node *vardecs;
+    types *type;
+    node *val_nt;
 
     DBUG_ENTER ("MakeFunRetArgsSpmd");
 
@@ -3006,6 +3009,8 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     /* regular arguments */
     ret_exprs = RETURN_EXPRS (arg_node);
     ret_cnt = 0;
+    vardecs = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
+
     for (i = 0; i < argtab->size; i++) {
         if (argtab->ptr_out[i] != NULL) {
             char *foldfunname;
@@ -3017,22 +3022,33 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
             foldfunname = LUTsearchInLutSs (INFO_FOLDLUT (arg_info),
                                             ID_NAME (EXPRS_EXPR (ret_exprs)));
 
-            foldfunname
-              = (foldfunname == ID_NAME (EXPRS_EXPR (ret_exprs)) ? "NONE" : foldfunname);
+            if (foldfunname == ID_NAME (EXPRS_EXPR (ret_exprs))) {
+                foldfunname = "NONE";
+            }
 
-            new_args
-              = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
-                             TBmakeExprs (TCmakeIdCopyString (foldfunname),
-                                          TBmakeExprs (DUPdupIdNt (
-                                                         EXPRS_EXPR (ret_exprs)),
-                                                       NULL)));
+            type = ID_TYPE (EXPRS_EXPR (ret_exprs));
+
+            DBUG_ASSERT (vardecs != NULL, "Too few vardecs in SPMD function");
+
+            val_nt = TBmakeId (VARDEC_AVIS (vardecs));
+            ID_NT_TAG (val_nt) = NTUcreateNtTag (ID_NAME (val_nt), VARDEC_TYPE (vardecs));
+            vardecs = VARDEC_NEXT (vardecs);
+
+            new_args = TBmakeExprs (
+              TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
+              TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (ret_exprs)),
+                           TBmakeExprs (val_nt,
+                                        TBmakeExprs (MakeBasetypeArg (type),
+                                                     TBmakeExprs (TCmakeIdCopyString (
+                                                                    foldfunname),
+                                                                  NULL)))));
 
             if (last_arg == NULL) {
                 icm_args = new_args;
             } else {
                 EXPRS_NEXT (last_arg) = new_args;
             }
-            last_arg = EXPRS_EXPRS3 (new_args);
+            last_arg = EXPRS_EXPRS5 (new_args);
 
             ret_exprs = EXPRS_NEXT (ret_exprs);
             ret_cnt++;

@@ -42,6 +42,4 @@ extern void ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt,
 extern void ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt,
                                                char **vararg);
 
-extern void ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim);
-
 #endif /* _SAC_ICM2C_MT_H_ */

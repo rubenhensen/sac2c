@@ -879,7 +879,7 @@ ICM_END( MT_SPMDFUN_DEF_END, (funname, vararg_cnt, vararg))
 ICM_DEF( MT_SPMDFUN_RET, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
+  ICM_VARANY( (5*vararg_cnt), vararg)
 ICM_END( MT_SPMDFUN_RET, (funname, vararg_cnt, vararg))
 #endif
 
@@ -905,13 +905,6 @@ ICM_DEF( MT_SPMD_BARRIER_ELEMENT, ICM_TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SPMD_BARRIER_ELEMENT, (funname, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_CREATE_LOCAL_DESC) || defined(ICM_ALL)
-ICM_DEF( MT_CREATE_LOCAL_DESC, ICM_TRACE_NONE)
-  ICM_ID( var_NT)
-  ICM_INT( dim)
-ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
 #endif
 
 /*
@@ -1065,135 +1058,6 @@ ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
 ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
-#endif
-
-/*
- *  Probably obsolete
- */
-
-#if 0
-
-#if defined(MT_SYNCBLOCK_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SYNCBLOCK_BEGIN, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SYNCBLOCK_BEGIN, (barrier_id, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_SYNCBLOCK_CLEANUP) || defined(ICM_ALL)
-ICM_DEF( MT_SYNCBLOCK_CLEANUP, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SYNCBLOCK_CLEANUP, (barrier_id, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_SYNCBLOCK_END) || defined(ICM_ALL)
-ICM_DEF( MT_SYNCBLOCK_END, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SYNCBLOCK_END, (barrier_id, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_SYNC_NONFOLD) || defined(ICM_ALL)
-ICM_DEF( MT_SYNC_NONFOLD, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-ICM_END( MT_SYNC_NONFOLD, (barrier_id))
-#endif
-
-#if defined(MT_SYNC_FOLD) || defined(ICM_ALL)
-ICM_DEF( MT_SYNC_FOLD, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (4*vararg_cnt), vararg)
-ICM_END( MT_SYNC_FOLD, (barrier_id, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_SYNC_ONEFOLD) || defined(ICM_ALL)
-ICM_DEF( MT_SYNC_ONEFOLD, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
-  ICM_ID( foldtype)
-  ICM_ID( accu_var)
-  ICM_ID( tmp_var)
-  ICM_ID( foldop)
-ICM_END( MT_SYNC_ONEFOLD, (barrier_id, foldtype, accu_var, tmp_var, foldop))
-#endif
-
-#if defined(MT_SYNC_ONEFOLD_NONFOLD) || defined(ICM_ALL)
-ICM_DEF( MT_SYNC_ONEFOLD_NONFOLD, ICM_TRACE_NONE)
-  ICM_ID( foldtype)
-  ICM_ID( accu_var)
-  ICM_ID( tmp_var)
-  ICM_ID( foldop)
-ICM_END( MT_SYNC_ONEFOLD_NONFOLD, (foldtype, accu_var, tmp_var, foldop))
-#endif
-
-#if defined(MT_SYNC_FOLD_NONFOLD) || defined(ICM_ALL)
-ICM_DEF( MT_SYNC_FOLD_NONFOLD, ICM_TRACE_NONE)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (4*vararg_cnt), vararg)
-ICM_END( MT_SYNC_FOLD_NONFOLD, (vararg_cnt, vararg))
-#endif
-
-#if defined(MT_MASTER_SEND_FOLDRESULTS) || defined(ICM_ALL)
-ICM_DEF( MT_MASTER_SEND_FOLDRESULTS, ICM_TRACE_NONE)
-  ICM_INT( foldargs_cnt)
-  ICM_VARANY( (2*foldargs_cnt), foldargs)
-ICM_END( MT_MASTER_SEND_FOLDRESULTS, (foldargs_cnt, foldargs))
-#endif
-
-#if defined(MT_MASTER_RECEIVE_FOLDRESULTS) || defined(ICM_ALL)
-ICM_DEF( MT_MASTER_RECEIVE_FOLDRESULTS, ICM_TRACE_NONE)
-  ICM_INT( foldargs_cnt)
-  ICM_VARANY( (2*foldargs_cnt), foldargs)
-ICM_END( MT_MASTER_RECEIVE_FOLDRESULTS, (foldargs_cnt, foldargs))
-#endif
-
-#if defined(MT_MASTER_SEND_SYNCARGS) || defined(ICM_ALL)
-ICM_DEF( MT_MASTER_SEND_SYNCARGS, ICM_TRACE_NONE)
-  ICM_INT( syncargs_cnt)
-  ICM_VARANY( syncargs_cnt, syncargs)
-ICM_END( MT_MASTER_SEND_SYNCARGS, (syncargs_cnt, syncargs))
-#endif
-
-#if defined(MT_MASTER_RECEIVE_SYNCARGS) || defined(ICM_ALL)
-ICM_DEF( MT_MASTER_RECEIVE_SYNCARGS, ICM_TRACE_NONE)
-  ICM_INT( syncargs_cnt)
-  ICM_VARANY( syncargs_cnt, syncargs)
-ICM_END( MT_MASTER_RECEIVE_SYNCARGS, (syncargs_cnt, syncargs))
-#endif
-
-#if defined(MT_SPMD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_BEGIN, ICM_TRACE_NONE)
-  ICM_ID( name)
-ICM_END( MT_SPMD_BEGIN, (name))
-#endif
-
-#if defined(MT_SPMD_ALTSEQ) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_ALTSEQ, ICM_TRACE_NONE)
-  ICM_ID( name)
-ICM_END( MT_SPMD_ALTSEQ, (name))
-#endif
-
-#if defined(MT_SPMD_STATIC_MODE_END) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_END, ICM_TRACE_NONE)
-  ICM_ID( name)
-ICM_END( MT_SPMD_END, (name))
-#endif
-
-
-#if defined(MT_SPMD_SETUP) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_SETUP, ICM_TRACE_NONE)
-  ICM_ID( name)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SPMD_SETUP, (name, vararg_cnt, vararg))
-#endif
-
-
-
 #endif
 
 

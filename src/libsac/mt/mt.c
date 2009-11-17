@@ -61,8 +61,6 @@
  * compiled SAC program.
  */
 
-extern volatile SAC_MT_barrier_t SAC_MT_barrier_space[];
-
 extern pthread_mutex_t SAC_MT_Tasklock[];
 
 extern pthread_mutex_t SAC_MT_TS_Tasklock[];
@@ -88,13 +86,9 @@ SAC_MT_DEFINE_LOCK (SAC_MT_propagate_lock)
 
 SAC_MT_DEFINE_LOCK (SAC_MT_output_lock)
 
-SAC_MT_DEFINE_LOCK (SAC_MT_init_lock)
-
 unsigned int SAC_MT_master_id = 0;
 
 pthread_attr_t SAC_MT_thread_attribs;
-
-volatile SAC_MT_barrier_t *SAC_MT_barrier;
 
 volatile unsigned int SAC_MT_master_flag = 0;
 
@@ -142,8 +136,6 @@ ThreadControl (void *arg)
     const unsigned int my_thread_id = ((unsigned long int)arg) & 0xFFFF;
     pthread_t tmp;
 
-    SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
-
     pthread_setspecific (SAC_MT_threadid_key, &my_thread_id);
 
     while (my_thread_id + my_worker_class >= SAC_MT_threads) {
@@ -169,8 +161,6 @@ ThreadControl (void *arg)
                               my_thread_id, my_thread_id + i);
         }
     }
-
-    SAC_MT_RELEASE_LOCK (SAC_MT_init_lock);
 
     for (;;) {
         SAC_TR_PRINT (("Worker thread #%u ready.", my_thread_id));
@@ -208,8 +198,6 @@ ThreadControlInitialWorker (void *arg)
     pthread_t tmp;
     const unsigned int my_thread_id = 1;
 
-    SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
-
     pthread_setspecific (SAC_MT_threadid_key, &my_thread_id);
 
     SAC_TR_PRINT (("This is worker thread #1 with class 0."));
@@ -228,8 +216,6 @@ ThreadControlInitialWorker (void *arg)
                               i);
         }
     }
-
-    SAC_MT_RELEASE_LOCK (SAC_MT_init_lock);
 
     for (;;) {
         SAC_TR_PRINT (("Worker thread #1 ready."));
@@ -257,9 +243,14 @@ ThreadControlInitialWorker (void *arg)
  *   This function implements an initial setup of the runtime system for
  *   multi-threaded program execution. Here initializations are made which
  *   may not wait till worker thread creation. Basically, these are
- *   - the creation of the thread speicific data key which holds the thread ID,
- *   - the initialization of the  thread specific data for the master thread,
+ *   - the creation of the thread specific data key which holds the thread ID,
+ *   - the initialization of the thread specific data for the master thread,
  *   - the evaluation of the -mt command line option.
+ *
+ *   These setups need to be performed *before* the heap is initialised
+ *   because heap initialisation requires the number of threads. Moreover,
+ *   we need the thread specific data key to access the current thread id
+ *   for legacy memory allocations.
  *
  ******************************************************************************/
 
@@ -311,44 +302,33 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
- *   void SAC_MT_TR_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
+ *   void SAC_MT_Setup( int num_schedulers)
+ *   void SAC_MT_TR_Setup( int num_schedulers)
  *
  * description:
  *
  *   This function initializes the runtime system for multi-threaded
  *   program execution. The basic steps performed are
- *   - aligning the synchronization barrier data structure so that no two
- *     threads write to the same cache line,
  *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
  *   - determining the thread class of the master thread,
  *   - creation and initialization of POSIX thread attributes,
  *   - creation of the initial worker thread.
  *
+ *   These setups need to be performed *after* the heap is initialised
+ *   because the setup of the multithreaded heap must be done sequentially
+ *   and we start creating further threads here.
+ *
  ******************************************************************************/
 
 #if TRACE
 void
-SAC_MT_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+SAC_MT_TR_Setup (int num_schedulers)
 #else
 void
-SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+SAC_MT_Setup (int num_schedulers)
 #endif
 {
     int i, n;
-
-    SAC_TR_PRINT (("Aligning synchronization barrier data structure "
-                   "to data cache specification."));
-
-    if (cache_line_max > 0) {
-        SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)
-                                              - ((unsigned long int)SAC_MT_barrier_space
-                                                 % barrier_offset));
-    } else {
-        SAC_MT_barrier = SAC_MT_barrier_space;
-    }
-
-    SAC_TR_PRINT (("Barrier base address is %p", SAC_MT_barrier));
 
     SAC_TR_PRINT (("Initializing Tasklocks."));
 
@@ -362,9 +342,8 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
     SAC_TR_PRINT (("Computing thread class of master thread."));
 
     for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;
-         SAC_MT_masterclass <<= 1) {
-        SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);
-    }
+         SAC_MT_masterclass <<= 1)
+        ;
 
     SAC_MT_masterclass >>= 1;
 
@@ -413,15 +392,13 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 /******************************************************************************
  *
  * function:
- *   void SAC_MT1_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
- *   void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
+ *   void SAC_MT1_Setup( int num_schedulers)
+ *   void SAC_MT1_TR_Setup( int num_schedulers)
  *
  * description:
  *
  *   This function initializes the runtime system for multi-threaded
  *   program execution. The basic steps performed are
- *   - aligning the synchronization barrier data structure so that no two
- *     threads write to the same cache line,
  *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
  *   - determining the thread class of the master thread,
  *   - creation and initialization of POSIX thread attributes,
@@ -430,26 +407,13 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 
 #if TRACE
 void
-SAC_MT1_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+SAC_MT1_TR_Setup (int num_schedulers)
 #else
 void
-SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+SAC_MT1_Setup (int num_schedulers)
 #endif
 {
     int i, n;
-
-    SAC_TR_PRINT (("Aligning synchronization barrier data structure "
-                   "to data cache specification."));
-
-    if (cache_line_max > 0) {
-        SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)
-                                              - ((unsigned long int)SAC_MT_barrier_space
-                                                 % barrier_offset));
-    } else {
-        SAC_MT_barrier = SAC_MT_barrier_space;
-    }
-
-    SAC_TR_PRINT (("Barrier base address is %p", SAC_MT_barrier));
 
     SAC_TR_PRINT (("Initializing Tasklocks."));
 
@@ -463,9 +427,8 @@ SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
     SAC_TR_PRINT (("Computing thread class of master thread."));
 
     for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;
-         SAC_MT_masterclass <<= 1) {
-        SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);
-    }
+         SAC_MT_masterclass <<= 1)
+        ;
 
     SAC_MT_masterclass >>= 1;
 
@@ -506,11 +469,7 @@ ThreadControl_MT1 (void *arg)
     const unsigned int my_thread_id = (unsigned long int)arg;
     volatile unsigned int worker_flag = 0;
 
-    SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
-
     pthread_setspecific (SAC_MT_threadid_key, &my_thread_id);
-
-    SAC_MT_RELEASE_LOCK (SAC_MT_init_lock);
 
     worker_flag = (*SAC_MT_spmd_function) (my_thread_id, 0, worker_flag);
 }
