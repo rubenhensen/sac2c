@@ -2678,9 +2678,9 @@ TCmakePrf5 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
 /******************************************************************************
  *
  * function:
- *   node *TCmakeAp1( char *name, char *mod, node *arg1)
- *   node *TCmakeAp2( char *name, char *mod, node *arg1, node *arg2)
- *   node *TCmakeAp3( char *name, char *mod, node *arg1, node *arg2, node *arg3)
+ *   node *TCmakeAp1( node *fundef, node *arg1)
+ *   node *TCmakeAp2( node *fundef, node *arg1, node *arg2)
+ *   node *TCmakeAp3( node *fundef, node *arg1, node *arg2, node *arg3)
  *
  * description:
  *   create N_prf node for primitive function application with 1, 2, or 3

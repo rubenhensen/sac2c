@@ -971,6 +971,9 @@ extern node *TCmakeSpap2 (namespace_t *ns, char *name, node *arg1, node *arg2);
 extern node *TCmakeSpap3 (namespace_t *ns, char *name, node *arg1, node *arg2,
                           node *arg3);
 
+extern node *TCmakeSpap5 (namespace_t *ns, char *name, node *arg1, node *arg2, node *arg3,
+                          node *arg4, node *arg5);
+
 /*--------------------------------------------------------------------------*/
 
 /***
