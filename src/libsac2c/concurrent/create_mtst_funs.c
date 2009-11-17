@@ -618,5 +618,7 @@ MTSTFfold (node *arg_node, info *arg_info)
 
     FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
 
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
