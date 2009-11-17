@@ -498,7 +498,8 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
              * element as this can play a vital role for improved type knowledge
              * (cf bug 556).
              */
-            if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL) {
+            if ((NODE_TYPE (WITH_WITHOP (wln)) == N_genarray)
+                && (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL)) {
                 def_type = ID_NTYPE (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
             } else {
                 def_type = NULL;
@@ -568,7 +569,8 @@ ForEachElement (node *assignn, node *wln, node *partn, info *arg_info)
          * element as this can play a vital role for improved type knowledge
          * (cf bug 556).
          */
-        if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL) {
+        if ((NODE_TYPE (WITH_WITHOP (wln)) == N_genarray)
+            && (GENARRAY_DEFAULT (WITH_WITHOP (wln)) != NULL)) {
             def_type = ID_NTYPE (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
         } else {
             def_type = NULL;
