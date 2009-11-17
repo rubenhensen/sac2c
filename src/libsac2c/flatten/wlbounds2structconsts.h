@@ -22,6 +22,6 @@ extern node *WLBSCdoWlbounds2structConsts (node *arg_node);
 extern node *WLBSCmodule (node *arg_node, info *arg_info);
 extern node *WLBSCfundef (node *arg_node, info *arg_info);
 extern node *WLBSCassign (node *arg_node, info *arg_info);
-extern node *WLBSCwith (node *arg_node, info *arg_info);
+extern node *WLBSCgenerator (node *arg_node, info *arg_info);
 
 #endif /* _SAC_BOUNDS2STRUCTCONSTS_H_ */
