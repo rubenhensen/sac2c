@@ -56,6 +56,33 @@ static node *specialized_fundefs = NULL;
  ***
  ******************************************************************************/
 
+node *
+AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
+{
+    node *ret;
+    int i;
+    ntype *spec_type, *inherited_type, *new_type;
+
+    DBUG_ENTER ("AdjustReturnTypesOfSpecialization");
+
+    ret = FUNDEF_RETS (fundef);
+    i = 0;
+    while (ret != NULL) {
+        spec_type = TYgetProductMember (rets, i);
+        inherited_type = SSIgetMax (TYgetAlpha (RET_TYPE (ret)));
+
+        if (!TYleTypes (inherited_type, spec_type)) {
+            new_type = TYlubOfTypes (spec_type, inherited_type);
+            spec_type = TYfreeType (spec_type);
+            rets = TYsetProductMember (rets, i, new_type);
+        }
+
+        ret = RET_NEXT (ret);
+        i++;
+    }
+    DBUG_RETURN (fundef);
+}
+
 /******************************************************************************
  *
  * function:
@@ -379,6 +406,14 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 
     /* copy the fundef to be specialized */
     res = DUPdoDupNode (fundef);
+
+    /* in case the ret-types in rets are more specific than those in res,
+     * we need to insert a type conv in the body of the function and
+     * can subsequently relax the rets types! (cf. bug 595)
+     */
+    if (rets != NULL) {
+        res = AdjustReturnTypesOfSpecialization (res, rets);
+    }
 
     DBUG_ASSERT ((FUNDEF_BODY (res) != NULL), "missing body while trying to specialise!");
 
