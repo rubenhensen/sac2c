@@ -6987,8 +6987,10 @@ EmptyWl2Expr (node *wl, info *arg_info)
 
     DBUG_EXECUTE ("WLtrans", CTInote ("  shape of WL is empty!"););
 
-    DBUG_ASSERT (((WITH_PARTS (wl) == -1) || (WITH_PARTS (wl) == 1)),
-                 "WL with empty shape and multiple parts found!");
+#if 0
+  DBUG_ASSERT( ((WITH_PARTS( wl) == -1) || (WITH_PARTS( wl) == 1)),
+               "WL with empty shape and multiple parts found!");
+#endif
 
     switch (WITH_TYPE (wl)) {
     case N_genarray:
@@ -7201,8 +7203,10 @@ WLTRAwith (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("WLtrans", CTInote ("with-loop with AKS withid found (line %d)",
                                           global.linenum););
 
-        DBUG_ASSERT ((WITH_PARTS (arg_node) > 0),
-                     "With-loop with AKS index vector is not fully partitioned!");
+#if 0
+    DBUG_ASSERT( ( WITH_PARTS( arg_node) > 0),
+                 "With-loop with AKS index vector is not fully partitioned!");
+#endif
 
         /*
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
