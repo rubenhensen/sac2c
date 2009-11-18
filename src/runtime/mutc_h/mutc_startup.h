@@ -3,21 +3,23 @@
 #define _SAC_MUTC_STARTUP_H_
 
 #define MUTC 1
-#if SAC_MUTC_MACROS
-#include "sac_helpers.h"
+#if SAC_BACKEND == MUTC
+#include <sac_helpers.h>
+#include <svp/sep.h>
+#include <svp/slr.h>
+#include <svp/testoutput.h>
+#include <svp/abort.h>
+
 #endif /* SAC_BACKEND */
 #undef MUTC
 
 #if SAC_DO_COMPILE_MODULE
 
-#define SAC_MUTC_STARTUP                                                                 \
-    SAC_MUTC_STARTUP_ANON ()                                                             \
-    SAC_MUTC_COMPATIBLE ()
+#define SAC_MUTC_STARTUP SAC_MUTC_STARTUP_ANON ()
 
 #else
 
 #define SAC_MUTC_STARTUP                                                                 \
-    SAC_MUTC_COMPATIBLE ()                                                               \
     SAC_MUTC_STARTUP_ANON ()                                                             \
     SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
@@ -26,8 +28,6 @@
     SAC_MUTC_BENCHMARK
 
 #endif
-
-#if SAC_MUTC_FUNAP_AS_CREATE
 
 #define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
     sl_decl (svp_io_putn, void, sl_glparm (long long, a), sl_glparm (int, t));           \
@@ -39,17 +39,6 @@
     }                                                                                    \
     sl_enddef
 
-#else
-
-#define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
-    void svp_io_putn (long long a, int t);                                               \
-    void sac_svp_io_putn (int a, int t)                                                  \
-    {                                                                                    \
-        svp_io_putn ((long long)a, t);                                                   \
-    }
-
-#endif
-
 #define SAC_MUTC_THE_WORLD_TAGS()                                                        \
     T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_USG (FPA, T_EMPTY))))))
 
@@ -58,61 +47,54 @@
       m4_define ([[sl_anon]],                                                            \
                  [[m4_step ([[_sl_anon_counter]]) _sl_anonarg[[]] _sl_anon_counter]])
 
-#define SAC_MUTC_COMPATIBLE()                                                            \
-    m4_ifndef ([[sl_glparm_mutable]],                                                    \
-               [[m4_copy ([[sl_glparm]], [[sl_glparm_mutable]])]])                       \
-      m4_ifndef ([[sl_glfparm_mutable]],                                                 \
-                 [[m4_copy ([[sl_glfparm]], [[sl_glfparm_mutable]])]])
-
-#define SAC_MUTC_CLIB_STRNCPY                                                            \
-    m4_define ([[strncpy]], [[({                                                         \
-                   char *restrict s1 = ([[$1]]);                                         \
-                   const char *restrict s2 = ([[$2]]);                                   \
-                   size_t n = ([[$3]]), x = 0;                                           \
-                   while (x++ < n && *s2)                                                \
-                       *s1++ = *s2++;                                                    \
-                   while (x++ < n)                                                       \
-                       *s1++ = 0;                                                        \
-                   s1;                                                                   \
-               })]])
-
 #define SAC_MUTC_MAIN_RES_NT                                                             \
     (SAC_res, T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_EMPTY))))))
+
+#if SVP_HAS_SEP
+#define SAC_MUTC_SEPALLOC(P, N)                                                          \
+    do {                                                                                 \
+        sl_create (, root_sep->sep_place | 1, , , , , , root_sep->sep_alloc,             \
+                   sl_glarg (struct SEP *, , root_sep),                                  \
+                   sl_glarg (unsigned long, , SAL_EXACT | N),                            \
+                   sl_sharg (struct placeinfo *, p, 0));                                 \
+        sl_sync ();                                                                      \
+        if (!sl_geta (p)) {                                                              \
+            output_string ("Place allocation failed!\n", 2);                             \
+            svp_abort ();                                                                \
+        }                                                                                \
+    } while (0)
+#else
+#define SAC_MUTC_SEPALLOC(P, N)                                                          \
+    do {                                                                                 \
+        (P) = PLACE_DEFAULT;                                                             \
+    } while (0)
+#endif
+
 #define SAC_MUTC_SAC_MAIN                                                                \
+    slr_decl (slr_var (unsigned, ncores));                                               \
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
+        unsigned P = 1;                                                                  \
+        if (slr_len (ncores))                                                            \
+            P = slr_get (ncores)[0];                                                     \
+        sl_place_t svp_pid;                                                              \
+        SAC_MUTC_SEPALLOC (svp_pid, P);                                                  \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
         SAC_COMMANDLINE_SET (0, NULL);                                                   \
-        SAC_MUTC_THREAD_FUNAP (SACwf__MAIN__main,                                        \
-                               SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));              \
+        sl_create (, svp_pid, , , , , , SACwf__MAIN__main,                               \
+                   SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
+        sl_sync ();                                                                      \
     }                                                                                    \
     sl_enddef
 
-#if SAC_MUTC_BENCH
-struct benchmark_state *sac_state;
-#define SAC_MUTC_T_MAIN                                                                  \
-    sl_def (b_main, void, sl_glparm (struct benchmark_state *, state))                   \
-    {                                                                                    \
-        sac_state = sl_getp (state);                                                     \
-        sl_proccall (sac_main);                                                          \
-    }                                                                                    \
-    sl_enddef sl_def (t_main, void)                                                      \
-    {                                                                                    \
-        struct benchmark b                                                               \
-          = {"SaC Program", "SaC2C", "", NULL, NULL, &b_main, NULL, NULL};               \
-        sl_proccall (run_benchmark, sl_glarg (struct benchmark *, b, &b));               \
-    }                                                                                    \
-    sl_enddef
-#else
 #define SAC_MUTC_T_MAIN                                                                  \
     sl_def (t_main, void)                                                                \
     {                                                                                    \
-        SAC_MUTC_THREAD_FUNAP (sac_main);                                                \
+        sl_proccall (sac_main);                                                          \
     }                                                                                    \
     sl_enddef
-#endif
 
 #define SAC_MUTC_MAIN SAC_MUTC_SAC_MAIN SAC_MUTC_T_MAIN
 
