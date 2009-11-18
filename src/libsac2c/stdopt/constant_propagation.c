@@ -346,11 +346,8 @@ CPprf (node *arg_node, info *arg_info)
     case F_idx_sel:
         DBUG_ASSERT (global.compiler_subphase >= PH_opt_ivesplit,
                      "F_idx_ operations are not allowed during the optimizer!");
-        /*
-         * The second argument of idx_sel must be variable
-         * the others can as well be constant scalars
-         */
-        INFO_PROPMODE (arg_info) = PROP_scalarconst;
+
+        INFO_PROPMODE (arg_info) = PROP_nothing;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_PROPMODE (arg_info) = PROP_nothing;
