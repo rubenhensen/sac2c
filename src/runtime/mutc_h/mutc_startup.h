@@ -9,8 +9,7 @@
 #include <svp/slr.h>
 #include <svp/testoutput.h>
 #include <svp/abort.h>
-
-struct benchmark_state *sac_state;
+#include <svp/perf.h>
 
 #endif /* SAC_BACKEND */
 #undef MUTC
@@ -64,6 +63,7 @@ struct benchmark_state *sac_state;
             output_string ("Place allocation failed!\n", 2);                             \
             svp_abort ();                                                                \
         }                                                                                \
+        (P) = sl_geta (p)->pid;                                                          \
     } while (0)
 #else
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \
@@ -72,10 +72,17 @@ struct benchmark_state *sac_state;
     } while (0)
 #endif
 
+#if SAC_MUTC_MACROS
+struct s_interval *sac_benchmark_intervals;
+static int sac_benchmark_count;
+#endif
+
 #define SAC_MUTC_SAC_MAIN                                                                \
     slr_decl (slr_var (unsigned, ncores));                                               \
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
+        sac_benchmark_intervals = mtperf_alloc_intervals (1024);                         \
+        sac_benchmark_count = 0;                                                         \
         unsigned P = 1;                                                                  \
         if (slr_len (ncores))                                                            \
             P = slr_get (ncores)[0];                                                     \
@@ -88,6 +95,7 @@ struct benchmark_state *sac_state;
         sl_create (, svp_pid, , , , , , SACwf__MAIN__main,                               \
                    SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
         sl_sync ();                                                                      \
+        mtperf_free_intervals (sac_benchmark_intervals);                                 \
     }                                                                                    \
     sl_enddef
 

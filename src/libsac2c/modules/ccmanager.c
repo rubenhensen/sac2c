@@ -219,7 +219,8 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 
     switch (kind) {
     case STRS_saclib:
-        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 6));
+        result = MEMmalloc (sizeof (char)
+                            * (STRlen (lib) + 6 + STRlen (global.config.lib_variant)));
         sprintf (result, "-l%sMod%s", lib, global.config.lib_variant);
 
         break;

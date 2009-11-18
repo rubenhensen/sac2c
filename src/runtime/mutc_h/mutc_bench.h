@@ -4,18 +4,25 @@
 #define SAC_MUTC_BENCHMARK                                                               \
     SAC_ND_DEF_FUN_BEGIN2 (benchStart, void)                                             \
     {                                                                                    \
-        start_interval (sac_state->wl);                                                  \
+        mtperf_start_interval (sac_benchmark_intervals, sac_benchmark_count, -1, "");    \
         return;                                                                          \
     }                                                                                    \
     SAC_ND_FUN_DEF_END ()                                                                \
     SAC_ND_DEF_FUN_BEGIN2 (benchEnd, void)                                               \
     {                                                                                    \
-        finish_interval (sac_state->wl);                                                 \
+        mtperf_finish_interval (sac_benchmark_intervals, sac_benchmark_count++);         \
         return;                                                                          \
     }                                                                                    \
     SAC_ND_FUN_DEF_END ()                                                                \
     SAC_ND_DEF_FUN_BEGIN2 (benchThis, void)                                              \
     {                                                                                    \
+        return;                                                                          \
+    }                                                                                    \
+    SAC_ND_FUN_DEF_END ()                                                                \
+    SAC_ND_DEF_FUN_BEGIN2 (benchPrint, void)                                             \
+    {                                                                                    \
+        mtperf_report_intervals (sac_benchmark_intervals, sac_benchmark_count,           \
+                                 REPORT_FIBRE);                                          \
         return;                                                                          \
     }                                                                                    \
     SAC_ND_FUN_DEF_END ()

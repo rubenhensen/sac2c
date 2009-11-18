@@ -243,7 +243,7 @@ runtime_phm_h          := phm
 
 runtime_mt_h           := mt mt_gen
 
-runtime_mutc_h         := benchmark benchmarkc tls_malloc mutc mutc_world \
+runtime_mutc_h         := benchmark tls_malloc mutc mutc_world \
                           mutc_gen mutc_tostring \
                           mutc_unin mutc_bench mutc_startup 
 
