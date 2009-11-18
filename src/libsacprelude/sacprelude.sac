@@ -3,7 +3,7 @@ module sacprelude;
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
          unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, 
-         wrap, prod, partitionSlicer};
+         wrap, prod, partitionSlicer, gridFiller};
 
 external typedef SACarg;
   #pragma freefun "SACARGfree"
@@ -107,6 +107,22 @@ partitionSlicer( int[.] min, int[.] max, int axis, int[.] lb, int[.] ub)
   new_max = _modarray_AxVxS_( max, [axis], ub_i);
 
   return( max_lower, min_upper, new_min, new_max);
+}
+
+inline
+int[.], int[.], int[.]
+gridFiller( int[.] lb, int[.] ub, int[.] wdth, int dim, int[.] maxwidth)
+{
+  l_dim = _min_SxS_( _add_SxS_( _sel_VxA_( [dim], lb), 
+                                _sel_VxA_( [dim], wdth)),
+                     _sel_VxA_( [dim], ub));
+  w_dim = _max_SxS_( _sub_SxS_( _sel_VxA_( [dim], maxwidth), 
+                                _sel_VxA_( [dim], wdth)),
+                     0);
+  nlb = _modarray_AxVxS_( lb, [dim], l_dim );
+  nwidth = _modarray_AxVxS_( maxwidth, [dim], w_dim);
+  nmaxwidth = _modarray_AxVxS_( maxwidth, [dim], _sel_VxA_( [dim], wdth));
+  return( nlb, nwidth, nmaxwidth);
 }
 
 

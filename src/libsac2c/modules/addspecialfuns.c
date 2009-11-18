@@ -80,6 +80,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
         DSaddSymbolByName ("partitionSlicer", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("gridFiller", SET_wrapperhead, global.preludename);
 
         DSfinishDeserialize (syntaxtree);
 
