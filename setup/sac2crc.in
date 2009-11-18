@@ -342,30 +342,35 @@ target sl:
 BACKEND          :=  "muTC"
 CC               :=  "comslc seqc"
 LD_DYNAMIC       :=  ""
-/*LIB_VARIANT      := "mutc-seqc"*/
+LIB_VARIANT      :=  "mutc-seqc"
+AR_CREATE        :=  "slar seqc cr"
+RANLIB           :=  "slranlib seqc"
+
 
 target mutc::sl:
 
 target sl_ppp::sl:
 
-CC               := "comslc ppp"
-AR_CREATE        := "mtalpha-linux-gnu-ar cr"
-RANLIB           := "mtalpha-linux-gnu-ranlib"
-/*LIB_VARIANT      := "mutc-ppp"*/
+CC               :=  "comslc ppp"
+LIB_VARIANT      :=  "mutc-ppp"
+AR_CREATE        :=  "slar ppp cr"
+RANLIB           :=  "slranlib ppp"
 
 target sl_ptl::sl:
 
-CC               := "comslc ptl"
-LIB_VARIANT      := "mutc-ptl"
+CC               :=  "comslc ptl"
+LIB_VARIANT      :=  "mutc-ptl"
+AR_CREATE        :=  "slar ptl cr"
+RANLIB           :=  "slranlib ptl"
 
 target sl_seqc::sl:
 
-CC               := "comslc seqc"
-
 target sl_utc::sl:
 
-CC               := "comslc utc0"
-LIB_VARIANT      := "mutc-utc0"
+CC               :=  "comslc utc0"
+LIB_VARIANT      :=  "mutc-utc0"
+AR_CREATE        :=  "slar utc0 cr"
+RANLIB           :=  "slranlib utc0"
  
 /*****************************************************************************
  * cuda targets

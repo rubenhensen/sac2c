@@ -19,11 +19,11 @@ do
           ;;
       -lsac_seq)
           ;;
-      -l*)
-          libs="${libs} $1"
+      -l*) libs="${libs} $1"
           ;;
-      -L*)
-          libs="${libs} $1"
+      -L*) libs="${libs} $1"
+          ;;
+      -g) arg_g="-g"
           ;;
       -*)
           ;;
@@ -40,4 +40,4 @@ fi
 
 #gcc ${include} -E -P -o ${output}.sl ${infile}
 
-slc -b ${backend} ${include} ${arg_c} -o ${output} ${infile}
+slc -b ${backend} ${include} ${arg_c} -o ${output} ${infile} ${libs} ${arg_g}

@@ -256,8 +256,7 @@ runtime_cuda_h         := cuda cuda_gen
 #
 ###############################################################################
 
-libsacprelude_targets           := libsacpreludeTree.so libsacpreludeMod.a \
-                                   libsacpreludeMod.so
+libsacprelude_targets           := libsacpreludeTree.so libsacpreludeMod.a
 libsacprelude_targetdir         := lib
 
 libsacprelude_subtarget_suffix  := .sac

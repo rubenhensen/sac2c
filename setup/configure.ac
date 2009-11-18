@@ -197,6 +197,13 @@ if [ test "$M4" = "!fail" ]; then
   AC_MSG_ERROR( [Cannot find a usable m4 processor.])
 fi
 
+dnl check for slc
+AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
+
+if [ test "$ENABLE_MUTC" = "yes"]; then
+AC_SUBST(SLC_PATH,`which slc`)
+fi
+
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
 

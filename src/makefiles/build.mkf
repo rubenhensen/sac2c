@@ -60,7 +60,9 @@ ifdef CROSS
 else
 endif
 
-libsacprelude_targets := $(patsubst %.so,%$(CROSS_VARIANT).so,$(libsacprelude_targets))
+libsacprelude_targets := $(patsubst %Tree.so,%Tree$(CROSS_VARIANT).so, \
+                           $(patsubst %Mod.a,%Mod$(CROSS_VARIANT).a, \
+                             $(libsacprelude_targets)))
 
 TARGETS          := $(addprefix $(TARGETDIR)/,\
                       $($(SUBPROJECT)_targets))
@@ -235,18 +237,28 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building libsacprelude
 #
 
-$(PROJECT_ROOT)/lib/libsacprelude%: \
-  $(STYLE)/libsacprelude%
+$(PROJECT_ROOT)/lib/libsacpreludeMod$(CROSS_VARIANT).a: \
+  $(STYLE)/libsacpreludeMod$(CROSS_VARIANT).a
+	@$(ECHO) "Creating " $(notdir $@)
+	$(HIDE) $(CP) $< $@
+	@$(CLOCK_SKEW_ELIMINATION)
+	$(HIDE) if [ -e $(basename $<).so ]; \
+	        then \
+	          $(ECHO) "Creating " $(basename $(notdir $@)).so; \
+                  $(CP) $(basename $<).so $(basename $@).so; \
+	        fi
+	  
+
+$(PROJECT_ROOT)/lib/libsacpreludeTree$(CROSS_VARIANT).so: \
+  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so
 	@$(ECHO) "Creating " `basename $@`
 	$(HIDE) $(CP) $< $@
 	@$(CLOCK_SKEW_ELIMINATION)
 
 
-$(STYLE)/libsacpreludeMod.a $(STYLE)/libsacpreludeMod.so: \
-  $(STYLE)/libsacpreludeTree.so
-
-$(STYLE)/libsacpreludeMod%.a $(STYLE)/libsacpreludeMod%.so: \
-  $(STYLE)/libsacpreludeTree%.so
+$(STYLE)/libsacpreludeMod$(CROSS_VARIANT).a \
+$(STYLE)/libsacpreludeMod$(CROSS_VARIANT).so: \
+  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so
 
 $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so: \
   sacprelude.sac $(FINGERPRINT_FILE)

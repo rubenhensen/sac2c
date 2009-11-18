@@ -56,6 +56,7 @@ TOUCH           := touch
 XSLTENGINE      := @XSLT@
 M4PROC          := @M4@
 CODE_BEAUTIFIER := @CB@
+SLC_PATH        := @SLC_PATH@
 
 
 ################################################################################
@@ -74,6 +75,7 @@ LIBS_LEX        := @LEXLIB@
 
 DISABLE_MT      := @DISABLE_MT@
 DISABLE_PHM     := @DISABLE_PHM@
+ENABLE_MUTC     := @ENABLE_MUTC@
 
 
 

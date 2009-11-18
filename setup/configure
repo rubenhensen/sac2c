@@ -686,6 +686,8 @@ LEX_OUTPUT_ROOT
 LEXLIB
 XSLT
 M4
+ENABLE_MUTC
+SLC_PATH
 DISABLE_MT
 DISABLE_PHM
 OPT_O0
@@ -3908,6 +3910,50 @@ echo "$as_me: error: Cannot find a usable m4 processor." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
+# Extract the first word of "slc", so it can be a program name with args.
+set dummy slc; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_ENABLE_MUTC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ENABLE_MUTC"; then
+  ac_cv_prog_ENABLE_MUTC="$ENABLE_MUTC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ENABLE_MUTC=""yes""
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_ENABLE_MUTC" && ac_cv_prog_ENABLE_MUTC=""no""
+fi
+fi
+ENABLE_MUTC=$ac_cv_prog_ENABLE_MUTC
+if test -n "$ENABLE_MUTC"; then
+  { echo "$as_me:$LINENO: result: $ENABLE_MUTC" >&5
+echo "${ECHO_T}$ENABLE_MUTC" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+if  test "$ENABLE_MUTC" = "yes"; then
+SLC_PATH=`which slc`
+
+fi
+
 { echo "$as_me:$LINENO: checking for ANSI C header files" >&5
 echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6; }
 if test "${ac_cv_header_stdc+set}" = set; then
@@ -6095,6 +6141,8 @@ LEX_OUTPUT_ROOT!$LEX_OUTPUT_ROOT$ac_delim
 LEXLIB!$LEXLIB$ac_delim
 XSLT!$XSLT$ac_delim
 M4!$M4$ac_delim
+ENABLE_MUTC!$ENABLE_MUTC$ac_delim
+SLC_PATH!$SLC_PATH$ac_delim
 DISABLE_MT!$DISABLE_MT$ac_delim
 DISABLE_PHM!$DISABLE_PHM$ac_delim
 OPT_O0!$OPT_O0$ac_delim
@@ -6107,8 +6155,6 @@ RCCCFLAGS!$RCCCFLAGS$ac_delim
 MKCCFLAGS!$MKCCFLAGS$ac_delim
 PDCCFLAGS!$PDCCFLAGS$ac_delim
 GENPIC!$GENPIC$ac_delim
-DEPSFLAG!$DEPSFLAG$ac_delim
-CPPFILE!$CPPFILE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 85; then
@@ -6166,6 +6212,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+DEPSFLAG!$DEPSFLAG$ac_delim
+CPPFILE!$CPPFILE$ac_delim
 CCMTLINK!$CCMTLINK$ac_delim
 OSFLAGS!$OSFLAGS$ac_delim
 LD_DYNAMIC!$LD_DYNAMIC$ac_delim
@@ -6175,7 +6223,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 7; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 9; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
