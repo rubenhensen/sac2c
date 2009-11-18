@@ -1007,6 +1007,8 @@ DFMprintMask (FILE *handle, const char *format, mask_t *mask)
         }
     }
 
+    fprintf (handle, "\n");
+
     DBUG_VOID_RETURN;
 }
 
@@ -1048,6 +1050,8 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
             j++;
         }
     }
+
+    fprintf (handle, "\n");
 
     DBUG_VOID_RETURN;
 }
