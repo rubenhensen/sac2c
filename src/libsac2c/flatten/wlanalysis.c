@@ -792,21 +792,23 @@ WLAgenerator (node *arg_node, info *arg_info)
         }
     }
 
-    if (check_stepwidth) {
-        /* normalize step and width */
-        switch (WLPGnormalizeStepWidth (&GENERATOR_STEP (arg_node),
-                                        &GENERATOR_WIDTH (arg_node))) {
-        case 1:
-            CTIabortLine (NODE_LINE (wln), "Component of width greater than step");
-            break;
-        case 2:
-            CTIabortLine (NODE_LINE (wln), "Component of width less than zero");
-            break;
-        case 3:
-            CTIabortLine (NODE_LINE (wln), "Width vector without step vector");
-            break;
-        }
+#if 0
+  if (check_stepwidth){
+    /* normalize step and width */
+    switch (WLPGnormalizeStepWidth( &GENERATOR_STEP( arg_node), 
+                                    &GENERATOR_WIDTH( arg_node))) {
+    case 1: 
+      CTIabortLine( NODE_LINE(wln), "Component of width greater than step");
+      break;
+    case 2: 
+      CTIabortLine( NODE_LINE(wln), "Component of width less than zero");
+      break;
+    case 3: 
+      CTIabortLine( NODE_LINE(wln), "Width vector without step vector");
+      break;
     }
+  }
+#endif
 
     INFO_GENPROP (arg_info) = gprop;
     INFO_GENSHP (arg_info) = gshape;

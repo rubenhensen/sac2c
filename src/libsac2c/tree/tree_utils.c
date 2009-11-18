@@ -160,3 +160,40 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
 
     DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TULSisFullGenerator( node *generator, node *operator)
+ *
+ * @brief checks for the following criteria:
+ *
+ *    in case of fold, propagate: always considered full!
+ *        NB: is only correct when the generator is the ONLY
+ *            non-default generator!!
+ *
+ *    in case of  genarray( shp, def) :
+ *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
+ *
+ *    in case of modarray( a) :
+ *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
+ *                                   and a::<xyz>[s1, ..., sm]
+ *                                   and shp::int[n]{s1, ..., sn}
+ *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
+ *                                   and AVIS_SHAPE( a) = shp
+ *
+ *    genarray/ modarray: both these cases may have step and width expressions
+ *    provided that these satisfy one of the following conditions:
+ *       step a          where a::int[n]{1,...,1}
+ *       step a width a
+ *
+ *   In case any of these is true, it returns TRUE.
+ *
+ *****************************************************************************/
+
+bool
+TULSisFullGenerator (node *generator, node *operator)
+{
+    DBUG_ENTER ("TULSisFullGenerator");
+
+    DBUG_RETURN (FALSE);
+}

@@ -1107,8 +1107,6 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
-          <node name="Let" />
-          <node name="Ap" />
           <node name="With" />
         </travuser>
       </traversal>
@@ -1117,6 +1115,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="With" />
           <node name="Generator" />
         </travuser>
       </traversal>

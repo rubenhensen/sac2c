@@ -122,10 +122,10 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
  *          and assigns it to a new var sc_bound:
  *
  *     sc_idx_0 = 0;
- *     sc_e_0 = idx_shape_sel( sc_idx_0, id);
+ *     sc_e_0 = idx_sel( sc_idx_0, id);
  *     ...
  *     sc_idx_n = dim-1;
- *     sc_e_n = idx_shape_sel( sc_idx_n, id);
+ *     sc_e_n = idx_sel( sc_idx_n, id);
  *     sc_bound = [ sc_e_0, ..., sc_e_n];
  *
  *   @param  node *array   :  N_id
@@ -154,11 +154,10 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
                                                TYmakeAKS (TYmakeSimpleType (T_int),
                                                           SHcreateShape (0)),
                                                arg_info);
-        assigns
-          = TBmakeAssign (TBmakeLet (TBmakeIds (elem_avis, NULL),
-                                     TCmakePrf2 (F_idx_shape_sel, TBmakeId (idx_avis),
-                                                 TBmakeId (id_avis))),
-                          assigns);
+        assigns = TBmakeAssign (TBmakeLet (TBmakeIds (elem_avis, NULL),
+                                           TCmakePrf2 (F_idx_sel, TBmakeId (idx_avis),
+                                                       TBmakeId (id_avis))),
+                                assigns);
         AVIS_SSAASSIGN (elem_avis) = assigns;
 
         assigns
@@ -298,6 +297,26 @@ WLBSCassign (node *arg_node, info *arg_info)
 
     INFO_PREASSIGN (arg_info) = NULL;
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLBSCwith(node *arg_node, info *arg_info)
+ *
+ *   @brief ensure that the code is traversed BEFORE the partitions;
+ *          otherwise, any created assignments would appear in the body
+ *          rather than the surrounding context.
+ *
+ ******************************************************************************/
+
+node *
+WLBSCwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLBSCwith");
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 

@@ -231,6 +231,9 @@ SUBPHASE (adp, "Adding default partitions", WLDPdoWlDefaultPartition, ALWAYS, ew
 SUBPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
           ALWAYS, ewl)
 
+SUBPHASE (wlbsc, "Ensuring structual constants for with-loop partition bounds",
+          WLBSCdoWlbounds2structConsts, ALWAYS, ewl)
+
 ENDPHASE (ewl)
 
 /******************************************************************************/
@@ -290,8 +293,11 @@ CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneF
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
                global.optimize.dovp, opt, cyc)
 
-CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
-               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, cyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+               global.optimize.dowlpg, opt, cyc)
+
+CYCLEPHASEFUN (wlbsc, "Ensuring structual constants for with-loop partition bounds",
+               WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, cyc)
 
 CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
                global.optimize.dowlsimp, opt, cyc)
@@ -476,8 +482,11 @@ CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneF
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
                global.optimize.dovp, opt, saacyc)
 
-CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
-               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, saacyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+               global.optimize.dowlpg, opt, saacyc)
+
+CYCLEPHASEFUN (wlbsc, "Ensuring structual constants for with-loop partition bounds",
+               WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, saacyc)
 
 CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
                global.optimize.dowlsimp, opt, saacyc)
@@ -600,6 +609,9 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
            * with-loops to arrive at wltransform
            */
           opt)
+
+SUBPHASE (wlbsc2, "Ensuring structual constants for with-loop partition bounds",
+          WLBSCdoWlbounds2structConsts, ALWAYS, opt)
 
 SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
