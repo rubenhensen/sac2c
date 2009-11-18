@@ -241,23 +241,14 @@
  */
 
 #define SAC_MT_SPMD_BARRIER_BEGIN()                                                      \
-    static volatile union {                                                              \
-        struct {                                                                         \
-            int ready;                                                                   \
-        } dummy[SAC_SET_THREADS_MAX + 1];
+    static volatile struct {                                                             \
+        int ready;                                                                       \
+        union {                                                                          \
+            struct {                                                                     \
+                char cache_align_buffer[SAC_MT_CACHE_LINE_MAX () - sizeof (int)];        \
+            } dummy;
 
-#define SAC_MT_SPMD_BARRIER_END()                                                        \
-    }                                                                                    \
-    SAC_spmd_barrier;
-
-#define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun)                                       \
-    struct {                                                                             \
-        int ready;
-
-#define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
-    char cache_align_buffer[SAC_MT_CACHE_LINE_MAX ()];                                   \
-    }                                                                                    \
-    spmdfun[SAC_SET_THREADS_MAX + 1];
+#define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct {
 
 #define SAC_MT_BARRIER_ELEMENT__NOOP(name, num, basetype, var_NT)
 
@@ -268,17 +259,27 @@
     SAC_ND_TYPE (var_NT, basetype) in_##num;                                             \
     SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
 
+#define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
+    }                                                                                    \
+    spmdfun;
+
+#define SAC_MT_SPMD_BARRIER_END()                                                        \
+    }                                                                                    \
+    data;                                                                                \
+    }                                                                                    \
+    SAC_spmd_barrier[SAC_SET_THREADS_MAX + 1];
+
 /*****************************************************************************/
 
 /*
  *  Macros for setting and clearing the synchronisation barrier
  */
 
-#define SAC_MT_CLEAR_BARRIER(spmdfun, thread) SAC_spmd_barrier.spmdfun[thread].ready = 0;
+#define SAC_MT_CLEAR_BARRIER(spmdfun, thread) SAC_spmd_barrier[thread].ready = 0;
 
-#define SAC_MT_SET_BARRIER(spmdfun, thread) SAC_spmd_barrier.spmdfun[thread].ready = 1;
+#define SAC_MT_SET_BARRIER(spmdfun, thread) SAC_spmd_barrier[thread].ready = 1;
 
-#define SAC_MT_CHECK_BARRIER(spmdfun, thread) (SAC_spmd_barrier.spmdfun[thread].ready)
+#define SAC_MT_CHECK_BARRIER(spmdfun, thread) (SAC_spmd_barrier[thread].ready)
 
 /*****************************************************************************/
 
@@ -289,11 +290,11 @@
 #define SAC_MT_SEND_RESULT__NOOP(spmdfun, thread, num, var_NT) SAC_NOOP ()
 
 #define SAC_MT_SEND_RESULT_out__NODESC(spmdfun, thread, num, var_NT)                     \
-    SAC_spmd_barrier.spmdfun[thread].in_##num = SAC_ND_A_FIELD (var_NT);
+    SAC_spmd_barrier[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);
 
 #define SAC_MT_SEND_RESULT_out__DESC(spmdfun, thread, num, var_NT)                       \
-    SAC_spmd_frame.spmdfun[thread].in_##num = SAC_ND_A_FIELD (var_NT);                   \
-    SAC_spmd_frame.spmdfun[thread].in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    SAC_spmd_frame[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);              \
+    SAC_spmd_frame[thread].data.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 /*****************************************************************************/
 
@@ -304,11 +305,11 @@
 #define SAC_MT_RECEIVE_RESULT__NOOP(spmdfun, thread, num, var_NT) SAC_NOOP ()
 
 #define SAC_MT_RECEIVE_RESULT_out__NODESC(spmdfun, thread, num, var_NT)                  \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier.spmdfun[thread].in_##num;
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num;
 
 #define SAC_MT_RECEIVE_RESULT_out__DESC(spmdfun, thread, num, var_NT)                    \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun[thread].in_##num;                   \
-    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame.spmdfun[thread].in_##num##_desc;
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame[thread].data.spmdfun.in_##num;              \
+    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame[thread].data.spmdfun.in_##num##_desc;
 
 /*****************************************************************************/
 
