@@ -112,6 +112,7 @@ extern bool TCisHidden (types *type);
  */
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
 
+extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
 extern int TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
@@ -657,6 +658,8 @@ extern node *TCappendExprs (node *exprs1, node *exprs2);
 extern node *TCcombineExprs (node *first, node *second);
 
 extern node *TCcreateExprsFromVardecs (node *vardecs);
+
+extern node *TCcreateExprsChainFromAvises (int num_avises, ...);
 
 /******************************************************************************
  *

@@ -1960,6 +1960,31 @@ TCcreateExprsFromVardecs (node *vardec)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateExprsChainFromAvises( int num_avises, ...)
+ *
+ * @brief Returns an N_exprs chain containing N_id nodes with
+ *        the avis given by as varargs
+ *
+ * @return created N_exprs chain
+ ******************************************************************************/
+node *
+TCcreateExprsChainFromAvises (int num_avises, ...)
+{
+    va_list ap;
+    int i;
+    node *exprs;
+
+    DBUG_ENTER ("TCcreateExprsChainFromAvises");
+    va_start (ap, num_avises);
+    exprs = NULL;
+    for (i = 0; i < num_avises; i++) {
+        exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (va_arg (ap, node *)), NULL));
+    }
+    va_end (ap);
+    DBUG_RETURN (exprs);
+}
+
 /******************************************************************************
  *
  * function:
@@ -2531,6 +2556,31 @@ TCmakeIdCopyStringNtNew (const char *str, ntype *type)
  ***/
 
 /*--------------------------------------------------------------------------*/
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateIdsChainFromAvises( int num_avises, ...)
+ *
+ * @brief Returns an N_ids chain containing nodes with
+ *        the avis given by as varargs
+ *
+ * @return created N_ids chain
+ ******************************************************************************/
+node *
+TCcreateIdsChainFromAvises (int num_avises, ...)
+{
+    va_list ap;
+    int i;
+    node *ids;
+
+    DBUG_ENTER ("TCcreateIdsChainFromAvises");
+    va_start (ap, num_avises);
+    ids = NULL;
+    for (i = 0; i < num_avises; i++) {
+        ids = TCappendIds (ids, TBmakeIds (va_arg (ap, node *), NULL));
+    }
+    va_end (ap);
+    DBUG_RETURN (ids);
+}
 
 /***************************************************************************
  *
