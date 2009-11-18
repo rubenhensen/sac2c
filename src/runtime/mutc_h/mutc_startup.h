@@ -10,6 +10,8 @@
 #include <svp/testoutput.h>
 #include <svp/abort.h>
 
+struct benchmark_state *sac_state;
+
 #endif /* SAC_BACKEND */
 #undef MUTC
 
