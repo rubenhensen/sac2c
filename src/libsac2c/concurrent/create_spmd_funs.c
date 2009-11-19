@@ -257,6 +257,8 @@ MTSPMDFmodule (node *arg_node, info *arg_info)
 node *
 MTSPMDFfundef (node *arg_node, info *arg_info)
 {
+    node *spmdfuns = NULL;
+
     DBUG_ENTER ("MTSPMDFfundef");
 
     if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
@@ -267,19 +269,17 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
+
+        spmdfuns = INFO_SPMDFUNS (arg_info);
+        INFO_SPMDFUNS (arg_info) = NULL;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    } else {
-        /*
-         * We have reached the end of the FUNDEF chain. We add the new SPMD functions
-         * constructed meanwhile and stored in the info structure to the end and stop
-         * the traversal.
-         */
-        FUNDEF_NEXT (arg_node) = INFO_SPMDFUNS (arg_info);
-        INFO_SPMDFUNS (arg_info) = NULL;
     }
+
+    spmdfuns = TCappendFundef (spmdfuns, FUNDEF_NEXT (arg_node));
+    FUNDEF_NEXT (arg_node) = spmdfuns;
 
     DBUG_RETURN (arg_node);
 }

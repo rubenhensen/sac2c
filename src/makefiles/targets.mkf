@@ -172,9 +172,9 @@ libsac2c_cuda        := annotate_cuda_withloop2 insert_memory_transfers create_c
                         create_cuda_kernels cleanup_cuda_kernels \
                         prepare_kernel_generation create_loop_kernels 
 
-libsac2c_concurrent  := cost_model create_mtst_funs create_spmd_funs mtdcr \
-                        scheduling annotate_scheduling set_spmd_linksign \
-                        restore_mem_instr
+libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
+                        create_spmd_funs mtdcr scheduling annotate_scheduling \
+                        set_spmd_linksign restore_mem_instr
 
 libsac2c_multithread := multithread_lib tag_executionmode \
                         propagate_executionmode create_cells \
