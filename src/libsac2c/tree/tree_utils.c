@@ -163,13 +163,54 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
 
 /** <!--********************************************************************-->
  *
+ * @fn static bool checkStepWidth( node *generator)
+ *
+ * @brief Predicate for determining if step (and/or width) is one of:
+ *     NULL
+ *     step matches width
+ *     all 1's
+ *
+ * @result: TRUE if predicate is satisfied.
+ *
+ *****************************************************************************/
+static bool
+checkStepWidth (node *generator)
+{
+    bool z;
+    constant *sw = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ("checkStepWidth");
+    pat = PMconst (1, PMAgetVal (&sw));
+    z = (NULL == GENERATOR_STEP (generator))
+        || (GENERATOR_STEP (generator) == GENERATOR_WIDTH (generator))
+        || (PMmatchFlat (pat, GENERATOR_STEP (generator)) && COisOne (sw, TRUE));
+    sw = (NULL != sw) ? COfreeConstant (sw) : sw;
+
+    z = z
+        && ((NULL == GENERATOR_WIDTH (generator))
+            || (PMmatchFlat (pat, GENERATOR_WIDTH (generator)) && COisOne (sw, TRUE)));
+    sw = (NULL != sw) ? COfreeConstant (sw) : sw;
+
+    PMfree (pat);
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TULSisFullGenerator( node *generator, node *operator)
  *
- * @brief checks for the following criteria:
+ * @brief
+ *
+ *    Predicate for determining if generator covers index set of
+ *    WL result.
+ *
+ *    Specifically, it checks for the following criteria:
  *
  *    in case of fold, propagate: always considered full!
  *        NB: is only correct when the generator is the ONLY
  *            non-default generator!!
+ *            This is the caller's responsbility to check.
  *
  *    in case of  genarray( shp, def) :
  *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
@@ -178,6 +219,10 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
  *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
  *                                   and a::<xyz>[s1, ..., sm]
  *                                   and shp::int[n]{s1, ..., sn}
+ *                                   and sn<=sm (for the case of
+ *                                       non-scalar cells) - not checked.
+ *        or
+ *
  *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
  *                                   and AVIS_SHAPE( a) = shp
  *
@@ -186,14 +231,55 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
  *       step a          where a::int[n]{1,...,1}
  *       step a width a
  *
- *   In case any of these is true, it returns TRUE.
+ *   In case either of these is true, it returns TRUE.
  *
  *****************************************************************************/
 
 bool
 TULSisFullGenerator (node *generator, node *operator)
 {
+    bool z;
+    constant *lb = NULL;
+    pattern *pat;
+
     DBUG_ENTER ("TULSisFullGenerator");
 
-    DBUG_RETURN (FALSE);
+    pat = PMconst (1, PMAgetVal (&lb));
+    switch (NODE_TYPE (operator)) {
+
+    case N_spfold:
+    case N_break:
+        z = FALSE;
+        DBUG_ASSERT (FALSE, "Should not exist here.");
+        break;
+
+    case N_fold:
+    case N_propagate:
+        z = TRUE;
+        break;
+
+    case N_genarray:
+        z = PMmatchFlat (pat, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+            && checkStepWidth (generator);
+        break;
+
+    case N_modarray:
+        z = PMmatchFlat (pat, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+            && checkStepWidth (generator);
+        z = z
+            && (GENERATOR_BOUND2 (generator)
+                == AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator))));
+        /* Need to check GENERATOR_BOUND2( generator) ==
+         * prefix of shape of MODARRAY_ARRAY( operator)
+         */
+        break;
+
+    default:
+        z = FALSE;
+    }
+
+    PMfree (pat);
+    lb = (NULL != lb) ? COfreeConstant (lb) : NULL;
+
+    DBUG_RETURN (z);
 }

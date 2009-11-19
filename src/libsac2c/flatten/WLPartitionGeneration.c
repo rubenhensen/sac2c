@@ -702,7 +702,7 @@ WLPGwith (node *arg_node, info *arg_info)
         } else if (num_parts == 2) {
             DBUG_ASSERT (NODE_TYPE (PART_GENERATOR (PART_NEXT (parts))) == N_default,
                          "default part expected to be the last part");
-            if (!TULSisFullGenerator (parts, withop)) {
+            if (!TULSisFullGenerator (PART_GENERATOR (parts), withop)) {
                 /*
                  * In case it was full, there is no replacement needed for the default
                  * partition!
