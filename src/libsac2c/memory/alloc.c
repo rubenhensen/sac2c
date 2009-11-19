@@ -1459,16 +1459,6 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
-    case F_run_mt_genarray:
-    case F_run_mt_modarray:
-    case F_run_mt_fold:
-        /*
-         * boolean predicate
-         */
-        als->dim = TBmakeNum (0);
-        als->shape = TCcreateZeroVector (0, T_int);
-        break;
-
     case F_add_SxS:
     case F_sub_SxS:
     case F_mul_SxS:
@@ -1662,6 +1652,10 @@ EMALprf (node *arg_node, info *arg_info)
     case F_to_unq:
     case F_from_unq:
     case F_genarray:
+    case F_run_mt_genarray:
+    case F_run_mt_modarray:
+    case F_run_mt_fold:
+
         DBUG_ASSERT ((0), "invalid prf found!");
         break;
 
