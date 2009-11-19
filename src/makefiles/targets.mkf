@@ -62,7 +62,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
                               memory precompile codegen print \
-                              cinterface generics constraints cuda
+                              cinterface generics constraints cuda mutc
 
 ###############################################################################
 
@@ -181,6 +181,8 @@ libsac2c_multithread := multithread_lib tag_executionmode \
                         create_dataflowgraph assignments_rearrange \
                         cell_growth create_withinwith replicate_functions \
                         consolidate_cells abort
+
+libsac2c_mutc        := tag_fun_thread
 
 libsac2c_profile     := annotate_fun_calls
 

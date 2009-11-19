@@ -25,6 +25,20 @@
                                  REPORT_FIBRE);                                          \
         return;                                                                          \
     }                                                                                    \
+    SAC_ND_FUN_DEF_END ()                                                                \
+    SAC_ND_DEF_FUN_BEGIN2 (benchGetInterval, void, sl_parm (void **, intival),           \
+                           sl_parm (int, num))                                           \
+    {                                                                                    \
+        int *lnum = (int *)*intival;                                                     \
+        *lnum = malloc (sizeof (int));                                                   \
+        lnum[0] = num;                                                                   \
+        return;                                                                          \
+    }                                                                                    \
+    SAC_ND_FUN_DEF_END ()                                                                \
+    SAC_ND_DEF_FUN_BEGIN2 (benchDestroyInterval, void, sl_parm (void **, intival))       \
+    {                                                                                    \
+        free (*intival);                                                                 \
+        return;                                                                          \
+    }                                                                                    \
     SAC_ND_FUN_DEF_END ()
-
 #endif

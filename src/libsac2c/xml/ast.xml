@@ -452,6 +452,13 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="TFT" name="Tag functions as thread functions when needed" default="sons" include="tag_fun_thread.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With3" />
+        </travuser>
+      </traversal>
       <traversal id="TP" name="Tag Preparation" default="sons" include="tag_preparation.h" >
         <travuser>
           <node name="Arg" />
