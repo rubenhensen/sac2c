@@ -905,22 +905,10 @@ SAC_C_EXTERN void SAC_MT1_Setup (int num_schedulers);
 
 #define SAC_MT_MYTHREAD() 0
 
-#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0;
-
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
 
 #define SAC_MT_DEFINE()
-
-#define SAC_MT_DEFINE_ARG_BUFFER_BEGIN()
-
-#define SAC_MT_DEFINE_ARG_BUFFER_END()
-
-#define SAC_MT_DEFINE_ARG_BUFFER_ENTRY_BEGIN(name)
-
-#define SAC_MT_DEFINE_ARG_BUFFER_ENTRY_END(name)
-
-#define SAC_MT_DEFINE_ARG_BUFFER_ENTRY_ITEM(type, item)
 
 #define SAC_MT_DEFINE_LOCK(name)
 
