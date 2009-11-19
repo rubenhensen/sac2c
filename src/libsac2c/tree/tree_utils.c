@@ -239,12 +239,24 @@ bool
 TULSisFullGenerator (node *generator, node *operator)
 {
     bool z;
+    bool z2 = FALSE;
     constant *lb = NULL;
-    pattern *pat;
+    constant *ub = NULL;
+    constant *arr = NULL;
+    constant *shpgen = NULL;
+    constant *shpa = NULL;
+    constant *shp = NULL;
+
+    pattern *patlb;
+    pattern *patub;
+    pattern *patarr;
 
     DBUG_ENTER ("TULSisFullGenerator");
 
-    pat = PMconst (1, PMAgetVal (&lb));
+    patlb = PMconst (1, PMAgetVal (&lb));
+    patub = PMconst (1, PMAgetVal (&ub));
+    patarr = PMconst (1, PMAgetVal (&arr));
+
     switch (NODE_TYPE (operator)) {
 
     case N_spfold:
@@ -259,26 +271,40 @@ TULSisFullGenerator (node *generator, node *operator)
         break;
 
     case N_genarray:
-        z = PMmatchFlat (pat, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+        z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
             && checkStepWidth (generator);
         break;
 
     case N_modarray:
-        z = PMmatchFlat (pat, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+        z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
             && checkStepWidth (generator);
+
+        if (PMmatchFlat (patub, GENERATOR_BOUND2 (generator))
+            && PMmatchFlat (patarr, MODARRAY_ARRAY (operator))) {
+            shpgen = COshape (ub);
+            shpa = COshape (arr);
+            shp = COtake (shpgen, shpa);
+            z2 = COcompareConstants (shp, shpgen);
+            COfreeConstant (shpgen);
+            COfreeConstant (shpa);
+            COfreeConstant (shp);
+            COfreeConstant (ub);
+            COfreeConstant (arr);
+        }
+
         z = z
-            && (GENERATOR_BOUND2 (generator)
-                == AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator))));
-        /* Need to check GENERATOR_BOUND2( generator) ==
-         * prefix of shape of MODARRAY_ARRAY( operator)
-         */
+            && (z2
+                || (GENERATOR_BOUND2 (generator)
+                    == AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator)))));
         break;
 
     default:
         z = FALSE;
     }
 
-    PMfree (pat);
+    PMfree (patlb);
+    PMfree (patub);
+    PMfree (patarr);
     lb = (NULL != lb) ? COfreeConstant (lb) : NULL;
 
     DBUG_RETURN (z);
