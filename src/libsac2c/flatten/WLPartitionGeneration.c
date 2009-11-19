@@ -240,6 +240,7 @@ CreateMaxFrameShapeAvis (node *withop, int fdim, info *arg_info)
         res_avis = nshp_avis;
         break;
     default:
+        res_avis = NULL;
         DBUG_ASSERT (FALSE, "CreateMaxFrameShapeAvis called on other than"
                             " genarray or modarray WL!");
     }

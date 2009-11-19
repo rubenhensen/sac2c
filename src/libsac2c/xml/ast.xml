@@ -1123,6 +1123,7 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="With" />
+          <node name="Part" />
           <node name="Generator" />
         </travuser>
       </traversal>

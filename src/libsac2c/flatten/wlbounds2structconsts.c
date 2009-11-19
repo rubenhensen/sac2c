@@ -48,6 +48,7 @@
 struct INFO {
     node *fundef;
     node *nassigns;
+    ntype *idxtype;
     bool onefundef;
 };
 
@@ -61,6 +62,7 @@ struct INFO {
  ******************************************************************************/
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->nassigns)
+#define INFO_IV_TYPE(n) (n->idxtype)
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 
 /**
@@ -77,6 +79,7 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
+    INFO_IV_TYPE (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -188,16 +191,16 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLBSCmodule(node *arg_node, info *arg_info)
+ * @fn node *EnsureStructConstant(node *arg_node, ntype *type, info *arg_info)
  *
- *   @brief first traversal of function definitions of WLPartitionGeneration
+ *   @brief
  *
  *   @param  node *arg_node:  N_module
  *           info *arg_info:  N_info
  *   @return node *        :  N_module
  ******************************************************************************/
 static node *
-EnsureStructConstant (node *bound, info *arg_info)
+EnsureStructConstant (node *bound, ntype *type, info *arg_info)
 {
     static pattern *pat = NULL;
     int dim;
@@ -207,8 +210,8 @@ EnsureStructConstant (node *bound, info *arg_info)
     if (pat == NULL) {
         pat = PMarray (0, 1, PMskip (0));
     }
-    if (!PMmatchFlat (pat, bound) && TUshapeKnown (ID_NTYPE (bound))) {
-        dim = SHgetExtent (TYgetShape (ID_NTYPE (bound)), 0);
+    if (!PMmatchFlat (pat, bound) && TUshapeKnown (type)) {
+        dim = SHgetExtent (TYgetShape (type), 0);
         bound = TBmakeId (CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info));
     }
 
@@ -322,6 +325,34 @@ WLBSCwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLBSCpart(node *arg_node, info *arg_info)
+ *
+ *   @brief  insert withid type into INFO_IV_TYPE while traversing the
+ *           genarator
+ *
+ ******************************************************************************/
+
+node *
+WLBSCpart (node *arg_node, info *arg_info)
+{
+    ntype *old_iv_type;
+
+    DBUG_ENTER ("WLBSCpart");
+
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+
+    old_iv_type = INFO_IV_TYPE (arg_info);
+    INFO_IV_TYPE (arg_info) = IDS_NTYPE (PART_VEC (arg_node));
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    INFO_IV_TYPE (arg_info) = old_iv_type;
+
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLBSCgenerator(node *arg_node, info *arg_info)
  *
  *   @brief  ensure struct constants for all components of each generator.
@@ -334,16 +365,20 @@ WLBSCgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLBSCgenerator");
 
     GENERATOR_BOUND1 (arg_node)
-      = EnsureStructConstant (GENERATOR_BOUND1 (arg_node), arg_info);
+      = EnsureStructConstant (GENERATOR_BOUND1 (arg_node), INFO_IV_TYPE (arg_info),
+                              arg_info);
     GENERATOR_BOUND2 (arg_node)
-      = EnsureStructConstant (GENERATOR_BOUND2 (arg_node), arg_info);
+      = EnsureStructConstant (GENERATOR_BOUND2 (arg_node), INFO_IV_TYPE (arg_info),
+                              arg_info);
     if (GENERATOR_STEP (arg_node) != NULL) {
         GENERATOR_STEP (arg_node)
-          = EnsureStructConstant (GENERATOR_STEP (arg_node), arg_info);
+          = EnsureStructConstant (GENERATOR_STEP (arg_node), INFO_IV_TYPE (arg_info),
+                                  arg_info);
     }
     if (GENERATOR_WIDTH (arg_node) != NULL) {
         GENERATOR_WIDTH (arg_node)
-          = EnsureStructConstant (GENERATOR_WIDTH (arg_node), arg_info);
+          = EnsureStructConstant (GENERATOR_WIDTH (arg_node), INFO_IV_TYPE (arg_info),
+                                  arg_info);
     }
 
     DBUG_RETURN (arg_node);
