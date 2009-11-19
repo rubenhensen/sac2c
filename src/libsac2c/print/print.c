@@ -71,6 +71,7 @@ struct INFO {
     int filecounter;
     int funcounter;
     node *nonlocalfun;
+    node *spmdstore;
 };
 
 /* access macros print */
@@ -90,6 +91,7 @@ struct INFO {
 #define INFO_FILECOUNTER(n) ((n)->filecounter)
 #define INFO_FUNCOUNTER(n) ((n)->filecounter)
 #define INFO_NONLOCCALFUN(n) ((n)->nonlocalfun)
+#define INFO_SPMDSTORE(n) ((n)->spmdstore)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -220,6 +222,7 @@ MakeInfo ()
     INFO_FILECOUNTER (result) = 1;
     INFO_FUNCOUNTER (result) = 0;
     INFO_NONLOCCALFUN (result) = NULL;
+    INFO_SPMDSTORE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -897,6 +900,9 @@ PRTmodule (node *arg_node, info *arg_info)
          *   globals.c  contains the definitions of the global objects.
          *   fun<n>.c   contains the definition of the nth function.
          */
+
+        INFO_SPMDSTORE (arg_info) = MODULE_SPMDSTORE (arg_node);
+
         global.outfile = FMGRwriteOpen ("%s/header.h", global.tmp_dirname);
         GSCprintFileHeader (arg_node);
 
@@ -1741,12 +1747,13 @@ PRTfundef (node *arg_node, info *arg_info)
              */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
-                if (INFO_SEPARATE (arg_info)
-                    && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
+
+                if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
                     global.outfile = FMGRwriteOpen ("%s/fun%d.c", global.tmp_dirname,
                                                     INFO_FILECOUNTER (arg_info));
                     INFO_FILECOUNTER (arg_info) += 1;
                     fprintf (global.outfile, "#include \"header.h\"\n\n");
+                    TRAVopt (INFO_SPMDSTORE (arg_info), arg_info);
                 }
 
                 fprintf (global.outfile, "\n\n"
@@ -1848,9 +1855,12 @@ PRTfundef (node *arg_node, info *arg_info)
                 fprintf (global.outfile, "\n");
 
                 if (INFO_SEPARATE (arg_info)
-                    && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
+                    && (INFO_FUNCOUNTER (arg_info) >= global.linksetsize)
+                    && ((FUNDEF_NEXT (arg_node) == NULL)
+                        || !FUNDEF_ISSPMDFUN (FUNDEF_NEXT (arg_node)))) {
                     fclose (global.outfile);
                     global.outfile = NULL;
+                    INFO_FUNCOUNTER (arg_info) = 0;
                 }
 
                 if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
