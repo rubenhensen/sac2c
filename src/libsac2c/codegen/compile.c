@@ -2996,6 +2996,8 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     node *vardecs;
     types *type;
     node *val_nt;
+    node *foldfun_tag;
+    node *foldfun_name;
 
     DBUG_ENTER ("MakeFunRetArgsSpmd");
 
@@ -3013,18 +3015,21 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
 
     for (i = 0; i < argtab->size; i++) {
         if (argtab->ptr_out[i] != NULL) {
-            char *foldfunname;
+            node *foldfun;
 
             DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
                          "no N_id node found!");
 
-            foldfunname = LUTsearchInLutSs (INFO_FOLDLUT (arg_info),
-                                            ID_NAME (EXPRS_EXPR (ret_exprs)));
+            foldfun = LUTsearchInLutPp (INFO_FOLDLUT (arg_info),
+                                        ID_AVIS (EXPRS_EXPR (ret_exprs)));
 
-            if (foldfunname == ID_NAME (EXPRS_EXPR (ret_exprs))) {
-                foldfunname = "NONE";
+            if (foldfun == ID_AVIS (EXPRS_EXPR (ret_exprs))) {
+                foldfun = NULL;
             }
+
+            DBUG_ASSERT ((foldfun == NULL) || (NODE_TYPE (foldfun) == N_fundef),
+                         "Wrong fold function detected");
 
             type = ID_TYPE (EXPRS_EXPR (ret_exprs));
 
@@ -3034,14 +3039,26 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
             ID_NT_TAG (val_nt) = NTUcreateNtTag (ID_NAME (val_nt), VARDEC_TYPE (vardecs));
             vardecs = VARDEC_NEXT (vardecs);
 
+            if (foldfun == NULL) {
+                foldfun_tag = TCmakeIdCopyString ("ND");
+                foldfun_name = TCmakeIdCopyString ("NONE");
+            } else {
+                foldfun_name = TCmakeIdCopyString (FUNDEF_NAME (foldfun));
+                if (FUNDEF_ISMTFUN (foldfun)) {
+                    foldfun_tag = TCmakeIdCopyString ("MT");
+                } else {
+                    foldfun_tag = TCmakeIdCopyString ("ND");
+                }
+            }
+
             new_args = TBmakeExprs (
               TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
-              TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (ret_exprs)),
-                           TBmakeExprs (val_nt,
-                                        TBmakeExprs (MakeBasetypeArg (type),
-                                                     TBmakeExprs (TCmakeIdCopyString (
-                                                                    foldfunname),
-                                                                  NULL)))));
+              TBmakeExprs (
+                DUPdupIdNt (EXPRS_EXPR (ret_exprs)),
+                TBmakeExprs (val_nt, TBmakeExprs (MakeBasetypeArg (type),
+                                                  TBmakeExprs (foldfun_tag,
+                                                               TBmakeExprs (foldfun_name,
+                                                                            NULL))))));
 
             if (last_arg == NULL) {
                 icm_args = new_args;
@@ -7446,8 +7463,8 @@ COMPwith2 (node *arg_node, info *arg_info)
              * put (tmp_ids, foldop) into FOLDLUT
              */
             INFO_FOLDLUT (arg_info)
-              = LUTinsertIntoLutS (INFO_FOLDLUT (arg_info), IDS_NAME (tmp_ids),
-                                   FUNDEF_NAME (FOLD_FUNDEF (withop)));
+              = LUTinsertIntoLutP (INFO_FOLDLUT (arg_info), IDS_AVIS (tmp_ids),
+                                   FOLD_FUNDEF (withop));
 
             /*
              * compile 'tmp_ids = neutral' !!!

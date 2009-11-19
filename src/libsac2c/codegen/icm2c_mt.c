@@ -223,11 +223,13 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMDFUN_RET( funname, vararg_cnt, [ tag, accu_NT, val_NT, basetype, foldfun ]* )
+ *   MT_SPMDFUN_RET( funname, vararg_cnt, [ tag, accu_NT, val_NT, basetype, tag, foldfun
+ *]* )
  *
  *   This ICM implements the return statement of an spmd-function,
  *   i.e. it has to realize the return of several out parameters.
  *
+ *   <tag> tags the foldfun as either following MT or ND calling convention.
  *
  ******************************************************************************/
 
@@ -248,11 +250,11 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
 
     global.indent++;
     cnt = 0;
-    for (i = 0; i < 5 * vararg_cnt; i += 5) {
+    for (i = 0; i < 6 * vararg_cnt; i += 6) {
         INDENT;
-        fprintf (global.outfile, "SAC_MT_SYNC_FOLD_%s( %s, %d, %s, %s, %s, %s);\n",
+        fprintf (global.outfile, "SAC_MT_SYNC_FOLD_%s( %s, %d, %s, %s, %s, %s, %s);\n",
                  vararg[i], funname, cnt, vararg[i + 1], vararg[i + 2], vararg[i + 3],
-                 vararg[i + 4]);
+                 vararg[i + 4], vararg[i + 5]);
         cnt += 1;
     }
     global.indent--;

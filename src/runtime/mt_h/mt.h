@@ -347,18 +347,22 @@
     SAC_MT_SET_BARRIER (spmdfun, SAC_MT_MYTHREAD ())                                     \
     }
 
-#define SAC_MT_SYNC_FOLD__NOOP(spmdfun, num, accu_NT, val_NT, basetype, foldfun)         \
+#define SAC_MT_SYNC_FOLD__NOOP(spmdfun, num, accu_NT, val_NT, basetype, tag, foldfun)    \
     SAC_NOOP ()
 
-#define SAC_MT_SYNC_FOLD_out__NODESC(spmdfun, num, accu_NT, val_NT, basetype, foldfun)   \
+#define SAC_MT_SYNC_FOLD_out__NODESC(spmdfun, num, accu_NT, val_NT, basetype, tag,       \
+                                     foldfun)                                            \
     SAC_MT_RECEIVE_RESULT_out__NODESC (spmdfun, SAC_MT_son_id, num, val_NT);             \
-    SAC_MT_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                          \
-                   SAC_ND_ARG_in (accu_NT, basetype), SAC_ND_ARG_in (val_NT, basetype));
+    SAC_##tag##_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                     \
+                        SAC_ND_ARG_in (accu_NT, basetype),                               \
+                        SAC_ND_ARG_in (val_NT, basetype));
 
-#define SAC_MT_SYNC_FOLD_out__DESC(spmdfun, num, accu_NT, val_NT, basetype, foldfun)     \
+#define SAC_MT_SYNC_FOLD_out__DESC(spmdfun, num, accu_NT, val_NT, basetype, tag,         \
+                                   foldfun)                                              \
     SAC_MT_RECEIVE_RESULT_out__DESC (spmdfun, SAC_MT_son_id, num, val_NT);               \
-    SAC_MT_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                          \
-                   SAC_ND_ARG_in (accu_NT, basetype), SAC_ND_ARG_in (val_NT, basetype));
+    SAC_##tag##_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                     \
+                        SAC_ND_ARG_in (accu_NT, basetype),                               \
+                        SAC_ND_ARG_in (val_NT, basetype));
 
 /*****************************************************************************/
 

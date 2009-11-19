@@ -879,7 +879,7 @@ ICM_END( MT_SPMDFUN_DEF_END, (funname, vararg_cnt, vararg))
 ICM_DEF( MT_SPMDFUN_RET, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (5*vararg_cnt), vararg)
+  ICM_VARANY( (6*vararg_cnt), vararg)
 ICM_END( MT_SPMDFUN_RET, (funname, vararg_cnt, vararg))
 #endif
 
