@@ -346,6 +346,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
                         SAC_ND_ARG_in (accu_NT, basetype),                               \
                         SAC_ND_ARG_in (val_NT, basetype));
 
+#define SAC_MT_FUNAP2(name, ...) name (SAC_MT_MYTHREAD (), __VA_ARGS__);
+
 /*****************************************************************************/
 
 /*

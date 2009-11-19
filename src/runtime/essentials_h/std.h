@@ -103,9 +103,6 @@ typedef int *SAC_array_descriptor_t;
 /* Overloaded by MUTC */
 #define SAC_ND_FUNAP2(name, ...) name (__VA_ARGS__);
 
-/* NOT overloaded by MUTC */
-#define SAC_MT_FUNAP2(name, ...) name (SAC_MT_MYTHREAD (), __VA_ARGS__);
-
 /* Overloaded by MUTC */
 #define SAC_ND_GETVAR(nt, name) name
 
