@@ -243,7 +243,7 @@ runtime_extras_h       := cachesim profile runtimecheck trace
 
 runtime_phm_h          := phm
 
-runtime_mt_h           := mt mt_gen
+runtime_mt_h           := mt mt_gen schedule
 
 runtime_mutc_h         := benchmark tls_malloc mutc mutc_world \
                           mutc_gen mutc_tostring \
