@@ -491,5 +491,35 @@ SAC_MT1_StartWorkers ()
 
 #endif
 
-#endif
+#else /* MT */
+
+#if !TRACE
+
+/*
+ * The following symbols are provided even in the sequential case because
+ * each module contains SEQ, ST and MT versions of each function. The latter
+ * make reference to the following symbols. Even though they will never be
+ * called when programs are compiled for sequential execution, the linker
+ * nevertheless wants to see them.
+ *
+ * If we compile for mt_trace.o, we don't need the global variables since
+ * these always remain in mt.o.
+ */
+
+unsigned int SAC_MT_master_id;
+
+volatile unsigned int SAC_MT_master_flag;
+
+volatile unsigned int SAC_MT_not_yet_parallel;
+
+unsigned int SAC_MT_masterclass;
+
+unsigned int SAC_MT_threads;
+
+unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
+                                      unsigned int);
+
+#endif /* TRACE */
+
+#endif /* MT */
 #endif /* DISABLE_MT */
