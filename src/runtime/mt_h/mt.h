@@ -55,7 +55,15 @@
 
 #include <pthread.h>
 #include <alloca.h>
-#include <string.h>
+
+extern void *memset (void *s, int c, size_t n);
+extern void *memcpy (void *dest, const void *src, size_t n);
+
+/*
+ * We need the above extern declarations here rather than including
+ * the corresponding header files because the further declarations in
+ * string.h conflict with SAC generated headers in the SAC string module.
+ */
 
 /*****************************************************************************/
 
