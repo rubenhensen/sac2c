@@ -609,11 +609,12 @@ GSCprintMainC99 ()
 {
     char *res_NT;
     types *tmp_type;
-    bool print_thread_id
-      = (((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
-         && (global.optimize.dophm));
+    bool print_thread_id, run_mt;
 
     DBUG_ENTER ("GSCprintMainC99");
+
+    run_mt = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
+    print_thread_id = run_mt && global.optimize.dophm;
 
     INDENT;
     fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
@@ -633,7 +634,8 @@ GSCprintMainC99 ()
     INDENT;
     fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
     INDENT;
-    fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
+    fprintf (global.outfile, "SACf_%s_%s_main( ", NSgetName (NSgetRootNamespace ()),
+             run_mt ? "CL_ST_" : "");
 
     fprintf (global.outfile, "SAC_ND_ARG_out( %s, int)", res_NT);
     fprintf (global.outfile, ");\n\n");
