@@ -68,6 +68,7 @@
 #include "traverse.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
+#include "pattern_match.h"
 
 /*
  * INFO structure
@@ -907,9 +908,13 @@ WLIwith (node *arg_node, info *arg_info)
     INFO_FOLDABLE (arg_info) = TRUE;
 
     /* determine FOLDABLE */
+    DBUG_PRINT ("WLI", ("WLIwith determining foldability of  WL in line %d",
+                        NODE_LINE (arg_node)));
     INFO_DETFOLDABLE (arg_info) = TRUE;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_ISFOLDABLE (INFO_WL (arg_info)) = INFO_FOLDABLE (arg_info);
+    DBUG_PRINT ("WLI", ("WITH_ISFOLDABLE set to %s",
+                        (INFO_FOLDABLE (arg_info) ? "true" : "false")));
     INFO_DETFOLDABLE (arg_info) = FALSE;
 
     /* traverse all parts and, implicitly, bodies) */
@@ -1012,25 +1017,29 @@ WLIpart (node *arg_node, info *arg_info)
 node *
 WLIgenerator (node *arg_node, info *arg_info)
 {
+    static pattern *pat = NULL;
     DBUG_ENTER ("WLIgenerator");
 
+    if (pat == NULL) {
+        pat = PMconst (0);
+    }
     INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
                                && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                                   COisConstant (GENERATOR_BOUND1 (arg_node)));
+                                   PMmatchFlat (pat, GENERATOR_BOUND1 (arg_node)));
     INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
                                && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                                   COisConstant (GENERATOR_BOUND2 (arg_node)));
+                                   PMmatchFlat (pat, GENERATOR_BOUND2 (arg_node)));
 
     if (GENERATOR_STEP (arg_node) != NULL) {
         INFO_FOLDABLE (arg_info)
           = INFO_FOLDABLE (arg_info)
             && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                COisConstant (GENERATOR_STEP (arg_node)));
+                PMmatchFlat (pat, GENERATOR_STEP (arg_node)));
         if (GENERATOR_WIDTH (arg_node) != NULL) {
             INFO_FOLDABLE (arg_info)
               = INFO_FOLDABLE (arg_info)
                 && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                    COisConstant (GENERATOR_WIDTH (arg_node)));
+                    PMmatchFlat (pat, GENERATOR_WIDTH (arg_node)));
         }
     } else {
         DBUG_ASSERT ((GENERATOR_WIDTH (arg_node) == NULL),

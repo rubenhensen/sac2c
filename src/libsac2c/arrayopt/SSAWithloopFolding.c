@@ -618,8 +618,8 @@ WLFcreateArrayFromInternGen (int *source, int number)
  *
  * description:
  *   copy intern_gen struct to the generators of the given WL. All existing
- *   N_Npart nodes are deleted before. Count number of N_Npart nodes and
- *   set WITH_PARTS. Return wln.
+ *   N_Npart nodes are deleted before. Count number of N_Npart nodes
+ *   Return wln.
  *
  * remark:
  *  don't forget to free intern_gen chain.
@@ -654,8 +654,6 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
         part = &(PART_NEXT ((*part)));
         no_parts++;
     }
-
-    WITH_PARTS (wln) = no_parts;
 
     FREEdoFreeTree (withidn);
 

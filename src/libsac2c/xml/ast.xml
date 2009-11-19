@@ -4537,7 +4537,7 @@ N_structdef :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase from="opt_cyc_wli" to="opt_cyc_wlf" />
+                  <range from="opt_cyc_wli" to="opt_cyc_wlf" />
                 </phases>
               </target>
             </targets>

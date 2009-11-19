@@ -1258,7 +1258,8 @@ FoldDecision (node *target_wl, node *subst_wl)
 
     subst_wl = LET_EXPR (ASSIGN_INSTR (subst_wl));
 
-    result = (WITH_PARTS (target_wl) > 0 && WITH_PARTS (subst_wl) > 0
+    result = (!TCcontainsDefaultPartition (WITH_PART (target_wl))
+              && !TCcontainsDefaultPartition (WITH_PART (subst_wl))
               && WITH_ISFOLDABLE (target_wl)
               && WITH_REFERENCED (subst_wl) == WITH_REFERENCED_FOLD (subst_wl)
               && (N_genarray == NODE_TYPE (WITH_WITHOP (subst_wl))
@@ -1855,6 +1856,9 @@ WLFwith (node *arg_node, info *arg_info)
 
             /* this WL is finished. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
+        } else {
+            DBUG_PRINT ("WLF", ("=> found nothing to fold in WL in line %d",
+                                NODE_LINE (arg_node)));
         }
 
         /*
