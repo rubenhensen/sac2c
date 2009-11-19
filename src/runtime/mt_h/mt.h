@@ -56,13 +56,21 @@
 #include <pthread.h>
 #include <alloca.h>
 
+#ifndef memset
 extern void *memset (void *s, int c, size_t n);
+#endif
+
+#ifndef memcpy
 extern void *memcpy (void *dest, const void *src, size_t n);
+#endif
 
 /*
  * We need the above extern declarations here rather than including
  * the corresponding header files because the further declarations in
  * string.h conflict with SAC generated headers in the SAC string module.
+ *
+ * The check for a previous definition of a macro of equal name are required
+ * for operating systems that try to overload memset or memcpy, e.g. MAC OS.
  */
 
 /*****************************************************************************/
@@ -301,8 +309,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
     SAC_spmd_barrier[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);
 
 #define SAC_MT_SEND_RESULT_out__DESC(spmdfun, thread, num, var_NT)                       \
-    SAC_spmd_frame[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);              \
-    SAC_spmd_frame[thread].data.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    SAC_spmd_barrier[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);            \
+    SAC_spmd_barrier[thread].data.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 /*****************************************************************************/
 
@@ -316,8 +324,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num;
 
 #define SAC_MT_RECEIVE_RESULT_out__DESC(spmdfun, thread, num, var_NT)                    \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame[thread].data.spmdfun.in_##num;              \
-    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame[thread].data.spmdfun.in_##num##_desc;
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num;            \
+    SAC_ND_A_DESC (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num##_desc;
 
 /*****************************************************************************/
 

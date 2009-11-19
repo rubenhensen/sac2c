@@ -203,7 +203,7 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
     }
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( %s);", funname);
+    fprintf (global.outfile, "\nSAC_MT_SPMD_EXECUTE( %s);\n", funname);
 
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
