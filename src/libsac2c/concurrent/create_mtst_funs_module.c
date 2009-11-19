@@ -162,22 +162,22 @@ HandleApFold (node *callee, info *arg_info)
     case SEQ:
         break;
     case ST:
-        DBUG_ASSERTF (FUNDEF_COMPANION (callee) != NULL,
-                      ("Function %s has no ST companion", FUNDEF_NAME (callee)));
-        DBUG_ASSERTF (FUNDEF_ISSTFUN (FUNDEF_COMPANION (callee)),
-                      ("ST companion of function %s is no ST function",
-                       FUNDEF_NAME (callee)));
+        if (FUNDEF_COMPANION (callee) != NULL) {
+            DBUG_ASSERTF (FUNDEF_ISSTFUN (FUNDEF_COMPANION (callee)),
+                          ("ST companion of function %s is no ST function",
+                           FUNDEF_NAME (callee)));
 
-        callee = FUNDEF_COMPANION (callee);
+            callee = FUNDEF_COMPANION (callee);
+        }
         break;
     case MT:
-        DBUG_ASSERTF (FUNDEF_MTCOMPANION (callee) != NULL,
-                      ("Function %s has no MT companion", FUNDEF_NAME (callee)));
-        DBUG_ASSERTF (FUNDEF_ISMTFUN (FUNDEF_MTCOMPANION (callee)),
-                      ("MT companion of function %s is no MT function",
-                       FUNDEF_NAME (callee)));
+        if (FUNDEF_MTCOMPANION (callee) != NULL) {
+            DBUG_ASSERTF (FUNDEF_ISMTFUN (FUNDEF_MTCOMPANION (callee)),
+                          ("MT companion of function %s is no MT function",
+                           FUNDEF_NAME (callee)));
 
-        callee = FUNDEF_MTCOMPANION (callee);
+            callee = FUNDEF_MTCOMPANION (callee);
+        }
         break;
     }
 
@@ -268,7 +268,8 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MTSTFMODfundef");
 
-    if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)) {
+    if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)
+        && !FUNDEF_ISEXTERN (arg_node)) {
 
         /*
          * Create the ST companion:
