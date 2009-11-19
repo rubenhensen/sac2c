@@ -42,6 +42,7 @@
  *****************************************************************************/
 
 #include "create_mtst_funs.h"
+#include "create_mtst_funs_module.h"
 
 #include "dbug.h"
 #include "tree_basic.h"
@@ -53,6 +54,9 @@
 #include "memory.h"
 #include "namespaces.h"
 #include "globals.h"
+#include "shape.h"
+#include "new_types.h"
+#include "type_utils.h"
 
 /**
  * INFO structure
@@ -60,21 +64,23 @@
 
 struct INFO {
     bool mtcontext;
-    bool ismodule;
     bool onspine;
+    node *vardecs;
     node *companions;
     node *spmdassigns;
+    node *spmdcondition;
 };
 
 /**
  * INFO macros
  */
 
-#define INFO_MTCONTEXT(n) (n->mtcontext)
-#define INFO_ISMODULE(n) (n->ismodule)
-#define INFO_ONSPINE(n) (n->onspine)
-#define INFO_COMPANIONS(n) (n->companions)
-#define INFO_SPMDASSIGNS(n) (n->spmdassigns)
+#define INFO_MTCONTEXT(n) ((n)->mtcontext)
+#define INFO_ONSPINE(n) ((n)->onspine)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_COMPANIONS(n) ((n)->companions)
+#define INFO_SPMDASSIGNS(n) ((n)->spmdassigns)
+#define INFO_SPMDCONDITION(n) ((n)->spmdcondition)
 
 /**
  * INFO functions
@@ -90,10 +96,11 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_MTCONTEXT (result) = FALSE;
-    INFO_ISMODULE (result) = FALSE;
     INFO_ONSPINE (result) = FALSE;
+    INFO_VARDECS (result) = NULL;
     INFO_COMPANIONS (result) = NULL;
     INFO_SPMDASSIGNS (result) = NULL;
+    INFO_SPMDCONDITION (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -147,7 +154,7 @@ IsSpmdConditional (node *arg_node)
 
 /******************************************************************************
  *
- * @fn node *MTSTFdoCreateMtStFuns( node *syntax_tree)
+ * @fn node *MTSTFdoCreateMtStFunsProg( node *syntax_tree)
  *
  *  @brief initiates MTSTF traversal
  *
@@ -158,13 +165,14 @@ IsSpmdConditional (node *arg_node)
  *****************************************************************************/
 
 node *
-MTSTFdoCreateMtStFuns (node *syntax_tree)
+MTSTFdoCreateMtStFunsProg (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTSTFdoCreateMtStFuns");
+    DBUG_ENTER ("MTSTFdoCreateMtStFunsProg");
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+    DBUG_ASSERT (MODULE_FILETYPE (syntax_tree) == F_prog,
+                 "MTSTFdoCreateMtStFunsProg() not applicable to modules/classes");
 
     info = MakeInfo ();
 
@@ -197,7 +205,7 @@ MakeCompanion (node *fundef)
     DBUG_ENTER ("MakeCompanion");
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "MakeMtFun called with non N_fundef argument node");
+                 "MakeCompanion() called with non N_fundef argument node");
 
     DBUG_ASSERT (FUNDEF_ISMTFUN (fundef) || FUNDEF_ISSTFUN (fundef),
                  "Function to be duplicated into companion is neither ST nor MT.");
@@ -302,11 +310,6 @@ MTSTFmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MTSTFmodule");
 
-    if ((MODULE_FILETYPE (arg_node) == F_modimp)
-        || (MODULE_FILETYPE (arg_node) == F_classimp)) {
-        INFO_ISMODULE (arg_info) = TRUE;
-    }
-
     INFO_ONSPINE (arg_info) = TRUE;
 
     if (MODULE_FUNS (arg_node) != NULL) {
@@ -332,46 +335,17 @@ MTSTFmodule (node *arg_node, info *arg_info)
 node *
 MTSTFfundef (node *arg_node, info *arg_info)
 {
-    node *companion;
-
     DBUG_ENTER ("MTSTFfundef");
 
     if (INFO_ONSPINE (arg_info)) {
 
-        if (FUNDEF_ISEXPORTED (arg_node) || FUNDEF_ISPROVIDED (arg_node)) {
+        if (FUNDEF_ISMAIN (arg_node)) {
+            FUNDEF_ISSTFUN (arg_node) = TRUE;
 
-            if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)) {
-                /*
-                 * The current function is provided/exported, but has not been
-                 * processed yet. We make this one an ST fun and traverse the body.
-                 */
-
-                FUNDEF_ISSTFUN (arg_node) = TRUE;
-
-                INFO_MTCONTEXT (arg_info) = FALSE;
-                INFO_ONSPINE (arg_info) = FALSE;
-                arg_node = TRAVdo (arg_node, arg_info);
-                INFO_ONSPINE (arg_info) = TRUE;
-            }
-
-            if ((FUNDEF_COMPANION (arg_node) == NULL) && INFO_ISMODULE (arg_info)) {
-                /*
-                 * The current function is provided/exported and has no companion
-                 * yet. If we are in a module/class implementation we want to create
-                 * both ST and MT versions of each provided/exported function.
-                 * If we are in a program, this must be the main function, which is
-                 * always ST and we do not need to create a companion.
-                 */
-
-                companion = MakeCompanion (arg_node);
-
-                INFO_ONSPINE (arg_info) = FALSE;
-                companion = TRAVdo (companion, arg_info);
-                INFO_ONSPINE (arg_info) = TRUE;
-
-                FUNDEF_NEXT (companion) = INFO_COMPANIONS (arg_info);
-                INFO_COMPANIONS (arg_info) = companion;
-            }
+            INFO_MTCONTEXT (arg_info) = FALSE;
+            INFO_ONSPINE (arg_info) = FALSE;
+            arg_node = TRAVdo (arg_node, arg_info);
+            INFO_ONSPINE (arg_info) = TRUE;
         }
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -393,25 +367,19 @@ MTSTFfundef (node *arg_node, info *arg_info)
             }
         }
 
-        if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)) {
-            FUNDEF_ISSTFUN (arg_node) = TRUE;
-            /*
-             * We have now processed all functions. If functions are left that are
-             * neither tagged ST nor MT, they are neither exported/provided nor used
-             * internally. They should have been removed by DFR, but maybe DFR was
-             * disabled. Another source of such functions are external functions that
-             * only exist in one version. To continue compilation in an ordered manner,
-             * we tag these functions ST.
-             */
-        }
-
         /*
          * On the traversal back up the tree, put all functions marked MT into
-         * the MT namespace.
+         * the MT namespace and all functions marked ST into the ST name space.
          */
         if (FUNDEF_ISMTFUN (arg_node)) {
             namespace_t *old_namespace = FUNDEF_NS (arg_node);
             FUNDEF_NS (arg_node) = NSgetMTNamespace (old_namespace);
+            old_namespace = NSfreeNamespace (old_namespace);
+        }
+
+        if (FUNDEF_ISSTFUN (arg_node)) {
+            namespace_t *old_namespace = FUNDEF_NS (arg_node);
+            FUNDEF_NS (arg_node) = NSgetSTNamespace (old_namespace);
             old_namespace = NSfreeNamespace (old_namespace);
         }
 
@@ -430,7 +398,16 @@ MTSTFfundef (node *arg_node, info *arg_info)
         INFO_MTCONTEXT (arg_info) = FUNDEF_ISMTFUN (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
+            node *vardecs;
+
+            vardecs = INFO_VARDECS (arg_info);
+            INFO_VARDECS (arg_info) = NULL;
+
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+            FUNDEF_VARDEC (arg_node)
+              = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+            INFO_VARDECS (arg_info) = vardecs;
         }
     }
 
@@ -455,24 +432,42 @@ MTSTFcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MTSTFcond");
 
-    if (IsSpmdConditional (arg_node) && INFO_MTCONTEXT (arg_info)) {
-        /*
-         * We are already in an MT context and this is a special conditional
-         * introduced by the cost model to postpone the parallelisation decision
-         * until runtime. We can now decide that we do *not* want to parallelise
-         * the associated with-loop in the current context.
-         */
+    if (IsSpmdConditional (arg_node)) {
+        if (INFO_MTCONTEXT (arg_info)) {
+            /*
+             * We are already in an MT context and this is a special conditional
+             * introduced by the cost model to postpone the parallelisation decision
+             * until runtime. We can now decide that we do *not* want to parallelise
+             * the associated with-loop in the current context.
+             */
 
-        INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
-        /*
-         * We store the assignment chain of the else-case (sequential)
-         * for subsequent integration into the surrounding assignment chain.
-         */
+            INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+            /*
+             * We store the assignment chain of the else-case (sequential)
+             * for subsequent integration into the surrounding assignment chain.
+             */
 
-        BLOCK_INSTR (COND_ELSE (arg_node)) = TBmakeEmpty ();
-        /*
-         * We must restore a correct conditional node for later de-allocation.
-         */
+            BLOCK_INSTR (COND_ELSE (arg_node)) = TBmakeEmpty ();
+            /*
+             * We must restore a correct conditional node for later de-allocation.
+             */
+        } else {
+            /*
+             * The conditional will remain, so we now lift the condition out into a
+             * separate assignment.
+             */
+            node *new_avis;
+
+            new_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                             SHmakeShape (0)));
+
+            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+            INFO_SPMDCONDITION (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                         COND_COND (arg_node)),
+                              NULL);
+            COND_COND (arg_node) = TBmakeId (new_avis);
+        }
     } else {
         /*
          * Normal conditionals are just traversed as usual.
@@ -547,8 +542,6 @@ MTSTFwith2 (node *arg_node, info *arg_info)
 node *
 MTSTFassign (node *arg_node, info *arg_info)
 {
-    node *further_assigns;
-
     DBUG_ENTER ("MTSTFassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -558,6 +551,8 @@ MTSTFassign (node *arg_node, info *arg_info)
          * During traversal of ASSIGN_INSTR we have found a special conditional
          * introduced by the cost model that needs to be eliminated now.
          */
+        node *further_assigns;
+
         further_assigns = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
         arg_node = FREEdoFreeTree (arg_node);
@@ -567,8 +562,20 @@ MTSTFassign (node *arg_node, info *arg_info)
 
         arg_node = TRAVdo (arg_node, arg_info);
     } else {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+        if (INFO_SPMDCONDITION (arg_info) != NULL) {
+            /*
+             * During traversal of ASSIGN_INSTR we have found a SPMD conditional
+             * whose condition is now being flattened.
+             */
+            node *preassign;
+
+            preassign = INFO_SPMDCONDITION (arg_info);
+            INFO_SPMDCONDITION (arg_info) = NULL;
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (preassign) = arg_node;
+            arg_node = preassign;
+        } else {
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
 
@@ -621,4 +628,32 @@ MTSTFfold (node *arg_node, info *arg_info)
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *MTSTFdoCreateMtStFuns( node *syntax_tree)
+ *
+ *  @brief initiates MTSTF traversal
+ *
+ *  @param syntax_tree
+ *
+ *  @return syntax_tree
+ *
+ *****************************************************************************/
+
+node *
+MTSTFdoCreateMtStFuns (node *syntax_tree)
+{
+    DBUG_ENTER ("MTSTFdoCreateMtStFuns");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
+
+    if (MODULE_FILETYPE (syntax_tree) == F_prog) {
+        syntax_tree = MTSTFdoCreateMtStFunsProg (syntax_tree);
+    } else {
+        syntax_tree = MTSTFMODdoCreateMtStFunsModule (syntax_tree);
+    }
+
+    DBUG_RETURN (syntax_tree);
 }

@@ -221,10 +221,6 @@ MTCMfundef (node *arg_node, info *arg_info)
 node *
 MTCMassign (node *arg_node, info *arg_info)
 {
-    node *new_avis;
-    node *preassign;
-    node *new_instr;
-    node *new_node = arg_node;
     node *parblock, *seqblock;
 
     DBUG_ENTER ("MTCMassign");
@@ -232,26 +228,14 @@ MTCMassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_CONDITION (arg_info) != NULL) {
-        new_avis = TBmakeAvis (TRAVtmpVar (),
-                               TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-
-        INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-
         parblock = TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL);
         BLOCK_ISMTPARALLELBRANCH (parblock) = TRUE;
 
         seqblock = TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL), NULL);
         BLOCK_ISMTSEQUENTIALBRANCH (seqblock) = TRUE;
 
-        new_instr = TBmakeCond (TBmakeId (new_avis), parblock, seqblock);
-
-        preassign = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
-                                             INFO_CONDITION (arg_info)),
-                                  NULL);
-
-        ASSIGN_INSTR (arg_node) = new_instr;
-
-        new_node = TCappendAssign (preassign, arg_node);
+        ASSIGN_INSTR (arg_node)
+          = TBmakeCond (INFO_CONDITION (arg_info), parblock, seqblock);
 
         INFO_CONDITION (arg_info) = NULL;
         INFO_SEQUENTIAL (arg_info) = NULL;
@@ -261,7 +245,7 @@ MTCMassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (new_node);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -390,7 +374,6 @@ MTCMgenarray (node *arg_node, info *arg_info)
 {
     int size;
     bool size_static;
-    node *arg1, *arg2;
 
     DBUG_ENTER ("MTCMgenarray");
 
@@ -452,21 +435,11 @@ MTCMgenarray (node *arg_node, info *arg_info)
              * criterion.
              */
 
-            if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
-                arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
-            } else {
-                arg1 = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
-            }
-
-            if (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id) {
-                arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
-            } else {
-                arg2 = DUPdoDupNode (GENARRAY_DEFAULT (arg_node));
-            }
-
-            INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
+            INFO_CONDITION (arg_info)
+              = TCmakePrf1 (F_run_mt_genarray, DUPdoDupNode (GENARRAY_MEM (arg_node)));
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -498,7 +471,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
             }
         } else {
             /*
-             * We statically know the size of the result array and its *not* beyond
+             * We statically know the size of the result array and it is *not* beyond
              * the threshold.
              */
             if (INFO_ISWORTH (arg_info)) {

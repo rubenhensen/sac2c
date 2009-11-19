@@ -749,6 +749,7 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; 
         NODE_LINE( $$) = $<cint>6;
 
         FUNDEF_NAME( $$) = STRcpy( "main");
+        FUNDEF_ISMAIN( $$) = TRUE;
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",

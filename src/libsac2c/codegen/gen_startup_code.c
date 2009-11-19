@@ -546,7 +546,7 @@ GSCprintMainBegin ()
 {
     DBUG_ENTER ("GSCprintMainBegin");
 
-    /* for a c function there is no command line available */
+    /* for a C library there is no command line available */
     if (global.genlib.c) {
         INDENT;
         fprintf (global.outfile, "SAC_COMMANDLINE_SET( 0 , NULL);\n\n");

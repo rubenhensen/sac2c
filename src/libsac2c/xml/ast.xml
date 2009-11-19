@@ -2368,7 +2368,18 @@
           <node name="Modarray" />
         </travuser>
       </traversal>
-      <traversal id="MTSTF" name="Create MT/ST functions" default="sons" include="create_mtst_funs.h">
+      <traversal id="MTSTF" name="Create MT/ST functions (programs)" default="sons" include="create_mtst_funs.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="With2" />
+          <node name="Ap" />
+          <node name="Fold" />
+        </travuser>
+      </traversal>
+      <traversal id="MTSTFMOD" name="Create MT/ST functions (modules)" default="sons" include="create_mtst_funs_module.h">
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -3788,6 +3799,19 @@ N_structdef :
             </targets>
           </type>
         </attribute>
+        <attribute name="MTCompanion" inconstructor="no">
+          <description>This link points to the MT companion function of the current function. This is used in the module version of create MT/ST functions (MTSTFMOD).</description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <phase name="mt_mtstf"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="ExecMode" inconstructor="no">
           <type name="MTExecMode">
             <targets>
@@ -3936,6 +3960,9 @@ N_structdef :
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsMain">
+          <description>This function is the main function of a program.</description>
+        </flag>
         <flag name="IsExported">
           <description>This function is being exported from the current namespace and will thus be fully visible from outside.</description>
         </flag>
