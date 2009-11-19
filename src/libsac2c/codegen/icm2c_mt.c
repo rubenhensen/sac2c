@@ -264,7 +264,7 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
 
     global.indent++;
     cnt = 0;
-    for (i = 0; i < 5 * vararg_cnt; i += 5) {
+    for (i = 0; i < 6 * vararg_cnt; i += 6) {
         INDENT;
         fprintf (global.outfile,
                  "SAC_MT_SEND_RESULT_%s( %s, SAC_MT_MYTHREAD(), %d, %s);\n", vararg[i],

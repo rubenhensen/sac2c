@@ -3065,7 +3065,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
             } else {
                 EXPRS_NEXT (last_arg) = new_args;
             }
-            last_arg = EXPRS_EXPRS5 (new_args);
+            last_arg = EXPRS_EXPRS6 (new_args);
 
             ret_exprs = EXPRS_NEXT (ret_exprs);
             ret_cnt++;
