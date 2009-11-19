@@ -52,7 +52,9 @@
 #include "print.h"
 #include <stdio.h>
 
+#ifndef DBUG_OFF
 static FILE *outfile = NULL;
+#endif
 
 /**
  * INFO structure
