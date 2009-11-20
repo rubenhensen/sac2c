@@ -120,7 +120,7 @@ OPTcheckOptionConsistency (void)
         }
 
         if ((global.mutc_disable_thread_mem == TRUE)
-            && (global.mutc_disable_thread_mem == TRUE)) {
+            && (global.mutc_thread_mem == TRUE)) {
             CTIerror ("-mutc_thread_mem can not be used with "
                       "-mutc_disable_thread_mem");
         }
@@ -210,6 +210,15 @@ OPTcheckOptionConsistency (void)
                  "attributes (SAA).\n"
                  "Index vector elimination disabled.");
         global.optimize.doive = FALSE;
+    }
+
+    if (!global.optimize.dowlur) {
+        CTIwarn ("With-Loop unrolling (WLUR) was disabled using the command line."
+                 "However, unrolling of single-trip with-loops is required for "
+                 "code generation. Therefore, WLUR will be re-enabled and "
+                 "with the maximum number of unrolling steps set as 1.");
+        global.wlunrnum = 1;
+        global.optimize.dowlur = TRUE;
     }
 
     DBUG_VOID_RETURN;

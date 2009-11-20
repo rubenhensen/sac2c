@@ -30,6 +30,5 @@ extern node *DCIids (node *arg_node, info *arg_info);
 extern node *DCIcode (node *arg_node, info *arg_info);
 extern node *DCIwithid (node *arg_node, info *arg_info);
 extern node *DCIrange (node *arg_node, info *arg_info);
-extern node *DCIwlsegvar (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DEADCODEINFERENCE_H_ */

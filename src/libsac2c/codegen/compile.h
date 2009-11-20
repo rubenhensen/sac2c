@@ -44,13 +44,10 @@ extern node *COMPwithid (node *arg_node, info *arg_info);
 extern node *COMPgenerator (node *arg_node, info *arg_info);
 extern node *COMPwith2 (node *arg_node, info *arg_info);
 extern node *COMPwlseg (node *arg_node, info *arg_info);
-extern node *COMPwlsegvar (node *arg_node, info *arg_info);
 extern node *COMPwlblock (node *arg_node, info *arg_info);
 extern node *COMPwlublock (node *arg_node, info *arg_info);
 extern node *COMPwlstride (node *arg_node, info *arg_info);
-extern node *COMPwlstridevar (node *arg_node, info *arg_info);
 extern node *COMPwlgrid (node *arg_node, info *arg_info);
-extern node *COMPwlgridvar (node *arg_node, info *arg_info);
 extern node *COMPcode (node *arg_node, info *arg_info);
 
 extern node *COMPwith3 (node *arg_node, info *arg_info);

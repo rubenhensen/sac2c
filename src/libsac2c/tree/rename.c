@@ -37,7 +37,7 @@ struct INFO {
  * INFO macros
  */
 
-#define INFO_LUT(n) n->lut
+#define INFO_LUT(n) ((n)->lut)
 
 /*
  * INFO functions
@@ -136,28 +136,6 @@ RENids (node *arg_node, info *arg_info)
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-RENwlsegvar (node *arg_node, info *arg_info)
-{
-    int d;
-
-    DBUG_ENTER ("RENwlsegvar");
-
-    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
-        WLSEGVAR_IDX_MIN (arg_node)
-        [d] = TRAVopt (WLSEGVAR_IDX_MIN (arg_node)[d], arg_info);
-    }
-
-    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
-        WLSEGVAR_IDX_MAX (arg_node)
-        [d] = TRAVopt (WLSEGVAR_IDX_MAX (arg_node)[d], arg_info);
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

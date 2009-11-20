@@ -226,52 +226,6 @@ MNGwlstride (node *arg_node, info *arg_info)
 }
 
 node *
-MNGwlstridevar (node *arg_node, info *arg_info)
-{
-    bool oldinfo;
-
-    DBUG_ENTER ("MNGwlstridevar");
-
-    /*
-     * check whether this stride is a noop
-     */
-    oldinfo = INFO_ISNOOP (arg_info);
-    INFO_ISNOOP (arg_info) = TRUE;
-
-    if (WLSTRIDEVAR_CONTENTS (arg_node) != NULL) {
-        WLSTRIDEVAR_CONTENTS (arg_node)
-          = TRAVdo (WLSTRIDEVAR_CONTENTS (arg_node), arg_info);
-    }
-
-    /*
-     * transform this stride into a NOOP if it is one
-     */
-    if (INFO_ISNOOP (arg_info)) {
-        DBUG_PRINT ("MNG", ("tagging wlstridevar as noop"));
-
-        if (WLSTRIDEVAR_CONTENTS (arg_node) != NULL) {
-            WLSTRIDEVAR_CONTENTS (arg_node)
-              = FREEdoFreeTree (WLSTRIDEVAR_CONTENTS (arg_node));
-        }
-    }
-
-    /*
-     * propagate result up
-     */
-    oldinfo = oldinfo && INFO_ISNOOP (arg_info);
-    INFO_ISNOOP (arg_info) = oldinfo;
-
-    /*
-     * continue with next stride
-     */
-    if (WLSTRIDEVAR_NEXT (arg_node) != NULL) {
-        WLSTRIDEVAR_NEXT (arg_node) = TRAVdo (WLSTRIDEVAR_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 MNGwlgrid (node *arg_node, info *arg_info)
 {
     bool oldinfo;
@@ -329,69 +283,6 @@ MNGwlgrid (node *arg_node, info *arg_info)
      */
     if (WLGRID_NEXT (arg_node) != NULL) {
         WLGRID_NEXT (arg_node) = TRAVdo (WLGRID_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-MNGwlgridvar (node *arg_node, info *arg_info)
-{
-    bool oldinfo;
-
-    DBUG_ENTER ("MNGwlgridvar");
-
-    /*
-     * check whether this gridvar is a noop
-     */
-    oldinfo = INFO_ISNOOP (arg_info);
-    INFO_ISNOOP (arg_info) = TRUE;
-
-    /*
-     * there are two possibilities here:
-     * - CODE != NULL: innermost dimension. check the code
-     * - NEXTDIM != NULL: check inner dimensions
-     * - both NULL: this is already a noop, thus nothing to check
-     */
-    if (WLGRIDVAR_CODE (arg_node) != NULL) {
-        WLGRIDVAR_CODE (arg_node) = TRAVdo (WLGRIDVAR_CODE (arg_node), arg_info);
-    } else if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
-        WLGRIDVAR_NEXTDIM (arg_node) = TRAVdo (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
-    }
-
-    /*
-     * transform it into a NOOP
-     */
-#ifndef DBUG_OFF
-    if (INFO_ISNOOP (arg_info)) {
-        DBUG_PRINT ("MNG", ("tagging wlgridvar as noop"));
-    }
-#endif
-
-    WLGRIDVAR_ISNOOP (arg_node) = WLGRIDVAR_ISNOOP (arg_node) || INFO_ISNOOP (arg_info);
-
-    if (WLGRIDVAR_ISNOOP (arg_node)) {
-        if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
-            WLGRIDVAR_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRIDVAR_NEXTDIM (arg_node));
-        }
-
-        if (WLGRIDVAR_CODE (arg_node) != NULL) {
-            CODE_USED (WLGRIDVAR_CODE (arg_node))--;
-            WLGRIDVAR_CODE (arg_node) = NULL;
-        }
-    }
-
-    /*
-     * propagate the result up
-     */
-    INFO_ISNOOP (arg_info) = oldinfo;
-    INFO_ISNOOP (arg_info) = INFO_ISNOOP (arg_info) && WLGRIDVAR_ISNOOP (arg_node);
-
-    /*
-     * continue with next
-     */
-    if (WLGRIDVAR_NEXT (arg_node) != NULL) {
-        WLGRIDVAR_NEXT (arg_node) = TRAVdo (WLGRIDVAR_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

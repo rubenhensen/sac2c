@@ -179,22 +179,3 @@ RCSwlgrid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/** <!--********************************************************************-->
- *
- * @fn node *RCSwlgridvar( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-RCSwlgridvar (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RCSwlgridvar");
-
-    WLGRIDVAR_CODE (arg_node) = ResolvePotentialSharing (WLGRIDVAR_CODE (arg_node));
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}

@@ -824,6 +824,8 @@ extern node *TCnodeBehindCast (node *arg_node);
  */
 extern node *TCmakeVector (ntype *basetype, node *aelems);
 extern node *TCmakeIntVector (node *aelems);
+extern node *TCcreateIntVector (int length, int value);
+extern int TCgetIntVectorNthValue (int pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);
 extern node *TCcreateZeroVector (int length, simpletype btype);
@@ -1348,99 +1350,6 @@ extern int TCcountWithops (node *withop);
  ***  N_wlseg :
  ***/
 
-#define WLSEG_IDX_PRINT(handle, n, field)                                                \
-    PRINT_VECT (handle, ((int *)(WLSEG_##field (n))), WLSEG_DIMS (n), "%i");
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlsegVar :
- ***/
-
-#define WLSEGVAR_IDX_PRINT(handle, n, field)                                             \
-    {                                                                                    \
-        int d;                                                                           \
-        node **vect = WLSEGVAR_##field (n);                                              \
-        if (vect != NULL) {                                                              \
-            fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < WLSEGVAR_DIMS (n); d++) {                                    \
-                WLBnodeOrIntPrint (handle, N_wlsegvar, &(vect[d]), d);                   \
-                fprintf (handle, " ");                                                   \
-            }                                                                            \
-            fprintf (handle, "]");                                                       \
-        } else {                                                                         \
-            fprintf (handle, "NULL");                                                    \
-        }                                                                                \
-    }
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlseg :  *and*  N_wlsegVar :
- ***/
-
-#define WLSEGX_IDX_MIN(n)                                                                \
-    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_IDX_MIN (n) : WLSEGVAR_IDX_MIN (n))
-
-#define WLSEGX_IDX_MAX(n)                                                                \
-    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_IDX_MAX (n) : WLSEGVAR_IDX_MAX (n))
-
-#define WLSEGX_DIMS(n) ((NODE_TYPE (n) == N_wlseg) ? WLSEG_DIMS (n) : WLSEGVAR_DIMS (n))
-
-#define WLSEGX_CONTENTS(n)                                                               \
-    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_CONTENTS (n) : WLSEGVAR_CONTENTS (n))
-
-#define WLSEGX_NEXT(n) ((NODE_TYPE (n) == N_wlseg) ? WLSEG_NEXT (n) : WLSEGVAR_NEXT (n))
-
-#define WLSEGX_SCHEDULING(n)                                                             \
-    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_SCHEDULING (n) : WLSEGVAR_SCHEDULING (n))
-
-#define WLSEGX_TASKSEL(n)                                                                \
-    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_TASKSEL (n) : WLSEGVAR_TASKSEL (n))
-
-#define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
-    ((NODE_TYPE (n) == N_wlseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
-                                : ((NODE_TYPE (n) == N_wlsegvar)                         \
-                                     ? (void *)&(((node **)(WLSEGVAR_##field (n)))[dim]) \
-                                     : NULL))
-
-#define WLSEGX_IDX_PRINT(handle, n, field)                                               \
-    if (NODE_TYPE (n) == N_wlseg) {                                                      \
-        WLSEG_IDX_PRINT (handle, n, field);                                              \
-    } else {                                                                             \
-        WLSEGVAR_IDX_PRINT (handle, n, field);                                           \
-    }
-
-#define L_WLSEGX_NEXT(n, rhs)                                                            \
-    if (NODE_TYPE (n) == N_wlseg) {                                                      \
-        WLSEG_NEXT (n) = (rhs);                                                          \
-    } else {                                                                             \
-        WLSEGVAR_NEXT (n) = (rhs);                                                       \
-    }
-
-#define L_WLSEGX_SCHEDULING(n, rhs)                                                      \
-    if (NODE_TYPE (n) == N_wlseg) {                                                      \
-        WLSEG_SCHEDULING (n) = (rhs);                                                    \
-    } else {                                                                             \
-        WLSEGVAR_SCHEDULING (n) = (rhs);                                                 \
-    }
-
-#define L_WLSEGX_CONTENTS(n, rhs)                                                        \
-    if (NODE_TYPE (n) == N_wlseg) {                                                      \
-        WLSEG_CONTENTS (n) = (rhs);                                                      \
-    } else {                                                                             \
-        WLSEGVAR_CONTENTS (n) = (rhs);                                                   \
-    }
-
-#define L_WLSEGX_TASKSEL(n, rhs)                                                         \
-    if (NODE_TYPE (n) == N_wlseg) {                                                      \
-        WLSEG_TASKSEL (n) = (rhs);                                                       \
-    } else {                                                                             \
-        WLSEGVAR_TASKSEL (n) = (rhs);                                                    \
-    }
-
-extern node *TCmakeWlSegX (int dims, node *contents, node *next);
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1517,54 +1426,6 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_wlstridevar :
- ***/
-
-#define WLSTRIDEVAR_ISNOOP(n) (WLSTRIDEVAR_CONTENTS (n) == NULL)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlstride :  *and*  N_wlstridevar :
- ***/
-
-#define WLSTRIDEX_GET_ADDR(n, field)                                                     \
-    ((NODE_TYPE (n) == N_wlstride)                                                       \
-       ? (void *)&(WLSTRIDE_##field (n))                                                 \
-       : ((NODE_TYPE (n) == N_wlstridevar) ? (void *)&(WLSTRIDEVAR_##field (n)) : NULL))
-
-#define WLSTRIDEX_ISNOOP(n)                                                              \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_ISNOOP (n) : WLSTRIDEVAR_ISNOOP (n))
-
-#define WLSTRIDEX_LEVEL(n)                                                               \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_LEVEL (n) : WLSTRIDEVAR_LEVEL (n))
-
-#define WLSTRIDEX_DIM(n)                                                                 \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_DIM (n) : WLSTRIDEVAR_DIM (n))
-
-#define WLSTRIDEX_CONTENTS(n)                                                            \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_CONTENTS (n) : WLSTRIDEVAR_CONTENTS (n))
-
-#define WLSTRIDEX_NEXT(n)                                                                \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_NEXT (n) : WLSTRIDEVAR_NEXT (n))
-
-#define L_WLSTRIDEX_CONTENTS(n, rhs)                                                     \
-    if (NODE_TYPE (n) == N_wlstride) {                                                   \
-        WLSTRIDE_CONTENTS (n) = (rhs);                                                   \
-    } else {                                                                             \
-        WLSTRIDEVAR_CONTENTS (n) = (rhs);                                                \
-    }
-
-#define L_WLSTRIDEX_NEXT(n, rhs)                                                         \
-    if (NODE_TYPE (n) == N_wlstride) {                                                   \
-        WLSTRIDE_NEXT (n) = (rhs);                                                       \
-    } else {                                                                             \
-        WLSTRIDEVAR_NEXT (n) = (rhs);                                                    \
-    }
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_wlgrid :
  ***/
 
@@ -1576,117 +1437,9 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_wlgridvar :
- ***/
-
-#define WLGRIDVAR_CBLOCK(n) (CODE_CBLOCK (WLGRIDVAR_CODE (n)))
-#define WLGRIDVAR_CEXPR(n) (CODE_CEXPR (WLGRIDVAR_CODE (n)))
-
-#define WLGRIDVAR_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDVAR_CBLOCK (n)))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlgrid :  *and*  N_wlgridvar :
- ***/
-
-#define WLGRIDX_LEVEL(n)                                                                 \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_LEVEL (n) : WLGRIDVAR_LEVEL (n))
-
-#define WLGRIDX_DIM(n) ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_DIM (n) : WLGRIDVAR_DIM (n))
-
-#define WLGRIDX_ISFITTED(n)                                                              \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISFITTED (n) : WLGRIDVAR_ISFITTED (n))
-
-#define WLGRIDX_NEXTDIM(n)                                                               \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_NEXTDIM (n) : WLGRIDVAR_NEXTDIM (n))
-
-#define WLGRIDX_NEXT(n)                                                                  \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_NEXT (n) : WLGRIDVAR_NEXT (n))
-
-#define WLGRIDX_CODE(n)                                                                  \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_CODE (n) : WLGRIDVAR_CODE (n))
-
-#define WLGRIDX_ISNOOP(n)                                                                \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISNOOP (n) : WLGRIDVAR_ISNOOP (n))
-
-#define WLGRIDX_CBLOCK(n) (CODE_CBLOCK (WLGRIDX_CODE (n)))
-#define WLGRIDX_CEXPR(n) (CODE_CEXPR (WLGRIDX_CODE (n)))
-
-#define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
-
-#define WLGRIDX_GET_ADDR(n, field)                                                       \
-    ((NODE_TYPE (n) == N_wlgrid)                                                         \
-       ? (void *)&(WLGRID_##field (n))                                                   \
-       : ((NODE_TYPE (n) == N_wlgridvar) ? (void *)&(WLGRIDVAR_##field (n)) : NULL))
-
-#define L_WLGRIDX_ISNOOP(n, rhs)                                                         \
-    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
-        WLGRID_ISNOOP (n) = (rhs);                                                       \
-    } else {                                                                             \
-        WLGRIDVAR_ISNOOP (n) = (rhs);                                                    \
-    }
-
-#define L_WLGRIDX_NEXTDIM(n, rhs)                                                        \
-    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
-        WLGRID_NEXTDIM (n) = (rhs);                                                      \
-    } else {                                                                             \
-        WLGRIDVAR_NEXTDIM (n) = (rhs);                                                   \
-    }
-
-#define L_WLGRIDX_CODE(n, rhs)                                                           \
-    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
-        WLGRID_CODE (n) = (rhs);                                                         \
-    } else {                                                                             \
-        WLGRIDVAR_CODE (n) = (rhs);                                                      \
-    }
-
-#define L_WLGRIDX_ISFITTED(n, rhs)                                                       \
-    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
-        WLGRID_ISFITTED (n) = (rhs);                                                     \
-    } else {                                                                             \
-        WLGRIDVAR_ISFITTED (n) = (rhs);                                                  \
-    }
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_wlblock :   *and*  N_wlublock :     *and*
- ***  N_wlstride :  *and*  N_wlstridevar :
+ ***  N_wlstride :  *and*  N_wlgrid :
  ***/
-
-#define WLBLOCKSTR_GET_ADDR(n, field)                                                    \
-    ((NODE_TYPE (n) == N_wlstride)                                                       \
-       ? (void *)&(WLSTRIDE_##field (n))                                                 \
-       : ((NODE_TYPE (n) == N_wlstridevar)                                               \
-            ? (void *)&(WLSTRIDEVAR_##field (n))                                         \
-            : ((NODE_TYPE (n) == N_wlblock)                                              \
-                 ? (void *)&(WLBLOCK_##field (n))                                        \
-                 : ((NODE_TYPE (n) == N_wlublock) ? (void *)&(WLUBLOCK_##field (n))      \
-                                                  : NULL))))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlblock :   *and*  N_wlublock :     *and*
- ***  N_wlstride :  *and*  N_wlstridevar :  *and*
- ***  N_wlgrid :    *and*  N_wlgridvar :
- ***/
-
-#define WLNODE_GET_ADDR(n, field)                                                        \
-    ((NODE_TYPE (n) == N_wlstride)                                                       \
-       ? (void *)&(WLSTRIDE_##field (n))                                                 \
-       : ((NODE_TYPE (n) == N_wlstridevar)                                               \
-            ? (void *)&(WLSTRIDEVAR_##field (n))                                         \
-            : ((NODE_TYPE (n) == N_wlgrid)                                               \
-                 ? (void *)&(WLGRID_##field (n))                                         \
-                 : ((NODE_TYPE (n) == N_wlgridvar)                                       \
-                      ? (void *)&(WLGRIDVAR_##field (n))                                 \
-                      : ((NODE_TYPE (n) == N_wlblock)                                    \
-                           ? (void *)&(WLBLOCK_##field (n))                              \
-                           : ((NODE_TYPE (n) == N_wlublock)                              \
-                                ? (void *)&(WLUBLOCK_##field (n))                        \
-                                : NULL))))))
 
 #define WLNODE_ISNOOP(n)                                                                 \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
@@ -1695,12 +1448,14 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
             ? WLUBLOCK_ISNOOP (n)                                                        \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_ISNOOP (n)                                                   \
-                 : ((NODE_TYPE (n) == N_wlstridevar)                                     \
-                      ? WLSTRIDEVAR_ISNOOP (n)                                           \
-                      : ((NODE_TYPE (n) == N_wlgrid)                                     \
-                           ? WLGRID_ISNOOP (n)                                           \
-                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_ISNOOP (n)      \
-                                                             : FALSE))))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISNOOP (n) : FALSE))))
+
+#define WLNODE_ISDYNAMIC(n)                                                              \
+    ((NODE_TYPE (n) == N_wlseg)                                                          \
+       ? WLSEG_ISDYNAMIC (n)                                                             \
+       : ((NODE_TYPE (n) == N_wlstride)                                                  \
+            ? WLSTRIDE_ISDYNAMIC (n)                                                     \
+            : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISDYNAMIC (n) : FALSE)))
 
 #define WLNODE_NEXT(n)                                                                   \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
@@ -1709,12 +1464,7 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
             ? WLUBLOCK_NEXT (n)                                                          \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_NEXT (n)                                                     \
-                 : ((NODE_TYPE (n) == N_wlstridevar)                                     \
-                      ? WLSTRIDEVAR_NEXT (n)                                             \
-                      : ((NODE_TYPE (n) == N_wlgrid)                                     \
-                           ? WLGRID_NEXT (n)                                             \
-                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_NEXT (n)        \
-                                                             : NULL))))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_NEXT (n) : NULL))))
 
 #define WLNODE_LEVEL(n)                                                                  \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
@@ -1723,12 +1473,7 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
             ? WLUBLOCK_LEVEL (n)                                                         \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_LEVEL (n)                                                    \
-                 : ((NODE_TYPE (n) == N_wlstridevar)                                     \
-                      ? WLSTRIDEVAR_LEVEL (n)                                            \
-                      : ((NODE_TYPE (n) == N_wlgrid)                                     \
-                           ? WLGRID_LEVEL (n)                                            \
-                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_LEVEL (n)       \
-                                                             : 0))))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_LEVEL (n) : 0))))
 
 #define WLNODE_DIM(n)                                                                    \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
@@ -1737,56 +1482,39 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
             ? WLUBLOCK_DIM (n)                                                           \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_DIM (n)                                                      \
-                 : ((NODE_TYPE (n) == N_wlstridevar)                                     \
-                      ? WLSTRIDEVAR_DIM (n)                                              \
-                      : ((NODE_TYPE (n) == N_wlgrid)                                     \
-                           ? WLGRID_DIM (n)                                              \
-                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_DIM (n)         \
-                                                             : 0))))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_DIM (n) : 0))))
 
-#define WLNODE_BOUND1_INT(n)                                                             \
+#define WLNODE_BOUND1(n)                                                                 \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
        ? WLBLOCK_BOUND1 (n)                                                              \
        : ((NODE_TYPE (n) == N_wlublock)                                                  \
             ? WLUBLOCK_BOUND1 (n)                                                        \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_BOUND1 (n)                                                   \
-                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_BOUND1 (n) : 0))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_BOUND1 (n) : NULL))))
 
-#define WLNODE_BOUND1_NODE(n)                                                            \
-    ((NODE_TYPE (n) == N_wlstridevar)                                                    \
-       ? WLSTRIDEVAR_BOUND1 (n)                                                          \
-       : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_BOUND1 (n) : NULL))
-
-#define WLNODE_BOUND2_INT(n)                                                             \
+#define WLNODE_BOUND2(n)                                                                 \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
        ? WLBLOCK_BOUND2 (n)                                                              \
        : ((NODE_TYPE (n) == N_wlublock)                                                  \
             ? WLUBLOCK_BOUND2 (n)                                                        \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
                  ? WLSTRIDE_BOUND2 (n)                                                   \
-                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_BOUND2 (n) : 0))))
+                 : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_BOUND2 (n) : NULL))))
 
-#define WLNODE_BOUND2_NODE(n)                                                            \
-    ((NODE_TYPE (n) == N_wlstridevar)                                                    \
-       ? WLSTRIDEVAR_BOUND2 (n)                                                          \
-       : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_BOUND2 (n) : NULL))
-
-#define WLNODE_STEP_INT(n)                                                               \
+#define WLNODE_STEP(n)                                                                   \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
        ? WLBLOCK_STEP (n)                                                                \
        : ((NODE_TYPE (n) == N_wlublock)                                                  \
             ? WLUBLOCK_STEP (n)                                                          \
-            : ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_STEP (n) : 0)))
+            : ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_STEP (n) : NULL)))
 
 #define WLNODE_NEXTDIM(n)                                                                \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
        ? WLBLOCK_NEXTDIM (n)                                                             \
        : ((NODE_TYPE (n) == N_wlublock)                                                  \
             ? WLUBLOCK_NEXTDIM (n)                                                       \
-            : ((NODE_TYPE (n) == N_wlgrid)                                               \
-                 ? WLGRID_NEXTDIM (n)                                                    \
-                 : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_NEXTDIM (n) : NULL))))
+            : ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_NEXTDIM (n) : NULL)))
 
 #define L_WLNODE_NEXT(n, rhs)                                                            \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
@@ -1795,16 +1523,12 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
         WLUBLOCK_NEXT (n) = rhs;                                                         \
     else if (NODE_TYPE (n) == N_wlstride)                                                \
         WLSTRIDE_NEXT (n) = rhs;                                                         \
-    else if (NODE_TYPE (n) == N_wlstridevar)                                             \
-        WLSTRIDEVAR_NEXT (n) = rhs;                                                      \
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_NEXT (n) = rhs;                                                           \
-    else if (NODE_TYPE (n) == N_wlgridvar)                                               \
-        WLGRIDVAR_NEXT (n) = rhs;                                                        \
     else                                                                                 \
         DBUG_ASSERT (0, "L_WLNODE_NEXT called on wrong node type");
 
-#define L_WLNODE_BOUND1_INT(n, rhs)                                                      \
+#define L_WLNODE_BOUND1(n, rhs)                                                          \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
         WLBLOCK_BOUND1 (n) = rhs;                                                        \
     else if (NODE_TYPE (n) == N_wlublock)                                                \
@@ -1816,7 +1540,7 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
     else                                                                                 \
         DBUG_ASSERT (0, "L_WLNODE_BOUND1_INT called on wrong node type");
 
-#define L_WLNODE_BOUND2_INT(n, rhs)                                                      \
+#define L_WLNODE_BOUND2(n, rhs)                                                          \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
         WLBLOCK_BOUND2 (n) = rhs;                                                        \
     else if (NODE_TYPE (n) == N_wlublock)                                                \
@@ -1828,7 +1552,7 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
     else                                                                                 \
         DBUG_ASSERT (0, "L_WLNODE_BOUND2_INT called on wrong node type");
 
-#define L_WLNODE_STEP_INT(n, rhs)                                                        \
+#define L_WLNODE_STEP(n, rhs)                                                            \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
         WLBLOCK_STEP (n) = rhs;                                                          \
     else if (NODE_TYPE (n) == N_wlublock)                                                \
@@ -1845,8 +1569,6 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
         WLUBLOCK_NEXTDIM (n) = rhs;                                                      \
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_NEXTDIM (n) = rhs;                                                        \
-    else if (NODE_TYPE (n) == N_wlgridvar)                                               \
-        WLGRIDVAR_NEXTDIM (n) = rhs;                                                     \
     else                                                                                 \
         DBUG_ASSERT (0, "L_WLNODE_NEXTDIM called on wrong node type");
 

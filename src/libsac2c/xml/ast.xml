@@ -30,8 +30,6 @@
     <type name="Prf" ctype="prf" init="0" copy="literal" />
     <type name="NodeList" ctype="nodelist*" init="NULL"
     copy="function" />
-    <type name="SharedNodeList" ctype="nodelist*" init="NULL"
-    copy="function" />
     <type name="DFMask" ctype="dfmask_t*" init="NULL"
     copy="function" persist="no" />
     <type name="DFMaskBase" ctype="dfmask_base_t*" init="NULL"
@@ -39,8 +37,6 @@
     <type name="NewType" ctype="ntype*" init="NULL"
     copy="function" />
     <type name="ArgTab" ctype="argtab_t*" init="NULL"
-    copy="function" />
-    <type name="IndexPointer" ctype="index_info*" init="NULL"
     copy="function" />
     <type name="Shape" ctype="shape*" init="NULL"
     copy="function" />
@@ -52,16 +48,10 @@
     copy="literal"  />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
     copy="function" />
-    <type name="IntegerPointer" ctype="int*" init="NULL"
-    copy="function" />
-    <type name="IntegerPointerArray" ctype="int*" size="7"
-    init="NULL" copy="function" />
     <type name="Scheduling" ctype="sched_t*" init="NULL"
     copy="function" persist="no" />
     <type name="TaskSel" ctype="tasksel_t*" init="NULL"
     copy="function" persist="no" />
-    <type name="NodePointer" ctype="node**" init="NULL"
-    copy="function" />
     <type name="BitField" ctype="int" init="0" copy="literal" />
     <type name="Constant" ctype="constant*" init="NULL"
     copy="function" />
@@ -335,8 +325,6 @@
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
           <node name="SSAstack" />
-          <node name="WLblock" />
-          <node name="WLublock" />
           <node name="Nums" />
         </travsons>
       </traversal>
@@ -354,7 +342,6 @@
           <node name="Vardec" />
           <node name="Id" />
           <node name="Ids" />
-          <node name="WLsegVar" />
         </travuser>
       </traversal>
       <traversal id="MCG" name="Map Call Graph" default="sons" include="map_call_graph.h" >
@@ -1410,7 +1397,6 @@
 	  <node name="Code" />
 	  <node name="Withid" />
 	  <node name="Range" />
-          <node name="WLsegVar" />
 	</travuser>
       </traversal>
       <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
@@ -1853,7 +1839,6 @@
       </traversal>
       <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
         <travuser>
-          <node name="Assign" />
           <node name="Code" />
           <node name="Let" />
           <node name="With" />
@@ -1875,11 +1860,8 @@
 	  <node name="With2" />
 	  <node name="Withid" />
 	  <node name="WLseg" />
-	  <node name="WLsegVar" />
 	  <node name="WLstride" />
-	  <node name="WLstrideVar" />
 	  <node name="WLgrid" />
-	  <node name="WLgridVar" />
 	</travuser>
 	<traverror>
 	  <!-- blocking is not supported for now. -->
@@ -1972,12 +1954,14 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="Ap" />
           <node name="Cond" />
           <node name="With" />
           <node name="With2" />
           <node name="Code" />
           <node name="Prf" />
+          <node name="Funcond" />
         </travuser>
 	<traverror>
           <node name="Do" />
@@ -2437,7 +2421,6 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="With2" />
-          <node name="WLsegVar" />
           <node name="WLseg" />
         </travuser>
       </traversal>
@@ -2653,7 +2636,6 @@
           <node name="With2" />
           <node name="With3" />
           <node name="WLseg" />
-          <node name="WLsegVar" />
           <node name="Return" />
           <node name="Ret" />
         </travuser>
@@ -2700,9 +2682,7 @@
       <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">
         <travuser>
           <node name="WLgrid" />
-          <node name="WLgridVar" />
           <node name="WLstride" />
-          <node name="WLstrideVar" />
           <node name="WLblock" />
           <node name="WLublock" />
           <node name="Code" />
@@ -2711,28 +2691,26 @@
       </traversal>
       <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
         <travuser>
-	  <node name="Module" />
-	  <node name="Typedef" />
-	  <node name="Objdef" />
-	  <node name="Fundef" />
-	  <node name="Arg" />
-	  <node name="Return" />
-	  <node name="Ap" />
-	  <node name="Icm" />
-	  <node name="WLseg" />
-	  <node name="WLsegVar" />
-	  <node name="Avis" />
-	</travuser>
+	        <node name="Module" />
+	        <node name="Typedef" />
+	        <node name="Objdef" />
+	        <node name="Fundef" />
+	        <node name="Arg" />
+	        <node name="Return" />
+	        <node name="Ap" />
+	        <node name="Icm" />
+	        <node name="WLseg" />
+	        <node name="Avis" />
+	      </travuser>
       </traversal>
       <traversal id="RCS" name="Resolve Code Sharing" default="sons" include="resolve_code_sharing.h">
         <travuser>
-	  <node name="With" />
-	  <node name="With2" />
-	  <node name="Code" />
-	  <node name="Part" />
-	  <node name="WLgrid" />
-	  <node name="WLgridVar" />
-	</travuser>
+	        <node name="With" />
+	        <node name="With2" />
+	        <node name="Code" />
+	        <node name="Part" />
+	        <node name="WLgrid" />
+	      </travuser>
       </traversal>
       <traversal id="COMP" name="Compile" default="sons" include="compile.h">
         <travuser>
@@ -2762,13 +2740,10 @@
           <node name="Generator" />
           <node name="With2" />
           <node name="WLseg" />
-          <node name="WLsegVar" />
           <node name="WLblock" />
           <node name="WLublock" />
           <node name="WLstride" />
-          <node name="WLstrideVar" />
           <node name="WLgrid" />
-          <node name="WLgridVar" />
           <node name="Code" />
           <node name="With3" />
           <node name="Range" />
@@ -4280,7 +4255,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4295,7 +4269,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4310,7 +4283,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4742,7 +4714,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4757,7 +4728,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4772,7 +4742,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4841,7 +4810,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4856,7 +4824,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -4871,7 +4838,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6077,8 +6043,11 @@ N_structdef :
               <target mandatory="no">
                 <node name="Assign" />
                 <phases>
+		<!--
                   <range from="ptc_ssa" to="wlt_ussa" /> 
                   <range from="wlt_ssa" to="ussa_ussa" /> 
+		  -->
+                  <range from="ptc_ssa" to="ussa_ussa" /> 
                 </phases>
               </target>
             </targets>
@@ -6673,7 +6642,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6688,7 +6656,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6703,7 +6670,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -7248,12 +7214,6 @@ N_structdef :
                 <all />
               </phases>
             </target>
-            <target mandatory="yes">
-              <node name="WLsegVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
           </targets>
         </son>
         <son name="Code">
@@ -7296,7 +7256,7 @@ N_structdef :
               <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <range from="wlt_wltr" to="wlt_l2f" />
+                  <all />
                 </phases>
               </target>
             </targets>
@@ -7310,7 +7270,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -7325,7 +7284,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -7340,7 +7298,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -7856,13 +7813,87 @@ N_structdef :
             <target mandatory="no">
               <node name="WLseg" />
               <phases>
-                <all />
+                <range from="wlt_wltr" to="final" />
               </phases>
             </target>
-            <target mandatory="no">
-              <node name="WLsegVar" />
+          </targets>
+        </son>
+        <son name="IdxInf" default="NULL">
+          <description>Gives the infimum of all indices in the iteration space of this segment. Note that for static segments (ISDYNAMIC == FALSE), this must be an array of integer constants.</description>
+          <targets>
+            <target mandatory="yes">
+              <node name="Array" />
               <phases>
-                <all />
+                <range from="wlt_wltr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="IdxSup" default="NULL">
+          <description>Gives the supremum of all indices in the iteration space of this segment. Note that for non-dynamic segments (ISDYNAMIC == FALSE), this must be an array of integer constants.</description>
+          <targets>
+            <target mandatory="yes">
+              <node name="Array" />
+              <phases>
+                <range from="wlt_wltr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="UBV" default="NULL">
+	  <description>This son is only present if the segment is static (ISDYNAMIC == FALSE). The length of the vector is replicated by the BLOCKS attribute.</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Array"/>
+              <phases>
+                <range from="wlt_wltr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+	<!--
+        <attribute name="BV" default="NULL" inconstructor="no">
+          <type name="IntegerPointerArray">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="wlt_wltr" to="cg_cpl" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+	-->
+        <son name="BV" default="NULL">
+	  <description>This son contains an N_exprs chain of integer vectors encoded as N_array nodes. The number of expressions in the chain needs to be equal to the BLOCKS attribute. Each vector, in turn, needs to have exactly DIMS many elements.</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs"/>
+              <phases>
+                <range from="wlt_wltr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="SV" default="NULL">
+	  <description>This son is only present if the segment is static (ISDYNAMIC == FALSE). The length of the vector is replicated by the BLOCKS attribute.</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Array"/>
+              <phases>
+                <range from="wlt_wltr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="HomSV" default="NULL">
+	  <description>This son is only present if the segment is static (ISDYNAMIC == FALSE). The length of the vector is replicated by the BLOCKS attribute.</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Array"/>
+              <phases>
+                <range from="wlt_wltr" to="final" />
               </phases>
             </target>
           </targets>
@@ -7870,43 +7901,8 @@ N_structdef :
       </sons>
       <attributes>
         <attribute name="Dims" inconstructor="yes">
+	  <description>Gives the number of dimensions of this segment, i.e., the rank of the computed result.</description>
           <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Idx_Min" default="NULL" inconstructor="no">
-          <type name="IntegerPointer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Idx_Max" default="NULL" inconstructor="no">
-          <type name="IntegerPointer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="UBV" default="NULL" inconstructor="no">
-          <type name="IntegerPointer">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -7929,45 +7925,6 @@ N_structdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="BV" default="NULL" inconstructor="no">
-          <type name="IntegerPointerArray">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                <!--
-                  <all />
-                -->
-                  <range from="wlt_wltr" to="cg_cpl" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="SV" default="NULL" inconstructor="no">
-          <type name="IntegerPointer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="wlt_wltr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="HomSV" inconstructor="no">
-          <type name="IntegerPointer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="wlt_wltr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type> 
-       </attribute>
         <attribute name="Scheduling" inconstructor="no">
           <type name="Scheduling">
             <targets>
@@ -8000,130 +7957,11 @@ N_structdef :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
-    </node>
-<!--
-
-  N_wlsegvar :
-
--->
-    <node name="WLsegVar">
-      <sons>
-        <son name="Contents">
-          <targets>
-            <target mandatory="yes">
-              <node name="WLstride" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
-              <node name="WLstrideVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="WLseg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLsegVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Dims" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Idx_Min" default="NULL" inconstructor="no">
-          <type name="NodePointer">
-            <description>wird bei der correct-type function ausgelassen, da nicht klar 
-              war, wie mit dem Arraytyp umgegangen werden soll.</description>
-            <targets>
-              <target mandatory="yes">
-                <node name="Num" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-              <target mandatory="yes">
-                <node name="Id" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Idx_Max" default="NULL" inconstructor="no">
-          <type name="NodePointer">
-            <description>wird bei der correct-type function ausgelassen, da nicht klar 
-              war, wie mit dem Arraytyp umgegangen werden soll.</description>
-            <targets>
-              <target mandatory="yes">
-                <node name="Num" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-              <target mandatory="yes">
-                <node name="Id" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Scheduling" inconstructor="no">
-          <type name="Scheduling">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="wlt_wltr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="TaskSel" inconstructor="no">
-          <type name="TaskSel">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="wlt_wltr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsDynamic">
+	  <description>Signals that this segment has bounds that are not statically known.</description>
+	</flag>
+      </flags>
     </node>
 <!--
 
@@ -8132,6 +7970,36 @@ N_structdef :
 -->
     <node name="WLblock">
       <sons>
+        <son name="Bound1">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Bound2">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Step">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="NextDim">
           <targets>
             <target mandatory="no">
@@ -8183,42 +8051,6 @@ N_structdef :
           </type>
         </attribute>
         <attribute name="Dim" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound1" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound2" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Step" inconstructor="yes">
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -8240,6 +8072,36 @@ N_structdef :
 -->
     <node name="WLublock">
       <sons>
+        <son name="Bound1">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Bound2">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Step">
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="NextDim">
           <targets>
             <target mandatory="no">
@@ -8285,42 +8147,6 @@ N_structdef :
           </type>
         </attribute>
         <attribute name="Dim" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound1" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound2" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Step" inconstructor="yes">
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -8350,6 +8176,7 @@ N_structdef :
       </sons>
       <attributes>
       </attributes>
+      <flags></flags>
     </node>
 <!--
 
@@ -8358,16 +8185,46 @@ N_structdef :
 -->
     <node name="WLstride">
       <sons>
-        <son name="Contents">
+        <son name="Bound1">
+	  <description>Gives the lower bound of this stride. This needs to be an N_num if ISDYNAMIC is not set.</description>
           <targets>
             <target mandatory="yes">
-              <node name="WLgrid" />
+              <node name="Num" />
+              <node name="Id" />
               <phases>
                 <all />
               </phases>
             </target>
+          </targets>
+        </son>
+        <son name="Bound2">
+	  <description>Gives the lower bound of this stride. This needs to be an N_num if ISDYNAMIC is not set.</description>
+          <targets>
             <target mandatory="yes">
-              <node name="WLgridVar" />
+              <node name="Num" />
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Step">
+	  <description>Gives the step of this stride. This needs to be an N_num if ISDYNAMIC is not set.</description>
+          <targets>
+            <target mandatory="yes">
+              <node name="Num" />
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Contents">
+          <targets>
+            <target mandatory="yes">
+              <node name="WLgrid" />
               <phases>
                 <all />
               </phases>
@@ -8378,12 +8235,6 @@ N_structdef :
           <targets>
             <target mandatory="no">
               <node name="WLstride" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLstrideVar" />
               <phases>
                 <all />
               </phases>
@@ -8405,42 +8256,6 @@ N_structdef :
           </type>
         </attribute>
         <attribute name="Dim" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>                
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound1" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound2" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Step" inconstructor="yes">
           <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -8468,247 +8283,23 @@ N_structdef :
       <flags>
         <flag name="DoUnroll" />
         <flag name="IsModified">
-          <description>
-            Used in wltransform.
-          </description>
+          <description> Used in wltransform.  </description>
         </flag>
         <flag name="IsSimdSuitable" />
+	<flag name="IsDynamic" default="FALSE">
+	  <description>Signals that this stride has bounds or a step that are not statically known.</description>
+	</flag>
       </flags>
     </node>
 <!--
 
-  N_wlstridevar :
-
--->
-    <node name="WLstrideVar">
-      <sons>
-        <son name="Bound1">
-          <targets>
-            <target mandatory="yes">
-              <node name="Num" />
-              <node name="Id" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Bound2">
-          <targets>
-            <target mandatory="yes">
-              <node name="Num" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
-              <node name="Id" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Step">
-          <targets>
-            <target mandatory="yes">
-              <node name="Num" />
-              <node name="Id" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Contents">
-          <targets>
-            <target mandatory="yes">
-              <node name="WLgrid" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
-              <node name="WLgridVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="WLstride" />
-              <node name="WLstrideVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Level" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Dim" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-<!--
-
-  N_wlgrid :
+  N_wlgrid:
 
 -->
     <node name="WLgrid">
       <sons>
-        <son name="NextDim">
-          <targets>
-            <target mandatory="no">
-              <node name="WLblock" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLublock" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLstride" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLstrideVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-       </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="WLgrid" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLgridVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Level" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Dim" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound1" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Bound2" inconstructor="yes">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Code" inconstructor="yes">
-          <description>if present, the used counter for the code
-            needs to be increased</description>
-          <type name="CodeLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Code" />
-                <phases>
-                  <range from="wlt_wltr" to="cg_cpl" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags>
-        <flag name="IsFitted" />
-        <flag name="DoUnroll" />
-        <flag name="IsNoOp" />
-        <flag name="IsModified">
-          <description>Used in wltransform.</description>
-        </flag>
-      </flags>
-    </node>
-<!--
-
-  N_wlgridvar :
-
--->
-    <node name="WLgridVar">
-      <sons>
         <son name="Bound1">
+	  <description>Encodes the lower bound of the grid. This needs to be a N_num node if ISDYNAMIC is not set.</description>
           <targets>
             <target mandatory="yes">
               <node name="Num" />
@@ -8725,6 +8316,7 @@ N_structdef :
           </targets>
         </son>
         <son name="Bound2">
+	  <description>Encodes the upper bound of the grid. This needs to be a N_num node if ISDYNAMIC is not set.</description>
           <targets>
             <target mandatory="yes">
               <node name="Num" />
@@ -8748,24 +8340,12 @@ N_structdef :
                 <all />
               </phases>
             </target>
-            <target mandatory="no">
-              <node name="WLstrideVar" />
-              <phases>
-                <all />
-              </phases>
-            </target>
           </targets>
         </son>
         <son name="Next">
           <targets>
             <target mandatory="no">
               <node name="WLgrid" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="no">
-              <node name="WLgridVar" />
               <phases>
                 <all />
               </phases>
@@ -8817,6 +8397,12 @@ N_structdef :
         <flag name="IsFitted" />
         <flag name="DoUnroll" />
         <flag name="IsNoOp" />
+        <flag name="IsModified">
+          <description>Used in wltransform.</description>
+        </flag>
+	<flag name="IsDynamic" default="FALSE">
+	  <description>Signals that this grid has bounds that are not statically known.</description>
+	</flag>
       </flags>
     </node>
 <!--
@@ -9712,7 +9298,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9727,7 +9312,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9742,7 +9326,6 @@ N_structdef :
                 <phases>
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
-                  <phase name="wlt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>

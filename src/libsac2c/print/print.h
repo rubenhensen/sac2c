@@ -113,13 +113,12 @@ extern node *PRTpropagate (node *arg_node, info *arg_info);
 /* with-loop (backend) */
 extern node *PRTwith2 (node *arg_node, info *arg_info);
 extern node *PRTwlseg (node *arg_node, info *arg_info);
-extern node *PRTwlsegvar (node *arg_node, info *arg_info);
 extern node *PRTwlxblock (node *arg_node, info *arg_info);
 extern node *PRTwlsimd (node *arg_node, info *arg_info);
 extern node *PRTwlstride (node *arg_node, info *arg_info);
-extern node *PRTwlstridevar (node *arg_node, info *arg_info);
 extern node *PRTwlgrid (node *arg_node, info *arg_info);
-extern node *PRTwlgridvar (node *arg_node, info *arg_info);
+extern node *PRTwlublock (node *arg_node, info *arg_info);
+extern node *PRTwlblock (node *arg_node, info *arg_info);
 
 /* with-loop (mutc) */
 extern node *PRTwith3 (node *arg_node, info *arg_info);

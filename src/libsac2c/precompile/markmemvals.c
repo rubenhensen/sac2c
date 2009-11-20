@@ -1078,51 +1078,10 @@ MMVwlseg (node *arg_node, info *arg_info)
     }
 
     WLSEG_CONTENTS (arg_node) = TRAVdo (WLSEG_CONTENTS (arg_node), arg_info);
+    WLSEG_IDXINF (arg_node) = TRAVopt (WLSEG_IDXINF (arg_node), arg_info);
+    WLSEG_IDXSUP (arg_node) = TRAVopt (WLSEG_IDXSUP (arg_node), arg_info);
 
     WLSEG_NEXT (arg_node) = TRAVopt (WLSEG_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn MMVwlsegvar
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
- ***************************************************************************/
-node *
-MMVwlsegvar (node *arg_node, info *arg_info)
-{
-    int d;
-
-    DBUG_ENTER ("MMVwlsegvar");
-
-    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-        WLSEGVAR_SCHEDULING (arg_node)
-          = SCHmarkmemvalsScheduling (WLSEGVAR_SCHEDULING (arg_node),
-                                      INFO_LUT (arg_info));
-        WLSEGVAR_TASKSEL (arg_node)
-          = SCHmarkmemvalsTasksel (WLSEGVAR_TASKSEL (arg_node), INFO_LUT (arg_info));
-    }
-
-    DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL), "WLSEGVAR_IDX_MIN not found!");
-    DBUG_ASSERT ((WLSEGVAR_IDX_MAX (arg_node) != NULL), "WLSEGVAR_IDX_MAX not found!");
-    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
-        (WLSEGVAR_IDX_MIN (arg_node))[d]
-          = TRAVdo ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
-        (WLSEGVAR_IDX_MAX (arg_node))[d]
-          = TRAVdo ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
-    }
-
-    WLSEGVAR_CONTENTS (arg_node) = TRAVdo (WLSEGVAR_CONTENTS (arg_node), arg_info);
-
-    WLSEGVAR_NEXT (arg_node) = TRAVopt (WLSEGVAR_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

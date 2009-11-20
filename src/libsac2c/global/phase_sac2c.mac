@@ -112,8 +112,7 @@ SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, ptc)
 
 SUBPHASE (elf, "Extending LaC funs", ELFdoExtendLacFuns, global.elf, ptc)
 
-SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransformAllowGOs,
-          ALWAYS, ptc)
+SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, ptc)
 
 ENDPHASE (ptc)
 
@@ -188,7 +187,7 @@ SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
 SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
 
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs, ALWAYS, cwc)
+          SSATdoTransformAllowGOs, ALWAYS cwc)
 
 #else /*  CG_STRUCT_TRY */
 
@@ -197,7 +196,7 @@ SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
 SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
 
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs, ALWAYS, cwc)
+          SSATdoTransform, ALWAYS, cwc)
 
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           cwc)
@@ -724,25 +723,10 @@ ENDPHASE (cuda)
 
 PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
-SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, wlt)
-
-#if 0
-SUBPHASE( acul,
-          "Annotate CUDA loops",
-          ACULdoAnnotateCUDALoop, 
-          global.backend == BE_cuda,
-          wlt)
-#endif
-
-SUBPHASE (f2l, "Reintroducing loops and conditionals", F2LdoFun2Lac, ALWAYS, wlt)
-
-SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, wlt)
+SUBPHASE (wlbsc, "Ensuring structual constants for with-loop partition bounds",
+          WLBSCdoWlbounds2structConsts, ALWAYS, wlt)
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
-
-SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, wlt)
-
-SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransform, ALWAYS, wlt)
 
 SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           global.backend == BE_mutc, wlt)

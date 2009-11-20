@@ -44,7 +44,6 @@ bool[+] ordotandBBBSTAR (bool[+] x, bool[+] y)
 #endif // FIXME
 
 /*
- * new_node = TBmakeRange(
  * $Id$
  */
 
@@ -64,10 +63,8 @@ bool[+] ordotandBBBSTAR (bool[+] x, bool[+] y)
  *   Do *NOT* call the external functions Dup...() within a DUP-traversal!!!!
  *   For duplicating nodes DUPTRAV should be used and for duplicating non-node
  *   structures appropriate Dup..._() functions are provided!
- *
- *   When adding new functions: Please name top-level functions Dup...()
- *   *without* trailing '_' and name static functions Dup..._() *with*
- *   trailing '_'.
+ *   Note that DUPTRAV, unlike usual traversal functions, does not fail if its
+ *   argument is NULL. Instead, it is the identity on the argument in this case.
  *
  ******************************************************************************/
 
@@ -2291,29 +2288,22 @@ node *
 DUPwlseg (node *arg_node, info *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DUPwlseg");
 
     new_node = TBmakeWlseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                             DUPCONT (WLSEG_NEXT (arg_node)));
 
-    DUP_VECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
-              int);
-    DUP_VECT (WLSEG_IDX_MAX (new_node), WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (new_node),
-              int);
+    WLSEG_IDXINF (new_node) = DUPTRAV (WLSEG_IDXINF (arg_node));
+    WLSEG_IDXSUP (new_node) = DUPTRAV (WLSEG_IDXSUP (arg_node));
 
-    DUP_VECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
+    WLSEG_UBV (new_node) = DUPTRAV (WLSEG_UBV (arg_node));
 
     WLSEG_BLOCKS (new_node) = WLSEG_BLOCKS (arg_node);
 
-    for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
-        DUP_VECT (WLSEG_BV (new_node, i), WLSEG_BV (arg_node, i), WLSEG_DIMS (new_node),
-                  int);
-    }
-
-    DUP_VECT (WLSEG_SV (new_node), WLSEG_SV (arg_node), WLSEG_DIMS (new_node), int);
-    DUP_VECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
+    WLSEG_BV (new_node) = DUPTRAV (WLSEG_BV (arg_node));
+    WLSEG_SV (new_node) = DUPTRAV (WLSEG_SV (arg_node));
+    WLSEG_HOMSV (new_node) = DUPTRAV (WLSEG_HOMSV (arg_node));
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (new_node) = SCHcopyScheduling (WLSEG_SCHEDULING (arg_node));
@@ -2323,40 +2313,7 @@ DUPwlseg (node *arg_node, info *arg_info)
         WLSEG_TASKSEL (new_node) = SCHcopyTasksel (WLSEG_TASKSEL (arg_node));
     }
 
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DUPwlsegvar (node *arg_node, info *arg_info)
-{
-    node *new_node;
-    int d;
-
-    DBUG_ENTER ("DUPwlsegvar");
-
-    new_node
-      = TBmakeWlsegvar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
-                        DUPCONT (WLSEGVAR_NEXT (arg_node)));
-
-    MALLOC_VECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_DIMS (new_node), node *);
-    MALLOC_VECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_DIMS (new_node), node *);
-    for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-        WLSEGVAR_IDX_MIN (new_node)[d] = DUPTRAV (WLSEGVAR_IDX_MIN (arg_node)[d]);
-        WLSEGVAR_IDX_MAX (new_node)[d] = DUPTRAV (WLSEGVAR_IDX_MAX (arg_node)[d]);
-    }
-
-    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-        WLSEGVAR_SCHEDULING (new_node)
-          = SCHcopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
-    }
-
-    if (WLSEGVAR_TASKSEL (arg_node) != NULL) {
-        WLSEGVAR_TASKSEL (new_node) = SCHcopyTasksel (WLSEGVAR_TASKSEL (arg_node));
-    }
+    WLSEG_FLAGSTRUCTURE (new_node) = WLSEG_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2430,11 +2387,12 @@ DUPwlstride (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwlstride");
 
-    new_node
-      = TBmakeWlstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
-                        WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
-                        WLSTRIDE_STEP (arg_node), DUPTRAV (WLSTRIDE_CONTENTS (arg_node)),
-                        DUPCONT (WLSTRIDE_NEXT (arg_node)));
+    new_node = TBmakeWlstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
+                               DUPTRAV (WLSTRIDE_BOUND1 (arg_node)),
+                               DUPTRAV (WLSTRIDE_BOUND2 (arg_node)),
+                               DUPTRAV (WLSTRIDE_STEP (arg_node)),
+                               DUPTRAV (WLSTRIDE_CONTENTS (arg_node)),
+                               DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
     WLSTRIDE_FLAGSTRUCTURE (new_node) = WLSTRIDE_FLAGSTRUCTURE (arg_node);
@@ -2452,28 +2410,6 @@ DUPwlstride (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPwlstridevar (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPwlstridevar");
-
-    new_node
-      = TBmakeWlstridevar (WLSTRIDEVAR_LEVEL (arg_node), WLSTRIDEVAR_DIM (arg_node),
-                           DUPTRAV (WLSTRIDEVAR_BOUND1 (arg_node)),
-                           DUPTRAV (WLSTRIDEVAR_BOUND2 (arg_node)),
-                           DUPTRAV (WLSTRIDEVAR_STEP (arg_node)),
-                           DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
-                           DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPwlgrid (node *arg_node, info *arg_info)
 {
     node *new_node;
@@ -2482,8 +2418,9 @@ DUPwlgrid (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeWlgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
-                      WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                       LUTsearchInLutPp (INFO_LUT (arg_info), WLGRID_CODE (arg_node)),
+                      DUPTRAV (WLGRID_BOUND1 (arg_node)),
+                      DUPTRAV (WLGRID_BOUND2 (arg_node)),
                       DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                       DUPCONT (WLGRID_NEXT (arg_node)));
 
@@ -2497,34 +2434,6 @@ DUPwlgrid (node *arg_node, info *arg_info)
      * duplicated grids are not modified yet ;)
      */
     WLGRID_ISMODIFIED (new_node) = FALSE;
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DUPwlgridvar (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPwlgridvar");
-
-    new_node = TBmakeWlgridvar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
-                                LUTsearchInLutPp (INFO_LUT (arg_info),
-                                                  WLGRIDVAR_CODE (arg_node)),
-                                DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
-                                DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
-                                DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
-                                DUPCONT (WLGRIDVAR_NEXT (arg_node)));
-
-    if (WLGRIDVAR_CODE (new_node) != NULL) {
-        CODE_INC_USED (WLGRIDVAR_CODE (new_node));
-    }
-
-    WLGRIDVAR_FLAGSTRUCTURE (new_node) = WLGRIDVAR_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 

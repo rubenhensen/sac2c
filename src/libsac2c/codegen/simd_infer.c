@@ -264,7 +264,7 @@ SIMDwlgrid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SIMDwlgrid");
 
-    if (WLGRID_CODE (arg_node) != NULL) {
+    if ((!WLGRID_ISDYNAMIC (arg_node)) && (WLGRID_CODE (arg_node) != NULL)) {
         DBUG_ASSERT (WLGRID_NEXTDIM (arg_node) == NULL,
                      "N_wlgrid with non-NULL NEXTDIM and CODE found!");
         /**
@@ -275,8 +275,8 @@ SIMDwlgrid (node *arg_node, info *arg_info)
          */
         INFO_SUITABLE (arg_info) = CODE_ISSIMDSUITABLE (WLGRID_CODE (arg_node))
                                    && (WLGRID_NEXT (arg_node) == NULL)
-                                   && (WLGRID_BOUND1 (arg_node) == 0)
-                                   && (WLGRID_BOUND2 (arg_node) == 1);
+                                   && (NUM_VAL (WLGRID_BOUND1 (arg_node)) == 0)
+                                   && (NUM_VAL (WLGRID_BOUND2 (arg_node)) == 1);
     } else {
         DBUG_ASSERT (WLGRID_NEXTDIM (arg_node) != NULL,
                      "N_wlgrid with NULL NEXTDIM and CODE found!");

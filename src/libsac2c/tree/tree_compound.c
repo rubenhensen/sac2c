@@ -2368,6 +2368,58 @@ TCmakeIntVector (node *aelems)
 /******************************************************************************
  *
  * function:
+ *   node *TCcreateIntVector( int length, int value)
+ *
+ * description:
+ *   Returns an integer vector.
+ *
+ *****************************************************************************/
+node *
+TCcreateIntVector (int length, int value)
+{
+    node *result = NULL;
+    int d;
+
+    DBUG_ENTER ("TCcreateIntVector");
+
+    for (d = 0; d < length; d++) {
+        result = TBmakeExprs (TBmakeNum (value), result);
+    }
+
+    result = TCmakeIntVector (result);
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Given an N_array node that represents an integer vector, this
+ *        function returns the value of its pos-th element.
+ *
+ * @param pos  index of element to return
+ * @param vect N_array node
+ *
+ * @return value at that position
+ ******************************************************************************/
+int
+TCgetIntVectorNthValue (int pos, node *vect)
+{
+    node *elem;
+
+    DBUG_ENTER ("TCgetIntVectorNthValue");
+
+    DBUG_ASSERT ((SHgetDim (ARRAY_FRAMESHAPE (vect)) == 1), "argument not a vector");
+
+    elem = TCgetNthExprsExpr (pos, ARRAY_AELEMS (vect));
+
+    DBUG_ASSERT ((elem != NULL), "vector too short!");
+    DBUG_ASSERT ((NODE_TYPE (elem) == N_num), "element not an int!");
+
+    DBUG_RETURN (NUM_VAL (elem));
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *TCcreateZeroScalar( simpletype btype)
  *
  * description:
@@ -3100,44 +3152,6 @@ TCcountWithops (node *withop)
 /***
  ***  N_with2 :
  ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_with :  *and*  N_with2 :
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_wlseg :  *and*  N_wlsegVar :
- ***/
-
-/******************************************************************************
- *
- * Function:
- *   node *TCmakeWLsegX( int dims, node *contents, node *next)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-TCmakeWlSegX (int dims, node *contents, node *next)
-{
-    node *new_node;
-
-    DBUG_ENTER ("TCmakeWlSegX");
-
-    if (WLTRAallStridesAreConstant (contents, TRUE, TRUE)) {
-        new_node = TBmakeWlseg (dims, contents, next);
-    } else {
-        new_node = TBmakeWlsegvar (dims, contents, next);
-    }
-
-    DBUG_RETURN (new_node);
-}
 
 /*--------------------------------------------------------------------------*/
 

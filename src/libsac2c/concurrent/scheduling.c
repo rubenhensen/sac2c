@@ -36,6 +36,7 @@
 #include "free.h"
 #include "traverse.h"
 #include "ctinfo.h"
+#include "DupTree.h"
 #include "wl_bounds.h"
 #include "dbug.h"
 #include "renameidentifiers.h"
@@ -491,7 +492,7 @@ SCHtouchScheduling (sched_t *sched, info *arg_info)
     DBUG_ENTER ("SCHtouchScheduling");
 
     /*
-     * The discipline string must not be freed since it is only a pointer
+     * The discipline string must not be touched since it is only a pointer
      * to the respective entry of the scheduler table.
      */
 
@@ -788,16 +789,20 @@ SCHadjustmentRequired (int dim, node *wlseg)
 
     DBUG_ENTER ("SCHadjustmentRequired");
 
-    while (!STReq (((sched_t *)WLSEGX_SCHEDULING (wlseg))->discipline,
+    while (!STReq (((sched_t *)WLSEG_SCHEDULING (wlseg))->discipline,
                    scheduler_table[i].discipline)) {
         i++;
     }
 
     adjust
       = ((dim <= scheduler_table[i].max_sched_dim)
-         && ((NODE_TYPE (wlseg) == N_wlsegvar)
-             || (((!scheduler_table[i].adjust_flag) || (WLSEG_HOMSV (wlseg)[dim] == 0))
-                 && (WLSEG_SV (wlseg)[dim] > 1))));
+         && ((WLSEG_ISDYNAMIC (wlseg))
+             || (((!scheduler_table[i].adjust_flag)
+                  || (NUM_VAL (
+                        TCgetNthExprsExpr (dim, ARRAY_AELEMS (WLSEG_HOMSV (wlseg))))
+                      == 0))
+                 && (NUM_VAL (TCgetNthExprsExpr (dim, ARRAY_AELEMS (WLSEG_SV (wlseg))))
+                     > 1))));
 
     DBUG_RETURN (adjust);
 }
@@ -877,7 +882,7 @@ CompileConstSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
 
     DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlseg), "no constant segment found!");
+    DBUG_ASSERT ((!WLSEG_ISDYNAMIC (wlseg)), "no constant segment found!");
 
     args = NULL;
 
@@ -886,23 +891,29 @@ CompileConstSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
             if (SCHadjustmentRequired (d, wlseg)) {
                 args = TBmakeExprs (TBmakeNum (1), args);
             } else {
-                args = TBmakeExprs (TBmakeNum (WLSEG_SV (wlseg)[d]), args);
+                args
+                  = TBmakeExprs (DUPdoDupNode (
+                                   TCgetNthExprsExpr (d,
+                                                      ARRAY_AELEMS (WLSEG_SV (wlseg)))),
+                                 args);
             }
         }
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXSUP (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXINF (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = TBmakeExprs (index, args);
     }
@@ -933,33 +944,35 @@ CompileVarSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
 
     DBUG_ENTER ("CompileVarSegSchedulingArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlsegvar), "no var. segment found!");
+    DBUG_ASSERT ((WLSEG_ISDYNAMIC (wlseg)), "no var. segment found!");
 
     args = NULL;
 
     if (sched != NULL) {
-        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
             args = TBmakeExprs (TBmakeNum (1), args);
         }
     }
 
-    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXSUP (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = TBmakeExprs (index, args);
     }
 
-    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXINF (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = TBmakeExprs (index, args);
     }
 
-    args = TBmakeExprs (TBmakeNum (WLSEGVAR_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEG_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -998,11 +1011,11 @@ CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, cha
 
     switch (NODE_TYPE (arg_node)) {
     case N_wlseg:
-        general_args = CompileConstSegSchedulingArgs (wl_ids, arg_node, sched);
-        break;
-
-    case N_wlsegvar:
-        general_args = CompileVarSegSchedulingArgs (wl_ids, arg_node, sched);
+        if (WLSEG_ISDYNAMIC (arg_node)) {
+            general_args = CompileVarSegSchedulingArgs (wl_ids, arg_node, sched);
+        } else {
+            general_args = CompileConstSegSchedulingArgs (wl_ids, arg_node, sched);
+        }
         break;
 
     default:
@@ -1494,7 +1507,7 @@ CompileConstSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sc
 
     DBUG_ENTER ("CompileConstSegSchedulingWithTaskselArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlseg), "no constant segment found!");
+    DBUG_ASSERT ((!WLSEG_ISDYNAMIC (wlseg)), "no constant segment found!");
 
     args = NULL;
 
@@ -1523,24 +1536,29 @@ CompileConstSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sc
             if (SCHadjustmentRequired (d, wlseg)) {
                 args = TBmakeExprs (TBmakeNum (1), args);
             } else {
-                args = TBmakeExprs (TBmakeNum (WLSEG_SV (wlseg)[d]), args);
+                args
+                  = TBmakeExprs (DUPdoDupNode (
+                                   TCgetNthExprsExpr (d,
+                                                      ARRAY_AELEMS (WLSEG_SV (wlseg)))),
+                                 args);
             }
         }
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXSUP (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
-
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXINF (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = TBmakeExprs (index, args);
     }
@@ -1574,7 +1592,7 @@ CompileVarSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sche
 
     DBUG_ENTER ("CompileVarSegSchedulingWithTaskselArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlsegvar), "no var. segment found!");
+    DBUG_ASSERT ((WLSEG_ISDYNAMIC (wlseg)), "no var. segment found!");
 
     args = NULL;
 
@@ -1599,28 +1617,30 @@ CompileVarSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sche
             }
         }
 
-        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
             args = TBmakeExprs (TBmakeNum (1), args);
         }
     }
 
-    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXSUP (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = TBmakeExprs (index, args);
     }
 
-    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index
-          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
-                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+          = WLBidOrNumMakeIndex (TCgetNthExprsExpr (d,
+                                                    ARRAY_AELEMS (WLSEG_IDXINF (wlseg))),
+                                 d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = TBmakeExprs (index, args);
     }
 
-    args = TBmakeExprs (TBmakeNum (WLSEGVAR_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEG_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -1661,13 +1681,13 @@ CompileSchedulingWithTasksel (int seg_id, node *wl_ids, sched_t *sched,
 
     switch (NODE_TYPE (arg_node)) {
     case N_wlseg:
-        general_args
-          = CompileConstSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
-        break;
-
-    case N_wlsegvar:
-        general_args
-          = CompileVarSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
+        if (WLSEG_ISDYNAMIC (arg_node)) {
+            general_args
+              = CompileVarSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
+        } else {
+            general_args = CompileConstSegSchedulingWithTaskselArgs (wl_ids, arg_node,
+                                                                     sched, tasksel);
+        }
         break;
 
     default:

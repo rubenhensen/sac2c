@@ -497,68 +497,34 @@ RIDicm (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RIDwlsegx( node *arg_node, info *arg_info)
+ *   node *RIDwlseg( node *arg_node, info *arg_info)
  *
  * description:
- *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
+ *   Since the scheduling specification and WLSEGVAR_IDXINF, WLSEGVAR_IDXSUP
  *   may contain the names of local identifiers, these have to be renamed
  *   according to the general renaming scheme implemented by this compiler
  *   phase.
  *
  ******************************************************************************/
 
-static node *
-RIDwlsegx (node *arg_node, info *arg_info)
-{
-    int d;
-
-    DBUG_ENTER ("RIDwlsegx");
-
-    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        L_WLSEGX_SCHEDULING (arg_node,
-                             SCHprecompileScheduling (WLSEGX_SCHEDULING (arg_node)));
-
-        L_WLSEGX_TASKSEL (arg_node, SCHprecompileTasksel (WLSEGX_TASKSEL (arg_node)));
-    }
-
-    if (NODE_TYPE (arg_node) == N_wlsegvar) {
-        DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL),
-                     "WLSEGVAR_IDX_MIN not found!");
-        DBUG_ASSERT ((WLSEGVAR_IDX_MAX (arg_node) != NULL),
-                     "WLSEGVAR_IDX_MAX not found!");
-        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
-            (WLSEGVAR_IDX_MIN (arg_node))[d]
-              = TRAVdo ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
-            (WLSEGVAR_IDX_MAX (arg_node))[d]
-              = TRAVdo ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
-        }
-    }
-
-    L_WLSEGX_CONTENTS (arg_node, TRAVdo (WLSEGX_CONTENTS (arg_node), arg_info));
-
-    if (WLSEGX_NEXT (arg_node) != NULL) {
-        L_WLSEGX_NEXT (arg_node, TRAVdo (WLSEGX_NEXT (arg_node), arg_info));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 node *
 RIDwlseg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDwlseg");
+    DBUG_ENTER ("RIDwlsegx");
 
-    arg_node = RIDwlsegx (arg_node, arg_info);
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        WLSEG_SCHEDULING (arg_node)
+          = SCHprecompileScheduling (WLSEG_SCHEDULING (arg_node));
 
-    DBUG_RETURN (arg_node);
-}
+        WLSEG_TASKSEL (arg_node) = SCHprecompileTasksel (WLSEG_TASKSEL (arg_node));
+    }
 
-node *
-RIDwlsegvar (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RIDwlsegvar");
+    WLSEG_IDXINF (arg_node) = TRAVopt (WLSEG_IDXINF (arg_node), arg_info);
+    WLSEG_IDXSUP (arg_node) = TRAVopt (WLSEG_IDXSUP (arg_node), arg_info);
 
-    arg_node = RIDwlsegx (arg_node, arg_info);
+    WLSEG_CONTENTS (arg_node) = TRAVdo (WLSEG_CONTENTS (arg_node), arg_info);
+
+    WLSEG_NEXT (arg_node) = TRAVopt (WLSEG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

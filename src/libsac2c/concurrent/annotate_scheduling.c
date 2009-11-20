@@ -280,10 +280,19 @@ MTASwlseg (node *arg_node, info *arg_info)
          * constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
-            WLSEG_SCHEDULING (arg_node)
-              = InferSchedulingConstSegment (arg_node, arg_info);
+            if (WLSEG_ISDYNAMIC (arg_node)) {
+                WLSEG_SCHEDULING (arg_node)
+                  = InferSchedulingVarSegment (arg_node, arg_info);
+            } else {
+                WLSEG_SCHEDULING (arg_node)
+                  = InferSchedulingConstSegment (arg_node, arg_info);
+            }
         } else {
-            SCHcheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
+            if (WLSEG_ISDYNAMIC (arg_node)) {
+                SCHcheckSuitabilityVarSeg (WLSEG_SCHEDULING (arg_node));
+            } else {
+                SCHcheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
+            }
         }
     } else {
         /*
@@ -300,56 +309,6 @@ MTASwlseg (node *arg_node, info *arg_info)
     }
 
     WLSEG_NEXT (arg_node) = TRAVopt (WLSEG_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MTASwlsegvar(node *arg_node, info *arg_info)
- *
- * description:
- *   sched_tab traversal function for N_WLsegVar nodes.
- *
- *   This function assures that each segment within an spmd-function has
- *   a scheduling specification while all segments outside of spmd-functions
- *   do not have scheduling specifications.
- *
- ******************************************************************************/
-
-node *
-MTASwlsegvar (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MTASwlsegvar");
-
-    if (INFO_INPARWL (arg_info)) {
-        /*
-         * Here, we are within an spmd-function, so if no scheduling is already
-         * present, the inference strategy is used. Otherwise a scheduling derived
-         * from wlcomp pragma is checked for suitability for constant segments.
-         */
-        if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = InferSchedulingVarSegment (arg_node, arg_info);
-        } else {
-            SCHcheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
-        }
-    } else {
-        /*
-         * Here, we are not within an spmd-function, so schedulings derived from
-         * wlcomp pragmas must be removed.
-         */
-        if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
-        }
-        if (WLSEGVAR_TASKSEL (arg_node) != NULL) {
-            WLSEGVAR_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGVAR_TASKSEL (arg_node));
-        }
-    }
-
-    WLSEGVAR_NEXT (arg_node) = TRAVopt (WLSEGVAR_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

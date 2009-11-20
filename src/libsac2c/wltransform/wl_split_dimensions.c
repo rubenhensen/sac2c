@@ -1851,13 +1851,13 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
  *
  *        This function consumes its lower, upper and step arguments!
  *
- * @param level    level attribute of N_wlstride or N_wlstridevar node
- * @param dim      dim attribute of N_wlstride or N_wlstridevar node
- * @param lower    lower bound as either N_num or N_id. CONSUMED!
- * @param upper    upper bound as either N_num or N_id. CONSUMED!
+ * @param level    level attribute of N_wlstride
+ * @param dim      dim attribute of N_wlstride
+ * @param lower    lower bound as either N_num or N_id.
+ * @param upper    upper bound as either N_num or N_id.
  * @param step     step as either N_num or N_id. CONSUMED!
- * @param contents contents son of N_wlstride or N_wlstridevar node
- * @param next     next son of N_wlstride or N_wlstridevar node
+ * @param contents contents son of N_wlstride
+ * @param next     next son of N_wlstride
  * @param arg_info current state of traversal
  *
  * @return N_range node corresponding to the given stride.
@@ -1892,7 +1892,7 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
                                  arg_info);
         body = MakeRangeBody (index, contents, over, FALSE, &results, &offsets, arg_info);
 
-        next = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupTree (nupper), upper, over,
+        next = TBmakeRange (TBmakeIds (index, NULL), nupper, DUPdoDupTree (upper), over,
                             body, results, offsets, next);
 
         /*
@@ -1904,8 +1904,9 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
     body = MakeRangeBody (index, contents, step, FALSE, &results, &offsets, arg_info);
 
-    next = TBmakeRange (TBmakeIds (index, NULL), lower, upper, step, body, results,
-                        offsets, next);
+    next
+      = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), DUPdoDupNode (upper),
+                     DUPdoDupNode (step), body, results, offsets, next);
 
     DBUG_RETURN (next);
 }
@@ -1919,13 +1920,13 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
  *        that the code link is consumed, i.e., it is set to NULL and the
  *        CODE_USED counter is decremented.
  *
- * @param level    level attribute of N_wlgrid/N_wlgridvar node
- * @param dim      dim attribute of N_wlgrid/N_wlgridvar node
- * @param lower    lower bound as either N_id or N_num node. CONSUMED!
- * @param upper    upper bound as either N_id or N_num node. CONSUMED!
- * @param nextdim  nextdim son of N_wlgrid/N_wlgridvar node.
- * @param code     code son of N_wlgrid/N_wlgridvar node.
- * @param next     next son of N_wlgrid/N_wlgridvar node.
+ * @param level    level attribute of N_wlgrid node
+ * @param dim      dim attribute of N_wlgrid node
+ * @param lower    lower bound as either N_id or N_num node.
+ * @param upper    upper bound as either N_id or N_num node.
+ * @param nextdim  nextdim son of N_wlgrid node.
+ * @param code     code son of N_wlgrid node.
+ * @param next     next son of N_wlgrid node.
  * @param arg_info current state of traversal
  *
  * @return N_range node corresponding to the given grid.
@@ -2007,14 +2008,9 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, &rangeoffsets, arg_info);
     }
 
-    result = TBmakeRange (TBmakeIds (index, NULL), lower, max,
+    result = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), max,
                           NULL, /* grids have no chunksize */
                           body, res, rangeoffsets, next);
-
-    /*
-     * consume unuseds
-     */
-    upper = FREEdoFreeNode (upper);
 
     DBUG_RETURN (result);
 }
@@ -2367,32 +2363,6 @@ WLSDwlseg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSDwlsegvar(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-WLSDwlsegvar (node *arg_node, info *arg_info)
-{
-    node *ranges;
-
-    DBUG_ENTER ("WLSDwlsegvar");
-
-    /*
-     * A segment itself is just a wrapper around the strides/grids. Therefore,
-     * it does not result in any additional structure. We just traverse the
-     * content and then continue with the next one.
-     */
-    ranges = TRAVdo (WLSEGVAR_CONTENTS (arg_node), arg_info);
-
-    ranges = TCappendRange (ranges, TRAVopt (WLSEGVAR_NEXT (arg_node), arg_info));
-
-    DBUG_RETURN (ranges);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *WLSDwlstride(node *arg_node, info *arg_info)
  *
  * @brief
@@ -2402,7 +2372,6 @@ node *
 WLSDwlstride (node *arg_node, info *arg_info)
 {
     node *result, *next = NULL;
-    node *bound1, *bound2, *step;
 
     DBUG_ENTER ("WLSDwlstride");
 
@@ -2410,42 +2379,10 @@ WLSDwlstride (node *arg_node, info *arg_info)
         next = TRAVdo (WLSTRIDE_NEXT (arg_node), arg_info);
     }
 
-    bound1 = TBmakeNum (WLSTRIDE_BOUND1 (arg_node));
-    bound2 = TBmakeNum (WLSTRIDE_BOUND2 (arg_node));
-    step = TBmakeNum (WLSTRIDE_STEP (arg_node));
-
-    result = ProcessStride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node), bound1,
-                            bound2, step, WLSTRIDE_CONTENTS (arg_node), next, arg_info);
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLSDwlstridevar(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-WLSDwlstridevar (node *arg_node, info *arg_info)
-{
-    node *result, *next = NULL;
-    node *bound1, *bound2, *step;
-
-    DBUG_ENTER ("WLSDwlstridevar");
-
-    if (WLSTRIDEVAR_NEXT (arg_node) != NULL) {
-        next = TRAVdo (WLSTRIDEVAR_NEXT (arg_node), arg_info);
-    }
-
-    bound1 = DUPdoDupNode (WLSTRIDEVAR_BOUND1 (arg_node));
-    bound2 = DUPdoDupNode (WLSTRIDEVAR_BOUND2 (arg_node));
-    step = DUPdoDupNode (WLSTRIDEVAR_STEP (arg_node));
-
-    result
-      = ProcessStride (WLSTRIDEVAR_LEVEL (arg_node), WLSTRIDEVAR_DIM (arg_node), bound1,
-                       bound2, step, WLSTRIDEVAR_CONTENTS (arg_node), next, arg_info);
+    result = ProcessStride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
+                            WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
+                            WLSTRIDE_STEP (arg_node), WLSTRIDE_CONTENTS (arg_node), next,
+                            arg_info);
 
     DBUG_RETURN (result);
 }
@@ -2461,48 +2398,16 @@ node *
 WLSDwlgrid (node *arg_node, info *arg_info)
 {
     node *result;
-    node *bound1, *bound2;
 
     DBUG_ENTER ("WLSDwlgrid");
 
     result = TRAVopt (WLGRID_NEXT (arg_node), arg_info);
 
     if (!WLGRID_ISNOOP (arg_node)) {
-        bound1 = TBmakeNum (WLGRID_BOUND1 (arg_node));
-        bound2 = TBmakeNum (WLGRID_BOUND2 (arg_node));
-
-        result = ProcessGrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node), bound1,
-                              bound2, WLGRID_NEXTDIM (arg_node), &WLGRID_CODE (arg_node),
-                              result, arg_info);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLSDwlgridvar(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-WLSDwlgridvar (node *arg_node, info *arg_info)
-{
-    node *result;
-    node *bound1, *bound2;
-
-    DBUG_ENTER ("WLSDwlgridvar");
-
-    result = TRAVopt (WLGRIDVAR_NEXT (arg_node), arg_info);
-
-    if (!WLGRIDVAR_ISNOOP (arg_node)) {
-        bound1 = DUPdoDupNode (WLGRIDVAR_BOUND1 (arg_node));
-        bound2 = DUPdoDupNode (WLGRIDVAR_BOUND2 (arg_node));
-
-        result = ProcessGrid (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
-                              bound1, bound2, WLGRIDVAR_NEXTDIM (arg_node),
-                              &WLGRIDVAR_CODE (arg_node), result, arg_info);
+        result = ProcessGrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
+                              WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
+                              WLGRID_NEXTDIM (arg_node), &WLGRID_CODE (arg_node), result,
+                              arg_info);
     }
 
     DBUG_RETURN (result);

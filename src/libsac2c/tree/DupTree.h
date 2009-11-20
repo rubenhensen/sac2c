@@ -147,14 +147,11 @@ extern node *DUPdefault (node *arg_node, info *arg_info);
 /* backend with-loop */
 extern node *DUPwith2 (node *arg_node, info *arg_info);
 extern node *DUPwlseg (node *arg_node, info *arg_info);
-extern node *DUPwlsegvar (node *arg_node, info *arg_info);
 extern node *DUPwlblock (node *arg_node, info *arg_info);
 extern node *DUPwlublock (node *arg_node, info *arg_info);
 extern node *DUPwlsimd (node *arg_node, info *arg_info);
 extern node *DUPwlstride (node *arg_node, info *arg_info);
-extern node *DUPwlstridevar (node *arg_node, info *arg_info);
 extern node *DUPwlgrid (node *arg_node, info *arg_info);
-extern node *DUPwlgridvar (node *arg_node, info *arg_info);
 
 /* with-loop (mutc) */
 extern node *DUPwith3 (node *arg_node, info *arg_info);

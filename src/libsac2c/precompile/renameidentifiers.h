@@ -18,7 +18,6 @@ extern node *RIDreturn (node *arg_node, info *arg_info);
 extern node *RIDap (node *arg_node, info *arg_info);
 extern node *RIDicm (node *arg_node, info *arg_info);
 extern node *RIDwlseg (node *arg_node, info *arg_info);
-extern node *RIDwlsegvar (node *arg_node, info *arg_info);
 extern node *RIDavis (node *arg_node, info *arg_info);
 // extern node *RIDprf(node * arg_node, info * arg_info);
 

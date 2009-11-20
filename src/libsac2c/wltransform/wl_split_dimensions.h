@@ -22,10 +22,7 @@ extern node *WLSDblock (node *arg_node, info *arg_info);
 extern node *WLSDwith2 (node *arg_node, info *arg_info);
 extern node *WLSDwithid (node *arg_node, info *arg_info);
 extern node *WLSDwlseg (node *arg_node, info *arg_info);
-extern node *WLSDwlsegvar (node *arg_node, info *arg_info);
 extern node *WLSDwlstride (node *arg_node, info *arg_info);
-extern node *WLSDwlstridevar (node *arg_node, info *arg_info);
 extern node *WLSDwlgrid (node *arg_node, info *arg_info);
-extern node *WLSDwlgridvar (node *arg_node, info *arg_info);
 
 #endif /* _SAC_WL_SPLIT_DIMENSIONS_H_ */

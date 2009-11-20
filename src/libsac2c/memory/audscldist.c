@@ -20,6 +20,19 @@
  *       b = fun( a);   =>   _tmp_b = fun( a); b = copy(_tmp_b);
  *   </pre>
  *
+ *   Furthermore, we have to do a similar transformation for funconds/conditions.
+ *   Firstly, we have to ensure that the predicate is a scalar variable. If it
+ *   is not, we insert an assignment of the form
+ *   <pre>
+ *       if (p) ...     =>  _tmp_p = _copy_(p); if (_tmp_p) ...
+ *   </pre>
+ *   and update the funcond accordingly.
+ *   Secondly, if the shape class of the result of a funcond and the shape class
+ *   of the second or third argument do not match, we insert a copy like
+ *   <pre>
+ *       x = funcond(p, a, b)  =>  _tmp_a = a; x = funcond(p, _tmp_a, b);
+ *   </pre>
+ *
  * @ingroup mm
  *
  * @{
@@ -61,6 +74,8 @@ struct INFO {
     node *assign;
     node *preassigns;
     node *postassigns;
+    node *elseassigns;
+    node *thenassigns;
 
     node *lhs;
     node *withop;
@@ -71,6 +86,8 @@ struct INFO {
 #define INFO_ASSIGN(n) ((n)->assign)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_THENASSIGNS(n) ((n)->thenassigns)
+#define INFO_ELSEASSIGNS(n) ((n)->elseassigns)
 
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHOP(n) ((n)->withop)
@@ -89,6 +106,8 @@ MakeInfo ()
     INFO_ASSIGN (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_POSTASSIGNS (result) = NULL;
+    INFO_THENASSIGNS (result) = NULL;
+    INFO_ELSEASSIGNS (result) = NULL;
     INFO_WITHOP (result) = NULL;
     INFO_CEXTYPES (result) = NULL;
 
@@ -193,7 +212,8 @@ GetLeastTypes (ntype *p1, ntype *p2)
 
 /** <!--********************************************************************-->
  *
- *  @fn node *LiftId(  node *id, ntype *new_type, info *arg_info)
+ *  @fn node *LiftId(  node *id, ntype *new_type, node *fundef,
+ *                     node **new_assigns)
  *
  *  @brief Lifts the given id of a expr position
  *
@@ -216,12 +236,11 @@ GetLeastTypes (ntype *p1, ntype *p2)
  *
  ******************************************************************************/
 static void
-LiftId (node *id, ntype *new_type, info *arg_info)
+LiftId (node *id, ntype *new_type, node *fundef, node **new_assigns)
 {
     char *new_name;
     node *new_ids;
     node *new_avis;
-    node *fundef;
 
     DBUG_ENTER ("LiftId");
 
@@ -236,16 +255,15 @@ LiftId (node *id, ntype *new_type, info *arg_info)
     /*
      * Insert vardec for new var
      */
-    fundef = INFO_FUNDEF (arg_info);
     FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
 
     new_ids = TBmakeIds (new_avis, NULL);
 
-    INFO_PREASSIGNS (arg_info)
+    *new_assigns
       = TBmakeAssign (TBmakeLet (new_ids, TCmakePrf1 (F_copy, TBmakeId (ID_AVIS (id)))),
-                      INFO_PREASSIGNS (arg_info));
+                      *new_assigns);
 
-    AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
+    AVIS_SSAASSIGN (new_avis) = *new_assigns;
 
     ID_AVIS (id) = new_avis;
 
@@ -254,7 +272,8 @@ LiftId (node *id, ntype *new_type, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn void LiftIds( node *ids_arg, ntype *new_type, info *arg_info)
+ * @fn void LiftIds( node *ids_arg, ntype *new_type, node *fundef,
+ *                   node **new_assigns, node *new_ssaassign)
  *
  * @brief Lifts the given return value of a function application:
  *
@@ -281,18 +300,14 @@ LiftId (node *id, ntype *new_type, info *arg_info)
  *
  ******************************************************************************/
 static void
-LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
+LiftIds (node *ids_arg, ntype *new_type, node *fundef, node **new_assigns,
+         node *new_ssaassign)
 {
     char *new_name;
     node *new_id;
     node *new_avis;
-    node *fundef;
-    node *assign;
 
     DBUG_ENTER ("LiftIds");
-
-    fundef = INFO_FUNDEF (arg_info);
-    assign = INFO_ASSIGN (arg_info);
 
     new_name = TRAVtmpVarName (IDS_NAME (ids_arg));
 
@@ -308,16 +323,15 @@ LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
     FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
 
     new_id = TBmakeId (new_avis);
-    INFO_POSTASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
-                                 TCmakePrf1 (F_copy, new_id)),
-                      INFO_POSTASSIGNS (arg_info));
+    *new_assigns = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
+                                            TCmakePrf1 (F_copy, new_id)),
+                                 *new_assigns);
 
-    AVIS_SSAASSIGN (IDS_AVIS (ids_arg)) = INFO_POSTASSIGNS (arg_info);
+    AVIS_SSAASSIGN (IDS_AVIS (ids_arg)) = *new_assigns;
 
     IDS_AVIS (ids_arg) = new_avis;
 
-    AVIS_SSAASSIGN (new_avis) = assign;
+    AVIS_SSAASSIGN (new_avis) = new_ssaassign;
 
     DBUG_VOID_RETURN;
 }
@@ -455,7 +469,8 @@ ASDap (node *arg_node, info *arg_info)
                                 FUNDEF_NAME (INFO_FUNDEF (arg_info)), IDS_NAME (ids),
                                 global.nt_shape_string[actual_cls],
                                 global.nt_shape_string[formal_cls]));
-            LiftIds (ids, RET_TYPE (ret), arg_info);
+            LiftIds (ids, RET_TYPE (ret), INFO_FUNDEF (arg_info),
+                     &INFO_POSTASSIGNS (arg_info), INFO_ASSIGN (arg_info));
         }
 
         ret = RET_NEXT (ret);
@@ -479,7 +494,8 @@ ASDap (node *arg_node, info *arg_info)
                                 global.nt_shape_string[actual_cls],
                                 global.nt_shape_string[formal_cls]));
 
-            LiftId (id, ARG_NTYPE (arg), arg_info);
+            LiftId (id, ARG_NTYPE (arg), INFO_FUNDEF (arg_info),
+                    &INFO_PREASSIGNS (arg_info));
         }
 
         arg = ARG_NEXT (arg);
@@ -511,6 +527,21 @@ ASDcond (node *arg_node, info *arg_info)
     funcond_ass = ASSIGN_NEXT (INFO_ASSIGN (arg_info));
 
     /*
+     * insert assignments produced at funconds */
+    if (INFO_THENASSIGNS (arg_info) != NULL) {
+        BLOCK_INSTR (COND_THEN (arg_node))
+          = TCappendAssign (BLOCK_INSTR (COND_THEN (arg_node)),
+                            INFO_THENASSIGNS (arg_info));
+        INFO_THENASSIGNS (arg_info) = NULL;
+    }
+    if (INFO_ELSEASSIGNS (arg_info) != NULL) {
+        BLOCK_INSTR (COND_ELSE (arg_node))
+          = TCappendAssign (BLOCK_INSTR (COND_ELSE (arg_node)),
+                            INFO_ELSEASSIGNS (arg_info));
+        INFO_ELSEASSIGNS (arg_info) = NULL;
+    }
+
+    /*
      * first traverse the two blocks
      * as we insert the assigns on our way up
      */
@@ -536,7 +567,7 @@ ASDcond (node *arg_node, info *arg_info)
              */
             LiftId (COND_COND (arg_node),
                     TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
-                    arg_info);
+                    INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
 
             /*
              * Exchange predicate identifier in all subsequent funcond nodes
@@ -550,6 +581,58 @@ ASDcond (node *arg_node, info *arg_info)
             }
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *ASDfuncond( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Inserts conversion assignments for the then/else arguments of the
+ *   funcond if necessary.
+ *
+ ******************************************************************************/
+node *
+ASDfuncond (node *arg_node, info *arg_info)
+{
+    shape_class_t result_cls, then_cls, else_cls;
+
+    DBUG_ENTER ("ASDfuncond");
+
+    DBUG_PRINT ("ASD", ("analyzing funcond..."));
+
+    result_cls = NTUgetShapeClassFromNType (IDS_NTYPE (INFO_LHS (arg_info)));
+
+    if (NODE_TYPE (FUNCOND_THEN (arg_node)) == N_id) {
+        then_cls = NTUgetShapeClassFromNType (ID_NTYPE (FUNCOND_THEN (arg_node)));
+
+        if ((result_cls != then_cls) && ((result_cls == C_scl) || (then_cls == C_scl))) {
+            DBUG_PRINT ("ASD", ("Then branch and result of funcond have "
+                                "different ishape classes: %s instead of %s",
+                                global.nt_shape_string[then_cls],
+                                global.nt_shape_string[result_cls]));
+            LiftId (FUNCOND_THEN (arg_node), IDS_NTYPE (INFO_LHS (arg_info)),
+                    INFO_FUNDEF (arg_info), &INFO_THENASSIGNS (arg_info));
+        }
+    }
+
+    if (NODE_TYPE (FUNCOND_ELSE (arg_node)) == N_id) {
+        else_cls = NTUgetShapeClassFromNType (ID_NTYPE (FUNCOND_ELSE (arg_node)));
+
+        if ((result_cls != else_cls) && ((result_cls == C_scl) || (else_cls == C_scl))) {
+            DBUG_PRINT ("ASD", ("Else branch and result of funcond have "
+                                "different ishape classes: %s instead of %s",
+                                global.nt_shape_string[else_cls],
+                                global.nt_shape_string[result_cls]));
+            LiftId (FUNCOND_ELSE (arg_node), IDS_NTYPE (INFO_LHS (arg_info)),
+                    INFO_FUNDEF (arg_info), &INFO_ELSEASSIGNS (arg_info));
+        }
+    }
+
+    DBUG_PRINT ("ASD", ("...funcond done"));
 
     DBUG_RETURN (arg_node);
 }
@@ -747,7 +830,7 @@ ASDprf (node *arg_node, info *arg_info)
 
                     nt = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (arg))),
                                     SHmakeShape (0));
-                    LiftId (arg, nt, arg_info);
+                    LiftId (arg, nt, INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
                     nt = TYfreeType (nt);
                 }
             }

@@ -240,7 +240,8 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
     isect = NULL;
     if (strides != NULL) {
 
-        DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "no constant stride found");
+        DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "no stride found");
+        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (strides)), "dynamic stride found");
 
         if ((aelems1 == NULL) || (aelems2 == NULL)) {
             CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
@@ -253,16 +254,19 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
         }
 
         /* compute outline of intersection in current dim */
-        bound1 = MATHmax (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
-        bound2 = MATHmin (WLSTRIDE_BOUND2 (strides), NUM_VAL (EXPRS_EXPR (aelems2)));
+        bound1
+          = MATHmax (NUM_VAL (WLSTRIDE_BOUND1 (strides)), NUM_VAL (EXPRS_EXPR (aelems1)));
+        bound2
+          = MATHmin (NUM_VAL (WLSTRIDE_BOUND2 (strides)), NUM_VAL (EXPRS_EXPR (aelems2)));
 
         width = bound2 - bound1;
-        step = MATHmin (WLSTRIDE_STEP (strides), width);
+        step = MATHmin (NUM_VAL (WLSTRIDE_STEP (strides)), width);
 
         /* compute grids */
         if (width > 0) {
             isect = TBmakeWlstride (WLSTRIDE_LEVEL (strides), WLSTRIDE_DIM (strides),
-                                    bound1, bound2, step, NULL, NULL);
+                                    TBmakeNum (bound1), TBmakeNum (bound2),
+                                    TBmakeNum (step), NULL, NULL);
 
             WLSTRIDE_DOUNROLL (isect) = WLSTRIDE_DOUNROLL (strides);
 
@@ -270,24 +274,26 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
             grids = WLSTRIDE_CONTENTS (strides);
             do {
                 /* compute offset for current grid */
-                offset = WLTRAgridOffset (bound1, WLSTRIDE_BOUND1 (strides),
-                                          WLSTRIDE_STEP (strides), WLGRID_BOUND2 (grids));
+                offset = WLTRAgridOffset (bound1, NUM_VAL (WLSTRIDE_BOUND1 (strides)),
+                                          NUM_VAL (WLSTRIDE_STEP (strides)),
+                                          NUM_VAL (WLGRID_BOUND2 (grids)));
 
-                if (offset <= WLGRID_BOUND1 (grids)) {
+                if (offset <= NUM_VAL (WLGRID_BOUND1 (grids))) {
                     /* grid is still in one pice :) */
 
-                    grid1_b1 = WLGRID_BOUND1 (grids) - offset;
-                    grid1_b2 = WLGRID_BOUND2 (grids) - offset;
+                    grid1_b1 = NUM_VAL (WLGRID_BOUND1 (grids)) - offset;
+                    grid1_b2 = NUM_VAL (WLGRID_BOUND2 (grids)) - offset;
                     grid2_b1 = grid2_b2 = width; /* dummy value */
                 } else {
                     /* the grid is split into two parts :( */
 
                     /* first part: */
                     grid1_b1 = 0;
-                    grid1_b2 = WLGRID_BOUND2 (grids) - offset;
+                    grid1_b2 = NUM_VAL (WLGRID_BOUND2 (grids)) - offset;
                     /* second part: */
-                    grid2_b1 = WLGRID_BOUND1 (grids) - (offset - WLSTRIDE_STEP (strides));
-                    grid2_b2 = WLSTRIDE_STEP (strides);
+                    grid2_b1 = NUM_VAL (WLGRID_BOUND1 (grids))
+                               - (offset - NUM_VAL (WLSTRIDE_STEP (strides)));
+                    grid2_b2 = NUM_VAL (WLSTRIDE_STEP (strides));
                 }
 
                 nextdim = code = NULL;
@@ -309,8 +315,9 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                     if (!empty) {
                         new_grids
-                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
-                                          grid1_b1, grid1_b2, code, nextdim, new_grids);
+                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids), code,
+                                          TBmakeNum (grid1_b1), TBmakeNum (grid1_b2),
+                                          nextdim, new_grids);
 
                         WLGRID_DOUNROLL (new_grids) = WLGRID_DOUNROLL (grids);
                         CODE_INC_USED (code);
@@ -322,8 +329,8 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                     if (!empty) {
                         new_grids
-                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
-                                          grid2_b1, grid2_b2, code,
+                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids), code,
+                                          TBmakeNum (grid2_b1), TBmakeNum (grid2_b2),
                                           DUPdoDupTree (nextdim), new_grids);
 
                         WLGRID_DOUNROLL (new_grids) = WLGRID_DOUNROLL (grids);
@@ -361,46 +368,48 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 /******************************************************************************
  *
  * Function:
- *   node *Array2Bv( node *array, int *bv, int dims,
- *                   char *fun_name, int line)
+ *   node *Array2BV( node *array, int dims, char *fun_name, int line)
  *
  * Description:
- *   converts an N_array node into a blocking vector (int *).
+ *   transforms the given N_array node into a proper integer vector to be
+ *   used as blocking vector.
  *
  ******************************************************************************/
 
-static int *
-Array2Bv (node *array, int *bv, int dims, char *fun_name, int line)
+static node *
+Array2Bv (node *array, int dims, char *fun_name, int line)
 {
     int d;
+    node *result, *tmp;
 
     DBUG_ENTER ("Array2Bv");
 
-    array = ARRAY_AELEMS (array);
+    tmp = ARRAY_AELEMS (array);
     for (d = 0; d < dims; d++) {
-        if (array == NULL) {
+        if (tmp == NULL) {
             CTIabortLine (line,
                           "Illegal argument in wlcomp-pragma found;"
                           " %s(): Blocking vector has wrong dimension",
                           fun_name);
         }
-        if (NODE_TYPE (EXPRS_EXPR (array)) != N_num) {
+        if (NODE_TYPE (EXPRS_EXPR (tmp)) != N_num) {
             CTIabortLine (line,
                           "Illegal argument in wlcomp-pragma found;"
                           " %s(): Blocking vector is not an 'int'-array",
                           fun_name);
         }
-        bv[d] = NUM_VAL (EXPRS_EXPR (array));
-        array = EXPRS_NEXT (array);
+        tmp = EXPRS_NEXT (tmp);
     }
-    if (array != NULL) {
+    if (tmp != NULL) {
         CTIabortLine (line,
                       "Illegal argument in wlcomp-pragma found;"
                       " %s(): Blocking vector has wrong dimension",
                       fun_name);
     }
 
-    DBUG_RETURN (bv);
+    result = TCmakeIntVector (DUPdoDupTree (ARRAY_AELEMS (array)));
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -426,6 +435,7 @@ static node *
 StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int line)
 {
     node *seg = segs;
+    node *abv;
     int level;
 
     DBUG_ENTER ("StoreBv");
@@ -452,7 +462,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
 
     if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
-            if (NODE_TYPE (seg) != N_wlseg) {
+            if (WLSEG_ISDYNAMIC (seg)) {
                 CTIwarnLine (line,
                              "wlcomp-pragma function %s() ignored"
                              " because generator is not constant",
@@ -469,12 +479,14 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
                     DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
                                  "illegal blocking level found!");
 
-                    WLSEG_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims,
-                                  fun_name, line);
+                    abv = TCgetNthExprs (level, WLSEG_BV (seg));
+                    EXPRS_EXPR (abv) = FREEdoFreeTree (EXPRS_EXPR (abv));
+
+                    EXPRS_EXPR (abv)
+                      = Array2Bv (EXPRS_EXPR (parms), dims, fun_name, line);
                 } else {
-                    WLSEG_UBV (seg) = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims,
-                                                fun_name, line);
+                    WLSEG_UBV (seg) = FREEdoFreeTree (WLSEG_UBV (seg));
+                    WLSEG_UBV (seg) = Array2Bv (EXPRS_EXPR (parms), dims, fun_name, line);
                 }
             }
 
@@ -495,11 +507,11 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
  *                     int line)
  *
  * Description:
- *   choose the hole array as the only segment;
+ *   choose the whole array as the only segment;
  *   init blocking vectors ('NoBlocking')
  *
  * caution:
- *   'segs' can contain N_wlstriVar- as well as N_wlgridVar-nodes!!
+ *   'segs' can contain dynamic N_wlstride- as well as dynamic N_wlgrid-nodes!!
  *
  ******************************************************************************/
 
@@ -517,7 +529,9 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FREEdoFreeTree (segs);
     }
 
-    segs = TCmakeWlSegX (dims, DUPdoDupTree (cubes), NULL);
+    segs = TBmakeWlseg (dims, DUPdoDupTree (cubes), NULL);
+    WLSEG_ISDYNAMIC (segs)
+      = !WLTRAallStridesAreConstant (WLSEG_CONTENTS (segs), TRUE, TRUE);
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
@@ -558,7 +572,9 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * build new segment
          */
-        new_seg = TCmakeWlSegX (dims, DUPdoDupNode (cubes), NULL);
+        new_seg = TBmakeWlseg (dims, DUPdoDupNode (cubes), NULL);
+        WLSEG_ISDYNAMIC (new_seg)
+          = !WLTRAallStridesAreConstant (WLSEG_CONTENTS (new_seg), TRUE, TRUE);
 
         /*
          * append 'new_seg' at 'segs'
@@ -566,11 +582,11 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         if (segs == NULL) {
             segs = new_seg;
         } else {
-            L_WLSEGX_NEXT (last_seg, new_seg);
+            WLSEG_NEXT (last_seg) = new_seg;
         }
         last_seg = new_seg;
 
-        cubes = WLSTRIDEX_NEXT (cubes);
+        cubes = WLSTRIDE_NEXT (cubes);
     }
 
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
@@ -630,12 +646,14 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                                                ARRAY_AELEMS (EXPRS_EXPR2 (parms)), line);
 
             if (new_cubes != NULL) {
-                new_seg = TCmakeWlSegX (dims, new_cubes, NULL);
+                new_seg = TBmakeWlseg (dims, new_cubes, NULL);
+                WLSEG_ISDYNAMIC (new_seg)
+                  = !WLTRAallStridesAreConstant (WLSEG_CONTENTS (new_seg), TRUE, TRUE);
 
                 if (segs == NULL) {
                     segs = new_seg;
                 } else {
-                    L_WLSEGX_NEXT (last_seg, new_seg);
+                    WLSEG_NEXT (last_seg) = new_seg;
                 }
                 last_seg = new_seg;
             }
@@ -678,19 +696,20 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * set ubv
          */
-        if (NODE_TYPE (seg) == N_wlseg) {
-            MALLOC_INIT_VECT (WLSEG_UBV (seg), WLSEGX_DIMS (seg), int, 1);
+        if (!WLSEG_ISDYNAMIC (seg)) {
+            WLSEG_UBV (seg) = TCcreateIntVector (WLSEG_DIMS (seg), 1);
 
             /*
              * set bv[]
              */
             WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                MALLOC_INIT_VECT (WLSEG_BV (seg, b), WLSEGX_DIMS (seg), int, 1);
+                WLSEG_BV (seg)
+                  = TBmakeExprs (TCcreateIntVector (WLSEG_DIMS (seg), 1), WLSEG_BV (seg));
             }
         }
 
-        seg = WLSEGX_NEXT (seg);
+        seg = WLSEG_NEXT (seg);
     }
 
     DBUG_RETURN (segs);
@@ -831,12 +850,12 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
             /*
              * set SCHEDULING
              */
-            if (WLSEGX_SCHEDULING (seg) != NULL) {
-                L_WLSEGX_SCHEDULING (seg, SCHremoveScheduling (WLSEGX_SCHEDULING (seg)));
+            if (WLSEG_SCHEDULING (seg) != NULL) {
+                WLSEG_SCHEDULING (seg) = SCHremoveScheduling (WLSEG_SCHEDULING (seg));
             }
-            L_WLSEGX_SCHEDULING (seg, SCHmakeSchedulingByPragma (arg, line));
+            WLSEG_SCHEDULING (seg) = SCHmakeSchedulingByPragma (arg, line);
 
-            seg = WLSEGX_NEXT (seg);
+            seg = WLSEG_NEXT (seg);
             if (EXPRS_NEXT (parms) != NULL) {
                 parms = EXPRS_NEXT (parms);
             }
@@ -888,13 +907,13 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
              * set TaskSel
              */
 
-            if (WLSEGX_TASKSEL (seg) != NULL) {
-                L_WLSEGX_TASKSEL (seg, SCHremoveTasksel (WLSEGX_TASKSEL (seg)));
+            if (WLSEG_TASKSEL (seg) != NULL) {
+                WLSEG_TASKSEL (seg) = SCHremoveTasksel (WLSEG_TASKSEL (seg));
             }
 
-            L_WLSEGX_TASKSEL (seg, SCHmakeTaskselByPragma (arg, line));
+            WLSEG_TASKSEL (seg) = SCHmakeTaskselByPragma (arg, line);
 
-            seg = WLSEGX_NEXT (seg);
+            seg = WLSEG_NEXT (seg);
 
             if (EXPRS_NEXT (parms) != NULL) {
                 parms = EXPRS_NEXT (parms);

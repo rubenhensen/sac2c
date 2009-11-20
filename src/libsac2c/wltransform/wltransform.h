@@ -9,7 +9,6 @@
 
 extern node *WLTRAdoWlTransform (node *syntax_tree);
 
-extern node *WLTRAassign (node *arg_node, info *arg_info);
 extern node *WLTRAcode (node *arg_node, info *arg_info);
 extern node *WLTRAlet (node *arg_node, info *arg_info);
 extern node *WLTRAwith (node *arg_node, info *arg_info);
