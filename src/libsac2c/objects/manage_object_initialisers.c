@@ -119,7 +119,7 @@ MOIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MOIassign");
 
-    if (NSequals (NSgetInitNamespace (), FUNDEF_NS (arg_node))) {
+    if (FUNDEF_ISOBJINITFUN (arg_node)) {
         DBUG_PRINT ("MOI", (">>> entering fundef %s", CTIitemName (arg_node)));
 
         /*

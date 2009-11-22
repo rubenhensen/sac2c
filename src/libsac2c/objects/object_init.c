@@ -105,6 +105,8 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
      */
     result = TBmakeFundef (name, ns, NULL, TBmakeArg (argavis, NULL),
                            TBmakeBlock (assign, NULL), NULL);
+
+    FUNDEF_ISOBJINITFUN (result) = TRUE;
     ARG_ISREFERENCE (FUNDEF_ARGS (result)) = TRUE;
 
     DBUG_RETURN (result);

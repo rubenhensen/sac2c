@@ -210,6 +210,7 @@ GenerateObjectInitFun (node *objlist)
                            TBmakeBlock (assigns, NULL), NULL);
 
     FUNDEF_OBJECTS (result) = objlist;
+    FUNDEF_ISOBJINITFUN (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -237,49 +238,8 @@ GOIfundef (node *arg_node, info *arg_info)
     /*
      * check for function _MAIN::main
      */
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)
-        && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
-        && (STReq (FUNDEF_NAME (arg_node), "main"))) {
-        node *initfun;
-
-        /*
-         * first add all objects that are needed by the initfuns themselves
-         * to the dependency list of main
-         */
-        FUNDEF_OBJECTS (arg_node) = AddInitFunDependencies (FUNDEF_OBJECTS (arg_node));
-
-        /*
-         * next create the init function itself
-         */
-        initfun = GenerateObjectInitFun (FUNDEF_OBJECTS (arg_node));
-
-        /*
-         * insert the call into main
-         */
-        arg_node = InsertInitFunCall (arg_node, initfun);
-
-        /*
-         * and append the function to the fundef chain
-         */
-        FUNDEF_NEXT (initfun) = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (arg_node) = initfun;
-
-        /*
-         * finally update the wrapper. see below for comment...
-         */
-        if (INFO_DEPS (arg_info) != NULL) {
-            if (*INFO_DEPS (arg_info) != NULL) {
-                *INFO_DEPS (arg_info) = FREEdoFreeTree (*INFO_DEPS (arg_info));
-                *INFO_DEPS (arg_info) = DUPdoDupTree (FUNDEF_OBJECTS (arg_node));
-            } else {
-                INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
-            }
-        }
-    } else {
-
-        if (FUNDEF_ISWRAPPERFUN (arg_node)
-            && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
-            && (STReq (FUNDEF_NAME (arg_node), "main"))) {
+    if (FUNDEF_ISMAIN (arg_node)) {
+        if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             /*
              * we need to correct the wrapper object dependencies as well.
              * if INFO_DEPS is NULL, we have not passed the main function
@@ -294,6 +254,43 @@ GOIfundef (node *arg_node, info *arg_info)
                     FUNDEF_OBJECTS (arg_node)
                       = FREEdoFreeTree (FUNDEF_OBJECTS (arg_node));
                     FUNDEF_OBJECTS (arg_node) = DUPdoDupTree (*INFO_DEPS (arg_info));
+                }
+            }
+        } else {
+            node *initfun;
+
+            /*
+             * first add all objects that are needed by the initfuns themselves
+             * to the dependency list of main
+             */
+            FUNDEF_OBJECTS (arg_node)
+              = AddInitFunDependencies (FUNDEF_OBJECTS (arg_node));
+
+            /*
+             * next create the init function itself
+             */
+            initfun = GenerateObjectInitFun (FUNDEF_OBJECTS (arg_node));
+
+            /*
+             * insert the call into main
+             */
+            arg_node = InsertInitFunCall (arg_node, initfun);
+
+            /*
+             * and append the function to the fundef chain
+             */
+            FUNDEF_NEXT (initfun) = FUNDEF_NEXT (arg_node);
+            FUNDEF_NEXT (arg_node) = initfun;
+
+            /*
+             * finally update the wrapper. see below for comment...
+             */
+            if (INFO_DEPS (arg_info) != NULL) {
+                if (*INFO_DEPS (arg_info) != NULL) {
+                    *INFO_DEPS (arg_info) = FREEdoFreeTree (*INFO_DEPS (arg_info));
+                    *INFO_DEPS (arg_info) = DUPdoDupTree (FUNDEF_OBJECTS (arg_node));
+                } else {
+                    INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
                 }
             }
         }

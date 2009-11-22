@@ -3973,13 +3973,16 @@ N_structdef :
         <flag name="IsCondFun">
           <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
         </flag>
+        <flag name="IsDoFun">
+          <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
+        </flag>
+        <flag name="IsObjInitFun">
+          <description>This function is a global object initialiser function derived from the objdef expression.</description>
+        </flag>
         <flag name="IsThreadFun">
           <description>This function is a mutc thread function.</description>
         </flag>
         <flag name="WasWith3Body">
-        </flag>
-        <flag name="IsDoFun">
-          <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
         </flag>
         <flag name="IsSpmdfun">
           <description>This function is a lifted region (usually one withloop) from a SPMD-block; it is only called once from within the region it was lifted from. From a backend perspective, the SPMD function is the transition from sequential to parallel execution. It is called while in sequential mode, its body is exectuted in parallel by multiple threads and it syncronizes on the return.</description>
