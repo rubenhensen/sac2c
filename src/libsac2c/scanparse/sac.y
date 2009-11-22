@@ -51,11 +51,13 @@ static bool has_dot_rets = FALSE;
 static bool has_dot_args = FALSE;
 
 /*
-* used to distinguish the different kinds of files
-* which are parsed with this single parser
-*/
+ * used to distinguish the different kinds of files
+ * which are parsed with this single parser
+ */
 static file_type file_kind = F_prog;
-
+static bool main_found = FALSE;
+static int main_found_line = 0;
+ 
 static int yyerror( char *errname);
 static int yyparse();
 
@@ -748,8 +750,22 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; 
                            $4, $7, NULL);
         NODE_LINE( $$) = $<cint>6;
 
+        if (file_kind != F_prog) {
+          CTIerrorLine( global.linenum, 
+                        "Defintion of main function found in module/class implementation");
+        }
+        
+        if (main_found) {
+          CTIerrorLine( global.linenum,
+                        "Repeated definition of main function, "
+                        "previous definition in line %d", main_found_line);
+        }
+        
         FUNDEF_NAME( $$) = STRcpy( "main");
         FUNDEF_ISMAIN( $$) = TRUE;
+
+        main_found = TRUE;
+        main_found_line = global.linenum;
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
