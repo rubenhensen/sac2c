@@ -5054,7 +5054,10 @@ CompareWlTrees (node *tree1, node *tree2)
              */
             if ((NUM_VAL (WLNODE_BOUND1 (tmp1)) == NUM_VAL (WLNODE_BOUND1 (tmp2)))
                 && (NUM_VAL (WLNODE_BOUND2 (tmp1)) == NUM_VAL (WLNODE_BOUND2 (tmp2)))
-                && (NUM_VAL (WLNODE_STEP (tmp1)) == NUM_VAL (WLNODE_STEP (tmp2)))) {
+                && (((WLNODE_STEP (tmp1) == NULL) && (WLNODE_STEP (tmp2) == NULL))
+                    || ((WLNODE_STEP (tmp1) != NULL) && (WLNODE_STEP (tmp2) != NULL)
+                        && (NUM_VAL (WLNODE_STEP (tmp1))
+                            == NUM_VAL (WLNODE_STEP (tmp2)))))) {
 
                 /*
                  * compare type-specific data
