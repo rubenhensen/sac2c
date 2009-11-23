@@ -1,38 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.10  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.9  2005/06/15 10:23:31  sbs
- * call history added to error messages.
- *
- * Revision 1.8  2005/01/10 17:27:06  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 1.7  2004/12/07 14:27:13  sbs
- * minor correction in DBUG output
- *
- * Revision 1.6  2004/11/24 18:47:53  sbs
- * compiles
- *
- * Revision 1.5  2004/10/26 10:46:29  sbs
- * FUNDEF_MOD printed as well know
- *
- * Revision 1.4  2003/09/09 14:56:11  sbs
- * extended type error reporting added
- *
- * Revision 1.3  2002/09/06 15:16:40  sbs
- * FUNDEF_RETURN now set properly?!
- *
- * Revision 1.2  2002/09/03 14:41:45  sbs
- * DupTree machanism for duplicating condi funs established
- *
- * Revision 1.1  2002/08/05 16:57:48  sbs
- * Initial revision
- *
- *
- */
+/* $Id$ */
 
 #include "ct_fun.h"
 #include "dbug.h"
@@ -300,7 +266,8 @@ NTCCTudf (te_info *info, ntype *args)
                     ("global.act_info_chn reset to %p", global.act_info_chn));
 
         tmp = TYtype2String (args, FALSE, 0);
-        TEhandleError (global.linenum, " -- in %s%s@", CTIitemName (fundef), tmp);
+        TEhandleError (global.linenum, global.filename, " -- in %s%s@",
+                       CTIitemName (fundef), tmp);
         tmp = MEMfree (tmp);
     }
 

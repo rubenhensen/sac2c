@@ -49,6 +49,7 @@
 #include "filemgr.h"
 #include "system.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "build.h"
 #include "print.h"
@@ -195,7 +196,8 @@ Format2Buffer (const char *format, va_list arg_p)
 
 /** <!--********************************************************************-->
  *
- * @fn char *CTIgetErrorMessageVA( int line, const char *format, va_list arg_p)
+ * @fn char *CTIgetErrorMessageVA( int line, const char* file,
+ *                                 const char *format, va_list arg_p)
  *
  *   @brief generates error message string
  *
@@ -205,23 +207,28 @@ Format2Buffer (const char *format, va_list arg_p)
  *          is formatted to fit a certain line length and is printed to
  *          stderr.
  *
+ *   @param line    line number to use in error message
+ *   @param file    file name to use in error message
  *   @param format  format string like in printf family of functions
  *
  ******************************************************************************/
 
 char *
-CTIgetErrorMessageVA (int line, const char *format, va_list arg_p)
+CTIgetErrorMessageVA (int line, const char *file, const char *format, va_list arg_p)
 {
-    char *first_line, *res;
+    char *res;
+    str_buf *buffer;
 
     DBUG_ENTER ("CTIgetErrorMessageVA");
     Format2Buffer (format, arg_p);
     ProcessMessage (message_buffer, message_line_length - STRlen (error_message_header));
 
-    first_line = (char *)MEMmalloc (32 * sizeof (char));
-    sprintf (first_line, "line %d @", line);
-    res = STRcat (first_line, message_buffer);
-    first_line = MEMfree (first_line);
+    buffer = SBUFcreate (255);
+    SBUFprintf (buffer, "line %d in file %s:@", line, file);
+    SBUFprint (buffer, message_buffer);
+    res = SBUF2str (buffer);
+
+    buffer = SBUFfree (buffer);
 
     DBUG_RETURN (res);
 }

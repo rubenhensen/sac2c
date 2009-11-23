@@ -304,7 +304,8 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
     } else if (cmp == TY_gt) {
         res = TYcopyType (arg);
     } else {
-        TEhandleError (TEgetLine (info), "inferred type %s should match declared type %s",
+        TEhandleError (TEgetLine (info), TEgetFile (info),
+                       "inferred type %s should match declared type %s",
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
@@ -558,7 +559,8 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
         res = TYcopyType (type);
         pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
     } else {
-        TEhandleError (TEgetLine (info), "inferred type %s should match required type %s",
+        TEhandleError (TEgetLine (info), TEgetFile (info),
+                       "inferred type %s should match required type %s",
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
@@ -898,7 +900,8 @@ NTCCTprf_nested_shape (te_info *info, ntype *args)
     type = TYgetProductMember (args, 0);
 
     if (!TUisArrayOfUser (type)) {
-        TEhandleError (TEgetLine (info), "nested_shape applied to non user-type %s.",
+        TEhandleError (TEgetLine (info), TEgetFile (info),
+                       "nested_shape applied to non user-type %s.",
                        TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);

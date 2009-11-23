@@ -893,7 +893,7 @@ NTCcond (node *arg_node, info *arg_info)
     context_info = MakeInfo ();
     INFO_LAST_ASSIGN (context_info) = INFO_LAST_ASSIGN (arg_info);
 
-    info = TEmakeInfo (global.linenum, TE_cond, "predicate");
+    info = TEmakeInfo (global.linenum, global.filename, TE_cond, "predicate");
 
     res = NTCCTcomputeType (NTCCTcond, info, args);
 
@@ -942,7 +942,7 @@ NTCfuncond (node *arg_node, info *arg_info)
 
     args = TYmakeProductType (3, pred, rhs1, rhs2);
 
-    info = TEmakeInfo (global.linenum, TE_funcond, "conditional");
+    info = TEmakeInfo (global.linenum, global.filename, TE_funcond, "conditional");
 
     /**
      * Here, we need to be able to approximate the result type from
@@ -1254,9 +1254,9 @@ NTCap (node *arg_node, info *arg_info)
 
     old_info_chn = global.act_info_chn;
     global.act_info_chn
-      = TEmakeInfoUdf (global.linenum, TE_udf, NSgetName (FUNDEF_NS (wrapper)),
-                       FUNDEF_NAME (wrapper), wrapper, INFO_LAST_ASSIGN (arg_info),
-                       global.act_info_chn);
+      = TEmakeInfoUdf (global.linenum, global.filename, TE_udf,
+                       NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper), wrapper,
+                       INFO_LAST_ASSIGN (arg_info), global.act_info_chn);
     DBUG_PRINT ("TEINFO",
                 ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
     res = NTCCTcomputeType (ntc_fun, global.act_info_chn, args);
@@ -1347,8 +1347,8 @@ NTCprf (node *arg_node, info *arg_info)
         args = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
-        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_name[prf], prf,
-                              prf_te_funtab[prf](args));
+        info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
+                              global.prf_name[prf], prf, prf_te_funtab[prf](args));
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
@@ -1461,7 +1461,8 @@ NTCarray (node *arg_node, info *arg_info)
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
          */
-        info = TEmakeInfoPrf (global.linenum, TE_prf, "array-constructor", 0, 1);
+        info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
+                              "array-constructor", 0, 1);
         type = NTCCTcomputeType (NTCCTprf_array, info, elems);
 
         TYfreeType (elems);
@@ -1682,7 +1683,7 @@ NTCcast (node *arg_node, info *arg_info)
     }
     cast_t = CAST_NTYPE (arg_node);
 
-    info = TEmakeInfoPrf (global.linenum, TE_prf, "type-cast", 0, 1);
+    info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", 0, 1);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);
@@ -1857,7 +1858,8 @@ NTCpart (node *arg_node, info *arg_info)
             remaining_idx = TYgetProductMember (INFO_TYPE (arg_info), 0);
             INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));
 
-            info = TEmakeInfo (global.linenum, TE_with, "multi generator");
+            info
+              = TEmakeInfo (global.linenum, global.filename, TE_with, "multi generator");
             idx = TYmakeProductType (2, this_idx, remaining_idx);
             INFO_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multipart, info, idx);
             ;
@@ -1923,7 +1925,7 @@ NTCgenerator (node *arg_node, info *arg_info)
         gen = TYmakeProductType (3, lb, idx, ub);
     }
 
-    info = TEmakeInfo (global.linenum, TE_generator, "generator");
+    info = TEmakeInfo (global.linenum, global.filename, TE_generator, "generator");
     res = NTCCTcomputeType (NTCCTwl_idx, info, gen);
     TYfreeType (gen);
 
@@ -2015,7 +2017,8 @@ NTCcode (node *arg_node, info *arg_info)
         res = TYmakeEmptyProductType (num_ops);
 
         for (i = 0; i < num_ops; i++) {
-            info = TEmakeInfo (global.linenum, TE_with, "multi generator");
+            info
+              = TEmakeInfo (global.linenum, global.filename, TE_with, "multi generator");
             blocks = TYmakeProductType (2, TYgetProductMember (this_block, i),
                                         TYgetProductMember (remaining_blocks, i));
             DBUG_ASSERT (wl_ops != NULL,
@@ -2095,7 +2098,7 @@ NTCgenarray (node *arg_node, info *arg_info)
     }
 
     args = TYmakeProductType (4, gen, shp, body, dexpr);
-    info = TEmakeInfo (global.linenum, TE_with, "genarray");
+    info = TEmakeInfo (global.linenum, global.filename, TE_with, "genarray");
     res = NTCCTcomputeType (NTCCTwl_gen, info, args);
 
     GENARRAY_NEXT (arg_node) = HandleMultiOperators (GENARRAY_NEXT (arg_node), arg_info);
@@ -2138,7 +2141,7 @@ NTCmodarray (node *arg_node, info *arg_info)
     INFO_TYPE (arg_info) = NULL;
 
     args = TYmakeProductType (3, gen, shp, body);
-    info = TEmakeInfo (global.linenum, TE_with, "modarray");
+    info = TEmakeInfo (global.linenum, global.filename, TE_with, "modarray");
     res = NTCCTcomputeType (NTCCTwl_mod, info, args);
 
     MODARRAY_NEXT (arg_node) = HandleMultiOperators (MODARRAY_NEXT (arg_node), arg_info);
@@ -2193,7 +2196,7 @@ NTCfold (node *arg_node, info *arg_info)
      * Then, we compute the type of the elements to be folded:
      */
     args = TYmakeProductType (3, gen, neutr, body);
-    info = TEmakeInfo (global.linenum, TE_with, "fold");
+    info = TEmakeInfo (global.linenum, global.filename, TE_with, "fold");
     res = NTCCTcomputeType (NTCCTwl_fold, info, args);
     elems = TYgetProductMember (res, 0);
     res = TYfreeTypeConstructor (res);
@@ -2243,9 +2246,9 @@ NTCfold (node *arg_node, info *arg_info)
 
         args = TYmakeProductType (2, acc, elems);
         wrapper = FOLD_FUNDEF (arg_node);
-        info = TEmakeInfoUdf (global.linenum, TE_foldf, NSgetName (FUNDEF_NS (wrapper)),
-                              FUNDEF_NAME (wrapper), wrapper, INFO_LAST_ASSIGN (arg_info),
-                              NULL);
+        info = TEmakeInfoUdf (global.linenum, global.filename, TE_foldf,
+                              NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper),
+                              wrapper, INFO_LAST_ASSIGN (arg_info), NULL);
         res = NTCCTcomputeType ((FUNDEF_ISWRAPPERFUN (wrapper) ? NTCCTudf
                                                                : NTCCTudfDispatched),
                                 info, args);

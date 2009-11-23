@@ -45,12 +45,13 @@ extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype 
 extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEmakeInfo (int linenum, te_kind_t kind, const char *name_str);
-extern te_info *TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str,
-                               const char *name_str, node *wrapper, node *assign,
-                               te_info *parent);
-extern te_info *TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str,
-                               prf prf_no, int num_rets);
+extern te_info *TEmakeInfo (int linenum, const char *file, te_kind_t kind,
+                            const char *name_str);
+extern te_info *TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind,
+                               const char *mod_str, const char *name_str, node *wrapper,
+                               node *assign, te_info *parent);
+extern te_info *TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind,
+                               const char *name_str, prf prf_no, int num_rets);
 extern int TEone (ntype *args);
 extern int TEtwo (ntype *args);
 extern int TEthree (ntype *args);
@@ -60,10 +61,11 @@ extern int TEval (ntype *args);
 
 extern void TEfreeAllTypeErrorInfos ();
 
-extern void TEhandleError (int line, const char *format, ...);
+extern void TEhandleError (int line, const char *file, const char *format, ...);
 extern char *TEfetchErrors ();
 extern void TEextendedAbort ();
 extern int TEgetLine (te_info *info);
+extern const char *TEgetFile (te_info *info);
 extern char *TEgetKindStr (te_info *info);
 extern te_kind_t TEgetKind (te_info *info);
 extern const char *TEgetModStr (te_info *info);

@@ -35,6 +35,7 @@ struct TE_INFO_PRF {
 
 struct TE_INFO {
     int line;             /* line where the application is situated */
+    const char *file;     /* file in which application is situated */
     te_kind_t kind;       /* kind of function we are dealing with */
     const char *name_str; /* name of the function */
     union {
@@ -43,15 +44,16 @@ struct TE_INFO {
     } info;
 };
 
-#define TI_LINE(n) (n->line)
-#define TI_KIND(n) (n->kind)
-#define TI_MOD(n) (n->info.udf.mod_str)
-#define TI_NAME(n) (n->name_str)
-#define TI_FUNDEF(n) (n->info.udf.wrapper)
-#define TI_ASSIGN(n) (n->info.udf.assign)
-#define TI_CHN(n) (n->info.udf.chn)
-#define TI_PRF(n) (n->info.prf.prf_no)
-#define TI_NUM_RETS(n) (n->info.prf.num_rets)
+#define TI_LINE(n) ((n)->line)
+#define TI_FILE(n) ((n)->file)
+#define TI_KIND(n) ((n)->kind)
+#define TI_MOD(n) ((n)->info.udf.mod_str)
+#define TI_NAME(n) ((n)->name_str)
+#define TI_FUNDEF(n) ((n)->info.udf.wrapper)
+#define TI_ASSIGN(n) ((n)->info.udf.assign)
+#define TI_CHN(n) ((n)->info.udf.chn)
+#define TI_PRF(n) ((n)->info.prf.prf_no)
+#define TI_NUM_RETS(n) ((n)->info.prf.num_rets)
 
 #define TI_KIND_STR(n) (kind_str[TI_KIND (n)])
 
@@ -207,7 +209,7 @@ MatchSimpleA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEmakeInfo (int linenum, te_kind_t kind, const char *name_str)
+TEmakeInfo (int linenum, const char *file, te_kind_t kind, const char *name_str)
 {
     te_info *res;
 
@@ -220,6 +222,7 @@ TEmakeInfo (int linenum, te_kind_t kind, const char *name_str)
     res = (te_info *)PHPmalloc (tinfo_heap);
 
     TI_LINE (res) = linenum;
+    TI_FILE (res) = file;
     TI_KIND (res) = kind;
     TI_NAME (res) = name_str;
 
@@ -227,14 +230,14 @@ TEmakeInfo (int linenum, te_kind_t kind, const char *name_str)
 }
 
 te_info *
-TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str, const char *name_str,
-               node *wrapper, node *assign, te_info *parent)
+TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind, const char *mod_str,
+               const char *name_str, node *wrapper, node *assign, te_info *parent)
 {
     te_info *res;
 
     DBUG_ENTER ("TEmakeInfo");
 
-    res = TEmakeInfo (linenum, kind, name_str);
+    res = TEmakeInfo (linenum, file, kind, name_str);
     TI_MOD (res) = mod_str;
     TI_FUNDEF (res) = wrapper;
     TI_ASSIGN (res) = assign;
@@ -244,14 +247,14 @@ TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str, const char *nam
 }
 
 te_info *
-TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, prf prf_no,
-               int num_rets)
+TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_str,
+               prf prf_no, int num_rets)
 {
     te_info *res;
 
     DBUG_ENTER ("TEmakeInfo");
 
-    res = TEmakeInfo (linenum, kind, name_str);
+    res = TEmakeInfo (linenum, file, kind, name_str);
     TI_PRF (res) = prf_no;
     TI_NUM_RETS (res) = num_rets;
 
@@ -273,6 +276,13 @@ TEgetLine (te_info *info)
 {
     DBUG_ENTER ("TEgetLine");
     DBUG_RETURN (TI_LINE (info));
+}
+
+const char *
+TEgetFile (te_info *info)
+{
+    DBUG_ENTER ("TEgetFile");
+    DBUG_RETURN (TI_FILE (info));
 }
 
 te_kind_t
@@ -381,17 +391,18 @@ static char *errors = NULL;
 
 /** <!--********************************************************************-->
  *
- * @fn void TEhandleError( int line, const char *format, ...)
+ * @fn void TEhandleError( int line, const char *file, const char *format, ...)
  *
  *   @brief  collect the error messages
  *
  *   @param line  line number
+ *   "param file  file name
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-TEhandleError (int line, const char *format, ...)
+TEhandleError (int line, const char *file, const char *format, ...)
 {
     va_list arg_p;
 
@@ -405,9 +416,10 @@ TEhandleError (int line, const char *format, ...)
      */
 
     if (errors == NULL) {
-        errors = CTIgetErrorMessageVA (line, format, arg_p);
+        errors = CTIgetErrorMessageVA (line, file, format, arg_p);
     } else {
-        errors = STRcatn (3, errors, "@", CTIgetErrorMessageVA (line, format, arg_p));
+        errors
+          = STRcatn (3, errors, "@", CTIgetErrorMessageVA (line, file, format, arg_p));
     }
 
     va_end (arg_p);
@@ -604,7 +616,8 @@ TEassureScalar (char *obj, ntype *type)
     DBUG_ENTER ("TEassureScalar");
 
     if (!MatchScalar (type)) {
-        TEhandleError (global.linenum, "%s should be a scalar; type found: %s", obj,
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be a scalar; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
 
@@ -627,7 +640,8 @@ TEassureVect (char *obj, ntype *type)
     DBUG_ENTER ("TEassureVect");
 
     if (!MatchVect (type)) {
-        TEhandleError (global.linenum, "%s should be a vector; type found: %s", obj,
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be a vector; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
 
@@ -650,7 +664,8 @@ TEassureIntS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureIntS");
 
     if (!MatchScalar (type) || !MatchIntA (type)) {
-        TEhandleError (global.linenum, "%s should be of type int; type found: %s", obj,
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be of type int; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
@@ -672,8 +687,9 @@ TEassureIntV (char *obj, ntype *type)
     DBUG_ENTER ("AssureIntV");
 
     if (!MatchIntA (type) || !MatchVect (type)) {
-        TEhandleError (global.linenum, "%s should be an integer vector; type found: %s",
-                       obj, TYtype2String (type, FALSE, 0));
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be an integer vector; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
@@ -694,7 +710,8 @@ TEassureBoolS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureBoolS");
 
     if (!MatchScalar (type) || !MatchBoolA (type)) {
-        TEhandleError (global.linenum, "%s should be of type bool; type found: %s", obj,
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be of type bool; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
@@ -716,8 +733,9 @@ TEassureBoolV (char *obj, ntype *type)
     DBUG_ENTER ("TEassureBoolV");
 
     if (!MatchVect (type) || !MatchBoolA (type)) {
-        TEhandleError (global.linenum, "%s should be a boolean vector; type found: %s",
-                       obj, TYtype2String (type, FALSE, 0));
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be a boolean vector; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
@@ -738,7 +756,7 @@ TEassureBoolA (char *obj, ntype *type)
     DBUG_ENTER ("TEassureBoolA");
 
     if (!MatchBoolA (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Element type of %s should be boolean; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
@@ -761,7 +779,7 @@ TEassureNumS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureNumS");
 
     if (!MatchScalar (type) || !MatchNumA (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "%s should be of type int / float / double; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
@@ -784,7 +802,7 @@ TEassureNumV (char *obj, ntype *type)
     DBUG_ENTER ("TEassureNumV");
 
     if (!MatchVect (type) || !MatchNumA (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "%s should be a vector of type int / float / double; type found: "
                        "%s",
                        obj, TYtype2String (type, FALSE, 0));
@@ -808,7 +826,7 @@ TEassureNumA (char *obj, ntype *type)
     DBUG_ENTER ("TEassureNumA");
 
     if (!MatchNumA (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Element type of %s should be numeric; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
@@ -831,8 +849,9 @@ TEassureSimpleType (char *obj, ntype *type)
     DBUG_ENTER ("TEassureSimpleType");
 
     if (!MatchSimpleA (type)) {
-        TEhandleError (global.linenum, "%s should be a built-in type; type found: %s",
-                       obj, TYtype2String (type, FALSE, 0));
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be a built-in type; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
@@ -853,7 +872,7 @@ TEassureSimpleS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureSimpleS");
 
     if (!MatchSimpleA (type) || !MatchScalar (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "%s should be a scalar of a built-in type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
@@ -876,7 +895,7 @@ TEassureSimpleV (char *obj, ntype *type)
     DBUG_ENTER ("TEassureSimpleV");
 
     if (!MatchSimpleA (type) || !MatchVect (type)) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "%s should be a vector of a built-in type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
@@ -899,8 +918,9 @@ TEassureIntVectLengthOne (char *obj, ntype *type)
     DBUG_ENTER ("AssureIntVectLengthOne");
 
     if (!MatchIntA (type) || !MatchVectLengthOne (type)) {
-        TEhandleError (global.linenum, "%s should be an integer vector; type found: %s",
-                       obj, TYtype2String (type, FALSE, 0));
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be an integer vector; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
     }
     DBUG_VOID_RETURN;
 }
@@ -929,7 +949,7 @@ TEassureNonNegativeValues (char *obj, ntype *type)
 
         for (i = 0; i < dim; i++) {
             if (dv[i] < 0) {
-                TEhandleError (global.linenum,
+                TEhandleError (global.linenum, global.filename,
                                "%s should not contain negative values; type found: %s",
                                obj, TYtype2String (type, FALSE, 0));
             }
@@ -958,7 +978,7 @@ TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
         && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
             || (TYgetConstr (type2) == TC_akd))
         && (SHgetExtent (TYgetShape (type1), 0) != TYgetDim (type2))) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Shape of %s should match dimensionality of %s;"
                        " types found: %s  and  %s",
                        obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -992,7 +1012,7 @@ TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2
         && ((TYgetConstr (type3) == TC_akv) || (TYgetConstr (type3) == TC_aks)
             || (TYgetConstr (type3) == TC_akd))
         && (SHgetExtent (TYgetShape (type1), 0) + TYgetDim (type2) != TYgetDim (type3))) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Shape of %s + dimensionality of %s "
                        "should match dimensionality of %s;"
                        " types found: %s ,  %s ,  and  %s",
@@ -1027,7 +1047,7 @@ TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
         for (i = 0; i < TYgetDim (type1); i++) {
             if (SHgetExtent (TYgetShape (type1), i)
                 != SHgetExtent (TYgetShape (type2), i + offset)) {
-                TEhandleError (global.linenum,
+                TEhandleError (global.linenum, global.filename,
                                "the shape of %s (%s) should be a postfix of the shape of "
                                "%s (%s)",
                                obj1, TYtype2String (type1, FALSE, 0), obj2,
@@ -1064,7 +1084,7 @@ TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
             || (TYgetConstr (type2) == TC_akv))) {
         dv = (int *)COgetDataVec (TYgetValue (type1));
         if ((dv[0] < 0) || (dv[0] >= TYgetDim (type2))) {
-            TEhandleError (global.linenum,
+            TEhandleError (global.linenum, global.filename,
                            "%s should be legal index into shape( %s);"
                            " types found: %s  and  %s",
                            obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1101,7 +1121,7 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
             if ((dv[i] < 0) || (dv[i] >= SHgetExtent (TYgetShape (type2), i))) {
-                TEhandleError (global.linenum,
+                TEhandleError (global.linenum, global.filename,
                                "%s should be legal index into %s;"
                                " types found: %s  and  %s",
                                obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1140,7 +1160,7 @@ TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
         dv2 = (int *)COgetDataVec (TYgetValue (type2));
         for (i = 0; i < dim1; i++) {
             if ((dv1[i] < 0) || (dv1[i] > dv2[i])) {
-                TEhandleError (global.linenum,
+                TEhandleError (global.linenum, global.filename,
                                "%s should be less equal than %s;"
                                " types found: %s  and  %s",
                                obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1169,7 +1189,7 @@ TEassureValNonZero (char *obj1, ntype *type1)
 
     if (TYgetConstr (type1) == TC_akv) {
         if (COisZero (TYgetValue (type1), FALSE)) {
-            TEhandleError (global.linenum,
+            TEhandleError (global.linenum, global.filename,
                            "%s must not contain a zero;"
                            " type found: %s",
                            obj1, TYtype2String (type1, FALSE, 0));
@@ -1201,7 +1221,7 @@ TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
         dv = (int *)COgetDataVec (TYgetValue (type1));
         if ((dv[0] < 0) || (dv[0] >= SHgetUnrLen (TYgetShape (type2)))) {
-            TEhandleError (global.linenum,
+            TEhandleError (global.linenum, global.filename,
                            "%s should be legal offset index into %s;"
                            " types found: %s  and  %s",
                            obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1238,7 +1258,7 @@ TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
             if (abs (dv[i]) > SHgetExtent (TYgetShape (type2), i)) {
-                TEhandleError (global.linenum,
+                TEhandleError (global.linenum, global.filename,
                                "%s should not exceed the shape of %s;"
                                " types found: %s  and  %s",
                                obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1278,7 +1298,7 @@ TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
             prod *= dv[i];
         }
         if (prod != SHgetUnrLen (TYgetShape (type2))) {
-            TEhandleError (global.linenum,
+            TEhandleError (global.linenum, global.filename,
                            "%s should be legal shape for the data vector of %s;"
                            " types found: %s  and  %s",
                            obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1308,7 +1328,7 @@ TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_ENTER ("TEassureSameSimpleType");
 
     if (TYgetSimpleType (TYgetScalar (type1)) != TYgetSimpleType (TYgetScalar (type2))) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Element types of %s and %s should be identical;"
                        " types found: %s  and  %s",
                        obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1334,7 +1354,7 @@ TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_ENTER ("TEassureSameScalarType");
 
     if (!TYeqTypes (TYgetScalar (type1), TYgetScalar (type2))) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "Element types of %s and %s should be identical;"
                        " types found: %s  and  %s",
                        obj1, obj2, TYtype2String (type1, FALSE, 0),
@@ -1468,7 +1488,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     }
 
     if (res == NULL) {
-        TEhandleError (global.linenum,
+        TEhandleError (global.linenum, global.filename,
                        "%s (shape: %s) and %s (shape: %s) must have identical shapes.",
                        obj1, TYtype2String (type1, FALSE, 0), obj2,
                        TYtype2String (type2, FALSE, 0));

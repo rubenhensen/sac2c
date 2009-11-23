@@ -18,7 +18,8 @@
 #include <stdarg.h>
 
 extern void CTIinstallInterruptHandlers ();
-extern char *CTIgetErrorMessageVA (int line, const char *format, va_list arg_p);
+extern char *CTIgetErrorMessageVA (int line, const char *file, const char *format,
+                                   va_list arg_p);
 extern void CTIerror (const char *format, ...);
 extern void CTIerrorLine (int line, const char *format, ...);
 extern void CTIerrorContinued (const char *format, ...);
