@@ -38,7 +38,7 @@ WLBidOrNumEq (node *arg1, node *arg2)
     if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)) {
         result = (ID_AVIS (arg1) == ID_AVIS (arg2));
     } else if ((NODE_TYPE (arg1) == N_num) && (NODE_TYPE (arg2) == N_num)) {
-        result = TRUE;
+        result = (NUM_VAL (arg1) == NUM_VAL (arg2));
     } else {
         result = FALSE;
     }
