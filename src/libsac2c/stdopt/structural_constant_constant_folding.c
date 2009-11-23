@@ -1027,7 +1027,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  *        x = sel( {iv_1, iv_2], P);
  *
- *        we can ignore iv_1 as it has to be 0 anyways. We lose a check here
+ *        we can ignore iv_1 as it has to be 0 anyway. We lose a check here
  *        but ecc should catch these cases for us.
  *        Finally, the proxy might cover more than one dimension.
  *
@@ -1133,9 +1133,19 @@ SelProxyArray (node *arg_node, info *arg_info)
             DBUG_PRINT ("CF_PROXY", ("Might have found a proxy!"));
 
             /*
-             * first of all, we filter out the prefix of indices that correspond
+             * First of all, we filter out the prefix of indices that correspond
              * to a 1 extent dimension in P and the corresponding elements
-             * from the frameshape of P to get the iteration space over A
+             * from the frameshape of P to get the iteration space over A. This
+             * caters for proxies of the form
+             *
+             * A = ...
+             * P = [[sel(p_iv1, A), ..., [sel(p_ivn, A)]];
+             * r = sel( iv, P);
+             *
+             * where the outer indices of iv have no correspondence in the p_ivx.
+             * Note, however, that this transformation is still correct if the
+             * outer dimension has a correspondence in P_iv, as it will be
+             * identical for all selections.
              */
             filter_iv = DUPdoDupTree (aelems_iv);
             fs_P_shp = ARRAY_FRAMESHAPE (arr_P);
@@ -1146,59 +1156,71 @@ SelProxyArray (node *arg_node, info *arg_info)
                 pos++;
             }
 
-            DBUG_ASSERT ((filter_iv != NULL), "selection from weird array!");
+            DBUG_ASSERT ((filter_iv != NULL), "weird selection encountered....");
 
             flen = TCcountExprs (filter_iv);
             iter_shp = SHdropFromShape (SHgetDim (fs_P_shp) - flen, fs_P_shp);
-            /*
-             * now the final step:
-             *
-             * check whether all sels are of the form
-             *
-             * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
-             *
-             */
-
             tlen = TCcountExprs (template);
-            DBUG_ASSERT ((tlen >= flen), "sel operations do not match!");
-
-            if (tlen == flen) {
-                template = NULL; /* no non-index part */
-            } else {
-                template = DUPdoDupTree (template);
-                tmp = TCgetNthExprs (tlen - flen - 1, template);
-                EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
-            }
 
             /*
-             * now we check whether all selections are
-             *
-             * template ++ some constants
+             * If by now we still have not managed to reduce the index used
+             * for selections into the proxy such that it is shorter or
+             * equally long as the selections used to construct the proxy,
+             * we have to give up.
              */
-            tmp = COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P, template);
-
-            /*
-             * if that worked out, we can replace the selection by
-             *
-             * sel ( [v1, ..., vn, i1, ..., in]], A)
-             */
-            if (tmp != IPS_FAILED) {
-                DBUG_PRINT ("CF_PROXY", ("Replacing a proxy sel!"));
-                iv_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                                SHcreateShape (1, tlen)));
-                INFO_VARDECS (arg_info) = TBmakeVardec (iv_avis, INFO_VARDECS (arg_info));
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
-                                             TCmakeIntVector (
-                                               TCappendExprs (template, filter_iv))),
-                                  INFO_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
-
-                res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
-            } else {
-                if (template != NULL) {
-                    template = FREEdoFreeTree (template);
+            if (tlen >= flen) {
+                /*
+                 * now the final step:
+                 *
+                 * check whether all sels are of the form
+                 *
+                 * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
+                 *
+                 */
+                if (tlen == flen) {
+                    template = NULL; /* no non-index part */
+                } else {
+                    template = DUPdoDupTree (template);
+                    tmp = TCgetNthExprs (tlen - flen - 1, template);
+                    EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
                 }
+
+                /*
+                 * now we check whether all selections are
+                 *
+                 * template ++ some constants
+                 */
+                tmp
+                  = COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P, template);
+
+                /*
+                 * if that worked out, we can replace the selection by
+                 *
+                 * sel ( [v1, ..., vn, i1, ..., in]], A)
+                 */
+                if (tmp != IPS_FAILED) {
+                    DBUG_PRINT ("CF_PROXY", ("Replacing a proxy sel!"));
+                    iv_avis
+                      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (1, tlen)));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (iv_avis, INFO_VARDECS (arg_info));
+                    INFO_PREASSIGN (arg_info)
+                      = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
+                                                 TCmakeIntVector (
+                                                   TCappendExprs (template, filter_iv))),
+                                      INFO_PREASSIGN (arg_info));
+                    AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
+
+                    res
+                      = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
+                } else {
+                    if (template != NULL) {
+                        template = FREEdoFreeTree (template);
+                    }
+                    filter_iv = FREEdoFreeTree (filter_iv);
+                }
+            } else {
                 filter_iv = FREEdoFreeTree (filter_iv);
             }
 
