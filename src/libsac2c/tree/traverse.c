@@ -383,13 +383,18 @@ TRAVgetName ()
 
     DBUG_ENTER ("TRAVgetName");
 
-    if (travstack == NULL) {
+    /*
+     * Ignore anonymous traversals on top. This was implemented initially
+     * implemented by cg. So don't blame me. I just rearranged it a bit
+     */
+    tmp = travstack;
+    while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
+        tmp = tmp->next;
+    }
+
+    if (tmp == NULL) {
         result = "no_active_traversal";
     } else {
-        tmp = travstack;
-        while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
-            tmp = tmp->next;
-        }
         result = travnames[tmp->traversal];
     }
 
@@ -424,7 +429,7 @@ TRAVsetPostFun (trav_t traversal, travfun_p postfun)
  * Description:
  *   Generates string to be used as artificial variable.
  *   The variable name is different in each call of TRAVtmpVar().
- *   The string has the form "__tmp_" ++ traversal ++ consecutive number.
+ *   The string has the form "_" ++ traversal ++ "_" ++ consecutive number.
  *
  ******************************************************************************/
 
@@ -461,24 +466,43 @@ char *
 TRAVtmpVarName (char *postfix)
 {
     const char *tmp;
-    char *result, *prefix;
+    char *new_postfix, *result, *prefix;
 
     DBUG_ENTER ("TRAVtmpVarName");
 
     /* avoid chains of same prefixes */
     tmp = TRAVgetName ();
+    new_postfix = postfix;
 
-    if ((STRlen (postfix) > (STRlen (tmp) + 1)) && (postfix[0] == '_')
-        && STRprefix (tmp, postfix + 1)) {
-        postfix = postfix + STRlen (tmp) + 1;
-        while (postfix[0] != '_') {
-            postfix++;
+    if ((new_postfix[0] == '_') && STRprefix (tmp, new_postfix + 1)) {
+        new_postfix = new_postfix + STRlen (tmp) + 1;
+
+        /* check for the dividing '_' between travtag and number */
+        if (new_postfix[0] == '_') {
+            /* found divider */
+            new_postfix++;
+
+            /* ignore previous number tag */
+            while ((new_postfix[0] >= '0') && (new_postfix[0] <= '9')) {
+                new_postfix++;
+            }
+
+            if (new_postfix[0] == '_') {
+                /* this is the final bit of the previous postfix */
+                new_postfix++;
+            } else {
+                /* this does not match the pattern => roll back */
+                new_postfix = postfix;
+            }
+        } else {
+            /* this does not match the pattern => roll back */
+            new_postfix = postfix;
         }
     }
 
     prefix = TRAVtmpVar ();
 
-    result = STRcatn (3, prefix, "_", postfix);
+    result = STRcatn (3, prefix, "_", new_postfix);
 
     MEMfree (prefix);
 
