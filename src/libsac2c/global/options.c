@@ -213,10 +213,10 @@ OPTcheckOptionConsistency (void)
     }
 
     if (!global.optimize.dowlur) {
-        CTIwarn ("With-Loop unrolling (WLUR) was disabled using the command line."
+        CTIwarn ("With-Loop unrolling (WLUR) was disabled using the command line. "
                  "However, unrolling of single-trip with-loops is required for "
-                 "code generation. Therefore, WLUR will be re-enabled and "
-                 "with the maximum number of unrolling steps set as 1.");
+                 "code generation. Therefore, WLUR will be re-enabled with the  "
+                 "maximum number of unrolling steps set to 1.");
         global.wlunrnum = 1;
         global.optimize.dowlur = TRUE;
     }
