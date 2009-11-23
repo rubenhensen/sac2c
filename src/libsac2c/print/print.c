@@ -89,7 +89,7 @@ struct INFO {
 #define INFO_SHAPE_COUNTER(n) ((n)->shapecnt)
 #define INFO_FIRSTERROR(n) ((n)->firstError)
 #define INFO_FILECOUNTER(n) ((n)->filecounter)
-#define INFO_FUNCOUNTER(n) ((n)->filecounter)
+#define INFO_FUNCOUNTER(n) ((n)->funcounter)
 #define INFO_NONLOCCALFUN(n) ((n)->nonlocalfun)
 #define INFO_SPMDSTORE(n) ((n)->spmdstore)
 
