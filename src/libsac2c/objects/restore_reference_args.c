@@ -450,6 +450,22 @@ RERAprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_afterguard:
+        /*
+         * after guard is the identity on the first argument
+         */
+        if (NODE_TYPE (AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)))) == N_arg) {
+            node *arg = AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)));
+
+            if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
+                DBUG_ASSERT ((IDS_NEXT (INFO_LHS (arg_info)) == NULL),
+                             "afterguard with multiple LHS found");
+
+                AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) = ARG_AVIS (arg);
+            }
+        }
+        break;
+
     default:
         break;
     }

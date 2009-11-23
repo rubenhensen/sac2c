@@ -1162,10 +1162,10 @@ DUPblock (node *arg_node, info *arg_info)
                                         AVIS_NAME (ID_AVIS (AVIS_DIM (avis))),
                                         AVIS_NAME (ID_AVIS (nid))));
                     AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-                    AVIS_DIM (avis) = DUPdoDupNode (nid);
+                    AVIS_DIM (avis) = TBmakeId (ID_AVIS (nid));
                 }
             } else if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
-                AVIS_DIM (avis) = DUPdoDupNode (AVIS_DIM (avis));
+                AVIS_DIM (avis) = DUPCONT (AVIS_DIM (avis));
             } else {
                 DBUG_ASSERT (FALSE, ("DUPblock found oddball AVIS_DIM node type"));
             }
@@ -1181,10 +1181,10 @@ DUPblock (node *arg_node, info *arg_info)
                                         AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))),
                                         AVIS_NAME (ID_AVIS (nid))));
                     AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-                    AVIS_SHAPE (avis) = DUPdoDupNode (nid);
+                    AVIS_SHAPE (avis) = TBmakeId (ID_AVIS (nid));
                 }
             } else if (N_array == NODE_TYPE (AVIS_SHAPE (avis))) {
-                AVIS_SHAPE (avis) = DUPdoDupNode (AVIS_SHAPE (avis));
+                AVIS_SHAPE (avis) = DUPCONT (AVIS_SHAPE (avis));
             } else {
                 DBUG_ASSERT (FALSE, ("DUPblock found oddball AVIS_SHAPE node type"));
             }

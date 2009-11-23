@@ -2598,6 +2598,7 @@
       <traversal id="RESO" name="Restore Global Objects" default="sons" include="restore_objects.h">
         <travuser>
 	  <node name="Ap" />
+	  <node name="Prf" />
 	  <node name="Id" />
 	  <node name="Assign" />
 	  <node name="Let" />

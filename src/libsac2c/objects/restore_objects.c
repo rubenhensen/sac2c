@@ -329,6 +329,33 @@ RESOap (node *arg_node, info *arg_info)
 }
 
 node *
+RESOprf (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("RESOprf");
+
+    switch (PRF_PRF (arg_node)) {
+    case F_afterguard:
+        avis = ID_AVIS (PRF_ARG1 (arg_node));
+
+        if ((NODE_TYPE (AVIS_DECL (avis)) == N_arg)
+            && (ARG_ISARTIFICIAL (AVIS_DECL (avis)))) {
+            INFO_DELETE (arg_info) = TRUE;
+        } else {
+            arg_node = TRAVsons (arg_node, arg_info);
+        }
+
+        break;
+    default:
+        arg_node = TRAVsons (arg_node, arg_info);
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RESOlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RESOlet");
