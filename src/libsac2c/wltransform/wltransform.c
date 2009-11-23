@@ -5346,21 +5346,21 @@ FitNode (node *wlnode, int unroll)
 
     if (unroll > 0) {
         if ((NODE_TYPE (WLNODE_BOUND1 (wlnode)) == N_num)
-            || (NODE_TYPE (WLNODE_BOUND2 (wlnode)) == N_num)) {
+            && (NODE_TYPE (WLNODE_BOUND2 (wlnode)) == N_num)) {
             bnd1 = NUM_VAL (WLNODE_BOUND1 (wlnode));
             bnd2 = NUM_VAL (WLNODE_BOUND2 (wlnode));
             width = bnd2 - bnd1;
             remain = width % unroll;
             if ((remain > 0) && (width > remain)) {
                 /*
-                 * incomplete periode found -> split
+                 * incomplete period found -> split
                  */
                 new_wlnode = DUPdoDupNode (wlnode);
 
                 DBUG_ASSERT ((!(WLNODE_ISDYNAMIC (wlnode))), "illegal node found!");
 
                 NUM_VAL (WLNODE_BOUND1 (new_wlnode)) = (bnd2 - remain);
-                NUM_VAL (WLNODE_BOUND2 (new_wlnode)) = (bnd2 - remain);
+                NUM_VAL (WLNODE_BOUND2 (wlnode)) = NUM_VAL (WLNODE_BOUND1 (new_wlnode));
 
                 L_WLNODE_NEXT (new_wlnode, WLNODE_NEXT (wlnode));
                 L_WLNODE_NEXT (wlnode, new_wlnode);
@@ -5702,9 +5702,14 @@ static
         if ((EXPRS_EXPR (idx_max) != NULL)
             && (NODE_TYPE (EXPRS_EXPR (idx_max)) == N_num)) {
             value = NUM_VAL (EXPRS_EXPR (idx_max));
+
+            DBUG_PRINT ("WLtrans", ("...found max-idx at position %d of %d", pos, value));
         } else {
             DBUG_ASSERT ((iter_shp != NULL), "no shape found!");
             value = SHgetExtent (iter_shp, pos);
+
+            DBUG_PRINT ("WLtrans",
+                        ("...using iter-shape at position %d of %d", pos, value));
         }
 
         result = TBmakeExprs (TBmakeNum (value), result);
