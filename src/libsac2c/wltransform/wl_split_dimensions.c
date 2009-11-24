@@ -1267,6 +1267,8 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
          * We are out of options here. All we can do it tell the world that
          * we need a default element and stop compilation.
          */
+        inner = NULL;
+
         CTIerror ("Default element required in genarray with-loop.");
     }
 

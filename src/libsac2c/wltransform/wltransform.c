@@ -3974,8 +3974,8 @@ CheckParams (node *seg)
 {
     int d, b;
     node *tmp1, *tmp2, *last;
-    node *first_block, *first_sv, *first_ubv;
-    int inner_block_pos, inner_unr_block_pos;
+    node *first_block = NULL, *first_sv, *first_ubv;
+    int inner_block_pos = 0, inner_unr_block_pos;
 
     DBUG_ENTER ("CheckParams");
 
@@ -6326,7 +6326,7 @@ InferFitted (node *wlnode)
 {
     node *grids;
     node *bnd1, *bnd2, *step, *g_bnd1, *g_bnd2;
-    int width, remain;
+    int width, remain = 0;
 
     DBUG_ENTER ("InferFitted");
 
