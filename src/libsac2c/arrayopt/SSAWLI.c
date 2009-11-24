@@ -253,14 +253,16 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     index_info *iinfo, *tmpii;
     int elts = 1, ok = 1, i, *valid_permutation;
     node *idn;
-    ntype *atype;
 
     DBUG_ENTER ("Scalar2ArrayIndex");
     DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
 
-    atype = NTCnewTypeCheck_Expr (arrayn);
-    if (TUshapeKnown (atype)) {
-        elts = SHgetExtent (TYgetShape (atype), 0);
+    /*
+     * this needs to be a vector of scalar elements
+     */
+    if (TUisScalar (ARRAY_ELEMTYPE (arrayn))
+        && (SHgetDim (ARRAY_FRAMESHAPE (arrayn)) == 1)) {
+        elts = SHgetExtent (ARRAY_FRAMESHAPE (arrayn), 0);
         arrayn = ARRAY_AELEMS (arrayn);
 
         iinfo = WLFcreateIndex (elts);
@@ -312,8 +314,6 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     } else {
         iinfo = NULL;
     }
-
-    atype = TYfreeType (atype);
 
     DBUG_RETURN (iinfo);
 }
