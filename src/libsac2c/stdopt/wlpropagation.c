@@ -447,7 +447,6 @@ node *
 WLPROPid (node *arg_node, info *arg_info)
 {
     node *newids;
-    node *d;
 
     DBUG_ENTER ("WLPROPid");
 
@@ -566,16 +565,25 @@ WLPROPid (node *arg_node, info *arg_info)
 
                 AVIS_SSAASSIGN (ARG_AVIS (witharg)) = new_withloop;
 
+                /*
+                 * move the AVIS_DIM and AVIS_SHAPE annotations to the
+                 * current context
+                 */
                 if (isSAAMode ()) {
-                    d = AVIS_DIM (ARG_AVIS (witharg));
-                    d = (NULL != d) ? FREEdoFreeTree (d) : NULL;
-                    d = AVIS_SHAPE (ARG_AVIS (witharg));
-                    d = (NULL != d) ? FREEdoFreeTree (d) : NULL;
+                    if (AVIS_DIM (ARG_AVIS (witharg)) != NULL) {
+                        AVIS_DIM (ARG_AVIS (witharg))
+                          = FREEdoFreeTree (AVIS_DIM (ARG_AVIS (witharg)));
+                    }
+
+                    if (AVIS_SHAPE (ARG_AVIS (witharg)) != NULL) {
+                        AVIS_SHAPE (ARG_AVIS (witharg))
+                          = FREEdoFreeTree (AVIS_SHAPE (ARG_AVIS (witharg)));
+                    }
 
                     AVIS_DIM (ARG_AVIS (witharg))
-                      = DUPdoDupTree (AVIS_DIM (ID_AVIS (arg_node)));
+                      = DUPdoDupTreeLut (AVIS_DIM (ID_AVIS (arg_node)), lut);
                     AVIS_SHAPE (ARG_AVIS (witharg))
-                      = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (arg_node)));
+                      = DUPdoDupTreeLut (AVIS_SHAPE (ID_AVIS (arg_node)), lut);
                 }
 
                 /*
