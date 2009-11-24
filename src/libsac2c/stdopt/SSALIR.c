@@ -1745,17 +1745,28 @@ node *
 LIRMOVblock (node *arg_node, info *arg_info)
 {
     int old_flag;
+    int old_mode;
 
     DBUG_ENTER ("LIRMOVblock");
 
     /* save block mode */
     old_flag = INFO_TOPBLOCK (arg_info);
+    old_mode = INFO_FLAG (arg_info);
 
     if (FUNDEF_BODY (INFO_FUNDEF (arg_info)) == arg_node) {
         /* top block */
         INFO_TOPBLOCK (arg_info) = TRUE;
     } else {
         /* any other block */
+        if ((INFO_FLAG (arg_info) == LIR_MOVEUP)
+            || (INFO_FLAG (arg_info) == LIR_MOVEDOWN)) {
+            /*
+             * if the assignment containing this block is to be moved,
+             * so is the entire block. Thus, all ids from here on are
+             * local with respect to the move.
+             */
+            INFO_FLAG (arg_info) = LIR_MOVELOCAL;
+        }
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
@@ -1763,6 +1774,7 @@ LIRMOVblock (node *arg_node, info *arg_info)
 
     /* restore block mode */
     INFO_TOPBLOCK (arg_info) = old_flag;
+    INFO_FLAG (arg_info) = old_mode;
 
     DBUG_RETURN (arg_node);
 }
