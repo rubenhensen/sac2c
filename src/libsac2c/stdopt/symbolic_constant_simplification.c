@@ -1595,7 +1595,6 @@ SCSprf_shape (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCSprf_shape");
 
 #ifdef BUG524
-
     /* This code should never have gone live. It absolutely trashes
      * the performance of MANY benchmarks, by about a factor of 3-4X.
      *
@@ -1734,11 +1733,13 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 p2 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 res = TCmakePrf2 (F_mul_SxS, TBmakeId (p1), TBmakeId (p2));
                 DBUG_PRINT ("CF", ("SCSprf_reciproc_S Case 2 replacing %s by %s",
                                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -1798,11 +1799,13 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
                                                          DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 p2 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
                                                          DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 res = TCmakePrf2 (F_mul_VxV, TBmakeId (p1), TBmakeId (p2));
                 DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 2 replacing %s by %s",
                                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -1859,10 +1862,12 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 p2 = AWLFIflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));
                 res = TCmakePrf2 (F_add_SxS, TBmakeId (p1), TBmakeId (p2));
                 DBUG_PRINT ("CF", ("SCSprf_neg_S Case 2 replacing %s by %s",
                                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -1919,10 +1924,12 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 p2 = AWLFIflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGN (arg_info), ID_AVIS (arg1p));
+                                             &INFO_PREASSIGN (arg_info),
+                                             TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));
                 res = TCmakePrf2 (F_add_VxV, TBmakeId (p1), TBmakeId (p2));
                 DBUG_PRINT ("CF", ("SCSprf_neg_V Case 2 replacing %s by %s",
                                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),

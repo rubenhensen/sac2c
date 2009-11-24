@@ -493,6 +493,7 @@ makeNarray (node *extrema, info *arg_info, int arrxrho)
 
     resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                     SHcreateShape (1, arrxrho)));
+
     if (isSAAMode ()) {
         AVIS_DIM (resavis) = TBmakeNum (1);
         AVIS_SHAPE (resavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (arrxrho), NULL));
@@ -502,7 +503,9 @@ makeNarray (node *extrema, info *arg_info, int arrxrho)
     INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
 
     zavis = AWLFIflattenExpression (narr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), resavis);
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (1, arrxrho)));
     DBUG_RETURN (zavis);
 }
 
@@ -717,11 +720,9 @@ PropagateNarray (node *arg_node, info *arg_info)
     /* Check that we have extrema for all array elements.
      * All N_array elements must be N_id nodes.
      */
-    allex = TRUE;
     exprs = ARRAY_AELEMS (rhs);
-    DBUG_ASSERT (NULL != exprs, ("PropagateNarray got empty array joke"));
-    allex = (NULL != exprs); /* No funny biz with [:int] */
-    while (allex && (exprs != NULL)) {
+    allex = (NULL != exprs);
+    while (allex && (NULL != exprs)) {
         if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
             allex = allex & isAvisHasExtrema (ID_AVIS (EXPRS_EXPR (exprs)));
         } else {
@@ -750,7 +751,8 @@ PropagateNarray (node *arg_node, info *arg_info)
          */
         vprime = TBmakeId (AWLFIflattenExpression (rhs, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info),
-                                                   IDS_AVIS (LET_IDS (arg_node))));
+                                                   TYeliminateAKV (AVIS_TYPE (
+                                                     IDS_AVIS (LET_IDS (arg_node))))));
         AVIS_MINVAL (ID_AVIS (vprime)) = minv;
         AVIS_MAXVAL (ID_AVIS (vprime)) = maxv;
 
@@ -759,8 +761,8 @@ PropagateNarray (node *arg_node, info *arg_info)
                                             &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNS (arg_info), F_attachextrema,
                                             NULL));
+        ARRAY_EXTREMAATTACHED (LET_EXPR (arg_node)) = TRUE;
     }
-    ARRAY_EXTREMAATTACHED (LET_EXPR (arg_node)) = TRUE;
 
     DBUG_RETURN (rhs);
 }
@@ -1222,9 +1224,11 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     PRF_NOEXTREMAWANTED (minv) = TRUE;
                     PRF_NOEXTREMAWANTED (maxv) = TRUE;
                     minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), lhsavis);
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), lhsavis);
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
                 }
                 break;
 
@@ -1300,7 +1304,8 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     PRF_NOEXTREMAWANTED (minv) = TRUE;
 
                     minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), lhsavis);
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
 
                     maxarg1 = arg1c ? DUPdoDupTree (PRF_ARG1 (rhs))
                                     : TBmakeId (AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (rhs))));
@@ -1312,7 +1317,8 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                     PRF_NOEXTREMAWANTED (maxv) = TRUE;
 
                     maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), lhsavis);
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
                 }
                 break;
             } /* end of switch */

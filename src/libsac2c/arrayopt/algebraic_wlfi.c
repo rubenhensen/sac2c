@@ -188,14 +188,21 @@ FreeInfo (info *info)
 node *
 AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ("AWLFIdoAlgebraicWithLoopFoldingOneFunction");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  ("AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef"));
 
+    arg_info = MakeInfo (arg_node);
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+
     TRAVpush (TR_awlfi);
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -243,7 +250,7 @@ noDefaultPartition (node *arg_node)
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFIflattenExpression(node *arg_node, node **vardecs,
- *                                  node **preassigns, node *restypeavis)
+ *                                  node **preassigns, ntype *restype)
  *
  *   @brief  Flattens the expression at arg_node.
  *           E.g., if the expression is:
@@ -262,14 +269,13 @@ noDefaultPartition (node *arg_node)
  *                           will have a new vardec appended to it.
  *           node **preassigns: a pointer to a preassigns chain that
  *                           will have a new assign appended to it.
- *           node *restypeavis: an N_avis with the same type as TMP.
+ *           node *restype:  the ntype of TMP.
  *
  *   @return node *node:      N_avis node for flattened node
  *
  ******************************************************************************/
 node *
-AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
-                        node *restypeavis)
+AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
 {
     node *avis;
     node *nas;
@@ -279,15 +285,11 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
     if (N_id == NODE_TYPE (arg_node)) {
         avis = ID_AVIS (arg_node);
     } else {
-        avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (restypeavis)));
+        avis = TBmakeAvis (TRAVtmpVar (), restype);
         *vardecs = TBmakeVardec (avis, *vardecs);
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
         *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
-        if (isSAAMode ()) {
-            AVIS_DIM (avis) = DUPdoDupTree (AVIS_DIM (restypeavis));
-            AVIS_SHAPE (avis) = DUPdoDupTree (AVIS_SHAPE (restypeavis));
-        }
         DBUG_PRINT ("AWLFI",
                     ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
     }
@@ -353,7 +355,6 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
  * @params foldeepart: An N_part of the foldeeWL.
  * @params boundnum: 1 for bound1,     or 2 for bound2
  * @params ivminmax: AVIS_MINVAL( idx) or AVIS_MAXVAL( idx)
- * @param  genshpavis: the N_avis for the above genshp computation.
  *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
  *
@@ -361,7 +362,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
 
 static node *
 IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum,
-                           node *ivminmax, node *genshpavis)
+                           node *ivminmax)
 {
     node *boundee;
     node *folderpart;
@@ -370,7 +371,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *idxassign;
     node *ivid;
     node *resavis;
-    node *genshpid;
     node *boundeeid;
     node *pid;
     node *pavis;
@@ -378,6 +378,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     node *expnm;
     node *szeroid;
     node *subid;
+    int shp;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
@@ -394,26 +395,31 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
                  "IntersectBoundsBuilderOne expected N_id WL-generator boundee");
 
     ivid = TBmakeId (ivminmax);
-    genshpid = TBmakeId (genshpavis);
     boundeeid = TBmakeId (ID_AVIS (boundee));
 
     subexpr = TCmakePrf2 (F_sub_VxV, ivid, boundeeid);
-    subid = TBmakeId (AWLFIflattenExpression (subexpr, &INFO_VARDECS (arg_info),
-                                              &INFO_PREASSIGNS (arg_info), genshpavis));
+    subid = TBmakeId (
+      AWLFIflattenExpression (subexpr, &INFO_VARDECS (arg_info),
+                              &INFO_PREASSIGNS (arg_info),
+                              TYeliminateAKV (AVIS_TYPE (ID_AVIS (boundee)))));
 
     szeroid
       = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
 
     pexpr = TCmakePrf2 ((boundnum == 1) ? F_gt_VxS : F_lt_VxS, subid, szeroid);
 
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (boundee))));
     pavis = AWLFIflattenExpression (pexpr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), ID_AVIS (boundeeid));
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_bool),
+                                               SHcreateShape (1, shp)));
     pid = TBmakeId (pavis);
 
     expnm = TCmakePrf3 (F_mesh_VxVxV, pid, DUPdoDupNode (ivid), DUPdoDupNode (boundeeid));
 
     resavis = AWLFIflattenExpression (expnm, &INFO_VARDECS (arg_info),
-                                      &INFO_PREASSIGNS (arg_info), genshpavis);
+                                      &INFO_PREASSIGNS (arg_info),
+                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (boundeeid))));
 
     DBUG_RETURN (resavis);
 }
@@ -450,28 +456,19 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
     node *foldeeassign;
     node *foldeewl;
     node *curavis;
-    node *genshp;
-    node *genshpavis;
-    node *gen;
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
     foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
     foldeewl = LET_EXPR (foldeeassign);
 
-    /* Emit:  genshp = _shape_A_(GENERATOR_BOUND1( foldee)); */
-    gen = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
-    genshp = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), TBmakeId (ID_AVIS (gen)));
-    genshpavis = AWLFIflattenExpression (genshp, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNS (arg_info), ID_AVIS (gen));
-
     partn = WITH_PART (foldeewl);
     while (NULL != partn) {
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 1,
-                                             AVIS_MINVAL (idxavis), genshpavis);
+                                             AVIS_MINVAL (idxavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 2,
-                                             AVIS_MAXVAL (idxavis), genshpavis);
+                                             AVIS_MAXVAL (idxavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
         partn = PART_NEXT (partn);
     }
@@ -750,7 +747,6 @@ AWLFIfundef (node *arg_node, info *arg_info)
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
 
-        arg_info = MakeInfo (arg_node);
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
 
@@ -770,13 +766,14 @@ AWLFIfundef (node *arg_node, info *arg_info)
             INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
-        arg_info = FreeInfo (arg_info);
-
         DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s ends",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                               FUNDEF_NAME (arg_node)));
     }
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), NULL);
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -836,6 +833,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
     INFO_FOLDERWL (arg_info) = arg_node;
+    INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
 
     DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_FOLDERWL, etc."));
     WITH_REFERENCED_FOLD (arg_node) = 0;

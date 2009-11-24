@@ -16,7 +16,7 @@
 extern node *AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
-                                     node *restypeavis);
+                                     ntype *ztype);
 extern node *AWLFIfundef (node *arg_node, info *arg_info);
 extern node *AWLFIblock (node *arg_node, info *arg_info);
 extern node *AWLFIassign (node *arg_node, info *arg_info);
