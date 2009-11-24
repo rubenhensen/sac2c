@@ -153,9 +153,9 @@ AddVect2Offset (node *iv, node *shpexpr, info *info)
                                  TCmakePrf2 (F_vect2offset, shpexpr, DUPdoDupTree (iv))),
                       NULL);
 
-    INFO_PREASSIGNS (info) = TCappendAssign (INFO_PREASSIGNS (info), assign);
+    AVIS_SSAASSIGN (avis) = assign;
 
-    AVIS_SSAASSIGN (avis) = INFO_PREASSIGNS (info);
+    INFO_PREASSIGNS (info) = TCappendAssign (INFO_PREASSIGNS (info), assign);
 
     DBUG_RETURN (avis);
 }
