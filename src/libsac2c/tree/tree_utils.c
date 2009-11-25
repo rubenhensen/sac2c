@@ -272,6 +272,7 @@ TULSisFullGenerator (node *generator, node *operator)
 
     case N_genarray:
         z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+            && (GENERATOR_BOUND2 (generator) == GENARRAY_SHAPE (operator))
             && checkStepWidth (generator);
         break;
 
