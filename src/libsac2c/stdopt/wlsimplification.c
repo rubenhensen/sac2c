@@ -456,7 +456,8 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
     lhs = INFO_LHS (arg_info);
     lhstype = IDS_NTYPE (lhs);
 
-    empty = TBmakeArray (TYcopyType (lhstype), SHcopyShape (TYgetShape (lhstype)), NULL);
+    empty = TBmakeArray (TYmakeAKS (TYcopyType (TYgetScalar (lhstype)), SHmakeShape (0)),
+                         SHcopyShape (TYgetShape (lhstype)), NULL);
     INFO_PREASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), empty), INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
