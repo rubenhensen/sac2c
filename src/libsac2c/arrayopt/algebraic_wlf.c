@@ -304,6 +304,7 @@ AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
     DBUG_ENTER ("AWLFdoAlgebraicWithLoopFoldingOneFunction");
 
     arg_info = MakeInfo (NULL);
+    INFO_ONEFUNDEF (arg_info) = TRUE;
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_awlf);
@@ -1343,8 +1344,8 @@ AWLFfundef (node *arg_node, info *arg_info)
     }
     INFO_FUNDEF (arg_info) = NULL;
 
-    if (NULL != FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

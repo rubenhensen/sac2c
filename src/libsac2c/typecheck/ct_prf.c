@@ -521,7 +521,8 @@ NTCCTprf_attachintersect (te_info *info, ntype *args)
 
     DBUG_ENTER ("NTCCTprf_attachintersect");
 
-    arg = TYgetProductMember (args, 0);
+    arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
     DBUG_RETURN (res);
@@ -2733,6 +2734,10 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
  *     This is an internal-use-only primitive, used as part of AWLF.
  *     It does not survive the optimization phase.
  *
+ *     The idea below is to make the result have the same type as x,
+ *     but without any AKV-ness. This should work, because x and y
+ *     should have the same types.
+ *
  ******************************************************************************/
 
 ntype *
@@ -2744,6 +2749,7 @@ NTCCTprf_mesh_VxVxV (te_info *info, ntype *args)
     DBUG_ENTER ("NTCCTprf_mesh_VxVxV");
 
     arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
     DBUG_RETURN (res);
