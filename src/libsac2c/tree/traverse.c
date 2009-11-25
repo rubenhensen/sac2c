@@ -385,7 +385,9 @@ TRAVgetName ()
 
     /*
      * Ignore anonymous traversals on top. This was implemented initially
-     * implemented by cg. So don't blame me. I just rearranged it a bit
+     * by cg. I just rearranged it a bit. Ideally, as we all agree, using
+     * a proper name for anonymous traversals would be nicer. However, we
+     * just don't have the resources right now.
      */
     tmp = travstack;
     while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
