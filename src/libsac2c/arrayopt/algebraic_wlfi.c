@@ -754,7 +754,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
             /* If new vardecs were made, append them to the current set */
             if (INFO_VARDECS (arg_info) != NULL) {
                 BLOCK_VARDEC (FUNDEF_BODY (arg_node))
@@ -762,6 +762,8 @@ AWLFIfundef (node *arg_node, info *arg_info)
                                     BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
                 INFO_VARDECS (arg_info) = NULL;
             }
+
+            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
             INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
