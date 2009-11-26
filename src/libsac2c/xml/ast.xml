@@ -1460,7 +1460,49 @@
           <node name="Exprs" />
 	</travuser>
       </traversal>
+      <traversal id="DLIR" name="Do-Loop Invariants Traversal" default="sons" include="loop_invariant_removal.h" >
+	<travuser>
+	  <node name="Ids" />
+	  <node name="Assign" />
+	  <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Ap" />
+          <node name="Cond" />
+          <node name="Return" />
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Exprs" />
+	</travuser>
+      </traversal>
+      <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
+	<travuser>
+	  <node name="Ids" />
+	  <node name="Assign" />
+	  <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="With" />
+          <node name="Withid" />
+	</travuser>
+      </traversal>
       <traversal id="LIRMOV" name="Loop Invariants Move Traversal" default="sons" include="SSALIR.h" >
+	<travuser>
+	  <node name="Id" />
+	  <node name="Withid" />
+	  <node name="Assign" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Ids" />
+	</travuser>
+      </traversal>
+      <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
 	<travuser>
 	  <node name="Id" />
 	  <node name="Withid" />
