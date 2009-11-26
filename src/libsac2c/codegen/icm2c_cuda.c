@@ -221,7 +221,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     fprintf (global.outfile, ");\n");
 
     fprintf (global.outfile, "cutStopTimer(timer);\n");
-    fprintf (global.outfile, "printf(\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
+    fprintf (global.outfile, "fprintf(stderr,\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
              funname);
     fprintf (global.outfile, "cutResetTimer(timer);\n");
 
