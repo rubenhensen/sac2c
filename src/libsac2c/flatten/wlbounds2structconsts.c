@@ -124,11 +124,11 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
  *   @brief creates a structural constant of shape selections into "id"
  *          and assigns it to a new var sc_bound:
  *
- *     sc_idx_0 = 0;
- *     sc_e_0 = idx_sel( sc_idx_0, id);
+ *     sc_iv_0 = [0];
+ *     sc_e_0 = _sel_VxA_( sc_iv_0, id);
  *     ...
- *     sc_idx_n = dim-1;
- *     sc_e_n = idx_sel( sc_idx_n, id);
+ *     sc_iv_n = [dim-1];
+ *     sc_e_n = _sel_VxA_( sc_iv_n, id);
  *     sc_bound = [ sc_e_0, ..., sc_e_n];
  *
  *   @param  node *array   :  N_id
@@ -143,29 +143,30 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
 {
     node *res = NULL, *assigns = NULL;
     node *res_avis;
-    node *idx_avis, *elem_avis;
+    node *iv_avis, *elem_avis;
     int i;
 
     DBUG_ENTER ("CreateArrayOfShapeSels");
 
     for (i = dim - 1; i >= 0; i--) {
-        idx_avis = CreateAvisAndInsertVardec ("sc_idx",
-                                              TYmakeAKS (TYmakeSimpleType (T_int),
-                                                         SHcreateShape (0)),
-                                              arg_info);
+        iv_avis = CreateAvisAndInsertVardec ("sc_iv",
+                                             TYmakeAKS (TYmakeSimpleType (T_int),
+                                                        SHcreateShape (0)),
+                                             arg_info);
         elem_avis = CreateAvisAndInsertVardec ("sc_e",
                                                TYmakeAKS (TYmakeSimpleType (T_int),
                                                           SHcreateShape (0)),
                                                arg_info);
         assigns = TBmakeAssign (TBmakeLet (TBmakeIds (elem_avis, NULL),
-                                           TCmakePrf2 (F_idx_sel, TBmakeId (idx_avis),
+                                           TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
                                                        TBmakeId (id_avis))),
                                 assigns);
         AVIS_SSAASSIGN (elem_avis) = assigns;
 
         assigns
-          = TBmakeAssign (TBmakeLet (TBmakeIds (idx_avis, NULL), TBmakeNum (i)), assigns);
-        AVIS_SSAASSIGN (idx_avis) = assigns;
+          = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL), TCcreateIntVector (1, i)),
+                          assigns);
+        AVIS_SSAASSIGN (iv_avis) = assigns;
 
         /*
          * create element of structural constant
