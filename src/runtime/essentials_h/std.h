@@ -95,7 +95,7 @@ typedef int *SAC_array_descriptor_t;
     {
 
 /* Overloaded by MUTC */
-#define SAC_ND_FUN_DEF_END(...) }
+#define SAC_ND_FUN_DEF_END2(...) }
 
 /* Overloaded by MUTC */
 #define SAC_ND_DECL_FUN2(name, type, ...) type name (__VA_ARGS__)

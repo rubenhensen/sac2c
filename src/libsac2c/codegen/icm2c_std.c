@@ -124,14 +124,48 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")\n");
 
-#if 0
-  INDENT;
-  fprintf( global.outfile, "{\n");
-  global.indent++;
-  
-  INDENT;
-  fprintf( global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
-#endif
+    INDENT;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
+
+    INDENT;
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_FUN_DEF_END( char *name, char *rettype_NT,
+ *                                  int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_FUN_DEF_END( name, rettype, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements end of a standard function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileND_FUN_DEF_END");
+
+#define ND_FUN_DEF_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_FUN_DEF_END
+
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, "}\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_FUN_DEF_END2();\n");
 
     DBUG_VOID_RETURN;
 }

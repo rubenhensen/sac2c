@@ -350,18 +350,9 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
     }
 #endif /* SAC_DO_MULTITHREAD */
 
-#if SAC_DO_MULTITHREAD
-#define SAC_HM_DEFINE_INITIAL_THREAD_STATUS()                                            \
-    SAC_HM_DEFINE_THREAD_STATUS (SAC_HM_any_threaded)
-#else /* SAC_DO_MULTITHREAD */
-#define SAC_HM_DEFINE_INITIAL_THREAD_STATUS()                                            \
-    SAC_HM_DEFINE_THREAD_STATUS (SAC_HM_single_threaded)
-#endif /* SAC_DO_MULTITHREAD */
-
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
     SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];                  \
-    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;
 #else
 
@@ -369,7 +360,6 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;                                       \
     extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size           \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
@@ -382,7 +372,6 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;                                       \
     const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size                  \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
