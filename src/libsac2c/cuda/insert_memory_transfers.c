@@ -387,6 +387,7 @@ IMEMap (node *arg_node, info *arg_info)
                               = LUTinsertIntoLutP (INFO_LUT (arg_info),
                                                    ARG_AVIS (fundef_args), dup_avis);
                             ARG_AVIS (fundef_args) = dup_avis;
+                            AVIS_DECL (dup_avis) = fundef_args;
                         }
                     } else {
                         /* If the N_id is the one we don't want to create host2device for,
@@ -412,6 +413,7 @@ IMEMap (node *arg_node, info *arg_info)
 
                     /* Change N_avis of the fun arg to the device variable */
                     ARG_AVIS (fundef_args) = dup_avis;
+                    AVIS_DECL (dup_avis) = fundef_args;
                 }
 
                 ap_args = EXPRS_NEXT (ap_args);
