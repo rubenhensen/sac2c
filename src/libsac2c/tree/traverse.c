@@ -21,6 +21,9 @@
 #include "sanity_checks.h"
 #include "memory.h"
 #include "group_local_funs.h"
+#include "string.h"
+
+#define MAX_VAR_BUFFER_SIZE 30
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
@@ -375,33 +378,61 @@ TRAVpop ()
     DBUG_RETURN (result);
 }
 
+#ifdef DO_NOT_ADD_SUFFIX_IN_ANONYMOUS_TRAVERSAL
+
 const char *
 TRAVgetName ()
 {
     const char *result;
-    travstack_t *tmp;
 
     DBUG_ENTER ("TRAVgetName");
 
-    /*
-     * Ignore anonymous traversals on top. This was implemented initially
-     * by cg. I just rearranged it a bit. Ideally, as we all agree, using
-     * a proper name for anonymous traversals would be nicer. However, we
-     * just don't have the resources right now.
-     */
-    tmp = travstack;
-    while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
-        tmp = tmp->next;
-    }
-
-    if (tmp == NULL) {
-        result = "no_active_traversal";
+    if (travstack == NULL) {
+        result = "notrav";
     } else {
-        result = travnames[tmp->traversal];
+        result = travnames[travstack->traversal];
     }
 
     DBUG_RETURN (result);
 }
+
+#else /* DO_NOT_ADD_SUFFIX_IN_ANONYMOUS_TRAVERSAL */
+
+#define MAX_VAR_BUFFER_SIZE 30
+
+const char *
+TRAVgetName ()
+{
+    travstack_t *tmp;
+    bool anonymous;
+    static char buffer[MAX_VAR_BUFFER_SIZE + 1];
+
+    DBUG_ENTER ("TRAVgetName");
+
+    tmp = travstack;
+    anonymous = FALSE;
+
+    while ((tmp != NULL) && (tmp->traversal == TR_anonymous)) {
+        tmp = tmp->next;
+        anonymous = TRUE;
+    }
+
+    if (tmp == NULL) {
+        strncpy (buffer, "notrav", MAX_VAR_BUFFER_SIZE);
+    } else if (anonymous) {
+        strncpy (buffer, travnames[tmp->traversal], MAX_VAR_BUFFER_SIZE - 5);
+        strcat (buffer, "anon");
+        DBUG_PRINT ("TRAVANON", ("Anonymous identifier generated: %s", buffer));
+    } else {
+        strncpy (buffer, travnames[tmp->traversal], MAX_VAR_BUFFER_SIZE);
+    }
+
+    DBUG_RETURN (buffer);
+}
+
+#undef MAX_VAR_BUFFER_SIZE
+
+#endif /* DO_NOT_ADD_SUFFIX_IN_ANONYMOUS_TRAVERSAL */
 
 void
 TRAVsetPreFun (trav_t traversal, travfun_p prefun)
