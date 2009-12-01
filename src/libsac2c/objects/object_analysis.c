@@ -24,6 +24,7 @@ struct INFO {
     node *objects;
     node *objdefs;
     node *fundefs;
+    node *wrapper;
     int changes;
     bool wasused;
 };
@@ -34,6 +35,7 @@ struct INFO {
 #define INFO_OBJECTS(n) ((n)->objects)
 #define INFO_OBJDEFS(n) ((n)->objdefs)
 #define INFO_FUNDEFS(n) ((n)->fundefs)
+#define INFO_WRAPPER(n) ((n)->wrapper)
 #define INFO_CHANGES(n) ((n)->changes)
 #define INFO_WASUSED(n) ((n)->wasused)
 
@@ -52,6 +54,7 @@ MakeInfo ()
     INFO_OBJECTS (result) = NULL;
     INFO_OBJDEFS (result) = NULL;
     INFO_FUNDEFS (result) = NULL;
+    INFO_WRAPPER (result) = NULL;
     INFO_CHANGES (result) = 0;
     INFO_WASUSED (result) = FALSE;
 
@@ -72,7 +75,7 @@ FreeInfo (info *info)
  * Local helper function
  */
 static node *
-CreateObjectWrapper (node *fundef)
+CreateObjectWrapper (node *wrapper, node *fundef)
 {
     node *result;
     node *body;
@@ -82,7 +85,9 @@ CreateObjectWrapper (node *fundef)
 
     DBUG_ENTER ("CreateObjectWrapper");
 
-    DBUG_PRINT ("OAN", ("Creating object wrapper for %s...", CTIitemName (fundef)));
+    DBUG_PRINT ("OAN", ("Creating object wrapper for %s for " F_PTR "...",
+                        CTIitemName (fundef), fundef));
+    DBUG_PRINT ("OAN", ("The corresponding wrapper is %s...", CTIitemName (wrapper)));
 
     /*
      * remove body for copying
@@ -91,12 +96,27 @@ CreateObjectWrapper (node *fundef)
     FUNDEF_BODY (fundef) = NULL;
 
     /*
-     * create a localized copy of the function header
+     * create a localized copy of the function header in a view
+     * that corresponds to the wrappers namespace
      */
     result = DUPdoDupNode (fundef);
     FUNDEF_NS (result) = NSfreeNamespace (FUNDEF_NS (result));
-    FUNDEF_NS (result) = NSdupNamespace (global.modulenamespace),
-              FUNDEF_WASIMPORTED (result) = FALSE;
+    if (NSequals (FUNDEF_NS (wrapper), global.modulenamespace)) {
+        /*
+         * this is a local wrapper, so we put the object wrapper in
+         * that namespace, too.
+         */
+        FUNDEF_NS (result) = NSdupNamespace (FUNDEF_NS (wrapper));
+    } else {
+        /*
+         * the wrapper is non-local. So we create an according
+         * view in the current namespace and put the object wrapper
+         * into that.
+         */
+        FUNDEF_NS (result) = NSbuildView (FUNDEF_NS (wrapper));
+    }
+
+    FUNDEF_WASIMPORTED (result) = FALSE;
     FUNDEF_WASUSED (result) = FALSE;
     FUNDEF_ISLOCAL (result) = TRUE;
     result = SOSSKresetFundefDemand (result);
@@ -129,6 +149,8 @@ CreateObjectWrapper (node *fundef)
 
     FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
     FUNDEF_IMPL (result) = fundef;
+
+    DBUG_PRINT ("OAN", ("The result is %s...", CTIitemName (result)));
 
     DBUG_RETURN (result);
 }
@@ -165,10 +187,11 @@ ProjectObjects (node *fundef, info *info)
         /*
          * we cannot modify the object dependencies for non local functions
          * as these might be shared between multiple wrappers. Thus, we
-         * insert special object wrappers.
+         * insert special object wrappers. We pass the wrapper here to
+         * figure out the target namespace.
          */
         if (INFO_OBJECTS (info) != NULL) {
-            fundef = CreateObjectWrapper (fundef);
+            fundef = CreateObjectWrapper (INFO_WRAPPER (info), fundef);
             INFO_FUNDEFS (info) = TCappendFundef (INFO_FUNDEFS (info), fundef);
 
             if (FUNDEF_OBJECTS (fundef) != NULL) {
@@ -193,6 +216,8 @@ UnifyOverloadedFunctions (node *funs, info *info)
             DBUG_PRINT ("OAN",
                         ("Unifying objects of function %s...", CTIitemName (funs)));
 
+            INFO_WRAPPER (info) = funs;
+
             if (TYisFun (FUNDEF_WRAPPERTYPE (funs))) {
                 INFO_OBJECTS (info) = FUNDEF_OBJECTS (funs);
                 INFO_WASUSED (info) = FUNDEF_WASUSED (funs);
@@ -216,6 +241,8 @@ UnifyOverloadedFunctions (node *funs, info *info)
                       = DUPdoDupTree (FUNDEF_OBJECTS (FUNDEF_IMPL (funs)));
                 }
             }
+
+            INFO_WRAPPER (info) = NULL;
         }
         funs = FUNDEF_NEXT (funs);
     }
