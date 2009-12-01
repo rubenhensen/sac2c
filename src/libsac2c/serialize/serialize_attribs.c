@@ -117,6 +117,28 @@ SATserializeInteger (info *info, int attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeShort
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeShort (info *info, short attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeShort");
+
+    fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeLong
  *
  * @brief generates code to serialize the given attribute

@@ -73,6 +73,7 @@ extern node *PRTids (node *arg_node, info *arg_info);
 extern node *PRTspid (node *arg_node, info *arg_info);
 extern node *PRTspids (node *arg_node, info *arg_info);
 extern node *PRTnum (node *arg_node, info *arg_info);
+extern node *PRTnumshort (node *arg_node, info *arg_info);
 extern node *PRTfloat (node *arg_node, info *arg_info);
 extern node *PRTdouble (node *arg_node, info *arg_info);
 extern node *PRTbool (node *arg_node, info *arg_info);

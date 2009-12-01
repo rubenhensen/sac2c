@@ -69,6 +69,7 @@ extern node *DUPgetCopiedSpecialFundefsHook (void);
  * Functions for internal use during AST traversal only!
  */
 extern node *DUPnum (node *arg_node, info *arg_info);
+extern node *DUPnumshort (node *arg_node, info *arg_info);
 extern node *DUPbool (node *arg_node, info *arg_info);
 extern node *DUPfloat (node *arg_node, info *arg_info);
 extern node *DUPdouble (node *arg_node, info *arg_info);

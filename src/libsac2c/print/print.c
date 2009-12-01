@@ -3001,6 +3001,30 @@ PRTnum (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *PRTnumshort( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numshort node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumshort (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumshort");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%d", NUMSHORT_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *PRTfloat( node *arg_node, info *arg_info)
  *
  *   @brief print N_float node

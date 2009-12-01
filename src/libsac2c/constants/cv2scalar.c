@@ -43,6 +43,14 @@ COcv2Num (void *elems, int offset)
 }
 
 node *
+COcv2Numshort (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Num");
+
+    DBUG_RETURN (TBmakeNumshort (((short *)elems)[offset]));
+}
+
+node *
 COcv2Double (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Num");

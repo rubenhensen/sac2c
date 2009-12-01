@@ -1,70 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.11  2005/08/23 14:24:27  sbs
- * added COzipCvChar
- *
- * Revision 3.10  2004/11/26 16:33:16  cg
- * identifiers brushed.
- *
- * Revision 3.9  2002/10/11 16:04:40  sbs
- * T_classtype added.
- *
- * Revision 3.8  2002/07/30 15:09:58  dkr
- * _hidden_ renamed into SAC_hidden
- * _user_ renamed into SAC_user
- *
- * Revision 3.7  2001/05/02 07:57:56  nmw
- * functions for basecv table added
- *
- * Revision 3.6  2001/04/30 12:26:30  nmw
- * COCv2CvHidden added
- *
- * Revision 3.5  2001/04/04 09:59:06  nmw
- * missing convert functions for basetype char added
- *
- * Revision 3.4  2001/03/22 14:29:13  nmw
- * COCv2Float, COCv2Bool, COCv2Char added
- *
- * Revision 3.3  2001/03/05 17:02:12  sbs
- * zipcv-funs inserted
- *
- * Revision 3.2  2001/03/02 10:14:07  sbs
- * it_cv2str added
- *
- * Revision 3.1  2000/11/20 18:03:38  sacbase
- * new release made
- *
- * Revision 1.3  2000/09/25 15:12:16  dkr
- * typestring for T_hidden changed from void* into _hidden_
- *
- * Revision 1.2  2000/09/22 13:54:01  dkr
- * header modified
- *
- * Revision 1.1  2000/01/21 15:39:28  dkr
- * Initial revision
- *
- * Revision 2.6  1999/10/22 14:17:27  sbs
- * added a few new cv2cv funs
- *
- * Revision 2.5  1999/10/19 12:56:14  sacbase
- * the new .mac mechanism introduced as well as cv2xxx tables added.
- *
- * Revision 2.4  1999/04/08 17:13:18  jhs
- * T_nothing as virtual type for elements of empti arrays added.
- *
- * Revision 2.3  1999/03/22 19:10:52  bs
- * bug fixed
- *
- * Revision 2.2  1999/03/19 09:26:37  bs
- * T_unknown changed to 1st position. This is necessary, since
- * initializing routines are using 0 for unknown values.
- *
- * Revision 2.1  1999/02/23 12:40:13  sacbase
- * new release made
- *
- * [...]
- *
+ * $Id$
  */
 
 /*
@@ -143,7 +78,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
 TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
         COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
 
-TYP_IF (T_short, "short", "short", "s", COcv2ScalarDummy, COcv2CvShort, COcv2StrShort,
+TYP_IF (T_short, "short", "short", "s", COcv2Numshort, COcv2CvShort, COcv2StrShort,
         sizeof (short int), COzipCvShort, CObaseCvShort, MUTC_SC_INT, unused)
 
 TYP_IF (T_long, "long", "long", "l", COcv2ScalarDummy, COcv2CvLong, COcv2StrLong,

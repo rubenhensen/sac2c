@@ -183,6 +183,7 @@ MatchNumA (ntype *type)
 
     res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
            && ((TYgetSimpleType (TYgetScalar (type)) == T_int)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_short)
                || (TYgetSimpleType (TYgetScalar (type)) == T_float)
                || (TYgetSimpleType (TYgetScalar (type)) == T_double)));
 

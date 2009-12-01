@@ -9,6 +9,7 @@
     <type name="Namespace" ctype="namespace_t*" init="NULL"
     copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
+    <type name="Short" ctype="short" init="0" copy="literal" />
     <type name="Long" ctype="long" init="0" copy="literal" />
     <type name="Bool" ctype="bool" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" init="0.0" copy="literal" />
@@ -2884,6 +2885,7 @@
     <nodeset name="Expr">
       <target>
         <node name="Num" />
+        <node name="NumShort" />
         <node name="Double" />
         <node name="Float" />
         <node name="Char" />
@@ -5325,6 +5327,30 @@ N_structdef :
       <attributes>
         <attribute name="Val" inconstructor="yes" >
           <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numshort :
+
+-->
+    <node name="NumShort">
+     <description>  Short scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Short">
             <targets>
               <target mandatory="yes">
                 <any />

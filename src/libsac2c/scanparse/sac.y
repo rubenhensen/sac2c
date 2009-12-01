@@ -1940,6 +1940,7 @@ basentype: simplentype
          ;
 
 simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
+           | TYPE_SHORT  { $$ = TYmakeSimpleType( T_short);  }
            | TYPE_FLOAT  { $$ = TYmakeSimpleType( T_float);  }
            | TYPE_BOOL   { $$ = TYmakeSimpleType( T_bool);   }
            | TYPE_CHAR   { $$ = TYmakeSimpleType( T_char);   }
