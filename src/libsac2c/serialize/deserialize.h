@@ -21,7 +21,6 @@ extern node *DSdispatchFunCall (const namespace_t *ns, const char *name, node *a
  */
 extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
                                 const char *module);
-extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern void DSimportInstancesByName (const char *name, const char *module);
 extern void DSimportTypedefByName (const char *name, const char *module);
 extern void DSimportObjdefByName (const char *name, const char *module);

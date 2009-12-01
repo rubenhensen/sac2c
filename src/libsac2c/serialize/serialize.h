@@ -5,7 +5,7 @@
 #ifndef _SAC_SERIALIZE_H_
 #define _SAC_SERIALIZE_H_
 
-#define SAC_SERIALIZE_VERSION 4 /* 20/01/2007 */
+#define SAC_SERIALIZE_VERSION 5 /* 27/11/2009 */
 
 #include "types.h"
 

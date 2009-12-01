@@ -77,6 +77,7 @@ struct INFO {
 #define INFO_DISPATCH_NS(n) ((n)->dispatch_ns)
 #define INFO_DISPATCH_ARGS(n) ((n)->dispatch_args)
 #define INFO_DISPATCH_RESULT(n) ((n)->dispatch_result)
+
 /*
  * INFO functions
  */
@@ -360,6 +361,7 @@ updateContextInformation (node *entry)
     default:
         break;
     }
+
     DBUG_VOID_RETURN;
 }
 
@@ -676,6 +678,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
 
     DBUG_RETURN (entryp);
 }
+
 /**
  * @brief adds the given symbol from the given module to the AST.
  *
@@ -722,15 +725,20 @@ DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 }
 
 node *
-DSaddSymbolById (const char *symbid, const char *module)
+AddSymbolById (const char *symbid, const char *module, bool resetimport)
 {
     module_t *mod;
     serfun_p fun;
     node *entryp;
 
-    DBUG_ENTER ("DSaddSymbolById");
+    DBUG_ENTER ("AddSymbolById");
 
     DBUG_PRINT ("DS", ("Adding symbol '%s' from module '5s'...", symbid, module));
+
+    if (resetimport) {
+        resetimport = INFO_IMPORTMODE (DSstate);
+        INFO_IMPORTMODE (DSstate) = FALSE;
+    }
 
     mod = MODMloadModule (module);
 
@@ -747,7 +755,27 @@ DSaddSymbolById (const char *symbid, const char *module)
 
     mod = MODMunLoadModule (mod);
 
+    if (resetimport) {
+        INFO_IMPORTMODE (DSstate) = TRUE;
+    }
+
     DBUG_RETURN (entryp);
+}
+
+static node *
+FreeObjectWrapper (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("FreeObjectWrapper");
+
+    if (FUNDEF_ISOBJECTWRAPPER (arg_node)) {
+        new_node = FUNDEF_IMPL (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = new_node;
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 void
@@ -796,6 +824,30 @@ DSimportInstancesByName (const char *name, const char *module)
              *                even imported.
              */
             entryp = serfun (DSstate);
+
+            /*
+             * free object wrappers: a wrapper may point to object wrappers which
+             *                       in turn point to the actual instances. As
+             *                       we are only interested in the real instances,
+             *                       we discard of the object wrappers here. Note
+             *                       that, as the object wrappers directly point
+             *                       to an instance using the FUNDEF_IMPL attribute,
+             *                       the real instances have been loaded, as well.
+             */
+            if (FUNDEF_IMPL (entryp) != NULL) {
+                /*
+                 * wrapper with no arguments found. There should not be any
+                 * object wrappers here but better be sure :-)
+                 */
+                FUNDEF_IMPL (entryp) = FreeObjectWrapper (FUNDEF_IMPL (entryp), NULL);
+            } else {
+                /*
+                 * find all instances via the wrapper type
+                 */
+                FUNDEF_WRAPPERTYPE (entryp)
+                  = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (entryp),
+                                            &FreeObjectWrapper, NULL);
+            }
 
             /*
              * free wrapper: as we only loaded the wrapper to make sure
@@ -1104,6 +1156,11 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
 
 /*
  * hooks for the deserialisation process
+ *
+ * it is important that these hooks reset the import mode, as each hook
+ * means that we are leaving the scope of a function. Reasons to leave the
+ * scope for instance is a reference to an object in a function signature
+ * or the use of a user-defined type.
  */
 
 usertype
@@ -1117,7 +1174,9 @@ DSloadUserType (const char *symbid, const namespace_t *ns)
     tdef = FindSymbolInAst (symbid);
 
     if (tdef == NULL) {
-        tdef = DSaddSymbolById (symbid, NSgetModule (ns));
+        tdef = AddSymbolById (symbid, NSgetModule (ns), TRUE);
+    } else {
+        updateContextInformation (tdef);
     }
 
     DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
@@ -1133,8 +1192,6 @@ node *
 DSlookupFunction (const char *module, const char *symbol)
 {
     node *result = NULL;
-    serfun_p serfun;
-    module_t *mod;
 
     DBUG_ENTER ("DSlookupFunction");
 
@@ -1146,22 +1203,12 @@ DSlookupFunction (const char *module, const char *symbol)
         DBUG_PRINT ("DS",
                     ("Looking up function `%s:%s' in `%s'.", module, symbol, module));
 
-        mod = MODMloadModule (module);
-        serfun = MODMgetDeSerializeFunction (symbol, mod);
-
-        DBUG_ASSERT ((serfun != NULL),
-                     "inconsistency in serialized module found. referenced "
-                     "function does not exist");
-
-        result = serfun ();
-        mod = MODMunLoadModule (mod);
-
-        InsertIntoState (result);
+        result = AddSymbolById (symbol, module, FALSE);
+    } else {
+        updateContextInformation (result);
     }
 
     DBUG_ASSERT ((result != NULL), "lookup failed.");
-
-    updateContextInformation (result);
 
     DBUG_RETURN (result);
 }
@@ -1170,8 +1217,6 @@ node *
 DSlookupObject (const char *module, const char *symbol)
 {
     node *result = NULL;
-    serfun_p serfun;
-    module_t *mod;
 
     DBUG_ENTER ("DSlookupObjdef");
 
@@ -1182,22 +1227,12 @@ DSlookupObject (const char *module, const char *symbol)
     if (result == NULL) {
         DBUG_PRINT ("DS", ("Looking up objdef `%s:%s' in `%s'.", module, symbol, module));
 
-        mod = MODMloadModule (module);
-        serfun = MODMgetDeSerializeFunction (symbol, mod);
-
-        DBUG_ASSERT ((serfun != NULL),
-                     "inconsistency in serialized module found. referenced "
-                     "objdef does not exist");
-
-        result = serfun ();
-        mod = MODMunLoadModule (mod);
-
-        InsertIntoState (result);
+        result = AddSymbolById (symbol, module, TRUE);
+    } else {
+        updateContextInformation (result);
     }
 
     DBUG_ASSERT ((result != NULL), "lookup failed.");
-
-    updateContextInformation (result);
 
     DBUG_RETURN (result);
 }

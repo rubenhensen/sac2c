@@ -312,16 +312,19 @@ SERgenerateSerFunName (stentrytype_t type, node *arg_node)
     case SET_funbody:
     case SET_wrapperbody:
         size
-          -= snprintf (buffer, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
-                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
+          -= snprintf (buffer, size, "SBDY_%s_%s_%d%d_", NSgetName (FUNDEF_NS (arg_node)),
+                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node),
+                       FUNDEF_ISOBJECTWRAPPER (arg_node));
 
         size = AppendSerFunTypeSignature (buffer, arg_node, size);
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        size -= snprintf (buffer, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (arg_node)),
-                          FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node));
+        size
+          -= snprintf (buffer, size, "SHD_%s_%s_%d%d_", NSgetName (FUNDEF_NS (arg_node)),
+                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node),
+                       FUNDEF_ISOBJECTWRAPPER (arg_node));
 
         size = AppendSerFunTypeSignature (buffer, arg_node, size);
 
