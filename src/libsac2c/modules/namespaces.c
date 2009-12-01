@@ -149,7 +149,7 @@ FindInPool (const char *module, view_t *view)
     nspool_t *pos;
     int cnt;
 
-    DBUG_ENTER ("GetFromPool");
+    DBUG_ENTER ("FindInPool");
 
     pos = pool;
 
