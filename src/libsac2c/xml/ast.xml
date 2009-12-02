@@ -9,12 +9,13 @@
     <type name="Namespace" ctype="namespace_t*" init="NULL"
     copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
-    <type name="Short" ctype="short" init="0" copy="literal" />
+    <type name="Short" ctype="short" vtype="int" init="0" copy="literal" />
     <type name="Long" ctype="long" init="0" copy="literal" />
-    <type name="Bool" ctype="bool" init="FALSE" copy="literal" />
-    <type name="Float" ctype="float" init="0.0" copy="literal" />
+    <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
+    <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
-    <type name="Char" ctype="unsigned char" init="'\0'" copy="literal" />
+    <type name="Char" ctype="unsigned char" vtype="int" init="'\0'" 
+          copy="literal" />
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />

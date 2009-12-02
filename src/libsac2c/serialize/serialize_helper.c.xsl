@@ -246,7 +246,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="' = '" />
   <!-- generate right hand side of assignment -->
-  <xsl:apply-templates select="key(&quot;types&quot;, ./type/@name)/@ctype"
+  <xsl:apply-templates select="key(&quot;types&quot;, ./type/@name)"
                        mode="gen-fill-fun" />
   <xsl:value-of select="';'" />
   <!-- end of for loop in case of an array -->
@@ -255,37 +255,17 @@ version="1.0">
   </xsl:if>
 </xsl:template>
 
-<!-- special treatment for char types beeing passed through ...
-     because they are promoted to int by the c compiler
--->
-<xsl:template match="@ctype[. = &quot;char&quot;]" mode="gen-fill-fun">
-  <xsl:value-of select="'(char) va_arg( args, int)'" />
+<xsl:template match="//attributetypes/type[@vtype]" mode="gen-fill-fun">
+  <xsl:value-of select="'('" />
+  <xsl:value-of select="@ctype" />
+  <xsl:value-of select="') va_arg( args, '" />
+  <xsl:value-of select="@vtype" />
+  <xsl:value-of select="')'" />
 </xsl:template>
 
-<!-- special treatment for unsigned char types beeing passed through ...
-     because they are promoted to unsigned int by the c compiler
--->
-<xsl:template match="@ctype[. = &quot;unsigned char&quot;]" mode="gen-fill-fun">
-  <xsl:value-of select="'(unsigned char) va_arg( args, unsigned int)'" />
-</xsl:template>
-
-<!-- special treatment for float types beeing passed through ...
-     because they are promoted to double by the c compiler
--->
-<xsl:template match="@ctype[. = &quot;float&quot;]" mode="gen-fill-fun">
-  <xsl:value-of select="'(float) va_arg( args, double)'" />
-</xsl:template>
-
-<!-- special treatment for bool types beeing passed through ...
-     because they are promoted to int by the c compiler
--->
-<xsl:template match="@ctype[. = &quot;bool&quot;]" mode="gen-fill-fun">
-  <xsl:value-of select="'(bool) va_arg( args, int)'" />
-</xsl:template>
-
-<xsl:template match="@ctype" mode="gen-fill-fun">
+<xsl:template match="//attributetypes/type[not(@vtype)]" mode="gen-fill-fun">
   <xsl:value-of select="'va_arg( args, '" />
-  <xsl:value-of select="." />
+  <xsl:value-of select="@ctype" />
   <xsl:value-of select="')'" />
 </xsl:template>
 
