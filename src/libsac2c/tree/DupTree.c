@@ -562,6 +562,22 @@ DUPnum (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPnumbyte (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumbyte");
+
+    new_node = TBmakeNumbyte (NUMBYTE_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPnumshort (node *arg_node, info *arg_info)
 {
     node *new_node;
@@ -569,6 +585,22 @@ DUPnumshort (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPnumshort");
 
     new_node = TBmakeNumshort (NUMSHORT_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumlong (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumlong");
+
+    new_node = TBmakeNumlong (NUMLONG_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

@@ -78,6 +78,9 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
 TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
         COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
 
+TYP_IF (T_byte, "byte", "byte", "bt", COcv2Numbyte, COcv2CvDummy, COcv2StrDummy,
+        sizeof (char), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+
 TYP_IF (T_short, "short", "short", "s", COcv2Numshort, COcv2CvShort, COcv2StrShort,
         sizeof (short int), COzipCvShort, CObaseCvShort, MUTC_SC_INT, unused)
 

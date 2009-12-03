@@ -31,7 +31,9 @@
 #include "types.h"
 
 extern node *COcv2Num (void *elems, int offset);
+extern node *COcv2Numbyte (void *elems, int offset);
 extern node *COcv2Numshort (void *elems, int offset);
+extern node *COcv2Numlong (void *elems, int offset);
 extern node *COcv2Double (void *elems, int offset);
 extern node *COcv2Bool (void *elems, int offset);
 extern node *COcv2Float (void *elems, int offset);

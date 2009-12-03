@@ -9,6 +9,7 @@
     <type name="Namespace" ctype="namespace_t*" init="NULL"
     copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
+    <type name="Byte" ctype="char" vtype="int" init="0" copy="literal" />
     <type name="Short" ctype="short" vtype="int" init="0" copy="literal" />
     <type name="Long" ctype="long" init="0" copy="literal" />
     <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
@@ -2886,7 +2887,9 @@
     <nodeset name="Expr">
       <target>
         <node name="Num" />
+        <node name="NumByte" />
         <node name="NumShort" />
+        <node name="NumLong" />
         <node name="Double" />
         <node name="Float" />
         <node name="Char" />
@@ -5343,6 +5346,30 @@ N_structdef :
     </node>
 <!--
 
+  N_numbyte :
+
+-->
+    <node name="NumByte">
+     <description>  Byte scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Byte">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
   N_numshort :
 
 -->
@@ -5352,6 +5379,30 @@ N_structdef :
       <attributes>
         <attribute name="Val" inconstructor="yes" >
           <type name="Short">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numlong :
+
+-->
+    <node name="NumLong">
+     <description>  Long scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Long">
             <targets>
               <target mandatory="yes">
                 <any />

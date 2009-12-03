@@ -267,6 +267,7 @@ int charpos = 0;
 "float"                    { FILTER( TYPE_FLOAT); }
 "bool"                     { FILTER( TYPE_BOOL); }
 "unsigned"                 { FILTER( TYPE_UNS); }
+"byte"                     { FILTER( TYPE_BYTE); }
 "short"                    { FILTER( TYPE_SHORT); }
 "long"                     { FILTER( TYPE_LONG); }
 "char"                     { FILTER( TYPE_CHAR); }

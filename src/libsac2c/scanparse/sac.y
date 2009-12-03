@@ -135,7 +135,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %token <id> ID  STR
 
 %token TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
-       TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID
+       TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID  TYPE_BYTE
 %token <cint> NUM
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
@@ -1940,7 +1940,9 @@ basentype: simplentype
          ;
 
 simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
+           | TYPE_BYTE   { $$ = TYmakeSimpleType( T_byte);   }
            | TYPE_SHORT  { $$ = TYmakeSimpleType( T_short);  }
+           | TYPE_LONG   { $$ = TYmakeSimpleType( T_long);   }
            | TYPE_FLOAT  { $$ = TYmakeSimpleType( T_float);  }
            | TYPE_BOOL   { $$ = TYmakeSimpleType( T_bool);   }
            | TYPE_CHAR   { $$ = TYmakeSimpleType( T_char);   }
