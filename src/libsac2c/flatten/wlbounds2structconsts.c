@@ -151,7 +151,7 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
     for (i = dim - 1; i >= 0; i--) {
         iv_avis = CreateAvisAndInsertVardec ("sc_iv",
                                              TYmakeAKS (TYmakeSimpleType (T_int),
-                                                        SHcreateShape (0)),
+                                                        SHcreateShape (1, 1)),
                                              arg_info);
         elem_avis = CreateAvisAndInsertVardec ("sc_e",
                                                TYmakeAKS (TYmakeSimpleType (T_int),
