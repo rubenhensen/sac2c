@@ -5793,6 +5793,7 @@ TYoldType2ScalarType (types *old)
         }
         break;
     case T_int:
+    case T_byte:
     case T_short:
     case T_long:
     case T_uint:

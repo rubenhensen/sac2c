@@ -80,9 +80,10 @@
     }
 
 #define MAP(fname, const)                                                                \
-    CObaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort, const)                    \
-      CObaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const)                        \
-        CObaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                   \
+    CObaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort,                           \
+                      const) CObaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const) \
+      CObaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                     \
+        CObaseCvTEMPLATE (fname, T_byte, char, Byte, const)                              \
           CObaseCvTEMPLATE (fname, T_short, short, Short, const)                         \
             CObaseCvTEMPLATE (fname, T_int, int, Int, const)                             \
               CObaseCvTEMPLATE (fname, T_long, long, Long, const)                        \

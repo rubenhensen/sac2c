@@ -8,6 +8,7 @@
 extern void COcv2CvUShort (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvUInt (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvULong (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvByte (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvShort (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvInt (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvBool (void *src, int off, int len, void *res, int res_off);

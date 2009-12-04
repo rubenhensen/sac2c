@@ -152,6 +152,10 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
      SCSprf_tob_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS, ICCnone,
      TEone, NULL, NULL),
 
+  PRF (toby_S, (PA_S, PA_x, PA_x), 1, TOBY, NOSIMD, NTCCTprf_toby_S, COtoby, COMPprfOp_S,
+       SCSprf_toby_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
   PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, NULL, COMPprfOp_S,
        SCSprf_toc_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),

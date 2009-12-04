@@ -42,15 +42,16 @@
  */
 
 COcv2CvTEMPLATE (unsigned short, UShort) COcv2CvTEMPLATE (unsigned int, UInt)
-  COcv2CvTEMPLATE (unsigned long, ULong) COcv2CvTEMPLATE (short, Short)
-    COcv2CvTEMPLATE (int, Int) COcv2CvTEMPLATE (bool, Bool) COcv2CvTEMPLATE (long, Long)
+  COcv2CvTEMPLATE (unsigned long, ULong) COcv2CvTEMPLATE (char, Byte)
+    COcv2CvTEMPLATE (short, Short) COcv2CvTEMPLATE (int, Int) COcv2CvTEMPLATE (bool, Bool)
+      COcv2CvTEMPLATE (long, Long)
 
-      COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (double, Double)
-        COcv2CvTEMPLATE (long double, LongDouble)
+        COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (double, Double)
+          COcv2CvTEMPLATE (long double, LongDouble)
 
-          COcv2CvTEMPLATE (char, Char)
+            COcv2CvTEMPLATE (char, Char)
 
-            COcv2CvTEMPLATE (void *, Hidden)
+              COcv2CvTEMPLATE (void *, Hidden)
 
   /*
    * Finally, we provide a dummy function which should never be called!

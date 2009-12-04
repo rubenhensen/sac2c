@@ -36,6 +36,8 @@
                                   int res_pos);                                          \
     extern void COzipCvULong##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
+    extern void COzipCvByte##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
+                                  int res_pos);                                          \
     extern void COzipCvShort##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
     extern void COzipCvInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res,  \
@@ -74,6 +76,7 @@ EXT_DECLS (Lt)
 EXT_DECLS (Gt)
 EXT_DECLS (Ge)
 EXT_DECLS (Not)
+EXT_DECLS (Toby)
 EXT_DECLS (Toi)
 EXT_DECLS (Tof)
 EXT_DECLS (Tod)

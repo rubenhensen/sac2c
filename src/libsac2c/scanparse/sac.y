@@ -129,7 +129,7 @@ PRF_GT_SxS   PRF_GT_SxV  PRF_GT_VxS  PRF_GT_VxV
 PRF_AND_SxS  PRF_AND_SxV  PRF_AND_VxS  PRF_AND_VxV
 PRF_OR_SxS   PRF_OR_SxV  PRF_OR_VxS  PRF_OR_VxV
 PRF_NOT_S  PRF_NOT_V
-PRF_TOI_S  PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S
+PRF_TOI_S  PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S PRF_TOBY_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %token <id> ID  STR
@@ -1824,6 +1824,7 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_TOD_S          { $$ = F_tod_S;   }
    | PRF_TOC_S          { $$ = F_toc_S;   }
    | PRF_TOB_S          { $$ = F_tob_S;   }
+   | PRF_TOBY_S         { $$ = F_toby_S;  }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}

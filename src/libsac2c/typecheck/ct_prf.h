@@ -40,6 +40,7 @@ extern ntype *NTCCTprf_toi_S (te_info *info, ntype *args);
 extern ntype *NTCCTprf_tof_S (te_info *info, ntype *args);
 extern ntype *NTCCTprf_tod_S (te_info *info, ntype *args);
 extern ntype *NTCCTprf_tob_S (te_info *info, ntype *args);
+extern ntype *NTCCTprf_toby_S (te_info *info, ntype *args);
 extern ntype *NTCCTprf_toc_S (te_info *info, ntype *args);
 extern ntype *NTCCTprf_ari_op_SxS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_ari_op_SxV (te_info *info, ntype *args);

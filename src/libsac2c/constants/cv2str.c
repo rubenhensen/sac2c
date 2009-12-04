@@ -71,9 +71,9 @@
 
 COcv2StrTEMPLATE (unsigned short, UShort, "%hud")
   COcv2StrTEMPLATE (unsigned int, UInt, "%ud")
-    COcv2StrTEMPLATE (unsigned long, ULong, "%lud") COcv2StrTEMPLATE (short, Short, "%hd")
-      COcv2StrTEMPLATE (int, Int, "%d") COcv2StrTEMPLATE (bool, Bool, "%d")
-        COcv2StrTEMPLATE (long, Long, "%ld")
+    COcv2StrTEMPLATE (unsigned long, ULong, "%lud") COcv2StrTEMPLATE (char, Byte, "%c")
+      COcv2StrTEMPLATE (short, Short, "%hd") COcv2StrTEMPLATE (int, Int, "%d")
+        COcv2StrTEMPLATE (bool, Bool, "%d") COcv2StrTEMPLATE (long, Long, "%ld")
 
           COcv2StrTEMPLATE (float, Float, "%f") COcv2StrTEMPLATE (double, Double, "%f")
             COcv2StrTEMPLATE (long double, LongDouble, "%Lf")

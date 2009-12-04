@@ -1580,6 +1580,30 @@ NTCCTprf_tob_S (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
+ * @fn ntype *NTCCTprf_toby_S( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _toby_S_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _toby_S_ is applied to
+ *   @return       the result type of applying _toby_S_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_toby_S (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCCTprf_tob_S");
+
+    res = ConvS (info, args, T_byte);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn ntype *NTCCTprf_toc_S( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _toc_S_

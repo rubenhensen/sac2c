@@ -47,7 +47,7 @@ COcv2Numbyte (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Numbyte");
 
-    DBUG_RETURN (TBmakeNumbyte (((short *)elems)[offset]));
+    DBUG_RETURN (TBmakeNumbyte (((char *)elems)[offset]));
 }
 
 node *
@@ -63,7 +63,7 @@ COcv2Numlong (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Numlong");
 
-    DBUG_RETURN (TBmakeNumlong (((short *)elems)[offset]));
+    DBUG_RETURN (TBmakeNumlong (((long *)elems)[offset]));
 }
 
 node *

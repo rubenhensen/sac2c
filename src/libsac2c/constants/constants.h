@@ -159,6 +159,7 @@ extern constant *COgt (constant *a, constant *b);
 
 /* unary ops */
 extern constant *COnot (constant *a);
+extern constant *COtoby (constant *a);
 extern constant *COtoi (constant *a);
 extern constant *COtof (constant *a);
 extern constant *COtod (constant *a);

@@ -210,6 +210,7 @@ int charpos = 0;
 "_tod_S_"                  { FILTER( PRF_TOD_S); }
 "_toc_S_"                  { FILTER( PRF_TOC_S); }
 "_tob_S_"                  { FILTER( PRF_TOB_S); }
+"_toby_S_"                 { FILTER( PRF_TOBY_S); }
 
 
 "struct"                   { FILTER( STRUCT); }

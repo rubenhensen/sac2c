@@ -891,6 +891,27 @@ SCSprf_tob_S (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_toby_S( node *arg_node, info *arg_info)
+ * Delete type coercion toby(bytevec) if arg_node is already of type byte.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toby_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toby_S");
+    if ((N_numbyte == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_byte
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_toc_S( node *arg_node, info *arg_info)
  * Delete type coercion toc(charvec) if arg_node is already of type char.
  *

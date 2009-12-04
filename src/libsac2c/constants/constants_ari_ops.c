@@ -588,6 +588,27 @@ COtoi (constant *a)
 /******************************************************************************
  *
  * function:
+ *    constant *COtoby( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise convertet to byte,
+ *
+ ******************************************************************************/
+
+constant *
+COtoby (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoby");
+    res = COzipUnary (global.zipcv_toby, a, T_byte);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoby", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *COtof( constant *a)
  *
  * description:

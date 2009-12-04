@@ -10,6 +10,7 @@
 extern char *COcv2StrUShort (void *src, int off, int len, int max_char);
 extern char *COcv2StrUInt (void *src, int off, int len, int max_char);
 extern char *COcv2StrULong (void *src, int off, int len, int max_char);
+extern char *COcv2StrByte (void *src, int off, int len, int max_char);
 extern char *COcv2StrShort (void *src, int off, int len, int max_char);
 extern char *COcv2StrInt (void *src, int off, int len, int max_char);
 extern char *COcv2StrBool (void *src, int off, int len, int max_char);
