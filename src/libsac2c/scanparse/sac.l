@@ -407,6 +407,14 @@ int charpos = 0;
                              FILTER( NUM);
                            }
 
+[1-9][0-9]*[bB]            {
+                             sscanf( yytext, "%d", &yylval.cbyte);
+                             FILTER( NUMBYTE);
+                           }
+
+0[bB]                      { yylval.cbyte = 0;
+                             FILTER( NUMBYTE);
+                           }
 0[xX][0-9a-fA-F]+          { char *str;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {

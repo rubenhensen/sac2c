@@ -1162,6 +1162,7 @@ EMALCONST (char)
 EMALCONST (float)
 EMALCONST (double)
 EMALCONST (num)
+EMALCONST (numbyte)
 
 /** <!--******************************************************************-->
  *

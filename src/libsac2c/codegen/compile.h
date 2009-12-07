@@ -33,6 +33,7 @@ extern node *COMPtypedef (node *arg_node, info *arg_info);
 extern node *COMPvardec (node *arg_node, info *arg_info);
 
 extern node *COMPnum (node *arg_node, info *arg_info);
+extern node *COMPnumbyte (node *arg_node, info *arg_info);
 extern node *COMPchar (node *arg_node, info *arg_info);
 extern node *COMPbool (node *arg_node, info *arg_info);
 extern node *COMPfloat (node *arg_node, info *arg_info);

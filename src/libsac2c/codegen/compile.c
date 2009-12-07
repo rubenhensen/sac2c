@@ -3731,6 +3731,27 @@ COMPscalar (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPnumbyte( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumbyte (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumbyte");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPnum( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a constant scalar on the RHS.

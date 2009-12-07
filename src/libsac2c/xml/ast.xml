@@ -535,433 +535,434 @@
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
-          <node name="Double" />
-          <node name="Type" />
-          <node name="Str" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Array" />
-          <node name="Prf" />
-          <node name="Ap" />
-          <node name="Generator" />
-          <node name="Fold" />
+		  <node name="Double" />
+		  <node name="Type" />
+		  <node name="Str" />
+		  <node name="Id" />
+		  <node name="Ids" />
+		  <node name="Array" />
+		  <node name="Prf" />
+		  <node name="Ap" />
+		  <node name="Generator" />
+		  <node name="Fold" />
 
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Return" />
-          <node name="Cond" />
-          <node name="Do" />
-          <node name="Funcond" />
-          <node name="Exprs" />
-          <node name="Empty" />
-          <node name="With" />
-          <node name="Part" />
-          <node name="Withid" />
-          <node name="Code" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-        </travuser>
-      </traversal>
-      <traversal id="CHK" name="Check the Tree" default="user" ifdef="show_malloc" include="check.h" />
-      <traversal id="CHKTST" name="Check the TreeTest" default="user" ifdef="show_malloc" include="checktst.h" />
-      <traversal id="CHKM" name="Check the memspace" default="user" postfun="CHKMpostfun" ifdef="show_malloc" include="check_node.h" />
-      <traversal id="CHKLACF" name="Check LaC functions" 
-               default="sons" include="check_lacfuns.h" >
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Ap" />
-        </travuser>
-      </traversal>
-      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
-        <travuser>
-          <node name="SPMop" />
-        </travuser>
-      </traversal>
-      <traversal id="HWLG" name="Handle multi-generator with-loops"
-                 default="sons" include="handle_with_loop_generators.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="SPFold" />
-          <node name="Propagate" />
-        </travuser>
-      </traversal>
-      <traversal id="HWLO" name="Handle multi-operator with-loops"
-                 default="sons" include="handle_with_loop_operators.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="SPFold" />
-          <node name="Propagate" />
-        </travuser>
-      </traversal>
-      <traversal id="HZGWL" name="Handle zero-generator withloops"
-                 default="sons" include="handle_zero_generator_with_loops.h" >
-        <travuser>
-          <node name="With" />
-          <node name="Modarray" />
-          <node name="Genarray" />
-          <node name="SPFold" />
-          <node name="Propagate" />
-          <node name="Let" />
-          <node name="Assign" />
-          <node name="Return" />
-        </travuser>
-      </traversal>
-      <traversal id="IUTC" name="Introduce User Trace Calls" default="sons" include="introduce_user_tracing_calls.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="SPIds" />
-          <node name="Assign" />
-          <node name="Return" />
-          <node name="Block" />
-        </travuser>
-	<travnone>
-	  <node name="Withid" />
-	</travnone>
-      </traversal>
-      <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
-        <travuser>
-          <node name="SPId" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Part" />
-          <node name="Generator" />
-          <node name="Dot" />
-          <node name="SPAp" />
-          <node name="Prf" />
-          <node name="Assign" />
-          <node name="SetWL" />
-          <node name="SPId" />
-        </travuser>
-      </traversal>
-      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Ret" />
-          <node name="Avis" />
-          <node name="Cast" />
-          <node name="Return" />
-          <node name="Assign" />
-        </travuser>
-      </traversal>
-      <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons" include="generate_generic_type_conversions.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Typedef" />
-          <node name="Export" />
-          <node name="Provide" />
-          <node name="Symbol" />
-        </travuser>
-      </traversal>
-      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
-        <travuser>
-          <node name="Typedef" />
-          <node name="Objdef" />
-          <node name="Fundef" />
-          <node name="Module" />
-          <node name="Ret" />
-          <node name="Arg" />
-        </travuser>
-      </traversal>
-      <traversal id="W2D" name="While2do" default="sons" include="while2do.h" >
-	<travuser>
-	  <node name="While" />
-	</travuser>
-      </traversal>
-      <traversal id="HCE" name="Handle conditional expressions" 
-                 default="sons" include="handle_condexpr.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Code" />
-	  <node name="Cond" />
-	  <node name="Do" />
-	  <node name="Funcond" />
-	  <node name="With" />
-	</travuser>
-      </traversal>
-      <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Cast" />
-          <node name="Exprs" />
-          <node name="SPAp" />
-          <node name="Block" />
-          <node name="Cond" />
-          <node name="Do" />
-          <node name="Array" />
-          <node name="Return" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Part" />
-          <node name="Generator" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Propagate" />
-          <node name="SPFold" />
-          <node name="Code" />
-        </travuser>
-      </traversal>
-      <traversal id="FLATG" name="Flattengenerators" default="sons" include="flattengenerators.h" >
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="With" />
-          <node name="Part" />
-          <node name="Generator" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="Do" />
-	  <node name="While" />
-          <node name="Funcond" />
-        </travuser>
-      </traversal>
-      <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Do" />
-	  <node name="Fundef" />
-	  <node name="Cond" />
-	</travuser>
-      </traversal>
-      <traversal id="SSAT" name="SSA Transform Traversal" default="sons" include="SSATransform.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Ap" />
-	  <node name="Fundef" />
-	  <node name="Cond" />
-          <node name="Block" />
-          <node name="Code" />
-          <node name="Let" />
-          <node name="Arg" />
-          <node name="Vardec" />
-          <node name="Id" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Part" />
-          <node name="Withid" />
-          <node name="Funcond" />
-          <node name="Return" />
-          <node name="Ids" />
-	</travuser>
-      </traversal>
-      <traversal id="RSA" name="Resolve All Flags" default="sons" include="resolveall.h" >
-        <travuser>
-	  <node name="Use" />
-	  <node name="Import" />
-	  <node name="Provide" />
-	  <node name="Export" />
-	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="GDP" name="Gather Dependencies" default="sons" include="gatherdependencies.h">
-        <travuser>
-	  <node name="Use" />
-	  <node name="Import" />
-	  <node name="Typedef" />
-	  <node name="Objdef" />
-	  <node name="Avis" />
-	  <node name="Ret" />
-	  <node name="SPId" />
-	  <node name="SPFold" />
-	  <node name="Cast" />
-	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
-        <travuser>
-	  <node name="Symbol" />
-	  <node name="Use" />
-	  <node name="Import" />
-	  <node name="Export" />
-	  <node name="Provide" />
-	  <node name="Fundef" />
-	  <node name="Typedef" />
-	  <node name="Objdef" />
-	  <node name="While" />
-	  <node name="Do" />
-	  <node name="SPAp" />
-	  <node name="SPMop" />
-	  <node name="Avis" />
-	  <node name="Array" />
-	  <node name="Arg" />
-	  <node name="Ret" />
-	  <node name="Vardec" />
-	  <node name="SPIds" />
-	  <node name="SPId" />
-	  <node name="Let" />
-	  <node name="With" />
-	  <node name="SPFold" />
-	  <node name="Module" />
-	  <node name="Cast" />
-	</travuser>
-      </traversal>
-      <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
-        <travuser>
-	  <node name="Typedef" />
-	  <node name="Objdef" />
-	  <node name="SPFold" />
-	  <node name="Avis" />
-	  <node name="Cast" />
-	  <node name="Array" />
-	  <node name="Ret" />
-	  <node name="SPAp" />
-	  <node name="SPId" />
-	  <node name="SPMop" />
-	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="IMP" name="Import Symbols" default="sons" include="importsymbols.h" >
-        <travuser>
-	  <node name="Module" />
-	  <node name="Import" />
-	  <node name="Export" />
-	  <node name="Use" />
-	  <node name="Provide" />
-	  <node name="Symbol" />
-        </travuser>
-      </traversal>
-      <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
-	<travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="SPAp" />
-          <node name="SPId" />
-          <node name="SPIds" />
-          <node name="With" />
-          <node name="Let" />
-          <node name="Part" />
-          <node name="Code" />
-          <node name="Do" />
-	</travuser>
-      </traversal>
-      <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Avis" />
-          <node name="Assign" />
-          <node name="Ids" />
-          <node name="Id" />
-          <node name="With" />
-          <node name="Return" />
-        </travuser>
-      </traversal>
-      <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="SPAp" />
-          <node name="Genarray" />
-          <node name="SPFold" />
-        </travuser>  
-      </traversal>
-      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Ret" />
-          <node name="Avis" />
-          <node name="Array" />
-          <node name="Typedef" />
-          <node name="Objdef" />
-          <node name="Type" />
-          <node name="Cast" />
-        </travuser>
-      </traversal>
-      <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Objdef" />
-        </travuser>
-      </traversal>
-      <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Globobj" />
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="Objdef" />
-        </travuser>
-      </traversal>
-      <traversal id="GOI" name="Generating Object Initialiser" default="sons" include="generate_object_initialiser.h" >
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
-        <travuser>
-	  <node name="Ap" />
-	  <node name="Fundef" />
-	  <node name="Globobj" />
-          <node name="Let" />
-	  <node name="Module" />
-          <node name="Propagate" />
-	  <node name="With" />
-	</travuser>
-      </traversal>
-      <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Return" />
-	  <node name="Let" />
-	  <node name="Ap" />
-	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h" >
-        <travuser>
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="ESP" name="Enforce Specialization" default="sons" include="enforce_specialization.h" >
-        <travuser> 
-          <node name="Module" />
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
-        <travuser> 
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="Funcond" />
-          <node name="Let" />
-          <node name="Return" />
-          <node name="Ap" />
-          <node name="Prf" />
-          <node name="Array" />
-          <node name="Cast" />
-          <node name="Exprs" />
-          <node name="Id" />
-          <node name="Globobj" />
-          <node name="Type" />
-          <node name="Num" />
-          <node name="Bool" />
-          <node name="Char" />
-          <node name="Double" />
+		  <node name="Block" />
+		  <node name="Assign" />
+		  <node name="Let" />
+		  <node name="Return" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Funcond" />
+		  <node name="Exprs" />
+		  <node name="Empty" />
+		  <node name="With" />
+		  <node name="Part" />
+		  <node name="Withid" />
+		  <node name="Code" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CHK" name="Check the Tree" default="user" ifdef="show_malloc" include="check.h" />
+	      <traversal id="CHKTST" name="Check the TreeTest" default="user" ifdef="show_malloc" include="checktst.h" />
+	      <traversal id="CHKM" name="Check the memspace" default="user" postfun="CHKMpostfun" ifdef="show_malloc" include="check_node.h" />
+	      <traversal id="CHKLACF" name="Check LaC functions" 
+		       default="sons" include="check_lacfuns.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Ap" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
+		<travuser>
+		  <node name="SPMop" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HWLG" name="Handle multi-generator with-loops"
+			 default="sons" include="handle_with_loop_generators.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HWLO" name="Handle multi-operator with-loops"
+			 default="sons" include="handle_with_loop_operators.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Let" />
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HZGWL" name="Handle zero-generator withloops"
+			 default="sons" include="handle_zero_generator_with_loops.h" >
+		<travuser>
+		  <node name="With" />
+		  <node name="Modarray" />
+		  <node name="Genarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		  <node name="Let" />
+		  <node name="Assign" />
+		  <node name="Return" />
+		</travuser>
+	      </traversal>
+	      <traversal id="IUTC" name="Introduce User Trace Calls" default="sons" include="introduce_user_tracing_calls.h">
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="SPIds" />
+		  <node name="Assign" />
+		  <node name="Return" />
+		  <node name="Block" />
+		</travuser>
+		<travnone>
+		  <node name="Withid" />
+		</travnone>
+	      </traversal>
+	      <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
+		<travuser>
+		  <node name="SPId" />
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="Fold" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		  <node name="Dot" />
+		  <node name="SPAp" />
+		  <node name="Prf" />
+		  <node name="Assign" />
+		  <node name="SetWL" />
+		  <node name="SPId" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Avis" />
+		  <node name="Cast" />
+		  <node name="Return" />
+		  <node name="Assign" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons" include="generate_generic_type_conversions.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Typedef" />
+		  <node name="Export" />
+		  <node name="Provide" />
+		  <node name="Symbol" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
+		<travuser>
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Fundef" />
+		  <node name="Module" />
+		  <node name="Ret" />
+		  <node name="Arg" />
+		</travuser>
+	      </traversal>
+	      <traversal id="W2D" name="While2do" default="sons" include="while2do.h" >
+		<travuser>
+		  <node name="While" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HCE" name="Handle conditional expressions" 
+			 default="sons" include="handle_condexpr.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Code" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Funcond" />
+		  <node name="With" />
+		</travuser>
+	      </traversal>
+	      <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Cast" />
+		  <node name="Exprs" />
+		  <node name="SPAp" />
+		  <node name="Block" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Array" />
+		  <node name="Return" />
+		  <node name="Prf" />
+		  <node name="With" />
+		  <node name="Withid" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="Propagate" />
+		  <node name="SPFold" />
+		  <node name="Code" />
+		</travuser>
+	      </traversal>
+	      <traversal id="FLATG" name="Flattengenerators" default="sons" include="flattengenerators.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="With" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		  <node name="Assign" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="While" />
+		  <node name="Funcond" />
+		</travuser>
+	      </traversal>
+	      <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Do" />
+		  <node name="Fundef" />
+		  <node name="Cond" />
+		</travuser>
+	      </traversal>
+	      <traversal id="SSAT" name="SSA Transform Traversal" default="sons" include="SSATransform.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Ap" />
+		  <node name="Fundef" />
+		  <node name="Cond" />
+		  <node name="Block" />
+		  <node name="Code" />
+		  <node name="Let" />
+		  <node name="Arg" />
+		  <node name="Vardec" />
+		  <node name="Id" />
+		  <node name="With" />
+		  <node name="With2" />
+		  <node name="Part" />
+		  <node name="Withid" />
+		  <node name="Funcond" />
+		  <node name="Return" />
+		  <node name="Ids" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSA" name="Resolve All Flags" default="sons" include="resolveall.h" >
+		<travuser>
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Provide" />
+		  <node name="Export" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GDP" name="Gather Dependencies" default="sons" include="gatherdependencies.h">
+		<travuser>
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Avis" />
+		  <node name="Ret" />
+		  <node name="SPId" />
+		  <node name="SPFold" />
+		  <node name="Cast" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
+		<travuser>
+		  <node name="Symbol" />
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Export" />
+		  <node name="Provide" />
+		  <node name="Fundef" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="While" />
+		  <node name="Do" />
+		  <node name="SPAp" />
+		  <node name="SPMop" />
+		  <node name="Avis" />
+		  <node name="Array" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Vardec" />
+		  <node name="SPIds" />
+		  <node name="SPId" />
+		  <node name="Let" />
+		  <node name="With" />
+		  <node name="SPFold" />
+		  <node name="Module" />
+		  <node name="Cast" />
+		</travuser>
+	      </traversal>
+	      <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
+		<travuser>
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="SPFold" />
+		  <node name="Avis" />
+		  <node name="Cast" />
+		  <node name="Array" />
+		  <node name="Ret" />
+		  <node name="SPAp" />
+		  <node name="SPId" />
+		  <node name="SPMop" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="IMP" name="Import Symbols" default="sons" include="importsymbols.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Import" />
+		  <node name="Export" />
+		  <node name="Use" />
+		  <node name="Provide" />
+		  <node name="Symbol" />
+		</travuser>
+	      </traversal>
+	      <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="SPAp" />
+		  <node name="SPId" />
+		  <node name="SPIds" />
+		  <node name="With" />
+		  <node name="Let" />
+		  <node name="Part" />
+		  <node name="Code" />
+		  <node name="Do" />
+		</travuser>
+	      </traversal>
+	      <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Avis" />
+		  <node name="Assign" />
+		  <node name="Ids" />
+		  <node name="Id" />
+		  <node name="With" />
+		  <node name="Return" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Let" />
+		  <node name="SPAp" />
+		  <node name="Genarray" />
+		  <node name="SPFold" />
+		</travuser>  
+	      </traversal>
+	      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Avis" />
+		  <node name="Array" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Type" />
+		  <node name="Cast" />
+		</travuser>
+	      </traversal>
+	      <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Objdef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Globobj" />
+		  <node name="Fundef" />
+		  <node name="Ap" />
+		  <node name="Objdef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GOI" name="Generating Object Initialiser" default="sons" include="generate_object_initialiser.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
+		<travuser>
+		  <node name="Ap" />
+		  <node name="Fundef" />
+		  <node name="Globobj" />
+		  <node name="Let" />
+		  <node name="Module" />
+		  <node name="Propagate" />
+		  <node name="With" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Return" />
+		  <node name="Let" />
+		  <node name="Ap" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h" >
+		<travuser>
+		  <node name="Fundef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="ESP" name="Enforce Specialization" default="sons" include="enforce_specialization.h" >
+		<travuser> 
+		  <node name="Module" />
+		  <node name="Fundef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
+		<travuser> 
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Vardec" />
+		  <node name="Assign" />
+		  <node name="Cond" />
+		  <node name="Funcond" />
+		  <node name="Let" />
+		  <node name="Return" />
+		  <node name="Ap" />
+		  <node name="Prf" />
+		  <node name="Array" />
+		  <node name="Cast" />
+		  <node name="Exprs" />
+		  <node name="Id" />
+		  <node name="Globobj" />
+		  <node name="Type" />
+		  <node name="Num" />
+		  <node name="NumByte" />
+		  <node name="Bool" />
+		  <node name="Char" />
+		  <node name="Double" />
           <node name="Float" />
           <node name="With" />
           <node name="Generator" />
@@ -2015,6 +2016,7 @@
       <traversal id="EMAL" name="Allocation" default="none" include="alloc.h" >
         <travuser>
           <node name="Num" />
+          <node name="NumByte" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
@@ -2776,6 +2778,7 @@
           <node name="Typedef" />
           <node name="Vardec" />
           <node name="Num" />
+          <node name="NumByte" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />

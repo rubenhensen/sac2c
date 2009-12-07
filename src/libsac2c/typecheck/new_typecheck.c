@@ -1607,6 +1607,7 @@ NTCglobobj (node *arg_node, info *arg_info)
     }
 
 NTCBASIC (num, T_int)
+NTCBASIC (numbyte, T_byte)
 NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
 NTCBASIC (char, T_char)

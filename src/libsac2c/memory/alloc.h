@@ -17,6 +17,7 @@ extern node *EMALchar (node *arg_node, info *arg_info);
 extern node *EMALdouble (node *arg_node, info *arg_info);
 extern node *EMALfloat (node *arg_node, info *arg_info);
 extern node *EMALnum (node *arg_node, info *arg_info);
+extern node *EMALnumbyte (node *arg_node, info *arg_info);
 
 extern node *EMALap (node *arg_node, info *arg_info);
 extern node *EMALbreak (node *arg_node, info *arg_info);

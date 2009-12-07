@@ -83,6 +83,7 @@ static int prf_arity[] = {
  node               *node;
  int                cint;
  char               cchar;
+ char               cbyte;
  float              cfloat;
  double             cdbl;
  prf                prf;
@@ -137,6 +138,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %token TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
        TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID  TYPE_BYTE
 %token <cint> NUM
+%token <cbyte> NUMBYTE
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
@@ -1320,6 +1322,7 @@ subexpr: subexpr DOT ID %prec STRUCTELEM
 nostrexpr:
       qual_ext_id                { $$ = $1; }
     | NUM                        { $$ = TBmakeNum( $1);       }
+    | NUMBYTE                    { $$ = TBmakeNumbyte( $1);   }
     | FLOAT                      { $$ = TBmakeFloat( $1);     }
     | DOUBLE                     { $$ = TBmakeDouble( $1);    }
     | CHAR                       { $$ = TBmakeChar( $1);      }

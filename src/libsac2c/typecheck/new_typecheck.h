@@ -31,6 +31,7 @@ extern node *NTCid (node *arg_node, info *arg_info);
 extern node *NTCglobobj (node *arg_node, info *arg_info);
 extern node *NTCtype (node *arg_node, info *arg_info);
 extern node *NTCnum (node *arg_node, info *arg_info);
+extern node *NTCnumbyte (node *arg_node, info *arg_info);
 extern node *NTCbool (node *arg_node, info *arg_info);
 extern node *NTCchar (node *arg_node, info *arg_info);
 extern node *NTCdouble (node *arg_node, info *arg_info);
