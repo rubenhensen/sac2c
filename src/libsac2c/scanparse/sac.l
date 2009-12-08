@@ -162,6 +162,8 @@ int charpos = 0;
 "_reciproc_S_"             { FILTER( PRF_RECIPROC_S); }
 "_reciproc_V_"             { FILTER( PRF_RECIPROC_V); }
 
+"_mesh_VxVxV_"             { FILTER( PRF_MESH_VxVxV); }
+
 "_eq_SxS_"                 { FILTER( PRF_EQ_SxS);  }
 "_eq_SxV_"                 { FILTER( PRF_EQ_SxV);  }
 "_eq_VxS_"                 { FILTER( PRF_EQ_VxS);  }

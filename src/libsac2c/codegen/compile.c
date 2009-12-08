@@ -5227,7 +5227,7 @@ COMPprfModarray_AxVxS (node *arg_node, info *arg_info)
      *
      ****************************************************************************
      *
-     * For efficiency reasons, constant arrays are excepted as 2nd argument of
+     * For efficiency reasons, constant arrays are accepted as 2nd argument of
      * modarray() as well:
      *
      *   A = fun( ...);
@@ -5293,7 +5293,7 @@ COMPprfModarray_AxVxA (node *arg_node, info *arg_info)
      *
      ****************************************************************************
      *
-     * For efficiency reasons, constant arrays are excepted as 2nd argument of
+     * For efficiency reasons, constant arrays are accepted as 2nd argument of
      * modarray() as well:
      *
      *   A = fun( ...);
@@ -5747,6 +5747,45 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_VxVxV( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a ternary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_VxVxV (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfOp_VxVxV");
+
+    /* assure that the prf has exactly three arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) != NULL) && (PRF_EXPRS4 (arg_node) == NULL)),
+                 "illegal number of args found! - expected 3 args");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VxVxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 

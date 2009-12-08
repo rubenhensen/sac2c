@@ -3,7 +3,9 @@ module sacprelude;
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
          unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, 
-         wrap, prod, partitionSlicer, gridFiller};
+         wrap, prod, partitionSlicer, gridFiller,
+         isPartitionIntersectNull, 
+         partitionIntersectMax, partitionIntersectMin};
 
 external typedef SACarg;
   #pragma freefun "SACARGfree"
@@ -125,6 +127,39 @@ gridFiller( int[.] lb, int[.] ub, int[.] wdth, int dim, int[.] maxwidth)
   return( nlb, nwidth, nmaxwidth);
 }
 
+inline
+bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
+                                  int[.] bound1, int[.] bound2)
+{ /* Predicate to determine if intersection of index set and
+   * partition bounds is null. It requires an assist from 
+   * the compiler to perform the any-reduce on this function's result.
+   */
+
+  z = _or_VxV_( _le_VxV_( idxmax, bound1), _ge_VxV_( idxmin, bound2));
+  return(z);
+}
+
+inline int[.] partitionIntersectMax( int[.] idxmin, int[.] bound1)
+{ /* Function to perform max( idxmin, bound1), but written to 
+   * let the optimizers simplify the arguments.
+   */
+
+  dif  = _sub_VxV_( idxmin, bound1);
+  p = _ge_VxS_( dif, 0);
+  z = _mesh_VxVxV_( p, idxmin, bound1);
+  return(z);
+}
+
+inline int[.] partitionIntersectMin( int[.] idxmax, int[.] bound2)
+{ /* Function to perform min( idxmax, bound2), but written to 
+   * let the optimizers simplify the arguments.
+   */
+
+  dif  = _sub_VxV_( idxmax, bound2);
+  p = _le_VxS_( dif, 0);
+  z = _mesh_VxVxV_( p, idxmax, bound2);
+  return(z);
+}
 
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"

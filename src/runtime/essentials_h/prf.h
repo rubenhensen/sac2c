@@ -55,6 +55,8 @@
 #define SAC_ND_PRF_GE(arg1, arg2) (arg1) >= (arg2)
 #define SAC_ND_PRF_GT(arg1, arg2) (arg1) > (arg2)
 
+#define SAC_ND_PRF_MESH(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
+
 /******************************************************************************
  *
  * ICMs for primitive functions
@@ -212,6 +214,20 @@
             SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
                                op_macro (SAC_ND_READ (from1_NT, SAC_i),                  \
                                          SAC_ND_READ (from2_NT, SAC_i)), );              \
+        }                                                                                \
+    }
+
+#define SAC_ND_PRF_VxVxV__DATA(to_NT, op_macro, from1_NT, from2_NT, from3_NT)            \
+    SAC_TR_PRF_PRINT (("ND_PRF_VxVxV__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT),          \
+                       #op_macro, NT_STR (from1_NT), NT_STR (from2_NT),                  \
+                       NT_STR (from3_NT)));                                              \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
+                               op_macro (SAC_ND_READ (from1_NT, SAC_i),                  \
+                                         SAC_ND_READ (from2_NT, SAC_i),                  \
+                                         SAC_ND_READ (from3_NT, SAC_i)), );              \
         }                                                                                \
     }
 

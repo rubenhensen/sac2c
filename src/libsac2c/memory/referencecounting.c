@@ -642,16 +642,14 @@ RCIprf (node *arg_node, info *arg_info)
         /*
          * v1,..,vn = guard(p,a1,..an)
          *
-         * - Traverse p like a prf
+         *  - Traverse p like a prf
          * - Traverse a_i as app since they are aliased into v_i
          */
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_MODE (arg_info) = rc_apuse;
-        if (EXPRS_EXPRS2 (PRF_ARGS (arg_node)) != NULL) {
-            EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-              = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
-        }
+        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
+          = TRAVopt (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     case F_afterguard:
@@ -664,10 +662,8 @@ RCIprf (node *arg_node, info *arg_info)
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_MODE (arg_info) = rc_prfuse;
-        if (EXPRS_EXPRS2 (PRF_ARGS (arg_node)) != NULL) {
-            EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-              = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
-        }
+        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
+          = TRAVopt (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     case F_accu:
@@ -690,9 +686,7 @@ RCIprf (node *arg_node, info *arg_info)
 
     default:
         INFO_MODE (arg_info) = rc_prfuse;
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

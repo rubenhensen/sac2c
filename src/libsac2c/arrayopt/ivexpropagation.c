@@ -1080,7 +1080,7 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
  *
  *      INFO_PREASSIGNS are appended to, with the assigns for
  *        minv, maxv, and iv''.
- *noprelude noprelude
+ *
  * Restrictions:
  *      A subset of N_prfs are supported, namely, those for which
  *      we can meaningfully compute their extrema.
@@ -1173,6 +1173,7 @@ static node *
 IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
 {
     node *rhs;
+    node *rhsavis;
     node *minv = NULL;
     node *maxv = NULL;
     node *minarg1;
@@ -1205,6 +1206,16 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
             { /* sheep vs. goats - ignore oddball N_prfs.*/
 
             default:
+                break;
+
+            case F_saabind:
+                rhsavis = ID_AVIS (PRF_ARG3 (rhs));
+                if (isAvisHasExtrema (rhsavis)) {
+                    DBUG_PRINT ("IVEXP", ("Propagating saabind extrema from %s to %s",
+                                          AVIS_NAME (rhsavis), AVIS_NAME (lhsavis)));
+                    AVIS_MINVAL (lhsavis) = AVIS_MINVAL (rhsavis);
+                    AVIS_MAXVAL (lhsavis) = AVIS_MAXVAL (rhsavis);
+                }
                 break;
 
             case F_neg_S: /* We swap extrema later */

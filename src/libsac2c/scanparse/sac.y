@@ -132,6 +132,7 @@ PRF_OR_SxS   PRF_OR_SxV  PRF_OR_VxS  PRF_OR_VxV
 PRF_NOT_S  PRF_NOT_V
 PRF_TOI_S  PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S PRF_TOBY_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
+PRF_MESH_VxVxV
 
 %token <id> ID  STR
 
@@ -1831,6 +1832,7 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}
+   | PRF_MESH_VxVxV     { $$ = F_mesh_VxVxV; }
    ;
 
 qual_ext_ids: qual_ext_id COMMA qual_ext_ids

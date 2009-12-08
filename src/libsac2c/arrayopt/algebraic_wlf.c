@@ -7,12 +7,12 @@
  * @defgroup awlf Algebraic With-Loop Folding
  *
  * @terminology:
- *        Foldee-WL, or foldee: The WL that will no longer
+ *        ProducerWL: The WL that will no longer
  *        exist after this phase completes. In the example
- *        below, A is the foldeeWL.
+ *        below, A is the producerWL.
  *
- *        Folder-WL: the WL that will absorb the block(s) from
- *        the foldeeWL. In the example below, B is the folderWL.
+ *        ConsumerWL: the WL that will absorb the block(s) from
+ *        the producerWL. In the example below, B is the consumerWL.
  *
  * @brief Algebraic With-Loop Folding
  *        This performs WLF on AKD arrays, not foldable by WLF.
@@ -21,42 +21,44 @@
  *
  *            - Ability to fold arrays whose shapes are not
  *              known statically. Specifically, if the index
- *              set of the folderWL is known to be identical to,
- *              or a subset of, the index set of the foldeeWL,
+ *              set of the consumerWL is known to be identical to,
+ *              or a subset of, the index set of the producerWL,
  *              folding will occur.
  *
- *           - the foldeeWL must have an SSAASSIGN.
+ *           - the producerWL must have an SSAASSIGN.
  *
- *           - the foldeeWL must have an empty code block (so that the cost
+ *           - the producerWL must have an empty code block (so that the cost
  *             must have of duplicating it is zero), or it must have
  *             a NEEDCOUNT of 1.
- *             There must be no other references to the foldeeWL.
+ *             There must be no other references to the producerWL.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
- *             This code includes a little trick to convert a modarray(foldee)
- *             into a genarray(shape(foldee)), but this happens
- *             after any folding. Hence, there is a kludge to
- *             allow a NEEDCOUNT of 2 if there is a modarray folderWL
+ *
+ *             This code includes a little trick to convert a
+ *             modarray( producerWL) into a genarray( shape( producerWL)).
+ *             This happens after any folding is performed.
+ *             Hence, there is a kludge to
+ *             allow a NEEDCOUNT of 2 if there is a modarray consumerWL
  *             present.
  *
- *           - the foldeeWL must have a DEPDEPTH value of 1??
+ *           - the producerWL must have a DEPDEPTH value of 1??
  *             I think the idea here is to ensure that we do not
- *             pull a foldeeWL inside a loop, which could cause
+ *             pull a producerWL inside a loop, which could cause
  *             increased computation.
  *
- *           - The folderWL must refer to the foldee WL via
- *              _sel_VxA_(idx, foldee)
- *             and idx must be the folderWL's WITHID, or a
+ *           - The consumerWL must refer to the producerWL via
+ *              _sel_VxA_(idx, producerWL)
+ *             and idx must be the consumerWL's WITHID, or a
  *             linear function thereof.
  *
- *           - The foldeeWL operator is a genarray or modarray
+ *           - The producerWL operator is a genarray or modarray
  *             (NO folds, please).
  *
  *           - The WL is a single-operator WL. (These should have been
  *             eliminated by phase 10, I think.)
  *
- *           - The index set of the folderWL's partition matches
- *             the generator of the foldeeWL, or is a subset
+ *           - The index set of the consumerWL's partition matches
+ *             the generator of the producerWL, or is a subset
  *             of it. Note that this implies that
  *             the WL-bounds are the same length, which
  *             may not be the case. Consider this example:
@@ -118,10 +120,10 @@
  *
  *  TODO:
  *   1. At present, AWLF does not occur unless ALL references
- *      to the foldeeWL are in the folderWL, or unless the
- *      foldeeWL has an empty code block. Here is a possible extension
+ *      to the producerWL are in the consumerWL, or unless the
+ *      producerWL has an empty code block. Here is a possible extension
  *      to allow small computations to be folded into several
- *      folderWLs:
+ *      consumerWL:
  *
  *      Introduce a cost function into WLNC. The idea here is
  *      to provide a crude measure of the cost of computing
@@ -139,16 +141,16 @@
  *      in each WL. Hmm. The cost must be associated with the
  *      WL-partition.
  *
- *      If the foldeeWL is otherwise ripe for folding, we allow
+ *      If the producerWL is otherwise ripe for folding, we allow
  *      the fold to occur if the cost is less than some threshold,
- *      even if the references to the foldeeWL occur in several
- *      folderWLs.
+ *      even if the references to the producerWL occur in several
+ *      consumerWL.
  *
  *   2. Permit WLF through reshape operations.
- *      The idea here is that, if the folderWL and foldeeWL
+ *      The idea here is that, if the consumerWL and producerWL
  *      operating in wlidx mode, then
  *      the folding can be done, because neither WL cares about
- *      the shape of the foldeeWL result, just that they have
+ *      the shape of the producerWL result, just that they have
  *      identical element counts.
  *
  *      A bit more thought here might give a nice way to
@@ -204,12 +206,12 @@
 struct INFO {
     node *fundef;
     node *part;
-    /* This is the current partition in the folderWL. */
+    /* This is the current partition in the consumerWL. */
     node *wl;
-    /* This is the current folderWL. */
+    /* This is the current consumerWL. */
     int level;
     /* This is the current nesting level of WLs */
-    node *awlfoldablefoldeepart;
+    node *awlfoldableProducerWLpart;
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
@@ -228,7 +230,7 @@ struct INFO {
 #define INFO_PART(n) ((n)->part)
 #define INFO_WL(n) ((n)->wl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_AWLFOLDABLEFOLDEEPART(n) ((n)->awlfoldablefoldeepart)
+#define INFO_AWLFOLDABLEPRODUCERWLPART(n) ((n)->awlfoldableProducerWLpart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
@@ -251,7 +253,7 @@ MakeInfo (node *fundef)
     INFO_PART (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_AWLFOLDABLEFOLDEEPART (result) = NULL;
+    INFO_AWLFOLDABLEPRODUCERWLPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
@@ -412,7 +414,7 @@ isPrfArg1AttachExtrema (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool matchGeneratorField( node *fa, node *fb, node *foldeewl)
+ * @fn bool matchGeneratorField( node *fa, node *fb, node *producerWL)
  *
  * @brief Attempt to match corresponding N_id/N_array fields of
  *        two generators (BOUND, WIDTH, STEP),
@@ -424,9 +426,9 @@ isPrfArg1AttachExtrema (node *arg_node)
  *         - fa can be shown to be the shape vector for foldewl.
  *
  * @param - fa is a GENERATOR_BOUND2 or similar generator field for
- *          the folder WL.
+ *          the consumerWL.
  *          fb is a GENERATOR_BOUND2 or similar generator field for
- *          the foldee WL.
+ *          the producerWL.
  *
  * @return Boolean TRUE if both fields are the same or can
  *          be shown to represent the same shape vector.
@@ -460,8 +462,8 @@ matchGeneratorField (node *fa, node *fb)
      * remove this check. This is a workaround for a performance
      * problem in sac/apex/buildv/buildv.sac
      */
-    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (fa))
-        && TYisAKV (AVIS_TYPE (fb))) {
+    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (ID_AVIS (fa)))
+        && TYisAKV (AVIS_TYPE (ID_AVIS (fb)))) {
         fac = COaST2Constant (fa);
         fbc = COaST2Constant (fa);
         z = COcompareConstants (fac, fbc);
@@ -471,11 +473,11 @@ matchGeneratorField (node *fa, node *fb)
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s matched", AVIS_NAME (fa),
-                                 AVIS_NAME (fb)));
+            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s matched",
+                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
         } else {
             DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s did not match",
-                                 AVIS_NAME (fa), AVIS_NAME (fb)));
+                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
         }
     }
     DBUG_RETURN (z);
@@ -483,22 +485,18 @@ matchGeneratorField (node *fa, node *fb)
 
 /** <!--********************************************************************-->
  *
- * @fn node * ExtractNthWLIntersection...
+ * @fn node * ExtractNthItem
  *
- * @brief Extract the Nth WL bounds for the intersection of the
- *        foldee partition with partition partno of the foldee WL.
+ * @brief Extract the Nth item of the attach_intersect information
  *
- * @params partno: the partition number in the foldee WL.
- *         boundnum: 0 for BOUND1, 1 for BOUND2.
- *         idx: the index vector for the _sel_VxA( idx, foldee).
- *         The intersection calculations hang off the F_attachextrema
- *         that is the parent of idx, after the idx entry.
+ * @params itemno: the Nth item number.
+ * @params idx: the index vector for the _sel_VxA( idx, producerWL).
  *
- * @result: The lower/upper bounds of the WL intersection.
+ * @result: The item itself.
  *
  *****************************************************************************/
 static node *
-ExtractNthWLIntersection (int partno, int boundnum, node *idx)
+ExtractNthItem (int itemno, node *idx)
 {
     node *bnd;
     node *dfg;
@@ -509,16 +507,21 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
     dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
     dfg = LET_EXPR (ASSIGN_INSTR (dfg));
     DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
-                 ("ExtractNthWLIntersection wanted F_attachintersect as idx parent"));
-    /* expressions are bound1, bound2 for each partition. */
-    bnd = TCgetNthExprsExpr (((2 * partno) + boundnum + 1), PRF_ARGS (dfg));
+                 ("ExtractNthItem wanted F_attachintersect as idx parent"));
+    bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
 
     if (!(PMO (PMOlastVarGuards (&val, bnd)))) {
-        DBUG_ASSERT (FALSE, ("ExtractNthWLIntersection could not find var!"));
+        DBUG_ASSERT (FALSE, ("ExtractNthItem could not find var!"));
     }
 
     DBUG_RETURN (val);
 }
+
+/* expressions per partition are: bound1, bound2, intlo, inthi, intNull */
+#define WLBOUND1ORIGINAL(partno) (1 + (5 * partno))
+#define WLBOUND2ORIGINAL(partno) (1 + (5 * partno) + 1)
+#define WLINTERSECTION(partno, boundno) (1 + (5 * partno) + boundno)
+#define WLINTERSECTIONNULL(partno) (1 + (5 * partno) + 4)
 
 #ifdef BROKE
 /** <!--********************************************************************-->
@@ -529,7 +532,7 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *                                node *idxbound1, idxbound2,
  *                                info *arg_info);
  *
- * @brief Possibly mark current folderWL partition as requiring slicing.
+ * @brief Possibly mark current consumerWL partition as requiring slicing.
  *
  *        The partition requires slicing if:
  *          - intersects and bounds are N_array nodes.
@@ -538,18 +541,18 @@ ExtractNthWLIntersection (int partno, int boundnum, node *idx)
  *            [Since we only get called when this is the case,
  *             they are guaranteed not to match.]
  *
- * @params: folderpart: folderWL partition that may need slicing
- *          intersectb1: lower bound of intersection between folderWL
- *                       sel operation index set and foldeeWL partition
+ * @params: folderpart: consumerWL partition that may need slicing
+ *          intersectb1: lower bound of intersection between consumerWL
+ *                       sel operation index set and producerWL partition
  *                       bounds.
  *          intersectb2: upper bound of same.
- *          idxbound1:   lower bound of folderWL sel operation index set.
+ *          idxbound1:   lower bound of consumerWL sel operation index set.
  *          idxboundi2:  lower bound of same.
  *          arg_info:    your basic arg_info node.
  *
  * @result: None.
  *
- * @note: It may happen that more than one partition in the folderWL
+ * @note: It may happen that more than one partition in the consumerWL
  *        requires slicing.
  *
  *****************************************************************************/
@@ -577,38 +580,53 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
  *
  * @fn node * FindMatchingPart(...
  *
- * @brief check if a WL has a legal foldee partition.
- *        The requirements for folding are:
- *           - The WL foldeeWL operator is a genarray or modarray.
+ * @brief Search for a producerWL partition that matches the
+ *        consumerWLPart index set, or that is a superset thereof.
  *
- *           - The WL is a single-operator WL.
+ *        The search comprises two steps:
  *
- *           - The current folderWL's sel(idx, foldeeWL) index set matches
- *             the index set of some partition of the foldeeWL,
- *             or is a subset of that partition.
- *             We have already computed the intersection of those
- *             index sets, and they hang off the F_attachintersect node.
- *             The Nth foldeeWL partition can be folded if the
- *             Nth intersection set matches the index set of the
- *             folderWL partition. We don't even look
- *             at the foldeeWL any more, except it comes along for
- *             the ride as an easy way to pick the correct
- *             foldeeWL partition when we do find a match.
+ *        1. Scan the F_attachintersect intersect results,
+ *           looking for
  *
- * @params *arg_node: the N_prf of the sel(idx, foldeeWL).
- *         *folderpart: the folderWL partition containing arg_node.
- *         *foldeeWL: the N_with of the foldeeWL.
  *
- * @result: The address of the matching foldee partition, if any.
+ *        1. Find a partition in the producerWL that has bounds
+ *           that match those in the F_attachintersect bounds, if
+ *           such still exists.
+ *           This is required because other optimizations
+ *           may have split a partition, and/or reordered partitions
+ *           within the producerWL.
+ *
+ *           If we are unable to find a matching partition, we
+ *           have to discard the consumerWLPart's intersect
+ *           computation data, and redo it.
+ *
+ *        2. If we do find a matching partition, there are three
+ *           types of intersection possible:
+ *            a. Null - no intersection, so no folding is possible.
+ *
+ *            b. ConsumerWL is subset of producerWL, or matches exactly.
+ *               Folding is trivial, using the intersect data in
+ *               the _attach_intersect_.
+ *
+ *            c. ConsumerWL is superset of producerWL.
+ *               Folding is possible, but the ConsumerWL partition
+ *               must be split into 2 or three partitions.
+ *
+ *
+ * @params *arg_node: the N_prf of the sel(idx, producerWL).
+ *         *folderpart: the consumerWL partition containing arg_node.
+ *         *producerWL: the N_with of the producerWL.
+ *
+ * @result: The address of the matching prducerWL partition, if any.
  *          NULL if none is found.
  *
  *****************************************************************************/
 static node *
-FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldeeWL)
+FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *producerWL)
 {
-    node *folderpg;
-    node *gee;
-    node *partee;
+    node *consumerWLGenerator;
+    node *producerWLGenerator;
+    node *producerWLPart;
     node *intersectb1;
     node *intersectb2;
     node *idx;
@@ -616,170 +634,80 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldee
     node *idxbound2;
     node *idxassign;
     node *idxparent;
+    node *producerWLBound1Original;
+    node *producerWLBound2Original;
     bool matched = FALSE;
+    node *nullIntersect;
     int partno = 0;
 
     DBUG_ENTER ("FindMatchingPart");
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
                  ("FindMatchingPart expected N_prf arg_node"));
-    DBUG_ASSERT (N_with == NODE_TYPE (foldeeWL),
-                 ("FindMatchingPart expected N_with foldeeWL"));
+    DBUG_ASSERT (N_with == NODE_TYPE (producerWL),
+                 ("FindMatchingPart expected N_with producerWL"));
     DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
                  ("FindMatchingPart expected N_part folderpart"));
 
-    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, foldeeWL) */
+    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
     DBUG_ASSERT (NULL != idxassign, ("FindMatchingPart found NULL SSAASSIGN"));
     idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
     DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
                  ("FindMatchingPart expected F_attachintersect as idx parent"));
 
-    idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
-    idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+    consumerWLGenerator = PART_GENERATOR (folderpart);
+    producerWLPart = WITH_PART (producerWL);
 
-    folderpg = PART_GENERATOR (folderpart);
-    partee = WITH_PART (foldeeWL);
-
-    while ((!matched) && partee != NULL) {
-        gee = PART_GENERATOR (partee);
-        intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
-        intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
+    /* Find matching producerWL partition, if any */
+    while ((!matched) && producerWLPart != NULL) {
+        producerWLGenerator = PART_GENERATOR (producerWLPart);
 #ifdef NEEDSNULLCHECK
         DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
                              AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
         DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
                              AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
 #endif // NEEDSNULLCHECK
-        if (
-          /* Find and match Referents for generators, skipping default partitions */
-          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
-          && (matchGeneratorField (idxbound1, intersectb1))
-          && (matchGeneratorField (idxbound2, intersectb2)) &&
 
-          (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
-          && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
-            matched = TRUE;
-            DBUG_PRINT ("AWLF", ("FindMatchingPart referents all match"));
-        } else {
-            partee = PART_NEXT (partee);
-            partno++;
-        }
-    }
+        idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+        idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+        intersectb1 = ID_AVIS (ExtractNthItem (WLINTERSECTION (partno, 0), idx));
+        intersectb2 = ID_AVIS (ExtractNthItem (WLINTERSECTION (partno, 1), idx));
 
-    if (matched) {
-        DBUG_PRINT ("AWLF", ("FindMatchingPart matches"));
-    } else {
-        partee = NULL;
-        DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
-    }
+        producerWLBound1Original = ExtractNthItem (WLBOUND1ORIGINAL (partno), idx);
+        producerWLBound2Original = ExtractNthItem (WLBOUND2ORIGINAL (partno), idx);
+        nullIntersect = ExtractNthItem (WLINTERSECTIONNULL (partno), idx);
 
-    DBUG_RETURN (partee);
-}
-
-#ifdef BROKE
-/** <!--********************************************************************-->
- *
- *
- * @fn node * FindMatchingPart(...
- *
- * @brief check if a WL has a legal foldee partition.
- *        The requirements for folding are:
- *           - The WL foldeeWL operator is a genarray or modarray.
- *
- *           - The WL is a single-operator WL.
- *
- *           - The current folderWL's sel(idx, foldeeWL) index set matches
- *             the index set of some partition of the foldeeWL,
- *             or is a subset of that partition.
- *             We have already computed the intersection of those
- *             index sets, and they hang off the F_attachintersect node.
- *             The Nth foldeeWL partition can be folded if the
- *             Nth intersection set matches the index set of the
- *             folderWL partition. We don't even look
- *             at the foldeeWL any more, except it comes along for
- *             the ride as an easy way to pick the correct
- *             foldeeWL partition when we do find a match.
- *
- * @params *arg_node: the N_prf of the sel(idx, foldeeWL).
- *         *folderpart: the folderWL partition containing arg_node.
- *         *foldeeWL: the N_with of the foldeeWL.
- *
- * @result: The address of the matching foldee partition, if any.
- *          NULL if none is found.
- *
- *****************************************************************************/
-static node *
-FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *foldeeWL)
-{
-    node *folderpg;
-    node *gee;
-    node *partee;
-    node *intersectb1;
-    node *intersectb2;
-    node *idx;
-    node *idxbound1;
-    node *idxbound2;
-    node *idxassign;
-    node *idxparent;
-    bool matched = FALSE;
-    int partno = 0;
-
-    DBUG_ENTER ("FindMatchingPart");
-    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
-                 ("FindMatchingPart expected N_prf arg_node"));
-    DBUG_ASSERT (N_with == NODE_TYPE (foldeeWL),
-                 ("FindMatchingPart expected N_with foldeeWL"));
-    DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
-                 ("FindMatchingPart expected N_part folderpart"));
-
-    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, foldeeWL) */
-    idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
-    DBUG_ASSERT (NULL != idxassign, ("FindMatchingPart found NULL SSAASSIGN"));
-    idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
-    DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
-                 ("FindMatchingPart expected F_attachintersect as idx parent"));
-    idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
-    idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (idxparent)));
-
-    folderpg = PART_GENERATOR (folderpart);
-    partee = WITH_PART (foldeeWL);
-
-    while ((!matched) && partee != NULL) {
-        gee = PART_GENERATOR (partee);
-        intersectb1 = ID_AVIS (ExtractNthWLIntersection (partno, 0, idx));
-        intersectb2 = ID_AVIS (ExtractNthWLIntersection (partno, 1, idx));
-        if (
-          /* Find and match Referents for generators, skipping default partitions */
-          ((N_generator == NODE_TYPE (folderpg)) && (N_generator == NODE_TYPE (gee)))
-          && (matchGeneratorField (GENERATOR_STEP (folderpg), GENERATOR_STEP (gee)))
-          && (matchGeneratorField (GENERATOR_WIDTH (folderpg), GENERATOR_WIDTH (gee)))) {
-            DBUG_PRINT ("AWLF", ("FindMatchingPart STEP/WIDTH match"));
-            if ((idxbound1 == intersectb1) && (idxbound2 == intersectb2)) {
-                DBUG_PRINT ("AWLF", ("FindMatchingPart referents all match"));
-                matched = TRUE;
-            } else {
-                DBUG_PRINT ("AWLF", ("FindMatchingPart intersects do not match"));
-                MarkPartitionSliceNeeded (folderpart, intersectb1, intersectb2, idxbound1,
-                                          idxbound2, arg_info);
-            }
-        }
+        matched = ((N_generator == NODE_TYPE (consumerWLGenerator))
+                   && (N_generator == NODE_TYPE (producerWLGenerator))
+                   && (matchGeneratorField (producerWLBound1Original,
+                                            GENERATOR_BOUND1 (consumerWLGenerator)))
+                   && (matchGeneratorField (producerWLBound2Original,
+                                            GENERATOR_BOUND2 (consumerWLGenerator)))
+                   && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
+                                            GENERATOR_STEP (consumerWLGenerator)))
+                   && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
+                                            GENERATOR_WIDTH (consumerWLGenerator)))
+                   &&
+                   /*
+                   ( !nullIntersect)                                   &&
+                   */
+                   (idxbound1 == intersectb1) && (idxbound2 == intersectb2));
 
         if (!matched) {
-            partee = PART_NEXT (partee);
+            producerWLPart = PART_NEXT (producerWLPart);
             partno++;
         }
     }
 
     if (matched) {
-        DBUG_PRINT ("AWLF", ("FindMatchingPart matches"));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart referents match partition#%d", partno));
     } else {
-        partee = NULL;
+        producerWLPart = NULL;
         DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
     }
 
-    DBUG_RETURN (partee);
+    DBUG_RETURN (producerWLPart);
 }
-#endif // BROKE
 
 /** <!--********************************************************************-->
  *
@@ -805,48 +733,51 @@ isEmptyPartitionCodeBlock (node *partn)
 /** <!--********************************************************************-->
  *
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
- * node * folderpart, int level)
+ * node *consumerWLPart, int level)
  *
- * @brief check if _sel_VxA_(idx, foldee), appearing in folder WL
+ * @brief check if _sel_VxA_(idx, prducerWL), appearing in folder WL
  *        partition, part, is foldable into the folder WL.
  *        Most checks have already been made by AWLFI.
  *        Here, we check that the generators match,
- *        and that the only references to the foldeeWL result are
- *        in the folderWL.
+ *        and that the only references to the producerWL result are
+ *        in the consumerWL.
  *
- * @param _sel_VxA_( idx, foldee)
- * @param folderpart: The partition into which we would like to fold this sel().
+ * @param _sel_VxA_( idx, prducerWL)
+ * @param consumerWLPart: The partition into which we would like to
+ *        fold this sel().
  * @param level
- * @result If the foldee is foldable into the folder, return the
- *         N_part of the foldee that should be used for the fold; else NULL.
+ * @result If the producerWL is foldable into the consumerWL, return the
+ *         N_part of the producerWL that should be used for the fold; else NULL.
  *
  *****************************************************************************/
 static node *
-checkAWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
+checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int level)
 {
-    node *foldeeid;
+    node *producerWLid;
     node *foldeeavis;
     node *foldeeassign;
-    node *foldeewl;
+    node *producerWL;
     node *foldeepart = NULL;
 
     DBUG_ENTER ("checkAWLFoldable");
 
-    foldeeid = PRF_ARG2 (arg_node);
-    foldeeavis = ID_AVIS (foldeeid);
+    producerWLid = PRF_ARG2 (arg_node);
+    foldeeavis = ID_AVIS (producerWLid);
     if ((NULL != AVIS_SSAASSIGN (foldeeavis))
         && (AVIS_DEFDEPTH (foldeeavis) + 1 == level)) {
-        foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
+        foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (producerWLid)));
         if (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with) {
-            foldeewl = LET_EXPR (foldeeassign);
-            DBUG_PRINT ("AWLF",
-                        ("folderWL %s: foldeeWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                         AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
-                         AVIS_WL_NEEDCOUNT (foldeeavis)));
-            foldeepart = FindMatchingPart (arg_node, arg_info, folderpart, foldeewl);
+            producerWL = LET_EXPR (foldeeassign);
+            DBUG_PRINT (
+              "AWLF",
+              ("consumerWL %s: producerWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+               AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
+               AVIS_WL_NEEDCOUNT (foldeeavis)));
+            foldeepart
+              = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
             /* Allow fold if needcounts match OR if foldeepartition
              * has empty code block. This is a crude cost function:
-             * We should allow "cheap" foldee partitions to fold.
+             * We should allow "cheap" prducerWL partitions to fold.
              * E.g., toi(iota(N)), but I'm in a hurry...
              */
             if ((NULL != foldeepart)
@@ -879,18 +810,18 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *folderpart, int level)
  *        said name and its original, which we will use
  *        to do renames in the copied WL code block.
  *        See caller for description. Basically,
- *        we have a foldeeWL with generator of this form:
+ *        we have a producerWL with generator of this form:
  *
- *    foldeeWL = with {
+ *    producerWL = with {
  *         ( . <= iv=[i,j] <= .) : _sel_VxA_( iv, AAA);
  *
- *        We want to perform renames in the foldeeWL code block as follows:
+ *        We want to perform renames in the producerWL code block as follows:
  *
  *        iv --> iv'
  *        i  --> i'
  *        j  --> j'
  *
- * @param: arg_node: one N_avis node of the foldeeWL generator (e.g., iv),
+ * @param: arg_node: one N_avis node of the producerWL generator (e.g., iv),
  *                   to serve as iv for above assigns.
  *         arg_info: your basic arg_info.
  *         shp:      the shape descriptor of the new LHS.
@@ -928,9 +859,9 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  * @ fn static node *makeIdxAssigns( node *arg_node, node *foldeePart)
  *
- * @brief for a foldee partition, with generator:
+ * @brief for a prducerWL partition, with generator:
  *        (. <= iv=[i,j] < .)
- *        and a folder _sel_VxA_( idx, foldeeWL),
+ *        and a folder _sel_VxA_( idx, producerWL),
  *
  *        generate an N_assigns chain of this form:
  *
@@ -1023,30 +954,32 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
  *
  * @brief
  *   In
- *    foldeeWL = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
- *    folderWL = with...  elc = _sel_VxA_(idx, foldeeWL) ...
+ *    producerWL = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
+ *    consumerWL = with...  elc = _sel_VxA_(idx, producerWL) ...
  *
- *   Replace, in the folderWL:
- *     elc = _sel_VxA_( idx, foldeeWL)
+ *   Replace, in the consumerWL:
+ *     elc = _sel_VxA_( idx, producerWL)
  *   by
  *     iv = idx;
  *     i = _sel_VxA_([0], idx);
  *     j = _sel_VxA_([1], idx);
  *
- *     {code block from foldeeWL, with SSA renames}
+ *     {code block from producerWL, with SSA renames}
  *
- *     tmp = foldeeWLresultelement)
+ *     tmp = producerWL)
  *     elc = tmp;
  *
  * @params
  *    arg_node: N_assign for the sel()
  *    fundef: N_fundef node, so we can insert new avis node for
  *            temp assign being made here.
- *    foldee: N_part node of foldee.
+ *    producerWLPart: N_part node of producerWL.
+ *
  *    folder: N_part node of folder.
  *****************************************************************************/
 static node *
-doAWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *arg_info)
+doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consumerWLPart,
+               info *arg_info)
 {
     node *oldblock;
     node *newblock;
@@ -1056,20 +989,20 @@ doAWLFreplace (node *arg_node, node *fundef, node *foldee, node *folder, info *a
 
     DBUG_ENTER ("doAWLFreplace");
 
-    oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (foldee)));
+    oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (producerWLPart)));
 
     /* Generate iv=[i,j] assigns, then do renames. */
-    idxassigns = makeIdxAssigns (arg_node, arg_info, foldee);
+    idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
 
-    /* If foldeeWL is empty, don't do any code substitutions.
-     * Just replace sel(iv, foldeeWL) by iv.
+    /* If producerWL is empty, don't do any code substitutions.
+     * Just replace sel(iv, producerWL) by iv.
      */
     newblock
       = (N_empty == NODE_TYPE (oldblock))
           ? NULL
           : DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
-    expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (foldee))));
+    expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
 
     LUTremoveContentLut (INFO_LUT (arg_info));
@@ -1116,9 +1049,9 @@ AppendPart (node *partz, node *newpart)
  *
  * @fn static node *PartitionSlicer(...)
  *
- * @params partn: an N_part of the folderWL.
+ * @params partn: an N_part of the consumerWL.
  *         idx: an N_array, representing the intersect of the
- *              folderWL index set and a foldeeWL partition.
+ *              consumerWL index set and a producerWL partition.
  *         idx must be the same shape as the partn generators.
  *         d: the axis which we are going to slice. e.g., for matrix,
  *            d = 0 --> slice rows
@@ -1192,9 +1125,9 @@ AppendPart (node *partz, node *newpart)
  *       a partition before we know that slicing is required.
  *       These are the requirements:
  *
- *        - The folderWL index set is an N_array.
- *        - The intersect of the folderWL index set with
- *          the foldeeWL partition bounds is:
+ *        - The consumerWL index set is an N_array.
+ *        - The intersect of the consumerWL index set with
+ *          the producerWL partition bounds is:
  *            . non-empty  (or we are looking at a total mismatch)
  *            . not an exact match (because it could fold as is).
  *
@@ -1356,13 +1289,13 @@ AWLFfundef (node *arg_node, info *arg_info)
  * @fn node AWLFassign( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
- *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
+ *        For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
  *
  *****************************************************************************/
 node *
 AWLFassign (node *arg_node, info *arg_info)
 {
-    node *foldablefoldeepart;
+    node *foldableProducerPart;
 
     DBUG_ENTER ("AWLFassign");
 
@@ -1370,8 +1303,8 @@ AWLFassign (node *arg_node, info *arg_info)
     DBUG_PRINT ("AWLF", ("Traversing N_assign"));
 #endif // VERBOSE
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    foldablefoldeepart = INFO_AWLFOLDABLEFOLDEEPART (arg_info);
-    INFO_AWLFOLDABLEFOLDEEPART (arg_info) = NULL;
+    foldableProducerPart = INFO_AWLFOLDABLEPRODUCERWLPART (arg_info);
+    INFO_AWLFOLDABLEPRODUCERWLPART (arg_info) = NULL;
     DBUG_ASSERT ((NULL == INFO_PREASSIGNS (arg_info)),
                  "AWLFassign INFO_PREASSIGNS not NULL");
 
@@ -1383,8 +1316,8 @@ AWLFassign (node *arg_node, info *arg_info)
     /*
      * Append the new cloned block
      */
-    if (NULL != foldablefoldeepart) {
-        arg_node = doAWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldablefoldeepart,
+    if (NULL != foldableProducerPart) {
+        arg_node = doAWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldableProducerPart,
                                   INFO_PART (arg_info), arg_info);
 
         global.optcounters.awlf_expr += 1;
@@ -1428,13 +1361,13 @@ AWLFwith (node *arg_node, info *arg_info)
     WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
-    /* Try to replace modarray(foldeeWL) by genarray(shape(foldeeWL)).
-     * This has no effect on the foldeeWL itself, but is needed to
-     * eliminate the reference to foldeeWL, so it can be removed by DCR.
+    /* Try to replace modarray(producerWL) by genarray(shape(producerWL)).
+     * This has no effect on the producerWL itself, but is needed to
+     * eliminate the reference to producerWL, so it can be removed by DCR.
      *
-     * If the foldeeWL has been folded, its result will have
+     * If the producerWL has been folded, its result will have
      * AVIS_FOLDED set. Since there are, by the definition of
-     * folding, no other references to the foldeeWL, we can
+     * folding, no other references to the producerWL, we can
      * blindly replace the modarray by the genarray.
      */
     folderop = WITH_WITHOP (arg_node);
@@ -1523,10 +1456,10 @@ AWLFids (node *arg_node, info *arg_info)
  * @fn node *AWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all _sel_VxA_( idx, foldeeWL)  primitives to see if
+ *   Examine all _sel_VxA_( idx, producerWL)  primitives to see if
  *   the _sel_VxA_ is contained inside a WL, and that idx has
  *   intersect information attached to it.
- *   If so, foldeeWL may be a candidate for folding into this WL.
+ *   If so, producerWL may be a candidate for folding into this WL.
  *
  *   If idx does not have an SSAASSIGN, it means idx is a WITHID.
  *   If so, we will visit here again, after extrema have been
@@ -1546,7 +1479,7 @@ AWLFprf (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (isPrfArg1AttachIntersect (arg_node))) {
-        INFO_AWLFOLDABLEFOLDEEPART (arg_info)
+        INFO_AWLFOLDABLEPRODUCERWLPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }

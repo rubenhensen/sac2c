@@ -735,9 +735,9 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        SCSprf_prod_matches_prod_shape_VxA, NULL, NULL, SAAdim_cc_inherit,
        SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
-  PRF (mesh_VxVxV, (PA_V, PA_V, PA_V), 3, XXX, NOSIMD, NTCCTprf_mesh_VxVxV, NULL,
-       COMPprfNoop, NULL, SCCFprf_mesh_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL,
-       0, NULL, NULL, TEone, NULL, NULL),
+  PRF (mesh_VxVxV, (PA_V, PA_V, PA_V), 3, MESH, NOSIMD, NTCCTprf_mesh_VxVxV, NULL,
+       COMPprfOp_VxVxV, NULL, SCCFprf_mesh_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Functions to definine generic functions on udts

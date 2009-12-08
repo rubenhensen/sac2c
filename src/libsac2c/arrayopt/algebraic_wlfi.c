@@ -98,6 +98,8 @@
 #include "check.h"
 #include "ivextrema.h"
 #include "phase.h"
+#include "namespaces.h"
+#include "deserialize.h"
 
 /** <!--********************************************************************-->
  *
@@ -198,9 +200,13 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
     arg_info = MakeInfo (arg_node);
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
+    DSinitDeserialize (global.syntax_tree);
+
     TRAVpush (TR_awlfi);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    DSfinishDeserialize (global.syntax_tree);
 
     arg_info = FreeInfo (arg_info);
 
@@ -301,14 +307,13 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
  *                                      node *foldeepart, int boundnum,
- *                                      node *ivminmax,
- *                                      node *genshpavis)
+ *                                      node *ivminmax)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
  *        a single foldeeWL partition with folderWL index set, of the form:
  *
  *           iv' = (k*iv) + ivoffset;
- *           sel( iv', foldeeWL)
+ *           z = sel( iv', foldeeWL)
  *
  *        We determine the intersection of the folderWL iv'
  *        index set with the foldeeWL's partition bounds this way:
@@ -330,7 +335,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *           d  = _sub_VxV_( xl, yl);
  *           zero = 0;
  *           p = _gt_VxS_( d, zero);
- *           intlo = _mesh_( p, xl, yl);
+ *           p0intlo = _mesh_( p, xl, yl);
  *           )
  *
  *          ( Similar treatment for _min_VxV_ as above:
@@ -339,16 +344,36 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *          yh = GENERATOR_BOUND2( foldee);
  *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
- *          inthi = _mesh_( p', xh, yh);
+ *          p0inthi = _mesh_( p', xh, yh);
  *          )
  *
- *          iv'' = _attachextrema_(iv', intlo, inthi);
- *          sel( iv'', foldeeWL)
+ *          iv'' = _attachextrema_(iv',
+ *                                 p0bound1, p0bound2, p0intlo, p0inthi, p0int,
+ *                                 p1bound1, p1bound2, p1intlo, p1inthi, p1int,
+ *                                 ...);
+ *          z = sel( iv'', foldeeWL)
  *
  *        where int1 evaluates to the lower bound of the intersection,
- *        and   int2 evaluates to the upper bound of the intersection.
+ *        and   int2 evaluates to the upper bound of the intersection
+ *        and p0, p1... are the partitions of the foldeeWL.
+ *
+ *
  *        NB. ALL lower bounds preceed all upper bounds in the
  *            _attach_extrema_ arguments.
+ *
+ *        NB. We need the foldeeWL partition bounds for at least
+ *            two reasons: a foldeeWL partition may be split
+ *            between the time we build this code and the time
+ *            we look at the answer. When we find a potential
+ *            hit, we have to go look up the partition bounds
+ *            in the foldeeWL again, to ensure that the requisite
+ *            partition still exists. Also, even if the partitions
+ *            remain unchanged in size, their order may be
+ *            shuffled, so we have to search for the right one.
+ *
+ *        NB. The null intersect computation is required so that
+ *            we can distinguish it from non-null intersects,
+ *             for the cases where cube slicing will be required.
  *
  * @params arg_node: the _sel_VxA_( idx, foldeeWL)
  * @params arg_info.
@@ -366,18 +391,13 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 {
     node *boundee;
     node *folderpart;
-    node *pexpr;
     node *idxavis;
     node *idxassign;
     node *ivid;
     node *resavis;
     node *boundeeid;
-    node *pid;
-    node *pavis;
-    node *subexpr;
-    node *expnm;
-    node *szeroid;
-    node *subid;
+    node *fncall;
+    char *fun;
     int shp;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
@@ -390,6 +410,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 
     boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
                               : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
+    fun = (boundnum == 1) ? "partitionIntersectMax" : "partitionIntersectMin";
 
     DBUG_ASSERT (N_id == NODE_TYPE (boundee),
                  "IntersectBoundsBuilderOne expected N_id WL-generator boundee");
@@ -397,29 +418,54 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
     ivid = TBmakeId (ivminmax);
     boundeeid = TBmakeId (ID_AVIS (boundee));
 
-    subexpr = TCmakePrf2 (F_sub_VxV, ivid, boundeeid);
-    subid = TBmakeId (
-      AWLFIflattenExpression (subexpr, &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNS (arg_info),
-                              TYeliminateAKV (AVIS_TYPE (ID_AVIS (boundee)))));
-
-    szeroid
-      = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info));
-
-    pexpr = TCmakePrf2 ((boundnum == 1) ? F_gt_VxS : F_lt_VxS, subid, szeroid);
-
+    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
+                                TCcreateExprsChainFromAvises (2, idxavis, ivminmax));
     shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (boundee))));
-    pavis = AWLFIflattenExpression (pexpr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_bool),
-                                               SHcreateShape (1, shp)));
-    pid = TBmakeId (pavis);
-
-    expnm = TCmakePrf3 (F_mesh_VxVxV, pid, DUPdoDupNode (ivid), DUPdoDupNode (boundeeid));
-
-    resavis = AWLFIflattenExpression (expnm, &INFO_VARDECS (arg_info),
+    resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
-                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (boundeeid))));
+                                      TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                 SHcreateShape (1, shp)));
+
+    DBUG_RETURN (resavis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IntersectNullComputationBuilder( node *idxavismin,
+ *                                            node *idxavismax,
+ *                                            node *bound1, node *bound2,
+ *                                            info *arg_info)
+ *
+ * @brief:  Emit symbiotic expression to determine if intersection
+ *          of index vector set and partition bounds is null.
+ *
+ * @params: idxavismin: AVIS_MINVAL( folderWL partition index vector)
+ * @params: idxavismax: AVIS_MAXVAL( folderWL partition index vector)
+ * @params: bound1: GENERATOR_BOUND1 of foldeeWL partition.
+ * @params: bound2: GENERATOR_BOUND2 of foldeeWL partition.
+ * @params: arg_info: your basic arg_info node
+ *
+ * @result: N_avis node of generated computation's boolean result.
+ *
+ *****************************************************************************/
+
+static node *
+IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound1,
+                                 node *bound2, info *arg_info)
+{
+    node *fncall;
+    node *resavis;
+
+    DBUG_ENTER ("IntersectNullComputationBuilder");
+
+    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersectNull",
+                                TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
+                                                              ID_AVIS (bound1),
+                                                              ID_AVIS (bound2)));
+
+    resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info),
+                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (bound1))));
 
     DBUG_RETURN (resavis);
 }
@@ -442,9 +488,11 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
  * @params arg_info.
  * @params boundnum: 1 for bound1,        2 for bound2
  * @params idxavis: the N_avis of the index vector used by the sel() operation.
- * @return An N_exprs node containing the (two * # foldee partitions)
+ * @return An N_exprs node containing the ( 2 * # foldee partitions)
  *         intersect expressions, in the form:
- *              p0 lb, p0 up, p1 lb, p1 ub,...
+ *           p0bound1, p0bound2, p0intlo, p0inthi, p0nullint,
+ *           p1bound1, p1bound2, p1intlo, p1inthi, p1nullint,
+ *           ...
  *
  *****************************************************************************/
 
@@ -456,6 +504,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
     node *foldeeassign;
     node *foldeewl;
     node *curavis;
+    node *g1;
+    node *g2;
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
@@ -464,12 +514,24 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
 
     partn = WITH_PART (foldeewl);
     while (NULL != partn) {
+        g1 = GENERATOR_BOUND1 (PART_GENERATOR (partn));
+        g2 = GENERATOR_BOUND2 (PART_GENERATOR (partn));
+        expn = TCappendExprs (expn, TBmakeExprs (DUPdoDupNode (g1), NULL));
+        expn = TCappendExprs (expn, TBmakeExprs (DUPdoDupNode (g2), NULL));
+
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 1,
                                              AVIS_MINVAL (idxavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 2,
                                              AVIS_MAXVAL (idxavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
+        curavis
+          = IntersectNullComputationBuilder (AVIS_MINVAL (idxavis), AVIS_MAXVAL (idxavis),
+                                             g1, g2, arg_info);
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
         partn = PART_NEXT (partn);
     }
 
