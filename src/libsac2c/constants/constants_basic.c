@@ -875,6 +875,12 @@ COaST2Constant (node *n)
             new_co = COmakeConstant (T_int, SHmakeShape (0), element);
             break;
 
+        case N_numbyte:
+            element = (char *)MEMmalloc (sizeof (char));
+            *((char *)element) = NUMBYTE_VAL (n);
+            new_co = COmakeConstant (T_byte, SHmakeShape (0), element);
+            break;
+
         case N_double:
             element = (double *)MEMmalloc (sizeof (double));
             *((double *)element) = DOUBLE_VAL (n);
@@ -960,6 +966,7 @@ COisConstant (node *n)
     if (n != NULL) {
         switch (NODE_TYPE (n)) {
         case N_num:
+        case N_numbyte:
         case N_double:
         case N_float:
         case N_bool:

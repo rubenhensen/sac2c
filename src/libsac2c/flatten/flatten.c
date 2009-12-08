@@ -506,20 +506,20 @@ FLATexprs (node *arg_node, info *arg_info)
      */
     switch (INFO_FLAT_CONTEXT (arg_info)) {
     case CT_ap:
-        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
-                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
-                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
-                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
-                    || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numbyte)
+                    || (NODE_TYPE (expr) == N_float) || (NODE_TYPE (expr) == N_double)
+                    || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
+                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_return:
-        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
-                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
-                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
-                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
-                    || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numbyte)
+                    || (NODE_TYPE (expr) == N_float) || (NODE_TYPE (expr) == N_double)
+                    || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
+                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_normal:
         abstract = ((NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
