@@ -660,20 +660,27 @@ SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-relatVS (node *arg_node, info *arg_info, constant *(*fn) (constant *, constant *))
+relatVS (node *arg_node, info *arg_info, constant *(*fn) (constant *, constant *),
+         bool minmax)
 {
     node *res = NULL;
+
+    DBUG_ENTER ("relatVS");
+
+#define RELMIN FALSE
+#define RELMAX TRUE
+
+#ifdef BROKEN
     pattern *pat;
     constant *arg1c = NULL;
     constant *arg2c = NULL;
     constant *z;
-    node *arg1min;
-
-    DBUG_ENTER ("relatVS");
+    node *arg1ex;
 
     pat = PMconst (1, PMAgetVal (&arg1c));
 
-    arg1min = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+    arg1ex = minmax ? AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (arg_node)))
+                    : AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != arg1min) {
         arg1min = LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (arg1min)));
         DBUG_ASSERT (NULL != arg1min, "AVIS_SSAASSIGN missing!");
@@ -681,10 +688,9 @@ relatVS (node *arg_node, info *arg_info, constant *(*fn) (constant *, constant *
     }
     arg2c = COaST2Constant (PRF_ARG2 (arg_node));
 
-    if ((PMmatchFlatSkipExtrema (pat, arg1min)) && (NULL != arg2c)) {
-        z = (*fn) (arg1c, arg2c);
-        res = COconstant2AST (z);
-        z = COfreeConstant (z);
+    if ((PMmatchFlatSkipExtrema (pat, arg1min)) && (NULL != arg2c)
+        && (*fn) (arg1c, arg2c)) {
+        res = allzeros
     }
 
     arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
@@ -693,6 +699,8 @@ relatVS (node *arg_node, info *arg_info, constant *(*fn) (constant *, constant *
         FREEdoFreeTree (arg1min);
     }
     pat = PMfree (pat);
+
+#endif // BROKEN
 
     DBUG_RETURN (res);
 }
@@ -729,6 +737,10 @@ SAACFprf_lt_SxV (node *arg_node, info *arg_info)
  *
  * @fn node *SAACFprf_lt_VxS( node *arg_node, info *arg_info)
  *
+ * @brief:  If AVIS_MAXVAL(V) < S, return:
+ *
+ *          genarray( shape(V), TRUE);
+ *
  *****************************************************************************/
 node *
 SAACFprf_lt_VxS (node *arg_node, info *arg_info)
@@ -737,7 +749,7 @@ SAACFprf_lt_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SAACFprf_lt_VxS");
 
-    res = relatVS (arg_node, arg_info, COlt);
+    res = relatVS (arg_node, arg_info, COlt, RELMAX);
 
     DBUG_RETURN (res);
 }
@@ -788,6 +800,10 @@ SAACFprf_le_SxV (node *arg_node, info *arg_info)
  *
  * @fn node *SAACFprf_le_VxS( node *arg_node, info *arg_info)
  *
+ * @brief:  If AVIS_MAXVAL(V) <= S, return:
+ *
+ *          genarray( shape(V), TRUE);
+ *
  *****************************************************************************/
 node *
 SAACFprf_le_VxS (node *arg_node, info *arg_info)
@@ -796,7 +812,7 @@ SAACFprf_le_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SAACFprf_le_VxS");
 
-    res = relatVS (arg_node, arg_info, COle);
+    res = relatVS (arg_node, arg_info, COle, RELMAX);
 
     DBUG_RETURN (res);
 }
@@ -847,6 +863,10 @@ SAACFprf_ge_SxV (node *arg_node, info *arg_info)
  *
  * @fn node *SAACFprf_ge_VxS( node *arg_node, info *arg_info)
  *
+ * @brief:  If AVIS_MINVAL(V) >= S, return:
+ *
+ *          genarray( shape(V), TRUE);
+ *
  *****************************************************************************/
 node *
 SAACFprf_ge_VxS (node *arg_node, info *arg_info)
@@ -855,7 +875,7 @@ SAACFprf_ge_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SAACFprf_ge_VxS");
 
-    res = relatVS (arg_node, arg_info, COge);
+    res = relatVS (arg_node, arg_info, COge, RELMIN);
 
     DBUG_RETURN (res);
 }
@@ -906,6 +926,10 @@ SAACFprf_gt_SxV (node *arg_node, info *arg_info)
  *
  * @fn node *SAACFprf_gt_VxS( node *arg_node, info *arg_info)
  *
+ * @brief:  If AVIS_MINVAL(V) > S, return:
+ *
+ *          genarray( shape(V), TRUE);
+ *
  *****************************************************************************/
 node *
 SAACFprf_gt_VxS (node *arg_node, info *arg_info)
@@ -914,7 +938,7 @@ SAACFprf_gt_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SAACFprf_gt_VxS");
 
-    res = relatVS (arg_node, arg_info, COgt);
+    res = relatVS (arg_node, arg_info, COgt, RELMIN);
 
     DBUG_RETURN (res);
 }
