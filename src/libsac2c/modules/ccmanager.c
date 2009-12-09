@@ -127,7 +127,9 @@ AddSacLibs (str_buf *buffer)
     }
 
     if (global.mtmode == MT_none) {
-        SBUFprint (buffer, "-lsac_seq ");
+        SBUFprint (buffer, "-lsac_seq");
+        SBUFprint (buffer, global.config.lib_variant);
+        SBUFprint (buffer, " ");
     } else {
         SBUFprint (buffer, "-lsac_mt -lpthread");
     }

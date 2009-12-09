@@ -1941,6 +1941,8 @@ MakeFunApArgIdsNt (node *ids)
 
     if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_FUNPARAM) {
         id = TCmakeIdCopyString ("FPA");
+    } else if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_THREADPARAM) {
+        id = TCmakeIdCopyString ("FTA");
     } else {
         id = TCmakeIdCopyString ("FAG");
     }
@@ -1992,6 +1994,8 @@ MakeFunApArgIdNt (node *id)
 
     if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_FUNPARAM) {
         st = TCmakeIdCopyString ("FPA");
+    } else if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_THREADPARAM) {
+        st = TCmakeIdCopyString ("FTA");
     } else {
         st = TCmakeIdCopyString ("FAG");
     }
@@ -2017,8 +2021,6 @@ MakeFunApArgIdNtThread (node *id)
 
     if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_THREADPARAM) {
         st = TCmakeIdCopyString ("TPA");
-    } else if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_FUNPARAM) {
-        st = TCmakeIdCopyString ("FTA");
     } else {
         st = TCmakeIdCopyString ("TAG");
     }
@@ -2115,10 +2117,29 @@ MakeFunApArgs (node *ap)
                                                       exprs));
                 }
             } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
-                exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG", TCmakeIdCopyString ("FAG"),
+                if (!FUNDEF_ISTHREADFUN (fundef)) {
+                    if (TYgetMutcUsage (
+                          OBJDEF_TYPE (GLOBOBJ_OBJDEF (EXPRS_EXPR (argtab->ptr_in[i]))))
+                        == MUTC_US_THREADPARAM) {
+                        exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG",
+                                                         TCmakeIdCopyString ("FAG"),
+                                                         DUPdoDupNode (EXPRS_EXPR (
+                                                           argtab->ptr_in[i]))),
+                                             icm_args);
+                    } else {
+                        exprs = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG",
+                                                         TCmakeIdCopyString ("TFA"),
+                                                         DUPdoDupNode (EXPRS_EXPR (
+                                                           argtab->ptr_in[i]))),
+                                             icm_args);
+                    }
+                } else {
+                    exprs
+                      = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG", TCmakeIdCopyString ("TAG"),
                                                  DUPdoDupNode (
                                                    EXPRS_EXPR (argtab->ptr_in[i]))),
                                      icm_args);
+                }
                 exprs = TBmakeExprs (TCmakeIdCopyString (
                                        GetBaseTypeFromExpr (argtab->ptr_in[i])),
                                      exprs);

@@ -12,7 +12,7 @@
  * can be called on N_module               |   -----   |  y  |       |
  * can be called on N_fundef               |   -----   |  y  |       |
  * expects LaC funs                        |   -----   |  n  |       |
- * follows N_ap to LaC funs                |   -----   | n/a |       |
+ * follows N_ap to LaC funs                |   -----   |  y  |       |
  * ============================================================================
  * deals with GLF properly                 |    yes    |  y  |       |
  * ============================================================================
@@ -39,6 +39,7 @@
  * =============================
  * Have a call to a thread fun.
  * Have with3
+ * Is !local or is exported or is provided or IsObjInitFun
  *
  * @ingroup tt
  *
@@ -180,7 +181,10 @@ TFTfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("TFTfundef");
 
     /* If this is a thread fun then rember in info */
-    if (FUNDEF_ISTHREADFUN (arg_node)) {
+    if (FUNDEF_ISTHREADFUN (arg_node) || FUNDEF_ISEXPORTED (arg_node)
+        || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISOBJINITFUN (arg_node)
+        || !FUNDEF_ISLOCAL (arg_node)) {
+        FUNDEF_ISTHREADFUN (arg_node) = TRUE;
         INFO_THREAD (arg_info) = TRUE;
     } else {
         /* If we have not traversed this fun before update its thread status */

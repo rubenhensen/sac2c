@@ -151,6 +151,12 @@ static char *nt_mutc_usage_string_init[] = {
 #undef NTIFstr
 };
 
+static const char *backend_string[] = {
+#define BACKENDstring(string) string,
+#include "backends.mac"
+#undef BACKENDstring
+  "UNKNOWN"};
+
 static const zipcvfunptr zipcv_plus_init[] = {
 #define TYP_IFzipcv(fun) fun##Plus
 #include "type_info.mac"
@@ -554,13 +560,16 @@ GLOBsetupBackend (void)
 {
     DBUG_ENTER ("GLOBsetupBackend");
 
-    if (STReq (global.config.backend, "C99")) {
+    if (STReq (global.config.backend, "")) {
         global.backend = BE_c99;
-    } else if (STReq (global.config.backend, "muTC")) {
-        global.backend = BE_mutc;
-    } else if (STReq (global.config.backend, "Cuda")) {
-        global.backend = BE_cuda;
-    } else {
+    }
+#define BACKEND(type, string)                                                            \
+    else if (STReqci (global.config.backend, string))                                    \
+    {                                                                                    \
+        global.backend = type;                                                           \
+    }
+#include "backends.mac"
+    else {
         CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
     }
 

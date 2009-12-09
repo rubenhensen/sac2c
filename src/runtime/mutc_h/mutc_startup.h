@@ -25,8 +25,7 @@
     SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \
-    SAC_MUTC_SAC_SVP_IO_PUTN                                                             \
-    SAC_MUTC_BENCHMARK
+    SAC_MUTC_SAC_SVP_IO_PUTN
 
 #endif
 
@@ -72,6 +71,7 @@
     } while (0)
 #endif
 
+#if 0
 #if SAC_MUTC_MACROS
 struct s_interval *sac_benchmark_intervals;
 static int sac_benchmark_count;
@@ -98,6 +98,20 @@ static int sac_benchmark_count;
         mtperf_free_intervals (sac_benchmark_intervals);                                 \
     }                                                                                    \
     sl_enddef
+#else
+#define SAC_MUTC_SAC_MAIN                                                                \
+    sl_def (sac_main, void)                                                              \
+    {                                                                                    \
+        SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
+        SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
+        SAC_NOTHING ()                                                                   \
+        SAC_COMMANDLINE_SET (0, NULL);                                                   \
+        sl_create (, , , , , , , SACwf__MAIN__main,                                      \
+                   SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
+        sl_sync ();                                                                      \
+    }                                                                                    \
+    sl_enddef
+#endif
 
 #define SAC_MUTC_T_MAIN                                                                  \
     sl_def (t_main, void)                                                                \

@@ -871,7 +871,11 @@ typedef struct GENLIB_FLAGS_T {
 #include "flags.mac"
 } genlib_flags_t;
 
-typedef enum { BE_c99, BE_mutc, BE_cuda } backend_t;
+typedef enum {
+#define BACKENDtype(type) type,
+#include "backends.mac"
+    BE_unknown
+} backend_t;
 
 /*
  * type of traversal functions

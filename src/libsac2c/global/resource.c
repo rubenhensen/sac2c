@@ -48,6 +48,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "types.h"
 #include "dbug.h"
@@ -150,6 +151,44 @@ static struct {
 
   {"", 0, NULL},
 };
+
+/** <!--********************************************************************-->
+ *
+ * @fn void RSCprintConfigEntry( char *config)
+ *
+ * @brief Print out a single entry from the config file ( global.config. ...)
+ *        where the entry is named 'config'
+ *
+ *****************************************************************************/
+void
+RSCprintConfigEntry (char *config)
+{
+    int i = 0;
+    DBUG_ENTER ("printConfigEntry");
+
+    for (i = 0; i < INT_MAX; i++) {
+        if (resource_table[i].tag == 0) {
+            DBUG_ASSERT ((0 == 1), "Unknown config entry");
+            break; /* end of list */
+        }
+        if (STReq (resource_table[i].name, config)) {
+            switch (resource_table[i].tag) {
+            case str:
+                printf ("%s\n", *((char **)resource_table[i].store));
+                break;
+            case num:
+                printf ("%d\n", *((int *)resource_table[i].store));
+                break;
+            default:
+                DBUG_ASSERT ((0 == 1), "Unknown type of config entry");
+                break;
+            }
+            break;
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*****************************************************************************
  *

@@ -589,9 +589,9 @@ GLOBAL (bool, makelibdeps, FALSE)
  * Don't actually compile, but infer extended module dependencies.
  */
 
-GLOBAL (bool, makelibvariant, FALSE)
+GLOBAL (char *, printConfig, NULL)
 /*
- * Don't actually compile, but print lib_variant
+ * Don't actually compile, but print an entry from the config file
  */
 
 GLOBAL (bool, gen_cccall, FALSE)
@@ -797,6 +797,7 @@ GLOBAL (char **, nt_mutc_usage_string, nt_mutc_usage_string_init)
  * array class and array uniqueness properties.
  */
 
+GLOBAL (const char **, backend_string, backend_string)
 /*
  * Primitive zip function tables, previously defined in zipcv.c
  */

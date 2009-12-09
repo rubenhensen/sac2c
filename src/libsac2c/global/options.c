@@ -34,6 +34,7 @@
 #include "stringset.h"
 #include "phase_options.h"
 #include "phase_info.h"
+#include "resource.h"
 
 /******************************************************************************
  *
@@ -94,8 +95,8 @@ OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ("OPTcheckOptionConsistency");
 
-    if (global.makelibvariant) {
-        printf ("%s", global.config.lib_variant);
+    if (global.printConfig) {
+        RSCprintConfigEntry (global.printConfig);
         exit (0);
     }
 
@@ -272,6 +273,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
+
+    ARGS_OPTION ("C", global.printConfig = ARG);
 
     ARGS_OPTION_BEGIN ("check")
     {
@@ -533,7 +536,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("M", global.makedeps = TRUE);
     ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
-    ARGS_FLAG ("Mlib_variant", global.makelibvariant = TRUE);
 
     /* mutc options */
     ARGS_FLAG ("mutc_fun_threads", global.mutc_fun_as_threads = TRUE);

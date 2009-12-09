@@ -190,6 +190,9 @@ PrintGlobalSwitches ()
     case BE_cuda:
         fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
         break;
+    default:
+        DBUG_ASSERT (FALSE, "Unknown backend");
+        break;
     }
     fprintf (global.outfile, "\n");
 
@@ -725,31 +728,27 @@ GSCprintSACargCopyFreeStubs ()
 {
     DBUG_ENTER ("GSCprintSACargCopyFreeStubs");
 
-    if (global.backend != BE_mutc) {
-
-        if (global.backend != BE_cuda) {
-            fprintf (global.outfile,
-                     "/*\n"
-                     " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
-                     " */\n"
-                     "extern void SACARGfreeDataUdt( int, void *);\n"
-                     "extern void *SACARGcopyDataUdt( int, int, void *);\n"
-                     "void SACARGfreeDataUdt( int size, void *data) {};\n"
-                     "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
-                     "((void *) 0x0); } \n"
-                     "\n");
-        } else {
-            fprintf (global.outfile,
-                     "/*\n"
-                     " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
-                     " */\n"
-                     "extern \"C\" void SACARGfreeDataUdt( int, void *);\n"
-                     "extern \"C\" void *SACARGcopyDataUdt( int, int, void *);\n"
-                     "void SACARGfreeDataUdt( int size, void *data) {};\n"
-                     "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
-                     "((void *) 0x0); } \n"
-                     "\n");
-        }
+    if (global.backend != BE_cuda) {
+        fprintf (global.outfile, "/*\n"
+                                 " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                                 " */\n"
+                                 "extern void SACARGfreeDataUdt( int, void *);\n"
+                                 "extern void *SACARGcopyDataUdt( int, int, void *);\n"
+                                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                                 "void *SACARGcopyDataUdt( int type, int size, void "
+                                 "*data) { return ((void *) 0x0); } \n"
+                                 "\n");
+    } else {
+        fprintf (global.outfile,
+                 "/*\n"
+                 " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
+                 " */\n"
+                 "extern \"C\" void SACARGfreeDataUdt( int, void *);\n"
+                 "extern \"C\" void *SACARGcopyDataUdt( int, int, void *);\n"
+                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                 "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
+                 "((void *) 0x0); } \n"
+                 "\n");
     }
 
     DBUG_VOID_RETURN;

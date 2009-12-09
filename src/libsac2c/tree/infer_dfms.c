@@ -1573,10 +1573,12 @@ INFDFMSap (node *arg_node, info *arg_info)
              */
         } else {
             if ((ARG_ISREFERENCE (fundef_args))) {
+                node *avis;
                 DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
                              "Reference parameter must be a N_id node!");
 
                 decl = ID_DECL (EXPRS_EXPR (ap_args));
+                avis = ID_AVIS (EXPRS_EXPR (ap_args));
                 if ((NODE_TYPE (decl) == N_arg) && ((ARG_ISREFERENCE (decl)))) {
                     /*
                      * argument is used as reference parameter of the application,
@@ -1602,7 +1604,7 @@ INFDFMSap (node *arg_node, info *arg_info)
                                  FUNDEF_NAME (INFO_FUNDEF (arg_info)),
                                  FUNDEF_NAME (AP_FUNDEF (arg_node)),
                                  ID_NAME (EXPRS_EXPR (ap_args))));
-                    arg_info = DefinedVar (arg_info, decl);
+                    arg_info = DefinedVar (arg_info, avis);
                 }
             }
         }

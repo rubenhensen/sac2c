@@ -17,6 +17,31 @@
 
 /** <!--********************************************************************-->
  *
+ * @fn char *AddVariantToDotOFile( const char *file)
+ *
+ * @brief If the 'file' is a .o file add the lib_variant to its name
+ *        If not a .o file then just copy the name of the file
+ *
+ *****************************************************************************/
+static char *
+AddVariantToDotOFile (const char *file)
+{
+    char *res;
+    DBUG_ENTER ("AddVariantToDotOFile");
+
+    if (STRsuffix (".o", file)) {
+        char *name = STRsubStr (file, 0, STRlen (file) - 2);
+        res = STRcatn (3, name, global.config.lib_variant, ".o");
+        name = MEMfree (name);
+    } else {
+        res = STRcpy (file);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn char *BuildDepLibsStringMod( const char *lib,
  *                                  strstype_t kind,
  *                                  void *rest)
@@ -29,13 +54,13 @@ static void *
 BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 {
     char *result = NULL;
-    const char *select;
+    char *select;
 
     DBUG_ENTER ("BuildDepLibsStringMod");
 
     switch (kind) {
     case STRS_objfile:
-        select = lib;
+        select = AddVariantToDotOFile (lib);
         break;
     default:
         select = NULL;
@@ -44,9 +69,10 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 
     if ((rest != NULL) && (select != NULL)) {
         result = STRcatn (3, (char *)rest, " ", select);
+        select = MEMfree (select);
         rest = MEMfree (rest);
     } else if (select != NULL) {
-        result = STRcpy (select);
+        result = select;
     } else { /* rest != NULL */
         result = (char *)rest;
     }

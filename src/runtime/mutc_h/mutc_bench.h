@@ -1,44 +1,53 @@
 #ifndef _MUTC_BENCH_H_
 #define _MUTC_BENCH_H_
 
+#if SAC_MUTC_MACROS
 #define SAC_MUTC_BENCHMARK                                                               \
-    SAC_ND_DEF_FUN_BEGIN2 (benchStart, void)                                             \
+    struct bench {                                                                       \
+        int num;                                                                         \
+        struct s_interval interval;                                                      \
+    };                                                                                   \
+                                                                                         \
+    void benchStart (struct bench *interval)                                             \
     {                                                                                    \
-        mtperf_start_interval (sac_benchmark_intervals, sac_benchmark_count, -1, "");    \
+        mtperf_start_interval (interval->interval, 0, interval->num, "");                \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()                                                                \
-    SAC_ND_DEF_FUN_BEGIN2 (benchEnd, void)                                               \
+                                                                                         \
+    void benchEnd (struct bench *interval)                                               \
     {                                                                                    \
-        mtperf_finish_interval (sac_benchmark_intervals, sac_benchmark_count++);         \
+        mtperf_finish_interval (interval->interval, 0);                                  \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()                                                                \
-    SAC_ND_DEF_FUN_BEGIN2 (benchThis, void)                                              \
+                                                                                         \
+    void benchThis ()                                                                    \
     {                                                                                    \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()                                                                \
-    SAC_ND_DEF_FUN_BEGIN2 (benchPrint, void)                                             \
+                                                                                         \
+    void benchPrint (struct bench *interval)                                             \
     {                                                                                    \
-        mtperf_report_intervals (sac_benchmark_intervals, sac_benchmark_count,           \
-                                 REPORT_FIBRE);                                          \
+        mtperf_report_intervals (interval->interval, 1, REPORT_FIBRE);                   \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()                                                                \
-    SAC_ND_DEF_FUN_BEGIN2 (benchGetInterval, void, sl_parm (void **, intival),           \
-                           sl_parm (int, num))                                           \
+                                                                                         \
+    void benchGetInterval_i (struct bench **interval, int num)                           \
     {                                                                                    \
-        int *lnum = (int *)*intival;                                                     \
-        *lnum = malloc (sizeof (int));                                                   \
-        lnum[0] = num;                                                                   \
+        interval->interval = (struct bench *)malloc (sizeof (struct bench));             \
+        interval->num = num;                                                             \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()                                                                \
-    SAC_ND_DEF_FUN_BEGIN2 (benchDestroyInterval, void, sl_parm (void **, intival))       \
+                                                                                         \
+    void benchDestroyInterval (struct bench *intival)                                    \
     {                                                                                    \
+        free (*intival->interval);                                                       \
         free (*intival);                                                                 \
         return;                                                                          \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END ()
+    void benchCreate (int *a)                                                            \
+    {                                                                                    \
+        *a = 1;                                                                          \
+        return;                                                                          \
+    }
+#endif
 #endif

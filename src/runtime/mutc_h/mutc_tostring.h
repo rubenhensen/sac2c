@@ -175,7 +175,7 @@
                                                       T_SCO (GLO,                        \
                                                              T_USG (NON,                 \
                                                                     T_EMPTY))))))))),    \
-                     SAC_ND_GETVAR (                                                     \
+                     (char *)SAC_ND_GETVAR (                                             \
                        (ar,                                                              \
                         T_SHP (AUD,                                                      \
                                T_HID (NHD,                                               \
@@ -260,7 +260,7 @@
                                                      T_SCO (GLO,                         \
                                                             T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END (to_string)
+    SAC_ND_FUN_DEF_END2 ()
 
 #define SAC_STRING2ARRAY(array, string_arg)                                              \
     {                                                                                    \

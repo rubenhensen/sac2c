@@ -292,6 +292,7 @@ LIBPATH          :=  "$SAC2CBASE/lib:"
                      "$SACBASE/stdlib/modules/numerical/blas/lib:"
                      "$SACBASE/stdlib/modules/unibench/lib:"
                      "$SACBASE/stdlib/modules/auxiliary/lib:"
+                     "$SACBASE/stdlib/modules/mutc/lib:"
                      "$SACBASE/stdlib/world/mutc/lib:"
                      "$SACBASE/stdlib/world/system/lib:"
                      "$SACBASE/stdlib/world/stdio/lib:"
@@ -304,6 +305,7 @@ IMPPATH          :=  "$SACBASE/stdlib/modules/structures:"
                      "$SACBASE/stdlib/modules/numerical/blas:"
                      "$SACBASE/stdlib/modules/unibench:"
                      "$SACBASE/stdlib/modules/auxiliary:"
+                     "$SACBASE/stdlib/modules/mutc:"
                      "$SACBASE/stdlib/world/mutc:"
                      "$SACBASE/stdlib/world/system:"
                      "$SACBASE/stdlib/world/stdio:"
@@ -340,7 +342,7 @@ CACHE3_MSCA      :=  0
 target sl:
 
 BACKEND          :=  "muTC"
-CC               :=  "comslc seqc"
+CC               :=  "slc -b seqc"
 LD_DYNAMIC       :=  ""
 LIB_VARIANT      :=  "mutc-seqc"
 AR_CREATE        :=  "slar seqc cr"
@@ -351,14 +353,14 @@ target mutc::sl:
 
 target sl_ppp::sl:
 
-CC               :=  "comslc ppp"
+CC               :=  "slc -b ppp"
 LIB_VARIANT      :=  "mutc-ppp"
 AR_CREATE        :=  "slar ppp cr"
 RANLIB           :=  "slranlib ppp"
 
 target sl_ptl::sl:
 
-CC               :=  "comslc ptl"
+CC               :=  "slc -b ptl"
 LIB_VARIANT      :=  "mutc-ptl"
 AR_CREATE        :=  "slar ptl cr"
 RANLIB           :=  "slranlib ptl"
@@ -367,7 +369,7 @@ target sl_seqc::sl:
 
 target sl_utc::sl:
 
-CC               :=  "comslc utc0"
+CC               :=  "slc -b utc0"
 LIB_VARIANT      :=  "mutc-utc0"
 AR_CREATE        :=  "slar utc0 cr"
 RANLIB           :=  "slranlib utc0"

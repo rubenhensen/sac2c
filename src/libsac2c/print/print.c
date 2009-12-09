@@ -5011,9 +5011,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
             GSCprintFileHeader (syntax_tree);
             syntax_tree = TRAVdo (syntax_tree, arg_info);
 
-            if (global.backend != BE_mutc) {
-                GSCprintSACargCopyFreeStubs ();
-            }
+            GSCprintSACargCopyFreeStubs ();
 
             GSCprintMain ();
 

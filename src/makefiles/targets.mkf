@@ -248,7 +248,7 @@ runtime_mt_h           := mt mt_gen schedule
 
 runtime_mutc_h         := benchmark tls_malloc mutc mutc_world \
                           mutc_gen mutc_tostring \
-                          mutc_unin mutc_bench mutc_startup 
+                          mutc_unin mutc_startup 
 
 runtime_cuda_h         := cuda cuda_gen
 
@@ -282,18 +282,19 @@ libsacprelude_sourcedirs        := .
 #
 ###############################################################################
 
-libsac_targets           := libsac_seq.a libsac_seq.so \
-                            libsac_mt.a libsac_mt.so
-libsac_targetdir         := lib
+libsac_targets             := libsac_seq.a libsac_seq.so \
+                              libsac_mt.a libsac_mt.so
+libsac_targetdir           := lib
 
-libsac_subtarget_suffix  := .o
-libsac_defaultstyle      := prod
+libsac_subtarget_suffix    := .o
+libsac_defaultstyle        := prod
 
-libsac_extraclean_all    := 
-libsac_extraclean_devel  := 
-libsac_extraclean_prod   := 
+libsac_extraclean_all      := 
+libsac_extraclean_devel    := 
+libsac_extraclean_prod     := 
 
-libsac_sourcedirs        := essentials mt phm cachesim interface
+libsac_sourcedirs          := essentials mt phm cachesim interface
+libsac_sourcedirs_mutc_ppp := interface
 
 ###############################################################################
 

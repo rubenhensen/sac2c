@@ -130,6 +130,8 @@ PrintSpecialOptions (void)
       "                    for makefiles used by the standard library building\n"
       "                    process.\n"
       "\n"
+      "    -C <name>       Print out a configuration parameter\n"
+      "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
       "    any compilation steps.\n");

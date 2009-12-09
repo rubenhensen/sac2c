@@ -34,7 +34,13 @@ typedef long int SAC_HM_size_unit_t;
 #ifndef SAC_COMPILE_SACLIB
 #if !SAC_MUTC_MACROS
 
+#define muTC 1
+#if SAC_BACKEND != muTC
 #include <sys/types.h> /* typedef unsigned int size_t;  */
+#else
+#include "cstddef.h"
+#endif
+#undef muTC
 
 #endif
 #endif /* SAC_COMPILE_SACLIB */

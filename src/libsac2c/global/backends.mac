@@ -1,0 +1,19 @@
+#ifndef BACKENDtype
+#define BACKENDtype(type)
+#endif
+
+#ifndef BACKENDstring
+#define BACKENDstring(string)
+#endif
+
+#ifndef BACKEND
+#define BACKEND(type, string) BACKENDtype (type) BACKENDstring (string)
+#endif
+
+BACKEND (BE_mutc, "muTC")
+BACKEND (BE_c99, "c99")
+BACKEND (BE_cuda, "Cuda")
+
+#undef BACKENDtype
+#undef BACKENDstring
+#undef BACKEND

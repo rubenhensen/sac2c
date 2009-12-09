@@ -127,4 +127,4 @@
                                                      T_SCO (GLO,                         \
                                                             T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
-    SAC_ND_FUN_DEF_END (unin_double)
+    SAC_ND_FUN_DEF_END2 ()

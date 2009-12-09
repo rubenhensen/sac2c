@@ -28,7 +28,7 @@
  * Prototypes of functions
  *
  ******************************************************************************/
-
+extern void RSCprintConfigEntry (char *config);
 extern bool RSCparseResourceFile (char *file);
 
 extern inheritence_list_t *RSCmakeInheritenceListEntry (char *name,

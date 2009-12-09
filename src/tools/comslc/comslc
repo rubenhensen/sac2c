@@ -33,10 +33,10 @@ do
   shift
 done
 
-if [ "$output" == "" ]
-then
+#if [ "$output" == "" ]
+#then
     output=`basename $infile .c`
-fi
+#fi
 
 #gcc ${include} -E -P -o ${output}.sl ${infile}
 

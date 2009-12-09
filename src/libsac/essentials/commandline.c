@@ -7,7 +7,6 @@
  *
  */
 
-#include <stdio.h>
-
+#define NULL ((void *)0);
 char **SAC_commandline_argv = NULL;
 int SAC_commandline_argc = 0;

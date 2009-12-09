@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "filemgr.h"
 #include "handle_dots.h"
+#include "build.h"
 
 #include "sac.tab.h"
 
@@ -41,21 +42,38 @@ SPdoLocateSource (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+static char *
+CreateInfoMacroCommandLine ()
+{
+    char *res;
+
+    DBUG_ENTER ("CreateInfoMacroCommandLine");
+
+    res = STRcatn (3 * 4 + 1, " ", "-DSAC_REV=", build_rev, " ",
+                   "-DSAC_SREV=", build_srev, " ", "-DSAC_STYLE=", build_style, " ",
+                   "-DSAC_BACKEND=", global.backend_string[global.backend], " ");
+
+    DBUG_RETURN (res);
+}
+
 node *
 SPdoRunPreProcessor (node *syntax_tree)
 {
     int err;
     char *tmp, *cppcallstr;
+    char *define;
 
     DBUG_ENTER ("SPdoRunPreProcessor");
 
     global.filename = global.puresacfilename;
 
+    define = CreateInfoMacroCommandLine ();
+
     if (pathname == NULL) {
-        cppcallstr = STRcat (global.config.cpp_stdin,
-                             global.cpp_options == NULL ? " " : global.cpp_options);
+        cppcallstr = STRcatn (3, global.config.cpp_stdin, define,
+                              global.cpp_options == NULL ? " " : global.cpp_options);
     } else {
-        cppcallstr = STRcatn (4, global.config.cpp_file,
+        cppcallstr = STRcatn (5, global.config.cpp_file, define,
                               global.cpp_options == NULL ? " " : global.cpp_options, " ",
                               pathname);
 #if 0
