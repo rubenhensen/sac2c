@@ -2,12 +2,14 @@ module sacprelude;
 
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, prod, partitionSlicer, gridFiller
+#define muTC 1
 #if SAC_BACKEND != muTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
            unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap,
            isPartitionIntersectNull, 
            partitionIntersectMax, partitionIntersectMin
 #endif
+#undef muTC
 };
 
 external typedef SACarg;
@@ -164,6 +166,7 @@ inline int[.] partitionIntersectMin( int[.] idxmax, int[.] bound2)
   return(z);
 }
 
+#define muTC 1
 #if SAC_BACKEND!=muTC
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"
@@ -241,3 +244,4 @@ external bool isUdt( int base, SACarg a);
 
 
 #endif
+#undef muTC
