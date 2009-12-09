@@ -83,6 +83,8 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("gridFiller", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("partitionIntersectMax", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("partitionIntersectMin", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("isPartitionIntersectNull", SET_wrapperhead,
+                           global.preludename);
 
         DSfinishDeserialize (syntaxtree);
 

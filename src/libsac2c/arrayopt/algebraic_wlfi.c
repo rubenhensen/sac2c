@@ -404,12 +404,14 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
 
     folderpart = INFO_PART (arg_info);
 
-    /* The indexing expression used in the sel(iv, foldee). */
     idxavis = ID_AVIS (PRF_ARG1 (arg_node));
+    /* The indexing expression used in the sel(iv, foldee). */
     idxassign = AVIS_SSAASSIGN (idxavis);
 
     boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
                               : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
+    idxavis = (boundnum == 1) ? AVIS_MINVAL (idxavis) : AVIS_MAXVAL (idxavis);
+
     fun = (boundnum == 1) ? "partitionIntersectMax" : "partitionIntersectMin";
 
     DBUG_ASSERT (N_id == NODE_TYPE (boundee),

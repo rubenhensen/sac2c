@@ -1296,6 +1296,9 @@ SCCFprf_sel (node *arg_node, info *arg_info)
  *
  * result:
  *   If p is constant, then we perform the above substutition.
+ *   We also do a quick check to see if p is all TRUE or all FALSE.
+ *   If so, we don't care if x and y are N_array nodes or not.
+ *
  *   Otherwise, we do nothing.
  *
  *
@@ -1316,30 +1319,44 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCCFprf_mesh_VxVxV");
 
-    pat = PMprf (1, PMAisPrf (F_mesh_VxVxV), 3,
-                 PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
-                 PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)),
-                 PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)));
-
-    if ((PMmatchFlatSkipExtrema (pat, arg_node)) && COisConstant (p)) {
-        DBUG_PRINT ("CF", ("Replacing mesh result"));
-        /* p is constant, x and y are N_array nodes */
-        res = DUPdoDupTree (x); /* Handy starter for result */
-        FREEdoFreeTree (ARRAY_AELEMS (res));
-        p = ARRAY_AELEMS (p);
-        x = ARRAY_AELEMS (x);
-        y = ARRAY_AELEMS (y);
-        while (p != NULL) {
-            c = COaST2Constant (EXPRS_EXPR (p));
-            b = COisTrue (c, TRUE);
-            c = COfreeConstant (c);
-            curel = b ? EXPRS_EXPR (x) : EXPRS_EXPR (y);
-            z = TCappendExprs (z, TBmakeExprs (DUPdoDupTree (curel), NULL));
-            p = EXPRS_NEXT (p);
-            x = EXPRS_NEXT (x);
-            y = EXPRS_NEXT (y);
+    c = COaST2Constant (PRF_ARG1 (arg_node));
+    if (NULL != c) {
+        if (COisTrue (c, TRUE)) {
+            DBUG_PRINT ("CF", ("Replacing mesh result by x "));
+            res = DUPdoDupNode (PRF_ARG2 (arg_node));
+        } else if (COisFalse (c, TRUE)) {
+            DBUG_PRINT ("CF", ("Replacing mesh result by y"));
+            res = DUPdoDupNode (PRF_ARG3 (arg_node));
         }
-        ARRAY_AELEMS (res) = z;
+        c = COfreeConstant (c);
+    } else {
+        pat = PMprf (1, PMAisPrf (F_mesh_VxVxV), 3,
+                     PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
+                     PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)),
+                     PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)));
+
+        if ((PMmatchFlatSkipExtrema (pat, arg_node)) && COisConstant (p)) {
+            DBUG_PRINT ("CF", ("Replacing mesh result by mesh of x,y"));
+            /* p is constant, x and y are N_array nodes */
+            res = DUPdoDupTree (x); /* Handy starter for result */
+            FREEdoFreeTree (ARRAY_AELEMS (res));
+            p = ARRAY_AELEMS (p);
+            x = ARRAY_AELEMS (x);
+            y = ARRAY_AELEMS (y);
+            while (p != NULL) {
+                c = COaST2Constant (EXPRS_EXPR (p));
+                b = COisTrue (c, TRUE);
+                c = COfreeConstant (c);
+                curel = b ? EXPRS_EXPR (x) : EXPRS_EXPR (y);
+                z = TCappendExprs (z, TBmakeExprs (DUPdoDupTree (curel), NULL));
+                p = EXPRS_NEXT (p);
+                x = EXPRS_NEXT (x);
+                y = EXPRS_NEXT (y);
+            }
+            ARRAY_AELEMS (res) = z;
+        }
+        pat = PMfree (pat);
     }
+
     DBUG_RETURN (res);
 }

@@ -397,12 +397,12 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCnone, TEone, NULL, NULL),
 
   PRF (le_VxS, (PA_V, PA_S, PA_x), 2, LE, NOSIMD, NTCCTprf_rel_op_VxS, COle,
-       COMPprfOp_VxS, NULL, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVVxS,
-       ICCnone, TEone, NULL, NULL),
+       COMPprfOp_VxS, NULL, NULL, SAACFprf_le_VxS, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxS, ICCnone, TEone, NULL, NULL),
 
   PRF (le_VxV, (PA_V, PA_V, PA_x), 2, LE, NOSIMD, NTCCTprf_rel_op_VxV, COle,
-       COMPprfOp_VxV, SCSprf_lege, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
-       PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
+       COMPprfOp_VxV, SCSprf_lege, NULL, SAACFprf_le_VxS, SAAdim_is_1, SAAshp_of_arg1,
+       NULL, 0, PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
 
   PRF (lt_SxS, (PA_S, PA_S, PA_x), 2, LT, NOSIMD, NTCCTprf_rel_op_SxS, COlt,
        COMPprfOp_SxS, SCSprf_nlege, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
@@ -413,8 +413,8 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCnone, TEone, NULL, NULL),
 
   PRF (lt_VxS, (PA_V, PA_S, PA_x), 2, LT, NOSIMD, NTCCTprf_rel_op_VxS, COlt,
-       COMPprfOp_VxS, NULL, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVVxS,
-       ICCnone, TEone, NULL, NULL),
+       COMPprfOp_VxS, NULL, NULL, SAACFprf_lt_VxS, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxS, ICCnone, TEone, NULL, NULL),
 
   PRF (lt_VxV, (PA_V, PA_V, PA_x), 2, LT, NOSIMD, NTCCTprf_rel_op_VxV, COlt,
        COMPprfOp_VxV, SCSprf_nlege, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
@@ -429,12 +429,12 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCnone, TEone, NULL, NULL),
 
   PRF (ge_VxS, (PA_V, PA_S, PA_x), 2, GE, NOSIMD, NTCCTprf_rel_op_VxS, COge,
-       COMPprfOp_VxS, NULL, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVVxS,
-       ICCnone, TEone, NULL, NULL),
+       COMPprfOp_VxS, NULL, NULL, SAACFprf_ge_VxS, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxS, ICCnone, TEone, NULL, NULL),
 
   PRF (ge_VxV, (PA_V, PA_V, PA_x), 2, GE, NOSIMD, NTCCTprf_rel_op_VxV, COge,
-       COMPprfOp_VxV, SCSprf_lege, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
-       PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
+       COMPprfOp_VxV, SCSprf_lege, NULL, SAACFprf_ge_VxV, SAAdim_is_1, SAAshp_of_arg1,
+       NULL, 0, PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
 
   PRF (gt_SxS, (PA_S, PA_S, PA_x), 2, GT, NOSIMD, NTCCTprf_rel_op_SxS, COgt,
        COMPprfOp_SxS, SCSprf_nlege, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
@@ -445,8 +445,8 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        ICCnone, TEone, NULL, NULL),
 
   PRF (gt_VxS, (PA_V, PA_S, PA_x), 2, GT, NOSIMD, NTCCTprf_rel_op_VxS, COgt,
-       COMPprfOp_VxS, NULL, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVVxS,
-       ICCnone, TEone, NULL, NULL),
+       COMPprfOp_VxS, NULL, NULL, SAACFprf_gt_VxS, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxS, ICCnone, TEone, NULL, NULL),
 
   PRF (gt_VxV, (PA_V, PA_V, PA_x), 2, GT, NOSIMD, NTCCTprf_rel_op_VxV, COgt,
        COMPprfOp_VxV, SCSprf_nlege, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
@@ -740,7 +740,7 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
-   * Functions to definine generic functions on udts
+   * Functions to define generic functions on udts
    */
 
   PRF (nested_shape, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_nested_shape, NULL,

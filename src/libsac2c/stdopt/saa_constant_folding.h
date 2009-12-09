@@ -27,4 +27,13 @@ extern node *SAACFprf_shape_matches_dim (node *arg_node, info *arg_info);
 extern node *SAACFprf_non_neg_val_V (node *arg_node, info *arg_info);
 extern node *SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info);
 
+extern node *SAACFprf_lt_VxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_lt_VxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_le_VxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_le_VxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_ge_VxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_ge_VxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_gt_VxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_gt_VxS (node *arg_node, info *arg_info);
+
 #endif /* _SAC_saa_constantfolding_h_ */

@@ -10,7 +10,8 @@
  *
  *      SAACF uses function table prf_SAACF.
  *
- *   This module handles identities on reshape, replacing expressions of the form:
+ *   This module handles identities on reshape, replacing expressions of
+ *   the form:
  *
  *      z = reshape( shp, arr)
  *
@@ -21,6 +22,10 @@
  *   when it can prove that:
  *
  *     shp <==> shape( arr)
+ *
+ * This and other such optimizations in this file are driven
+ * by knowledge of AVIS_DIM, AVIS_SHAPE, AVIS_MINVAL, and AVIS_MAXVAL.
+ *
  *
  *
  *  @ingroup opt
@@ -53,6 +58,7 @@
 #include "shape.h"
 #include "ctinfo.h"
 #include "pattern_match.h"
+#include "free.h"
 
 /** <!--********************************************************************-->
  *
@@ -627,5 +633,302 @@ SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
         }
     }
 
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Code below here provides extrema-based CF for relationals
+ *
+ * The basic principle is that if the appropriate extremum of
+ * one argument is constant, and the other argument is constant,
+ * we MAY be able to provide an answer to the function.
+ *
+ * E.g., _ge_VxS( X, 0),
+ *       and AVIS_MINVAL(X) = [0], we can fold the operation into [ true].
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *relatVS( node *arg_node, info *arg_info,
+ *                         node* ( *fn)( node *, node *));
+ *
+ * @params: arg_node and arg_info, as usual, for N_prf node.
+ * @params: fn is the function to be used for comparison against zero,
+ *          e.g., COge() in the above example.
+ *
+ *****************************************************************************/
+static node *
+relatVS (node *arg_node, info *arg_info, constant *(*fn) (constant *, constant *))
+{
+    node *res = NULL;
+    pattern *pat;
+    constant *arg1c = NULL;
+    constant *arg2c = NULL;
+    constant *z;
+    node *arg1min;
+
+    DBUG_ENTER ("relatVS");
+
+    pat = PMconst (1, PMAgetVal (&arg1c));
+
+    arg1min = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+    if (NULL != arg1min) {
+        arg1min = LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (arg1min)));
+        DBUG_ASSERT (NULL != arg1min, "AVIS_SSAASSIGN missing!");
+        arg1min = TBmakeExprs (TBmakeId (IDS_AVIS (arg1min)), NULL);
+    }
+    arg2c = COaST2Constant (PRF_ARG2 (arg_node));
+
+    if ((PMmatchFlatSkipExtrema (pat, arg1min)) && (NULL != arg2c)) {
+        z = (*fn) (arg1c, arg2c);
+        res = COconstant2AST (z);
+        z = COfreeConstant (z);
+    }
+
+    arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
+    arg2c = (NULL != arg2c) ? COfreeConstant (arg2c) : arg2c;
+    if (NULL != arg1min) {
+        FREEdoFreeTree (arg1min);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_lt_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_lt_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_lt_SxS");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_lt_SxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_lt_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_lt_SxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_lt_VxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_lt_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_lt_VxS");
+
+    res = relatVS (arg_node, arg_info, COlt);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_lt_VxV( node *arg_node, info *arg_info)
+
+ *****************************************************************************/
+node *
+SAACFprf_lt_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_lt_VxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_le_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_le_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_le_SxS");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_le_SxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_le_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_le_SxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_le_VxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_le_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_le_VxS");
+
+    res = relatVS (arg_node, arg_info, COle);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_le_VxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_le_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_le_VxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_ge_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_ge_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_ge_SxS");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_ge_SxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_ge_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_ge_SxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_ge_VxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_ge_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_ge_VxS");
+
+    res = relatVS (arg_node, arg_info, COge);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_ge_VxV( node *arg_node, info *arg_info)
+
+ *****************************************************************************/
+node *
+SAACFprf_ge_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_ge_VxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_gt_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_gt_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_gt_SxS");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_gt_SxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_gt_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_gt_SxV");
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_gt_VxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_gt_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_gt_VxS");
+
+    res = relatVS (arg_node, arg_info, COgt);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_gt_VxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_gt_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_gt_VxV");
     DBUG_RETURN (res);
 }
