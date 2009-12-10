@@ -321,6 +321,8 @@ WLDPfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
+    DBUG_PRINT ("WLDP", ("traversing body of function %s", CTIitemName (arg_node)));
+
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
     }
@@ -383,6 +385,7 @@ WLDPwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLDPwith");
 
+    DBUG_PRINT ("WLDP", ("traversing With-Loop in line #%d ", NODE_LINE (arg_node)));
     /*
      * We have to stack the withloop info here to cater for nested withloops
      */
@@ -502,7 +505,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
 node *
 WLDPmodarray (node *arg_node, info *arg_info)
 {
-    node *sel_vec, *sel_array;
+    node *sel_vec, *sel_array, *sel_ap;
 
     DBUG_ENTER ("WLDPmodarray");
 
@@ -526,13 +529,12 @@ WLDPmodarray (node *arg_node, info *arg_info)
   }
   else{
 #endif
-    INFO_DEFEXPR (arg_info)
-      = TBmakeExprs (DSdispatchFunCall (NSgetNamespace (global.preludename), "sel",
-                                        TBmakeExprs (DUPdupIdsId (sel_vec),
-                                                     TBmakeExprs (DUPdoDupNode (
-                                                                    sel_array),
-                                                                  NULL))),
-                     INFO_DEFEXPR (arg_info));
+    sel_ap
+      = DSdispatchFunCall (NSgetNamespace (global.preludename), "sel",
+                           TBmakeExprs (DUPdupIdsId (sel_vec),
+                                        TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
+    DBUG_ASSERT (sel_ap != NULL, "missing instance of sel in sac-prelude");
+    INFO_DEFEXPR (arg_info) = TBmakeExprs (sel_ap, INFO_DEFEXPR (arg_info));
 #if 0
   }
 #endif

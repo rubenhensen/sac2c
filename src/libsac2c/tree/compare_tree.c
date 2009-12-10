@@ -145,6 +145,27 @@ TravLocal (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node* CMPTnumbyte(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numbyte node
+ *
+ ******************************************************************************/
+node *
+CMPTnumbyte (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumbyte");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMBYTE_VAL (arg_node) == NUMBYTE_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* CMPTnum(node *arg_node, info *arg_info)
  *
  * description:

@@ -532,6 +532,7 @@
       <traversal id="CMPT" name="Compare Tree Traversal" default="CMPTunknown" prefun="CMPTnodeType" include="compare_tree.h" >
         <travuser>
           <node name="Num" />
+          <node name="NumByte" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
@@ -1617,6 +1618,7 @@
           <node name="Bool" />
           <node name="Char" />
           <node name="Num" />
+          <node name="NumByte" />
           <node name="Float" />
           <node name="Double" />         
         </travuser>
@@ -1633,6 +1635,7 @@
           <node name="Bool" />
           <node name="Char" />
           <node name="Num" />
+          <node name="NumByte" />
           <node name="Float" />
           <node name="Double" />         
         </travuser>

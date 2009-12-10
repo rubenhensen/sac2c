@@ -337,6 +337,7 @@ MakeDimArg (node *arg)
 
     switch (NODE_TYPE (arg)) {
     case N_num:
+    case N_numbyte:
     case N_float:
     case N_double:
     case N_char:
@@ -377,6 +378,7 @@ MakeShapeArg (node *arg)
 
     switch (NODE_TYPE (arg)) {
     case N_num:
+    case N_numbyte:
     case N_float:
     case N_double:
     case N_char:
@@ -1478,6 +1480,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neg_S:
     case F_abs_S:
     case F_tob_S:
+    case F_toby_S:
     case F_toc_S:
     case F_toi_S:
     case F_tof_S:

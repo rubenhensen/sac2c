@@ -25,6 +25,7 @@ extern node *MSEwith (node *arg_node, info *arg_info);
 extern node *MSEbool (node *arg_node, info *arg_info);
 extern node *MSEchar (node *arg_node, info *arg_info);
 extern node *MSEnum (node *arg_node, info *arg_info);
+extern node *MSEnumbyte (node *arg_node, info *arg_info);
 extern node *MSEfloat (node *arg_node, info *arg_info);
 extern node *MSEdouble (node *arg_node, info *arg_info);
 extern node *MakeVectAvis (char *name, node *dim);

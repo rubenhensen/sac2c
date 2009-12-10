@@ -879,6 +879,7 @@ MSECONST (char)
 MSECONST (float)
 MSECONST (double)
 MSECONST (num)
+MSECONST (numbyte)
 
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->

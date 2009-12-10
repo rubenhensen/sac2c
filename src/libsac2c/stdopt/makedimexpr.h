@@ -24,6 +24,7 @@ extern node *MDEwith (node *arg_node, info *arg_info);
 extern node *MDEbool (node *arg_node, info *arg_info);
 extern node *MDEchar (node *arg_node, info *arg_info);
 extern node *MDEnum (node *arg_node, info *arg_info);
+extern node *MDEnumbyte (node *arg_node, info *arg_info);
 extern node *MDEfloat (node *arg_node, info *arg_info);
 extern node *MDEdouble (node *arg_node, info *arg_info);
 extern node *MakeScalarAvis (char *name);

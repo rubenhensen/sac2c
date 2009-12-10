@@ -672,6 +672,7 @@ MDECONST (char)
 MDECONST (float)
 MDECONST (double)
 MDECONST (num)
+MDECONST (numbyte)
 
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->

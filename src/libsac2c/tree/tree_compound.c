@@ -2440,6 +2440,9 @@ TCcreateZeroScalar (simpletype btype)
     case T_int:
         ret_node = TBmakeNum (0);
         break;
+    case T_byte:
+        ret_node = TBmakeNumbyte (0);
+        break;
     case T_float:
         ret_node = TBmakeFloat (0);
         break;

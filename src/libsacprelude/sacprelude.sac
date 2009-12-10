@@ -17,6 +17,7 @@ external typedef SACarg;
   #pragma copyfun "SACARGcopy"
 
 #define BUILT_IN( fun)    \
+fun( byte)                \
 fun( int)                 \
 fun( float)               \
 fun( double)              \
@@ -50,6 +51,7 @@ a zero( a[*] A)       \
   return( za);        \
 }
 
+ZERO( byte, 0b)
 ZERO( int, 0)
 ZERO( double, 0d)
 ZERO( float, 0f)

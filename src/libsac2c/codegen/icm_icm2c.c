@@ -257,6 +257,29 @@ GetNextString (char **ret, node *exprs)
 }
 
 static node *
+GetNextByte (char *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextByte");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numbyte), "wrong icm-arg: N_num expected");
+    (*ret) = NUMBYTE_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
 GetNextInt (int *ret, node *exprs)
 {
     node *expr;
@@ -376,6 +399,7 @@ GetNextAny (char **ret, node *exprs)
 {
     int ival;
     char cval;
+    char byval;
     bool bval;
     float fval;
     double dval;
@@ -412,6 +436,11 @@ GetNextAny (char **ret, node *exprs)
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
         exprs = GetNextInt (&ival, exprs);
         sprintf ((*ret), "%d", ival);
+        break;
+    case N_numbyte:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextByte (&byval, exprs);
+        sprintf ((*ret), "%d", byval);
         break;
     case N_char:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 5);

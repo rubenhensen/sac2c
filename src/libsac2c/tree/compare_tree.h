@@ -30,6 +30,7 @@ extern cmptree_t CMPTdoCompareTreeLUT (node *tree1, node *tree2, lut_t *lut);
 extern cmptree_t CMPTdoCompareTree (node *tree1, node *tree2);
 
 extern node *CMPTnum (node *arg_node, info *arg_info);
+extern node *CMPTnumbyte (node *arg_node, info *arg_info);
 extern node *CMPTchar (node *arg_node, info *arg_info);
 extern node *CMPTbool (node *arg_node, info *arg_info);
 extern node *CMPTfloat (node *arg_node, info *arg_info);
