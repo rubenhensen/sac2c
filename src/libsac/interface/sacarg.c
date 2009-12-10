@@ -168,7 +168,7 @@ SACARGcopy (SACarg *arg)
     return (SACARGnewReference (arg));
 }
 
-#define muTC
+#define muTC 1
 #if SAC_BACKEND == muTC
 #warning "SACARGcopyDataInternal not implimented"
 void *
