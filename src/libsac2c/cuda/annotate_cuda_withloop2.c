@@ -385,9 +385,11 @@ ACUWLap (node *arg_node, info *arg_info)
         /* The only function application allowed in a cudarizbale N_with
          * is mathematical functions. However, the check below is ugly
          * and a better way needs to be found. */
-        ns = FUNDEF_NS (AP_FUNDEF (arg_node)); /* ns could be NULL */
-        if (ns == NULL || !STReq (NSgetModule (ns), "Math")) {
-            INFO_CUDARIZABLE (arg_info) = FALSE;
+        if (!FUNDEF_ISLACFUN (fundef)) {
+            ns = FUNDEF_NS (AP_FUNDEF (arg_node)); /* ns could be NULL */
+            if (ns == NULL || !STReq (NSgetModule (ns), "Math")) {
+                INFO_CUDARIZABLE (arg_info) = FALSE;
+            }
         }
     }
 
