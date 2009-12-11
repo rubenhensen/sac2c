@@ -381,9 +381,9 @@ target cuda:
 
 BACKEND          :=  "Cuda"
 CC               :=  "nvcc"
-CCFLAGS          :=  "-Xcompiler -Wall -Xcompiler -Wno-unused"
+CCFLAGS          :=  "-Xcompiler -Wall -Xcompiler -Wno-unused "
                      "-Xcompiler -fno-builtin -Xcompiler -std=c99"
-CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/"
+CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"
 CCLINK           :=  "-lcutil -lcudart -lcublas"
 LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"

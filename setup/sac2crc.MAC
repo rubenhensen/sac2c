@@ -19,8 +19,8 @@ target MBair_32bit :
   target MBair_cuda::MBair_32bit::cuda :
 
   CCDIR :
-  = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/"
-    "-I/Developer/GPU\ Computing/C/common/inc"
+  = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
+    "-I/Developer/GPU\ Computing/C/common/inc "
     "-L/Developer/GPU\ Computing/C/lib" CCLINK :
   = "-lcutil_i386 -lcudart -lcublas" LD_PATH :
   = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
