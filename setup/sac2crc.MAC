@@ -1,41 +1,50 @@
+/*******************************************************************************
  *
  * Specific targets for APPLE machines
  *
  */
 
-target MBair_32bit:
+target MBair_32bit :
 
-CC               :=  "gcc-4.0"
-LDFLAGS          :=  "-m32"
-CCLINK           :=  "-m32"
-LIB_VARIANT      :=  "32-bit"
+  CC :
+  = "gcc-4.0" LDFLAGS :
+  = "-m32" CCLINK :
+  = "-m32" LIB_VARIANT :
+  = "32-bit"
 
-LD_DYNAMIC       :=  "gcc-4.0 -undefined suppress -flat_namespace -dynamiclib "
-                     "-install_name '@rpath/%libname%' "
+  LD_DYNAMIC :
+  = "gcc-4.0 -undefined suppress -flat_namespace -dynamiclib "
+    "-install_name '@rpath/%libname%' "
 
+  target MBair_cuda::MBair_32bit::cuda :
 
-target cuda_MBair::cuda::MBair_32bit:
+  CCDIR :
+  = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/"
+    "-I/Developer/GPU\ Computing/C/common/inc"
+    "-L/Developer/GPU\ Computing/C/lib" CCLINK :
+  = "-lcutil_i386 -lcudart -lcublas" LD_PATH :
+  = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
 
-CCDIR            := "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/"
-                    "-I/Developer/GPU\ Computing/C/common/inc"
-                    "-L/Developer/GPU\ Computing/C/lib"
-CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
-LD_PATH          :=  "-Xlinker -L%path% -Xlinker '-rpath %path%'"
+  target mpc7450 :
 
+  CACHE1_SIZE :
+  = 32 /* found at <http://e-www.motorola.com/> */
+  CACHE1_LINE :
+  = 32 /* found at <http://e-www.motorola.com/> */
+  CACHE1_ASSOC :
+  = 8 /* found at <http://e-www.motorola.com/> */
+  CACHE1_WRITEPOL :
+  = "default" CACHE1_MSCA :
+  = 0
 
-target mpc7450:
+  CACHE2_SIZE :
+  = 256 /* found at <http://e-www.motorola.com/> */
+  CACHE2_LINE :
+  = 32 /* found at <http://e-www.motorola.com/> */
+  CACHE2_ASSOC :
+  = 8 /* found at <http://e-www.motorola.com/> */
+  CACHE2_WRITEPOL :
+  = "default" CACHE2_MSCA :
+  = 0
 
-CACHE1_SIZE      :=  32           /* found at <http://e-www.motorola.com/> */
-CACHE1_LINE      :=  32           /* found at <http://e-www.motorola.com/> */
-CACHE1_ASSOC     :=  8            /* found at <http://e-www.motorola.com/> */
-CACHE1_WRITEPOL  :=  "default"
-CACHE1_MSCA      :=  0
-
-CACHE2_SIZE      :=  256          /* found at <http://e-www.motorola.com/> */
-CACHE2_LINE      :=  32           /* found at <http://e-www.motorola.com/> */
-CACHE2_ASSOC     :=  8            /* found at <http://e-www.motorola.com/> */
-CACHE2_WRITEPOL  :=  "default"
-CACHE2_MSCA      :=  0
-
-
-target powerbook_G4::mpc7450:
+  target powerbook_G4::mpc7450:
