@@ -2035,7 +2035,7 @@ NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
         } else {
-            res = TYcopyType (array2);
+            res = TYeliminateAKV (array2);
             res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
@@ -2083,7 +2083,7 @@ NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
         } else {
-            res = TYcopyType (array1);
+            res = TYeliminateAKV (array1);
             res = TYsetScalar (res, TYmakeSimpleType (T_bool));
         }
     }
