@@ -257,6 +257,23 @@ $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so: \
 #
 
 
+$(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*.a " \
+                 "($($(STYLE)_long) version) $(CROSS_FOR)"
+	$(HIDE) $(CROSS_AR) $@ $^
+	$(HIDE) $(CROSS_RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%.so: $(SUBTARGETS:.o=%.o)
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*.so " \
+                 "($($(STYLE)_long) version) $(CROSS_FOR)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(CROSS_LD_DYNAMIC)) -o $@ $^
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
 $(PROJECT_ROOT)/lib/libsac$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*.a " \
