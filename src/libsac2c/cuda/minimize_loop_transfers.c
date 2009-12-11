@@ -511,9 +511,12 @@ MLTRANfuncond (node *arg_node, info *arg_info)
          * application of the do-fun and the 'else' part is result computed
          * within the do-fun. */
         ssaassign = AVIS_SSAASSIGN (ID_AVIS (else_id));
-        if (ISDEVICE2HOST (ssaassign) && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
+        if ((ISDEVICE2HOST (ssaassign)
+             && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign))) {
+
             avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
             if (avis != ID_AVIS (else_id)) {
+
                 /* If the 'else' part is a host variable defined by <device2host>,
                  * it can be replaced by the corresponding device varaible. */
                 ID_AVIS (else_id) = avis;
@@ -532,6 +535,28 @@ MLTRANfuncond (node *arg_node, info *arg_info)
                 TYsetSimpleType (ids_scalar_type, CUh2dSimpleTypeConversion (
                                                     TYgetSimpleType (ids_scalar_type)));
             }
+        }
+        /* This branch is added to take care of the case when the else
+         * id is a argument of the function (See bug in loop14.sac)*/
+        else if (NODE_TYPE (AVIS_DECL (ID_AVIS (else_id))) == N_arg
+                 && CUisDeviceTypeNew (
+                      AVIS_TYPE (ARG_AVIS (AVIS_DECL (ID_AVIS (else_id)))))
+                 && !CUisDeviceTypeNew (AVIS_TYPE (ID_AVIS (then_id)))) {
+            ID_AVIS (else_id) = ARG_AVIS (AVIS_DECL (ID_AVIS (else_id)));
+
+            /* Also change the 'then' part and N_ids to device type variables */
+            AVIS_NAME (ID_AVIS (then_id)) = MEMfree (AVIS_NAME (ID_AVIS (then_id)));
+            AVIS_NAME (IDS_AVIS (let_ids)) = MEMfree (AVIS_NAME (IDS_AVIS (let_ids)));
+            AVIS_NAME (ID_AVIS (then_id)) = TRAVtmpVarName ("dev");
+            AVIS_NAME (IDS_AVIS (let_ids)) = TRAVtmpVarName ("dev");
+
+            then_scalar_type = TYgetScalar (AVIS_TYPE (ID_AVIS (then_id)));
+            TYsetSimpleType (then_scalar_type, CUh2dSimpleTypeConversion (
+                                                 TYgetSimpleType (then_scalar_type)));
+
+            ids_scalar_type = TYgetScalar (AVIS_TYPE (IDS_AVIS (let_ids)));
+            TYsetSimpleType (ids_scalar_type, CUh2dSimpleTypeConversion (
+                                                TYgetSimpleType (ids_scalar_type)));
         }
     }
     DBUG_RETURN (arg_node);
