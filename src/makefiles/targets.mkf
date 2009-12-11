@@ -259,7 +259,8 @@ runtime_cuda_h         := cuda cuda_gen
 #
 ###############################################################################
 
-libsacprelude_targets           := libsacpreludeTree.so libsacpreludeMod.a
+libsacprelude_targets           := libsacpreludeTree$(CROSS_VARIANT).so \
+                                   libsacpreludeMod$(CROSS_VARIANT).a
 libsacprelude_targetdir         := lib
 
 libsacprelude_subtarget_suffix  := .sac
@@ -282,19 +283,24 @@ libsacprelude_sourcedirs        := .
 #
 ###############################################################################
 
-libsac_targets             := libsac_seq.a libsac_seq.so \
-                              libsac_mt.a libsac_mt.so
+libsac_targets             := libsac$(CROSS_VARIANT).seq.a \
+                              libsac$(CROSS_VARIANT).seq.so \
+                              libsac$(CROSS_VARIANT).mt.a \
+                              libsac$(CROSS_VARIANT).mt.so
 libsac_targetdir           := lib
 
-libsac_subtarget_suffix    := .o
+libsac_subtarget_suffix    := $(CROSS_VARIANT).o
 libsac_defaultstyle        := prod
 
 libsac_extraclean_all      := 
 libsac_extraclean_devel    := 
 libsac_extraclean_prod     := 
 
+ifeq  (mutc-ppp, $(CROSS_VARIANT))
+libsac_sourcedirs          := interface
+else
 libsac_sourcedirs          := essentials mt phm cachesim interface
-libsac_sourcedirs_mutc_ppp := interface
+endif
 
 ###############################################################################
 
@@ -316,13 +322,17 @@ libsac_cachesim     := basic access_simple access_detailed
 #
 ###############################################################################
 
-libsacphm_targets           := libsacphm_seq.a libsacphm_seq.so \
-                               libsacphm_seq_diag.a libsacphm_seq_diag.so \
-                               libsacphm_mt.a libsacphm_mt.so \
-                               libsacphm_mt_diag.a libsacphm_mt_diag.so
+libsacphm_targets           := libsac$(CROSS_VARIANT)phm.seq.a \
+                               libsac$(CROSS_VARIANT)phm.seq.so \
+                               libsac$(CROSS_VARIANT)phm.seq.diag.a \
+                               libsac$(CROSS_VARIANT)phm.seq.diag.so \
+                               libsac$(CROSS_VARIANT)phm.mt.a \
+                               libsac$(CROSS_VARIANT)phm.mt.so \
+                               libsac$(CROSS_VARIANT)phm.mt.diag.a \
+                               libsac$(CROSS_VARIANT)phm.mt.diag.so
 libsacphm_targetdir         := lib
 
-libsacphm_subtarget_suffix  := .o
+libsacphm_subtarget_suffix  := $(CROSS_VARIANT).o
 libsacphm_defaultstyle      := prod
 
 libsacphm_extraclean_all    := 

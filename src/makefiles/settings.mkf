@@ -46,7 +46,7 @@ SETTINGS_DIAG          := -DDIAG
 
 LIBDIRS                := -L../../lib
 LIB_MAKETOOLS          := 
-LIB_TOOLS              := -lsac_seq
+LIB_TOOLS              := -lsac.seq
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
@@ -76,6 +76,33 @@ HEADER_ZIPPER          := $(PROJECT_ROOT)/src/bin/hzip
 
 FINGERPRINTER_CALL     := $(XSLTENGINE) $(XML_DIR)/ast2fingerprint.xsl \
                            $(XML_DIR)/ast.xml | $(FINGERPRINTER)
+
+
+################################################################################
+#
+# definitions for makefile CROSS compilation mechanism
+#
+
+ifdef CROSS
+  CROSS_TARGET     := -target $(CROSS)
+  CROSS_VARIANT    := $(shell $(SAC2C) $(CROSS_TARGET) -CLIB_VARIANT)
+  CROSS_CC         := $(shell $(SAC2C) $(CROSS_TARGET) -CCC)
+  CROSS_AR         := $(shell $(SAC2C) $(CROSS_TARGET) -CAR_CREATE)
+  CROSS_RANLIB     := $(shell $(SAC2C) $(CROSS_TARGET) -CRANLIB)
+  CROSS_LD_DYNAMIC := $(shell $(SAC2C) $(CROSS_TARGET) -CLD_DYNAMIC)
+  CROSS_FOR        := for $(CROSS_VARIANT)
+  CROSS_BACKEND    := $(shell $(SAC2C) $(CROSS_TARGET) -CBACKEND)
+
+  CC_FLAGS    = -DSAC_BACKEND=$(CROSS_BACKEND) $(CC_FLAGS)
+  CC_FLAGS_YY = -DSAC_BACKEND=$(CROSS_BACKEND)
+
+else
+
+  CROSS_CC         := $(CC_$($(STYLE)_cap))
+  CROSS_AR         := $(AR)
+  CROSS_RANLIB     := $(RANLIB)
+  CROSS_LD_DYNAMIC := $(LD_DYNAMIC)
+endif
 
 
 ################################################################################

@@ -111,27 +111,32 @@ AddSacLibs (str_buf *buffer)
     DBUG_ENTER ("AddSacLibs");
 
     if (global.optimize.dophm) {
+        SBUFprint (buffer, "-lsacphm");
+        SBUFprint (buffer, global.config.lib_variant);
+
         if (global.mtmode == MT_none) {
             if (global.runtimecheck.heap) {
-                SBUFprint (buffer, "-lsacphm_seq_diag ");
+                SBUFprint (buffer, ".seq.diag ");
             } else {
-                SBUFprint (buffer, "-lsacphm_seq ");
+                SBUFprint (buffer, ".seq ");
             }
         } else {
             if (global.runtimecheck.heap) {
-                SBUFprint (buffer, "-lsacphm_mt_diag ");
+                SBUFprint (buffer, ".mt.diag ");
             } else {
-                SBUFprint (buffer, "-lsacphm_mt ");
+                SBUFprint (buffer, ".mt ");
             }
         }
     }
 
     if (global.mtmode == MT_none) {
-        SBUFprint (buffer, "-lsac_seq");
+        SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
-        SBUFprint (buffer, " ");
+        SBUFprint (buffer, ".seq ");
     } else {
-        SBUFprint (buffer, "-lsac_mt -lpthread");
+        SBUFprint (buffer, "-lsac");
+        SBUFprint (buffer, global.config.lib_variant);
+        SBUFprint (buffer, ".mt -lpthread");
     }
 
     DBUG_VOID_RETURN;
