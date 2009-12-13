@@ -15,6 +15,9 @@
  *****************************************************************************/
 extern void SCSinitSymbolicConstantSimplification ();
 extern void SCSfinalizeSymbolicConstantSimplification ();
+extern node *MakeTrue (node *prfarg);
+extern node *MakeFalse (node *prfarg);
+extern simpletype GetBasetypeOfExpr (node *expr);
 
 extern node *SCSprf_tob_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toby_S (node *arg_node, info *arg_info);

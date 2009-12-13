@@ -140,7 +140,7 @@ SCSfinalizeSymbolicConstantSimplification ()
  *   identifier or an array node. returns NULL if no type can be computed.
  *
  *****************************************************************************/
-static simpletype
+simpletype
 GetBasetypeOfExpr (node *expr)
 {
     simpletype stype;
@@ -193,7 +193,7 @@ MakeZero (node *prfarg)
  * If prfarg is not AKS, we give up.
  *
  *****************************************************************************/
-static node *
+node *
 MakeFalse (node *prfarg)
 {
     constant *con;
@@ -221,7 +221,7 @@ MakeFalse (node *prfarg)
  * If prfarg is not AKS, we give up.
  *
  *****************************************************************************/
-static node *
+node *
 MakeTrue (node *prfarg)
 {
     constant *con;
