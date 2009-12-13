@@ -1211,3 +1211,45 @@ SAACFprf_gt_VxV (node *arg_node, info *arg_info)
 
     DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_saabind( node *arg_node, info *arg_info)
+ *
+ * @brief:  If PRF_ARG3 does not derive from an N_ap,
+ *          replace the _saabind_( dim, shp, val) by val.
+ *
+ *****************************************************************************/
+node *
+SAACFprf_saabind (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *dim;
+    node *shp;
+    node *val;
+    node *arg3rhs;
+    pattern *pat;
+
+    DBUG_ENTER ("SAACFprf_saabind");
+
+    pat = PMprf (1, PMAisPrf (F_saabind), 3, PMvar (1, PMAgetNode (&dim), 0),
+                 PMvar (1, PMAgetNode (&shp), 0), PMvar (1, PMAgetNode (&val), 0));
+
+    if (PMmatchFlat (pat, arg_node)) {
+        arg3rhs = AVIS_SSAASSIGN (ID_AVIS (val));
+        if ((NULL != arg3rhs)
+            && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg3rhs))))) {
+            DBUG_PRINT ("CF", ("_saabind_() replaced by assignment"));
+            /*
+             * This little bit of code that does the actual work is
+             * crippled, until we decide what to do about _saabind_()
+             * ops where PRF_ARG3 is a formal argument to this function.
+             *
+            res = DUPdoDupNode( val);
+            */
+        }
+    }
+    PMfree (pat);
+
+    DBUG_RETURN (res);
+}
