@@ -49,6 +49,24 @@ isSAAMode (void)
     DBUG_RETURN (z);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool isSSAMode( node *arg_node)
+ *
+ * @brief Predicates for those compiler phases that are running in SSA mode.
+ *
+ *****************************************************************************/
+bool
+isSSAMode (void)
+{
+    bool z;
+
+    DBUG_ENTER ("isSSAMode");
+
+    z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
+    DBUG_RETURN (z);
+}
+
 #ifndef DBUG_OFF
 
 static void

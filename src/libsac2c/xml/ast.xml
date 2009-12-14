@@ -6058,6 +6058,11 @@ N_structdef :
 
       <attributes>
         <attribute name="Decl" default="NULL" inconstructor="no" >
+          <description>
+                  If this variable is a local, this is a link to its
+                  N_vardec. Otherwise, it is a function parameter,
+                  and this is a link to its N_arg.
+          </description>
           <type name="Link">
             <targets>
               <target mandatory="yes">
@@ -6277,11 +6282,11 @@ N_structdef :
             </targets>
           </type>
           <description>
-            This field is the number of references to the foldeeWL that
-            created this value, from one, arbitrary-chosen folderWL.
-            The field is used as a crude cost function on the foldeeWL,
+            This field is the number of references to the producerWL that
+            created this value, from one, arbitrary-chosen consumerWL.
+            The field is used as a crude cost function on the producerWL,
             so that the AWLF is performed only if all references to the
-            foldeeWL are from one other (folderWL) WL.
+            producerWL are from one other (consumerWL) WL.
           </description>
         </attribute>
         <attribute name="VarNo" inconstructor="no" >

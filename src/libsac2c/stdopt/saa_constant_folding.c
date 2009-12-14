@@ -1237,16 +1237,11 @@ SAACFprf_saabind (node *arg_node, info *arg_info)
 
     if (PMmatchFlat (pat, arg_node)) {
         arg3rhs = AVIS_SSAASSIGN (ID_AVIS (val));
-        if ((NULL != arg3rhs)
-            && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg3rhs))))) {
+        if ((NULL != arg3rhs) && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg3rhs))))
+            && (N_arg != NODE_TYPE (AVIS_DECL (ID_AVIS (val))))) {
+
             DBUG_PRINT ("CF", ("_saabind_() replaced by assignment"));
-            /*
-             * This little bit of code that does the actual work is
-             * crippled, until we decide what to do about _saabind_()
-             * ops where PRF_ARG3 is a formal argument to this function.
-             *
-            res = DUPdoDupNode( val);
-            */
+            res = DUPdoDupNode (val);
         }
     }
     PMfree (pat);
