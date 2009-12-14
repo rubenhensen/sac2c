@@ -2674,7 +2674,6 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
             DBUG_ASSERT ((new_grid != NULL), "no produced grid found!");
             WLGRID_CODE (new_grid) = code;
             CODE_USED (code)++;
-            WLGRID_ISNOOP (new_grid) = CODE_ISDUMMYCODE (code);
             parts_stride = WLTRAinsertWlNodes (parts_stride, stride);
         }
 
@@ -3835,8 +3834,7 @@ ComputeCubes (node *strides)
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, bool has_fold, int iter_dims, shape *iter_shp,
-            bool *do_naive_comp)
+BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
 {
     bool all_const;
     node *cubes = NULL;
@@ -3854,31 +3852,26 @@ BuildCubes (node *strides, bool has_fold, int iter_dims, shape *iter_shp,
                              ? "  multi-generator with-loop: TRUE"
                              : "  multi-generator with-loop: FALSE"););
 
-    if (has_fold) {
-        /* fold with-loop  ->  the missing indices represent 'noop' */
+    if (!all_const) {
+        /*
+         * multiple strides, which are not all constant
+         *  -> just naive compilation possible for the time being :-(
+         */
+        *do_naive_comp = TRUE;
+        CTIwarnLine (global.linenum,
+                     "Naive compilation of multi-generator with-loop activated");
+
         cubes = strides;
     } else {
-        if (!all_const) {
+        if (*do_naive_comp) {
             /*
-             * multiple strides, which are not all constant
-             *  -> just naive compilation possible for the time being :-(
+             * this is a trick in order to put each stride in a separate
+             * segment later on
              */
-            *do_naive_comp = TRUE;
-            CTIwarnLine (global.linenum,
-                         "Naive compilation of multi-generator with-loop activated");
-
             cubes = strides;
         } else {
-            if (*do_naive_comp) {
-                /*
-                 * this is a trick in order to put each stride in a separate
-                 * segment later on
-                 */
-                cubes = strides;
-            } else {
-                strides = NormalizeAllStrides (strides);
-                cubes = ComputeCubes (strides);
-            }
+            strides = NormalizeAllStrides (strides);
+            cubes = ComputeCubes (strides);
         }
     }
 
@@ -6724,7 +6717,6 @@ WLTRAwith (node *arg_node, info *arg_info)
 {
     ntype *idx_type;
     info *info_tmp;
-    bool has_fold;
     node *withop;
     node *new_node = NULL;
 
@@ -6742,15 +6734,6 @@ WLTRAwith (node *arg_node, info *arg_info)
     arg_info = info_tmp;
 
     arg_node = CheckWith (arg_node, INFO_WL_LHS (arg_info));
-
-    has_fold = FALSE;
-    withop = WITH_WITHOP (arg_node);
-    while (withop != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
-            has_fold = TRUE;
-        }
-        withop = WITHOP_NEXT (withop);
-    }
 
     idx_type = TYeliminateAKV (IDS_NTYPE (WITH_VEC (arg_node)));
 
@@ -6842,7 +6825,7 @@ WLTRAwith (node *arg_node, info *arg_info)
              */
             DBUG_EXECUTE ("WLtrans", CTInote ("step 2: build cubes"););
 
-            cubes = BuildCubes (strides, has_fold, iter_dims, iter_shp, &do_naive_comp);
+            cubes = BuildCubes (strides, iter_dims, iter_shp, &do_naive_comp);
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
@@ -6875,23 +6858,19 @@ WLTRAwith (node *arg_node, info *arg_info)
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, global.linenum);
             } else {
                 bool fold_float = FALSE;
+                node *res_ids = INFO_WL_LHS (arg_info);
+                simpletype res_btype;
+                withop = WITH_WITHOP (arg_node);
 
-                if (has_fold) {
-                    node *res_ids = INFO_WL_LHS (arg_info);
-                    simpletype res_btype;
-                    withop = WITH_WITHOP (arg_node);
-
-                    while (withop != NULL) {
-                        if (NODE_TYPE (withop) == N_fold) {
-                            res_btype
-                              = TYgetSimpleType (TYgetScalar (IDS_NTYPE (res_ids)));
-                            fold_float
-                              = (fold_float
-                                 || ((res_btype == T_float) || (res_btype == T_double)));
-                        }
-                        withop = WITHOP_NEXT (withop);
-                        res_ids = IDS_NEXT (res_ids);
+                while (withop != NULL) {
+                    if (NODE_TYPE (withop) == N_fold) {
+                        res_btype = TYgetSimpleType (TYgetScalar (IDS_NTYPE (res_ids)));
+                        fold_float
+                          = (fold_float
+                             || ((res_btype == T_float) || (res_btype == T_double)));
                     }
+                    withop = WITHOP_NEXT (withop);
+                    res_ids = IDS_NEXT (res_ids);
                 }
 
                 segs = SetSegs (WITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);

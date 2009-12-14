@@ -7315,7 +7315,6 @@ N_structdef :
       <flags>
         <flag name="Visited" />
         <flag name="HasResolveableDependencies" />
-	<flag name="IsDummyCode" />
         <flag name="IsSimdSuitable" />
       </flags>
     </node>
