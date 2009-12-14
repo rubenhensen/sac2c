@@ -411,15 +411,17 @@ RERAprf (node *arg_node, info *arg_info)
     case F_type_error:
         /*
          * for these prfs we have to remove all LHS return vars that
-         * have a subst flag set (e.g. they are artificial return
-         * values). In fact this is a bad hack, as it only works, if
-         * the return value has been used in a regular function call.
-         * At least for wrappers this is true...
+         * correspond to a reference argument in the corresponding
+         * function call that this prf resembles. However, we don't
+         * know which result corresponds to a reference arg, as these
+         * prfs don't have args anymore. Even worse, we might not have
+         * a function call at all anymore that would provide this
+         * information anymore via the AVIS_SUBST flag.
+         * Luckily, we are so late in compilation that we can just get
+         * rid of all results. These two prfs terminate execution
+         * and in reality don't have a result anyway.
          */
-        while ((INFO_LHS (arg_info) != NULL)
-               && (AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) != NULL)) {
-            INFO_LHS (arg_info) = FREEdoFreeNode (INFO_LHS (arg_info));
-        }
+        INFO_LHS (arg_info) = FREEdoFreeTree (INFO_LHS (arg_info));
         break;
 
     case F_prop_obj_out:
