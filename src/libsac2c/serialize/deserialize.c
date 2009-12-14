@@ -365,27 +365,6 @@ updateContextInformation (node *entry)
     DBUG_VOID_RETURN;
 }
 
-static char *
-HeadSymbol2BodySymbol (const char *symbol)
-{
-    char *result;
-
-    DBUG_ENTER ("HeadSymbol2BodySymbol");
-
-    DBUG_ASSERT (((symbol[0] == 'S') && (symbol[1] == 'H') && (symbol[2] == 'D')),
-                 "given symbol is not a function header symbol!");
-
-    result = MEMmalloc (STRlen (symbol) + 2);
-
-    snprintf (result, STRlen (symbol) + 2, "S%s", symbol);
-
-    result[1] = 'B';
-    result[2] = 'D';
-    result[3] = 'Y';
-
-    DBUG_RETURN (result);
-}
-
 /*
  * functions handling the aliasing
  */
@@ -435,7 +414,7 @@ DSaddAliasing (const char *symbol, node *target)
 void
 DSremoveAliasing (const char *symbol)
 {
-    ds_aliasing_t *oldalias;
+    ds_aliasing_t *oldalias, *tmp;
     void **search;
 
     DBUG_ENTER ("DSremoveAliasing");
@@ -455,7 +434,9 @@ DSremoveAliasing (const char *symbol)
          * would be too expensive), this will do as well.
          */
         oldalias = (ds_aliasing_t *)*search;
+        tmp = oldalias;
         oldalias = oldalias->next;
+        tmp = MEMfree (tmp);
 
 #ifndef DBUG_OFF
         if (oldalias != NULL) {
@@ -1006,7 +987,7 @@ DSloadFunctionBody (node *fundef)
     DBUG_ASSERT ((FUNDEF_SYMBOLNAME (fundef) != NULL),
                  "cannot load body for a function without symbolname!");
 
-    serfunname = HeadSymbol2BodySymbol (FUNDEF_SYMBOLNAME (fundef));
+    serfunname = SERfundefHeadSymbol2BodySymbol (FUNDEF_SYMBOLNAME (fundef));
 
     DBUG_PRINT ("DS_BODY", ("deserializing fundef body for symbol %s...", serfunname));
 

@@ -268,13 +268,16 @@ SplitWrapper (node *fundef, info *arg_info)
          * remove the aliasing for the splitoff
          */
         if (!FUNDEF_ISLOCAL (new_fundef)) {
-            FUNDEF_SYMBOLNAME (new_fundef)
-              = SERgenerateSerFunName (SET_wrapperhead, new_fundef);
+            char *sname;
 
-            DBUG_PRINT ("SWR",
-                        ("generated symbolname is %s", FUNDEF_SYMBOLNAME (new_fundef)));
+            /* this will force the generation of the symbol name */
+            sname = SERgetSerFunName (new_fundef);
 
-            DSremoveAliasing (FUNDEF_SYMBOLNAME (new_fundef));
+            DBUG_PRINT ("SWR", ("generated symbolname is %s", sname));
+
+            DSremoveAliasing (sname);
+
+            sname = MEMfree (sname);
         }
 
         /*

@@ -7097,7 +7097,7 @@ SerializeSimpleType (FILE *file, ntype *type)
 
         tdef = UTgetTdef (SIMPLE_HIDDEN_UDT (type));
 
-        funname = SERgenerateSerFunName (SET_typedef, tdef);
+        funname = SERgetSerFunName (tdef);
 
         fprintf (file, "TYdeserializeType( %d, %d, 1, \"%s\", ", NTYPE_CON (type),
                  SIMPLE_TYPE (type), funname);
@@ -7142,7 +7142,7 @@ SerializeUserType (FILE *file, ntype *type)
      */
     tdef = UTgetTdef (USER_TYPE (type));
 
-    funname = SERgenerateSerFunName (SET_typedef, tdef);
+    funname = SERgetSerFunName (tdef);
 
     fprintf (file, "TYdeserializeType( %d, \"%s\", ", NTYPE_CON (type), funname);
 

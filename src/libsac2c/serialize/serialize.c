@@ -8,6 +8,7 @@
 #include "dbug.h"
 #include "build.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "symboltable.h"
 #include "stringset.h"
@@ -25,8 +26,6 @@
 #include "serialize_symboltable.h"
 #include "serialize_filenames.h"
 #include "dbug.h"
-
-#define MAX_FUN_NAME_LEN 255
 
 /*
  * INFO functions
@@ -168,58 +167,31 @@ GenerateSerFileModuleInfo (node *module, FILE *file)
     DBUG_VOID_RETURN;
 }
 
-static int
-AppendSerFunType (char *funname, ntype *type, int size)
+static str_buf *
+AppendSerFunType (str_buf *funname, ntype *type)
 {
-    char *pos;
-    int written;
     ntype *scalar;
 
     DBUG_ENTER ("AppendSerFunType");
 
-    pos = &funname[STRlen (funname)];
-
-    DBUG_ASSERT ((size > 1), "fundef name buffer to small!");
-
-    if (TYisScalar (type)) {
-        *pos = 'S';
-        pos++;
-        size--;
-        scalar = type;
-    } else if ((TYisAKS (type) || (TYisAKV (type)))) {
+    if ((TYisAKS (type) || (TYisAKV (type)))) {
         char *shape = SHshape2String (0, TYgetShape (type));
-        written = 0;
 
-        *pos = 'K';
-        pos++;
-        size--;
-
-        written = snprintf (pos, size, "%s", shape);
-        pos += written;
-        size -= written;
+        funname = SBUFprintf (funname, "K%s", shape);
 
         shape = MEMfree (shape);
         scalar = TYgetScalar (type);
     } else if (TYisAKD (type)) {
-        int written;
-        *pos = 'D';
-        pos++;
-        size--;
-
-        written = snprintf (pos, size, "%d", TYgetDim (type));
-        pos += written;
-        size -= written;
+        funname = SBUFprintf (funname, "D%d", TYgetDim (type));
 
         scalar = TYgetScalar (type);
     } else if (TYisAUDGZ (type)) {
-        *pos = 'G';
-        pos++;
-        size--;
+        funname = SBUFprintf (funname, "G");
+
         scalar = TYgetScalar (type);
     } else if (TYisAUD (type)) {
-        *pos = 'U';
-        pos++;
-        size--;
+        funname = SBUFprintf (funname, "U");
+
         scalar = TYgetScalar (type);
     } else {
         DBUG_ASSERT (0, "unknown shape class!");
@@ -229,59 +201,41 @@ AppendSerFunType (char *funname, ntype *type, int size)
     if (TYisSimple (scalar)) {
         simpletype simple = TYgetSimpleType (scalar);
 
-        written = snprintf (pos, size, "%s", CVbasetype2ShortString (simple));
-
-        pos += written;
-        size -= written;
+        funname = SBUFprintf (funname, "%s", CVbasetype2ShortString (simple));
     } else if (TYisUser (scalar)) {
         usertype user = TYgetUserType (scalar);
 
-        written = snprintf (pos, size, "%s__%s", NSgetName (UTgetNamespace (user)),
-                            UTgetName (user));
+        funname = SBUFprintf (funname, "%s__%s", NSgetName (UTgetNamespace (user)),
+                              UTgetName (user));
 
-        pos += written;
-        size -= written;
     } else if (TYisSymb (scalar)) {
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s",
-                            NSgetName (TYgetNamespace (scalar)), TYgetName (scalar));
-
-        pos += written;
-        size -= written;
+        funname = SBUFprintf (funname, "%s__%s", NSgetName (TYgetNamespace (scalar)),
+                              TYgetName (scalar));
     } else {
         DBUG_ASSERT (0, "unknown scalar type found");
     }
 
-    DBUG_ASSERT ((size > 0), "funname buffer to small");
-
-    *pos = '\0';
-
-    DBUG_RETURN (size);
+    DBUG_RETURN (funname);
 }
 
-static int
-AppendSerFunArgType (char *funname, node *arg, int size)
+static str_buf *
+AppendSerFunArgType (str_buf *funname, node *arg)
 {
-    char *pos;
-
     DBUG_ENTER ("AppendSerFunArgType");
 
-    DBUG_ASSERT ((size > 2), "funname buffer to small");
-
-    pos = &funname[STRlen (funname)];
-
     if (ARG_ISARTIFICIAL (arg)) {
-        size -= snprintf (pos, size, "_A");
+        funname = SBUFprintf (funname, "_A");
     } else if (ARG_WASREFERENCE (arg)) {
-        size -= snprintf (pos, size, "_R");
+        funname = SBUFprintf (funname, "_R");
     } else {
-        size -= snprintf (pos, size, "_N");
+        funname = SBUFprintf (funname, "_N");
     }
 
-    DBUG_RETURN (size);
+    DBUG_RETURN (funname);
 }
 
-static int
-AppendSerFunTypeSignature (char *funname, node *fundef, int size)
+static str_buf *
+AppendSerFunTypeSignature (str_buf *funname, node *fundef)
 {
     node *args;
 
@@ -290,65 +244,169 @@ AppendSerFunTypeSignature (char *funname, node *fundef, int size)
     args = FUNDEF_ARGS (fundef);
 
     while (args != NULL) {
-        size = AppendSerFunArgType (funname, args, size);
-        size = AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)), size);
+        funname = AppendSerFunArgType (funname, args);
+        funname = AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)));
 
         args = ARG_NEXT (args);
     }
 
-    DBUG_RETURN (size);
+    DBUG_RETURN (funname);
 }
 
-char *
-SERgenerateSerFunName (stentrytype_t type, node *arg_node)
+static char *
+GenerateSerFunName (stentrytype_t type, node *arg_node)
 {
-    static char buffer[MAX_FUN_NAME_LEN + 1];
-    int size = MAX_FUN_NAME_LEN;
+    static str_buf *buffer = NULL;
+    char *tmp_name;
     char *result;
 
-    DBUG_ENTER ("SERgenerateSerFunName");
+    DBUG_ENTER ("GenerateSerFunName");
+
+    if (buffer == NULL) {
+        buffer = SBUFcreate (255);
+    }
 
     switch (type) {
     case SET_funbody:
     case SET_wrapperbody:
-        size
-          -= snprintf (buffer, size, "SBDY_%s_%s_%d%d_", NSgetName (FUNDEF_NS (arg_node)),
-                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node),
-                       FUNDEF_ISOBJECTWRAPPER (arg_node));
-
-        size = AppendSerFunTypeSignature (buffer, arg_node, size);
+        DBUG_ASSERT ((FALSE), "cannot generate names for function bodies!");
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        size
-          -= snprintf (buffer, size, "SHD_%s_%s_%d%d_", NSgetName (FUNDEF_NS (arg_node)),
-                       FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node),
-                       FUNDEF_ISOBJECTWRAPPER (arg_node));
+        buffer = SBUFprintf (buffer, "SHDR_%s_%s_%d%d_", NSgetName (FUNDEF_NS (arg_node)),
+                             FUNDEF_NAME (arg_node), FUNDEF_ISWRAPPERFUN (arg_node),
+                             FUNDEF_ISOBJECTWRAPPER (arg_node));
 
-        size = AppendSerFunTypeSignature (buffer, arg_node, size);
+        buffer = AppendSerFunTypeSignature (buffer, arg_node);
 
         break;
     case SET_typedef:
-        size -= snprintf (buffer, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (arg_node)),
-                          TYPEDEF_NAME (arg_node));
+        buffer = SBUFprintf (buffer, "STD_%s_%s_", NSgetName (TYPEDEF_NS (arg_node)),
+                             TYPEDEF_NAME (arg_node));
         break;
     case SET_objdef:
-        size -= snprintf (buffer, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (arg_node)),
-                          OBJDEF_NAME (arg_node));
+        buffer = SBUFprintf (buffer, "SOD_%s_%s", NSgetName (OBJDEF_NS (arg_node)),
+                             OBJDEF_NAME (arg_node));
         break;
     default:
         DBUG_ASSERT (0, "Unexpected symboltype found!");
         break;
     }
 
-    DBUG_ASSERT ((size > 0), "internal buffer in SERgenerateSerFunName too small!");
+    tmp_name = SBUF2str (buffer);
+    SBUFflush (buffer);
 
-    DBUG_PRINT ("SER", ("Generated new function name: %s", buffer));
+    DBUG_PRINT ("SER", ("Generated new function name: %s", tmp_name));
 
-    result = STRreplaceSpecialCharacters (buffer);
+    result = STRreplaceSpecialCharacters (tmp_name);
+    tmp_name = MEMfree (tmp_name);
 
     DBUG_PRINT ("SER", ("Final function name: %s", result));
+
+    DBUG_RETURN (result);
+}
+
+char *
+SERfundefHeadSymbol2BodySymbol (const char *symbol)
+{
+    char *result;
+
+    /*
+     * NOTE: this renaming has to be kept in line with the generation
+     *       of serialize function names in SERgenerateSerFunName!
+     */
+    DBUG_ENTER ("SERfundefHeadSymbol2BodySymbol");
+
+    DBUG_ASSERT ((STRprefix ("SHDR", symbol)),
+                 "given symbol is not a function header symbol!");
+
+    result = STRcpy (symbol);
+
+    result[1] = 'B';
+    result[2] = 'D';
+    result[3] = 'Y';
+
+    DBUG_RETURN (result);
+}
+
+static char *
+GetSerFunName (stentrytype_t type, node *arg_node)
+{
+    char *result = NULL;
+
+    DBUG_ENTER ("GetSerFunName");
+
+    switch (type) {
+    case SET_funbody:
+    case SET_wrapperbody:
+        /* reuse symbol for header to construct symbol for body */
+        DBUG_ASSERT ((FUNDEF_SYMBOLNAME (arg_node) != NULL),
+                     "cannot produce name for fundef body before "
+                     "fundef head has been serialized!");
+        result = SERfundefHeadSymbol2BodySymbol (FUNDEF_SYMBOLNAME (arg_node));
+
+        break;
+    case SET_funhead:
+    case SET_wrapperhead:
+        if (FUNDEF_SYMBOLNAME (arg_node) == NULL) {
+            FUNDEF_SYMBOLNAME (arg_node) = GenerateSerFunName (type, arg_node);
+        }
+        result = STRcpy (FUNDEF_SYMBOLNAME (arg_node));
+
+        break;
+    case SET_objdef:
+        if (OBJDEF_SYMBOLNAME (arg_node) == NULL) {
+            OBJDEF_SYMBOLNAME (arg_node) = GenerateSerFunName (type, arg_node);
+        }
+        result = STRcpy (OBJDEF_SYMBOLNAME (arg_node));
+
+        break;
+    case SET_typedef:
+        if (TYPEDEF_SYMBOLNAME (arg_node) == NULL) {
+            TYPEDEF_SYMBOLNAME (arg_node) = GenerateSerFunName (type, arg_node);
+        }
+        result = STRcpy (TYPEDEF_SYMBOLNAME (arg_node));
+
+        break;
+    default:
+        DBUG_ASSERT (0, "Unexpected symboltype found!");
+        break;
+    }
+
+    DBUG_PRINT ("SER", ("Grabbed function name: %s", result));
+
+    DBUG_RETURN (result);
+}
+
+char *
+SERgetSerFunName (node *arg_node)
+{
+    char *result;
+
+    DBUG_ENTER ("SERgetSerFunName");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_fundef:
+        if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+            result = GetSerFunName (SET_wrapperhead, arg_node);
+        } else {
+            result = GetSerFunName (SET_funhead, arg_node);
+        }
+        break;
+
+    case N_objdef:
+        result = GetSerFunName (SET_objdef, arg_node);
+        break;
+
+    case N_typedef:
+        result = GetSerFunName (SET_typedef, arg_node);
+        break;
+
+    default:
+        DBUG_ASSERT ((FALSE), "unexpected node type.");
+        result = NULL;
+    }
 
     DBUG_RETURN (result);
 }
@@ -360,7 +418,7 @@ GenerateSerFunHead (node *elem, stentrytype_t type, info *info)
 
     DBUG_ENTER ("GenerateSerFunHead");
 
-    funname = SERgenerateSerFunName (type, elem);
+    funname = GetSerFunName (type, elem);
 
     fprintf (INFO_SER_FILE (info), "void *%s()", funname);
     fprintf (INFO_SER_FILE (info), "{\n");
@@ -437,11 +495,13 @@ SerializeFundefBody (node *fundef, info *info)
 static void
 SerializeFundefHead (node *fundef, info *info)
 {
+    char *funname;
+
     DBUG_ENTER ("SerializeFundefHead");
 
     INFO_SER_STACK (info) = SERbuildSerStack (fundef);
 
-    FUNDEF_SYMBOLNAME (fundef) = SERgenerateSerFunName (SET_funhead, fundef);
+    funname = GetSerFunName (SET_funhead, fundef);
 
     /*
      * we do not store special funs (cond/loop)
@@ -465,7 +525,7 @@ SerializeFundefHead (node *fundef, info *info)
          * visible!
          */
         if (vis != SVT_local) {
-            STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
+            STadd (FUNDEF_NAME (fundef), vis, funname,
                    FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
                    INFO_SER_TABLE (info));
         }
@@ -482,6 +542,7 @@ SerializeFundefHead (node *fundef, info *info)
     GenerateSerFunTail (fundef, SET_funhead, info);
 
     INFO_SER_STACK (info) = SSdestroy (INFO_SER_STACK (info));
+    funname = MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -490,12 +551,13 @@ static void
 SerializeTypedef (node *tdef, info *info)
 {
     stvisibility_t vis;
+    char *funname;
 
     DBUG_ENTER ("SerializeTypedef");
 
     INFO_SER_STACK (info) = SERbuildSerStack (tdef);
 
-    TYPEDEF_SYMBOLNAME (tdef) = SERgenerateSerFunName (SET_typedef, tdef);
+    funname = GetSerFunName (SET_typedef, tdef);
 
     if (TYPEDEF_ISEXPORTED (tdef)) {
         vis = SVT_exported;
@@ -510,8 +572,7 @@ SerializeTypedef (node *tdef, info *info)
      * table that are visible
      */
     if (vis != SVT_local) {
-        STadd (TYPEDEF_NAME (tdef), vis, TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
-               INFO_SER_TABLE (info));
+        STadd (TYPEDEF_NAME (tdef), vis, funname, SET_typedef, INFO_SER_TABLE (info));
     }
 
     GenerateSerFunHead (tdef, SET_typedef, info);
@@ -525,6 +586,7 @@ SerializeTypedef (node *tdef, info *info)
     GenerateSerFunTail (tdef, SET_typedef, info);
 
     INFO_SER_STACK (info) = SSdestroy (INFO_SER_STACK (info));
+    funname = MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -533,12 +595,13 @@ static void
 SerializeObjdef (node *objdef, info *info)
 {
     stvisibility_t vis;
+    char *funname;
 
     DBUG_ENTER ("SerializeObjdef");
 
     INFO_SER_STACK (info) = SERbuildSerStack (objdef);
 
-    OBJDEF_SYMBOLNAME (objdef) = SERgenerateSerFunName (SET_objdef, objdef);
+    funname = GetSerFunName (SET_objdef, objdef);
 
     if (OBJDEF_ISEXPORTED (objdef)) {
         vis = SVT_exported;
@@ -553,8 +616,7 @@ SerializeObjdef (node *objdef, info *info)
      * that are indeed visible
      */
     if (vis != SVT_local) {
-        STadd (OBJDEF_NAME (objdef), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
-               INFO_SER_TABLE (info));
+        STadd (OBJDEF_NAME (objdef), vis, funname, SET_objdef, INFO_SER_TABLE (info));
     }
 
     GenerateSerFunHead (objdef, SET_objdef, info);
@@ -568,6 +630,7 @@ SerializeObjdef (node *objdef, info *info)
     GenerateSerFunTail (objdef, SET_objdef, info);
 
     INFO_SER_STACK (info) = SSdestroy (INFO_SER_STACK (info));
+    funname = MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -710,7 +773,7 @@ SERobjdef (node *arg_node, info *arg_info)
      * only serialize objdefs that are not available in another
      * module
      */
-    if (OBJDEF_SYMBOLNAME (arg_node) == NULL) {
+    if (OBJDEF_ISLOCAL (arg_node)) {
         SerializeObjdef (arg_node, arg_info);
     }
 
@@ -730,12 +793,12 @@ SERserializeFundefLink (node *fundef, FILE *file)
 
     DBUG_ENTER ("SERserializeFundefLink");
 
-    funname = SERgenerateSerFunName (SET_funhead, fundef);
+    funname = GetSerFunName (SET_funhead, fundef);
 
     fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", NSgetModule (FUNDEF_NS (fundef)),
              funname);
 
-    MEMfree (funname);
+    funname = MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -747,12 +810,12 @@ SERserializeObjdefLink (node *objdef, FILE *file)
 
     DBUG_ENTER ("SERserializeObjdefLink");
 
-    funname = SERgenerateSerFunName (SET_objdef, objdef);
+    funname = GetSerFunName (SET_objdef, objdef);
 
     fprintf (file, "DSlookupObject( \"%s\", \"%s\")", NSgetModule (OBJDEF_NS (objdef)),
              funname);
 
-    MEMfree (funname);
+    funname = MEMfree (funname);
 
     DBUG_VOID_RETURN;
 }

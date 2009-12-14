@@ -5,7 +5,7 @@
 #ifndef _SAC_SERIALIZE_H_
 #define _SAC_SERIALIZE_H_
 
-#define SAC_SERIALIZE_VERSION 5 /* 27/11/2009 */
+#define SAC_SERIALIZE_VERSION 6 /* 14/12/2009 */
 
 #include "types.h"
 
@@ -13,7 +13,8 @@ extern node *SERdoSerialize (node *module);
 
 extern void SERserializeFundefLink (node *fundef, FILE *file);
 extern void SERserializeObjdefLink (node *fundef, FILE *file);
-extern char *SERgenerateSerFunName (stentrytype_t type, node *node);
+extern char *SERfundefHeadSymbol2BodySymbol (const char *symbol);
+extern char *SERgetSerFunName (node *arg_node);
 
 extern serstack_t *SERbuildSerStack (node *arg_node);
 
