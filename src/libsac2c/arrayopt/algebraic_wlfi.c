@@ -7,12 +7,14 @@
  * @defgroup awlfi Algebraic With-Loop Folding Inference
  *
  * @terminology:
- *        FoldeeWL, or foldee: The WL that will no longer
+ *        ProducerWL:
+ *        The WL that will no longer
  *        exist after this phase completes. In the example
- *        below, A is the foldeeWL.
+ *        below, A is the producerWL.
  *
- *        FolderWL: the WL that will absorb the block(s) from
- *        the foldeeWL. In the example below, B is the folderWL.
+ *        ConsumerWL:
+ *        the WL that will absorb the block(s) from
+ *        the producerWL. In the example below, B is the ConsumerWL.
  *
  *        Intersection expression: the expression that
  *        specifies the set of index vectors in one WL partition
@@ -24,38 +26,38 @@
  *
  *        This phase begins by computing AVIS_NEEDCOUNT for
  *        all N_id nodes. This is done as a cost-function
- *        heuristic to prevent the same foldeeWL element
+ *        heuristic to prevent the same producerWL element
  *        from being computed repeatedly.
  *        [ We could develop a better cost function. For example,
- *          iota(N) has a cost of zero, because the foldeeWL
+ *          iota(N) has a cost of zero, because the producerWL
  *          element cost is just an access to the WITH_ID.]
  *
  *        The phase then makes a depth-first traversal
- *        of the function, computing WL_REFERENCED_FOLD(foldeeWL)++
+ *        of the function, computing WL_REFERENCED_FOLD(producerWL)++
  *        for all sel() operations in WLs that are of the form:
  *
- *             _sel_VxA_(iv, foldeeWL)
+ *             _sel_VxA_(iv, producerWL)
  *
- *        where foldeeWL is the result of another WL.
- *        At present, only one folderWL is allowed to contribute to the
+ *        where producerWL is the result of another WL.
+ *        At present, only one consumerWL is allowed to contribute to the
  *        total. AWLF will permit the folding to occur if, among
  *        other requirements:
  *
- *         AVIS_NEEDCOUNT(foldeeWL) == WL_REFERENCED_FOLD(foldeeWL)
+ *         AVIS_NEEDCOUNT(producerWL) == WL_REFERENCED_FOLD(producerWL)
  *
  *        This phase inserts _attachextrema "intersection expressions"
  *        before _sel_(iv, X) statements, if iv is a function of
- *        the WITH_ID(folderWL) and X is the result of a foldeeWL.
+ *        the WITH_ID(consumerWL) and X is the result of a producerWL.
  *
  *        An intersection expression provides the information required
- *        to cut a folderWL partition so that its index set
+ *        to cut a consumerWL partition so that its index set
  *        is entirely contained with the index set of
- *        one partition of the foldeeWL.
+ *        one partition of the producerWL.
  *
  *        Once the cutting, if needed, has been performed, folding of the
- *        foldeeWL into the folderWL can be performed directly,
+ *        producerWL into the consumerWL can be performed directly,
  *        by replacing the above _sel_(iv, X) expression with
- *        the code from the foldeeWL partition, and performing
+ *        the code from the producerWL partition, and performing
  *        appropriate renames of WITH_IDs.
  *
  * @ingroup opt
@@ -111,17 +113,17 @@ struct INFO {
     node *fundef;
     node *vardecs;
     node *preassigns;
-    node *part;             /* The current folderWL partition */
-    node *folderwl;         /* The current folderWL N_with */
-    int level;              /* The current nesting level of WLs. This
-                             * is used to ensure that an index expression
-                             * refers to an earlier WL in the same code
-                             * block, rather than to a WL within this
-                             * WL. I think...
-                             */
-    bool awlfoldablefoldee; /* foldeeWL may be legally foldable. */
-                            /* (If index sets prove to be OK)     */
-    bool onefundef;         /* fundef-based traversal */
+    node *part;                 /* The current consumerWL partition */
+    node *consumerwl;           /* The current consumerWL N_with */
+    int level;                  /* The current nesting level of WLs. This
+                                 * is used to ensure that an index expression
+                                 * refers to an earlier WL in the same code
+                                 * block, rather than to a WL within this
+                                 * WL. I think...
+                                 */
+    bool awlfoldableproducerwl; /* producerWL may be legally foldable. */
+                                /* (If index sets prove to be OK)     */
+    bool onefundef;             /* fundef-based traversal */
 };
 
 /**
@@ -131,9 +133,9 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_PART(n) ((n)->part)
-#define INFO_FOLDERWL(n) ((n)->folderwl)
+#define INFO_FOLDERWL(n) ((n)->consumerwl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldablefoldee)
+#define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldableproducerwl)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -306,22 +308,23 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
- *                                      node *foldeepart, int boundnum,
+ *                                      node *producerwlPart, int boundnum,
  *                                      node *ivminmax)
  *
  * @brief Build a pair of expressions for intersecting the bounds of
- *        a single foldeeWL partition with folderWL index set, of the form:
+ *        a single producerWL partition with consumerWL index set, of the form:
  *
  *           iv' = (k*iv) + ivoffset;
- *           z = sel( iv', foldeeWL)
+ *           z = sel( iv', producerWL)
  *
- *        We determine the intersection of the folderWL iv'
- *        index set with the foldeeWL's partition bounds this way:
+ *        We determine the intersection of the consumerWL iv'
+ *        index set with the producerWL's partition bounds this way:
  *
- *          genshp = _shape_A_(GENERATOR_BOUND1( foldee));
+ *          genshp = _shape_A_(GENERATOR_BOUND1( producerwlPart));
  *
  *          (The next few lines compute:
- *           intlo = _max_VxV_( AVIS_MINVAL( iv'), GENERATOR_BOUND1(foldee));
+ *           intlo = _max_VxV_( AVIS_MINVAL( iv'),
+ *                              GENERATOR_BOUND1(producerwlPart));
  *
  *          but the optimizers are unable to compute common
  *          expressions such as:
@@ -331,7 +334,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *          Hence, we use the following:
  *
  *           xl = AVIS_MINVAL( iv');
- *           yl = GENERATOR_BOUND1( foldee);
+ *           yl = GENERATOR_BOUND1( producerwlPart);
  *           d  = _sub_VxV_( xl, yl);
  *           zero = 0;
  *           p = _gt_VxS_( d, zero);
@@ -341,7 +344,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *          ( Similar treatment for _min_VxV_ as above:
  *
  *          xh = AVIS_MAXVAL( iv');
- *          yh = GENERATOR_BOUND2( foldee);
+ *          yh = GENERATOR_BOUND2( producerwlPart);
  *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
  *          p0inthi = _mesh_( p', xh, yh);
@@ -351,22 +354,22 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *                                 p0bound1, p0bound2, p0intlo, p0inthi, p0int,
  *                                 p1bound1, p1bound2, p1intlo, p1inthi, p1int,
  *                                 ...);
- *          z = sel( iv'', foldeeWL)
+ *          z = sel( iv'', producerWL)
  *
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection
- *        and p0, p1... are the partitions of the foldeeWL.
+ *        and p0, p1... are the partitions of the producerWL.
  *
  *
  *        NB. ALL lower bounds preceed all upper bounds in the
  *            _attach_extrema_ arguments.
  *
- *        NB. We need the foldeeWL partition bounds for at least
- *            two reasons: a foldeeWL partition may be split
+ *        NB. We need the producerWL partition bounds for at least
+ *            two reasons: a producerWL partition may be split
  *            between the time we build this code and the time
  *            we look at the answer. When we find a potential
  *            hit, we have to go look up the partition bounds
- *            in the foldeeWL again, to ensure that the requisite
+ *            in the producerWL again, to ensure that the requisite
  *            partition still exists. Also, even if the partitions
  *            remain unchanged in size, their order may be
  *            shuffled, so we have to search for the right one.
@@ -375,9 +378,9 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *            we can distinguish it from non-null intersects,
  *             for the cases where cube slicing will be required.
  *
- * @params arg_node: the _sel_VxA_( idx, foldeeWL)
+ * @params arg_node: the _sel_VxA_( idx, producerWL)
  * @params arg_info.
- * @params foldeepart: An N_part of the foldeeWL.
+ * @params producerPart: An N_part of the producerWL.
  * @params boundnum: 1 for bound1,     or 2 for bound2
  * @params ivminmax: AVIS_MINVAL( idx) or AVIS_MAXVAL( idx)
  *
@@ -386,43 +389,35 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int boundnum,
-                           node *ivminmax)
+IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
+                           int boundnum, node *ivminmax)
 {
-    node *boundee;
-    node *folderpart;
-    node *idxavis;
-    node *idxassign;
+    node *producerGenerator;
     node *ivid;
     node *resavis;
-    node *boundeeid;
     node *fncall;
     char *fun;
     int shp;
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
-    folderpart = INFO_PART (arg_info);
-
-    idxavis = ID_AVIS (PRF_ARG1 (arg_node));
-    /* The indexing expression used in the sel(iv, foldee). */
-    idxassign = AVIS_SSAASSIGN (idxavis);
-
-    boundee = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (foldeepart))
-                              : GENERATOR_BOUND2 (PART_GENERATOR (foldeepart));
-    idxavis = (boundnum == 1) ? AVIS_MINVAL (idxavis) : AVIS_MAXVAL (idxavis);
+    producerGenerator = (boundnum == 1)
+                          ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
+                          : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
 
     fun = (boundnum == 1) ? "partitionIntersectMax" : "partitionIntersectMin";
 
-    DBUG_ASSERT (N_id == NODE_TYPE (boundee),
-                 "IntersectBoundsBuilderOne expected N_id WL-generator boundee");
+    DBUG_ASSERT (N_id == NODE_TYPE (producerGenerator), "IntersectBoundsBuilderOne "
+                                                        "expected N_id WL-generator "
+                                                        "producerGenerator");
 
     ivid = TBmakeId (ivminmax);
-    boundeeid = TBmakeId (ID_AVIS (boundee));
 
-    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
-                                TCcreateExprsChainFromAvises (2, idxavis, ivminmax));
-    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (boundee))));
+    fncall
+      = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
+                           TCcreateExprsChainFromAvises (2, ID_AVIS (producerGenerator),
+                                                         ivminmax));
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (producerGenerator))));
     resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_bool),
@@ -441,10 +436,10 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *foldeepart, int
  * @brief:  Emit symbiotic expression to determine if intersection
  *          of index vector set and partition bounds is null.
  *
- * @params: idxavismin: AVIS_MINVAL( folderWL partition index vector)
- * @params: idxavismax: AVIS_MAXVAL( folderWL partition index vector)
- * @params: bound1: GENERATOR_BOUND1 of foldeeWL partition.
- * @params: bound2: GENERATOR_BOUND2 of foldeeWL partition.
+ * @params: idxavismin: AVIS_MINVAL( consumerWL partition index vector)
+ * @params: idxavismax: AVIS_MAXVAL( consumerWL partition index vector)
+ * @params: bound1: GENERATOR_BOUND1 of producerWL partition.
+ * @params: bound2: GENERATOR_BOUND2 of producerWL partition.
  * @params: arg_info: your basic arg_info node
  *
  * @result: N_avis node of generated computation's boolean result.
@@ -475,22 +470,22 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
- *                                   node *foldeepart, node *idxavis)
+ *                                   node *producerwlPart, node *idxavis)
  *
  * @brief Build a set of expressions for intersecting the bounds of
- *        all foldeeWL partitions with folderWL index set, of the form:
+ *        all producerWL partitions with consumerWL index set, of the form:
  *
  *           sel((k*iv) + ivoffset, foldee)
  *
- *        We traverse all foldeeWL partitions, building a set of
+ *        We traverse all producerWL partitions, building a set of
  *        intersect calcuations for each of them.
  *
- * @params arg_node: The _sel_VxA( idx, foldeeWL).
- * @params foldeeid: The N_id created by the foldeeWL.
+ * @params arg_node: The _sel_VxA( idx, producerWL).
+ * @params foldeeid: The N_id created by the producerWL.
  * @params arg_info.
  * @params boundnum: 1 for bound1,        2 for bound2
  * @params idxavis: the N_avis of the index vector used by the sel() operation.
- * @return An N_exprs node containing the ( 2 * # foldee partitions)
+ * @return An N_exprs node containing the ( 2 * # producerwlPart partitions)
  *         intersect expressions, in the form:
  *           p0bound1, p0bound2, p0intlo, p0inthi, p0nullint,
  *           p1bound1, p1bound2, p1intlo, p1inthi, p1nullint,
@@ -546,10 +541,10 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
  *
  * @brief  We are looking at the N_prf for:
  *
- *            z = _sel_VxA_( idx, foldeeWL);
+ *            z = _sel_VxA_( idx, producerWL);
  *         and idx now has extrema attached to it. We
  *         are now in a position to compute the intersection
- *         between idx's index set and that of the foldeeWL
+ *         between idx's index set and that of the producerWL
  *         partitions.
  *
  *         We create new idx' from idx, to hold the result
@@ -616,40 +611,40 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  * @fn bool checkFoldeeFoldable( node *arg_node, info *arg_info)
  *
  * @brief We are looking at _sel_VxA_(idx, foldee), contained
- *        within a folderWL. We want to determine if
+ *        within a consumerWL. We want to determine if
  *        foldee is a WL that is a possible candidate for having some
- *        partition of itself folded into the folderWL that
+ *        partition of itself folded into the consumerWL that
  *        contains the _sel_ expression.
  *
  *        This function concerns itself only with the characteristics
- *        of the entire foldeeWL: partition-dependent characteristics
+ *        of the entire producerWL: partition-dependent characteristics
  *        are determined by the AWLF phase later on.
  *
  *        The requirements for folding are:
  *
- *           - foldeeWL is the result of a WL.
+ *           - producerWL is the result of a WL.
  *
- *           - foldeeWL operator is a genarray or modarray.
+ *           - producerWL operator is a genarray or modarray.
  *
- *           - foldeeWL is a single-operator WL.
+ *           - producerWL is a single-operator WL.
  *
- *           - foldeeWL has an SSAASSIGN (means that WITH_IDs are NOT legal),
+ *           - producerWL has an SSAASSIGN (means that WITH_IDs are NOT legal),
  *
- *           - foldeeWL is referenced only by the folderWL.
+ *           - producerWL is referenced only by the consumerWL.
  *             This is not strictly needed; it is only there
  *             to avoid potentially computing the same
- *             foldeeWL element more than once. FIXME: wl_needcount.c
+ *             producerWL element more than once. FIXME: wl_needcount.c
  *             changes will relax this and restriction and base it
- *             on foldeeWL element computation cost.
+ *             on producerWL element computation cost.
  *
- *           - foldeeWL has a DEFDEPTH value (which I don't understand yet).
+ *           - producerWL has a DEFDEPTH value (which I don't understand yet).
  *
- *           - folderWL and foldeeWL generator bounds are
+ *           - consumerWL and producerWL generator bounds are
  *             the same shape.
  *
  *        There is an added requirement, that the index set of
- *        the folderWL partition match, or be a subset, of the
- *        foldeeWL partition index set.
+ *        the consumerWL partition match, or be a subset, of the
+ *        producerWL partition index set.
  *
  *        The expressions hanging from the attachextrema inserted
  *        by attachExtremaCalc are intended to determine if this
@@ -659,9 +654,9 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  *        set requirements are met.
  *
  *
- * @param _sel_VxA_( idx, foldeeWL)
- * @result If some partition of the foldeeWL may be a legal
- *         candidate for folding into the folderWL, return true.
+ * @param _sel_VxA_( idx, producerWL)
+ * @result If some partition of the producerWL may be a legal
+ *         candidate for folding into the consumerWL, return true.
  *         Else false.
  *
  *****************************************************************************/
@@ -713,8 +708,8 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
  * @fn bool checkFolderFoldable( node *arg_node, info *arg_info)
  *
  * @brief We are looking at _sel_VxA_(idx, foldee), contained
- *        within a folderWL. We want to determine if
- *        the folderWL is acceptable to have something folded into it.
+ *        within a consumerWL. We want to determine if
+ *        the consumerWL is acceptable to have something folded into it.
  *
  *        We deem the prf foldable if idx derives directly from
  *        an _attachintersect_, or if idx has extrema.
@@ -722,9 +717,9 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
  *        This may not be enough to guarantee foldability, but
  *        without extrema, we're stuck.
  *
- * @param _sel_VxA_( idx, foldeeWL) arg_node.
+ * @param _sel_VxA_( idx, producerWL) arg_node.
  *
- * @result True if the folderWL (and the indexing expression)
+ * @result True if the consumerWL (and the indexing expression)
  *         are acceptable for having another WL folded into it,
  *         else false.
  *
@@ -751,7 +746,7 @@ checkFolderFoldable (node *arg_node, info *arg_info)
  * @fn bool checkBothFoldable( node *arg_node, info *arg_info)
  *
  * @brief Make any early checks we can that may show that
- *        the foldeeWL and folderWL are not foldable.
+ *        the producerWL and consumerWL are not foldable.
  *
  *        At present, we check that the generator bounds
  *        of both WLs are of the same shape.
@@ -759,15 +754,15 @@ checkFolderFoldable (node *arg_node, info *arg_info)
  *        We presume that earlier phases have ensured that
  *        the BOUND1 and BOUND2 lengths are the same for each partition.
  *
- * @param _sel_VxA_( idx, foldeeWL) arg_node.
- * @result True if the folderWL and foldeeWL
+ * @param _sel_VxA_( idx, producerWL) arg_node.
+ * @result True if the consumerWL and producerWL
  *         have no problems being folded (yet).
  *
  *****************************************************************************/
 static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
-    node *folderwl;
+    node *consumerWL;
     node *foldeewl;
     node *b1;
     node *b2;
@@ -776,9 +771,9 @@ checkBothFoldable (node *arg_node, info *arg_info)
     DBUG_ENTER ("checkBothFoldable");
 
     foldeewl = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
-    folderwl = INFO_FOLDERWL (arg_info);
+    consumerWL = INFO_FOLDERWL (arg_info);
 
-    b1 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (folderwl)));
+    b1 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (consumerWL)));
     b2 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
     z = SHcompareShapes (TYgetShape (AVIS_TYPE (ID_AVIS (b1))),
                          TYgetShape (AVIS_TYPE (ID_AVIS (b2))));
@@ -880,8 +875,8 @@ AWLFIassign (node *arg_node, info *arg_info)
  * @brief applies AWLFI to a with-loop in a top-down manner.
  *
  *        When we return here, we will have counted all the
- *        references to any potential foldeeWL that we
- *        may want to deal with. We already know the foldeeWL
+ *        references to any potential producerWL that we
+ *        may want to deal with. We already know the producerWL
  *        reference count, because that's computed at entry to
  *        this phase. Hence, we are then in a position to
  *        determine if the fold will be legal.
@@ -982,7 +977,7 @@ AWLFIids (node *arg_node, info *arg_info)
  *
  * description:
  *   If this Id is a reference to a WL (N_with) we want to increment
- *   the number of references to the potential foldeeWL (WITH_REFERENCED_FOLD).
+ *   the number of references to the potential producerWL (WITH_REFERENCED_FOLD).
  *   The WL node has to be found via avis_ssaassign backlink.
  *
  *   We want to end up with WITH_REFERENCED_FOLD counting only
@@ -1017,7 +1012,7 @@ AWLFIid (node *arg_node, info *arg_info)
 
     /*
      * arg_node describes a WL, so
-     * WITH_REFERENCED_FOLD(foldeeWL) may have to be
+     * WITH_REFERENCED_FOLD(producerWL) may have to be
      * incremented
      */
     if ((NULL != foldeewl) && (NULL != INFO_FOLDERWL (arg_info))
@@ -1041,9 +1036,9 @@ AWLFIid (node *arg_node, info *arg_info)
  * @fn node *AWLFIprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all _sel_VxA_(idx, foldeeWL) primitives to see if
- *   we may be able to fold foldeeWL here, assuming that
- *   the _sel_ is within a potential folderWL.
+ *   Examine all _sel_VxA_(idx, producerWL) primitives to see if
+ *   we may be able to fold producerWL here, assuming that
+ *   the _sel_ is within a potential consumerWL.
  *
  *   We don't find out if all the conditions for folding can
  *   be met until this phase completes, so AWLF makes the
@@ -1052,7 +1047,7 @@ AWLFIid (node *arg_node, info *arg_info)
  *   When we do encounter an eligible sel() operation,
  *   with extrema available on PRF_ARG1, we construct
  *   an intersect computation between the now-available index
- *   set of idx, and each partition of the foldeeWL.
+ *   set of idx, and each partition of the producerWL.
  *   These are attached to the sel() via an F_attachintersect
  *   guard.
  *

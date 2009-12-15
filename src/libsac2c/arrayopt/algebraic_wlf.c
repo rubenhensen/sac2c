@@ -520,14 +520,14 @@ ExtractNthItem (int itemno, node *idx)
 /* expressions per partition are: bound1, bound2, intlo, inthi, intNull */
 #define WLBOUND1ORIGINAL(partno) (1 + (5 * partno))
 #define WLBOUND2ORIGINAL(partno) (1 + (5 * partno) + 1)
-#define WLINTERSECTION(partno, boundno) (1 + (5 * partno) + boundno)
-#define WLINTERSECTIONNULL(partno) (1 + (5 * partno) + 4)
+#define WLINTERSECTION(partno, boundno) (1 + 2 + (5 * partno) + boundno)
+#define WLINTERSECTIONNULL(partno) (1 + 4 + (5 * partno))
 
 #ifdef BROKE
 /** <!--********************************************************************-->
  *
  * @fn static
- * void MarkPartitionSliceNeeded( node *folderpart,
+ * void MarkPartitionSliceNeeded( node *consumerpart,
  *                                node *intersectb1, node *intersectb2,
  *                                node *idxbound1, idxbound2,
  *                                info *arg_info);
@@ -541,7 +541,7 @@ ExtractNthItem (int itemno, node *idx)
  *            [Since we only get called when this is the case,
  *             they are guaranteed not to match.]
  *
- * @params: folderpart: consumerWL partition that may need slicing
+ * @params: consumerpart: consumerWL partition that may need slicing
  *          intersectb1: lower bound of intersection between consumerWL
  *                       sel operation index set and producerWL partition
  *                       bounds.
@@ -557,7 +557,7 @@ ExtractNthItem (int itemno, node *idx)
  *
  *****************************************************************************/
 static void
-MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2,
+MarkPartitionSliceNeeded (node *consumerpart, node *intersectb1, node *intersectb2,
                           node *idxbound1, node *idxbound2, info *arg_info)
 {
     DBUG_ENTER ("MarkPartitionSliceNeeded");
@@ -585,14 +585,10 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
  *
  *        The search comprises two steps:
  *
- *        1. Scan the F_attachintersect intersect results,
- *           looking for
- *
- *
  *        1. Find a partition in the producerWL that has bounds
  *           that match those in the F_attachintersect bounds, if
  *           such still exists.
- *           This is required because other optimizations
+ *           This search is required because other optimizations
  *           may have split a partition, and/or reordered partitions
  *           within the producerWL.
  *
@@ -602,6 +598,7 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
  *
  *        2. If we do find a matching partition, there are three
  *           types of intersection possible:
+ *
  *            a. Null - no intersection, so no folding is possible.
  *
  *            b. ConsumerWL is subset of producerWL, or matches exactly.
@@ -612,17 +609,16 @@ MarkPartitionSliceNeeded (node *folderpart, node *intersectb1, node *intersectb2
  *               Folding is possible, but the ConsumerWL partition
  *               must be split into 2 or three partitions.
  *
- *
- * @params *arg_node: the N_prf of the sel(idx, producerWL).
- *         *folderpart: the consumerWL partition containing arg_node.
- *         *producerWL: the N_with of the producerWL.
+ * @params arg_node: the N_prf of the sel(idx, producerWL).
+ *         consumerpart: the consumerWL partition containing arg_node.
+ *         producerWL: the N_with of the producerWL.
  *
  * @result: The address of the matching prducerWL partition, if any.
  *          NULL if none is found.
  *
  *****************************************************************************/
 static node *
-FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *producerWL)
+FindMatchingPart (node *arg_node, info *arg_info, node *consumerpart, node *producerWL)
 {
     node *consumerWLGenerator;
     node *producerWLGenerator;
@@ -638,15 +634,15 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *produc
     node *producerWLBound2Original;
     bool matched = FALSE;
     node *nullIntersect;
-    int partno = 0;
+    int producerPartno = 0;
 
     DBUG_ENTER ("FindMatchingPart");
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
                  ("FindMatchingPart expected N_prf arg_node"));
     DBUG_ASSERT (N_with == NODE_TYPE (producerWL),
                  ("FindMatchingPart expected N_with producerWL"));
-    DBUG_ASSERT (N_part == NODE_TYPE (folderpart),
-                 ("FindMatchingPart expected N_part folderpart"));
+    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart),
+                 ("FindMatchingPart expected N_part consumerpart"));
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -655,27 +651,36 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *produc
     DBUG_ASSERT (F_attachintersect == PRF_PRF (idxparent),
                  ("FindMatchingPart expected F_attachintersect as idx parent"));
 
-    consumerWLGenerator = PART_GENERATOR (folderpart);
+    consumerWLGenerator = PART_GENERATOR (consumerpart);
     producerWLPart = WITH_PART (producerWL);
 
     /* Find matching producerWL partition, if any */
     while ((!matched) && producerWLPart != NULL) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
-#ifdef NEEDSNULLCHECK
-        DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND1 %s and %s", partno,
-                             AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
-        DBUG_PRINT ("AWLF", ("Attempting to match partition #%d BOUND2 %s and %s", partno,
-                             AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
-#endif // NEEDSNULLCHECK
 
         idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
         idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
-        intersectb1 = ID_AVIS (ExtractNthItem (WLINTERSECTION (partno, 0), idx));
-        intersectb2 = ID_AVIS (ExtractNthItem (WLINTERSECTION (partno, 1), idx));
+        intersectb1 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 0), idx));
+        intersectb2 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 1), idx));
 
-        producerWLBound1Original = ExtractNthItem (WLBOUND1ORIGINAL (partno), idx);
-        producerWLBound2Original = ExtractNthItem (WLBOUND2ORIGINAL (partno), idx);
-        nullIntersect = ExtractNthItem (WLINTERSECTIONNULL (partno), idx);
+        if ((NULL != idxbound1) && (NULL != intersectb1)) {
+            DBUG_PRINT (
+              "AWLF",
+              ("producerPartno #%d matching producer idxbound1 %s, intersectb1 %s",
+               producerPartno, AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
+        }
+        if ((NULL != idxbound2) && (NULL != intersectb2)) {
+            DBUG_PRINT (
+              "AWLF",
+              ("producerPartno #%d matching producer idxbound2 %s, intersectb2 %s",
+               producerPartno, AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
+        }
+
+        producerWLBound1Original
+          = ExtractNthItem (WLBOUND1ORIGINAL (producerPartno), idx);
+        producerWLBound2Original
+          = ExtractNthItem (WLBOUND2ORIGINAL (producerPartno), idx);
+        nullIntersect = ExtractNthItem (WLINTERSECTIONNULL (producerPartno), idx);
 
         matched = ((N_generator == NODE_TYPE (consumerWLGenerator))
                    && (N_generator == NODE_TYPE (producerWLGenerator))
@@ -686,21 +691,26 @@ FindMatchingPart (node *arg_node, info *arg_info, node *folderpart, node *produc
                    && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
                                             GENERATOR_STEP (consumerWLGenerator)))
                    && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
-                                            GENERATOR_WIDTH (consumerWLGenerator)))
-                   &&
-                   /*
-                   ( !nullIntersect)                                   &&
-                   */
-                   (idxbound1 == intersectb1) && (idxbound2 == intersectb2));
+                                            GENERATOR_WIDTH (consumerWLGenerator))));
+
+        if (matched) {
+            DBUG_PRINT ("AWLF", ("All generator fields match"));
+            matched =
+              /*
+              ( !nullIntersect)                                   &&
+              */
+              (idxbound1 == intersectb1) && (idxbound2 == intersectb2);
+        }
 
         if (!matched) {
             producerWLPart = PART_NEXT (producerWLPart);
-            partno++;
+            producerPartno++;
         }
     }
 
     if (matched) {
-        DBUG_PRINT ("AWLF", ("FindMatchingPart referents match partition#%d", partno));
+        DBUG_PRINT ("AWLF", ("FindMatchingPart referents match producerPartno %d",
+                             producerPartno));
     } else {
         producerWLPart = NULL;
         DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
