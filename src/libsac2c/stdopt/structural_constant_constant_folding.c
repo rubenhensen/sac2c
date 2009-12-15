@@ -1312,23 +1312,15 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
     node *y;
     constant *xfs = NULL;
     pattern *pat;
+    constant *c;
     node *curel;
     bool b;
-    constant *c;
     node *z = NULL;
 
     DBUG_ENTER ("SCCFprf_mesh_VxVxV");
 
-    c = COaST2Constant (PRF_ARG1 (arg_node));
-    if (NULL != c) {
-        if (COisTrue (c, TRUE)) {
-            DBUG_PRINT ("CF", ("Replacing mesh result by x "));
-            res = DUPdoDupNode (PRF_ARG2 (arg_node));
-        } else if (COisFalse (c, TRUE)) {
-            DBUG_PRINT ("CF", ("Replacing mesh result by y"));
-            res = DUPdoDupNode (PRF_ARG3 (arg_node));
-        }
-        c = COfreeConstant (c);
+    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mesh_VxVxV), 3,
                      PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
@@ -1348,7 +1340,7 @@ SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info)
                 b = COisTrue (c, TRUE);
                 c = COfreeConstant (c);
                 curel = b ? EXPRS_EXPR (x) : EXPRS_EXPR (y);
-                z = TCappendExprs (z, TBmakeExprs (DUPdoDupTree (curel), NULL));
+                z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
                 p = EXPRS_NEXT (p);
                 x = EXPRS_NEXT (x);
                 y = EXPRS_NEXT (y);
