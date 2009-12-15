@@ -69,16 +69,21 @@
  * The actual function definitions are defined by the following macro usages:
  */
 
-COcv2StrTEMPLATE (unsigned short, UShort, "%hud")
-  COcv2StrTEMPLATE (unsigned int, UInt, "%ud")
-    COcv2StrTEMPLATE (unsigned long, ULong, "%lud") COcv2StrTEMPLATE (char, Byte, "%c")
-      COcv2StrTEMPLATE (short, Short, "%hd") COcv2StrTEMPLATE (int, Int, "%d")
-        COcv2StrTEMPLATE (bool, Bool, "%d") COcv2StrTEMPLATE (long, Long, "%ld")
+COcv2StrTEMPLATE (unsigned char, UByte, "%c")
+  COcv2StrTEMPLATE (unsigned short, UShort, "%hu")
+    COcv2StrTEMPLATE (unsigned int, UInt, "%u")
+      COcv2StrTEMPLATE (unsigned long, ULong, "%lu")
+        COcv2StrTEMPLATE (unsigned long long, ULongLong, "%llu")
+          COcv2StrTEMPLATE (char, Byte, "%c") COcv2StrTEMPLATE (short, Short, "%hd")
+            COcv2StrTEMPLATE (int, Int, "%d") COcv2StrTEMPLATE (long, Long, "%ld")
+              COcv2StrTEMPLATE (long long, LongLong, "%lld")
+                COcv2StrTEMPLATE (bool, Bool, "%d")
 
-          COcv2StrTEMPLATE (float, Float, "%f") COcv2StrTEMPLATE (double, Double, "%f")
-            COcv2StrTEMPLATE (long double, LongDouble, "%Lf")
+                  COcv2StrTEMPLATE (float, Float, "%f")
+                    COcv2StrTEMPLATE (double, Double, "%f")
+                      COcv2StrTEMPLATE (long double, LongDouble, "%Lf")
 
-              COcv2StrTEMPLATE (char, Char, "%c")
+                        COcv2StrTEMPLATE (char, Char, "%c")
 
   /*
    * Finally, we provide a dummy function which should never be called!

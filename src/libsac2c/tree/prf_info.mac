@@ -152,17 +152,49 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
      SCSprf_tob_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS, ICCnone,
      TEone, NULL, NULL),
 
+  PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, NULL, COMPprfOp_S,
+       SCSprf_toc_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
   PRF (toby_S, (PA_S, PA_x, PA_x), 1, TOBY, NOSIMD, NTCCTprf_toby_S, COtoby, COMPprfOp_S,
        SCSprf_toby_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
-  PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, NULL, COMPprfOp_S,
-       SCSprf_toc_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+  PRF (tos_S, (PA_S, PA_x, PA_x), 1, TOS, NOSIMD, NTCCTprf_tos_S, COtos, COMPprfOp_S,
+       SCSprf_tos_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
   PRF (toi_S, (PA_S, PA_x, PA_x), 1, TOI, NOSIMD, NTCCTprf_toi_S, COtoi, COMPprfOp_S,
        SCSprf_toi_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
+
+  PRF (tol_S, (PA_S, PA_x, PA_x), 1, TOL, NOSIMD, NTCCTprf_tol_S, COtol, COMPprfOp_S,
+       SCSprf_tol_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (toll_S, (PA_S, PA_x, PA_x), 1, TOLL, NOSIMD, NTCCTprf_toll_S, COtoll, COMPprfOp_S,
+       SCSprf_toll_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (touby_S, (PA_S, PA_x, PA_x), 1, TOUBY, NOSIMD, NTCCTprf_touby_S, COtouby,
+       COMPprfOp_S, SCSprf_touby_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
+       PPIgetPVS, ICCnone, TEone, NULL, NULL),
+
+  PRF (tous_S, (PA_S, PA_x, PA_x), 1, TOUS, NOSIMD, NTCCTprf_tous_S, COtous, COMPprfOp_S,
+       SCSprf_tous_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (toui_S, (PA_S, PA_x, PA_x), 1, TOUI, NOSIMD, NTCCTprf_toui_S, COtoui, COMPprfOp_S,
+       SCSprf_toui_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (toul_S, (PA_S, PA_x, PA_x), 1, TOUL, NOSIMD, NTCCTprf_toul_S, COtoul, COMPprfOp_S,
+       SCSprf_toul_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (toull_S, (PA_S, PA_x, PA_x), 1, TOULL, NOSIMD, NTCCTprf_toull_S, COtoull,
+       COMPprfOp_S, SCSprf_toull_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
+       PPIgetPVS, ICCnone, TEone, NULL, NULL),
 
   PRF (tof_S, (PA_S, PA_x, PA_x), 1, TOF, NOSIMD, NTCCTprf_tof_S, COtof, COMPprfOp_S,
        SCSprf_tof_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,

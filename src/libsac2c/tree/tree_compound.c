@@ -2437,11 +2437,35 @@ TCcreateZeroScalar (simpletype btype)
     DBUG_ASSERT ((btype != T_hidden), "hidden-type found");
 
     switch (btype) {
+    case T_byte:
+        ret_node = TBmakeNumbyte (0);
+        break;
+    case T_short:
+        ret_node = TBmakeNumshort (0);
+        break;
     case T_int:
         ret_node = TBmakeNum (0);
         break;
-    case T_byte:
-        ret_node = TBmakeNumbyte (0);
+    case T_long:
+        ret_node = TBmakeNumlong (0);
+        break;
+    case T_longlong:
+        ret_node = TBmakeNumlonglong (0);
+        break;
+    case T_ubyte:
+        ret_node = TBmakeNumubyte (0);
+        break;
+    case T_ushort:
+        ret_node = TBmakeNumushort (0);
+        break;
+    case T_uint:
+        ret_node = TBmakeNumuint (0);
+        break;
+    case T_ulong:
+        ret_node = TBmakeNumulong (0);
+        break;
+    case T_ulonglong:
+        ret_node = TBmakeNumulonglong (0);
         break;
     case T_float:
         ret_node = TBmakeFloat (0);

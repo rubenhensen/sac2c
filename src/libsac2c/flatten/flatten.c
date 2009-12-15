@@ -506,20 +506,32 @@ FLATexprs (node *arg_node, info *arg_info)
      */
     switch (INFO_FLAT_CONTEXT (arg_info)) {
     case CT_ap:
-        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numbyte)
-                    || (NODE_TYPE (expr) == N_float) || (NODE_TYPE (expr) == N_double)
-                    || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
-                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
+        abstract
+          = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
+             || (NODE_TYPE (expr) == N_numint) || (NODE_TYPE (expr) == N_numlong)
+             || (NODE_TYPE (expr) == N_numlonglong) || (NODE_TYPE (expr) == N_numubyte)
+             || (NODE_TYPE (expr) == N_numushort) || (NODE_TYPE (expr) == N_numuint)
+             || (NODE_TYPE (expr) == N_numulong) || (NODE_TYPE (expr) == N_numulonglong)
+             || (NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+             || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+             || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+             || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
+             || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
+             || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_return:
-        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numbyte)
-                    || (NODE_TYPE (expr) == N_float) || (NODE_TYPE (expr) == N_double)
-                    || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
-                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
+        abstract
+          = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
+             || (NODE_TYPE (expr) == N_numint) || (NODE_TYPE (expr) == N_numlong)
+             || (NODE_TYPE (expr) == N_numlonglong) || (NODE_TYPE (expr) == N_numubyte)
+             || (NODE_TYPE (expr) == N_numushort) || (NODE_TYPE (expr) == N_numuint)
+             || (NODE_TYPE (expr) == N_numulong) || (NODE_TYPE (expr) == N_numulonglong)
+             || (NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+             || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+             || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+             || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
+             || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
+             || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_normal:
         abstract = ((NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)

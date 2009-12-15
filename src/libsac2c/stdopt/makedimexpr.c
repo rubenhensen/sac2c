@@ -673,6 +673,15 @@ MDECONST (float)
 MDECONST (double)
 MDECONST (num)
 MDECONST (numbyte)
+MDECONST (numshort)
+MDECONST (numint)
+MDECONST (numlong)
+MDECONST (numlonglong)
+MDECONST (numubyte)
+MDECONST (numushort)
+MDECONST (numuint)
+MDECONST (numulong)
+MDECONST (numulonglong)
 
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->

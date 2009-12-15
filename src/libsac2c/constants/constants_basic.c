@@ -869,16 +869,70 @@ COaST2Constant (node *n)
         /* convert the given constant node */
 
         switch (NODE_TYPE (n)) {
-        case N_num:
-            element = (int *)MEMmalloc (sizeof (int));
-            *((int *)element) = NUM_VAL (n);
-            new_co = COmakeConstant (T_int, SHmakeShape (0), element);
-            break;
-
         case N_numbyte:
             element = (char *)MEMmalloc (sizeof (char));
             *((char *)element) = NUMBYTE_VAL (n);
             new_co = COmakeConstant (T_byte, SHmakeShape (0), element);
+            break;
+
+        case N_numshort:
+            element = (short *)MEMmalloc (sizeof (short));
+            *((short *)element) = NUMSHORT_VAL (n);
+            new_co = COmakeConstant (T_short, SHmakeShape (0), element);
+            break;
+
+        case N_numint:
+            element = (int *)MEMmalloc (sizeof (int));
+            *((int *)element) = NUMINT_VAL (n);
+            new_co = COmakeConstant (T_int, SHmakeShape (0), element);
+            break;
+
+        case N_numlong:
+            element = (long *)MEMmalloc (sizeof (long));
+            *((long *)element) = NUMLONG_VAL (n);
+            new_co = COmakeConstant (T_long, SHmakeShape (0), element);
+            break;
+
+        case N_numlonglong:
+            element = (long long *)MEMmalloc (sizeof (long long));
+            *((long long *)element) = NUMLONGLONG_VAL (n);
+            new_co = COmakeConstant (T_longlong, SHmakeShape (0), element);
+            break;
+
+        case N_numubyte:
+            element = (unsigned char *)MEMmalloc (sizeof (unsigned char));
+            *((unsigned char *)element) = NUMUBYTE_VAL (n);
+            new_co = COmakeConstant (T_ubyte, SHmakeShape (0), element);
+            break;
+
+        case N_numushort:
+            element = (unsigned short *)MEMmalloc (sizeof (unsigned short));
+            *((unsigned short *)element) = NUMUSHORT_VAL (n);
+            new_co = COmakeConstant (T_ushort, SHmakeShape (0), element);
+            break;
+
+        case N_numuint:
+            element = (unsigned int *)MEMmalloc (sizeof (unsigned int));
+            *((unsigned int *)element) = NUMUINT_VAL (n);
+            new_co = COmakeConstant (T_uint, SHmakeShape (0), element);
+            break;
+
+        case N_numulong:
+            element = (unsigned long *)MEMmalloc (sizeof (unsigned long));
+            *((unsigned long *)element) = NUMULONG_VAL (n);
+            new_co = COmakeConstant (T_ulong, SHmakeShape (0), element);
+            break;
+
+        case N_numulonglong:
+            element = (unsigned long long *)MEMmalloc (sizeof (unsigned long long));
+            *((unsigned long long *)element) = NUMULONGLONG_VAL (n);
+            new_co = COmakeConstant (T_ulonglong, SHmakeShape (0), element);
+            break;
+
+        case N_num:
+            element = (int *)MEMmalloc (sizeof (int));
+            *((int *)element) = NUM_VAL (n);
+            new_co = COmakeConstant (T_int, SHmakeShape (0), element);
             break;
 
         case N_double:
@@ -965,8 +1019,17 @@ COisConstant (node *n)
 
     if (n != NULL) {
         switch (NODE_TYPE (n)) {
-        case N_num:
         case N_numbyte:
+        case N_numshort:
+        case N_numint:
+        case N_numlong:
+        case N_numlonglong:
+        case N_numubyte:
+        case N_numushort:
+        case N_numuint:
+        case N_numulong:
+        case N_numulonglong:
+        case N_num:
         case N_double:
         case N_float:
         case N_bool:

@@ -880,6 +880,15 @@ MSECONST (float)
 MSECONST (double)
 MSECONST (num)
 MSECONST (numbyte)
+MSECONST (numshort)
+MSECONST (numint)
+MSECONST (numlong)
+MSECONST (numlonglong)
+MSECONST (numubyte)
+MSECONST (numushort)
+MSECONST (numuint)
+MSECONST (numulong)
+MSECONST (numulonglong)
 
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->

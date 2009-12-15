@@ -21,5 +21,11 @@
 #define _SAC_TYPES_H
 
 typedef char byte;
+typedef long long longlong;
+typedef unsigned char ubyte;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef unsigned long long ulonglong;
 
 #endif /* _TYPES_H */

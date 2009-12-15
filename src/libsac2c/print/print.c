@@ -3042,7 +3042,31 @@ PRTnumshort (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%d", NUMSHORT_VAL (arg_node));
+    fprintf (global.outfile, "%hd", NUMSHORT_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumint( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numint node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumint (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumint");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%d", NUMINT_VAL (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -3067,6 +3091,150 @@ PRTnumlong (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, "%ld", NUMLONG_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumlonglong( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numlonglong node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumlonglong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumlonglong");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%lldLL", NUMLONGLONG_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumubyte( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numubyte node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumubyte (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumubyte");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%u", NUMUBYTE_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumushort( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numushort node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumushort (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumushort");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%hu", NUMUSHORT_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumint( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numint node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumuint (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumuint");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%u", NUMUINT_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumulong( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numulong node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumulong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumulong");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%lu", NUMULONG_VAL (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTnumulonglong( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_numulonglong node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnumulonglong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTnumulonglong");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%lluULL", NUMULONGLONG_VAL (arg_node));
 
     DBUG_RETURN (arg_node);
 }

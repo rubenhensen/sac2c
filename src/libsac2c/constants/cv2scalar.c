@@ -59,11 +59,67 @@ COcv2Numshort (void *elems, int offset)
 }
 
 node *
+COcv2Numint (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numint");
+
+    DBUG_RETURN (TBmakeNumint (((int *)elems)[offset]));
+}
+
+node *
 COcv2Numlong (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Numlong");
 
     DBUG_RETURN (TBmakeNumlong (((long *)elems)[offset]));
+}
+
+node *
+COcv2Numlonglong (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numlonglong");
+
+    DBUG_RETURN (TBmakeNumlonglong (((long long *)elems)[offset]));
+}
+
+node *
+COcv2Numubyte (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numubyte");
+
+    DBUG_RETURN (TBmakeNumubyte (((unsigned char *)elems)[offset]));
+}
+
+node *
+COcv2Numushort (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numushort");
+
+    DBUG_RETURN (TBmakeNumushort (((unsigned short *)elems)[offset]));
+}
+
+node *
+COcv2Numuint (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numuint");
+
+    DBUG_RETURN (TBmakeNumuint (((unsigned int *)elems)[offset]));
+}
+
+node *
+COcv2Numulong (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numulong");
+
+    DBUG_RETURN (TBmakeNumulong (((unsigned long *)elems)[offset]));
+}
+
+node *
+COcv2Numulonglong (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Numulonglong");
+
+    DBUG_RETURN (TBmakeNumulonglong (((unsigned long long *)elems)[offset]));
 }
 
 node *

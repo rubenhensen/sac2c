@@ -30,12 +30,16 @@
 #include "types.h"
 
 #define EXT_DECLS(fun)                                                                   \
+    extern void COzipCvUByte##fun (void *arg1, int pos1, void *arg2, int pos2,           \
+                                   void *res, int res_pos);                              \
     extern void COzipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos);                             \
     extern void COzipCvUInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
     extern void COzipCvULong##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
+    extern void COzipCvULongLong##fun (void *arg1, int pos1, void *arg2, int pos2,       \
+                                       void *res, int res_pos);                          \
     extern void COzipCvByte##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
     extern void COzipCvShort##fun (void *arg1, int pos1, void *arg2, int pos2,           \
@@ -44,6 +48,8 @@
                                  int res_pos);                                           \
     extern void COzipCvLong##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
+    extern void COzipCvLongLong##fun (void *arg1, int pos1, void *arg2, int pos2,        \
+                                      void *res, int res_pos);                           \
                                                                                          \
     extern void COzipCvFloat##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
@@ -76,8 +82,16 @@ EXT_DECLS (Lt)
 EXT_DECLS (Gt)
 EXT_DECLS (Ge)
 EXT_DECLS (Not)
+EXT_DECLS (Touby)
+EXT_DECLS (Tous)
+EXT_DECLS (Toui)
+EXT_DECLS (Toul)
+EXT_DECLS (Toull)
 EXT_DECLS (Toby)
+EXT_DECLS (Tos)
 EXT_DECLS (Toi)
+EXT_DECLS (Tol)
+EXT_DECLS (Toll)
 EXT_DECLS (Tof)
 EXT_DECLS (Tod)
 EXT_DECLS (Abs)

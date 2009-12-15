@@ -259,8 +259,56 @@ static const zipcvfunptr zipcv_toby_init[] = {
 #undef TYP_IFzipcv
 };
 
+static const zipcvfunptr zipcv_tos_init[] = {
+#define TYP_IFzipcv(fun) fun##Tos
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
 static const zipcvfunptr zipcv_toi_init[] = {
 #define TYP_IFzipcv(fun) fun##Toi
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_tol_init[] = {
+#define TYP_IFzipcv(fun) fun##Tol
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_toll_init[] = {
+#define TYP_IFzipcv(fun) fun##Toll
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_touby_init[] = {
+#define TYP_IFzipcv(fun) fun##Touby
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_tous_init[] = {
+#define TYP_IFzipcv(fun) fun##Tous
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_toui_init[] = {
+#define TYP_IFzipcv(fun) fun##Toui
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_toul_init[] = {
+#define TYP_IFzipcv(fun) fun##Toul
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+
+static const zipcvfunptr zipcv_toull_init[] = {
+#define TYP_IFzipcv(fun) fun##Toull
 #include "type_info.mac"
 #undef TYP_IFzipcv
 };

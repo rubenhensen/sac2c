@@ -21,13 +21,16 @@
 #include "types.h"
 
 #define EXT_DECLS(fun)                                                                   \
+    extern constant *CObaseCvUByte##fun (shape *shp);                                    \
     extern constant *CObaseCvUShort##fun (shape *shp);                                   \
     extern constant *CObaseCvUInt##fun (shape *shp);                                     \
     extern constant *CObaseCvULong##fun (shape *shp);                                    \
+    extern constant *CObaseCvULongLong##fun (shape *shp);                                \
     extern constant *CObaseCvByte##fun (shape *shp);                                     \
     extern constant *CObaseCvShort##fun (shape *shp);                                    \
     extern constant *CObaseCvInt##fun (shape *shp);                                      \
     extern constant *CObaseCvLong##fun (shape *shp);                                     \
+    extern constant *CObaseCvLongLong##fun (shape *shp);                                 \
                                                                                          \
     extern constant *CObaseCvFloat##fun (shape *shp);                                    \
     extern constant *CObaseCvDouble##fun (shape *shp);                                   \

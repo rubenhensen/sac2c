@@ -207,12 +207,20 @@ int charpos = 0;
 "_not_S_"                  { FILTER( PRF_NOT_S); }
 "_not_V_"                  { FILTER( PRF_NOT_V); }
 
-"_toi_S_"                  { FILTER( PRF_TOI_S); }
-"_tof_S_"                  { FILTER( PRF_TOF_S); }
-"_tod_S_"                  { FILTER( PRF_TOD_S); }
-"_toc_S_"                  { FILTER( PRF_TOC_S); }
-"_tob_S_"                  { FILTER( PRF_TOB_S); }
 "_toby_S_"                 { FILTER( PRF_TOBY_S); }
+"_tos_S_"                  { FILTER( PRF_TOS_S);  }
+"_toi_S_"                  { FILTER( PRF_TOI_S);  }
+"_tol_S_"                  { FILTER( PRF_TOL_S);  }
+"_toll_S_"                 { FILTER( PRF_TOLL_S); }
+"_touby_S_"                { FILTER( PRF_TOUBY_S); }
+"_tous_S_"                 { FILTER( PRF_TOUS_S);  }
+"_toui_S_"                 { FILTER( PRF_TOUI_S);  }
+"_toul_S_"                 { FILTER( PRF_TOUL_S);  }
+"_toull_S_"                { FILTER( PRF_TOULL_S); }
+"_tof_S_"                  { FILTER( PRF_TOF_S);  }
+"_tod_S_"                  { FILTER( PRF_TOD_S);  }
+"_toc_S_"                  { FILTER( PRF_TOC_S);  }
+"_tob_S_"                  { FILTER( PRF_TOB_S);  }
 
 
 "struct"                   { FILTER( STRUCT); }
@@ -266,13 +274,19 @@ int charpos = 0;
 "specialize"               { FILTER( SPECIALIZE); }
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
 
-"int"                      { FILTER( TYPE_INT); }
 "float"                    { FILTER( TYPE_FLOAT); }
 "bool"                     { FILTER( TYPE_BOOL); }
 "unsigned"                 { FILTER( TYPE_UNS); }
 "byte"                     { FILTER( TYPE_BYTE); }
 "short"                    { FILTER( TYPE_SHORT); }
+"int"                      { FILTER( TYPE_INT); }
 "long"                     { FILTER( TYPE_LONG); }
+"long long"                { FILTER( TYPE_LONGLONG); }
+"unsigned byte"            { FILTER( TYPE_UBYTE); }
+"unsigned short"           { FILTER( TYPE_USHORT); }
+"unsigned int"             { FILTER( TYPE_UINT); }
+"unsingned long"           { FILTER( TYPE_ULONG); }
+"unsigned long long"       { FILTER( TYPE_ULONGLONG); }
 "char"                     { FILTER( TYPE_CHAR); }
 "double"                   { FILTER( TYPE_DBL); }
 
@@ -417,6 +431,88 @@ int charpos = 0;
 0[bB]                      { yylval.cbyte = 0;
                              FILTER( NUMBYTE);
                            }
+
+[1-9][0-9]*[sS]            {
+                             sscanf( yytext, "%hd", &yylval.cshort);
+                             FILTER( NUMSHORT);
+                           }
+
+0[sS]                      { yylval.cshort = 0;
+                             FILTER( NUMSHORT);
+                           }
+
+[1-9][0-9]*[iI]            {
+                             sscanf( yytext, "%d", &yylval.cint);
+                             FILTER( NUMINT);
+                           }
+
+0[iI]                      { yylval.cint = 0;
+                             FILTER( NUMINT);
+                           }
+
+[1-9][0-9]*[lL]            {
+                             sscanf( yytext, "%ld", &yylval.clong);
+                             FILTER( NUMLONG);
+                           }
+
+0[lL]                      { yylval.clong = 0;
+                             FILTER( NUMLONG);
+                           }
+
+[1-9][0-9]*(ll|LL)         {
+                             sscanf( yytext, "%lld", &yylval.clonglong);
+                             FILTER( NUMLONGLONG);
+                           }
+
+0(lL|lL)                   { yylval.clonglong = 0;
+                             FILTER( NUMLONGLONG);
+                           }
+
+[1-9][0-9]*(ub|UB)         {
+                             sscanf( yytext, "%u", &yylval.cubyte);
+                             FILTER( NUMUBYTE);
+                           }
+
+0(ub|UB)                   { yylval.cubyte = 0;
+                             FILTER( NUMUBYTE);
+                           }
+
+[1-9][0-9]*(us|US)         {
+                             sscanf( yytext, "%hu", &yylval.cushort);
+                             FILTER( NUMUSHORT);
+                           }
+
+0(us|US)                   { yylval.cushort = 0;
+                             FILTER( NUMUSHORT);
+                           }
+
+[1-9][0-9]*(ui|UI)         {
+                             sscanf( yytext, "%u", &yylval.cuint);
+                             FILTER( NUMUINT);
+                           }
+
+0(ui|UI)                   { yylval.cuint = 0;
+                             FILTER( NUMUINT);
+                           }
+
+[1-9][0-9]*(ul|UL)         {
+                             sscanf( yytext, "%lu", &yylval.culong);
+                             FILTER( NUMULONG);
+                           }
+
+0(ul|UL)                   { yylval.culong = 0;
+                             FILTER( NUMULONG);
+                           }
+
+[1-9][0-9]*(ull|ULL)       {
+                             sscanf( yytext, "%lld", &yylval.culonglong);
+                             FILTER( NUMULONGLONG);
+                           }
+
+0(ull|ULL)                 { yylval.culonglong = 0;
+                             FILTER( NUMULONGLONG);
+                           }
+
 0[xX][0-9a-fA-F]+          { char *str;
                              sscanf( yytext, "%i", &yylval.cint);
                              if (commlevel==0) {

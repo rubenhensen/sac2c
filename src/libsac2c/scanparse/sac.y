@@ -81,9 +81,17 @@ static int prf_arity[] = {
  char               *id;
  ntype              *ntype;
  node               *node;
- int                cint;
  char               cchar;
  char               cbyte;
+ short              cshort;
+ int                cint;
+ long               clong;
+ long long          clonglong;
+ unsigned char      cubyte;
+ unsigned short     cushort;
+ unsigned int       cuint;
+ unsigned long      culong;
+ unsigned long long culonglong;
  float              cfloat;
  double             cdbl;
  prf                prf;
@@ -130,16 +138,29 @@ PRF_GT_SxS   PRF_GT_SxV  PRF_GT_VxS  PRF_GT_VxV
 PRF_AND_SxS  PRF_AND_SxV  PRF_AND_VxS  PRF_AND_VxV
 PRF_OR_SxS   PRF_OR_SxV  PRF_OR_VxS  PRF_OR_VxV
 PRF_NOT_S  PRF_NOT_V
-PRF_TOI_S  PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S PRF_TOBY_S
+PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S 
+PRF_TOBY_S PRF_TOS_S PRF_TOI_S PRF_TOL_S PRF_TOLL_S
+PRF_TOUBY_S PRF_TOUS_S PRF_TOUI_S PRF_TOUL_S PRF_TOULL_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 PRF_MESH_VxVxV
 
 %token <id> ID  STR
 
-%token TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
-       TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID  TYPE_BYTE
-%token <cint> NUM
+%token TYPE_FLOAT  TYPE_BOOL  TYPE_UNS
+       TYPE_CHAR  TYPE_DBL  TYPE_VOID  
+       TYPE_BYTE TYPE_SHORT TYPE_INT TYPE_LONG TYPE_LONGLONG
+       TYPE_UBYTE TYPE_USHORT TYPE_UINT TYPE_ULONG TYPE_ULONGLONG
 %token <cbyte> NUMBYTE
+%token <cshort> NUMSHORT
+%token <cint> NUM
+%token <cint> NUMINT
+%token <clong> NUMLONG
+%token <clonglong> NUMLONGLONG
+%token <cubyte> NUMUBYTE
+%token <cushort> NUMUSHORT
+%token <cuint> NUMUINT
+%token <culong> NUMULONG
+%token <culonglong> NUMULONGLONG
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
@@ -1322,8 +1343,17 @@ subexpr: subexpr DOT ID %prec STRUCTELEM
 /* Expression without struct-style member access (x.y). */
 nostrexpr:
       qual_ext_id                { $$ = $1; }
-    | NUM                        { $$ = TBmakeNum( $1);       }
     | NUMBYTE                    { $$ = TBmakeNumbyte( $1);   }
+    | NUMSHORT                   { $$ = TBmakeNumshort( $1);  }
+    | NUMINT                     { $$ = TBmakeNumint( $1);    }
+    | NUMLONG                    { $$ = TBmakeNumlong( $1);   }
+    | NUMLONGLONG                { $$ = TBmakeNumlonglong( $1); }
+    | NUMUBYTE                   { $$ = TBmakeNumubyte( $1);  }
+    | NUMUSHORT                  { $$ = TBmakeNumushort( $1); }
+    | NUMUINT                    { $$ = TBmakeNumuint( $1);   }
+    | NUMULONG                   { $$ = TBmakeNumulong( $1);  }
+    | NUMULONGLONG               { $$ = TBmakeNumulonglong( $1); }
+    | NUM                        { $$ = TBmakeNum( $1);       }
     | FLOAT                      { $$ = TBmakeFloat( $1);     }
     | DOUBLE                     { $$ = TBmakeDouble( $1);    }
     | CHAR                       { $$ = TBmakeChar( $1);      }
@@ -1823,12 +1853,20 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_OR_SxV         { $$ = F_or_SxV;  }
    | PRF_OR_VxS         { $$ = F_or_VxS;  }
    | PRF_OR_VxV         { $$ = F_or_VxV;  }
+   | PRF_TOBY_S         { $$ = F_toby_S;  }
+   | PRF_TOS_S          { $$ = F_tos_S;   }
    | PRF_TOI_S          { $$ = F_toi_S;   }
+   | PRF_TOL_S          { $$ = F_tol_S;   }
+   | PRF_TOLL_S         { $$ = F_toll_S;  }
+   | PRF_TOUBY_S        { $$ = F_touby_S; }
+   | PRF_TOUS_S         { $$ = F_tous_S;  }
+   | PRF_TOUI_S         { $$ = F_toui_S;  }
+   | PRF_TOUL_S         { $$ = F_toul_S;  }
+   | PRF_TOULL_S        { $$ = F_toull_S; }
    | PRF_TOF_S          { $$ = F_tof_S;   }
    | PRF_TOD_S          { $$ = F_tod_S;   }
    | PRF_TOC_S          { $$ = F_toc_S;   }
    | PRF_TOB_S          { $$ = F_tob_S;   }
-   | PRF_TOBY_S         { $$ = F_toby_S;  }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}
@@ -1945,14 +1983,20 @@ basentype: simplentype
            }
          ;
 
-simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
-           | TYPE_BYTE   { $$ = TYmakeSimpleType( T_byte);   }
-           | TYPE_SHORT  { $$ = TYmakeSimpleType( T_short);  }
-           | TYPE_LONG   { $$ = TYmakeSimpleType( T_long);   }
-           | TYPE_FLOAT  { $$ = TYmakeSimpleType( T_float);  }
-           | TYPE_BOOL   { $$ = TYmakeSimpleType( T_bool);   }
-           | TYPE_CHAR   { $$ = TYmakeSimpleType( T_char);   }
-           | TYPE_DBL    { $$ = TYmakeSimpleType( T_double); }
+simplentype: TYPE_BYTE       { $$ = TYmakeSimpleType( T_byte);       }
+           | TYPE_SHORT      { $$ = TYmakeSimpleType( T_short);      }
+           | TYPE_INT        { $$ = TYmakeSimpleType( T_int);        }
+           | TYPE_LONG       { $$ = TYmakeSimpleType( T_long);       }
+           | TYPE_LONGLONG   { $$ = TYmakeSimpleType( T_longlong);   }
+           | TYPE_UBYTE      { $$ = TYmakeSimpleType( T_ubyte);      }
+           | TYPE_USHORT     { $$ = TYmakeSimpleType( T_ushort);     }
+           | TYPE_UINT       { $$ = TYmakeSimpleType( T_uint);       }
+           | TYPE_ULONG      { $$ = TYmakeSimpleType( T_ulong);      }
+           | TYPE_ULONGLONG  { $$ = TYmakeSimpleType( T_ulonglong);  }
+           | TYPE_FLOAT      { $$ = TYmakeSimpleType( T_float);      }
+           | TYPE_BOOL       { $$ = TYmakeSimpleType( T_bool);       }
+           | TYPE_CHAR       { $$ = TYmakeSimpleType( T_char);       }
+           | TYPE_DBL        { $$ = TYmakeSimpleType( T_double);     }
            ;
 
 userntype: STRUCT ID

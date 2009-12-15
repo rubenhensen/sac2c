@@ -11,7 +11,14 @@
     <type name="Integer" ctype="int" init="0" copy="literal" />
     <type name="Byte" ctype="char" vtype="int" init="0" copy="literal" />
     <type name="Short" ctype="short" vtype="int" init="0" copy="literal" />
-    <type name="Long" ctype="long" init="0" copy="literal" />
+    <type name="Int" ctype="int" vtype="int" init="0" copy="literal" />
+    <type name="Long" ctype="long" vtype="long long" init="0" copy="literal" />
+    <type name="Longlong" ctype="long long" vtype="long long" init="0" copy="literal" />
+    <type name="Ubyte" ctype="unsigned char" vtype="unsigned int" init="0" copy="literal" />
+    <type name="Ushort" ctype="unsigned short" vtype="unsigned int" init="0" copy="literal" />
+    <type name="Uint" ctype="unsigned int" vtype="unsigned int" init="0" copy="literal" />
+    <type name="Ulong" ctype="unsigned long" vtype="unsigned long int" init="0" copy="literal" />
+    <type name="Ulonglong" ctype="unsigned long long" vtype="unsigned long long int" init="0" copy="literal" />
     <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
@@ -533,6 +540,15 @@
         <travuser>
           <node name="Num" />
           <node name="NumByte" />
+	  <node name="NumShort" />
+	  <node name="NumInt" />
+	  <node name="NumLong" />
+	  <node name="NumLonglong" />
+	  <node name="NumUbyte" />
+	  <node name="NumUshort" />
+	  <node name="NumUint" />
+	  <node name="NumUlong" />
+          <node name="NumUlonglong" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
@@ -961,6 +977,15 @@
 		  <node name="Type" />
 		  <node name="Num" />
 		  <node name="NumByte" />
+		  <node name="NumShort" />
+		  <node name="NumInt" />
+		  <node name="NumLong" />
+		  <node name="NumLonglong" />
+		  <node name="NumUbyte" />
+		  <node name="NumUshort" />
+		  <node name="NumUint" />
+		  <node name="NumUlong" />
+		  <node name="NumUlonglong" />
 		  <node name="Bool" />
 		  <node name="Char" />
 		  <node name="Double" />
@@ -1619,6 +1644,15 @@
           <node name="Char" />
           <node name="Num" />
           <node name="NumByte" />
+	  <node name="NumShort" />
+	  <node name="NumInt" />
+	  <node name="NumLong" />
+	  <node name="NumLonglong" />
+	  <node name="NumUbyte" />
+	  <node name="NumUshort" />
+	  <node name="NumUint" />
+	  <node name="NumUlong" />
+          <node name="NumUlonglong" />
           <node name="Float" />
           <node name="Double" />         
         </travuser>
@@ -1636,6 +1670,15 @@
           <node name="Char" />
           <node name="Num" />
           <node name="NumByte" />
+	  <node name="NumShort" />
+	  <node name="NumInt" />
+	  <node name="NumLong" />
+	  <node name="NumLonglong" />
+	  <node name="NumUbyte" />
+	  <node name="NumUshort" />
+	  <node name="NumUint" />
+	  <node name="NumUlong" />
+          <node name="NumUlonglong" />
           <node name="Float" />
           <node name="Double" />         
         </travuser>
@@ -2020,6 +2063,15 @@
         <travuser>
           <node name="Num" />
           <node name="NumByte" />
+	  <node name="NumShort" />
+	  <node name="NumInt" />
+	  <node name="NumLong" />
+	  <node name="NumLonglong" />
+	  <node name="NumUbyte" />
+	  <node name="NumUshort" />
+	  <node name="NumUint" />
+	  <node name="NumUlong" />
+          <node name="NumUlonglong" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
@@ -2782,6 +2834,15 @@
           <node name="Vardec" />
           <node name="Num" />
           <node name="NumByte" />
+	  <node name="NumShort" />
+	  <node name="NumInt" />
+	  <node name="NumLong" />
+	  <node name="NumLonglong" />
+	  <node name="NumUbyte" />
+	  <node name="NumUshort" />
+	  <node name="NumUint" />
+	  <node name="NumUlong" />
+          <node name="NumUlonglong" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
@@ -2895,7 +2956,14 @@
         <node name="Num" />
         <node name="NumByte" />
         <node name="NumShort" />
+        <node name="NumInt" />
         <node name="NumLong" />
+        <node name="NumLonglong" />
+        <node name="NumUbyte" />
+        <node name="NumUshort" />
+        <node name="NumUint" />
+        <node name="NumUlong" />
+        <node name="NumUlonglong" />
         <node name="Double" />
         <node name="Float" />
         <node name="Char" />
@@ -5400,6 +5468,30 @@ N_structdef :
     </node>
 <!--
 
+  N_numint :
+
+-->
+    <node name="NumInt">
+     <description>  Int scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Int">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
   N_numlong :
 
 -->
@@ -5409,6 +5501,150 @@ N_structdef :
       <attributes>
         <attribute name="Val" inconstructor="yes" >
           <type name="Long">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numlonglong :
+
+-->
+    <node name="NumLonglong">
+     <description>  Long Long scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Longlong">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numubyte :
+
+-->
+    <node name="NumUbyte">
+     <description>  Ubyte scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Ubyte">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numushort :
+
+-->
+    <node name="NumUshort">
+     <description>  Ushort scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Ushort">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numuint :
+
+-->
+    <node name="NumUint">
+     <description>  Uint scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Uint">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numulong :
+
+-->
+    <node name="NumUlong">
+     <description>  Ulong scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Ulong">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_numulonglong :
+
+-->
+    <node name="NumUlonglong">
+     <description>  ULongLong scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Ulonglong">
             <targets>
               <target mandatory="yes">
                 <any />

@@ -3773,6 +3773,27 @@ COMPnumbyte (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPnumshort( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumshort (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumshort");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPnum( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a constant scalar on the RHS.
@@ -3786,6 +3807,174 @@ COMPnum (node *arg_node, info *arg_info)
     node *ret_node;
 
     DBUG_ENTER ("COMPnum");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumint( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumint (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumint");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumlong( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumlong (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumlong");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumlonglong( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumlonglong (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumlonglong");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumubyte( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumubyte (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumubyte");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumushort( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumushort (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumushort");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumuint( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumuint (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumuint");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumulong( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumulong (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumulong");
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPnumulonglong( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles let expression with a constant scalar on the RHS.
+ *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
+ *   removed by COMPLet) or the unchanged N_id node.
+ *
+ ******************************************************************************/
+node *
+COMPnumulonglong (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPnumulonglong");
 
     ret_node = COMPscalar (arg_node, arg_info);
 

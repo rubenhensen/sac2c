@@ -166,6 +166,195 @@ CMPTnumbyte (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node* CMPTnumshort(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numshort node
+ *
+ ******************************************************************************/
+node *
+CMPTnumshort (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumshort");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMSHORT_VAL (arg_node) == NUMSHORT_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumint(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numint node
+ *
+ ******************************************************************************/
+node *
+CMPTnumint (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumint");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMINT_VAL (arg_node) == NUMINT_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumlong(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numlong node
+ *
+ ******************************************************************************/
+node *
+CMPTnumlong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumlong");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMLONG_VAL (arg_node) == NUMLONG_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumlonglong(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numlonglong node
+ *
+ ******************************************************************************/
+node *
+CMPTnumlonglong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumlonglong");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMLONGLONG_VAL (arg_node) == NUMLONGLONG_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumubyte(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numubyte node
+ *
+ ******************************************************************************/
+node *
+CMPTnumubyte (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumubyte");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMUBYTE_VAL (arg_node) == NUMUBYTE_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumushort(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numushort node
+ *
+ ******************************************************************************/
+node *
+CMPTnumushort (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumushort");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMUSHORT_VAL (arg_node) == NUMUSHORT_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumuint(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numuint node
+ *
+ ******************************************************************************/
+node *
+CMPTnumuint (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumuint");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMUINT_VAL (arg_node) == NUMUINT_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumulong(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numulong node
+ *
+ ******************************************************************************/
+node *
+CMPTnumulong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumulong");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   NUMULONG_VAL (arg_node) == NUMULONG_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTnumulonglong(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares value of numulonglong node
+ *
+ ******************************************************************************/
+node *
+CMPTnumulonglong (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTnumulonglong");
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info), NUMULONGLONG_VAL (arg_node)
+                                             == NUMULONGLONG_VAL (INFO_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* CMPTnum(node *arg_node, info *arg_info)
  *
  * description:

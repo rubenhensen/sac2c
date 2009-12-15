@@ -32,8 +32,17 @@ extern node *COMPreturn (node *arg_node, info *arg_info);
 extern node *COMPtypedef (node *arg_node, info *arg_info);
 extern node *COMPvardec (node *arg_node, info *arg_info);
 
-extern node *COMPnum (node *arg_node, info *arg_info);
 extern node *COMPnumbyte (node *arg_node, info *arg_info);
+extern node *COMPnumshort (node *arg_node, info *arg_info);
+extern node *COMPnum (node *arg_node, info *arg_info);
+extern node *COMPnumint (node *arg_node, info *arg_info);
+extern node *COMPnumlong (node *arg_node, info *arg_info);
+extern node *COMPnumlonglong (node *arg_node, info *arg_info);
+extern node *COMPnumubyte (node *arg_node, info *arg_info);
+extern node *COMPnumushort (node *arg_node, info *arg_info);
+extern node *COMPnumuint (node *arg_node, info *arg_info);
+extern node *COMPnumulong (node *arg_node, info *arg_info);
+extern node *COMPnumulonglong (node *arg_node, info *arg_info);
 extern node *COMPchar (node *arg_node, info *arg_info);
 extern node *COMPbool (node *arg_node, info *arg_info);
 extern node *COMPfloat (node *arg_node, info *arg_info);

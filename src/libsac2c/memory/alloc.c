@@ -336,8 +336,17 @@ MakeDimArg (node *arg)
     DBUG_ENTER ("MakeDimArg");
 
     switch (NODE_TYPE (arg)) {
-    case N_num:
     case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
+    case N_num:
     case N_float:
     case N_double:
     case N_char:
@@ -377,8 +386,17 @@ MakeShapeArg (node *arg)
     DBUG_ENTER ("MakeShapeArg");
 
     switch (NODE_TYPE (arg)) {
-    case N_num:
     case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
+    case N_num:
     case N_float:
     case N_double:
     case N_char:
@@ -1165,6 +1183,15 @@ EMALCONST (float)
 EMALCONST (double)
 EMALCONST (num)
 EMALCONST (numbyte)
+EMALCONST (numshort)
+EMALCONST (numint)
+EMALCONST (numlong)
+EMALCONST (numlonglong)
+EMALCONST (numubyte)
+EMALCONST (numushort)
+EMALCONST (numuint)
+EMALCONST (numulong)
+EMALCONST (numulonglong)
 
 /** <!--******************************************************************-->
  *
@@ -1481,8 +1508,16 @@ EMALprf (node *arg_node, info *arg_info)
     case F_abs_S:
     case F_tob_S:
     case F_toby_S:
-    case F_toc_S:
+    case F_tos_S:
     case F_toi_S:
+    case F_tol_S:
+    case F_toll_S:
+    case F_touby_S:
+    case F_tous_S:
+    case F_toui_S:
+    case F_toul_S:
+    case F_toull_S:
+    case F_toc_S:
     case F_tof_S:
     case F_tod_S:
     case F_not_S:

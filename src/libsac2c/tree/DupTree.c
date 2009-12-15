@@ -594,6 +594,22 @@ DUPnumshort (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPnumint (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumint");
+
+    new_node = TBmakeNumint (NUMINT_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPnumlong (node *arg_node, info *arg_info)
 {
     node *new_node;
@@ -601,6 +617,102 @@ DUPnumlong (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPnumlong");
 
     new_node = TBmakeNumlong (NUMLONG_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumlonglong (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumlonglong");
+
+    new_node = TBmakeNumlonglong (NUMLONGLONG_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumubyte (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumubyte");
+
+    new_node = TBmakeNumubyte (NUMUBYTE_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumushort (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumushort");
+
+    new_node = TBmakeNumushort (NUMUSHORT_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumuint (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumuint");
+
+    new_node = TBmakeNumuint (NUMUINT_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumulong (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumulong");
+
+    new_node = TBmakeNumulong (NUMULONG_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPnumulonglong (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPnumulonglong");
+
+    new_node = TBmakeNumulonglong (NUMULONGLONG_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

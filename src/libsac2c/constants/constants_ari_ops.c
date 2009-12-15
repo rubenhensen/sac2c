@@ -567,10 +567,52 @@ COnot (constant *a)
 /******************************************************************************
  *
  * function:
+ *    constant *COtoby( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise convertet to byte,
+ *
+ ******************************************************************************/
+
+constant *
+COtoby (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoby");
+    res = COzipUnary (global.zipcv_toby, a, T_byte);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoby", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtos( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to short.
+ *
+ ******************************************************************************/
+
+constant *
+COtos (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtos");
+    res = COzipUnary (global.zipcv_tos, a, T_short);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtos", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *COtoi( constant *a)
  *
  * description:
- *    returns a constant whose elements are elementwise convertet to  ,
+ *    returns a constant whose elements are elementwise convertet to int.
  *
  ******************************************************************************/
 
@@ -588,21 +630,147 @@ COtoi (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COtoby( constant *a)
+ *    constant *COtol( constant *a)
  *
  * description:
- *    returns a constant whose elements are elementwise convertet to byte,
+ *    returns a constant whose elements are elementwise converted to long.
  *
  ******************************************************************************/
 
 constant *
-COtoby (constant *a)
+COtol (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoby");
-    res = COzipUnary (global.zipcv_toby, a, T_byte);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoby", a, res););
+    DBUG_ENTER ("COtol");
+    res = COzipUnary (global.zipcv_tol, a, T_long);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtol", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtoll( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to longlong.
+ *
+ ******************************************************************************/
+
+constant *
+COtoll (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoll");
+    res = COzipUnary (global.zipcv_toll, a, T_longlong);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoll", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtouby( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to ubyte.
+ *
+ ******************************************************************************/
+
+constant *
+COtouby (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtouby");
+    res = COzipUnary (global.zipcv_touby, a, T_ubyte);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtouby", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtous( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to ushort.
+ *
+ ******************************************************************************/
+
+constant *
+COtous (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtous");
+    res = COzipUnary (global.zipcv_tous, a, T_ushort);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtous", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtoui( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to  uint.
+ *
+ ******************************************************************************/
+
+constant *
+COtoui (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoui");
+    res = COzipUnary (global.zipcv_toui, a, T_uint);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoui", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtoul( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to ulong.
+ *
+ ******************************************************************************/
+
+constant *
+COtoul (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoul");
+    res = COzipUnary (global.zipcv_toul, a, T_ulong);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoul", a, res););
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtoull( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are elementwise converted to ulonglong.
+ *
+ ******************************************************************************/
+
+constant *
+COtoull (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("COtoull");
+    res = COzipUnary (global.zipcv_toull, a, T_ulonglong);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoull", a, res););
     DBUG_RETURN (res);
 }
 

@@ -5792,13 +5792,16 @@ TYoldType2ScalarType (types *old)
             }
         }
         break;
-    case T_int:
     case T_byte:
     case T_short:
+    case T_int:
     case T_long:
-    case T_uint:
+    case T_longlong:
+    case T_ubyte:
     case T_ushort:
+    case T_uint:
     case T_ulong:
+    case T_ulonglong:
     case T_float:
     case T_double:
     case T_longdbl:

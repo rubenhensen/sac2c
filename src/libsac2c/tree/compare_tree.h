@@ -31,6 +31,15 @@ extern cmptree_t CMPTdoCompareTree (node *tree1, node *tree2);
 
 extern node *CMPTnum (node *arg_node, info *arg_info);
 extern node *CMPTnumbyte (node *arg_node, info *arg_info);
+extern node *CMPTnumshort (node *arg_node, info *arg_info);
+extern node *CMPTnumint (node *arg_node, info *arg_info);
+extern node *CMPTnumlong (node *arg_node, info *arg_info);
+extern node *CMPTnumlonglong (node *arg_node, info *arg_info);
+extern node *CMPTnumubyte (node *arg_node, info *arg_info);
+extern node *CMPTnumushort (node *arg_node, info *arg_info);
+extern node *CMPTnumuint (node *arg_node, info *arg_info);
+extern node *CMPTnumulong (node *arg_node, info *arg_info);
+extern node *CMPTnumulonglong (node *arg_node, info *arg_info);
 extern node *CMPTchar (node *arg_node, info *arg_info);
 extern node *CMPTbool (node *arg_node, info *arg_info);
 extern node *CMPTfloat (node *arg_node, info *arg_info);

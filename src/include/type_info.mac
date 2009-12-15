@@ -75,28 +75,39 @@
 TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
-TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
-        COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
-
 TYP_IF (T_byte, "byte", "byte", "by", COcv2Numbyte, COcv2CvByte, COcv2StrByte,
         sizeof (char), COzipCvByte, CObaseCvByte, MUTC_SC_INT, unused)
 
 TYP_IF (T_short, "short", "short", "s", COcv2Numshort, COcv2CvShort, COcv2StrShort,
         sizeof (short int), COzipCvShort, CObaseCvShort, MUTC_SC_INT, unused)
 
+TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
+        COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+
 TYP_IF (T_long, "long", "long", "l", COcv2ScalarDummy, COcv2CvLong, COcv2StrLong,
         sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused)
 
-TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COcv2ScalarDummy, COcv2CvUInt,
-        COcv2StrUInt, sizeof (int), COzipCvUInt, CObaseCvUInt, MUTC_SC_INT, unused)
+TYP_IF (T_longlong, "longlong", "longlong", "ll", COcv2Numlonglong, COcv2CvLongLong,
+        COcv2StrLongLong, sizeof (long long int), COzipCvLongLong, CObaseCvLongLong,
+        MUTC_SC_INT, unused)
+
+TYP_IF (T_ubyte, "ubyte", "ubyte", "uby", COcv2Numubyte, COcv2CvUByte, COcv2StrUByte,
+        sizeof (char), COzipCvUByte, CObaseCvUByte, MUTC_SC_INT, unused)
 
 TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", COcv2ScalarDummy,
         COcv2CvUShort, COcv2StrUShort, sizeof (short int), COzipCvUShort, CObaseCvUShort,
         MUTC_SC_INT, unused)
 
+TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COcv2ScalarDummy, COcv2CvUInt,
+        COcv2StrUInt, sizeof (int), COzipCvUInt, CObaseCvUInt, MUTC_SC_INT, unused)
+
 TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COcv2ScalarDummy, COcv2CvULong,
         COcv2StrULong, sizeof (long int), COzipCvULong, CObaseCvULong, MUTC_SC_INT,
         unused)
+
+TYP_IF (T_ulonglong, "ulonglong", "ulonglong", "ull", COcv2Numulonglong, COcv2CvULongLong,
+        COcv2StrULongLong, sizeof (long long int), COzipCvULongLong, CObaseCvULongLong,
+        MUTC_SC_INT, unused)
 
 TYP_IF (T_float, "float", "float", "f", COcv2Float, COcv2CvFloat, COcv2StrFloat,
         sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)

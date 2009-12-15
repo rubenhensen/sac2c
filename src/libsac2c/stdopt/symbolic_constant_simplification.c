@@ -891,27 +891,6 @@ SCSprf_tob_S (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_toby_S( node *arg_node, info *arg_info)
- * Delete type coercion toby(bytevec) if arg_node is already of type byte.
- *
- *****************************************************************************/
-node *
-SCSprf_toby_S (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ("SCSprf_toby_S");
-    if ((N_numbyte == NODE_TYPE (PRF_ARG1 (arg_node)))
-        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
-            && (T_byte
-                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
-        res = DUPdoDupTree (PRF_ARG1 (arg_node));
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *SCSprf_toc_S( node *arg_node, info *arg_info)
  * Delete type coercion toc(charvec) if arg_node is already of type char.
  *
@@ -933,6 +912,48 @@ SCSprf_toc_S (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_toby_S( node *arg_node, info *arg_info)
+ * Delete type coercion toby(bytevec) if arg_node is already of type byte.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toby_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toby_S");
+    if ((N_numbyte == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_byte
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_tos_S( node *arg_node, info *arg_info)
+ * Delete type coercion tos(shortvec) if arg_node is already of type short.
+ *
+ *****************************************************************************/
+node *
+SCSprf_tos_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_tos_S");
+    if ((N_numshort == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_short
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_toi_S( node *arg_node, info *arg_info)
  * Delete type coercion toi(intvec) if arg_node is already of type int.
  *
@@ -944,8 +965,158 @@ SCSprf_toi_S (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_toi_S");
     if ((N_num == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || (N_numint == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_int
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_tol_S( node *arg_node, info *arg_info)
+ * Delete type coercion tol(longvec) if arg_node is already of type long.
+ *
+ *****************************************************************************/
+node *
+SCSprf_tol_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_tol_S");
+    if ((N_numlong == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_long
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_toll_S( node *arg_node, info *arg_info)
+ * Delete type coercion toll(longlongvec) if arg_node is already of type
+ * longlong.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toll_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toll_S");
+    if ((N_numlonglong == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_longlong
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_touby_S( node *arg_node, info *arg_info)
+ * Delete type coercion touby(ubytevec) if arg_node is already of type ubyte.
+ *
+ *****************************************************************************/
+node *
+SCSprf_touby_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_touby_S");
+    if ((N_numubyte == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_ubyte
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_tous_S( node *arg_node, info *arg_info)
+ * Delete type coercion tous(ushortvec) if arg_node is already of type ushort.
+ *
+ *****************************************************************************/
+node *
+SCSprf_tous_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_tous_S");
+    if ((N_numushort == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_ushort
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_toui_S( node *arg_node, info *arg_info)
+ * Delete type coercion toui(uintvec) if arg_node is already of type uint.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toui_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toui_S");
+    if ((N_numuint == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_uint
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_toul_S( node *arg_node, info *arg_info)
+ * Delete type coercion toul(ulongvec) if arg_node is already of type ulong.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toul_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toul_S");
+    if ((N_numulong == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_ulong
+                == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_toull_S( node *arg_node, info *arg_info)
+ * Delete type coercion toull(longlongvec) if arg_node is already of type
+ * ulonglong.
+ *
+ *****************************************************************************/
+node *
+SCSprf_toull_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_toull_S");
+    if ((N_numulonglong == NODE_TYPE (PRF_ARG1 (arg_node)))
+        || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
+            && (T_ulonglong
                 == TYgetSimpleType (TYgetScalar (ID_NTYPE (PRF_ARG1 (arg_node))))))) {
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }

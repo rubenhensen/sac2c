@@ -154,7 +154,29 @@ SATserializeShort (info *info, short attr, node *parent)
 {
     DBUG_ENTER ("SATserializeShort");
 
-    fprintf (INFO_SER_FILE (info), "(short)%hd", attr);
+    fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeInt
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeInt (info *info, int attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeInt");
+
+    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_VOID_RETURN;
 }
@@ -177,6 +199,138 @@ SATserializeLong (info *info, long attr, node *parent)
     DBUG_ENTER ("SATserializeLong");
 
     fprintf (INFO_SER_FILE (info), "%ld", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeLonglong
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeLonglong (info *info, long long attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeLonglong");
+
+    fprintf (INFO_SER_FILE (info), "%lldLL", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeUbyte
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeUbyte (info *info, unsigned char attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeUbyte");
+
+    fprintf (INFO_SER_FILE (info), "%u", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeUshort
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeUshort (info *info, unsigned short attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeUshort");
+
+    fprintf (INFO_SER_FILE (info), "%u", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeUint
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeUint (info *info, unsigned int attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeUint");
+
+    fprintf (INFO_SER_FILE (info), "%u", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeUlong
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeUlong (info *info, unsigned long attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeUlong");
+
+    fprintf (INFO_SER_FILE (info), "%lu", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeUlonglong
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeUlonglong (info *info, unsigned long long attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeUlonglong");
+
+    fprintf (INFO_SER_FILE (info), "%lluULL", attr);
 
     DBUG_VOID_RETURN;
 }

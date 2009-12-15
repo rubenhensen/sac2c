@@ -182,10 +182,16 @@ MatchNumA (ntype *type)
     DBUG_ENTER ("MatchNumA");
 
     res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
-           && ((TYgetSimpleType (TYgetScalar (type)) == T_int)
-               || (TYgetSimpleType (TYgetScalar (type)) == T_byte)
+           && ((TYgetSimpleType (TYgetScalar (type)) == T_byte)
                || (TYgetSimpleType (TYgetScalar (type)) == T_short)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_int)
                || (TYgetSimpleType (TYgetScalar (type)) == T_long)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_longlong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ubyte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ushort)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_uint)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulonglong)
                || (TYgetSimpleType (TYgetScalar (type)) == T_float)
                || (TYgetSimpleType (TYgetScalar (type)) == T_double)));
 

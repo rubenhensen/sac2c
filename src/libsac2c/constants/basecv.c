@@ -80,17 +80,20 @@
     }
 
 #define MAP(fname, const)                                                                \
-    CObaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort,                           \
-                      const) CObaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const) \
-      CObaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                     \
-        CObaseCvTEMPLATE (fname, T_byte, char, Byte, const)                              \
-          CObaseCvTEMPLATE (fname, T_short, short, Short, const)                         \
-            CObaseCvTEMPLATE (fname, T_int, int, Int, const)                             \
-              CObaseCvTEMPLATE (fname, T_long, long, Long, const)                        \
-                CObaseCvTEMPLATE (fname, T_float, float, Float, const)                   \
-                  CObaseCvTEMPLATE (fname, T_double, double, Double, const)              \
-                    CObaseCvTEMPLATE (fname, T_longdbl, long double, LongDouble, const)  \
-                      CObaseCvDUMMYTEMP (Dummy, fname)
+    CObaseCvTEMPLATE (fname, T_ubyte, unsigned char, UByte, const)                       \
+      CObaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort, const)                  \
+        CObaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const)                      \
+          CObaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                 \
+            CObaseCvTEMPLATE (fname, T_ulonglong, unsigned long long, ULongLong, const)  \
+              CObaseCvTEMPLATE (fname, T_byte, char, Byte, const)                        \
+                CObaseCvTEMPLATE (fname, T_short, short, Short, const)                   \
+                  CObaseCvTEMPLATE (fname, T_int, int, Int, const)                       \
+                    CObaseCvTEMPLATE (fname, T_long, long, Long, const)                  \
+                      CObaseCvTEMPLATE (fname, T_longlong, long long, LongLong, const)   \
+                        CObaseCvTEMPLATE (fname, T_float, float, Float, const)           \
+                          CObaseCvTEMPLATE (fname, T_double, double, Double, const)      \
+                            CObaseCvTEMPLATE (fname, T_longdbl, long double, LongDouble, \
+                                              const) CObaseCvDUMMYTEMP (Dummy, fname)
 
 MAP (Zero, 0)
 MAP (One, 1)
