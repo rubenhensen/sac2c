@@ -281,12 +281,12 @@ int charpos = 0;
 "short"                    { FILTER( TYPE_SHORT); }
 "int"                      { FILTER( TYPE_INT); }
 "long"                     { FILTER( TYPE_LONG); }
-"long long"                { FILTER( TYPE_LONGLONG); }
-"unsigned byte"            { FILTER( TYPE_UBYTE); }
-"unsigned short"           { FILTER( TYPE_USHORT); }
-"unsigned int"             { FILTER( TYPE_UINT); }
-"unsingned long"           { FILTER( TYPE_ULONG); }
-"unsigned long long"       { FILTER( TYPE_ULONGLONG); }
+"longlong"                 { FILTER( TYPE_LONGLONG); }
+"ubyte"            	   { FILTER( TYPE_UBYTE); }
+"ushort"                   { FILTER( TYPE_USHORT); }
+"uint"                     { FILTER( TYPE_UINT); }
+"ulong"                    { FILTER( TYPE_ULONG); }
+"ulonglong"       	   { FILTER( TYPE_ULONGLONG); }
 "char"                     { FILTER( TYPE_CHAR); }
 "double"                   { FILTER( TYPE_DBL); }
 
@@ -464,7 +464,7 @@ int charpos = 0;
                              FILTER( NUMLONGLONG);
                            }
 
-0(lL|lL)                   { yylval.clonglong = 0;
+0(ll|LL)                   { yylval.clonglong = 0;
                              FILTER( NUMLONGLONG);
                            }
 

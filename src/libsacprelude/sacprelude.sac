@@ -18,7 +18,15 @@ external typedef SACarg;
 
 #define BUILT_IN( fun)    \
 fun( byte)                \
+fun( short)               \
 fun( int)                 \
+fun( long)                \
+fun( longlong)            \
+fun( ubyte)               \
+fun( ushort)              \
+fun( uint)                \
+fun( ulong)               \
+fun( ulonglong)           \
 fun( float)               \
 fun( double)              \
 fun( bool)                \
@@ -52,7 +60,15 @@ a zero( a[*] A)       \
 }
 
 ZERO( byte, 0b)
+ZERO( short, 0s)
 ZERO( int, 0)
+ZERO( long, 0l)
+ZERO( longlong, 0ll)
+ZERO( ubyte, 0ub)
+ZERO( ushort, 0us)
+ZERO( uint, 0ui)
+ZERO( ulong, 0ul)
+ZERO( ulonglong, 0ull)
 ZERO( double, 0d)
 ZERO( float, 0f)
 ZERO( char, ' ')
