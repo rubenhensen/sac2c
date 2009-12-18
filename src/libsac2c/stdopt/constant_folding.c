@@ -330,6 +330,56 @@ IsFullyConstantNode (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @static fn node *UnflattenSimpleScalars( node *arg_node)
+ *
+ * @brief  Replaces N_array elements that are N_id nodes
+ *         pointing to simple scalar constants by their values.
+ *
+ *           one = 1;
+ *           two = 2;
+ *           arr = [ one, 3, two];
+ *
+ *         by:
+ *
+ *          arr = [ 1, 3, 2];
+ *
+ *        If a decision is made to completely flatten N_array nodes,
+ *        this code should either be deleted or its behavior inverted.
+ *
+ *****************************************************************************/
+static node *
+UnflattenSimpleScalars (node *arg_node)
+{
+    node *el;
+    node *curel;
+    node *cons;
+    node *res;
+    pattern *pat;
+
+    DBUG_ENTER ("UnflattenSimpleScalars");
+
+    res = DUPdoDupTree (arg_node);
+    pat = PMconst (1, PMAgetNode (&cons));
+
+    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && IsFullyConstantNode (arg_node)) {
+        el = ARRAY_AELEMS (res);
+        while (NULL != el) {
+            curel = EXPRS_EXPR (el);
+            if ((N_id == NODE_TYPE (curel)) && (PMmatchFlat (pat, curel))) {
+                DBUG_PRINT ("CF", ("Flattening N_array scalar constant"));
+                FREEdoFreeNode (EXPRS_EXPR (el));
+                EXPRS_EXPR (el) = DUPdoDupNode (cons);
+            }
+            el = EXPRS_NEXT (el);
+        }
+    }
+    arg_node = FREEdoFreeTree (arg_node);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node* CreateConstExprsFromType( ntype *type)
  *
  * @brief Create AST exprs node for "type", which is known to be AKV.
@@ -908,6 +958,8 @@ CFarray (node *arg_node, info *arg_info)
     }
     fs = (NULL != fs) ? COfreeConstant (fs) : fs;
     pat = PMfree (pat);
+
+    res = UnflattenSimpleScalars (res);
 
     DBUG_RETURN (res);
 }

@@ -3320,6 +3320,10 @@ TYisNonFixedAlpha (ntype *type)
     DBUG_RETURN ((NTYPE_CON (type) == TC_alpha) && !SSIisFix (ALPHA_SSI (type)));
 }
 
+/* See bug #630. Constant N_array nodes are not AKV, but AKS.
+ * If you need TYisAKV( ARRAY_ELEMTYPE( array), use the
+ * IsFullyConstantNode( node *array) function in constant_folding.c
+ */
 bool
 TYisAKV (ntype *type)
 {

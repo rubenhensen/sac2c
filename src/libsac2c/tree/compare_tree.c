@@ -25,6 +25,8 @@
 #include "free.h"
 #include "shape.h"
 #include "globals.h"
+#include "pattern_match.h"
+#include "type_utils.h"
 
 /*
  * INFO structure
@@ -550,6 +552,66 @@ CMPTids (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static node* HeterogeneousArrayCompare(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Compares two N_array nodes whose elements are all simple scalars
+ *   constants.
+ *   This assumes a non-homogeneous representation of such N_array nodes,
+ *   where one node may have:
+ *     one = 1;
+ *     [ one, 2, 3];
+ *   and the other has:
+ *     [ 1, 2, 3];
+ *
+ *   If a decision is made to completely flatten N_array element nodes,
+ *   then this code should be eliminated.
+ *
+ *
+ ******************************************************************************/
+static node *
+HeterogeneousArrayCompare (node *arg_node, info *arg_info)
+{
+    node *n1;
+    node *n2;
+    node *c1;
+    node *c2;
+    node *oldn2;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ("HeterogeneousArrayCompare");
+
+    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && TYisAKV (ARRAY_ELEMTYPE (arg_node))
+        && TYisAKV (ARRAY_ELEMTYPE (INFO_TREE (arg_info)))) {
+
+        pat1 = PMconst (1, PMAgetNode (&c1)), pat2 = PMconst (1, PMAgetNode (&c2)),
+        n1 = ARRAY_AELEMS (arg_node);
+        n2 = ARRAY_AELEMS (INFO_TREE (arg_info));
+        while ((NULL != n1) && (PMmatchFlat (pat1, ARRAY_AELEMS (n1)))
+               && (PMmatchFlat (pat2, ARRAY_AELEMS (n2)))) {
+
+            oldn2 = INFO_TREE (arg_info);
+            INFO_TREE (arg_info) = c2;
+            n1 = TravLocal (c1, arg_info);
+            INFO_TREE (arg_info) = oldn2;
+
+            n1 = EXPRS_NEXT (n1);
+            n2 = EXPRS_NEXT (n2);
+        }
+        PMfree (pat1);
+        PMfree (pat2);
+
+    } else {
+        arg_node = TravLocal (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* CMPTarray(node *arg_node, info *arg_info)
  *
  * description:
@@ -569,7 +631,7 @@ CMPTarray (node *arg_node, info *arg_info)
                                          ARRAY_FRAMESHAPE (INFO_TREE (arg_info))));
 
     /* traverse ArrayElements (the real son) */
-    arg_node = TravLocal (arg_node, arg_info);
+    arg_node = HeterogeneousArrayCompare (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
