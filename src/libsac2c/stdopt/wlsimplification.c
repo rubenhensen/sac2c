@@ -667,7 +667,9 @@ WLSIMPpart (node *arg_node, info *arg_info)
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (INFO_ZEROTRIP (arg_info)) {
+    if ((INFO_ZEROTRIP (arg_info))
+        && ((1 != INFO_NUM_GENPARTS (arg_info))
+            || (TUshapeKnown (IDS_NTYPE (INFO_LHS (arg_info)))))) {
         DBUG_PRINT ("WLSIMP", ("eliminating zero-trip generator"));
         /**
          * The following free implicitly decrements CODE_USED.

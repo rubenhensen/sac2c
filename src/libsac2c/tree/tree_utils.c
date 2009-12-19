@@ -16,6 +16,8 @@
 #include "constants.h"
 #include "shape.h"
 #include "type_utils.h"
+#include "free.h"
+#include "compare_tree.h"
 
 /**
  *
@@ -240,12 +242,12 @@ TULSisFullGenerator (node *generator, node *operator)
 {
     bool z;
     bool z2 = FALSE;
+    int shpgen;
     constant *lb = NULL;
-    constant *ub = NULL;
-    constant *arr = NULL;
-    constant *shpgen = NULL;
-    constant *shpa = NULL;
-    constant *shp = NULL;
+    node *ub = NULL;
+    node *arr = NULL;
+    node *shp;
+    node *modarrshp;
 
     pattern *patlb;
     pattern *patub;
@@ -254,8 +256,8 @@ TULSisFullGenerator (node *generator, node *operator)
     DBUG_ENTER ("TULSisFullGenerator");
 
     patlb = PMconst (1, PMAgetVal (&lb));
-    patub = PMconst (1, PMAgetVal (&ub));
-    patarr = PMconst (1, PMAgetVal (&arr));
+    patub = PMarray (1, PMAgetNode (&ub), 0);
+    patarr = PMarray (1, PMAgetNode (&arr), 0);
 
     switch (NODE_TYPE (operator)) {
 
@@ -272,7 +274,8 @@ TULSisFullGenerator (node *generator, node *operator)
 
     case N_genarray:
         z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
-            && (GENERATOR_BOUND2 (generator) == GENARRAY_SHAPE (operator))
+            && (ID_AVIS (GENERATOR_BOUND2 (generator))
+                == ID_AVIS (GENARRAY_SHAPE (operator)))
             && checkStepWidth (generator);
         break;
 
@@ -282,21 +285,22 @@ TULSisFullGenerator (node *generator, node *operator)
 
         if (PMmatchFlat (patub, GENERATOR_BOUND2 (generator))
             && PMmatchFlat (patarr, MODARRAY_ARRAY (operator))) {
-            shpgen = COshape (ub);
-            shpa = COshape (arr);
-            shp = COtake (shpgen, shpa);
-            z2 = COcompareConstants (shp, shpgen);
-            COfreeConstant (shpgen);
-            COfreeConstant (shpa);
-            COfreeConstant (shp);
-            COfreeConstant (ub);
-            COfreeConstant (arr);
+
+            /* Check for matching frame shapes */
+            shpgen = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
+            shp = TCtakeDropExprs (shpgen, 0, ARRAY_AELEMS (arr));
+            z2 = (CMPT_EQ == CMPTdoCompareTree (shp, ARRAY_AELEMS (ub)));
+            FREEdoFreeTree (shp);
         }
 
-        z = z
-            && (z2
-                || (GENERATOR_BOUND2 (generator)
-                    == AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator)))));
+        DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (generator)),
+                     "TULSisFullGenerator wants N_id GENERATOR_BOUND");
+
+        modarrshp = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator)));
+        DBUG_ASSERT ((NULL == modarrshp) || (N_id == NODE_TYPE (modarrshp)),
+                     "TULSisFullGenerator AVIS_SHAPE not flattened");
+
+        z = z && (z2 || (GENERATOR_BOUND2 (generator) == modarrshp));
         break;
 
     default:
