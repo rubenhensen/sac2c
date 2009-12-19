@@ -88,16 +88,16 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
 	  then                \
 	    echo "?????" >$@; \
 	  fi
-	@ if which svnversion > /dev/null;                          \
-	  then                                                      \
-	    svnversion $(PROJECT_ROOT) | sed -e 's/M/:MODIFIED/g'   \
-              | sed -e 's/S/:SWITCHED/g' > $@.new ;                 \
+	@ if which svnversion > /dev/null;          \
+	  then                                      \
+	    svnversion | sed -e 's/M/:MODIFIED/g'   \
+              | sed -e 's/S/:SWITCHED/g' > $@.new ; \
 	  fi 
 	@ if which diff >/dev/null;         \
 	  then                              \
-            if diff $@ $@.new >/dev/null;   \
+            if ! diff $@ $@.new >/dev/null; \
 	      then mv $@.new $@;            \
-	      else rm $@.new;               \
+	      else rm $@.new; 	            \
             fi	                            \
           else rm $@.new;                   \
           fi                                          
