@@ -288,9 +288,13 @@ TULSisFullGenerator (node *generator, node *operator)
 
             /* Check for matching frame shapes */
             shpgen = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
-            shp = TCtakeDropExprs (shpgen, 0, ARRAY_AELEMS (arr));
-            z2 = (CMPT_EQ == CMPTdoCompareTree (shp, ARRAY_AELEMS (ub)));
-            FREEdoFreeTree (shp);
+            if (0 == shpgen) {
+                z2 = TRUE;
+            } else {
+                shp = TCtakeDropExprs (shpgen, 0, ARRAY_AELEMS (arr));
+                z2 = (CMPT_EQ == CMPTdoCompareTree (shp, ARRAY_AELEMS (ub)));
+                FREEdoFreeTree (shp);
+            }
         }
 
         DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (generator)),
