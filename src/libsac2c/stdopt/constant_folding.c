@@ -841,7 +841,7 @@ CFlet (node *arg_node, info *arg_info)
          */
 
         if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
-            DBUG_PRINT ("CF", ("LHS (%s) is AKS: replacing RHS by constant",
+            DBUG_PRINT ("CF", ("LHS (%s) is AKV: replacing RHS by constant",
                                AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
             if (TYgetProductSize (INFO_LHSTYPE (arg_info)) == 1) {

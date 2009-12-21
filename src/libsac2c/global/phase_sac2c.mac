@@ -506,6 +506,10 @@ CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
                saacyc)
 
+CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
+               CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
+               saacyc)
+
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
                AWLFdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
                saacyc)

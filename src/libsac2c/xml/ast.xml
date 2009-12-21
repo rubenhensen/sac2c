@@ -1773,6 +1773,16 @@
           <node name="Prf"     />
        </travuser>
      </traversal>
+     <traversal id="CUBSL" name="Algebraic With-Loop-Folding Cube Slicer" default="sons" include="cubeslicer.h" >
+       <travuser>
+          <node name="Fundef"  />
+          <node name="With"    />
+          <node name="Code"    />
+          <node name="Part"    />
+          <node name="Let"     />
+          <node name="Prf"     />
+       </travuser>
+     </traversal>
      <traversal id="AWLF" name="Algebraic With-Loop-Folding" default="sons" include="algebraic_wlf.h" >
        <travuser>
           <node name="Fundef"  />
