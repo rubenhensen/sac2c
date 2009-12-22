@@ -34,4 +34,10 @@ extern node *AWLFIids (node *arg_node, info *arg_info);
 extern node *AWLFIprf (node *arg_node, info *arg_info);
 extern node *AWLFIavis (node *arg_node, info *arg_info);
 
+/* expressions per partition are: bound1, bound2, intlo, inthi, intNull */
+#define WLBOUND1ORIGINAL(partno) (1 + (5 * partno))
+#define WLBOUND2ORIGINAL(partno) (1 + (5 * partno) + 1)
+#define WLINTERSECTION(partno, boundno) (1 + 2 + (5 * partno) + boundno)
+#define WLINTERSECTIONNULL(partno) (1 + 4 + (5 * partno))
+
 #endif /* _SAC_ALGEBRAIC_WLFI_H_ */

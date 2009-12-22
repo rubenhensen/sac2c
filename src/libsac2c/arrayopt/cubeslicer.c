@@ -43,6 +43,7 @@
 #include "type_utils.h"
 #include "wls.h"
 #include "algebraic_wlf.h"
+#include "algebraic_wlfi.h"
 
 /** <!--********************************************************************-->
  *
@@ -56,6 +57,7 @@ struct INFO {
     node *preassigns;
     bool onefundef; /* fundef-based traversal */
     node *lhs;
+    node *consumerpart;
 };
 
 /**
@@ -66,6 +68,7 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_CONSUMERPART(n) ((n)->consumerpart)
 
 static info *
 MakeInfo (node *fundef)
@@ -81,6 +84,7 @@ MakeInfo (node *fundef)
     INFO_PREASSIGNS (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = NULL;
+    INFO_CONSUMERPART (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -149,20 +153,89 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn static
- * void MarkPartitionSliceNeeded( node *consumerpart,
+ * @fn bool matchGeneratorField( node *fa, node *fb, node *producerWL)
+ *
+ * @brief Attempt to match corresponding N_id/N_array fields of
+ *        two generators (BOUND, WIDTH, STEP),
+ *        such as GENERATOR_BOUND1( wla) and GENERATOR_BOUND1( wlb).
+ *        Fields "match" if they meet any of the following criteria:
+ *         - both fields are NULL.
+ *         - both fields refer to the same name.
+ *         - both fields have a common ancestor in their SSAASSIGN chains.
+ *         - fa can be shown to be the shape vector for foldewl.
+ *
+ * @param - fa is a GENERATOR_BOUND2 or similar generator field for
+ *          the consumerWL.
+ *          fb is a GENERATOR_BOUND2 or similar generator field for
+ *          the producerWL.
+ *
+ * @return Boolean TRUE if both fields are the same or can
+ *          be shown to represent the same shape vector.
+ *
+ *****************************************************************************/
+bool
+matchGeneratorField (node *fa, node *fb)
+{
+    node *fav = NULL;
+    node *fbv = NULL;
+    constant *fafs = NULL;
+    constant *fbfs = NULL;
+    constant *fac;
+    constant *fbc;
+    bool z;
+
+    DBUG_ENTER ("matchGeneratorField");
+
+    z = (fa == fb); /* SAA should do it this way most of the time */
+
+    if ((!z) && (NULL != fa) && (NULL != fb)
+        && (PMO (PMOarray (&fafs, &fav, fa)) && (PMO (PMOarray (&fbfs, &fbv, fb))))) {
+        z = (fav == fbv);
+    }
+    fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
+    fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
+
+    /* If one field is local and the other is a function argument,
+     * we can have both AKV, but they will not be merged, at
+     * last in saacyc today. If that ever gets fixed, we can
+     * remove this check. This is a workaround for a performance
+     * problem in sac/apex/buildv/buildv.sac
+     */
+    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (ID_AVIS (fa)))
+        && TYisAKV (AVIS_TYPE (ID_AVIS (fb)))) {
+        fac = COaST2Constant (fa);
+        fbc = COaST2Constant (fa);
+        z = COcompareConstants (fac, fbc);
+        fac = COfreeConstant (fac);
+        fbc = COfreeConstant (fbc);
+    }
+
+    if ((NULL != fa) && (NULL != fb)) {
+        if (z) {
+            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s matched",
+                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
+        } else {
+            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s did not match",
+                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
+        }
+    }
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool isPartitionNeedsSlicing( node *consumerpart,
  *                                node *intersectb1, node *intersectb2,
  *                                node *idxbound1, idxbound2,
  *                                info *arg_info);
  *
- * @brief Possibly mark current consumerWL partition as requiring slicing.
+ * @brief Predicate: does current consumerWL partition requires slicing
+ *                   against intersectb1, intersectb1?
  *
  *        The partition requires slicing if:
  *          - intersects and bounds are N_array nodes.
  *          - the intersect is not NULL.
  *          - the intersects and bounds do not match.
- *            [Since we only get called when this is the case,
- *             they are guaranteed not to match.]
  *
  * @params: consumerpart: consumerWL partition that may need slicing
  *          intersectb1: lower bound of intersection between consumerWL
@@ -173,30 +246,261 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
  *          idxboundi2:  lower bound of same.
  *          arg_info:    your basic arg_info node.
  *
- * @result: None.
+ * @result: TRUE if slicing is required.
  *
  * @note: It may happen that more than one partition in the consumerWL
  *        requires slicing.
  *
  *****************************************************************************/
-static void
-MarkPartitionSliceNeeded (node *consumerpart, node *intersectb1, node *intersectb2,
-                          node *idxbound1, node *idxbound2, info *arg_info)
+static bool
+isPartitionNeedsSlicing (node *consumerpart, node *intersectb1, node *intersectb2,
+                         node *idxbound1, node *idxbound2, info *arg_info)
 {
-    DBUG_ENTER ("MarkPartitionSliceNeeded");
-    if ((N_array == NODE_TYPE (intersectb1)) && (N_array == NODE_TYPE (intersectb2))
-        && (N_array == NODE_TYPE (idxbound1)) && (N_array == NODE_TYPE (idxbound2))) {
+    bool z;
+    DBUG_ENTER ("isPartitionNeedsSlicing");
 
-        DBUG_PRINT ("AWLF", ("FIXME: check for NULL intersection"));
-#ifdef CRUD
-        INFO_INTERSECTB1 (arg_info) = intersectb1;
-        INFO_INTERSECTB2 (arg_info) = intersectb2;
-        INFO_IDXBOUND1 (arg_info) = idxbound1;
-        INFO_IDXBOUND2 (arg_info) = idxbound2;
-#endif // CRUD
+    z = ((N_array == NODE_TYPE (intersectb1)) && (N_array == NODE_TYPE (intersectb2))
+         && (N_array == NODE_TYPE (idxbound1)) && (N_array == NODE_TYPE (idxbound2)));
+
+    DBUG_PRINT ("AWLF", ("FIXME: check for NULL intersection"));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUBSLgetProducerWL( node *arg_node)
+ *
+ * @brief Given an N_prf _sel_VxA_( iv, producerWL), return
+ *        the producerWL's N_with node.
+ *
+ * @params: arg_node
+ * @result: The N_with node of the producerWL
+ *
+ *****************************************************************************/
+node *
+CUBSLgetProducerWL (node *arg_node)
+{
+    node *producerWL = NULL;
+    node *producerWLid;
+    node *producerWLavis;
+    node *producerWLassign;
+
+    DBUG_ENTER ("CUBSLgetProducerWL");
+
+    producerWLid = PRF_ARG2 (arg_node);
+    producerWLavis = ID_AVIS (producerWLid);
+    if ((NULL != AVIS_SSAASSIGN (producerWLavis))) {
+        producerWLassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (producerWLid)));
+        if (NODE_TYPE (LET_EXPR (producerWLassign)) == N_with) {
+            producerWL = LET_EXPR (producerWLassign);
+        }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (producerWL);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isNullIntersect( node *arg_node)
+ *
+ * @brief Predicate for determining Null intersection of two WLs
+ *
+ * @params arg_node: A F_attachintersect null intersection entry.
+ *
+ * @result: TRUE if intersection of index vector set and producerWL
+ *          partition is empty.
+ *
+ *****************************************************************************/
+static bool
+isNullIntersect (node *arg_node)
+{
+    bool z = TRUE;
+
+    DBUG_ENTER ("isNullIntersect");
+
+#ifdef FIXME
+    constant *con;
+    xxx
+#endif // FIXME
+
+      DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node * ExtractNthItem
+ *
+ * @brief Extract the Nth item of the attach_intersect information
+ *
+ * @params itemno: the Nth item number.
+ * @params idx: the index vector for the _sel_VxA( idx, producerWL).
+ *
+ * @result: The item itself.
+ *
+ *****************************************************************************/
+node *
+ExtractNthItem (int itemno, node *idx)
+{
+    node *bnd;
+    node *dfg;
+    node *val = NULL;
+
+    DBUG_ENTER ("ExtractNthWLIntersection");
+
+    dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
+    dfg = LET_EXPR (ASSIGN_INSTR (dfg));
+    DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
+                 ("ExtractNthItem wanted F_attachintersect as idx parent"));
+    bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
+
+    if (!(PMO (PMOlastVarGuards (&val, bnd)))) {
+        DBUG_ASSERT (FALSE, ("ExtractNthItem could not find var!"));
+    }
+
+    DBUG_RETURN (val);
+}
+
+/** <!--********************************************************************-->
+ *
+ *
+ * @fn node * FindMatchingPart(...
+ *
+ * @brief Search for a producerWL partition that matches the
+ *        consumerWLPart index set, or that is a superset thereof.
+ *
+ *        The search comprises two steps:
+ *
+ *        1. Find a partition in the producerWL that has bounds
+ *           that match those in the F_attachintersect bounds, if
+ *           such still exists.
+ *           This search is required because other optimizations
+ *           may have split a partition, and/or reordered partitions
+ *           within the producerWL.
+ *
+ *           If we are unable to find a matching partition, we
+ *           have to discard the consumerWLPart's intersect
+ *           computation data, and redo it.
+ *
+ *        2. If we do find a matching partition, there are three
+ *           types of intersection possible:
+ *
+ *            a. Null - no intersection, so no folding is possible.
+ *
+ *            b. ConsumerWL is subset of producerWL, or matches exactly.
+ *               Folding is trivial, using the intersect data in
+ *               the _attach_intersect_.
+ *
+ *            c. ConsumerWL is superset of producerWL.
+ *               Folding is possible, but the ConsumerWL partition
+ *               must be split into 2 or three partitions.
+ *
+ * @params arg_node: the N_prf of the sel(idx, producerWL).
+ *         consumerpart: the consumerWL partition containing arg_node.
+ *         producerWL: the N_with of the producerWL.
+ *
+ * @result: The address of the matching producerWL partition, if any.
+ *          NULL if none is found.
+ *
+ *****************************************************************************/
+node *
+FindMatchingPart (node *arg_node, info *arg_info, node *consumerpart, node *producerWL)
+{
+    node *consumerWLGenerator;
+    node *producerWLGenerator;
+    node *producerWLPart;
+    node *intersectb1;
+    node *intersectb2;
+    node *idx;
+    node *idxbound1;
+    node *idxbound2;
+    node *idxassign;
+    node *idxparent;
+    node *producerWLBound1Original;
+    node *producerWLBound2Original;
+    bool matched = FALSE;
+    bool nullIntersect;
+    int producerPartno = 0;
+
+    DBUG_ENTER ("FindMatchingPart");
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
+                 ("FindMatchingPart expected N_prf arg_node"));
+    DBUG_ASSERT (N_with == NODE_TYPE (producerWL),
+                 ("FindMatchingPart expected N_with producerWL"));
+    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart),
+                 ("FindMatchingPart expected N_part consumerpart"));
+
+    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
+    idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
+    idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
+
+    consumerWLGenerator = PART_GENERATOR (consumerpart);
+    producerWLPart = WITH_PART (producerWL);
+
+    /* Find matching producerWL partition, if any */
+    while ((!matched) && producerWLPart != NULL) {
+        producerWLGenerator = PART_GENERATOR (producerWLPart);
+
+        idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+        idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
+        intersectb1 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 0), idx));
+        intersectb2 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 1), idx));
+
+        if ((NULL != idxbound1) && (NULL != intersectb1)) {
+            DBUG_PRINT (
+              "AWLF",
+              ("producerPartno #%d matching producer idxbound1 %s, intersectb1 %s",
+               producerPartno, AVIS_NAME (idxbound1), AVIS_NAME (intersectb1)));
+        }
+        if ((NULL != idxbound2) && (NULL != intersectb2)) {
+            DBUG_PRINT (
+              "AWLF",
+              ("producerPartno #%d matching producer idxbound2 %s, intersectb2 %s",
+               producerPartno, AVIS_NAME (idxbound2), AVIS_NAME (intersectb2)));
+        }
+
+        producerWLBound1Original
+          = ExtractNthItem (WLBOUND1ORIGINAL (producerPartno), idx);
+        producerWLBound2Original
+          = ExtractNthItem (WLBOUND2ORIGINAL (producerPartno), idx);
+        nullIntersect
+          = isNullIntersect (ExtractNthItem (WLINTERSECTIONNULL (producerPartno), idx));
+
+        matched = ((N_generator == NODE_TYPE (consumerWLGenerator))
+                   && (N_generator == NODE_TYPE (producerWLGenerator))
+                   && (matchGeneratorField (producerWLBound1Original,
+                                            GENERATOR_BOUND1 (consumerWLGenerator)))
+                   && (matchGeneratorField (producerWLBound2Original,
+                                            GENERATOR_BOUND2 (consumerWLGenerator)))
+                   && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
+                                            GENERATOR_STEP (consumerWLGenerator)))
+                   && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
+                                            GENERATOR_WIDTH (consumerWLGenerator))));
+
+        /* This could be combined with the previous statement,
+         * but it's easier to debug this way.
+         */
+        if (matched) {
+            DBUG_PRINT ("AWLF", ("All generator fields match"));
+            matched = (TRUE == nullIntersect) && (idxbound1 == intersectb1)
+                      && (idxbound2 == intersectb2);
+        }
+
+        if (!matched) {
+            producerWLPart = PART_NEXT (producerWLPart);
+            producerPartno++;
+        }
+    }
+
+    if (matched) {
+        DBUG_PRINT ("AWLF", ("FindMatchingPart referents match producerPartno %d",
+                             producerPartno));
+    } else {
+        producerWLPart = NULL;
+        DBUG_PRINT ("AWLF", ("FindMatchingPart does not match"));
+    }
+
+    DBUG_RETURN (producerWLPart);
 }
 
 /** <!--********************************************************************-->
@@ -534,7 +838,9 @@ CUBSLpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUBSLpart");
 
+    INFO_CONSUMERPART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+    INFO_CONSUMERPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -570,11 +876,29 @@ CUBSLlet (node *arg_node, info *arg_info)
 node *
 CUBSLprf (node *arg_node, info *arg_info)
 {
+    node *producerPart;
+    node *producerWL;
+
     DBUG_ENTER ("CUBSLprf");
 
-    if (F_sel_VxA == PRF_PRF (arg_node) && isPrfArg1AttachIntersect (arg_node)) {
-        DBUG_PRINT ("CUBSL", (" %s =_sel-VxA_( iv, X) has attachintersect",
-                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
+        && (isPrfArg1AttachIntersect (arg_node))
+
+    ) {
+#ifdef FIXME
+        move this up
+
+          (isPartitionNeedsSlicing (arg_node))
+#endif // FIXME
+
+            DBUG_PRINT ("CUBSL", (" %s =_sel_VxA_( iv, X) needs slicing",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        producerWL = CUBSLgetProducerWL (arg_node);
+        producerPart = FindMatchingPart (arg_node, arg_info, INFO_CONSUMERPART (arg_info),
+                                         producerWL);
+        if (NULL != producerPart) {
+            DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+        }
     }
 
     DBUG_RETURN (arg_node);
