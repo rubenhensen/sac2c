@@ -269,8 +269,31 @@ GetNextByte (char *ret, node *exprs)
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numbyte), "wrong icm-arg: N_num expected");
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numbyte), "wrong icm-arg: N_numbyte expected");
     (*ret) = NUMBYTE_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextShort (short *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextShort");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numshort), "wrong icm-arg: N_numshort expected");
+    (*ret) = NUMSHORT_VAL (expr);
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
 
@@ -292,10 +315,175 @@ GetNextInt (int *ret, node *exprs)
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "wrong icm-arg: N_num expected");
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numint),
+                 "wrong icm-arg: N_num or N_int expected");
     (*ret) = NUM_VAL (expr);
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextLong (long *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextLong");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numlong), "wrong icm-arg: N_numlong expected");
+    (*ret) = NUMLONG_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %ld", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextLonglong (long long *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextLonglong");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numlonglong),
+                 "wrong icm-arg: N_numulonglong expected");
+    (*ret) = NUMLONGLONG_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %lld", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextUbyte (unsigned char *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextUbyte");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numubyte), "wrong icm-arg: N_numubyte expected");
+    (*ret) = NUMUBYTE_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %hu", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextUshort (unsigned short *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextUshort");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numushort),
+                 "wrong icm-arg: N_numushort expected");
+    (*ret) = NUMUSHORT_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %hu", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextUint (unsigned int *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextUint");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numuint), "wrong icm-arg: N_numuint expected");
+    (*ret) = NUMUINT_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %u", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextUlong (unsigned long *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextUlong");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numulong), "wrong icm-arg: N_numulong expected");
+    (*ret) = NUMULONG_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %lu", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextUlonglong (unsigned long long *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextUlonglong");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_numulonglong),
+                 "wrong icm-arg: N_numulonglong expected");
+    (*ret) = NUMULONGLONG_VAL (expr);
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %llu", (*ret)));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -397,9 +585,17 @@ GetNextDouble (double *ret, node *exprs)
 static node *
 GetNextAny (char **ret, node *exprs)
 {
-    int ival;
     char cval;
     char byval;
+    short sval;
+    int ival;
+    long lval;
+    long long llval;
+    unsigned char ubyval;
+    unsigned short usval;
+    unsigned int uival;
+    unsigned long ulval;
+    unsigned long long ullval;
     bool bval;
     float fval;
     double dval;
@@ -440,7 +636,52 @@ GetNextAny (char **ret, node *exprs)
     case N_numbyte:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
         exprs = GetNextByte (&byval, exprs);
-        sprintf ((*ret), "%d", byval);
+        sprintf ((*ret), "%hd", byval);
+        break;
+    case N_numshort:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextShort (&sval, exprs);
+        sprintf ((*ret), "%hd", sval);
+        break;
+    case N_numint:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextInt (&ival, exprs);
+        sprintf ((*ret), "%d", ival);
+        break;
+    case N_numlong:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextLong (&lval, exprs);
+        sprintf ((*ret), "%ld", lval);
+        break;
+    case N_numlonglong:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextLonglong (&llval, exprs);
+        sprintf ((*ret), "%lldLL", llval);
+        break;
+    case N_numubyte:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextUbyte (&ubyval, exprs);
+        sprintf ((*ret), "%hu", ubyval);
+        break;
+    case N_numushort:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextUshort (&usval, exprs);
+        sprintf ((*ret), "%hu", usval);
+        break;
+    case N_numuint:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextUint (&uival, exprs);
+        sprintf ((*ret), "%u", uival);
+        break;
+    case N_numulong:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextUlong (&ulval, exprs);
+        sprintf ((*ret), "%lu", ulval);
+        break;
+    case N_numulonglong:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextUlonglong (&ullval, exprs);
+        sprintf ((*ret), "%lluULL", ullval);
         break;
     case N_char:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 5);

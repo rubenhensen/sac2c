@@ -201,6 +201,16 @@ isScalar (node *n)
 
     switch (NODE_TYPE (n)) {
     case N_num:
+    case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
     case N_char:
     case N_bool:
     case N_double:
@@ -513,6 +523,46 @@ isNotOne (node *n)
 
     case N_double:
         res = (DOUBLE_VAL (n) != 1.0);
+        break;
+
+    case N_numbyte:
+        res = (NUMBYTE_VAL (n) != (char)1);
+        break;
+
+    case N_numshort:
+        res = (NUMSHORT_VAL (n) != (short)1);
+        break;
+
+    case N_numint:
+        res = (NUMINT_VAL (n) != (int)1);
+        break;
+
+    case N_numlong:
+        res = (NUMLONG_VAL (n) != (long)1);
+        break;
+
+    case N_numlonglong:
+        res = (NUMLONGLONG_VAL (n) != (long long)1);
+        break;
+
+    case N_numubyte:
+        res = (NUMUBYTE_VAL (n) != (unsigned char)1);
+        break;
+
+    case N_numushort:
+        res = (NUMUSHORT_VAL (n) != (unsigned short)1);
+        break;
+
+    case N_numuint:
+        res = (NUMUINT_VAL (n) != (unsigned int)1);
+        break;
+
+    case N_numulong:
+        res = (NUMULONG_VAL (n) != (unsigned long)1);
+        break;
+
+    case N_numulonglong:
+        res = (NUMULONGLONG_VAL (n) != (unsigned long long)1);
         break;
 
     case N_num:
