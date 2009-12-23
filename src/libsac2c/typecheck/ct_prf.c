@@ -521,7 +521,7 @@ NTCCTprf_attachintersect (te_info *info, ntype *args)
 
     DBUG_ENTER ("NTCCTprf_attachintersect");
 
-    arg = TYgetProductMember (args, 1);
+    arg = TYgetProductMember (args, 0);
     arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
