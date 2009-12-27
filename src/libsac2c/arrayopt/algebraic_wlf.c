@@ -862,7 +862,7 @@ AWLFwith (node *arg_node, info *arg_info)
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
     INFO_PREASSIGNS (arg_info) = INFO_PREASSIGNS (old_info);
 
-    WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
+    WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     /* Try to replace modarray(producerWL) by genarray(shape(producerWL)).

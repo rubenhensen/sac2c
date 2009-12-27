@@ -6855,7 +6855,7 @@ N_structdef :
 	</flag>
 	<flag name="IsWLFolded" default="FALSE">
 	  <description>
-             If true, the given variable is the result of a foldeeWL
+             If true, the given variable is the result of a producerWL
              that has been folded out of existence.
 	  </description>
 	</flag>
@@ -7075,12 +7075,12 @@ N_structdef :
         </attribute>
         <attribute name="Referenced_Fold" default="0">
           <description>
-            The number of RHS references, within a potential folderWL,  
+            The number of RHS references, within a potential consumerWL,  
             to the result of this WL, by the WL at
-            Referenced_Folderwl. WLF and AWLF can fold WLs only
+            Referenced_consumerWL. WLF and AWLF can fold WLs only
             if this field and WITH_REFERENCED are equal.
             The only rationale for this restriction is that it prevents
-            the same foldeeWL element from being computed more than once.
+            the same producerWL element from being computed more than once.
           </description>
           <type name="Integer">
             <targets>
@@ -7094,10 +7094,10 @@ N_structdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="Referenced_Folderwl" default ="NULL" >
+        <attribute name="Referenced_consumerWL" default ="NULL" >
           <description>
-            The first folderWL that refers to the result created by
-            this putative foldeeWL. See Referenced_Fold.
+            The first consumerWL that refers to the result created by
+            this putative producerWL. See Referenced_Fold.
           </description>
           <type name="Link">
             <targets>

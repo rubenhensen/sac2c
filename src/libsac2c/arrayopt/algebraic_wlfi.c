@@ -133,7 +133,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_PART(n) ((n)->part)
-#define INFO_FOLDERWL(n) ((n)->consumerwl)
+#define INFO_CONSUMERWL(n) ((n)->consumerwl)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldableproducerwl)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
@@ -151,7 +151,7 @@ MakeInfo (node *fundef)
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_PART (result) = NULL;
-    INFO_FOLDERWL (result) = NULL;
+    INFO_CONSUMERWL (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_AWLFOLDABLEFOLDEE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
@@ -499,7 +499,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
     node *expn = NULL;
     node *partn;
     node *foldeeassign;
-    node *foldeewl;
+    node *producerWL;
     node *curavis;
     node *g1;
     node *g2;
@@ -507,9 +507,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
     DBUG_ENTER ("IntersectBoundsBuilder");
 
     foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
-    foldeewl = LET_EXPR (foldeeassign);
+    producerWL = LET_EXPR (foldeeassign);
+    partn = WITH_PART (producerWL);
 
-    partn = WITH_PART (foldeewl);
     while (NULL != partn) {
         g1 = GENERATOR_BOUND1 (PART_GENERATOR (partn));
         g2 = GENERATOR_BOUND2 (PART_GENERATOR (partn));
@@ -565,7 +565,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     node *ivid;
     node *ividprime;
     node *intersectcalc;
-    node *foldeewl;
+    node *producerWL;
     node *args;
     node *idxavis;
 
@@ -577,10 +577,10 @@ attachIntersectCalc (node *arg_node, info *arg_info)
      * upper-bound intersection calculation.
      */
     ivid = PRF_ARG1 (arg_node);
-    foldeewl = PRF_ARG2 (arg_node);
+    producerWL = PRF_ARG2 (arg_node);
 
     idxavis = ID_AVIS (ivid);
-    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, foldeewl, idxavis);
+    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, producerWL, idxavis);
     args = TBmakeExprs (TBmakeId (ID_AVIS (ivid)), NULL);
     args = TCappendExprs (args, intersectcalc);
 
@@ -664,23 +664,23 @@ static bool
 checkFoldeeFoldable (node *arg_node, info *arg_info)
 {
     node *foldeeavis;
-    node *foldeewlid;
-    node *foldeewl;
+    node *producerWLid;
+    node *producerWL;
     node *foldeeassign;
     node *rhs;
     bool z = FALSE;
 
     DBUG_ENTER ("checkFoldeeFoldable");
 
-    foldeewlid = PRF_ARG2 (arg_node);
-    foldeeavis = ID_AVIS (foldeewlid);
+    producerWLid = PRF_ARG2 (arg_node);
+    foldeeavis = ID_AVIS (producerWLid);
     rhs = AVIS_SSAASSIGN (foldeeavis);
     if ((NULL != rhs) && (N_with == NODE_TYPE (ASSIGN_RHS (rhs)))) {
-        foldeewl = ASSIGN_RHS (rhs);
+        producerWL = ASSIGN_RHS (rhs);
         foldeeassign = ASSIGN_INSTR (rhs);
 
         DBUG_PRINT ("AWLFI", ("FoldeeWL:%s: WITH_REFERENCED_FOLD=%d",
-                              AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (foldeewl)));
+                              AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (producerWL)));
 
         if ((NODE_TYPE (foldeeassign) == N_let)
             && (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with)
@@ -754,7 +754,7 @@ checkFolderFoldable (node *arg_node, info *arg_info)
  *        We presume that earlier phases have ensured that
  *        the BOUND1 and BOUND2 lengths are the same for each partition.
  *
- * @param _sel_VxA_( idx, producerWL) arg_node.
+ * @param N_prf: _sel_VxA_( idx, producerWL) arg_node.
  * @result True if the consumerWL and producerWL
  *         have no problems being folded (yet).
  *
@@ -763,29 +763,29 @@ static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
     node *consumerWL;
-    node *foldeewl;
+    node *producerWL;
     node *b1;
     node *b2;
-    bool z;
+    shape *s1;
+    shape *s2;
+    bool z = FALSE;
 
     DBUG_ENTER ("checkBothFoldable");
 
-    foldeewl = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
-    consumerWL = INFO_FOLDERWL (arg_info);
+    producerWL = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
+    consumerWL = INFO_CONSUMERWL (arg_info);
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (consumerWL)));
-    b2 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (foldeewl)));
-    z = SHcompareShapes (TYgetShape (AVIS_TYPE (ID_AVIS (b1))),
-                         TYgetShape (AVIS_TYPE (ID_AVIS (b2))));
-    if (z) {
-        DBUG_PRINT ("AWLFI", ("FolderWL & FoldeeWL %s generator shapes match.",
-                              AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
-    } else {
-        DBUG_PRINT ("AWLFI", ("FolderWL & FoldeeWL %s generator shapes do not match.",
-                              AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+    s1 = TYgetShape (AVIS_TYPE (ID_AVIS (b1)));
+    b2 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+    if (NULL != b2) {
+        s2 = TYgetShape (AVIS_TYPE (b2));
+        z = SHcompareShapes (s1, s2);
     }
+
     DBUG_RETURN (z);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFIfundef(node *arg_node, info *arg_info)
@@ -893,12 +893,12 @@ AWLFIwith (node *arg_node, info *arg_info)
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
-    INFO_FOLDERWL (arg_info) = arg_node;
+    INFO_CONSUMERWL (arg_info) = arg_node;
     INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
 
-    DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_FOLDERWL, etc."));
+    DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_CONSUMERWL, etc."));
     WITH_REFERENCED_FOLD (arg_node) = 0;
-    WITH_REFERENCED_FOLDERWL (arg_node) = NULL;
+    WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_REFERENCES_FOLDED (arg_node) = 0;
 
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
@@ -982,7 +982,7 @@ AWLFIids (node *arg_node, info *arg_info)
  *
  *   We want to end up with WITH_REFERENCED_FOLD counting only
  *   references from a single WL. Hence, the checking on
- *   WITH_REFERENCED_FOLDERWL
+ *   WITH_REFERENCED_CONSUMERWL
  *   AWLF will disallow folding if WITH_REFERENCED_FOLD != AVIS_NEEDCOUNT.
  *
  ******************************************************************************/
@@ -990,7 +990,7 @@ node *
 AWLFIid (node *arg_node, info *arg_info)
 {
     node *assignn;
-    node *foldeewl;
+    node *producerWL;
 
     DBUG_ENTER ("AWLFIid");
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
@@ -998,14 +998,14 @@ AWLFIid (node *arg_node, info *arg_info)
     DBUG_PRINT ("AWLFI", ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
-    foldeewl = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
-                 ? ASSIGN_RHS (assignn)
-                 : NULL;
+    producerWL = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
+                   ? ASSIGN_RHS (assignn)
+                   : NULL;
 
-    if ((NULL != foldeewl) && (NULL == WITH_REFERENCED_FOLDERWL (foldeewl))) {
+    if ((NULL != producerWL) && (NULL == WITH_REFERENCED_CONSUMERWL (producerWL))) {
         /* First reference to this WL. */
-        WITH_REFERENCED_FOLDERWL (foldeewl) = INFO_FOLDERWL (arg_info);
-        WITH_REFERENCED_FOLD (foldeewl) = 0;
+        WITH_REFERENCED_CONSUMERWL (producerWL) = INFO_CONSUMERWL (arg_info);
+        WITH_REFERENCED_FOLD (producerWL) = 0;
         DBUG_PRINT ("AWLFI", ("AWLFIid found first reference to %s",
                               AVIS_NAME (ID_AVIS (arg_node))));
     }
@@ -1015,12 +1015,12 @@ AWLFIid (node *arg_node, info *arg_info)
      * WITH_REFERENCED_FOLD(producerWL) may have to be
      * incremented
      */
-    if ((NULL != foldeewl) && (NULL != INFO_FOLDERWL (arg_info))
-        && (WITH_REFERENCED_FOLDERWL (foldeewl) == INFO_FOLDERWL (arg_info))) {
-        (WITH_REFERENCED_FOLD (foldeewl)) += 1;
+    if ((NULL != producerWL) && (NULL != INFO_CONSUMERWL (arg_info))
+        && (WITH_REFERENCED_CONSUMERWL (producerWL) == INFO_CONSUMERWL (arg_info))) {
+        (WITH_REFERENCED_FOLD (producerWL)) += 1;
         DBUG_PRINT ("AWLFI",
                     ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
-                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (foldeewl)));
+                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (producerWL)));
     } else {
 #ifdef NOISY
         DBUG_PRINT ("AWLFI", ("AWLFIid %s is not defined by a WL",
@@ -1116,23 +1116,24 @@ AWLFIcond (node *arg_node, info *arg_info)
 node *
 AWLFImodarray (node *arg_node, info *arg_info)
 {
-    node *foldeewlid;
-    node *foldeeavis;
-    node *foldeeassign;
-    node *foldeewl;
+    node *producerWLid;
+    node *producerWLavis;
+    node *producerWLassign;
+    node *producerWL;
 
     DBUG_ENTER ("AWLFImodarray");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     if (N_modarray == NODE_TYPE (arg_node)) {
-        foldeewlid = MODARRAY_ARRAY (arg_node);
-        foldeeavis = ID_AVIS (foldeewlid);
-        foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (foldeeavis));
-        foldeewl = LET_EXPR (foldeeassign);
-        (WITH_REFERENCED_FOLD (foldeewl))++;
-        DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
-                              AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (foldeewl)));
+        producerWLid = MODARRAY_ARRAY (arg_node);
+        producerWLavis = ID_AVIS (producerWLid);
+        producerWLassign = ASSIGN_INSTR (AVIS_SSAASSIGN (producerWLavis));
+        producerWL = LET_EXPR (producerWLassign);
+        (WITH_REFERENCED_FOLD (producerWL))++;
+        DBUG_PRINT ("AWLFI",
+                    ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+                     AVIS_NAME (producerWLavis), WITH_REFERENCED_FOLD (producerWL)));
     }
 
     DBUG_RETURN (arg_node);
