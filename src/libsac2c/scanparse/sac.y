@@ -138,9 +138,9 @@ PRF_GT_SxS   PRF_GT_SxV  PRF_GT_VxS  PRF_GT_VxV
 PRF_AND_SxS  PRF_AND_SxV  PRF_AND_VxS  PRF_AND_VxV
 PRF_OR_SxS   PRF_OR_SxV  PRF_OR_VxS  PRF_OR_VxV
 PRF_NOT_S  PRF_NOT_V
-PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOB_S 
-PRF_TOBY_S PRF_TOS_S PRF_TOI_S PRF_TOL_S PRF_TOLL_S
-PRF_TOUBY_S PRF_TOUS_S PRF_TOUI_S PRF_TOUL_S PRF_TOULL_S
+PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOBOOL_S 
+PRF_TOB_S  PRF_TOS_S PRF_TOI_S PRF_TOL_S PRF_TOLL_S
+PRF_TOUB_S PRF_TOUS_S PRF_TOUI_S PRF_TOUL_S PRF_TOULL_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 PRF_MESH_VxVxV
 
@@ -1853,12 +1853,12 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_OR_SxV         { $$ = F_or_SxV;  }
    | PRF_OR_VxS         { $$ = F_or_VxS;  }
    | PRF_OR_VxV         { $$ = F_or_VxV;  }
-   | PRF_TOBY_S         { $$ = F_toby_S;  }
+   | PRF_TOB_S          { $$ = F_tob_S;   }
    | PRF_TOS_S          { $$ = F_tos_S;   }
    | PRF_TOI_S          { $$ = F_toi_S;   }
    | PRF_TOL_S          { $$ = F_tol_S;   }
    | PRF_TOLL_S         { $$ = F_toll_S;  }
-   | PRF_TOUBY_S        { $$ = F_touby_S; }
+   | PRF_TOUB_S         { $$ = F_toub_S;  }
    | PRF_TOUS_S         { $$ = F_tous_S;  }
    | PRF_TOUI_S         { $$ = F_toui_S;  }
    | PRF_TOUL_S         { $$ = F_toul_S;  }
@@ -1866,7 +1866,7 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_TOF_S          { $$ = F_tof_S;   }
    | PRF_TOD_S          { $$ = F_tod_S;   }
    | PRF_TOC_S          { $$ = F_toc_S;   }
-   | PRF_TOB_S          { $$ = F_tob_S;   }
+   | PRF_TOBOOL_S       { $$ = F_tobool_S;   }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}

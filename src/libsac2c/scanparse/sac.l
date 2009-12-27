@@ -207,12 +207,12 @@ int charpos = 0;
 "_not_S_"                  { FILTER( PRF_NOT_S); }
 "_not_V_"                  { FILTER( PRF_NOT_V); }
 
-"_toby_S_"                 { FILTER( PRF_TOBY_S); }
+"_tob_S_"                  { FILTER( PRF_TOB_S); }
 "_tos_S_"                  { FILTER( PRF_TOS_S);  }
 "_toi_S_"                  { FILTER( PRF_TOI_S);  }
 "_tol_S_"                  { FILTER( PRF_TOL_S);  }
 "_toll_S_"                 { FILTER( PRF_TOLL_S); }
-"_touby_S_"                { FILTER( PRF_TOUBY_S); }
+"_toub_S_"                 { FILTER( PRF_TOUB_S); }
 "_tous_S_"                 { FILTER( PRF_TOUS_S);  }
 "_toui_S_"                 { FILTER( PRF_TOUI_S);  }
 "_toul_S_"                 { FILTER( PRF_TOUL_S);  }
@@ -220,7 +220,7 @@ int charpos = 0;
 "_tof_S_"                  { FILTER( PRF_TOF_S);  }
 "_tod_S_"                  { FILTER( PRF_TOD_S);  }
 "_toc_S_"                  { FILTER( PRF_TOC_S);  }
-"_tob_S_"                  { FILTER( PRF_TOB_S);  }
+"_tobool_S_"               { FILTER( PRF_TOBOOL_S);  }
 
 
 "struct"                   { FILTER( STRUCT); }
@@ -424,7 +424,8 @@ int charpos = 0;
                            }
 
 [1-9][0-9]*[bB]            {
-                             sscanf( yytext, "%d", &yylval.cbyte);
+                             yytext[STRlen(yytext)]='\0';
+                             yylval.cbyte=(char)atoi(yytext);
                              FILTER( NUMBYTE);
                            }
 
@@ -469,7 +470,8 @@ int charpos = 0;
                            }
 
 [1-9][0-9]*(ub|UB)         {
-                             sscanf( yytext, "%u", &yylval.cubyte);
+                             yytext[STRlen(yytext)]='\0';
+                             yylval.cubyte=(unsigned char)atoi(yytext);
                              FILTER( NUMUBYTE);
                            }
 

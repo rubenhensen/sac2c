@@ -1484,22 +1484,22 @@ ConvS (te_info *info, ntype *args, simpletype st)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_toby_S( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tob_S( te_info *info, ntype *args)
  *
- *   @brief  computes the return type of an application of _toby_S_
+ *   @brief  computes the return type of an application of _tob_S_
  *
  *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _toby_S_ is applied to
- *   @return       the result type of applying _toby_S_
+ *   @param args   product of argument types _tob_S_ is applied to
+ *   @return       the result type of applying _tob_S_
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_toby_S (te_info *info, ntype *args)
+NTCCTprf_tob_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toby_S");
+    DBUG_ENTER ("NTCCTprf_tob_S");
 
     res = ConvS (info, args, T_byte);
 
@@ -1604,22 +1604,22 @@ NTCCTprf_toll_S (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_touby_S( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_toub_S( te_info *info, ntype *args)
  *
- *   @brief  computes the return type of an application of _touby_S_
+ *   @brief  computes the return type of an application of _toub_S_
  *
  *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _touby_S_ is applied to
- *   @return       the result type of applying _touby_S_
+ *   @param args   product of argument types _toub_S_ is applied to
+ *   @return       the result type of applying _toub_S_
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_touby_S (te_info *info, ntype *args)
+NTCCTprf_toub_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_touby_S");
+    DBUG_ENTER ("NTCCTprf_toub_S");
 
     res = ConvS (info, args, T_ubyte);
 
@@ -1772,22 +1772,22 @@ NTCCTprf_tod_S (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_tob_S( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tobool_S( te_info *info, ntype *args)
  *
- *   @brief  computes the return type of an application of _tob_S_
+ *   @brief  computes the return type of an application of _tobool_S_
  *
  *   @param info   info needed for type errors and for applying CF
- *   @param args   product of argument types _tod_S_ is applied to
- *   @return       the result type of applying _tod_S_
+ *   @param args   product of argument types _tobool_S_ is applied to
+ *   @return       the result type of applying _tobool_S_
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_tob_S (te_info *info, ntype *args)
+NTCCTprf_tobool_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tob_S");
+    DBUG_ENTER ("NTCCTprf_tobool_S");
 
     res = ConvS (info, args, T_bool);
 

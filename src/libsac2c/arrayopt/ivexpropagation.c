@@ -937,8 +937,17 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         break;
 
     /* These cases are ISMOP */
+    case F_tobool_S:
     case F_tob_S:
+    case F_tos_S:
     case F_toi_S:
+    case F_tol_S:
+    case F_toll_S:
+    case F_toub_S:
+    case F_tous_S:
+    case F_toui_S:
+    case F_toul_S:
+    case F_toull_S:
     case F_toc_S:
     case F_tof_S:
     case F_tod_S:
@@ -1220,8 +1229,17 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
 
             case F_neg_S: /* We swap extrema later */
 
+            case F_tobool_S:
             case F_tob_S:
+            case F_tos_S:
             case F_toi_S:
+            case F_tol_S:
+            case F_toll_S:
+            case F_toub_S:
+            case F_tous_S:
+            case F_toui_S:
+            case F_toul_S:
+            case F_toull_S:
             case F_tof_S:
             case F_tod_S:
             case F_toc_S:

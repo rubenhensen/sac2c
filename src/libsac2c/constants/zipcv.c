@@ -328,7 +328,7 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                               MAP_BOOL_BOOL (!, Not)
 
-                                MAP_ANY_TYPE ((char), Toby, char)
+                                MAP_ANY_TYPE ((char), Tob, char)
 
                                   MAP_ANY_TYPE ((short), Tos, short)
 
@@ -338,7 +338,7 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                                         MAP_ANY_TYPE ((long long), Toll, long long)
 
-                                          MAP_ANY_TYPE ((unsigned char), Touby,
+                                          MAP_ANY_TYPE ((unsigned char), Toub,
                                                         unsigned char)
 
                                             MAP_ANY_TYPE ((unsigned short), Tous,

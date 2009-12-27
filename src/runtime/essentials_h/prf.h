@@ -27,14 +27,14 @@
  *
  ******************************************************************************/
 
-#define SAC_ND_PRF_TOB(arg) (int)(arg)
+#define SAC_ND_PRF_TOBOOL(arg) (int)(arg)
 #define SAC_ND_PRF_TOC(arg) (char)(arg)
-#define SAC_ND_PRF_TOBY(arg) (byte) (arg)
+#define SAC_ND_PRF_TOB(arg) (byte) (arg)
 #define SAC_ND_PRF_TOS(arg) (short)(arg)
 #define SAC_ND_PRF_TOI(arg) (int)(arg)
 #define SAC_ND_PRF_TOL(arg) (long)(arg)
 #define SAC_ND_PRF_TOLL(arg) (longlong) (arg)
-#define SAC_ND_PRF_TOUBY(arg) (ubyte) (arg)
+#define SAC_ND_PRF_TOUB(arg) (ubyte) (arg)
 #define SAC_ND_PRF_TOUS(arg) (ushort) (arg)
 #define SAC_ND_PRF_TOUI(arg) (uint) (arg)
 #define SAC_ND_PRF_TOUL(arg) (ulong) (arg)

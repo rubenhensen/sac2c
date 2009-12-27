@@ -148,16 +148,16 @@
  * Built-in type conversion operations
  */
 
-PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_S,
-     SCSprf_tob_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS, ICCnone,
-     TEone, NULL, NULL),
+PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
+     COMPprfOp_S, SCSprf_tobool_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
+     PPIgetPVS, ICCnone, TEone, NULL, NULL),
 
   PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, NULL, COMPprfOp_S,
        SCSprf_toc_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
-  PRF (toby_S, (PA_S, PA_x, PA_x), 1, TOBY, NOSIMD, NTCCTprf_toby_S, COtoby, COMPprfOp_S,
-       SCSprf_toby_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+  PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, COtob, COMPprfOp_S,
+       SCSprf_tob_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
   PRF (tos_S, (PA_S, PA_x, PA_x), 1, TOS, NOSIMD, NTCCTprf_tos_S, COtos, COMPprfOp_S,
@@ -176,9 +176,9 @@ PRF (tob_S, (PA_S, PA_x, PA_x), 1, TOB, NOSIMD, NTCCTprf_tob_S, NULL, COMPprfOp_
        SCSprf_toll_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
-  PRF (touby_S, (PA_S, PA_x, PA_x), 1, TOUBY, NOSIMD, NTCCTprf_touby_S, COtouby,
-       COMPprfOp_S, SCSprf_touby_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
-       PPIgetPVS, ICCnone, TEone, NULL, NULL),
+  PRF (toub_S, (PA_S, PA_x, PA_x), 1, TOUB, NOSIMD, NTCCTprf_toub_S, COtoub, COMPprfOp_S,
+       SCSprf_toub_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
 
   PRF (tous_S, (PA_S, PA_x, PA_x), 1, TOUS, NOSIMD, NTCCTprf_tous_S, COtous, COMPprfOp_S,
        SCSprf_tous_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,

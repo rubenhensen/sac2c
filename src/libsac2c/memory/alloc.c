@@ -1506,13 +1506,13 @@ EMALprf (node *arg_node, info *arg_info)
     case F_gt_SxS:
     case F_neg_S:
     case F_abs_S:
+    case F_tobool_S:
     case F_tob_S:
-    case F_toby_S:
     case F_tos_S:
     case F_toi_S:
     case F_tol_S:
     case F_toll_S:
-    case F_touby_S:
+    case F_toub_S:
     case F_tous_S:
     case F_toui_S:
     case F_toul_S:

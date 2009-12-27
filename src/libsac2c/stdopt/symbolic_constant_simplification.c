@@ -870,16 +870,16 @@ SCSprf_mod (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_tob_S( node *arg_node, info *arg_info)
+ * @fn node *SCSprf_tobool_S( node *arg_node, info *arg_info)
  * Delete type coercion tob(boolvec) if arg_node is already of type bool.
  *
  *****************************************************************************/
 node *
-SCSprf_tob_S (node *arg_node, info *arg_info)
+SCSprf_tobool_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tob_S");
+    DBUG_ENTER ("SCSprf_tobool_S");
     if ((N_bool == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_bool
@@ -912,16 +912,16 @@ SCSprf_toc_S (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_toby_S( node *arg_node, info *arg_info)
- * Delete type coercion toby(bytevec) if arg_node is already of type byte.
+ * @fn node *SCSprf_tob_S( node *arg_node, info *arg_info)
+ * Delete type coercion tob(bytevec) if arg_node is already of type byte.
  *
  *****************************************************************************/
 node *
-SCSprf_toby_S (node *arg_node, info *arg_info)
+SCSprf_tob_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toby_S");
+    DBUG_ENTER ("SCSprf_tob_S");
     if ((N_numbyte == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_byte
@@ -1019,16 +1019,16 @@ SCSprf_toll_S (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_touby_S( node *arg_node, info *arg_info)
- * Delete type coercion touby(ubytevec) if arg_node is already of type ubyte.
+ * @fn node *SCSprf_toub_S( node *arg_node, info *arg_info)
+ * Delete type coercion toub(ubytevec) if arg_node is already of type ubyte.
  *
  *****************************************************************************/
 node *
-SCSprf_touby_S (node *arg_node, info *arg_info)
+SCSprf_toub_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_touby_S");
+    DBUG_ENTER ("SCSprf_toub_S");
     if ((N_numubyte == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_ubyte

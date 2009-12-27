@@ -567,7 +567,7 @@ COnot (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COtoby( constant *a)
+ *    constant *COtob( constant *a)
  *
  * description:
  *    returns a constant whose elements are elementwise convertet to byte,
@@ -575,13 +575,13 @@ COnot (constant *a)
  ******************************************************************************/
 
 constant *
-COtoby (constant *a)
+COtob (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoby");
-    res = COzipUnary (global.zipcv_toby, a, T_byte);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoby", a, res););
+    DBUG_ENTER ("COtob");
+    res = COzipUnary (global.zipcv_tob, a, T_byte);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtob", a, res););
     DBUG_RETURN (res);
 }
 
@@ -672,7 +672,7 @@ COtoll (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COtouby( constant *a)
+ *    constant *COtoub( constant *a)
  *
  * description:
  *    returns a constant whose elements are elementwise converted to ubyte.
@@ -680,13 +680,13 @@ COtoll (constant *a)
  ******************************************************************************/
 
 constant *
-COtouby (constant *a)
+COtoub (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COtouby");
-    res = COzipUnary (global.zipcv_touby, a, T_ubyte);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtouby", a, res););
+    DBUG_ENTER ("COtoub");
+    res = COzipUnary (global.zipcv_toub, a, T_ubyte);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoub", a, res););
     DBUG_RETURN (res);
 }
 

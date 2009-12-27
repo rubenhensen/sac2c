@@ -225,8 +225,35 @@ GetInnerTypeName (namespace_t *ns, const char *name)
     } while (TUisArrayOfUser (base));
 
     switch (TYgetSimpleType (TYgetScalar (base))) {
+    case T_byte:
+        result = "Byte";
+        break;
+    case T_short:
+        result = "Short";
+        break;
     case T_int:
         result = "Int";
+        break;
+    case T_long:
+        result = "Long";
+        break;
+    case T_longlong:
+        result = "Longlong";
+        break;
+    case T_ubyte:
+        result = "Ubyte";
+        break;
+    case T_ushort:
+        result = "Ushort";
+        break;
+    case T_uint:
+        result = "Uint";
+        break;
+    case T_ulong:
+        result = "Ulong";
+        break;
+    case T_ulonglong:
+        result = "Ulonglong";
         break;
     case T_bool:
         result = "Bool";

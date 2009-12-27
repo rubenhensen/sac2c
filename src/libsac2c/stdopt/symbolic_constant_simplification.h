@@ -19,14 +19,14 @@ extern node *MakeTrue (node *prfarg);
 extern node *MakeFalse (node *prfarg);
 extern simpletype GetBasetypeOfExpr (node *expr);
 
-extern node *SCSprf_tob_S (node *arg_node, info *arg_info);
+extern node *SCSprf_tobool_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);
-extern node *SCSprf_toby_S (node *arg_node, info *arg_info);
+extern node *SCSprf_tob_S (node *arg_node, info *arg_info);
 extern node *SCSprf_tos_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toi_S (node *arg_node, info *arg_info);
 extern node *SCSprf_tol_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toll_S (node *arg_node, info *arg_info);
-extern node *SCSprf_touby_S (node *arg_node, info *arg_info);
+extern node *SCSprf_toub_S (node *arg_node, info *arg_info);
 extern node *SCSprf_tous_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toui_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toul_S (node *arg_node, info *arg_info);

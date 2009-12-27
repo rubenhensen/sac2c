@@ -75,7 +75,7 @@
 TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
-TYP_IF (T_byte, "byte", "byte", "by", COcv2Numbyte, COcv2CvByte, COcv2StrByte,
+TYP_IF (T_byte, "byte", "byte", "b", COcv2Numbyte, COcv2CvByte, COcv2StrByte,
         sizeof (char), COzipCvByte, CObaseCvByte, MUTC_SC_INT, unused)
 
 TYP_IF (T_short, "short", "short", "s", COcv2Numshort, COcv2CvShort, COcv2StrShort,
@@ -91,7 +91,7 @@ TYP_IF (T_longlong, "longlong", "longlong", "ll", COcv2Numlonglong, COcv2CvLongL
         COcv2StrLongLong, sizeof (long long int), COzipCvLongLong, CObaseCvLongLong,
         MUTC_SC_INT, unused)
 
-TYP_IF (T_ubyte, "ubyte", "ubyte", "uby", COcv2Numubyte, COcv2CvUByte, COcv2StrUByte,
+TYP_IF (T_ubyte, "ubyte", "ubyte", "ub", COcv2Numubyte, COcv2CvUByte, COcv2StrUByte,
         sizeof (char), COzipCvUByte, CObaseCvUByte, MUTC_SC_INT, unused)
 
 TYP_IF (T_ushort, "ushort", "ushort", "us", COcv2Numushort, COcv2CvUShort, COcv2StrUShort,
@@ -117,7 +117,7 @@ TYP_IF (T_longdbl, "long double", "long double", "ld", COcv2ScalarDummy,
         COcv2CvLongDouble, COcv2StrLongDouble, sizeof (long double), COzipCvLongDouble,
         CObaseCvLongDouble, MUTC_SC_FLOAT, unused)
 
-TYP_IF (T_bool, "bool", "bool", "b", COcv2Bool, COcv2CvBool, COcv2StrBool, sizeof (bool),
+TYP_IF (T_bool, "bool", "bool", "bl", COcv2Bool, COcv2CvBool, COcv2StrBool, sizeof (bool),
         COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused)
 
 TYP_IF (T_str, "string", "string", "st", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy,

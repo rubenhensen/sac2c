@@ -159,12 +159,12 @@ extern constant *COgt (constant *a, constant *b);
 
 /* unary ops */
 extern constant *COnot (constant *a);
-extern constant *COtoby (constant *a);
+extern constant *COtob (constant *a);
 extern constant *COtos (constant *a);
 extern constant *COtoi (constant *a);
 extern constant *COtol (constant *a);
 extern constant *COtoll (constant *a);
-extern constant *COtouby (constant *a);
+extern constant *COtoub (constant *a);
 extern constant *COtous (constant *a);
 extern constant *COtoui (constant *a);
 extern constant *COtoul (constant *a);
