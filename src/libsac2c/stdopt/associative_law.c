@@ -376,6 +376,16 @@ isConst (node *n)
     case N_bool:
     case N_double:
     case N_float:
+    case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
     case N_num:
         res = TRUE;
         break;
@@ -419,6 +429,16 @@ isScalar (node *n)
     DBUG_ENTER ("isScalar");
 
     switch (NODE_TYPE (n)) {
+    case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
     case N_num:
     case N_char:
     case N_bool:
