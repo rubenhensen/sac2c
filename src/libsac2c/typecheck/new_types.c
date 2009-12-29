@@ -830,7 +830,7 @@ TYgetDim (ntype *array)
     DBUG_ENTER ("TYgetDim");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
                    || (NTYPE_CON (array) == TC_akd),
-                 "TYgetDim applied to ther than AKV, AKS or AKD type!");
+                 "TYgetDim applied to other than AKV, AKS or AKD type!");
     if (NTYPE_CON (array) == TC_akv) {
         res = COgetDim (AKV_CONST (array));
     } else if (NTYPE_CON (array) == TC_aks) {
@@ -855,7 +855,7 @@ TYgetShape (ntype *array)
     DBUG_ENTER ("TYgetShape");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
                    || (NTYPE_CON (array) == TC_akd),
-                 "TYgetShape applied to ther than AKV, AKS or AKD type!");
+                 "TYgetShape applied to other than AKV, AKS or AKD type!");
     if (NTYPE_CON (array) == TC_akv) {
         res = COgetShape (AKV_CONST (array));
     } else if (NTYPE_CON (array) == TC_aks) {
@@ -874,7 +874,7 @@ TYgetValue (ntype *array)
 
     DBUG_ENTER ("TYgetValue");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_akv),
-                 "TYgetValue applied to ther than AKV type!");
+                 "TYgetValue applied to other than AKV type!");
     res = AKV_CONST (array);
 
     DBUG_RETURN (res);
@@ -1331,7 +1331,7 @@ TYgetBottomError (ntype *type)
  *
  *  All "open ends" of this structure point to TC_ires nodes which hold the
  *  return types of the given function. The dots right of some edges indicate
- *  that there may be multiple of the lower nodes attached, i.e., ther may be
+ *  that there may be multiple of the lower nodes attached, i.e., there may be
  *  several TC_ibase nodes under a single TC_fun node, and there may also be
  *  several TC_idim and several TC_ishape nodes.
  *  However, since this function only creates the type for a single

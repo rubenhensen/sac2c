@@ -764,10 +764,10 @@ checkBothFoldable (node *arg_node, info *arg_info)
 {
     node *consumerWL;
     node *producerWL;
-    node *b1;
-    node *b2;
-    shape *s1;
-    shape *s2;
+    node *bp;
+    node *bc;
+    shape *sp;
+    shape *sc;
     bool z = FALSE;
 
     DBUG_ENTER ("checkBothFoldable");
@@ -775,12 +775,18 @@ checkBothFoldable (node *arg_node, info *arg_info)
     producerWL = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
     consumerWL = INFO_CONSUMERWL (arg_info);
 
-    b1 = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (consumerWL)));
-    s1 = TYgetShape (AVIS_TYPE (ID_AVIS (b1)));
-    b2 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
-    if (NULL != b2) {
-        s2 = TYgetShape (AVIS_TYPE (b2));
-        z = SHcompareShapes (s1, s2);
+    bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (producerWL)));
+    sp = TYgetShape (AVIS_TYPE (ID_AVIS (bp)));
+    bc = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+    if (NULL != bc) {
+        sc = TYgetShape (AVIS_TYPE (bc));
+        z = SHcompareShapes (sp, sc);
+    }
+
+    if (z) {
+        DBUG_PRINT ("AWLFI", ("with-loops are foldable"));
+    } else {
+        DBUG_PRINT ("AWLFI", ("with-loops are not foldable"));
     }
 
     DBUG_RETURN (z);
@@ -1151,7 +1157,9 @@ node *
 AWLFIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AWLFIlet");
+
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
