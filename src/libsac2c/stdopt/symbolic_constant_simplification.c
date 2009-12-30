@@ -216,6 +216,42 @@ MakeFalse (node *prfarg)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *MakeVectorConstant( shape *shp, node *scalarval)
+ *
+ * @brief: Create an N_array, of shape shp elements, containing
+ *         scalarval as each item.
+ *
+ * @return the N_array thus created.
+ *
+ *****************************************************************************/
+static node *
+MakeVectorConstant (shape *shp, node *scalarval)
+{
+    node *res = NULL;
+    node *aelems = NULL;
+    ntype *elemtype;
+    shape *frameshape;
+    int xrho;
+
+    DBUG_ENTER ("MakeVectorConstant");
+
+    elemtype
+      = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (scalarval))), SHcreateShape (0));
+    frameshape = SHcopyShape (shp);
+    xrho = SHgetExtent (shp, 0);
+
+    while (xrho != 0) {
+        aelems = TBmakeExprs (DUPdoDupNode (scalarval), aelems);
+        xrho--;
+    }
+
+    res = TBmakeArray (elemtype, frameshape, aelems);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *MakeTrue( node *prfarg)
  * Create an array of TRUE of the same shape as prfarg.
  * If prfarg is not AKS, we give up.
@@ -241,6 +277,7 @@ MakeTrue (node *prfarg)
     }
     DBUG_RETURN (res);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn bool MatchConstantZero( node *prfarg)
@@ -410,18 +447,33 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
  * @fn node *SCSprf_add_SxV( node *arg_node, info *arg_info)
  *   Case 1:   0 + X -> X
  *
- *   Case 2:   X + [0,0,0] --> [X,X,X]  -- not supported yet
+ *   Case 2:   SCALAR + [0,0,0] --> [SCALAR, SCALAR, SCALAR]
  *
  *****************************************************************************/
 node *
 SCSprf_add_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat;
+    node *arr = NULL;
 
     DBUG_ENTER ("SCSprf_add_SxV");
 
     if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced 0 + VEC by VEC"));
+    } else {
+        /* SCALAR + [0,0,..., 0] */
+        pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+        if (MatchConstantZero (PRF_ARG2 (arg_node))
+            && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+
+            res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+            DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]"));
+        }
+
+        PMfree (pat);
     }
 
     DBUG_RETURN (res);
@@ -472,11 +524,26 @@ node *
 SCSprf_add_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat;
+    node *arr = NULL;
 
     DBUG_ENTER ("SCSprf_add_VxS");
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced VEC + 0 by VEC"));
+    } else {
+        /* [0,0,..., 0] + X */
+        pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+        if (MatchConstantZero (PRF_ARG1 (arg_node))
+            && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
+
+            res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+            DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]"));
+        }
+
+        PMfree (pat);
     }
 
     DBUG_RETURN (res);
@@ -484,9 +551,41 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_sub_SxV( node *arg_node, info *arg_info)
+ *
+ *   replace  S - [0,0...0] by  [S,S,...S]
+ *
+ *
+ *****************************************************************************/
+node *
+SCSprf_sub_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *arr = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ("SCSprf_sub_SxV");
+
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+    if (MatchConstantZero (PRF_ARG2 (arg_node))
+        && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+
+        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]"));
+    }
+    PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_sub( node *arg_node, info *arg_info)
- * X - 0 -> X
+ *
  * SCSprf_sub_SxS, SCSprf_sub_SxV
+ *   replace  X - 0  by  X
+ *
  *
  *****************************************************************************/
 node *
@@ -495,11 +594,13 @@ SCSprf_sub (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_sub");
+
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
         res = MakeZero (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -508,7 +609,6 @@ SCSprf_sub (node *arg_node, info *arg_info)
  * @fn node *SCSprf_sub_VxV( node *arg_node, info *arg_info)
  * X - X -> (shape(X)) reshape(0)
  *
- * ISMOP: Could handle SCSprf_sub_VxV if we could do length error check
  *
  *****************************************************************************/
 node *
@@ -517,8 +617,12 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_sub_VxV");
-    /* Can't do X - 0 unless we know argument shapes match */
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
+
+    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
+        /* This assumes that shape(x) == shape(y), and hence is perhaps,
+         * not a safe optimization. */
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+    } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
         res = MakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -565,13 +669,32 @@ node *
 SCSprf_mul_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat;
+    node *arr = NULL;
 
     DBUG_ENTER ("SCSprf_mul_SxV");
+
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+    /* Scalar constant cases */
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
         res = MakeZero (PRF_ARG2 (arg_node));
+
+        /* Vector constant cases */
+    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /*  S * [0,0,...0] */
+        res = DUPdoDupTree (PRF_ARG2 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced  S* [0,0...,0] by [0,0,...0]"));
+
+    } else if (MatchConstantOne (PRF_ARG2 (arg_node))
+               && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]"));
     }
+
+    PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -585,16 +708,37 @@ node *
 SCSprf_mul_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat;
+    node *arr = NULL;
 
     DBUG_ENTER ("SCSprf_mul_VxS");
+
+    /* Scalar constant cases */
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X * 1 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 1 by V"));
+
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
         res = MakeZero (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 0 by [0,0,...0]"));
+
+        /* Vector constant cases */
+    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* [0,0,...0] * S */
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [0,0...,0] * S by [0,0,...0]"));
+
+    } else if (MatchConstantOne (PRF_ARG1 (arg_node))
+               && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
+        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]"));
     }
+
+    PMfree (pat);
+
     DBUG_RETURN (res);
 }
-
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_mul_VxV( node *arg_node, info *arg_info)
@@ -625,24 +769,85 @@ SCSprf_mul_VxV (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_div( node *arg_node, info *arg_info)
- * X / 1 -> X
- * X / 0 -> error
+ * @fn node *SCSprf_div_SxX( node *arg_node, info *arg_info)
+ * S / 1         --> S
+ * S / 0         --> error
+ * S / [1,1...1] --> [S,S,...S]
+ *
+ * Handles SCSprf_div_SxS, SCSprf_div_SxV_
+ *
+ *****************************************************************************/
+node *
+SCSprf_div_SxX (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    pattern *pat;
+    node *arr = NULL;
+
+    DBUG_ENTER ("SCSprf_div_SxX");
+
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* S / 0 */
+        CTIabortLine (NODE_LINE (arg_node),
+                      "SCSprf_div_SxX: Division by zero encountered");
+
+        /* Scalar extension case:      S / [1,1,...1]  --> [S,S,..,S] */
+    } else if (MatchConstantOne (PRF_ARG2 (arg_node))
+               && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]"));
+    }
+    PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_div_VxV( node *arg_node, info *arg_info)
+ *
+ *  V / [1,1..,1]        --> V
+ *
+ *****************************************************************************/
+node *
+SCSprf_div_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SCSprf_div_VxV");
+
+    if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* V / [1,1...1] */
+        res = DUPdoDupTree (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("CF", ("SCSprf_div_VxV replaced V / [1,1,...1] by V"));
+    }
+
+    DBUG_RETURN (res);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_div_XxS( node *arg_node, info *arg_info)
+ * X / 1          --> X
+ * X / 0          --> error
+ *
  * Handles SCSprf_div_SxS, SCSprf_div_VxS
  *
  *****************************************************************************/
 node *
-SCSprf_div (node *arg_node, info *arg_info)
+SCSprf_div_XxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_div");
-    if (MatchConstantOne (PRF_ARG2 (arg_node))) { /*  X / 1 */
+    DBUG_ENTER ("SCSprf_div_XxS");
+
+    if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X / 1 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X / 0 */
-        CTIabortLine (NODE_LINE (arg_node), "Division by zero encountered");
+        CTIabortLine (NODE_LINE (arg_node),
+                      "SCSprf_div_XxS: Division by zero encountered");
     }
+
     DBUG_RETURN (res);
 }
 
