@@ -215,9 +215,11 @@ ACUWLwith (node *arg_node, info *arg_info)
                                       && TYgetSimpleType (TYgetScalar (ty)) != T_double
                                       && INFO_CUDARIZABLE (arg_info);
 
-        if (TYgetSimpleType (TYgetScalar (ty)) == T_double) {
-            CTIwarn ("Double WITH-loop uncudarizable");
-        }
+        if ()
+
+            if (TYgetSimpleType (TYgetScalar (ty)) == T_double) {
+                CTIwarn ("Double WITH-loop uncudarizable");
+            }
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);

@@ -517,11 +517,32 @@ AMTRANprf (node *arg_node, info *arg_info)
                      *      loop_fun( *, c_host , *, *);
                      *    }
                      */
-                    if (ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
-                        && ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))) {
-                        ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (
-                          AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
-                          = TRUE;
+
+                    /*
+                                if( ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg))) &&
+                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
+                       arg_info))) { ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( AVIS_SSAASSIGN(
+                       ID_AVIS( ap_arg))) = TRUE;
+                                }
+                    */
+                    if (ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))) {
+                        if (ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))) {
+                            ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (
+                              AVIS_SSAASSIGN (ID_AVIS (ap_arg)))
+                              = TRUE;
+                        } else {
+                            /* If the host2device is allowed to be moved up and the
+                             * ssaassign of the corresponding recursive ap arg is
+                             * device2host, set the ap avis to te avis of the device
+                             * variable in device2host. This is a fix to the bug found in
+                             * kp1_trapezoidal_float.sac In that program, a host2device is
+                             * allowed to be moved up and the corresponding device2host is
+                             * not, this causes that the fundef has a dev arguemnt but the
+                             * recursive ap still has a host arguemnt at the same
+                             * position*/
+                            ID_AVIS (ap_arg) = ID_AVIS (
+                              PRF_ARG1 (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))));
+                        }
                     }
                     /*
                                 pattern *pat;
