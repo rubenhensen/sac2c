@@ -1142,6 +1142,7 @@
           <node name="With" />
           <node name="Part" />
           <node name="Generator" />
+          <node name="Genarray" />
         </travuser>
       </traversal>
       <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h" >

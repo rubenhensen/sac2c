@@ -387,6 +387,28 @@ WLBSCgenerator (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLBSCgenarray(node *arg_node, info *arg_info)
+ *
+ *   @brief  ensure struct constants for genarray shape.
+ *
+ ******************************************************************************/
+
+node *
+WLBSCgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLBSCgenarray");
+
+    if (N_id == NODE_TYPE (GENARRAY_SHAPE (arg_node))) {
+        GENARRAY_SHAPE (arg_node)
+          = EnsureStructConstant (GENARRAY_SHAPE (arg_node),
+                                  ID_NTYPE (GENARRAY_SHAPE (arg_node)), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLBSCdoWlbounds2structConsts( node *arg_node)
  *
  *   @brief  Starting point for the partition generation if it was called

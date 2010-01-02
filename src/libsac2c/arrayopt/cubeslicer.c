@@ -153,6 +153,52 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool matchConstantValues( node *fa, node *fb)
+ *
+ * @brief Match two AVIS nodes. This is to catch the case
+ *        where one is an N_vardec and the other is an N_arg node.
+ *
+ * @param - fa and fb are N_avis nodes.
+ *
+ * @return Boolean TRUE if both fields are the same or can
+ *          be shown to represent the same value.
+ *
+ *****************************************************************************/
+static bool
+matchConstantValues (node *fa, node *fb)
+{
+    constant *fac;
+    constant *fbc;
+    bool z;
+
+    DBUG_ENTER ("matchConstantValues");
+
+    /* If one field is local and the other is a function argument,
+     * we can have both AKV, but they do not share the same N_vardec.
+     */
+
+    z = (fa == fb);
+    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (fa))
+        && TYisAKV (AVIS_TYPE (fb))) {
+        fac = COaST2Constant (fa);
+        fbc = COaST2Constant (fa);
+        z = COcompareConstants (fac, fbc);
+        fac = COfreeConstant (fac);
+        fbc = COfreeConstant (fbc);
+        if (z) {
+            DBUG_PRINT ("CUBSL",
+                        ("Vardecs %s and %s match", AVIS_NAME (fa), AVIS_NAME (fb)));
+        } else {
+            DBUG_PRINT ("CUBSL", ("Vardecs %s and %s do not match", AVIS_NAME (fa),
+                                  AVIS_NAME (fb)));
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool matchGeneratorField( node *fa, node *fb, node *producerWL)
  *
  * @brief Attempt to match corresponding N_id/N_array fields of
@@ -180,8 +226,6 @@ matchGeneratorField (node *fa, node *fb)
     node *fbv = NULL;
     constant *fafs = NULL;
     constant *fbfs = NULL;
-    constant *fac;
-    constant *fbc;
     bool z;
 
     DBUG_ENTER ("matchGeneratorField");
@@ -195,30 +239,20 @@ matchGeneratorField (node *fa, node *fb)
     fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
     fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
 
-    /* If one field is local and the other is a function argument,
-     * we can have both AKV, but they will not be merged, at
-     * last in saacyc today. If that ever gets fixed, we can
-     * remove this check. This is a workaround for a performance
-     * problem in sac/apex/buildv/buildv.sac
-     */
-    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (ID_AVIS (fa)))
-        && TYisAKV (AVIS_TYPE (ID_AVIS (fb)))) {
-        fac = COaST2Constant (fa);
-        fbc = COaST2Constant (fa);
-        z = COcompareConstants (fac, fbc);
-        fac = COfreeConstant (fac);
-        fbc = COfreeConstant (fbc);
+    if ((!z) && (NULL != fa) && (NULL != fb)) {
+        z = matchConstantValues (ID_AVIS (fa), ID_AVIS (fb));
     }
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s matched",
-                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
+            DBUG_PRINT ("CUBSL", ("matchGeneratorField %s and %s matched",
+                                  AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
         } else {
-            DBUG_PRINT ("AWLF", ("matchGeneratorField %s and %s did not match",
-                                 AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
+            DBUG_PRINT ("CUBSL", ("matchGeneratorField %s and %s did not match",
+                                  AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
         }
     }
+
     DBUG_RETURN (z);
 }
 
@@ -482,8 +516,16 @@ FindMatchingPart (node *arg_node, info *arg_info, node *consumerpart, node *prod
          */
         if (matched) {
             DBUG_PRINT ("AWLF", ("All generator fields match"));
-            matched = (TRUE == nullIntersect) && (idxbound1 == intersectb1)
-                      && (idxbound2 == intersectb2);
+            matched =
+#ifdef CONFUSION
+              what ifn we can not solve the null intersect problem,
+            but things otherwise match up...
+
+              (TRUE == nullIntersect)
+              &&
+#endif // CONFUSION
+              (matchConstantValues (idxbound1, intersectb1))
+              && (matchConstantValues (idxbound2, intersectb2));
         }
 
         if (!matched) {

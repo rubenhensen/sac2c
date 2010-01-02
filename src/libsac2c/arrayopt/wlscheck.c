@@ -662,7 +662,7 @@ WLSCwith (node *arg_node, info *arg_info)
          * Its parts must form a full partition of index space
          */
         if (INFO_POSSIBLE (arg_info)) {
-            if (WITH_PARTS (arg_node) < 0) {
+            if (TCcontainsDefaultPartition (WITH_PART (arg_node))) {
                 INFO_POSSIBLE (arg_info) = FALSE;
                 DBUG_PRINT ("WLS", ("%s: Outer with-loop has no full partition",
                                     AVIS_NAME (lhs)));

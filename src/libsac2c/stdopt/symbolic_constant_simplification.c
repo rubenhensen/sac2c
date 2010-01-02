@@ -555,6 +555,7 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
  *
  *   replace  S - [0,0...0] by  [S,S,...S]
  *
+ *   replace  S - [S,S,...S] by [0,0,...0]
  *
  *****************************************************************************/
 node *
