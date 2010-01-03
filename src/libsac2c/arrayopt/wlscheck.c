@@ -429,7 +429,8 @@ WLSCdefault (node *arg_node, info *arg_info)
  *
  * @fn static void genhelper(node *arg_node, info *arg_info, char *nm)
  *
- * @brief rules out non-AKV N_id bounds
+ * @brief rules out generator bounds,step,width if non-null and
+ *        don't eventually derive from an N_array.
  *
  * @param arg_node - some N_generator node.
  * @param arg_info
@@ -442,34 +443,23 @@ void
 genhelper (node *arg_node, info *arg_info, char *nm)
 {
     node *lhs;
-    node *gen;
-    constant *gfs;
+    node *argnarray = NULL;
+    pattern *pat;
 
     DBUG_ENTER ("genhelper");
 
     /*
-     * WLS cannot be performed if the bound vectors are neither full not
+     * WLS cannot be performed if the bound vectors are neither full nor
      * structural constants
      */
     lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
-
-    gen = NULL;
-    gfs = NULL;
-    if (NULL != arg_node) {
-        if (PMO (PMOarrayConstructor (&gfs, &gen, arg_node))) {
-            gfs = COfreeConstant (gfs);
-        }
-
-        /* FIXME: this check seems (to me) a trifle overly restrictive. Since
-         * we (now) know that there is an N_array at the end of the tunnel,
-         * could we relax the test two lines down to be TYisAKS?
-         */
-        if (((NULL == gen)
-             || ((NODE_TYPE (gen) == N_id) && (!TYisAKV (ID_NTYPE (gen)))))) {
-            INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("WLS", ("%s: %s is neither AKV N_id nor N_array", nm, lhs));
-        }
+    pat = PMarray (1, PMAgetNode (&argnarray), 0);
+    if ((NULL != arg_node) && (!PMmatchFlatSkipExtrema (pat, arg_node))) {
+        INFO_POSSIBLE (arg_info) = FALSE;
+        DBUG_PRINT ("WLS", ("%s: %s is not an N_array", nm, lhs));
     }
+    PMfree (pat);
+
     DBUG_VOID_RETURN;
 }
 
