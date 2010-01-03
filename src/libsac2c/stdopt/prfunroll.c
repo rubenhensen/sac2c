@@ -307,6 +307,7 @@ RevertAssignments (node *ass, node *agg)
  * prefix: UPRF
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *UPRFfundef( node *arg_node, info *arg_info)
@@ -320,8 +321,14 @@ UPRFfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDEC (arg_info) = FUNDEF_VARDEC (arg_node);
+        DBUG_PRINT ("UPRF", ("traversing body of (%s) %s",
+                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                             FUNDEF_NAME (arg_node)));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_VARDEC (arg_node) = INFO_VARDEC (arg_info);
+        DBUG_PRINT ("UPRF", ("leaving body of (%s) %s",
+                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                             FUNDEF_NAME (arg_node)));
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -494,6 +501,7 @@ UPRFprf (node *arg_node, info *arg_info)
                                      RevertExprs (elems, NULL));
 
             INFO_PREASSIGN (arg_info) = RevertAssignments (ass, NULL);
+            DBUG_PRINT ("UPRF", ("prf unrolled for %s", INFO_LHS (arg_info)));
         }
 
         nt1 = TYfreeType (nt1);

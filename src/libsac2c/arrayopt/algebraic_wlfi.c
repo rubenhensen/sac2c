@@ -113,7 +113,7 @@ struct INFO {
     node *fundef;
     node *vardecs;
     node *preassigns;
-    node *part;                 /* The current consumerWL partition */
+    node *consumerpart;         /* The current consumerWL partition */
     node *consumerwl;           /* The current consumerWL N_with */
     int level;                  /* The current nesting level of WLs. This
                                  * is used to ensure that an index expression
@@ -132,7 +132,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_PART(n) ((n)->part)
+#define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldableproducerwl)
@@ -150,7 +150,7 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
-    INFO_PART (result) = NULL;
+    INFO_CONSUMERPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_AWLFOLDABLEFOLDEE (result) = FALSE;
@@ -542,8 +542,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
  * @brief  We are looking at the N_prf for:
  *
  *            z = _sel_VxA_( idx, producerWL);
- *         and idx now has extrema attached to it. We
- *         are now in a position to compute the intersection
+ *         within the consumerWL, and idx now has extrema attached to it.
+ *         We are now in a position to compute the intersection
  *         between idx's index set and that of the producerWL
  *         partitions.
  *
@@ -600,6 +600,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
         AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ID_AVIS (ivid)));
         AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (ivid)));
     }
+    PART_ISCONSUMERPART (INFO_CONSUMERPART (arg_info)) = TRUE;
 
     global.optcounters.awlfi_insert++;
 
@@ -948,9 +949,9 @@ AWLFIpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AWLFIpart");
 
-    INFO_PART (arg_info) = arg_node;
+    INFO_CONSUMERPART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-    INFO_PART (arg_info) = NULL;
+    INFO_CONSUMERPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -1065,7 +1066,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("AWLFIprf");
 
-    if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
+    if ((INFO_CONSUMERPART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
