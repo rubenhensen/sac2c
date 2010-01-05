@@ -6,12 +6,35 @@
  *
  * @defgroup cwle Copy with-loop elimination
  *
+ *  Overview:
+ *  ---------
+ *
  * This traversal takes care of with-loops that do nothing more
  * than copying some array. These are replaced by A = B, like in
  *
- * B = with { (.<=iv<=.) : A[iv]; } : genarray( shape(A), n );
+ * B = with {
+ *       (.<=iv<=.) : A[iv];
+ *     } : genarray( shape(A), n );
+ *
  * will be transformed to
+ *
  * B = A;
+ *
+ *
+ * Implementational issue:
+ * -----------------------
+ * When matching for the pattern A[iv] (in CWLEcode), we need to make sure
+ * that "A" has been defined BEFORE this WL-body rather than within it.
+ * Otherwise we wrongly transform a WL of the following (pathological :-) kind:
+ *
+ * B = with {
+ *       (.<=iv<=.) {
+ *         A = genarray( shp, 21);
+ *       } : A[iv];
+ *     } : genarray( shp, n);
+ *
+ * To detect these cases, we use the DFMs and mark all LHS defined BEFORE
+ * entering the WL as such.
  *
  * @ingroup opt
  *
@@ -39,6 +62,7 @@
 #include "free.h"
 #include "compare_tree.h"
 #include "DataFlowMask.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -383,8 +407,9 @@ CWLEwith (node *arg_node, info *arg_info)
 node *
 CWLEcode (node *arg_node, info *arg_info)
 {
-    node *let_expr;
-    node *cexpr_avis;
+    node *cexpr;
+    node *withid_avis;
+    pattern *pat;
     node *target = NULL;
     info *subinfo;
 
@@ -393,109 +418,76 @@ CWLEcode (node *arg_node, info *arg_info)
     if (INFO_VALID (arg_info)) {
         DBUG_PRINT ("CWLE", ("prev nodes and wl signal ok"));
 
-#if NEW
-
         cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
-        withid = WITHID_VEC (INFO_WITHID (arg_info));
+        withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
 
-        pat = PMprf (1, PMAisPrf (F_sel_VxA_), 2, PMid (1, PMAisId (&withid)),
-                     PMvar (1, PMAgetNode (&target), 0));
-    if( PMmatchFlatSkipExtrema( pat, cexpr) {
-            DBUG_PRINT ("CWLE", ("body matches _sel_VxA_( &withid, &target)"));
+        pat = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
+                     PMvar (1, PMAgetAvis (&target), 0));
 
-#else
-        /*
-         * we have to check for:
-         * code->cexprs->expr-(id)>avis->ssaassign->n_assign->n_let->expr->prf
-         *   existing?
-         * prf of type F_sel_VxA?
-         * prf->args->expr-(id)>avis == with_iv?
-         * target = prf->args->next->expr-(id)>avis
-         */
-        cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
-
-        if ((NULL != AVIS_SSAASSIGN (cexpr_avis))
-            && (N_let == NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis))))
-            && (N_prf
-                == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis)))))) {
-            DBUG_PRINT ("CWLE", ("first checks hold (ssaassign points to prf)"));
-
-            let_expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis)));
-
-            if ((F_sel_VxA == PRF_PRF (let_expr))
-                && (IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))
-                    == ID_AVIS (PRF_ARG1 (let_expr)))) {
-                DBUG_PRINT ("CWLE", ("second checks hold (prf selects at iv)"));
-
-                target = ID_AVIS (PRF_ARG2 (let_expr));
-            }
-        }
-#endif
-  }
-  else {
-            DBUG_PRINT ("CWLE", ("previous nodes signal NO ok"));
-  }
-
-  if ( NULL != target ) {
-            DBUG_PRINT ("CWLE", ("found a target."));
-  }
-  else {
+        if (PMmatchFlatSkipExtrema (pat, cexpr)) {
+            DBUG_PRINT ("CWLE", ("body matches _sel_VxA_( withid, &target)"));
+        } else {
             INFO_VALID (arg_info) = FALSE;
-  }
+        }
 
-  /*
-   * if we have found some avis that meets the requirements, then lets check if
-   * it is the same that we have found before. If we do not have found anything
-   * before, assign it to INFO_RHSAVIS.
-   * At this point we also check the DataFlowMask, to see if our source array
-   * was defined _before_ this wl.
-   */
-  if ( INFO_VALID( arg_info ) ) {
-            DBUG_PRINT ("CWLE", ("checking if target is legitimate and known"));
+        pat = PMfree (pat);
 
-            if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
-                && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
-                DBUG_PRINT ("CWLE", ("target is valid. saving"));
-
-                INFO_RHSAVIS (arg_info) = target;
-            } else {
-                DBUG_PRINT ("CWLE", ("target is NOT valid. skipping wl"));
-
-                INFO_VALID (arg_info) = FALSE;
-                INFO_RHSAVIS (arg_info) = NULL;
-            }
-  }
-
-  /*
-   * if we got another code, traverse it; if we are at the end of all codes,
-   * mark the withid. This ensures that the withid is available inside all
-   * wls which may be nested inside and copy from our withid.
-   */
-  if ( NULL != CODE_NEXT( arg_node ) ) {
-            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-  }
-  else {
-            INFO_WITHID (arg_info) = TRAVdo (INFO_WITHID (arg_info), arg_info);
-  }
-
-  /*
-   * create a new info-structure for traversing the code-block, traverse, and 
-   * release the info-structure. we obviously need to pass it the dfmask, so
-   * we use that from the local info structure.
-   * We need the seperate structure so we do not mess with the current wl.
-   */
-  subinfo = MakeInfo( );
-  INFO_DFM( subinfo ) = INFO_DFM( arg_info );
-  CODE_CBLOCK( arg_node ) = TRAVdo( CODE_CBLOCK( arg_node ), subinfo );
-  subinfo = FreeInfo( subinfo );
-
-  DBUG_RETURN( arg_node);
+    } else {
+        DBUG_PRINT ("CWLE", ("previous nodes signal NOT ok"));
     }
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Traversal functions -->
-     *****************************************************************************/
+    /*
+     * if we have found some avis that meets the requirements, then lets check if
+     * it is the same that we have found before. If we do not have found anything
+     * before, assign it to INFO_RHSAVIS.
+     * At this point we also check the DataFlowMask, to see if our source array
+     * was defined _before_ this wl.
+     */
+    if (INFO_VALID (arg_info)) {
+        DBUG_PRINT ("CWLE", ("checking if target is legitimate and known"));
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Traversal template -->
-     *****************************************************************************/
+        if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
+            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
+            DBUG_PRINT ("CWLE", ("target is valid. saving"));
+
+            INFO_RHSAVIS (arg_info) = target;
+        } else {
+            DBUG_PRINT ("CWLE", ("target is NOT valid. skipping wl"));
+
+            INFO_VALID (arg_info) = FALSE;
+            INFO_RHSAVIS (arg_info) = NULL;
+        }
+    }
+
+    /*
+     * if we got another code, traverse it; if we are at the end of all codes,
+     * mark the withid. This ensures that the withid is available inside all
+     * wls which may be nested inside and copy from our withid.
+     */
+    if (NULL != CODE_NEXT (arg_node)) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    } else {
+        INFO_WITHID (arg_info) = TRAVdo (INFO_WITHID (arg_info), arg_info);
+    }
+
+    /*
+     * create a new info-structure for traversing the code-block, traverse, and
+     * release the info-structure. we obviously need to pass it the dfmask, so
+     * we use that from the local info structure.
+     * We need the seperate structure so we do not mess with the current wl.
+     */
+    subinfo = MakeInfo ();
+    INFO_DFM (subinfo) = INFO_DFM (arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
+    subinfo = FreeInfo (subinfo);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/

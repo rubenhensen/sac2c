@@ -168,11 +168,12 @@
  * At the time being (2009-07-18) we support the following patterns:
  *
  * SINGLETON PATTERN:
- * - PMany     matches any node      (BUT follows N_id nodes!)
  * - PMconst   matches any constant expression (could be N_num, N_array, etc)
  * - PMint     matches an N_num
  * - PMskip    matches ALL expressions left to be matched ( '...'-pattern)
  * - PMskipN   matches n expressions
+ * - PMany     matches any node      (BUT follows N_id nodes!)
+ * - PMparam   matches an N_id       (BUT follows N_id nodes!)
  *
  * NESTED PATTERN:
  * - PMvar     matches an N_id        WITHOUT following N_id nodes
@@ -856,6 +857,30 @@ PMvar (int num_attribs, ...)
     va_end (ap);
 
     PAT_DOFOLLOW (res) = FALSE;
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMparam( int num_attribs, ... );
+ *
+ * @brief matches an identifyer (N_id) that has no SSA_ASSIGN and, thus,
+ *        relates to either an N_arg or to a WL-index-variable!
+ *        - no inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+pattern *
+PMparam (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_id, genericPatternMatcher), FALSE,
+                              num_attribs, ap);
+    va_end (ap);
 
     return (res);
 }

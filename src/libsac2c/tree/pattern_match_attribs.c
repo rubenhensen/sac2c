@@ -169,7 +169,7 @@ PMAisNode (node **match)
  *
  * @fn attrib *PMAisVar( node **var)
  *
- * @brief attrib for PMvar checks for equality
+ * @brief attrib for PMvar/PMparam checks for equality
  *
  *****************************************************************************/
 bool
@@ -206,7 +206,8 @@ PMAisVar (node **var)
  *
  * @fn attrib *PMAgetSaaShape( node **shp)
  *
- * @brief attrib for PMvar. Matches if AVIS-SHAPE exists and hands it back.
+ * @brief attrib for PMvar/PMparam.
+ *        Matches if AVIS-SHAPE exists and hands it back.
  *
  *****************************************************************************/
 bool
@@ -230,6 +231,73 @@ PMAgetSaaShape (node **shp)
 
     res = makeAttrib (N_id, attribgetSaaShape);
     PATTR_N1 (res) = shp;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAgetAvis( node **shp)
+ *
+ * @brief attrib for PMvar/PMparam. Matches iff Avis exists and hands it back.
+ *
+ *****************************************************************************/
+bool
+attribgetAvis (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetAvis( " F_PTR " ):", PATTR_N1 (attr)));
+
+    *PATTR_N1 (attr) = ID_AVIS (arg);
+    res = ((*PATTR_N1 (attr)) != NULL);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+
+    return (res);
+}
+
+attrib *
+PMAgetAvis (node **avis)
+{
+    attrib *res;
+
+    res = makeAttrib (N_id, attribgetAvis);
+    PATTR_N1 (res) = avis;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAhasAvis( node **shp)
+ *
+ * @brief attrib for PMvar/PMparam. Matches if the attached Avis is identical
+ *        to the one provided.
+ *
+ *****************************************************************************/
+bool
+attribHasAvis (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_PRINT ("PMA", (PMASTART "PMAhasAvis( & \"%s\" (" F_PTR ") ):",
+                        AVIS_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr)));
+
+    res = ((*PATTR_N1 (attr)) == ID_AVIS (arg));
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+
+    return (res);
+}
+
+attrib *
+PMAhasAvis (node **avis)
+{
+    attrib *res;
+
+    DBUG_ASSERT (avis != NULL, "PMAhasAvis called with NULL argument");
+    DBUG_ASSERT (NODE_TYPE (*avis) == N_avis, "PMAhasAvis called with non-avis argument");
+    res = makeAttrib (N_id, attribHasAvis);
+    PATTR_N1 (res) = avis;
 
     return (res);
 }

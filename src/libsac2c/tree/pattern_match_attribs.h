@@ -18,10 +18,12 @@ extern attrib *PMAgetNode (node **match);
 extern attrib *PMAisNode (node **match);
 
 /**
- * attrib matchers for PMvar:
+ * attrib matchers for PMvar / PMparam:
  */
 extern attrib *PMAisVar (node **var);
 extern attrib *PMAgetSaaShape (node **shp);
+extern attrib *PMAgetAvis (node **avis);
+extern attrib *PMAhasAvis (node **avis);
 
 /**
  * attrib matchers for PMconst:
