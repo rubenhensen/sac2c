@@ -398,12 +398,14 @@ WLBSCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLBSCgenarray");
 
+#ifdef BUG650
     if (N_id == NODE_TYPE (GENARRAY_SHAPE (arg_node))) {
         GENARRAY_SHAPE (arg_node)
           = EnsureStructConstant (GENARRAY_SHAPE (arg_node),
                                   ID_NTYPE (GENARRAY_SHAPE (arg_node)), arg_info);
     }
 
+#endif // BUG650
     DBUG_RETURN (arg_node);
 }
 
