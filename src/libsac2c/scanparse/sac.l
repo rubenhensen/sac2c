@@ -423,95 +423,119 @@ int charpos = 0;
                              FILTER( NUM);
                            }
 
-[1-9][0-9]*[bB]            {
-                             yytext[STRlen(yytext)]='\0';
-                             yylval.cbyte=(char)atoi(yytext);
+[0-9]+[bB]            {
+                             yylval.cbyte=(char)strtoll(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to byte\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMBYTE);
                            }
 
-0[bB]                      { yylval.cbyte = 0;
-                             FILTER( NUMBYTE);
-                           }
-
-[1-9][0-9]*[sS]            {
-                             sscanf( yytext, "%hd", &yylval.cshort);
+[0-9]+[sS]            {
+                             yylval.cshort=(short)strtoll(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to short\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMSHORT);
                            }
 
-0[sS]                      { yylval.cshort = 0;
-                             FILTER( NUMSHORT);
-                           }
-
-[1-9][0-9]*[iI]            {
-                             sscanf( yytext, "%d", &yylval.cint);
+[0-9]+[iI]            {
+                             yylval.cint=(int)strtoll(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to int\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMINT);
                            }
 
-0[iI]                      { yylval.cint = 0;
-                             FILTER( NUMINT);
-                           }
-
-[1-9][0-9]*[lL]            {
-                             sscanf( yytext, "%ld", &yylval.clong);
+[0-9]+[lL]            {
+                             yylval.clong=(long)strtoll(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to long\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMLONG);
                            }
 
-0[lL]                      { yylval.clong = 0;
-                             FILTER( NUMLONG);
-                           }
-
-[1-9][0-9]*(ll|LL)         {
-                             sscanf( yytext, "%lld", &yylval.clonglong);
+[0-9]+(ll|LL)         {
+                             yylval.clonglong=(long long)
+			       strtoll(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to longlong\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMLONGLONG);
                            }
 
-0(ll|LL)                   { yylval.clonglong = 0;
-                             FILTER( NUMLONGLONG);
-                           }
-
-[1-9][0-9]*(ub|UB)         {
-                             yytext[STRlen(yytext)]='\0';
-                             yylval.cubyte=(unsigned char)atoi(yytext);
+[0-9]+(ub|UB)         {
+                             yylval.cubyte=(unsigned char)
+			       strtoull(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to ubyte\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMUBYTE);
                            }
 
-0(ub|UB)                   { yylval.cubyte = 0;
-                             FILTER( NUMUBYTE);
-                           }
-
-[1-9][0-9]*(us|US)         {
-                             sscanf( yytext, "%hu", &yylval.cushort);
+[0-9]+(us|US)         {
+                             yylval.cushort=(unsigned short)
+			       strtoull(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to ushort\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMUSHORT);
                            }
 
-0(us|US)                   { yylval.cushort = 0;
-                             FILTER( NUMUSHORT);
-                           }
-
-[1-9][0-9]*(ui|UI)         {
-                             sscanf( yytext, "%u", &yylval.cuint);
+[0-9]+(ui|UI)         {
+                             yylval.cuint=(unsigned int)
+			       strtoull(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to uint\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMUINT);
                            }
 
-0(ui|UI)                   { yylval.cuint = 0;
-                             FILTER( NUMUINT);
-                           }
-
-[1-9][0-9]*(ul|UL)         {
-                             sscanf( yytext, "%lu", &yylval.culong);
+[0-9]+(ul|UL)         {
+                             yylval.culong=(unsigned long)
+			       strtoull(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to ulong\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMULONG);
                            }
 
-0(ul|UL)                   { yylval.culong = 0;
-                             FILTER( NUMULONG);
-                           }
-
-[1-9][0-9]*(ull|ULL)       {
-                             sscanf( yytext, "%lld", &yylval.culonglong);
-                             FILTER( NUMULONGLONG);
-                           }
-
-0(ull|ULL)                 { yylval.culonglong = 0;
+[0-9]+(ull|ULL)         {
+                             yylval.culonglong=(unsigned long long)
+			       strtoull(yytext,(char **)NULL,10);
+			     if(errno==ERANGE){ 
+			       fprintf(stderr, \
+			       "Overflow problems converting %s to ulonglong\n", \
+			       yytext);
+			       exit(-1);
+			     }
                              FILTER( NUMULONGLONG);
                            }
 
