@@ -955,6 +955,16 @@ SUBPHASE (moi, "Manage object initialisers", MOIdoManageObjectInitialisers, ALWA
 SUBPHASE (rcs, "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing, ALWAYS,
           pc)
 
+SUBPHASE (tmft, "MUTC tag main function as thread function", TMFTdoTagMainFunThread,
+          (global.backend == BE_mutc && global.filetype == F_prog), pc)
+
+SUBPHASE (tft, "MUTC tag functions as thread functions if needed",
+          TFTdoTagFunctionsAsThreads, (global.backend == BE_mutc), pc)
+
+/* KEEP ABOVE fpc */
+SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
+          (global.backend == BE_mutc && global.filetype != F_prog), pc)
+
 /*
  * WARNING: no phases that duplicate code below this line!
  *          FPC builds the argtabs which CANNOT be maintained
@@ -966,12 +976,6 @@ SUBPHASE (fpc, "Reorganising function prototypes", FPCdoFunctionPrecompile, ALWA
 SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 
 SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
-
-SUBPHASE (tmft, "MUTC tag main function as thread function", TMFTdoTagMainFunThread,
-          ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)
-
-SUBPHASE (tft, "MUTC tag functions as thread functions if needed",
-          TFTdoTagFunctionsAsThreads, (global.backend == BE_mutc), pc)
 
 SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
 

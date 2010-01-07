@@ -183,7 +183,7 @@ libsac2c_multithread := multithread_lib tag_executionmode \
                         cell_growth create_withinwith replicate_functions \
                         consolidate_cells abort
 
-libsac2c_mutc        := tag_fun_thread
+libsac2c_mutc        := tag_fun_thread create_function_pairs
 
 libsac2c_profile     := annotate_fun_calls
 
@@ -321,7 +321,9 @@ libsac_cachesim     := basic access_simple access_detailed
 # Subproject libsacphm
 #
 ###############################################################################
-
+ifeq  (mutc-ppp, $(CROSS_VARIANT))
+libsacphm_targets           :=
+else
 libsacphm_targets           := libsac$(CROSS_VARIANT)phm.seq.a \
                                libsac$(CROSS_VARIANT)phm.seq.so \
                                libsac$(CROSS_VARIANT)phm.seq.diag.a \
@@ -330,6 +332,7 @@ libsacphm_targets           := libsac$(CROSS_VARIANT)phm.seq.a \
                                libsac$(CROSS_VARIANT)phm.mt.so \
                                libsac$(CROSS_VARIANT)phm.mt.diag.a \
                                libsac$(CROSS_VARIANT)phm.mt.diag.so
+endif
 libsacphm_targetdir         := lib
 
 libsacphm_subtarget_suffix  := $(CROSS_VARIANT).o

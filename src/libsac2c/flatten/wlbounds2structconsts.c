@@ -196,9 +196,9 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
  *
  *   @brief
  *
- *   @param  node *arg_node:  N_module
+ *   @param  node *arg_node:  N_id
  *           info *arg_info:  N_info
- *   @return node *        :  N_module
+ *   @return node *        :  N_id
  ******************************************************************************/
 static node *
 EnsureStructConstant (node *bound, ntype *type, info *arg_info)
@@ -384,31 +384,32 @@ WLBSCgenerator (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
 /** <!--********************************************************************-->
  *
  * @fn node *WLBSCgenarray(node *arg_node, info *arg_info)
  *
- *   @brief  ensure struct constants for genarray shape.
+ *   @brief  ensure structural constants for shape
  *
- ******************************************************************************/
-
+ *****************************************************************************/
 node *
 WLBSCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLBSCgenarray");
 
+#define BUG650
 #ifdef BUG650
-    if (N_id == NODE_TYPE (GENARRAY_SHAPE (arg_node))) {
+    if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
         GENARRAY_SHAPE (arg_node)
           = EnsureStructConstant (GENARRAY_SHAPE (arg_node),
                                   ID_NTYPE (GENARRAY_SHAPE (arg_node)), arg_info);
     }
 
-#endif // BUG650
+#endif /* BUG650 */
+
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
-
 /** <!--********************************************************************-->
  *
  * @fn node *WLBSCdoWlbounds2structConsts( node *arg_node)

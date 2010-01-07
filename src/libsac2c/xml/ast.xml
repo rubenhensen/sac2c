@@ -444,6 +444,11 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="CFP" name="MUTC create function pairs" default="sons" include="create_function_pairs.h">
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="TMFT" name="Tag main function as thread function" default="sons" include="tag_main_fun_thread.h">
         <travuser>
           <node name="Fundef" />

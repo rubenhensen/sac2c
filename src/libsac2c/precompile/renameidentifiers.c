@@ -128,13 +128,14 @@ RenameFunName (node *fundef)
 
     buf = SBUFcreate (40);
 
+    buf = SBUFprint (buf, "SAC");
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
-        buf = SBUFprint (buf, "SACwf_");
-    } else if (FUNDEF_ISTHREADFUN (fundef)) {
-        buf = SBUFprint (buf, "SACtf_");
-    } else {
-        buf = SBUFprint (buf, "SACf_");
+        buf = SBUFprint (buf, "w");
     }
+    if (FUNDEF_ISTHREADFUN (fundef)) {
+        buf = SBUFprint (buf, "t");
+    }
+    buf = SBUFprint (buf, "f_");
 
     tmp_name = STRreplaceSpecialCharacters (FUNDEF_NAME (fundef));
     ns_name = STRreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));

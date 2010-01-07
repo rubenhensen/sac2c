@@ -1,4 +1,5 @@
-
+#define SAC_MUTC_TOSTRING
+#if 0
 #define SAC_MUTC_TOSTRING                                                                \
     SAC_ND_DEF_FUN_BEGIN2 (                                                              \
       to_string, void,                                                                   \
@@ -261,6 +262,8 @@
                                                             T_USG (NON, T_EMPTY))))))))  \
     }                                                                                    \
     SAC_ND_FUN_DEF_END2 ()
+
+#endif
 
 #define SAC_STRING2ARRAY(array, string_arg)                                              \
     {                                                                                    \

@@ -979,19 +979,18 @@ PRTmodule (node *arg_node, info *arg_info)
 
         if (NULL != MODULE_FUNS (arg_node)) {
             TRAVdo (MODULE_FUNS (arg_node), arg_info); /* print function definitions */
+                                                       /*
+                                                        * Note that in this case a separate file is created for each function.
+                                                        * These files are opened and closed in PRTfundef().
+                                                        */
+        }
+        TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
+        if (global.outfile != NULL) {
+            fclose (global.outfile);
             /*
-             * Note that in this case a separate file is created for each function.
-             * These files are opened and closed in PRTfundef().
+             * Due to the linksetsize feature it may be the case that the lust file
+             * created is still open for writing after having written the last function.
              */
-
-            if (global.outfile != NULL) {
-                fclose (global.outfile);
-                /*
-                 * Due to the linksetsize feature it may be the case that the lust file
-                 * created is still open for writing after having written the last
-                 * function.
-                 */
-            }
         }
 
         /*

@@ -106,7 +106,7 @@ static int sac_benchmark_count;
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
         SAC_COMMANDLINE_SET (0, NULL);                                                   \
-        sl_create (, , , , , , , SACwf__MAIN__main,                                      \
+        sl_create (, , , , , , , SACwtf__MAIN__main,                                     \
                    SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
         sl_sync ();                                                                      \
     }                                                                                    \
