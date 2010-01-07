@@ -396,7 +396,6 @@ WLBSCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLBSCgenarray");
 
-#define BUG650
 #ifdef BUG650
     if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
         GENARRAY_SHAPE (arg_node)
