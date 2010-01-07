@@ -370,7 +370,8 @@ isNullIntersect (node *arg_node)
  * @params itemno: the Nth item number.
  * @params idx: the index vector for the _sel_VxA( idx, producerWL).
  *
- * @result: The item itself.
+ * @result: The item itself, unless index error, in which case we
+ *          return NULL.
  *
  *****************************************************************************/
 node *
@@ -387,9 +388,8 @@ ExtractNthItem (int itemno, node *idx)
     DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
                  ("ExtractNthItem wanted F_attachintersect as idx parent"));
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
-
-    if (!(PMO (PMOlastVarGuards (&val, bnd)))) {
-        DBUG_ASSERT (FALSE, ("ExtractNthItem could not find var!"));
+    if (NULL != bnd) {
+        PMO (PMOlastVarGuards (&val, bnd));
     }
 
     DBUG_RETURN (val);
@@ -477,8 +477,12 @@ FindMatchingPart (node *arg_node, info *arg_info, node *consumerpart, node *prod
 
         idxbound1 = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (idxparent)));
         idxbound2 = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (idxparent)));
-        intersectb1 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 0), idx));
-        intersectb2 = ID_AVIS (ExtractNthItem (WLINTERSECTION (producerPartno, 1), idx));
+
+        intersectb1 = ExtractNthItem (WLINTERSECTION (producerPartno, 0), idx);
+        intersectb2 = ExtractNthItem (WLINTERSECTION (producerPartno, 1), idx);
+        /* producerWL may have vanished, due to CWLE, etc. */
+        intersectb1 = (NULL != intersectb1) ? ID_AVIS (intersectb1) : intersectb1;
+        intersectb2 = (NULL != intersectb2) ? ID_AVIS (intersectb2) : intersectb2;
 
         if ((NULL != idxbound1) && (NULL != intersectb1)) {
             DBUG_PRINT (
@@ -936,10 +940,16 @@ CUBSLprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("CUBSL", (" %s =_sel_VxA_( iv, X) needs slicing",
                                   AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         producerWL = CUBSLgetProducerWL (arg_node);
-        producerPart = FindMatchingPart (arg_node, arg_info, INFO_CONSUMERPART (arg_info),
-                                         producerWL);
-        if (NULL != producerPart) {
-            DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+
+        /* producerWL may be entirely gone now, perhaps
+         * due to it being copyWL, etc.
+         */
+        if (NULL != producerWL) {
+            producerPart = FindMatchingPart (arg_node, arg_info,
+                                             INFO_CONSUMERPART (arg_info), producerWL);
+            if (NULL != producerPart) {
+                DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+            }
         }
     }
 

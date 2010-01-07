@@ -439,14 +439,21 @@ isEmptyPartitionCodeBlock (node *partn)
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node *consumerWLPart, int level)
  *
- * @brief check if _sel_VxA_(idx, prducerWL), appearing in folder WL
+ * @brief check if _sel_VxA_(idx, producerWL), appearing in folder WL
  *        partition, part, is foldable into the folder WL.
  *        Most checks have already been made by AWLFI.
  *        Here, we check that the generators match,
  *        and that the only references to the producerWL result are
  *        in the consumerWL.
  *
- * @param _sel_VxA_( idx, prducerWL)
+ *        We have to be careful, because (See Bug #652) the
+ *        producerWL may have changed underfoot, due to CWLE
+ *        and the like. Specifically, the copy-WL that was
+ *        the producerWL may not exist any more, or it may
+ *        have been replaced by a multi-op WL, which would
+ *        be equally unpleasant.
+ *
+ * @param _sel_VxA_( idx, producerWL)
  * @param consumerWLPart: The partition into which we would like to
  *        fold this sel().
  * @param level
@@ -458,51 +465,55 @@ static node *
 checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int level)
 {
     node *producerWLid;
-    node *foldeeavis;
-    node *foldeeassign;
+    node *producerWLavis;
+    node *producerWLlet;
+    node *producerWLassign;
     node *producerWL;
-    node *foldeepart = NULL;
+    node *producerWLpart = NULL;
 
     DBUG_ENTER ("checkAWLFoldable");
 
     producerWLid = PRF_ARG2 (arg_node);
-    foldeeavis = ID_AVIS (producerWLid);
-    if ((NULL != AVIS_SSAASSIGN (foldeeavis))
-        && (AVIS_DEFDEPTH (foldeeavis) + 1 == level)) {
-        foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (producerWLid)));
-        if (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with) {
-            producerWL = LET_EXPR (foldeeassign);
+    producerWLavis = ID_AVIS (producerWLid);
+    if ((NULL != AVIS_SSAASSIGN (producerWLavis))
+        && (AVIS_DEFDEPTH (producerWLavis) + 1 == level)) {
+        producerWLassign = AVIS_SSAASSIGN (ID_AVIS (producerWLid));
+        producerWLlet = ASSIGN_INSTR (producerWLassign);
+        if (AWLFIisSingleOpWL (producerWLassign)) {
+            producerWL = LET_EXPR (producerWLlet);
             DBUG_PRINT (
               "AWLF",
               ("consumerWL %s: producerWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-               AVIS_NAME (foldeeavis), AVIS_NEEDCOUNT (foldeeavis),
-               AVIS_WL_NEEDCOUNT (foldeeavis)));
-            foldeepart
+               AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+               AVIS_WL_NEEDCOUNT (producerWLavis)));
+            producerWLpart
               = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
-            /* Allow fold if needcounts match OR if foldeepartition
+            /* Allow fold if needcounts match OR if producerWLpart
              * has empty code block. This is a crude cost function:
              * We should allow "cheap" prducerWL partitions to fold.
              * E.g., toi(iota(N)), but I'm in a hurry...
              */
-            if ((NULL != foldeepart)
-                && ((AVIS_NEEDCOUNT (foldeeavis) != AVIS_WL_NEEDCOUNT (foldeeavis)))
-                && (!isEmptyPartitionCodeBlock (foldeepart))) {
-                foldeepart = NULL;
+            if ((NULL != producerWLpart)
+                && ((AVIS_NEEDCOUNT (producerWLavis)
+                     != AVIS_WL_NEEDCOUNT (producerWLavis)))
+                && (!isEmptyPartitionCodeBlock (producerWLpart))) {
+                producerWLpart = NULL;
             }
         }
     } else {
-        DBUG_PRINT ("AWLF", ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
-                             AVIS_NAME (foldeeavis), AVIS_DEFDEPTH (foldeeavis), level));
+        DBUG_PRINT ("AWLF",
+                    ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
+                     AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis), level));
     }
 
-    if (NULL != foldeepart) {
-        AVIS_ISWLFOLDED (foldeeavis) = TRUE;
-        DBUG_PRINT ("AWLF", ("WL %s will be folded.", AVIS_NAME (foldeeavis)));
+    if (NULL != producerWLpart) {
+        AVIS_ISWLFOLDED (producerWLavis) = TRUE;
+        DBUG_PRINT ("AWLF", ("WL %s will be folded.", AVIS_NAME (producerWLavis)));
     } else {
-        DBUG_PRINT ("AWLF", ("WLs %s will not be folded.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("AWLF", ("WLs %s will not be folded.", AVIS_NAME (producerWLavis)));
     }
 
-    DBUG_RETURN (foldeepart);
+    DBUG_RETURN (producerWLpart);
 }
 
 /** <!--********************************************************************-->

@@ -113,17 +113,17 @@ struct INFO {
     node *fundef;
     node *vardecs;
     node *preassigns;
-    node *consumerpart;         /* The current consumerWL partition */
-    node *consumerwl;           /* The current consumerWL N_with */
-    int level;                  /* The current nesting level of WLs. This
-                                 * is used to ensure that an index expression
-                                 * refers to an earlier WL in the same code
-                                 * block, rather than to a WL within this
-                                 * WL. I think...
-                                 */
-    bool awlfoldableproducerwl; /* producerWL may be legally foldable. */
-                                /* (If index sets prove to be OK)     */
-    bool onefundef;             /* fundef-based traversal */
+    node *consumerpart;      /* The current consumerWL partition */
+    node *consumerwl;        /* The current consumerWL N_with */
+    int level;               /* The current nesting level of WLs. This
+                              * is used to ensure that an index expression
+                              * refers to an earlier WL in the same code
+                              * block, rather than to a WL within this
+                              * WL. I think...
+                              */
+    bool producerWLFoldable; /* producerWL may be legally foldable. */
+                             /* (If index sets prove to be OK)     */
+    bool onefundef;          /* fundef-based traversal */
 };
 
 /**
@@ -135,7 +135,7 @@ struct INFO {
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_AWLFOLDABLEFOLDEE(n) ((n)->awlfoldableproducerwl)
+#define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -153,7 +153,7 @@ MakeInfo (node *fundef)
     INFO_CONSUMERPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_AWLFOLDABLEFOLDEE (result) = FALSE;
+    INFO_PRODUCERWLFOLDABLE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -228,8 +228,7 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn
- *                                  node **preassigns, node *restypeavis)
+ * @fn bool noDefaultPartition( node *arg_node)
  *
  *   @brief  TRUE if the N_with does not contain a default N_part.
  *
@@ -609,7 +608,30 @@ attachIntersectCalc (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkFoldeeFoldable( node *arg_node, info *arg_info)
+ * @fn bool AWLFIisSingleOpWL( node *arg_node)
+ *
+ * @brief: predicate for determining if node is single-op WL
+ *
+ * @param: arg_node: an N_assign
+ *
+ * @return: TRUE if only one result from WL
+ *
+ *****************************************************************************/
+bool
+AWLFIisSingleOpWL (node *arg_node)
+{
+    bool z;
+
+    DBUG_ENTER ("AWLFIisSingleOpWL");
+    z = (N_with == NODE_TYPE (ASSIGN_RHS (arg_node)))
+        && (NULL == IDS_NEXT (LET_IDS (ASSIGN_INSTR (arg_node))));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool checkProducerWLFoldable( node *arg_node, info *arg_info)
  *
  * @brief We are looking at _sel_VxA_(idx, foldee), contained
  *        within a consumerWL. We want to determine if
@@ -662,43 +684,46 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static bool
-checkFoldeeFoldable (node *arg_node, info *arg_info)
+checkProducerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *foldeeavis;
+    node *producerWLavis;
     node *producerWLid;
     node *producerWL;
-    node *foldeeassign;
+    node *producerWLassign;
     node *rhs;
     bool z = FALSE;
 
-    DBUG_ENTER ("checkFoldeeFoldable");
+    DBUG_ENTER ("checkProducerWLFoldable");
 
     producerWLid = PRF_ARG2 (arg_node);
-    foldeeavis = ID_AVIS (producerWLid);
-    rhs = AVIS_SSAASSIGN (foldeeavis);
+    producerWLavis = ID_AVIS (producerWLid);
+    rhs = AVIS_SSAASSIGN (producerWLavis);
     if ((NULL != rhs) && (N_with == NODE_TYPE (ASSIGN_RHS (rhs)))) {
         producerWL = ASSIGN_RHS (rhs);
-        foldeeassign = ASSIGN_INSTR (rhs);
+        producerWLassign = ASSIGN_INSTR (rhs);
 
-        DBUG_PRINT ("AWLFI", ("FoldeeWL:%s: WITH_REFERENCED_FOLD=%d",
-                              AVIS_NAME (foldeeavis), WITH_REFERENCED_FOLD (producerWL)));
+        DBUG_PRINT ("AWLFI",
+                    ("ProducerWL:%s: WITH_REFERENCED_FOLD=%d", AVIS_NAME (producerWLavis),
+                     WITH_REFERENCED_FOLD (producerWL)));
 
-        if ((NODE_TYPE (foldeeassign) == N_let)
-            && (NODE_TYPE (LET_EXPR (foldeeassign)) == N_with)
-            && (WITHOP_NEXT (WITH_WITHOP (LET_EXPR (foldeeassign))) == NULL)
-            && (noDefaultPartition (LET_EXPR (foldeeassign)))
-            && ((NODE_TYPE (WITH_WITHOP (LET_EXPR (foldeeassign))) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (LET_EXPR (foldeeassign))) == N_modarray))) {
+        if ((NODE_TYPE (producerWLassign) == N_let)
+            && (NODE_TYPE (LET_EXPR (producerWLassign)) == N_with)
+            && (AWLFIisSingleOpWL (rhs))
+            && (WITHOP_NEXT (WITH_WITHOP (LET_EXPR (producerWLassign))) == NULL)
+            && (noDefaultPartition (LET_EXPR (producerWLassign)))
+            && ((NODE_TYPE (WITH_WITHOP (LET_EXPR (producerWLassign))) == N_genarray)
+                || (NODE_TYPE (WITH_WITHOP (LET_EXPR (producerWLassign)))
+                    == N_modarray))) {
             z = TRUE;
         }
     }
 
     if (z) {
-        DBUG_PRINT ("AWLFI",
-                    ("Foldee WL %s is suitable for folding.", AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("AWLFI", ("ProducerWL %s is suitable for folding.",
+                              AVIS_NAME (producerWLavis)));
     } else {
-        DBUG_PRINT ("AWLFI", ("Foldee WL %s is not suitable for folding.",
-                              AVIS_NAME (foldeeavis)));
+        DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
+                              AVIS_NAME (producerWLavis)));
     }
 
     DBUG_RETURN (z);
@@ -706,7 +731,7 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkFolderFoldable( node *arg_node, info *arg_info)
+ * @fn bool checkConsumerWLFoldable( node *arg_node, info *arg_info)
  *
  * @brief We are looking at _sel_VxA_(idx, foldee), contained
  *        within a consumerWL. We want to determine if
@@ -726,13 +751,13 @@ checkFoldeeFoldable (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static bool
-checkFolderFoldable (node *arg_node, info *arg_info)
+checkConsumerWLFoldable (node *arg_node, info *arg_info)
 {
     node *idx = NULL;
     node *idxavis;
     bool z;
 
-    DBUG_ENTER ("checkFolderFoldable");
+    DBUG_ENTER ("checkConsumerWLFoldable");
 
     idx = PRF_ARG1 (arg_node);
     idxavis = ID_AVIS (idx);
@@ -1070,14 +1095,15 @@ AWLFIprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
-        INFO_AWLFOLDABLEFOLDEE (arg_info) = checkFolderFoldable (arg_node, arg_info)
-                                            && checkFoldeeFoldable (arg_node, arg_info)
-                                            && checkBothFoldable (arg_node, arg_info);
+        INFO_PRODUCERWLFOLDABLE (arg_info)
+          = checkConsumerWLFoldable (arg_node, arg_info)
+            && checkProducerWLFoldable (arg_node, arg_info)
+            && checkBothFoldable (arg_node, arg_info);
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         /* Maybe attach intersect calculations now. */
-        if ((INFO_AWLFOLDABLEFOLDEE (arg_info))
+        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
             && (!isPrfArg1AttachIntersect (arg_node))) {
             z = attachIntersectCalc (arg_node, arg_info);
             FREEdoFreeNode (PRF_ARG1 (arg_node));

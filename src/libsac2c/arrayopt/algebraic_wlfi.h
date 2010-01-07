@@ -14,6 +14,7 @@
  *
  *****************************************************************************/
 extern node *AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node);
+extern bool AWLFIisSingleOpWL (node *arg_node);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
