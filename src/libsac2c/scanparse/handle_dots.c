@@ -1424,7 +1424,7 @@ Exprs2Ids (node *exprs)
 }
 
 /** <!--********************************************************************-->
- * checks for any occurencies of a dot symbol within a set notation
+ * checks for any occurrences of a dot symbol within a set notation
  * selection vector.
  *
  * @param ids EXPRS node containing ids
@@ -1443,6 +1443,36 @@ CountDotsInVector (node *ids)
         while (ids != NULL) {
             if (NODE_TYPE (EXPRS_EXPR (ids)) == N_dot)
                 result++;
+            ids = EXPRS_NEXT (ids);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ * checks for any occurrences of a triple-dot symbol within a set notation
+ * selection vector.
+ *
+ * @param ids EXPRS node containing ids
+ * @return whether a triple dot was found
+ *****************************************************************************/
+static bool
+ContainsTripleDot (node *ids)
+{
+    bool result = FALSE;
+
+    DBUG_ENTER ("ContainsTripleDot");
+
+    if (NODE_TYPE (ids) != N_exprs) {
+        result = FALSE;
+    } else {
+        while (ids != NULL) {
+            if ((NODE_TYPE (EXPRS_EXPR (ids)) == N_dot)
+                && (DOT_NUM (EXPRS_EXPR (ids)) == 3)) {
+                result = TRUE;
+                break;
+            }
             ids = EXPRS_NEXT (ids);
         }
     }
@@ -1489,6 +1519,195 @@ RemoveDotsFromVector (node *ids)
 }
 
 /** <!--********************************************************************-->
+ * constructs the anti-permutaed index vector to map the results of a set
+ * notation to the set notation with dots.
+ *
+ * @param ids the indexvector of the set notation
+ * @param vect the indexvector of the withloop used for permutation
+ ****************************************************************************/
+static node *
+BuildAntiPermutatedVector (node *ids, node *vect)
+{
+    node *result = NULL;
+    node *left = NULL;
+    node *left_expr = NULL;
+    node *trav = ids;
+    int single_pre_t = 0, triple = 0, others_pre_t = 0;
+    int single_post_t = 0, others_post_t = 0;
+    int pos = 0, dpos = 0, allpos = 0;
+
+    DBUG_ENTER ("BuildAntiPermutatedVector");
+
+    /*
+     * collect stats about this vector
+     */
+    while (trav != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                triple++;
+                if (triple > 1) {
+                    CTIerrorLine (global.linenum,
+                                  "Multiple occurrences of ... are not allowed in a "
+                                  "single set notation statement.");
+                }
+                trav = EXPRS_NEXT (trav);
+                break;
+            } else {
+                single_pre_t++;
+            }
+        } else {
+            others_pre_t++;
+        }
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    while (trav != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                triple++;
+                if (triple > 1) {
+                    CTIerrorLine (global.linenum,
+                                  "Multiple occurrences of ... are not allowed in a "
+                                  "single set notation statement.");
+                }
+            } else {
+                single_post_t++;
+            }
+        } else {
+            others_post_t++;
+        }
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    /* construct an exprs chain to hold the result */
+    for (int cnt = 0; cnt < others_pre_t + others_post_t + single_pre_t; cnt++) {
+        result = TBmakeExprs (NULL, result);
+    }
+
+    /* now fill it */
+    trav = ids;
+
+    while (trav != NULL) {
+        int target;
+        node *texpr;
+
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                break;
+            }
+
+            target = others_pre_t + others_post_t + dpos;
+            dpos++;
+        } else {
+            target = pos;
+            pos++;
+        }
+        node *entry
+          = MAKE_BIN_PRF (F_sel_VxA,
+                          TCmakeIntVector (TBmakeExprs (TBmakeNum (allpos), NULL)),
+                          DUPdoDupTree (vect));
+
+        texpr = TCgetNthExprs (target, result);
+
+        DBUG_ASSERT ((texpr != NULL), "bad permutation");
+        DBUG_ASSERT ((EXPRS_EXPR (texpr) == NULL), "slot taken in permutation");
+        EXPRS_EXPR (texpr) = entry;
+
+        trav = EXPRS_NEXT (trav);
+        allpos++;
+    }
+
+    if (trav != NULL) {
+        DBUG_ASSERT ((triple > 0), "weird set notation");
+
+        left_expr = result;
+
+        left
+          = TCmakePrf2 (F_cat_VxV, TCmakeIntVector (result),
+                        TCmakePrf2 (F_take_SxV,
+                                    TCmakePrf2 (F_sub_SxS,
+                                                TCmakePrf2 (F_sel_VxA,
+                                                            TCmakeIntVector (
+                                                              TBmakeExprs (TBmakeNum (0),
+                                                                           NULL)),
+                                                            TCmakePrf1 (F_shape_A,
+                                                                        DUPdoDupTree (
+                                                                          vect))),
+                                                TBmakeNum (single_pre_t + single_post_t
+                                                           + others_pre_t
+                                                           + others_post_t)),
+                                    TCmakePrf2 (F_drop_SxV, TBmakeNum (allpos),
+                                                DUPdoDupTree (vect))));
+        result = NULL;
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    /* now take care of the rest */
+    for (int cnt = 0; cnt < single_post_t; cnt++) {
+        result = TBmakeExprs (NULL, result);
+    }
+
+    allpos = 0;
+    while (trav != NULL) {
+        node *target;
+
+        node *entry
+          = MAKE_BIN_PRF (F_sel_VxA,
+                          TCmakeIntVector (
+                            TBmakeExprs (TCmakePrf2 (F_sub_SxS,
+                                                     TCmakePrf2 (F_sel_VxA,
+                                                                 TCmakeIntVector (
+                                                                   TBmakeExprs (TBmakeNum (
+                                                                                  0),
+                                                                                NULL)),
+                                                                 TCmakePrf1 (F_shape_A,
+                                                                             DUPdoDupTree (
+                                                                               vect))),
+                                                     TBmakeNum (single_post_t
+                                                                + others_post_t
+                                                                - allpos)),
+                                         NULL)),
+                          DUPdoDupTree (vect));
+
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                break;
+            }
+
+            target = TCgetNthExprs (dpos, result);
+            DBUG_ASSERT ((target != NULL), "permutation wrong");
+            DBUG_ASSERT ((EXPRS_EXPR (target) == NULL), "double entry");
+            EXPRS_EXPR (target) = entry;
+            dpos++;
+        } else {
+            target = TCgetNthExprs (pos, left_expr);
+            DBUG_ASSERT ((target != NULL), "permutation wrong");
+            DBUG_ASSERT ((EXPRS_EXPR (target) == NULL), "double entry");
+            EXPRS_EXPR (target) = entry;
+            pos++;
+        }
+
+        trav = EXPRS_NEXT (trav);
+        allpos++;
+    }
+
+    if (left != NULL) {
+        if (result == NULL) {
+            result = left;
+        } else {
+            result = TCmakePrf2 (F_cat_VxV, left, result);
+        }
+    } else {
+        result = TCmakeIntVector (result);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
  * constructs the permutaed index vector to map the results of a set
  * notation to the set notation with dots.
  *
@@ -1499,60 +1718,143 @@ static node *
 BuildPermutatedVector (node *ids, node *vect)
 {
     node *result = NULL;
+    node *left = NULL;
     node *trav = ids;
     node *next = NULL;
-    int pos = 0;
+    int single = 0, triple = 0, others = 0;
+    int pos = 0, dpos = 0;
 
     DBUG_ENTER ("BuildPermutatedVector");
 
-    /* first scan for non-dot entries */
-
-    while (trav != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (trav)) != N_dot) {
-            node *entry
-              = MAKE_BIN_PRF (F_sel_VxA,
-                              TCmakeIntVector (TBmakeExprs (TBmakeNum (pos), NULL)),
-                              DUPdoDupTree (vect));
-
-            if (result == NULL) {
-                result = TBmakeExprs (entry, NULL);
-                next = result;
-            } else {
-                EXPRS_NEXT (next) = TBmakeExprs (entry, NULL);
-                next = EXPRS_NEXT (next);
-            }
-        }
-
-        trav = EXPRS_NEXT (trav);
-        pos++;
-    }
-
-    /* now the same for dots */
-
-    trav = ids;
-    pos = 0;
-
+    /*
+     * first count the non-dot entries and the number of
+     * single dots and whether we have a tripledot
+     */
     while (trav != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
-            node *entry
-              = MAKE_BIN_PRF (F_sel_VxA,
-                              TCmakeIntVector (TBmakeExprs (TBmakeNum (pos), NULL)),
-                              DUPdoDupTree (vect));
-
-            if (result == NULL) {
-                result = TBmakeExprs (entry, NULL);
-                next = result;
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                triple++;
+                if (triple > 1) {
+                    CTIerrorLine (global.linenum,
+                                  "Multiple occurrences of ... are not allowed in a "
+                                  "single set notation statement.");
+                }
             } else {
-                EXPRS_NEXT (next) = TBmakeExprs (entry, NULL);
-                next = EXPRS_NEXT (next);
+                single++;
             }
+        } else {
+            others++;
         }
 
         trav = EXPRS_NEXT (trav);
-        pos++;
     }
 
-    result = TCmakeIntVector (result);
+    /* now build everything up to the ... if there is one */
+    trav = ids;
+
+    while (trav != NULL) {
+        int target;
+
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                break;
+            }
+
+            target = others + dpos;
+            dpos++;
+        } else {
+            target = pos;
+            pos++;
+        }
+        node *entry
+          = MAKE_BIN_PRF (F_sel_VxA,
+                          TCmakeIntVector (TBmakeExprs (TBmakeNum (target), NULL)),
+                          DUPdoDupTree (vect));
+
+        if (result == NULL) {
+            result = TBmakeExprs (entry, NULL);
+            next = result;
+        } else {
+            EXPRS_NEXT (next) = TBmakeExprs (entry, NULL);
+            next = EXPRS_NEXT (next);
+        }
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    if (trav != NULL) {
+        DBUG_ASSERT ((triple > 0), "weird set notation");
+
+        left
+          = TCmakePrf2 (F_cat_VxV, TCmakeIntVector (result),
+                        TCmakePrf2 (F_take_SxV,
+                                    TCmakePrf2 (F_sub_SxS,
+                                                TCmakePrf2 (F_sel_VxA,
+                                                            TCmakeIntVector (
+                                                              TBmakeExprs (TBmakeNum (0),
+                                                                           NULL)),
+                                                            TCmakePrf1 (F_shape_A,
+                                                                        DUPdoDupTree (
+                                                                          vect))),
+                                                TBmakeNum (single + others)),
+                                    TCmakePrf2 (F_drop_SxV, TBmakeNum (dpos + others),
+                                                DUPdoDupTree (vect))));
+        result = NULL;
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    /* now take care of the rest */
+
+    while (trav != NULL) {
+        node *target;
+
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            if (DOT_NUM (EXPRS_EXPR (trav)) == 3) {
+                break;
+            }
+
+            target
+              = TCmakePrf2 (F_add_SxS,
+                            TCmakePrf2 (F_sub_SxS,
+                                        TCmakePrf2 (F_sel_VxA,
+                                                    TCmakeIntVector (
+                                                      TBmakeExprs (TBmakeNum (0), NULL)),
+                                                    TCmakePrf1 (F_shape_A,
+                                                                DUPdoDupTree (vect))),
+                                        TBmakeNum (others + single + 1)),
+                            TBmakeNum (dpos));
+            dpos++;
+        } else {
+            target = TBmakeNum (pos);
+            pos++;
+        }
+        node *entry
+          = MAKE_BIN_PRF (F_sel_VxA, TCmakeIntVector (TBmakeExprs (target, NULL)),
+                          DUPdoDupTree (vect));
+
+        if (result == NULL) {
+            result = TBmakeExprs (entry, NULL);
+            next = result;
+        } else {
+            EXPRS_NEXT (next) = TBmakeExprs (entry, NULL);
+            next = EXPRS_NEXT (next);
+        }
+
+        trav = EXPRS_NEXT (trav);
+    }
+
+    if (result != NULL) {
+        result = TCmakeIntVector (result);
+    }
+
+    if (left != NULL) {
+        if (result == NULL) {
+            result = left;
+        } else {
+            result = TCmakePrf2 (F_cat_VxV, left, result);
+        }
+    }
 
     DBUG_RETURN (result);
 }
@@ -2209,7 +2511,7 @@ HDsetwl (node *arg_node, info *arg_info)
         if (dotcnt != 0) {
             node *intermediate = result;
             node *withid = MakeTmpId ("permutationiv");
-            node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
+            node *selvector = BuildAntiPermutatedVector (SETWL_VEC (arg_node), withid);
             node *shape
               = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
             node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
@@ -2220,13 +2522,19 @@ HDsetwl (node *arg_node, info *arg_info)
             /* create permutation code */
 
             /* build the default value */
-            defshape
-              = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
-                              TBmakePrf (F_shape_A,
-                                         TBmakeExprs (DUPdoDupTree (intermediate),
-                                                      NULL)));
+            if (ContainsTripleDot (SETWL_VEC (arg_node))) {
+                defexpr = TCmakeSpap1 (NSgetNamespace (global.preludename),
+                                       STRcpy ("zero"), DUPdoDupTree (intermediate));
+            } else {
+                defshape
+                  = MAKE_BIN_PRF (F_drop_SxV,
+                                  TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
+                                  TBmakePrf (F_shape_A,
+                                             TBmakeExprs (DUPdoDupTree (intermediate),
+                                                          NULL)));
 
-            defexpr = BuildDefaultWithloop (intermediate, defshape);
+                defexpr = BuildDefaultWithloop (intermediate, defshape);
+            }
 
             result
               = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
