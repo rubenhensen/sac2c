@@ -818,16 +818,7 @@ CSEblock (node *arg_node, info *arg_info)
 
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-        if (BLOCK_VARDEC (arg_node) != NULL) {
-            /*
-             * traverse vardecs of block again, to rename extrema.
-             */
-            node *vardec = BLOCK_VARDEC (arg_node);
-            while (vardec != NULL) {
-                vardec = CSEvardec (vardec, arg_info);
-                vardec = VARDEC_NEXT (vardec);
-            }
-        }
+        BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
         /*
          * remove the fake assignment of the index scalars to the index vector
@@ -1212,28 +1203,58 @@ CSEwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *CSEavis(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse an avis to rename its extrema,
+ *   and rename the AVIS_DIM, AVIS_SHAPE
+ *
+ *
+ *****************************************************************************/
+node *
+CSEavis (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CSEavis");
+
+    DBUG_PRINT ("CSE", ("Traversing N_avis %s", AVIS_NAME (arg_node)));
+
+    if ((NULL != AVIS_MINVAL (arg_node))
+        && (NULL != AVIS_SUBST (AVIS_MINVAL (arg_node)))) {
+        AVIS_MINVAL (arg_node) = AVIS_SUBST (AVIS_MINVAL (arg_node));
+    }
+
+    if ((NULL != AVIS_MAXVAL (arg_node))
+        && (NULL != AVIS_SUBST (AVIS_MAXVAL (arg_node)))) {
+        AVIS_MAXVAL (arg_node) = AVIS_SUBST (AVIS_MAXVAL (arg_node));
+    }
+
+    AVIS_DIM (arg_node) = TRAVopt (AVIS_DIM (arg_node), arg_info);
+    AVIS_SHAPE (arg_node) = TRAVopt (AVIS_SHAPE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *CSEvardec(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse a vardec to rename its extrema.
+ *   and rename the AVIS_DIM, AVIS_SHAPE
  *
  *
  *****************************************************************************/
 node *
 CSEvardec (node *arg_node, info *arg_info)
 {
-    node *avis;
-
     DBUG_ENTER ("CSEvardec");
 
-    avis = VARDEC_AVIS (arg_node);
-    if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
-        AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
-    }
+    DBUG_PRINT ("CSE", ("Traversing N_vardec %s", AVIS_NAME (VARDEC_AVIS (arg_node))));
 
-    if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
-        AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
-    }
+    VARDEC_AVIS (arg_node) = TRAVopt (VARDEC_AVIS (arg_node), arg_info);
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

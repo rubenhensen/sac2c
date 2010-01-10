@@ -814,11 +814,11 @@ PMOintConst (constant **co, node **conode, node *stack)
  *           2. that has a direct lineage to id.
  *
  *        The idea here is to trace a chain of N_id and
- *        N_with/modarray nodes from id to the
+ *        N_with genarray/modarray nodes from id to the
  *        shape primogenitor of id. Basically,
  *        it does lastId(id, TRUE), but also has some tricks to go
  *        further when that result comes from a modarray WL
- *        or (someday) a genarray WL.
+ *        or a genarray WL.
  *
  *        Hence, if we have:
  *

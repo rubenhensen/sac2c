@@ -174,7 +174,7 @@ AddShapeComputation (node *array, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("AddShapeCompuutation");
+    DBUG_ENTER ("AddShapeComputation");
 
     DBUG_ASSERT ((NODE_TYPE (array) == N_id), "non-flattened array found!");
 
