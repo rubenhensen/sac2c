@@ -41,6 +41,7 @@
 #include "shape.h"
 #include "traverse.h"
 #include "pattern_match.h"
+#include "globals.h"
 
 /**
  * INFO structure
