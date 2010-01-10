@@ -287,9 +287,7 @@ DCIarg (node *arg_node, info *arg_info)
         MarkAvisAlive (ARG_AVIS (arg_node));
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -309,9 +307,7 @@ DCIvardec (node *arg_node, info *arg_info)
 
     AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -349,9 +345,7 @@ DCIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /* traverse instruction */
     INFO_ASSIGN (arg_info) = arg_node;
@@ -614,9 +608,7 @@ DCIids (node *arg_node, info *arg_info)
         INFO_ONEIDSNEEDED (arg_info) = TRUE;
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

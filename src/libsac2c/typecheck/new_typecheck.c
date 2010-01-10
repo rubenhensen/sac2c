@@ -600,8 +600,8 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     inf_n = TYgetProductSize (inf_type);
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (inf_type, FALSE, 0););
-    DBUG_PRINT ("NTC",
-                ("inferred return type of \"%s\" is %s", CTIitemName (fundef), tmp_str));
+    DBUG_PRINT ("NTC", ("Function %s: inferred return type of \"%s\" is %s",
+                        FUNDEF_NAME (fundef), CTIitemName (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     spec_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
@@ -622,8 +622,9 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
         if (!ok) {
             CTIabortLine (NODE_LINE (fundef),
-                          "Component #%d of inferred return type (%s) is not within %s",
-                          i, TYtype2String (itype, FALSE, 0),
+                          "Function %s: Component #%d of inferred return type (%s) is "
+                          "not within %s",
+                          FUNDEF_NAME (fundef), i, TYtype2String (itype, FALSE, 0),
                           TYtype2String (stype, FALSE, 0));
         }
         /**
@@ -659,9 +660,11 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         if ((global.act_info_chn == NULL) && TYisAlpha (stype)
             && (SSIgetMin (TYgetAlpha (stype)) == NULL)) {
             CTIabortLine (NODE_LINE (fundef),
-                          "Component #%d of inferred return type (%s) has no lower bound;"
+                          "Function %s: Component #%d of inferred return type (%s) has "
+                          "no lower bound;"
                           " an application of \"%s\" will not terminate",
-                          i, TYtype2String (stype, FALSE, 0), FUNDEF_NAME (fundef));
+                          FUNDEF_NAME (fundef), i, TYtype2String (stype, FALSE, 0),
+                          FUNDEF_NAME (fundef));
         }
     }
     TYfreeType (inf_type);
@@ -1761,7 +1764,7 @@ NTCwith (node *arg_node, info *arg_info)
     body = INFO_TYPE (arg_info);
     INFO_TYPE (arg_info) = NULL;
 
-    DBUG_ASSERT (TYisProd (body), "non product type recieved for the type of a WL body");
+    DBUG_ASSERT (TYisProd (body), "non-product type received for the type of a WL body");
     /**
      * needs to be kept as product type as multi-operator WL requires more
      * than one return type!

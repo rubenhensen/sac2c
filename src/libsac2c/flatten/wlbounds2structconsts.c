@@ -397,19 +397,11 @@ WLBSCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLBSCgenarray");
 
-#ifndef BUG650
-    if (global.backend == BE_mutc) {
-#endif /* BUG650 */
-
-        if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
-            GENARRAY_SHAPE (arg_node)
-              = EnsureStructConstant (GENARRAY_SHAPE (arg_node),
-                                      ID_NTYPE (GENARRAY_SHAPE (arg_node)), arg_info);
-        }
-
-#ifndef BUG650
+    if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
+        GENARRAY_SHAPE (arg_node)
+          = EnsureStructConstant (GENARRAY_SHAPE (arg_node),
+                                  ID_NTYPE (GENARRAY_SHAPE (arg_node)), arg_info);
     }
-#endif /* BUG650 */
 
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
