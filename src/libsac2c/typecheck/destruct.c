@@ -122,8 +122,7 @@ ExplodeArg (node *arg, node *selem)
     /* Old name: my_s_arg.
      * New names: _my_s_arg_e1, _my_s_arg_e2, ...
      */
-    ARG_NAME (newarg)
-      = STRcatn (4, "_", old_name, "_", AVIS_NAME (STRUCTELEM_AVIS (selem)));
+    ARG_NAME (newarg) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     DBUG_PRINT ("DES", ("Created new N_arg: %s", ARG_NAME (newarg)));
     /* Recursion for the rest of the struct elements. */
@@ -169,8 +168,7 @@ ExplodeExprs (node *exprs, node *selem)
     /* Old name: my_s_id.
      * New names: _my_s_id_e1, _my_s_id_e2, ...
      */
-    ID_NAME (newid)
-      = STRcatn (4, "_", old_name, "_", AVIS_NAME (STRUCTELEM_AVIS (selem)));
+    ID_NAME (newid) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     EXPRS_EXPR (newexprs) = newid;
     DBUG_PRINT ("DES", ("Created new N_id: %s", ID_NAME (newid)));
@@ -241,8 +239,7 @@ ExplodeIds (node *ids, node *selem)
     /* Old name: my_s_id.
      * New names: _my_s_id_e1, _my_s_id_e2, ...
      */
-    IDS_NAME (newids)
-      = STRcatn (4, "_", old_name, "_", AVIS_NAME (STRUCTELEM_AVIS (selem)));
+    IDS_NAME (newids) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     /* Recursion for the rest of the struct elements. */
     IDS_NEXT (newids) = ExplodeIds (ids, STRUCTELEM_NEXT (selem));
@@ -274,8 +271,7 @@ IDstruct2elem (node *id, node *selem)
     ID_NTYPE (newid) = TYfreeType (ID_NTYPE (newid));
     ID_NTYPE (newid) = TYcopyType (TYPEDEF_NTYPE (STRUCTELEM_TYPEDEF (selem)));
     old_name = ID_NAME (newid);
-    ID_NAME (newid)
-      = STRcatn (4, "_", old_name, "_", AVIS_NAME (STRUCTELEM_AVIS (selem)));
+    ID_NAME (newid) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     id = FREEdoFreeNode (id);
 
@@ -315,8 +311,7 @@ CreateFCAssignChain (node *assign, node *selem)
     IDS_NTYPE (newids) = TYfreeType (IDS_NTYPE (newids));
     IDS_NTYPE (newids) = TYcopyType (TYPEDEF_NTYPE (STRUCTELEM_TYPEDEF (selem)));
     old_name = IDS_NAME (newids);
-    IDS_NAME (newids)
-      = STRcatn (4, "_", old_name, "_", AVIS_NAME (STRUCTELEM_AVIS (selem)));
+    IDS_NAME (newids) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     /* Change the right-hand side. */
     newfc = LET_EXPR (ASSIGN_INSTR (newass));
@@ -589,8 +584,8 @@ DESfundef (node *arg_node, info *arg_info)
         selem = FUNDEF_STRUCTGETTER (arg_node);
         /* TODO: The argument's name is known: `s'. */
         ret_name = STRcatn (4, "_", ARG_NAME (FUNDEF_ARGS (arg_node)), "_",
-                            AVIS_NAME (STRUCTELEM_AVIS (selem)));
-        avis = TBmakeAvis (ret_name, TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (selem))));
+                            STRUCTELEM_NAME (selem));
+        avis = TBmakeAvis (ret_name, TYcopyType (STRUCTELEM_TYPE (selem)));
         body
           = TBmakeBlock (TBmakeAssign (TBmakeReturn (TBmakeExprs (TBmakeId (avis), NULL)),
                                        NULL),

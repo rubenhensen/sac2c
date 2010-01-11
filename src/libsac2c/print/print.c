@@ -1216,8 +1216,8 @@ PRTstructelem (node *arg_node, info *arg_info)
     INDENT;
 
     fprintf (global.outfile, "%s %s;\n",
-             TYtype2String (AVIS_TYPE (STRUCTELEM_AVIS (arg_node)), FALSE, 0),
-             AVIS_NAME (STRUCTELEM_AVIS (arg_node)));
+             TYtype2String (STRUCTELEM_TYPE (arg_node), FALSE, 0),
+             STRUCTELEM_NAME (arg_node));
 
     arg_node = TRAVcont (arg_node, arg_info);
 
