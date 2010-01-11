@@ -4449,16 +4449,6 @@ N_structdef :
     <node name="Structelem">
       <description>declaration of an element of a struct</description>
       <sons>
-        <son name="Avis">
-          <targets>
-            <target mandatory="yes">
-              <node name="Avis" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Next">
           <targets>
             <target mandatory="no">
@@ -4471,6 +4461,31 @@ N_structdef :
         </son>
       </sons>
       <attributes>
+        <attribute name="Name" inconstructor="yes" >
+          <type name="String">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Type" inconstructor="yes" >
+	  <description></description>
+          <type name="NewType">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Typedef" default="NULL" inconstructor="no">
           <!-- TODO: Perhaps making these normal Node types would clean them up
                automatically during the `destruct' phase instead of having to
