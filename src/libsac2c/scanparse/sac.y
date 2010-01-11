@@ -111,7 +111,7 @@ K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
 HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT MUTCTHREADFUN  REFCOUNTING
-REFCOUNTDOTS
+REFCOUNTDOTS NOINLINE
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
@@ -990,6 +990,16 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           PRAGMA_MUTCTHREADFUN( store_pragma) = TRUE;
+        }
+      | hash_pragma NOINLINE
+        { 
+          if (pragma_type != PRAG_fundec && pragma_type != PRAG_fundef) {
+            yyerror( "pragma \"noinline\" not allowed here");
+          }
+          if (store_pragma == NULL) {
+            store_pragma = TBmakePragma();
+          }
+          PRAGMA_NOINLINE( store_pragma) = TRUE;
         }
       | hash_pragma COPYFUN string
         { if( pragma_type != PRAG_typedef) {

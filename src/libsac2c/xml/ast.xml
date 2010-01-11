@@ -4184,6 +4184,11 @@ N_structdef :
             TRUE iff this function is a loop fun and can be executed on the CUDA card.
           </description>
         </flag>
+        <flag name="NoInline" default="FALSE">
+          <description>
+            This function MUST NOT be inlined.  This is set from #pragma noinline.
+          </description>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -6184,6 +6189,7 @@ N_structdef :
       <flags>
         <flag name="RefcountDots" default="FALSE" />
         <flag name="MutcThreadFun" default="FALSE" />
+        <flag name="NoInline" default="FALSE" />
       </flags>
     </node>
 <!--

@@ -417,6 +417,10 @@ RSPfundef (node *arg_node, info *arg_info)
             FUNDEF_ISTHREADFUN (arg_node) = TRUE;
         }
 
+        if (PRAGMA_NOINLINE (pragma)) {
+            FUNDEF_NOINLINE (arg_node) == TRUE;
+        }
+
         /*
          * if this function needs an external module, add it to
          * the external dependencies of this module.

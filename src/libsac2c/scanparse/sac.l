@@ -273,6 +273,7 @@ int charpos = 0;
 "cachesim"                 { FILTER( CACHESIM); }
 "specialize"               { FILTER( SPECIALIZE); }
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
+"noinline"                 { FILTER( NOINLINE); }
 
 "float"                    { FILTER( TYPE_FLOAT); }
 "bool"                     { FILTER( TYPE_BOOL); }
