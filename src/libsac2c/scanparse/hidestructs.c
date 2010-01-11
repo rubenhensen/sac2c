@@ -290,6 +290,7 @@ HSstructelem (node *arg_node, info *arg_info)
 
     arg = TBmakeArg (avis, INFO_INIT_ARGS (arg_info));
     AVIS_DECL (avis) = arg;
+    AVIS_DECLTYPE (avis) = TYcopyType (STRUCTELEM_TYPE (arg_node));
 
     INFO_INIT_ARGS (arg_info) = arg;
 
