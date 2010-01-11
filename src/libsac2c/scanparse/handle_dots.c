@@ -1519,14 +1519,14 @@ RemoveDotsFromVector (node *ids)
 }
 
 /** <!--********************************************************************-->
- * constructs the anti-permutaed index vector to map the results of a set
- * notation to the set notation with dots.
+ * constructs the inverse permutation of the index vector to map the results
+ * of a set notation to the set notation with dots.
  *
  * @param ids the indexvector of the set notation
  * @param vect the indexvector of the withloop used for permutation
  ****************************************************************************/
 static node *
-BuildAntiPermutatedVector (node *ids, node *vect)
+BuildInversePermutatedVector (node *ids, node *vect)
 {
     node *result = NULL;
     node *left = NULL;
@@ -1536,7 +1536,7 @@ BuildAntiPermutatedVector (node *ids, node *vect)
     int single_post_t = 0, others_post_t = 0;
     int pos = 0, dpos = 0, allpos = 0;
 
-    DBUG_ENTER ("BuildAntiPermutatedVector");
+    DBUG_ENTER ("BuildInversePermutatedVector");
 
     /*
      * collect stats about this vector
@@ -1581,7 +1581,10 @@ BuildAntiPermutatedVector (node *ids, node *vect)
         trav = EXPRS_NEXT (trav);
     }
 
-    /* construct an exprs chain to hold the result */
+    /* construct an exprs chain to hold the result. it needs to be long
+     * enough to hold all not-dot axes as these are to the left of any
+     * dot axes, in particular the .... Furthermore, it needs to have some
+     * space for the dots to the left of the ... */
     for (int cnt = 0; cnt < others_pre_t + others_post_t + single_pre_t; cnt++) {
         result = TBmakeExprs (NULL, result);
     }
@@ -1708,11 +1711,11 @@ BuildAntiPermutatedVector (node *ids, node *vect)
 }
 
 /** <!--********************************************************************-->
- * constructs the permutaed index vector to map the results of a set
+ * constructs the permutation of the shape vector to map the results of a set
  * notation to the set notation with dots.
  *
- * @param ids the indexvector of the set notation
- * @param vect the indexvector of the withloop used for permutation
+ * @param ids the shape vector of the withloop representing the set notation
+ * @param vect the shape vector of the withloop used for permutation
  ****************************************************************************/
 static node *
 BuildPermutatedVector (node *ids, node *vect)
@@ -2511,7 +2514,7 @@ HDsetwl (node *arg_node, info *arg_info)
         if (dotcnt != 0) {
             node *intermediate = result;
             node *withid = MakeTmpId ("permutationiv");
-            node *selvector = BuildAntiPermutatedVector (SETWL_VEC (arg_node), withid);
+            node *selvector = BuildInversePermutatedVector (SETWL_VEC (arg_node), withid);
             node *shape
               = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
             node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
