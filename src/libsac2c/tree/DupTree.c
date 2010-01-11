@@ -1365,8 +1365,9 @@ DUPstructelem (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPstructelem");
 
-    new_node = TBmakeVardec (DUPTRAV (STRUCTELEM_AVIS (arg_node)),
-                             DUPCONT (STRUCTELEM_NEXT (arg_node)));
+    new_node = TBmakeStructelem (STRcpy (STRUCTELEM_NAME (arg_node)),
+                                 TYcopyType (STRUCTELEM_TYPE (arg_node)),
+                                 DUPCONT (STRUCTELEM_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 

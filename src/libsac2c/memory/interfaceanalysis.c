@@ -282,6 +282,8 @@ EMIAarg (node *arg_node, info *arg_info)
 
         DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL,
                             ARG_AVIS (arg_node));
+
+        DBUG_PRINT ("IA", ("Mask created for %s", ARG_NAME (arg_node)));
         break;
 
     case IA_end:
@@ -290,6 +292,7 @@ EMIAarg (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (ARG_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (ARG_AVIS (arg_node)));
+        DBUG_PRINT ("IA", ("Mask removed for %s", ARG_NAME (arg_node)));
         break;
 
     case IA_unqargs:
@@ -431,7 +434,11 @@ EMIAfundef (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
         }
 
+        DBUG_PRINT ("IA", ("Going into function %s", FUNDEF_NAME (arg_node)));
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        DBUG_PRINT ("IA", ("Coming from function %s", FUNDEF_NAME (arg_node)));
 
         /*
          * Traverse vardecs/args to remove ALIASMASKS
@@ -683,6 +690,7 @@ EMIAvardec (node *arg_node, info *arg_info)
 
         DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL,
                             VARDEC_AVIS (arg_node));
+        DBUG_PRINT ("IA", ("Mask created for %s", VARDEC_NAME (arg_node)));
         break;
 
     case IA_end:
@@ -691,6 +699,7 @@ EMIAvardec (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (VARDEC_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)));
+        DBUG_PRINT ("IA", ("Mask removed for %s", VARDEC_NAME (arg_node)));
         break;
 
     default:

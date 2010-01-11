@@ -232,8 +232,7 @@ HSstructelem (node *arg_node, info *arg_info)
     node *module;
     node *structdef;
     ntype *structtype;
-    ntype *elemtype;
-    char *elemname;
+    node *avis;
 
     DBUG_ENTER ("HSstructelem");
 
@@ -243,13 +242,13 @@ HSstructelem (node *arg_node, info *arg_info)
     DBUG_ASSERT (structdef != NULL, ("No structdef for this struct element."));
     structtype = INFO_STRUCTTYPE (arg_info);
     DBUG_ASSERT (structtype != NULL, ("No struct set for this struct element."));
-    elemname = AVIS_NAME (STRUCTELEM_AVIS (arg_node));
-    elemtype = AVIS_TYPE (STRUCTELEM_AVIS (arg_node));
+
     /* Create getter as new external fundec. */
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
-    ret = TBmakeRet (TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (arg_node))), NULL);
-    fundec = TBmakeFundef (STRcat (STRUCT_GET, elemname), NULL, /* TODO: namespace? */
+    ret = TBmakeRet (TYcopyType (STRUCTELEM_TYPE (arg_node)), NULL);
+    fundec = TBmakeFundef (STRcat (STRUCT_GET, STRUCTELEM_NAME (arg_node)),
+                           NULL, /* TODO: namespace? */
                            ret, arg, NULL, MODULE_FUNDECS (module));
     FUNDEF_ISEXTERN (fundec) = TRUE;
     FUNDEF_STRUCTGETTER (fundec) = arg_node;
@@ -258,11 +257,12 @@ HSstructelem (node *arg_node, info *arg_info)
     /* Setter. */
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
-    arg = TBmakeArg (TBmakeAvis (STRcpy ("e"), TYcopyType (elemtype)), arg);
-    AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (elemtype);
+    arg = TBmakeArg (TBmakeAvis (STRcpy ("e"), TYcopyType (STRUCTELEM_TYPE (arg_node))),
+                     arg);
+    AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (STRUCTELEM_TYPE (arg_node));
     ret = TBmakeRet (TYcopyType (structtype), NULL);
-    fundec = TBmakeFundef (STRcat (STRUCT_SET, elemname), NULL, ret, arg, NULL,
-                           MODULE_FUNDECS (module));
+    fundec = TBmakeFundef (STRcat (STRUCT_SET, STRUCTELEM_NAME (arg_node)), NULL, ret,
+                           arg, NULL, MODULE_FUNDECS (module));
     FUNDEF_ISEXTERN (fundec) = TRUE;
     FUNDEF_STRUCTSETTER (fundec) = arg_node;
     /* Setter on the stack. */
@@ -270,8 +270,8 @@ HSstructelem (node *arg_node, info *arg_info)
     /* Create a typedef for this struct element. */
     STRUCTELEM_TYPEDEF (arg_node)
       = TBmakeTypedef (STRcatn (4, STRUCT_ELEM, STRUCTDEF_NAME (structdef), "_",
-                                elemname),
-                       NULL, TYcopyType (AVIS_TYPE (STRUCTELEM_AVIS (arg_node))),
+                                STRUCTELEM_NAME (arg_node)),
+                       NULL, TYcopyType (STRUCTELEM_TYPE (arg_node)),
                        MODULE_TYPES (module));
     /* Store a pointer to this elem's structdef. */
     TYPEDEF_STRUCTDEF (STRUCTELEM_TYPEDEF (arg_node)) = structdef;
@@ -284,8 +284,13 @@ HSstructelem (node *arg_node, info *arg_info)
      * be done bottom-up to honour the order of the arg declarations in the
      * structdef.
      */
-    arg
-      = TBmakeArg (DUPdoDupNode (STRUCTELEM_AVIS (arg_node)), INFO_INIT_ARGS (arg_info));
+
+    avis = TBmakeAvis (STRcpy (STRUCTELEM_NAME (arg_node)),
+                       TYcopyType (STRUCTELEM_TYPE (arg_node)));
+
+    arg = TBmakeArg (avis, INFO_INIT_ARGS (arg_info));
+    AVIS_DECL (avis) = arg;
+
     INFO_INIT_ARGS (arg_info) = arg;
 
     DBUG_RETURN (arg_node);
