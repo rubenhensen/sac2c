@@ -517,7 +517,8 @@ structdef2: ntype ids SEMIC structdef2
                 /* I copied this one from exprblock2, but couldn't you use
                  * DUPavis for the first arg of TBmakeVardec()? Or, heck, maybe
                  * even DUPvardec for this entire loop? */
-                $$ = TBmakeStructelem( STRcpy( SPIDS_NAME( $2)), $1, $$);
+                $$ = TBmakeStructelem( STRcpy( SPIDS_NAME( $2)),
+                                       TYcopyType( $1), $$);
 
                 /* The first (of the remaining) ids has been turned into a
                  * vardec, it can now be freed. */
