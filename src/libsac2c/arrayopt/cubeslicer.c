@@ -185,6 +185,9 @@ matchConstantValues (node *fa, node *fb)
         z = COcompareConstants (fac, fbc);
         fac = COfreeConstant (fac);
         fbc = COfreeConstant (fbc);
+    }
+
+    if ((NULL != fa) && (NULL != fb)) {
         if (z) {
             DBUG_PRINT ("CUBSL",
                         ("Vardecs %s and %s match", AVIS_NAME (fa), AVIS_NAME (fb)));
@@ -224,20 +227,23 @@ matchGeneratorField (node *fa, node *fb)
 {
     node *fav = NULL;
     node *fbv = NULL;
-    constant *fafs = NULL;
-    constant *fbfs = NULL;
+    pattern *pata;
+    pattern *patb;
     bool z;
 
     DBUG_ENTER ("matchGeneratorField");
 
     z = (fa == fb); /* SAA should do it this way most of the time */
 
-    if ((!z) && (NULL != fa) && (NULL != fb)
-        && (PMO (PMOarray (&fafs, &fav, fa)) && (PMO (PMOarray (&fbfs, &fbv, fb))))) {
+    pata = PMarray (1, PMAgetNode (&fav), 1, PMskip (0));
+    patb = PMarray (1, PMAgetNode (&fbv), 1, PMskip (0));
+
+    if ((!z) && (NULL != fa) && (NULL != fb) && (PMmatchFlatSkipExtrema (pata, fa))
+        && (PMmatchFlatSkipExtrema (patb, fb))) {
         z = (fav == fbv);
     }
-    fafs = (NULL != fafs) ? COfreeConstant (fafs) : fafs;
-    fbfs = (NULL != fbfs) ? COfreeConstant (fbfs) : fbfs;
+    PMfree (pata);
+    PMfree (patb);
 
     if ((!z) && (NULL != fa) && (NULL != fb)) {
         z = matchConstantValues (ID_AVIS (fa), ID_AVIS (fb));

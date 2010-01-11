@@ -1249,19 +1249,18 @@ CSEvardec (node *arg_node, info *arg_info)
         DBUG_PRINT ("CSE", ("Traversing vardec for %s in reset mode",
                             AVIS_NAME (VARDEC_AVIS (arg_node))));
         AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
-        VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
         break;
 
     case VARDECMODERENAME:
         /* This is dead code; perhaps I should just kill it */
         DBUG_PRINT ("CSE", ("Traversing vardec for %s in rename mode",
                             AVIS_NAME (VARDEC_AVIS (arg_node))));
-        VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
         break;
 
     case VARDECMODEINVALID:
         DBUG_ASSERT (FALSE, ("CSEvardec is confused about mode"));
     }
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
