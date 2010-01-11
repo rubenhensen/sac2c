@@ -65,7 +65,16 @@
     SACARGFROMCVECT (name, btype, ctype)                                                 \
     SACARGFROMCSCALAR (name, btype, ctype)
 
+CONVERTER (Byte, T_byte, byte)
+CONVERTER (Short, T_short, short)
 CONVERTER (Int, T_int, int)
+CONVERTER (Long, T_long, long)
+CONVERTER (Longlong, T_longlong, longlong)
+CONVERTER (Ubyte, T_ubyte, ubyte)
+CONVERTER (Ushort, T_ushort, ushort)
+CONVERTER (Uint, T_uint, uint)
+CONVERTER (Ulong, T_ulong, ulong)
+CONVERTER (Ulonglong, T_ulonglong, ulonglong)
 CONVERTER (Double, T_double, double)
 CONVERTER (Float, T_float, float)
 CONVERTER (Bool, T_bool, int)

@@ -114,13 +114,31 @@ LoadPreludeFunctions (node *syntax_tree)
 {
     DBUG_ENTER ("LoadPreludeFunctions");
 
+    DSaddSymbolByName ("isByte", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isShort", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isInt", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isLong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isLonglong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isUbyte", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isUshort", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isUint", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isUlong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("isUlonglong", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isBool", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isFloat", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isDouble", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isChar", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("unwrap", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapByte", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapShort", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("wrapInt", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapLong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapLonglong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapUbyte", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapUshort", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapUint", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapUlong", SET_wrapperhead, global.preludename);
+    DSaddSymbolByName ("wrapUlonglong", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("wrapBool", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("wrapFloat", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("wrapDouble", SET_wrapperhead, global.preludename);
@@ -235,8 +253,35 @@ PickPredFun (ntype *type, node *args, node **preassign, node **vardecs)
 
     if (TYisSimple (TYgetScalar (type))) {
         switch (TYgetSimpleType (TYgetScalar (type))) {
+        case T_byte:
+            name = "isByte";
+            break;
+        case T_short:
+            name = "isShort";
+            break;
         case T_int:
             name = "isInt";
+            break;
+        case T_long:
+            name = "isLong";
+            break;
+        case T_longlong:
+            name = "isLonglong";
+            break;
+        case T_ubyte:
+            name = "isUbyte";
+            break;
+        case T_ushort:
+            name = "isUshort";
+            break;
+        case T_uint:
+            name = "isUint";
+            break;
+        case T_ulong:
+            name = "isUlong";
+            break;
+        case T_ulonglong:
+            name = "isUlonglong";
             break;
         case T_bool:
             name = "isBool";
@@ -339,8 +384,35 @@ PickInputConversion (ntype *type, node *args)
 
     if (TYisSimple (TYgetScalar (type))) {
         switch (TYgetSimpleType (TYgetScalar (type))) {
+        case T_byte:
+            name = STRcpy ("unwrapByte");
+            break;
+        case T_short:
+            name = STRcpy ("unwrapShort");
+            break;
         case T_int:
             name = STRcpy ("unwrapInt");
+            break;
+        case T_long:
+            name = STRcpy ("unwrapLong");
+            break;
+        case T_longlong:
+            name = STRcpy ("unwrapLonglong");
+            break;
+        case T_ubyte:
+            name = STRcpy ("unwrapUbyte");
+            break;
+        case T_ushort:
+            name = STRcpy ("unwrapUshort");
+            break;
+        case T_uint:
+            name = STRcpy ("unwrapUint");
+            break;
+        case T_ulong:
+            name = STRcpy ("unwrapUlong");
+            break;
+        case T_ulonglong:
+            name = STRcpy ("unwrapUlonglong");
             break;
         case T_bool:
             name = STRcpy ("unwrapBool");

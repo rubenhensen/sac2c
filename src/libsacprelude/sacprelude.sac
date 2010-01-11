@@ -4,10 +4,15 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, prod, partitionSlicer, gridFiller
 #define muTC 1
 #if SAC_BACKEND != muTC
-         , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble,
-           unwrapChar, isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap,
-           isPartitionIntersectNull, 
-           partitionIntersectMax, partitionIntersectMin
+         , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
+	   isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap,
+           isPartitionIntersectNull, partitionIntersectMax, partitionIntersectMin
+#ifdef SANTANU
+	 , unwrapByte, unwrapShort, unwrapInt, unwrapLong, unwrapLonglong,
+	   unwrapUbyte, unwrapUshort, unwrapUint, unwrapUlong, unwrapUlonglong,
+	   isByte, isShort, isInt, isLong, isLonglong,
+	   isUbyte, isUshort, isUint, isUlong, isUlonglong
+#endif
 #endif
 #undef muTC
 };
@@ -16,22 +21,30 @@ external typedef SACarg;
   #pragma freefun "SACARGfree"
   #pragma copyfun "SACARGcopy"
 
+#ifdef SANTANU
 #define BUILT_IN( fun)    \
+fun( int)                 \
+fun( float)               \
+fun( double)              \
+fun( bool)                \
+fun( char)		  \
 fun( byte)                \
 fun( short)               \
-fun( int)                 \
 fun( long)                \
 fun( longlong)            \
 fun( ubyte)               \
 fun( ushort)              \
 fun( uint)                \
 fun( ulong)               \
-fun( ulonglong)           \
+fun( ulonglong)           
+#else
+#define BUILT_IN( fun)    \
+fun( int)                 \
 fun( float)               \
 fun( double)              \
 fun( bool)                \
-fun( char)
-
+fun( char)		  
+#endif
 
 #define SEL_VxA( a)                                                      \
 inline                                                                   \
@@ -59,9 +72,13 @@ a zero( a[*] A)       \
   return( za);        \
 }
 
+ZERO( int, 0)
+ZERO( double, 0d)
+ZERO( float, 0f)
+ZERO( char, ' ')
+ZERO( bool, false)
 ZERO( byte, 0b)
 ZERO( short, 0s)
-ZERO( int, 0)
 ZERO( long, 0l)
 ZERO( longlong, 0ll)
 ZERO( ubyte, 0ub)
@@ -69,10 +86,6 @@ ZERO( ushort, 0us)
 ZERO( uint, 0ui)
 ZERO( ulong, 0ul)
 ZERO( ulonglong, 0ull)
-ZERO( double, 0d)
-ZERO( float, 0f)
-ZERO( char, ' ')
-ZERO( bool, false)
 
 inline
 bool and( bool a, bool b)
@@ -186,6 +199,7 @@ inline int[.] partitionIntersectMin( int[.] idxmax, int[.] bound2)
 
 #define muTC 1
 #if SAC_BACKEND!=muTC
+
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"
   #pragma linksign [1,2]
@@ -260,6 +274,135 @@ external bool isUdt( int base, SACarg a);
   #pragma linkname "SACARGisUdt"
   #pragma linksign [0,1,2]
 
+#ifdef SANTANU
+
+external byte[*] unwrapByte( SACarg arg);
+  #pragma linkname "SACARGunwrapByte"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external short[*] unwrapShort( SACarg arg);
+  #pragma linkname "SACARGunwrapShort"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external long[*] unwrapLong( SACarg arg);
+  #pragma linkname "SACARGunwrapLong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external longlong[*] unwrapLonglong( SACarg arg);
+  #pragma linkname "SACARGunwrapLonglong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external ubyte[*] unwrapUbyte( SACarg arg);
+  #pragma linkname "SACARGunwrapUbyte"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external ushort[*] unwrapUshort( SACarg arg);
+  #pragma linkname "SACARGunwrapUshort"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external uint[*] unwrapUint( SACarg arg);
+  #pragma linkname "SACARGunwrapUint"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external ulong[*] unwrapUlong( SACarg arg);
+  #pragma linkname "SACARGunwrapUlong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external ulonglong[*] unwrapUlonglong( SACarg arg);
+  #pragma linkname "SACARGunwrapUlonglong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( byte[*] a);
+  #pragma linkname "SACARGwrapByte"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( short[*] a);
+  #pragma linkname "SACARGwrapShort"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( long[*] a);
+  #pragma linkname "SACARGwrapLong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( longlong[*] a);
+  #pragma linkname "SACARGwrapLonglong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( ubyte[*] a);
+  #pragma linkname "SACARGwrapUbyte"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( ushort[*] a);
+  #pragma linkname "SACARGwrapUshort"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( uint[*] a);
+  #pragma linkname "SACARGwrapUint"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( ulong[*] a);
+  #pragma linkname "SACARGwrapUlong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external SACarg wrap( ulonglong[*] a);
+  #pragma linkname "SACARGwrapUlonglong"
+  #pragma linksign [1,2]
+  #pragma refcounting [0,1]
+
+external bool isByte( SACarg a);
+  #pragma linkname "SACARGisByte"
+  #pragma linksign [0,1]
+
+external bool isShort( SACarg a);
+  #pragma linkname "SACARGisShort"
+  #pragma linksign [0,1]
+
+external bool isLong( SACarg a);
+  #pragma linkname "SACARGisLong"
+  #pragma linksign [0,1]
+
+external bool isLonglong( SACarg a);
+  #pragma linkname "SACARGisLonglong"
+  #pragma linksign [0,1]
+
+external bool isUbyte( SACarg a);
+  #pragma linkname "SACARGisUbyte"
+  #pragma linksign [0,1]
+
+external bool isUshort( SACarg a);
+  #pragma linkname "SACARGisUshort"
+  #pragma linksign [0,1]
+
+external bool isUint( SACarg a);
+  #pragma linkname "SACARGisUint"
+  #pragma linksign [0,1]
+
+external bool isUlong( SACarg a);
+  #pragma linkname "SACARGisUlong"
+  #pragma linksign [0,1]
+
+external bool isUlonglong( SACarg a);
+  #pragma linkname "SACARGisUlonglong"
+  #pragma linksign [0,1]
+
+#endif
 
 #endif
 #undef muTC

@@ -153,4 +153,21 @@ extern SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
  ******************************************************************************/
 extern void *SACARGconvertToVoidPointer (int basetype, SACarg *arg);
 
+#define EXTERN_DECL(type, alias)                                                         \
+    extern type *SACARGconvertTo##alias##Array (SACarg *arg);                            \
+    extern SACarg *SACARGconvertFrom##alias##Pointer (type *data, int dim, ...);         \
+    extern SACarg *SACARGconvertFrom##alias##PointerVect (type *data, int dim,           \
+                                                          int *shape);                   \
+    extern SACarg *SACARGconvertFrom##alias##Scalar (type value);
+
+EXTERN_DECL (char, Byte)
+EXTERN_DECL (short, Short)
+EXTERN_DECL (long, Long)
+EXTERN_DECL (long long, Longlong)
+EXTERN_DECL (unsigned char, Ubyte)
+EXTERN_DECL (unsigned short, Ushort)
+EXTERN_DECL (unsigned int, Uint)
+EXTERN_DECL (unsigned long, Ulong)
+EXTERN_DECL (unsigned long long, Ulonglong)
+
 #endif /* _SAC_SACINTERFACE_H_ */

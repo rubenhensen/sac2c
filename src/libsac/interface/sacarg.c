@@ -40,8 +40,12 @@ static const int basetype_to_size[] = {
 };
 
 #define BTYPE_ISINTERNAL(btype)                                                          \
-    ((btype == T_int) || (btype == T_float) || (btype == T_double) || (btype == T_char)  \
+    ((btype == T_int) || (btype == T_float) || (btype == T_byte) || (btype == T_short)   \
+     || (btype == T_long) || (btype == T_longlong) || (btype == T_ubyte)                 \
+     || (btype == T_ushort) || (btype == T_uint) || (btype == T_ulong)                   \
+     || (btype == T_ulonglong) || (btype == T_double) || (btype == T_char)               \
      || (btype == T_bool))
+
 /**
  * Functions for creating SACargs
  */
@@ -386,6 +390,56 @@ HASTYPE (Bool, bool, T_bool)
 HASTYPE (Float, float, T_float)
 HASTYPE (Double, double, T_double)
 HASTYPE (Char, char, T_char)
+
+UNWRAP (Byte, byte, T_byte)
+UNWRAP (Short, short, T_short)
+UNWRAP (Long, long, T_long)
+UNWRAP (Longlong, longlong, T_longlong)
+UNWRAP (Ubyte, ubyte, T_ubyte)
+UNWRAP (Ushort, ushort, T_ushort)
+UNWRAP (Uint, uint, T_uint)
+UNWRAP (Ulong, ulong, T_ulong)
+UNWRAP (Ulonglong, ulonglong, T_ulonglong)
+
+WRAP (Byte, byte, T_byte)
+WRAP (Short, short, T_short)
+WRAP (Long, long, T_long)
+WRAP (Longlong, longlong, T_longlong)
+WRAP (Ubyte, ubyte, T_ubyte)
+WRAP (Ushort, ushort, T_ushort)
+WRAP (Uint, uint, T_uint)
+WRAP (Ulong, ulong, T_ulong)
+WRAP (Ulonglong, ulonglong, T_ulonglong)
+
+WRAPWRAPPER (Byte, byte)
+WRAPWRAPPER (Short, short)
+WRAPWRAPPER (Long, long)
+WRAPWRAPPER (Longlong, longlong)
+WRAPWRAPPER (Ubyte, ubyte)
+WRAPWRAPPER (Ushort, ushort)
+WRAPWRAPPER (Uint, uint)
+WRAPWRAPPER (Ulong, ulong)
+WRAPWRAPPER (Ulonglong, ulonglong)
+
+UNWRAPWRAPPER (Byte, byte)
+UNWRAPWRAPPER (Short, short)
+UNWRAPWRAPPER (Long, long)
+UNWRAPWRAPPER (Longlong, longlong)
+UNWRAPWRAPPER (Ubyte, ubyte)
+UNWRAPWRAPPER (Ushort, ushort)
+UNWRAPWRAPPER (Uint, uint)
+UNWRAPWRAPPER (Ulong, ulong)
+UNWRAPWRAPPER (Ulonglong, ulonglong)
+
+HASTYPE (Byte, byte, T_byte)
+HASTYPE (Short, short, T_short)
+HASTYPE (Long, long, T_long)
+HASTYPE (Longlong, longlong, T_longlong)
+HASTYPE (Ubyte, ubyte, T_ubyte)
+HASTYPE (Ushort, ushort, T_ushort)
+HASTYPE (Uint, uint, T_uint)
+HASTYPE (Ulong, ulong, T_ulong)
+HASTYPE (Ulonglong, ulonglong, T_ulonglong)
 
 bool
 SACARGisUdt (basetype btype, SACarg *arg)
