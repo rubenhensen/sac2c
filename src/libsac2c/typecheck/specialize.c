@@ -291,9 +291,11 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
         ok = ok && SSInewTypeRel (type, new_type);
         if (!ok) {
             CTIerrorLine (global.linenum,
-                          "loop variable \"%s\" is being used inconsistently; "
+                          "loop variable \"%s\" is being used inconsistently in function "
+                          "%s; "
                           "conflicting types are %s and %s",
-                          ARG_NAME (args), TYtype2String (type, FALSE, 0),
+                          ARG_NAME (args), FUNDEF_NAME (fundef),
+                          TYtype2String (type, FALSE, 0),
                           TYtype2String (TYfixAndEliminateAlpha (new_type), FALSE, 0));
             CTIabortOnError ();
         }
