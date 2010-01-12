@@ -151,7 +151,7 @@ CWLEdoTemplateTraversal (node *syntax_tree)
     DBUG_ENTER ("CWLEdoTemplateTraversal");
 
     info = MakeInfo ();
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "CWLE called on nonN_fundef node");
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "CWLE called on non-N_fundef node");
 
     INFO_ONEFUNDEF (info) = TRUE;
 
@@ -231,11 +231,11 @@ arrayFromShapeSel (node *avisshape)
     PMfree (patshapesel2);
 
     if (b && (NULL != M)) {
-        DBUG_PRINT ("CWLE", ("AVIS_SHAPE %s is %s", AVIS_NAME (ID_AVIS (avisshape)),
-                             AVIS_NAME (ID_AVIS (M))));
+        DBUG_PRINT ("CWLE", ("AVIS_SHAPE %s is shape(%s)",
+                             AVIS_NAME (ID_AVIS (avisshape)), AVIS_NAME (ID_AVIS (M))));
     } else {
-        DBUG_PRINT ("CWLE",
-                    ("AVIS_SHAPE %s is unknown", AVIS_NAME (ID_AVIS (avisshape))));
+        DBUG_PRINT ("CWLE", ("AVIS_SHAPE %s not derived from _idx_shape_sel_()",
+                             AVIS_NAME (ID_AVIS (avisshape))));
     }
 
     DBUG_RETURN (M);
@@ -282,8 +282,8 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
     DBUG_ENTER ("isAvisShapesMatch");
 
-    DBUG_PRINT ("rbe", ("checking shape match for %s and %s", AVIS_NAME (arg1),
-                        AVIS_NAME (arg2)));
+    DBUG_PRINT ("CWLE", ("checking shape match for %s and %s", AVIS_NAME (arg1),
+                         AVIS_NAME (arg2)));
 
     /* Case 1: AKS and result shapes match */
     arg1type = AVIS_TYPE (arg1);
@@ -322,11 +322,11 @@ isAvisShapesMatch (node *arg1, node *arg2)
 #endif // CRUD
 
         if (z) {
-            DBUG_PRINT ("rbe", ("shapes match for %s and %s", AVIS_NAME (arg1),
-                                AVIS_NAME (arg2)));
+            DBUG_PRINT ("CWLE", ("shapes match for %s and %s", AVIS_NAME (arg1),
+                                 AVIS_NAME (arg2)));
         } else {
-            DBUG_PRINT ("rbe", ("shapes do not match for %s and %s", AVIS_NAME (arg1),
-                                AVIS_NAME (arg2)));
+            DBUG_PRINT ("CWLE", ("shapes do not match for %s and %s", AVIS_NAME (arg1),
+                                 AVIS_NAME (arg2)));
         }
 
         DBUG_RETURN (z);
@@ -362,6 +362,10 @@ isAvisShapesMatch (node *arg1, node *arg2)
         DBUG_ENTER ("CWLEfundef");
 
         if (NULL != FUNDEF_BODY (arg_node)) {
+            DBUG_PRINT ("CWLE", ("traversing body of (%s) %s",
+                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                                 FUNDEF_NAME (arg_node)));
+
             dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
                                           BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
             INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
@@ -374,6 +378,9 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
             INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
             DFMremoveMaskBase (dfmask_base);
+            DBUG_PRINT ("CWLE", ("leaving body of (%s) %s",
+                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                                 FUNDEF_NAME (arg_node)));
         }
 
         old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -422,7 +429,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
     node *CWLElet (node * arg_node, info * arg_info)
     {
         DBUG_ENTER ("CWLElet");
-        DBUG_PRINT ("CWLE", ("Calling CWLElet"));
+        DBUG_PRINT ("CWLE", ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
 
         INFO_VALID (arg_info) = TRUE;
 
@@ -489,7 +496,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
      *   have a look for some cwle-action.
      *   If the checks in the codes succeed, we compare the found array we
      *   apparently copy from with the array we would like to create; if these
-     *   fit (in shape) we may replace ourselves with a N_id-node of the array
+     *   fit (in shape) we may replace ourselves with a N_id node of the array
      *   found in the codes.
      *
      *****************************************************************************/
@@ -575,6 +582,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
             if (PMmatchFlatSkipExtrema (pat, cexpr)) {
                 DBUG_PRINT ("CWLE", ("body matches _sel_VxA_( withid, &target)"));
             } else {
+                DBUG_PRINT ("CWLE", ("body does not match _sel_VxA_( withid, &target)"));
                 INFO_VALID (arg_info) = FALSE;
             }
 
