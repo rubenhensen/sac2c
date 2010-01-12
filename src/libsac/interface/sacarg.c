@@ -410,7 +410,8 @@ WRAP (Ushort, ushort, T_ushort)
 WRAP (Uint, uint, T_uint)
 WRAP (Ulong, ulong, T_ulong)
 WRAP (Ulonglong, ulonglong, T_ulonglong)
-
+#define muTC 1
+#if SAC_BACKEND != muTC
 WRAPWRAPPER (Byte, byte)
 WRAPWRAPPER (Short, short)
 WRAPWRAPPER (Long, long)
@@ -430,6 +431,8 @@ UNWRAPWRAPPER (Ushort, ushort)
 UNWRAPWRAPPER (Uint, uint)
 UNWRAPWRAPPER (Ulong, ulong)
 UNWRAPWRAPPER (Ulonglong, ulonglong)
+#endif
+#undef muTC
 
 HASTYPE (Byte, byte, T_byte)
 HASTYPE (Short, short, T_short)
