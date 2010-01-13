@@ -630,10 +630,6 @@ SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithlo
 SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
           global.optimize.doawlf, opt)
 
-SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
-          SCCdoStripConformityChecks,
-          global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
-
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
@@ -648,6 +644,10 @@ SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
 
 SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
+
+SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
+          SCCdoStripConformityChecks,
+          global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
 
 SUBPHASE (lir3, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)

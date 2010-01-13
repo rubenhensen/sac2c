@@ -241,9 +241,7 @@ SCCblock (node *arg_node, info *arg_info)
     INFO_LHS (arg_info) = oldlhs;
     INFO_PREASSIGNS (arg_info) = preassigns;
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -279,11 +277,9 @@ SCCassign (node *arg_node, info *arg_info)
 
     if (INFO_SCRAPASSIGN (arg_info)) {
         INFO_SCRAPASSIGN (arg_info) = FALSE;
-        if (arg_node != NULL) {
-            arg_node = TRAVdo (arg_node, arg_info);
-        }
-    } else if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+        arg_node = TRAVopt (arg_node, arg_info);
+    } else {
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -324,9 +320,7 @@ SCCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCCprf");
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     DBUG_PRINT ("SCC", ("Looking at prf %s...", PRF_NAME (PRF_PRF (arg_node))));
 
@@ -432,8 +426,8 @@ SCCvardec (node *arg_node, info *arg_info)
         if (arg_node != NULL) {
             arg_node = TRAVdo (arg_node, arg_info);
         }
-    } else if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    } else {
+        VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

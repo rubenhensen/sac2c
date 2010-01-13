@@ -112,6 +112,7 @@
 #include "phase.h"
 #include "ctinfo.h"
 #include "tree_utils.h"
+#include "algebraic_wlfi.h"
 
 /**
  * INFO structure
@@ -206,6 +207,9 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
     node *ub_exprs, *lb_exprs;
     node *exprs = NULL;
     node *diffavis;
+    node *lb;
+    node *ub;
+    node *prfassgn;
 
     DBUG_ENTER ("CreateGenwidth");
 
@@ -223,12 +227,23 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TBmakeVardec (diffavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
-                                     TCmakePrf2 (F_sub_SxS,
-                                                 DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
-                                                 DUPdoDupNode (EXPRS_EXPR (lb_exprs)))),
-                          INFO_PREASSIGN (arg_info));
+        lb = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
+                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                     &INFO_PREASSIGN (arg_info),
+                                     TYmakeAKS (TYmakeSimpleType (T_int),
+                                                SHcreateShape (0)));
+
+        ub = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
+                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                     &INFO_PREASSIGN (arg_info),
+                                     TYmakeAKS (TYmakeSimpleType (T_int),
+                                                SHcreateShape (0)));
+
+        prfassgn = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
+                                            TCmakePrf2 (F_sub_SxS, TBmakeId (lb),
+                                                        TBmakeId (ub))),
+                                 NULL);
+        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), prfassgn);
         AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
 
         if (isSAAMode ()) {
