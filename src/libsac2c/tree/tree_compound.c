@@ -3174,6 +3174,40 @@ TCcountWithops (node *withop)
     DBUG_RETURN (counter);
 }
 
+int
+TCcountWithopsEq (node *withop, nodetype eq)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountWithops");
+
+    while (withop != NULL) {
+        if (NODE_TYPE (withop) == eq) {
+            counter += 1;
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (counter);
+}
+
+int
+TCcountWithopsNeq (node *withop, nodetype neq)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountWithops");
+
+    while (withop != NULL) {
+        if (NODE_TYPE (withop) != neq) {
+            counter += 1;
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (counter);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

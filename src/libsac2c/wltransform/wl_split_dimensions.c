@@ -2004,15 +2004,22 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         lut = LUTremoveContentLut (lut);
 
         IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
-    } else {
-        DBUG_ASSERT ((nextdim != NULL), "neither code nor nextdim?");
-
+    } else if (nextdim != NULL) {
         body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, &rangeoffsets, arg_info);
+    } else {
+        DBUG_ASSERT ((TCcountWithopsNeq (INFO_WITH2_WITHOPS (arg_info), N_fold) == 0),
+                     "Must just be folds if doing nothing");
+        body = NULL;
     }
 
-    result = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), max,
-                          NULL, /* grids have no chunksize */
-                          body, res, rangeoffsets, next);
+    if (body != NULL) {
+        result = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), max,
+                              NULL, /* grids have no chunksize */
+                              body, res, rangeoffsets, next);
+    } else {
+        /* This range is a nop so do not create it */
+        result = next;
+    }
 
     DBUG_RETURN (result);
 }
