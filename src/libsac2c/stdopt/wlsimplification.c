@@ -240,8 +240,8 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
                                                 SHcreateShape (0)));
 
         prfassgn = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
-                                            TCmakePrf2 (F_sub_SxS, TBmakeId (lb),
-                                                        TBmakeId (ub))),
+                                            TCmakePrf2 (F_sub_SxS, TBmakeId (ub),
+                                                        TBmakeId (lb))),
                                  NULL);
         INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), prfassgn);
         AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
