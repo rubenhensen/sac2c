@@ -625,6 +625,7 @@ extern node *TCappendAssign (node *assign_chain, node *assign);
 extern node *TCappendAssignIcm (node *assign, char *name, node *args);
 
 extern int TCcountAssigns (node *assigns);
+extern node *TCgetLastAssign (node *arg_node);
 
 /*--------------------------------------------------------------------------*/
 

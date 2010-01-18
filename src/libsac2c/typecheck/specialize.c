@@ -21,6 +21,8 @@
 #include "namespaces.h"
 #include "map_call_graph.h"
 #include "globals.h"
+#include "traverse.h"
+#include "phase.h"
 
 /**
  *
@@ -57,6 +59,49 @@ static node *specialized_fundefs = NULL;
  ******************************************************************************/
 
 node *
+InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
+{
+    node *last_assign, *ret, *id, *avis, *new_avis;
+
+    DBUG_ENTER ("InsertTypeConv");
+
+    last_assign = TCgetLastAssign (FUNDEF_INSTR (fundef));
+
+    DBUG_ASSERT ((last_assign != NULL)
+                   && (NODE_TYPE (ASSIGN_INSTR (last_assign)) == N_return),
+                 "trying to insert type conv for return type into body "
+                 "without return!");
+
+    ret = ASSIGN_INSTR (last_assign);
+    id = TCgetNthExprsExpr (pos_of_ret, RETURN_EXPRS (ret));
+    avis = ID_AVIS (id);
+
+    DBUG_ASSERT (NODE_TYPE (id) == N_id, "non N_id node found in N_return");
+
+    new_avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)), TYcopyType (spec_type));
+    ID_AVIS (id) = new_avis;
+
+    /**
+     * we are recycling the N_assign node here as it may either be hooked
+     * up to an N_block or an N_assign node and we do not want to use
+     * a traversal here!
+     */
+
+    ASSIGN_INSTR (last_assign)
+      = TBmakeLet (TBmakeIds (new_avis, NULL),
+                   TCmakePrf2 (F_type_conv, TBmakeType (TYcopyType (spec_type)),
+                               TBmakeId (avis)));
+    ASSIGN_NEXT (last_assign) = TBmakeAssign (ret, NULL);
+
+    if (isSAAMode ()) {
+        AVIS_SSAASSIGN (new_avis) = last_assign;
+    }
+    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+
+    DBUG_RETURN (fundef);
+}
+
+node *
 AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
 {
     node *ret;
@@ -71,10 +116,35 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
         spec_type = TYgetProductMember (rets, i);
         inherited_type = SSIgetMax (TYgetAlpha (RET_TYPE (ret)));
 
-        if (!TYleTypes (inherited_type, spec_type)) {
-            new_type = TYlubOfTypes (spec_type, inherited_type);
+        switch (TYcmpTypes (spec_type, inherited_type)) {
+        case TY_eq:
+            /**
+             * nothing to be done here!
+             */
+            break;
+        case TY_lt:
+            /**
+             * the specialisation claims to return a more specific
+             * type which remains to be proved. Hence, we insert a type conv!
+             */
+            fundef = InsertTypeConv (fundef, i, spec_type);
+            /**
+             * Now, we inherit the return type:
+             */
+        case TY_gt:
+            /**
+             * we can potentially sharpen the return type here, as we know
+             * that any specialisation can not specialize to a LESS
+             * precise type!
+             */
+            new_type = TYcopyType (inherited_type);
             spec_type = TYfreeType (spec_type);
             rets = TYsetProductMember (rets, i, new_type);
+            break;
+        case TY_hcs:
+        case TY_dis:
+        default:
+            DBUG_ASSERT ((0), "dispach should no have worked!");
         }
 
         ret = RET_NEXT (ret);

@@ -1511,6 +1511,25 @@ TCcountAssigns (node *arg_node)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn int TCgetLastAssign( node *arg_node)
+ *
+ *****************************************************************************/
+node *
+TCgetLastAssign (node *arg_node)
+{
+    DBUG_ENTER ("TCgetLastAssign");
+
+    if (arg_node != NULL) {
+        while (ASSIGN_NEXT (arg_node) != NULL) {
+            arg_node = ASSIGN_NEXT (arg_node);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * Function:
