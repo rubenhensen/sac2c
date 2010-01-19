@@ -354,6 +354,9 @@ CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
 CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
 
+CYCLEPHASEFUN (ctz, "Applying comparison to zero", CTZdoComparisonToZero,
+               global.optimize.doctz, opt, cyc)
+
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
