@@ -7018,6 +7018,29 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *MakeIcm_GETVAR_ifNeeded( node *arg_node)
+ *
+ * @brief create a GETVAR icm if arg_node is an id
+ *****************************************************************************/
+static node *
+MakeIcm_GETVAR_ifNeeded (node *arg_node)
+{
+    DBUG_ENTER ("MakeIcm_GETVAR_ifNeeded");
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        node *res
+          = TCmakeIcm2 ("SAC_ND_GETVAR",
+                        TCmakeIdCopyStringNt (ID_NAME (arg_node), ID_TYPE (arg_node)),
+                        TCmakeIdCopyString (ID_NAME (arg_node)));
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = res;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *MakeIcm_WL_ADJUST_OFFSET( node *arg_node, node *assigns)
  *
  * @brief  ...
@@ -7872,20 +7895,10 @@ COMPrange (node *arg_node, info *arg_info)
 
     thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
-    if (NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_id) {
-        RANGE_LOWERBOUND (arg_node)
-          = TCmakeIcm2 ("SAC_ND_GETVAR",
-                        TCmakeIdCopyStringNt (ID_NAME (RANGE_LOWERBOUND (arg_node)),
-                                              ID_TYPE (RANGE_LOWERBOUND (arg_node))),
-                        TCmakeIdCopyString (ID_NAME (RANGE_LOWERBOUND (arg_node))));
-    }
-
-    if (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_id) {
-        RANGE_UPPERBOUND (arg_node)
-          = TCmakeIcm2 ("SAC_ND_GETVAR",
-                        TCmakeIdCopyStringNt (ID_NAME (RANGE_UPPERBOUND (arg_node)),
-                                              ID_TYPE (RANGE_UPPERBOUND (arg_node))),
-                        TCmakeIdCopyString (ID_NAME (RANGE_UPPERBOUND (arg_node))));
+    RANGE_LOWERBOUND (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));
+    RANGE_UPPERBOUND (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_UPPERBOUND (arg_node));
+    if (RANGE_CHUNKSIZE (arg_node) != NULL) {
+        RANGE_CHUNKSIZE (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
     }
 
     create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),

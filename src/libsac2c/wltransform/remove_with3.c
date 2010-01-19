@@ -237,15 +237,15 @@ RW3doRemoveWith3 (node *syntax_tree)
  *        [assign]
  *         | +> [let]
  *         |     | +> ids
- *         |          +> exprs
+ *         |     +> exprs
  *         +> [assign]
  *             | +> [let]
  *             |     | +> ids
- *             |          +> exprs
+ *             |     +> exprs
  *             +> [assign]
  *                   +> [let]
  *                       | +> ids
- *                            +> exprs
+ *                       +> exprs
  *
  *****************************************************************************/
 static node *
@@ -424,6 +424,34 @@ ReplaceAccu (node *tree, node *ops)
 }
 
 /** <!--********************************************************************-->
+ *
+ * @fn node *GetInitals( node *folds)
+ *
+ * @brief Get the initals from a chain of folds and return as a chain
+ *        of exprs.
+ *
+ * @param folds A chain of folds
+ *****************************************************************************/
+static node *
+GetInitals (node *folds)
+{
+    node *exprs = NULL;
+    DBUG_ENTER ("GetInitals");
+
+    DBUG_ASSERT ((folds != NULL), "Expected a chain of folds");
+
+    DBUG_ASSERT ((NODE_TYPE (folds) == N_fold), "Can only get initals from fold withops");
+
+    if (FOLD_NEXT (folds) != NULL) {
+        exprs = GetInitals (FOLD_NEXT (folds));
+    }
+
+    exprs = TBmakeExprs (DUPdoDupTree (FOLD_INITIAL (folds)), exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+/** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
@@ -494,6 +522,9 @@ RW3assign (node *arg_node, info *arg_info)
  * With3 must only have one range and that range must go over one element.
  * Support for ranges that have a step are not supported.
  *
+ * In the case of fold it is posible to have a noop with3 this has no
+ * ranges only fold withops and can be replaced by the initial value.
+ *
  *****************************************************************************/
 node *
 RW3with3 (node *arg_node, info *arg_info)
@@ -507,10 +538,11 @@ RW3with3 (node *arg_node, info *arg_info)
 
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_RANGES (arg_info) >= 1),
-                 "At least one range expected in a with3 loop");
+    DBUG_ASSERT (((INFO_RANGES (arg_info) >= 1)
+                  || (TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_fold) != 0)),
+                 "At least one range expected in a with3 loop unless folding");
 
-    INFO_WITHOPS (arg_info) = DUPdoDupTree (WITH3_OPERATIONS (arg_node));
+    /*INFO_WITHOPS( arg_info) = DUPdoDupTree( WITH3_OPERATIONS( arg_node));*/
 
     if ((INFO_RANGES (arg_info) == 1) && (INFO_REMOVABLE_RANGE (arg_info) == TRUE)) {
 
@@ -531,6 +563,14 @@ RW3with3 (node *arg_node, info *arg_info)
         INFO_SAVED_RESULTS (arg_info) = DUPdoDupTree (INFO_RESULTS (arg_info));
 
         /* Free old ast */
+        arg_node = FREEdoFreeTree (arg_node);
+    } else if ((INFO_RANGES (arg_info) == 0)
+               && (TCcountWithopsNeq (WITH3_OPERATIONS (arg_node), N_fold) == 0)) {
+        /*
+         * All withops are fold withops and there are no ranges this must
+         * be a noop with3 loop so repace with initial
+         */
+        INFO_SAVED_RESULTS (arg_info) = GetInitals (WITH3_OPERATIONS (arg_node));
         arg_node = FREEdoFreeTree (arg_node);
     }
 

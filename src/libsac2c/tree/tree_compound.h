@@ -1160,7 +1160,7 @@ extern bool TCcontainsDefaultPartition (node *parts);
  ***/
 
 extern int TCcountWithops (node *withop);
-extern int TCcountWithopseq (node *withop, nodetype eq);
+extern int TCcountWithopsEq (node *withop, nodetype eq);
 extern int TCcountWithopsNeq (node *withop, nodetype neq);
 
 /*
