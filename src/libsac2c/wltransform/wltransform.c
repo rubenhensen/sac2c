@@ -4734,16 +4734,28 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
             last = last_old;
             for (i = 1; i < div; i++) {
                 tmp = grids;
-                do {
-                    /* duplicate current grid */
-                    new_grid = DUPdoDupNode (tmp);
-                    NUM_VAL (WLGRID_BOUND1 (new_grid))
-                      = NUM_VAL (WLGRID_BOUND1 (new_grid)) + i * step;
-                    NUM_VAL (WLGRID_BOUND2 (new_grid))
-                      = NUM_VAL (WLGRID_BOUND2 (new_grid)) + i * step;
+#if 0
+        do {
+#endif
+                /* duplicate current grid */
+                new_grid = DUPdoDupNode (tmp);
+                NUM_VAL (WLGRID_BOUND1 (new_grid))
+                  = NUM_VAL (WLGRID_BOUND1 (new_grid)) + i * step;
+                NUM_VAL (WLGRID_BOUND2 (new_grid))
+                  = NUM_VAL (WLGRID_BOUND2 (new_grid)) + i * step;
 
-                    last = WLGRID_NEXT (last) = new_grid;
-                } while (tmp != last_old);
+                last = WLGRID_NEXT (last) = new_grid;
+#if 0
+        }
+        while (tmp != last_old);
+#endif
+                /*
+                 * For some reason there is an endless loop here.  I am not
+                 * confidant enough with this peace of code to correct it so I
+                 * have added an assert encase it is ever hit.
+                 */
+
+                DBUG_ASSERT ((tmp == last_old), "Compiler bug endless loop found");
             }
         }
     }
