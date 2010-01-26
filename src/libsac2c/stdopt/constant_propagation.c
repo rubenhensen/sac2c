@@ -114,6 +114,16 @@ IsScalarConst (node *arg_node)
     case N_double:
     case N_bool:
     case N_num:
+    case N_numubyte:
+    case N_numushort:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
+    case N_numbyte:
+    case N_numshort:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
     case N_char:
         res = TRUE;
         break;
