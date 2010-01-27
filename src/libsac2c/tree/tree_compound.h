@@ -1630,4 +1630,6 @@ extern node *TCappendError (node *chain, node *item);
 
 extern node *TCappendRange (node *range_chain, node *range);
 
+extern node *TCmakeZero (ntype *type);
+
 #endif /* _SAC_TREE_COMPOUND_H_ */

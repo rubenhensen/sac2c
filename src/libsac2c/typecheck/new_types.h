@@ -158,7 +158,7 @@ extern ntype *TYsetSimpleType (ntype *simple, simpletype base);
 extern ntype *TYsetHiddenUserType (ntype *simple, usertype udt);
 
 extern ntype *TYsetMutcUsage (ntype *type, mutcUsage usage);
-extern ntype *TYsetMutcScope (ntype *type, mutcScope usage);
+extern ntype *TYsetMutcScope (ntype *type, mutcScope scope);
 
 extern simpletype TYgetSimpleType (ntype *simple);
 extern usertype TYgetHiddenUserType (ntype *simple);

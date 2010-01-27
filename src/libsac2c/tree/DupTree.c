@@ -2852,17 +2852,20 @@ DUPwith3 (node *arg_node, info *arg_info)
 node *
 DUPrange (node *arg_node, info *arg_info)
 {
-    node *new_node;
+    node *new_node, *body, *result, *index, *idxs;
 
     DBUG_ENTER ("DUPrange");
 
-    new_node
-      = TBmakeRange (DUPTRAV (RANGE_INDEX (arg_node)),
-                     DUPTRAV (RANGE_LOWERBOUND (arg_node)),
-                     DUPTRAV (RANGE_UPPERBOUND (arg_node)),
-                     DUPTRAV (RANGE_CHUNKSIZE (arg_node)),
-                     DUPTRAV (RANGE_BODY (arg_node)), DUPTRAV (RANGE_RESULTS (arg_node)),
-                     DUPTRAV (RANGE_IDXS (arg_node)), DUPCONT (RANGE_NEXT (arg_node)));
+    /* Force correct traversal order of ids, id */
+    idxs = DUPTRAV (RANGE_IDXS (arg_node));
+    index = DUPTRAV (RANGE_INDEX (arg_node));
+    body = DUPTRAV (RANGE_BODY (arg_node));
+    result = DUPTRAV (RANGE_RESULTS (arg_node));
+
+    new_node = TBmakeRange (index, DUPTRAV (RANGE_LOWERBOUND (arg_node)),
+                            DUPTRAV (RANGE_UPPERBOUND (arg_node)),
+                            DUPTRAV (RANGE_CHUNKSIZE (arg_node)), body, result, idxs,
+                            DUPCONT (RANGE_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 

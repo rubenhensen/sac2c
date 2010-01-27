@@ -13,7 +13,7 @@
  * @{
  *
  *****************************************************************************/
-#define MUTC_MODARRAY
+/*#define MUTC_MODARRAY*/
 /** <!--********************************************************************-->
  *
  * @file wl_split_dimensions.c
@@ -775,6 +775,36 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *MakeZero( ntype *type, info *arg_info)
+ *
+ * @brief Create an id that is the scaler zero of type
+ *
+ * @param type     type to create zero of
+ * @param arg_info info structure
+ *
+ * @return new id node
+ ******************************************************************************/
+static node *
+MakeZero (ntype *type, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("MakeZero");
+
+    type = TYmakeAKV (TYcopyType (TYgetScalar (type)),
+                      COmakeZero (TYgetSimpleType (TYgetScalar (type)), SHmakeShape (0)));
+
+    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    AVIS_SSAASSIGN (avis) = INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TCmakeZero (type)),
+                      INFO_PREASSIGNS (arg_info));
+
+    DBUG_RETURN (TBmakeId (avis));
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ATravCNWmodarray( node *arg_node, info *arg_info)
  *
  * @brief Computes a new GENARRAY withop from the current dimension, current
@@ -795,6 +825,7 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
     ntype *atype;
     node *shape = NULL;
     node *sexpr = NULL;
+    node *zero = NULL;
     int cnt;
 
     DBUG_ENTER ("ATravCNWmodarray");
@@ -832,7 +863,6 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
 
         sexpr = TCmakeIntVector (sexpr);
     } else {
-        /* AKS */
         /*
          * If the surrounding WL has a chunksize, this determines
          * the shape of the inner genarray. Otherwise, the
@@ -848,8 +878,8 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
                                  NULL);
         }
         sexpr = NULL;
-        for (cnt = (INFO_CURRENT_DIM (arg_info));
-             cnt < TYgetDim (AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)))); cnt++) {
+        for (cnt = (TYgetDim (AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)))) - 1);
+             cnt > INFO_CURRENT_DIM (arg_info); cnt--) {
             sexpr
               = TBmakeExprs (TBmakeId (MakeSel (cnt, ID_AVIS (MODARRAY_ARRAY (arg_node)),
                                                 arg_info)),
@@ -862,7 +892,9 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
 
     shape = TCmakeIntVector (shape);
 
-    new_node = TBmakeGenarray (shape, NULL);
+    zero = MakeZero (AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node))), arg_info);
+
+    new_node = TBmakeGenarray (shape, zero);
     GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
 
     /*

@@ -3543,3 +3543,41 @@ TCappendRange (node *range_chain, node *range)
 
     DBUG_RETURN (ret);
 }
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCmakeZero( ntype *type)
+ *
+ * @brief Make a node that is the zero of type.  This has the same effect
+ *        as zero from the prelude but can be used after optimization
+ *
+ *        Does not consume type!!!
+ *
+ * @param type The type of zero to create
+ *
+ * @return a node that is zero of the given type
+ ****************************************************************************/
+node *
+TCmakeZero (ntype *type)
+{
+    node *ret;
+    DBUG_ENTER ("TCmakeZero");
+
+#define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
+               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, it_zero)             \
+                                                                                         \
+    case it_name:                                                                        \
+        ret = it_zero;                                                                   \
+        break;
+
+    switch (TYgetSimpleType (TYgetScalar (type))) {
+#include "type_info.mac"
+    default:
+        DBUG_ASSERT (FALSE, "Unknown type");
+        break;
+    }
+#undef TYP_IF
+
+    DBUG_ASSERT ((ret != NULL), "Can not create zero of given type");
+
+    DBUG_RETURN (ret);
+}

@@ -227,7 +227,7 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 
     if ((depth > 0) && (TCcountExprs (PRF_ARGS (suballoc))) >= 4) {
         node *array, *exprs;
-        pattern *pat;
+        pattern *pat, *pat2;
 
         pat = PMprf (1, PMAisPrf (F_suballoc), 2, PMskipN (&three, 0),
                      PMprf (1, PMAisPrf (F_shape_A), 1,
@@ -235,8 +235,14 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
                                    PMarray (1, PMAgetNode (&array), 0),
                                    PMskipN (&one, 0))));
 
-        if (PMmatchFlat (pat, suballoc)) {
+        pat2 = PMprf (1, PMAisPrf (F_suballoc), 2, PMskipN (&three, 0),
+                      PMarray (1, PMAgetNode (&array), 0));
+
+        if (PMmatchFlat (pat, suballoc) || PMmatchFlat (pat2, suballoc)) {
         }
+
+        pat = PMfree (pat);
+        pat2 = PMfree (pat2);
 
         DBUG_ASSERT ((NODE_TYPE (array) == N_array),
                      "Can not remove array indirection if "

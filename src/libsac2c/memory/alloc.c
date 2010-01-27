@@ -35,6 +35,7 @@
 #include "shape.h"
 #include "constants.h"
 #include "string.h"
+#include "new_typecheck.h"
 #include "dbug.h"
 
 /**
@@ -230,6 +231,7 @@ Ids2ALS (node *ids)
     return (res);
 }
 
+#if 0
 /** <!--******************************************************************-->
  *
  * @fn bool AlloclistContains( alloclist_struct *als, node *avis)
@@ -238,25 +240,27 @@ Ids2ALS (node *ids)
  *         designated element.
  *
  ***************************************************************************/
-static bool
-AlloclistContains (alloclist_struct *als, node *avis)
+static bool AlloclistContains( alloclist_struct *als, node *avis)
 {
-    bool res;
+  bool res;
 
-    DBUG_ENTER ("AlloclistContains");
+  DBUG_ENTER( "AlloclistContains");
 
-    if (als == NULL) {
-        res = FALSE;
-    } else {
-        if (als->avis == avis) {
-            res = TRUE;
-        } else {
-            res = AlloclistContains (als->next, avis);
-        }
+  if ( als == NULL) {
+    res = FALSE;
+  }
+  else {
+    if (als->avis == avis) {
+      res = TRUE;
     }
+    else {
+      res = AlloclistContains( als->next, avis);
+    }
+  }
 
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+#endif
 
 /** <!--******************************************************************-->
  *
@@ -461,6 +465,21 @@ MakeSizeArg (node *arg)
     }
 
     DBUG_RETURN (arg);
+}
+
+static bool
+ASTisScalar (node *ast)
+{
+    bool res;
+    ntype *atype;
+
+    DBUG_ENTER ("ASTisScalar");
+
+    atype = NTCnewTypeCheck_Expr (ast);
+    res = (TYgetDim (atype) == 0);
+    atype = TYfreeType (atype);
+
+    DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
@@ -881,7 +900,9 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
                         genshape = TBmakeExprs (DUPdoDupNode (chunksize), genshape);
                     }
 
-                    if (genshape != NULL) {
+                    if ((genshape != NULL) && ASTisScalar (GENARRAY_DEFAULT (withops))) {
+                        args = TBmakeExprs (TCmakeIntVector (genshape), NULL);
+                    } else if (genshape != NULL) {
                         args = TBmakeExprs (TCmakePrf1 (F_shape_A,
                                                         TCmakePrf2 (F_genarray,
                                                                     TCmakeIntVector (

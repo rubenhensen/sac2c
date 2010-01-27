@@ -681,7 +681,7 @@ RCIprf (node *arg_node, info *arg_info)
          * referenced once) but the index!
          */
         INFO_MODE (arg_info) = rc_prfuse;
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
         break;
 
     default:
