@@ -2976,6 +2976,16 @@
         </travuser>
       </traversal>
 
+      <traversal id="UCZC" name="UndoCondZeroCmp" default="sons" include="UndoCondZeroCmp.h" >
+        <travuser>
+	  <node name="Fundef" />
+          <node name="Block" />
+          <node name="Prf" />
+          <node name="Let" />
+	  <node name="Assign" />
+        </travuser>
+      </traversal>
+
   </traversals>
 
   <nodesets>
