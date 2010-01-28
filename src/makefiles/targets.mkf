@@ -150,7 +150,9 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         symbolic_constant_simplification wl_lock_optimization_marking \
                         wl_lock_optimization_shifting setfundefwasoptimized \
                         loop_invariant_removal withloop_invariant_removal \
-                        comparison_to_zero
+                        comparison_to_zero \
+                        UndoCondZeroCmp
+
 
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         wl_access_analyze tile_size_inference wls wlscheck \
