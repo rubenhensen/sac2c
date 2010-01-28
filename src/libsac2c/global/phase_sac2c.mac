@@ -404,6 +404,9 @@ CYCLE (scyc, "Type stabilization cycle",
 
 FUNBEGIN (scyc, opt, scyc)
 
+CYCLEPHASEFUN (uczc, "Applying undo conditon zero comparison by Zheng",
+               UCZCdoUndoCondZeroCmp, global.optimize.douczc, opt, scyc)
+
 CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
                global.optimize.dotup, opt, scyc)
 
