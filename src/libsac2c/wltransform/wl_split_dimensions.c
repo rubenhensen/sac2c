@@ -133,9 +133,11 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
+
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
-#define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
+#define INFO_NIP_WLSEGS(n) ((n)->nip_wlsegs)
 
 static info *
 MakeInfo ()
@@ -2140,6 +2142,12 @@ NotImplemented (node *with, info *arg_info)
         WITH2_CODE (with) = TRAVdo (WITH2_CODE (with), info);
         TRAVpop ();
     }
+
+    /* check that there is just one segment unless we are only folding */
+    INFO_NIP_RESULT (info) = (INFO_NIP_RESULT (info)
+                              || ((TCcountWithops (WITH2_WITHOP (with))
+                                   == TCcountWithopsNeq (WITH2_WITHOP (with), N_fold))
+                                  && (TCcountWlseg (WITH2_SEGS (with)) != 1)));
 
     result = INFO_NIP_RESULT (info);
 

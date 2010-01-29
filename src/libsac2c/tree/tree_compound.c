@@ -3236,6 +3236,27 @@ TCcountWithopsNeq (node *withop, nodetype neq)
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_wlsegs :
+ ***/
+
+int
+TCcountWlseg (node *wlseg)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountWlseg");
+
+    while (wlseg != NULL) {
+        counter += 1;
+        wlseg = WLSEG_NEXT (wlseg);
+    }
+
+    DBUG_RETURN (counter);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_str :
  ***/
 

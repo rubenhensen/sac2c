@@ -1293,6 +1293,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
 #define WITH2_ARRAY(n) (MODARRAY_ARRAY (WITH2_WITHOP (n)))
 #define WITH2_NEUTRAL(n) (FOLD_NEUTRAL (WITH2_WITHOP (n)))
 
+extern int TCcountWlseg (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1629,7 +1630,5 @@ extern node *TCappendError (node *chain, node *item);
  ***/
 
 extern node *TCappendRange (node *range_chain, node *range);
-
-extern node *TCmakeZero (ntype *type);
 
 #endif /* _SAC_TREE_COMPOUND_H_ */
