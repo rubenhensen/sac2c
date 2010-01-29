@@ -788,17 +788,19 @@ static node *
 MakeZero (ntype *type, info *arg_info)
 {
     node *avis;
+    simpletype simple;
 
     DBUG_ENTER ("MakeZero");
 
-    type = TYmakeAKV (TYcopyType (TYgetScalar (type)),
-                      COmakeZero (TYgetSimpleType (TYgetScalar (type)), SHmakeShape (0)));
+    simple = TYgetSimpleType (TYgetScalar (type));
+    type
+      = TYmakeAKV (TYcopyType (TYgetScalar (type)), COmakeZero (simple, SHmakeShape (0)));
 
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     AVIS_SSAASSIGN (avis) = INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TCmakeZero (type)),
+      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TCcreateZeroScalar (simple)),
                       INFO_PREASSIGNS (arg_info));
 
     DBUG_RETURN (TBmakeId (avis));
