@@ -60,6 +60,7 @@
 #include "pattern_match.h"
 #include "free.h"
 #include "symbolic_constant_simplification.h"
+#include "constant_folding_info.h"
 
 /** <!--********************************************************************-->
  *
@@ -240,7 +241,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
             if (NULL != rhs) {
                 rhs = LET_EXPR (ASSIGN_INSTR (rhs));
                 if (PMmatchFlatSkipExtrema (pat2, rhs)) {
-                    res = shp;
+                    res = DUPdoDupNode (shp);
                     DBUG_PRINT ("CF", ("_shape_A(_saabnd(dim,shp,val)) replaced by shp"));
                 }
             }

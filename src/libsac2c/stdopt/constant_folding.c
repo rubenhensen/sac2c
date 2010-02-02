@@ -404,6 +404,38 @@ CreateConstExprsFromType (ntype *type)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief This function wraps the identifier given as first argument into
+ *        a type_conv, iff the type of the identifier is less precise than
+ *        the oldtype argument.
+ *
+ *        If the argument is no expression, nothing is done.
+ *
+ * @param id       expression node (reused)
+ * @param oldtype  type to enforce
+ *
+ * @return new expression
+ ******************************************************************************/
+node *
+PreventTypePrecisionLoss (node *id, ntype *oldtype)
+{
+    node *res;
+
+    DBUG_ENTER ("PreventTypePrecisionLoss");
+
+    if ((id != NULL) && (NODE_TYPE (id) == N_id)) {
+        if (!TYleTypes (ID_NTYPE (id), oldtype)) {
+            res = TCmakePrf2 (F_type_conv, TBmakeType (TYcopyType (oldtype)), id);
+        } else {
+            res = id;
+        }
+    } else {
+        res = id;
+    }
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node* node* CreateAssignsFromIdsExprs( node *ids, node *exprs)
@@ -419,27 +451,46 @@ CreateConstExprsFromType (ntype *type)
  *
  *****************************************************************************/
 static node *
-CreateAssignsFromIdsExprs (node *ids, node *exprs)
+CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
 {
     node *res = NULL;
+    node *cexpr = NULL;
+    node *tmp;
     node *expr;
+    int pos = 0;
 
     DBUG_ENTER ("CreateAssignsFromIdsExprs");
 
-    if (ids != NULL) {
+    while (ids != NULL) {
         DBUG_ASSERT ((exprs != NULL),
                      "ids chain longer than exprs chain in CreateAssignsFromIdsExprs");
+
+        /* grab expression and ensure type */
         expr = EXPRS_EXPR (exprs);
         EXPRS_EXPR (exprs) = NULL;
-        res = TBmakeAssign (TBmakeLet (ids, expr),
-                            CreateAssignsFromIdsExprs (IDS_NEXT (ids),
-                                                       FREEdoFreeNode (exprs)));
-        AVIS_SSAASSIGN (IDS_AVIS (ids)) = res;
-        IDS_NEXT (ids) = NULL;
-    } else {
-        DBUG_ASSERT ((exprs == NULL),
-                     "exprs chain longer than ids chain in CreateAssignsFromIdsExprs");
+        expr = PreventTypePrecisionLoss (expr, TYgetProductMember (restypes, pos));
+
+        tmp = TBmakeAssign (TBmakeLet (ids, expr), NULL);
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = tmp;
+
+        if (cexpr == NULL) {
+            cexpr = tmp;
+            res = tmp;
+        } else {
+            ASSIGN_NEXT (cexpr) = tmp;
+            cexpr = tmp;
+        }
+        tmp = ids;
+        ids = IDS_NEXT (tmp);
+        IDS_NEXT (tmp) = NULL;
+
+        exprs = FREEdoFreeNode (exprs);
+        pos++;
     }
+
+    DBUG_ASSERT ((exprs == NULL),
+                 "exprs chain longer than ids chain in CreateAssignsFromIdsExprs");
+
     DBUG_RETURN (res);
 }
 
@@ -854,8 +905,6 @@ CFlet (node *arg_node, info *arg_info)
         }
     }
 
-    INFO_LHSTYPE (arg_info) = TYfreeTypeConstructor (INFO_LHSTYPE (arg_info));
-
     /**
      *  If CF has replaced the RHS by an N_exprs chain, we have to break this
      *  up now!
@@ -863,12 +912,19 @@ CFlet (node *arg_node, info *arg_info)
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_exprs) {
         INFO_POSTASSIGN (arg_info)
           = TCappendAssign (CreateAssignsFromIdsExprs (LET_IDS (arg_node),
-                                                       LET_EXPR (arg_node)),
+                                                       LET_EXPR (arg_node),
+                                                       INFO_LHSTYPE (arg_info)),
                             INFO_POSTASSIGN (arg_info));
         LET_EXPR (arg_node) = NULL;
         LET_IDS (arg_node) = NULL;
         INFO_REMASSIGN (arg_info) = TRUE;
+    } else {
+        LET_EXPR (arg_node)
+          = PreventTypePrecisionLoss (LET_EXPR (arg_node),
+                                      TYgetProductMember (INFO_LHSTYPE (arg_info), 0));
     }
+
+    INFO_LHSTYPE (arg_info) = TYfreeTypeConstructor (INFO_LHSTYPE (arg_info));
 
     DBUG_RETURN (arg_node);
 }
