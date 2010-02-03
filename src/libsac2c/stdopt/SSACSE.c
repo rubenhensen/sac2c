@@ -1233,16 +1233,23 @@ CSEvardec (node *arg_node, info *arg_info)
     switch (INFO_VARDECMODE (arg_info)) {
 
     case VARDECMODEEXTREMA:
-        DBUG_PRINT ("CSE", ("Traversing vardec for %s in extrema mode",
-                            AVIS_NAME (VARDEC_AVIS (arg_node))));
         avis = VARDEC_AVIS (arg_node);
         if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
+            DBUG_PRINT ("CSE", ("Renamed AVIS_MINVAL %s to %s",
+                                AVIS_NAME (VARDEC_AVIS (arg_node)),
+                                AVIS_NAME (AVIS_SUBST (AVIS_MINVAL (avis)))));
             AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
         }
 
         if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
+            DBUG_PRINT ("CSE", ("Renamed AVIS_MAXVAL %s to %s",
+                                AVIS_NAME (VARDEC_AVIS (arg_node)),
+                                AVIS_NAME (AVIS_SUBST (AVIS_MAXVAL (avis)))));
             AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
         }
+
+        AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
+        AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
         break;
 
     case VARDECMODERESET:
