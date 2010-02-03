@@ -4,8 +4,8 @@
  * This module infers how often each variable is used in RHS expressions
  * and puts the value found into each variable's AVIS_NEEDCOUNT.
  * This information, IN PRINCIPLE, is needed by several optimisations
- * to base the decisions on. Amongst thes are at the time being
- * (2009) AL, DL, SISI, SWLF, and WLPROP.
+ * to base the decisions on. Amongst these are, at this time (2009),
+ *    AL, DL, SISI, SWLF, and WLPROP.
  * Since some of these optimisations actually would prefer to
  * exclude certain RHS occurances, the entry function takes a further
  * parameter, the traversal table TR_xx itself!
@@ -192,7 +192,6 @@ INFNCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("INFNCfundef");
 
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -213,7 +212,6 @@ INFNCblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("INFNCblock");
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -260,7 +258,6 @@ INFNCid (node *arg_node, info *arg_info)
     }
 
     AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
-
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -279,11 +276,7 @@ INFNCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("INFNCprf");
 
     INFO_PRF (arg_info) = arg_node;
-
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
-
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     INFO_PRF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);

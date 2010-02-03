@@ -490,7 +490,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
               = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
             /* Allow fold if needcounts match OR if producerWLpart
              * has empty code block. This is a crude cost function:
-             * We should allow "cheap" prducerWL partitions to fold.
+             * We should allow "cheap" producerWL partitions to fold.
              * E.g., toi(iota(N)), but I'm in a hurry...
              */
             if ((NULL != producerWLpart)

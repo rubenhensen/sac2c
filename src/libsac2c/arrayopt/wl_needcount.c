@@ -17,12 +17,12 @@
  * @file wl_needcount.c
  *
  * Prefix: WLNC
- * @brief:  This phase counts the number of _sel_VxA_(iv, foldeeWL)
- *          references within a folderWL to the foldeeWL.
+ * @brief:  This phase counts the number of _sel_VxA_(iv, producerWL)
+ *          references within a consumerWL to the producerWL.
  *
  *          The intent is to determine whether or not all references
- *          to the foldeeWL are from the folderWL.
- *          If so, the foldeeWL may be foldable into the folderWL.
+ *          to the producerWL are from the consumerWL.
+ *          If so, the producerWL may be foldable into the consumerWL.
  *          If not, no folding can occur.
  *
  *****************************************************************************/
@@ -136,7 +136,7 @@ WLNCdoWLNeedCount (node *fundef)
  * @fn void incrementNeedcount( node *avis, info *arg_info)
  *
  * @brief  Conditionally increments WL use count for the
- *         foldeeWL result.
+ *         producerWL result.
  *
  *****************************************************************************/
 static void
@@ -181,13 +181,8 @@ WLNCfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("WLNC", ("WL-needcounting for %s %s begins",
                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                          FUNDEF_NAME (arg_node)));
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     DBUG_PRINT ("WLNC", ("WL-needcounting for %s %s ends",
                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
@@ -208,10 +203,7 @@ WLNCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLNCblock");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -255,9 +247,7 @@ WLNCwith (node *arg_node, info *arg_info)
     outer_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
 
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     if (N_modarray == NODE_TYPE (WITH_WITHOP (arg_node))) {
         avis = ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
@@ -283,10 +273,7 @@ WLNCpart (node *arg_node, info *arg_info)
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -303,9 +290,7 @@ WLNCcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLNCcode");
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -323,11 +308,7 @@ WLNCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLNCprf");
 
     INFO_FUN (arg_info) = arg_node;
-
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
-
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     INFO_FUN (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -346,11 +327,7 @@ WLNCap (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLNCap");
 
     INFO_FUN (arg_info) = arg_node;
-
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
-
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
     INFO_FUN (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -364,7 +341,7 @@ WLNCap (node *arg_node, info *arg_info)
  *        I am not sure what the default case was originally intended to do.
  *
  *        The AVIS_COUNTING_WL code is to ensure that only one
- *        folderWL contributes to the count.
+ *        consumerWL contributes to the count.
  *        That is the first-past-the-post WL: if more than one WL
  *        tries to contribute, the latter ones will be ignored.
  *        This will cause a mismatch in SWLF between AVIS_NEEDCOUNT

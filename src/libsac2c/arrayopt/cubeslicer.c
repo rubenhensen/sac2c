@@ -8,7 +8,32 @@
  *
  * @terminology:
  *
- * @brief
+ * @brief This traversal uses information in each F_attachintersect
+ *        node as the basis for making a decision about slicing
+ *        each consumerWL partition.
+ *
+ *        The order of slicing is bottom-to-top, so as to slice
+ *        consumerWLs before their producerWLs.
+ *        Similarly, the order is innermost-to-outermost WL.
+ *
+ *        Each consumerWL partition may generate one, two, or three
+ *        slices per axis.
+ *
+ * @notes We traverse PART_CODES within each WL partition,
+ *        seeking evidence that this is a consumerWL partition.
+ *        If we find it, we save the intersection information
+ *        in INFO_INTERSECTP.
+ *
+ *        Since a given partition may have several, potentially
+ *        conflicting intersect specifications in it, once we
+ *        have sliced a partition, we examine the new partitions,
+ *        and delete any F_attachintersect that does not have an
+ *        exact match on the new partition. The idea here is that
+ *        we do not know if the unmatched intersections represent
+ *        valid slices-in-waiting.
+ *        Further AWLFI traversals will rebuild those F_attachintersect
+ *        calls with up-to-date partition bounds, and perform additional
+ *        slicing, as required.
  *
  * @ingroup opt
  *
@@ -58,6 +83,7 @@ struct INFO {
     bool onefundef; /* fundef-based traversal */
     node *lhs;
     node *consumerpart;
+    node *intersectp; /* A pointer to the F_intersect */
 };
 
 /**
@@ -69,6 +95,7 @@ struct INFO {
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
+#define INFO_INTERSECTP(n) ((n)->intersectp)
 
 static info *
 MakeInfo (node *fundef)
@@ -85,6 +112,7 @@ MakeInfo (node *fundef)
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
+    INFO_INTERSECTP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -153,7 +181,7 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool matchConstantValues( node *fa, node *fb)
+ * @fn bool matchValues( node *fa, node *fb)
  *
  * @brief Match two AVIS nodes. This is to catch the case
  *        where one is an N_vardec and the other is an N_arg node.
@@ -165,13 +193,13 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
  *
  *****************************************************************************/
 static bool
-matchConstantValues (node *fa, node *fb)
+matchValues (node *fa, node *fb)
 {
     constant *fac;
     constant *fbc;
     bool z;
 
-    DBUG_ENTER ("matchConstantValues");
+    DBUG_ENTER ("matchValues");
 
     /* If one field is local and the other is a function argument,
      * we can have both AKV, but they do not share the same N_vardec.
@@ -246,7 +274,7 @@ matchGeneratorField (node *fa, node *fb)
     PMfree (patb);
 
     if ((!z) && (NULL != fa) && (NULL != fb)) {
-        z = matchConstantValues (ID_AVIS (fa), ID_AVIS (fb));
+        z = matchValues (ID_AVIS (fa), ID_AVIS (fb));
     }
 
     if ((NULL != fa) && (NULL != fb)) {
@@ -257,6 +285,35 @@ matchGeneratorField (node *fa, node *fb)
             DBUG_PRINT ("CUBSL", ("matchGeneratorField %s and %s did not match",
                                   AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
         }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool isNullIntersect( node *arg_node)
+ *
+ * @brief Predicate for determining Null intersection of two WLs
+ *
+ * @params arg_node: A F_attachintersect null intersection entry.
+ *
+ * @result: TRUE if intersection of index vector set and producerWL
+ *          partition is empty.
+ *
+ *****************************************************************************/
+static bool
+isNullIntersect (node *arg_node)
+{
+    bool z = FALSE;
+    constant *con;
+
+    DBUG_ENTER ("isNullIntersect");
+
+    con = COaST2Constant (arg_node);
+    if (NULL != con) {
+        z = COisTrue (con, TRUE);
+        COfreeConstant (con);
     }
 
     DBUG_RETURN (z);
@@ -299,10 +356,15 @@ isPartitionNeedsSlicing (node *consumerpart, node *intersectb1, node *intersectb
     bool z;
     DBUG_ENTER ("isPartitionNeedsSlicing");
 
-    z = ((N_array == NODE_TYPE (intersectb1)) && (N_array == NODE_TYPE (intersectb2))
-         && (N_array == NODE_TYPE (idxbound1)) && (N_array == NODE_TYPE (idxbound2)));
+    z = TRUE;
+#ifdef CRUD
+    z = (!isExactIntersect (idxbound1, idxbound2, intersectb1, intersectb2)
+         && isNullIntersect (xxx));
 
-    DBUG_PRINT ("AWLF", ("FIXME: check for NULL intersection"));
+    if (z) {
+        DBUG_PRINT ("AWLF", ("Non-null intersect partition needs slicing."));
+    }
+#endif // CRUD
 
     DBUG_RETURN (z);
 }
@@ -332,39 +394,12 @@ CUBSLgetProducerWL (node *arg_node)
     producerWLavis = ID_AVIS (producerWLid);
     if ((NULL != AVIS_SSAASSIGN (producerWLavis))) {
         producerWLassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (producerWLid)));
-        if (NODE_TYPE (LET_EXPR (producerWLassign)) == N_with) {
+        if (N_with == NODE_TYPE (LET_EXPR (producerWLassign))) {
             producerWL = LET_EXPR (producerWLassign);
         }
     }
 
     DBUG_RETURN (producerWL);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool isNullIntersect( node *arg_node)
- *
- * @brief Predicate for determining Null intersection of two WLs
- *
- * @params arg_node: A F_attachintersect null intersection entry.
- *
- * @result: TRUE if intersection of index vector set and producerWL
- *          partition is empty.
- *
- *****************************************************************************/
-static bool
-isNullIntersect (node *arg_node)
-{
-    bool z = TRUE;
-
-    DBUG_ENTER ("isNullIntersect");
-
-#ifdef FIXME
-    constant *con;
-    xxx
-#endif // FIXME
-
-      DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -399,6 +434,31 @@ ExtractNthItem (int itemno, node *idx)
     }
 
     DBUG_RETURN (val);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool isExactIntersect( node *idxbound1, node *idxbound2,
+ *                                   node *intersectb1, node *intersectb2)
+ *
+ * @brief Predicate for exact partition intersection.
+ *
+ * @params idxbound1, idxbound2: extrema of idx in _sel_VxA_( idx, producerWL)
+ *         intersectb1, intersectb2: intersection of producerWL partition
+ *                                   and consumer WL idx extrema.
+ * @result: True if intersection is exact.
+ *
+ *****************************************************************************/
+static bool
+isExactIntersect (node *idxbound1, node *idxbound2, node *intersectb1, node *intersectb2)
+{
+    bool z;
+
+    DBUG_ENTER ("isExactIntersect");
+
+    z = (matchValues (idxbound1, intersectb1)) && (matchValues (idxbound2, intersectb2));
+
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -510,32 +570,24 @@ FindMatchingPart (node *arg_node, info *arg_info, node *consumerpart, node *prod
         nullIntersect
           = isNullIntersect (ExtractNthItem (WLINTERSECTIONNULL (producerPartno), idx));
 
-        matched = ((N_generator == NODE_TYPE (consumerWLGenerator))
-                   && (N_generator == NODE_TYPE (producerWLGenerator))
-                   && (matchGeneratorField (producerWLBound1Original,
-                                            GENERATOR_BOUND1 (consumerWLGenerator)))
-                   && (matchGeneratorField (producerWLBound2Original,
-                                            GENERATOR_BOUND2 (consumerWLGenerator)))
-                   && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
-                                            GENERATOR_STEP (consumerWLGenerator)))
-                   && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
-                                            GENERATOR_WIDTH (consumerWLGenerator))));
+        matched = (TRUE != nullIntersect)
+                  && (N_generator == NODE_TYPE (consumerWLGenerator))
+                  && (N_generator == NODE_TYPE (producerWLGenerator))
+                  && (matchGeneratorField (producerWLBound1Original,
+                                           GENERATOR_BOUND1 (consumerWLGenerator)))
+                  && (matchGeneratorField (producerWLBound2Original,
+                                           GENERATOR_BOUND2 (consumerWLGenerator)))
+                  && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
+                                           GENERATOR_STEP (consumerWLGenerator)))
+                  && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
+                                           GENERATOR_WIDTH (consumerWLGenerator)));
 
         /* This could be combined with the previous statement,
          * but it's easier to debug this way.
          */
         if (matched) {
             DBUG_PRINT ("AWLF", ("All generator fields match"));
-            matched =
-#ifdef CONFUSION
-              what ifn we can not solve the null intersect problem,
-            but things otherwise match up...
-
-              (TRUE == nullIntersect)
-              &&
-#endif // CONFUSION
-              (matchConstantValues (idxbound1, intersectb1))
-              && (matchConstantValues (idxbound2, intersectb2));
+            matched = isExactIntersect (idxbound1, intersectb1, idxbound2, intersectb2);
         }
 
         if (!matched) {
@@ -845,7 +897,7 @@ CUBSLassign (node *arg_node, info *arg_info)
  *
  * @fn node *CUBSLwith( node *arg_node, info *arg_info)
  *
- * @brief applies CUBSL to a with-loop in a top-down manner.
+ * @brief applies CUBSL to a with-loop in a bottom-to-top manner.
  *
  *****************************************************************************/
 node *
@@ -855,7 +907,9 @@ CUBSLwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUBSLwith");
 
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
-    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+#ifdef CRUD
+    xxxxWITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+#endif // CRUD
 
     DBUG_RETURN (arg_node);
 }
@@ -889,10 +943,6 @@ node *
 CUBSLpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUBSLpart");
-
-    INFO_CONSUMERPART (arg_info) = arg_node;
-    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-    INFO_CONSUMERPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -934,17 +984,9 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUBSLprf");
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
-        && (isPrfArg1AttachIntersect (arg_node))
-
-    ) {
-#ifdef FIXME
-        move this up
-
-          (isPartitionNeedsSlicing (arg_node))
-#endif // FIXME
-
-            DBUG_PRINT ("CUBSL", (" %s =_sel_VxA_( iv, X) needs slicing",
-                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        && (isPrfArg1AttachIntersect (arg_node))) {
+        DBUG_PRINT ("CUBSL", (" %s =_sel_VxA_( iv, X) needs slicing",
+                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         producerWL = CUBSLgetProducerWL (arg_node);
 
         /* producerWL may be entirely gone now, perhaps
@@ -955,11 +997,19 @@ CUBSLprf (node *arg_node, info *arg_info)
                                              INFO_CONSUMERPART (arg_info), producerWL);
             if (NULL != producerPart) {
                 DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+            } else {
+                /* See if cube slicing required */
             }
         }
     }
 
-    DBUG_RETURN (arg_node);
+#ifdef CRUD
+    perhaps all we need here is : nonNullIntersect AND !isExactIntersect
+
+                                    what about multiple producerWL partitions.
+#endif // CRUD
+
+                                  DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

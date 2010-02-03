@@ -4,25 +4,31 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup wlcc With Loop Cost Check
+ * @defgroup wlcc With Loop Cost Estimate
  *
- * @brief Computes the per-element-computation cost of With Loops
+ * @brief Computes a rough estimate of the per-element-computation
+ *        cost of each with-loop partition.
+ *
+ *        Basically, we want to identify the set of producerWLs
+ *        that are worthy of being folded in to more than one
+ *        consumerWLs. A typical example of this would
+ *        be:  tod( genarray(iota(N)))
+ *        where the per-element computation cost is small.
+ *
+ *        There is no problem in making this function more
+ *        precise, should you feel the need.
  *
  * The cost is associated with each N_code, as the cost
  * may vary greatly from partition to partition.
  *
- * Definition of Cost function of With Loops
+ * Definition of Cost function of with-loop partition:
  *   SAC Function's Structure
- *     fundef         ::= assign*
- *     assign         ::= with-loop | sel | user-defined-fun | other
- *     with-loop      ::= with-part+
- *     with-part      ::= assign+
- *
- *     cost(user-defined-fun)    = 2
- *     cost(with-loop) = max cost(with-part) for all with-part in with-loop
- *     cost(sel)       = 1
- *     cost(other)     = 0
- *     cost(with-part) = sum of all assigns in the with-part
+ *     cost(primitive fn on scalars):    1
+ *        e.g., F_add_SxS,  F_tod_S_
+ *     cost(primitive fnon non-scalars): infinite
+ *     cost( N_ap):                      infinite
+ *     cost( N_with):                    infinite
+ *     cost( other):                     infinite
  *
  * @ingroup opt
  *
