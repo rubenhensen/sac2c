@@ -538,10 +538,19 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
 
     /* mutc options */
+    ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
+    ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
+
+    ARGS_OPTION_BEGIN ("mutc_distribute");
+    ARG_CHOICE_BEGIN ();
+    ARG_CHOICE ("bounded", global.mutc_distribution_mode = MUTC_DMODE_bounded;
+                ARG_NUM (global.mutc_distribution_mode_arg););
+    ARG_CHOICE ("toplevel", global.mutc_distribution_mode = MUTC_DMODE_toplevel);
+    ARG_CHOICE_END ();
+    ARGS_OPTION_END ();
+
     ARGS_FLAG ("mutc_fun_threads", global.mutc_fun_as_threads = TRUE);
     ARGS_FLAG ("mutc_thread_mem", global.mutc_thread_mem = TRUE);
-    ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
-    ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn

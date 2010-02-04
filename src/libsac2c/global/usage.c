@@ -464,7 +464,15 @@ PrintMutcOptions (void)
       "    -mutc_thread_mem         Use thread local memory every where not global \n"
       "                             memory\n\n"
       "    -mutc_disable_thread_mem Disable creation of thread local memory\n\n"
-      "    -mutc_benchmark          Enable mutc benchmarking support\n\n");
+      "    -mutc_benchmark          Enable mutc benchmarking support\n\n"
+      "    -mutc_distribute <mode>  Select a mode for distributing threads across\n"
+      "                             cores. Possible modes are:\n\n"
+      "                               toplevel : only distribute the top-evel\n"
+      "                                          create of a with3 nesting\n"
+      "                               bounded <n> : distribute threads globally until "
+      "at\n"
+      "                                             least <n> threads have been\n"
+      "                                             distributed.\n\n");
 
     DBUG_VOID_RETURN;
 }

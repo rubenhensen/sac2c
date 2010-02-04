@@ -225,6 +225,12 @@ typedef enum {
     MUTC_US_FUNARG
 } mutcUsage;
 
+typedef enum {
+    MUTC_DMODE_default = 0,
+    MUTC_DMODE_toplevel = 1,
+    MUTC_DMODE_bounded = 2
+} mutc_distribution_mode_t;
+
 /*
  * structs
  */

@@ -32,7 +32,6 @@
  *****************************************************************************/
 
 #define FAMILYTABLESIZE 32
-#define GLOBAL_THRESHOLD 32
 
 /** <!--********************************************************************-->
  *
@@ -375,7 +374,7 @@ node *
 DSTrange (node *arg_node, info *arg_info)
 {
     int previous_height, current_width, old_global, num_elements;
-    int init_avail, level_avail;
+    int init_avail, level_avail, threshold;
     int level_used;
 
     DBUG_ENTER ("DSTrange");
@@ -399,31 +398,46 @@ DSTrange (node *arg_node, info *arg_info)
 
     old_global = INFO_GLOBALS (arg_info);
 
-    if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
-        && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
-        num_elements
-          = NUM_VAL (RANGE_UPPERBOUND (arg_node)) - NUM_VAL (RANGE_LOWERBOUND (arg_node));
+    switch (global.mutc_distribution_mode) {
+    case MUTC_DMODE_default:
+    case MUTC_DMODE_toplevel:
+        RANGE_ISGLOBAL (arg_node) = (INFO_DOWN (arg_info) == 0);
 
-        if (num_elements <= 1) {
-            /* do not distribute 1 element creates -> no point */
-            RANGE_ISGLOBAL (arg_node) = FALSE;
-        } else if ((INFO_GLOBALS (arg_info)) < GLOBAL_THRESHOLD) {
-            RANGE_ISGLOBAL (arg_node) = TRUE;
-            INFO_GLOBALS (arg_info) *= num_elements;
+        break;
+    case MUTC_DMODE_bounded:
+        threshold = global.mutc_distribution_mode_arg;
+
+        if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
+            && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
+            num_elements = NUM_VAL (RANGE_UPPERBOUND (arg_node))
+                           - NUM_VAL (RANGE_LOWERBOUND (arg_node));
+
+            if (num_elements <= 1) {
+                /* do not distribute 1 element creates -> no point */
+                RANGE_ISGLOBAL (arg_node) = FALSE;
+            } else if ((INFO_GLOBALS (arg_info)) < threshold) {
+                RANGE_ISGLOBAL (arg_node) = TRUE;
+                INFO_GLOBALS (arg_info) *= num_elements;
+            } else {
+                RANGE_ISGLOBAL (arg_node) = FALSE;
+            }
         } else {
-            RANGE_ISGLOBAL (arg_node) = FALSE;
+            if (INFO_GLOBALS (arg_info) < threshold) {
+                /*
+                 * we don't know how this will change the distribution, so we
+                 * just inhibit further global creates
+                 */
+                RANGE_ISGLOBAL (arg_node) = TRUE;
+                INFO_GLOBALS (arg_info) = threshold;
+            } else {
+                RANGE_ISGLOBAL (arg_node) = FALSE;
+            }
         }
-    } else {
-        if (INFO_GLOBALS (arg_info) < GLOBAL_THRESHOLD) {
-            /*
-             * we don't know how this will change the distribution, so we
-             * just inhibit further global creates
-             */
-            RANGE_ISGLOBAL (arg_node) = TRUE;
-            INFO_GLOBALS (arg_info) = GLOBAL_THRESHOLD;
-        } else {
-            RANGE_ISGLOBAL (arg_node) = FALSE;
-        }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "unknown distribution mode...");
+        break;
     }
 
     /*

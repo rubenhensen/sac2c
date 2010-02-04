@@ -678,6 +678,11 @@ SUBPHASE (wllom, "Withloop lock optimization marking", WLLOMdoLockOptimizationMa
 SUBPHASE (wllos, "Withloop lock optimization shifting", WLLOSdoLockOptimizationShifting,
           global.optimize.dowllo, opt)
 
+SUBPHASE (dfc, "Applying final function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
+          opt)
+
+SUBPHASE (finalinl, "Applying final inlining", INLdoInlining, global.optimize.doinl, opt)
+
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
 SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
