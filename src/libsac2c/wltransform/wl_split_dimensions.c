@@ -112,6 +112,7 @@ struct INFO {
     lut_t *lut;
     node *fundef;
     int with3_nesting;
+    bool dense;
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
@@ -134,6 +135,7 @@ struct INFO {
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
+#define INFO_DENSE(n) ((n)->dense)
 
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
@@ -1847,6 +1849,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
      * produce with3
      */
     with3 = TBmakeWith3 (ranges, ops);
+    WITH3_DENSE (with3) = INFO_DENSE (arg_info);
 
     ASSIGN_INSTR (INFO_WITH3_ASSIGN (arg_info)) = TBmakeLet (lhs, with3);
     ASSIGN_NEXT (INFO_WITH3_ASSIGN (arg_info)) = assigns;
@@ -2144,10 +2147,10 @@ NotImplemented (node *with, info *arg_info)
     }
 
     /* check that there is just one segment unless we are only folding */
-    INFO_NIP_RESULT (info) = (INFO_NIP_RESULT (info)
-                              || ((TCcountWithops (WITH2_WITHOP (with))
-                                   == TCcountWithopsNeq (WITH2_WITHOP (with), N_fold))
-                                  && (TCcountWlseg (WITH2_SEGS (with)) != 1)));
+    INFO_DENSE (info) = !(INFO_NIP_RESULT (info)
+                          || ((TCcountWithops (WITH2_WITHOP (with))
+                               == TCcountWithopsNeq (WITH2_WITHOP (with), N_fold))
+                              && (TCcountWlseg (WITH2_SEGS (with)) != 1)));
 
     result = INFO_NIP_RESULT (info);
 
@@ -2341,6 +2344,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
          */
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeWith3 (ranges, withops);
+        WITH3_DENSE (arg_node) = INFO_DENSE (arg_info);
 
         /*
          * reset the info structure, mainly to ease finding bugs and to prevent

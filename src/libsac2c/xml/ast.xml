@@ -9775,6 +9775,9 @@ N_structdef :
         <flag name="UseConcurrentRanges" default="TRUE">
 	  <description>Controls whether the ranges of a with3 will be computed concurrently, or whether the ranges are sequentialised</description>
 	</flag>
+        <flag name="Dense" default="TRUE">
+          <description>This with3 covers all of the index space without gaps</description>
+        </flag>
       </flags>
     </node>
 <!--
