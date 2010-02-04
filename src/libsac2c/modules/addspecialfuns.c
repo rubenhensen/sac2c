@@ -77,6 +77,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("prod", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
         DSaddSymbolByName ("partitionSlicer", SET_wrapperhead, global.preludename);

@@ -289,10 +289,14 @@ static node *
 createUpperBound (node *bound, info *arg_info)
 {
     node *ub_avis;
-    node *ub_assign;
+    node *prod_avis;
     node *ap_node;
 
     DBUG_ENTER ("createUpperBound");
+
+    prod_avis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+    INFO_VARDECS (arg_info) = TBmakeVardec (prod_avis, INFO_VARDECS (arg_info));
 
     ub_avis = TBmakeAvis (TRAVtmpVar (),
                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
@@ -305,11 +309,17 @@ createUpperBound (node *bound, info *arg_info)
 
     DBUG_ASSERT ((ap_node != NULL), "cannot find `" SAC_PRELUDE_NAME "::prod'.");
 
-    ub_assign = TBmakeAssign (TBmakeLet (TBmakeIds (ub_avis, NULL), ap_node),
-                              INFO_PREASSIGNS (arg_info));
-    INFO_PREASSIGNS (arg_info) = ub_assign;
+    INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (ub_avis, NULL),
+                                 TCmakeIntVector (
+                                   TBmakeExprs (TBmakeId (prod_avis), NULL))),
+                      INFO_PREASSIGNS (arg_info));
+    AVIS_SSAASSIGN (ub_avis) = INFO_PREASSIGNS (arg_info);
 
-    AVIS_SSAASSIGN (ub_avis) = ub_assign;
+    INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (prod_avis, NULL), ap_node),
+                      INFO_PREASSIGNS (arg_info));
+    AVIS_SSAASSIGN (prod_avis) = INFO_PREASSIGNS (arg_info);
 
     DBUG_RETURN (TBmakeId (ub_avis));
 }
@@ -323,11 +333,11 @@ createUpperBound (node *bound, info *arg_info)
  *          lhs1 = _reshape_VxA_( old_shp, tmp1);
  *          ...
  *          lhsn = _reshape_VxA_( old_shp, tmpn);
-
+ *
  *        and vardecs
- *          <basetype(lhs1)>[ new_shp] tmp1;
+ *          <basetype(lhs1)>[ prod( old_shp)] tmp1;
  *          ...
- *          <basetype(lhsn)>[ new_shp] tmpn;
+ *          <basetype(lhsn)>[ prod( old_shp)] tmpn;
  *
  *        insert these into INFO_POSTASSIGNS and INFO_VARDECS, respectively
  *        and returns in N_ids chain     tmp1, ..., tmpn
@@ -338,20 +348,28 @@ createReshapeAssignments (node *lhs, node *old_shp, node *new_shp, info *arg_inf
 {
     node *avis;
     node *new_lhs = NULL;
+    ntype *newtype;
 
     DBUG_ENTER ("createReshapeAssignments");
 
-    DBUG_ASSERT (NODE_TYPE (old_shp) == N_array,
+    DBUG_ASSERT (((NODE_TYPE (old_shp) == N_array) || (NODE_TYPE (old_shp) == N_id)),
                  "N_array expected as 2nd arg in createReshapeAssignments");
     DBUG_ASSERT (NODE_TYPE (new_shp) == N_avis,
                  "N_avis expected as 3nd arg in createReshapeAssignments");
 
     if (lhs != NULL) {
         new_lhs = createReshapeAssignments (IDS_NEXT (lhs), old_shp, new_shp, arg_info);
-        avis = TBmakeAvis (TRAVtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (
-                                        TUgetBaseSimpleType (IDS_NTYPE (lhs))),
-                                      SHcopyShape (TYgetShape (AVIS_TYPE (new_shp)))));
+
+        newtype = TYmakeSimpleType (TUgetBaseSimpleType (IDS_NTYPE (lhs)));
+        if (TUshapeKnown (IDS_NTYPE (lhs))) {
+            newtype
+              = TYmakeAKS (newtype,
+                           SHcreateShape (1, SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)))));
+        } else {
+            newtype = TYmakeAKD (newtype, 1, SHmakeShape (0));
+        }
+
+        avis = TBmakeAvis (TRAVtmpVar (), newtype);
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
         INFO_POSTASSIGNS (arg_info)
@@ -662,7 +680,9 @@ WLFLTwith (node *arg_node, info *arg_info)
 
     wlopsno = TCcountWithops (WITH_WITHOP (arg_node));
     if ((INFO_GENARRAYS (arg_info) == wlopsno) && (INFO_IDSUSED (arg_info) == 0)
-        && (INFO_ISFULLPARTITION (arg_info))) {
+        && (INFO_ISFULLPARTITION (arg_info))
+        && ((!TUdimKnown (IDS_NTYPE (INFO_LHS (arg_info))))
+            || (TYgetDim (IDS_NTYPE (INFO_LHS (arg_info))) > 1))) {
         anontrav_t modtrav[4] = {{N_generator, &WLFLTMgenerator},
                                  {N_genarray, &WLFLTMgenarray},
                                  {N_withid, &WLFLTMwithid},
@@ -831,15 +851,15 @@ WLFLTassign (node *arg_node, info *arg_info)
     }
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_REPLACE (arg_info)) {
-        arg_node = FREEdoFreeNode (arg_node);
-        INFO_REPLACE (arg_info) = FALSE;
-    }
-
     if (INFO_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
           = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
         INFO_POSTASSIGNS (arg_info) = NULL;
+    }
+
+    if (INFO_REPLACE (arg_info)) {
+        arg_node = FREEdoFreeNode (arg_node);
+        INFO_REPLACE (arg_info) = FALSE;
     }
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
