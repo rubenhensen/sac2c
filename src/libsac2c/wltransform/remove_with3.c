@@ -544,7 +544,7 @@ RW3with3 (node *arg_node, info *arg_info)
 
     /*INFO_WITHOPS( arg_info) = DUPdoDupTree( WITH3_OPERATIONS( arg_node));*/
 
-    if (WITH3_DENSE (arg_info) && (INFO_RANGES (arg_info) == 1)
+    if (WITH3_DENSE (arg_node) && (INFO_RANGES (arg_info) == 1)
         && (INFO_REMOVABLE_RANGE (arg_info) == TRUE)) {
 
         /* Save the body of the with3 loop */
