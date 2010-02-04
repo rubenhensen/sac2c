@@ -469,10 +469,11 @@ PrintMutcOptions (void)
       "                             cores. Possible modes are:\n\n"
       "                               toplevel : only distribute the top-evel\n"
       "                                          create of a with3 nesting\n"
-      "                               bounded <n> : distribute threads globally until "
-      "at\n"
-      "                                             least <n> threads have been\n"
-      "                                             distributed.\n\n");
+      "                               bounded : distribute threads globally until at\n"
+      "                                         least <n> threads have been\n"
+      "                                         distributed. <n> is specified using\n"
+      "                                         the -mutc_distribute_arg option\n\n"
+      "    -mutc_distribute_arg    numerical argument for distribution modes.\n\n");
 
     DBUG_VOID_RETURN;
 }

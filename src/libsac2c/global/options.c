@@ -125,6 +125,11 @@ OPTcheckOptionConsistency (void)
             CTIerror ("-mutc_thread_mem can not be used with "
                       "-mutc_disable_thread_mem");
         }
+
+        if ((global.mutc_distribution_mode == MUTC_DMODE_bounded)
+            && (global.mutc_distribution_mode_arg == -1)) {
+            CTIerror ("bounded distribution mode requires an argument");
+        }
     } else {
         if (global.mutc_fun_as_threads == TRUE) {
             CTIerror ("-mutc_fun_threads only works with mutc backend");
@@ -541,10 +546,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
     ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
 
+    ARGS_OPTION ("mutc_distribute_arg", ARG_NUM (global.mutc_distribution_mode_arg));
+
     ARGS_OPTION_BEGIN ("mutc_distribute");
     ARG_CHOICE_BEGIN ();
-    ARG_CHOICE ("bounded", global.mutc_distribution_mode = MUTC_DMODE_bounded;
-                ARG_NUM (global.mutc_distribution_mode_arg););
+    ARG_CHOICE ("bounded", global.mutc_distribution_mode = MUTC_DMODE_bounded);
     ARG_CHOICE ("toplevel", global.mutc_distribution_mode = MUTC_DMODE_toplevel);
     ARG_CHOICE_END ();
     ARGS_OPTION_END ();
