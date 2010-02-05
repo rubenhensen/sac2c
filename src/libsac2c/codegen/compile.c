@@ -37,7 +37,6 @@
 #include "types.h"
 #include "cuda_utils.h"
 
-#define USE_STATIC_RESOURCE_ANNOTATIONS 1
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
 /*
@@ -7877,6 +7876,7 @@ COMPrange (node *arg_node, info *arg_info)
 {
     node *family, *create, *next, *sync;
     node *thread_fun;
+    node *block;
     char *familyName;
     str_buf *buffer;
 
@@ -7901,6 +7901,12 @@ COMPrange (node *arg_node, info *arg_info)
         RANGE_CHUNKSIZE (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
     }
 
+    if (global.mutc_static_resource_management) {
+        block = TBmakeNum (RANGE_BLOCKSIZE (arg_node));
+    } else {
+        block = TCmakeIdCopyString ("");
+    }
+
     create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
                                TCmakeIdCopyString (
                                  RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
@@ -7909,12 +7915,7 @@ COMPrange (node *arg_node, info *arg_info)
                                (RANGE_CHUNKSIZE (arg_node) == NULL)
                                  ? TCmakeIdCopyString ("1")
                                  : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
-#ifdef USE_STATIC_RESOURCE_ANNOTATIONS
-                               TBmakeNum (RANGE_BLOCKSIZE (arg_node)),
-#else
-                               TCmakeIdCopyString (""),
-#endif /* USE_STATIC_RESOURCE_ANNOTATIONS */
-                               DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+                               block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
 
     sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 
