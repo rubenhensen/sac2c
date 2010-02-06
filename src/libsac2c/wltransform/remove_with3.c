@@ -538,15 +538,14 @@ RW3with3 (node *arg_node, info *arg_info)
 
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
-    DBUG_ASSERT (((INFO_RANGES (arg_info) >= 1)
-                  || (TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_fold) != 0)),
-                 "At least one range expected in a with3 loop unless folding");
-
     /*INFO_WITHOPS( arg_info) = DUPdoDupTree( WITH3_OPERATIONS( arg_node));*/
 
     if (WITH3_DENSE (arg_node) && (INFO_RANGES (arg_info) == 1)
         && (INFO_REMOVABLE_RANGE (arg_info) == TRUE)) {
 
+        DBUG_ASSERT (((INFO_RANGES (arg_info) >= 1)
+                      || (TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_fold) != 0)),
+                     "At least one range expected in a with3 loop unless folding");
         /* Save the body of the with3 loop */
         INFO_ASSIGNS (arg_info)
           = TCappendAssign (ReplaceAccu (DUPdoDupTree (INFO_LOOP_ASSIGNS (arg_info)),

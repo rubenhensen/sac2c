@@ -3168,7 +3168,11 @@ COMPlet (node *arg_node, info *arg_info)
      * 'expr' is a RHS expression or a N_assign chain !!
      */
 
-    if (NODE_TYPE (expr) == N_assign) {
+    if (expr == NULL) {
+        /* Nothing left return NOOP */
+        ret_node = TCmakeIcm0 ("NOOP");
+        arg_node = FREEdoFreeTree (arg_node);
+    } else if (NODE_TYPE (expr) == N_assign) {
         /*
          * 'expr' is a N_assign chain
          *  -> return this N_assign chain
@@ -7853,7 +7857,7 @@ COMPwith3 (node *arg_node, info *arg_info)
     INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
     INFO_WITH3_FOLDS (arg_info)
       = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
-    arg_node = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     if (INFO_WITH3_FOLDS (arg_info) != NULL) {
         INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));

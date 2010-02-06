@@ -2384,7 +2384,7 @@ EMALwith3 (node *arg_node, info *arg_info)
      * now traverse the code in all ranges
      */
     INFO_RANGEMODE (arg_info) = EA_body;
-    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     /*
      * Collect shape/dim information of the with3 results
@@ -2396,7 +2396,7 @@ EMALwith3 (node *arg_node, info *arg_info)
      * Collect shape/dim information for the range index
      */
     INFO_RANGEMODE (arg_info) = EA_index;
-    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

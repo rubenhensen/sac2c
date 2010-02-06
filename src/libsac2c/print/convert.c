@@ -89,7 +89,7 @@ CVdouble2String (double val)
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
 
-    sprintf (tmp_string, "%.256g", val);
+    snprintf (tmp_string, 270, "%.256g", val);
 
     if (strchr (tmp_string, '.') == NULL) {
         strcat (tmp_string, ".0");

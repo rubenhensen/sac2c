@@ -2046,8 +2046,9 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
     } else if (nextdim != NULL) {
         body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, &rangeoffsets, arg_info);
     } else {
-        DBUG_ASSERT ((TCcountWithopsNeq (INFO_WITH2_WITHOPS (arg_info), N_fold) == 0),
-                     "Must just be folds if doing nothing");
+        /* DBUG_ASSERT( ( TCcountWithopsNeq( INFO_WITH2_WITHOPS( arg_info),
+           N_fold) == 0),
+           "Must just be folds if doing nothing"); */
         body = NULL;
     }
 

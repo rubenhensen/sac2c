@@ -1041,7 +1041,7 @@ InferMasksWith3 (node *arg_node, info *arg_info)
                   DbugPrintMasks (arg_info););
 
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
-    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     DBUG_EXECUTE ("INFDFMS",
                   fprintf (stderr, "<<<  %s finished\n", NODE_TEXT (arg_node)););
