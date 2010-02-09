@@ -207,6 +207,12 @@ SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
+SUBPHASE (cse, "Applying common subexpression elimination",
+          CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, cwc)
+
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
+          cwc)
+
 SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
           global.insertconformitychecks, cwc)
 
