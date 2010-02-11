@@ -597,8 +597,11 @@ RW3range (node *arg_node, info *arg_info)
     DBUG_ENTER ("RW3range");
 
     nested_info = MakeInfo ();
-    arg_node = TRAVcont (arg_node, nested_info);
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), nested_info);
     nested_info = FreeInfo (nested_info);
+
+    /* arg_info to count ranges */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     INFO_RANGES (arg_info) = INFO_RANGES (arg_info) + 1;
     INFO_LOWERBOUND (arg_info) = RANGE_LOWERBOUND (arg_node);

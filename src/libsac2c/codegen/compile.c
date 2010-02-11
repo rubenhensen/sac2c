@@ -7905,7 +7905,9 @@ COMPrange (node *arg_node, info *arg_info)
         RANGE_CHUNKSIZE (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
     }
 
-    if (global.mutc_static_resource_management) {
+    if (global.mutc_force_block_size >= 0) {
+        block = TBmakeNum (global.mutc_force_block_size);
+    } else if (global.mutc_static_resource_management) {
         block = TBmakeNum (RANGE_BLOCKSIZE (arg_node));
     } else {
         block = TCmakeIdCopyString ("");

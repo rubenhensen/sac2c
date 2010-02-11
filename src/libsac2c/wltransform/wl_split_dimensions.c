@@ -1931,7 +1931,8 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
         index = MakeIntegerVar (&INFO_VARDECS (arg_info));
         over = ComputeNewBounds (lower, upper, step, &nupper, &INFO_PREASSIGNS (arg_info),
                                  arg_info);
-        body = MakeRangeBody (index, contents, over, FALSE, &results, &offsets, arg_info);
+        body = MakeRangeBody (index, DUPdoDupTree (contents), over, FALSE, &results,
+                              &offsets, arg_info);
 
         next = TBmakeRange (TBmakeIds (index, NULL), nupper, DUPdoDupTree (upper), over,
                             body, results, offsets, next);

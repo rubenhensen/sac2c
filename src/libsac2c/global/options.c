@@ -130,6 +130,11 @@ OPTcheckOptionConsistency (void)
             && (global.mutc_distribution_mode_arg == -1)) {
             CTIerror ("bounded distribution mode requires an argument");
         }
+
+        if ((global.mutc_force_block_size != -1)
+            && (global.mutc_static_resource_management)) {
+            CTIerror ("Can only use one method of setting the block size at a time");
+        }
     } else {
         if (global.mutc_fun_as_threads == TRUE) {
             CTIerror ("-mutc_fun_threads only works with mutc backend");
@@ -142,6 +147,9 @@ OPTcheckOptionConsistency (void)
         }
         if (global.mutc_static_resource_management == TRUE) {
             CTIerror ("-mutc_static_resource_management needs mutc backend");
+        }
+        if (global.mutc_force_block_size != -1) {
+            CTIerror ("-mutc_force_block_size only works with mutc backend");
         }
         if (global.mutc_benchmark == TRUE) {
             CTIerror ("-mutc_benchmark needs mutc backend");
@@ -550,6 +558,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
 
     ARGS_OPTION ("mutc_distribute_arg", ARG_NUM (global.mutc_distribution_mode_arg));
+
+    ARGS_OPTION ("mutc_force_block_size", ARG_NUM (global.mutc_force_block_size));
 
     ARGS_OPTION_BEGIN ("mutc_distribute");
     ARG_CHOICE_BEGIN ();

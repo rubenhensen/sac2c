@@ -466,15 +466,19 @@ PrintMutcOptions (void)
       "    -mutc_disable_thread_mem         Disable creation of thread local memory\n\n"
       "    -mutc_benchmark                  Enable mutc benchmarking support\n\n"
       "    -mutc_static_resource_management Staticly manage resources\n\n"
-      "    -mutc_distribute <mode>  Select a mode for distributing threads across\n"
-      "                             cores. Possible modes are:\n\n"
-      "                               toplevel : only distribute the top-evel\n"
-      "                                          create of a with3 nesting\n"
-      "                               bounded : distribute threads globally until at\n"
-      "                                         least <n> threads have been\n"
-      "                                         distributed. <n> is specified using\n"
-      "                                         the -mutc_distribute_arg option\n\n"
-      "    -mutc_distribute_arg    numerical argument for distribution modes.\n\n");
+      "    -mutc_force_block_size <n>       Force the block size to <n> for all\n"
+      "                                     creates\n"
+      "    -mutc_distribute <mode>          Select a mode for distributing threads\n"
+      "                                     across cores. Possible modes are:\n\n"
+      "                                     toplevel : only distribute the top-evel\n"
+      "                                                create of a with3 nesting\n"
+      "                                     bounded :  distribute threads globally\n"
+      "                                                until at least <n> threads\n"
+      "                                                have been distributed. <n> is\n"
+      "                                                specified using the\n"
+      "                                                -mutc_distribute_arg option\n\n"
+      "    -mutc_distribute_arg             numerical argument for distribution "
+      "modes.\n\n");
 
     DBUG_VOID_RETURN;
 }
