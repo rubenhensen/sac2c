@@ -160,20 +160,20 @@ GetBasetypeOfExpr (node *expr)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeZero( node *prfarg)
+ * @fn node *SCSmakeZero( node *prfarg)
  * Create an array of zeros/FALSE of the same type and shape as prfarg.
  * If prfarg is not AKS, we give up.
  *
  *****************************************************************************/
-static node *
-MakeZero (node *prfarg)
+node *
+SCSmakeZero (node *prfarg)
 {
     constant *con;
     shape *shp;
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("MakeZero");
+    DBUG_ENTER ("SCSmakeZero");
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -188,20 +188,20 @@ MakeZero (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeFalse( node *prfarg)
+ * @fn node *SCSmakeFalse( node *prfarg)
  * Create an array of FALSE of the same shape as prfarg.
  * If prfarg is not AKS, we give up.
  *
  *****************************************************************************/
 node *
-MakeFalse (node *prfarg)
+SCSmakeFalse (node *prfarg)
 {
     constant *con;
     shape *shp;
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("MakeFalse");
+    DBUG_ENTER ("SCSmakeFalse");
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -252,20 +252,20 @@ MakeVectorConstant (shape *shp, node *scalarval)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeTrue( node *prfarg)
+ * @fn node *SCSmakeTrue( node *prfarg)
  * Create an array of TRUE of the same shape as prfarg.
  * If prfarg is not AKS, we give up.
  *
  *****************************************************************************/
 node *
-MakeTrue (node *prfarg)
+SCSmakeTrue (node *prfarg)
 {
     constant *con;
     shape *shp;
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("MakeTrue");
+    DBUG_ENTER ("SCSmakeTrue");
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -436,7 +436,7 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
                || MatchNegS (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node))) {
         /* Case 4:   X + _neg_S_( X)  */
         /* Case 3:	 _neg_S_( X) + X  */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_add_SxS generated zero vector"));
     }
     DBUG_RETURN (res);
@@ -497,7 +497,7 @@ SCSprf_add_VxV (node *arg_node, info *arg_info)
         || MatchNegV (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node))) {
         /* Case 1:	 _neg_V_( X) + X  */
         /* Case 2:   X + _neg_V_( X)  */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_add_VxV generated zero vector"));
     } else {
         if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
@@ -599,7 +599,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -624,7 +624,7 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
          * not a safe optimization. */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -652,10 +652,10 @@ SCSprf_mul_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
-        res = MakeZero (PRF_ARG2 (arg_node));
+        res = SCSmakeZero (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -681,7 +681,7 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
-        res = MakeZero (PRF_ARG2 (arg_node));
+        res = SCSmakeZero (PRF_ARG2 (arg_node));
 
         /* Vector constant cases */
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /*  S * [0,0,...0] */
@@ -722,7 +722,7 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
         DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 1 by V"));
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 0 by [0,0,...0]"));
 
         /* Vector constant cases */
@@ -760,9 +760,9 @@ SCSprf_mul_VxV (node *arg_node, info *arg_info)
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
-        res = MakeZero (PRF_ARG1 (arg_node));
+        res = SCSmakeZero (PRF_ARG1 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
-        res = MakeZero (PRF_ARG2 (arg_node));
+        res = SCSmakeZero (PRF_ARG2 (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -884,10 +884,10 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_or_SxS");
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
-        res = MakeTrue (PRF_ARG1 (arg_node));
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
 
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
-        res = MakeTrue (PRF_ARG2 (arg_node));
+        res = SCSmakeTrue (PRF_ARG2 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
@@ -916,7 +916,7 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_or_SxV");
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
-        res = MakeTrue (PRF_ARG2 (arg_node));
+        res = SCSmakeTrue (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     }
@@ -937,7 +937,7 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_or_VxS");
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
-        res = MakeTrue (PRF_ARG1 (arg_node));
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     }
@@ -985,10 +985,10 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
-        res = MakeFalse (PRF_ARG1 (arg_node));
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
 
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
-        res = MakeFalse (PRF_ARG2 (arg_node));
+        res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
     } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X & X */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
@@ -1012,7 +1012,7 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
         res = DUPdoDupTree (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
-        res = MakeFalse (PRF_ARG2 (arg_node));
+        res = SCSmakeFalse (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -1033,7 +1033,7 @@ SCSprf_and_VxS (node *arg_node, info *arg_info)
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
         res = DUPdoDupTree (PRF_ARG1 (arg_node));
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
-        res = MakeFalse (PRF_ARG1 (arg_node));
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -1461,7 +1461,7 @@ SCSprf_nlege (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_nlege");
     if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) {
-        res = MakeFalse (PRF_ARG1 (arg_node));
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
 }
@@ -1541,7 +1541,7 @@ SCSprf_lege (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_lege");
     if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) {
-        res = MakeTrue (PRF_ARG1 (arg_node));
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
 }

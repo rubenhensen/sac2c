@@ -60,6 +60,7 @@
 #include "check.h"
 #include "phase.h"
 #include "shape.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -884,6 +885,7 @@ static bool
 PrfExtractExtrema (node *arg_node, info *arg_info)
 {
     node *avis;
+    node *zr;
     bool z = FALSE;
 
     DBUG_ENTER ("PrfExtractExtrema");
@@ -1039,24 +1041,33 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
           FIXME */
 
     case F_non_neg_val_V:
+        avis = ID_AVIS (PRF_ARG1 (arg_node));
+        if ((!isAvisHasMinVal (avis))
+            && (TYisAKV (AVIS_TYPE (avis)) || TYisAKS (AVIS_TYPE (avis)))) {
+            /* Create zero vector */
+            zr = SCSmakeZero (PRF_ARG1 (arg_node));
+            zr = AWLFIflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info),
+                                         TYeliminateAKV (AVIS_TYPE (avis)));
+            INFO_MINVAL (arg_info) = zr;
+            z = TRUE;
+            break;
+        }
+        /* break intentionally elided. */
+
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
     case F_shape_matches_dim_VxA:
-        /* Propagate any extrema.
-         *
+        /*
+         * Propagate any extrema.
          * Removal of the guard, when possible, will be done by CF.
-         *
          */
 
         avis = ID_AVIS (PRF_ARG1 (arg_node));
-        if ((isAvisHasBothExtrema (avis))) {
-            DBUG_PRINT ("IVEXP", ("PrfExtractExtrema propagating guard extrema"));
-            INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
-            INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
-            z = TRUE;
-        } else {
-            DBUG_PRINT ("IVEXP", ("Please write AVIS_MINVAL code now."));
-        }
+        DBUG_PRINT ("IVEXP", ("PrfExtractExtrema propagating guard extrema"));
+        INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
+        INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
+        z = TRUE;
         break;
 
     default:

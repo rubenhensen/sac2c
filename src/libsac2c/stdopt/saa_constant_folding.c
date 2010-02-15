@@ -749,7 +749,7 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
             arg1cp = COsub (arg1c, adj); /* Correct AVIS_MAXVAL */
             b = ((relfn[fna])) (arg1cp, arg2c);
             if (COisTrue (b, TRUE)) {
-                res = tf ? MakeTrue (prfargres) : MakeFalse (prfargres);
+                res = tf ? SCSmakeTrue (prfargres) : SCSmakeFalse (prfargres);
                 DBUG_PRINT ("CF", ("saarelat replacing RHS by constant"));
             }
             b = COfreeConstant (b);
