@@ -439,8 +439,8 @@ isEmptyPartitionCodeBlock (node *partn)
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node *consumerWLPart, int level)
  *
- * @brief check if _sel_VxA_(idx, producerWL), appearing in folder WL
- *        partition, part, is foldable into the folder WL.
+ * @brief check if _sel_VxA_(idx, producerWL), appearing in consumer WL
+ *        partition, part, is foldable into the consumer WL.
  *        Most checks have already been made by AWLFI.
  *        Here, we check that the generators match,
  *        and that the only references to the producerWL result are
@@ -464,41 +464,31 @@ isEmptyPartitionCodeBlock (node *partn)
 static node *
 checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int level)
 {
-    node *producerWLid;
     node *producerWLavis;
-    node *producerWLlet;
-    node *producerWLassign;
     node *producerWL;
     node *producerWLpart = NULL;
 
     DBUG_ENTER ("checkAWLFoldable");
 
-    producerWLid = PRF_ARG2 (arg_node);
-    producerWLavis = ID_AVIS (producerWLid);
-    if ((NULL != AVIS_SSAASSIGN (producerWLavis))
-        && (AVIS_DEFDEPTH (producerWLavis) + 1 == level)) {
-        producerWLassign = AVIS_SSAASSIGN (ID_AVIS (producerWLid));
-        producerWLlet = ASSIGN_INSTR (producerWLassign);
-        if (AWLFIisSingleOpWL (producerWLassign)) {
-            producerWL = LET_EXPR (producerWLlet);
-            DBUG_PRINT (
-              "AWLF",
-              ("consumerWL %s: producerWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-               AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-               AVIS_WL_NEEDCOUNT (producerWLavis)));
-            producerWLpart
-              = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
-            /* Allow fold if needcounts match OR if producerWLpart
-             * has empty code block. This is a crude cost function:
-             * We should allow "cheap" producerWL partitions to fold.
-             * E.g., toi(iota(N)), but I'm in a hurry...
-             */
-            if ((NULL != producerWLpart)
-                && ((AVIS_NEEDCOUNT (producerWLavis)
-                     != AVIS_WL_NEEDCOUNT (producerWLavis)))
-                && (!isEmptyPartitionCodeBlock (producerWLpart))) {
-                producerWLpart = NULL;
-            }
+    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
+    producerWLavis = ID_AVIS (PRF_ARG2 (arg_node));
+    if ((NULL != producerWL) && (AVIS_DEFDEPTH (producerWLavis) + 1 == level)
+        && (AWLFIisSingleOpWL (producerWL))) {
+        DBUG_PRINT ("AWLF",
+                    ("consumerWL %s: producerWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                     AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                     AVIS_WL_NEEDCOUNT (producerWLavis)));
+        producerWLpart
+          = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
+        /* Allow fold if needcounts match OR if producerWLpart
+         * has empty code block. This is a crude cost function:
+         * We should allow "cheap" producerWL partitions to fold.
+         * E.g., toi(iota(N)), but I'm in a hurry...
+         */
+        if ((NULL != producerWLpart)
+            && ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
+            && (!isEmptyPartitionCodeBlock (producerWLpart))) {
+            producerWLpart = NULL;
         }
     } else {
         DBUG_PRINT ("AWLF",
@@ -572,11 +562,11 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @ fn static node *makeIdxAssigns( node *arg_node, node *foldeePart)
+ * @ fn static node *makeIdxAssigns( node *arg_node, node *ProducerPart)
  *
  * @brief for a prducerWL partition, with generator:
  *        (. <= iv=[i,j] < .)
- *        and a folder _sel_VxA_( idx, producerWL),
+ *        and a consumer _sel_VxA_( idx, producerWL),
  *
  *        generate an N_assigns chain of this form:
  *
@@ -592,7 +582,7 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  *****************************************************************************/
 static node *
-makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
+makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
 {
     node *z = NULL;
     node *ids;
@@ -607,7 +597,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
 
     DBUG_ENTER ("makeIdxAssigns");
 
-    ids = WITHID_IDS (PART_WITHID (foldeePart));
+    ids = WITHID_IDS (PART_WITHID (ProducerPart));
     idxid = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (arg_node)));
     k = 0;
 
@@ -648,7 +638,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
     }
 
     /* Now generate iv = idx; */
-    lhsids = WITHID_VEC (PART_WITHID (foldeePart));
+    lhsids = WITHID_VEC (PART_WITHID (ProducerPart));
     lhsavis = populateLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
     z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), DUPdoDupNode (idxid)), z);
     AVIS_SSAASSIGN (lhsavis) = z;
@@ -690,7 +680,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *foldeePart)
  *            temp assign being made here.
  *    producerWLPart: N_part node of producerWL.
  *
- *    folder: N_part node of folder.
+ *    consumerWLPart: N_part node of consumer WL.
  *****************************************************************************/
 static node *
 doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consumerWLPart,
@@ -858,8 +848,8 @@ AWLFwith (node *arg_node, info *arg_info)
 {
     node *nextop;
     node *genop;
-    node *folderop;
-    node *foldeeshape;
+    node *consumerop;
+    node *producershape;
     info *old_info;
 
     DBUG_ENTER ("AWLFwith");
@@ -885,14 +875,14 @@ AWLFwith (node *arg_node, info *arg_info)
      * folding, no other references to the producerWL, we can
      * blindly replace the modarray by the genarray.
      */
-    folderop = WITH_WITHOP (arg_node);
-    if ((N_modarray == NODE_TYPE (folderop))
-        && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (folderop))))
-        && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (folderop))))) {
-        foldeeshape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (folderop)));
-        genop = TBmakeGenarray (DUPdoDupTree (foldeeshape), NULL);
-        GENARRAY_NEXT (genop) = MODARRAY_NEXT (folderop);
-        nextop = FREEdoFreeNode (folderop);
+    consumerop = WITH_WITHOP (arg_node);
+    if ((N_modarray == NODE_TYPE (consumerop))
+        && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
+        && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
+        producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
+        genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
+        GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
+        nextop = FREEdoFreeNode (consumerop);
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("AWLF", ("Replacing modarray by genarray"));
     }

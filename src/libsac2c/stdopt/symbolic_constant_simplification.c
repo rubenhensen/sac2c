@@ -1921,34 +1921,46 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_val_le_val_VxV( node *arg_node, info *arg_info)
  *
+ * @brief If both arguments are constant, compare them, and
+ *        determine if the guard is true.
+ *        Otherwise, if both arguments are identical, the guard is true.
+ *
  *****************************************************************************/
 node *
 SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    node *val = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
-    pattern *pat;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("SCSprf_val_le_val_VxV");
 
-    pat = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMconst (1, PMAgetVal (&con1)),
-                 PMconst (1, PMAgetVal (&con2), 0));
+    pat1 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMconst (1, PMAgetVal (&con1)),
+                  PMconst (1, PMAgetVal (&con2), 0));
 
-    if (PMmatchFlatSkipExtrema (pat, arg_node)
-        && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && COle (con1, con2)) {
+    pat2 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val), 0),
+                  PMvar (1, PMAisVar (&val), 0));
+
+    if ((PMmatchFlatSkipExtrema (pat2, arg_node))
+        || (PMmatchFlatSkipExtrema (pat1, arg_node)
+            && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && COle (con1, con2))) {
         res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("SCS", ("SCSprf_val_le_val_VxV removed guard( %s, %s)",
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
-    pat = PMfree (pat);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
 
     DBUG_RETURN (res);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_prod_matches_prod_shape_VxA( node *arg_node, info *arg_info)

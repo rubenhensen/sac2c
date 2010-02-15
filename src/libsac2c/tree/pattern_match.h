@@ -24,6 +24,8 @@ typedef struct PAT pattern;
 extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
+extern bool PMmatchFlatSkipGuards (pattern *pat, node *expr);
+extern bool PMmatchFlatWith (pattern *pat, node *expr);
 
 extern node *PMmultiExprs (int num_nodes, ...);
 
@@ -31,6 +33,7 @@ extern node *PMmultiExprs (int num_nodes, ...);
  * Pattern-DSL:
  */
 extern pattern *PMvar (int num_attribs, ...);
+extern pattern *PMlastVar (int num_attribs, ...);
 
 extern pattern *PMparam (int num_attribs, ...);
 extern pattern *PMany (int num_attribs, ...);
@@ -43,6 +46,7 @@ extern pattern *PMretryAll (int *i, int *l, int num_pats, ...);
 extern pattern *PMskip (int num_attribs, ...);
 extern pattern *PMskipN (int *n, int num_attribs, ...);
 extern pattern *PMmulti (int num_pats, ...);
+extern pattern *PMwith (int num_attribs, ...);
 
 /**
  * utils:

@@ -179,13 +179,13 @@ IVEXPdoIndexVectorExtremaPropOneFunction (node *arg_node)
  *
  *        We start with:
  *
- *          v' =  F_non_neg_val_V( v);
+ *          v', p' =  F_non_neg_val_V( v);
  *
  *        And generate:
  *
  *          zr = 0;
  *          p = _ge_VxS_( v, zr);
- *          v' = F_non_neg_val_V( v, p);
+ *          v', p' = F_non_neg_val_V( v, p);
  *          wrong! We should generate:
  *
  *          zr = 0;
@@ -544,24 +544,17 @@ isConstantValue (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   static bool isAvisHasExtrema( node *avis)
  *
- * description: Predicate for determining if an N_avis node has known extrema.
+ * description: Predicates for determining if an N_avis node have extrema.
  *
  * @params  arg_node: an N_avis node.
- * @result: True if the node has either extremum present.
+ * @result: True if the node has desired extrema present.
  *
  ******************************************************************************/
-static bool
-isAvisHasExtrema (node *avis)
-{
-    bool z;
 
-    DBUG_ENTER ("isAvisHasExtrema");
-    z = (NULL != AVIS_MINVAL (avis)) || (NULL != AVIS_MAXVAL (avis));
-
-    DBUG_RETURN (z);
-}
+#define isAvisHasMinVal(avis) (NULL != AVIS_MINVAL (avis))
+#define isAvisHasMaxVal(avis) (NULL != AVIS_MAXVAL (avis))
+#define isAvisHasBothExtrema(avis) (isAvisHasMinVal (avis) && isAvisHasMaxVal (avis))
 
 /******************************************************************************
  *
@@ -621,8 +614,7 @@ isPrfArgHasKnownExtrema (node *arg_node, info *arg_info)
     if ((N_id == NODE_TYPE (arg_node))) {
         if (isArgExtremaAttached (arg_node)) {
             ids = LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
-            if ((NULL != AVIS_MINVAL (IDS_AVIS (ids)))
-                && (NULL != AVIS_MAXVAL (IDS_AVIS (ids)))) {
+            if (isAvisHasBothExtrema (IDS_AVIS (ids))) {
                 z = TRUE;
                 INFO_MINVAL (arg_info) = AVIS_MINVAL (IDS_AVIS (ids));
                 INFO_MAXVAL (arg_info) = AVIS_MAXVAL (IDS_AVIS (ids));
@@ -724,7 +716,7 @@ PropagateNarray (node *arg_node, info *arg_info)
     allex = (NULL != exprs);
     while (allex && (NULL != exprs)) {
         if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
-            allex = allex & isAvisHasExtrema (ID_AVIS (EXPRS_EXPR (exprs)));
+            allex = allex & isAvisHasBothExtrema (ID_AVIS (EXPRS_EXPR (exprs)));
         } else {
             allex = FALSE;
         }
@@ -835,6 +827,48 @@ adjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
 /******************************************************************************
  *
  * function:
+ *   bool ExtremaOnNonconstantArg( node *arg_node, info *arg_info)
+ *
+ * description: Predicate for prf has extrema on non-constant argument
+ *
+ * @params  arg_node: an N_prf node
+ *          arg_info: your basic arg_info
+ * @result:
+ *
+ ******************************************************************************/
+static bool
+ExtremaOnNonconstantArg (node *arg_node, info *arg_info)
+{
+    bool z;
+    bool arg1c;
+    bool arg2c;
+
+    DBUG_ENTER ("ExtremaOnNonconstantArg");
+
+    arg1c = isConstantValue (PRF_ARG1 (arg_node));
+    arg2c = isConstantValue (PRF_ARG2 (arg_node));
+
+    if (arg1c != arg2c) {
+        z = arg1c && (PRF_EXTREMAATTACHED (arg_node))
+            && (isAvisHasMinVal (ID_AVIS (PRF_ARG2 (arg_node))))
+            && (isPrfArgHasKnownExtrema (PRF_ARG2 (arg_node), arg_info));
+
+        z = z
+            || (arg2c && (PRF_EXTREMAATTACHED (arg_node))
+                && (isAvisHasMinVal (ID_AVIS (PRF_ARG1 (arg_node))))
+                && (isPrfArgHasKnownExtrema (PRF_ARG1 (arg_node), arg_info)));
+    }
+
+    if (z) {
+        DBUG_PRINT ("IVEXP", ("Extrema exist on non-constant argument"));
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   bool PrfExtractExtrema( node *arg_node, info *arg_info)
  *
  * description: Extracts extrema from within a primitive.
@@ -851,8 +885,6 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
 {
     node *avis;
     bool z = FALSE;
-    bool arg1c;
-    bool arg2c;
 
     DBUG_ENTER ("PrfExtractExtrema");
 
@@ -866,7 +898,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         avis = ID_AVIS (PRF_ARG1 (arg_node));
         INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
         INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
-        z = (NULL != INFO_MINVAL (arg_info)) && (NULL != INFO_MAXVAL (arg_info));
+        z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
         break;
 
     case F_attachextrema:
@@ -875,7 +907,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
             == (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
             INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
             INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG3 (arg_node));
-            z = (NULL != INFO_MINVAL (arg_info)) && (NULL != INFO_MAXVAL (arg_info));
+            z = (NULL != INFO_MINVAL (arg_info)) || (NULL != INFO_MAXVAL (arg_info));
         }
         break;
 
@@ -900,39 +932,57 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
     case F_mul_VxS:
     case F_mul_VxV:
 
-    case F_min_SxS:
-    case F_min_SxV:
-    case F_min_VxS:
-    case F_min_VxV:
-
-    case F_max_SxS:
-    case F_max_SxV:
-    case F_max_VxS:
-    case F_max_VxV:
-
     case F_sub_SxS:
     case F_sub_SxV:
     case F_sub_VxS:
     case F_sub_VxV:
 
-        arg1c = isConstantValue (PRF_ARG1 (arg_node));
-        arg2c = isConstantValue (PRF_ARG2 (arg_node));
+        z = ExtremaOnNonconstantArg (arg_node, arg_info);
+        break;
 
-        if (arg1c != arg2c) {
+    case F_min_SxS:
+    case F_min_VxV:
+#ifdef CODEME
+    /* Have to make constant scalar into vector, or vice versa. */
+    case F_min_SxV:
+    case F_min_VxS:
+#endif // CODEME
 
-            if (arg1c && (PRF_EXTREMAATTACHED (arg_node))
-                && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG2 (arg_node))))
-                && (isPrfArgHasKnownExtrema (PRF_ARG2 (arg_node), arg_info))) {
-                z = TRUE;
-            }
+        z = ExtremaOnNonconstantArg (arg_node, arg_info);
+        /* If we don't have extrema on a non-constant argument,
+         * we can estimate one extremum based on the constant argument.
+         */
+        if ((!z) && isConstantValue (PRF_ARG1 (arg_node))) {
+            INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG1 (arg_node));
+            z = TRUE;
+        }
 
-            if (arg2c && (PRF_EXTREMAATTACHED (arg_node))
-                && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node))))
-                && (isPrfArgHasKnownExtrema (PRF_ARG1 (arg_node), arg_info))) {
-                z = TRUE;
-            }
+        if ((!z) && isConstantValue (PRF_ARG2 (arg_node))) {
+            INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
+            z = TRUE;
+        }
+        break;
 
-            DBUG_PRINT ("IVEXP", ("Introduced extrema code for N_prf"));
+    case F_max_SxS:
+    case F_max_VxV:
+#ifdef CODEME
+    /* Have to make constant scalar into vector, or vice versa. */
+    case F_max_SxV:
+    case F_max_VxS:
+#endif // CODEME
+
+        z = ExtremaOnNonconstantArg (arg_node, arg_info);
+        /* If we don't have extrema on a non-constant argument,
+         * we can estimate one extremum based on the constant argument.
+         */
+        if ((!z) && isConstantValue (PRF_ARG1 (arg_node))) {
+            INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG1 (arg_node));
+            z = TRUE;
+        }
+
+        if ((!z) && isConstantValue (PRF_ARG2 (arg_node))) {
+            INFO_MINVAL (arg_info) = ID_AVIS (PRF_ARG2 (arg_node));
+            z = TRUE;
         }
         break;
 
@@ -965,7 +1015,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
     case F_neg_V:
 
         avis = ID_AVIS (PRF_ARG1 (arg_node));
-        if ((NULL != AVIS_MINVAL (avis))) {
+        if (isAvisHasBothExtrema (avis)) {
             DBUG_PRINT ("IVEXP", ("PrfExtractExtrema propagating F_neg extrema"));
             /* Like subtract, we have to flip the order */
             INFO_MINVAL (arg_info) = AVIS_MAXVAL (avis);
@@ -999,7 +1049,7 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
          */
 
         avis = ID_AVIS (PRF_ARG1 (arg_node));
-        if ((NULL != AVIS_MINVAL (avis))) {
+        if ((isAvisHasBothExtrema (avis))) {
             DBUG_PRINT ("IVEXP", ("PrfExtractExtrema propagating guard extrema"));
             INFO_MINVAL (arg_info) = AVIS_MINVAL (avis);
             INFO_MAXVAL (arg_info) = AVIS_MAXVAL (avis);
@@ -1064,6 +1114,24 @@ AttachTheExtrema (node *arg_node, info *arg_info, node *lhsavis, node *minv, nod
     AVIS_MAXVAL (newlhsavis) = maxv;
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * Description: Emit code to invoke monadic function on AVIS_MINVAL/MAXVAL
+ *
+ ******************************************************************************/
+static node *
+InvokeMonadicFn (node *minmax, node *lhsavis, node *rhs, info *arg_info)
+{
+    DBUG_ENTER ("InvokeMonadicFn");
+
+    minmax = TCmakePrf1 (PRF_PRF (rhs), TBmakeId (minmax));
+    PRF_NOEXTREMAWANTED (minmax) = TRUE;
+    minmax = AWLFIflattenExpression (minmax, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
+    DBUG_RETURN (minmax);
 }
 
 /** <!--********************************************************************-->
@@ -1219,7 +1287,7 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
 
             case F_saabind:
                 rhsavis = ID_AVIS (PRF_ARG3 (rhs));
-                if (isAvisHasExtrema (rhsavis)) {
+                if (isAvisHasBothExtrema (rhsavis)) {
                     DBUG_PRINT ("IVEXP", ("Propagating saabind extrema from %s to %s",
                                           AVIS_NAME (rhsavis), AVIS_NAME (lhsavis)));
                     AVIS_MINVAL (lhsavis) = AVIS_MINVAL (rhsavis);
@@ -1243,21 +1311,15 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
             case F_tof_S:
             case F_tod_S:
             case F_toc_S:
-                docalc = isAvisHasExtrema (ID_AVIS (PRF_ARG1 (rhs)));
+                docalc = isAvisHasBothExtrema (ID_AVIS (PRF_ARG1 (rhs)));
                 arg1c = TRUE; /* Keep gcc happy */
                 if (docalc) {
-                    minarg1 = TBmakeId (AVIS_MINVAL (ID_AVIS (PRF_ARG1 (rhs))));
-                    maxarg1 = TBmakeId (AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (rhs))));
-                    minv = TCmakePrf1 (PRF_PRF (rhs), minarg1);
-                    maxv = TCmakePrf1 (PRF_PRF (rhs), maxarg1);
-                    PRF_NOEXTREMAWANTED (minv) = TRUE;
-                    PRF_NOEXTREMAWANTED (maxv) = TRUE;
-                    minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                    maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    minv = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (rhs)));
+                    minv = (NULL != minv) ? InvokeMonadicFn (minv, lhsavis, rhs, arg_info)
+                                          : minv;
+                    maxv = AVIS_MAXVAL (ID_AVIS (PRF_ARG1 (rhs)));
+                    maxv = (NULL != maxv) ? InvokeMonadicFn (maxv, lhsavis, rhs, arg_info)
+                                          : maxv;
                 }
                 break;
 
@@ -1305,14 +1367,14 @@ IntroducePrfExtremaCalc (node *arg_node, info *arg_info)
                 if (arg1c != arg2c) { /* Cases 1,2: One constant, one non-constant */
 
                     nca = arg1c ? PRF_ARG2 (rhs) : PRF_ARG1 (rhs);
-                    docalc = isAvisHasExtrema (ID_AVIS (nca));
+                    docalc = isAvisHasBothExtrema (ID_AVIS (nca));
                 } else if (arg1c && arg2c) { /* Case 3: Both arguments constant. */
                     docalc = FALSE;
                 } else { /* Case 4: neither arg constant */
 
                     /* Treat extrema'd argument as if it was non-constant */
-                    arg1e = isAvisHasExtrema (ID_AVIS (PRF_ARG1 (rhs)));
-                    arg2e = isAvisHasExtrema (ID_AVIS (PRF_ARG2 (rhs)));
+                    arg1e = isAvisHasBothExtrema (ID_AVIS (PRF_ARG1 (rhs)));
+                    arg2e = isAvisHasBothExtrema (ID_AVIS (PRF_ARG2 (rhs)));
                     docalc = arg1e || arg2e; /* Extrema on one side or both is ok */
                     nca = arg1e ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
                     arg1c = !arg1e;
@@ -1481,7 +1543,7 @@ IVEXPlet (node *arg_node, info *arg_info)
 #endif // VERBOSE
 
     /* If extrema already exist, we are done */
-    if ((!isAvisHasExtrema (lhsavis))) {
+    if ((!isAvisHasBothExtrema (lhsavis))) {
 
         switch (NODE_TYPE (rhs)) {
         case N_id:
@@ -1500,9 +1562,11 @@ IVEXPlet (node *arg_node, info *arg_info)
                                       AVIS_NAME (lhsavis)));
                 AVIS_MINVAL (lhsavis) = INFO_MINVAL (arg_info);
                 AVIS_MAXVAL (lhsavis) = INFO_MAXVAL (arg_info);
-                DBUG_ASSERT (N_avis == NODE_TYPE (AVIS_MINVAL (lhsavis)),
+                DBUG_ASSERT ((NULL == AVIS_MINVAL (lhsavis))
+                               || (N_avis == NODE_TYPE (AVIS_MINVAL (lhsavis))),
                              ("PrfExtractExtrema returned non-avis minval"));
-                DBUG_ASSERT (N_avis == NODE_TYPE (AVIS_MAXVAL (lhsavis)),
+                DBUG_ASSERT ((NULL == AVIS_MAXVAL (lhsavis))
+                               || (N_avis == NODE_TYPE (AVIS_MAXVAL (lhsavis))),
                              ("PrfExtractExtrema returned non-avis maxval"));
             } else {
                 /* Could not extract extrema from RHS.

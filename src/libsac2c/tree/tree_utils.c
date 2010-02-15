@@ -273,18 +273,19 @@ TULSisFullGenerator (node *generator, node *operator)
         break;
 
     case N_genarray:
-        z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
+        z = PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
+            && COisZero (lb, TRUE)
             && (ID_AVIS (GENERATOR_BOUND2 (generator))
                 == ID_AVIS (GENARRAY_SHAPE (operator)))
             && checkStepWidth (generator);
         break;
 
     case N_modarray:
-        z = PMmatchFlat (patlb, GENERATOR_BOUND1 (generator)) && COisZero (lb, TRUE)
-            && checkStepWidth (generator);
+        z = PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
+            && COisZero (lb, TRUE) && checkStepWidth (generator);
 
-        if (PMmatchFlat (patub, GENERATOR_BOUND2 (generator))
-            && PMmatchFlat (patarr, MODARRAY_ARRAY (operator))) {
+        if (PMmatchFlatSkipGuards (patub, GENERATOR_BOUND2 (generator))
+            && PMmatchFlatSkipGuards (patarr, MODARRAY_ARRAY (operator))) {
 
             /* Check for matching frame shapes */
             shpgen = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));

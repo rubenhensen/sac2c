@@ -276,7 +276,13 @@
 static char *FAIL = "";
 static int matching_level;
 
-static enum pm_mode { PM_exact, PM_flat, PM_flatSkipExtrema } mode;
+static enum pm_mode {
+    PM_exact,
+    PM_flat,
+    PM_flatSkipExtrema,
+    PM_flatSkipGuards,
+    PM_flatWith
+} mode;
 
 typedef node *matchFun (pattern *, node *);
 
@@ -585,32 +591,42 @@ pushArgs (node *stack, node *args)
 
 /** <!--*******************************************************************-->
  *
- * @fn bool isInGuards( node *expr)
+ * @fn static bool isInExtrema( node *expr)
  *
- * @brief Predicate for determining that an N_prf is a guard or
- *        extrema attachment.
- *
- *        FIXME: It may be that treating extrema and guards alike
- *        is not a good idea. If we can concoct an example of
- *        code, such as CF, that can defeat a guard, thereby
- *        producing incorrect code or code that is likely to
- *        fail, we'll have to tighten up this definition.
+ * @brief Predicate for determining that an N_prf is an extrema attachment.
  *
  * @param N_prf
  * @return True if N_prf is member of the set below.
  *
  *****************************************************************************/
-bool
+static bool
+isInExtrema (prf prfun)
+{
+    DBUG_ENTER ("isInExtrema");
+    DBUG_RETURN ((prfun == F_attachextrema) || (prfun == F_attachintersect));
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn static bool isInGuards( node *expr)
+ *
+ * @brief Predicate for determining that an N_prf is a guard
+ *
+ * @param N_prf
+ * @return True if N_prf is member of the set below.
+ *
+ *****************************************************************************/
+static bool
 isInGuards (prf prfun)
 {
     DBUG_ENTER ("isInGuards");
-    DBUG_RETURN ((prfun == F_attachextrema) /* Attributes */
-                 || (prfun == F_attachintersect)
-
-                 || (prfun == F_guard) /* Guards */
-                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
-                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_val_le_val_VxV));
+    DBUG_RETURN ((prfun == F_guard) || (prfun == F_afterguard)
+                 || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
+                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_V)
+                 || (prfun == F_val_lt_shape_VxA) || (prfun == F_val_le_val_VxV)
+                 || (prfun == F_prod_matches_prod_shape_VxA));
 }
+
 /** <!--*******************************************************************-->
  *
  * @fn node *getInner( node *arg_node)
@@ -669,10 +685,35 @@ skipVarDefs (node *expr)
                 expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
             }
             break;
+
         case PM_flatSkipExtrema:
             while (
               ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
+              || ((NODE_TYPE (expr) == N_prf) && (isInExtrema (PRF_PRF (expr))))) {
+                if (NODE_TYPE (expr) == N_id) {
+                    expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
+                } else {
+                    expr = PRF_ARG1 (expr);
+                }
+            }
+            break;
+
+        case PM_flatSkipGuards:
+            while (
+              ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
               || ((NODE_TYPE (expr) == N_prf) && (isInGuards (PRF_PRF (expr))))) {
+                if (NODE_TYPE (expr) == N_id) {
+                    expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
+                } else {
+                    expr = PRF_ARG1 (expr);
+                }
+            }
+            break;
+
+        case PM_flatWith:
+            while (
+              ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
+              || ((NODE_TYPE (expr) == N_prf) && (F_afterguard == PRF_PRF (expr)))) {
                 if (NODE_TYPE (expr) == N_id) {
                     expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
                 } else {
@@ -841,7 +882,7 @@ PMmulti (int num_pats, ...)
  *
  * pattern *PMvar( int num_attribs, ... , num_pats, ...);
  *
- * @brief matches an IMMEDIATE identifyer (N_id)
+ * @brief matches an IMMEDIATE identifier (N_id)
  *        - up to one inner pattern
  *
  ******************************************************************************/
@@ -857,6 +898,30 @@ PMvar (int num_attribs, ...)
     va_end (ap);
 
     PAT_DOFOLLOW (res) = FALSE;
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMlastVar( int num_attribs, ... , num_pats, ...);
+ *
+ * @brief matches an identifier (N_id), but follows assign chains
+ *        - up to one inner pattern
+ *
+ ******************************************************************************/
+pattern *
+PMlastVar (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_id, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    PAT_DOFOLLOW (res) = TRUE;
 
     return (res);
 }
@@ -1053,6 +1118,29 @@ PMprf (int num_attribs, ...)
 
     va_start (ap, num_attribs);
     res = genericFillPattern (makePattern (N_prf, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMwith( int num_attribs, ..., int num_pats, ...)
+ *
+ * @brief prf pattern:  prf( sub_pat_1, ..., sub_pat_{num_pats})
+ *        - num_pats inner pattern
+ *        - does depend on matching mode!
+ *
+ ******************************************************************************/
+pattern *
+PMwith (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_with, genericPatternMatcher), TRUE,
                               num_attribs, ap);
     va_end (ap);
 
@@ -1340,6 +1428,50 @@ PMmatchFlatSkipExtrema (pattern *pat, node *expr)
     DBUG_PRINT ("PM", ("starting flatSkipExtrema match"));
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
     DBUG_PRINT ("PM", ("flatSkipExtrema match %s!", (res ? "succeeded" : "failed")));
+
+    return (res);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchFlatSkipGuards( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_flatSkipGuards
+ * @return success
+ *
+ *****************************************************************************/
+bool
+PMmatchFlatSkipGuards (pattern *pat, node *expr)
+{
+    mode = PM_flatSkipGuards;
+    matching_level = 0;
+    bool res;
+
+    DBUG_PRINT ("PM", ("starting flatSkipGuards match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("flatSkipGuards match %s!", (res ? "succeeded" : "failed")));
+
+    return (res);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchFlatWith( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_flatWith
+ * @return success
+ *
+ *****************************************************************************/
+bool
+PMmatchFlatWith (pattern *pat, node *expr)
+{
+    mode = PM_flatWith;
+    matching_level = 0;
+    bool res;
+
+    DBUG_PRINT ("PM", ("starting flatWith match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("flatWith match %s!", (res ? "succeeded" : "failed")));
 
     return (res);
 }

@@ -228,6 +228,38 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FindProducerWL( node *arg_node)
+ *
+ * @brief: Determine if N_id arg_node was created by a WL.
+ *         If so, find its N_let.
+ *
+ * @param: arg_node: an N_id node
+ *
+ * @return: The N_with that created the WL, or NULL if the N_id node
+ *          was not created by a WL.
+ *
+ *****************************************************************************/
+node *
+FindProducerWL (node *arg_node)
+{
+    node *producerWL = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ("FindProducerWL");
+
+    pat = PMwith (1, PMAgetNode (&producerWL), 0);
+    if (PMmatchFlatWith (pat, arg_node)) {
+        DBUG_PRINT ("AWLFI", ("Found producerWL:%s: WITH_REFERENCED_FOLD=%d",
+                              AVIS_NAME (ID_AVIS (producerWL)),
+                              WITH_REFERENCED_FOLD (producerWL)));
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (producerWL);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool noDefaultPartition( node *arg_node)
  *
  *   @brief  TRUE if the N_with does not contain a default N_part.
@@ -497,7 +529,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
 {
     node *expn = NULL;
     node *partn;
-    node *foldeeassign;
     node *producerWL;
     node *curavis;
     node *g1;
@@ -505,8 +536,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
-    foldeeassign = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (foldeeid)));
-    producerWL = LET_EXPR (foldeeassign);
+    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
     partn = WITH_PART (producerWL);
 
     while (NULL != partn) {
@@ -576,7 +606,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
      * upper-bound intersection calculation.
      */
     ivid = PRF_ARG1 (arg_node);
-    producerWL = PRF_ARG2 (arg_node);
+    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
 
     idxavis = ID_AVIS (ivid);
     intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, producerWL, idxavis);
@@ -612,7 +642,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
  *
  * @brief: predicate for determining if node is single-op WL
  *
- * @param: arg_node: an N_assign
+ * @param: arg_node: an N_with
  *
  * @return: TRUE if only one result from WL
  *
@@ -623,8 +653,30 @@ AWLFIisSingleOpWL (node *arg_node)
     bool z;
 
     DBUG_ENTER ("AWLFIisSingleOpWL");
-    z = (N_with == NODE_TYPE (ASSIGN_RHS (arg_node)))
-        && (NULL == IDS_NEXT (LET_IDS (ASSIGN_INSTR (arg_node))));
+
+    switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
+    default:
+        DBUG_ASSERT (FALSE, "WITHOP confusion");
+        break;
+    case N_genarray:
+        z = (NULL == GENARRAY_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_modarray:
+        z = (NULL == MODARRAY_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_fold:
+        z = (NULL == FOLD_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_spfold:
+        z = (NULL == SPFOLD_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_propagate:
+        z = (NULL == PROPAGATE_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_break:
+        z = (NULL == BREAK_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    }
 
     DBUG_RETURN (z);
 }
@@ -686,44 +738,27 @@ AWLFIisSingleOpWL (node *arg_node)
 static bool
 checkProducerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *producerWLavis;
-    node *producerWLid;
     node *producerWL;
-    node *producerWLassign;
-    node *rhs;
-    bool z = FALSE;
+    bool z;
 
     DBUG_ENTER ("checkProducerWLFoldable");
 
-    producerWLid = PRF_ARG2 (arg_node);
-    producerWLavis = ID_AVIS (producerWLid);
-    rhs = AVIS_SSAASSIGN (producerWLavis);
-    if ((NULL != rhs) && (N_with == NODE_TYPE (ASSIGN_RHS (rhs)))) {
-        producerWL = ASSIGN_RHS (rhs);
-        producerWLassign = ASSIGN_INSTR (rhs);
+    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
+    if (NULL != producerWL) {
+        z = (AWLFIisSingleOpWL (producerWL)) && (noDefaultPartition (producerWL))
+            && (WITHOP_NEXT (WITH_WITHOP (producerWL)) == NULL)
+            && ((NODE_TYPE (WITH_WITHOP (producerWL)) == N_genarray)
+                || (NODE_TYPE (WITH_WITHOP (producerWL)) == N_modarray));
 
-        DBUG_PRINT ("AWLFI",
-                    ("ProducerWL:%s: WITH_REFERENCED_FOLD=%d", AVIS_NAME (producerWLavis),
-                     WITH_REFERENCED_FOLD (producerWL)));
-
-        if ((NODE_TYPE (producerWLassign) == N_let)
-            && (NODE_TYPE (LET_EXPR (producerWLassign)) == N_with)
-            && (AWLFIisSingleOpWL (rhs))
-            && (WITHOP_NEXT (WITH_WITHOP (LET_EXPR (producerWLassign))) == NULL)
-            && (noDefaultPartition (LET_EXPR (producerWLassign)))
-            && ((NODE_TYPE (WITH_WITHOP (LET_EXPR (producerWLassign))) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (LET_EXPR (producerWLassign)))
-                    == N_modarray))) {
-            z = TRUE;
+        if (z) {
+            DBUG_PRINT ("AWLFI",
+                        ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
+                         AVIS_NAME (ID_AVIS (producerWL)),
+                         WITH_REFERENCED_FOLD (producerWL)));
+        } else {
+            DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
+                                  AVIS_NAME (ID_AVIS (producerWL))));
         }
-    }
-
-    if (z) {
-        DBUG_PRINT ("AWLFI", ("ProducerWL %s is suitable for folding.",
-                              AVIS_NAME (producerWLavis)));
-    } else {
-        DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
-                              AVIS_NAME (producerWLavis)));
     }
 
     DBUG_RETURN (z);
@@ -798,7 +833,7 @@ checkBothFoldable (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("checkBothFoldable");
 
-    producerWL = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))));
+    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
     consumerWL = INFO_CONSUMERWL (arg_info);
 
     bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (producerWL)));
@@ -1010,8 +1045,6 @@ AWLFIids (node *arg_node, info *arg_info)
  * description:
  *   If this Id is a reference to a WL (N_with) we want to increment
  *   the number of references to the potential producerWL (WITH_REFERENCED_FOLD).
- *   The WL node has to be found via avis_ssaassign backlink.
- *
  *   We want to end up with WITH_REFERENCED_FOLD counting only
  *   references from a single WL. Hence, the checking on
  *   WITH_REFERENCED_CONSUMERWL
@@ -1021,7 +1054,6 @@ AWLFIids (node *arg_node, info *arg_info)
 node *
 AWLFIid (node *arg_node, info *arg_info)
 {
-    node *assignn;
     node *producerWL;
 
     DBUG_ENTER ("AWLFIid");
@@ -1029,11 +1061,7 @@ AWLFIid (node *arg_node, info *arg_info)
 #ifdef NOISY
     DBUG_PRINT ("AWLFI", ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
-    assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
-    producerWL = ((NULL != assignn) && (N_with == NODE_TYPE (ASSIGN_RHS (assignn))))
-                   ? ASSIGN_RHS (assignn)
-                   : NULL;
-
+    producerWL = FindProducerWL (arg_node);
     if ((NULL != producerWL) && (NULL == WITH_REFERENCED_CONSUMERWL (producerWL))) {
         /* First reference to this WL. */
         WITH_REFERENCED_CONSUMERWL (producerWL) = INFO_CONSUMERWL (arg_info);
@@ -1149,9 +1177,6 @@ AWLFIcond (node *arg_node, info *arg_info)
 node *
 AWLFImodarray (node *arg_node, info *arg_info)
 {
-    node *producerWLid;
-    node *producerWLavis;
-    node *producerWLassign;
     node *producerWL;
 
     DBUG_ENTER ("AWLFImodarray");
@@ -1159,14 +1184,11 @@ AWLFImodarray (node *arg_node, info *arg_info)
     arg_node = TRAVcont (arg_node, arg_info);
 
     if (N_modarray == NODE_TYPE (arg_node)) {
-        producerWLid = MODARRAY_ARRAY (arg_node);
-        producerWLavis = ID_AVIS (producerWLid);
-        producerWLassign = ASSIGN_INSTR (AVIS_SSAASSIGN (producerWLavis));
-        producerWL = LET_EXPR (producerWLassign);
+        producerWL = FindProducerWL (MODARRAY_ARRAY (arg_node));
         (WITH_REFERENCED_FOLD (producerWL))++;
-        DBUG_PRINT ("AWLFI",
-                    ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
-                     AVIS_NAME (producerWLavis), WITH_REFERENCED_FOLD (producerWL)));
+        DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+                              AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
+                              WITH_REFERENCED_FOLD (producerWL)));
     }
 
     DBUG_RETURN (arg_node);
