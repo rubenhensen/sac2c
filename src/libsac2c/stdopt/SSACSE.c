@@ -171,13 +171,6 @@ FindCSE (cseinfo *layer, node *let)
  * @}  <!-- CSE structure -->
  *****************************************************************************/
 
-typedef enum {
-    VARDECMODERESET,
-    VARDECMODERENAME,
-    VARDECMODEEXTREMA,
-    VARDECMODEINVALID
-} vardecmodetype;
-
 /*
  * INFO structure
  */
@@ -189,20 +182,18 @@ struct INFO {
     node *withid;
     bool recfunap;
     nodelist *resultarg;
-    vardecmodetype vardecmode;
 };
 
 /*
  * INFO macros
  */
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_EXT_ASSIGN(n) (n->ext_assign)
-#define INFO_CSE(n) (n->cse)
-#define INFO_ASSIGN(n) (n->assign)
-#define INFO_WITHID(n) (n->withid)
-#define INFO_RECFUNAP(n) (n->recfunap)
-#define INFO_RESULTARG(n) (n->resultarg)
-#define INFO_VARDECMODE(n) (n->vardecmode)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_EXT_ASSIGN(n) ((n)->ext_assign)
+#define INFO_CSE(n) ((n)->cse)
+#define INFO_ASSIGN(n) ((n)->assign)
+#define INFO_WITHID(n) ((n)->withid)
+#define INFO_RECFUNAP(n) ((n)->recfunap)
+#define INFO_RESULTARG(n) ((n)->resultarg)
 
 /*
  * INFO functions
@@ -223,7 +214,6 @@ MakeInfo ()
     INFO_WITHID (result) = NULL;
     INFO_RECFUNAP (result) = FALSE;
     INFO_RESULTARG (result) = NULL;
-    INFO_VARDECMODE (result) = VARDECMODEINVALID;
 
     DBUG_RETURN (result);
 }
@@ -244,7 +234,8 @@ typedef enum { THENPART, ELSEPART } condpart;
 static node *SetSubstAttributes (node *subst, node *with);
 
 static node *PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
-static node *PropagateReturn2Results (node *ap_fundef, node *ids_chain);
+static node *PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain);
+static node *PropagateLoopInvariantArgs (node *ids, nodelist **nodes);
 static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign);
 static node *GetResultArgAvis (node *id, condpart cp);
 static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign);
@@ -523,7 +514,7 @@ BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
 /******************************************************************************
  *
  * function:
- *   node *PropagateReturn2Results(node *ap_fundef, node *ids_chain)
+ *   node *PropagateIdenticalReturn2Results(node *ap_fundef, node *ids_chain)
  *
  * description:
  *   searches in the return statement of loops (here the then-part phi-copy-
@@ -533,7 +524,7 @@ BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
  *
  *****************************************************************************/
 static node *
-PropagateReturn2Results (node *ap_fundef, node *ids_chain)
+PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain)
 {
     node *act_result;
     node *act_exprs;
@@ -542,7 +533,7 @@ PropagateReturn2Results (node *ap_fundef, node *ids_chain)
 
     bool found_match;
 
-    DBUG_ENTER ("PropagateReturn2Results");
+    DBUG_ENTER ("PropagateIdenticalReturn2Results");
 
     /* process all identifier of result chain of a loop special fundef */
     act_result = ids_chain;
@@ -594,6 +585,53 @@ PropagateReturn2Results (node *ap_fundef, node *ids_chain)
     }
 
     DBUG_RETURN (ids_chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *PropagateLoopInvariantArgs( ids *ids, nodelist **nodes)
+ *
+ * description:
+ *
+ *   Propagates the information that a result of a loop is identical to one
+ *   of its arguments into the results of the outer application to propagate
+ *   this information further.
+ *
+ *****************************************************************************/
+
+node *
+PropagateLoopInvariantArgs (node *ids, nodelist **nodes)
+{
+    DBUG_ENTER ("PropagateLoopInvariantArgs");
+
+    /* process stored INFO_RESULTARG information if any */
+    if ((ids != NULL) && (*nodes != NULL)) {
+        DBUG_ASSERT ((IDS_AVIS (ids) != NULL), "missing Avis backlink in ids");
+
+        DBUG_PRINT ("CSE", ("Looking at %s", AVIS_NAME (IDS_AVIS (ids))));
+
+        DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (ids)) == NULL),
+                     "there must not exist any subst setting for"
+                     " a freshly defined vardec");
+
+        /* set AVIS_SUBST corresponding avis infered by */
+        AVIS_SUBST (IDS_AVIS (ids)) = NODELIST_NODE ((*nodes));
+
+        /* remove info of this result */
+        *nodes = FREEfreeNodelistNode (*nodes);
+
+#ifndef DBUG_OFF
+        if (AVIS_SUBST (IDS_AVIS (ids)) != NULL) {
+            DBUG_PRINT ("CSE", ("bypassing result %s", AVIS_NAME (IDS_AVIS (ids))));
+        }
+#endif
+
+        /* continue with next ids in chain */
+        IDS_NEXT (ids) = PropagateLoopInvariantArgs (IDS_NEXT (ids), nodes);
+    }
+
+    DBUG_RETURN (ids);
 }
 
 /******************************************************************************
@@ -752,20 +790,21 @@ CSEfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CSEarg( node *arg_node, info *arg_info)
+ *   node *CSEavis( node *arg_node, info *arg_info)
  *
  * description:
- *   traverses chain of args to init SUBST attribute with NULL.
+ *   traverses avis to init SUBST attribute with NULL.
  *
  *****************************************************************************/
 node *
-CSEarg (node *arg_node, info *arg_info)
+CSEavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEarg");
+    DBUG_ENTER ("CSEavis");
 
-    AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
+    DBUG_PRINT ("CSE", ("Resetting SUBST field of avis for %s", AVIS_NAME (arg_node)));
 
-    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
+    AVIS_SUBST (arg_node) = NULL;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -791,9 +830,8 @@ CSEblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CSEblock");
 
-    INFO_VARDECMODE (arg_info) = VARDECMODERESET;
+    /* reset AVIS_SUBST for local variables */
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-    INFO_VARDECMODE (arg_info) = VARDECMODEINVALID;
 
     if (NODE_TYPE (BLOCK_INSTR (arg_node)) != N_empty) {
         /*
@@ -819,10 +857,6 @@ CSEblock (node *arg_node, info *arg_info)
 
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-        INFO_VARDECMODE (arg_info) = VARDECMODEEXTREMA;
-        BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-        INFO_VARDECMODE (arg_info) = VARDECMODEINVALID;
-
         /*
          * remove the fake assignment of the index scalars to the index vector
          */
@@ -839,9 +873,7 @@ CSEblock (node *arg_node, info *arg_info)
         INFO_CSE (arg_info) = RemoveTopCseLayer (INFO_CSE (arg_info));
     }
 
-    INFO_VARDECMODE (arg_info) = VARDECMODERESET;
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-    INFO_VARDECMODE (arg_info) = VARDECMODEINVALID;
 
     DBUG_RETURN (arg_node);
 }
@@ -963,6 +995,12 @@ CSElet (node *arg_node, info *arg_info)
     DBUG_PRINT ("CSE", ("Looking at %s in line %d",
                         AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))), NODE_LINE (arg_node)));
     /*
+     * traverse left-hand side t0 do variable substitutions for extrema
+     * and saa
+     */
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+
+    /*
      * traverse right side expression to do variable substitutions
      * or CSE in with-loops/special fundefs
      */
@@ -997,15 +1035,17 @@ CSElet (node *arg_node, info *arg_info)
              * traverse the result ids to set the inferred subst information stored
              * in INFO_RESULTARG nodelist
              */
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+            LET_IDS (arg_node) = PropagateLoopInvariantArgs (LET_IDS (arg_node),
+                                                             &INFO_RESULTARG (arg_info));
 
             /*
              * propagate identical results into calling fundef,
              * set according AVIS_SUBST information for duplicate results.
              * DeadCodeRemoval() will remove the unused result later.
              */
-            LET_IDS (arg_node) = PropagateReturn2Results (AP_FUNDEF (LET_EXPR (arg_node)),
-                                                          LET_IDS (arg_node));
+            LET_IDS (arg_node)
+              = PropagateIdenticalReturn2Results (AP_FUNDEF (LET_EXPR (arg_node)),
+                                                  LET_IDS (arg_node));
 
         } else {
             INFO_CSE (arg_info) = AddLet (INFO_CSE (arg_info), arg_node);
@@ -1091,53 +1131,6 @@ CSEap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *CSEids( ids *arg_ids, info *arg_info)
- *
- * description:
- *
- *   If we have some nodelist stored in INFO_RESULTARG annotate the
- *   stored subst avis information after processing, so further uses will be
- *   renamed according to this information.
- *
- *****************************************************************************/
-
-node *
-CSEids (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CSEids");
-
-    DBUG_ASSERT ((IDS_AVIS (arg_node) != NULL), "missing Avis backlink in ids");
-
-    DBUG_PRINT ("CSE", ("Looking at %s", AVIS_NAME (IDS_AVIS (arg_node))));
-
-    /* process stored INFO_RESULTARG information */
-    if (INFO_RESULTARG (arg_info) != NULL) {
-        DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (arg_node)) == NULL),
-                     "there must not exist any subst setting for"
-                     " a freshly defined vardec");
-
-        /* set AVIS_SUBST corresponding avis infered by */
-        AVIS_SUBST (IDS_AVIS (arg_node)) = NODELIST_NODE (INFO_RESULTARG (arg_info));
-
-        /* remove info of this result */
-        INFO_RESULTARG (arg_info) = FREEfreeNodelistNode (INFO_RESULTARG (arg_info));
-
-#ifndef DBUG_OFF
-        if (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
-            DBUG_PRINT ("CSE", ("bypassing result %s", AVIS_NAME (IDS_AVIS (arg_node))));
-        }
-#endif
-    }
-
-    /* traverse to next ids in chain */
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *CSEid( node *arg_node, info *arg_info)
  *
  * description:
@@ -1216,58 +1209,39 @@ CSEwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CSEvardec(node *arg_node, info *arg_info)
+ *   node *CSEids(node *arg_node, info *arg_info)
  *
  * description:
- *   traverse a vardec to rename its extrema.
- *
+ *   Performs CSE on MIN/MAX and SHAPE/DIM information as attached to the
+ *   vardec. This is done here to ensure that we are in the right scope!
  *
  *****************************************************************************/
 node *
-CSEvardec (node *arg_node, info *arg_info)
+CSEids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CSEvardec");
+    DBUG_ENTER ("CSEids");
 
-    switch (INFO_VARDECMODE (arg_info)) {
-
-    case VARDECMODEEXTREMA:
-        avis = VARDEC_AVIS (arg_node);
-        if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
-            DBUG_PRINT ("CSE", ("Renamed AVIS_MINVAL %s to %s",
-                                AVIS_NAME (VARDEC_AVIS (arg_node)),
-                                AVIS_NAME (AVIS_SUBST (AVIS_MINVAL (avis)))));
-            AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
-        }
-
-        if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
-            DBUG_PRINT ("CSE", ("Renamed AVIS_MAXVAL %s to %s",
-                                AVIS_NAME (VARDEC_AVIS (arg_node)),
-                                AVIS_NAME (AVIS_SUBST (AVIS_MAXVAL (avis)))));
-            AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
-        }
-
-        AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
-        AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
-        break;
-
-    case VARDECMODERESET:
-        DBUG_PRINT ("CSE", ("Traversing vardec for %s in reset mode",
-                            AVIS_NAME (VARDEC_AVIS (arg_node))));
-        AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
-        break;
-
-    case VARDECMODERENAME:
-        /* This is dead code; perhaps I should just kill it */
-        DBUG_PRINT ("CSE", ("Traversing vardec for %s in rename mode",
-                            AVIS_NAME (VARDEC_AVIS (arg_node))));
-        break;
-
-    case VARDECMODEINVALID:
-        DBUG_ASSERT (FALSE, ("CSEvardec is confused about mode"));
+    avis = IDS_AVIS (arg_node);
+    if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
+        DBUG_PRINT ("CSE",
+                    ("Renamed AVIS_MINVAL %s to %s", AVIS_NAME (IDS_AVIS (arg_node)),
+                     AVIS_NAME (AVIS_SUBST (AVIS_MINVAL (avis)))));
+        AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
     }
-    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
+
+    if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
+        DBUG_PRINT ("CSE",
+                    ("Renamed AVIS_MAXVAL %s to %s", AVIS_NAME (IDS_AVIS (arg_node)),
+                     AVIS_NAME (AVIS_SUBST (AVIS_MAXVAL (avis)))));
+        AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
+    }
+
+    AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
+    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -135,11 +135,11 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 
 extern nodelist *TBmakeNodelistNode (node *node, nodelist *next);
 
-#define NODELIST_NODE(n) (n->node)
-#define NODELIST_ATTRIB2(n) (n->attrib2)
-#define NODELIST_STATUS(n) (n->status)
-#define NODELIST_NEXT(n) (n->next)
-#define NODELIST_INT(n) (n->num)
+#define NODELIST_NODE(n) ((n)->node)
+#define NODELIST_ATTRIB2(n) ((n)->attrib2)
+#define NODELIST_STATUS(n) ((n)->status)
+#define NODELIST_NEXT(n) ((n)->next)
+#define NODELIST_INT(n) ((n)->num)
 
 /*--------------------------------------------------------------------------*/
 
