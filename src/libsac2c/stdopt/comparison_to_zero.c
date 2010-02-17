@@ -49,6 +49,7 @@
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "constants.h"
+#include "type_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -159,13 +160,22 @@ IsComparisonOperator (prf op)
 {
     DBUG_ENTER ("IsComparisonOperator");
 
-    DBUG_RETURN (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
-                 || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS
-                 || op == F_neq_VxV || op == F_le_SxS || op == F_le_SxV || op == F_le_VxS
-                 || op == F_le_VxV || op == F_lt_SxS || op == F_lt_SxV || op == F_lt_VxS
-                 || op == F_lt_VxV || op == F_ge_SxS || op == F_ge_SxV || op == F_ge_VxS
-                 || op == F_ge_VxV || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS
-                 || op == F_gt_VxV);
+    DBUG_PRINT ("CTZ", ("Looking for comparison operator"));
+
+    bool res
+      = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
+         || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS || op == F_neq_VxV
+         || op == F_le_SxS || op == F_le_SxV || op == F_le_VxS || op == F_le_VxV
+         || op == F_lt_SxS || op == F_lt_SxV || op == F_lt_VxS || op == F_lt_VxV
+         || op == F_ge_SxS || op == F_ge_SxV || op == F_ge_VxS || op == F_ge_VxV
+         || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS || op == F_gt_VxV);
+
+    if (res)
+        DBUG_PRINT ("CTZ", ("Comp. op. found :)"));
+    else
+        DBUG_PRINT ("CTZ", ("Comp. op. not found :("));
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -186,6 +196,7 @@ IsNodeLiteralZero (node *node)
     bool res = FALSE;
 
     DBUG_ENTER ("IsNodeLiteralZero");
+    DBUG_PRINT ("CTZ", ("Comparing to zero"));
 
     argconst = COaST2Constant (node);
 
@@ -193,6 +204,49 @@ IsNodeLiteralZero (node *node)
         res = COisZero (argconst, TRUE);
         argconst = COfreeConstant (argconst);
     }
+
+    if (res)
+        DBUG_PRINT ("CTZ", ("Zero found"));
+    else
+        DBUG_PRINT ("CTZ", ("Zero not found"));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool HasSuitableType(node *node)
+ *
+ * @brief This function checks to see of the given argument node has a
+ *        suitable type. A suitable types is int, double or float.
+ *
+ * @param node *node must be an N_id node
+ *
+ * @return whether node is of type int, double or float
+ *
+ *****************************************************************************/
+static bool
+HasSuitableType (node *node)
+{
+    DBUG_ENTER ("IsSuitableType");
+
+    DBUG_PRINT ("CTZ", ("Checking for type..."));
+
+    DBUG_ASSERT (NODE_TYPE (node) == N_id, "Node must be an N_id node");
+
+    ntype *type = AVIS_TYPE (ID_AVIS (node));
+
+    if (TYisArray (type))
+        type = TYgetScalar (type);
+
+    simpletype simple = TYgetSimpleType (type);
+
+    bool res = simple == T_int || simple == T_double || simple == T_float;
+
+    if (res)
+        DBUG_PRINT ("CTZ", ("Suitable type found"));
+    else
+        DBUG_PRINT ("CTZ", ("Suitable type not found"));
 
     DBUG_RETURN (res);
 }
@@ -253,7 +307,7 @@ ToScalarComparison (prf op)
         op = F_gt_VxS;
         break;
     default:
-        op = op;
+        break;
     }
 
     DBUG_RETURN (op);
@@ -279,79 +333,37 @@ GetSubtractionOperator (prf op)
 
     switch (op) {
     case F_eq_SxS:
-        result = F_sub_SxS;
-        break;
-    case F_eq_SxV:
-        result = F_sub_SxV;
-        break;
-    case F_eq_VxS:
-        result = F_sub_VxS;
-        break;
-    case F_eq_VxV:
-        result = F_sub_VxV;
-        break;
-
     case F_neq_SxS:
-        result = F_sub_SxS;
-        break;
-    case F_neq_SxV:
-        result = F_sub_SxV;
-        break;
-    case F_neq_VxS:
-        result = F_sub_VxS;
-        break;
-    case F_neq_VxV:
-        result = F_sub_VxV;
-        break;
-
     case F_le_SxS:
-        result = F_sub_SxS;
-        break;
-    case F_le_SxV:
-        result = F_sub_SxV;
-        break;
-    case F_le_VxS:
-        result = F_sub_VxS;
-        break;
-    case F_le_VxV:
-        result = F_sub_VxV;
-        break;
-
     case F_lt_SxS:
-        result = F_sub_SxS;
-        break;
-    case F_lt_SxV:
-        result = F_sub_SxV;
-        break;
-    case F_lt_VxS:
-        result = F_sub_VxS;
-        break;
-    case F_lt_VxV:
-        result = F_sub_VxV;
-        break;
-
     case F_ge_SxS:
-        result = F_sub_SxS;
-        break;
-    case F_ge_SxV:
-        result = F_sub_SxV;
-        break;
-    case F_ge_VxS:
-        result = F_sub_VxS;
-        break;
-    case F_ge_VxV:
-        result = F_sub_VxV;
-        break;
-
     case F_gt_SxS:
         result = F_sub_SxS;
         break;
+
+    case F_eq_SxV:
+    case F_neq_SxV:
+    case F_le_SxV:
+    case F_lt_SxV:
+    case F_ge_SxV:
     case F_gt_SxV:
         result = F_sub_SxV;
         break;
+
+    case F_eq_VxS:
+    case F_neq_VxS:
+    case F_le_VxS:
+    case F_lt_VxS:
+    case F_ge_VxS:
     case F_gt_VxS:
         result = F_sub_VxS;
         break;
+
+    case F_eq_VxV:
+    case F_neq_VxV:
+    case F_le_VxV:
+    case F_lt_VxV:
+    case F_ge_VxV:
     case F_gt_VxV:
         result = F_sub_VxV;
         break;
@@ -463,8 +475,8 @@ CTZassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_NEWASSIGN (arg_info) != NULL) {
-        // insert new assignment node
-        ASSIGN_NEXT (INFO_NEWASSIGN (arg_info)) = arg_node;
+        // insert 2 new assignment nodes
+        ASSIGN_NEXT (ASSIGN_NEXT (INFO_NEWASSIGN (arg_info))) = arg_node;
         arg_node = INFO_NEWASSIGN (arg_info);
 
         INFO_NEWASSIGN (arg_info) = NULL;
@@ -501,8 +513,8 @@ CTZlet (node *arg_node, info *arg_info)
  *
  * @fn node *CTZprf(node *arg_node, info *arg_info)
  *
- * @brief This function looks for suitable comparisons and
- *        applies the optimization and creates the new structure.
+ * @brief This function looks for suitable comparisons, applies the
+ *        ptimization and creates the new structure.
  *
  * @param arg_node
  * @param arg_info
@@ -518,37 +530,81 @@ CTZprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("CTZ",
                 ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
 
-    // check for comparisons that don't already use a literal zero
+    // Check for comparisons that don't already use a literal zero
     if (IsComparisonOperator (PRF_PRF (arg_node))
-        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
+        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
+        && HasSuitableType (EXPRS_EXPR (PRF_ARGS (arg_node)))) {
         DBUG_PRINT ("CTZ", ("Found suitable comparison function"));
 
         // Create the new subtraction assignment with same arguments as comparison
-        node *f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)), NULL);
-        PRF_ARGS (f_sub)
-          = TBmakeExprs (EXPRS_EXPR (PRF_ARGS (arg_node)),
-                         TBmakeExprs (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                      NULL));
+        node *f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)),
+                                 TBmakeExprs (EXPRS_EXPR (PRF_ARGS (arg_node)),
+                                              TBmakeExprs (EXPRS_EXPR (EXPRS_NEXT (
+                                                             PRF_ARGS (arg_node))),
+                                                           NULL)));
 
-        ntype *ptype = NTCnewTypeCheck_Expr (f_sub);
-        node *avis
-          = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (ptype, 0)));
+        ntype *pt = NTCnewTypeCheck_Expr (f_sub);
+        ntype *ptype = TYgetProductMember (pt, 0);
+
+        // Create avis node for subtraction
+        node *avissub = TBmakeAvis (TRAVtmpVar (), TYcopyType (ptype));
+
+        // Create new zero node where type is based on type of the comparison
+        ntype *type = AVIS_TYPE (avissub);
+
+        if (TYisArray (type))
+            type = TYgetScalar (type);
+
+        simpletype simple = TYgetSimpleType (type);
+
+        node *n_zero = NULL;
+
+        switch (simple) {
+        case T_int:
+            DBUG_PRINT ("CTZ", ("Type is int"));
+            n_zero = TBmakeNum (0);
+            break;
+        case T_double:
+            DBUG_PRINT ("CTZ", ("Type is double"));
+            n_zero = TBmakeDouble (0);
+            break;
+
+        case T_float:
+            DBUG_PRINT ("CTZ", ("Type is float"));
+            n_zero = TBmakeFloat (0);
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Type is unknown, must be int, double or float");
+        }
+
+        // Avis node for zero
+        node *aviszero = TBmakeAvis (TRAVtmpVar (), TYcopyType (ptype));
+
         ptype = TYfreeType (ptype);
 
+        // Add the nodes to the instruction list
         INFO_NEWASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), f_sub), NULL);
-        AVIS_SSAASSIGN (avis) = INFO_NEWASSIGN (arg_info);
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avissub, NULL), f_sub),
+                          TBmakeAssign (TBmakeLet (TBmakeIds (aviszero, NULL), n_zero),
+                                        NULL));
 
-        // Create the new vardec node for the subtraction assignment
-        node *vardec = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = vardec;
+        AVIS_SSAASSIGN (avissub) = INFO_NEWASSIGN (arg_info);
+        AVIS_SSAASSIGN (aviszero) = ASSIGN_NEXT (INFO_NEWASSIGN (arg_info));
+
+        // Create the new vardec nodes
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avissub, TBmakeVardec (aviszero,
+                                                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))));
 
         // Change the current comparison function
         PRF_PRF (arg_node) = ToScalarComparison (PRF_PRF (arg_node));
-        EXPRS_EXPR (PRF_ARGS (arg_node)) = TBmakeId (avis);
-        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = TBmakeNum (0);
-    }
+        PRF_ARG1 (arg_node) = TBmakeId (avissub);
+        PRF_ARG2 (arg_node) = TBmakeId (aviszero);
 
+    } // end IsComparisonOperator...
+
+    DBUG_PRINT ("CTZ", ("Leaving prf"));
     DBUG_RETURN (arg_node);
 }
 
