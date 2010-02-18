@@ -154,7 +154,7 @@ INLfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("INL", ("Looking at %s", CTIitemName (arg_node)));
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
-        && (!FUNDEF_ISWRAPPERFUN (arg_node))
+        && (!FUNDEF_ISOBJECTWRAPPER (arg_node)) && (!FUNDEF_ISWRAPPERFUN (arg_node))
         && ((!FUNDEF_ISLACFUN (arg_node)) || (!INFO_SPINE (arg_info)))) {
 
         old_info = arg_info;

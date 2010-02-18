@@ -166,6 +166,12 @@ CreateObjectWrapper (node *wrapper, node *fundef)
     }
 
     /*
+     * we mark it as inline, as this will get rid of the object
+     * wrapper if a dispatch is possible.
+     */
+    FUNDEF_ISINLINE (result) = TRUE;
+
+    /*
      * add body again
      */
     FUNDEF_BODY (fundef) = body;
