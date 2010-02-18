@@ -75,6 +75,38 @@ FreeInfo (info *info)
  * Local helper function
  */
 static node *
+ResetArgs (node *args)
+{
+    DBUG_ENTER ("ResetArgs");
+
+    if (args != NULL) {
+        ARG_HASLINKSIGNINFO (args) = FALSE;
+        ARG_LINKSIGN (args) = 0;
+        ARG_ISREFCOUNTED (args) = TRUE;
+
+        ARG_NEXT (args) = ResetArgs (ARG_NEXT (args));
+    }
+
+    DBUG_RETURN (args);
+}
+
+static node *
+ResetRets (node *rets)
+{
+    DBUG_ENTER ("ResetRets");
+
+    if (rets != NULL) {
+        RET_HASLINKSIGNINFO (rets) = FALSE;
+        RET_LINKSIGN (rets) = 0;
+        RET_ISREFCOUNTED (rets) = TRUE;
+
+        RET_NEXT (rets) = ResetRets (RET_NEXT (rets));
+    }
+
+    DBUG_RETURN (rets);
+}
+
+static node *
 CreateObjectWrapper (node *wrapper, node *fundef)
 {
     node *result;
@@ -116,11 +148,22 @@ CreateObjectWrapper (node *wrapper, node *fundef)
         FUNDEF_NS (result) = NSbuildView (FUNDEF_NS (wrapper));
     }
 
+    /*
+     * reset the functions state
+     */
     FUNDEF_WASIMPORTED (result) = FALSE;
     FUNDEF_WASUSED (result) = FALSE;
     FUNDEF_ISLOCAL (result) = TRUE;
     result = SOSSKresetFundefDemand (result);
     result = SESstripOneFunction (result);
+    if (FUNDEF_ISEXTERN (result)) {
+        FUNDEF_ARGS (result) = ResetArgs (FUNDEF_ARGS (result));
+        FUNDEF_RETS (result) = ResetRets (FUNDEF_RETS (result));
+        if (FUNDEF_LINKNAME (result) != NULL) {
+            FUNDEF_LINKNAME (result) = MEMfree (FUNDEF_LINKNAME (result));
+        }
+        FUNDEF_ISEXTERN (result) = FALSE;
+    }
 
     /*
      * add body again
@@ -128,24 +171,21 @@ CreateObjectWrapper (node *wrapper, node *fundef)
     FUNDEF_BODY (fundef) = body;
 
     /*
-     * for non external funs we create an appropriate
-     * function body calling the original function
+     * we create an appropriate function body calling the original function
      */
-    if (!FUNDEF_ISEXTERN (fundef)) {
-        ids = TCcreateIdsFromRets (FUNDEF_RETS (result), &vardecs);
+    ids = TCcreateIdsFromRets (FUNDEF_RETS (result), &vardecs);
 
-        block = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
-                                                      TBmakeAp (fundef,
-                                                                TCcreateExprsFromArgs (
+    block
+      = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
+                                              TBmakeAp (fundef, TCcreateExprsFromArgs (
                                                                   FUNDEF_ARGS (result)))),
-                                           TBmakeAssign (TBmakeReturn (
-                                                           TCcreateExprsFromIds (ids)),
-                                                         NULL)),
-                             NULL);
+                                   TBmakeAssign (TBmakeReturn (
+                                                   TCcreateExprsFromIds (ids)),
+                                                 NULL)),
+                     NULL);
 
-        BLOCK_VARDEC (block) = vardecs;
-        FUNDEF_BODY (result) = block;
-    }
+    BLOCK_VARDEC (block) = vardecs;
+    FUNDEF_BODY (result) = block;
 
     FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
     FUNDEF_IMPL (result) = fundef;

@@ -135,6 +135,9 @@ RenameFunName (node *fundef)
     if (FUNDEF_ISTHREADFUN (fundef)) {
         buf = SBUFprint (buf, "t");
     }
+    if (FUNDEF_ISOBJECTWRAPPER (fundef)) {
+        buf = SBUFprint (buf, "o");
+    }
     buf = SBUFprint (buf, "f_");
 
     tmp_name = STRreplaceSpecialCharacters (FUNDEF_NAME (fundef));

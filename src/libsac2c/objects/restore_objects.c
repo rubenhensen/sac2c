@@ -8,6 +8,8 @@
 #include "free.h"
 #include "str.h"
 #include "memory.h"
+#include "new_types.h"
+
 /*
  * INFO structure
  */
@@ -240,6 +242,18 @@ DeleteRHSobjects (node *rhs)
     DBUG_RETURN (rhs_out);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node * MarkArtificialArgs( node *fundef_args, node *ap_args)
+ *
+ * @brief Whoever wrote me, didn't comment me. However, it seems as if this
+ *        function propagates the ISARTIFICIAL property from actual to
+ *        formal arguments.
+ *
+ * @param fundef_args formal arguments
+ * @param ap_args     actual arguments
+ *
+ * @return the updated formal arguments.
+ ******************************************************************************/
 static node *
 MarkArtificialArgs (node *fundef_args, node *ap_args)
 {
@@ -257,6 +271,62 @@ MarkArtificialArgs (node *fundef_args, node *ap_args)
           = MarkArtificialArgs (ARG_NEXT (fundef_args), EXPRS_NEXT (ap_args));
     }
     DBUG_RETURN (fundef_args);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn bool SignaturesIdenticalModuloArtificials( node *fun1, node *fun2)
+ *
+ * @brief Checks whether the signature of fun1 and fun2 are identical after
+ *        all artificial args and rets have been removed.
+ *
+ * @param fun1 first function to compare
+ * @param fun2 second function to compare
+ *
+ * @return TRUE iff the signatures match
+ ******************************************************************************/
+static bool
+SignaturesIdenticalModuloArtificials (node *fun1, node *fun2)
+{
+    bool result = TRUE;
+    node *rets1, *rets2, *args1, *args2;
+
+    DBUG_ENTER ("SignaturesIdenticalModuloArtificials");
+
+    /* first check return types */
+    rets1 = FUNDEF_RETS (fun1);
+    rets2 = FUNDEF_RETS (fun2);
+
+    while (result && (rets1 != NULL) && (rets2 != NULL)) {
+        if (RET_ISARTIFICIAL (rets1)) {
+            rets1 = RET_NEXT (rets1);
+        } else if (RET_ISARTIFICIAL (rets2)) {
+            rets2 = RET_NEXT (rets2);
+        } else {
+            result = TYeqTypes (RET_TYPE (rets1), RET_TYPE (rets2));
+            rets1 = RET_NEXT (rets1);
+            rets2 = RET_NEXT (rets2);
+        }
+    }
+    result = result && (rets1 == NULL) && (rets2 == NULL);
+
+    /* same for argument types */
+    args1 = FUNDEF_ARGS (fun1);
+    args2 = FUNDEF_ARGS (fun2);
+
+    while (result && (args1 != NULL) && (args2 != NULL)) {
+        if (ARG_ISARTIFICIAL (args1)) {
+            args1 = ARG_NEXT (args1);
+        } else if (ARG_ISARTIFICIAL (args2)) {
+            args2 = ARG_NEXT (args2);
+        } else {
+            result = TYeqTypes (ARG_NTYPE (args1), ARG_NTYPE (args2));
+            args1 = ARG_NEXT (args1);
+            args2 = ARG_NEXT (args2);
+        }
+    }
+    result = result && (args1 == NULL) && (args2 == NULL);
+
+    DBUG_RETURN (result);
 }
 
 /*
@@ -308,11 +378,15 @@ RESOap (node *arg_node, info *arg_info)
       = StripArtificialArgExprs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
 
     /*
-     * unwrap function if neccessary
+     * unwrap function if necessary and possible.
      * be aware that functions may get wrapped multiple times
      * if they are imported more than once!
+     * furthermore, we can only unwrap the object wrapper if it
+     * has not been specialized and the signatures still match.
      */
-    while (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))) {
+    while (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))
+           && SignaturesIdenticalModuloArtificials (AP_FUNDEF (arg_node),
+                                                    FUNDEF_IMPL (AP_FUNDEF (arg_node)))) {
         DBUG_ASSERT ((FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL),
                      "found object wrapper with FUNDEF_IMPL not set!");
         AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
@@ -516,7 +590,7 @@ RESOfundef (node *arg_node, info *arg_info)
     }
 
     /*
-     * prcocess all bodies first
+     * process all bodies first
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -532,9 +606,12 @@ RESOfundef (node *arg_node, info *arg_info)
     FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node));
 
     /*
-     * finally delete object wrapper functions
+     * finally, we can remove those object wrappers where the signature of the
+     * object wrapper still matches that of the wrapped function (modulo
+     * artificial args), i.e., those, that have not been specialized.
      */
-    if (FUNDEF_ISOBJECTWRAPPER (arg_node)) {
+    if (FUNDEF_ISOBJECTWRAPPER (arg_node)
+        && SignaturesIdenticalModuloArtificials (arg_node, FUNDEF_IMPL (arg_node))) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 
