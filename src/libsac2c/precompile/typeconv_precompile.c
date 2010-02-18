@@ -45,7 +45,6 @@ struct INFO {
     node *preassigns;
     node *postassigns;
     node *endblockassigns;
-    node *lhs; /* pointer */
 };
 
 /*
@@ -55,7 +54,6 @@ struct INFO {
 #define INFO_TCP_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_TCP_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_TCP_ENDBLOCKASSIGNS(n) ((n)->endblockassigns)
-#define INFO_LHS(n) ((n)->lhs)
 
 /*
  * INFO functions
@@ -73,7 +71,6 @@ MakeInfo ()
     INFO_TCP_PREASSIGNS (result) = NULL;
     INFO_TCP_POSTASSIGNS (result) = NULL;
     INFO_TCP_ENDBLOCKASSIGNS (result) = NULL;
-    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -327,53 +324,6 @@ TCPassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!-- ***************************************************************** -->
- * @brief removes prfs of type F_type_conv by replacing them with
- *        their second argument.
- *
- * @param arg_node N_prf node
- * @param arg_info info structure
- *
- * @return N_prf node != N_type_conv or the second argument of the given
- *         prf
- */
-node *
-TCPprf (node *arg_node, info *arg_info)
-{
-    node *tmp;
-    ntype *type;
-    ct_res cond;
-
-    DBUG_ENTER ("TCPprf");
-    if (PRF_PRF (arg_node) == F_type_conv) {
-#if 0 /* CAJ */
-    /*
-     * replace expressions of form:
-     *     type_conv( <type>, <expr>)
-     * by
-     *     <expr>
-     */
-    tmp = arg_node;
-    arg_node = PRF_ARG2( tmp);
-    PRF_ARG2( tmp) = NULL;
-
-    tmp = FREEdoFreeNode( tmp);
-#else
-        type = NTCnewTypeCheck_Expr (PRF_ARG2 (arg_node));
-        cond = TYcmpTypes (type, AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info))));
-        if (cond == TY_eq) {
-            tmp = arg_node;
-            arg_node = PRF_ARG2 (tmp);
-            PRF_ARG2 (tmp) = NULL;
-
-            tmp = FREEdoFreeNode (tmp);
-        }
-        type = TYfreeType (type);
-#endif
-    }
-    DBUG_RETURN (arg_node);
-}
-
 /******************************************************************************
  *
  * Function:
@@ -490,19 +440,6 @@ TCPrange (node *arg_node, info *arg_info)
     DBUG_ENTER ("TCPrange");
 
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-TCPids (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("TCPids");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    INFO_LHS (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);
 }

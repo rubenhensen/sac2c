@@ -2792,10 +2792,8 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
-          <node name="Prf" />
           <node name="Ap" />
           <node name="Range" />
-          <node name="Ids" />
         </travuser>
       </traversal>
       <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">

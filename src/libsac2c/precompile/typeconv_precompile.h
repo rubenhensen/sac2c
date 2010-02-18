@@ -18,8 +18,6 @@ extern node *TCPmodule (node *arg_node, info *arg_info);
 extern node *TCPfundef (node *arg_node, info *arg_info);
 extern node *TCPassign (node *arg_node, info *arg_info);
 extern node *TCPap (node *arg_node, info *arg_info);
-extern node *TCPprf (node *arg_node, info *arg_info);
 extern node *TCPrange (node *arg_node, info *arg_info);
-extern node *TCPids (node *arg_node, info *arg_info);
 
 #endif /* _SAC_TYPECONV_PRECOMPILE_H_ */
