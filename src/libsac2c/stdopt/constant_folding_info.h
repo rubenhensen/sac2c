@@ -16,10 +16,14 @@ struct INFO {
     node *postassign;
     node *vardecs;
     node *topblock;
+    node *avisminval;
+    node *avismaxval;
+    node *let;
     bool remassign;
     bool onefundef;
     bool lacfunok;
     bool travinlac;
+    bool doingextrema;
 };
 
 #define INFO_NUM_IDS_SOFAR(n) (n->numidssofar)
@@ -32,7 +36,11 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_TOPBLOCK(n) (n->topblock)
+#define INFO_AVISMINVAL(n) (n->avisminval)
+#define INFO_AVISMAXVAL(n) (n->avismaxval)
+#define INFO_LET(n) (n->let)
 
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_LACFUNOK(n) (n->lacfunok)
 #define INFO_TRAVINLAC(n) (n->travinlac)
+#define INFO_DOINGEXTREMA(n) (n->doingextrema)

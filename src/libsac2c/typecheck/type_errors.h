@@ -27,7 +27,8 @@ extern void TEassureSimpleV (char *obj, ntype *type);
 extern void TEassureIntS (char *obj, ntype *type);
 extern void TEassureIntV (char *obj, ntype *type);
 extern void TEassureIntVectLengthOne (char *obj, ntype *type);
-extern void TEassureNonNegativeValues (char *obj, ntype *type);
+extern void TEassureNonNegativeValues_S (char *obj, ntype *type);
+extern void TEassureNonNegativeValues_V (char *obj, ntype *type);
 extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2,
                                           ntype *type2, char *obj3, ntype *type3);

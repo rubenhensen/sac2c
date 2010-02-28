@@ -51,6 +51,7 @@
 #include "namespaces.h"
 #include "remove_vardecs.h"
 #include "constant_folding_info.h"
+#include "symbolic_constant_simplification.h"
 #include "pattern_match.h"
 #include "print.h"
 #include "phase.h"
@@ -1279,6 +1280,22 @@ SCCFprf_sel (node *arg_node, info *arg_info)
     if (NULL == res) {
         res = SelProxyArray (arg_node, arg_info);
     }
+
+    /* Propagate extrema */
+    if ((NULL != res) && (NULL != AVIS_MINVAL (ID_AVIS (PRF_ARG2 (arg_node))))) {
+        INFO_AVISMINVAL (arg_info)
+          = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
+                                   AVIS_MINVAL (ID_AVIS (PRF_ARG2 (arg_node))),
+                                   &SCCFprf_sel);
+    }
+
+    if ((NULL != res) && (NULL != AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (arg_node))))) {
+        INFO_AVISMAXVAL (arg_info)
+          = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
+                                   AVIS_MAXVAL (ID_AVIS (PRF_ARG2 (arg_node))),
+                                   &SCCFprf_sel);
+    }
+
     DBUG_RETURN (res);
 }
 

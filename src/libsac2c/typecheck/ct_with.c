@@ -271,7 +271,7 @@ NTCCTwl_gen (te_info *info, ntype *args)
         res = TYmakeBottomType (err_msg);
     } else {
 
-        TEassureNonNegativeValues ("shape expression of genarray with loop", shp);
+        TEassureNonNegativeValues_V ("shape expression of genarray with loop", shp);
         err_msg = TEfetchErrors ();
         if (err_msg != NULL) {
             res = TYmakeBottomType (err_msg);

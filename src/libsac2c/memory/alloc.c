@@ -1683,6 +1683,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_same_shape_AxA:
     case F_shape_matches_dim_VxA:
+    case F_non_neg_val_S:
     case F_non_neg_val_V:
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:

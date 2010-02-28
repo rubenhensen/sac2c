@@ -135,6 +135,8 @@
 #include "structural_constant_constant_folding.h"
 #include "constant_folding_info.h"
 #include "pattern_match.h"
+#include "algebraic_wlfi.h"
+#include "check.h"
 
 static info *
 MakeInfo ()
@@ -159,6 +161,10 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_TOPBLOCK (result) = NULL;
+    INFO_AVISMINVAL (result) = NULL;
+    INFO_AVISMAXVAL (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_DOINGEXTREMA (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -343,9 +349,6 @@ IsFullyConstantNode (node *arg_node)
  *
  *          arr = [ 1, 3, 2];
  *
- *        If a decision is made to completely flatten N_array nodes,
- *        this code should either be deleted or its behavior inverted.
- *
  *****************************************************************************/
 static node *
 UnflattenSimpleScalars (node *arg_node)
@@ -490,6 +493,47 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
 
     DBUG_ASSERT ((exprs == NULL),
                  "exprs chain longer than ids chain in CreateAssignsFromIdsExprs");
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *InvokeCFprfAndFlattenExtrema( node *arg_node,
+ *                                                info *arg_info,
+ *                                                 travfun_p fn,
+ *                                                 node *res)
+ *
+ * @brief Invoke specific CFprf function.
+ *        Then, flatten the extrema, if they were created.
+ *
+ *****************************************************************************/
+
+static node *
+InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node *res)
+{
+    node *ex;
+    ntype *restype;
+
+    DBUG_ENTER ("InvokeCFprfAndFlattenExtrema");
+
+    if ((NULL == res) && (NULL != fn)) {
+        res = fn (arg_node, arg_info);
+        restype = (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
+        restype = TYeliminateAKV (restype);
+        if ((NULL != res) && (NULL != INFO_AVISMINVAL (arg_info))) {
+            ex = AWLFIflattenExpression (INFO_AVISMINVAL (arg_info),
+                                         &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGN (arg_info), restype);
+            INFO_AVISMINVAL (arg_info) = ex;
+        }
+        if ((NULL != res) && (NULL != INFO_AVISMAXVAL (arg_info))) {
+            ex = AWLFIflattenExpression (INFO_AVISMAXVAL (arg_info),
+                                         &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGN (arg_info), restype);
+            INFO_AVISMAXVAL (arg_info) = ex;
+        }
+    }
 
     DBUG_RETURN (res);
 }
@@ -873,14 +917,28 @@ CFlet (node *arg_node, info *arg_info)
      */
     DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "empty LHS of let found in CF");
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "empty RHS of let found in CF");
+    DBUG_ASSERT ((NULL == INFO_AVISMINVAL (arg_info)), "AVISMINVAL non-NULL");
+    DBUG_ASSERT ((NULL == INFO_AVISMAXVAL (arg_info)), "AVISMAXVAL non-NULL");
+    DBUG_ASSERT ((FALSE == INFO_DOINGEXTREMA (arg_info)), "DOINGEXTREMA TRUE");
 
     DBUG_PRINT ("CF", ("Looking at LHS: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
     /**
      *  First, we collect the INFO_LHSTYPE!
      */
+    INFO_LET (arg_info) = arg_node;
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    /* If first result has extrema, add them now.
+     */
+    if (NULL != INFO_AVISMINVAL (arg_info)) {
+        AVIS_MINVAL (IDS_AVIS (LET_IDS (arg_node))) = INFO_AVISMINVAL (arg_info);
+        INFO_AVISMINVAL (arg_info) = NULL;
+    }
+    if (NULL != INFO_AVISMAXVAL (arg_info)) {
+        AVIS_MAXVAL (IDS_AVIS (LET_IDS (arg_node))) = INFO_AVISMAXVAL (arg_info);
+        INFO_AVISMAXVAL (arg_info) = NULL;
+    }
 
     if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))
         && (NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)) {
@@ -986,6 +1044,8 @@ CFarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFarray");
 
+    DBUG_PRINT ("CF", ("CFarray looking at  %s",
+                       AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))));
     exprs = ARRAY_AELEMS (arg_node);
     pat = PMarray (0, 2, PMarray (1, PMAgetFS (&fs), 1, PMskip (0)), PMskip (0));
 
@@ -1004,6 +1064,8 @@ CFarray (node *arg_node, info *arg_info)
               = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (array)),
                              SHappendShapes (ARRAY_FRAMESHAPE (arg_node), fshp), lexprs);
             fshp = SHfreeShape (fshp);
+            DBUG_PRINT ("CF", ("N_array %s being expanded",
+                               AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))));
             arg_node = FREEdoFreeNode (arg_node);
         } else {
             res = arg_node;
@@ -1035,28 +1097,22 @@ node *
 CFprf (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    travfun_p fn;
 
     DBUG_ENTER ("CFprf");
     DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
-    /* Bog-standard constant-folding is all handled by typechecker now */
-    /* Try symbolic constant simplification */
-    fn = prf_cfscs_funtab[PRF_PRF (arg_node)];
-    if ((NULL == res) && (NULL != fn)) {
-        res = fn (arg_node, arg_info);
-    }
 
+    /* Bog-standard constant-folding is all handled by typechecker now */
+
+    /* Try symbolic constant simplification */
+    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                        prf_cfscs_funtab[PRF_PRF (arg_node)], res);
     /* If that doesn't help, try structural constant constant folding */
-    fn = prf_cfsccf_funtab[PRF_PRF (arg_node)];
-    if ((NULL == res) && (NULL != fn)) {
-        res = fn (arg_node, arg_info);
-    }
+    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                        prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
 
     /* If that doesn't help, try SAA constant folding */
-    fn = prf_cfsaa_funtab[PRF_PRF (arg_node)];
-    if ((NULL == res) && (NULL != fn)) {
-        res = fn (arg_node, arg_info);
-    }
+    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                        prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
 
     if (res != NULL) {
         /* free this primitive function and replace it by new node */

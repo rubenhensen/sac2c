@@ -750,13 +750,25 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        SAAdim_shape_matches_dim_VxA, SAAshp_shape_matches_dim_VxA,
        SAACFprf_shape_matches_dim_VxA, 1, NULL, NULL, TEtwo, NULL, NULL),
 
-  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg, NULL,
-       COMPprfNonNegVal, SCSprf_non_neg_val_V, NULL, SAACFprf_non_neg_val_V,
+  PRF (non_neg_val_S, (PA_S, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg_S, NULL,
+       COMPprfNonNegVal_S, SCSprf_non_neg_val_S, NULL, SAACFprf_non_neg_val_S,
+       SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+
+  PRF (non_neg_val_V, (PA_V, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg_V, NULL,
+       COMPprfNonNegVal_V, SCSprf_non_neg_val_V, NULL, SAACFprf_non_neg_val_V,
+       SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+
+  PRF (val_lt_shape_SxA, (PA_S, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape, NULL,
+       COMPprfValLtShape, SCSprf_val_lt_shape_SxA, NULL, SAACFprf_val_lt_shape_SxA,
        SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_lt_shape_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_shape, NULL,
        COMPprfValLtShape, SCSprf_val_lt_shape_VxA, NULL, SAACFprf_val_lt_shape_VxA,
        SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+
+  PRF (val_le_val_SxS, (PA_S, PA_S, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
+       COMPprfValLeVal, SCSprf_val_le_val_SxS, NULL, NULL, SAAdim_cc_inherit,
+       SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
   PRF (val_le_val_VxV, (PA_V, PA_V, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_val, NULL,
        COMPprfValLeVal, SCSprf_val_le_val_VxV, NULL, NULL, SAAdim_cc_inherit,

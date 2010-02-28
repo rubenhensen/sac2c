@@ -19,6 +19,8 @@ extern node *SCSmakeTrue (node *prfarg);
 extern node *SCSmakeFalse (node *prfarg);
 extern node *SCSmakeZero (node *prfarg);
 extern simpletype GetBasetypeOfExpr (node *expr);
+extern node *SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1,
+                                    node *arg2, node *(*fun) (node *, info *));
 
 extern node *SCSprf_tobool_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);
@@ -66,8 +68,11 @@ extern node *SCSprf_guard (node *arg_node, info *arg_info);
 extern node *SCSprf_afterguard (node *arg_node, info *arg_info);
 extern node *SCSprf_same_shape_AxA (node *arg_node, info *arg_info);
 extern node *SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_non_neg_val_S (node *arg_node, info *arg_info);
 extern node *SCSprf_non_neg_val_V (node *arg_node, info *arg_info);
+extern node *SCSprf_val_lt_shape_SxA (node *arg_node, info *arg_info);
 extern node *SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_val_le_val_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_val_le_val_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info);
 extern node *SCSprf_sel_VxA (node *arg_node, info *arg_info);

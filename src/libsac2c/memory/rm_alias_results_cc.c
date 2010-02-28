@@ -15,6 +15,7 @@
  *   - same_shape_AxA
  *   - shape_matches_dim_VxA
  *   - non_neg_val_V
+ *   - non_neg_val_S
  *   - val_lt_shape_VxA
  *   - val_le_val_VxV
  *   - prod_matches_prod_shape_VxA
@@ -346,6 +347,7 @@ EMRACCprf (node *arg_node, info *arg_info)
 
     case F_shape_matches_dim_VxA:
     case F_non_neg_val_V:
+    case F_non_neg_val_S:
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
     case F_prod_matches_prod_shape_VxA:

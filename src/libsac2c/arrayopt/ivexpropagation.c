@@ -1041,10 +1041,11 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
           FIXME */
 
     case F_non_neg_val_V:
+    case F_non_neg_val_S:
         avis = ID_AVIS (PRF_ARG1 (arg_node));
         if ((!isAvisHasMinVal (avis))
             && (TYisAKV (AVIS_TYPE (avis)) || TYisAKS (AVIS_TYPE (avis)))) {
-            /* Create zero vector */
+            /* Create zero minimum */
             zr = SCSmakeZero (PRF_ARG1 (arg_node));
             zr = AWLFIflattenExpression (zr, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info),
@@ -1056,8 +1057,8 @@ PrfExtractExtrema (node *arg_node, info *arg_info)
         /* break intentionally elided. */
 
     case F_val_lt_shape_VxA:
-    case F_val_le_val_VxV:
     case F_shape_matches_dim_VxA:
+    case F_val_le_val_VxV:
         /*
          * Propagate any extrema.
          * Removal of the guard, when possible, will be done by CF.
@@ -1601,10 +1602,23 @@ IVEXPlet (node *arg_node, info *arg_info)
             break;
 
         case N_array:
-            if (!TYisAKV (AVIS_TYPE (lhsavis))) {
-                rhs = PropagateNarray (arg_node, arg_info);
-                LET_EXPR (arg_node) = rhs;
-            }
+            rhs = PropagateNarray (arg_node, arg_info);
+            LET_EXPR (arg_node) = rhs;
+            break;
+
+        case N_funcond:
+        case N_bool:
+        case N_num:
+        case N_char:
+        case N_float:
+        case N_double:
+        case N_numbyte:
+        case N_numlonglong:
+        case N_numulonglong:
+        case N_numushort:
+        case N_numuint:
+        case N_numulong:
+            /* FIXME: Add other simple scalar types */
             break;
 
         default:

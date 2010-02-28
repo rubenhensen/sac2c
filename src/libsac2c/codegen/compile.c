@@ -6483,20 +6483,41 @@ COMPprfShapeMatchesDim (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *COMPprfNonNegVal( node *arg_node, info *arg_info)
+ * @fn node *COMPprfNonNegVal_S( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-COMPprfNonNegVal (node *arg_node, info *arg_info)
+COMPprfNonNegVal_S (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfNonNegVal");
+    DBUG_ENTER ("COMPprfNonNegVal_S");
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm2 ("ND_PRF_NON_NEG_VAL", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm2 ("ND_PRF_NON_NEG_VAL_S", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfNonNegVal_V( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfNonNegVal_V (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfNonNegVal_V");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm2 ("ND_PRF_NON_NEG_VAL_V", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);

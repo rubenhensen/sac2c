@@ -674,23 +674,60 @@ NTCCTprf_shape_dim (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_non_neg( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_non_neg_S)( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_non_neg (te_info *info, ntype *args)
+NTCCTprf_non_neg_S (te_info *info, ntype *args)
 {
     ntype *idx;
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_non_neg");
+    DBUG_ENTER ("NTCCTprf_non_neg_S");
 
     idx = TYgetProductMember (args, 0);
-    TEassureNonNegativeValues (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureNonNegativeValues_S (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+        pred = TYcopyType (res);
+    } else {
+        res = TYcopyType (idx);
+        if (TYisAKV (idx)) {
+            pred = TYmakeAKV (TYmakeSimpleType (T_bool), COmakeTrue (SHcreateShape (0)));
+        } else {
+            pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (2, res, pred));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_non_neg_V)( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_non_neg_V (te_info *info, ntype *args)
+{
+    ntype *idx;
+    ntype *res, *pred;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_non_neg_V");
+
+    idx = TYgetProductMember (args, 0);
+    TEassureNonNegativeValues_V (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -1070,7 +1107,7 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
         res = TYmakeBottomType (err_msg);
     } else {
 
-        TEassureNonNegativeValues (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
+        TEassureNonNegativeValues_V (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
         TEassureProdValMatchesProdShape (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp,
                                          TEarg2Obj (2), array);
         err_msg = TEfetchErrors ();

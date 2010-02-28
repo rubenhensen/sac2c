@@ -249,9 +249,9 @@ FindProducerWL (node *arg_node)
 
     pat = PMwith (1, PMAgetNode (&producerWL), 0);
     if (PMmatchFlatWith (pat, arg_node)) {
-        DBUG_PRINT ("AWLFI", ("Found producerWL:%s: WITH_REFERENCED_FOLD=%d",
-                              AVIS_NAME (ID_AVIS (producerWL)),
-                              WITH_REFERENCED_FOLD (producerWL)));
+        DBUG_PRINT ("AWLFI",
+                    ("Found producerWL:%s: WITH_REFERENCED_FOLD=%d",
+                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (producerWL)));
     }
     pat = PMfree (pat);
 
@@ -753,11 +753,11 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
         if (z) {
             DBUG_PRINT ("AWLFI",
                         ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
-                         AVIS_NAME (ID_AVIS (producerWL)),
+                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
                          WITH_REFERENCED_FOLD (producerWL)));
         } else {
             DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
-                                  AVIS_NAME (ID_AVIS (producerWL))));
+                                  AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
         }
     }
 

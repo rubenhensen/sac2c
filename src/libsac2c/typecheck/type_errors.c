@@ -937,7 +937,7 @@ TEassureIntVectLengthOne (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEassureNonNegativeValues( char *obj, ntype *type)
+ *    void TEassureNonNegativeValues_S( char *obj, ntype *type)
  *
  * description:
  *
@@ -945,12 +945,41 @@ TEassureIntVectLengthOne (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEassureNonNegativeValues (char *obj, ntype *type)
+TEassureNonNegativeValues_S (char *obj, ntype *type)
+{
+    int i;
+    int *dv;
+
+    DBUG_ENTER ("TEassureNonNegativeValues_S");
+
+    if (TYgetConstr (type) == TC_akv) {
+        dv = (int *)COgetDataVec (TYgetValue (type));
+        if (dv[0] < 0) {
+            TEhandleError (global.linenum, global.filename,
+                           "%s should not contain negative values; type found: %s", obj,
+                           TYtype2String (type, FALSE, 0));
+        }
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureNonNegativeValues_V( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureNonNegativeValues_V (char *obj, ntype *type)
 {
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEassureNonNegativeValues");
+    DBUG_ENTER ("TEassureNonNegativeValues_V");
 
     if (TYgetConstr (type) == TC_akv) {
         dim = SHgetExtent (TYgetShape (type), 0);

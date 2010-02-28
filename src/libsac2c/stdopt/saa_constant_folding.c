@@ -480,6 +480,36 @@ SAACFprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/**<!--*************************************************************-->
+ *
+ * @fn node *SAACFprf_non_neg_val_S(node *arg_node, info *arg_info)
+ *
+ * @description: Identical to _V version, essentially.
+ *
+ ********************************************************************/
+
+node *
+SAACFprf_non_neg_val_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *minv;
+    constant *con;
+
+    DBUG_ENTER ("SAACFprf_non_neg_val_S");
+
+    minv = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
+    if (NULL != minv) {
+        con = COaST2Constant (minv);
+        if ((NULL != con) && COisNonNeg (con, TRUE)) {
+            DBUG_PRINT ("CF", ("non_neg_val_S guard removed"));
+            con = COfreeConstant (con);
+            res = TBmakeExprs (DUPdoDupTree (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+        }
+    }
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SAACFprf_same_shape_AxA( node *arg_node, info *arg_info)
@@ -573,6 +603,20 @@ SAACFprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
 
 #endif // FIXME
 
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SAACFprf_val_lt_shape_SxA( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SAACFprf_val_lt_shape_SxA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("SAACFprf_val_lt_shape_SxA");
     DBUG_RETURN (res);
 }
 

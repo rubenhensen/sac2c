@@ -24,7 +24,9 @@ extern node *SAACFprf_take_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_drop_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_same_shape_AxA (node *arg_node, info *arg_info);
 extern node *SAACFprf_shape_matches_dim (node *arg_node, info *arg_info);
+extern node *SAACFprf_non_neg_val_S (node *arg_node, info *arg_info);
 extern node *SAACFprf_non_neg_val_V (node *arg_node, info *arg_info);
+extern node *SAACFprf_val_lt_shape_SxA (node *arg_node, info *arg_info);
 extern node *SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info);
 
 extern node *SAACFprf_saabind (node *arg_node, info *arg_info);

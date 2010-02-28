@@ -282,7 +282,14 @@
                           "dim constraint.");                                            \
     }
 
-#define SAC_ND_PRF_NON_NEG_VAL(to_NT, from_NT)                                           \
+#define SAC_ND_PRF_NON_NEG_VAL_S(to_NT, from_NT)                                         \
+    {                                                                                    \
+        if (SAC_ND_READ (from_NT, 0) < 0)                                                \
+            SAC_RuntimeError ("Non-negativity constraint violated");                     \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
+
+#define SAC_ND_PRF_NON_NEG_VAL_V(to_NT, from_NT)                                         \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
