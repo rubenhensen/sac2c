@@ -338,6 +338,7 @@ SCCprf (node *arg_node, info *arg_info)
 
     case F_afterguard:
     case F_non_neg_val_V:
+    case F_non_neg_val_S:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {
             INFO_LHS (arg_info)
               = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
