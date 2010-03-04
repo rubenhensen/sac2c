@@ -418,7 +418,7 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_NOINLINE (pragma)) {
-            FUNDEF_NOINLINE (arg_node) == TRUE;
+            FUNDEF_NOINLINE (arg_node) = TRUE;
         }
 
         /*
