@@ -8,7 +8,7 @@
  *
  * @terminology:
  *
- * @brief This traversal uses information in each F_attachintersect
+ * @brief This traversal uses information in each F_noteintersect
  *        node as the basis for making a decision about slicing
  *        each consumerWL partition.
  *
@@ -27,11 +27,11 @@
  *        Since a given partition may have several, potentially
  *        conflicting intersect specifications in it, once we
  *        have sliced a partition, we examine the new partitions,
- *        and delete any F_attachintersect that does not have an
+ *        and delete any F_noteintersect that does not have an
  *        exact match on the new partition. The idea here is that
  *        we do not know if the unmatched intersections represent
  *        valid slices-in-waiting.
- *        Further AWLFI traversals will rebuild those F_attachintersect
+ *        Further AWLFI traversals will rebuild those F_noteintersect
  *        calls with up-to-date partition bounds, and perform additional
  *        slicing, as required.
  *
@@ -296,7 +296,7 @@ matchGeneratorField (node *fa, node *fb)
  *
  * @brief Predicate for determining Null intersection of two WLs
  *
- * @params arg_node: A F_attachintersect null intersection entry.
+ * @params arg_node: A F_noteintersect null intersection entry.
  *
  * @result: TRUE if intersection of index vector set and producerWL
  *          partition is empty.
@@ -406,7 +406,7 @@ CUBSLgetProducerWL (node *arg_node)
  *
  * @fn node * ExtractNthItem
  *
- * @brief Extract the Nth item of the attach_intersect information
+ * @brief Extract the Nth item of the intersect information
  *
  * @params itemno: the Nth item number.
  * @params idx: the index vector for the _sel_VxA( idx, producerWL).
@@ -426,8 +426,8 @@ ExtractNthItem (int itemno, node *idx)
 
     dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
     dfg = LET_EXPR (ASSIGN_INSTR (dfg));
-    DBUG_ASSERT ((F_attachintersect == PRF_PRF (dfg)),
-                 ("ExtractNthItem wanted F_attachintersect as idx parent"));
+    DBUG_ASSERT ((F_noteintersect == PRF_PRF (dfg)),
+                 ("ExtractNthItem wanted F_noteintersect as idx parent"));
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
     if (NULL != bnd) {
         PMO (PMOlastVarGuards (&val, bnd));
@@ -472,7 +472,7 @@ isExactIntersect (node *idxbound1, node *idxbound2, node *intersectb1, node *int
  *        The search comprises two steps:
  *
  *        1. Find a partition in the producerWL that has bounds
- *           that match those in the F_attachintersect bounds, if
+ *           that match those in the F_noteintersect bounds, if
  *           such still exists.
  *           This search is required because other optimizations
  *           may have split a partition, and/or reordered partitions
@@ -489,7 +489,7 @@ isExactIntersect (node *idxbound1, node *idxbound2, node *intersectb1, node *int
  *
  *            b. ConsumerWL is subset of producerWL, or matches exactly.
  *               Folding is trivial, using the intersect data in
- *               the _attach_intersect_.
+ *               the _noteintersect.
  *
  *            c. ConsumerWL is superset of producerWL.
  *               Folding is possible, but the ConsumerWL partition

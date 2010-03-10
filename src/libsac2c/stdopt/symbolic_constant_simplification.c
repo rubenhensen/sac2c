@@ -257,7 +257,7 @@ SCSmakeFalse (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeVectorConstant( shape *shp, node *scalarval)
+ * @fn node *SCSmakeVectorConstant( shape *shp, node *scalarval)
  *
  * @brief: Create an N_array, of shape shp elements, containing
  *         scalarval as each item.
@@ -265,8 +265,8 @@ SCSmakeFalse (node *prfarg)
  * @return the N_array thus created.
  *
  *****************************************************************************/
-static node *
-MakeVectorConstant (shape *shp, node *scalarval)
+node *
+SCSmakeVectorConstant (shape *shp, node *scalarval)
 {
     node *res = NULL;
     node *aelems = NULL;
@@ -274,7 +274,7 @@ MakeVectorConstant (shape *shp, node *scalarval)
     shape *frameshape;
     int xrho;
 
-    DBUG_ENTER ("MakeVectorConstant");
+    DBUG_ENTER ("SCSmakeVectorConstant");
 
     elemtype
       = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (scalarval))), SHcreateShape (0));
@@ -390,8 +390,8 @@ MatchNegV (node *arg1, node *arg2)
 
     res = PMmatchFlatSkipExtrema (pat1, arg1) && PMmatchFlatSkipExtrema (pat2, arg2);
 
-    PMfree (pat1);
-    PMfree (pat2);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }
@@ -422,8 +422,8 @@ MatchNegS (node *arg1, node *arg2)
     pat2 = PMprf (1, PMAisPrf (F_neg_S), 1, PMvar (1, PMAisVar (&arg1p), 0));
 
     res = PMmatchFlatSkipExtrema (pat1, arg1) && PMmatchFlatSkipExtrema (pat2, arg2);
-    PMfree (pat1);
-    PMfree (pat2);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }
@@ -510,11 +510,11 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
         if (MatchConstantZero (PRF_ARG2 (arg_node))
             && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
 
-            res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+            res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
             DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]"));
         }
 
-        PMfree (pat);
+        pat = PMfree (pat);
     }
 
     DBUG_RETURN (res);
@@ -580,11 +580,11 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
         if (MatchConstantZero (PRF_ARG1 (arg_node))
             && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
 
-            res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+            res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
             DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]"));
         }
 
-        PMfree (pat);
+        pat = PMfree (pat);
     }
 
     DBUG_RETURN (res);
@@ -613,10 +613,10 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
     if (MatchConstantZero (PRF_ARG2 (arg_node))
         && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
 
-        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]"));
     }
-    PMfree (pat);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -731,11 +731,11 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
 
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
-        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]"));
     }
 
-    PMfree (pat);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -773,11 +773,11 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
 
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))
                && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
-        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]"));
     }
 
-    PMfree (pat);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -837,10 +837,10 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
         /* Scalar extension case:      S / [1,1,...1]  --> [S,S,..,S] */
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
-        res = MakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]"));
     }
-    PMfree (pat);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -1684,6 +1684,7 @@ SCSprf_reshape (node *arg_node, info *arg_info)
         shp2 = FREEdoFreeNode (PRF_ARG2 (res));
         PRF_ARG2 (res) = DUPdoDupNode (X);
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -1970,7 +1971,6 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     ntype *arrtype;
     shape *arrshp;
     pattern *pat1;
-    pattern *pat2;
 
     DBUG_ENTER ("SCSprf_val_lt_shape_VxA");
 
@@ -2288,9 +2288,9 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
             }
         }
     }
-    PMfree (pat1);
-    PMfree (pat2);
-    PMfree (pat3);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }
@@ -2355,9 +2355,9 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
         }
     }
 
-    PMfree (pat1);
-    PMfree (pat2);
-    PMfree (pat3);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }
@@ -2416,9 +2416,9 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
             }
         }
     }
-    PMfree (pat1);
-    PMfree (pat2);
-    PMfree (pat3);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }
@@ -2479,9 +2479,9 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
         }
     }
 
-    PMfree (pat1);
-    PMfree (pat2);
-    PMfree (pat3);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }

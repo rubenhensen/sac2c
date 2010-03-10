@@ -947,7 +947,6 @@ TEassureIntVectLengthOne (char *obj, ntype *type)
 void
 TEassureNonNegativeValues_S (char *obj, ntype *type)
 {
-    int i;
     int *dv;
 
     DBUG_ENTER ("TEassureNonNegativeValues_S");

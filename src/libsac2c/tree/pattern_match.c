@@ -593,7 +593,7 @@ pushArgs (node *stack, node *args)
  *
  * @fn static bool isInExtrema( node *expr)
  *
- * @brief Predicate for determining that an N_prf is an extrema attachment.
+ * @brief Predicate for determining that an N_prf is an extrema note.
  *
  * @param N_prf
  * @return True if N_prf is member of the set below.
@@ -603,7 +603,8 @@ static bool
 isInExtrema (prf prfun)
 {
     DBUG_ENTER ("isInExtrema");
-    DBUG_RETURN ((prfun == F_attachextrema) || (prfun == F_attachintersect));
+    DBUG_RETURN ((prfun == F_noteminval) || (prfun == F_notemaxval)
+                 || (prfun == F_noteintersect));
 }
 
 /** <!--*******************************************************************-->

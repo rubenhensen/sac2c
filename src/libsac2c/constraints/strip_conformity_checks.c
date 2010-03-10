@@ -327,9 +327,10 @@ SCCprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
 
-    /* dataflow and attachextrema guards never reach code generator */
-    case F_attachextrema:
-    case F_attachintersect:
+    /* dataflow and extrema guards never reach code generator */
+    case F_noteminval:
+    case F_notemaxval:
+    case F_noteintersect:
         INFO_LHS (arg_info)
           = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
                                  &INFO_PREASSIGNS (arg_info));

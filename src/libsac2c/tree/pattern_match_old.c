@@ -196,8 +196,9 @@ isPrfGuard (node *arg_node)
             z = FALSE;
             break;
         case F_guard:
-        case F_attachextrema:
-        case F_attachintersect:
+        case F_noteminval:
+        case F_notemaxval:
+        case F_noteintersect:
         case F_non_neg_val_V:
         case F_val_lt_shape_VxA:
         case F_val_le_val_VxV:
@@ -221,7 +222,7 @@ isPrfGuard (node *arg_node)
  *
  *          f = [5,6];
  *          b = f;
- *          c = _attachintersect(b, min, max);
+ *          c = _noteintersect(b, min, max);
  *          d = c;
  *
  *        If we do lastId(d, TRUE), the result is f.
@@ -280,7 +281,7 @@ lastId (node *arg_node, bool ignoreguards)
  *        to find the definition point of a value. For example,
  *          f = [5,6];
  *          a = f;
- *          b = _attachextrema( a);
+ *          b = _noteminval( a);
  *          c = b;
  *          d = c;
  *

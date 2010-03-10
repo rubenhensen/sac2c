@@ -1376,8 +1376,11 @@ LIRid (node *arg_node, info *arg_info)
          * calc the maximum definition depth of all identifiers in the
          * current assignment
          */
-        DBUG_ASSERT ((AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED),
-                     "usage of undefined identifier");
+        if (AVIS_DEFDEPTH (ID_AVIS (arg_node)) == DD_UNDEFINED) {
+            DBUG_PRINT ("LIR",
+                        ("undefined identifier is %s", AVIS_NAME (ID_AVIS (arg_node))));
+            DBUG_ASSERT (FALSE, ("usage of undefined identifier"));
+        }
         if (INFO_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
             INFO_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
         }

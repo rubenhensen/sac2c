@@ -33,7 +33,7 @@ extern node *IVEXIap (node *arg_node, info *arg_info);
 extern node *IVEXIids (node *arg_node, info *arg_info);
 extern node *IVEXIid (node *arg_node, info *arg_info);
 
-extern node *IVEXIattachExtrema (node *minv, node *maxv, node *ivavis, node **vardecs,
+extern node *IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs,
                                  node **preassigns, prf nprf, node *lhsavis);
 
 extern node *IVEXImakeIntScalar (int k, node **vardecs, node **preassigns);

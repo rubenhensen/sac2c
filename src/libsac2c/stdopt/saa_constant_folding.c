@@ -296,7 +296,7 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
                 res = DUPdoDupTree (shpel);
                 DBUG_PRINT ("CF", ("idx_shape_sel replaced by N_array element"));
             }
-            PMfree (pat);
+            pat = PMfree (pat);
         }
     }
     DBUG_RETURN (res);
@@ -434,6 +434,8 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (res);
 }
@@ -1289,7 +1291,7 @@ SAACFprf_saabind (node *arg_node, info *arg_info)
             res = DUPdoDupNode (val);
         }
     }
-    PMfree (pat);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }

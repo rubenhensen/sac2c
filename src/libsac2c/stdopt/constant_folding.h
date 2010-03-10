@@ -15,6 +15,7 @@
  *****************************************************************************/
 extern node *CFdoConstantFolding (node *fundef);
 extern node *CFdoConstantFoldingOneFundef (node *fundef);
+extern bool CFisFullyConstantNode (node *arg_node);
 
 extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);

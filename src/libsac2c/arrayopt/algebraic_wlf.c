@@ -329,7 +329,7 @@ AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
  * @fn bool isPrfArg1AttachIntersect( node *arg_node)
  *
  * @brief Predicate to check if arg1 of this N_prf has
- *        an F_attachintersect guard attached to it.
+ *        an F_noteintersect guard attached to it.
  *
  * @param arg_node: an N_prf
  *
@@ -350,7 +350,7 @@ isPrfArg1AttachIntersect (node *arg_node)
                  "isPrfArg1AttachIntersect expected N_id as PRF_ARG1");
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
     if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))
-        && (F_attachintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))))) {
+        && (F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))))) {
         z = TRUE;
     }
     DBUG_RETURN (z);
@@ -360,8 +360,8 @@ isPrfArg1AttachIntersect (node *arg_node)
  *
  * @fn bool isPrfArg1AttachExtrema( node *arg_node)
  *
- * @brief Predicate to check if arg1 of this N_prf is an F_attachextrema op
- *  OR if arg1 is an F_attachintersect, and its PRF_ARG1 is an F_attachextrema.
+ * @brief Predicate to check if arg1 of this N_prf is an F_noteintersect op
+ *  OR if arg1 is an F_noteintersect, and its PRF_ARG1 is an F_noteextrema.
  *  This is VERY brittle code, and we should find a more robust way
  *  to do this. FIXME.
  *  Like a PM of some sort...
@@ -390,14 +390,14 @@ isPrfArg1AttachExtrema (node *arg_node)
     if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))) {
 
         prf = LET_EXPR (ASSIGN_INSTR (assgn));
-        if ((F_attachextrema == PRF_PRF (prf))) {
+        if ((F_noteminval == PRF_PRF (prf)) || (F_notemaxval == PRF_PRF (prf))) {
             z = TRUE;
         } else {
             assgn2 = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prf)));
             if ((NULL != assgn)
                 && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
                 prf2 = LET_EXPR (ASSIGN_INSTR (assgn2));
-                if ((F_attachintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
+                if ((F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
                     z = TRUE;
                 }
             }

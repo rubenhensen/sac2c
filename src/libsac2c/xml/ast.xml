@@ -5351,10 +5351,17 @@ N_structdef :
         </attribute>
       </attributes>
       <flags>
-        <flag name="ExtremaAttached" default="FALSE" >
+        <flag name="MinvalAttached" default="FALSE" >
          <description> 
           If true, this N_array has already
-          an F_attachextrema guard attached to it.
+          an F_noteminval guard attached to it.
+          If false, IVEXP will emit the guard, then set this flag.
+         </description> 
+        </flag>
+        <flag name="MaxvalAttached" default="FALSE" >
+         <description> 
+          If true, this N_array has already
+          an F_notemaxval guard attached to it.
           If false, IVEXP will emit the guard, then set this flag.
          </description> 
         </flag>
@@ -6905,6 +6912,20 @@ N_structdef :
              that has been folded out of existence.
 	  </description>
 	</flag>
+        <flag name="IsMinvalGenerated" default="FALSE">
+          <description>
+                  If true, indicates that IVEXI/IVEXP have performed whatever
+                  needs to be done to generate AVIS_MINVAL for this node.
+                  For N_array assignments, the extrema are not directly
+                  attached to the LHS (v), but to v' or v'', so looking
+                  for non-NULL AVIS_MINVAL will not work.
+          </description>
+        </flag>
+        <flag name="IsMaxvalGenerated" default="FALSE">
+          <description>
+                  Like IsMinvalGenerated, but for AVIS_MAXVAL.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--

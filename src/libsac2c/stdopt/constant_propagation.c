@@ -283,8 +283,9 @@ CPprf (node *arg_node, info *arg_info)
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
-    case F_attachextrema:
-    case F_attachintersect:
+    case F_noteminval:
+    case F_notemaxval:
+    case F_noteintersect:
         /*
          * Only propagate variables here
          *  This can probably be deleted...

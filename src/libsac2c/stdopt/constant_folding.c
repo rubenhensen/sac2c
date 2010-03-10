@@ -294,7 +294,7 @@ CFdoConstantFolding (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IsFullyConstantNode( node *arg_node)
+ * @fn bool IsScalarConstantNode( node *arg_node)
  *
  * @brief in contrast to COisConstant, this function ensures a "minimal"
  *        AST representation of the argument!
@@ -310,13 +310,13 @@ IsScalarConstantNode (node *arg_node)
                  || PMO (PMOdouble (arg_node)));
 }
 
-static bool
-IsFullyConstantNode (node *arg_node)
+bool
+CFisFullyConstantNode (node *arg_node)
 {
     bool res;
     constant *frameshape = NULL;
 
-    DBUG_ENTER ("IsFullyConstantNode");
+    DBUG_ENTER ("CFisFullyConstantNode");
 
     if (IsScalarConstantNode (arg_node)) {
         res = TRUE;
@@ -364,7 +364,7 @@ UnflattenSimpleScalars (node *arg_node)
     res = DUPdoDupTree (arg_node);
     pat = PMconst (1, PMAgetNode (&cons));
 
-    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && IsFullyConstantNode (arg_node)) {
+    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && CFisFullyConstantNode (arg_node)) {
         el = ARRAY_AELEMS (res);
         while (NULL != el) {
             curel = EXPRS_EXPR (el);
@@ -377,6 +377,7 @@ UnflattenSimpleScalars (node *arg_node)
         }
     }
     arg_node = FREEdoFreeTree (arg_node);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -949,7 +950,7 @@ CFlet (node *arg_node, info *arg_info)
          *     Therefore we HAVE TO traverse the RHS if these are funconds.
          */
 
-        if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
+        if (!CFisFullyConstantNode (LET_EXPR (arg_node))) {
             DBUG_PRINT ("CF", ("LHS (%s) is AKV: replacing RHS by constant",
                                AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));

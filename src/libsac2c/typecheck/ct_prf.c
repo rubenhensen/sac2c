@@ -445,37 +445,52 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_attachextrema( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_noteminval( te_info *info, ntype *elems)
  *
  * description:
- *   _attachextrema_ is used to preserve a temp assigned
+ *   _note_minval is used to preserve a temp assigned
  *   from WITHIDs in WLs. If -ssaiv ever works, we can just
  *   scrap this, and attach AVIS_MINVAL and AVIS_MAXVAL to
  *   the WITHIDs directly. At present, we can't do that,
  *   because the extrema are different for each partition,
  *   but the WITHIDs are not different, hence this kludge.
  *
- *   The semantics of the _attachextrema are:
+ *   The semantics of the _noteminval/notemaxval are:
  *
- *    iv' = _attachextrema(iv, GENERATOR_BOUND1, GENERATOR_BOUND2)
+ *    iv'  = _noteminval(iv, GENERATOR_BOUND1)
+ *    iv'' = _notemaxval(iv', GENERATOR_BOUND2)
  *
- *    The duty of the code using iv' (SWLFI/SWLF) is to delete the
+ *    The duty of the code using iv'' (SWLFI/SWLF) is to delete the
  *    guard in the fullness of time, after making use of the
  *    extrema. The scc phase will delete these guards before
  *    they ever reach the code generator. In both cases,
  *    the above call is replaced by:
  *
- *    iv' = iv;
+ *    iv'' = iv;
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_attachextrema (te_info *info, ntype *args)
+NTCCTprf_noteminval (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_attachextrema");
+    DBUG_ENTER ("NTCCTprf_noteminval");
+
+    arg = TYgetProductMember (args, 0);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+    DBUG_RETURN (res);
+}
+
+ntype *
+NTCCTprf_notemaxval (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTprf_notemaxval");
 
     arg = TYgetProductMember (args, 0);
     res = TYcopyType (arg);
@@ -486,7 +501,7 @@ NTCCTprf_attachextrema (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_attachintersect( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_noteintersect( te_info *info, ntype *elems)
  *
  * description:
  *   This guard acts as an anchor for index vector intersect
@@ -495,14 +510,14 @@ NTCCTprf_attachextrema (te_info *info, ntype *args)
  *   This is intended as a data-flow approach for
  *   adding ancillary information to the ast.
  *
- *   The semantics of the _attachintersect are:
+ *   The semantics of the _noteintersect are:
  *   If we start with:
  *
  *    z   = _sel_VxA_( iv, foldeeWL);
  *
  *   We end up with:
  *
- *    iv' = _attachintersect(iv, indexsetmin, indexsetmax)
+ *    iv' = _noteintersect(iv, indexsetmin, indexsetmax)
  *    z   = _sel_VxA_( iv', foldeeWL);
  *
  *   The indexsetmin and indexsetmax are the result
@@ -514,12 +529,12 @@ NTCCTprf_attachextrema (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_attachintersect (te_info *info, ntype *args)
+NTCCTprf_noteintersect (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_attachintersect");
+    DBUG_ENTER ("NTCCTprf_noteintersect");
 
     arg = TYgetProductMember (args, 0);
     arg = TYeliminateAKV (arg);

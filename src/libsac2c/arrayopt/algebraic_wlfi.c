@@ -331,6 +331,9 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
         AVIS_SSAASSIGN (avis) = nas;
         DBUG_PRINT ("AWLFI",
                     ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
+        /* FIXME either insert isSAAMode code to set AVIS_DIM/SHAPE,
+         * or move ISAA2 into SAACYC.
+         */
     }
 
     DBUG_RETURN (avis);
@@ -424,7 +427,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                            int boundnum, node *ivminmax)
 {
     node *producerGenerator;
-    node *ivid;
     node *resavis;
     node *fncall;
     char *fun;
@@ -441,8 +443,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     DBUG_ASSERT (N_id == NODE_TYPE (producerGenerator), "IntersectBoundsBuilderOne "
                                                         "expected N_id WL-generator "
                                                         "producerGenerator");
-
-    ivid = TBmakeId (ivminmax);
 
     fncall
       = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
@@ -619,7 +619,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
     ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),
-                                        TBmakePrf (F_attachintersect, args)),
+                                        TBmakePrf (F_noteintersect, args)),
                              NULL);
     INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
     ividprime = TBmakeId (ivavis);

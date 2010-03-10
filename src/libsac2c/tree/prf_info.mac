@@ -728,14 +728,6 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfNoop, SCSprf_afterguard, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL,
        0, NULL, NULL, TEone, NULL, NULL),
 
-  PRF (attachintersect, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_attachintersect,
-       NULL, COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL,
-       NULL, TEone, NULL, NULL),
-
-  PRF (attachextrema, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_attachextrema, NULL,
-       COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
-
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_constraint,
        NULL, COMPprfTypeConstraint, NULL, NULL, NULL, SAAdim_type_constraint,
        SAAshp_type_constraint, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
@@ -778,6 +770,22 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        NTCCTprf_prod_shape, NULL, COMPprfProdMatchesProdShape,
        SCSprf_prod_matches_prod_shape_VxA, NULL, NULL, SAAdim_cc_inherit,
        SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
+
+  /*******************************************************************************
+   * Functions to define vector extrema and WL intersections
+   */
+
+  PRF (noteintersect, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_noteintersect, NULL,
+       COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
+  PRF (noteminval, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_noteminval, NULL,
+       COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
+  PRF (notemaxval, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_notemaxval, NULL,
+       COMPprfNoop, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
 
   PRF (mesh_VxVxV, (PA_V, PA_V, PA_V), 3, MESH, NOSIMD, NTCCTprf_mesh_VxVxV, NULL,
        COMPprfOp_VxVxV, NULL, SCCFprf_mesh_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
