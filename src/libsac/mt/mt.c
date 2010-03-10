@@ -506,6 +506,9 @@ SAC_MT1_StartWorkers ()
  * these always remain in mt.o.
  */
 
+int SAC_MT_propagate_lock;
+int SAC_MT_output_lock;
+
 unsigned int SAC_MT_master_id;
 
 volatile unsigned int SAC_MT_master_flag;
