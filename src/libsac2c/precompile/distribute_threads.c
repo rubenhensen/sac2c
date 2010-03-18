@@ -112,7 +112,7 @@ MakeInfo ()
     INFO_USED (result) = 0;
     INFO_THROTTLE (result) = 1;
     INFO_FAILED (result) = FALSE;
-    INFO_GLOBALS (result) = 0;
+    INFO_GLOBALS (result) = 1;
 
     DBUG_RETURN (result);
 }
@@ -406,6 +406,8 @@ DSTrange (node *arg_node, info *arg_info)
         break;
     case MUTC_DMODE_bounded:
         threshold = global.mutc_distribution_mode_arg;
+        DBUG_PRINT ("DST", ("bounded mode: reached %d, max %d.", INFO_GLOBALS (arg_info),
+                            threshold));
 
         if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
             && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
@@ -415,22 +417,29 @@ DSTrange (node *arg_node, info *arg_info)
             if (num_elements <= 1) {
                 /* do not distribute 1 element creates -> no point */
                 RANGE_ISGLOBAL (arg_node) = FALSE;
-            } else if ((INFO_GLOBALS (arg_info)) < threshold) {
+                DBUG_PRINT ("DST", ("singleton create --> local"));
+            } else if (INFO_GLOBALS (arg_info) * num_elements <= threshold) {
                 RANGE_ISGLOBAL (arg_node) = TRUE;
                 INFO_GLOBALS (arg_info) *= num_elements;
+                DBUG_PRINT ("DST", ("globals left, now using %d --> global",
+                                    INFO_GLOBALS (arg_info)));
             } else {
                 RANGE_ISGLOBAL (arg_node) = FALSE;
+                DBUG_PRINT ("DST", ("globals exhausted, cannot fit %d more --> local",
+                                    num_elements));
             }
         } else {
-            if (INFO_GLOBALS (arg_info) < threshold) {
+            if (INFO_GLOBALS (arg_info) <= threshold) {
                 /*
                  * we don't know how this will change the distribution, so we
                  * just inhibit further global creates
                  */
                 RANGE_ISGLOBAL (arg_node) = TRUE;
                 INFO_GLOBALS (arg_info) = threshold;
+                DBUG_PRINT ("DST", ("unknown size, grab all --> global"));
             } else {
                 RANGE_ISGLOBAL (arg_node) = FALSE;
+                DBUG_PRINT ("DST", ("unknown size, exhausted --> local"));
             }
         }
         break;
