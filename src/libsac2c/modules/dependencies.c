@@ -78,7 +78,7 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 
     string = SBUF2str (buffer);
 
-    fprintf (file, string);
+    fprintf (file, "%s", string);
 
     string = MEMfree (string);
     buffer = SBUFfree (buffer);
