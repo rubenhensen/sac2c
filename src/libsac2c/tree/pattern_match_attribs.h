@@ -8,9 +8,6 @@
 
 #include "types.h"
 
-/** needs to be moved into types.h: */
-typedef struct PATTR attrib;
-
 /**
  * generic attrib matchers:
  */

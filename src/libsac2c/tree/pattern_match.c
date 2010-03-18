@@ -272,19 +272,17 @@
 #include "constants.h"
 #include "shape.h"
 #include "compare_tree.h"
+#include "LookUpTable.h"
 
 static char *FAIL = "";
 static int matching_level;
 
-static enum pm_mode {
-    PM_exact,
-    PM_flat,
-    PM_flatSkipExtrema,
-    PM_flatSkipGuards,
-    PM_flatWith
-} mode;
+static pm_mode_t mode;
+
+static lut_t *follow_lut = NULL;
 
 typedef node *matchFun (pattern *, node *);
+typedef bool prfMatchFun (prf);
 
 /** <!--*********************************************************************-->
  *
@@ -630,6 +628,23 @@ isInGuards (prf prfun)
 
 /** <!--*******************************************************************-->
  *
+ * @fn static bool isAfterguard( node *expr)
+ *
+ * @brief Predicate for determining that an N_prf is a guard
+ *
+ * @param N_prf
+ * @return True if N_prf is member of the set below.
+ *
+ *****************************************************************************/
+static bool
+isAfterguard (prf prfun)
+{
+    DBUG_ENTER ("isInGuards");
+    DBUG_RETURN ((prfun == F_afterguard));
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *getInner( node *arg_node)
  *
  * @brief returns pointer to expr / N_exprs chain that constitutes a
@@ -664,6 +679,52 @@ getInner (node *arg_node)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *followId( node *expr)
+ *
+ * @brief follows Variables to their definitions using SSAASSIGN and the
+ *        (potentially empty) LUT
+ * @param starting expression
+ * @return RHS of definition for the given Id node or the node itself.
+ *****************************************************************************/
+static node *
+followId (node *expr)
+{
+    node *new_id;
+    DBUG_ENTER ("followId");
+
+    if (NODE_TYPE (expr) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
+            expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
+        } else if (follow_lut != NULL) {
+            new_id = (node *)LUTsearchInLutP (follow_lut, ID_AVIS (expr));
+            expr = (new_id != NULL ? new_id : expr);
+        }
+    }
+    DBUG_RETURN (expr);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *followPrf( prfMatchFun prfInspectFun, node *expr)
+ *
+ * @brief follows first arg of given prf if the prfInspectFun yields TRUE.
+ * @param starting expression
+ * @return first arg of given prf node if in expected set;
+ *         otherwise the expr itself.
+ *****************************************************************************/
+static node *
+followPrf (prfMatchFun prfInspectFun, node *expr)
+{
+    DBUG_ENTER ("followPrf");
+
+    if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
+        expr = PRF_ARG1 (expr);
+    }
+    DBUG_RETURN (expr);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *skipVarDefs( node *expr)
  *
  * @brief follows Variables to their definitions according to
@@ -675,52 +736,41 @@ static node *
 skipVarDefs (node *expr)
 {
     DBUG_ENTER ("skipVarDefs");
+    node *old_expr;
 
     if (expr != NULL) {
         switch (mode) {
         case PM_exact:
             break;
         case PM_flat:
-            while ((NODE_TYPE (expr) == N_id)
-                   && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
-                expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-            }
+            do {
+                old_expr = expr;
+                expr = followId (old_expr);
+            } while (expr != old_expr);
             break;
 
         case PM_flatSkipExtrema:
-            while (
-              ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
-              || ((NODE_TYPE (expr) == N_prf) && (isInExtrema (PRF_PRF (expr))))) {
-                if (NODE_TYPE (expr) == N_id) {
-                    expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-                } else {
-                    expr = PRF_ARG1 (expr);
-                }
-            }
+            do {
+                old_expr = expr;
+                expr = followId (old_expr);
+                expr = followPrf (isInExtrema, expr);
+            } while (expr != old_expr);
             break;
 
         case PM_flatSkipGuards:
-            while (
-              ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
-              || ((NODE_TYPE (expr) == N_prf) && (isInGuards (PRF_PRF (expr))))) {
-                if (NODE_TYPE (expr) == N_id) {
-                    expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-                } else {
-                    expr = PRF_ARG1 (expr);
-                }
-            }
+            do {
+                old_expr = expr;
+                expr = followId (old_expr);
+                expr = followPrf (isInGuards, expr);
+            } while (expr != old_expr);
             break;
 
         case PM_flatWith:
-            while (
-              ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL))
-              || ((NODE_TYPE (expr) == N_prf) && (F_afterguard == PRF_PRF (expr)))) {
-                if (NODE_TYPE (expr) == N_id) {
-                    expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-                } else {
-                    expr = PRF_ARG1 (expr);
-                }
-            }
+            do {
+                old_expr = expr;
+                expr = followId (old_expr);
+                expr = followPrf (isAfterguard, expr);
+            } while (expr != old_expr);
             break;
         }
     }
@@ -899,30 +949,6 @@ PMvar (int num_attribs, ...)
     va_end (ap);
 
     PAT_DOFOLLOW (res) = FALSE;
-
-    return (res);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * pattern *PMlastVar( int num_attribs, ... , num_pats, ...);
- *
- * @brief matches an identifier (N_id), but follows assign chains
- *        - up to one inner pattern
- *
- ******************************************************************************/
-pattern *
-PMlastVar (int num_attribs, ...)
-{
-    va_list ap;
-    pattern *res;
-
-    va_start (ap, num_attribs);
-    res = genericFillPattern (makePattern (N_id, genericPatternMatcher), TRUE,
-                              num_attribs, ap);
-    va_end (ap);
-
-    PAT_DOFOLLOW (res) = TRUE;
 
     return (res);
 }
@@ -1368,6 +1394,31 @@ PMfree (pattern *p)
 
 /** <!--*********************************************************************-->
  *
+ * @fn bool PMmatch( pattern *pat, pm_mode_t pm_mode, lut_t *f_lut, node *expr)
+ *
+ * @brief matches pat against expr in the specified mode using the giving
+ *        lut when following N_oid nodes (can be NULL).
+ * @return success
+ *
+ *****************************************************************************/
+bool
+PMmatch (pattern *pat, pm_mode_t pm_mode, lut_t *f_lut, node *expr)
+{
+    mode = pm_mode;
+    follow_lut = f_lut;
+    matching_level = 0;
+    bool res;
+    DBUG_ENTER ("PMmatch");
+
+    DBUG_PRINT ("PM", ("starting match in mode %d", pm_mode));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM", ("match %s!", (res ? "succeeded" : "failed")));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--*********************************************************************-->
+ *
  * @fn bool PMmatchExact( pattern *pat, node *expr)
  *
  * @brief matches pat against expr in mode PM_exact
@@ -1378,6 +1429,8 @@ bool
 PMmatchExact (pattern *pat, node *expr)
 {
     mode = PM_exact;
+    follow_lut = NULL;
+
     matching_level = 0;
     bool res;
     DBUG_ENTER ("PMmatchExact");
@@ -1401,6 +1454,8 @@ bool
 PMmatchFlat (pattern *pat, node *expr)
 {
     mode = PM_flat;
+    follow_lut = NULL;
+
     matching_level = 0;
     bool res;
 
@@ -1423,6 +1478,8 @@ bool
 PMmatchFlatSkipExtrema (pattern *pat, node *expr)
 {
     mode = PM_flatSkipExtrema;
+    follow_lut = NULL;
+
     matching_level = 0;
     bool res;
 
@@ -1445,6 +1502,8 @@ bool
 PMmatchFlatSkipGuards (pattern *pat, node *expr)
 {
     mode = PM_flatSkipGuards;
+    follow_lut = NULL;
+
     matching_level = 0;
     bool res;
 
@@ -1467,6 +1526,8 @@ bool
 PMmatchFlatWith (pattern *pat, node *expr)
 {
     mode = PM_flatWith;
+    follow_lut = NULL;
+
     matching_level = 0;
     bool res;
 

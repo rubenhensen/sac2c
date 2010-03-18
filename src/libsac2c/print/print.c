@@ -3878,6 +3878,11 @@ PRTwith (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/** CUDA WL **/\n");
     }
 
+    if (WITH_ISFOLDABLE (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/** FOLDABLE WL **/\n");
+    }
+
     if (WITH_PART (arg_node) != NULL) {
 #ifdef OLDWAY
         fprintf (global.outfile, " ( ");

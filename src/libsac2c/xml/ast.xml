@@ -379,6 +379,13 @@
           <node name="Ap" />
         </travuser>
       </traversal> 
+      <traversal id="PMBL" name="Pattern Matching Build Lut" default="sons" include="pattern_match_build_lut.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Arg" />
+        </travuser>
+      </traversal> 
       <traversal id="IVEXI" name="Index Variable Extrema Insertion" default="sons" include="ivextrema.h" >
         <travuser>
           <node name="Fundef" />

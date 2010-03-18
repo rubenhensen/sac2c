@@ -744,6 +744,23 @@ typedef enum {
 typedef void *dynlib_t;
 typedef void *dynfun_t;
 
+/*
+ * moved from pattern_match.h
+ */
+typedef struct PAT pattern;
+typedef enum {
+    PM_exact,
+    PM_flat,
+    PM_flatSkipExtrema,
+    PM_flatSkipGuards,
+    PM_flatWith
+} pm_mode_t;
+
+/*
+ * moved from pattern_match_attribs.h
+ */
+typedef struct PATTR attrib;
+
 /*******************************************************************************
  *
  * moved from pad_info.h

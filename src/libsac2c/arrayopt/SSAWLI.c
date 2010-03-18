@@ -46,6 +46,8 @@
  - INFO_ASSIGN  : always the last N_assign node (see WLIassign)
  - INFO_FUNDEF  : pointer to last fundef node. needed to access vardecs.
  - INFO_FOLDABLE: indicates if current withloop is foldable or not
+ - INFO_PMLUT   : pattern matching lut for current context
+ - INFO_LOCALFUN: indicates if current fundef is a localfun
  ******************************************************************************/
 
 #include <stdio.h>
@@ -69,6 +71,8 @@
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
 #include "pattern_match.h"
+#include "pattern_match_build_lut.h"
+#include "LookUpTable.h"
 
 /*
  * INFO structure
@@ -81,18 +85,22 @@ struct INFO {
     node *fundef;
     int foldable;
     bool detfoldable;
+    lut_t *pmlut;
+    bool localfun;
 };
 
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
-#define INFO_NEXT(n) (n->next)
-#define INFO_WL(n) (n->wl)
-#define INFO_ASSIGN(n) (n->assign)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_FOLDABLE(n) (n->foldable)
-#define INFO_DETFOLDABLE(n) (n->detfoldable)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_NEXT(n) ((n)->next)
+#define INFO_WL(n) ((n)->wl)
+#define INFO_ASSIGN(n) ((n)->assign)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_FOLDABLE(n) ((n)->foldable)
+#define INFO_DETFOLDABLE(n) ((n)->detfoldable)
+#define INFO_PMLUT(n) ((n)->pmlut)
+#define INFO_LOCALFUN(n) ((n)->localfun)
 
 /*
  * INFO functions
@@ -113,6 +121,8 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_FOLDABLE (result) = 0;
     INFO_DETFOLDABLE (result) = FALSE;
+    INFO_PMLUT (result) = NULL;
+    INFO_LOCALFUN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -624,10 +634,17 @@ node *
 WLIfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
+    bool old_localfun;
     DBUG_ENTER ("WLIfundef");
 
     INFO_WL (arg_info) = NULL;
     INFO_FUNDEF (arg_info) = arg_node;
+
+    if (!INFO_LOCALFUN (arg_info)) {
+        DBUG_ASSERT ((INFO_PMLUT (arg_info) == NULL),
+                     "left-over pattern matching lut found!");
+        INFO_PMLUT (arg_info) = PMBLdoBuildPatternMatchingLut (arg_node, PM_flat);
+    }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -635,8 +652,16 @@ WLIfundef (node *arg_node, info *arg_info)
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
+    old_localfun = INFO_LOCALFUN (arg_info);
+    INFO_LOCALFUN (arg_info) = TRUE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    INFO_LOCALFUN (arg_info) = old_localfun;
     INFO_ONEFUNDEF (arg_info) = old_onefundef;
+
+    if (!INFO_LOCALFUN (arg_info)) {
+        DBUG_ASSERT ((INFO_PMLUT (arg_info) != NULL), "pattern matching lut got lost!");
+        INFO_PMLUT (arg_info) = LUTremoveLut (INFO_PMLUT (arg_info));
+    }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -889,6 +914,7 @@ WLIwith (node *arg_node, info *arg_info)
     tmpi = MakeInfo ();
     INFO_FUNDEF (tmpi) = INFO_FUNDEF (arg_info);
     INFO_ASSIGN (tmpi) = INFO_ASSIGN (arg_info);
+    INFO_PMLUT (tmpi) = INFO_PMLUT (arg_info);
     INFO_NEXT (tmpi) = arg_info;
     arg_info = tmpi;
 
@@ -1018,28 +1044,35 @@ node *
 WLIgenerator (node *arg_node, info *arg_info)
 {
     static pattern *pat = NULL;
+    lut_t *pmlut = INFO_PMLUT (arg_info);
+
     DBUG_ENTER ("WLIgenerator");
+
+    DBUG_ASSERT ((pmlut != NULL),
+                 "pattern matching lut has not made it to the matching site");
 
     if (pat == NULL) {
         pat = PMconst (0);
     }
-    INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
-                               && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                                   PMmatchFlat (pat, GENERATOR_BOUND1 (arg_node)));
-    INFO_FOLDABLE (arg_info) = INFO_FOLDABLE (arg_info)
-                               && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                                   PMmatchFlat (pat, GENERATOR_BOUND2 (arg_node)));
+    INFO_FOLDABLE (arg_info)
+      = INFO_FOLDABLE (arg_info)
+        && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+            PMmatch (pat, PM_flat, pmlut, GENERATOR_BOUND1 (arg_node)));
+    INFO_FOLDABLE (arg_info)
+      = INFO_FOLDABLE (arg_info)
+        && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
+            PMmatch (pat, PM_flat, pmlut, GENERATOR_BOUND2 (arg_node)));
 
     if (GENERATOR_STEP (arg_node) != NULL) {
         INFO_FOLDABLE (arg_info)
           = INFO_FOLDABLE (arg_info)
             && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                PMmatchFlat (pat, GENERATOR_STEP (arg_node)));
+                PMmatch (pat, PM_flat, pmlut, GENERATOR_STEP (arg_node)));
         if (GENERATOR_WIDTH (arg_node) != NULL) {
             INFO_FOLDABLE (arg_info)
               = INFO_FOLDABLE (arg_info)
                 && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                    PMmatchFlat (pat, GENERATOR_WIDTH (arg_node)));
+                    PMmatch (pat, PM_flat, pmlut, GENERATOR_WIDTH (arg_node)));
         }
     } else {
         DBUG_ASSERT ((GENERATOR_WIDTH (arg_node) == NULL),

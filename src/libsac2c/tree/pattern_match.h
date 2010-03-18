@@ -13,14 +13,13 @@
 #endif
 
 #include "types.h"
-#include "pattern_match_attribs.h"
 
-/** needs to be moved into types.h: */
-typedef struct PAT pattern;
+#include "pattern_match_attribs.h"
 
 /**
  * Design of the shiny new pattern matcher:
  */
+extern bool PMmatch (pattern *pat, pm_mode_t pm_mode, lut_t *follow_lut, node *expr);
 extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
@@ -33,7 +32,6 @@ extern node *PMmultiExprs (int num_nodes, ...);
  * Pattern-DSL:
  */
 extern pattern *PMvar (int num_attribs, ...);
-extern pattern *PMlastVar (int num_attribs, ...);
 
 extern pattern *PMparam (int num_attribs, ...);
 extern pattern *PMany (int num_attribs, ...);
