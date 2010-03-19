@@ -5,38 +5,67 @@
  This file realizes the information gathering for the SAC-WLs (SSAWLI phase).
  The decision to fold or not to fold (SSAWLF) is based on these informations.
 
-   ASSIGN_INFO : whenever there is an index-offset calculation in the RHS
-   ID_WL : for all N-ids pointing to WL results
-
  This implementation is aware of the ssa form and does not use any masks.
  Most code is unchanged from the original implementation in WLI.c.
 
- in this phase every withloop seems to be (nmw) attributed with:
-   WITH_REFERENCED(wl)
+ Attributes are gathered at three different node types:
+ - N_with,
+ - N_id, and
+ - N_assign
+
+ In detail, these are:
+
+--------------------------------------------------------------------------------
+  at N_with:
+--------------------------------------------------------------------------------
+
+   WITH_REFERENCED(wl)    (int)
      this is the number of identifiers that reference this withloop
+     [ initialized in WLIwith; incremented in WLIidi; top-down traversal
+       ensures initialisation before incrments!]
+
+   WITH_FOLDABLE(wl)      (bool)
+     set to true for all WL whose partitions ALL have constants for bounds
+     step and width.
+     [ set in WLIgenerator ]
 
    WITH_REFERENCED_FOLD(wl)
      this is the number of references from foldable (modarray) WL, so
      WITH_REFERENCED(arg_node) >= WITH_REFERENCED_FOLD(arg_node) should hold
+     [ this is being initialised in WLIwith and incremented in WLIlet ]
 
    WITH_REFERENCES_FOLDED(wl)
      is a counter used in SSAWLF that counts the folding operations. it
      is initialized here with 0.
 
-   WITH_FOLDABLE(wl)
-     marks all WL with constant borders, step and so on.
-     only for these WLs withloop folding can be computed.
+--------------------------------------------------------------------------------
+  at N_id:
+--------------------------------------------------------------------------------
 
- additionally all N_id get the attribute ID_WL:
    ID_WL(id)
      points to a defining wl if id is defined by a wl, NULL otherwise
+     [ set in WLIid ]
 
- furthermore, N_assign nodes within wls may obtain the ASSIGN_INFO attribute:
-   ASSIGN_INFO(assign)
+--------------------------------------------------------------------------------
+  at N_assign:
+--------------------------------------------------------------------------------
+
+   ASSIGN_INDEX(assign)
      if present, it indicates an index-offset calculation into a wl-defined
      variable in its RHS
      Note here, that this is referred to by the macro SSAINDEX !
+     [ set in WLIlet ]
 
+
+ *******************************************************************************
+
+General remarks:
+  Most of the code is rather straight forward. The main chrunching happens in
+  WLIlet. Here, the attributation of ASSIGN_INDEX happens and previously
+  gathered information such as ID_WL or WITH_FOLDABLE is being used to decide
+  whether a given selection operation could be folded.
+  If this is the case, WITH_REFERENCED_FOLD is incremented at the WL that is
+  being folded.
 
  *******************************************************************************
 
@@ -68,6 +97,7 @@
 #include "dbug.h"
 #include "constants.h"
 #include "traverse.h"
+#include "pattern_match.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
 #include "pattern_match.h"
@@ -401,11 +431,17 @@ CreateIndexInfoId (node *idn, info *arg_info)
 static void
 CreateIndexInfoSxS (node *prfn, info *arg_info)
 {
-    int id_no = 0, index_var = 0;
+    int index_var = 0;
     index_info *iinfo;
     node *idn = NULL, *assignn, *wln;
+    int cval;
+    pattern *pat1, *pat2;
+    bool const_second;
 
     DBUG_ENTER (" CreateIndexInfoSxS");
+
+    pat1 = PMprf (0, 2, PMvar (1, PMAgetNode (&idn), 0), PMint (1, PMAgetIVal (&cval)));
+    pat2 = PMprf (0, 2, PMint (1, PMAgetIVal (&cval)), PMvar (1, PMAgetNode (&idn), 0));
 
     assignn = INFO_ASSIGN (arg_info);
     wln = INFO_WL (arg_info);
@@ -413,18 +449,10 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
     /* CF has been done, so we just search for an Id and a constant.
        Since we do not want to practice constant folding here we ignore
        prfs with two constants. */
-    if (N_id == NODE_TYPE (PRF_ARG1 (prfn)) && /* first arg is an Id */
-        N_num == NODE_TYPE (PRF_ARG2 (prfn))) {
-        /* second arg is a numeric constant */
-        id_no = 1;
-        idn = PRF_ARG1 (prfn);
-    } else if (N_id == NODE_TYPE (PRF_ARG2 (prfn))
-               && N_num == NODE_TYPE (PRF_ARG1 (prfn))) {
-        id_no = 2;
-        idn = PRF_ARG2 (prfn);
-    }
+    const_second = PMmatch (pat1, PM_flatSkipGuards, NULL, prfn);
 
-    if (id_no != 0) {
+    if (const_second || PMmatch (pat2, PM_flatSkipGuards, NULL, prfn)) {
+
         /* we found a constant and an Id. If this Id is a vaild Id (i.e.
            it is declared in the generator or it is a valid local Id)
            this transformation is valid, too. */
@@ -449,11 +477,12 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
             }
 
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
-            iinfo->const_arg[0]
-              = NUM_VAL (((id_no == 1) ? PRF_ARG2 (prfn) : PRF_ARG1 (prfn)));
-            iinfo->arg_no = (id_no == 1) ? 2 : 1;
+            iinfo->const_arg[0] = cval;
+            iinfo->arg_no = const_second ? 2 : 1;
         }
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_VOID_RETURN;
 }
@@ -764,10 +793,8 @@ WLIid (node *arg_node, info *arg_info)
                      WITH_REFERENCED (ASSIGN_RHS (assignn))));
     } else {
         /* id is not defined by a withloop */
-#ifdef NOISY
-        DBUG_PRINT ("WLI",
+        DBUG_PRINT ("WLIEXT",
                     ("WLIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node))));
-#endif // NOISY
 
         ID_WL (arg_node) = NULL;
     }
