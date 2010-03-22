@@ -3880,7 +3880,26 @@ PRTwith (node *arg_node, info *arg_info)
 
     if (WITH_ISFOLDABLE (arg_node)) {
         INDENT;
-        fprintf (global.outfile, "/** FOLDABLE WL **/\n");
+        fprintf (global.outfile, "/** FOLDABLE (all gen's const) **/\n");
+    }
+
+    if (WITH_REFERENCED (arg_node) > 0) {
+        INDENT;
+        fprintf (global.outfile, "/** REFERENCED: %d (total num refs) **/\n",
+                 WITH_REFERENCED (arg_node));
+    }
+
+    if (WITH_REFERENCED_FOLD (arg_node) > 0) {
+        INDENT;
+        fprintf (global.outfile, "/** REFERENCED_FOLD: %d (num refs in fold pos.) **/\n",
+                 WITH_REFERENCED_FOLD (arg_node));
+    }
+
+    if (WITH_REFERENCES_FOLDED (arg_node) > 0) {
+        INDENT;
+        fprintf (global.outfile,
+                 "/** REFERENCES_FOLDED: %d (num refs folded already) **/\n",
+                 WITH_REFERENCES_FOLDED (arg_node));
     }
 
     if (WITH_PART (arg_node) != NULL) {

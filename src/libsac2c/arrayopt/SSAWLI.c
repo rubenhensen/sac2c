@@ -272,7 +272,7 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   index_info *Scalar2ArrayIndex(node *letn, node *wln);
+ *   index_info *Scalar2ArrayIndex(node *letn, node *wln, lut_t *pmlut);
  *
  * description:
  *   arrayn has to be N_array. This function checks if the array is
@@ -288,14 +288,18 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
  *
  ******************************************************************************/
 static index_info *
-Scalar2ArrayIndex (node *arrayn, node *wln)
+Scalar2ArrayIndex (node *arrayn, node *wln, lut_t *pmlut)
 {
     index_info *iinfo, *tmpii;
     int elts = 1, ok = 1, i, *valid_permutation;
     node *idn;
+    pattern *pat1;
+    int cval;
 
     DBUG_ENTER ("Scalar2ArrayIndex");
     DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
+
+    pat1 = PMint (1, PMAgetIVal (&cval));
 
     /*
      * this needs to be a vector of scalar elements
@@ -316,9 +320,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
             ok = 0;
             iinfo->last[i] = NULL;
             idn = EXPRS_EXPR (arrayn);
-            if (N_num == NODE_TYPE (idn)) { /* this is a constant */
+            if (PMmatch (pat1, PM_flatSkipGuards, pmlut, idn)) { /* this is a constant */
                 iinfo->permutation[i] = 0;
-                iinfo->const_arg[i] = NUM_VAL (idn);
+                iinfo->const_arg[i] = cval;
                 ok = 1;
             }
 
@@ -354,6 +358,8 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     } else {
         iinfo = NULL;
     }
+
+    pat1 = PMfree (pat1);
 
     DBUG_RETURN (iinfo);
 }
@@ -449,9 +455,9 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
     /* CF has been done, so we just search for an Id and a constant.
        Since we do not want to practice constant folding here we ignore
        prfs with two constants. */
-    const_second = PMmatch (pat1, PM_flatSkipGuards, NULL, prfn);
+    const_second = PMmatch (pat1, PM_flatSkipGuards, INFO_PMLUT (arg_info), prfn);
 
-    if (const_second || PMmatch (pat2, PM_flatSkipGuards, NULL, prfn)) {
+    if (const_second || PMmatch (pat2, PM_flatSkipGuards, INFO_PMLUT (arg_info), prfn)) {
 
         /* we found a constant and an Id. If this Id is a vaild Id (i.e.
            it is declared in the generator or it is a valid local Id)
@@ -609,7 +615,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
 
         /* Is it a contruction based on index scalars ([i,i,c])? */
         if (NODE_TYPE (idn) == N_array) {
-            iinfo = Scalar2ArrayIndex (idn, wln);
+            iinfo = Scalar2ArrayIndex (idn, wln, INFO_PMLUT (arg_info));
             if (iinfo) {
                 /* This is a valid vector. Permutation and last of index_info are
                    already set. But we still need to handle the prf. */
@@ -789,8 +795,9 @@ WLIid (node *arg_node, info *arg_info)
          */
         (WITH_REFERENCED (ASSIGN_RHS (assignn))) += 1;
         DBUG_PRINT ("WLI",
-                    ("WLIid WITH_REFERENCED(%s) = %d", AVIS_NAME (ID_AVIS (arg_node)),
-                     WITH_REFERENCED (ASSIGN_RHS (assignn))));
+                    ("WLIid WITH_REFERENCED(%s) = %d (line %d)",
+                     AVIS_NAME (ID_AVIS (arg_node)),
+                     WITH_REFERENCED (ASSIGN_RHS (assignn)), NODE_LINE (arg_node)));
     } else {
         /* id is not defined by a withloop */
         DBUG_PRINT ("WLIEXT",
@@ -909,7 +916,7 @@ WLIlet (node *arg_node, info *arg_info)
         /* The let expr still may be a construction of a vector (without a prf). */
         if (N_array == NODE_TYPE (exprn)) {
             ASSIGN_INDEX (INFO_ASSIGN (arg_info))
-              = Scalar2ArrayIndex (exprn, INFO_WL (arg_info));
+              = Scalar2ArrayIndex (exprn, INFO_WL (arg_info), INFO_PMLUT (arg_info));
         }
 
     } /* is this a WL? */
