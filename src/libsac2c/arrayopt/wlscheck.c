@@ -224,31 +224,25 @@ WLSCdoCheck (node *with, node *nassign)
 
 /** <!--********************************************************************-->
  *
- * @static node *lastAssign(node *arg_node, info *arg_info)
+ * @static node *skipIrrelevantAssigns(node *arg_node)
  *
- * @brief Find the last element of an N_assign chain (except
- *        it might be an N_empty node).
+ * @brief skips over all those assigns that we consider cheap enough not
+ *        to cause any harm by repeated execution
+ *        NEEDS FIXING!!! (extreema-stuff!!)
  *
  * @param arg_node - an N_assign chain.
  * @param arg_info
  *
- * @param return   - take( -1, arg_node)
+ * @param return
  *
  *****************************************************************************/
 static node *
-lastAssign (node *arg_node, info *arg_info)
+skipIrrelevantAssigns (node *arg_node)
 {
-    node *z;
 
-    DBUG_ENTER ("lastAssign");
+    DBUG_ENTER ("skipIrrelevantAssigns");
 
-    z = arg_node;
-    while ((NULL != arg_node) && (N_assign == NODE_TYPE (arg_node))) {
-        z = arg_node;
-        arg_node = ASSIGN_NEXT (arg_node);
-    }
-
-    DBUG_RETURN (z);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -277,8 +271,10 @@ lastAssign (node *arg_node, info *arg_info)
 node *
 WLSCblock (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
     node *lhs;
-    node *la;
+#endif
+    node *wlassign;
 
     DBUG_ENTER ("WLSCblock");
 
@@ -286,35 +282,40 @@ WLSCblock (node *arg_node, info *arg_info)
      * To enhance applicability of WLS, we allow empty code blocks
      * This means that the CEXPR is defined outside the block
      */
-    la = lastAssign (BLOCK_INSTR (arg_node), arg_info);
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    if (NODE_TYPE (BLOCK_INSTR (arg_node)) != N_empty) {
+        wlassign = skipIrrelevantAssigns (BLOCK_INSTR (arg_node));
+        if (wlassign != NULL) {
 
-    if (N_empty != NODE_TYPE (la)) {
-        /*
-         * The block's last assignment must be INFO_CEXPR
-         */
-        if (la != AVIS_SSAASSIGN (ID_AVIS (INFO_CEXPR (arg_info)))) {
-            INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("WLS", ("%s: CEXPR is not last assignment in block!!!",
-                                AVIS_NAME (lhs)));
-        }
+            DBUG_EXECUTE ("WLS", lhs = IDS_AVIS (
+                                   LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info)))););
 
-        /*
-         * The assignment must have a with-loop as RHS
-         */
-        if (INFO_POSSIBLE (arg_info)) {
-            if (N_with != NODE_TYPE (ASSIGN_RHS (la))) {
+            /*
+             * The block's first relevant assignment must be INFO_CEXPR
+             * NB we are not in wls-aggressive mode here!
+             */
+            if (wlassign != AVIS_SSAASSIGN (ID_AVIS (INFO_CEXPR (arg_info)))) {
                 INFO_POSSIBLE (arg_info) = FALSE;
-                DBUG_PRINT ("WLS",
-                            ("%s: CEXPR is not given by a with-loop!", AVIS_NAME (lhs)));
+                DBUG_PRINT ("WLS", ("%s: CEXPR is not last assignment in block!!!",
+                                    AVIS_NAME (lhs)));
             }
-        }
 
-        /*
-         * Then we continue the check inside of that with-loop
-         */
-        if (INFO_POSSIBLE (arg_info)) {
-            ASSIGN_RHS (la) = TRAVdo (ASSIGN_RHS (la), arg_info);
+            /*
+             * The assignment must have a with-loop as RHS
+             */
+            if (INFO_POSSIBLE (arg_info)) {
+                if (N_with != NODE_TYPE (ASSIGN_RHS (wlassign))) {
+                    INFO_POSSIBLE (arg_info) = FALSE;
+                    DBUG_PRINT ("WLS", ("%s: CEXPR is not given by a with-loop!",
+                                        AVIS_NAME (lhs)));
+                }
+            }
+
+            /*
+             * Then we continue the check inside of that with-loop
+             */
+            if (INFO_POSSIBLE (arg_info)) {
+                ASSIGN_RHS (wlassign) = TRAVdo (ASSIGN_RHS (wlassign), arg_info);
+            }
         }
     }
 
