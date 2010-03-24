@@ -639,7 +639,7 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
 node *
 LSfundef (node *arg_node, info *arg_info)
 {
-    node *fundef;
+    node *fundef, *args;
     node *extap, *recap;
 
     DBUG_ENTER ("LSfundef");
@@ -653,7 +653,16 @@ LSfundef (node *arg_node, info *arg_info)
 
         /**
          *
-         * First, we mark all AVISs that are not used as 2nd arg to F_Sel
+         * First, we clear all AVIS_ISUSED for all arguments:
+         */
+        args = FUNDEF_ARGS (arg_node);
+        while (args != NULL) {
+            AVIS_ISUSED (ARG_AVIS (args)) = FALSE;
+            args = ARG_NEXT (args);
+        }
+
+        /**
+         * Then, mark all AVISs that are not used as 2nd arg to F_Sel
          * as ISUSED:
          */
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -682,6 +691,7 @@ LSfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = fundef;
     }
+    DBUG_PRINT ("LS", ("leaving function %s", FUNDEF_NAME (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) && (INFO_LEVEL (arg_info) == 0)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -717,12 +727,13 @@ LSarg (node *arg_node, info *arg_info)
         INFO_RECCALL (arg_info) = mem_reccall;
     }
 
+    DBUG_PRINT ("LS", ("inspecting arg %s!", ARG_NAME (arg_node)));
     if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))
         && (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) > 0)) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
         if ((SHgetUnrLen (shp) <= global.minarray)
             && !AVIS_ISUSED (ARG_AVIS (arg_node))) {
-            DBUG_PRINT ("LS", ("replacing arg %s!", ARG_NAME (arg_node)));
+            DBUG_PRINT ("LS", ("   replacing arg %s!", ARG_NAME (arg_node)));
             /**
              * First we create new arguments and we insert the array construction
              * at the beginning of the function body:
@@ -740,8 +751,14 @@ LSarg (node *arg_node, info *arg_info)
              */
             INFO_EXTCALL (arg_info)
               = AdjustExternalCall (INFO_EXTCALL (arg_info), shp, arg_info);
+        } else {
+            DBUG_PRINT ("LS",
+                        ("  %s!", AVIS_ISUSED (ARG_AVIS (arg_node)) ? "vector use!"
+                                                                    : "too large!"));
         }
         shp = SHfreeShape (shp);
+    } else {
+        DBUG_PRINT ("LS", ("  insufficient shape info!"));
     }
 
     DBUG_RETURN (arg_node);

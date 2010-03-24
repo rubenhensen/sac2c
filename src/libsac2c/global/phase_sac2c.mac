@@ -294,6 +294,9 @@ CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, o
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, cyc)
 
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
+               global.optimize.dols, opt, cyc)
+
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
                global.optimize.docf, opt, cyc)
 
@@ -432,9 +435,6 @@ CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, s
 ENDCYCLE (scyc)
 
 /*************************************************/
-
-SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
-          opt)
 
 SUBPHASE (lir2, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)

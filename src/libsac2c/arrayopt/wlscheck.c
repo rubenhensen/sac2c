@@ -286,8 +286,12 @@ WLSCblock (node *arg_node, info *arg_info)
         wlassign = skipIrrelevantAssigns (BLOCK_INSTR (arg_node));
         if (wlassign != NULL) {
 
-            DBUG_EXECUTE ("WLS", lhs = IDS_AVIS (
-                                   LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info)))););
+#if 0
+      DBUG_EXECUTE( "WLS", lhs = IDS_AVIS(
+                                   LET_IDS(
+                                     ASSIGN_INSTR(
+                                       INFO_NASSIGN( arg_info)))););
+#endif
 
             /*
              * The block's first relevant assignment must be INFO_CEXPR
@@ -295,8 +299,10 @@ WLSCblock (node *arg_node, info *arg_info)
              */
             if (wlassign != AVIS_SSAASSIGN (ID_AVIS (INFO_CEXPR (arg_info)))) {
                 INFO_POSSIBLE (arg_info) = FALSE;
-                DBUG_PRINT ("WLS", ("%s: CEXPR is not last assignment in block!!!",
-                                    AVIS_NAME (lhs)));
+#if 0
+        DBUG_PRINT( "WLS", ("%s: CEXPR is not last assignment in block!!!",
+                    AVIS_NAME( lhs)));
+#endif
             }
 
             /*
