@@ -379,12 +379,10 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 
     while (fundef != NULL) {
         if (!FUNDEF_ISZOMBIE (fundef) && !FUNDEF_ISTYPEERROR (fundef)
-            && FUNDEF_WASOPTIMIZED (fundef)) {
+            && !FUNDEF_ISWRAPPERFUN (fundef) && FUNDEF_WASOPTIMIZED (fundef)) {
             CTItell (4, " ");
 
-            if (FUNDEF_ISWRAPPERFUN (fundef)) {
-                CTInote ("****** Optimizing wrapper function:");
-            } else if (FUNDEF_ISDOFUN (fundef)) {
+            if (FUNDEF_ISDOFUN (fundef)) {
                 CTInote ("****** Optimizing loop function:");
             } else if (FUNDEF_ISCONDFUN (fundef)) {
                 CTInote ("****** Optimizing conditional function:");
