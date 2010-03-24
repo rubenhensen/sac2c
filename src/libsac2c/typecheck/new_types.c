@@ -6631,7 +6631,6 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
     prf prf;
     node *assigns;
     node *prf_ids;
-    node *id;
 
     DBUG_ENTER ("BuildCondAssign");
 
@@ -6659,23 +6658,30 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         case F_sub_SxS: /* last op in dim on udt */
         case F_dim_A: {
             node *prf2;
-            node *prf_ids2;
+            node *prf_ids2, *prf_ids3;
+            node *id, *id2, *id3;
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "illegal expression found!");
 
             id = DUPdupIdsId (prf_ids);
 
-            prf2 = TBmakePrf (rel_prf, TBmakeExprs (id, TBmakeExprs (expr, NULL)));
+            prf_ids3
+              = BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
+                             new_vardecs);
+            id3 = DUPdupIdsId (prf_ids3);
+
+            prf2 = TBmakePrf (rel_prf, TBmakeExprs (id, TBmakeExprs (id3, NULL)));
             prf_ids2
               = BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                              new_vardecs);
+            id2 = DUPdupIdsId (prf_ids2);
 
-            id = DUPdupIdsId (prf_ids2);
-            assigns
-              = TBmakeAssign (TBmakeLet (prf_ids2, prf2),
-                              TBmakeAssign (TBmakeCond (id, TBmakeBlock (then_ass, NULL),
-                                                        TBmakeBlock (else_ass, NULL)),
-                                            NULL));
+            assigns = TBmakeAssign (
+              TBmakeLet (prf_ids3, expr),
+              TBmakeAssign (TBmakeLet (prf_ids2, prf2),
+                            TBmakeAssign (TBmakeCond (id2, TBmakeBlock (then_ass, NULL),
+                                                      TBmakeBlock (else_ass, NULL)),
+                                          NULL)));
         } break;
 
         case F_drop_SxV: /* last op of shape on udts */
@@ -6683,6 +6689,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             node *prf2, *prf3, *prf4, *array;
             node *flt_prf2, *flt_prf3, *flt_prf4, *flt_array;
             node *aexprs, *last_ass;
+            node *id;
             int dim;
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_array), "illegal expression found!");

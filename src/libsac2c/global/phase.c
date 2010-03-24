@@ -36,6 +36,7 @@ static optimize_counter_t oc_pass;
  *        should be generated and propagated.
  *
  *****************************************************************************/
+
 bool
 isSAAMode (void)
 {
@@ -46,6 +47,7 @@ isSAAMode (void)
     z = global.optimize.dosaa
         && ((global.compiler_anyphase >= PH_opt_isaa2)
             && (global.compiler_anyphase < PH_opt_esaa2));
+
     DBUG_RETURN (z);
 }
 
@@ -56,6 +58,7 @@ isSAAMode (void)
  * @brief Predicates for those compiler phases that are running in SSA mode.
  *
  *****************************************************************************/
+
 bool
 isSSAMode (void)
 {
@@ -64,6 +67,7 @@ isSSAMode (void)
     DBUG_ENTER ("isSSAMode");
 
     z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
+
     DBUG_RETURN (z);
 }
 
