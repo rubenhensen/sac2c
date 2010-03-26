@@ -423,11 +423,9 @@ CCWHtypedef (node *arg_node, info *arg_info)
 
         udt = UTgetUnAliasedType (udt);
 
-        if (TUisHidden (UTgetBaseType (udt))) {
-            fprintf (INFO_FILE (arg_info), "\n#define SACTYPE_%s_%s %d",
-                     NSgetName (TYPEDEF_NS (arg_node)), TYPEDEF_NAME (arg_node),
-                     udt + global.sac4c_udt_offset);
-        }
+        fprintf (INFO_FILE (arg_info), "\n#define SACTYPE_%s_%s %d",
+                 NSgetName (TYPEDEF_NS (arg_node)), TYPEDEF_NAME (arg_node),
+                 udt + global.sac4c_udt_offset);
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
