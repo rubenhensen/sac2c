@@ -1760,8 +1760,8 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
                 }
 
-                if (FUNDEF_ISCUDARIZABLE (arg_node)) {
-                    fprintf (global.outfile, " * CUDA loop function:\n");
+                if (FUNDEF_ISCUDALACFUN (arg_node)) {
+                    fprintf (global.outfile, " * CUDA lac function:\n");
                 }
 
                 if (FUNDEF_ISTHREADFUN (arg_node)) {
@@ -2238,6 +2238,23 @@ PRTassign (node *arg_node, info *arg_info)
                     fprintf (global.outfile, "/** Is allowed to be moved down **/\n");
                 }
             }
+        }
+    }
+
+    if (global.backend == BE_cuda) {
+        switch (ASSIGN_EXECMODE (arg_node)) {
+        case CUDA_HOST_SINGLE:
+            fprintf (global.outfile, "/** Execution Mode: Host Single **/\n");
+            break;
+        case CUDA_DEVICE_SINGLE:
+            fprintf (global.outfile, "/** Execution Mode: Device Single **/\n");
+            break;
+        case CUDA_DEVICE_MULTI:
+            fprintf (global.outfile, "/** Execution Mode: Device Multithreaded **/\n");
+            break;
+        default:
+            fprintf (global.outfile, "/** Execution Mode: Unknown **/\n");
+            break;
         }
     }
 
@@ -3839,6 +3856,45 @@ PRTst (node *arg_node, info *arg_info)
     fprintf (global.outfile, "\n");
     INDENT;
     fprintf (global.outfile, "} /*** end of st cell ***/\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTcudast(node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTcudast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTcudast");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    /* PrintAssign already indents */
+    fprintf (global.outfile, "CUDAST {");
+    fprintf (global.outfile, " /*** begin of cudast cell ***/\n");
+
+    global.indent++;
+    if (CUDAST_REGION (arg_node) != NULL) {
+        TRAVdo (CUDAST_REGION (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (global.outfile, "/* ... Empty ... */");
+    }
+    global.indent--;
+
+    fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, "} /*** end of cudast cell ***/\n");
 
     DBUG_RETURN (arg_node);
 }

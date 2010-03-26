@@ -928,6 +928,14 @@ ICM_DEF( CUDA_GLOBALFUN_AP, ICM_TRACE_NONE)
 ICM_END( CUDA_GLOBALFUN_AP, (funname, vararg_cnt, vararg))
 #endif
 
+#if defined(CUDA_ST_GLOBALFUN_AP) || defined(ICM_ALL)
+ICM_DEF( CUDA_ST_GLOBALFUN_AP, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (4*vararg_cnt), vararg)
+ICM_END( CUDA_ST_GLOBALFUN_AP, (funname, vararg_cnt, vararg))
+#endif
+
 #if defined(CUDA_GLOBALFUN_RET) || defined(ICM_ALL)
 ICM_DEF( CUDA_GLOBALFUN_RET, ICM_TRACE_NONE)
   ICM_ID( funname)
@@ -1069,6 +1077,15 @@ ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
 ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
 #endif
 
+#if defined(CUDA_ASSIGN) || defined(ICM_ALL)
+ICM_DEF( CUDA_ASSIGN, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ID( copyfun)
+ICM_END( CUDA_ASSIGN, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
+#endif
 
 
 /*

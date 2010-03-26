@@ -60,7 +60,12 @@
  *
  *****************************************************************************/
 struct INFO {
+    node *current_block;
+    node *lastassign;
 };
+
+#define INFO_CURRENT_BLOCK(n) (n->current_block)
+#define INFO_LASTASSIGN(n) (n->lastassign)
 
 static info *
 MakeInfo ()
@@ -70,6 +75,9 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
+
+    INFO_CURRENT_BLOCK (result) = NULL;
+    INFO_LASTASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -137,6 +145,53 @@ MBTRAN2doMinimizeBlockTransfers (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *MBTRAN2block( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+MBTRAN2block (node *arg_node, info *arg_info)
+{
+    node *old_block;
+
+    DBUG_ENTER ("MBTRAN2block");
+
+    old_block = INFO_CURRENT_BLOCK (arg_info);
+    INFO_CURRENT_BLOCK (arg_info) = arg_node;
+
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+
+    INFO_CURRENT_BLOCK (arg_info) = old_block;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MBTRAN2assign( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+MBTRAN2assign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MBTRAN2assign");
+
+    ASSIGN_CONTAINING_BLOCK (arg_node) = INFO_CURRENT_BLOCK (arg_info);
+    INFO_LASTASSIGN (arg_info) = arg_node;
+
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    INFO_LASTASSIGN (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *MBTRAN2prf( node *arg_node, info *arg_info)
  *
  * @brief
@@ -152,6 +207,11 @@ MBTRAN2prf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_host2device:
         ssaassign = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)));
+        /*
+        if( ISDEVICE2HOST( ssaassign) &&
+            ( ASSIGN_CONTAINING_BLOCK( ssaassign) ==
+              ASSIGN_CONTAINING_BLOCK( INFO_LASTASSIGN( arg_info)))) {
+              ( */
         if (ISDEVICE2HOST (ssaassign)) {
             node *dev_id = PRF_ARG1 (ASSIGN_RHS (ssaassign));
             node *dev_avis = ID_AVIS (dev_id);

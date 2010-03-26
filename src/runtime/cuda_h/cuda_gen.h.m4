@@ -79,15 +79,35 @@ rule(`GEN_SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD', `SAC_CUDA_MEM_TRANSFER__AKS_AKD_A
 
 //----------------------------------------------------------------------
 
-pat(`SAC_CUDA_PARAM', `0', `1', `NT_SHP')
-rule(`SAC_CUDA_PARAM', `SAC_CUDA_PARAM__SCL', `SCL')
-rule(`SAC_CUDA_PARAM', `SAC_CUDA_PARAM__AKS_AKD', `AKS')
-rule(`SAC_CUDA_PARAM', `SAC_CUDA_PARAM__AKS_AKD', `AKD')
+pat(`SAC_CUDA_PARAM_in', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_PARAM_in', `SAC_CUDA_PARAM_in__SCL', `SCL')
+rule(`SAC_CUDA_PARAM_in', `SAC_CUDA_PARAM_in__AKS_AKD', `AKS')
+rule(`SAC_CUDA_PARAM_in', `SAC_CUDA_PARAM_in__AKS_AKD', `AKD')
 
-pat(`SAC_CUDA_ARG', `0', `1', `NT_SHP')
-rule(`SAC_CUDA_ARG', `SAC_CUDA_ARG__SCL', `SCL')
-rule(`SAC_CUDA_ARG', `SAC_CUDA_ARG__AKS_AKD', `AKS')
-rule(`SAC_CUDA_ARG', `SAC_CUDA_ARG__AKS_AKD', `AKD')
+pat(`SAC_CUDA_ARG_in', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_ARG_in', `SAC_CUDA_ARG_in__SCL', `SCL')
+rule(`SAC_CUDA_ARG_in', `SAC_CUDA_ARG_in__AKS_AKD', `AKS')
+rule(`SAC_CUDA_ARG_in', `SAC_CUDA_ARG_in__AKS_AKD', `AKD')
+
+pat(`SAC_CUDA_PARAM_out', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_PARAM_out', `SAC_CUDA_PARAM_out__SCL', `SCL')
+rule(`SAC_CUDA_PARAM_out', `SAC_CUDA_PARAM_out__AKS_AKD', `AKS')
+rule(`SAC_CUDA_PARAM_out', `SAC_CUDA_PARAM_out__AKS_AKD', `AKD')
+
+pat(`SAC_CUDA_ARG_out', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_ARG_out', `SAC_CUDA_ARG_out__SCL', `SCL')
+rule(`SAC_CUDA_ARG_out', `SAC_CUDA_ARG_out__AKS_AKD', `AKS')
+rule(`SAC_CUDA_ARG_out', `SAC_CUDA_ARG_out__AKS_AKD', `AKD')
+
+pat(`SAC_CUDA_PARAM_inout', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_PARAM_inout', `SAC_CUDA_PARAM_inout__SCL', `SCL')
+rule(`SAC_CUDA_PARAM_inout', `SAC_CUDA_PARAM_inout__AKS_AKD', `AKS')
+rule(`SAC_CUDA_PARAM_inout', `SAC_CUDA_PARAM_inout__AKS_AKD', `AKD')
+
+pat(`SAC_CUDA_ARG_inout', `0', `1', `NT_SHP')
+rule(`SAC_CUDA_ARG_inout', `SAC_CUDA_ARG_inout__SCL', `SCL')
+rule(`SAC_CUDA_ARG_inout', `SAC_CUDA_ARG_inout__AKS_AKD', `AKS')
+rule(`SAC_CUDA_ARG_inout', `SAC_CUDA_ARG_inout__AKS_AKD', `AKD')
 
 //----------------------------------------------------------------------
 

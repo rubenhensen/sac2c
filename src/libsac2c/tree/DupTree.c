@@ -2654,6 +2654,30 @@ DUPst (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *DupCudaSt( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Duplicates a N_cudast, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
+
+node *
+DUPcudast (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPcudast");
+
+    new_node = TBmakeSt (DUPTRAV (CUDAST_REGION (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *DupAvis( node *arg_node, info *arg_info)
  *
  * description:

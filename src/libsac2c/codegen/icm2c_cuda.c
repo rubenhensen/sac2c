@@ -43,7 +43,8 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
         }
 
         INDENT;
-        fprintf (global.outfile, "SAC_CUDA_PARAM( %s, %s)", vararg[i + 2], basetype);
+        fprintf (global.outfile, "SAC_CUDA_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                 basetype);
 
         dim = DIM_NO_OFFSET (atoi (vararg[i + 3]));
         if (dim > 0) {
@@ -181,7 +182,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     int dim, cnt, i, j;
     char *basetype;
 
-    DBUG_ENTER ("ICMCompileCUDA_FUN_AP");
+    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_AP");
 
 #define CUDA_GLOBALFUN_AP
 #include "icm_comment.c"
@@ -202,7 +203,8 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
         }
 
         INDENT;
-        fprintf (global.outfile, "SAC_CUDA_ARG( %s, %s)", vararg[i + 3], basetype);
+        fprintf (global.outfile, "SAC_CUDA_ARG_%s( %s, %s)", vararg[i], vararg[i + 3],
+                 basetype);
 
         dim = DIM_NO_OFFSET (atoi (vararg[i + 2]));
         if (dim > 0) {
@@ -221,8 +223,8 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     fprintf (global.outfile, ");\n");
 
     fprintf (global.outfile, "cutStopTimer(timer);\n");
-    fprintf (global.outfile, "fprintf(stderr,\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
-             funname);
+    // fprintf( global.outfile, "fprintf(stderr,\"%s: %%f\\n\",
+    // cutGetTimerValue(timer));\n", funname);
     fprintf (global.outfile, "cutResetTimer(timer);\n");
 
     INDENT;
@@ -307,6 +309,82 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     fprintf (global.outfile, "unsigned int timer;\n");
     fprintf (global.outfile, "cutCreateTimer(&timer);\n");
     fprintf (global.outfile, "cutStartTimer(timer);\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_ST_GLOBALFUN_AP( char *funname,
+ *                                     int vararg_cnt,
+ *                                     char **vararg)
+ *
+ * description:
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
+{
+    int dim, cnt, i, j;
+    char *basetype;
+
+    DBUG_ENTER ("ICMCompileCUDA_ST_GLOBALFUN_AP");
+
+#define CUDA_ST_GLOBALFUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_ST_GLOBALFUN_AP
+
+    INDENT;
+    fprintf (global.outfile, "{\n");
+
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "unsigned int timer;\n");
+    fprintf (global.outfile, "cutCreateTimer(&timer);\n");
+    fprintf (global.outfile, "cutStartTimer(timer);\n");
+
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
+    cnt = 0;
+    for (i = 0; i < 4 * vararg_cnt; i += 4) {
+        if (STReq (vararg[i + 1], "float_dev")) {
+            basetype = "float";
+        } else if (STReq (vararg[i + 1], "int_dev")) {
+            basetype = "int";
+        } else {
+            basetype = vararg[i + 1];
+        }
+
+        INDENT;
+        fprintf (global.outfile, "SAC_CUDA_ARG_%s( %s, %s)", vararg[i], vararg[i + 3],
+                 basetype);
+
+        dim = DIM_NO_OFFSET (atoi (vararg[i + 2]));
+        if (dim > 0) {
+            fprintf (global.outfile, ", ");
+            for (j = 0; j < dim; j++) {
+                fprintf (global.outfile, "SAC_ND_A_MIRROR_SHAPE(%s, %d), ", vararg[i + 3],
+                         j);
+            }
+            fprintf (global.outfile, "SAC_ND_A_MIRROR_SIZE(%s), ", vararg[i + 3]);
+            fprintf (global.outfile, "SAC_ND_A_MIRROR_DIM(%s)", vararg[i + 3]);
+        }
+        if (i != 4 * (vararg_cnt - 1)) {
+            fprintf (global.outfile, ", ");
+        }
+    }
+    fprintf (global.outfile, ");\n");
+
+    fprintf (global.outfile, "cutStopTimer(timer);\n");
+    // fprintf( global.outfile, "fprintf(stderr,\"%s: %%f\\n\",
+    // cutGetTimerValue(timer));\n", funname);
+    fprintf (global.outfile, "cutResetTimer(timer);\n");
+
+    INDENT;
+    fprintf (global.outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -708,6 +786,44 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
         DBUG_ASSERT ((0), "Non-AKS array found in CUDA kernel!");
         break;
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_ASSIGN( char *to_NT, int to_sdim,
+ *                             char *from_NT, int from_sdim,
+ *                             char *copyfun)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_ASSIGN( to_NT, to_sdim, from_NT, from_sdim, copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                       char *copyfun)
+{
+    int from_dim = DIM_NO_OFFSET (from_sdim);
+
+    DBUG_ENTER ("ICMCompileCUDA_ASSIGN");
+
+#define CUDA_ASSIGN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_ASSIGN
+
+    Check_Mirror (to_NT, to_sdim, from_NT, from_dim, DimId, ShapeId, NULL, 0, NULL, NULL);
+
+    ICMCompileND_UPDATE__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT,
+             copyfun);
 
     DBUG_VOID_RETURN;
 }

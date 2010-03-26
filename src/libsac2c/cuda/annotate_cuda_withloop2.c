@@ -37,6 +37,7 @@
 #include "namespaces.h"
 #include "new_types.h"
 #include "DupTree.h"
+#include "type_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -151,11 +152,15 @@ ACUWLfundef (node *arg_node, info *arg_info)
             INFO_FUNDEF (arg_info) = NULL;
         }
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    } else {
+    }
+    /* If the fundef is lac function, we check whether the traversal
+     * is initiated from the calling site. */
+    else {
         if (INFO_FROM_AP (arg_info)) {
             old_fundef = INFO_FUNDEF (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
-            /* Traversal of lac functions is initiated from the calling site */
+            /* if the traversal is initiated from the calling site,
+             * we traverse the body the function */
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_FUNDEF (arg_info) = old_fundef;
         } else {
@@ -200,48 +205,46 @@ ACUWLwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ACUWLwith");
 
-    ty = AVIS_TYPE (IDS_AVIS (INFO_LETIDS (arg_info)));
+    ty = IDS_NTYPE (INFO_LETIDS (arg_info));
 
     INFO_CUDARIZABLE (arg_info) = TRUE;
 
+    /* If the N_with is a top level withloop */
     if (!INFO_INWL (arg_info)) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
         INFO_INWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
 
         /* We only cudarize AKS N_with and not double*/
-        WITH_CUDARIZABLE (arg_node) = TYisAKS (ty)
-                                      && TYgetSimpleType (TYgetScalar (ty)) != T_double
-                                      && INFO_CUDARIZABLE (arg_info);
+        WITH_CUDARIZABLE (arg_node)
+          = TYisAKS (ty) &&
+            /* TYgetSimpleType( TYgetScalar( ty)) != T_double && */
+            INFO_CUDARIZABLE (arg_info);
 
-        if (TYgetSimpleType (TYgetScalar (ty)) == T_double) {
-            CTIwarn ("Double WITH-loop uncudarizable");
+        /*
+        if( TYgetSimpleType( TYgetScalar( ty)) == T_double) {
+          CTIwarn("Double WITH-loop uncudarizable");
         }
+        */
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-        /*
-            // We only cudarize AKS N_with
-            WITH_CUDARIZABLE( arg_node) =
-              TYisAKS( AVIS_TYPE( IDS_AVIS( INFO_LETIDS( arg_info)))) &&
-              INFO_CUDARIZABLE( arg_info);
-
-            // The inner N_with makes the outer N_with uncudarizable
-            INFO_CUDARIZABLE( arg_info) = FALSE;
-        */
-
         /* Since we only try to cudarize outermost N_with, any
          * inner N_with is tagged as not cudarizbale */
         WITH_CUDARIZABLE (arg_node) = FALSE;
-        INFO_CUDARIZABLE (arg_info) = TYisAKS (ty)
-                                      && TYgetSimpleType (TYgetScalar (ty)) != T_double
-                                      && INFO_CUDARIZABLE (arg_info);
 
-        if (TYgetSimpleType (TYgetScalar (ty)) == T_double) {
-            CTIwarn ("Double WITH-loop uncudarizable");
+        INFO_CUDARIZABLE (arg_info)
+          = TYisAKS (ty) &&
+            /* TYgetSimpleType( TYgetScalar( ty)) != T_double && */
+            INFO_CUDARIZABLE (arg_info);
+        /*
+        if( TYgetSimpleType( TYgetScalar( ty)) == T_double) {
+          CTIwarn("Double WITH-loop uncudarizable");
         }
+        */
     }
 
     DBUG_RETURN (arg_node);
@@ -323,12 +326,12 @@ ACUWLid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ACUWLid");
 
-    type = AVIS_TYPE (ID_AVIS (arg_node));
+    type = ID_NTYPE (arg_node);
 
     if (INFO_INWL (arg_info)) {
         /* We do not cudarize any N_with which contains arrays
          * other than AKS arrays */
-        if (!TYisScalar (type) && !TYisAKV (type) && !TYisAKS (type)) {
+        if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
         }
     }

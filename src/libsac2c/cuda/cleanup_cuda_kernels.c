@@ -93,10 +93,12 @@ CLKNLfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CLKNLfundef");
 
-    if (FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
+    /* we only travers cuda kernels */
+    if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
+
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -125,7 +127,11 @@ CLKNLlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("CLKNLlet");
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
-        if (TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
+        /* if we found a assignment of the form N_id = N_id
+         * in cuda kernels and they are arrays, we repalce the RHS N_id by
+         * primitive copy( N_id). */
+        if (!CUisDeviceTypeNew (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node))))
+            && TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
             node *avis = ID_AVIS (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));

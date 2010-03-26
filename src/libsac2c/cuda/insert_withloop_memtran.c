@@ -43,10 +43,10 @@
  *
  * @file cuda_type_conversion.c
  *
- * Prefix: IMEM
+ * Prefix: IWLMEM
  *
  *****************************************************************************/
-#include "insert_memory_transfers.h"
+#include "insert_withloop_memtran.h"
 
 /*
  * Other includes go here
@@ -179,15 +179,15 @@ static void CreateHost2Device (node **id, node *host_avis, node *dev_avis,
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMdoInsertMemoryTransfers( node *syntax_tree)
+ * @fn node *IWLMEMdoInsertWithloopMemtran( node *syntax_tree)
  *
  *****************************************************************************/
 node *
-IMEMdoInsertMemoryTransfers (node *syntax_tree)
+IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IMEMdoInsertMemoryTransfers");
+    DBUG_ENTER ("IWLMEMdoInsertWithloopMemtran");
 
     info = MakeInfo ();
 
@@ -196,7 +196,7 @@ IMEMdoInsertMemoryTransfers (node *syntax_tree)
      */
     // syntax_tree = INFDFMSdoInferDfms( syntax_tree, HIDE_LOCALS_NEVER);
 
-    TRAVpush (TR_imem);
+    TRAVpush (TR_iwlmem);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -232,7 +232,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     DBUG_ENTER ("TypeConvert");
 
     if (nty == N_id) {
-        /* If the N_ids is of known dimension and is not a scalar */
+        /* If the N_id is of known dimension and is not a scalar */
         DBUG_ASSERT (TUdimKnown (host_type), "AUD N_id found in cudarizable N_with!");
         if (TYgetDim (host_type) > 0) {
             /* If the scalar type is simple, e.g. int, float ... */
@@ -299,24 +299,23 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMfundef( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMfundef( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-IMEMfundef (node *arg_node, info *arg_info)
+IWLMEMfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("IMEMfundef");
+    DBUG_ENTER ("IWLMEMfundef");
 
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
-
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
         if (INFO_FROM_AP (arg_info)) {
@@ -335,13 +334,13 @@ IMEMfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMap( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-IMEMap (node *arg_node, info *arg_info)
+IWLMEMap (node *arg_node, info *arg_info)
 {
     bool traverse_lac_fun, old_from_ap;
     node *ap_args, *fundef_args;
@@ -349,7 +348,7 @@ IMEMap (node *arg_node, info *arg_info)
     ntype *dev_type;
     node *fundef;
 
-    DBUG_ENTER ("IMEMap");
+    DBUG_ENTER ("IWLMEMap");
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -440,18 +439,18 @@ IMEMap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMassign( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMassign( node *arg_node, info *arg_info)
  *
  * @brief  Add newly created <host2device> and <device2host> to
  *         the assign chain.
  *
  *****************************************************************************/
 node *
-IMEMassign (node *arg_node, info *arg_info)
+IWLMEMassign (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("IMEMassign");
+    DBUG_ENTER ("IWLMEMassign");
 
     /*
      * Here we have to do a top-down traversal for the following reason:
@@ -459,7 +458,6 @@ IMEMassign (node *arg_node, info *arg_info)
      * in a cudarizable N_with. If there is, we don't want to create a
      * host2devcice when we later come across it in the same block of code.
      */
-
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* If we are no longer in a cudarizable N_with, we insert
@@ -494,15 +492,15 @@ IMEMassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMlet( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMlet( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-IMEMlet (node *arg_node, info *arg_info)
+IWLMEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMlet");
+    DBUG_ENTER ("IWLMEMlet");
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LETEXPR (arg_info) = LET_EXPR (arg_node);
@@ -513,44 +511,52 @@ IMEMlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMwith( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMwith( node *arg_node, info *arg_info)
  *
  * @brief Traverse both withop and N_code of a cudarizable N_with
  *
  *****************************************************************************/
 node *
-IMEMwith (node *arg_node, info *arg_info)
+IWLMEMwith (node *arg_node, info *arg_info)
 {
     lut_t *old_lut;
 
-    DBUG_ENTER ("IMEMwith");
+    DBUG_ENTER ("IWLMEMwith");
 
     /* If the N_with is cudarizable */
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_LUT (arg_info) = LUTgenerateLut ();
+
         INFO_INCUDAWL (arg_info) = TRUE;
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         old_lut = INFO_NOTRAN (arg_info);
+        /* This lookup table stores variables that we do not
+         * want to create data transfers for */
         INFO_NOTRAN (arg_info) = LUTgenerateLut ();
 
-        /* we do not want to create a host2device for index vector */
+        /* We do not want to create a host2device for index vector,
+         * We store pair N_id->N_empty to signal this. */
         INFO_NOTRAN (arg_info)
           = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
                                TBmakeEmpty ());
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+        /* Cleanup */
         INFO_NOTRAN (arg_info) = old_lut;
         INFO_NOTRAN (arg_info) = LUTremoveLut (INFO_NOTRAN (arg_info));
-
         INFO_INCUDAWL (arg_info) = FALSE;
         INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
 
-        /* We need to create <device2host> for N_ids on the LHS */
+        /* We need to create device2host for N_ids
+         * on the LHS of this withloop*/
         INFO_CREATE_D2H (arg_info) = TRUE;
     } else if (INFO_INCUDAWL (arg_info)) {
         /* If we are already in a cudarizable N_with but the
          * N_with itself is not a cudarizable N_with */
+        DBUG_ASSERT (!WITH_CUDARIZABLE (arg_node),
+                     "Found cuda withloop in cuda withloop!");
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         INFO_NOTRAN (arg_info)
@@ -563,8 +569,7 @@ IMEMwith (node *arg_node, info *arg_info)
          * N_with is not cudarizable, none of its inner N_withs (if
          * there is any) will be cudarizable since we only cudarize
          * the outermost N_with. */
-
-        /* WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info); */
+        /* Do nothing */
     }
 
     DBUG_RETURN (arg_node);
@@ -572,15 +577,15 @@ IMEMwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMcode( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMcode( node *arg_node, info *arg_info)
  *
  * @brief Traverse the code block
  *
  *****************************************************************************/
 node *
-IMEMcode (node *arg_node, info *arg_info)
+IWLMEMcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMcode");
+    DBUG_ENTER ("IWLMEMcode");
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -595,21 +600,22 @@ IMEMcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMgenarray( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMgenarray( node *arg_node, info *arg_info)
  *
  * @brief Traverse default element of a N_genarray
  *
  *****************************************************************************/
 node *
-IMEMgenarray (node *arg_node, info *arg_info)
+IWLMEMgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMgenarray");
+    DBUG_ENTER ("IWLMEMgenarray");
 
     if (INFO_INCUDAWL (arg_info)) {
         /* Note that we do not traverse N_genarray->shape. This is
          * because it can be an N_id node and we do not want to insert
-         * <host2device> for it in this case. Therefore, the only son
-         * of N_genarray we traverse is the default element. */
+         * <host2device> for it in this case. Therefore, the only sons
+         * of N_genarray we traverse are the default element and the
+         * potential reuse candidates. */
         if (GENARRAY_DEFAULT (arg_node) != NULL) {
             DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
                          "Non N_id default element found in N_genarray!");
@@ -626,15 +632,15 @@ IMEMgenarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMmodarray( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMmodarray( node *arg_node, info *arg_info)
  *
  * @brief Traverse default element of a N_modarray
  *
  *****************************************************************************/
 node *
-IMEMmodarray (node *arg_node, info *arg_info)
+IWLMEMmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMmodarray");
+    DBUG_ENTER ("IWLMEMmodarray");
 
     if (INFO_INCUDAWL (arg_info)) {
         DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id),
@@ -651,23 +657,23 @@ IMEMmodarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMids( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMids( node *arg_node, info *arg_info)
  *
  * @brief For N_ids needed to be type converted, create <device2host>.
  *
  *****************************************************************************/
 node *
-IMEMids (node *arg_node, info *arg_info)
+IWLMEMids (node *arg_node, info *arg_info)
 {
     node *new_avis, *ids_avis;
     ntype *ids_type, *dev_type;
 
-    DBUG_ENTER ("IMEMids");
+    DBUG_ENTER ("IWLMEMids");
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
 
-    /* If the array is define in Cuda wl, we do not create
+    /* If the array is defined in cuda withloop, we do not create
      * a host2device transfer for it */
     if (INFO_INCUDAWL (arg_info)) {
         if (TYisArray (ids_type)) {
@@ -705,7 +711,7 @@ IMEMids (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMid( node *arg_node, info *arg_info)
+ * @fn node *IWLMEMid( node *arg_node, info *arg_info)
  *
  * @brief For each host array N_id in the cudarizable N_with, either create
  *        type conversion for it (i.e. <host2device>) or set its N_avis to
@@ -714,12 +720,12 @@ IMEMids (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-IMEMid (node *arg_node, info *arg_info)
+IWLMEMid (node *arg_node, info *arg_info)
 {
     node *new_avis, *avis, *id_avis;
     ntype *dev_type, *id_type;
 
-    DBUG_ENTER ("IMEMid");
+    DBUG_ENTER ("IWLMEMid");
 
     id_avis = ID_AVIS (arg_node);
     id_type = AVIS_TYPE (id_avis);

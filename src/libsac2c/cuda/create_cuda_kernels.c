@@ -102,6 +102,7 @@
 #include "str.h"
 #include "cuda_utils.h"
 #include "cleanup_cuda_kernels.h"
+#include "lift_dec_rc.h"
 
 /** <!--********************************************************************-->
  *
@@ -253,6 +254,8 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     info = FreeInfo (info);
 
     syntax_tree = CLKNLdoCleanupCUDAKernels (syntax_tree);
+
+    syntax_tree = LDRCdoLiftDecRc (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

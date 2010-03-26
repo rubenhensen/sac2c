@@ -34,8 +34,9 @@
 #include "pattern_match.h"
 
 /* Two traverse mode:
- *   tarv_collect: we collect variable usage information.
- *   trav_annoate: we annoate which memory transfer can be lifted out.
+ *   tarv_collect:     we collect variable usage information.
+ *   trav_consolidate: we annoate which memory transfer can be lifted out.
+ *   trav_annoate:     we annoate which memory transfer can be lifted out.
  */
 enum traverse_mode { trav_collect, trav_consolidate, trav_annotate };
 
@@ -160,20 +161,23 @@ AMTRANfundef (node *arg_node, info *arg_info)
     /* We only traverse do-fun. */
     if (FUNDEF_ISDOFUN (arg_node)) {
         INFO_INDOFUN (arg_info) = TRUE;
-        /* First traversal, collect variable usage information */
         INFO_NLUT (arg_info)
           = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        /* First traversal: collect variable usage information */
         INFO_TRAVMODE (arg_info) = trav_collect;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
+        /* Second traversal: */
         INFO_TRAVMODE (arg_info) = trav_consolidate;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        /* Second traversal, annotate <host2device> and <device2host> */
+        /* Third traversal: annotate host2device and device2host */
         INFO_TRAVMODE (arg_info) = trav_annotate;
         INFO_FUNARGNUM (arg_info) = 0;
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
         INFO_NLUT (arg_info) = NLUTremoveNlut (INFO_NLUT (arg_info));
         INFO_RECURSIVE_APARGS (arg_info) = NULL;
         INFO_INDOFUN (arg_info) = FALSE;
@@ -198,8 +202,7 @@ AMTRANarg (node *arg_node, info *arg_info)
     DBUG_ENTER ("AMTRANarg");
 
     /* N_arg->linksign is reused here to assign each argument
-     * of a do-fun a sequential number starting from 0.
-     */
+     * of a do-fun a sequential number starting from 0. */
     ARG_LINKSIGN (arg_node) = INFO_FUNARGNUM (arg_info);
     INFO_FUNARGNUM (arg_info) += 1;
 
@@ -257,7 +260,7 @@ AMTRANlet (node *arg_node, info *arg_info)
          *       b = a;
          *       .... (no use of b)
          *
-         * In this case, wif we do nothing, than use count of a will
+         * In this case, if we do nothing, then the use count of a will
          * be greated than 0 and this may prevent lifting the device2host
          * However, since the rest of the program other than the recursive
          * loop fun application contains no reference to b, this device2host
@@ -572,7 +575,7 @@ AMTRANprf (node *arg_node, info *arg_info)
             }
             break;
         case F_device2host:
-            /* Ensure that each <device2host> is initially
+            /* Ensure that each device2host is initially
              * tagged as can be moved out */
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
                 ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (INFO_LASTASSIGN (arg_info)) = FALSE;

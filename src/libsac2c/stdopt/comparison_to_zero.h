@@ -14,7 +14,7 @@
  *
  *****************************************************************************/
 extern node *CTZdoConditionalZeroComparison (node *arg_node);
-
+extern node *CTZdoComparisonToZero (node *argnode);
 extern node *CTZblock (node *arg_node, info *arg_info);
 extern node *CTZassign (node *arg_node, info *arg_info);
 extern node *CTZlet (node *arg_node, info *arg_info);

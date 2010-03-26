@@ -410,6 +410,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 
         /* Check that both parameters have no descriptors. */
         if (!(FUNDEF_ISSPMDFUN (fundef)) && !(FUNDEF_ISCUDAGLOBALFUN (fundef))
+            && !(FUNDEF_ISCUDASTGLOBALFUN (fundef))
             && !(argtab->tag[idx] == ATG_out_nodesc && argtag == ATG_in_nodesc)) {
             CTIerrorLine (line, "Pragma 'linksign' illegal: "
                                 "mappings allowed exclusively between parameters"
@@ -431,7 +432,8 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
          * and thus get the inout_nodesc_bx or inout_nodesc for boxed and unboxed
          * types, respectively.
          */
-        if (FUNDEF_ISSPMDFUN (fundef) || FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+        if (FUNDEF_ISSPMDFUN (fundef) || FUNDEF_ISCUDAGLOBALFUN (fundef)
+            || FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
             argtag = ATG_inout;
         } else {
             if (TUisBoxed (ARG_NTYPE (arg))) {

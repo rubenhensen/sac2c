@@ -7,5 +7,7 @@
 
 extern node *MBTRAN2doMinimizeBlockTransfers (node *arg_node);
 extern node *MBTRAN2prf (node *arg_node, info *arg_info);
+extern node *MBTRAN2block (node *arg_node, info *arg_info);
+extern node *MBTRAN2assign (node *arg_node, info *arg_info);
 
 #endif

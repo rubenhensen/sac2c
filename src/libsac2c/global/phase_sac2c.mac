@@ -363,9 +363,13 @@ CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
 CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
 
-CYCLEPHASEFUN (ctz, "Applying comparison to zero", CTZdoComparisonToZero,
-               global.optimize.doctz, opt, cyc)
-
+/*
+CYCLEPHASEFUN( ctz,
+          "Applying comparison to zero",
+          CTZdoComparisonToZero,
+          global.optimize.doctz,
+          opt, cyc)
+*/
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
@@ -707,15 +711,49 @@ SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
 /*
-SUBPHASE( scuwl,
-          "Split cudarizable withloop",
-          SCUWLdoSplitCudaWithloops,
+SUBPHASE( cutem,
+          "CUDA Tag execution mode",
+          CUTEMdoTagExecutionmode,
           global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE( aculac,
+          "CUDA Annotate CUDA lac functions",
+          ACULACdoAnnotateCUDALacfun,
+          global.backend == BE_cuda,
+          cuda)
+
+SUBPHASE( cuskc,
+          "CUDA Sink scalar code",
+          CUSKCdoSinkCode,
+          global.backend == BE_cuda && global.optimize.docuskc,
+          cuda)
+
+SUBPHASE( cucc,
+          "CUDA Create cells",
+          CUCCdoCreateCells,
+          global.backend == BE_cuda && global.optimize.docucc,
           cuda)
 */
 
-SUBPHASE (imem, "CUDA Insert CUDA memory transfer primitives",
-          IMEMdoInsertMemoryTransfers, global.backend == BE_cuda, cuda)
+#if 0
+SUBPHASE( scuwl,
+          "Split cudarizable withloop",
+          SCUWLdoSplitCudaWithloops, 
+          global.backend == BE_cuda,
+          cuda)
+#endif
+
+SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
+          IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
+
+/*
+SUBPHASE( icsmem,
+          "CUDA Insert CUDA memory transfer primitives for cudasts",
+          ICSMEMdoInsertCudastMemtran,
+          global.backend == BE_cuda,
+          cuda)
+*/
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,
           cuda)
@@ -734,6 +772,14 @@ SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition
 
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
           MTRANdoMinimizeTransfers, global.backend == BE_cuda, cuda)
+
+/*
+SUBPHASE( stknl,
+          "CUDA Create single threaded CUDA kernels",
+          STKNLdoSingleThreadKernels,
+          global.backend == BE_cuda,
+          pc)
+*/
 
 /*
 SUBPHASE( wlds,
@@ -947,6 +993,14 @@ SUBPHASE( pknlg,
           global.backend == BE_cuda,
           pc)
 #endif
+
+/*
+SUBPHASE( cuasr,
+          "CUDA Adjust return ids of single threaded kernel",
+          CUASRdoAdjustStknlRets,
+          global.backend == BE_cuda,
+          pc)
+*/
 
 SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           global.backend == BE_cuda, pc)

@@ -114,13 +114,31 @@
 /*
  * CUDA kernel parameters and arguments
  */
-#define SAC_CUDA_PARAM__SCL(var_NT, basetype) basetype NT_NAME (var_NT)
+#define SAC_CUDA_PARAM_in__SCL(var_NT, basetype) basetype NT_NAME (var_NT)
 
-#define SAC_CUDA_PARAM__AKS_AKD(var_NT, basetype) basetype *NT_NAME (var_NT)
+#define SAC_CUDA_PARAM_in__AKS_AKD(var_NT, basetype) basetype *NT_NAME (var_NT)
 
-#define SAC_CUDA_ARG__SCL(var_NT, basetype) NT_NAME (var_NT)
+#define SAC_CUDA_ARG_in__SCL(var_NT, basetype) NT_NAME (var_NT)
 
-#define SAC_CUDA_ARG__AKS_AKD(var_NT, basetype) NT_NAME (var_NT)
+#define SAC_CUDA_ARG_in__AKS_AKD(var_NT, basetype) NT_NAME (var_NT)
+
+#define SAC_CUDA_PARAM_out__SCL(var_NT, basetype)                                        \
+    basetype *SAC_NAMEP (SAC_ND_A_FIELD (var_NT))
+
+#define SAC_CUDA_PARAM_out__AKS_AKD(var_NT, basetype) basetype *NT_NAME (var_NT)
+
+#define SAC_CUDA_ARG_out__SCL(var_NT, basetype) &NT_NAME (var_NT)
+
+#define SAC_CUDA_ARG_out__AKS_AKD(var_NT, basetype) NT_NAME (var_NT)
+
+#define SAC_CUDA_PARAM_inout__SCL(var_NT, basetype)                                      \
+    basetype *SAC_NAMEP (SAC_ND_A_FIELD (var_NT))
+
+#define SAC_CUDA_PARAM_inout__AKS_AKD(var_NT, basetype) basetype *NT_NAME (var_NT)
+
+#define SAC_CUDA_ARG_inout__SCL(var_NT, basetype) &NT_NAME (var_NT)
+
+#define SAC_CUDA_ARG_inout__AKS_AKD(var_NT, basetype) NT_NAME (var_NT)
 
 /*
  * CUDA built-in index variables

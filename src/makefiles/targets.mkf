@@ -169,13 +169,15 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
                         remove_with3 addSyncs 
                         
-libsac2c_cuda        := annotate_cuda_withloop2 insert_memory_transfers create_constant_assignments \
+libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         minimize_transfers minimize_loop_transfers minimize_cond_transfers \
                         minimize_block_transfers annotate_memory_transfers annotate_cuda_partition \
-                        annotate_cuda_loop cuda_utils annotate_cond_transfers split_partitions \
+                        annotate_cuda_lacfun cuda_utils annotate_cond_transfers split_partitions \
                         minimize_block_transfers2 wl_descalarization split_cuda_withloop \
-                        create_cuda_kernels cleanup_cuda_kernels \
-                        prepare_kernel_generation create_loop_kernels 
+                        create_cuda_kernels cleanup_cuda_kernels cuda_tag_executionmode \
+                        prepare_kernel_generation cuda_create_cells minimize_cudast_transfers \
+                        single_thread_kernels lift_dec_rc adjust_stknl_rets cuda_sink_code \
+                        insert_withloop_memtran insert_cudast_memtran
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

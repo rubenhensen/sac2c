@@ -97,6 +97,7 @@ extern node *PRTpragma (node *arg_node, info *arg_info);
 extern node *PRTex (node *arg_node, info *arg_info);
 extern node *PRTmt (node *arg_node, info *arg_info);
 extern node *PRTst (node *arg_node, info *arg_info);
+extern node *PRTcudast (node *arg_node, info *arg_info);
 extern node *PRTssacnt (node *arg_node, info *arg_info);
 extern node *PRTavis (node *arg_node, info *arg_info);
 extern node *PRTconstraint (node *arg_node, info *arg_info);

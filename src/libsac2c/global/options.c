@@ -424,6 +424,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("enforceIEEE", global.enforce_ieee = TRUE);
 
+    ARGS_FLAG ("enforceFloat", global.enforce_float = TRUE);
+
     /*
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
      */

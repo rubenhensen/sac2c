@@ -182,6 +182,8 @@ typedef enum {
     MUTH_MULTI_SPECIALIZED
 } mtexecmode_t;
 
+typedef enum { CUDA_HOST_SINGLE, CUDA_DEVICE_SINGLE, CUDA_DEVICE_MULTI } cudaexecmode_t;
+
 /* string sets, see stringset.h */
 typedef struct STRINGSET_T stringset_t;
 

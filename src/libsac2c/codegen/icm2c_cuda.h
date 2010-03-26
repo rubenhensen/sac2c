@@ -12,6 +12,7 @@ extern void ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt,
 extern void ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt,
                                               char **vararg);
 extern void ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg);
+extern void ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg);
 extern void ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg);
 
 extern void ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim,
@@ -38,5 +39,8 @@ extern void ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdi
 
 extern void ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim,
                                               int *shp);
+
+extern void ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                   char *copyfun);
 
 #endif /* _SAC_ICM2C_CUDA_H_ */

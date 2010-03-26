@@ -265,6 +265,13 @@ GetBasetypeStr (types *type)
         str = "float";
     } else if (basetype == T_int_dev) {
         str = "int";
+    } else if (basetype == T_double_dev) {
+        str = "float"; /* We do not support double in CUDA yet */
+    }
+    /* If the enforce_float flag is set,
+     * we change all doubles to floats */
+    else if (basetype == T_double && global.enforce_float) {
+        str = "float";
     } else {
         str = global.type_string[basetype];
     }
@@ -774,8 +781,8 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
             assigns = TCmakeAssignIcm2 ("ND_SET__RC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), assigns);
         } else {
-            if (TCgetBasetype (type) != T_float_dev
-                && TCgetBasetype (type) != T_int_dev) {
+            if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev
+                && TCgetBasetype (type) != T_double_dev) {
                 assigns
                   = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
                                       TCmakeIdCopyString (GenericFun (GF_free, type)),
@@ -835,7 +842,8 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
     DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
 
     if (num > 0) {
-        if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev) {
+        if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev
+            && TCgetBasetype (type) != T_double_dev) {
             assigns
               = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
                                   TBmakeNum (num),
@@ -878,8 +886,8 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
     if (RC_IS_ACTIVE (rc)) {
         if (pragma == NULL) {
             /* This is an array that should be allocated on the device */
-            if (TCgetBasetype (type) == T_float_dev
-                || TCgetBasetype (type) == T_int_dev) {
+            if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev
+                || TCgetBasetype (type) == T_double_dev) {
 #if USE_COMPACT_ALLOC
                 assigns
                   = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
@@ -1019,7 +1027,8 @@ MakeReAllocIcm (char *name, types *type, char *sname, types *stype, int rc, node
 
     if (RC_IS_ACTIVE (rc)) {
         /* This is an array that should be allocated on the device */
-        if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev) {
+        if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev
+            || TCgetBasetype (type) == T_double_dev) {
 #if USE_COMPACT_ALLOC
             assigns = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), get_dim, set_shape_icm, assigns);
@@ -2067,7 +2076,7 @@ MakeFunApArgs (node *ap)
                   = TBmakeExprs (MakeFunApArgIdsNtThread (argtab->ptr_out[i]), icm_args);
             }
 
-            if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+            if (!FUNDEF_ISCUDAGLOBALFUN (fundef) && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
                 exprs = TBmakeExprs (TCmakeIdCopyString (
                                        GetBaseTypeFromExpr (argtab->ptr_out[i])),
                                      exprs);
@@ -2104,7 +2113,8 @@ MakeFunApArgs (node *ap)
                     }
                 }
 
-                if (!FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+                if (!FUNDEF_ISCUDAGLOBALFUN (fundef)
+                    && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
                     exprs = TBmakeExprs (TCmakeIdCopyString (
                                            GetBaseTypeFromExpr (argtab->ptr_in[i])),
                                          exprs);
@@ -2159,7 +2169,8 @@ MakeFunApArgs (node *ap)
 
     icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
 
-    if (!FUNDEF_ISSPMDFUN (fundef) && !FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+    if (!FUNDEF_ISSPMDFUN (fundef) && !FUNDEF_ISCUDAGLOBALFUN (fundef)
+        && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
         if (argtab->ptr_out[0] == NULL) {
             icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
         } else {
@@ -2319,25 +2330,42 @@ RhsId (node *arg_node, info *arg_info)
 {
     node *let_ids = NULL;
     node *ret_node = NULL;
+    node *fundef;
 
     DBUG_ENTER ("RhsId");
 
     let_ids = INFO_LASTIDS (arg_info);
 
+    fundef = INFO_FUNDEF (arg_info);
+
     /*
      * 'arg_node' and 'let_ids' are both non-unique or both unique
      */
     if (!STReq (IDS_NAME (let_ids), ID_NAME (arg_node))) {
-        ret_node
-          = TCmakeAssignIcm2 ("ND_ASSIGN",
-                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                            TRUE, FALSE,
-                                            MakeTypeArgs (ID_NAME (arg_node),
-                                                          ID_TYPE (arg_node), FALSE, TRUE,
-                                                          FALSE, NULL)),
-                              TCmakeIdCopyString (
-                                GenericFun (GF_copy, ID_TYPE (arg_node))),
-                              ret_node);
+        if (fundef != NULL
+            && (FUNDEF_ISCUDAGLOBALFUN (fundef) || FUNDEF_ISCUDASTGLOBALFUN (fundef))) {
+            ret_node
+              = TCmakeAssignIcm2 ("CUDA_ASSIGN",
+                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                FALSE, TRUE, FALSE,
+                                                MakeTypeArgs (ID_NAME (arg_node),
+                                                              ID_TYPE (arg_node), FALSE,
+                                                              TRUE, FALSE, NULL)),
+                                  TCmakeIdCopyString (
+                                    GenericFun (GF_copy, ID_TYPE (arg_node))),
+                                  ret_node);
+        } else {
+            ret_node
+              = TCmakeAssignIcm2 ("ND_ASSIGN",
+                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                FALSE, TRUE, FALSE,
+                                                MakeTypeArgs (ID_NAME (arg_node),
+                                                              ID_TYPE (arg_node), FALSE,
+                                                              TRUE, FALSE, NULL)),
+                                  TCmakeIdCopyString (
+                                    GenericFun (GF_copy, ID_TYPE (arg_node))),
+                                  ret_node);
+        }
     } else {
         /*
          * We are dealing with an assignment of the kind:
@@ -2644,7 +2672,8 @@ COMPfundef (node *arg_node, info *arg_info)
          * traverse arguments
          */
         if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_BODY (arg_node) != NULL)
-            && !FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
+            && !FUNDEF_ISCUDAGLOBALFUN (arg_node)
+            && !FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
             assigns = COMPFundefArgs (arg_node, arg_info);
 
             /* new first assignment of body */
@@ -2673,7 +2702,8 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("MUTC_THREADFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("MUTC_THREADFUN_DEF_END", DUPdoDupTree (icm_args));
-        } else if (FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
+        } else if (FUNDEF_ISCUDAGLOBALFUN (arg_node)
+                   || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
             icm_args = MakeFunctionArgsCuda (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("CUDA_GLOBALFUN_DECL", icm_args);
             FUNDEF_ICMDEFBEGIN (arg_node)
@@ -3124,7 +3154,7 @@ COMPreturn (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("MT_MTFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
         icm = TBmakeIcm ("MUTC_THREADFUN_RET", MakeFunRetArgs (arg_node, arg_info));
-    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
+    } else if (FUNDEF_ISCUDAGLOBALFUN (fundef) || FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
         icm = TBmakeIcm ("CUDA_GLOBALFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else {
         icm = TBmakeIcm ("ND_FUN_RET", MakeFunRetArgs (arg_node, arg_info));
@@ -3362,6 +3392,8 @@ COMPap (node *arg_node, info *arg_info)
         }
     } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
         icm = TBmakeIcm ("CUDA_GLOBALFUN_AP", icm_args);
+    } else if (FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
+        icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
@@ -4768,7 +4800,8 @@ COMPprfCopy (node *arg_node, info *arg_info)
         dst_basetype = TCgetBasetype (IDS_TYPE (let_ids));
 
         if (((src_basetype == T_float_dev && dst_basetype == T_float_dev)
-             || (src_basetype == T_int_dev && dst_basetype == T_int_dev))
+             || (src_basetype == T_int_dev && dst_basetype == T_int_dev)
+             || (src_basetype == T_double_dev && dst_basetype == T_double_dev))
             && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
             ret_node
               = TCmakeAssignIcm4 ("CUDA_COPY__ARRAY", DUPdupIdsIdNt (let_ids),
@@ -5261,9 +5294,11 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
 
     if (global.backend == BE_cuda
         && (TCgetBasetype (ID_TYPE (arg1)) == T_float_dev
-            || TCgetBasetype (ID_TYPE (arg1)) == T_int_dev)
+            || TCgetBasetype (ID_TYPE (arg1)) == T_int_dev
+            || TCgetBasetype (ID_TYPE (arg1)) == T_double_dev)
         && (TCgetBasetype (ID_TYPE (arg3)) == T_float_dev
-            || TCgetBasetype (ID_TYPE (arg3)) == T_int_dev)
+            || TCgetBasetype (ID_TYPE (arg3)) == T_int_dev
+            || TCgetBasetype (ID_TYPE (arg3)) == T_double_dev)
         && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
         ret_node
           = TCmakeAssignIcm4 ("CUDA_PRF_IDX_MODARRAY_AxSxA__DATA",
@@ -5754,9 +5789,17 @@ COMPprfOp_S (node *arg_node, info *arg_info)
                    || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
                   ("non-scalar argument found!", global.prf_name[PRF_PRF (arg_node)]));
 
-    ret_node = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
-                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
-                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    /* If enforce float flag is set, we change all tods to tofs */
+    if (global.enforce_float && PRF_PRF (arg_node) == F_tod_S) {
+        ret_node = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                                     TCmakeIdCopyString (prf_ccode_tab[F_tof_S]),
+                                     DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    } else {
+        ret_node
+          = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                              TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                              DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+    }
 
     DBUG_RETURN (ret_node);
 }

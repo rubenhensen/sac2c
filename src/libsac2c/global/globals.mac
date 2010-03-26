@@ -276,6 +276,8 @@ GLOBAL (int, min_parallel_size_per_thread, 8)
  *       => generator size must be >= 32 to be executed parallel
  */
 
+GLOBAL (bool, enforce_float, FALSE)
+
 /*
  * Preprocessor options
  *

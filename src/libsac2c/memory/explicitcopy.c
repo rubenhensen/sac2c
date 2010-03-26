@@ -301,9 +301,11 @@ EMECprf (node *arg_node, info *arg_info)
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
-        PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
+        if (!FUNDEF_ISCUDASTGLOBALFUN (INFO_FUNDEF (arg_info))
+            && !FUNDEF_ISCUDALACFUN (INFO_FUNDEF (arg_info))) {
+            PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
+        }
         break;
-
     default:
         break;
     }

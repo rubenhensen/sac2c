@@ -32,6 +32,7 @@
 #include "annotate_cond_transfers.h"
 #include "minimize_loop_transfers.h"
 #include "minimize_cond_transfers.h"
+#include "minimize_cudast_transfers.h"
 #include "wl_descalarization.h"
 
 /** <!--********************************************************************-->
@@ -52,6 +53,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
 
     int i = 0;
     while (i < 10) {
+        syntax_tree = MCSTRANdoMinimizeCudastTransfers (syntax_tree);
         syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
         syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
         syntax_tree = MCTRANdoMinimizeCondTransfers (syntax_tree);

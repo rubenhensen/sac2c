@@ -86,6 +86,68 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
+      <traversal id="CUSKC" name="CUDA Sink scalar code into CUDA withloop" default="sons" include="cuda_sink_code.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ids" />
+          <node name="Id" />         
+          <node name="Let" />
+          <node name="Block" />
+          <node name="With" />
+        </travuser>
+      </traversal>
+      <traversal id="CUASR" name="CUDA Adjust return ids of single threaded kernel" default="sons" include="adjust_stknl_rets.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Return" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Module" />
+          <node name="Let" />
+          <node name="Arg" />
+        </travuser>
+      </traversal>
+      <traversal id="LDRC" name="CUDA Lift decrement reference count promitive from CUDA kernels" default="sons" include="lift_dec_rc.h" >
+        <travuser>
+          <node name="Prf" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
+      <traversal id="STKNL" name="CUDA Create single threaded CUDA kerenls" default="sons" include="single_thread_kernels.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Cudast" />
+        </travuser>
+      </traversal>
+      <traversal id="CUCC" name="CUDA Create cells" default="sons" include="cuda_create_cells.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
+      <traversal id="CUTEM" name="CUDA Tag execution mode" default="sons" include="cuda_tag_executionmode.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Assign" />
+          <node name="Id" />
+          <node name="Ap" />
+          <node name="Let" />
+          <node name="Fundef" />
+          <node name="Exprs" />
+        </travuser>
+        <travnone>
+          <node name="With2" />
+          <node name="Return" />
+          <node name="Funcond" />
+        </travnone>
+      </traversal>
       <traversal id="SPTN" name="Split partitions" default="sons" include="split_partitions.h" >
         <travuser>
           <node name="With" />
@@ -121,11 +183,6 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-      <traversal id="CULKNL" name="Create CUDA loop kernels" default="sons" include="create_loop_kernels.h" >
-        <travuser>
-          <node name="Do" />
-        </travuser>
-      </traversal>
       <traversal id="PKNLG" name="Prepare cuda kernel generation" default="sons" include="prepare_kernel_generation.h" >
         <travuser>
           <node name="Do" />
@@ -133,11 +190,13 @@
           <node name="Part" />
         </travuser>
       </traversal>
-      <traversal id="ACUL" name="Annotate CUDA loops" default="sons" include="annotate_cuda_loop.h" >
+      <traversal id="ACULAC" name="Annotate CUDA lac functions" default="sons" include="annotate_cuda_lacfun.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Ap" />
-          <node name="Genarray" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Assign" />
         </travuser>
       </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
@@ -211,7 +270,17 @@
       </traversal>
       <traversal id="MBTRAN2" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers2.h" >
         <travuser>
+          <node name="Block" />
+          <node name="Assign" />
           <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="MCSTRAN" name="Minimise the number of device-host data transfers in a Cudast" default="sons" include="minimize_cudast_transfers.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Cudast" />
         </travuser>
       </traversal>
       <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
@@ -246,7 +315,7 @@
           <node name="Generator" />
         </travuser>
       </traversal>
-      <traversal id="IMEM" name="Insert CUDA memory transfer primitives" default="sons" include="insert_memory_transfers.h" >
+      <traversal id="IWLMEM" name="Insert CUDA memory transfer primitives for withloops" default="sons" include="insert_withloop_memtran.h" >
         <travuser>
           <node name="Let" />
           <node name="Assign" />
@@ -259,6 +328,21 @@
           <node name="Modarray" />
           <node name="Code" />
         </travuser>
+      </traversal>
+      <traversal id="ICSMEM" name="Insert CUDA memory transfer primitives for cudasts" default="sons" include="insert_cudast_memtran.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Cudast" />  
+          <node name="Let" />
+          <node name="Funcond" />            
+        </travuser>
+        <travnone>
+          <node name="Return" />
+        </travnone>
       </traversal>
       <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop2.h" >
         <travuser>
@@ -2979,7 +3063,6 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-
       <traversal id="UCZC" name="UndoCondZeroCmp" default="sons" include="UndoCondZeroCmp.h" >
         <travuser>
 	  <node name="Fundef" />
@@ -3040,6 +3123,7 @@
         <node name="Annotate" />
         <node name="While" />
         <node name="Icm" />
+        <node name="Cudast" />
       </target>
     </nodeset>
 
@@ -4158,8 +4242,8 @@ N_structdef :
         <flag name="IsStfun">
           <description>This is (potentially) a copy of the original function that will be executed sequentially by a single thread during runtime. If the function is only used in sequential context, this may in fact be the original function that has been reused.</description>
         </flag>
-        <flag name="IsCudaHostfun" default="FALSE">
-          <description>This is a cuda host side function.</description>
+        <flag name="IsCudastGlobalfun" default="FALSE">
+          <description>This is a single threaded cuda global kernel function.</description>
         </flag>
         <flag name="IsCudaGlobalfun" default="FALSE">
           <description>This is a cuda global kernel function.</description>
@@ -4204,9 +4288,9 @@ N_structdef :
             TRUE iff this function was created by the HS pass as a constructor for structs.
           </description>
         </flag>
-        <flag name="IsCudarizable" default="FALSE">
+        <flag name="IsCudaLacFun" default="FALSE">
           <description>
-            TRUE iff this function is a loop fun and can be executed on the CUDA card.
+            TRUE iff this function is a lac fun that can be executed on the CUDA card.
           </description>
         </flag>
         <flag name="NoInline" default="FALSE">
@@ -4325,7 +4409,8 @@ N_structdef :
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
-        </flag>	  
+        </flag>	 
+        <flag name="IsCudaDefined" default="FALSE" /> 
       </flags>
     </node>
 <!--
@@ -7013,6 +7098,30 @@ N_structdef :
       </attributes>
       <flags></flags>
     </node>
+    
+<!--
+
+  N_cudast :
+
+-->
+    <node name="Cudast">
+      <sons>
+        <son name="Region">
+          <targets>
+            <target mandatory="yes">
+              <node name="Block" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+      </attributes>
+      <flags></flags>
+    </node>
+    
 <!--
 
   N_with :
@@ -7204,7 +7313,7 @@ N_structdef :
             (WithLoopSelectionCount) traversal.
           </description>
           <type name="Integer">
-            <targets>
+            <targets>        <node name="Cudast" />
               <target mandatory="no">
                 <any />
                 <phases>

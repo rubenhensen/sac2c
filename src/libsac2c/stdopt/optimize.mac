@@ -105,6 +105,8 @@ OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
 OPTIMIZE ("saacyc", saacyc, TRUE, TRUE, "run saa cycle")
 OPTIMIZE ("wllo", wllo, FALSE, FALSE, "run with-loop lock optimization")
 OPTIMIZE ("rw3", rw3, TRUE, TRUE, "remove with3 loops")
+OPTIMIZE ("cuskc", cuskc, TRUE, TRUE, "CUDA sink code")
+OPTIMIZE ("cucc", cucc, TRUE, TRUE, "CUDA create cells")
 OPTIMIZE ("ctz", ctz, FALSE, FALSE, "comparison to zero")
 OPTIMIZE ("uczc", uczc, FALSE, FALSE, "undo comparison to zero")
 
