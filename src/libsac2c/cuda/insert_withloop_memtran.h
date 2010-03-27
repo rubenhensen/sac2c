@@ -16,5 +16,6 @@ extern node *IWLMEMids (node *arg_node, info *arg_info);
 extern node *IWLMEMgenarray (node *arg_node, info *arg_info);
 extern node *IWLMEMmodarray (node *arg_node, info *arg_info);
 extern node *IWLMEMcode (node *arg_node, info *arg_info);
+extern node *IWLMEMfuncond (node *arg_node, info *arg_info);
 
 #endif

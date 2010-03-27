@@ -93,6 +93,9 @@ struct INFO {
     bool is_modarr;
     bool in_cexprs;
     bool from_ap;
+    node *letids;
+    node *apids;
+    node *topblock;
 };
 
 /*
@@ -130,6 +133,9 @@ struct INFO {
 #define INFO_IS_MODARR(n) (n->is_modarr)
 #define INFO_IN_CEXPRS(n) (n->in_cexprs)
 #define INFO_FROM_AP(n) (n->from_ap)
+#define INFO_LETIDS(n) (n->letids)
+#define INFO_APIDS(n) (n->apids)
+#define INFO_TOPBLOCK(n) (n->topblock)
 
 static info *
 MakeInfo ()
@@ -150,6 +156,9 @@ MakeInfo ()
     INFO_IS_MODARR (result) = FALSE;
     INFO_IN_CEXPRS (result) = FALSE;
     INFO_FROM_AP (result) = FALSE;
+    INFO_LETIDS (result) = NULL;
+    INFO_APIDS (result) = NULL;
+    INFO_TOPBLOCK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -170,6 +179,7 @@ FreeInfo (info *info)
 
 static void CreateHost2Device (node **id, node *host_avis, node *dev_avis,
                                info *arg_info);
+static bool AssignInTopBlock (node *assign, info *arg_info);
 
 /** <!--********************************************************************-->
  *
@@ -308,22 +318,27 @@ node *
 IWLMEMfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
+    node *old_topblock;
 
     DBUG_ENTER ("IWLMEMfundef");
 
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
+        INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
         if (INFO_FROM_AP (arg_info)) {
             old_fundef = INFO_FUNDEF (arg_info);
+            old_topblock = INFO_TOPBLOCK (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
             /* Traversal of lac functions are initiated from the calling site */
+            INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_FUNDEF (arg_info) = old_fundef;
+            INFO_TOPBLOCK (arg_info) = old_topblock;
         } else {
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
@@ -346,7 +361,7 @@ IWLMEMap (node *arg_node, info *arg_info)
     node *ap_args, *fundef_args;
     node *avis, *id_avis, *new_avis, *dup_avis;
     ntype *dev_type;
-    node *fundef;
+    node *fundef, *old_apids;
 
     DBUG_ENTER ("IWLMEMap");
 
@@ -360,6 +375,10 @@ IWLMEMap (node *arg_node, info *arg_info)
     if (traverse_lac_fun) {
         old_from_ap = INFO_FROM_AP (arg_info);
         INFO_FROM_AP (arg_info) = TRUE;
+
+        old_apids = INFO_APIDS (arg_info);
+        INFO_APIDS (arg_info) = INFO_LETIDS (arg_info);
+
         if (!INFO_INCUDAWL (arg_info)) {
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         } else {
@@ -432,6 +451,7 @@ IWLMEMap (node *arg_node, info *arg_info)
         }
 
         INFO_FROM_AP (arg_info) = old_from_ap;
+        INFO_APIDS (arg_info) = old_apids;
     }
 
     DBUG_RETURN (arg_node);
@@ -502,9 +522,96 @@ IWLMEMlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IWLMEMlet");
 
+    INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
     INFO_LETEXPR (arg_info) = LET_EXPR (arg_node);
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IWLMEMfuncond( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+IWLMEMfuncond (node *arg_node, info *arg_info)
+{
+    node *then_id, *else_id;
+    node *ids, *apids;
+    ntype *then_sclty, *else_sclty, *ids_sclty;
+    node *ret_st, *ret_exprs, *fundef_ret;
+
+    DBUG_ENTER ("IWLMEMfuncond");
+
+    if (INFO_INCUDAWL (arg_info)) {
+        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
+        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
+
+        then_id = FUNCOND_THEN (arg_node);
+        else_id = FUNCOND_ELSE (arg_node);
+        ids = INFO_LETIDS (arg_info);
+
+        if (TYisArray (IDS_NTYPE (ids))) {
+            then_sclty = TYgetScalar (ID_NTYPE (then_id));
+            else_sclty = TYgetScalar (ID_NTYPE (else_id));
+            ids_sclty = TYgetScalar (IDS_NTYPE (ids));
+
+            if (TYgetSimpleType (then_sclty) != TYgetSimpleType (else_sclty)) {
+                apids = INFO_APIDS (arg_info);
+
+                if (CUisDeviceTypeNew (ID_NTYPE (then_id))
+                    && !CUisDeviceTypeNew (ID_NTYPE (else_id))) {
+                    TYsetSimpleType (else_sclty, TYgetSimpleType (then_sclty));
+                    AVIS_ISCUDALOCAL (ID_AVIS (else_id)) = TRUE;
+                    ID_NAME (else_id) = MEMfree (ID_NAME (else_id));
+                    ID_NAME (else_id) = TRAVtmpVarName ("dev");
+                    TYsetSimpleType (ids_sclty, TYgetSimpleType (then_sclty));
+                    IDS_NAME (ids) = MEMfree (IDS_NAME (ids));
+                    IDS_NAME (ids) = TRAVtmpVarName ("dev");
+                } else if (CUisDeviceTypeNew (ID_NTYPE (else_id))
+                           && !CUisDeviceTypeNew (ID_NTYPE (then_id))) {
+                    TYsetSimpleType (then_sclty, TYgetSimpleType (else_sclty));
+                    AVIS_ISCUDALOCAL (ID_AVIS (then_id)) = TRUE;
+                    ID_NAME (then_id) = MEMfree (ID_NAME (then_id));
+                    ID_NAME (then_id) = TRAVtmpVarName ("dev");
+                    TYsetSimpleType (ids_sclty, TYgetSimpleType (else_sclty));
+                    IDS_NAME (ids) = MEMfree (IDS_NAME (ids));
+                    IDS_NAME (ids) = TRAVtmpVarName ("dev");
+                } else {
+                    /* .... TODO ... */
+                    DBUG_ASSERT ((0), "Found arrays of unequal types while not one host "
+                                      "type and one device type!");
+                }
+
+                AVIS_ISCUDALOCAL (IDS_AVIS (ids)) = TRUE;
+
+                ret_st = FUNDEF_RETURN (INFO_FUNDEF (arg_info));
+                DBUG_ASSERT ((ret_st != NULL), "N_return is null for lac fun!");
+                ret_exprs = RETURN_EXPRS (ret_st);
+                fundef_ret = FUNDEF_RETS (INFO_FUNDEF (arg_info));
+
+                while (ret_exprs != NULL && fundef_ret != NULL && apids != NULL) {
+                    if (ID_AVIS (EXPRS_EXPR (ret_exprs)) == IDS_AVIS (ids)) {
+                        TYsetSimpleType (TYgetScalar (RET_TYPE (fundef_ret)),
+                                         TYgetSimpleType (ids_sclty));
+                        TYsetSimpleType (TYgetScalar (IDS_NTYPE (apids)),
+                                         TYgetSimpleType (ids_sclty));
+                        AVIS_ISCUDALOCAL (IDS_AVIS (apids)) = TRUE;
+                        IDS_NAME (apids) = MEMfree (IDS_NAME (apids));
+                        IDS_NAME (apids) = TRAVtmpVarName ("dev");
+                    }
+                    ret_exprs = EXPRS_NEXT (ret_exprs);
+                    fundef_ret = RET_NEXT (fundef_ret);
+                    apids = IDS_NEXT (apids);
+                }
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -540,6 +647,7 @@ IWLMEMwith (node *arg_node, info *arg_info)
         INFO_NOTRAN (arg_info)
           = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
                                TBmakeEmpty ());
+        AVIS_ISCUDALOCAL (IDS_AVIS (WITH_VEC (arg_node))) = TRUE;
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -562,6 +670,7 @@ IWLMEMwith (node *arg_node, info *arg_info)
         INFO_NOTRAN (arg_info)
           = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
                                TBmakeEmpty ());
+        AVIS_ISCUDALOCAL (IDS_AVIS (WITH_VEC (arg_node))) = TRUE;
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     } else {
@@ -676,9 +785,11 @@ IWLMEMids (node *arg_node, info *arg_info)
     /* If the array is defined in cuda withloop, we do not create
      * a host2device transfer for it */
     if (INFO_INCUDAWL (arg_info)) {
-        if (TYisArray (ids_type)) {
+        if (/* TYisArray( ids_type) */ !TUisScalar (ids_type)) {
             INFO_NOTRAN (arg_info)
               = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, TBmakeEmpty ());
+
+            AVIS_ISCUDALOCAL (IDS_AVIS (arg_node)) = TRUE;
         }
     } else {
         if (INFO_CREATE_D2H (arg_info)) {
@@ -724,6 +835,7 @@ IWLMEMid (node *arg_node, info *arg_info)
 {
     node *new_avis, *avis, *id_avis;
     ntype *dev_type, *id_type;
+    node *ssaassign;
 
     DBUG_ENTER ("IWLMEMid");
 
@@ -745,8 +857,7 @@ IWLMEMid (node *arg_node, info *arg_info)
          * N_id and we here simply need to set it's avis to the device variable
          * avis. (This is fix to the bug discovered in compiling tvd2d.sac) */
 
-        if (avis == id_avis && !INFO_IN_CEXPRS (arg_info)) {
-            dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
+        if (avis == id_avis) {
             /* Definition of the N_id must not be in the same block as
              * reference of the N_id. Otherwise, no host2device will be
              * created. e.g.
@@ -760,12 +871,18 @@ IWLMEMid (node *arg_node, info *arg_info)
              *
              * We do not create b_dev = host2device( b) in this case.
              */
-            if (dev_type != NULL
-                && (/* NODE_TYPE( AVIS_DECL( avis)) == N_arg || */
-                    /* INFO_IS_MODARR( arg_info) || */
-                    LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis)) {
-                new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
-                CreateHost2Device (&arg_node, id_avis, new_avis, arg_info);
+
+            ssaassign = AVIS_SSAASSIGN (avis);
+
+            if (((INFO_IN_CEXPRS (arg_info) && ssaassign != NULL
+                  && AssignInTopBlock (ssaassign, arg_info))
+                 || !INFO_IN_CEXPRS (arg_info))
+                && LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
+                dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
+                if (dev_type != NULL) {
+                    new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                    CreateHost2Device (&arg_node, id_avis, new_avis, arg_info);
+                }
             }
         } else {
             /* If the N_avis has been come across before, replace its
@@ -798,6 +915,27 @@ CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
 
     DBUG_VOID_RETURN;
+}
+
+static bool
+AssignInTopBlock (node *assign, info *arg_info)
+{
+    bool res = FALSE;
+    node *assign_chain;
+
+    DBUG_ENTER ("AssignInTopBlock");
+
+    assign_chain = BLOCK_INSTR (INFO_TOPBLOCK (arg_info));
+
+    while (assign_chain != NULL) {
+        if (assign_chain == assign) {
+            res = TRUE;
+            break;
+        }
+        assign_chain = ASSIGN_NEXT (assign_chain);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

@@ -5107,6 +5107,10 @@ PRTavis (node *arg_node, info *arg_info)
                     : COconstant2String (AVIS_DEMAND (arg_node))));
     }
 
+    if (global.backend == BE_cuda && AVIS_ISCUDALOCAL (arg_node)) {
+        fprintf (global.outfile, " /* CUDA local */");
+    }
+
     DBUG_RETURN (arg_node);
 }
 

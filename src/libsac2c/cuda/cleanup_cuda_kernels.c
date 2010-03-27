@@ -130,9 +130,17 @@ CLKNLlet (node *arg_node, info *arg_info)
         /* if we found a assignment of the form N_id = N_id
          * in cuda kernels and they are arrays, we repalce the RHS N_id by
          * primitive copy( N_id). */
+        node *avis = ID_AVIS (LET_EXPR (arg_node));
         if (!CUisDeviceTypeNew (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node))))
             && TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
-            node *avis = ID_AVIS (LET_EXPR (arg_node));
+            LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
+            LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
+        }
+
+        if (AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node)))
+            || AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node)))) {
+            AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
+            AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node))) = TRUE;
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         }
@@ -149,6 +157,7 @@ CLKNLprf (node *arg_node, info *arg_info)
     node *dim, *free_var, *arr;
     int dim_num;
     ntype *type;
+    node *array;
 
     DBUG_ENTER ("CLKNLprf");
 
@@ -186,6 +195,13 @@ CLKNLprf (node *arg_node, info *arg_info)
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
         }
         break;
+    case F_dec_rc:
+    case F_inc_rc:
+        array = PRF_ARG1 (arg_node);
+        if (TYisArray (AVIS_TYPE (ID_AVIS (array)))
+            && AVIS_ISCUDALOCAL (ID_AVIS (array))) {
+            INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+        }
     default:
         break;
     }

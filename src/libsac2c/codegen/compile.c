@@ -2772,8 +2772,9 @@ COMPvardec (node *arg_node, info *arg_info)
     if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
         VARDEC_ICM (arg_node) = TCmakeIcm1 ("SAC_MUTC_DECL_INDEX",
                                             TCmakeIdCopyString (VARDEC_NAME (arg_node)));
-    } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))
-               && !CUisDeviceTypeOld (VARDEC_TYPE (arg_node))
+    } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info)) &&
+               /* !CUisDeviceTypeOld( VARDEC_TYPE( arg_node)) && */
+               AVIS_ISCUDALOCAL (VARDEC_AVIS (arg_node))
                && TCgetShapeDim (VARDEC_TYPE (arg_node)) > 0) {
         VARDEC_ICM (arg_node)
           = TCmakeIcm1 ("CUDA_DECL_KERNEL_ARRAY",

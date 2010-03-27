@@ -327,6 +327,7 @@
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Code" />
+          <node name="Funcond" />
         </travuser>
       </traversal>
       <traversal id="ICSMEM" name="Insert CUDA memory transfer primitives for cudasts" default="sons" include="insert_cudast_memtran.h" >
@@ -7016,6 +7017,11 @@ N_structdef :
         <flag name="IsMaxvalGenerated" default="FALSE">
           <description>
                   Like IsMinvalGenerated, but for AVIS_MAXVAL.
+          </description>
+        </flag>
+        <flag name="IsCudaLocal" default="FALSE">
+          <description>
+                  If true, this (array) variable should be allocated locally on CUDA.
           </description>
         </flag>
       </flags>
