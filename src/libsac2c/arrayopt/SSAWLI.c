@@ -394,6 +394,7 @@ CreateIndexInfoId (node *idn, info *arg_info)
         /* index var? */
         index_var = WLFlocateIndexVar (idn, wln);
         if (index_var != 0) {
+            DBUG_PRINT ("WLI", ("valid index var found"));
             if (index_var < 0) {
                 /* Index vector */
                 iinfo = WLFcreateIndex (SHgetExtent (TYgetShape (ID_NTYPE (idn)), 0));
@@ -416,6 +417,7 @@ CreateIndexInfoId (node *idn, info *arg_info)
             /* valid local variable */
             iinfo = WLFvalidLocalId (idn);
             if (iinfo) {
+                DBUG_PRINT ("WLI", ("valid local id found"));
                 ASSIGN_INDEX (assignn) = WLFduplicateIndexInfo (iinfo);
             }
         }
@@ -882,6 +884,10 @@ WLIlet (node *arg_node, info *arg_info)
                    Create it.
                    - the first argument is a reference to a locally defined
                    valid (or invalid) transformation. If valid, duplicate it. */
+                if (N_id == NODE_TYPE (PRF_ARG1 (exprn))) {
+                    DBUG_PRINT ("WLI", ("checking id %s as WL-index",
+                                        ID_NAME (PRF_ARG1 (exprn))));
+                }
                 if (N_id == NODE_TYPE (PRF_ARG1 (exprn))
                     && CreateIndexInfoId (PRF_ARG1 (exprn), arg_info)) {
                     /* Now, if this was a valid transformation and we index an
