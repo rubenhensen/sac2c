@@ -1451,9 +1451,8 @@ DONE:
 static bool
 BuildNewGens (node *current_wl, node *fusionable_wl)
 {
-    node *tmp, *new_parts_fwl, *new_parts_cwl = NULL;
-    int number_parts = 0;
-    bool successfull = FALSE;
+    node *new_parts_fwl, *new_parts_cwl = NULL;
+    bool successful = FALSE;
 
     DBUG_ENTER ("BuildNewGens");
 
@@ -1461,32 +1460,24 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
                                     &(new_parts_cwl));
 
     if (new_parts_fwl != NULL) {
-        successfull = TRUE;
+        successful = TRUE;
 
-        tmp = new_parts_fwl;
-        while (tmp != NULL) {
-            number_parts++;
-            tmp = PART_NEXT (tmp);
-        }
-
-        DBUG_PRINT ("WLFS", ("%d new generators created", number_parts));
+        DBUG_PRINT ("WLFS", ("%d new generators created", TCcountParts (new_parts_fwl)));
 
         WITH_PART (fusionable_wl) = FREEdoFreeTree (WITH_PART (fusionable_wl));
         WITH_PART (fusionable_wl) = new_parts_fwl;
-        WITH_PARTS (fusionable_wl) = number_parts;
         WITH_CODE (fusionable_wl) = RemoveUnusedCodes (WITH_CODE (fusionable_wl));
         DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
 
         WITH_PART (current_wl) = FREEdoFreeTree (WITH_PART (current_wl));
         WITH_PART (current_wl) = new_parts_cwl;
-        WITH_PARTS (current_wl) = number_parts;
         WITH_CODE (current_wl) = RemoveUnusedCodes (WITH_CODE (current_wl));
         DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
     }
 
-    DBUG_RETURN (successfull);
+    DBUG_RETURN (successful);
 }
 
 /****************************************************************************
@@ -1541,12 +1532,12 @@ AskFusionOracle (info *arg_info)
 
         if ((INFO_GENPROPERTY (arg_info) == GEN_equal
              || INFO_GENPROPERTY (arg_info) == GEN_equal_var)
-            && WITH_PARTS (wl) == WITH_PARTS (fwl)) {
+            && TCcountParts (WITH_PART (wl)) == TCcountParts (WITH_PART (fwl))) {
             DBUG_PRINT ("WLFS", ("both With-Loops can be fused together"));
             answer = TRUE;
-        } else
+        } else {
             DBUG_PRINT ("WLFS", ("both With-Loops can't be fused together"));
-
+        }
     } else {
         /*
          * The current genarray-withloop depends on the fusionable. Append it to
@@ -1915,8 +1906,8 @@ WLFSwith (node *arg_node, info *arg_info)
      * Futhermore we consider only WLs with non-empty iteration space
      */
 
-    if (WITH_PARTS (arg_node) >= 1
-        && SHgetUnrLen (TYgetShape (AVIS_TYPE (IDS_AVIS (WITH_VEC (arg_node))))) > 0) {
+    if (!TCcontainsDefaultPartition (WITH_PART (arg_node))
+        && (SHgetUnrLen (TYgetShape (AVIS_TYPE (IDS_AVIS (WITH_VEC (arg_node))))) > 0)) {
 
         INFO_WL (arg_info) = arg_node; /* store the current node for later */
 
@@ -1937,8 +1928,7 @@ WLFSwith (node *arg_node, info *arg_info)
          *  INFO_WL_ARRAY_TYPE(arg_info)
          *  INFO_WL_SHAPE( arg_info)
          */
-        DBUG_ASSERT ((WITH_PART (arg_node) != NULL),
-                     "WITH_PARTS is >= 1 although no PART is available!");
+
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
         /* is there a WL we can fuse with and is fusion with fold WLs permitted? */

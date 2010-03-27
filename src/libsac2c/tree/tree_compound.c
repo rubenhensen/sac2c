@@ -3106,6 +3106,9 @@ TCcountParts (node *parts)
 
     DBUG_ENTER ("TCcountParts");
 
+    DBUG_ASSERT (parts == NULL || NODE_TYPE (parts) == N_part,
+                 "TCcountParts called with wrong node type.");
+
     while (parts != NULL) {
         counter += 1;
         parts = PART_NEXT (parts);
@@ -3131,6 +3134,13 @@ TCappendPart (node *parts1, node *parts2)
     node *current;
 
     DBUG_ENTER ("TCappendPart");
+
+    DBUG_ASSERT (parts1 == NULL || NODE_TYPE (parts1) == N_part,
+                 "TCappendPart called with wrong node type.");
+
+    DBUG_ASSERT (parts2 == NULL || NODE_TYPE (parts2) == N_part,
+                 "TCappendPart called with wrong node type.");
+
     if (parts1 == NULL) {
         parts1 = parts2;
     } else {
@@ -3158,6 +3168,9 @@ bool
 TCcontainsDefaultPartition (node *parts)
 {
     DBUG_ENTER ("TCcontainsDefaultPartition");
+
+    DBUG_ASSERT (parts == NULL || NODE_TYPE (parts) == N_part,
+                 "TCcontainsDefaultPartition called with wrong node type.");
 
     while ((parts != NULL) && (NODE_TYPE (PART_GENERATOR (parts)) != N_default)) {
         parts = PART_NEXT (parts);
