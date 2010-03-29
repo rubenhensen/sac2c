@@ -143,14 +143,24 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 #define SAC_MT_SEND_PARAM_in__NODESC(spmdfun, num, var_NT)                               \
     SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);
 
-#define SAC_MT_SEND_PARAM_in__DESC(spmdfun, num, var_NT)                                 \
+#define SAC_MT_SEND_PARAM_in__DESC_AKD(spmdfun, num, var_NT)                             \
+    DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
+    SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                           \
+    SAC_spmd_frame.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
+
+#define SAC_MT_SEND_PARAM_in__DESC_AUD(spmdfun, num, var_NT)                             \
     SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                           \
     SAC_spmd_frame.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
     SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);
 
-#define SAC_MT_SEND_PARAM_inout__DESC(spmdfun, num, var_NT)                              \
+#define SAC_MT_SEND_PARAM_inout__DESC_AKD(spmdfun, num, var_NT)                          \
+    DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
+    SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);                          \
+    SAC_spmd_frame.spmdfun.in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+
+#define SAC_MT_SEND_PARAM_inout__DESC_AUD(spmdfun, num, var_NT)                          \
     SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);                          \
     SAC_spmd_frame.spmdfun.in_##num##_desc = &SAC_ND_A_DESC (var_NT);
 
