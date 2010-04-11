@@ -320,6 +320,7 @@
 
 #define SAC_ND_PRF_TYPE_CONV__SCL__SCL(error, left_NT, right_NT)                         \
     {                                                                                    \
+        SAC_ND_A_FIELD (left_NT) = SAC_ND_A_FIELD (right_NT);                            \
     }
 
 #define SAC_ND_PRF_TYPE_CONV__AKD_START(error, left_NT, right_NT)                        \
