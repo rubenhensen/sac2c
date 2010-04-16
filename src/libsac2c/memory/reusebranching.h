@@ -21,6 +21,8 @@ extern node *EMRBmodarray (node *arg_node, info *arg_info);
 extern node *EMRBprf (node *arg_node, info *arg_info);
 extern node *EMRBwith (node *arg_node, info *arg_info);
 extern node *EMRBwith2 (node *arg_node, info *arg_info);
+extern node *EMRBwith3 (node *arg_node, info *arg_info);
+extern node *EMRBrange (node *arg_node, info *arg_info);
 extern node *EMRBwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_REUSEBRANCHING_H_ */

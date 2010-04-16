@@ -19,6 +19,8 @@ extern node *EMDRassign (node *arg_node, info *arg_info);
 extern node *EMDRwithid (node *arg_node, info *arg_info);
 extern node *EMDRwith (node *arg_node, info *arg_info);
 extern node *EMDRwith2 (node *arg_node, info *arg_info);
+extern node *EMDRwith3 (node *arg_node, info *arg_info);
+extern node *EMDRrange (node *arg_node, info *arg_info);
 extern node *EMDRcode (node *arg_node, info *arg_info);
 extern node *EMDRcond (node *arg_node, info *arg_info);
 extern node *EMDRfundef (node *arg_node, info *arg_info);

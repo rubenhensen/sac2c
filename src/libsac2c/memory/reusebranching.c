@@ -712,38 +712,9 @@ EMRBprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *EMRBcode( node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
- *
- *****************************************************************************/
-node *
-EMRBcode (node *arg_node, info *arg_info)
+static void
+handleCodeBlock (node *cexprs, info *arg_info)
 {
-    dfmask_t *oldlocals;
-    node *cexprs;
-
-    DBUG_ENTER ("EMRBcode");
-
-    /*
-     * stack local indentifiers
-     */
-    oldlocals = INFO_LOCALVARS (arg_info);
-    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
-
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    cexprs = CODE_CEXPRS (arg_node);
-
     while (cexprs != NULL) {
         node *cid;
         node *wlass;
@@ -782,7 +753,10 @@ EMRBcode (node *arg_node, info *arg_info)
                                  == N_with)
                                 || (NODE_TYPE (
                                       ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
-                                    == N_with2))) {
+                                    == N_with2)
+                                || (NODE_TYPE (
+                                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                                    == N_with3))) {
                             /*
                              * Full branch in order to be able to move suballoc upwards
                              */
@@ -825,6 +799,75 @@ EMRBcode (node *arg_node, info *arg_info)
         }
         cexprs = EXPRS_NEXT (cexprs);
     }
+}
+
+node *
+EMRBrange (node *arg_node, info *arg_info)
+{
+    dfmask_t *oldlocals;
+    node *cexprs;
+
+    DBUG_ENTER ("EMRBrange");
+
+    /*
+     * stack local indentifiers
+     */
+    oldlocals = INFO_LOCALVARS (arg_info);
+    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+    cexprs = RANGE_RESULTS (arg_node);
+
+    handleCodeBlock (cexprs, arg_info);
+
+    /*
+     * restore local identifiers
+     */
+    INFO_LOCALVARS (arg_info) = DFMremoveMask (INFO_LOCALVARS (arg_info));
+    INFO_LOCALVARS (arg_info) = oldlocals;
+
+    /*
+     * Traverse next
+     */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBcode (node *arg_node, info *arg_info)
+{
+    dfmask_t *oldlocals;
+    node *cexprs;
+
+    DBUG_ENTER ("EMRBcode");
+
+    /*
+     * stack local indentifiers
+     */
+    oldlocals = INFO_LOCALVARS (arg_info);
+    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    cexprs = CODE_CEXPRS (arg_node);
+
+    handleCodeBlock (cexprs, arg_info);
 
     /*
      * restore local identifiers
@@ -920,6 +963,42 @@ EMRBwith2 (node *arg_node, info *arg_info)
     if (INFO_BRANCHES (arg_info) != NULL) {
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBwith3( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBwith3 (node *arg_node, info *arg_info)
+{
+    dfmask_t *olddrcs;
+
+    DBUG_ENTER ("EMRBwith3");
+
+    /*
+     * Stack outer data reuse candidates
+     */
+    olddrcs = INFO_DRCS (arg_info);
+    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+
+    /*
+     * restore outer data reuse candidates
+     */
+    INFO_DRCS (arg_info) = DFMremoveMask (INFO_DRCS (arg_info));
+    INFO_DRCS (arg_info) = olddrcs;
 
     DBUG_RETURN (arg_node);
 }

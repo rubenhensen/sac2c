@@ -901,7 +901,8 @@ SUBPHASE (ipc, "Identifying in-place updates", EMIPdoInplaceComputation,
           global.optimize.doipc, mem)
 
 SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
-          global.optimize.douip &&global.optimize.dodr, mem)
+          global.backend == BE_mutc || (global.optimize.douip && global.optimize.dodr),
+          mem)
 
 SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemovalModule,
           global.optimize.dodcr, mem)

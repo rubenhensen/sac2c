@@ -50,6 +50,7 @@ struct INFO {
     node *rcavis;
     node *iv;
     node *ivids;
+    bool remove_with3;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -60,6 +61,7 @@ struct INFO {
 #define INFO_RCAVIS(n) ((n)->rcavis)
 #define INFO_IV(n) ((n)->iv)
 #define INFO_IVIDS(n) ((n)->ivids)
+#define INFO_REMOVE_WITH3(n) ((n)->remove_with3)
 
 static info *
 MakeInfo (node *fundef)
@@ -78,6 +80,7 @@ MakeInfo (node *fundef)
     INFO_RCAVIS (result) = NULL;
     INFO_IV (result) = NULL;
     INFO_IVIDS (result) = NULL;
+    INFO_REMOVE_WITH3 (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -103,6 +106,58 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+static node *
+ATravWith3 (node *arg_node, info *arg_info)
+{
+    bool stack;
+    DBUG_ENTER ("ATravWith3");
+
+    stack = INFO_REMOVE_WITH3 (arg_info);
+    INFO_REMOVE_WITH3 (arg_info) = FALSE;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if ((TCcountRanges (WITH3_RANGES (arg_node)) == 1)
+        && (TCcountWithops (WITH3_OPERATIONS (arg_node)) == 1)
+        && (INFO_REMOVE_WITH3 (arg_info))) {
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = TBmakePrf (F_noop, NULL);
+    }
+
+    INFO_REMOVE_WITH3 (arg_info) = stack;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravRange (node *arg_node, info *arg_info)
+{
+    node *assign;
+    DBUG_ENTER ("ATravRange");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    assign
+      = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (arg_node)))));
+
+    if ((NODE_TYPE (LET_EXPR (assign)) == N_prf)
+        && (PRF_PRF (LET_EXPR (assign)) == F_noop)) {
+        INFO_REMOVE_WITH3 (arg_info) = TRUE;
+    }
+
+#if 0
+  if ( NODE_TYPE( LET_EXPR( assign)) == N_with3){
+    node *assign2 = ASSIGN_INSTR( AVIS_SSAASSIGN( ID_AVIS( EXPRS_EXPR( RANGE_RESULTS( WITH3_RANGES( LET_EXPR( assign)))))));
+    if ( ( NODE_TYPE( LET_EXPR( assign2)) == N_prf) &&
+         ( PRF_PRF( LET_EXPR( assign2)) == F_noop)){
+      INFO_REMOVE_WITH3( arg_info) = TRUE;
+    }
+  }
+#endif
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *EMDRdoDataReuse( node *syntax_tree)
@@ -117,10 +172,17 @@ FreeInfo (info *info)
 node *
 EMDRdoDataReuse (node *syntax_tree)
 {
+    anontrav_t cnw_trav[3] = {{N_with3, &ATravWith3}, {N_range, &ATravRange}, {0, NULL}};
     DBUG_ENTER ("EMDRdoDataReuse");
 
     TRAVpush (TR_emdr);
     syntax_tree = TRAVdo (syntax_tree, NULL);
+    TRAVpop ();
+
+    TRAVpushAnonymous (cnw_trav, &TRAVsons);
+
+    syntax_tree = TRAVopt (syntax_tree, MakeInfo (NULL));
+
     TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
@@ -318,35 +380,97 @@ EMDRwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMDRcode( node *arg_node, info *arg_info)
+ * @fn node *EMDRrange( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Stack IV and IVIDS
  *
  *****************************************************************************/
 node *
-EMDRcode (node *arg_node, info *arg_info)
+EMDRwith3 (node *arg_node, info *arg_info)
 {
-    node *exprs;
+    node *oldivs, *oldiv;
+
+    DBUG_ENTER ("EMDRwith3");
+
+    oldiv = INFO_IV (arg_info);
+    oldivs = INFO_IVIDS (arg_info);
+
+    WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+
+    INFO_IVIDS (arg_info) = oldivs;
+    INFO_IV (arg_info) = oldiv;
+
+    DBUG_RETURN (arg_node);
+}
+
+#if 0
+static
+node *GetAddAvis( node *id){
+  node *res = NULL;
+
+  DBUG_ENTER( "GetAddAvis");
+
+  if ( NODE_TYPE( id) == N_id){
+    res = TBmakeIds( ID_AVIS( id), res);
+  } else {
+    if ( ( NODE_TYPE( arg_node) == N_prf) &&
+       ( PRF_PRF( arg_node) == F_fill) &&
+       ( NODE_TYPE( PRF_ARG1( arg_node)) == N_prf) &&
+       ( PRF_PRF( PRF_ARG1( arg_node)) == F_add)){
+      res = 
+        TCappendIds( res,
+                     GetAddAvis( PRF_ARG1( PRF_PRF( PRF_ARG1( arg_node)))));
+      res = 
+        TCappendIds( res, 
+                     GetAddAvis( PRF_ARG2( PRF_PRF( PRF_ARG1( arg_node)))));
+    } else {
+      res = TBmakeIds( NULL, res);
+    }
+  }
+
+  DBUG_RETURN( res);
+}
+static
+bool ValidIds( node *ids){
+  bool res = FALSE;
+  DBUG_ENTER( "ValidIds");
+
+  res = IDS_AVIS( ids) != NULL;
+
+  if ( IDS_NEXT( ids) != NULL){
+    res &&= ValidIds( ids);
+  }
+
+  DBUG_RETURN( res);
+}
+
+static
+bool IsWith3Indexs( node *ids){
+  bool res;
+  DBUG_ENTER( "IsWith3Indexs");
+  
+  res = AVIS_ISTHREADINDEX( 
+
+  if ( IDS_NEXT( ids) != NULL){
+    res &&= IsWith3Indexs( IDS_NEXT( ids));
+  }
+  
+  DBUG_RETURN( res);
+}
+#endif
+
+static node *
+HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
+{
     pattern *pat;
 
-    DBUG_ENTER ("EMDRcode");
+    DBUG_ENTER ("HandleCodeBlock");
 
-    /*
-     * Traverse into CBLOCK in order to apply datareuse in nested with-loops
-     */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
-    /*
-     * The great moment:
-     * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
-     */
-    exprs = CODE_CEXPRS (arg_node);
     while (exprs != NULL) {
         node *id = NULL;
         node *idx = NULL;
         bool inplace = FALSE;
+        bool with3inplace = FALSE;
 
         id = EXPRS_EXPR (exprs);
 
@@ -399,14 +523,31 @@ EMDRcode (node *arg_node, info *arg_info)
                      *
                      * where A' is known to be a reuse of B
                      */
+                    /*
+                     * Pattern2:
+                     *
+                     * a = fill( idx_sel( idx2, B), a');
+                     * r = wl_assign( a, A', [idx], idx);
+                     *
+                     * where A' is known to be a reuse of B
+                     *
+                     * should check
+                     * idx2 and idx come from with3 index
+                     * idx eqiv idx2
+                     */
                     if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_idx_sel)) {
                         node *selidx = PRF_ARG1 (sel);
                         node *arr = PRF_ARG2 (sel);
 
-                        if ((ID_AVIS (idx) == ID_AVIS (selidx))
-                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                                == ID_AVIS (arr))) {
-                            inplace = TRUE;
+                        if (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                            == ID_AVIS (arr)) {
+                            if (ID_AVIS (idx) == ID_AVIS (selidx)) {
+                                inplace = TRUE;
+                            }
+
+                            if (global.backend == BE_mutc) { /* fix this!!!!! */
+                                inplace = with3inplace = TRUE;
+                            }
                         }
                     }
                 }
@@ -480,7 +621,23 @@ EMDRcode (node *arg_node, info *arg_info)
                     inplace = TRUE;
                 }
             }
-
+            /*
+             * with3{
+             *  ( . <= i < .) : _noop_(...);
+             * } ...
+             */
+            if (NODE_TYPE (wlass) == N_with3) {
+                if ((TCcountRanges (WITH3_RANGES (wlass)) == 1)
+                    && (TCcountWithops (WITH3_OPERATIONS (wlass)) == 1)
+                    && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
+                          ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (WITH3_RANGES (wlass))))))))
+                        == N_prf)
+                    && (PRF_PRF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
+                          ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (WITH3_RANGES (wlass))))))))
+                        == F_noop)) {
+                    inplace = with3inplace = TRUE;
+                }
+            }
             /*
              * Pattern:
              * mem = suballoc( A, _);
@@ -608,13 +765,15 @@ EMDRcode (node *arg_node, info *arg_info)
              * Create noop
              * a = noop( iv);
              */
-            CODE_CBLOCK_INSTR (arg_node)
+            assigns
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                         TCmakePrf1 (F_noop,
-                                                     DUPdoDupNode (INFO_IV (arg_info)))),
-                              CODE_CBLOCK_INSTR (arg_node));
+                                         TCmakePrf1 (F_noop, DUPdoDupNode (
+                                                               with3inplace
+                                                                 ? INFO_IVIDS (arg_info)
+                                                                 : INFO_IV (arg_info)))),
+                              assigns);
 
-            AVIS_SSAASSIGN (avis) = CODE_CBLOCK_INSTR (arg_node);
+            AVIS_SSAASSIGN (avis) = assigns;
 
             EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
             EXPRS_EXPR (exprs) = TBmakeId (avis);
@@ -622,13 +781,74 @@ EMDRcode (node *arg_node, info *arg_info)
 
         exprs = EXPRS_NEXT (exprs);
     }
+    DBUG_RETURN (assigns);
+}
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRcode (node *arg_node, info *arg_info)
+{
+    node *exprs;
+
+    DBUG_ENTER ("EMDRcode");
+
+    /*
+     * Traverse into CBLOCK in order to apply datareuse in nested with-loops
+     */
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * The great moment:
+     * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
+     */
+    exprs = CODE_CEXPRS (arg_node);
+    CODE_CBLOCK_INSTR (arg_node)
+      = HandleCodeBlock (exprs, CODE_CBLOCK_INSTR (arg_node), arg_info);
     /*
      * Traverse next code
      */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRrange( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRrange (node *arg_node, info *arg_info)
+{
+    node *exprs;
+
+    DBUG_ENTER ("EMDRrange");
+
+    /*
+     * Traverse into CBLOCK in order to apply datareuse in nested with-loops
+     */
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+    /*
+     * The great moment:
+     * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
+     */
+    INFO_IVIDS (arg_info) = RANGE_INDEX (arg_node);
+    exprs = RANGE_RESULTS (arg_node);
+    BLOCK_INSTR (RANGE_BODY (arg_node))
+      = HandleCodeBlock (exprs, BLOCK_INSTR (RANGE_BODY (arg_node)), arg_info);
+    /*
+     * Traverse next code
+     */
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -704,6 +924,18 @@ EMDRlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+FollowLut (node *pos, lut_t *lut)
+{
+    node *next = pos;
+    DBUG_ENTER ("FollowLut");
+
+    while (((next = LUTsearchInLutPp (lut, pos)) != NULL) && (pos != next))
+        pos = next;
+
+    DBUG_RETURN (pos);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *EMDRprf( node *arg_node, info *arg_info)
@@ -723,7 +955,7 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_LHS (arg_info),
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
@@ -737,6 +969,14 @@ EMDRprf (node *arg_node, info *arg_info)
                            ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
+    case F_suballoc:
+        /* Prove this does not break anything!!!!!!!!! */
+        if (global.backend == BE_mutc) {
+            LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                               FollowLut (ID_AVIS (PRF_ARG1 (arg_node)),
+                                          INFO_REUSELUT (arg_info)));
+        }
+        break;
     case F_reshape_VxA:
         /*
          * b = reshape( dim, shp, a);

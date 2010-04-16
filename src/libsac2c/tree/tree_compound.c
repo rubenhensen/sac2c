@@ -3577,3 +3577,18 @@ TCappendRange (node *range_chain, node *range)
 
     DBUG_RETURN (ret);
 }
+
+int
+TCcountRanges (node *range)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountRanges");
+
+    while (range != NULL) {
+        counter += 1;
+        range = RANGE_NEXT (range);
+    }
+
+    DBUG_RETURN (counter);
+}
