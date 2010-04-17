@@ -9922,6 +9922,9 @@ N_structdef :
         <flag name="Dense" default="TRUE">
           <description>This with3 covers all of the index space without gaps</description>
         </flag>
+	<flag name="IsTopLevel" default="FALSE">
+	  <description>This with3 represents a top-level stride of a former with2. This is used to indetify into what array the IIRR (see N_range) indexes.</description>
+	</flag>
       </flags>
     </node>
 <!--
@@ -10023,6 +10026,17 @@ N_structdef :
             </target>
           </targets>
 	  <description>This is a chain of indices into the ravels of the results of genarray and modarray withloops. Once they are explicitly used in mem_alloc, this special reference is freed.</description>
+	</son>
+	<son name="IIRR" default="NULL">
+	  <description>This is a chain of indices into the ravel of the overall result of genarray/modarray withloops. It corresponds (value-wise) to the wlidx of the origininal with2 and is used in optimisations like data-reuse to identify selections into the reused array. This chain only exists for the ranges of the innermost with3 of a transformed with2, as it is only defined in that level.</description>
+	  <targets>
+	    <target mandatory="no">
+	      <node name="Exprs" />
+	      <phases>
+	        <range from="wlt_wlsd" to="final" />
+	      </phases>
+	    </target>
+	  </targets>
 	</son>
         <son name="Next">
           <targets>
