@@ -826,7 +826,7 @@ RSOdoResolveObjects (node *syntax_tree)
 
     arg_info = FreeInfo (arg_info);
 
-    TRAVpop (TR_rso);
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
