@@ -167,7 +167,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         ivextrema ivexpropagation ivexcleanup
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
-                        remove_with3 addSyncs 
+                        remove_with3 addSyncs prune_empty_with3
                         
 libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         minimize_transfers minimize_loop_transfers minimize_cond_transfers \

@@ -2233,6 +2233,15 @@
           <node name="Block" />
         </travsons>
       </traversal>
+      <traversal id="PEW3" name="Prune Empty With3" default="sons" include="prune_empty_with3.h">
+        <travuser>
+          <node name="With3"/>
+          <node name="Range"/>
+          <node name="Id"/>
+          <node name="Assign"/>
+          <node name="Let"/>
+        </travuser>
+      </traversal>
       <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
         <travuser>
           <node name="Assign" />
