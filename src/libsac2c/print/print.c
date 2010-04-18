@@ -5153,6 +5153,11 @@ PRTwith3 (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/* concurrent */\n");
     }
 
+    if (WITH3_ISTOPLEVEL (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/* top-level */\n");
+    }
+
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
     global.indent--;
@@ -5207,6 +5212,11 @@ PRTrange (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, " (IDXS: ");
     RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
+    if (RANGE_IIRR (arg_node) != NULL) {
+        fprintf (global.outfile, ", IIRR: ");
+        RANGE_IIRR (arg_node) = TRAVdo (RANGE_IIRR (arg_node), arg_info);
+    }
+
     fprintf (global.outfile, ") ");
 
     fprintf (global.outfile, ") ");

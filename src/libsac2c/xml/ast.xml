@@ -2225,6 +2225,8 @@
           <node name="Fundef" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Genarray" />
+          <node name="Modarray" />
         </travuser>
         <travsons>
           <node name="Module" />
@@ -10030,11 +10032,11 @@ N_structdef :
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <range from="wlt_wlsd" to="mem_alloc" />
+                <range from="wlt_wlsd" to="mem_dr" />
               </phases>
             </target>
           </targets>
-	  <description>This is a chain of indices into the ravels of the results of genarray and modarray withloops. Once they are explicitly used in mem_alloc, this special reference is freed.</description>
+	  <description>This is a chain of indices into the ravels of the results of genarray and modarray withloops. Once they are explicitly used in mem_alloc and mem_dr, this special reference is freed.</description>
 	</son>
 	<son name="IIRR" default="NULL">
 	  <description>This is a chain of indices into the ravel of the overall result of genarray/modarray withloops. It corresponds (value-wise) to the wlidx of the origininal with2 and is used in optimisations like data-reuse to identify selections into the reused array. This chain only exists for the ranges of the innermost with3 of a transformed with2, as it is only defined in that level.</description>
@@ -10042,7 +10044,7 @@ N_structdef :
 	    <target mandatory="no">
 	      <node name="Exprs" />
 	      <phases>
-	        <range from="wlt_wlsd" to="final" />
+	        <range from="wlt_wlsd" to="mem_dr" />
 	      </phases>
 	    </target>
 	  </targets>

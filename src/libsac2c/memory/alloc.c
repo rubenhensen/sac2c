@@ -2445,13 +2445,9 @@ EMALrange (node *arg_node, info *arg_info)
                                     RANGE_CHUNKSIZE (arg_node), RANGE_RESULTS (arg_node),
                                     arg_info);
         /*
-         * the template and the special handle to the indices is not needed
-         * anymore, so lets free both
+         * the template is not needed anymore, so lets free it
          */
         INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
-        if (RANGE_IDXS (arg_node) != NULL) {
-            RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
-        }
 
         if (assign != NULL) {
             BLOCK_INSTR (RANGE_BODY (arg_node))

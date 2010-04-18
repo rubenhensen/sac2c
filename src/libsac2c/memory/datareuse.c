@@ -45,23 +45,27 @@ struct INFO {
     node *fundef;
     node *lhs;
     lut_t *reuselut;
+    lut_t *sublut;
     node *predavis;
     node *memavis;
     node *rcavis;
     node *iv;
     node *ivids;
-    bool remove_with3;
+    node *wlidx;
+    node *wliirr;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_REUSELUT(n) ((n)->reuselut)
+#define INFO_SUBLUT(n) ((n)->sublut)
 #define INFO_PREDAVIS(n) ((n)->predavis)
 #define INFO_MEMAVIS(n) ((n)->memavis)
 #define INFO_RCAVIS(n) ((n)->rcavis)
 #define INFO_IV(n) ((n)->iv)
 #define INFO_IVIDS(n) ((n)->ivids)
-#define INFO_REMOVE_WITH3(n) ((n)->remove_with3)
+#define INFO_WLIDXS(n) ((n)->wlidx)
+#define INFO_WLIIRR(n) ((n)->wliirr)
 
 static info *
 MakeInfo (node *fundef)
@@ -75,12 +79,14 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = fundef;
     INFO_LHS (result) = NULL;
     INFO_REUSELUT (result) = NULL;
+    INFO_SUBLUT (result) = NULL;
     INFO_PREDAVIS (result) = NULL;
     INFO_MEMAVIS (result) = NULL;
     INFO_RCAVIS (result) = NULL;
     INFO_IV (result) = NULL;
     INFO_IVIDS (result) = NULL;
-    INFO_REMOVE_WITH3 (result) = FALSE;
+    INFO_WLIDXS (result) = NULL;
+    INFO_WLIIRR (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -101,62 +107,421 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @name Entry functions
+ * @name Static helper functions
  * @{
  *
  *****************************************************************************/
 
-static node *
-ATravWith3 (node *arg_node, info *arg_info)
+/** <!-- ****************************************************************** -->
+ * @fn bool IsSameIndex( node *idxs_s, node *idxs_t, node *idx_s, node *idx_t)
+ *
+ * @brief Checks whether idx_s and idx_t belong to the same wl-operation. Both
+ *        are considered to stem form the same operation in they are at the
+ *        same position in the idxs_s and idxs_t chains, respectively.
+ *
+ * @param idxs_s N_exprs chain of global ravel indices of a with3 (IIRR)
+ * @param idxs_t N_ids chain of local ravel indices of a with3 (IDXS)
+ * @param idx_s  N_id of the source index (read operation)
+ * @param idx_t  N_id of the target index (write operation)
+ *
+ * @return TRUE iff idx_t and idx_s belong to the same operation
+ ******************************************************************************/
+static bool
+IsSameIndex (node *idxs_s, node *idxs_t, node *idx_s, node *idx_t)
 {
-    bool stack;
-    DBUG_ENTER ("ATravWith3");
+    bool result = FALSE;
 
-    stack = INFO_REMOVE_WITH3 (arg_info);
-    INFO_REMOVE_WITH3 (arg_info) = FALSE;
+    DBUG_ENTER ("IsSameIndex");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    while (!result && (idxs_s != NULL) && (idxs_t != NULL)) {
+        DBUG_PRINT ("EMDR",
+                    ("comparing S(%s/%s) and T(%s/%s)", ID_NAME (idx_t),
+                     IDS_NAME (idxs_t), ID_NAME (idx_s), ID_NAME (EXPRS_EXPR (idxs_s))));
 
-    if ((TCcountRanges (WITH3_RANGES (arg_node)) == 1)
-        && (TCcountWithops (WITH3_OPERATIONS (arg_node)) == 1)
-        && (INFO_REMOVE_WITH3 (arg_info))) {
-        arg_node = FREEdoFreeTree (arg_node);
-        arg_node = TBmakePrf (F_noop, NULL);
+        result = result
+                 || ((ID_AVIS (idx_t) == IDS_AVIS (idxs_t))
+                     && (ID_AVIS (idx_s) == ID_AVIS (EXPRS_EXPR (idxs_s))));
+
+        idxs_s = EXPRS_NEXT (idxs_s);
+        idxs_t = IDS_NEXT (idxs_t);
     }
 
-    INFO_REMOVE_WITH3 (arg_info) = stack;
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *FindSubAllocRoot( lut_t sublut, node *avis)
+ *
+ * @brief Follows the chain of mappings in sublut until the root is found.
+ *        If a root is found, the corresponding avis is returned. If no
+ *        mapping is found, NULL is returned.
+ *
+ * @param sublut suballoc mapping lut
+ * @param avis   avis of suballoced memvar
+ *
+ * @return root memvar or NULL
+ ******************************************************************************/
 static node *
-ATravRange (node *arg_node, info *arg_info)
+FindSubAllocRoot (lut_t *sublut, node *avis)
 {
-    node *assign;
-    DBUG_ENTER ("ATravRange");
+    node *found, *result;
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    DBUG_ENTER ("FindSubAllocRoot");
 
-    assign
-      = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (arg_node)))));
+    found = LUTsearchInLutPp (sublut, avis);
+    DBUG_PRINT ("EMDR", ("checking root of %s, found %s", AVIS_NAME (avis),
+                         (found == NULL) ? "--" : AVIS_NAME (found)));
 
-    if ((NODE_TYPE (LET_EXPR (assign)) == N_prf)
-        && (PRF_PRF (LET_EXPR (assign)) == F_noop)) {
-        INFO_REMOVE_WITH3 (arg_info) = TRUE;
+    if (found == avis) {
+        result = NULL;
+    } else if (found == NULL) {
+        result = avis;
+    } else {
+        result = FindSubAllocRoot (sublut, found);
     }
 
-#if 0
-  if ( NODE_TYPE( LET_EXPR( assign)) == N_with3){
-    node *assign2 = ASSIGN_INSTR( AVIS_SSAASSIGN( ID_AVIS( EXPRS_EXPR( RANGE_RESULTS( WITH3_RANGES( LET_EXPR( assign)))))));
-    if ( ( NODE_TYPE( LET_EXPR( assign2)) == N_prf) &&
-         ( PRF_PRF( LET_EXPR( assign2)) == F_noop)){
-      INFO_REMOVE_WITH3( arg_info) = TRUE;
-    }
-  }
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *HandleCodeBlock( node *exprs, node *assigns, info *arg_info)
+ *
+ * @brief Tries to detect copy operations in code blocks and replaces the
+ *        corresponding cexpr by a F_noop operation.
+ *
+ * @param exprs    result expressions of the current code block
+ * @param assigns  body of the code block
+ * @param arg_info info structure
+ *
+ * @return updated body of the code block
+ ******************************************************************************/
+static node *
+HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
+{
+    pattern *pat;
+
+    DBUG_ENTER ("HandleCodeBlock");
+
+    while (exprs != NULL) {
+        node *id = NULL;
+        node *idx = NULL;
+        bool inplace = FALSE;
+
+        id = EXPRS_EXPR (exprs);
+
+        if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
+            node *wlass = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)));
+            node *aexprs = NULL;
+            node *iv = NULL;
+            node *mem = NULL;
+
+            if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_wl_assign)) {
+                node *val;
+                node *valavis;
+
+                val = PRF_ARG1 (wlass);
+                mem = PRF_ARG2 (wlass);
+                iv = PRF_ARG3 (wlass);
+                idx = PRF_ARG4 (wlass);
+
+                valavis = ID_AVIS (val);
+
+                if ((AVIS_SSAASSIGN (valavis) != NULL)
+                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (valavis))) == N_prf)
+                    && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (valavis))) == F_fill)) {
+                    node *sel = PRF_ARG1 (ASSIGN_RHS (AVIS_SSAASSIGN (valavis)));
+
+                    /*
+                     * Pattern:
+                     *
+                     * a = fill( B[iv], a');
+                     * r = wl_assign( a, A', iv, idx);
+                     *
+                     * where A' is known to be a reuse of B
+                     */
+                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_sel_VxA)) {
+                        node *vec = PRF_ARG1 (sel);
+                        node *arr = PRF_ARG2 (sel);
+
+                        if ((ID_AVIS (iv) == ID_AVIS (vec))
+                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                                == ID_AVIS (arr))) {
+                            inplace = TRUE;
+                        }
+                    }
+
+                    /*
+                     * Pattern:
+                     *
+                     * a = fill( idx_sel( idx_s, B), a');
+                     * r = wl_assign( a, A', iv, idx_t);
+                     *
+                     * where A' is known to be a reuse of B
+                     * and
+                     * idx_s = idx_t (with/with2)
+                     *
+                     * -or-
+                     *
+                     * where A' is known to be a suballoc of a reuse of B
+                     * and
+                     * idx_s is the ravel index of a with3 (IIRR) and
+                     * idx_t is the result offset of a with3 (IDXS)
+                     */
+                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_idx_sel)) {
+                        node *selidx = PRF_ARG1 (sel);
+                        node *arr = PRF_ARG2 (sel);
+                        node *submem;
+
+                        if (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                            == ID_AVIS (arr)) {
+                            if (ID_AVIS (idx) == ID_AVIS (selidx)) {
+                                inplace = TRUE;
+                            }
+                        }
+
+                        submem = FindSubAllocRoot (INFO_SUBLUT (arg_info), ID_AVIS (mem));
+                        if ((submem != NULL)
+                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), submem)
+                                == ID_AVIS (arr))) {
+                            DBUG_PRINT ("EMDR",
+                                        ("found root for suballoc %s --> %s",
+                                         AVIS_NAME (ID_AVIS (mem)), AVIS_NAME (submem)));
+
+                            if (IsSameIndex (INFO_WLIIRR (arg_info),
+                                             INFO_WLIDXS (arg_info), selidx, idx)) {
+                                inplace = TRUE;
+                                DBUG_PRINT ("EMDR", ("found with3 idx_sel copy."));
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Pattern:
+             *
+             * a' = suballoc( A', _)
+             * r = fill( [v1, ..., vn], a')
+             *
+             * where A' is known to be a reuse of B
+             * and the vi are defined as
+             *
+             * vi = fill( idx_sel( idxi, B), vi');
+             * idxi = idxs2offset( _, iv1, ..., ivn, i)
+             *
+             * the shape (arg 1) is by construction the
+             * shape of A and B
+             */
+            pat = PMprf (1, PMAisPrf (F_fill), 2,
+                         PMarray (0, 1, PMskip (1, PMAgetNode (&aexprs))),
+                         PMprf (1, PMAisPrf (F_suballoc), 2,
+                                PMvar (1, PMAgetNode (&mem), 0), PMskip (0)));
+            if (PMmatchFlat (pat, wlass)) {
+                node *expr;
+                node *arr = NULL;
+                bool iscopy = TRUE;
+                int pos = 0;
+
+                DBUG_PRINT ("EMDR", ("vector copy: potential candiate found."));
+
+                while ((aexprs != NULL) && iscopy) {
+                    expr = EXPRS_EXPR (aexprs);
+
+                    if (!PMO (PMOvar (
+                          &arr,
+                          PMOany (
+                            NULL,
+                            PMOnumVal (
+                              pos,
+                              PMOpartExprs (
+                                INFO_IVIDS (arg_info),
+                                PMOany (NULL,
+                                        PMOprf (F_idxs2offset,
+                                                PMOprf (F_fill,
+                                                        PMOprf (F_idx_sel,
+                                                                PMOprf (F_fill,
+                                                                        expr))))))))))) {
+                        iscopy = FALSE;
+#ifndef DBUG_OFF
+                    } else {
+                        DBUG_PRINT ("EMDR", ("vector copy: element %d fits.", pos));
 #endif
+                    }
 
-    DBUG_RETURN (arg_node);
+                    aexprs = EXPRS_NEXT (aexprs);
+                    pos++;
+                }
+
+#ifndef DBUG_OFF
+                if (iscopy) {
+                    DBUG_PRINT ("EMDR", ("vector copy expression found"));
+                }
+#endif
+                if (iscopy
+                    && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                        == ID_AVIS (arr))) {
+                    DBUG_PRINT ("EMDR", ("vector copy: reuse identified."));
+
+                    inplace = TRUE;
+                }
+            }
+
+            /*
+             * Pattern:
+             * mem = suballoc( A, _);
+             * r = with2/with
+             *       ( _ <= ivi=[ii1, ..., iim] < _) : r_inner;
+             *     genarray( _, _, mem)
+             *
+             * with only 1 partition (i.e., one full partition)
+             * which selects is defined as
+             *
+             * r_inner = sel( iv ++ ivi, B)
+             *
+             * - or -
+             *
+             * r_inner = sel( [i1, ..., in, ii1, ..., iim], B)
+             *
+             * and A is a reuse of B
+             *
+             * The sel operations have been processed by vect2offset!
+             */
+            if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)) {
+                node *withop, *wlids, *wliv, *code;
+                bool iscopy = FALSE;
+
+                withop = WITH_OR_WITH2_WITHOP (wlass);
+                wlids = WITH_OR_WITH2_IDS (wlass);
+                wliv = WITH_OR_WITH2_VEC (wlass);
+                code = WITH_OR_WITH2_CODE (wlass);
+
+                if ((NODE_TYPE (withop) == N_genarray) && (GENARRAY_NEXT (withop) == NULL)
+                    && (CODE_NEXT (code) == NULL)) {
+                    node *cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
+                    node *offset = NULL;
+                    node *arr = NULL;
+                    node *mem = NULL;
+
+                    DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
+
+                    if (PMO (PMOvar (&arr, PMOvar (&offset,
+                                                   PMOprf (F_idx_sel,
+                                                           PMOprf (F_fill,
+                                                                   PMOprf (F_wl_assign,
+                                                                           cexpr))))))) {
+                        node *cat_arg1 = NULL, *cat_arg2 = NULL;
+
+                        /*
+                         * offset can be defined as an idxs2offset or a vect2offset
+                         * the shape does not matter, as we select from a reuse
+                         * candidate which has the same shape.
+                         */
+                        if ((wlids != NULL) && (INFO_IVIDS (arg_info) != NULL)
+                            && PMO (
+                                 PMOexprs (&wlids,
+                                           PMOpartExprs (
+                                             INFO_IVIDS (arg_info),
+                                             PMOany (NULL, PMOprf (F_idxs2offset,
+                                                                   PMOprf (F_fill,
+                                                                           offset))))))) {
+
+                            DBUG_PRINT ("EMDR", ("wl copy: inner sel is scalar copy."));
+                            iscopy = TRUE;
+                        }
+
+                        /*
+                         * or it can be a concatenation of the two ivs
+                         */
+                        else if (
+                          PMO (PMOvar (
+                            &cat_arg2,
+                            PMOvar (
+                              &cat_arg2,
+                              PMOprf (F_cat_VxV,
+                                      PMOprf (F_fill,
+                                              PMOany (NULL,
+                                                      PMOprf (F_vect2offset,
+                                                              PMOprf (F_fill,
+                                                                      offset))))))))) {
+                            /*
+                             * arg_1/2 can be iv or [ivids]
+                             */
+                            if ((((INFO_IV (arg_info) != NULL)
+                                  && PMO (PMOvar (&INFO_IV (arg_info), cat_arg1)))
+                                 || ((INFO_IVIDS (arg_info) != NULL)
+                                     && PMO (PMOexprs (&INFO_IVIDS (arg_info),
+                                                       PMOarray (NULL, NULL, cat_arg1)))))
+                                && (((wliv != NULL) && PMO (PMOvar (&wliv, cat_arg2)))
+                                    || ((wlids != NULL)
+                                        && (PMO (
+                                             PMOexprs (&wlids, PMOarray (NULL, NULL,
+                                                                         cat_arg2))))))) {
+
+                                DBUG_PRINT ("EMDR",
+                                            ("wl copy: inner sel is vector copy."));
+                                iscopy = TRUE;
+                            }
+                        }
+                    }
+
+                    if (iscopy
+                        && PMO (PMOvar (&mem, PMOprf (F_suballoc, GENARRAY_MEM (withop))))
+                        && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
+                            == ID_AVIS (arr))) {
+                        DBUG_PRINT ("EMDR", ("wl copy: reuse identified."));
+
+                        inplace = TRUE;
+                    }
+                }
+            }
+        }
+
+        if (inplace) {
+            node *avis;
+
+            DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
+
+            /*
+             * Create a variable for new cexpr
+             */
+            avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            /*
+             * Create noop
+             * a = noop( iv);
+             */
+            assigns = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                               TCmakePrf1 (F_noop,
+                                                           DUPdoDupNode (
+                                                             (INFO_IV (arg_info) == NULL)
+                                                               ? INFO_IVIDS (arg_info)
+                                                               : INFO_IV (arg_info)))),
+                                    assigns);
+
+            AVIS_SSAASSIGN (avis) = assigns;
+
+            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
+            EXPRS_EXPR (exprs) = TBmakeId (avis);
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+    DBUG_RETURN (assigns);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -172,17 +537,10 @@ ATravRange (node *arg_node, info *arg_info)
 node *
 EMDRdoDataReuse (node *syntax_tree)
 {
-    anontrav_t cnw_trav[3] = {{N_with3, &ATravWith3}, {N_range, &ATravRange}, {0, NULL}};
     DBUG_ENTER ("EMDRdoDataReuse");
 
     TRAVpush (TR_emdr);
     syntax_tree = TRAVdo (syntax_tree, NULL);
-    TRAVpop ();
-
-    TRAVpushAnonymous (cnw_trav, &TRAVsons);
-
-    syntax_tree = TRAVopt (syntax_tree, MakeInfo (NULL));
-
     TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
@@ -321,6 +679,8 @@ EMDRwithid (node *arg_node, info *arg_info)
 
     INFO_IV (arg_info) = WITHID_VEC (arg_node);
     INFO_IVIDS (arg_info) = WITHID_IDS (arg_node);
+    INFO_WLIDXS (arg_info) = WITHID_IDXS (arg_node);
+    INFO_WLIIRR (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -335,17 +695,21 @@ EMDRwithid (node *arg_node, info *arg_info)
 node *
 EMDRwith (node *arg_node, info *arg_info)
 {
-    node *oldivs, *oldiv;
+    node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
     DBUG_ENTER ("EMDRwith");
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
+    oldidxs = INFO_WLIDXS (arg_info);
+    oldiirr = INFO_WLIIRR (arg_info);
 
     WITH_WITHID (arg_node) = TRAVopt (WITH_WITHID (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
+    INFO_WLIIRR (arg_info) = oldiirr;
+    INFO_WLIDXS (arg_info) = oldidxs;
     INFO_IVIDS (arg_info) = oldivs;
     INFO_IV (arg_info) = oldiv;
 
@@ -362,16 +726,20 @@ EMDRwith (node *arg_node, info *arg_info)
 node *
 EMDRwith2 (node *arg_node, info *arg_info)
 {
-    node *oldivs, *oldiv;
+    node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
     DBUG_ENTER ("EMDRwith2");
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
+    oldidxs = INFO_WLIDXS (arg_info);
+    oldiirr = INFO_WLIIRR (arg_info);
 
     WITH2_WITHID (arg_node) = TRAVopt (WITH2_WITHID (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
 
+    INFO_WLIIRR (arg_info) = oldiirr;
+    INFO_WLIDXS (arg_info) = oldidxs;
     INFO_IVIDS (arg_info) = oldivs;
     INFO_IV (arg_info) = oldiv;
 
@@ -380,408 +748,84 @@ EMDRwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMDRrange( node *arg_node, info *arg_info)
+ * @fn node *EMDRwith3( node *arg_node, info *arg_info)
  *
- * @brief Stack IV and IVIDS
+ * @brief Stack IV and IVIDS and remember top-level left-hand sides for
+ *        genarray/modarray withloops in suballoc lut
  *
  *****************************************************************************/
 node *
 EMDRwith3 (node *arg_node, info *arg_info)
 {
-    node *oldivs, *oldiv;
+    node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
     DBUG_ENTER ("EMDRwith3");
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
+    oldidxs = INFO_WLIDXS (arg_info);
+    oldiirr = INFO_WLIIRR (arg_info);
+
+    /*
+     * insert all top-level result memvals into the SUBLUT as
+     * these might be referenced in suballocs in levels
+     * further down. I use NULL here to mark the end of the
+     * suballoc chain.
+     */
+    if (WITH3_ISTOPLEVEL (arg_node)) {
+        WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    }
 
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
+    INFO_WLIIRR (arg_info) = oldiirr;
+    INFO_WLIDXS (arg_info) = oldidxs;
     INFO_IVIDS (arg_info) = oldivs;
     INFO_IV (arg_info) = oldiv;
 
     DBUG_RETURN (arg_node);
 }
 
-#if 0
-static
-node *GetAddAvis( node *id){
-  node *res = NULL;
-
-  DBUG_ENTER( "GetAddAvis");
-
-  if ( NODE_TYPE( id) == N_id){
-    res = TBmakeIds( ID_AVIS( id), res);
-  } else {
-    if ( ( NODE_TYPE( arg_node) == N_prf) &&
-       ( PRF_PRF( arg_node) == F_fill) &&
-       ( NODE_TYPE( PRF_ARG1( arg_node)) == N_prf) &&
-       ( PRF_PRF( PRF_ARG1( arg_node)) == F_add)){
-      res = 
-        TCappendIds( res,
-                     GetAddAvis( PRF_ARG1( PRF_PRF( PRF_ARG1( arg_node)))));
-      res = 
-        TCappendIds( res, 
-                     GetAddAvis( PRF_ARG2( PRF_PRF( PRF_ARG1( arg_node)))));
-    } else {
-      res = TBmakeIds( NULL, res);
-    }
-  }
-
-  DBUG_RETURN( res);
-}
-static
-bool ValidIds( node *ids){
-  bool res = FALSE;
-  DBUG_ENTER( "ValidIds");
-
-  res = IDS_AVIS( ids) != NULL;
-
-  if ( IDS_NEXT( ids) != NULL){
-    res &&= ValidIds( ids);
-  }
-
-  DBUG_RETURN( res);
-}
-
-static
-bool IsWith3Indexs( node *ids){
-  bool res;
-  DBUG_ENTER( "IsWith3Indexs");
-  
-  res = AVIS_ISTHREADINDEX( 
-
-  if ( IDS_NEXT( ids) != NULL){
-    res &&= IsWith3Indexs( IDS_NEXT( ids));
-  }
-  
-  DBUG_RETURN( res);
-}
-#endif
-
-static node *
-HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRgenarray (node *arg_node, info *arg_info)
 {
-    pattern *pat;
+    DBUG_ENTER ("EMDRgenarray");
 
-    DBUG_ENTER ("HandleCodeBlock");
+    DBUG_PRINT ("EMDR", ("adding new suballoc root %s",
+                         AVIS_NAME (ID_AVIS (GENARRAY_MEM (arg_node)))));
+    LUTinsertIntoLutP (INFO_SUBLUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)), NULL);
 
-    while (exprs != NULL) {
-        node *id = NULL;
-        node *idx = NULL;
-        bool inplace = FALSE;
-        bool with3inplace = FALSE;
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
-        id = EXPRS_EXPR (exprs);
+    DBUG_RETURN (arg_node);
+}
 
-        if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
-            node *wlass = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)));
-            node *aexprs = NULL;
-            node *iv = NULL;
-            node *mem = NULL;
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMDRmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMDRmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMDRmodarray");
 
-            if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_wl_assign)) {
-                node *val;
-                node *valavis;
+    DBUG_PRINT ("EMDR", ("adding new suballoc root %s",
+                         AVIS_NAME (ID_AVIS (MODARRAY_MEM (arg_node)))));
+    LUTinsertIntoLutP (INFO_SUBLUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)), NULL);
 
-                val = PRF_ARG1 (wlass);
-                mem = PRF_ARG2 (wlass);
-                iv = PRF_ARG3 (wlass);
-                idx = PRF_ARG4 (wlass);
+    MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
-                valavis = ID_AVIS (val);
-
-                if ((AVIS_SSAASSIGN (valavis) != NULL)
-                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (valavis))) == N_prf)
-                    && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (valavis))) == F_fill)) {
-                    node *sel = PRF_ARG1 (ASSIGN_RHS (AVIS_SSAASSIGN (valavis)));
-
-                    /*
-                     * Pattern:
-                     *
-                     * a = fill( B[iv], a');
-                     * r = wl_assign( a, A', iv, idx);
-                     *
-                     * where A' is known to be a reuse of B
-                     */
-                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_sel_VxA)) {
-                        node *vec = PRF_ARG1 (sel);
-                        node *arr = PRF_ARG2 (sel);
-
-                        if ((ID_AVIS (iv) == ID_AVIS (vec))
-                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                                == ID_AVIS (arr))) {
-                            inplace = TRUE;
-                        }
-                    }
-
-                    /*
-                     * Pattern:
-                     *
-                     * a = fill( idx_sel( idx, B), a');
-                     * r = wl_assign( a, A', iv, idx);
-                     *
-                     * where A' is known to be a reuse of B
-                     */
-                    /*
-                     * Pattern2:
-                     *
-                     * a = fill( idx_sel( idx2, B), a');
-                     * r = wl_assign( a, A', [idx], idx);
-                     *
-                     * where A' is known to be a reuse of B
-                     *
-                     * should check
-                     * idx2 and idx come from with3 index
-                     * idx eqiv idx2
-                     */
-                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_idx_sel)) {
-                        node *selidx = PRF_ARG1 (sel);
-                        node *arr = PRF_ARG2 (sel);
-
-                        if (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                            == ID_AVIS (arr)) {
-                            if (ID_AVIS (idx) == ID_AVIS (selidx)) {
-                                inplace = TRUE;
-                            }
-
-                            if (global.backend == BE_mutc) { /* fix this!!!!! */
-                                inplace = with3inplace = TRUE;
-                            }
-                        }
-                    }
-                }
-            }
-
-            /*
-             * Pattern:
-             *
-             * a' = suballoc( A', _)
-             * r = fill( [v1, ..., vn], a')
-             *
-             * where A' is known to be a reuse of B
-             * and the vi are defined as
-             *
-             * vi = fill( idx_sel( idxi, B), vi');
-             * idxi = idxs2offset( _, iv1, ..., ivn, i)
-             *
-             * the shape (arg 1) is by construction the
-             * shape of A and B
-             */
-            pat = PMprf (1, PMAisPrf (F_fill), 2,
-                         PMarray (0, 1, PMskip (1, PMAgetNode (&aexprs))),
-                         PMprf (1, PMAisPrf (F_suballoc), 2,
-                                PMvar (1, PMAgetNode (&mem), 0), PMskip (0)));
-            if (PMmatchFlat (pat, wlass)) {
-                node *expr;
-                node *arr = NULL;
-                bool iscopy = TRUE;
-                int pos = 0;
-
-                DBUG_PRINT ("EMDR", ("vector copy: potential candiate found."));
-
-                while ((aexprs != NULL) && iscopy) {
-                    expr = EXPRS_EXPR (aexprs);
-
-                    if (!PMO (PMOvar (
-                          &arr,
-                          PMOany (
-                            NULL,
-                            PMOnumVal (
-                              pos,
-                              PMOpartExprs (
-                                INFO_IVIDS (arg_info),
-                                PMOany (NULL,
-                                        PMOprf (F_idxs2offset,
-                                                PMOprf (F_fill,
-                                                        PMOprf (F_idx_sel,
-                                                                PMOprf (F_fill,
-                                                                        expr))))))))))) {
-                        iscopy = FALSE;
-#ifndef DBUG_OFF
-                    } else {
-                        DBUG_PRINT ("EMDR", ("vector copy: element %d fits.", pos));
-#endif
-                    }
-
-                    aexprs = EXPRS_NEXT (aexprs);
-                    pos++;
-                }
-
-#ifndef DBUG_OFF
-                if (iscopy) {
-                    DBUG_PRINT ("EMDR", ("vector copy expression found"));
-                }
-#endif
-                if (iscopy
-                    && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                        == ID_AVIS (arr))) {
-                    DBUG_PRINT ("EMDR", ("vector copy: reuse identified."));
-
-                    inplace = TRUE;
-                }
-            }
-            /*
-             * with3{
-             *  ( . <= i < .) : _noop_(...);
-             * } ...
-             */
-            if (NODE_TYPE (wlass) == N_with3) {
-                if ((TCcountRanges (WITH3_RANGES (wlass)) == 1)
-                    && (TCcountWithops (WITH3_OPERATIONS (wlass)) == 1)
-                    && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                          ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (WITH3_RANGES (wlass))))))))
-                        == N_prf)
-                    && (PRF_PRF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                          ID_AVIS (EXPRS_EXPR (RANGE_RESULTS (WITH3_RANGES (wlass))))))))
-                        == F_noop)) {
-                    inplace = with3inplace = TRUE;
-                }
-            }
-            /*
-             * Pattern:
-             * mem = suballoc( A, _);
-             * r = with2/with
-             *       ( _ <= ivi=[ii1, ..., iim] < _) : r_inner;
-             *     genarray( _, _, mem)
-             *
-             * with only 1 partition (i.e., one full partition)
-             * which selects is defined as
-             *
-             * r_inner = sel( iv ++ ivi, B)
-             *
-             * - or -
-             *
-             * r_inner = sel( [i1, ..., in, ii1, ..., iim], B)
-             *
-             * and A is a reuse of B
-             *
-             * The sel operations have been processed by vect2offset!
-             */
-            if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)) {
-                node *withop, *wlids, *wliv, *code;
-                bool iscopy = FALSE;
-
-                withop = WITH_OR_WITH2_WITHOP (wlass);
-                wlids = WITH_OR_WITH2_IDS (wlass);
-                wliv = WITH_OR_WITH2_VEC (wlass);
-                code = WITH_OR_WITH2_CODE (wlass);
-
-                if ((NODE_TYPE (withop) == N_genarray) && (GENARRAY_NEXT (withop) == NULL)
-                    && (CODE_NEXT (code) == NULL)) {
-                    node *cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
-                    node *offset = NULL;
-                    node *arr = NULL;
-                    node *mem = NULL;
-
-                    DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
-
-                    if (PMO (PMOvar (&arr, PMOvar (&offset,
-                                                   PMOprf (F_idx_sel,
-                                                           PMOprf (F_fill,
-                                                                   PMOprf (F_wl_assign,
-                                                                           cexpr))))))) {
-                        node *cat_arg1 = NULL, *cat_arg2 = NULL;
-
-                        /*
-                         * offset can be defined as an idxs2offset or a vect2offset
-                         * the shape does not matter, as we select from a reuse
-                         * candidate which has the same shape.
-                         */
-                        if ((wlids != NULL) && (INFO_IVIDS (arg_info) != NULL)
-                            && PMO (
-                                 PMOexprs (&wlids,
-                                           PMOpartExprs (
-                                             INFO_IVIDS (arg_info),
-                                             PMOany (NULL, PMOprf (F_idxs2offset,
-                                                                   PMOprf (F_fill,
-                                                                           offset))))))) {
-
-                            DBUG_PRINT ("EMDR", ("wl copy: inner sel is scalar copy."));
-                            iscopy = TRUE;
-                        }
-
-                        /*
-                         * or it can be a concatenation of the two ivs
-                         */
-                        else if (
-                          PMO (PMOvar (
-                            &cat_arg2,
-                            PMOvar (
-                              &cat_arg2,
-                              PMOprf (F_cat_VxV,
-                                      PMOprf (F_fill,
-                                              PMOany (NULL,
-                                                      PMOprf (F_vect2offset,
-                                                              PMOprf (F_fill,
-                                                                      offset))))))))) {
-                            /*
-                             * arg_1/2 can be iv or [ivids]
-                             */
-                            if ((((INFO_IV (arg_info) != NULL)
-                                  && PMO (PMOvar (&INFO_IV (arg_info), cat_arg1)))
-                                 || ((INFO_IVIDS (arg_info) != NULL)
-                                     && PMO (PMOexprs (&INFO_IVIDS (arg_info),
-                                                       PMOarray (NULL, NULL, cat_arg1)))))
-                                && (((wliv != NULL) && PMO (PMOvar (&wliv, cat_arg2)))
-                                    || ((wlids != NULL)
-                                        && (PMO (
-                                             PMOexprs (&wlids, PMOarray (NULL, NULL,
-                                                                         cat_arg2))))))) {
-
-                                DBUG_PRINT ("EMDR",
-                                            ("wl copy: inner sel is vector copy."));
-                                iscopy = TRUE;
-                            }
-                        }
-                    }
-
-                    if (iscopy
-                        && PMO (PMOvar (&mem, PMOprf (F_suballoc, GENARRAY_MEM (withop))))
-                        && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                            == ID_AVIS (arr))) {
-                        DBUG_PRINT ("EMDR", ("wl copy: reuse identified."));
-
-                        inplace = TRUE;
-                    }
-                }
-            }
-        }
-
-        if (inplace) {
-            node *avis;
-
-            DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
-
-            /*
-             * Create a variable for new cexpr
-             */
-            avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
-
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-            /*
-             * Create noop
-             * a = noop( iv);
-             */
-            assigns
-              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                         TCmakePrf1 (F_noop, DUPdoDupNode (
-                                                               with3inplace
-                                                                 ? INFO_IVIDS (arg_info)
-                                                                 : INFO_IV (arg_info)))),
-                              assigns);
-
-            AVIS_SSAASSIGN (avis) = assigns;
-
-            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
-            EXPRS_EXPR (exprs) = TBmakeId (avis);
-        }
-
-        exprs = EXPRS_NEXT (exprs);
-    }
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -794,8 +838,6 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
 node *
 EMDRcode (node *arg_node, info *arg_info)
 {
-    node *exprs;
-
     DBUG_ENTER ("EMDRcode");
 
     /*
@@ -807,9 +849,8 @@ EMDRcode (node *arg_node, info *arg_info)
      * The great moment:
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
-    exprs = CODE_CEXPRS (arg_node);
     CODE_CBLOCK_INSTR (arg_node)
-      = HandleCodeBlock (exprs, CODE_CBLOCK_INSTR (arg_node), arg_info);
+      = HandleCodeBlock (CODE_CEXPRS (arg_node), CODE_CBLOCK_INSTR (arg_node), arg_info);
     /*
      * Traverse next code
      */
@@ -828,8 +869,6 @@ EMDRcode (node *arg_node, info *arg_info)
 node *
 EMDRrange (node *arg_node, info *arg_info)
 {
-    node *exprs;
-
     DBUG_ENTER ("EMDRrange");
 
     /*
@@ -842,11 +881,28 @@ EMDRrange (node *arg_node, info *arg_info)
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
     INFO_IVIDS (arg_info) = RANGE_INDEX (arg_node);
-    exprs = RANGE_RESULTS (arg_node);
+    /* for now we don't actually know the IV */
+    INFO_IV (arg_info) = NULL;
+    INFO_WLIIRR (arg_info) = RANGE_IIRR (arg_node);
+    INFO_WLIDXS (arg_info) = RANGE_IDXS (arg_node);
+
     BLOCK_INSTR (RANGE_BODY (arg_node))
-      = HandleCodeBlock (exprs, BLOCK_INSTR (RANGE_BODY (arg_node)), arg_info);
+      = HandleCodeBlock (RANGE_RESULTS (arg_node), BLOCK_INSTR (RANGE_BODY (arg_node)),
+                         arg_info);
+
     /*
-     * Traverse next code
+     * we can now free the IIRR and IDXS info, as it is no longer needed and
+     * may otherwise keep offsets/indices alive that are not actually used
+     */
+    if (RANGE_IIRR (arg_node) != NULL) {
+        RANGE_IIRR (arg_node) = FREEdoFreeTree (RANGE_IIRR (arg_node));
+    }
+    if (RANGE_IDXS (arg_node) != NULL) {
+        RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
+    }
+
+    /*
+     * Traverse next range
      */
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
@@ -885,9 +941,11 @@ EMDRfundef (node *arg_node, info *arg_info)
             }
 
             INFO_REUSELUT (info) = LUTgenerateLut ();
+            INFO_SUBLUT (info) = LUTgenerateLut ();
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
+            INFO_SUBLUT (info) = LUTremoveLut (INFO_SUBLUT (info));
             INFO_REUSELUT (info) = LUTremoveLut (INFO_REUSELUT (info));
 
             info = FreeInfo (info);
@@ -924,18 +982,6 @@ EMDRlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-static node *
-FollowLut (node *pos, lut_t *lut)
-{
-    node *next = pos;
-    DBUG_ENTER ("FollowLut");
-
-    while (((next = LUTsearchInLutPp (lut, pos)) != NULL) && (pos != next))
-        pos = next;
-
-    DBUG_RETURN (pos);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *EMDRprf( node *arg_node, info *arg_info)
@@ -969,14 +1015,6 @@ EMDRprf (node *arg_node, info *arg_info)
                            ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
-    case F_suballoc:
-        /* Prove this does not break anything!!!!!!!!! */
-        if (global.backend == BE_mutc) {
-            LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                               FollowLut (ID_AVIS (PRF_ARG1 (arg_node)),
-                                          INFO_REUSELUT (arg_info)));
-        }
-        break;
     case F_reshape_VxA:
         /*
          * b = reshape( dim, shp, a);
@@ -987,6 +1025,25 @@ EMDRprf (node *arg_node, info *arg_info)
                            ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
+    case F_suballoc:
+        /*
+         * b = suballoc( A, _)
+         *
+         * Insert (b, A) into SUBLUT iff A is already contained
+         * in sublut!
+         */
+        DBUG_PRINT ("EMDR", ("checking for existing suballoc %s",
+                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+        if (LUTsearchInLutPp (INFO_SUBLUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)))
+            != ID_AVIS (PRF_ARG1 (arg_node))) {
+            DBUG_PRINT ("EMDR", ("adding %s as new suballoc of %s.",
+                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+
+            LUTinsertIntoLutP (INFO_SUBLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                               ID_AVIS (PRF_ARG1 (arg_node)));
+        }
+        break;
     case F_fill:
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
             /*

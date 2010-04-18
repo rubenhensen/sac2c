@@ -769,7 +769,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     /*
      * copy over reuse information if we are at the top level!
      */
-    if (INFO_CURRENT_DIM (arg_info) == 0) {
+    if (INFO_WITH3_NESTING (arg_info) == 0) {
         GENARRAY_RC (new_node) = DUPdoDupTree (GENARRAY_RC (arg_node));
     }
 
@@ -906,7 +906,7 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
     /*
      * copy over reuse information if we are at the top level!
      */
-    if (INFO_CURRENT_DIM (arg_info) == 0) {
+    if (INFO_WITH3_NESTING (arg_info) == 0) {
         GENARRAY_RC (new_node) = DUPdoDupTree (MODARRAY_RC (arg_node));
     }
 
@@ -1977,7 +1977,7 @@ static node *
 ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node **code,
              node *next, info *arg_info)
 {
-    node *index, *max, *body, *res, *result, *rangeoffsets;
+    node *index, *max, *body, *res, *result, *rangeoffsets, *resultindices;
 
     DBUG_ENTER ("ProcessGrid");
 
@@ -2043,9 +2043,19 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         /* only remove contents! the lut is reused! */
         lut = LUTremoveContentLut (lut);
 
+        /* compute resultindices */
+        resultindices = TCids2Exprs (final_offsets);
+
+        /* free final offsets */
+        if (final_offsets != NULL) {
+            final_offsets = FREEdoFreeTree (final_offsets);
+        }
+
         IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     } else if (nextdim != NULL) {
         body = MakeRangeBody (index, nextdim, NULL, TRUE, &res, &rangeoffsets, arg_info);
+        /* no resultindices here as not innermost level */
+        resultindices = NULL;
     } else {
         /* DBUG_ASSERT( ( TCcountWithopsNeq( INFO_WITH2_WITHOPS( arg_info),
            N_fold) == 0),
@@ -2057,6 +2067,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         result = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), max,
                               NULL, /* grids have no chunksize */
                               body, res, rangeoffsets, next);
+        RANGE_IIRR (result) = resultindices;
     } else {
         /* This range is a nop so do not create it */
         result = next;
@@ -2347,6 +2358,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeWith3 (ranges, withops);
         WITH3_DENSE (arg_node) = INFO_DENSE (arg_info);
+        WITH3_ISTOPLEVEL (arg_node) = TRUE;
 
         /*
          * reset the info structure, mainly to ease finding bugs and to prevent

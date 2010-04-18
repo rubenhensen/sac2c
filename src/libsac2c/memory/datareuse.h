@@ -26,5 +26,7 @@ extern node *EMDRcond (node *arg_node, info *arg_info);
 extern node *EMDRfundef (node *arg_node, info *arg_info);
 extern node *EMDRlet (node *arg_node, info *arg_info);
 extern node *EMDRprf (node *arg_node, info *arg_info);
+extern node *EMDRgenarray (node *arg_node, info *arg_info);
+extern node *EMDRmodarray (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DATAREUSE_H_ */

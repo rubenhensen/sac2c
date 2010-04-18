@@ -688,6 +688,7 @@ DCIrange (node *arg_node, info *arg_info)
     INFO_ALLIDSNEEDED (arg_info) = TRUE;
     RANGE_INDEX (arg_node) = TRAVdo (RANGE_INDEX (arg_node), arg_info);
     RANGE_IDXS (arg_node) = TRAVopt (RANGE_IDXS (arg_node), arg_info);
+    RANGE_IIRR (arg_node) = TRAVopt (RANGE_IIRR (arg_node), arg_info);
     INFO_ALLIDSNEEDED (arg_info) = FALSE;
 
     /* generate demand for the identifiers in the body */

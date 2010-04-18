@@ -2858,6 +2858,8 @@ DUPwith3 (node *arg_node, info *arg_info)
     new_node = TBmakeWith3 (DUPTRAV (WITH3_RANGES (arg_node)),
                             DUPTRAV (WITH3_OPERATIONS (arg_node)));
 
+    WITH3_FLAGSTRUCTURE (new_node) = WITH3_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2890,6 +2892,10 @@ DUPrange (node *arg_node, info *arg_info)
                             DUPTRAV (RANGE_UPPERBOUND (arg_node)),
                             DUPTRAV (RANGE_CHUNKSIZE (arg_node)), body, result, idxs,
                             DUPCONT (RANGE_NEXT (arg_node)));
+
+    if (RANGE_IIRR (arg_node) != NULL) {
+        RANGE_IIRR (new_node) = DUPTRAV (RANGE_IIRR (arg_node));
+    }
 
     CopyCommonNodeData (new_node, arg_node);
 
