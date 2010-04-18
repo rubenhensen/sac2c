@@ -316,6 +316,7 @@ CutSlices (node *min_avis, node *max_avis, int fdim, node *part_lb_avis,
     node *res = NULL, *npart, *npart2, *assigns;
     node *axis_avis, *lmax_avis, *umin_avis, *nmin_avis, *nmax_avis;
     ntype *bound_type;
+    ntype *scalar_type;
 
     DBUG_ENTER ("CutSlices");
 
@@ -330,7 +331,8 @@ CutSlices (node *min_avis, node *max_avis, int fdim, node *part_lb_avis,
          * and insert it into INFO_PREASSIGN:
          */
         bound_type = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, fdim));
-        axis_avis = CreateAvisAndInsertVardec ("axis", bound_type, arg_info);
+        scalar_type = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0));
+        axis_avis = CreateAvisAndInsertVardec ("axis", scalar_type, arg_info);
         lmax_avis = CreateAvisAndInsertVardec ("lmax", TYcopyType (bound_type), arg_info);
         umin_avis = CreateAvisAndInsertVardec ("umin", TYcopyType (bound_type), arg_info);
         nmin_avis = CreateAvisAndInsertVardec ("nmin", TYcopyType (bound_type), arg_info);
