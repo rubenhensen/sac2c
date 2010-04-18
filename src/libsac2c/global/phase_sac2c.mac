@@ -903,8 +903,8 @@ SUBPHASE (ipc, "Identifying in-place updates", EMIPdoInplaceComputation,
 SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
           global.optimize.douip &&global.optimize.dodr, mem)
 
-SUBPHASE (PEW3, "Prune empty with3", PEW3doPruneEmptyWith3, global.backend == BE_mutc,
-          mem)
+SUBPHASE (pew3, "MUTC Prune empty with3", PEW3doPruneEmptyWith3,
+          global.backend == BE_mutc, mem)
 
 SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemovalModule,
           global.optimize.dodcr, mem)

@@ -221,14 +221,26 @@ createAssignChain (node *arg_ids, node *exprs)
  *
  *****************************************************************************/
 static node *
-ATRAVwithop (node *arg_node, info *arg_info)
+ATRAVgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATRAVwithop");
+    DBUG_ENTER ("ATRAVgenarray");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     INFO_MEMVARS (arg_info)
-      = TBmakeExprs (WITHOP_MEM (arg_node), INFO_MEMVARS (arg_info));
+      = TBmakeExprs (DUPdoDupTree (GENARRAY_MEM (arg_node)), INFO_MEMVARS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+static node *
+ATRAVmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATRAVmodarray");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_MEMVARS (arg_info)
+      = TBmakeExprs (DUPdoDupTree (MODARRAY_MEM (arg_node)), INFO_MEMVARS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -242,8 +254,8 @@ ATRAVwithop (node *arg_node, info *arg_info)
 static node *
 getMemvars (node *withops, info *arg_info)
 { // N_genarrayN_modarrayN_spfoldN_foldN_breakN_propagate
-    anontrav_t trav[] = {{N_modarray, &ATRAVwithop},
-                         {N_genarray, &ATRAVwithop},
+    anontrav_t trav[] = {{N_modarray, &ATRAVmodarray},
+                         {N_genarray, &ATRAVgenarray},
                          {N_spfold, &TRAVerror},
                          {N_fold, &TRAVerror},
                          {N_break, &TRAVerror},
@@ -290,7 +302,7 @@ PEW3with3 (node *arg_node, info *arg_info)
 
     if ((!WITH3_ISTOPLEVEL (arg_node))
         && (TCcountRanges (WITH3_RANGES (arg_node)) == 0)) {
-        INFO_MEMVARS (arg_info) = getMemvars (WITH3_OPERATIONS (arg_node), arg_info);
+        WITH3_OPERATIONS (arg_node) = getMemvars (WITH3_OPERATIONS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -308,19 +320,19 @@ PEW3range (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PEW3range");
 
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
     INFO_CAN_REMOVE (arg_info) = TRUE;
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
-    if (INFO_CAN_REMOVE (arg_info)) {
+    if (INFO_CAN_REMOVE (arg_info) && INFO_DO_RANGE_REMOVE (arg_info)) {
         node *del;
         del = arg_node;
         arg_node = RANGE_NEXT (del);
         RANGE_NEXT (del) = NULL;
         del = FREEdoFreeTree (del);
-    } else {
-        RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -365,8 +377,9 @@ PEW3assign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_REPLACE_ASSIGNS (arg_info) != NULL) {
-        arg_node
-          = TCappendAssign (INFO_REPLACE_ASSIGNS (arg_info), FREEdoFreeNode (arg_node));
+        arg_node = TCappendAssign (INFO_REPLACE_ASSIGNS (arg_info),
+                                   FREEdoFreeNode (arg_node)); /* next */
+        INFO_REPLACE_ASSIGNS (arg_info) = NULL;
     }
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
