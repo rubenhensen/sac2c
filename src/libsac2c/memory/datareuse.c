@@ -1001,7 +1001,7 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_LHS (arg_info),
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
