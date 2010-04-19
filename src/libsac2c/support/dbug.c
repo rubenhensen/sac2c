@@ -134,15 +134,6 @@ EXPORT char *_db_process_ = "dbug"; /* Pointer to process name; argv[0] */
 EXPORT BOOLEAN _db_on_ = FALSE;     /* TRUE if debugging currently on */
 EXPORT int _db_dummy_;
 
-LOCAL void Indent ();
-LOCAL void FreeList ();
-LOCAL void DoPrefix ();
-LOCAL int DelayArg ();
-
-#ifndef fflush        /* This is sometimes a macro */
-IMPORT int fflush (); /* Flush output for stream */
-#endif
-
 /*
  *     The user may specify a list of functions to trace or
  *     debug.  These lists are kept in a linear linked list,
@@ -153,6 +144,15 @@ struct link {
     char *string;           /* Pointer to link's contents */
     struct link *next_link; /* Pointer to the next link */
 };
+
+LOCAL void Indent (int indent);
+LOCAL void FreeList (struct link *linkp);
+LOCAL void DoPrefix (int _line_);
+LOCAL int DelayArg (int value);
+
+#ifndef fflush        /* This is sometimes a macro */
+IMPORT int fflush (); /* Flush output for stream */
+#endif
 
 /*
  *     Debugging states can be pushed or popped off of a
@@ -189,27 +189,27 @@ LOCAL int jmplevel;  /* Remember nesting level at setjmp () */
 LOCAL char *jmpfunc; /* Remember current function for setjmp */
 LOCAL char *jmpfile; /* Remember current file for setjmp */
 
-LOCAL struct link *ListParse (); /* Parse a debug command string */
-LOCAL char *StrDup ();           /* Make a fresh copy of a string */
-LOCAL VOID OpenFile ();          /* Open debug output stream */
-LOCAL VOID CloseFile ();         /* Close debug output stream */
-LOCAL VOID PushState ();         /* Push current debug state */
+LOCAL struct link *ListParse (char *ctlp); /* Parse a debug command string */
+LOCAL char *StrDup (char *string);         /* Make a fresh copy of a string */
+LOCAL VOID OpenFile (char *name);          /* Open debug output stream */
+LOCAL VOID CloseFile (FILE *fp);           /* Close debug output stream */
+LOCAL VOID PushState (void);               /* Push current debug state */
 
 #if 0
 LOCAL VOID ChangeOwner ();     /* Change file owner and group */
 #endif
 
-LOCAL BOOLEAN DoTrace ();  /* Test for TRACING enabled */
-LOCAL BOOLEAN Writable (); /* Test to see if file is writable */
-LOCAL char *DbugMalloc (); /* Allocate memory for runtime support */
-LOCAL char *BaseName ();   /* Remove leading pathname components */
+LOCAL BOOLEAN DoTrace (void);            /* Test for TRACING enabled */
+LOCAL BOOLEAN Writable (char *pathname); /* Test to see if file is writable */
+LOCAL char *DbugMalloc (int size);       /* Allocate memory for runtime support */
+LOCAL char *BaseName (char *pathname);   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
 #ifndef HAVE_STRTOK
-LOCAL char *strtok (); /* Break string into tokens */
+LOCAL char *strtok (char *s1, char *s2); /* Break string into tokens */
 #endif
 #ifndef HAVE_STRRCHR
-LOCAL char *strrchr (); /* Find last occurance of char */
+LOCAL char *strrchr (char *s, char c); /* Find last occurance of char */
 #endif
 
 /*
