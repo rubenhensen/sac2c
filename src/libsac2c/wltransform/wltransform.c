@@ -3858,8 +3858,7 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
          *  -> just naive compilation possible for the time being :-(
          */
         *do_naive_comp = TRUE;
-        CTIwarnLine (global.linenum,
-                     "Naive compilation of multi-generator with-loop activated");
+        CTInote ("Naive compilation of multi-generator with-loop activated");
 
         cubes = strides;
     } else {
