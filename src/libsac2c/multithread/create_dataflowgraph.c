@@ -117,7 +117,14 @@ FreeInfo (info *info)
 /* some declaration */
 static node *UpdateDependency (node *dfn_assign, node *outer_graph, node *current_node);
 
-static node *FindAssignCorrespondingNode (node *graph, node *dfn_assign);
+#if 0
+/*
+ * Note, this function is currently not used and hence its definition causes 
+ * a compiler warning.
+ */
+static
+node *FindAssignCorrespondingNode(node *graph, node *dfn_assign);
+#endif
 
 static node *LowestCommonLevel (node *node_one, node *node_two);
 
@@ -429,6 +436,13 @@ UpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
     DBUG_RETURN (outer_graph);
 }
 
+#if 0
+
+/*
+ * Note, this function is currently not used and hence its definition causes 
+ * a compiler warning.
+ */
+
 /** <!--********************************************************************-->
  *
  * @fn static node *FindAssignCorrespondingNode(node *graph, node *dfn_assign)
@@ -441,53 +455,52 @@ UpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
  * @return the node, somewhere in graph, which has dfn_assign as its assignment
  *
  *****************************************************************************/
-static node *
-FindAssignCorrespondingNode (node *graph, node *dfn_assign)
+static
+node *FindAssignCorrespondingNode(node *graph, node *dfn_assign)
 {
-    node *result;
-    nodelist *member_iterator;
-    DBUG_ENTER ("FindAssignCorrespondingNode");
-    DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph),
-                 "1st parameter is no N_dataflowgraph");
-    DBUG_ASSERT ((dfn_assign != NULL), "2nd parameter is NULL");
-    DBUG_ASSERT ((NODE_TYPE (dfn_assign) == N_assign), "2nd parameter is no N_assign");
+  node *result;
+  nodelist *member_iterator;
+  DBUG_ENTER("FindAssignCorrespondingNode");
+  DBUG_ASSERT((NODE_TYPE(graph) == N_dataflowgraph),
+              "1st parameter is no N_dataflowgraph");
+  DBUG_ASSERT((dfn_assign != NULL),
+              "2nd parameter is NULL");
+  DBUG_ASSERT((NODE_TYPE(dfn_assign) == N_assign),
+              "2nd parameter is no N_assign");
 
 #if CDFG_DEBUG
-    /*fprintf(stdout,"searching for node which corresponds to");
-      PRTPrintNode(dfn_assign);*/
+  /*fprintf(stdout,"searching for node which corresponds to");
+    PRTPrintNode(dfn_assign);*/
 #endif
 
-    result = NULL;
-    member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
-    while ((result == NULL) && (member_iterator != NULL)) {
+  result = NULL;
+  member_iterator = DATAFLOWGRAPH_MEMBERS(graph);
+  while((result == NULL) && (member_iterator != NULL)) {
 
-        /* Is this node the one? */
-        if ((DATAFLOWNODE_ASSIGN (NODELIST_NODE (member_iterator))) == dfn_assign) {
-            result = NODELIST_NODE (member_iterator);
+    /* Is this node the one? */
+    if((DATAFLOWNODE_ASSIGN(NODELIST_NODE(member_iterator))) == dfn_assign) {
+      result = NODELIST_NODE(member_iterator);
+    }
+    /* not -> well, perhaps within its dataflowgraphs (if exist) - rekursion */
+    else {
+      /* within the then-branch? */
+      if(DATAFLOWNODE_DFGTHEN(NODELIST_NODE(member_iterator)) != NULL) {
+        result = FindAssignCorrespondingNode(DATAFLOWNODE_DFGTHEN(NODELIST_NODE(member_iterator)), dfn_assign);
+        /* or within the else-branch? */
+        if((result == NULL) && 
+           (DATAFLOWNODE_DFGELSE(NODELIST_NODE(member_iterator)) != NULL)) {
+          result = FindAssignCorrespondingNode(DATAFLOWNODE_DFGELSE(NODELIST_NODE(member_iterator)), dfn_assign);
         }
-        /* not -> well, perhaps within its dataflowgraphs (if exist) - rekursion */
-        else {
-            /* within the then-branch? */
-            if (DATAFLOWNODE_DFGTHEN (NODELIST_NODE (member_iterator)) != NULL) {
-                result = FindAssignCorrespondingNode (DATAFLOWNODE_DFGTHEN (
-                                                        NODELIST_NODE (member_iterator)),
-                                                      dfn_assign);
-                /* or within the else-branch? */
-                if ((result == NULL)
-                    && (DATAFLOWNODE_DFGELSE (NODELIST_NODE (member_iterator)) != NULL)) {
-                    result
-                      = FindAssignCorrespondingNode (DATAFLOWNODE_DFGELSE (
-                                                       NODELIST_NODE (member_iterator)),
-                                                     dfn_assign);
-                }
-            }
-        } /* else */
-
-        member_iterator = NODELIST_NEXT (member_iterator);
-    } /* while */
-
-    DBUG_RETURN (result);
+      }
+    } /* else */
+    
+    member_iterator = NODELIST_NEXT(member_iterator);
+  } /* while */
+  
+  DBUG_RETURN(result);
 }
+
+#endif
 
 /** <!--********************************************************************-->
  *

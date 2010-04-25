@@ -136,7 +136,14 @@ static struct asmra_cluster_s *ClusterMerge (struct asmra_cluster_s *cluster_1,
                                              struct asmra_cluster_s *cluster_2);
 static struct asmra_cluster_s *ClusterRefUpdate (struct asmra_cluster_s *cluster);
 
-static void PrintCluster (struct asmra_cluster_s *cluster);
+#if 0
+/*
+ * Note, this function is currently not used and hence its definition causes 
+ * a compiler warning.
+ */
+static
+void PrintCluster(struct asmra_cluster_s *cluster);
+#endif
 
 static struct asmra_list_s *FreeList (struct asmra_list_s *list);
 
@@ -894,6 +901,13 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
     DBUG_RETURN (cluster);
 }
 
+#if 0
+
+/*
+ * Note, this function is currently not used and hence its definition causes 
+ * a compiler warning.
+ */
+
 /** <!--********************************************************************-->
  *
  * @fn static void PrintCluster(struct asmra_cluster_s *cluster)
@@ -903,22 +917,23 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
  * @param cluster
  *
  ****************************************************************************/
-static void
-PrintCluster (struct asmra_cluster_s *cluster)
+static 
+void PrintCluster(struct asmra_cluster_s *cluster) 
 {
-    DBUG_ENTER ("PrintCluster");
-
-    if (cluster != NULL) {
-        fprintf (stdout, "%s dist:%i execm:%s; ",
-                 DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)),
-                 ASMRA_CLUSTER_DISTANCE (cluster),
-                 MUTHLIBdecodeExecmode (
-                   DATAFLOWNODE_EXECMODE (ASMRA_CLUSTER_DFN (cluster))));
-        PrintCluster (ASMRA_CLUSTER_NEXT (cluster));
-        fflush (stdout);
-    }
-    DBUG_VOID_RETURN;
+  DBUG_ENTER("PrintCluster");
+  
+  if (cluster != NULL) {
+    fprintf(stdout,"%s dist:%i execm:%s; ",
+            DATAFLOWNODE_NAME(ASMRA_CLUSTER_DFN(cluster)),
+            ASMRA_CLUSTER_DISTANCE(cluster),
+            MUTHLIBdecodeExecmode(DATAFLOWNODE_EXECMODE(ASMRA_CLUSTER_DFN(cluster))));
+    PrintCluster(ASMRA_CLUSTER_NEXT(cluster));
+    fflush(stdout);
+  }
+  DBUG_VOID_RETURN;  
 }
+
+#endif
 
 /** <!--********************************************************************-->
  *
