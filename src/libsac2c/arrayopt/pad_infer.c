@@ -1,60 +1,5 @@
 /*
- * $Log$
- * Revision 3.7  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.6  2004/11/25 20:33:30  jhb
- * comcompile! SACDECCAMP 04
- *
- * Revision 3.5  2003/04/14 15:24:05  sbs
- * typo corrected.
- *
- * Revision 3.4  2003/04/14 15:15:16  sbs
- * casts for safe unsigned - signed comparison added.
- *
- * Revision 3.3  2001/05/17 13:40:26  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 3.2  2000/12/06 19:22:16  cg
- * Removed compiler warnings in production mode.
- *
- * Revision 3.1  2000/11/20 18:01:50  sacbase
- * new release made
- *
- * Revision 1.9  2000/10/31 18:13:27  cg
- * Bug fixed in de-allocation of vector padding in function APinfer.
- *
- * Revision 1.8  2000/10/27 13:24:56  cg
- * Padding inference partly re-implemented.
- * In particular, the choice of padding dimensions is completely
- * changed.
- * Layout of diagnostic output improved.
- *
- * Revision 1.7  2000/10/26 13:00:01  dkr
- * DupShpSeg renamed into DupShpseg
- *
- * Revision 1.6  2000/08/04 14:31:16  mab
- * added some comments
- *
- * Revision 1.5  2000/08/03 15:33:42  mab
- * completed implementation of inference algorithm
- * (conversion functions not yet supported)
- *
- * Revision 1.4  2000/07/21 14:42:18  mab
- * completed APinfer, added SortAccesses
- *
- * Revision 1.3  2000/07/13 15:25:05  mab
- * added static declaration
- * added APinfer
- *
- * Revision 1.2  2000/07/13 12:08:58  cg
- * Initial version of inference algorithm identical to the standalone
- * implementation developed for PDPTA'2000.
- *
- * Revision 1.1  2000/05/26 13:42:19  sbs
- * Initial revision
- *
- *
+ * $Id$
  */
 
 /*****************************************************************************
@@ -66,9 +11,6 @@
  * description:
  *
  *   This compiler module infers new shapes for array padding.
- *
- *
- *
  *
  *****************************************************************************/
 

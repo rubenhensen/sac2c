@@ -1,57 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.4  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.3  2004/11/27 02:51:24  mwe
- * APTdoTransform deactivated
- *
- * Revision 3.2  2004/11/26 20:36:07  jhb
- * compile
- *
- * Revision 3.1  2000/11/20 18:01:47  sacbase
- * new release made
- *
- * Revision 1.14  2000/10/31 18:13:27  cg
- * If no cache specification is available, array padding is now
- * skipped at a reasonably high level.
- *
- * Revision 1.13  2000/10/27 13:39:54  cg
- * Added correction factor for -apdiaglimit option.
- *
- * Revision 1.12  2000/10/27 13:24:56  cg
- * Modified function APprintDiag() in order to support new command
- * line option -apdiaglimit.
- *
- * Revision 1.11  2000/08/08 11:49:33  dkr
- * DBUG_PRINT added
- *
- * Revision 1.10  2000/08/03 15:29:49  mab
- * added apdiag_file, APprintDiag
- * removed all dummies
- *
- * Revision 1.8  2000/07/19 12:39:28  mab
- * added dummy values for testing purposes
- *
- * Revision 1.6  2000/07/05 09:12:34  mab
- * fixed memory problem
- *
- * Revision 1.5  2000/06/14 10:41:31  mab
- * comments added
- *
- * Revision 1.4  2000/06/08 11:14:49  mab
- * pad_info added
- *
- * Revision 1.3  2000/05/31 16:16:58  mab
- * initial version
- *
- * Revision 1.2  2000/05/26 14:24:29  sbs
- * dummy function ArrayPadding added.
- *
- * Revision 1.1  2000/05/26 13:41:35  sbs
- * Initial revision
- *
+ * $Id$
  */
 
 /*****************************************************************************
