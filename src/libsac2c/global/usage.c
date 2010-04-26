@@ -377,6 +377,12 @@ PrintOptimisationOptions (void)
       "                      (default: %d)\n\n",
       global.wlunrnum);
 
+    printf (
+      "    -maxprfur <n>   Unroll built-in vector operations with at most <n> elements\n"
+      "                    generator set size.\n"
+      "                      (default: %d)\n\n",
+      global.prfunrnum);
+
     printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements.\n"
             "                      (default: %d)\n\n",
             global.minarray);

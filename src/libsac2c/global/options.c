@@ -529,6 +529,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("maxwlur", ARG_NUM (global.wlunrnum));
 
+    ARGS_OPTION ("maxprfur", ARG_NUM (global.prfunrnum));
+
     ARGS_OPTION ("maxspec", ARG_NUM (global.maxspec));
 
     ARGS_OPTION ("maxthreads", ARG_NUM (global.max_threads));

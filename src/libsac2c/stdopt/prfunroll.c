@@ -699,7 +699,7 @@ UPRFprf (node *arg_node, info *arg_info)
         nt2 = monadic ? NULL : NTCnewTypeCheck_Expr (PRF_ARG2 (arg_node));
 
         if ((TUshapeKnown (nt1)) && (monadic || (TUshapeKnown (nt2)))
-            && (len < global.wlunrnum)) {
+            && (len < global.prfunrnum)) {
             ntype *scl;
             node *avis1, *avis2;
             node *elems = NULL;
