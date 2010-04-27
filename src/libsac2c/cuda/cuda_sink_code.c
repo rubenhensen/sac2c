@@ -29,7 +29,7 @@ typedef enum { trav_normal, trav_backtrace } travmode_t;
  */
 struct INFO {
     node *current_block;
-    node *sink_code;
+    node *sink_code; /* N_assign chain containing the sunk code */
     bool incudawl;
     travmode_t travmode;
     lut_t *lut;
@@ -136,7 +136,12 @@ CUSKCfundef (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 
-    /* Set the execution mode of all sunk N_assigns to CUDA_HOST_SINGLE */
+    /* Tag the execution mode of all sunk N_assigns to CUDA_HOST_SINGLE.
+     * We cannot do it when we sink the code because the same N_assign
+     * might be sunk to different blocks and if one sinking change the
+     * execution mode to CUDA_HOST_SINGLE, it might prevent later sinking
+     * as code sinking need to check the execution mode to ensure that
+     * it's CUDA_DEVICE_SINGLE. */
     nl = INFO_NLIST (arg_info);
     while (nl != NULL) {
         DBUG_ASSERT (NODE_TYPE (NODELIST_NODE (nl)) == N_assign,
@@ -170,6 +175,7 @@ CUSKCblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUSKCblock");
 
+    /* Push info */
     old_current_block = INFO_CURRENT_BLOCK (arg_info);
     old_sink_code = INFO_SINK_CODE (arg_info);
     old_lut = INFO_LUT (arg_info);
@@ -177,13 +183,16 @@ CUSKCblock (node *arg_node, info *arg_info)
     INFO_CURRENT_BLOCK (arg_info) = arg_node;
     INFO_SINK_CODE (arg_info) = NULL;
     INFO_LUT (arg_info) = LUTgenerateLut ();
+
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+
+    /* Pop info */
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
     INFO_CURRENT_BLOCK (arg_info) = old_current_block;
     INFO_LUT (arg_info) = old_lut;
 
     if (INFO_SINK_CODE (arg_info) != NULL) {
-        /* Add newly sunk code to the beginning of the current block */
+        /* Preppend newly sunk code to the beginning of the current block */
         BLOCK_INSTR (arg_node)
           = TCappendAssign (INFO_SINK_CODE (arg_info), BLOCK_INSTR (arg_node));
     }
@@ -212,13 +221,16 @@ CUSKCwith (node *arg_node, info *arg_info)
     /* Only look at cudarziable N_with and any N_withs nested inside,
      * since we only sink code into these N_withs */
     if (WITH_CUDARIZABLE (arg_node)) {
+        /* Note that since only outermost N_withs are considered to
+         * be cudarizable, hence we are sure that this N_with is the
+         * outermost one */
         INFO_INCUDAWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INCUDAWL (arg_info) = FALSE;
     } else if (INFO_INCUDAWL (arg_info)) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     } else {
-        /* Do nothing ... */
+        /* Skip current withloop */
     }
 
     DBUG_RETURN (arg_node);
@@ -241,24 +253,32 @@ CUSKCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUSKCassign");
 
+    /* If the traverse mode is normal, we perform a normal top-down traversal */
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_TRAVMODE (arg_info) == trav_backtrace) {
-        old_dupass = INFO_DUPASSIGN (arg_info);
+        /* Orginal assign */
         old_oriass = INFO_ORIASSIGN (arg_info);
+        /* Duplicate of the original assign */
+        old_dupass = INFO_DUPASSIGN (arg_info);
 
         /* If we are in backtrace mode, we would like to sink the
-         * current assign. However, result of this assign maynot
+         * current assign. However, result of this assign may not
          * just be used in the following cuda N_with and maybe used
          * in other context as well. Therefore, we cannot simply move
-         * this assign into the N_with and, instead we need to
+         * this assign into the N_with. Instead we need to
          * duplicate this assign and sink the duplicate. */
         sunk_assign = DUPdoDupNode (arg_node);
         ASSIGN_NEXT (sunk_assign) = NULL;
+        ASSIGN_EXECMODE (sunk_assign) = CUDA_HOST_SINGLE;
+
+        /* Both DUPASSIGN and ORIASSIGN will be used in CUSKCids to set
+         * the SSA links correctly */
         INFO_DUPASSIGN (arg_info) = sunk_assign;
         INFO_ORIASSIGN (arg_info) = arg_node;
 
+        /* Traverse RHS of the duplicate N_assign in case we need to further backtrace */
         ASSIGN_INSTR (sunk_assign) = TRAVdo (ASSIGN_INSTR (sunk_assign), arg_info);
 
         INFO_DUPASSIGN (arg_info) = old_dupass;
@@ -266,6 +286,7 @@ CUSKCassign (node *arg_node, info *arg_info)
 
         INFO_SINK_CODE (arg_info)
           = TCappendAssign (INFO_SINK_CODE (arg_info), sunk_assign);
+
         if (INFO_NLIST (arg_info) == NULL) {
             INFO_NLIST (arg_info) = TCnodeListAppend (NULL, arg_node, NULL);
         } else {
@@ -366,16 +387,17 @@ CUSKCid (node *arg_node, info *arg_info)
     avis = ID_AVIS (arg_node);
     ssa = AVIS_SSAASSIGN (avis);
 
-    /* We only backtrace scalar N_ids. We backtrace in two cases:
-     *   1) The current traverse mode is backtrace;
+    /* We only start backtracing in the following two cases:
+     *   1) The current traverse mode is backtrace, OR
      *   2) The N_id is within a cuda withloop */
     if (INFO_TRAVMODE (arg_info) == trav_backtrace || INFO_INCUDAWL (arg_info)) {
-        /* If the ssa assign of this N_id is tagged as CUDA_DEVICE_SINGLE */
-        if (ssa != NULL && TUisScalar (AVIS_TYPE (avis))
+        /* If the N_id is scalar (we only sink scalar operaions) and
+         * its ssaassign is tagged as CUDA_DEVICE_SINGLE */
+        if (TUisScalar (AVIS_TYPE (avis)) && ssa != NULL
             && ASSIGN_EXECMODE (ssa) == CUDA_DEVICE_SINGLE) {
             new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
             /*
-             * What the code does can be explained by the
+             * What this code does can be explained by the
              * following example:
              * e.g.
              *
@@ -396,7 +418,7 @@ CUSKCid (node *arg_node, info *arg_info)
              *          ... = ..a_cuskc..;
              *          ...
              *          ... = ..a_cuskc..;
-             *         }:genarray();         ( Cudarizable N_with)
+             *         }:genarray();         ( CudaCUSKCidsrizable N_with)
              *
              * Furthermore, the code insert pair a->a_cuskc into the lookup
              * table so that later encounter of "a" can be replace by a_cuskc.
@@ -413,16 +435,22 @@ CUSKCid (node *arg_node, info *arg_info)
                   = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
                 AVIS_DECL (new_avis) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
 
+                /* Set the ssaassign to NULL for now. It will be correctly
+                 * set to the sunk N_assign in CUSKCids */
                 AVIS_SSAASSIGN (new_avis) = NULL;
                 INFO_LUT (arg_info)
                   = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+                /* Set new avis to this N_id node */
                 ID_AVIS (arg_node) = new_avis;
 
                 old_mode = INFO_TRAVMODE (arg_info);
                 INFO_TRAVMODE (arg_info) = trav_backtrace;
+                /* Start backtracing */
                 ssa = TRAVdo (ssa, arg_info);
                 INFO_TRAVMODE (arg_info) = old_mode;
             } else {
+                /* If the N_id has been come across before, simple set
+                 * its avis to the new avis */
                 ID_AVIS (arg_node) = new_avis;
             }
         }

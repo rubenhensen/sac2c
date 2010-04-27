@@ -1954,6 +1954,11 @@ PRTarg (node *arg_node, info *arg_info)
     if ((!INFO_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
         fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
+
+    if (ARG_ISCUDADEFINED (arg_node)) {
+        fprintf (global.outfile, "[CD]");
+    }
+
     fprintf (global.outfile, " { "); /* Start of avis info */
     if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
         fprintf (global.outfile, "dim: ");
@@ -2244,7 +2249,7 @@ PRTassign (node *arg_node, info *arg_info)
     if (global.backend == BE_cuda) {
         switch (ASSIGN_EXECMODE (arg_node)) {
         case CUDA_HOST_SINGLE:
-            fprintf (global.outfile, "/** Execution Mode: Host Single **/\n");
+            // fprintf (global.outfile, "/** Execution Mode: Host Single **/\n");
             break;
         case CUDA_DEVICE_SINGLE:
             fprintf (global.outfile, "/** Execution Mode: Device Single **/\n");

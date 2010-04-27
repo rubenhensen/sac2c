@@ -200,7 +200,10 @@ LDRCprf (node *arg_node, info *arg_info)
                     fundef_args = ARG_NEXT (fundef_args);
                     ap_args = EXPRS_NEXT (ap_args);
                 }
+
                 ID_AVIS (array_id) = ID_AVIS (EXPRS_EXPR (ap_args));
+
+                printf ("Lift dec_rc: %s\n", ID_NAME (array_id));
 
                 INFO_REMOVABLE (arg_info) = TRUE;
             }

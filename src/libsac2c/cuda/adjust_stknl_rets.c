@@ -1,21 +1,19 @@
 /**
  *
- * @defgroup crece Create Cells
- * @ingroup muth
+ * @defgroup
+ * @ingroup
  *
- * @brief creates initial cells
+ * @brief
  * @{
  **/
 
 /** <!--********************************************************************-->
  *
- * @file cuda_create_cells.c
+ * @file adjust_stknl_rets.c
  *
- * prefix: CRECE
+ * prefix: CUASR
  *
  * description:
- *   creates a seperate cell around each first assignment of a CELLID, which
- *   is MUTH_EXCLUSIVE, MUTH_SINGLE or MUTH_MULTI tagged
  *
  *****************************************************************************/
 
@@ -28,6 +26,8 @@
 #include "tree_compound.h"
 #include "LookUpTable.h"
 #include "new_types.h"
+#include "type_utils.h"
+#include "free.h"
 
 /*
  * INFO structure
@@ -41,19 +41,20 @@ struct INFO {
     node *fundef;
     int lsnum;
 
-    lut_t *at_lut;
+    /* Used by anonymous traversal */
+    node *at_avis;
     node *at_letids;
 };
 
 #define INFO_LUT(n) (n->lut)
 #define INFO_LETIDS(n) (n->letids)
-#define INFO_FROM_AP(n) (n->from_ap)
+#define INFO_FROMAP(n) (n->from_ap)
 #define INFO_APIDS(n) (n->apids)
 #define INFO_APARGS(n) (n->apargs)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LSNUM(n) (n->lsnum)
 
-#define INFO_AT_LUT(n) ((n)->at_lut)
+#define INFO_AT_AVIS(n) (n->at_avis)
 #define INFO_AT_LETIDS(n) (n->at_letids)
 /*
  * INFO functions
@@ -69,13 +70,13 @@ MakeInfo ()
 
     INFO_LUT (result) = NULL;
     INFO_LETIDS (result) = NULL;
-    INFO_FROM_AP (result) = FALSE;
+    INFO_FROMAP (result) = FALSE;
     INFO_APIDS (result) = NULL;
     INFO_APARGS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_LSNUM (result) = 1;
 
-    INFO_AT_LUT (result) = LUTgenerateLut ();
+    INFO_AT_AVIS (result) = NULL;
     INFO_AT_LETIDS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -102,12 +103,15 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 static node *
-GetApArgFromFundefArg (node *fundef_arg, node *fundef_args, node *ap_args)
+GetApArgFromFundefArg (node *arg, node *fundef_args, node *ap_args)
 {
     DBUG_ENTER ("GetApArgFromFundefArg");
 
-    while (fundef_args != NULL && ap_args != NULL) {
-        if (fundef_args == fundef_arg)
+    DBUG_ASSERT ((TCcountArgs (fundef_args) == TCcountExprs (ap_args)),
+                 "Number of arguments and paramenters mismatch!");
+
+    while (fundef_args != NULL) {
+        if (fundef_args == arg)
             break;
         fundef_args = ARG_NEXT (fundef_args);
         ap_args = EXPRS_NEXT (ap_args);
@@ -118,7 +122,7 @@ GetApArgFromFundefArg (node *fundef_arg, node *fundef_args, node *ap_args)
 
 /** <!--********************************************************************-->
  *
- * @fn node *GetDeclFromRet(node *arg_node, info *arg_info)
+ * @fn node *GetRetByLinksign(node *arg_node, info *arg_info)
  *
  *
  *   @param arg_node
@@ -127,32 +131,18 @@ GetApArgFromFundefArg (node *fundef_arg, node *fundef_args, node *ap_args)
  *
  *****************************************************************************/
 static node *
-GetDeclFromRet (node *avis, info *arg_info)
+GetRetByLinksign (node *rets, int linksign)
 {
-    lut_t *lut;
-    node *rhs_avis;
+    DBUG_ENTER ("GetRetByLinksign");
 
-    DBUG_ENTER ("GetDeclFromRet");
-
-    lut = INFO_AT_LUT (arg_info);
-
-    rhs_avis = LUTsearchInLutPp (lut, avis);
-
-    printf ("hshsha: %s\n", AVIS_NAME (avis));
-
-    while (NODE_TYPE (rhs_avis) != N_empty) {
-
-        printf ("jajjajajajajajaj\n");
-
-        DBUG_ASSERT (rhs_avis != avis, "Avis not found in LUT!");
-        avis = rhs_avis;
-        rhs_avis = LUTsearchInLutPp (lut, avis);
+    while (rets != NULL) {
+        if (RET_HASLINKSIGNINFO (rets) && RET_LINKSIGN (rets) == linksign) {
+            break;
+        }
+        rets = RET_NEXT (rets);
     }
 
-    DBUG_ASSERT (NODE_TYPE (AVIS_DECL (avis)) == N_arg,
-                 "Declaration of avis is not N_arg!");
-
-    DBUG_RETURN (AVIS_DECL (avis));
+    DBUG_RETURN (rets);
 }
 
 /** <!--********************************************************************-->
@@ -204,7 +194,6 @@ ATravAssign (node *arg_node, info *arg_info)
  *
  * @fn node *ATravLet(node *arg_node, info *arg_info)
  *
- *
  *   @param arg_node
  *   @param arg_info
  *   @return
@@ -215,16 +204,18 @@ ATravLet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravLet");
 
-    INFO_AT_LETIDS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-    INFO_AT_LETIDS (arg_info) = NULL;
+    if (LET_IDS (arg_node) != NULL
+        && IDS_AVIS (LET_IDS (arg_node)) == INFO_AT_AVIS (arg_info)) {
+        INFO_AT_LETIDS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravFundef(node *arg_node, info *arg_info)
+ * @fn node *ATravId(node *arg_node, info *arg_info)
  *
  *
  *   @param arg_node
@@ -236,26 +227,13 @@ static node *
 ATravId (node *arg_node, info *arg_info)
 {
     node *letids;
-    node *search_res;
 
     DBUG_ENTER ("ATravId");
 
     letids = INFO_AT_LETIDS (arg_info);
-    if (letids != NULL) {
-        search_res = LUTsearchInLutPp (INFO_AT_LUT (arg_info), IDS_AVIS (letids));
-        if (ID_AVIS (arg_node) != IDS_AVIS (letids)
-            && TYeqTypes (AVIS_TYPE (ID_AVIS (arg_node)), AVIS_TYPE (IDS_AVIS (letids)))
-            && NODE_TYPE (search_res) == N_empty) {
-            printf ("Inserting pair: %s->%s\n", AVIS_NAME (IDS_AVIS (letids)),
-                    AVIS_NAME (ID_AVIS (arg_node)));
-            INFO_AT_LUT (arg_info)
-              = LUTupdateLutP (INFO_AT_LUT (arg_info), IDS_AVIS (letids),
-                               ID_AVIS (arg_node), NULL);
-            printf ("Inserting pair: %s->N_empty\n", AVIS_NAME (ID_AVIS (arg_node)));
-            INFO_AT_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_AT_LUT (arg_info), ID_AVIS (arg_node),
-                                   TBmakeEmpty ());
-        }
+
+    if (letids != NULL && TYeqTypes (ID_NTYPE (arg_node), IDS_NTYPE (letids))) {
+        INFO_AT_AVIS (arg_info) = ID_AVIS (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -281,7 +259,6 @@ CUASRdoAdjustStknlRets (node *syntax_tree)
     arg_info = MakeInfo ();
 
     TRAVpush (TR_cuasr);
-
     syntax_tree = TRAVdo (syntax_tree, arg_info);
 
     arg_info = FreeInfo (arg_info);
@@ -380,10 +357,10 @@ CUASRfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = old_fundef;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
-        if (INFO_FROM_AP (arg_info)) {
+        if (INFO_FROMAP (arg_info)) {
             INFO_LSNUM (arg_info) = 1;
+            FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-            INFO_LSNUM (arg_info) = 1;
             INFO_FUNDEF (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_FUNDEF (arg_info) = old_fundef;
@@ -391,6 +368,31 @@ CUASRfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUASRret(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+CUASRret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUASRret");
+
+    RET_HASLINKSIGNINFO (arg_node) = FALSE;
+    RET_LINKSIGN (arg_node) = INFO_LSNUM (arg_info);
+
+    INFO_LSNUM (arg_info) += 1;
+
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -410,7 +412,7 @@ CUASRarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUASRarg");
 
-    ARG_HASLINKSIGNINFO (arg_node) = TRUE;
+    ARG_HASLINKSIGNINFO (arg_node) = FALSE;
     ARG_LINKSIGN (arg_node) = INFO_LSNUM (arg_info);
 
     INFO_LSNUM (arg_info) += 1;
@@ -435,14 +437,17 @@ CUASRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUASRap");
 
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+
+    /* We traverse CUDA ST global function inline */
     if (AP_FUNDEF (arg_node) != NULL && FUNDEF_ISCUDASTGLOBALFUN (AP_FUNDEF (arg_node))) {
-        INFO_FROM_AP (arg_info) = TRUE;
+        INFO_FROMAP (arg_info) = TRUE;
         INFO_APIDS (arg_info) = INFO_LETIDS (arg_info);
         INFO_APARGS (arg_info) = AP_ARGS (arg_node);
         AP_FUNDEF (arg_node) = TRAVopt (AP_FUNDEF (arg_node), arg_info);
         INFO_APARGS (arg_info) = NULL;
         INFO_APIDS (arg_info) = NULL;
-        INFO_FROM_AP (arg_info) = FALSE;
+        INFO_FROMAP (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -465,6 +470,7 @@ CUASRreturn (node *arg_node, info *arg_info)
     node *fundef_rets;
     node *ret_id;
     node *old_avis;
+    node *rets_prev, *apids_prev, *fundef_rets_prev;
 
     info *anon_info;
 
@@ -482,47 +488,70 @@ CUASRreturn (node *arg_node, info *arg_info)
         while (rets != NULL) {
             ret_id = EXPRS_EXPR (rets);
 
-            DBUG_ASSERT (NODE_TYPE (ret_id) == N_id, "Non N_id node found in N_return!");
-            DBUG_ASSERT (!TYisScalar (AVIS_TYPE (ID_AVIS (ret_id))),
+            DBUG_ASSERT (!TUisScalar (AVIS_TYPE (ID_AVIS (ret_id))),
                          "Scalar found in N_return!");
 
             /************ Anonymous Traversal ************/
             anontrav_t atrav[6]
-              = {{N_fundef, &ATravFundef}, {N_assign, &ATravAssign}, {N_id, &ATravId},
-                 {N_let, &ATravLet},       {N_return, &TRAVnone},    {0, NULL}};
+              = {{N_fundef, &ATravFundef}, {N_assign, &ATravAssign}, {N_let, &ATravLet},
+                 {N_id, &ATravId},         {N_return, &TRAVnone},    {0, NULL}};
 
             TRAVpushAnonymous (atrav, &TRAVsons);
 
             anon_info = MakeInfo ();
 
-            INFO_AT_LUT (anon_info)
-              = LUTinsertIntoLutP (INFO_AT_LUT (anon_info), ID_AVIS (ret_id),
-                                   TBmakeEmpty ());
-
+            INFO_AT_AVIS (anon_info) = ID_AVIS (ret_id);
             fundef = TRAVdo (fundef, anon_info);
             /*********************************************/
 
-            node *ret_decl = GetDeclFromRet (ID_AVIS (ret_id), anon_info);
+            node *decl = AVIS_DECL (INFO_AT_AVIS (anon_info));
 
-            /* if( NODE_TYPE( AVIS_DECL( ID_AVIS( ret_id))) == N_arg) {
-              ap_arg = GetApArgFromFundefArg( AVIS_DECL( ID_AVIS( ret_id)),
-                                              fundef_args, ap_args);
-             */
-            ap_arg = GetApArgFromFundefArg (ret_decl, fundef_args, ap_args);
+            DBUG_ASSERT (NODE_TYPE (decl) == N_arg, "Declaration of avis is not N_arg!");
 
-            RET_HASLINKSIGNINFO (fundef_rets) = TRUE;
-            RET_LINKSIGN (fundef_rets) = ARG_LINKSIGN (ret_decl);
+            if (!ARG_HASLINKSIGNINFO (decl)) {
+                ARG_HASLINKSIGNINFO (decl) = TRUE;
+                RET_HASLINKSIGNINFO (fundef_rets) = TRUE;
+                RET_LINKSIGN (fundef_rets) = ARG_LINKSIGN (decl);
 
-            old_avis = IDS_AVIS (apids);
-            IDS_AVIS (apids) = ID_AVIS (EXPRS_EXPR (ap_arg));
+                printf ("[%s] setting linksign of ret to %d\n",
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)), RET_LINKSIGN (fundef_rets));
 
-            INFO_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_LUT (arg_info), old_avis, IDS_AVIS (apids));
-            /* } */
+                ap_arg = GetApArgFromFundefArg (decl, fundef_args, ap_args);
 
-            rets = EXPRS_NEXT (rets);
-            apids = IDS_NEXT (apids);
-            fundef_rets = RET_NEXT (fundef_rets);
+                old_avis = IDS_AVIS (apids);
+                IDS_AVIS (apids) = ID_AVIS (EXPRS_EXPR (ap_arg));
+
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), old_avis, IDS_AVIS (apids));
+
+                rets_prev = rets;
+                apids_prev = apids;
+                fundef_rets_prev = fundef_rets;
+
+                rets = EXPRS_NEXT (rets);
+                apids = IDS_NEXT (apids);
+                fundef_rets = RET_NEXT (fundef_rets);
+            } else {
+                node *tmp_ret
+                  = GetRetByLinksign (FUNDEF_RETS (fundef), ARG_LINKSIGN (decl));
+
+                DBUG_ASSERT ((tmp_ret != NULL),
+                             "Found linksigned N_arg with no corresponding N_ret!");
+
+                ARG_LINKSIGN (decl)--;
+                RET_LINKSIGN (tmp_ret)--;
+
+                ap_arg = GetApArgFromFundefArg (decl, fundef_args, ap_args);
+
+                old_avis = IDS_AVIS (apids);
+
+                INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), old_avis,
+                                                         ID_AVIS (EXPRS_EXPR (ap_arg)));
+
+                rets = EXPRS_NEXT (rets_prev) = FREEdoFreeNode (rets);
+                apids = IDS_NEXT (apids_prev) = FREEdoFreeNode (apids);
+                fundef_rets = RET_NEXT (fundef_rets_prev) = FREEdoFreeNode (fundef_rets);
+            }
 
             /************ Anonymous Traversal ************/
             anon_info = FreeInfo (anon_info);

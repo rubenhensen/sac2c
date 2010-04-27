@@ -267,8 +267,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     if (argtab->ptr_out[idx] != NULL) {
         CTIerrorLine (line,
                       "Pragma 'linksign' illegal: "
-                      "out-parameter at position %d found twice",
-                      idx);
+                      "out-parameter at position %d found twice in function %s",
+                      idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 
@@ -375,8 +375,8 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     if (argtab->ptr_in[idx] != NULL) {
         CTIerrorLine (line,
                       "Pragma 'linksign' illegal: "
-                      "in-parameter at position %d found twice",
-                      idx);
+                      "in-parameter at position %d found twice in function %s",
+                      idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 

@@ -17,9 +17,14 @@ extern node *CUTEMdoTagExecutionmode (node *arg_node);
 extern node *CUTEMassign (node *arg_node, info *arg_info);
 extern node *CUTEMwith (node *arg_node, info *arg_info);
 extern node *CUTEMap (node *arg_node, info *arg_info);
+extern node *CUTEMargs (node *arg_node, info *arg_info);
 extern node *CUTEMid (node *arg_node, info *arg_info);
+extern node *CUTEMids (node *arg_node, info *arg_info);
 extern node *CUTEMlet (node *arg_node, info *arg_info);
 extern node *CUTEMfundef (node *arg_node, info *arg_info);
 extern node *CUTEMexprs (node *arg_node, info *arg_info);
+extern node *CUTEMblock (node *arg_node, info *arg_info);
+extern node *CUTEMvardec (node *arg_node, info *arg_info);
+extern node *CUTEMcond (node *arg_node, info *arg_info);
 
 #endif /* _CUDA_TAG_EXECUTIONMODE_H_ */

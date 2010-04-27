@@ -317,7 +317,6 @@ RCIfundef (node *arg_node, info *arg_info)
                     NLUTincNum (INFO_ENV (info), ARG_AVIS (arg), -1);
                     arg = ARG_NEXT (arg);
                 }
-
                 BLOCK_INSTR (FUNDEF_BODY (arg_node))
                   = PrependAssignments (MakeRCAssignments (INFO_ENV (info)),
                                         BLOCK_INSTR (FUNDEF_BODY (arg_node)));
@@ -528,6 +527,11 @@ RCIap (node *arg_node, info *arg_info)
             } else if ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
                        && (!ARG_ISREFCOUNTED (funargs))
                        && (!ARG_WASREFERENCE (funargs))) {
+                INFO_MODE (arg_info) = rc_prfuse;
+            } else if (FUNDEF_ISCUDALACFUN (AP_FUNDEF (arg_node))
+                       && INFO_FUNDEF (arg_info) != AP_FUNDEF (arg_node)) {
+                /* Because cuda lac fun does not do refcount on its own,
+                 * the arguemnts need to be treated as prf arguemtns */
                 INFO_MODE (arg_info) = rc_prfuse;
             } else {
                 INFO_MODE (arg_info) = rc_apuse;

@@ -706,31 +706,21 @@ PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
+SUBPHASE (cutem, "CUDA Tag execution mode", CUTEMdoTagExecutionmode,
+          global.backend == BE_cuda && global.optimize.doexpar, cuda)
 /*
-SUBPHASE( cutem,
-          "CUDA Tag execution mode",
-          CUTEMdoTagExecutionmode,
-          global.backend == BE_cuda,
-          cuda)
-
 SUBPHASE( aculac,
           "CUDA Annotate CUDA lac functions",
           ACULACdoAnnotateCUDALacfun,
           global.backend == BE_cuda,
           cuda)
-
-SUBPHASE( cuskc,
-          "CUDA Sink scalar code",
-          CUSKCdoSinkCode,
-          global.backend == BE_cuda && global.optimize.docuskc,
-          cuda)
-
-SUBPHASE( cucc,
-          "CUDA Create cells",
-          CUCCdoCreateCells,
-          global.backend == BE_cuda && global.optimize.docucc,
-          cuda)
 */
+
+SUBPHASE (cuskc, "CUDA Sink scalar code", CUSKCdoSinkCode,
+          global.backend == BE_cuda && global.optimize.doexpar, cuda)
+
+SUBPHASE (cucc, "CUDA Create cells", CUCCdoCreateCells,
+          global.backend == BE_cuda && global.optimize.doexpar, cuda)
 
 #if 0
 SUBPHASE( scuwl,
@@ -743,13 +733,9 @@ SUBPHASE( scuwl,
 SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
           IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
 
-/*
-SUBPHASE( icsmem,
-          "CUDA Insert CUDA memory transfer primitives for cudasts",
+SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
           ICSMEMdoInsertCudastMemtran,
-          global.backend == BE_cuda,
-          cuda)
-*/
+          global.backend == BE_cuda && global.optimize.doexpar, cuda)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,
           cuda)
@@ -769,13 +755,8 @@ SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
           MTRANdoMinimizeTransfers, global.backend == BE_cuda, cuda)
 
-/*
-SUBPHASE( stknl,
-          "CUDA Create single threaded CUDA kernels",
-          STKNLdoSingleThreadKernels,
-          global.backend == BE_cuda,
-          pc)
-*/
+SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
+          global.backend == BE_cuda && global.optimize.doexpar, pc)
 
 /*
 SUBPHASE( wlds,
@@ -993,24 +974,12 @@ SUBPHASE( pknlg,
           pc)
 #endif
 
-/*
-SUBPHASE( cuasr,
-          "CUDA Adjust return ids of single threaded kernel",
-          CUASRdoAdjustStknlRets,
-          global.backend == BE_cuda,
+SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
+          CUASRdoAdjustStknlRets, global.backend == BE_cuda && global.optimize.doexpar,
           pc)
-*/
 
 SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           global.backend == BE_cuda, pc)
-
-#if 0
-SUBPHASE( culknl,
-          "Create Cuda loop kernel functions",
-          CULKNLdoCreateCudaLoopKernels,
-          global.backend == BE_cuda,
-          pc)
-#endif
 
 SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
           pc)

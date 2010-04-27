@@ -33,6 +33,7 @@
 #include "minimize_loop_transfers.h"
 #include "minimize_cond_transfers.h"
 #include "minimize_cudast_transfers.h"
+#include "SSALIR.h"
 #include "wl_descalarization.h"
 
 /** <!--********************************************************************-->
@@ -59,6 +60,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         syntax_tree = MCTRANdoMinimizeCondTransfers (syntax_tree);
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
+        // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
         i++;
     }
 

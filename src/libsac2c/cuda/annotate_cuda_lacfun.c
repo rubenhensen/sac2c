@@ -7,6 +7,9 @@
  *
  * description:
  *
+ *    This traversal finds out all LAC functions that can be executed
+ *    on CUDA in single thread. All eligible LAC functions will have
+ *    the IsCUDALaCFun flag set to TRUE.
  *
  *****************************************************************************/
 
@@ -188,44 +191,41 @@ ACULACap (node *arg_node, info *arg_info)
     ap_fundef = AP_FUNDEF (arg_node);
 
     /* If the application is to a lac-fun */
-    if (ap_fundef != NULL && FUNDEF_ISLACFUN (ap_fundef)) {
-        if (ap_fundef != INFO_FUNDEF (arg_info)) {
-            /* We only look at the lac fun  if it can potentially be executed
-             * in single thread in CUDA */
-            ap_assign = INFO_LASTASSIGN (arg_info);
+    if (ap_fundef != NULL && FUNDEF_ISLACFUN (ap_fundef)
+        && ap_fundef != INFO_FUNDEF (arg_info)) {
+        /* We only look at the lac fun if it can potentially be executed
+         * in single thread in CUDA */
+        ap_assign = INFO_LASTASSIGN (arg_info);
 
-            /* If the mode of the ap N_assign is CUDA_DEVICE_SINGLE or this
-             * N_ap is in a lac-fun, we traverse its body */
-            if (ASSIGN_EXECMODE (ap_assign) == CUDA_DEVICE_SINGLE
-                || INFO_INLACFUN (arg_info)) { /* Ugly condition!!! */
-                /* Stack info */
-                old_fundef = INFO_FUNDEF (arg_info);
-                old_cudarizable = INFO_CUDARIZABLE (arg_info);
-                old_inlacfun = INFO_INLACFUN (arg_info);
+        /* If the mode of the ap N_assign is CUDA_DEVICE_SINGLE or this
+         * N_ap is in a lac-fun, we traverse its body */
+        if (ASSIGN_EXECMODE (ap_assign) == CUDA_DEVICE_SINGLE
+            || INFO_INLACFUN (arg_info)) { /* Ugly condition!!! */
+            /* Stack info */
+            old_fundef = INFO_FUNDEF (arg_info);
+            old_cudarizable = INFO_CUDARIZABLE (arg_info);
+            old_inlacfun = INFO_INLACFUN (arg_info);
 
-                printf ("Traversing Loop fun: %s\n", FUNDEF_NAME (ap_fundef));
+            /* traverse the lac-fun fundef */
+            INFO_FROMAP (arg_info) = TRUE;
+            ap_fundef = TRAVopt (ap_fundef, arg_info);
+            INFO_FROMAP (arg_info) = FALSE;
 
-                /* traverse the lac-fun fundef */
-                INFO_FROMAP (arg_info) = TRUE;
-                ap_fundef = TRAVopt (ap_fundef, arg_info);
-                INFO_FROMAP (arg_info) = FALSE;
+            INFO_CUDARIZABLE (arg_info)
+              = old_cudarizable && FUNDEF_ISCUDALACFUN (ap_fundef);
 
-                INFO_CUDARIZABLE (arg_info)
-                  = old_cudarizable && FUNDEF_ISCUDALACFUN (ap_fundef);
-
-                /* If the lac fun is not cudarizbale, we tag the
-                 * application of this lac fun as CUDA_HOST_SINGLE */
-                if (!FUNDEF_ISCUDALACFUN (ap_fundef)) {
-                    ASSIGN_EXECMODE (ap_assign) = CUDA_HOST_SINGLE;
-                }
-
-                /* Pop info */
-                INFO_INLACFUN (arg_info) = old_inlacfun;
-                INFO_FUNDEF (arg_info) = old_fundef;
+            /* If the lac fun is not cudarizbale, we tag the
+             * application of this lac fun as CUDA_HOST_SINGLE */
+            if (!FUNDEF_ISCUDALACFUN (ap_fundef)) {
+                ASSIGN_EXECMODE (ap_assign) = CUDA_HOST_SINGLE;
             }
+
+            /* Pop info */
+            INFO_INLACFUN (arg_info) = old_inlacfun;
+            INFO_FUNDEF (arg_info) = old_fundef;
         }
     }
-    /* If the normal function application is within a lacfun,
+    /* If a normal function application is within a lacfun,
      * the current lacfun cannot be cudarized. */
     else if (INFO_INLACFUN (arg_info)) {
         INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -251,7 +251,7 @@ ACULACwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("ACULACwith");
 
     /* A withloop within a do-fun will prevent this do-fun from being
-     * cudarized, since not memory can be dynamically allocated within
+     * cudarized, since no memory can be dynamically allocated within
      * a cuda kernel function. */
     if (INFO_INLACFUN (arg_info)) {
         INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -264,7 +264,7 @@ ACULACwith (node *arg_node, info *arg_info)
  *
  * @fn
  *
- * @brief ACULACwith( node *arg_node, info *arg_info)
+ * @brief ACULACwith2( node *arg_node, info *arg_info)
  *
  * @param
  * @param

@@ -22,5 +22,6 @@ extern node *CUASRreturn (node *arg_node, info *arg_info);
 extern node *CUASRid (node *arg_node, info *arg_info);
 extern node *CUASRids (node *arg_node, info *arg_info);
 extern node *CUASRarg (node *arg_node, info *arg_info);
+extern node *CUASRret (node *arg_node, info *arg_info);
 
 #endif /* _ADJUST_STKNL_RETS_H_ */

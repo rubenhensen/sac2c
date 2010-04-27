@@ -108,6 +108,7 @@
           <node name="Module" />
           <node name="Let" />
           <node name="Arg" />
+          <node name="Ret" />
         </travuser>
       </traversal>
       <traversal id="LDRC" name="CUDA Lift decrement reference count promitive from CUDA kernels" default="sons" include="lift_dec_rc.h" >
@@ -137,10 +138,15 @@
           <node name="With" />
           <node name="Assign" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Ap" />
           <node name="Let" />
           <node name="Fundef" />
           <node name="Exprs" />
+          <node name="Vardec" />
+          <node name="Cond" />
+          <node name="Block" />
+          <node name="Args" />
         </travuser>
         <travnone>
           <node name="With2" />
@@ -7019,6 +7025,8 @@ N_structdef :
              If true, the given variable is the result of a producerWL
              that has been folded out of existence.
 	  </description>
+	</flag>
+    <flag name="IsHostReferenced" default="FALSE">
 	</flag>
         <flag name="IsMinvalGenerated" default="FALSE">
           <description>

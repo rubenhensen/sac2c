@@ -29,6 +29,7 @@
 #include "deadcoderemoval.h"
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
+#include "type_utils.h"
 
 /*
  * INFO structure
@@ -36,6 +37,7 @@
 struct INFO {
     node *fundef;
     bool remove_assign;
+    node *lhs;
 };
 
 /*
@@ -43,6 +45,7 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_REMOVE_ASSIGN(n) (n->remove_assign)
+#define INFO_LHS(n) (n->lhs)
 
 /*
  * INFO functions
@@ -58,6 +61,7 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_REMOVE_ASSIGN (result) = FALSE;
+    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -145,6 +149,7 @@ CLKNLlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         }
     } else {
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
@@ -154,10 +159,9 @@ CLKNLlet (node *arg_node, info *arg_info)
 node *
 CLKNLprf (node *arg_node, info *arg_info)
 {
-    node *dim, *free_var, *arr;
+    node *dim, *free_var, *array;
     int dim_num;
     ntype *type;
-    node *array;
 
     DBUG_ENTER ("CLKNLprf");
 
@@ -168,13 +172,16 @@ CLKNLprf (node *arg_node, info *arg_info)
             dim_num = NUM_VAL (dim);
             if (dim_num > 0) {
                 INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+                printf ("%s = F_alloc() removed in function %s\n",
+                        IDS_NAME (INFO_LHS (arg_info)),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
             }
         } else if ((NODE_TYPE (dim) == N_prf)) {
             if (PRF_PRF (dim) == F_dim_A) {
-                arr = PRF_ARG1 (dim);
-                DBUG_ASSERT ((NODE_TYPE (arr) == N_id),
+                array = PRF_ARG1 (dim);
+                DBUG_ASSERT ((NODE_TYPE (array) == N_id),
                              "Non N_id node found for arguemnt of F_dim_A!");
-                DBUG_ASSERT (TYgetDim (AVIS_TYPE (ID_AVIS (arr))) == 0,
+                DBUG_ASSERT (TYgetDim (AVIS_TYPE (ID_AVIS (array))) == 0,
                              "Non scalar found for F_dim_A as the second arguemnt of "
                              "F_alloc!");
             } else {
@@ -193,15 +200,28 @@ CLKNLprf (node *arg_node, info *arg_info)
         dim_num = TYgetDim (type);
         if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+            printf ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         }
         break;
     case F_dec_rc:
+        array = PRF_ARG1 (arg_node);
+        if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
+            /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
+            INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+            printf ("F_dec_rc( %s) removed in function %s\n", ID_NAME (array),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+        }
+        break;
     case F_inc_rc:
         array = PRF_ARG1 (arg_node);
-        if (TYisArray (AVIS_TYPE (ID_AVIS (array)))
-            && AVIS_ISCUDALOCAL (ID_AVIS (array))) {
+        if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
+            /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+            printf ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         }
+        break;
     default:
         break;
     }

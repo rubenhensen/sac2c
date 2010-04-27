@@ -255,7 +255,7 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     syntax_tree = CLKNLdoCleanupCUDAKernels (syntax_tree);
 
-    syntax_tree = LDRCdoLiftDecRc (syntax_tree);
+    // syntax_tree = LDRCdoLiftDecRc( syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

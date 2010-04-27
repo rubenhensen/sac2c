@@ -187,6 +187,7 @@ ICSMEMfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
+
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -270,6 +271,7 @@ ICSMEMlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("ICSMEMlet");
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
     if (INFO_TRAV_IDS (arg_info)) {
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
     } else {
@@ -401,6 +403,9 @@ ICSMEMids (node *arg_node, info *arg_info)
 
     if ((FUNDEF_ISCUDALACFUN (fundef) || INFO_INCUDAST (arg_info))
         && !TUisScalar (AVIS_TYPE (avis))) {
+        DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
+                     "Non AKS N_ids found in CUDA LAC fun or CUDAST!");
+
         dev_type = TYcopyType (AVIS_TYPE (avis));
         scalar_type = TYgetScalar (dev_type);
         sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
@@ -454,6 +459,9 @@ ICSMEMid (node *arg_node, info *arg_info)
     /* This condition needs to be further restricted */
     if ((FUNDEF_ISCUDALACFUN (fundef) || INFO_INCUDAST (arg_info))
         && !TUisScalar (AVIS_TYPE (avis))) {
+        DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
+                     "Non AKS N_id found in CUDA LAC fun or CUDAST!");
+
         dev_type = TYcopyType (AVIS_TYPE (avis));
         scalar_type = TYgetScalar (dev_type);
         sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));

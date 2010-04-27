@@ -454,8 +454,8 @@ PrintIncludes ()
 
     fprintf (global.outfile, "\n"
                              "#if SAC_CUDA_MACROS\n");
-    // fprintf( global.outfile, "\n"
-    //   "#include <stdio.h>\n\n");
+    fprintf (global.outfile, "\n"
+                             "#include <stdio.h>\n\n");
     fprintf (global.outfile, "\n"
                              "#include <cutil.h>\n\n");
     fprintf (global.outfile, "#endif\n");

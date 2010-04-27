@@ -92,6 +92,9 @@ CUCCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUCCfundef");
 
+    /* We do not traverse cuda lac fun as they itself will
+     * be executed on cuda, and therefore no cuda cells can
+     * possibly be created within them */
     if (!FUNDEF_ISCUDALACFUN (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -119,7 +122,7 @@ CUCCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUCCassign");
 
-    /* First assign with CUDA_DEVICE_SINGLE execution mode */
+    /* First N_assign with CUDA_DEVICE_SINGLE execution mode */
     if (ASSIGN_EXECMODE (arg_node) == CUDA_DEVICE_SINGLE) {
         cell = TBmakeAssign (TBmakeCudast (TBmakeBlock (arg_node, NULL)), NULL);
         ASSIGN_EXECMODE (cell) = CUDA_DEVICE_SINGLE;
