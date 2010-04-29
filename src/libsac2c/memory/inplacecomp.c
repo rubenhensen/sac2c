@@ -482,7 +482,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
         rets = EXPRS_NEXT (rets);
     }
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /** <!--********************************************************************-->
