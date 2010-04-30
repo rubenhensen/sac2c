@@ -107,6 +107,23 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
+static node *
+GetFundefArgFromApArg (node *fundef_args, node *ap_args, node *id)
+{
+    DBUG_ENTER ("GetFundefArgFromApArg");
+
+    while (fundef_args != NULL) {
+        if (EXPRS_EXPR (ap_args) == id)
+            break;
+        fundef_args = ARG_NEXT (fundef_args);
+        ap_args = EXPRS_NEXT (ap_args);
+    }
+
+    DBUG_ASSERT ((fundef_args != NULL), "No matching N_fundef arg found!");
+
+    DBUG_RETURN (fundef_args);
+}
+
 /** <!--********************************************************************-->
  *
  * @name Entry functions
@@ -340,6 +357,11 @@ AMTRANap (node *arg_node, info *arg_info)
             INFO_INRECURSIVEAPARGS (arg_info) = TRUE;
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
             INFO_INRECURSIVEAPARGS (arg_info) = FALSE;
+        } else if (INFO_FUNDEF (arg_info) == AP_FUNDEF (arg_node)
+                   && INFO_TRAVMODE (arg_info) == trav_annotate) {
+            INFO_INRECURSIVEAPARGS (arg_info) = TRUE;
+            AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+            INFO_INRECURSIVEAPARGS (arg_info) = FALSE;
         } else {
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
         }
@@ -422,6 +444,21 @@ AMTRANid (node *arg_node, info *arg_info)
             if (!INFO_INRECURSIVEAPARGS (arg_info) && !INFO_INFUNCOND (arg_info)) {
                 NLUTincNum (INFO_NLUT (arg_info), ID_AVIS (arg_node), 1);
             }
+        } else if (INFO_TRAVMODE (arg_info) == trav_annotate) {
+            if (INFO_INRECURSIVEAPARGS (arg_info)
+                && ISDEVICE2HOST (ID_SSAASSIGN (arg_node))) {
+                node *fundef_args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
+                node *ap_args = INFO_RECURSIVE_APARGS (arg_info);
+                node *arg = GetFundefArgFromApArg (fundef_args, ap_args, arg_node);
+                /* If the N_arg at correpsonding position cannot be
+                 * replaced by its cuda counterpart, this devicetohost
+                 * cannot be lifted */
+                if (NLUTgetNum (INFO_NLUT (arg_info), ARG_AVIS (arg)) != 0) {
+                    ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ID_SSAASSIGN (arg_node)) = TRUE;
+                }
+            }
+        } else {
+            /* Do nothing */
         }
     }
 

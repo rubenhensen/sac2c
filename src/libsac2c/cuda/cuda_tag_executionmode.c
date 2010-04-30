@@ -130,7 +130,7 @@ CUTEMdoTagExecutionmode (node *syntax_tree)
         arg_info = FreeInfo (arg_info);
 
         ITERATION++;
-    } while (/* ITERATION<=4 */ CHANGED);
+    } while (/* ITERATION<=1 */ CHANGED);
 
     TRAVpop ();
 
@@ -303,7 +303,8 @@ CUTEMassign (node *arg_node, info *arg_info)
         }
         INFO_TRAVMODE (arg_info) = UNTAG;
     } else {
-        /* NEED COMMENT!!! */
+        /* If we have a mode of VARUPDATE, this means we should be either
+         * in the withloop body or in a conditional */
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         } else {
@@ -335,12 +336,14 @@ CUTEMcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUTEMcond");
 
-    old_incond = INFO_INCOND (arg_info);
-    INFO_INCOND (arg_info) = TRUE;
-    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    INFO_INCOND (arg_info) = old_incond;
+    if (INFO_TRAVMODE (arg_info) != VARUPDATE) {
+        old_incond = INFO_INCOND (arg_info);
+        INFO_INCOND (arg_info) = TRUE;
+        COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+        INFO_INCOND (arg_info) = old_incond;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -516,6 +519,8 @@ CUTEMid (node *arg_node, info *arg_info)
      * we propogate the information to the arguments of
      * LAC N_fundef */
     if (INFO_INAPARGS (arg_info)) {
+        printf ("Setting argument %s CUDADEFINED attribute to %d\n",
+                ARG_NAME (INFO_FUNDEFARGS (arg_info)), cudadefined);
         ARG_ISCUDADEFINED (INFO_FUNDEFARGS (arg_info)) = cudadefined;
         AVIS_ISHOSTREFERENCED (ARG_AVIS (INFO_FUNDEFARGS (arg_info))) = !cudadefined;
     }
@@ -572,6 +577,7 @@ CUTEMap (node *arg_node, info *arg_info)
             old_fromap = INFO_FROMAP (arg_info);
 
             INFO_CUDARIZABLE (arg_info) = TRUE;
+            //( ASSIGN_EXECMODE( INFO_LASTASSIGN( arg_info)) == CUDA_DEVICE_SINGLE);
             INFO_INLACFUN (arg_info) = TRUE;
             INFO_FROMAP (arg_info) = TRUE;
             fundef = TRAVdo (fundef, arg_info);
@@ -588,6 +594,7 @@ CUTEMap (node *arg_node, info *arg_info)
             INFO_FROMAP (arg_info) = old_fromap;
             INFO_FUNDEF (arg_info) = old_fundef;
             INFO_INLACFUN (arg_info) = old_inlacfun;
+
         } else {
             if (fundef != INFO_FUNDEF (arg_info)) {
                 /* All other N_aps are immediately tagged as CUDA_HOST_SINGLE */
