@@ -306,6 +306,7 @@ CHKMregisterMem (int size, void *orig_ptr)
             else {
                 int newtabsize = (memtabsize - memfreeslots) * 2;
                 int newindex = 0;
+                int i;
                 memobj *newtab;
 
                 DBUG_PRINT ("CHKM", ("Allocating memtab for %d memory objects"
@@ -318,7 +319,7 @@ CHKMregisterMem (int size, void *orig_ptr)
                  * copy the old memtab to new (smaller or bigger) memtab. All gaps
                  * will ignore
                  */
-                for (int i = 0; i < memtabsize; i++) {
+                for (i = 0; i < memtabsize; i++) {
 
                     if (memtab[i].ptr != NULL) {
                         memobj **tmpptr;

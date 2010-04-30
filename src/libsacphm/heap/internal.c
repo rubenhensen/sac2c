@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include <unistd.h>
+#include <stdint.h>
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>

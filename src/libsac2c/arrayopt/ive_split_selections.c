@@ -181,6 +181,7 @@ AddShapeComputation (node *array, info *arg_info)
     if (TUdimKnown (AVIS_TYPE (ID_AVIS (array)))) {
         /* AKD or AKD */
         int dim;
+        int pos;
         node *sexprs = NULL;
         node *eassigns = NULL;
         node *assign = NULL;
@@ -190,7 +191,7 @@ AddShapeComputation (node *array, info *arg_info)
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
-        for (int pos = dim - 1; pos >= 0; pos--) {
+        for (pos = dim - 1; pos >= 0; pos--) {
             node *eavis;
 
             eavis = TBmakeAvis (TRAVtmpVar (),
