@@ -793,6 +793,7 @@ bool
 TUcontainsUser (ntype *type)
 {
     bool res = FALSE;
+    int cnt;
 
     DBUG_ENTER ("TUcontainsUser");
 
@@ -800,7 +801,7 @@ TUcontainsUser (ntype *type)
         res = TYisUser (TYgetScalar (type));
     } else if (TYisProd (type)) {
         int max = TYgetProductSize (type);
-        for (int cnt = 0; cnt < max; cnt++) {
+        for (cnt = 0; cnt < max; cnt++) {
             res = res || TUcontainsUser (TYgetProductMember (type, cnt));
         }
     } else {
