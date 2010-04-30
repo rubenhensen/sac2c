@@ -1535,6 +1535,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
     int single_pre_t = 0, triple = 0, others_pre_t = 0;
     int single_post_t = 0, others_post_t = 0;
     int pos = 0, dpos = 0, allpos = 0;
+    int cnt;
 
     DBUG_ENTER ("BuildInversePermutatedVector");
 
@@ -1585,7 +1586,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
      * enough to hold all not-dot axes as these are to the left of any
      * dot axes, in particular the .... Furthermore, it needs to have some
      * space for the dots to the left of the ... */
-    for (int cnt = 0; cnt < others_pre_t + others_post_t + single_pre_t; cnt++) {
+    for (cnt = 0; cnt < others_pre_t + others_post_t + single_pre_t; cnt++) {
         result = TBmakeExprs (NULL, result);
     }
 
@@ -1649,7 +1650,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
     }
 
     /* now take care of the rest */
-    for (int cnt = 0; cnt < single_post_t; cnt++) {
+    for (cnt = 0; cnt < single_post_t; cnt++) {
         result = TBmakeExprs (NULL, result);
     }
 
