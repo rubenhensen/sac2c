@@ -911,6 +911,7 @@ GLOBAL (bool, mutc_static_resource_management, FALSE);
 GLOBAL (mutc_distribution_mode_t, mutc_distribution_mode, MUTC_DMODE_default);
 GLOBAL (int, mutc_distribution_mode_arg, -1);
 GLOBAL (int, mutc_force_block_size, -1);
+GLOBAL (int, mutc_unroll, 1);
 
 #undef GLOBALtype
 #undef GLOBALname

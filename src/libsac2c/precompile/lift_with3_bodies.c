@@ -313,7 +313,6 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
         DBUG_ASSERT ((TYeqTypes (AVIS_TYPE (IDS_AVIS (ids)),
                                  AVIS_TYPE (IDS_AVIS (ids2)))),
                      "Expected both types to be equal");
-
         vardec = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
 
         type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids)));
@@ -575,6 +574,7 @@ InitFolds (node *syntax_tree)
     DBUG_ENTER ("InitFolds");
 
     TRAVpushAnonymous (atrav, &TRAVsons);
+
     anon_info = MakeInfo ();
     syntax_tree = TRAVdo (syntax_tree, anon_info);
     anon_info = FreeInfo (anon_info);
@@ -737,6 +737,8 @@ LW3doLiftWith3 (node *syntax_tree)
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "LW3 Called with non module node");
 
+    TRAVpush (TR_lw3);
+
     info = MakeInfo ();
     syntax_tree = addShareds (syntax_tree, info);
     syntax_tree = InitFolds (syntax_tree);
@@ -745,7 +747,6 @@ LW3doLiftWith3 (node *syntax_tree)
      */
     syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_WITH3);
 
-    TRAVpush (TR_lw3);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 

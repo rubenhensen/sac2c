@@ -167,7 +167,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         ivextrema ivexpropagation ivexcleanup
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
-                        remove_with3 addSyncs prune_empty_with3
+                        remove_with3 addSyncs prune_empty_with3 unroll_with3
                         
 libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         minimize_transfers minimize_loop_transfers minimize_cond_transfers \
@@ -205,7 +205,8 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign dead_vardec_removal \
                         remove_external_code mark_noop_grids \
                         resolve_code_sharing lift_with3_bodies \
-                        distribute_threads tag_main_fun_thread 
+                        distribute_threads tag_main_fun_thread \
+                        dynamic_memory_usage_inference
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \

@@ -961,7 +961,13 @@ ENDPHASE (mt)
 
 PHASE (pc, "Preparing C code generation", ALWAYS)
 
+SUBPHASE (uw3, "MUTC Unroll With3", UW3doUnrollWith3,
+          global.backend == BE_mutc && global.optimize.douw3, pc)
+
 SUBPHASE (lw3, "MUTC Lifting With-Loop bodies into threads", LW3doLiftWith3,
+          global.backend == BE_mutc, pc)
+
+SUBPHASE (dmui, "MUTC Dynamic memory usage inference", DMUIdoDynamicMemoryUsageInference,
           global.backend == BE_mutc, pc)
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)

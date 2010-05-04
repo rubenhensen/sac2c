@@ -484,7 +484,8 @@ PrintMutcOptions (void)
       "                                                specified using the\n"
       "                                                -mutc_distribute_arg option\n\n"
       "    -mutc_distribute_arg             numerical argument for distribution "
-      "modes.\n\n");
+      "modes.\n\n"
+      "    -mutc_unroll <n>                 Maximum with3 size to unroll(1)\n\n");
 
     DBUG_VOID_RETURN;
 }

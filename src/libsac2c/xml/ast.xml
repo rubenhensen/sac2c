@@ -394,6 +394,12 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="DMUI" name="Dynamic memory usage inference" default="sons" include="dynamic_memory_usage_inference.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="DST" name="Distribute threads" default="sons" include="distribute_threads.h" >
         <travuser>
           <node name="Module" />
@@ -581,6 +587,13 @@
           <node name="Id" />
           <node name="Ids" />
           <node name="Vardec" />
+        </travuser>
+      </traversal>
+      <traversal id="UW3" name="Unroll With3s" default="sons" include="unroll_with3.h">
+        <travuser>
+          <node name="Assign" />
+          <node name="With3" />
+          <node name="Range" />
         </travuser>
       </traversal>
       <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
@@ -4319,6 +4332,9 @@ N_structdef :
           <description>
             This function MUST NOT be inlined.  This is set from #pragma noinline.
           </description>
+        </flag>
+        <flag name="NeedsDynamicMemory" default="TRUE">
+          <description>This functions needs dynamic memory (malloc)</description>
         </flag>
       </flags>
     <checks>

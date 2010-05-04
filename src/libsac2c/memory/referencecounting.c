@@ -1116,11 +1116,18 @@ RCIfold (node *arg_node, info *arg_info)
      *
      * - op is not a variable
      * - n must be refcounted like a funap use
+     *
+     * fold( op, de, in);
+     * - op is not a variable
+     * - de is not used at run time
+     * - in must be refcounted like a funap use
      */
     INFO_MODE (arg_info) = rc_apuse;
-    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-
-    FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
+    if (FOLD_INITIAL (arg_node) == NULL) {
+        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    } else {
+        FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
+    }
 
     if (FOLD_NEXT (arg_node) != NULL) {
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
