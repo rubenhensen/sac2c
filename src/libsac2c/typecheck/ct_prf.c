@@ -160,6 +160,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     ntype *cast_t, *cast_bt, *expr_t, *expr_bt;
     ntype *res, *res_bt;
     shape *shp, *d_shp, *s_shp;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTprf_cast");
 
@@ -168,22 +169,47 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     expr_t = TYgetProductMember (elems, 1);
     expr_bt = TYeliminateUser (expr_t);
 
+    /*
+     * First we check whether the base types match. If they don't, we
+     * instantly bail out, as we do not support ant kind of basetype
+     * polymorphism and thus the program is incorrect no matter what.
+     */
     TEassureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        CTIerror (err_msg);
+        TEextendedAbort ();
+    }
+
+    /*
+     * For matching shapes, we only bail out if this code is reachable.
+     * This is to allow shape polymorphic programming (e.g., recursion
+     * over shapes).
+     *
+     * The actual error processing can be found further below...
+     */
     res_bt = TEassureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
     cast_bt = TYfreeType (cast_bt);
     expr_bt = TYfreeType (expr_bt);
 
     /*
      * Unfortunately, this TEassureSameShape in certain situations does not detect
-     * incompatabilities. The problem arises from the application of TYeliminateUser:
-     * e.g.  TYeliminateUser( complex[.])  =>   double[.,.]   which does not contain
-     *       the information that complex[.] in fact is double[.,2]! As a consequence,
-     * it can be casted into double[3,4] which obviously is wrong!!
-     * Such situations can accur, if
+     * incompatibilities. The problem arises from the application of
+     * TYeliminateUser: e.g.
+     *
+     *    TYeliminateUser( complex[.])  =>   double[.,.]
+     *
+     * which does not contain the information that complex[.] in fact is
+     * double[.,2]! As a consequence, it can be casted into double[3,4] which
+     * obviously is wrong!! Such situations can accur, if
+     *
      *   (a) "res_bt" is an AKS type and
      *   (b) at least one of "cast_t" and "expr_t" are based on a user type;
+     *
      * or if
+     *
      *   (a) both, "cast_t" and "expr_t" are based on a user type.
+     *
      * Hence, the shapes (if available) of "res_bt" and the definitions of
      * the user types of "cast_t" and "expr_t" have to be compared:
      */
@@ -255,13 +281,19 @@ NTCCTprf_cast (te_info *info, ntype *elems)
 
     /*
      * Now, that we have checked for potential compatibility, we can compute
-     * the best possible return type. Usualy, this is res_bt. However, if
-     * "cast_t" turns out to be based on a user defined type, we have to "de-nest" the
-     * return type, i.e., we have to cut off the shape of the (base) defining type of the
-     * user type from the back of "res_bt".
+     * the best possible return type. Usual, this is res_bt. However, if
+     * "cast_t" turns out to be based on a user defined type, we have to
+     * "de-nest" the return type, i.e., we have to cut off the shape of the
+     * (base) defining type of the user type from the back of "res_bt".
+     *
+     * REMARK: We first have to perform some error checking in case only
+     *         the first first shape conformity check above went wrong!
      */
 
-    if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t))) {
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t))) {
         res
           = TYdeNestTypeFromInner (res_bt,
                                    UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
