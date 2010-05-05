@@ -2664,6 +2664,18 @@ COMPfundef (node *arg_node, info *arg_info)
             if (INFO_SCHEDULERID (arg_info) > global.max_schedulers) {
                 global.max_schedulers = INFO_SCHEDULERID (arg_info);
             }
+
+            /*
+             * Add init memory allocator
+             */
+            if (FUNDEF_NEEDSDYNAMICMEMORY (arg_node)) {
+                BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                  = TCappendAssign (TBmakeAssign (TBmakeIcm ("SAC_INIT_LOCAL_MEM", NULL),
+                                                  BLOCK_INSTR (FUNDEF_BODY (arg_node))),
+                                    TBmakeAssign (TBmakeIcm ("SAC_CLEANUP_LOCAL_MEM",
+                                                             NULL),
+                                                  NULL));
+            }
         }
 
         /********** end: traverse body **********/

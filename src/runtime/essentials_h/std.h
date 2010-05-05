@@ -115,6 +115,12 @@ typedef int *SAC_array_descriptor_t;
 /* Overloaded by MUTC */
 #define SAC_ND_REAL_ARG(name, var_NT, type) name
 
+/* Overloaded by MUTC */
+#define SAC_INIT_LOCAL_MEM()
+
+/* Overloaded by MUTC */
+#define SAC_CLEANUP_LOCAL_MEM()
+
 /**********************************
  **********************************
  ***
