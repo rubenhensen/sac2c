@@ -97,7 +97,7 @@ CLKNLfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CLKNLfundef");
 
-    /* we only travers cuda kernels */
+    /* we only traverse cuda kernels */
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -148,6 +148,19 @@ CLKNLlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         }
+    }
+    /* If an assignment of the form: A = [v1,v2...v3] occurs
+     * in the kernel, we tag A as cuda local. Normally,
+     * this case should be handled in insert wl memory
+     * transfer. However, since insert wl structral bound
+     * is run after that and it might introduce assignment
+     * of the form mentioned above, we have to be careful.
+     * This bug is discoverred in the compilation of livermore
+     * loop21. */
+    else if (NODE_TYPE (LET_EXPR (arg_node)) == N_array) {
+        AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     } else {
         INFO_LHS (arg_info) = LET_IDS (arg_node);
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -221,6 +234,13 @@ CLKNLprf (node *arg_node, info *arg_info)
             printf ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
                     FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         }
+        break;
+    case F_suballoc:
+        /* If we have a suballoc, the lhs ids might be tagged as cuda
+         * local in CLKNLlet if the rhs is an N_array. However, we
+         * do not want that, therefore, we need to set it back to
+         * FALSE here */
+        AVIS_ISCUDALOCAL (IDS_AVIS (INFO_LHS (arg_info))) = FALSE;
         break;
     default:
         break;
