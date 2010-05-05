@@ -221,13 +221,13 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
         }
     }
     fprintf (global.outfile, ");\n");
-
-    // fprintf( global.outfile, "cudaThreadSynchronize();\n");
-    fprintf (global.outfile, "cutStopTimer(timer);\n");
-    fprintf (global.outfile, "fprintf(stderr,\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
-             funname);
-    fprintf (global.outfile, "cutResetTimer(timer);\n");
-
+    /*
+      fprintf( global.outfile, "cudaThreadSynchronize();\n");
+      fprintf( global.outfile, "cutStopTimer(timer);\n");
+      fprintf( global.outfile, "fprintf(stderr,\"%s: %%f\\n\",
+      cutGetTimerValue(timer));\n", funname); fprintf( global.outfile,
+      "cutResetTimer(timer);\n");
+    */
     INDENT;
     fprintf (global.outfile, "}\n");
 
@@ -307,10 +307,11 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 
     INDENT;
     INDENT;
-    fprintf (global.outfile, "unsigned int timer;\n");
-    fprintf (global.outfile, "cutCreateTimer(&timer);\n");
-    fprintf (global.outfile, "cutStartTimer(timer);\n");
-
+    /*
+      fprintf( global.outfile, "unsigned int timer;\n");
+      fprintf( global.outfile, "cutCreateTimer(&timer);\n");
+      fprintf( global.outfile, "cutStartTimer(timer);\n");
+    */
     DBUG_VOID_RETURN;
 }
 
@@ -342,10 +343,11 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 
     INDENT;
     INDENT;
-    fprintf (global.outfile, "unsigned int timer;\n");
-    fprintf (global.outfile, "cutCreateTimer(&timer);\n");
-    fprintf (global.outfile, "cutStartTimer(timer);\n");
-
+    /*
+    fprintf( global.outfile, "unsigned int timer;\n");
+    fprintf( global.outfile, "cutCreateTimer(&timer);\n");
+    fprintf( global.outfile, "cutStartTimer(timer);\n");
+    */
     INDENT;
     INDENT;
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
@@ -379,11 +381,12 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     }
     fprintf (global.outfile, ");\n");
 
-    fprintf (global.outfile, "cutStopTimer(timer);\n");
-    fprintf (global.outfile, "fprintf(stderr,\"%s: %%f\\n\", cutGetTimerValue(timer));\n",
-             funname);
-    fprintf (global.outfile, "cutResetTimer(timer);\n");
-
+    /*
+      fprintf( global.outfile, "cutStopTimer(timer);\n");
+      fprintf( global.outfile, "fprintf(stderr,\"%s: %%f\\n\",
+      cutGetTimerValue(timer));\n", funname); fprintf( global.outfile,
+      "cutResetTimer(timer);\n");
+    */
     INDENT;
     fprintf (global.outfile, "}\n");
 
