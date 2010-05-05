@@ -47,6 +47,7 @@
 #include "memory.h"
 #include "constants.h"
 #include "tree_compound.h"
+#include "globals.h"
 #include "free.h"
 #include "pattern_match.h"
 #include "print.h"
@@ -201,13 +202,17 @@ UW3doUnrollWith3 (node *syntax_tree)
  * @brief remove dead code created and marked by RemoveArrayIndirection
  *
  *****************************************************************************/
-static node *
-RemoveDead (node *syntax_tree)
+#if 0
+static
+node *RemoveDead( node *syntax_tree)
 {
-    DBUG_ENTER ("RemoveDead");
+  DBUG_ENTER( "RemoveDead");
 
-    DBUG_RETURN (syntax_tree);
+  
+
+  DBUG_RETURN( syntax_tree);
 }
+#endif
 /** <!--********************************************************************-->
  *
  * @fn node *ATravRangeResult( node *syntax_tree)
@@ -672,7 +677,6 @@ UW3assign (node *arg_node, info *arg_info)
 node *
 UW3with3 (node *arg_node, info *arg_info)
 {
-    node *let;
     node *operators_stack;
     DBUG_ENTER ("UW3with3");
 
@@ -744,7 +748,6 @@ UW3range (node *arg_node, info *arg_info)
             for (int i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
                 node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));
-                node *let;
                 INFO_ASSIGNS (arg_info)
                   = TCappendAssign (INFO_ASSIGNS (arg_info),
                                     Sync2Id (ReplaceAccu (newcode,
