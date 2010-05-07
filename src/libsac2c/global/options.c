@@ -565,6 +565,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("mutc_force_block_size", ARG_NUM (global.mutc_force_block_size));
 
+    ARGS_OPTION ("mutc_unroll", ARG_NUM (global.mutc_unroll));
+
     ARGS_OPTION_BEGIN ("mutc_distribute");
     ARG_CHOICE_BEGIN ();
     ARG_CHOICE ("bounded", global.mutc_distribution_mode = MUTC_DMODE_bounded);

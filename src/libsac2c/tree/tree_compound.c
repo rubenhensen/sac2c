@@ -794,6 +794,29 @@ TCmakeIdsFromVardecs (node *vardecs)
     DBUG_RETURN (ids);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TClastIds( node *ids)
+ *
+ * @brief Return the last ids in a chain of ids
+ *
+ * @param ids chain to return last of
+ *
+ *****************************************************************************/
+node *
+TClastIds (node *ids)
+{
+    node *lastIds;
+    DBUG_ENTER ("TClastIds");
+
+    if (IDS_NEXT (ids) != NULL) {
+        lastIds = TClastIds (IDS_NEXT (ids));
+    } else {
+        lastIds = ids;
+    }
+
+    DBUG_RETURN (lastIds);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

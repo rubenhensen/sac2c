@@ -117,6 +117,7 @@ extern node *TCappendIds (node *chain, node *item);
 extern int TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
+extern node *TClastIds (node *ids);
 
 /******************************************************************************
  *

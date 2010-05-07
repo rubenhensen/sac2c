@@ -1842,8 +1842,8 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     }
 
     if (AnyFold (ops)) {
-        accu = CreateFoldAccumulators (INFO_INDICES (arg_info), INFO_WITH2_LHS (arg_info),
-                                       ops, arg_info);
+        accu = CreateFoldAccumulators (TClastIds (INFO_INDICES (arg_info)),
+                                       INFO_WITH2_LHS (arg_info), ops, arg_info);
     }
     /*
      * produce with3
@@ -2303,12 +2303,10 @@ WLSDwith2 (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSDwith2");
 
     if (WITH2_HASNAIVEORDERING (arg_node)) {
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "Cannot transform with-loop with naive ordering");
+        CTInote ("Cannot transform with-loop with naive ordering");
     }
     if (NotImplemented (arg_node, arg_info)) {
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "Cannot transform with-loop due to unsupported operation");
+        CTInote ("Cannot transform with-loop due to unsupported operation");
     } else {
         /*
          * First of all, we transform the code blocks. As we migth potentially

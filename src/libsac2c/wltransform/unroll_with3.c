@@ -14,8 +14,7 @@
  *
  * The with3 must not have any fold withops.
  *
- * if (upperbound - lowerbound) == 1
- * -and if count(N_range) == 1- Condition removed
+ * if (upperbound - lowerbound) <= global.mutc_unroll
  *
  * set index = lowerbound
  * range body
@@ -71,6 +70,8 @@ struct INFO {
     bool fa_prf_accu;
     node *fa_init;
     node *fa_lhs;
+
+    node *si_ops_init;
 };
 
 /**
@@ -93,6 +94,8 @@ struct INFO {
  * INFO_FA_INIT         Initial value of folds
  * INFO_FA_LHS          LHS of accu
  *
+ * INFO_SI_OPS_INIT     Initial value of withops
+ *
  */
 #define INFO_ASSIGNS(info) (info->assigns)
 #define INFO_RESULTS(info) (info->results) /* pointer */
@@ -103,6 +106,8 @@ struct INFO {
 #define INFO_FA_PRF_ACCU(info) (info->fa_prf_accu)
 #define INFO_FA_INIT(info) (info->fa_init)
 #define INFO_FA_LHS(info) (info->fa_lhs)
+
+#define INFO_SI_OPS_INIT(info) (info->si_ops_init)
 
 static info *
 MakeInfo ()
@@ -120,6 +125,7 @@ MakeInfo ()
     INFO_FA_PRF_ACCU (result) = FALSE;
     INFO_FA_INIT (result) = NULL;
     INFO_FA_LHS (result) = NULL;
+    INFO_SI_OPS_INIT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -490,7 +496,7 @@ FAfold (node *arg_node, info *arg_info)
  *        fold.
  *
  *        Do not traverse into nested with loops or we would replace the wrong
- *        folds.
+ *        accus.
  *
  * @param tree ast to replace accus in
  * @param ops  chain of withops to get inital value from
@@ -529,7 +535,7 @@ S2Iprf (node *arg_node, info *arg_info)
     case F_syncout:
         id = DUPdoDupTree (PRF_ARG1 (arg_node));
         arg_node = FREEdoFreeTree (arg_node);
-        arg_node = id;
+        arg_node = TBmakePrf (F_copy, TBmakeExprs (id, NULL));
         break;
     default:
         arg_node = TRAVcont (arg_node, arg_info);
@@ -541,15 +547,15 @@ S2Iprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *Sync2Id( node *tree, node *ops)
+ * @fn node *Sync2Id( node *tree)
  *
  * @brief Replace
  *
- *        a = _sync{in,out}_(b)
+ *        _sync{in,out}_(b)
  *
  *        with
  *
- *        a = b
+ *        b
  *
  *        do not do this for nested with* loops
  *
@@ -601,6 +607,68 @@ GetInitals (node *folds)
     DBUG_RETURN (exprs);
 }
 
+static node *
+SInext (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SInext");
+
+    INFO_SI_OPS_INIT (arg_info) = EXPRS_NEXT (INFO_SI_OPS_INIT (arg_info));
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+SIfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SIfold");
+
+    if (FOLD_INITIAL (arg_node) != NULL) {
+        FOLD_INITIAL (arg_node) = FREEdoFreeTree (FOLD_INITIAL (arg_node));
+    }
+
+    FOLD_INITIAL (arg_node) = DUPdoDupTree (EXPRS_EXPR (INFO_SI_OPS_INIT (arg_info)));
+
+    arg_node = SInext (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SetInitials( node *ops, node *opsInitial)
+ *
+ * @brief Set the initials from a chain of exprs
+ *
+ * @param opsInitial if match a fold make initial of fold
+ * @param ops        withloop operations
+ *****************************************************************************/
+static node *
+SetInitials (node *ops, node *opsInitial)
+{
+    info *info;
+    DBUG_ENTER ("SetInitials");
+
+    anontrav_t trav[] = {{N_fold, &SIfold},
+                         {N_genarray, &SInext},
+                         {N_modarray, &SInext},
+                         {N_propagate, &SInext},
+                         {N_spfold, &SInext},
+                         {N_break, &SInext},
+                         {0, NULL}};
+
+    TRAVpushAnonymous (trav, &TRAVsons);
+
+    info = MakeInfo ();
+    INFO_SI_OPS_INIT (info) = opsInitial;
+    ops = TRAVopt (ops, info);
+    info = FreeInfo (info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (ops);
+}
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -633,9 +701,11 @@ GetInitals (node *folds)
 node *
 UW3assign (node *arg_node, info *arg_info)
 {
+    node *assign_stack;
     DBUG_ENTER ("UW3assign");
 
-    DBUG_ASSERT ((INFO_ASSIGNS (arg_info) == NULL), "leftover assigns found.");
+    assign_stack = INFO_ASSIGNS (arg_info);
+    INFO_ASSIGNS (arg_info) = NULL;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -651,13 +721,17 @@ UW3assign (node *arg_node, info *arg_info)
         INFO_RESULTS (arg_info) = FREEdoFreeTree (INFO_RESULTS (arg_info));
     }
 
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
     if (INFO_ASSIGNS (arg_info) != NULL) {
         /* put saved assigns before result lets */
         arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
         INFO_ASSIGNS (arg_info) = NULL;
     }
 
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    DBUG_ASSERT ((INFO_ASSIGNS (arg_info) == NULL),
+                 "Assigns in info not expected at this point");
+    INFO_ASSIGNS (arg_info) = assign_stack;
 
     DBUG_RETURN (arg_node);
 }
@@ -689,8 +763,6 @@ UW3with3 (node *arg_node, info *arg_info)
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
     INFO_OPERATORS (arg_info) = operators_stack;
 
-    /*INFO_WITHOPS( arg_info) = DUPdoDupTree( WITH3_OPERATIONS( arg_node));*/
-
     if ((INFO_RANGES (arg_info) == 0)
         && (TCcountWithopsNeq (WITH3_OPERATIONS (arg_node), N_fold) == 0)) {
         /*
@@ -698,10 +770,6 @@ UW3with3 (node *arg_node, info *arg_info)
          * be a noop with3 loop so repace with initial
          */
         INFO_RESULTS (arg_info) = GetInitals (WITH3_OPERATIONS (arg_node));
-        arg_node = FREEdoFreeTree (arg_node);
-    } else if (TCcountRanges (WITH3_RANGES (arg_node)) == 0) {
-
-        /* Free old ast */
         arg_node = FREEdoFreeTree (arg_node);
     }
 
@@ -745,24 +813,26 @@ UW3range (node *arg_node, info *arg_info)
         upper = COconst2Int (cupper);
         if ((upper - lower) <= global.mutc_unroll) {
             int max = upper - lower;
-            for (int i = 0; i < max; i++) {
+            for (int i = (max - 1); i >= 0; i--) {
                 /* Save the body of the with3 loop */
                 node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));
                 INFO_ASSIGNS (arg_info)
                   = TCappendAssign (INFO_ASSIGNS (arg_info),
-                                    Sync2Id (ReplaceAccu (newcode,
-                                                          WITH3_OPERATIONS (arg_node))));
+                                    Sync2Id (
+                                      ReplaceAccu (newcode, INFO_OPERATORS (arg_info))));
+
+                INFO_OPERATORS (arg_info)
+                  = SetInitials (INFO_OPERATORS (arg_info), RANGE_RESULTS (arg_node));
 
                 /* set index to lower bound */
-#if TODO
-                let = TBmakeLet (TBmakeIds (ID_AVIS (INFO_LOOP_INDEX (arg_info)), NULL),
-                                 TBmakeNum (lower + i));
-                INFO_ASSIGNS (arg_info) = TBmakeAssign (let, INFO_ASSIGNS (arg_info));
-#endif
+                INFO_ASSIGNS (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (RANGE_INDEX (arg_node)),
+                                                        NULL),
+                                             TBmakeNum (lower + i)),
+                                  INFO_ASSIGNS (arg_info));
             }
-#if TODO
-            AVIS_SSAASSIGN (IDS_AVIS (index)) = INFO_ASSIGNS (arg_info);
-#endif
+            /* range redundent now so remove */
+            arg_node = FREEdoFreeNode (arg_node);
         }
     }
 
