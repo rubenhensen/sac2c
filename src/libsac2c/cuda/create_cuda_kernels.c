@@ -255,8 +255,6 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     syntax_tree = CLKNLdoCleanupCUDAKernels (syntax_tree);
 
-    // syntax_tree = LDRCdoLiftDecRc( syntax_tree);
-
     DBUG_RETURN (syntax_tree);
 }
 
@@ -779,6 +777,8 @@ CUKNLgenarray (node *arg_node, info *arg_info)
 
     if (INFO_COLLECT (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            /* Shape needs to be traversed as well. */
+            GENARRAY_SHAPE (arg_node) = TRAVopt (GENARRAY_SHAPE (arg_node), arg_info);
             GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
             GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
             GENARRAY_IDX (arg_node)

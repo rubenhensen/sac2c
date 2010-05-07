@@ -29,20 +29,21 @@
 #include "deadcoderemoval.h"
 #include "NumLookUpTable.h"
 #include "cuda_utils.h"
+#include "constants.h"
 
 /*
  * INFO structure
  */
 struct INFO {
-    bool incudadoloop;
-    node *with;
+    node *preassign;
+    bool incudawl;
 };
 
 /*
  * INFO macros
  */
-#define INFO_INCUDADOLOOP(n) (n->incudadoloop)
-#define INFO_WITH(n) (n->with)
+#define INFO_PREASSIGN(n) (n->preassign)
+#define INFO_INCUDAWL(n) (n->incudawl)
 
 /*
  * INFO functions
@@ -56,8 +57,8 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_INCUDADOLOOP (result) = FALSE;
-    INFO_WITH (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
+    INFO_INCUDAWL (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -89,19 +90,17 @@ PKNLGdoPrepareKernelGeneration (node *syntax_tree)
 }
 
 node *
-PKNLGdo (node *arg_node, info *arg_info)
+PKNLGassign (node *arg_node, info *arg_info)
 {
-    bool old_incudadoloop;
+    DBUG_ENTER ("PKNLGassign");
 
-    DBUG_ENTER ("PKNLGdo");
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    if (DO_ISCUDARIZABLE (arg_node)) {
-        old_incudadoloop = INFO_INCUDADOLOOP (arg_info);
-        INFO_INCUDADOLOOP (arg_info) = TRUE;
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-        INFO_INCUDADOLOOP (arg_info) = old_incudadoloop;
-    } else {
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREASSIGN (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        INFO_PREASSIGN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -112,29 +111,55 @@ PKNLGwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PKNLGwith");
 
-    /* If a N_with is in a cudarizable do-loop, it's no
-     * longer cudarizable. Since CUDA doesn't not support
-     * hierachical thread creation */
-    if (INFO_INCUDADOLOOP (arg_info)) {
-        WITH_CUDARIZABLE (arg_node) = FALSE;
-        INFO_WITH (arg_info) = arg_node;
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        INFO_WITH (arg_info) = NULL;
+    if (WITH_CUDARIZABLE (arg_node)) {
+        INFO_INCUDAWL (arg_info) = TRUE;
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+        INFO_INCUDAWL (arg_info) = FALSE;
+    } else if (INFO_INCUDAWL (arg_info)) {
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+    } else {
+        /* Not cudarizable, not in cuda withloop, ignore */
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *PKNLGprf( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 node *
-PKNLGpart (node *arg_node, info *arg_info)
+PKNLGprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PKNLGpart");
+    node *id, *avis;
 
-    /* If the N_with is no cudarizable, all its partitions
-     * are not cudarizable either */
-    if (!WITH_CUDARIZABLE (INFO_WITH (arg_info))) {
-        PART_CUDARIZABLE (arg_node) = FALSE;
-        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    DBUG_ENTER ("PKNLGprf");
+
+    if (INFO_INCUDAWL (arg_info)) {
+        switch (PRF_PRF (arg_node)) {
+        case F_sel_VxA:
+            id = PRF_ARG2 (arg_node);
+            DBUG_ASSERT ((NODE_TYPE (id) == N_id), "2nd arg of F_sel_VxA is no N_id!");
+
+            avis = ID_AVIS (id);
+
+            printf ("Checking varaible %s\n", ID_NAME (id));
+            if (TYisAKV (AVIS_TYPE (avis))) {
+                INFO_PREASSIGN (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL),
+                                             COconstant2AST (
+                                               TYgetValue (AVIS_TYPE (avis)))),
+                                  NULL);
+            }
+            break;
+        default:
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+            break;
+        }
     }
 
     DBUG_RETURN (arg_node);

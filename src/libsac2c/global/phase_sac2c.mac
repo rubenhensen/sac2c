@@ -970,15 +970,10 @@ SUBPHASE (lw3, "MUTC Lifting With-Loop bodies into threads", LW3doLiftWith3,
 SUBPHASE (dmui, "MUTC Dynamic memory usage inference", DMUIdoDynamicMemoryUsageInference,
           global.backend == BE_mutc, pc)
 
-SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
+SUBPHASE (pknlg, "CUDA Prepare kernel generation", PKNLGdoPrepareKernelGeneration,
+          global.backend == BE_cuda, pc)
 
-#if 0
-SUBPHASE( pknlg,
-          "Prepare kernel generation",
-          PKNLGdoPrepareKernelGeneration,
-          global.backend == BE_cuda,
-          pc)
-#endif
+SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
 SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
           CUASRdoAdjustStknlRets, global.backend == BE_cuda && global.optimize.doexpar,
