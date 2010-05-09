@@ -753,7 +753,8 @@ SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition
           global.backend == BE_cuda, cuda)
 
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
-          MTRANdoMinimizeTransfers, global.backend == BE_cuda, cuda)
+          MTRANdoMinimizeTransfers, global.backend == BE_cuda && global.optimize.domemopt,
+          cuda)
 
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
           global.backend == BE_cuda && global.optimize.doexpar, pc)
