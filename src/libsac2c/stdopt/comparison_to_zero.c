@@ -271,37 +271,37 @@ ToScalarComparison (prf op)
 
     switch (op) {
     case F_eq_SxV:
-        op = F_eq_SxS;
+        op = F_eq_VxS;
         break;
     case F_eq_VxV:
         op = F_eq_VxS;
         break;
     case F_neq_SxV:
-        op = F_neq_SxS;
+        op = F_neq_VxS;
         break;
     case F_neq_VxV:
         op = F_neq_VxS;
         break;
     case F_le_SxV:
-        op = F_le_SxS;
+        op = F_le_VxS;
         break;
     case F_le_VxV:
         op = F_le_VxS;
         break;
     case F_lt_SxV:
-        op = F_lt_SxS;
+        op = F_lt_VxS;
         break;
     case F_lt_VxV:
         op = F_lt_VxS;
         break;
     case F_ge_SxV:
-        op = F_ge_SxS;
+        op = F_ge_VxS;
         break;
     case F_ge_VxV:
         op = F_ge_VxS;
         break;
     case F_gt_SxV:
-        op = F_gt_SxS;
+        op = F_gt_VxS;
         break;
     case F_gt_VxV:
         op = F_gt_VxS;
@@ -552,8 +552,10 @@ CTZprf (node *arg_node, info *arg_info)
         // Create new zero node where type is based on type of the comparison
         ntype *type = AVIS_TYPE (avissub);
 
-        if (TYisArray (type))
+        if (TYisArray (type)) {
+            DBUG_PRINT ("CTZ", ("Type is an array..."));
             type = TYgetScalar (type);
+        }
 
         simpletype simple = TYgetSimpleType (type);
 
