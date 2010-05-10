@@ -23,9 +23,6 @@
  *   the statement back to a > b.
  *
  *
- * TODO: test support for vector comparisons
- *
- *
  * @ingroup opt
  *
  * @{
@@ -158,24 +155,26 @@ CTZdoComparisonToZero (node *argnode)
 static bool
 IsComparisonOperator (prf op)
 {
+    bool result;
+
     DBUG_ENTER ("IsComparisonOperator");
 
     DBUG_PRINT ("CTZ", ("Looking for comparison operator"));
 
-    bool res
-      = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
-         || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS || op == F_neq_VxV
-         || op == F_le_SxS || op == F_le_SxV || op == F_le_VxS || op == F_le_VxV
-         || op == F_lt_SxS || op == F_lt_SxV || op == F_lt_VxS || op == F_lt_VxV
-         || op == F_ge_SxS || op == F_ge_SxV || op == F_ge_VxS || op == F_ge_VxV
-         || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS || op == F_gt_VxV);
+    result = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
+              || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS || op == F_neq_VxV
+              || op == F_le_SxS || op == F_le_SxV || op == F_le_VxS || op == F_le_VxV
+              || op == F_lt_SxS || op == F_lt_SxV || op == F_lt_VxS || op == F_lt_VxV
+              || op == F_ge_SxS || op == F_ge_SxV || op == F_ge_VxS || op == F_ge_VxV
+              || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS || op == F_gt_VxV);
 
-    if (res)
-        DBUG_PRINT ("CTZ", ("Comp. op. found :)"));
-    else
-        DBUG_PRINT ("CTZ", ("Comp. op. not found :("));
+    if (result) {
+        DBUG_PRINT ("CTZ", ("Comparison operator found"));
+    } else {
+        DBUG_PRINT ("CTZ", ("Comparison operator NOT found"));
+    }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->
@@ -205,10 +204,11 @@ IsNodeLiteralZero (node *node)
         argconst = COfreeConstant (argconst);
     }
 
-    if (res)
+    if (res) {
         DBUG_PRINT ("CTZ", ("Zero found"));
-    else
+    } else {
         DBUG_PRINT ("CTZ", ("Zero not found"));
+    }
 
     DBUG_RETURN (res);
 }
@@ -228,30 +228,36 @@ IsNodeLiteralZero (node *node)
 static bool
 HasSuitableType (node *node)
 {
+    ntype *type;
+    simpletype simple;
+    bool result;
+
     DBUG_ENTER ("IsSuitableType");
 
-    DBUG_PRINT ("CTZ", ("Checking for type..."));
+    DBUG_PRINT ("CTZ", ("Checking for suitable type"));
 
     DBUG_ASSERT (NODE_TYPE (node) == N_id, "Node must be an N_id node");
 
-    ntype *type = AVIS_TYPE (ID_AVIS (node));
+    type = AVIS_TYPE (ID_AVIS (node));
 
-    if (TYisArray (type))
+    if (TYisArray (type)) {
         type = TYgetScalar (type);
+    }
 
-    simpletype simple = TYgetSimpleType (type);
+    simple = TYgetSimpleType (type);
 
-    bool res = simple == T_int || simple == T_byte || simple == T_short
-               || simple == T_long || simple == T_longlong || simple == T_ubyte
-               || simple == T_ushort || simple == T_uint || simple == T_ulong
-               || simple == T_ulonglong || simple == T_double || simple == T_float;
+    result = simple == T_int || simple == T_byte || simple == T_short || simple == T_long
+             || simple == T_longlong || simple == T_ubyte || simple == T_ushort
+             || simple == T_uint || simple == T_ulong || simple == T_ulonglong
+             || simple == T_double || simple == T_float;
 
-    if (res)
+    if (result) {
         DBUG_PRINT ("CTZ", ("Suitable type found"));
-    else
+    } else {
         DBUG_PRINT ("CTZ", ("Suitable type not found"));
+    }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->
@@ -332,6 +338,7 @@ static prf
 GetSubtractionOperator (prf op)
 {
     prf result;
+
     DBUG_ENTER ("GetSubtractionOperator");
 
     switch (op) {
@@ -528,6 +535,14 @@ CTZlet (node *arg_node, info *arg_info)
 node *
 CTZprf (node *arg_node, info *arg_info)
 {
+    ntype *type_zero;
+    ntype *type_sub;
+
+    node *f_sub;
+    node *n_zero;
+    node *avis_sub;
+    node *avis_zero;
+
     DBUG_ENTER ("CTZprf");
 
     DBUG_PRINT ("CTZ",
@@ -540,31 +555,26 @@ CTZprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("CTZ", ("Found suitable comparison function"));
 
         // Create the new subtraction assignment with same arguments as comparison
-        node *f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)),
-                                 TBmakeExprs (EXPRS_EXPR (PRF_ARGS (arg_node)),
-                                              TBmakeExprs (EXPRS_EXPR (EXPRS_NEXT (
-                                                             PRF_ARGS (arg_node))),
-                                                           NULL)));
+        f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)),
+                           TBmakeExprs (EXPRS_EXPR (PRF_ARGS (arg_node)),
+                                        TBmakeExprs (EXPRS_EXPR (
+                                                       EXPRS_NEXT (PRF_ARGS (arg_node))),
+                                                     NULL)));
 
-        ntype *pt = NTCnewTypeCheck_Expr (f_sub);
-        ntype *ptype = TYgetProductMember (pt, 0);
+        type_zero = NTCnewTypeCheck_Expr (f_sub);
+        type_zero = TYgetProductMember (type_zero, 0);
 
         // Create avis node for subtraction
-        node *avissub = TBmakeAvis (TRAVtmpVar (), TYcopyType (ptype));
+        avis_sub = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
 
-        // Create new zero node where type is based on type of the comparison
-        ntype *type = AVIS_TYPE (avissub);
+        // Create new zero node where type is based on type of the subtraction
+        type_sub = AVIS_TYPE (avis_sub);
 
-        if (TYisArray (type)) {
-            DBUG_PRINT ("CTZ", ("Type is an array..."));
-            type = TYgetScalar (type);
+        if (TYisArray (type_sub)) {
+            type_sub = TYgetScalar (type_sub);
         }
 
-        simpletype simple = TYgetSimpleType (type);
-
-        node *n_zero = NULL;
-
-        switch (simple) {
+        switch (TYgetSimpleType (type_sub)) {
         case T_byte:
             DBUG_PRINT ("CTZ", ("Type is byte"));
             n_zero = TBmakeNumbyte (0);
@@ -609,7 +619,6 @@ CTZprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("CTZ", ("Type is double"));
             n_zero = TBmakeDouble (0);
             break;
-
         case T_float:
             DBUG_PRINT ("CTZ", ("Type is float"));
             n_zero = TBmakeFloat (0);
@@ -620,28 +629,28 @@ CTZprf (node *arg_node, info *arg_info)
         }
 
         // Avis node for zero
-        node *aviszero = TBmakeAvis (TRAVtmpVar (), TYcopyType (ptype));
+        avis_zero = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
 
-        ptype = TYfreeType (ptype);
+        type_zero = TYfreeType (type_zero);
 
         // Add the nodes to the instruction list
         INFO_NEWASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (avissub, NULL), f_sub),
-                          TBmakeAssign (TBmakeLet (TBmakeIds (aviszero, NULL), n_zero),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis_sub, NULL), f_sub),
+                          TBmakeAssign (TBmakeLet (TBmakeIds (avis_zero, NULL), n_zero),
                                         NULL));
 
-        AVIS_SSAASSIGN (avissub) = INFO_NEWASSIGN (arg_info);
-        AVIS_SSAASSIGN (aviszero) = ASSIGN_NEXT (INFO_NEWASSIGN (arg_info));
+        AVIS_SSAASSIGN (avis_sub) = INFO_NEWASSIGN (arg_info);
+        AVIS_SSAASSIGN (avis_zero) = ASSIGN_NEXT (INFO_NEWASSIGN (arg_info));
 
         // Create the new vardec nodes
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avissub, TBmakeVardec (aviszero,
-                                                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))));
+          = TBmakeVardec (avis_sub, TBmakeVardec (avis_zero, FUNDEF_VARDEC (
+                                                               INFO_FUNDEF (arg_info))));
 
         // Change the current comparison function
         PRF_PRF (arg_node) = ToScalarComparison (PRF_PRF (arg_node));
-        PRF_ARG1 (arg_node) = TBmakeId (avissub);
-        PRF_ARG2 (arg_node) = TBmakeId (aviszero);
+        PRF_ARG1 (arg_node) = TBmakeId (avis_sub);
+        PRF_ARG2 (arg_node) = TBmakeId (avis_zero);
 
     } // end IsComparisonOperator...
 
