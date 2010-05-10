@@ -596,6 +596,13 @@
           <node name="Range" />
         </travuser>
       </traversal>
+      <traversal id="MS" name="MUTC move syncs" default="sons" include="move_syncs.h">
+        <travuser>
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
       <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
         <travuser>
           <node name="Module" />

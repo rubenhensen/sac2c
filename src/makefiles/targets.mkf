@@ -189,7 +189,7 @@ libsac2c_multithread := multithread_lib tag_executionmode \
                         cell_growth create_withinwith replicate_functions \
                         consolidate_cells abort
 
-libsac2c_mutc        := tag_fun_thread create_function_pairs
+libsac2c_mutc        := tag_fun_thread create_function_pairs move_syncs
 
 libsac2c_profile     := annotate_fun_calls
 

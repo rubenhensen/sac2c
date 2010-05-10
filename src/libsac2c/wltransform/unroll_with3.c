@@ -813,23 +813,22 @@ UW3range (node *arg_node, info *arg_info)
         upper = COconst2Int (cupper);
         if ((upper - lower) <= global.mutc_unroll) {
             int max = upper - lower;
-            for (int i = (max - 1); i >= 0; i--) {
+            for (int i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
                 node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));
                 INFO_ASSIGNS (arg_info)
                   = TCappendAssign (INFO_ASSIGNS (arg_info),
-                                    Sync2Id (
-                                      ReplaceAccu (newcode, INFO_OPERATORS (arg_info))));
+                                    TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (
+                                                                          RANGE_INDEX (
+                                                                            arg_node)),
+                                                                        NULL),
+                                                             TBmakeNum (lower + i)),
+                                                  Sync2Id (
+                                                    ReplaceAccu (newcode, INFO_OPERATORS (
+                                                                            arg_info)))));
 
                 INFO_OPERATORS (arg_info)
                   = SetInitials (INFO_OPERATORS (arg_info), RANGE_RESULTS (arg_node));
-
-                /* set index to lower bound */
-                INFO_ASSIGNS (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (RANGE_INDEX (arg_node)),
-                                                        NULL),
-                                             TBmakeNum (lower + i)),
-                                  INFO_ASSIGNS (arg_info));
             }
             /* range redundent now so remove */
             arg_node = FREEdoFreeNode (arg_node);

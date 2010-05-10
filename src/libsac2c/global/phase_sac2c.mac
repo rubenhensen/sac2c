@@ -786,6 +786,9 @@ SUBPHASE (rw3, "MUTC Remove unneeded With3s", RW3doRemoveWith3,
 
 SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs, global.backend == BE_mutc, wlt)
 
+SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
+          global.backend == BE_mutc && global.optimize.doms, wlt)
+
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
@@ -964,6 +967,9 @@ PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (uw3, "MUTC Unroll With3", UW3doUnrollWith3,
           global.backend == BE_mutc && global.optimize.douw3, pc)
+
+SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
+          global.backend == BE_mutc && global.optimize.doms && global.optimize.douw3, pc)
 
 SUBPHASE (lw3, "MUTC Lifting With-Loop bodies into threads", LW3doLiftWith3,
           global.backend == BE_mutc, pc)
