@@ -241,7 +241,10 @@ HasSuitableType (node *node)
 
     simpletype simple = TYgetSimpleType (type);
 
-    bool res = simple == T_int || simple == T_double || simple == T_float;
+    bool res = simple == T_int || simple == T_byte || simple == T_short
+               || simple == T_long || simple == T_longlong || simple == T_ubyte
+               || simple == T_ushort || simple == T_uint || simple == T_ulong
+               || simple == T_ulonglong || simple == T_double || simple == T_float;
 
     if (res)
         DBUG_PRINT ("CTZ", ("Suitable type found"));
@@ -562,9 +565,45 @@ CTZprf (node *arg_node, info *arg_info)
         node *n_zero = NULL;
 
         switch (simple) {
+        case T_byte:
+            DBUG_PRINT ("CTZ", ("Type is byte"));
+            n_zero = TBmakeNumbyte (0);
+            break;
+        case T_short:
+            DBUG_PRINT ("CTZ", ("Type is short"));
+            n_zero = TBmakeNumshort (0);
+            break;
         case T_int:
             DBUG_PRINT ("CTZ", ("Type is int"));
             n_zero = TBmakeNum (0);
+            break;
+        case T_long:
+            DBUG_PRINT ("CTZ", ("Type is long"));
+            n_zero = TBmakeNumlong (0);
+            break;
+        case T_longlong:
+            DBUG_PRINT ("CTZ", ("Type is longlong"));
+            n_zero = TBmakeNumlonglong (0);
+            break;
+        case T_ubyte:
+            DBUG_PRINT ("CTZ", ("Type is ubyte"));
+            n_zero = TBmakeNumubyte (0);
+            break;
+        case T_ushort:
+            DBUG_PRINT ("CTZ", ("Type is ushort"));
+            n_zero = TBmakeNumushort (0);
+            break;
+        case T_uint:
+            DBUG_PRINT ("CTZ", ("Type is uint"));
+            n_zero = TBmakeNumuint (0);
+            break;
+        case T_ulong:
+            DBUG_PRINT ("CTZ", ("Type is ulong"));
+            n_zero = TBmakeNumulong (0);
+            break;
+        case T_ulonglong:
+            DBUG_PRINT ("CTZ", ("Type is ulonglong"));
+            n_zero = TBmakeNumulonglong (0);
             break;
         case T_double:
             DBUG_PRINT ("CTZ", ("Type is double"));
