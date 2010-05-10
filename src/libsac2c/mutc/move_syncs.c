@@ -232,7 +232,7 @@ MSassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        info *stack_info = MakeInfo (stack_info);
+        info *stack_info = MakeInfo ();
         next = TRAVdo (ASSIGN_NEXT (arg_node), stack_info);
         stack_info = FreeInfo (stack_info);
     }
