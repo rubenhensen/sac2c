@@ -746,7 +746,8 @@ SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend =
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
           global.backend == BE_cuda, cuda)
 
-SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions, global.backend == BE_cuda,
+SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
+          NEVER, /*Comment out for now. A bug in loop18p.sac*/
           cuda)
 
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
