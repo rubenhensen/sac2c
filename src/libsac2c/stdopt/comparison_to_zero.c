@@ -574,6 +574,7 @@ CTZprf (node *arg_node, info *arg_info)
             type_sub = TYgetScalar (type_sub);
         }
 
+        n_zero = NULL;
         switch (TYgetSimpleType (type_sub)) {
         case T_byte:
             DBUG_PRINT ("CTZ", ("Type is byte"));
