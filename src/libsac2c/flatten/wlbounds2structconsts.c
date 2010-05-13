@@ -183,6 +183,8 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
         res = TBmakeExprs (TBmakeId (elem_avis), res);
     }
 
+    res = TCmakeIntVector (res);
+
     /*
      * create structural constant
      */
@@ -192,16 +194,15 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
                                               TYmakeAKS (TYmakeSimpleType (T_int),
                                                          SHcreateShape (1, dim)),
                                               arg_info);
-        res = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL), TCmakeIntVector (res)),
-                            INFO_PREASSIGN (arg_info));
+        res = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL), res), NULL);
+        assigns = TCappendAssign (assigns, res);
+
         AVIS_SSAASSIGN (res_avis) = res;
 
-        INFO_PREASSIGN (arg_info) = TCappendAssign (assigns, res);
         res = TBmakeId (res_avis);
-    } else {
-
-        res = TCmakeIntVector (res);
     }
+
+    INFO_PREASSIGN (arg_info) = TCappendAssign (assigns, INFO_PREASSIGN (arg_info));
 
     DBUG_RETURN (res);
 }
@@ -449,7 +450,7 @@ Wlbounds2structConsts (node *arg_node, bool flat)
     if (NODE_TYPE (arg_node) == N_module) {
         INFO_ONEFUNDEF (arg_info) = FALSE;
     } else if (NODE_TYPE (arg_node) == N_fundef) {
-        INFO_ONEFUNDEF (arg_info) = FALSE;
+        INFO_ONEFUNDEF (arg_info) = TRUE;
     } else {
         DBUG_ASSERT (FALSE, "Illegal call to WLBSCdoWlbounds2structConsts!");
     }
@@ -471,7 +472,7 @@ WLBSCdoWlbounds2structConsts (node *arg_node)
 }
 
 node *
-WLBSCdoWlbounds2flatStructConsts (node *arg_node)
+WLBSCdoWlbounds2nonFlatStructConsts (node *arg_node)
 {
     DBUG_ENTER ("WLBSCdoWlbounds2nonFlatStructConsts");
     DBUG_RETURN (Wlbounds2structConsts (arg_node, FALSE));

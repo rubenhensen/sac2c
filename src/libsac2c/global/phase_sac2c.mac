@@ -600,6 +600,11 @@ SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
 SUBPHASE (ucts, "Eliminating subtractions in comparisons", UCZCdoUndoCondZeroCmp,
           global.optimize.doucts, opt)
 
+SUBPHASE (wlbscnf,
+          "Ensuring non-flattened structural constants for with-loop partition "
+          "bounds",
+          WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, opt)
+
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheck, ALWAYS, opt)
@@ -629,9 +634,6 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
            * with-loops to arrive at wltransform
            */
           opt)
-
-SUBPHASE (wlbsc2, "Ensuring structual constants for with-loop partition bounds",
-          WLBSCdoWlbounds2structConsts, ALWAYS, opt)
 
 SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
@@ -774,7 +776,7 @@ ENDPHASE (cuda)
 
 PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
-SUBPHASE (wlbsc, "Ensuring structual constants for with-loop partition bounds",
+SUBPHASE (wlbsc, "Ensuring structural constants for with-loop partition bounds",
           WLBSCdoWlbounds2structConsts, ALWAYS, wlt)
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
