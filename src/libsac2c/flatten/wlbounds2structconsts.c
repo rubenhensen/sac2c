@@ -36,6 +36,7 @@
 #include "dbug.h"
 #include "dbug.h"
 #include "memory.h"
+#include "free.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "shape.h"
@@ -51,6 +52,7 @@ struct INFO {
     node *nassigns;
     ntype *idxtype;
     bool onefundef;
+    bool genflat;
 };
 
 /*******************************************************************************
@@ -65,12 +67,13 @@ struct INFO {
 #define INFO_PREASSIGN(n) (n->nassigns)
 #define INFO_IV_TYPE(n) (n->idxtype)
 #define INFO_ONEFUNDEF(n) (n->onefundef)
+#define INFO_GENFLAT(n) (n->genflat)
 
 /**
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (bool flat)
 {
     info *result;
 
@@ -82,6 +85,7 @@ MakeInfo ()
     INFO_PREASSIGN (result) = NULL;
     INFO_IV_TYPE (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
+    INFO_GENFLAT (result) = flat;
 
     DBUG_RETURN (result);
 }
@@ -123,7 +127,11 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
  * @fn node *CreateArrayOfShapeSels( node *id_avis, int dim, info *arg_info)
  *
  *   @brief creates a structural constant of shape selections into "id"
- *          and assigns it to a new var sc_bound:
+ *          and either
+ *          -  returns that array (in case INFO_GENFLAT is TRUE)
+ *             or
+ *          -  assigns it to a new var sc_bound and returns a corresponding
+ *             id node (otherwise)
  *
  *     sc_iv_0 = [0];
  *     sc_e_0 = _sel_VxA_( sc_iv_0, id);
@@ -135,7 +143,7 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
  *   @param  node *array   :  N_id
  *           int dim       :
  *           info *arg_info:  info node, will contain flattened code
- *   @return node *        :  the avis of sc_bound
+ *   @return node *        :  the array or the avis of sc_bound
  *
  ******************************************************************************/
 
@@ -178,17 +186,24 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
     /*
      * create structural constant
      */
-    res_avis = CreateAvisAndInsertVardec ("sc_bound",
-                                          TYmakeAKS (TYmakeSimpleType (T_int),
-                                                     SHcreateShape (1, dim)),
-                                          arg_info);
-    res = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL), TCmakeIntVector (res)),
-                        INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (res_avis) = res;
+    if (INFO_GENFLAT (arg_info)) {
 
-    INFO_PREASSIGN (arg_info) = TCappendAssign (assigns, res);
+        res = TCmakeIntVector (res);
+    } else {
 
-    DBUG_RETURN (res_avis);
+        res_avis = CreateAvisAndInsertVardec ("sc_bound",
+                                              TYmakeAKS (TYmakeSimpleType (T_int),
+                                                         SHcreateShape (1, dim)),
+                                              arg_info);
+        res = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL), TCmakeIntVector (res)),
+                            INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (res_avis) = res;
+
+        INFO_PREASSIGN (arg_info) = TCappendAssign (assigns, res);
+        res = TBmakeId (res_avis);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -205,6 +220,7 @@ static node *
 EnsureStructConstant (node *bound, ntype *type, info *arg_info)
 {
     static pattern *pat = NULL;
+    node *new_bound;
     int dim;
 
     DBUG_ENTER ("EnsureStructConstant");
@@ -214,7 +230,9 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
     }
     if (!PMmatchFlat (pat, bound) && TUshapeKnown (type)) {
         dim = SHgetExtent (TYgetShape (type), 0);
-        bound = TBmakeId (CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info));
+        new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
+        bound = FREEdoFreeTree (bound);
+        bound = new_bound;
     }
 
     DBUG_RETURN (bound);
@@ -418,14 +436,14 @@ WLBSCgenarray (node *arg_node, info *arg_info)
  *   @return node *        :  the transformed syntax tree
  ******************************************************************************/
 
-node *
-WLBSCdoWlbounds2structConsts (node *arg_node)
+static node *
+Wlbounds2structConsts (node *arg_node, bool flat)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLBSCdoWlbounds2structConsts");
+    DBUG_ENTER ("Wlbounds2structConsts");
 
-    arg_info = MakeInfo ();
+    arg_info = MakeInfo (flat);
 
     if (NODE_TYPE (arg_node) == N_module) {
         INFO_ONEFUNDEF (arg_info) = FALSE;
@@ -442,4 +460,18 @@ WLBSCdoWlbounds2structConsts (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
+}
+
+node *
+WLBSCdoWlbounds2structConsts (node *arg_node)
+{
+    DBUG_ENTER ("WLBSCdoWlbounds2structConsts");
+    DBUG_RETURN (Wlbounds2structConsts (arg_node, FALSE));
+}
+
+node *
+WLBSCdoWlbounds2flatStructConsts (node *arg_node)
+{
+    DBUG_ENTER ("WLBSCdoWlbounds2flatStructConsts");
+    DBUG_RETURN (Wlbounds2structConsts (arg_node, TRUE));
 }

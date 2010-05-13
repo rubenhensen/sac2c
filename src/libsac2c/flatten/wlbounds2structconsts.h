@@ -18,6 +18,7 @@
  *
  *****************************************************************************/
 extern node *WLBSCdoWlbounds2structConsts (node *arg_node);
+extern node *WLBSCdoWlbounds2flatStructConsts (node *arg_node);
 
 extern node *WLBSCmodule (node *arg_node, info *arg_info);
 extern node *WLBSCfundef (node *arg_node, info *arg_info);
