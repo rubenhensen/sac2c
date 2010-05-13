@@ -613,6 +613,9 @@ SUBPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes, ALWAYS, o
 
 SUBPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes, ALWAYS, opt)
 
+SUBPHASE (cffinal, "Final round of constant folding", CFdoConstantFolding,
+          global.optimize.docf, opt)
+
 SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion, global.optimize.dowlfs,
           opt)
 
@@ -664,7 +667,7 @@ SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
 
 SUBPHASE (lir2, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
-          (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
+          global.optimize.dolir, opt)
 
 SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
@@ -775,9 +778,6 @@ ENDPHASE (cuda)
 /******************************************************************************/
 
 PHASE (wlt, "Transforming with-loop representation", ALWAYS)
-
-SUBPHASE (wlbsc, "Ensuring structural constants for with-loop partition bounds",
-          WLBSCdoWlbounds2structConsts, ALWAYS, wlt)
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
