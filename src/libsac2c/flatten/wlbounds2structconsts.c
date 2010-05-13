@@ -128,7 +128,7 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
  *
  *   @brief creates a structural constant of shape selections into "id"
  *          and either
- *          -  returns that array (in case INFO_GENFLAT is TRUE)
+ *          -  returns that array (in case INFO_GENFLAT is FALSE)
  *             or
  *          -  assigns it to a new var sc_bound and returns a corresponding
  *             id node (otherwise)
@@ -188,9 +188,6 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
      */
     if (INFO_GENFLAT (arg_info)) {
 
-        res = TCmakeIntVector (res);
-    } else {
-
         res_avis = CreateAvisAndInsertVardec ("sc_bound",
                                               TYmakeAKS (TYmakeSimpleType (T_int),
                                                          SHcreateShape (1, dim)),
@@ -201,6 +198,9 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
 
         INFO_PREASSIGN (arg_info) = TCappendAssign (assigns, res);
         res = TBmakeId (res_avis);
+    } else {
+
+        res = TCmakeIntVector (res);
     }
 
     DBUG_RETURN (res);
@@ -228,7 +228,8 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
     if (pat == NULL) {
         pat = PMarray (0, 1, PMskip (0));
     }
-    if (!PMmatchFlat (pat, bound) && TUshapeKnown (type)) {
+    if (!PMmatch (pat, (INFO_GENFLAT (arg_info) ? PM_flat : PM_exact), NULL, bound)
+        && TUshapeKnown (type)) {
         dim = SHgetExtent (TYgetShape (type), 0);
         new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
         bound = FREEdoFreeTree (bound);
@@ -466,12 +467,12 @@ node *
 WLBSCdoWlbounds2structConsts (node *arg_node)
 {
     DBUG_ENTER ("WLBSCdoWlbounds2structConsts");
-    DBUG_RETURN (Wlbounds2structConsts (arg_node, FALSE));
+    DBUG_RETURN (Wlbounds2structConsts (arg_node, TRUE));
 }
 
 node *
 WLBSCdoWlbounds2flatStructConsts (node *arg_node)
 {
-    DBUG_ENTER ("WLBSCdoWlbounds2flatStructConsts");
-    DBUG_RETURN (Wlbounds2structConsts (arg_node, TRUE));
+    DBUG_ENTER ("WLBSCdoWlbounds2nonFlatStructConsts");
+    DBUG_RETURN (Wlbounds2structConsts (arg_node, FALSE));
 }
