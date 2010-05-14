@@ -139,10 +139,8 @@ CLKNLlet (node *arg_node, info *arg_info)
             && TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
-        }
-
-        if (AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node)))
-            || AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node)))) {
+        } else if (AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node)))
+                   || AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node)))) {
             AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
             AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node))) = TRUE;
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
