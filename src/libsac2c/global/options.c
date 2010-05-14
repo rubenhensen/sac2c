@@ -879,7 +879,10 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("ldflags", global.printldflags = TRUE;);
 
-    ARGS_OPTION ("libdir", global.lib_dirname = STRcpy (ARG););
+    ARGS_OPTION_BEGIN ("libdir")
+    global.lib_dirname = STRcpy (ARG);
+    FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+    ARGS_OPTION_END ("libdir");
 
     ARGS_OPTION_BEGIN ("L")
     {
