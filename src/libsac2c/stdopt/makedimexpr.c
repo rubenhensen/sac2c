@@ -148,22 +148,17 @@ SAAdim_of_arg1 (node *arg_node, info *arg_info)
     DBUG_RETURN (dim_expr);
 }
 
-#if 0
-/*
- * Currently unused, but kept for completeness.
- */
-static
-node *SAAdim_of_arg2( node *arg_node, info *arg_info) 
+static node *
+SAAdim_of_arg2 (node *arg_node, info *arg_info)
 {
-  node *dim_expr;
-  
-  DBUG_ENTER("SAAdim_of_arg2");
-  
-  dim_expr = DUPdoDupNode( AVIS_DIM( ID_AVIS( PRF_ARG2( arg_node))));
-  
-  DBUG_RETURN( dim_expr);
+    node *dim_expr;
+
+    DBUG_ENTER ("SAAdim_of_arg2");
+
+    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
+
+    DBUG_RETURN (dim_expr);
 }
-#endif
 
 static node *
 SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
