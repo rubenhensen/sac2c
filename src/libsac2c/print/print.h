@@ -150,4 +150,16 @@ extern node *PRTset (node *arg_node, info *arg_info);
 /* sac4c */
 extern node *PRTfunbundle (node *arg_node, info *arg_info);
 
+//#ifdef NTFSANTANU
+extern node *PRTntfspecs (node *arg_node, info *arg_info);
+extern node *PRTntfdefs (node *arg_node, info *arg_info);
+extern node *PRTntfrels (node *arg_node, info *arg_info);
+extern node *PRTntfrel (node *arg_node, info *arg_info);
+extern node *PRTntfabs (node *arg_node, info *arg_info);
+extern node *PRTntfusr (node *arg_node, info *arg_info);
+extern node *PRTntfbin (node *arg_node, info *arg_info);
+extern node *PRTntfarg (node *arg_node, info *arg_info);
+extern node *PRTntfexpr (node *arg_node, info *arg_info);
+//#endif
+
 #endif /* _SAC_PRINT_H_ */

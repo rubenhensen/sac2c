@@ -172,4 +172,16 @@ extern node *DUPrange (node *arg_node, info *arg_info);
 extern node *DUPtreeTravPre (node *arg_node, info *arg_info);
 extern node *DUPtreeTravPost (node *arg_node, info *arg_info);
 
+//#ifdef NTFSANTANU
+extern node *DUPntfspecs (node *arg_node, info *arg_info);
+extern node *DUPntfdefs (node *arg_node, info *arg_info);
+extern node *DUPntfrels (node *arg_node, info *arg_info);
+extern node *DUPntfrel (node *arg_node, info *arg_info);
+extern node *DUPntfabs (node *arg_node, info *arg_info);
+extern node *DUPntfusr (node *arg_node, info *arg_info);
+extern node *DUPntfbin (node *arg_node, info *arg_info);
+extern node *DUPntfarg (node *arg_node, info *arg_info);
+extern node *DUPntfexpr (node *arg_node, info *arg_info);
+//#endif
+
 #endif /* _SAC_DUPTREE_H_ */

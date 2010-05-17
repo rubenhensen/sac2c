@@ -73,6 +73,41 @@ int charpos = 0;
 %}
 
 
+"(|"			   { FILTER( BURGER_L); }
+"|)"			   { FILTER( BURGER_R); }
+"<:"			   { FILTER( SUBTYPE); }
+"./"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFDIV); 
+			   }
+".*"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFMUL); 
+			   }
+".+"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFADD); 
+			   }
+".-"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFSUB); 
+			   }
+".<"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFLT); 
+			   }
+".>"			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFGT); 
+			   }
+".<="			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFLE); 
+			   }
+".>="			   { 
+  			     yylval.id = STRcpy(yytext); 
+			     FILTER( NTFGE); 
+			   }
 "{"                        { FILTER( BRACE_L); }
 "}"                        { FILTER( BRACE_R); }
 "("                        { FILTER( BRACKET_L); }
@@ -275,6 +310,12 @@ int charpos = 0;
 "specialize"               { FILTER( SPECIALIZE); }
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
 "noinline"                 { FILTER( NOINLINE); }
+
+"iff" 			   { FILTER( IFF); }
+"builtin-typedef" 	   { FILTER( NTFBUILTIN); }
+"user-typedef" 		   { FILTER( NTFUSER); }
+"abstract-typedef"	   { FILTER( NTFABSTRACT); }
+"typerel"		   { FILTER( TYPEREL); }
 
 "float"                    { FILTER( TYPE_FLOAT); }
 "bool"                     { FILTER( TYPE_BOOL); }

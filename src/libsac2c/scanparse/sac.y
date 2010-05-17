@@ -165,12 +165,16 @@ PRF_MESH_VxVxV
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
+%token BURGER_L BURGER_R NTFBUILTIN NTFUSER NTFABSTRACT
+TYPEREL SUBTYPE IFF
+%token <id> NTFADD NTFSUB NTFMUL NTFDIV
+%token <id> NTFLT NTFGT NTFLE NTFGE
 
 /*******************************************************************************
  * SAC programs
  */
 
-%type <node> prg  defs  def2  def3  def4  def5 def6
+%type <node> prg  defs  def1 def2  def3  def4  def5 def6
 
 %type <node> structdef structdef2 typedef exttypedef
 
@@ -199,9 +203,9 @@ PRF_MESH_VxVxV
 /*
 %type <node> pragmas 
 */
-
-
-
+%type <node> ntfabsdef ntfuserdef ntfbuiltindef ntfarg
+%type <node> ntfdef ntfrel ntfspecs ntfdefs ntfrels ntfexprs
+%type <node> ntfoperand
 
 
 /*******************************************************************************
@@ -229,6 +233,10 @@ PRF_MESH_VxVxV
 %type <target_list_t> targets
 %type <inheritence_list_t> inherits
 %type <resource_list_t> resources
+
+%right NTFLT NTFGT NTFLE NTFGE
+%left NTFSUB NTFADD
+%left NTFMUL NTFDIV
 
 %nonassoc STRUCTSET
 %left STRUCTELEM
@@ -303,12 +311,19 @@ prg: defs
      }
    ;
 
-defs: interface def2
+defs: interface def1
       { $$ = $2;
         MODULE_INTERFACE( $$) = $1;
       }
-    | def2
+    | def1
       { $$ = $1; }
+
+def1: ntfspecs def2
+      { $$ = $2;
+	MODULE_TYPEFAMILIES($$) = $1;
+      }
+    | def2
+      { $$ = $1;}
     ;
 
 def2: structdef def2
@@ -335,7 +350,7 @@ def3: typedef def3
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         TYPEDEF_PRAGMA( $1) = $3;
         MODULE_TYPES( $$) = $1;
-      } 
+      }
     | def4
       { $$ = $1; }
     ;
@@ -1935,7 +1950,174 @@ nums: NUM COMMA nums { $$ = TBmakeNums( $1, $3); }
       | NUM { $$ = TBmakeNums( $1, NULL); }
       ;
 
+/*
+ **********************************************************
+ *
+ *  rules for ntypefamily (ntf)
+ *
+ ********************************************************** 
+ */
+ntfspecs: ntfdefs ntfrels
+	{
+	  $$=TBmakeNtfspecs($1,$2);
+	}
 
+ntfdefs: ntfdef ntfdefs
+	{
+	  $$=TBmakeNtfdefs($1,$2);
+	}
+	|ntfdef
+	{
+	  $$=TBmakeNtfdefs($1,NULL);
+	}
+	;
+ntfrels: ntfrel ntfrels
+	{
+	  $$=TBmakeNtfrels($1,$2);
+	}
+	|ntfrel
+	{
+	  $$=TBmakeNtfrels($1,NULL);
+	}
+	;
+ntfdef: ntfabsdef
+	{
+	  $$=$1;
+	}
+	|ntfuserdef
+	{
+	  $$=$1;
+	}
+	|ntfbuiltindef
+	{
+	  $$=$1;
+	}
+	;
+ntfabsdef: NTFABSTRACT ID ntfarg SEMIC
+	{
+	  $$=TBmakeNtfabs($2,$3,NULL,NULL);
+	}
+	|NTFABSTRACT ID SEMIC
+	{
+	  $$=TBmakeNtfabs($2,NULL,NULL,NULL);
+	}
+	;
+ntfuserdef: NTFUSER ID ntfarg SEMIC
+	{
+	  $$=TBmakeNtfusr($2,$3,NULL,NULL);
+	}
+	;
+ntfbuiltindef: 
+	NTFBUILTIN simplentype SEMIC
+	{
+	  $$=TBmakeNtfbin(TYtype2DebugString($2,0,0), NULL,NULL,NULL);
+	}
+	| NTFBUILTIN ID SEMIC
+	{
+	  $$=TBmakeNtfbin($2, NULL, NULL, NULL);
+	}
+	| NTFBUILTIN ID BURGER_L ntfarg BURGER_R SEMIC
+	{
+	  $$=TBmakeNtfbin($2, $4, NULL, NULL);
+	}
+	;
+ntfarg: ID DCOLON ID COMMA ntfarg
+	{
+	  $$=TBmakeNtfarg($1,$3,$5);
+	}
+	|
+	ID COMMA ntfarg
+	{
+	  $$=TBmakeNtfarg($1,NULL,$3);
+	}
+	|
+	ID DCOLON ID
+	{
+	  $$=TBmakeNtfarg($1,$3,NULL);
+	}
+	|
+	ID
+	{
+	  $$=TBmakeNtfarg($1,NULL,NULL);
+	}
+	;
+ntfrel: TYPEREL simplentype SUBTYPE simplentype SEMIC
+	{
+	  $$=TBmakeNtfrel(TYtype2DebugString($2,0,0),
+		TYtype2DebugString($4,0,0),NULL);
+	}
+	|TYPEREL ID SUBTYPE ID SEMIC
+	{
+	  $$=TBmakeNtfrel($2,$4,NULL);
+	}
+	|TYPEREL simplentype SUBTYPE ID SEMIC
+	{
+	  $$=TBmakeNtfrel(TYtype2DebugString($2,0,0),$4,NULL);
+	}
+	|TYPEREL ID SUBTYPE ID IFF ntfexprs SEMIC
+	{
+	  $$=TBmakeNtfrel($2,$4,$6);
+	}
+	;
+ntfexprs: 
+	ntfexprs NTFLT ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFGT ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFLE ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFGE ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFMUL ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFDIV ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFADD ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| ntfexprs NTFSUB ntfexprs
+	{
+	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	}
+	| BRACKET_L ntfexprs BRACKET_R
+	{
+	  $$=$2;
+	}
+	| ntfoperand
+	{
+	  $$=$1;
+	}
+	;
+
+ntfoperand : ID
+	{
+	  printf("Id   : %s\n",STRcpy($1));
+	  fflush(stdout);
+	  $$=TBmakeNtfexpr(NULL,NULL,NULL);
+	  NTFEXPR_ASSIGNEEID($$)=STRcpy($1);
+	}
+	|
+	NUM
+	{
+	  printf("Num  : %d\n",$1);
+	  fflush(stdout);
+	  $$=TBmakeNtfexpr(NULL,NULL,NULL);
+	  NTFEXPR_VALUE($$)=$1;
+	}
+	;
 
 
 /*
