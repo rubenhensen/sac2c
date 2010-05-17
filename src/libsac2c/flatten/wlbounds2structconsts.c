@@ -37,12 +37,14 @@
 #include "dbug.h"
 #include "memory.h"
 #include "free.h"
+#include "DupTree.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "shape.h"
 #include "traverse.h"
 #include "pattern_match.h"
 #include "globals.h"
+#include "str.h"
 
 /**
  * INFO structure
@@ -221,16 +223,45 @@ static node *
 EnsureStructConstant (node *bound, ntype *type, info *arg_info)
 {
     static pattern *pat = NULL;
+    static node *array = NULL;
     node *new_bound;
     int dim;
 
     DBUG_ENTER ("EnsureStructConstant");
 
     if (pat == NULL) {
-        pat = PMarray (0, 1, PMskip (0));
+        pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     }
-    if (!PMmatch (pat, (INFO_GENFLAT (arg_info) ? PM_flat : PM_exact), NULL, bound)
-        && TUshapeKnown (type)) {
+
+    if (PMmatch (pat, PM_flatSkipExtrema, NULL, bound)) {
+        /* this is somehow defined as an array */
+
+        if (!INFO_GENFLAT (arg_info)) {
+            if (PMmatch (pat, PM_flat, NULL, bound)) {
+                /* but maybe flattened */
+                new_bound = array;
+
+                DBUG_PRINT ("WLBSC",
+                            ("...potentially already inline, store" F_PTR, array));
+
+                if (!PMmatch (pat, PM_exact, NULL, bound)) {
+                    /* it is flattened -> de-flatten */
+                    DBUG_PRINT ("WLBSC", ("...was flat, replacing."));
+                    bound = FREEdoFreeTree (bound);
+                    bound = DUPdoDupTree (new_bound);
+                }
+            } else {
+                /* there are some obstacles in the way, i.e. extrema -> create vector */
+                DBUG_PRINT ("WLBSC", ("...otherwise defined."));
+                dim = SHgetExtent (TYgetShape (type), 0);
+                new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
+                bound = FREEdoFreeTree (bound);
+                bound = new_bound;
+            }
+        }
+    } else if (TUshapeKnown (type)) {
+        /* not an array at all but AKS -> create vector */
+        DBUG_PRINT ("WLBSC", ("...creating struct const."));
         dim = SHgetExtent (TYgetShape (type), 0);
         new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
         bound = FREEdoFreeTree (bound);
