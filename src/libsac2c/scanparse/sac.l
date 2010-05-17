@@ -73,8 +73,8 @@ int charpos = 0;
 %}
 
 
-"(|"			   { FILTER( BURGER_L); }
-"|)"			   { FILTER( BURGER_R); }
+"(||"			   { FILTER( BURGER_L); }
+"||)"			   { FILTER( BURGER_R); }
 "<:"			   { FILTER( SUBTYPE); }
 "./"			   { 
   			     yylval.id = STRcpy(yytext); 
