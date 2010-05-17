@@ -1487,6 +1487,14 @@ EMALprf (node *arg_node, info *arg_info)
         als->reuse = DUPdoDupNode (PRF_ARG1 (arg_node));
         break;
 
+    case F_hideValue_SxA:
+    case F_hideShape_SxA:
+    case F_hideDim_SxA:
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        arg_node = TCmakePrf1 (F_copy, DUPdoDupNode (PRF_ARG2 (arg_node)));
+        break;
+
     case F_idx_shape_sel:
         /*
          * shape_sel always yields a scalar

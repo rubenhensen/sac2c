@@ -522,6 +522,21 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfDrop, NULL, SCCFprf_drop_SxV, SAACFprf_drop_SxV, SAAdim_is_1,
        SAAshp_for_drop, NULL, 0, PPIgetPVTakeAndDrop, ICCvalMatchLen, TEone, NULL, NULL),
 
+  /*
+   * Hide Functions
+   */
+  PRF (hideValue_SxA, (PA_S, PA_A, PA_x), 2, HIDE, NOSIMD, NTCCTprf_hideValue_SxA, NULL,
+       COMPprfSecond, NULL, NULL, NULL, SAAdim_of_arg2, SAAshp_of_arg2, NULL, 0,
+       PPIgetPVSel, ICCnone, TEone, NULL, NULL),
+
+  PRF (hideShape_SxA, (PA_S, PA_A, PA_x), 2, HIDE, NOSIMD, NTCCTprf_hideShape_SxA, NULL,
+       COMPprfSecond, NULL, NULL, NULL, SAAdim_of_arg2, NULL, NULL, 0, PPIgetPVSel,
+       ICCnone, TEone, NULL, NULL),
+
+  PRF (hideDim_SxA, (PA_S, PA_A, PA_x), 2, HIDE, NOSIMD, NTCCTprf_hideDim_SxA, NULL,
+       COMPprfSecond, NULL, NULL, NULL, NULL, NULL, NULL, 0, PPIgetPVSel, ICCnone, TEone,
+       NULL, NULL),
+
 #endif /* PRF_INTERNAL_ONLY */
 
 /*******************************************************************************

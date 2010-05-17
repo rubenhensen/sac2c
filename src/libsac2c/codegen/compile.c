@@ -3581,6 +3581,17 @@ MakeIcm_PRF_TYPE_CONV_AKS (char *error, node *let_ids, node *id)
 }
 
 static node *
+COMPprfSecond (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprfSecond");
+    ret_node
+      = TCmakeAssignIcm2 ("SAC_ND_PRF_SECOND", DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
+                          DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+    DBUG_RETURN (ret_node);
+}
+
+static node *
 COMPprfSyncIn (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;

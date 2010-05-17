@@ -3054,3 +3054,93 @@ NTCCTprf_mesh_VxVxV (te_info *info, ntype *args)
     res = TYmakeProductType (1, res);
     DBUG_RETURN (res);
 }
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_hideValue_SxA( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ *****************************************************************************/
+
+ntype *
+NTCCTprf_hideValue_SxA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("NTCCTprf_hideValue_SxA");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "hideValue called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 1);
+
+    if (TYisAKV (array)) {
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                         SHcopyShape (TYgetShape (array)));
+    } else {
+        res = TYcopyType (array);
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_hideShape_SxA( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ *****************************************************************************/
+
+ntype *
+NTCCTprf_hideShape_SxA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("NTCCTprf_hideShape_SxA");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "hideShape called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 1);
+
+    if (TUisScalar (array)) {
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                         SHcopyShape (TYgetShape (array)));
+    } else if (TUshapeKnown (array)) {
+        res = TYmakeAKD (TYcopyType (TYgetScalar (array)), SHgetDim (TYgetShape (array)),
+                         SHmakeShape (0));
+    } else {
+        res = TYcopyType (array);
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_hideDim_SxA( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ *****************************************************************************/
+
+ntype *
+NTCCTprf_hideDim_SxA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("NTCCTprf_hideDim_SxA");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "hideDim called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 1);
+
+    res = TYmakeAUD (TYcopyType (TYgetScalar (array)));
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}

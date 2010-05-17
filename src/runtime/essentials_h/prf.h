@@ -309,6 +309,13 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
+#define SAC_ND_PRF_SECOND_NODESC(to_NT, second_NT)                                       \
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (second_NT);
+
+#define SAC_ND_PRF_SECOND_DESC(to_NT, second_NT)                                         \
+    SAC_ND_PRF_SECOND_NODESC (to_NT, second_NT)                                          \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (second_NT);
+
 #define SAC_ND_PRF_TYPE_CONV__SCL__SHP(error, left_NT, right_NT)                         \
     {                                                                                    \
         if (0 != SAC_ND_A_DIM (right_NT)) {                                              \

@@ -119,6 +119,7 @@ LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL 
 
 PRF_DIM_A  PRF_SHAPE_A  PRF_RESHAPE_VxA  PRF_SEL_VxA  PRF_MODARRAY_AxVxS
+PRF_HIDEVALUE_SxA PRF_HIDESHAPE_SxA PRF_HIDEDIM_SxA
 PRF_ADD_SxS  PRF_ADD_SxV  PRF_ADD_VxS  PRF_ADD_VxV 
 PRF_SUB_SxS  PRF_SUB_SxV  PRF_SUB_VxS  PRF_SUB_VxV 
 PRF_MUL_SxS  PRF_MUL_SxV  PRF_MUL_VxS  PRF_MUL_VxV 
@@ -1806,6 +1807,9 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_RESHAPE_VxA    { $$ = F_reshape_VxA; }
    | PRF_SEL_VxA        { $$ = F_sel_VxA;     }
    | PRF_MODARRAY_AxVxS { $$ = F_modarray_AxVxS;}
+   | PRF_HIDEVALUE_SxA  { $$ = F_hideValue_SxA;}
+   | PRF_HIDESHAPE_SxA  { $$ = F_hideShape_SxA;}
+   | PRF_HIDEDIM_SxA    { $$ = F_hideDim_SxA;}
    | PRF_ADD_SxS        { $$ = F_add_SxS; }
    | PRF_ADD_SxV        { $$ = F_add_SxV; }
    | PRF_ADD_VxS        { $$ = F_add_VxS; }

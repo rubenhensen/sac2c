@@ -249,6 +249,11 @@ rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AKD', `HID')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AUD', `NHD')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AUD', `HID')
 
+pat(`SAC_ND_PRF_SECOND', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `SCL', `NHD', `*UNQ')
+rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_DESC', `*SHP', `*HID', `*UNQ')
+
 dnl SAC_ND_TYPE_CONV
 dnl Check before converting types
 pat(`SAC_ND_PRF_TYPE_CONV', `1', `1', `NT_SHP')
