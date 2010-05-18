@@ -116,6 +116,7 @@ struct INFO {
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
+    bool nip_arg;
 };
 
 #define INFO_WITH2_IVECT(n) ((n)->with2_ivect)
@@ -140,6 +141,7 @@ struct INFO {
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
 #define INFO_NIP_WLSEGS(n) ((n)->nip_wlsegs)
+#define INFO_NIP_ARG(n) ((n)->nip_arg)
 
 static info *
 MakeInfo ()
@@ -170,6 +172,7 @@ MakeInfo ()
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
+    INFO_NIP_ARG (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -207,6 +210,7 @@ InitialiseNipInfo (info *info)
 
     INFO_NIP_LHS (info) = INFO_WITH2_LHS (info);
     INFO_NIP_RESULT (info) = FALSE;
+    INFO_NIP_ARG (info) = FALSE;
 
     DBUG_RETURN (info);
 }
@@ -227,6 +231,7 @@ ResetNipInfo (info *info)
 
     INFO_NIP_LHS (info) = NULL;
     INFO_NIP_RESULT (info) = FALSE;
+    INFO_NIP_ARG (info) = FALSE;
 
     DBUG_RETURN (info);
 }
@@ -2117,6 +2122,37 @@ ATravNImodarray (node *arg_node, info *arg_info)
 }
 
 static node *
+ATravNIap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravNIap");
+
+    if (!FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
+        INFO_NIP_ARG (arg_info) = FALSE;
+
+        arg_node = TRAVcont (arg_node, arg_info);
+
+        INFO_NIP_RESULT (arg_info)
+          = INFO_NIP_RESULT (arg_info) || INFO_NIP_ARG (arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravNIarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravNIarg");
+
+    INFO_NIP_ARG (arg_info) = INFO_NIP_ARG (arg_info)
+                              || (!TYisScalar (AVIS_TYPE (ARG_AVIS (arg_node)))
+                                  || TUisHidden (AVIS_TYPE (ARG_AVIS (arg_node))));
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
 ATravNIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravNIfold");
@@ -2141,7 +2177,7 @@ NotImplemented (node *with, info *arg_info)
       = {{N_genarray, &ATravNIgenarray}, {N_modarray, &ATravNImodarray},
          {N_fold, &ATravNIfold},         {N_break, &ATravNIfail},
          {N_propagate, &ATravNIfail},    {0, NULL}};
-    anontrav_t nap_trav[2] = {{N_ap, &ATravNIfail}, {0, NULL}};
+    anontrav_t nap_trav[3] = {{N_ap, &ATravNIap}, {N_arg, &ATravNIarg}, {0, NULL}};
 
     DBUG_ENTER ("NotImplemented");
 
