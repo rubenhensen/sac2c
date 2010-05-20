@@ -25,7 +25,7 @@
 static bool CHANGED = FALSE;
 static int ITERATION = 1;
 
-typedef enum { TAG, UNTAG, VARUPDATE } travmode_t;
+typedef enum { cutem_tag, cutem_untag, cutem_update } travmode_t;
 
 /*
  * INFO structure
@@ -71,7 +71,7 @@ MakeInfo ()
     INFO_FROMAP (result) = FALSE;
     INFO_INAPARGS (result) = FALSE;
     INFO_FUNDEFARGS (result) = NULL;
-    INFO_TRAVMODE (result) = TAG;
+    INFO_TRAVMODE (result) = cutem_tag;
     INFO_INLACFUN (result) = FALSE;
     INFO_CUDARIZABLE (result) = FALSE;
     INFO_INWITH (result) = FALSE;
@@ -114,17 +114,15 @@ CUTEMdoTagExecutionmode (node *syntax_tree)
     do {
         CHANGED = FALSE;
 
-        printf (
-          "************************* Starting iteration %d *************************\n",
-          ITERATION);
+        printf ("**************** Starting iteration %d ****************\n", ITERATION);
 
         arg_info = MakeInfo ();
-        INFO_TRAVMODE (arg_info) = TAG;
+        INFO_TRAVMODE (arg_info) = cutem_tag;
         syntax_tree = TRAVdo (syntax_tree, arg_info);
         arg_info = FreeInfo (arg_info);
 
         arg_info = MakeInfo ();
-        INFO_TRAVMODE (arg_info) = UNTAG;
+        INFO_TRAVMODE (arg_info) = cutem_untag;
         // if( ITERATION != 4)
         syntax_tree = TRAVdo (syntax_tree, arg_info);
         arg_info = FreeInfo (arg_info);
@@ -164,7 +162,7 @@ CUTEMfundef (node *arg_node, info *arg_info)
             printf ("Traversing function %s\n", FUNDEF_NAME (arg_node));
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-            if (INFO_TRAVMODE (arg_info) == TAG) {
+            if (INFO_TRAVMODE (arg_info) == cutem_tag) {
                 printf ("Setting cudarizable function %s(%d)\n", FUNDEF_NAME (arg_node),
                         INFO_CUDARIZABLE (arg_info));
                 FUNDEF_ISCUDALACFUN (arg_node) = INFO_CUDARIZABLE (arg_info);
@@ -193,8 +191,8 @@ CUTEMargs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMargs");
 
-    /* We only initilise the needcount to 0 in the first iteration of tagging */
-    if (INFO_TRAVMODE (arg_info) == TAG && ITERATION == 1) {
+    /* We initilise IsHostReferenced in the first iteration of TAG traversal */
+    if (INFO_TRAVMODE (arg_info) == cutem_tag && ITERATION == 1) {
         AVIS_ISHOSTREFERENCED (ARG_AVIS (arg_node)) = FALSE;
     }
 
@@ -243,7 +241,7 @@ CUTEMvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUTEMvardec");
 
     /* We only initilise the needcount to 0 in the first iteration of tagging */
-    if (INFO_TRAVMODE (arg_info) == TAG && ITERATION == 1) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag && ITERATION == 1) {
         AVIS_ISHOSTREFERENCED (VARDEC_AVIS (arg_node)) = FALSE;
     }
 
@@ -274,7 +272,7 @@ CUTEMassign (node *arg_node, info *arg_info)
     old_assign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
 
-    if (INFO_TRAVMODE (arg_info) == TAG) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Each N_assign is intially tagged to be CUDA_HOST_SINGLE */
         ASSIGN_EXECMODE (arg_node) = CUDA_HOST_SINGLE;
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -283,11 +281,11 @@ CUTEMassign (node *arg_node, info *arg_info)
          * is still CUDA_HOST_SINGLE(means that this N_assign has
          * to be executed on the host), we update it's RHS variables */
         if (ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
-            INFO_TRAVMODE (arg_info) = VARUPDATE;
+            INFO_TRAVMODE (arg_info) = cutem_update;
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         }
-        INFO_TRAVMODE (arg_info) = TAG;
-    } else if (INFO_TRAVMODE (arg_info) == UNTAG) {
+        INFO_TRAVMODE (arg_info) = cutem_tag;
+    } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
 
         old_mode = ASSIGN_EXECMODE (arg_node);
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -297,13 +295,13 @@ CUTEMassign (node *arg_node, info *arg_info)
          * to CUDA_HOST_SINGLE, we update all variables on the RHS */
         if (old_mode == CUDA_DEVICE_SINGLE
             && ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
-            INFO_TRAVMODE (arg_info) = VARUPDATE;
+            INFO_TRAVMODE (arg_info) = cutem_update;
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
             CHANGED = TRUE;
         }
-        INFO_TRAVMODE (arg_info) = UNTAG;
+        INFO_TRAVMODE (arg_info) = cutem_untag;
     } else {
-        /* If we have a mode of VARUPDATE, this means we should be either
+        /* If we have a mode of cutem_update, this means we should be either
          * in the withloop body or in a conditional */
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -336,7 +334,7 @@ CUTEMcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUTEMcond");
 
-    if (INFO_TRAVMODE (arg_info) != VARUPDATE) {
+    if (INFO_TRAVMODE (arg_info) != cutem_update) {
         old_incond = INFO_INCOND (arg_info);
         INFO_INCOND (arg_info) = TRUE;
         COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
@@ -364,14 +362,15 @@ CUTEMlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMlet");
 
-    if (INFO_TRAVMODE (arg_info) == TAG || INFO_TRAVMODE (arg_info) == UNTAG) {
-        /* Techonically, for UNTAG traversal, we only need to traverse
+    if (INFO_TRAVMODE (arg_info) == cutem_tag
+        || INFO_TRAVMODE (arg_info) == cutem_untag) {
+        /* Techonically, for cutem_untag traversal, we only need to traverse
          * the ids and not the expr. However, since LAC functions are
          * traverse inline, therefore, to untag N_assigns in LAC functions,
          * we need to traverse expr as well */
         LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-    } else if (INFO_TRAVMODE (arg_info) == VARUPDATE) {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     } else {
         DBUG_ASSERT ((0), "Unknown traverse mode!");
@@ -396,13 +395,13 @@ CUTEMids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMids");
 
-    if (INFO_TRAVMODE (arg_info) == TAG) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* If the LHS contains non-AKS arrays, it can only be executed
          * on the host, i.e. CUDA_HOST_SINGLE */
         if (!TUisScalar (IDS_NTYPE (arg_node)) && !TYisAKS (IDS_NTYPE (arg_node))) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
-    } else if (INFO_TRAVMODE (arg_info) == UNTAG) {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         if (AVIS_ISHOSTREFERENCED (IDS_AVIS (arg_node))) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
@@ -431,7 +430,8 @@ CUTEMexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMexprs");
 
-    if (INFO_TRAVMODE (arg_info) == TAG || INFO_TRAVMODE (arg_info) == VARUPDATE) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag
+        || INFO_TRAVMODE (arg_info) == cutem_update) {
         EXPRS_EXPR (arg_node) = TRAVopt (EXPRS_EXPR (arg_node), arg_info);
         if (INFO_INAPARGS (arg_info)) {
             DBUG_ASSERT (INFO_FUNDEFARGS (arg_info) != NULL, "INFO_FUNDEFARGS is NULL!");
@@ -466,7 +466,7 @@ CUTEMid (node *arg_node, info *arg_info)
 
     lastassign = INFO_LASTASSIGN (arg_info);
 
-    if (INFO_TRAVMODE (arg_info) == TAG) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Get the SSAASSIGN of this N_id */
         ssa = ID_SSAASSIGN (arg_node);
         type = ID_NTYPE (arg_node);
@@ -497,7 +497,7 @@ CUTEMid (node *arg_node, info *arg_info)
                 cudadefined = TRUE;
             }
         }
-    } else if (INFO_TRAVMODE (arg_info) == VARUPDATE) {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         DBUG_ASSERT (ASSIGN_EXECMODE (lastassign) == CUDA_HOST_SINGLE,
                      "Update variable in non-CUDA_HOST_SINGLE N_assign!");
 
@@ -553,7 +553,7 @@ CUTEMap (node *arg_node, info *arg_info)
     traverse_lacfun
       = (fundef != NULL && FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info));
 
-    if (INFO_TRAVMODE (arg_info) == TAG) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag) {
 
         /* If the N_ap is a lac-fun, we traverse its arguments and see
          * if it can possibly be executed in single thread in CUDA. However,
@@ -606,7 +606,7 @@ CUTEMap (node *arg_node, info *arg_info)
                 }
             }
         }
-    } else if (INFO_TRAVMODE (arg_info) == VARUPDATE) {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         if (traverse_lacfun) {
             /* Tag the IsCudaDefined attribute of each lac fun argument */
             INFO_INAPARGS (arg_info) = TRUE;
@@ -620,7 +620,7 @@ CUTEMap (node *arg_node, info *arg_info)
         } else if (fundef != INFO_FUNDEF (arg_info)) {
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
         }
-    } else if (INFO_TRAVMODE (arg_info) == UNTAG) {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         if (traverse_lacfun) {
             /* Push info */
             old_inlacfun = INFO_INLACFUN (arg_info);
@@ -661,7 +661,7 @@ CUTEMwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUTEMwith");
 
-    if (INFO_TRAVMODE (arg_info) == TAG) {
+    if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Cudarizbale N_with is tagged as CUDA_DEVICE_MULTI */
         if (WITH_CUDARIZABLE (arg_node)) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_MULTI;
