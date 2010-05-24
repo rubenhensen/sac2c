@@ -4,12 +4,13 @@
  *
  */
 
-#include <string.h>
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "dbug.h"
 #include "new_types.h"
+#include "print.h"
+#include "tree_compound.h"
+#include <str.h>
 
 #include "gdb_utils.h"
 
@@ -45,23 +46,28 @@ GDBbreakAtNid (node *arg_node, char *nm)
         switch (NODE_TYPE (arg_node)) {
 
         case N_id:
-            z = (0 == strcmp (nm, AVIS_NAME (ID_AVIS (arg_node))));
+            z = (0 == STReq (nm, AVIS_NAME (ID_AVIS (arg_node))));
             break;
 
         case N_ids:
-            z = (0 == strcmp (nm, AVIS_NAME (IDS_AVIS (arg_node))));
+            z = (0 == STReq (nm, AVIS_NAME (IDS_AVIS (arg_node))));
+            break;
+
+        case N_assign:
+            z = (0
+                 == STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))))));
             break;
 
         case N_let:
-            z = (0 == strcmp (nm, AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+            z = (0 == STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
             break;
 
         case N_avis:
-            z = (0 == strcmp (nm, AVIS_NAME (arg_node)));
+            z = (0 == STReq (nm, AVIS_NAME (arg_node)));
             break;
 
         case N_fundef:
-            z = (0 == strcmp (nm, FUNDEF_NAME (arg_node)));
+            z = (0 == STReq (nm, FUNDEF_NAME (arg_node)));
             break;
 
         default:
@@ -71,4 +77,68 @@ GDBbreakAtNid (node *arg_node, char *nm)
     }
 
     return (z);
+}
+
+/******************************************************************************
+ *
+ * function: GDBwhatIs( char *nm, node *fundef)
+ *
+ * description:
+ *
+ * This function is intended to assist users of ddd/gdb in
+ * making the sac2c compiler display the value of a variable.
+ *
+ * Typical usage:
+ *   GDBwhatIs( "foo", arg_info->fundef)
+ *
+ ******************************************************************************/
+void
+GDBwhatIs (char *nm, node *fundef)
+{
+    node *vardec;
+
+    if (NULL != nm) {
+        vardec = TCfindVardec_Name (nm, fundef);
+        if ((NULL != vardec) && (NULL != AVIS_SSAASSIGN (VARDEC_AVIS (vardec)))) {
+            PRTdoPrintNode (AVIS_SSAASSIGN (VARDEC_AVIS (vardec)));
+        }
+    }
+
+    return;
+}
+
+/******************************************************************************
+ *
+ * function: GDBprintPrfArgs( node *arg_node, node *fundef)
+ *
+ * description:
+ *
+ * This function is intended to assist users of ddd/gdb in
+ * making the sac2c compiler display the value of the arguments
+ * of an N_prf.
+ *
+ * Typical usage:
+ *   GDBwhatIs( "foo", arg_info->fundef)
+ *
+ ******************************************************************************/
+void
+GDBprintPrfArgs (node *arg_node, node *fundef)
+{
+    node *exprs;
+    node *expr;
+
+    if (NULL != arg_node) {
+        exprs = PRF_ARGS (arg_node);
+        while (NULL != exprs) {
+            expr = EXPRS_EXPR (exprs);
+            if ((N_id == NODE_TYPE (expr)) && (NULL != AVIS_SSAASSIGN (ID_AVIS (expr)))) {
+                PRTdoPrintNode (AVIS_SSAASSIGN (ID_AVIS (expr)));
+            } else {
+                PRTdoPrintNode (expr);
+            }
+            exprs = EXPRS_NEXT (exprs);
+        }
+    }
+
+    return;
 }
