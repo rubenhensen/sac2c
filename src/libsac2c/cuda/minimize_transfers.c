@@ -34,6 +34,7 @@
 #include "minimize_cond_transfers.h"
 #include "minimize_cudast_transfers.h"
 #include "SSALIR.h"
+#include "globals.h"
 #include "wl_descalarization.h"
 
 /** <!--********************************************************************-->
@@ -52,8 +53,20 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
 {
     DBUG_ENTER ("MTRANdoMinimizeTransfers");
 
-    int i = 0;
-    while (i < 10) {
+    int i, j;
+
+    if (global.backend == BE_cuda && global.optimize.doexpar) {
+        i = 0;
+        while (i < 10) {
+            /* syntax_tree = MBTRAN2doMinimizeBlockTransfers( syntax_tree); */
+            syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
+            syntax_tree = MCTRANdoMinimizeCudastCondTransfers (syntax_tree);
+            i++;
+        }
+    }
+
+    j = 0;
+    while (j < 10) {
         syntax_tree = MCSTRANdoMinimizeCudastTransfers (syntax_tree);
         syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
         syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
@@ -61,7 +74,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
         // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
-        i++;
+        j++;
     }
 
     // syntax_tree = WLDSdoWithloopDescalarization( syntax_tree);

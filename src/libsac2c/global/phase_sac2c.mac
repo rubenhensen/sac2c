@@ -752,7 +752,8 @@ SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
           global.backend == BE_cuda, cuda)
 
 SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
-          NEVER, /*Comment out for now. A bug in loop18p.sac*/
+          global.backend == BE_cuda
+            && global.optimize.doslpt, /*Comment out for now. A bug in loop18p.sac*/
           cuda)
 
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,

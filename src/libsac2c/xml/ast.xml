@@ -278,6 +278,7 @@
           <node name="Arg" />
           <node name="Funcond" />
           <node name="Return" />
+          <node name="Cudast" />
         </travuser>
       </traversal>
       <traversal id="MBTRAN" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers.h" >

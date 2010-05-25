@@ -42,6 +42,7 @@
 #include "DataFlowMaskUtils.h"
 #include "remove_dfms.h"
 #include "infer_dfms.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  *
@@ -459,26 +460,45 @@ ICSMEMid (node *arg_node, info *arg_info)
     /* This condition needs to be further restricted */
     if ((FUNDEF_ISCUDALACFUN (fundef) || INFO_INCUDAST (arg_info))
         && !TUisScalar (AVIS_TYPE (avis))) {
-        DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
-                     "Non AKS N_id found in CUDA LAC fun or CUDAST!");
+        if (TYisAKV (AVIS_TYPE (avis))) {
+            new_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (avis)));
 
-        dev_type = TYcopyType (AVIS_TYPE (avis));
-        scalar_type = TYgetScalar (dev_type);
-        sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-        scalar_type = TYsetSimpleType (scalar_type, sty);
-        new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+            AVIS_ISCUDALOCAL (new_avis) = TRUE;
 
-        INFO_PREASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
-                                     TBmakePrf (F_host2device,
-                                                TBmakeExprs (TBmakeId (avis), NULL))),
-                          INFO_PREASSIGNS (arg_info));
+            INFO_PREASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                         COconstant2AST (
+                                           TYgetValue (ID_NTYPE (arg_node)))),
+                              INFO_PREASSIGNS (arg_info));
 
-        AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
-        ID_AVIS (arg_node) = new_avis;
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (new_avis, NULL));
+            AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
+            ID_AVIS (arg_node) = new_avis;
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                TBmakeVardec (new_avis, NULL));
+        } else {
+            DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
+                         "Non AKS N_id found in CUDA LAC fun or CUDAST!");
+
+            dev_type = TYcopyType (AVIS_TYPE (avis));
+            scalar_type = TYgetScalar (dev_type);
+            sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
+            scalar_type = TYsetSimpleType (scalar_type, sty);
+            new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+
+            INFO_PREASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                         TBmakePrf (F_host2device,
+                                                    TBmakeExprs (TBmakeId (avis), NULL))),
+                              INFO_PREASSIGNS (arg_info));
+
+            AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
+            ID_AVIS (arg_node) = new_avis;
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                TBmakeVardec (new_avis, NULL));
+        }
     }
 
     DBUG_RETURN (arg_node);

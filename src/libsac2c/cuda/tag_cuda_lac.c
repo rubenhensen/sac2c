@@ -26,10 +26,10 @@
  * INFO structure
  */
 struct INFO {
-    bool cudarizable;
+    bool iscudarizable;
 };
 
-#define INFO_CUDARIZABLE(n) (n->cudarizable)
+#define INFO_ISCUDARIZABLE(n) (n->iscudarizable)
 
 /*
  * INFO functions
@@ -43,7 +43,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_CUDARIZABLE (result) = TRUE;
+    INFO_ISCUDARIZABLE (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -62,13 +62,14 @@ static bool
 CheckIds (node *ids)
 {
     bool res = TRUE;
-    ntype *type
+    ntype *type;
 
-      DBUG_ENTER ("CheckIds");
+    DBUG_ENTER ("CheckIds");
 
     while (ids != NULL) {
         type = IDS_NTYPE (ids);
         res = res && (TUisScalar (type) || TYisAKS (type) || TYisAKD (type));
+        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (res);
@@ -78,10 +79,28 @@ node *
 TCULACdoTagCudaLac (node *funap, node *ids, node *fundef_args)
 {
     bool ids_ok;
+    node *fundef;
+    info *arg_info;
 
     DBUG_ENTER ("TCULACdoTagCudaLac");
 
+    fundef = AP_FUNDEF (funap);
+
     ids_ok = CheckIds (ids);
+
+    if (ids_ok) {
+
+        TRAVpush (TR_tculac);
+        arg_info = MakeInfo ();
+
+        fundef = TRAVdo (fundef, arg_info);
+        FUNDEF_ISCUDALACFUN (fundef) = INFO_ISCUDARIZABLE (arg_info);
+
+        arg_info = FreeInfo (arg_info);
+        TRAVpop ();
+    } else {
+        FUNDEF_ISCUDALACFUN (fundef) = FALSE;
+    }
 
     DBUG_RETURN (funap);
 }
@@ -90,6 +109,9 @@ node *
 TCULACfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMfundef");
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -97,12 +119,30 @@ node *
 TCULACwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUTEMwith");
+
+    INFO_ISCUDARIZABLE (arg_info) = FALSE;
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 TCULACap (node *arg_node, info *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("CUTEMap");
+
+    fundef = AP_FUNDEF (arg_node);
+
+    if (fundef != NULL) {
+        if (FUNDEF_ISDOFUN (fundef)) {
+            INFO_ISCUDARIZABLE (arg_info) = FALSE;
+        } else if (FUNDEF_ISCONDFUN (fundef)) {
+            fundef = TRAVdo (fundef, arg_info);
+        } else {
+            INFO_ISCUDARIZABLE (arg_info) = FALSE;
+        }
+    }
+
     DBUG_RETURN (arg_node);
 }

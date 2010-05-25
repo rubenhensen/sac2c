@@ -72,6 +72,8 @@ struct INFO {
     node *vardecs;
     int funargnum;
     bool funapdone;
+    bool cudastonly;
+    bool incudast;
 };
 
 #define INFO_INCONDFUN(n) (n->incondfun)
@@ -88,6 +90,8 @@ struct INFO {
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_FUNARGNUM(n) (n->funargnum)
 #define INFO_FUNAPDONE(n) (n->funapdone)
+#define INFO_CUDASTONLY(n) (n->cudastonly)
+#define INFO_INCUDAST(n) (n->incudast)
 
 static info *
 MakeInfo ()
@@ -112,6 +116,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_FUNARGNUM (result) = 0;
     INFO_FUNAPDONE (result) = FALSE;
+    INFO_INCUDAST (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -148,6 +153,32 @@ MCTRANdoMinimizeCondTransfers (node *syntax_tree)
     DBUG_ENTER ("MCTRANdoMinimizeCondTransfers");
 
     info = MakeInfo ();
+    INFO_CUDASTONLY (info) = FALSE;
+
+    TRAVpush (TR_mctran);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MCTRANdoMinimizeCudastCondTransfers( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *
+MCTRANdoMinimizeCudastCondTransfers (node *syntax_tree)
+{
+    info *info;
+    DBUG_ENTER ("MCTRANdoMinimizeCudastCondTransfers");
+
+    info = MakeInfo ();
+    INFO_CUDASTONLY (info) = TRUE;
 
     TRAVpush (TR_mctran);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -192,7 +223,7 @@ MCTRANfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
-        /* If the traverse mode is trav_condfun, we traverse the do-fun;
+        /* If the traverse mode is trav_condfun, we traverse the cond-fun;
          * otherwise we traverse the next N_fundef.
          */
         if (INFO_TRAVMODE (arg_info) == trav_condfun) {
@@ -323,6 +354,28 @@ MCTRANlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *MCTRANcudast( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
+node *
+MCTRANcudast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MCTRANcudast");
+
+    if (INFO_CUDASTONLY (arg_info)) {
+        INFO_INCUDAST (arg_info) = TRUE;
+        CUDAST_REGION (arg_node) = TRAVopt (CUDAST_REGION (arg_node), arg_info);
+        INFO_INCUDAST (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *MCTRANap( node *arg_node, info *arg_info)
  *
  * @brief
@@ -336,11 +389,15 @@ MCTRANap (node *arg_node, info *arg_info)
     node *old_apargs, *old_apids;
     enum traverse_mode old_mode;
     lut_t *old_h2d_lut, *old_d2h_lut;
+    bool traverse_cond;
 
     DBUG_ENTER ("MCTRANap");
 
+    traverse_cond = (INFO_CUDASTONLY (arg_info) && INFO_INCUDAST (arg_info))
+                    || (!INFO_CUDASTONLY (arg_info) && !INFO_INCUDAST (arg_info));
+
     /* If the N_ap->N_fundef is a COND-fun */
-    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)) && traverse_cond) {
         /* Traverse the N_ap arguments first */
         AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
@@ -404,46 +461,10 @@ MCTRANid (node *arg_node, info *arg_info)
          * a <host2device> is lifted out of the cond-fun, and therefore
          * the device variable is passed to the cond-fun as an argument
          * instead of a locally declared/defined variable. */
-        // if( !INFO_ISRECURSIVEAPARGS( arg_info)) {
         avis = LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
         if (avis != ID_AVIS (arg_node)) {
             ID_AVIS (arg_node) = avis;
         }
-        //}
-
-        /*
-            else {
-              pattern *pat;
-              pat = PMprf( 1, PMAisPrf( F_device2host),
-                           1, PMvar( 0, 0));
-
-              if( PMmatchFlat( pat, arg_node)) {
-                ssaassign = AVIS_SSAASSIGN( ID_AVIS( arg_node));
-                node *rhs = ASSIGN_RHS( ssaassign);
-                while( NODE_TYPE( rhs) != N_prf) {
-                 DBUG_ASSERT( NODE_TYPE( rhs) == N_id, "Non-id node found!");
-                 ssaassign = AVIS_SSAASSIGN( ID_AVIS( rhs));
-                 rhs = ASSIGN_RHS( ssaassign);
-                }
-                if( !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( ssaassign)) {
-                  // If the SSA of this argument is <device2host>, and this
-                  // <device2host> can be moved out of the do-fun.
-                  ID_AVIS( arg_node) = ID_AVIS( PRF_ARG1( ASSIGN_RHS( ssaassign)));
-                }
-              }
-              pat = PMfree( pat);
-
-              // If the N_ap argument is also a N_fundef argument, we set its
-              // avis to the N_fundef argument's avis. This has not effect when both
-              // arguments are host variables. However, since the argument of
-              // the N_fundef might changed to a device variable due to an earlier
-              // <host2device>, resetting the avis ensures that we pass the
-              // right argument to the recursive do-fun application.
-              if( NODE_TYPE( AVIS_DECL( ID_AVIS( arg_node))) == N_arg) {
-                ID_AVIS( arg_node) = ARG_AVIS( AVIS_DECL( ID_AVIS( arg_node)));
-              }
-            }
-        */
     }
 
     DBUG_RETURN (arg_node);
@@ -479,39 +500,6 @@ MCTRANfuncond (node *arg_node, info *arg_info)
         DBUG_ASSERT ((NODE_TYPE (else_id) == N_id),
                      "ELSE part of N_funcond must be a N_id node!");
 
-        /*
-            // The 'then' part of a N_funcond is result returned from the recursive
-            // application of the do-fun and the 'else' part is result computed
-            // within the do-fun.
-            ssaassign = AVIS_SSAASSIGN( ID_AVIS( else_id));
-            if( ISDEVICE2HOST( ssaassign) &&
-                !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( ssaassign)) {
-              avis = LUTsearchInLutPp( INFO_D2HLUT( arg_info), ID_AVIS( else_id));
-              if( avis != ID_AVIS( else_id)) {
-                // If the 'else' part is a host variable defined by <device2host>,
-                // it can be replaced by the corresponding device varaible.
-                ID_AVIS( else_id) = avis;
-
-                // Also change the 'then' part and N_ids to device type variables
-                AVIS_NAME( ID_AVIS( then_id)) =
-                  MEMfree( AVIS_NAME( ID_AVIS( then_id)));
-                AVIS_NAME( IDS_AVIS( let_ids)) =
-                  MEMfree( AVIS_NAME( IDS_AVIS( let_ids)));
-                AVIS_NAME( ID_AVIS( then_id)) = TRAVtmpVarName("dev");
-                AVIS_NAME( IDS_AVIS( let_ids)) = TRAVtmpVarName("dev");
-
-                then_scalar_type = TYgetScalar( AVIS_TYPE( ID_AVIS( then_id)));
-                TYsetSimpleType( then_scalar_type,
-                                 CUh2dSimpleTypeConversion(
-                                   TYgetSimpleType( then_scalar_type)));
-
-                ids_scalar_type = TYgetScalar( AVIS_TYPE( IDS_AVIS( let_ids)));
-                TYsetSimpleType( ids_scalar_type,
-                                 CUh2dSimpleTypeConversion(
-                                   TYgetSimpleType( ids_scalar_type)));
-              }
-            }
-        */
         then_ssaassign = AVIS_SSAASSIGN (ID_AVIS (then_id));
         else_ssaassign = AVIS_SSAASSIGN (ID_AVIS (else_id));
 

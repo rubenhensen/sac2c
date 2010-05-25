@@ -271,7 +271,7 @@ CUSKCassign (node *arg_node, info *arg_info)
          * duplicate this assign and sink the duplicate. */
         sunk_assign = DUPdoDupNode (arg_node);
         ASSIGN_NEXT (sunk_assign) = NULL;
-        // ASSIGN_EXECMODE( sunk_assign) = CUDA_HOST_SINGLE;
+        ASSIGN_EXECMODE (sunk_assign) = CUDA_HOST_SINGLE;
 
         /* Both DUPASSIGN and ORIASSIGN will be used in CUSKCids to set
          * the SSA links correctly */

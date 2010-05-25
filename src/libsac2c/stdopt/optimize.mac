@@ -113,6 +113,7 @@ OPTIMIZE( "cucc",   cucc,    TRUE,  TRUE,  "CUDA create cells")
 */
 OPTIMIZE ("expar", expar, FALSE, FALSE, "CUDA expand parallel region")
 OPTIMIZE ("memopt", memopt, TRUE, TRUE, "CUDA minimize memory tranfers")
+OPTIMIZE ("slpt", slpt, FALSE, FALSE, "CUDA split partition")
 OPTIMIZE ("cts", cts, TRUE, TRUE, "converting comparisons into subtractions")
 OPTIMIZE ("ucts", ucts, TRUE, TRUE, "eliminating subtractions in comparisons")
 

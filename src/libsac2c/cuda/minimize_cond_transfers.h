@@ -6,6 +6,7 @@
 #include "types.h"
 
 extern node *MCTRANdoMinimizeCondTransfers (node *arg_node);
+extern node *MCTRANdoMinimizeCudastCondTransfers (node *arg_node);
 extern node *MCTRANprf (node *arg_node, info *arg_info);
 extern node *MCTRANassign (node *arg_node, info *arg_info);
 extern node *MCTRANlet (node *arg_node, info *arg_info);
@@ -15,5 +16,6 @@ extern node *MCTRANid (node *arg_node, info *arg_info);
 extern node *MCTRANarg (node *arg_node, info *arg_info);
 extern node *MCTRANfuncond (node *arg_node, info *arg_info);
 extern node *MCTRANreturn (node *arg_node, info *arg_info);
+extern node *MCTRANcudast (node *arg_node, info *arg_info);
 
 #endif
