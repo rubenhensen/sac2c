@@ -138,6 +138,7 @@ struct INFO {
     node *withop;
     bool trav_mem;
     bool suballoc_rhs;
+    node *suballoc_lhs;
     bool in_cuda_partition;
 };
 
@@ -167,6 +168,7 @@ struct INFO {
 #define INFO_WITHOP(n) (n->withop)
 #define INFO_TRAVMEM(n) (n->trav_mem)
 #define INFO_SUBALLOC_RHS(n) (n->suballoc_rhs)
+#define INFO_SUBALLOC_LHS(n) (n->suballoc_lhs)
 #define INFO_IN_CUDA_PARTITION(n) (n->in_cuda_partition)
 #define INFO_WITH(n) (n->with)
 
@@ -205,6 +207,7 @@ MakeInfo ()
     INFO_WITHOP (result) = NULL;
     INFO_TRAVMEM (result) = FALSE;
     INFO_SUBALLOC_RHS (result) = FALSE;
+    INFO_SUBALLOC_LHS (result) = FALSE;
     INFO_IN_CUDA_PARTITION (result) = FALSE;
     INFO_WITH (result) = NULL;
 
@@ -648,8 +651,18 @@ node *
 CUKNLwith2 (node *arg_node, info *arg_info)
 {
     node *old_with;
+    /* node *new_avis; */
 
     DBUG_ENTER ("CUKNLwith2");
+
+    /*
+      if( INFO_COLLECT( arg_info) &&
+            ( IDS_AVIS( INFO_SUBALLOC_LHS( arg_info)) ==
+              IDS_AVIS( INFO_LETIDS( arg_info))) {
+        new_avis = DUPdoDupNode( IDS_AVIS( INFO_LETIDS( arg_info)));
+
+      }
+    */
 
     old_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
@@ -1185,6 +1198,7 @@ CUKNLprf (node *arg_node, info *arg_info)
         case F_suballoc:
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
             INFO_SUBALLOC_RHS (arg_info) = TRUE;
+            INFO_SUBALLOC_LHS (arg_info) = INFO_LETIDS (arg_info);
             ret_node = arg_node;
             break;
         default:

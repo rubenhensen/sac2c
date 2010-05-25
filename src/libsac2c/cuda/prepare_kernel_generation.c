@@ -154,6 +154,7 @@ PKNLGprf (node *arg_node, info *arg_info)
                                              COconstant2AST (
                                                TYgetValue (AVIS_TYPE (avis)))),
                                   NULL);
+                printf ("Add constant assignment before sel_VxA\n");
             }
             break;
         default:
