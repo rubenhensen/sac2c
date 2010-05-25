@@ -22,7 +22,6 @@ extern node *CUTEMid (node *arg_node, info *arg_info);
 extern node *CUTEMids (node *arg_node, info *arg_info);
 extern node *CUTEMlet (node *arg_node, info *arg_info);
 extern node *CUTEMfundef (node *arg_node, info *arg_info);
-extern node *CUTEMexprs (node *arg_node, info *arg_info);
 extern node *CUTEMblock (node *arg_node, info *arg_info);
 extern node *CUTEMvardec (node *arg_node, info *arg_info);
 extern node *CUTEMcond (node *arg_node, info *arg_info);

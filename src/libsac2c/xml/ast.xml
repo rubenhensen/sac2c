@@ -97,6 +97,13 @@
         </travuser>
       </traversal>
       -->
+      <traversal id="TCULAC" name="CUDA Tag cudarizable lac functions" default="sons" include="tag_cuda_lac.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With" />
+        </travuser>
+      </traversal>
       <traversal id="CUSKC" name="CUDA Sink scalar code into CUDA withloop" default="sons" include="cuda_sink_code.h" >
         <travuser>
           <node name="Fundef" />
@@ -153,14 +160,12 @@
           <node name="Ap" />
           <node name="Let" />
           <node name="Fundef" />
-          <node name="Exprs" />
           <node name="Vardec" />
           <node name="Cond" />
           <node name="Block" />
           <node name="Args" />
         </travuser>
         <travnone>
-          <node name="With2" />
           <node name="Return" />
           <node name="Funcond" />
         </travnone>
