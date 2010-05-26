@@ -74,7 +74,7 @@
  *
  * This transformation suffices iff Constant Folding (CF) and
  * Loop Invariant Removal (LIR) are turned on.
- * CF transformes the loop above into:
+ * CF transforms the loop above into:
  *
  * <pre>
  *   ...
@@ -289,6 +289,7 @@ struct INFO {
     node *vardecs;
     node *lastassign;
     node *precond;
+    bool onefundef;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -299,6 +300,7 @@ struct INFO {
 #define INFO_RECCALL(n) ((n)->reccall)
 #define INFO_LASTASSIGN(n) ((n)->lastassign)
 #define INFO_PRECONDASSIGN(n) ((n)->precond)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo ()
@@ -317,6 +319,7 @@ MakeInfo ()
     INFO_RECCALL (result) = NULL;
     INFO_LASTASSIGN (result) = NULL;
     INFO_PRECONDASSIGN (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -340,11 +343,11 @@ FreeInfo (info *info)
  * @fn node *AdjustLoopSignature( node *arg, shape * shp, info *arg_info)
  *
  * This function translates the non-scalar N_arg node "arg" into a
- * sequence of scalar N_arg nodes with fresh names whose lenth is
+ * sequence of scalar N_arg nodes with fresh names whose length is
  * identical to the product of the shape "shp" and returns these.
  * Furthermore, an assignment of the form
  *    arg = _reshape_( shp, [sarg1, ...., sargn] );
- * is created and prepanded to the function body utilising INFO_FUNDEF.
+ * is created and prepended to the function body utilising INFO_FUNDEF.
  * A vardec for arg is being created and inserted into the function
  * body as well. This vardec reuses the N_avis of the arg given and the
  * arg given is being freed!
@@ -505,14 +508,17 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
  *
  * @fn node * AdjustExternalCall( node *exprs, shape * shp, info *arg_info)
  *
- * This function replaces the non scalar external argument exprs_expr by an exprs
- * chain of new scalar identifiers a1, ..., an of the same element type and
- * returns these. The topmost N-exprs of exprs is freed, its successors are
+ * This function replaces the non-scalar external argument exprs_expr
+ * by an exprs chain of new scalar identifiers a1, ..., an
+ * o the same element type and returns these.
+ * The topmost N-exprs of exprs is freed, its successors are
  * appended to the freshly created exprs chain!
  * Furthermore, it creates a sequence of assignments
+ *
  *    a1 = exprs[ 0*shp];
  *       ...
  *    an = exprs[ shp-1];
+ *
  * which are stored in INFO_EXTASSIGNS( arg_info) for later insertion.
  * The according vardecs are stored in INFO_EXTVARDECS( arg_info)
  *
@@ -644,7 +650,9 @@ LSfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LSfundef");
 
-    DBUG_PRINT ("LS", ("traversing function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("LS", ("Starting to traverse %s %s",
+                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                       FUNDEF_NAME (arg_node)));
     if (!((INFO_LEVEL (arg_info) == 0)
           && (FUNDEF_ISDOFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
 
@@ -665,9 +673,7 @@ LSfundef (node *arg_node, info *arg_info)
          * Then, mark all AVISs that are not used as 2nd arg to F_Sel
          * as ISUSED:
          */
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
         if (FUNDEF_ISDOFUN (arg_node)) {
             /**
@@ -693,8 +699,12 @@ LSfundef (node *arg_node, info *arg_info)
     }
     DBUG_PRINT ("LS", ("leaving function %s", FUNDEF_NAME (arg_node)));
 
-    if (FUNDEF_NEXT (arg_node) && (INFO_LEVEL (arg_info) == 0)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if ((!INFO_ONEFUNDEF (arg_info)) && (INFO_LEVEL (arg_info) == 0)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    } else {
+        if ((INFO_ONEFUNDEF (arg_info)) && (INFO_LEVEL (arg_info) == 0)) {
+            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -728,6 +738,8 @@ LSarg (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("LS", ("inspecting arg %s!", ARG_NAME (arg_node)));
+    /* Traverse AVIS_SHAPE, etc., to mark extrema and SAA info as AVIS_ISUSED */
+    ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
     if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))
         && (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) > 0)) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
@@ -888,29 +900,64 @@ LSid (node *arg_node, info *arg_info)
  *
  * @fn  node *LSdoLoopScalarization( node *syntax_tree)
  *
- *   @brief call this function for eliminating arrays within loops
- *   @param part of the AST (usually the entire tree) IVE is to be applied on.
+ *   @brief This traversal eliminates arrays within loops for an N_module
+ *   @param the entire syntax tree.
  *   @return modified AST.
  *
  *****************************************************************************/
 node *
 LSdoLoopScalarization (node *syntax_tree)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ("LSdoLoopScalarization");
 
-    DBUG_PRINT ("OPT", ("Starting Loop Scalarization ...."));
+    DBUG_PRINT ("LS", ("Starting Loop Scalarization on module"));
+    DBUG_ASSERT (N_module == NODE_TYPE (syntax_tree), "Expected N_module");
 
     TRAVpush (TR_ls);
 
-    info = MakeInfo ();
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("OPT", ("Loop Scalarization done!"));
+    DBUG_PRINT ("LS", ("Loop Scalarization done!"));
 
     DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *LSdoLoopScalarizationOneFundef( node *arg_node)
+ *
+ *   @brief This traversal eliminates arrays within loops for one function
+ *   @param N_fundef
+ *   @return modified AST.
+ *
+ *****************************************************************************/
+node *
+LSdoLoopScalarizationOneFundef (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("LSdoLoopScalarizationOneFundef");
+
+    DBUG_PRINT ("LS", ("Starting Loop Scalarization on function"));
+    DBUG_ASSERT (N_fundef == NODE_TYPE (arg_node), "Expected N_fundef");
+
+    TRAVpush (TR_ls);
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+    arg_node = TRAVdo (arg_node, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+    TRAVpop ();
+
+    DBUG_PRINT ("LS", ("Loop Scalarization done!"));
+
+    DBUG_RETURN (arg_node);
 }
