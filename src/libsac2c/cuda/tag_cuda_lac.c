@@ -59,68 +59,72 @@ FreeInfo (info *info)
 }
 
 static bool
-CheckIds (node *ids)
+CheckApIds (node *ids)
 {
     bool res = TRUE;
     ntype *type;
 
-    DBUG_ENTER ("CheckIds");
+    DBUG_ENTER ("CheckApIds");
 
     while (ids != NULL) {
         type = IDS_NTYPE (ids);
-        res = res && (TUisScalar (type) || TYisAKS (type) || TYisAKD (type));
+        res = res && (TUisScalar (type) || TYisAKS (type) || TYisAKD (type))
+              && !AVIS_ISHOSTREFERENCED (IDS_AVIS (ids));
         ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUTEMdoTagExecutionmode(node *arg_node, info)
+ *
+ *   @brief
+ *
+ *   @param
+ *   @param
+ *   @return
+ *
+ *****************************************************************************/
 node *
-TCULACdoTagCudaLac (node *funap, node *ids, node *fundef_args)
+TCULACdoTagCudaLac (node *lac_ap, node *ap_ids, node *fundef_args)
 {
-    bool ids_ok;
-    node *fundef;
     info *arg_info;
+    node *fundef;
+    bool ids_args_ok = TRUE;
 
     DBUG_ENTER ("TCULACdoTagCudaLac");
 
-    fundef = AP_FUNDEF (funap);
+    fundef = AP_FUNDEF (lac_ap);
+    DBUG_ASSERT (fundef != NULL, "Found a lac fun with empty fundef!");
 
-    ids_ok = CheckIds (ids);
+    ids_args_ok = CheckApIds (ap_ids);
 
-    if (ids_ok) {
+    if (ids_args_ok) {
 
-        TRAVpush (TR_tculac);
         arg_info = MakeInfo ();
 
+        TRAVpush (TR_tculac);
         fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
+
         FUNDEF_ISCUDALACFUN (fundef) = INFO_ISCUDARIZABLE (arg_info);
 
         arg_info = FreeInfo (arg_info);
-        TRAVpop ();
     } else {
         FUNDEF_ISCUDALACFUN (fundef) = FALSE;
     }
 
-    DBUG_RETURN (funap);
+    DBUG_RETURN (lac_ap);
 }
 
 node *
 TCULACfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMfundef");
+    DBUG_ENTER ("TCULACfundef");
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-TCULACwith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CUTEMwith");
-
-    INFO_ISCUDARIZABLE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -130,19 +134,32 @@ TCULACap (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("CUTEMap");
+    DBUG_ENTER ("TCULACap");
+
+    DBUG_ASSERT ((FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISDOFUN (fundef)),
+                 "TCULAC traverses non-lac function!");
 
     fundef = AP_FUNDEF (arg_node);
 
     if (fundef != NULL) {
-        if (FUNDEF_ISDOFUN (fundef)) {
-            INFO_ISCUDARIZABLE (arg_info) = FALSE;
-        } else if (FUNDEF_ISCONDFUN (fundef)) {
+        if (FUNDEF_ISCONDFUN (fundef)) {
             fundef = TRAVdo (fundef, arg_info);
+        } else if (FUNDEF_ISDOFUN (fundef)) {
+            INFO_ISCUDARIZABLE (arg_info) = FALSE;
         } else {
             INFO_ISCUDARIZABLE (arg_info) = FALSE;
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCULACwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TCULACwith");
+
+    INFO_ISCUDARIZABLE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }

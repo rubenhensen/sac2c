@@ -45,7 +45,7 @@ struct INFO {
 #define INFO_ARRAY(n) (n->array)
 #define INFO_NEUTRAL(n) (n->neutral)
 #define INFO_WITHIDS(n) (n->withids)
-#define INFO_WITHVEC(n) (n->withids)
+#define INFO_WITHVEC(n) (n->withvec)
 #define INFO_TRAVMODE(n) (n->travmode)
 
 /*
@@ -178,6 +178,8 @@ SCUFwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
         INFO_TRAVMODE (arg_info) = trav_normal;
 
+        WITH_CUDARIZABLE (arg_node) = FALSE;
+
         INFO_PREASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (INFO_ARRAY (arg_info), new_with), NULL);
         AVIS_SSAASSIGN (IDS_AVIS (INFO_ARRAY (arg_info))) = INFO_PREASSIGN (arg_info);
@@ -235,8 +237,6 @@ SCUFcode (node *arg_node, info *arg_info)
           = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                             TBmakeVardec (offset_avis, NULL));
 
-        printf ("after offset\n");
-
         /* tmp3 = idx_sel( offset, array); */
         elem_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (cexpr_avis)));
         elem_ass = TBmakeAssign (TBmakeLet (TBmakeIds (elem_avis, NULL),
@@ -249,7 +249,6 @@ SCUFcode (node *arg_node, info *arg_info)
           = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                             TBmakeVardec (elem_avis, NULL));
 
-        printf ("after elem\n");
         /* tmp4 = op( arg_1, arg_2); */
         op_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (cexpr_avis)));
         op_ass = TBmakeAssign (TBmakeLet (TBmakeIds (op_avis, NULL),
@@ -260,7 +259,7 @@ SCUFcode (node *arg_node, info *arg_info)
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                             TBmakeVardec (op_avis, NULL));
-        printf ("after op\n");
+
         CODE_CEXPR (arg_node) = TBmakeExprs (TBmakeId (op_avis), NULL);
         BLOCK_INSTR (CODE_CBLOCK (arg_node))
           = TCappendAssign (accu_ass,
