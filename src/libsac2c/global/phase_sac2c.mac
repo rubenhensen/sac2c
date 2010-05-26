@@ -714,6 +714,9 @@ PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
+SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
+          global.backend == BE_cuda, cuda)
+
 SUBPHASE (cutem, "CUDA Tag execution mode", CUTEMdoTagExecutionmode,
           global.backend == BE_cuda && global.optimize.doexpar, cuda)
 /*

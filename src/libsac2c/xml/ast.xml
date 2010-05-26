@@ -97,6 +97,19 @@
         </travuser>
       </traversal>
       -->
+      <traversal id="SCUF" name="CUDA Split CUDA fold withloops" default="sons" include="split_cuda_fold.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Fold" />          
+          <node name="Code" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="TCULAC" name="CUDA Tag cudarizable lac functions" default="sons" include="tag_cuda_lac.h" >
         <travuser>
           <node name="Fundef" />
