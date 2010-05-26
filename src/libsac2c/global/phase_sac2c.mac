@@ -294,7 +294,7 @@ CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, o
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, cyc)
 
-CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarizationOneFundef,
                global.optimize.dols, opt, cyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
@@ -454,6 +454,9 @@ CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, o
 
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, saacyc)
+
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarizationOneFundef,
+               global.optimize.dols, opt, saacyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
                global.optimize.docf, opt, saacyc)
