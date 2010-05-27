@@ -734,7 +734,8 @@ NTCfundef (node *arg_node, info *arg_info)
          * info chain (kept for extended error messages only) is reset:
          */
         global.act_info_chn = NULL;
-        DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to NULL"));
+        DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to NULL for function %s",
+                                    FUNDEF_NAME (arg_node)));
 
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
@@ -1981,6 +1982,16 @@ NTCwithid (node *arg_node, info *arg_info)
          */
         AVIS_TYPE (IDS_AVIS (vec))
           = TYcopyType (TYgetProductMember (INFO_TYPE (arg_info), 0));
+    }
+
+    idxs = WITHID_IDXS (arg_node);
+    while (idxs) {
+        /*
+         * single genvars always have to be scalar int s
+         */
+        AVIS_TYPE (IDS_AVIS (idxs))
+          = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0));
+        idxs = IDS_NEXT (idxs);
     }
 
     DBUG_RETURN (arg_node);
