@@ -311,8 +311,10 @@ WLSCblock (node *arg_node, info *arg_info)
             if (INFO_POSSIBLE (arg_info)) {
                 if (N_with != NODE_TYPE (ASSIGN_RHS (wlassign))) {
                     INFO_POSSIBLE (arg_info) = FALSE;
-                    DBUG_PRINT ("WLS", ("%s: CEXPR is not given by a with-loop!",
-                                        AVIS_NAME (lhs)));
+#if 0
+          DBUG_PRINT( "WLS", ("%s: CEXPR is not given by a with-loop!",
+                    AVIS_NAME( lhs)));
+#endif
                 }
             }
 
