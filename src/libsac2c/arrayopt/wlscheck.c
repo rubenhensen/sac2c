@@ -271,7 +271,9 @@ skipIrrelevantAssigns (node *arg_node)
 node *
 WLSCblock (node *arg_node, info *arg_info)
 {
-    node *lhs;
+#if 0
+  node *lhs;
+#endif
     node *wlassign;
 
     DBUG_ENTER ("WLSCblock");
