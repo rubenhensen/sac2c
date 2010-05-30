@@ -688,6 +688,7 @@ extern node *TCmakeExprsNum (int num);
 extern int TCcountExprs (node *exprs);
 
 extern node *TCgetNthExprs (int n, node *exprs);
+extern node *TCputNthExprs (int n, node *exprs, node *val);
 extern node *TCgetNthExprsExpr (int n, node *exprs);
 extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
 

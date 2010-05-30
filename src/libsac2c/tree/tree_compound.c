@@ -2197,6 +2197,38 @@ TCgetNthExprs (int n, node *exprs)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *TCputNthExprs(int n, node *args, node *val)
+ *
+ * @brief Given an N_exprs chain, replace the nTH N_exprs node
+ *        in the chain by val, IN PLACE.
+ *        If n>chain length, abort.
+ *
+ * @param N_exprs chain
+ *
+ * @return updated N_exprs chain
+ ******************************************************************************/
+node *
+TCputNthExprs (int n, node *exprs, node *val)
+{
+    int cnt;
+
+    DBUG_ENTER ("TCputNthExprs");
+
+    for (cnt = 0; cnt < n; cnt++) {
+        if (exprs == NULL) {
+            DBUG_ASSERT (FALSE, "n > N_exprs chain length.");
+            break;
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
+    EXPRS_EXPR (exprs) = val;
+    DBUG_RETURN (exprs);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *TCgetNthExprsExpr(int n, node *args)
  *
  * @brief Given an N_exprs chain, return the nTH EXPRS_EXPR
@@ -3614,4 +3646,45 @@ TCcountRanges (node *range)
     }
 
     DBUG_RETURN (counter);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Searches fundef vardec and args chain for a vardec name.
+ *
+ * @param
+ *
+ * @return vardec pointer, or NULL
+ ******************************************************************************/
+node *
+TCfindVardec_Name (char *name, node *fundef)
+{
+    node *v;
+    node *curv = NULL;
+    bool b = FALSE;
+
+    DBUG_ENTER ("TCfindVardec_Name");
+
+    /* Search vardec chain */
+    v = FUNDEF_VARDEC (fundef);
+    if (NULL != v) {
+        while ((NULL != v) && (!b)) {
+            curv = v;
+            b = 0 == STReq (name, AVIS_NAME (VARDEC_AVIS (curv)));
+            v = VARDEC_NEXT (v);
+        }
+    }
+
+    /* Search args chain */
+    if (!b) {
+        v = FUNDEF_ARGS (fundef);
+        while ((NULL != v) && (!b)) {
+            curv = v;
+            b = 0 == STReq (name, AVIS_NAME (VARDEC_AVIS (curv)));
+            v = ARG_NEXT (v);
+        }
+    }
+
+    curv = b ? curv : NULL;
+
+    DBUG_RETURN (curv);
 }
