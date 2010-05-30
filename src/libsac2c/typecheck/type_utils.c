@@ -660,6 +660,27 @@ TUshapeKnown (ntype *ty)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisIntScalar( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisIntScalar (ntype *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("TUisIntScalar");
+    res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int)
+           && (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty)) && (TYgetDim (ty) == 0));
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUisIntVect( ntype *ty)
  *
  *   @brief
