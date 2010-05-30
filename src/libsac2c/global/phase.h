@@ -23,7 +23,9 @@ extern node *PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree);
 
 extern node *PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond);
 
-extern bool isSAAMode ();
+/* TEMP UNTIL ALL REFS RENAMED */ extern bool isSAAMode ();
 extern bool isSSAMode ();
+extern bool PHisSAAMode ();
+extern bool PHisSSAMode ();
 
 #endif /* _SAC_PHASE_H_ */

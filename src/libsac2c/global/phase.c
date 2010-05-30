@@ -28,6 +28,7 @@
 static optimize_counter_t oc_global;
 static optimize_counter_t oc_pass;
 
+/* TEMP UNTIL OTHER CODE GETS RENAMED */
 /** <!--********************************************************************-->
  *
  * @fn bool isSAAMode( node *arg_node)
@@ -65,6 +66,49 @@ isSSAMode (void)
     bool z;
 
     DBUG_ENTER ("isSSAMode");
+
+    z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool PHisSAAMode( node *arg_node)
+ *
+ * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
+ *        should be generated and propagated.
+ *
+ *****************************************************************************/
+bool
+PHisSAAMode (void)
+
+{
+    bool z;
+
+    DBUG_ENTER ("PHisSAAMode");
+
+    z = global.optimize.dosaa
+        && ((global.compiler_anyphase > PH_opt_saacyc_isaa3)
+            && (global.compiler_anyphase < PH_opt_esaa2));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool PHisSSAMode( node *arg_node)
+ *
+ * @brief Predicates for those compiler phases that are running in SSA mode.
+ *
+ *****************************************************************************/
+bool
+PHisSSAMode (void)
+
+{
+    bool z;
+
+    DBUG_ENTER ("PHisSSAMode");
 
     z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
 
@@ -345,6 +389,10 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
+        if (global.treecheck && (syntax_tree != NULL)) {
+            syntax_tree = CHKdoTreeCheck (syntax_tree);
+        }
+
         if (global.lacfuncheck) {
             syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
         }
@@ -412,6 +460,10 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););
 
 #ifndef DBUG_OFF
+            if (global.treecheck && (fundef != NULL)) {
+                fundef = CHKdoTreeCheck (fundef);
+            }
+
             if (global.lacfuncheck) {
                 fundef = CHKLACFdoCheckLacFuns (fundef);
             }
@@ -473,6 +525,10 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
+        if (global.treecheck && (fundef != NULL)) {
+            fundef = CHKdoTreeCheck (fundef);
+        }
+
         if (global.lacfuncheck) {
             fundef = CHKLACFdoCheckLacFuns (fundef);
         }
