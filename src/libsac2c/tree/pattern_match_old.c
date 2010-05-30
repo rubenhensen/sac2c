@@ -549,6 +549,7 @@ PMOlastVarGuards (node **var, node *stack)
  * @fn node *PMOnum( node *stack)
  * @fn node *PMOfloat( node *stack)
  * @fn node *PMOdouble( node *stack)
+ *  etc.
  *
  *****************************************************************************/
 #define MATCH_SCALAR_CONST(kind)                                                         \
@@ -567,6 +568,16 @@ MATCH_SCALAR_CONST (char)
 MATCH_SCALAR_CONST (num)
 MATCH_SCALAR_CONST (float)
 MATCH_SCALAR_CONST (double)
+MATCH_SCALAR_CONST (numbyte)
+MATCH_SCALAR_CONST (numubyte)
+MATCH_SCALAR_CONST (numint)
+MATCH_SCALAR_CONST (numuint)
+MATCH_SCALAR_CONST (numshort)
+MATCH_SCALAR_CONST (numushort)
+MATCH_SCALAR_CONST (numlong)
+MATCH_SCALAR_CONST (numulong)
+MATCH_SCALAR_CONST (numlonglong)
+MATCH_SCALAR_CONST (numulonglong)
 
 /** <!--*******************************************************************-->
  *
