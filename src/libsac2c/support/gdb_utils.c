@@ -46,28 +46,31 @@ GDBbreakAtNid (node *arg_node, char *nm)
         switch (NODE_TYPE (arg_node)) {
 
         case N_id:
-            z = (0 == STReq (nm, AVIS_NAME (ID_AVIS (arg_node))));
+            z = STReq (nm, AVIS_NAME (ID_AVIS (arg_node)));
             break;
 
         case N_ids:
-            z = (0 == STReq (nm, AVIS_NAME (IDS_AVIS (arg_node))));
+            z = STReq (nm, AVIS_NAME (IDS_AVIS (arg_node)));
             break;
 
         case N_assign:
-            z = (0
-                 == STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))))));
+            z = STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
             break;
 
         case N_let:
-            z = (0 == STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+            z = STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
             break;
 
         case N_avis:
-            z = (0 == STReq (nm, AVIS_NAME (arg_node)));
+            z = STReq (nm, AVIS_NAME (arg_node));
             break;
 
         case N_fundef:
-            z = (0 == STReq (nm, FUNDEF_NAME (arg_node)));
+            z = STReq (nm, FUNDEF_NAME (arg_node));
+            break;
+
+        case N_arg:
+            z = STReq (nm, AVIS_NAME (ARG_AVIS (arg_node)));
             break;
 
         default:
