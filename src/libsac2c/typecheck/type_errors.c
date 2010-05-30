@@ -1065,7 +1065,7 @@ TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2
  * @fn void TEassureShpIsPostfixOfShp( char *obj1, ntype *type1,
  *                                     char *obj2, ntype *type2)
  *
- *   @brief  makes shure, that if type1 and type2 are AKS, shape( type1)
+ *   @brief  makes sure, that if type1 and type2 are AKS, shape( type1)
  *           constitutes a postfix of shape( type2).
  *           It is assumed, that dim( type1) <= dim( type2).
  *
@@ -1103,7 +1103,7 @@ TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
  * @fn void TEassureValMatchesDim( char *obj1, ntype *type1,
  *                                 char *obj2, ntype *type2)
  *
- *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal index into shape( type2).
  *           It is assumed, that type1 is a vector or a scalar!!
  *
@@ -1172,6 +1172,73 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
+ * @fn void TEassureValLtVal_SxS( char *obj1, ntype *type1,
+ *                                char *obj2, ntype *type2)
+ *
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKV, the value
+ *           of type1 is < the value of type2.
+ *           It is assumed that shape type1 <= shape type2!
+ *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
+ *
+ ******************************************************************************/
+
+void
+TEassureValLtVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int *dv1, *dv2;
+
+    DBUG_ENTER ("TEassureValLtVal_SxS");
+
+    if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
+        dv1 = (int *)COgetDataVec (TYgetValue (type1));
+        dv2 = (int *)COgetDataVec (TYgetValue (type2));
+        if ((dv1[0] < 0) || (dv1[0] >= dv2[0])) {
+            TEhandleError (global.linenum, global.filename,
+                           "%s should be less than %s;"
+                           " types found: %s  and  %s",
+                           obj1, obj2, TYtype2String (type1, FALSE, 0),
+                           TYtype2String (type2, FALSE, 0));
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEassureValLeVal_SxS( char *obj1, ntype *type1,
+ *                                char *obj2, ntype *type2)
+ *
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKV, the value
+ *           of type1 is <= the value of type2.
+ *           It is assumed that shape type1 <= shape type2!
+ *
+ ******************************************************************************/
+
+void
+TEassureValLeVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int *dv1, *dv2;
+
+    DBUG_ENTER ("TEassureValLeVal_SxS");
+
+    if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
+        dv1 = (int *)COgetDataVec (TYgetValue (type1));
+        dv2 = (int *)COgetDataVec (TYgetValue (type2));
+        if ((dv1[0] < 0) || (dv1[0] > dv2[0])) {
+            TEhandleError (global.linenum, global.filename,
+                           "%s should be less than %s;"
+                           " types found: %s  and  %s",
+                           obj1, obj2, TYtype2String (type1, FALSE, 0),
+                           TYtype2String (type2, FALSE, 0));
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn void TEassureValLeVal( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
@@ -1213,7 +1280,7 @@ TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
  *
  * @fn void TEassureValNonZero( char *obj1, ntype *type1)
  *
- *   @brief  makes shure, that if type1 is AKV, the value is neither
+ *   @brief  makes sure, that if type1 is AKV, the value is neither
  *           zero itself nor an array that contains a zero.
  *           It is assumed, that the element type is a built-in numerical one.
  *
@@ -1241,7 +1308,7 @@ TEassureValNonZero (char *obj1, ntype *type1)
  * @fn void TEassureIdxMatchesShape( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
- *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal offset into type2.
  *           Type1 must be scalar!
  *
@@ -1274,7 +1341,7 @@ TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  * @fn void TEassureAbsValFitsShape( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
- *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal take/drop size into type2.
  *           It is assumed, that the shape of type1 matches the dim of type2!!
  *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
@@ -1312,7 +1379,7 @@ TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  * @fn void TEassureProdValMatchesProdShape( char *obj1, ntype *type1,
  *                                           char *obj2, ntype *type2)
  *
- *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *   @brief  makes sure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal shape for the elements of type2, i.e,
  *           prod( values(type1)) == prod( shape(type2)).
  *
@@ -1601,3 +1668,42 @@ TEval (ntype *args)
 
     DBUG_RETURN (num_rets);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureShpMatchesInt( char *obj, ntype shp,  int len)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureShpMatchesInt (char *obj, ntype *shp, int len)
+{
+    int shpel;
+
+    DBUG_ENTER ("TEassureShpMatchesInt");
+
+    if ((TYgetConstr (shp) == TC_akv) || (TYgetConstr (shp) == TC_aks)) {
+        shpel = SHgetUnrLen (TYgetShape (shp));
+        if (len != shpel) {
+            TEhandleError (global.linenum, global.filename,
+                           "%s should be %d elements, but is %d elements.", shp, shpel,
+                           len);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureBoolS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/

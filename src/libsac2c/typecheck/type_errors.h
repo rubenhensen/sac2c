@@ -30,6 +30,7 @@ extern void TEassureIntVectLengthOne (char *obj, ntype *type);
 extern void TEassureNonNegativeValues_S (char *obj, ntype *type);
 extern void TEassureNonNegativeValues_V (char *obj, ntype *type);
 extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureShpMatchesInt (char *obj1, ntype *shp, int len);
 extern void TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2,
                                           ntype *type2, char *obj3, ntype *type3);
 extern void TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2,
@@ -37,6 +38,8 @@ extern void TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2,
 extern void TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureValLtVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureValLeVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureValNonZero (char *obj1, ntype *type1);
 extern void TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
