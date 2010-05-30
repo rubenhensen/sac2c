@@ -81,6 +81,7 @@ struct INFO {
     node *preassign;
     node *postassign;
     node *assign;
+    node *lhsavis;
     int withdepth;
     bool topblock;
     int maxdepth;
@@ -96,6 +97,7 @@ struct INFO {
 #define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_PREASSIGN(n) (n->preassign)
 #define INFO_ASSIGN(n) (n->assign)
+#define INFO_LHSAVIS(n) (n->lhsavis)
 #define INFO_WITHDEPTH(n) (n->withdepth)
 #define INFO_TOPBLOCK(n) (n->topblock)
 #define INFO_RESULTMAP(n) (n->resultmap)
@@ -120,6 +122,7 @@ MakeInfo ()
     INFO_REMASSIGN (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
     INFO_ASSIGN (result) = NULL;
+    INFO_LHSAVIS (result) = NULL;
     INFO_WITHDEPTH (result) = 0;
     INFO_TOPBLOCK (result) = FALSE;
     INFO_MAXDEPTH (result) = 0;
@@ -541,7 +544,7 @@ WLIRassign (node *arg_node, info *arg_info)
      * the current level. if now the withloop is moved on another level we
      * must move the preassignments, too, but this might result in wrong code.
      * so we let this withloop at its current level and try to move it in the
-     * next opt cycle as standalone expression without dependend preassigns.
+     * next opt cycle as standalone expression without dependent preassigns.
      */
     if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
         && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
@@ -625,8 +628,11 @@ WLIRassign (node *arg_node, info *arg_info)
 node *
 WLIRlet (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("WLIRlet");
 
+    INFO_LHSAVIS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
+    DBUG_PRINT ("WLIR", ("looking at %s", AVIS_NAME (INFO_LHSAVIS (arg_info))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /* detect withloop-independent expression, will be moved up */
@@ -648,6 +654,7 @@ WLIRlet (node *arg_node, info *arg_info)
 
     /* traverse ids to mark them as loop-invariant/local or normal */
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+    INFO_LHSAVIS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -707,6 +714,7 @@ WLIRwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIRwith");
 
+    DBUG_PRINT ("WLIR", ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info))));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
