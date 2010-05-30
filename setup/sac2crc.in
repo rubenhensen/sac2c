@@ -253,10 +253,11 @@ CCDIR            :=  "-I$SAC2CBASE/include/ "
 LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
-
+CEXT             :=  "c"
 TREE_CC          :=  "@CC@ @GENPIC@"
 TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
 TREE_LD_PATH     :=  "@LD_PATH@"
+TREE_CEXT        :=  "c"
 
 BACKEND          :=  "C99"
 LIB_VARIANT      :=  ""
@@ -387,7 +388,8 @@ CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"
 CCLINK           :=  "-lcutil -lcudart -lcublas"
 LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
-
+CEXT		 :=  "cu"
+GENPIC           :=  "-Xcompiler -fPIC"
 
 /*******************************************************************************
  *******************************************************************************

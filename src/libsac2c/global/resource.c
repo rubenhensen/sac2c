@@ -93,13 +93,14 @@ static struct {
   {"LDFLAGS", str, &global.config.ldflags},
   {"CCLINK", str, &global.config.cclink},
   {"CCMTLINK", str, &global.config.ccmtlink},
-
+  {"CEXT", str, &global.config.cext},
   {"BACKEND", str, &global.config.backend},
 
   {"TREE_CC", str, &global.config.tree_cc},
   {"TREE_LD", str, &global.config.tree_ld},
   {"TREE_LD_PATH", str, &global.config.tree_ld_path},
   {"LIB_VARIANT", str, &global.config.lib_variant},
+  {"TREE_CEXT", str, &global.config.tree_cext},
 
   {"OPT_O0", str, &global.config.opt_O0},
   {"OPT_O1", str, &global.config.opt_O1},

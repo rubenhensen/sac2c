@@ -18,14 +18,14 @@
 #ifndef _SAC_COMMANDLINE_H_
 #define _SAC_COMMANDLINE_H_
 
-#ifndef SAC_C_EXTERN
-#define SAC_C_EXTERN extern
-#endif /* SAC_C_EXTERN */
+#ifndef SAC_C_EXTERN_VAR
+#define SAC_C_EXTERN_VAR extern
+#endif /* SAC_C_EXTERN_VAR */
 
 #ifndef SAC_SIMD_COMPILATION
 
-SAC_C_EXTERN char **SAC_commandline_argv;
-SAC_C_EXTERN int SAC_commandline_argc;
+SAC_C_EXTERN_VAR char **SAC_commandline_argv;
+SAC_C_EXTERN_VAR int SAC_commandline_argc;
 
 #define SAC_COMMANDLINE_GET(argc, argv)                                                  \
     argc = SAC_commandline_argc;                                                         \

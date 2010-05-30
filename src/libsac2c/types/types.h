@@ -650,13 +650,14 @@ typedef struct {
     char *ldflags;
     char *cclink;
     char *ccmtlink;
-
+    char *cext;
     char *backend;
 
     char *tree_cc;
     char *tree_ld;
     char *tree_ld_path;
     char *lib_variant;
+    char *tree_cext;
 
     char *opt_O0;
     char *opt_O1;
