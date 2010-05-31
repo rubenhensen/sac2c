@@ -1036,10 +1036,12 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
                             cond_assign);
     AVIS_SSAASSIGN (predavis) = predass;
 
-    if (isSAAMode ()) {
+#ifdef LETISAADOIT
+    if (PHisSAAMode ()) {
         AVIS_DIM (predavis) = TBmakeNum (0);
         AVIS_SHAPE (predavis) = TCmakeIntVector (NULL);
     }
+#endif // LETISAADOIT
 
     COND_COND (ASSIGN_INSTR (cond_assign))
       = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
