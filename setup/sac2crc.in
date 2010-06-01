@@ -352,7 +352,16 @@ RANLIB           :=  "slranlib seqc"
 
 target mutc::sl:
 
-target sl_ppp::sl:
+target sl_mtalpha::sl:
+
+CC               :=  "slc -b mtalpha"
+LIB_VARIANT      :=  "mutc-mtalpha"
+AR_CREATE        :=  "slar mtalpha cr"
+RANLIB           :=  "slranlib mtalpha"
+
+target sl_ppp::sl_mtalpha:
+
+target sl_ppp_lt_24::sl:
 
 CC               :=  "slc -b ppp"
 LIB_VARIANT      :=  "mutc-ppp"

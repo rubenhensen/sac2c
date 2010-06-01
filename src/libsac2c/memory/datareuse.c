@@ -53,6 +53,7 @@ struct INFO {
     node *ivids;
     node *wlidx;
     node *wliirr;
+    node *freeme; /* stuff that should be freed at the end of the trav */
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -66,6 +67,7 @@ struct INFO {
 #define INFO_IVIDS(n) ((n)->ivids)
 #define INFO_WLIDXS(n) ((n)->wlidx)
 #define INFO_WLIIRR(n) ((n)->wliirr)
+#define INFO_FREE_ME(n) ((n)->freeme)
 
 static info *
 MakeInfo (node *fundef)
@@ -87,6 +89,7 @@ MakeInfo (node *fundef)
     INFO_IVIDS (result) = NULL;
     INFO_WLIDXS (result) = NULL;
     INFO_WLIIRR (result) = NULL;
+    INFO_FREE_ME (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -95,6 +98,10 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
+
+    if (INFO_FREE_ME (info) != NULL) {
+        INFO_FREE_ME (info) = FREEdoFreeTree (INFO_FREE_ME (info));
+    }
 
     info = MEMfree (info);
 
@@ -180,6 +187,40 @@ FindSubAllocRoot (lut_t *sublut, node *avis)
         result = FindSubAllocRoot (sublut, found);
     }
 
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *WithResult( node *with)
+ *
+ *  Find the result of the current with loop
+ *
+ *  In the case of a nested with3 find the result of the nested with3
+ *  where nested means that the result of the with3 is a with3
+ *
+ *  @param with with to find result of
+ *****************************************************************************/
+node *
+WithResult (node *with)
+{
+    node *result = NULL;
+    DBUG_ENTER ("WithResult");
+
+    if ((NODE_TYPE (with) == N_with) || (NODE_TYPE (with) == N_with2)) {
+        result = CODE_CEXPR (WITH_OR_WITH2_CODE (with));
+    } else {
+        pattern *pat;
+        int zero = 0, two = 2;
+        DBUG_ASSERT (NODE_TYPE (with) == N_with3, "WithResult called without with* node");
+        pat = PMretryAny (&zero, &two, 2,
+                          PMvar (1, PMAgetNode (&result), 1,
+                                 PMprf (1, PMAisPrf (F_wl_assign), 1, PMskip (0))),
+                          PMwith3 (0, 1,
+                                   PMSrange (0, 1, PMrange (0, 1, PMlink (0, 1, &pat)))));
+        PMmatchFlat (pat, RANGE_RESULTS (WITH3_RANGES (with)));
+        pat = PMfree (pat);
+    }
+    DBUG_ASSERT (result != NULL, "Could not find result of withloop");
     DBUG_RETURN (result);
 }
 
@@ -386,22 +427,49 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
              *
              * The sel operations have been processed by vect2offset!
              */
-            if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)) {
-                node *withop, *wlids, *wliv, *code;
+            if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)
+                || (NODE_TYPE (wlass) == N_with3)) {
+                node *withop, *wlids, *wliv;
+                bool oneCodeIfApplicable;
                 bool iscopy = FALSE;
 
-                withop = WITH_OR_WITH2_WITHOP (wlass);
-                wlids = WITH_OR_WITH2_IDS (wlass);
-                wliv = WITH_OR_WITH2_VEC (wlass);
-                code = WITH_OR_WITH2_CODE (wlass);
+                withop = WITH_OR_WITH2_OR_WITH3_WITHOP (wlass);
+
+                if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)) {
+                    wlids = WITH_OR_WITH2_IDS (wlass);
+                    wliv = WITH_OR_WITH2_VEC (wlass);
+                }
+
+                oneCodeIfApplicable = (NODE_TYPE (wlass) == N_with3)
+                                      || (CODE_NEXT (WITH_OR_WITH2_CODE (wlass)) == NULL);
 
                 if ((NODE_TYPE (withop) == N_genarray) && (GENARRAY_NEXT (withop) == NULL)
-                    && (CODE_NEXT (code) == NULL)) {
-                    node *cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
+                    && oneCodeIfApplicable) {
+                    node *cexpr = WithResult (wlass);
                     node *offset = NULL;
                     node *arr = NULL;
                     node *mem = NULL;
 
+                    pattern *with3fill;
+                    int pos = 0, n = 1, one = 1;
+#if 0
+          with3fill = 
+            PMprf( 1, 
+                   PMAisPrf( F_fill),
+                   2, 
+                   PMretryAll( &pos, &n,
+                               1,
+                               PMarray( 1, 
+                                        PMAgetLen( &n),
+                                        1, 
+                                        PMskipN( &pos, 0, 0)),
+                               PMprf( 1, 
+                                      PMAisPrf( F_suballoc),
+                                      3, 
+                                      PMskipN( 1, 0, 0),
+                                      PMvar( 1, PMAisVar( &mem), 0),
+                                      PMskipN( 1, 0, 0)));
+#endif
                     DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
 
                     if (PMO (PMOvar (&arr, PMOvar (&offset,
@@ -880,7 +948,8 @@ EMDRrange (node *arg_node, info *arg_info)
      * The great moment:
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
-    INFO_IVIDS (arg_info) = RANGE_INDEX (arg_node);
+    INFO_IVIDS (arg_info) = TBmakeExprs (DUPdoDupTree (RANGE_INDEX (arg_node)), NULL);
+    INFO_FREE_ME (arg_info) = TBmakeSet (INFO_IVIDS (arg_info), INFO_FREE_ME (arg_info));
     /* for now we don't actually know the IV */
     INFO_IV (arg_info) = NULL;
     INFO_WLIIRR (arg_info) = RANGE_IIRR (arg_node);

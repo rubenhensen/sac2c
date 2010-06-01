@@ -693,3 +693,61 @@ PMAisPrf (prf fun)
 
     return (res);
 }
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAhasCountWithop( int count)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+bool
+attribHasCountWithop (attrib *attr, node *arg)
+{
+    bool res;
+
+    res = TCcountWithops (WITH_OR_WITH2_OR_WITH3_WITHOP (arg)) == *PATTR_I1 (attr);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+
+    return (res);
+}
+
+attrib *
+PMAhasCountWithop (int count)
+{
+    attrib *res;
+
+    res = makeAttrib (N_module, attribHasCountWithop);
+    PATTR_I1 (res) = count;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAhasCountRange( int count)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+bool
+attribHasCountRange (attrib *attr, node *arg)
+{
+    bool res;
+
+    res = TCcountRanges (WITH3_RANGES (arg)) == *PATTR_I1 (attr);
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+
+    return (res);
+}
+
+attrib *
+PMAhasCountRange (int count)
+{
+    attrib *res;
+
+    res = makeAttrib (N_with3, attribHasCountRange);
+    PATTR_I1 (res) = count;
+
+    return (res);
+}

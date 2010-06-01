@@ -299,6 +299,7 @@ struct PAT {
     int num_pats;
     pattern **pats;
     matchFun *matcher;
+    pattern **pattern_link;
 };
 
 #define PAT_NT(p) (p->nt)
@@ -311,6 +312,7 @@ struct PAT {
 #define PAT_NP(p) (p->num_pats)
 #define PAT_PATS(p) (p->pats)
 #define PAT_FUN(p) (p->matcher)
+#define PAT_PAT_LINK(p) (p->pattern_link)
 
 static pattern *
 makePattern (nodetype nt, matchFun f)
@@ -328,6 +330,7 @@ makePattern (nodetype nt, matchFun f)
     PAT_PATTRS (res) = NULL;
     PAT_NP (res) = 0;
     PAT_PATS (res) = NULL;
+    PAT_PAT_LINK (res) = NULL;
 
     return (res);
 }
@@ -582,6 +585,28 @@ pushArgs (node *stack, node *args)
     DBUG_RETURN (stack);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *range2Set( node * range)
+ *
+ * @brief convert a list of ranges into a list of sets
+ * @return chain of sets
+ *****************************************************************************/
+static node *
+range2Set (node *range)
+{
+    node *set = NULL;
+    DBUG_ENTER ("range2Set");
+
+    if (RANGE_NEXT (range) != NULL) {
+        set = range2Set (RANGE_NEXT (range));
+    }
+
+    set = TBmakeSet (range, set);
+
+    DBUG_RETURN (set);
+}
+
 /** <!--*********************************************************************-->
  *
  * local helper functions:
@@ -663,8 +688,13 @@ getInner (node *arg_node)
         inner = ARRAY_AELEMS (arg_node);
         break;
     case N_id:
-        inner = arg_node; /* needed for PMvar */
+    case N_with:
+    case N_with2:
+    case N_with3:
+        inner = arg_node; /* needed for PMvar and selecting sub chains*/
         break;
+    case N_range:
+        inner = RANGE_RESULTS (arg_node);
     case N_prf:
         inner = PRF_ARGS (arg_node);
         break;
@@ -928,6 +958,48 @@ PMmulti (int num_pats, ...)
 
     return (res);
 }
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMHlink( 0, 1, pattern **pat)
+ *
+ * @brief Provides a link out of the current pattern to a new pattern.
+ *        When freeing does not free linked pattern
+ *        Pointer to a pointer so you can pass a pattern before it is defined
+ *
+ ******************************************************************************/
+static node *
+linkMatcher (pattern *pat, node *stack)
+{
+    DBUG_PRINT ("PM", (PMSTART "link match:", matching_level));
+
+    stack = genericPatternMatcher (*PAT_PAT_LINK (pat), stack);
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+
+    return (stack);
+}
+
+pattern *
+PMlink (int num_pats, ...)
+{
+    va_list ap;
+    pattern *res;
+    int pats;
+
+    res = makePattern (N_module, linkMatcher);
+
+    va_start (ap, num_pats);
+
+    DBUG_ASSERT (num_pats == 0, "PMlink takes no args");
+    pats = va_arg (ap, int);
+    DBUG_ASSERT (pats == 1, "PMlink takes exactly 1 sub pattern");
+
+    PAT_PAT_LINK (res) = va_arg (ap, pattern **);
+
+    va_end (ap);
+
+    return (res);
+}
 
 /** <!-- ****************************************************************** -->
  *
@@ -1155,11 +1227,9 @@ PMprf (int num_attribs, ...)
  *
  * pattern *PMwith( int num_attribs, ..., int num_pats, ...)
  *
- * @brief prf pattern:  prf( sub_pat_1, ..., sub_pat_{num_pats})
- *        - num_pats inner pattern
- *        - does depend on matching mode!
+ * @brief
  *
- ******************************************************************************/
+ *****************************************************************************/
 pattern *
 PMwith (int num_attribs, ...)
 {
@@ -1169,6 +1239,92 @@ PMwith (int num_attribs, ...)
     va_start (ap, num_attribs);
     res = genericFillPattern (makePattern (N_with, genericPatternMatcher), TRUE,
                               num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMwith3( int num_attribs, ..., 0)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+pattern *
+PMwith3 (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_with3, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMrange( int num_attribs, ...,)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+pattern *
+PMrange (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res = genericFillPattern (makePattern (N_range, genericPatternMatcher), TRUE,
+                              num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMSrange( int num_attribs, ...)
+ *
+ * @brief range of current with3
+ *
+ *****************************************************************************/
+static node *
+rangeSelector (pattern *pat, node *stack)
+{
+    node *arg;
+
+    DBUG_ENTER ("rangeSelector");
+    DBUG_PRINT ("PM", (PMSTART "matching range"));
+
+    stack = extractOneArg (stack, &arg);
+
+    if (NODE_TYPE (arg) == N_with3) {
+
+        if ((genericSubPatternMatcher (pat, range2Set (WITH3_RANGES (arg)))
+             == (node *)FAIL)) {
+            stack = failMatch (stack);
+        }
+
+    } else {
+        DBUG_PRINT ("PM", (PMINDENT "No with3 => no range"));
+        stack = failMatch (stack);
+    }
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_RETURN (stack);
+}
+
+pattern *
+PMSrange (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res
+      = genericFillPattern (makePattern (N_with3, rangeSelector), TRUE, num_attribs, ap);
     va_end (ap);
 
     return (res);

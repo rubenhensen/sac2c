@@ -45,6 +45,13 @@ extern pattern *PMskip (int num_attribs, ...);
 extern pattern *PMskipN (int *n, int num_attribs, ...);
 extern pattern *PMmulti (int num_pats, ...);
 extern pattern *PMwith (int num_attribs, ...);
+extern pattern *PMwith3 (int num_attribs, ...);
+extern pattern *PMrange (int num_attribs, ...);
+extern pattern *PMlink (int num_attribs, ...);
+/**
+ * selectors
+ */
+extern pattern *PMSrange (int num_attribs, ...);
 
 /**
  * utils:
