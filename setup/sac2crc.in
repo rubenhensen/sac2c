@@ -390,12 +390,17 @@ RANLIB           :=  "slranlib utc0"
 target cuda:
 
 BACKEND          :=  "Cuda"
+
 CC               :=  "nvcc"
+CCLINK           :=  "-lcutil -lcudart -lcublas"
+/*
+CC               := "/home/unibench/ctca-cuda.stca.herts.ac.uk/cuda-3.0/cuda/bin/nvcc"
+CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
+*/
 CCFLAGS          :=  "-Xcompiler -Wall -Xcompiler -Wno-unused "
                      "-Xcompiler -fno-builtin -Xcompiler -std=c99"
 CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"
-CCLINK           :=  "-lcutil -lcudart -lcublas"
 LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
 CEXT		 :=  "cu"
 GENPIC           :=  "-Xcompiler -fPIC"

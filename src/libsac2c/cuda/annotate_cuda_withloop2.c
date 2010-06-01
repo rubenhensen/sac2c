@@ -267,7 +267,9 @@ ACUWLfold (node *arg_node, info *arg_info)
      * however, if the fold is within an N_with, we do not signal
      * uncudarizeable to the enclosing N_with. */
     if (!INFO_INWL (arg_info)) {
-        // INFO_CUDARIZABLE( arg_info) = FALSE;
+        if (!global.optimize.doscuf) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+        }
     }
 
     DBUG_RETURN (arg_node);

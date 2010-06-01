@@ -17,6 +17,7 @@
 #include "shape.h"
 #include "types.h"
 #include "constants.h"
+#include "remove_unused_lac.h"
 
 typedef enum { trav_normal, trav_genarray, trav_fold } travmode_t;
 
@@ -30,8 +31,7 @@ struct INFO {
     node *shape;
     node *array;
     node *neutral;
-    node *withids;
-    node *withvec;
+    node *foldwl;
     travmode_t travmode;
 };
 
@@ -44,8 +44,7 @@ struct INFO {
 #define INFO_SHAPE(n) (n->shape)
 #define INFO_ARRAY(n) (n->array)
 #define INFO_NEUTRAL(n) (n->neutral)
-#define INFO_WITHIDS(n) (n->withids)
-#define INFO_WITHVEC(n) (n->withvec)
+#define INFO_FOLDWL(n) (n->foldwl)
 #define INFO_TRAVMODE(n) (n->travmode)
 
 /*
@@ -66,8 +65,7 @@ MakeInfo ()
     INFO_SHAPE (result) = NULL;
     INFO_ARRAY (result) = NULL;
     INFO_NEUTRAL (result) = NULL;
-    INFO_WITHIDS (result) = NULL;
-    INFO_WITHVEC (result) = NULL;
+    INFO_FOLDWL (result) = NULL;
     INFO_TRAVMODE (result) = trav_normal;
 
     DBUG_RETURN (result);
@@ -83,6 +81,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static node *
+AppendVardec (node *fundef, node *avis)
+{
+    DBUG_ENTER ("AppendVardec");
+
+    FUNDEF_VARDEC (fundef)
+      = TCappendVardec (FUNDEF_VARDEC (fundef), TBmakeVardec (avis, NULL));
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 SCUFdoSplitCudaFold (node *syntax_tree)
 {
@@ -95,6 +104,8 @@ SCUFdoSplitCudaFold (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
     info = FreeInfo (info);
+
+    syntax_tree = RLACdoRemoveUnusedLac (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -160,9 +171,7 @@ SCUFwith (node *arg_node, info *arg_info)
 
         wlidx = TBmakeAvis (TRAVtmpVarName ("wlidx"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (wlidx, NULL));
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), wlidx);
         GENARRAY_IDX (WITH_WITHOP (new_with)) = wlidx;
         WITHID_IDXS (WITH_WITHID (new_with)) = TBmakeIds (wlidx, NULL);
 
@@ -173,9 +182,11 @@ SCUFwith (node *arg_node, info *arg_info)
 
         /* Start traversing N_code of the old fold withloop */
         INFO_TRAVMODE (arg_info) = trav_fold;
-        INFO_WITHIDS (arg_info) = WITH_IDS (arg_node);
-        INFO_WITHVEC (arg_info) = WITH_VEC (arg_node);
-        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+        /* update iv and wlids in the first partition */
+        WITH_WITHID (arg_node) = TRAVopt (WITH_WITHID (arg_node), arg_info);
+        INFO_FOLDWL (arg_info) = arg_node;
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+        INFO_FOLDWL (arg_info) = NULL;
         INFO_TRAVMODE (arg_info) = trav_normal;
 
         WITH_CUDARIZABLE (arg_node) = FALSE;
@@ -191,35 +202,58 @@ SCUFwith (node *arg_node, info *arg_info)
 node *
 SCUFcode (node *arg_node, info *arg_info)
 {
+    DBUG_ENTER ("SCUFcode");
+
+    DBUG_ASSERT (INFO_TRAVMODE (arg_info) == trav_genarray,
+                 "Wrong traverse mode in SCUFcode!");
+
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SCUFpart (node *arg_node, info *arg_info)
+{
     node *accu_avis, *offset_avis, *elem_avis, *op_avis;
     node *accu_ass, *offset_ass, *elem_ass, *op_ass;
     node *cexpr_avis;
+    ntype *cexpr_type;
+    node *new_code, *code_instr;
     prf op;
 
-    DBUG_ENTER ("SCUFcode");
+    DBUG_ENTER ("SCUFpart");
 
-    if (INFO_TRAVMODE (arg_info) == trav_genarray) {
-        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+        if (PART_NEXT (arg_node) == NULL) {
+            PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+        } else {
+            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+        }
     } else if (INFO_TRAVMODE (arg_info) == trav_fold) {
-        BLOCK_INSTR (CODE_CBLOCK (arg_node))
-          = FREEdoFreeTree (BLOCK_INSTR (CODE_CBLOCK (arg_node)));
-
         /* Get the reduction operation of this fold withloop */
-        cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
+        cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (arg_node))));
+        cexpr_type = AVIS_TYPE (cexpr_avis);
         op = PRF_PRF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis))));
-        CODE_CEXPR (arg_node) = FREEdoFreeNode (CODE_CEXPR (arg_node));
+
+        if (PART_NEXT (arg_node) != NULL) {
+            PART_NEXT (arg_node) = FREEdoFreeTree (PART_NEXT (arg_node));
+            PART_NEXT (arg_node) = NULL;
+        }
+        PART_CODE (arg_node) = FREEdoFreeTree (PART_CODE (arg_node));
+
+        PART_BOUND2 (arg_node) = FREEdoFreeNode (PART_BOUND2 (arg_node));
+        PART_BOUND2 (arg_node) = DUPdoDupNode (INFO_SHAPE (arg_info));
 
         /* tmp1 = accu(iv); */
-        accu_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (cexpr_avis)));
-        accu_ass
-          = TBmakeAssign (TBmakeLet (TBmakeIds (accu_avis, NULL),
-                                     TCmakePrf1 (F_accu, TBmakeId (IDS_AVIS (
-                                                           INFO_WITHVEC (arg_info))))),
-                          NULL);
+        accu_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (cexpr_type));
+        accu_ass = TBmakeAssign (TBmakeLet (TBmakeIds (accu_avis, NULL),
+                                            TCmakePrf1 (F_accu, TBmakeId (IDS_AVIS (
+                                                                  PART_VEC (arg_node))))),
+                                 NULL);
         AVIS_SSAASSIGN (accu_avis) = accu_ass;
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (accu_avis, NULL));
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), accu_avis);
 
         /* tmp2 = idxs2offset([...], i, j, k...); */
         offset_avis = TBmakeAvis (TRAVtmpVar (),
@@ -229,60 +263,74 @@ SCUFcode (node *arg_node, info *arg_info)
                                      TBmakePrf (F_idxs2offset,
                                                 TBmakeExprs (DUPdoDupNode (
                                                                INFO_SHAPE (arg_info)),
-                                                             TCids2Exprs (INFO_WITHIDS (
-                                                               arg_info))))),
+                                                             TCids2Exprs (
+                                                               PART_IDS (arg_node))))),
                           NULL);
         AVIS_SSAASSIGN (offset_avis) = offset_ass;
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (offset_avis, NULL));
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), offset_avis);
 
         /* tmp3 = idx_sel( offset, array); */
-        elem_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (cexpr_avis)));
+        elem_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (cexpr_type));
         elem_ass = TBmakeAssign (TBmakeLet (TBmakeIds (elem_avis, NULL),
                                             TCmakePrf2 (F_idx_sel, TBmakeId (offset_avis),
                                                         TBmakeId (IDS_AVIS (
                                                           INFO_ARRAY (arg_info))))),
                                  NULL);
         AVIS_SSAASSIGN (elem_avis) = elem_ass;
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (elem_avis, NULL));
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), elem_avis);
 
         /* tmp4 = op( arg_1, arg_2); */
-        op_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (cexpr_avis)));
+        op_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (cexpr_type));
         op_ass = TBmakeAssign (TBmakeLet (TBmakeIds (op_avis, NULL),
                                           TCmakePrf2 (op, TBmakeId (accu_avis),
                                                       TBmakeId (elem_avis))),
                                NULL);
         AVIS_SSAASSIGN (op_avis) = op_ass;
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                            TBmakeVardec (op_avis, NULL));
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), op_avis);
 
-        CODE_CEXPR (arg_node) = TBmakeExprs (TBmakeId (op_avis), NULL);
-        BLOCK_INSTR (CODE_CBLOCK (arg_node))
+        /* Update the new partition */
+        code_instr
           = TCappendAssign (accu_ass,
                             TCappendAssign (offset_ass,
                                             TCappendAssign (elem_ass,
                                                             TCappendAssign (op_ass,
                                                                             NULL))));
+        new_code = TBmakeCode (TBmakeBlock (code_instr, NULL),
+                               TBmakeExprs (TBmakeId (op_avis), NULL));
+        CODE_USED (new_code) = 1;
+        CODE_NEXT (new_code) = NULL;
+        PART_CODE (arg_node) = new_code;
+        WITH_CODE (INFO_FOLDWL (arg_info)) = new_code;
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode in SCUFcode!");
+        DBUG_ASSERT ((0), "Wrong traverse mode in SCUFpart!");
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-SCUFpart (node *arg_node, info *arg_info)
+SCUFwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFpart");
+    node *new_avis, *withids;
+    ;
 
-    DBUG_ASSERT ((PART_NEXT (arg_node)) == NULL,
-                 "Found fold withloop with more than one partition!");
+    DBUG_ENTER ("SCUFwithid");
 
-    PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+    if (INFO_TRAVMODE (arg_info) == trav_fold) {
+        new_avis = TBmakeAvis (TRAVtmpVarName ("iv"),
+                               TYcopyType (IDS_NTYPE (WITHID_VEC (arg_node))));
+        IDS_AVIS (WITHID_VEC (arg_node)) = new_avis;
+        INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), new_avis);
+
+        withids = WITHID_IDS (arg_node);
+        while (withids != NULL) {
+            new_avis
+              = TBmakeAvis (TRAVtmpVarName ("ids"), TYcopyType (IDS_NTYPE (withids)));
+            INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), new_avis);
+            IDS_AVIS (withids) = new_avis;
+            withids = IDS_NEXT (withids);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -311,9 +359,7 @@ SCUFgenerator (node *arg_node, info *arg_info)
 
     avis = TBmakeAvis (TRAVtmpVar (), type);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                        TBmakeVardec (avis, NULL));
+    INFO_FUNDEF (arg_info) = AppendVardec (INFO_FUNDEF (arg_info), avis);
 
     INFO_ARRAY (arg_info) = TBmakeIds (avis, NULL);
     INFO_SHAPE (arg_info) = shape_expr;
@@ -334,12 +380,20 @@ SCUFfold (node *arg_node, info *arg_info)
 node *
 SCUFprf (node *arg_node, info *arg_info)
 {
+    // ntype *type;
+
     DBUG_ENTER ("SCUFprf");
 
     if (INFO_TRAVMODE (arg_info) == trav_genarray) {
         if (PRF_PRF (arg_node) == F_accu) {
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = DUPdoDupNode (INFO_NEUTRAL (arg_info));
+            /*
+            type = IDS_NTYPE( INFO_LHS( arg_info));
+            arg_node = COconstant2AST(
+                         COmakeZero( TYgetSimpleType( TYgetScalar( type)),
+                                      TYgetShape( type)));
+            */
         }
     } else if (INFO_TRAVMODE (arg_info) == trav_fold) {
     } else {

@@ -15,5 +15,6 @@ extern node *SCUFgenerator (node *arg_node, info *arg_info);
 extern node *SCUFfold (node *arg_node, info *arg_info);
 extern node *SCUFcode (node *arg_node, info *arg_info);
 extern node *SCUFprf (node *arg_node, info *arg_info);
+extern node *SCUFwithid (node *arg_node, info *arg_info);
 
 #endif

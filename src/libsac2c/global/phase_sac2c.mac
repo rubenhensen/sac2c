@@ -715,7 +715,7 @@ SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
 SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
-          global.backend == BE_cuda, cuda)
+          global.backend == BE_cuda && global.optimize.doscuf, cuda)
 
 SUBPHASE (cutem, "CUDA Tag execution mode", CUTEMdoTagExecutionmode,
           global.backend == BE_cuda && global.optimize.doexpar, cuda)

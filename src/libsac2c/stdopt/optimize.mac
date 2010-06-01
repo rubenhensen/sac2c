@@ -112,6 +112,7 @@ OPTIMIZE( "cuskc",  cuskc,   TRUE,  TRUE,  "CUDA sink code")
 OPTIMIZE( "cucc",   cucc,    TRUE,  TRUE,  "CUDA create cells")
 */
 OPTIMIZE ("expar", expar, FALSE, FALSE, "CUDA expand parallel region")
+OPTIMIZE ("scuf", scuf, FALSE, FALSE, "CUDA split cuda fod withloop")
 OPTIMIZE ("memopt", memopt, TRUE, TRUE, "CUDA minimize memory tranfers")
 OPTIMIZE ("slpt", slpt, FALSE, FALSE, "CUDA split partition")
 OPTIMIZE ("cts", cts, TRUE, TRUE, "converting comparisons into subtractions")

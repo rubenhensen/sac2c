@@ -1008,7 +1008,6 @@ PRTmodule (node *arg_node, info *arg_info)
          * finally create a dummy funfile, so we can rely on one to exist
          * when using wildcards like fun*.c
          */
-
         global.outfile
           = FMGRwriteOpen ("%s/fundummy.%s", global.tmp_dirname, global.config.cext);
         fprintf (global.outfile, "#include \"header.h\"\n\n");

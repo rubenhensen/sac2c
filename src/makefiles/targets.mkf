@@ -178,7 +178,7 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         prepare_kernel_generation cuda_create_cells minimize_cudast_transfers \
                         single_thread_kernels lift_dec_rc adjust_stknl_rets cuda_sink_code \
                         insert_withloop_memtran insert_cudast_memtran tag_cuda_lac \
-                        split_cuda_fold
+                        split_cuda_fold remove_unused_lac
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

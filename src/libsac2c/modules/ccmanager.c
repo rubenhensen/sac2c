@@ -334,7 +334,6 @@ InvokeCCModule (char *cccall, char *ccflags)
     str = STRcat ("globals.", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
-
     if (!STReq (global.config.ld_dynamic, "")) {
         /*
          * compile PIC code for shared libs if needed
