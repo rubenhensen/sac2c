@@ -146,11 +146,11 @@ ACUWLfundef (node *arg_node, info *arg_info)
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
         /* Need to find out why the function must not be sticky */
-        if (!FUNDEF_ISSTICKY (arg_node)) {
-            INFO_FUNDEF (arg_info) = arg_node;
-            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-            INFO_FUNDEF (arg_info) = NULL;
-        }
+        // if ( !FUNDEF_ISSTICKY( arg_node)) {
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = NULL;
+        //}
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
     /* If the fundef is lac function, we check whether the traversal
