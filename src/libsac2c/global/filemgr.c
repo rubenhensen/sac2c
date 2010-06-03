@@ -528,7 +528,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     vsprintf (buffer, format, arg_p);
     va_end (arg_p);
 
-    fd = open (buffer, O_CREAT | O_WRONLY,
+    fd = open (buffer, O_CREAT | O_WRONLY | O_TRUNC,
                S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
     file = fdopen (fd, "w");
