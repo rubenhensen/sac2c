@@ -359,7 +359,7 @@ LIB_VARIANT      :=  "mutc-mtalpha"
 AR_CREATE        :=  "slar mtalpha cr"
 RANLIB           :=  "slranlib mtalpha"
 
-target sl_ppp::sl_mtalpha:
+target sl_ppp::sl_ppp_lt_24:
 
 target sl_ppp_lt_24::sl:
 
