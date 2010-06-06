@@ -454,9 +454,20 @@ RSPfundef (node *arg_node, info *arg_info)
             PRAGMA_LINKNAME (pragma) = NULL;
         }
 
-        if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKOBJ (pragma) == NULL)
-            && (PRAGMA_LINKSIGN (pragma) == NULL) && (PRAGMA_LINKMOD (pragma) == NULL)
-            && (PRAGMA_LINKSIGN (pragma) == NULL) && (PRAGMA_EFFECT (pragma) == NULL)
+        if (PRAGMA_CUDALINKNAME (pragma) != NULL) {
+            if (FUNDEF_LINKNAME (pragma) == NULL) {
+                CTIwarnLine (NODE_LINE (arg_node),
+                             "Implicit declaration of 'C' version of external function"
+                             " use linkname to explicitly declare 'C' version");
+            }
+            FUNDEF_CUDALINKNAME (arg_node) = PRAGMA_CUDALINKNAME (pragma);
+            PRAGMA_CUDALINKNAME (pragma) = NULL;
+        }
+
+        if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_CUDALINKNAME (pragma) == NULL)
+            && (PRAGMA_LINKOBJ (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
+            && (PRAGMA_LINKMOD (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
+            && (PRAGMA_EFFECT (pragma) == NULL)
             && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
             FUNDEF_PRAGMA (arg_node) = FREEdoFreeNode (pragma);
         }

@@ -301,6 +301,7 @@ int charpos = 0;
 "#"                        { FILTER( HASH); }
 "pragma"                   { FILTER( PRAGMA); }
 "linkname"                 { FILTER( LINKNAME); }
+"cudalinkname"             { FILTER( CUDALINKNAME); }
 "linksign"                 { FILTER( LINKSIGN); }
 "effect"                   { FILTER( EFFECT); }
 "refcounting"              { FILTER( REFCOUNTING); }

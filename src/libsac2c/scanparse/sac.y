@@ -110,7 +110,7 @@ INC  DEC  ADDON  SUBON  MULON  DIVON  MODON
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
-HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT MUTCTHREADFUN  REFCOUNTING
+HASH  PRAGMA  LINKNAME CUDALINKNAME  LINKSIGN  EFFECT MUTCTHREADFUN  REFCOUNTING
 REFCOUNTDOTS NOINLINE
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
@@ -930,6 +930,19 @@ pragma: hash_pragma LINKNAME string
                          "Conflicting definitions of pragma 'linkname`");
           }
           PRAGMA_LINKNAME( store_pragma) = $3;
+        }
+      | hash_pragma CUDALINKNAME string
+        { if( pragma_type != PRAG_fundec) {
+            yyerror( "pragma \"cudalinkname\" not allowed here");
+          }
+          if (store_pragma == NULL) {
+            store_pragma = TBmakePragma();
+          }
+          if (PRAGMA_CUDALINKNAME( store_pragma) != NULL) {
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'cudalinkname`");
+          }
+          PRAGMA_CUDALINKNAME( store_pragma) = $3;
         }
       | hash_pragma LINKWITH string
         { if( (pragma_type != PRAG_fundec) && (pragma_type != PRAG_typedef) ) {

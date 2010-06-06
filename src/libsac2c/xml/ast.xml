@@ -4373,6 +4373,19 @@ N_ntfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="CudaLinkName" default="NULL" inconstructor="no">
+          <description>Symbol name of cuda version of this function</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pre_rpr" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="LinkName" default="NULL" inconstructor="no">
           <type name="String">
             <targets>
@@ -6742,6 +6755,19 @@ N_ntfarg :
       </sons>
       <attributes>
         <attribute name="LinkName" default="NULL" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="CudaLinkName" default="NULL" inconstructor="no" >
+          <description>Declaration of cuda version of an external function</description>
           <type name="String">
             <targets>
               <target mandatory="no">
