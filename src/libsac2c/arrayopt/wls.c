@@ -168,7 +168,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- *  NB. THIS IS A CLONE OF CODE FROM ../flatten/WLPartitionGeneration.c.
+ *  NB. THIS IS ALMOST A CLONE OF CODE FROM ../flatten/WLPartitionGeneration.c.
  *      Perhaps we need a single function to do this stuff?
  *
  * @fn node *WLSflattenBound( node *arg_node, node **preassigns, node **vardecs)
@@ -194,7 +194,7 @@ FreeInfo (info *info)
  *          The only rationale for this change is to ensure that
  *          WL bounds are named. This allows us to associate an
  *          N_avis node with each bound, which will be used to
- *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          store AVIS_MIN and AVIS_MAX for the bound.
  *          These fields, in turn, will be used by the constant
  *          folder to remove guards and do other swell optimizations.
  *
@@ -202,22 +202,20 @@ FreeInfo (info *info)
  *           node **vardecs: The address of the vardecs chain.
  *           node **preassigns: The address of a preassigns chain.
  *
- *   @return node *node:      N_id node for flattened bound
+ *   @return node *node: The N_avis of the flattened arg_node.
+ *
  ******************************************************************************/
 node *
 WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
 {
     node *avis;
     node *assgn;
-    node *id;
     int shp;
 
     DBUG_ENTER ("WLSflattenBound");
 
-    id = arg_node;
     if (N_array == NODE_TYPE (arg_node)) {
         shp = TCcountExprs (ARRAY_AELEMS (arg_node));
-        /* Result is always an integer vector */
         avis = TBmakeAvis (TRAVtmpVar (),
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
         *vardecs = TBmakeVardec (avis, *vardecs);
@@ -225,18 +223,22 @@ WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
                               NULL);
         AVIS_SSAASSIGN (avis) = assgn;
         *preassigns = TCappendAssign (*preassigns, assgn);
-        id = TBmakeId (avis);
 
-        if (isSAAMode ()) {
+#ifdef LETISAADOIT
+        if (PHisSAAMode ()) {
             /* Now, create the dim and shape info */
             AVIS_DIM (avis) = TBmakeNum (1);
             AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
         }
+#endif // LETISAADOIT
         DBUG_PRINT ("WLS",
                     ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
+    } else {
+        DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id or N_array");
+        avis = ID_AVIS (arg_node);
     }
 
-    DBUG_RETURN (id);
+    DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
@@ -277,6 +279,7 @@ WLSdoWithloopScalarization (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
  *****************************************************************************/

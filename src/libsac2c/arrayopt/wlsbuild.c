@@ -220,11 +220,11 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
     DBUG_PRINT ("WLS", ("Scalarization complete. New with-loop is:"));
     DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
-#ifdef CRUD // fundef appears to be corrupt at this point...
+#ifdef FIXME // fundef appears to be corrupt at this point...
 
     DBUG_PRINT ("WLS", ("New fundef is:"));
     DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, fundef););
-#endif // CRUD
+#endif // FIXME
 
     DBUG_RETURN (arg_node);
 }
@@ -355,6 +355,8 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
      */
     res = WLSflattenBound (res, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                            &INFO_PREASSIGNS (arg_info));
+    res = TBmakeId (res);
+
     DBUG_RETURN (res);
 }
 

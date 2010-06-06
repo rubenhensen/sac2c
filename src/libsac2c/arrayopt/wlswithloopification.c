@@ -367,11 +367,13 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid, info *arg_info)
         lower_id = WLSflattenBound (SHshape2Array (lower),
                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                                     &INFO_PREASSIGNS (arg_info));
+        lower_id = TBmakeId (lower_id);
 
         upper = SHappendShapes (upper_hd, upper_tl);
         upper_id = WLSflattenBound (SHshape2Array (upper),
                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                                     &INFO_PREASSIGNS (arg_info));
+        upper_id = TBmakeId (upper_id);
 
         newpart = TBmakePart (NULL, DUPdoDupNode (withid),
                               TBmakeGenerator (F_wl_le, F_wl_lt, lower_id, upper_id, NULL,
