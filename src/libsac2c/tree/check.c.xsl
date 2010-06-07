@@ -75,7 +75,7 @@ version="1.0">
 #include "check_lib.h"
 #include "check_mem.h"
 #include "checktst.h"
-
+#include "ctinfo.h"
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "free.h"
@@ -84,24 +84,52 @@ version="1.0">
 
 /*****************************************************************************
  *
- * @fn node *CHKdoTreeCheck( node *syntax_tree)
+ * @fn node *CHKdoTreeCheck( node *arg_node)
  *
  ****************************************************************************/
-node *CHKdoTreeCheck( node *syntax_tree)
+node *CHKdoTreeCheck( node *arg_node)
 {
-  DBUG_ENTER( "CHKdoTreeCheck");
+  node *keep_next;
+  
+  DBUG_ENTER("CHKdoTreeCheck");
+  
+  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+               || (NODE_TYPE( arg_node) == N_fundef),
+               "Illegal argument node!");
 
+  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+               || global.local_funs_grouped ,
+               "If run fun-based, special funs must be grouped.");
+
+  if (NODE_TYPE( arg_node) == N_fundef) {
+    /* 
+     * If this check is called function-based, we do not want to traverse
+     * into the next fundef, but restrict ourselves to this function and
+     * its subordinate special functions.
+     */
+    keep_next = FUNDEF_NEXT( arg_node);
+    FUNDEF_NEXT( arg_node) = NULL;
+  }
+
+  CTItell( 4, "         Running tree check");
+    
   DBUG_PRINT( "CHK", ("Starting the check mechanism"));
 
-  syntax_tree = CHKTSTdoTreeCheckTest( syntax_tree);
-
   TRAVpush( TR_chk);
-  syntax_tree = TRAVdo( syntax_tree, NULL);
+  arg_node = TRAVdo( arg_node, NULL);
   TRAVpop();
 
-  DBUG_PRINT( "CHK", ("Checkmechanism complete"));
+  DBUG_PRINT( "CHK", ("Check mechanism complete"));
 
-  DBUG_RETURN( syntax_tree);
+  if (NODE_TYPE( arg_node) == N_fundef) {
+    /* 
+     * If this check is called function-based, we must restore the original
+     * fundef chain here.
+     */
+    FUNDEF_NEXT( arg_node) = keep_next;
+  }
+  
+  DBUG_RETURN( arg_node);
 }
     </xsl:text>
   

@@ -304,6 +304,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("check");
 
+    ARGS_OPTION ("chkfreq", ARG_RANGE (global.check_frequency, 0, 4));
+
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     ARGS_OPTION_BEGIN ("cppI")

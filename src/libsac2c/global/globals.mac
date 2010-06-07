@@ -531,6 +531,11 @@ GLOBAL (bool, lacfuncheck, FALSE)
  * check syntax tree single call property of LaC functions
  */
 
+GLOBAL (int, check_frequency, 2)
+/*
+ * treecheck and lacfuncheck frequency
+ */
+
 #ifdef PRODUCTION
 GLOBAL (bool, sancheck, FALSE)
 #else  /* PRODUCTION */

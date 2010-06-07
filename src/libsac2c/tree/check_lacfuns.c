@@ -79,13 +79,10 @@ FreeInfo (info *info)
 static node *
 ATravCHKLACFCmodule (node *arg_node, info *arg_info)
 {
-    node *foo;
-
     DBUG_ENTER ("ATravCHKLACFCmodule");
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-    foo = TRAVopt (DUPgetCopiedSpecialFundefsHook (), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -110,7 +107,7 @@ ATravCHKLACFCfundef (node *arg_node, info *arg_info)
 }
 
 static node *
-ClearCallSiteLinks (node *syntax_tree)
+ClearCallSiteLinks (node *arg_node)
 {
     anontrav_t dfrc_trav[4]
       = {{N_module, &ATravCHKLACFCmodule}, {N_fundef, &ATravCHKLACFCfundef}, {0, NULL}};
@@ -119,11 +116,12 @@ ClearCallSiteLinks (node *syntax_tree)
 
     TRAVpushAnonymous (dfrc_trav, &TRAVsons);
 
-    syntax_tree = TRAVopt (syntax_tree, NULL);
+    arg_node = TRAVopt (arg_node, NULL);
+    TRAVopt (DUPgetCopiedSpecialFundefsHook (), NULL);
 
     TRAVpop ();
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -173,9 +171,16 @@ CHKLACFfundef (node *arg_node, info *arg_info)
             }
 
             if (fundef == NULL) {
+                fundef = DUPgetCopiedSpecialFundefsHook ();
+                while ((fundef != NULL) && (fundef != arg_node)) {
+                    fundef = FUNDEF_NEXT (fundef);
+                }
+            }
+
+            if (fundef == NULL) {
                 CTIerror ("LaC function %s called in regular function %s, "
                           "but not a member of regular function's local "
-                          "function set",
+                          "function set or on CopiedSpecialFundefsHook",
                           FUNDEF_NAME (arg_node),
                           FUNDEF_NAME (INFO_REGULARFUNDEF (arg_info)));
             }
@@ -240,7 +245,7 @@ CHKLACFap (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn CHKLACFdoCheckLacFuns( node *syntax_tree)
+ * @fn CHKLACFdoCheckLacFuns( node *arg_node)
  *
  *  @brief initiates traversal
  *
@@ -254,18 +259,25 @@ node *
 CHKLACFdoCheckLacFuns (node *arg_node)
 {
     info *info;
-    node *syntax_tree;
+    node *keep_next;
 
     DBUG_ENTER ("CHKLACFdoCheckLacFuns");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
                  "Illegal argument node!");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || global.local_funs_grouped,
+                 "If run fun-based, special funs must be grouped.");
+
     if (global.valid_ssaform) {
         if (NODE_TYPE (arg_node) == N_fundef) {
-            syntax_tree = global.syntax_tree;
-        } else {
-            syntax_tree = arg_node;
+            /*
+             * If this check is called function-based, we do not want to traverse
+             * into the next fundef, but restrict ourselves to this function and
+             * its subordinate special functions.
+             */
+            keep_next = FUNDEF_NEXT (arg_node);
+            FUNDEF_NEXT (arg_node) = NULL;
         }
 
         CTItell (4, "         Running LaC fun check");
@@ -273,12 +285,20 @@ CHKLACFdoCheckLacFuns (node *arg_node)
         info = MakeInfo ();
 
         TRAVpush (TR_chklacf);
-        syntax_tree = TRAVdo (syntax_tree, info);
+        arg_node = TRAVdo (arg_node, info);
         TRAVpop ();
 
         info = FreeInfo (info);
 
-        syntax_tree = ClearCallSiteLinks (syntax_tree);
+        arg_node = ClearCallSiteLinks (arg_node);
+
+        if (NODE_TYPE (arg_node) == N_fundef) {
+            /*
+             * If this check is called function-based, we must restore the original
+             * fundef chain here.
+             */
+            FUNDEF_NEXT (arg_node) = keep_next;
+        }
     }
 
     DBUG_RETURN (arg_node);

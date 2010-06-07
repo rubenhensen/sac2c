@@ -28,7 +28,6 @@
 static optimize_counter_t oc_global;
 static optimize_counter_t oc_pass;
 
-/* TEMP UNTIL OTHER CODE GETS RENAMED */
 /** <!--********************************************************************-->
  *
  * @fn bool isSAAMode( node *arg_node)
@@ -72,49 +71,6 @@ isSSAMode (void)
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn bool PHisSAAMode( node *arg_node)
- *
- * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
- *        should be generated and propagated.
- *
- *****************************************************************************/
-bool
-PHisSAAMode (void)
-
-{
-    bool z;
-
-    DBUG_ENTER ("PHisSAAMode");
-
-    z = global.optimize.dosaa
-        && ((global.compiler_anyphase >= PH_opt_isaa2)
-            && (global.compiler_anyphase < PH_opt_esaa2));
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool PHisSSAMode( node *arg_node)
- *
- * @brief Predicates for those compiler phases that are running in SSA mode.
- *
- *****************************************************************************/
-bool
-PHisSSAMode (void)
-
-{
-    bool z;
-
-    DBUG_ENTER ("PHisSSAMode");
-
-    z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
-
-    DBUG_RETURN (z);
-}
-
 #ifndef DBUG_OFF
 
 static void
@@ -144,6 +100,26 @@ CheckDisableDbug (compiler_phase_t phase)
 }
 
 #endif /* DBUG_OFF */
+
+static node *
+RunConsistencyChecks (node *arg_node)
+{
+    DBUG_ENTER ("RunConsistencyCheck");
+
+    if (arg_node != NULL) {
+        CTItell (4, "       Running consistency checks");
+
+        if (global.treecheck) {
+            arg_node = CHKdoTreeCheck (arg_node);
+        }
+
+        if (global.lacfuncheck) {
+            arg_node = CHKLACFdoCheckLacFuns (arg_node);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
@@ -176,12 +152,8 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
-        if (global.treecheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
-        }
-
-        if (global.lacfuncheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+        if (global.check_frequency == 1) {
+            syntax_tree = RunConsistencyChecks (syntax_tree);
         }
 #endif
 
@@ -236,12 +208,8 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
-        if (global.treecheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
-        }
-
-        if (global.lacfuncheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+        if (global.check_frequency >= 2) {
+            syntax_tree = RunConsistencyChecks (syntax_tree);
         }
 #endif
 
@@ -306,12 +274,8 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
             CTIabortOnError ();
 
 #ifndef DBUG_OFF
-            if (global.treecheck) {
-                syntax_tree = CHKdoTreeCheck (syntax_tree);
-            }
-
-            if (global.lacfuncheck) {
-                syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
+            if (global.check_frequency >= 2) {
+                syntax_tree = RunConsistencyChecks (syntax_tree);
             }
 #endif
 
@@ -389,21 +353,17 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
-        if (global.treecheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
+        if (global.check_frequency == 3) {
+            syntax_tree = RunConsistencyChecks (syntax_tree);
         }
-
-        if (global.lacfuncheck) {
-            syntax_tree = CHKLACFdoCheckLacFuns (syntax_tree);
-        }
-
-        CTIabortOnError ();
 #endif
     }
 
 #ifndef DBUG_OFF
     CheckDisableDbug (cyclephase);
 #endif
+
+    CTIabortOnError ();
 
     DBUG_RETURN (syntax_tree);
 }
@@ -458,18 +418,6 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             }
 
             DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););
-
-#ifndef DBUG_OFF
-            if (global.treecheck && (fundef != NULL)) {
-                fundef = CHKdoTreeCheck (fundef);
-            }
-
-            if (global.lacfuncheck) {
-                fundef = CHKLACFdoCheckLacFuns (fundef);
-            }
-
-            CTIabortOnError ();
-#endif
         }
 
         if (FUNDEF_NEXT (fundef) == NULL) {
@@ -481,16 +429,6 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 
         fundef = FUNDEF_NEXT (fundef);
     }
-
-#ifdef SHOW_MALLOC
-    if (global.treecheck && (syntax_tree != NULL)) {
-        syntax_tree = CHKdoTreeCheck (syntax_tree);
-    }
-
-    if (global.memcheck && (syntax_tree != NULL)) {
-        syntax_tree = CHKMdoMemCheck (syntax_tree);
-    }
-#endif
 
     DBUG_RETURN (syntax_tree);
 }
@@ -525,14 +463,9 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
-        if (global.treecheck && (fundef != NULL)) {
-            fundef = CHKdoTreeCheck (fundef);
+        if (global.check_frequency >= 4) {
+            fundef = RunConsistencyChecks (fundef);
         }
-
-        if (global.lacfuncheck) {
-            fundef = CHKLACFdoCheckLacFuns (fundef);
-        }
-
         CTIabortOnError ();
 #endif
     }

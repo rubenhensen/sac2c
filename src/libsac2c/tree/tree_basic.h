@@ -16,7 +16,7 @@
 #define NODE_LINE(n) ((n)->lineno)
 #define NODE_FILE(n) ((n)->src_file)
 #define NODE_ERROR(n) ((n)->error)
-
+#define NODE_CHECKVISITED(n) ((n)->checkvisited)
 #define NODE_TEXT(n) (global.mdb_nodetype[NODE_TYPE (n)])
 
 /*
@@ -192,6 +192,7 @@ struct NODE {
     int lineno;                /* line number in source code */
     char *src_file;            /* pointer to filename or source code */
     node *error;               /* error node */
+    bool checkvisited;         /* visited flag to detect illegal node sharing */
     union SONUNION sons;       /* the sons */
     union ATTRIBUNION attribs; /* the nodes attributes */
 };
