@@ -706,14 +706,14 @@ attribHasCountWithop (attrib *attr, node *arg)
 {
     bool res;
 
-    res = TCcountWithops (WITH_OR_WITH2_OR_WITH3_WITHOP (arg)) == *PATTR_I1 (attr);
+    res = (TCcountWithops (WITH_OR_WITH2_OR_WITH3_WITHOP (arg)) == *PATTR_I1 (attr));
     DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
 
     return (res);
 }
 
 attrib *
-PMAhasCountWithop (int count)
+PMAhasCountWithop (int *count)
 {
     attrib *res;
 
@@ -742,7 +742,7 @@ attribHasCountRange (attrib *attr, node *arg)
 }
 
 attrib *
-PMAhasCountRange (int count)
+PMAhasCountRange (int *count)
 {
     attrib *res;
 

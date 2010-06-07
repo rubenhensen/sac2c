@@ -450,9 +450,9 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                     node *arr = NULL;
                     node *mem = NULL;
 
-                    pattern *with3fill;
-                    int pos = 0, n = 1, one = 1;
 #if 0
+          pattern *with3fill;
+          int pos=0, n=1, one=1;
           with3fill = 
             PMprf( 1, 
                    PMAisPrf( F_fill),
