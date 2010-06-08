@@ -15,6 +15,7 @@
 #include "DupTree.h"
 #include "check.h"
 #include "check_mem.h"
+#include "check_reset.h"
 #include "phase_drivers.h"
 #include "phase_info.h"
 #include "statistics.h"
@@ -107,9 +108,10 @@ RunConsistencyChecks (node *arg_node)
     DBUG_ENTER ("RunConsistencyCheck");
 
     if (arg_node != NULL) {
-        CTItell (4, "       Running consistency checks");
+        CTItell (4, "         -> Running syntax tree consistency checks");
 
         if (global.treecheck) {
+            arg_node = CHKRSTdoTreeCheckReset (arg_node);
             arg_node = CHKdoTreeCheck (arg_node);
         }
 

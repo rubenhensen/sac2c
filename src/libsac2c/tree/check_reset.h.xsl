@@ -46,12 +46,12 @@ version="1.0">
  *
  */
 
-#ifndef _SAC_CHECKTST_H_
-#define _SAC_CHECKTST_H_
+#ifndef _SAC_CHECK_RESET_H_
+#define _SAC_CHECK_RESET_H_
 
 #include "types.h"
 
-extern node *CHKTSTdoTreeCheckTest(  node *syntax_tree);
+extern node *CHKRSTdoTreeCheckReset( node *syntax_tree);
 </xsl:text> 
 <xsl:value-of select="$newline"/>
 
@@ -66,14 +66,14 @@ extern node *CHKTSTdoTreeCheckTest(  node *syntax_tree);
 
 <xsl:text>
 
-#endif /* _SAC_CHECKTST_H_ */
+#endif /* _SAC_CHECK_RESET_H_ */
 </xsl:text>
 
 </xsl:template>
 
 <xsl:template match="node">
 
-<xsl:value-of select="'extern node *CHKTST'"/>
+<xsl:value-of select="'extern node *CHKRST'"/>
   <xsl:value-of select="translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')"/>
   <xsl:value-of select="'( node *arg_node, info *arg_info)'"/>
   <xsl:value-of select="';'"/>

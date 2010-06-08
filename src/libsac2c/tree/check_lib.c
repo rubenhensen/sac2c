@@ -11,7 +11,6 @@
 #include "tree_basic.h"
 #include "types.h"
 #include "tree_compound.h"
-#include "checktst.h"
 #include "globals.h"
 #include "ctinfo.h"
 #include "phase.h"

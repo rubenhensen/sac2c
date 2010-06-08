@@ -71,16 +71,9 @@ version="1.0">
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "print.h"
 #include "check_lib.h"
 #include "check_mem.h"
-#include "checktst.h"
-#include "ctinfo.h"
-#include "tree_compound.h"
-#include "DupTree.h"
-#include "free.h"
-#include "str.h"
-#include "memory.h"
+
 
 /*****************************************************************************
  *
@@ -111,8 +104,6 @@ node *CHKdoTreeCheck( node *arg_node)
     FUNDEF_NEXT( arg_node) = NULL;
   }
 
-  CTItell( 4, "         Running tree check");
-    
   DBUG_PRINT( "CHK", ("Starting the check mechanism"));
 
   TRAVpush( TR_chk);
@@ -245,6 +236,20 @@ node *CHKdoTreeCheck( node *arg_node)
       </xsl:with-param>
     </xsl:call-template>
     <xsl:value-of select="'&quot;);'"/>
+
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'  if (NODE_CHECKVISITED( arg_node)) {'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'    NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node), &quot;Node illegally shared: N_'"/>
+    <xsl:value-of select="@name"/>
+    <xsl:value-of select="'&quot;);'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'  } else {'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'    NODE_CHECKVISITED( arg_node) = TRUE;'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'  }'"/>
+    <xsl:value-of select="$newline"/>
 
     <xsl:apply-templates select="sons/son" mode="checks">
       <xsl:sort select="@name"/>

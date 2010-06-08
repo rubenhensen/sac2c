@@ -62,38 +62,59 @@ version="1.0">
     <!-- includes -->
     <xsl:text>
 
-#include "checktst.h"
-#include "check.h"
+#include "check_reset.h"
 #include "globals.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "print.h"
 
-#include "tree_compound.h"
-#include "DupTree.h"
-#include "free.h"
-#include "str.h"
-#include "memory.h"
 
 /*****************************************************************************
  *
- * @fn node *CHKTSTdoTreeCheckTest( node *syntax_tree)
+ * @fn node *CHKRSTdoTreeCheckReset( node *syntax_tree)
  *
  *****************************************************************************/
-node *CHKTSTdoTreeCheckTest( node *syntax_tree)
+node *CHKRSTdoTreeCheckReset( node *arg_node)
 {
-  DBUG_ENTER( "CHKTSTdoTreeCheckTest");
+  node *keep_next;
 
-  DBUG_PRINT( "CHKTST", ("Starting the CheckTestmechanism"));
+  DBUG_ENTER( "CHKRSTdoTreeCheckReset");
 
-  TRAVpush( TR_chktst);
-  syntax_tree = TRAVdo( syntax_tree, NULL);
+  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+               || (NODE_TYPE( arg_node) == N_fundef),
+               "Illegal argument node!");
+
+  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+               || global.local_funs_grouped ,
+               "If run fun-based, special funs must be grouped.");
+
+  if (NODE_TYPE( arg_node) == N_fundef) {
+    /* 
+     * If this check is called function-based, we do not want to traverse
+     * into the next fundef, but restrict ourselves to this function and
+     * its subordinate special functions.
+     */
+    keep_next = FUNDEF_NEXT( arg_node);
+    FUNDEF_NEXT( arg_node) = NULL;
+  }
+
+  DBUG_PRINT( "CHKRST", ("Reset tree check mechanism"));
+
+  TRAVpush( TR_chkrst);
+  arg_node = TRAVdo( arg_node, NULL);
   TRAVpop();
 
-  DBUG_PRINT( "CHKTST", ("CheckTestmechanism complete"));
+  DBUG_PRINT( "CHKRST", ("Reset tree check mechanism completed"));
 
-  DBUG_RETURN( syntax_tree);
+  if (NODE_TYPE( arg_node) == N_fundef) {
+    /* 
+     * If this check is called function-based, we must restore the original
+     * fundef chain here.
+     */
+    FUNDEF_NEXT( arg_node) = keep_next;
+  }
+  
+  DBUG_RETURN( arg_node);
 }
   </xsl:text>
   <xsl:value-of select="$newline"/>
@@ -105,12 +126,12 @@ node *CHKTSTdoTreeCheckTest( node *syntax_tree)
 
 <xsl:template match="node" mode="function">
   <xsl:call-template name="travfun-comment">
-    <xsl:with-param name="prefix">CHKTST</xsl:with-param>
+    <xsl:with-param name="prefix">CHKRST</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="@name" /></xsl:with-param>
     <xsl:with-param name="text">build the testenviroment for the Checks</xsl:with-param>
   </xsl:call-template>  
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">CHKTST</xsl:with-param>
+    <xsl:with-param name="prefix">CHKRST</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="@name" /></xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="$newline"/>   
@@ -121,13 +142,17 @@ node *CHKTSTdoTreeCheckTest( node *syntax_tree)
     </xsl:if>
     <xsl:value-of select="$newline"/>
     <xsl:value-of select="'  DBUG_ENTER'"/>
-    <xsl:value-of select="'( &quot;CHKTST'"/>
+    <xsl:value-of select="'( &quot;CHKRST'"/>
     <xsl:call-template name="lowercase">
       <xsl:with-param name="string" >
         <xsl:value-of select="@name"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:value-of select="'&quot;);'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="$newline"/>
+
+    <xsl:value-of select="'  NODE_CHECKVISITED( arg_node) = FALSE;'"/>
     <xsl:value-of select="$newline"/>
 
     <xsl:apply-templates select="./sons/son" mode="trav">
