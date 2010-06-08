@@ -370,8 +370,44 @@ AddDummyCode (node *wl)
 
     /* add dummy code */
     switch (TYPES_BASETYPE (type)) {
+    case T_byte:
+        expr = TBmakeNumbyte (0);
+        break;
+
+    case T_short:
+        expr = TBmakeNumshort (0);
+        break;
+
     case T_int:
         expr = TBmakeNum (0);
+        break;
+
+    case T_long:
+        expr = TBmakeNumlong (0);
+        break;
+
+    case T_longlong:
+        expr = TBmakeNumlonglong (0);
+        break;
+
+    case T_ubyte:
+        expr = TBmakeNumubyte (0);
+        break;
+
+    case T_ushort:
+        expr = TBmakeNumushort (0);
+        break;
+
+    case T_uint:
+        expr = TBmakeNumuint (0);
+        break;
+
+    case T_ulong:
+        expr = TBmakeNumulong (0);
+        break;
+
+    case T_ulonglong:
+        expr = TBmakeNumulonglong (0);
         break;
 
     case T_double:

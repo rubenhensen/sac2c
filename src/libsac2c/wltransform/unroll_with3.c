@@ -813,7 +813,8 @@ UW3range (node *arg_node, info *arg_info)
         upper = COconst2Int (cupper);
         if ((upper - lower) <= global.mutc_unroll) {
             int max = upper - lower;
-            for (int i = 0; i < max; i++) {
+            int i;
+            for (i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
                 node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));
                 INFO_ASSIGNS (arg_info)

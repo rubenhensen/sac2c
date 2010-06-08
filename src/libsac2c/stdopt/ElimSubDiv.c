@@ -176,7 +176,16 @@ InversionPrf (prf op, simpletype stype)
         }
         /* There is no break missing here. */
 
+    case T_byte:
+    case T_short:
     case T_int:
+    case T_long:
+    case T_longlong:
+    case T_ubyte:
+    case T_ushort:
+    case T_uint:
+    case T_ulong:
+    case T_ulonglong:
         switch (op) {
         case F_sub_SxS:
         case F_sub_VxS:

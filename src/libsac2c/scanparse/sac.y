@@ -166,10 +166,10 @@ PRF_MESH_VxVxV
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
-%token BURGER_L BURGER_R NTFBUILTIN NTFUSER NTFABSTRACT
-TYPEREL SUBTYPE IFF
-%token <id> NTFADD NTFSUB NTFMUL NTFDIV
-%token <id> NTFLT NTFGT NTFLE NTFGE
+%token BURGER_L BURGER_R TFBUILTIN TFUSER TFABSTRACT
+TFTYPEREL SUBTYPE IFF
+%token <id> TFADD TFSUB TFMUL TFDIV
+%token <id> TFLT TFGT TFLE TFGE
 
 /*******************************************************************************
  * SAC programs
@@ -204,9 +204,9 @@ TYPEREL SUBTYPE IFF
 /*
 %type <node> pragmas 
 */
-%type <node> ntfabsdef ntfuserdef ntfbuiltindef ntfarg
-%type <node> ntfdef ntfrel ntfspecs ntfdefs ntfrels ntfexprs
-%type <node> ntfoperand
+%type <node> tfabsdef tfuserdef tfbuiltindef tfarg
+%type <node> tfdef tfrel tfspec tfdefs tfrels tfexprs
+%type <node> tfoperand
 
 
 /*******************************************************************************
@@ -235,9 +235,9 @@ TYPEREL SUBTYPE IFF
 %type <inheritence_list_t> inherits
 %type <resource_list_t> resources
 
-%right NTFLT NTFGT NTFLE NTFGE
-%left NTFSUB NTFADD
-%left NTFMUL NTFDIV
+%right TFLT TFGT TFLE TFGE
+%left TFSUB TFADD
+%left TFMUL TFDIV
 
 %nonassoc STRUCTSET
 %left STRUCTELEM
@@ -319,7 +319,7 @@ defs: interface def1
     | def1
       { $$ = $1; }
 
-def1: ntfspecs def2
+def1: tfspec def2
       { $$ = $2;
 	MODULE_TYPEFAMILIES($$) = $1;
       }
@@ -1970,169 +1970,166 @@ nums: NUM COMMA nums { $$ = TBmakeNums( $1, $3); }
 /*
  **********************************************************
  *
- *  rules for ntypefamily (ntf)
+ *  rules for typefamily (tf)
  *
  ********************************************************** 
  */
-ntfspecs: ntfdefs ntfrels
+tfspec: tfdefs tfrels
 	{
-	  $$=TBmakeNtfspecs($1,$2);
+	  $$=TBmakeTfspec($1,$2);
 	}
 
-ntfdefs: ntfdef ntfdefs
+tfdefs: tfdef tfdefs
 	{
-	  $$=TBmakeNtfdefs($1,$2);
+	  $$=TBmakeTfdef($1,NULL,NULL,$2);
 	}
-	|ntfdef
+	|tfdef
 	{
-	  $$=TBmakeNtfdefs($1,NULL);
-	}
-	;
-ntfrels: ntfrel ntfrels
-	{
-	  $$=TBmakeNtfrels($1,$2);
-	}
-	|ntfrel
-	{
-	  $$=TBmakeNtfrels($1,NULL);
+	  $$=TBmakeTfdef($1,NULL,NULL,NULL);
 	}
 	;
-ntfdef: ntfabsdef
+tfrels: tfrel tfrels
 	{
+	  TFREL_NEXT($1)=$2;
 	  $$=$1;
 	}
-	|ntfuserdef
-	{
-	  $$=$1;
-	}
-	|ntfbuiltindef
+	|tfrel
 	{
 	  $$=$1;
 	}
 	;
-ntfabsdef: NTFABSTRACT ID ntfarg SEMIC
+tfdef: tfabsdef
 	{
-	  $$=TBmakeNtfabs($2,$3,NULL,NULL);
+	  $$=$1;
 	}
-	|NTFABSTRACT ID SEMIC
+	|tfuserdef
 	{
-	  $$=TBmakeNtfabs($2,NULL,NULL,NULL);
+	  $$=$1;
 	}
-	;
-ntfuserdef: NTFUSER ID ntfarg SEMIC
+	|tfbuiltindef
 	{
-	  $$=TBmakeNtfusr($2,$3,NULL,NULL);
-	}
-	;
-ntfbuiltindef: 
-	NTFBUILTIN simplentype SEMIC
-	{
-	  $$=TBmakeNtfbin(TYtype2DebugString($2,0,0), NULL,NULL,NULL);
-	}
-	| NTFBUILTIN ID SEMIC
-	{
-	  $$=TBmakeNtfbin($2, NULL, NULL, NULL);
-	}
-	| NTFBUILTIN ID BURGER_L ntfarg BURGER_R SEMIC
-	{
-	  $$=TBmakeNtfbin($2, $4, NULL, NULL);
+	  $$=$1;
 	}
 	;
-ntfarg: ID DCOLON ID COMMA ntfarg
+tfabsdef: TFABSTRACT ID tfarg SEMIC
 	{
-	  $$=TBmakeNtfarg($1,$3,$5);
+	  $$=TBmakeTfabs($2,$3);
+	}
+	|TFABSTRACT ID SEMIC
+	{
+	  $$=TBmakeTfabs($2,NULL);
+	}
+	;
+tfuserdef: TFUSER ID tfarg SEMIC
+	{
+	  $$=TBmakeTfusr($2,$3);
+	}
+	;
+tfbuiltindef: 
+	TFBUILTIN simplentype SEMIC
+	{
+	  $$=TBmakeTfbin(TYtype2DebugString($2,0,0), NULL);
+	}
+	| TFBUILTIN ID SEMIC
+	{
+	  $$=TBmakeTfbin($2, NULL);
+	}
+	| TFBUILTIN ID BURGER_L tfarg BURGER_R SEMIC
+	{
+	  $$=TBmakeTfbin($2, $4);
+	}
+	;
+tfarg: ID DCOLON ID COMMA tfarg
+	{
+	  $$=TBmakeTfarg($1,$3,$5);
 	}
 	|
-	ID COMMA ntfarg
+	ID COMMA tfarg
 	{
-	  $$=TBmakeNtfarg($1,NULL,$3);
+	  $$=TBmakeTfarg($1,NULL,$3);
 	}
 	|
 	ID DCOLON ID
 	{
-	  $$=TBmakeNtfarg($1,$3,NULL);
+	  $$=TBmakeTfarg($1,$3,NULL);
 	}
 	|
 	ID
 	{
-	  $$=TBmakeNtfarg($1,NULL,NULL);
+	  $$=TBmakeTfarg($1,NULL,NULL);
 	}
 	;
-ntfrel: TYPEREL simplentype SUBTYPE simplentype SEMIC
+tfrel: TFTYPEREL simplentype SUBTYPE simplentype SEMIC
 	{
-	  $$=TBmakeNtfrel(TYtype2DebugString($2,0,0),
-		TYtype2DebugString($4,0,0),NULL);
+	  $$=TBmakeTfrel(TYtype2DebugString($2,0,0),
+		TYtype2DebugString($4,0,0),NULL,NULL);
 	}
-	|TYPEREL ID SUBTYPE ID SEMIC
+	|TFTYPEREL ID SUBTYPE ID SEMIC
 	{
-	  $$=TBmakeNtfrel($2,$4,NULL);
+	  $$=TBmakeTfrel($2,$4,NULL,NULL);
 	}
-	|TYPEREL simplentype SUBTYPE ID SEMIC
+	|TFTYPEREL simplentype SUBTYPE ID SEMIC
 	{
-	  $$=TBmakeNtfrel(TYtype2DebugString($2,0,0),$4,NULL);
+	  $$=TBmakeTfrel(TYtype2DebugString($2,0,0),$4,NULL,NULL);
 	}
-	|TYPEREL ID SUBTYPE ID IFF ntfexprs SEMIC
+	|TFTYPEREL ID SUBTYPE ID IFF tfexprs SEMIC
 	{
-	  $$=TBmakeNtfrel($2,$4,$6);
+	  $$=TBmakeTfrel($2,$4,$6,NULL);
 	}
 	;
-ntfexprs: 
-	ntfexprs NTFLT ntfexprs
+tfexprs: 
+	tfexprs TFLT tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFGT ntfexprs
+	| tfexprs TFGT tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFLE ntfexprs
+	| tfexprs TFLE tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFGE ntfexprs
+	| tfexprs TFGE tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFMUL ntfexprs
+	| tfexprs TFMUL tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFDIV ntfexprs
+	| tfexprs TFDIV tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFADD ntfexprs
+	| tfexprs TFADD tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| ntfexprs NTFSUB ntfexprs
+	| tfexprs TFSUB tfexprs
 	{
-	  $$=TBmakeNtfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| BRACKET_L ntfexprs BRACKET_R
+	| BRACKET_L tfexprs BRACKET_R
 	{
 	  $$=$2;
 	}
-	| ntfoperand
+	| tfoperand
 	{
 	  $$=$1;
 	}
 	;
 
-ntfoperand : ID
+tfoperand : ID
 	{
-	  printf("Id   : %s\n",STRcpy($1));
-	  fflush(stdout);
-	  $$=TBmakeNtfexpr(NULL,NULL,NULL);
-	  NTFEXPR_ASSIGNEEID($$)=STRcpy($1);
+	  $$=TBmakeTfexpr(NULL,NULL,NULL);
+	  TFEXPR_ASSIGNEEID($$)=STRcpy($1);
 	}
 	|
 	NUM
 	{
-	  printf("Num  : %d\n",$1);
-	  fflush(stdout);
-	  $$=TBmakeNtfexpr(NULL,NULL,NULL);
-	  NTFEXPR_VALUE($$)=$1;
+	  $$=TBmakeTfexpr(NULL,NULL,NULL);
+	  TFEXPR_VALUE($$)=$1;
 	}
 	;
 

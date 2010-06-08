@@ -120,6 +120,11 @@ ENDPHASE (ptc)
 
 PHASE (tc, "Running type inference system", ALWAYS)
 
+SUBPHASE (btf, "Building type family dependency graph", TFBDGdoBuildTFGraph, ALWAYS, tc)
+
+SUBPHASE (pptg, "Preprocess type family dependency graph", TFPPGdoPreprocessTFGraph,
+          ALWAYS, tc)
+
 SUBPHASE (esp, "Enforcing Specializations", ESPdoEnforceSpecialization, ALWAYS, tc)
 
 SUBPHASE (sossk, "Specialization Oracle for Static Shape Knowledge",

@@ -1598,6 +1598,18 @@ extern int TCcountWlseg (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  Macro to get typefamily tags
+ ***/
+
+#define TFDEF_TAG(n)                                                                     \
+    ((NODE_TYPE (n) == N_tfbin)                                                          \
+       ? TFBIN_TAG (n)                                                                   \
+       : ((NODE_TYPE (n) == N_tfusr)                                                     \
+            ? TFUSR_TAG (n)                                                              \
+            : ((NODE_TYPE (n) == N_tfabs) ? TFABS_TAG (n) : NULL)))
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_str :
  ***/
 

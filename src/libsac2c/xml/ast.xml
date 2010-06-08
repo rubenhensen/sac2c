@@ -86,17 +86,18 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
-      <!--<traversal id="NTFERN" name="Eliminate typerel nodes from AST" default="sons" include="ntf_remove_relnode.h" >
+      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="tf_build_graph.h" >
         <travuser>
-          <node name="Ntfrels" />
+          <node name="Tfspec" />
+          <node name="Tfdef" />
         </travuser>
       </traversal>
-      <traversal id="NTFARI" name="Add relation info to typedef nodes in AST" default="sons" include="ntf_insert_relinfo.h" >
+      <traversal id="TFPPG" name="Preprocess type family graph for reachability" default="sons" include="tf_preprocess_graph.h" >
         <travuser>
-          <node name="Ntfdefs" />
+          <node name="Tfspec" />
+          <node name="Tfdef" />
         </travuser>
       </traversal>
-      -->
       <traversal id="RLAC" name="CUDA Remove unused lac functions" default="sons" include="remove_unused_lac.h" >
         <travuser>
           <node name="Fundef" />
@@ -3235,11 +3236,11 @@
       </target>
      </nodeset>
 
-     <nodeset name="Ntfdef">
+     <nodeset name="Tfdefunion">
       <target>
-        <node name="Ntfusr" />
-        <node name="Ntfbin" />
-        <node name="Ntfabs" />
+        <node name="Tfusr" />
+        <node name="Tfbin" />
+        <node name="Tfabs" />
       </target>
      </nodeset>
 
@@ -3268,7 +3269,7 @@
           <description>Specification of type families</description>
           <targets>
             <target mandatory="no">
-              <node name="Ntfspecs" />
+              <node name="Tfspec" />
               <phases>
                 <all />
               </phases>
@@ -3479,16 +3480,16 @@ N_structdef :
     </node>
 <!--
 
-N_ntfspecs :
+N_tfspecs :
 
 -->
-    <node name="Ntfspecs">
+    <node name="Tfspec">
       <description>declaration of type families and relations</description>
       <sons>
         <son name="Defs">
           <targets>
             <target mandatory="yes">
-              <node name="Ntfdefs" />
+              <node name="Tfdef" />
               <phases>
                 <all />
               </phases>
@@ -3498,7 +3499,7 @@ N_ntfspecs :
         <son name="Rels">
           <targets>
             <target mandatory="yes">
-              <node name="Ntfrels" />
+              <node name="Tfrel" />
               <phases>
                 <all />
               </phases>
@@ -3510,16 +3511,62 @@ N_ntfspecs :
     </node>
 <!--
 
-N_ntfdefs :
+N_tfdef :
 
 -->
-    <node name="Ntfdefs">
+    <node name="Tfdef">
       <description>Type family definitions</description>
+      <attributes>
+        <attribute name="dfwid" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="dfwidmax" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
       <sons>
         <son name="Curr">
           <targets>
             <target mandatory="yes">
-              <set name="Ntfdef" />
+              <set name="Tfdefunion" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Supers">
+          <targets>
+            <target mandatory="no">
+              <node name="Tfsupersub" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Subs">
+          <targets>
+            <target mandatory="no">
+              <node name="Tfsupersub" />
               <phases>
                 <all />
               </phases>
@@ -3529,7 +3576,7 @@ N_ntfdefs :
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Ntfdefs" />
+              <node name="Tfdef" />
               <phases>
                 <all />
               </phases>
@@ -3541,41 +3588,10 @@ N_ntfdefs :
     </node>
 <!--
 
-N_ntfrels :
+N_tfrel :
 
 -->
-    <node name="Ntfrels">
-      <description>Type family relations</description>
-      <sons>
-        <son name="Curr">
-          <targets>
-            <target mandatory="yes">
-              <node name="Ntfrel" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <flags/>
-    </node>
-<!--
-
-N_ntfrel :
-
--->
-    <node name="Ntfrel">
+    <node name="Tfrel">
       <description>Type family relations</description>
       <attributes>
         <attribute name="Subtag" inconstructor="yes">
@@ -3602,36 +3618,22 @@ N_ntfrel :
             </targets>
           </type>
         </attribute>
-        <attribute name="Super" inconstructor="no">
-          <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Sub" inconstructor="no">
-          <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <sons>
         <son name="Cond">
           <targets>
             <target mandatory="no">
-              <node name="Ntfexpr" />
+              <node name="Tfexpr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Tfrel" />
               <phases>
                 <all />
               </phases>
@@ -3643,10 +3645,10 @@ N_ntfrel :
     </node>
 <!--
 
-N_ntfexpr :
+N_tfexpr :
 
 -->
-    <node name="Ntfexpr">
+    <node name="Tfexpr">
       <description>Expression for type family relation</description>
       <attributes>
         <attribute name="Assigneeid" inconstructor="no">
@@ -3687,20 +3689,20 @@ N_ntfexpr :
         </attribute>
       </attributes>
       <sons>
-        <son name="Op1">
+        <son name="Operand1">
           <targets>
             <target mandatory="no">
-              <node name="Ntfexpr" />
+              <node name="Tfexpr" />
               <phases>
                 <all />
               </phases>
             </target>
           </targets>
         </son>
-        <son name="Op2">
+        <son name="Operand2">
           <targets>
             <target mandatory="no">
-              <node name="Ntfexpr" />
+              <node name="Tfexpr" />
               <phases>
                 <all />
               </phases>
@@ -3712,10 +3714,10 @@ N_ntfexpr :
     </node>
 <!--
 
-N_ntfabs :
+N_tfabs :
 
 -->
-    <node name="Ntfabs">
+    <node name="Tfabs">
       <description>Abstract type family</description>
       <attributes>
         <attribute name="tag" inconstructor="yes">
@@ -3735,27 +3737,7 @@ N_ntfabs :
         <son name="Args">
           <targets>
             <target mandatory="no">
-              <node name="Ntfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Supers">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Subs">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
+              <node name="Tfarg" />
               <phases>
                 <all />
               </phases>
@@ -3767,10 +3749,10 @@ N_ntfabs :
     </node>
 <!--
 
-N_ntfusr :
+N_tfusr :
 
 -->
-    <node name="Ntfusr">
+    <node name="Tfusr">
       <description>User type family</description>
       <attributes>
         <attribute name="tag" inconstructor="yes">
@@ -3790,27 +3772,7 @@ N_ntfusr :
         <son name="Args">
           <targets>
             <target mandatory="no">
-              <node name="Ntfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Supers">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Subs">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
+              <node name="Tfarg" />
               <phases>
                 <all />
               </phases>
@@ -3822,10 +3784,10 @@ N_ntfusr :
     </node>
 <!--
 
-N_ntfbin :
+N_tfbin :
 
 -->
-    <node name="Ntfbin">
+    <node name="Tfbin">
       <description>Builtin type family</description>
       <attributes>
         <attribute name="tag" inconstructor="yes">
@@ -3845,27 +3807,7 @@ N_ntfbin :
         <son name="Args">
           <targets>
             <target mandatory="no">
-              <node name="Ntfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Supers">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Subs">
-          <targets>
-            <target mandatory="no">
-              <node name="Ntfrels" />
+              <node name="Tfarg" />
               <phases>
                 <all />
               </phases>
@@ -3877,10 +3819,55 @@ N_ntfbin :
     </node>
 <!--
 
-N_ntfarg :
+N_tfsupersub :
 
 -->
-    <node name="Ntfarg">
+    <node name="Tfsupersub">
+      <description>Subtypes and supertypes of a type</description>
+      <attributes>
+        <attribute name="TypeFamily" default="NULL" inconstructor="yes">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Tfdef" />
+                <phases>
+                  <all/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <sons>
+        <son name="Cond">
+          <targets>
+            <target mandatory="no">
+              <node name="Tfexpr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Tfsupersub" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <flags/>
+    </node>
+<!--
+
+N_tfarg :
+
+-->
+    <node name="Tfarg">
       <description>Arguments to type families</description>
       <attributes>
         <attribute name="tag" inconstructor="yes">
@@ -3912,7 +3899,7 @@ N_ntfarg :
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Ntfarg" />
+              <node name="Tfarg" />
               <phases>
                 <all />
               </phases>

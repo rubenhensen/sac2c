@@ -173,15 +173,15 @@ extern node *DUPtreeTravPre (node *arg_node, info *arg_info);
 extern node *DUPtreeTravPost (node *arg_node, info *arg_info);
 
 //#ifdef NTFSANTANU
-extern node *DUPntfspecs (node *arg_node, info *arg_info);
-extern node *DUPntfdefs (node *arg_node, info *arg_info);
-extern node *DUPntfrels (node *arg_node, info *arg_info);
-extern node *DUPntfrel (node *arg_node, info *arg_info);
-extern node *DUPntfabs (node *arg_node, info *arg_info);
-extern node *DUPntfusr (node *arg_node, info *arg_info);
-extern node *DUPntfbin (node *arg_node, info *arg_info);
-extern node *DUPntfarg (node *arg_node, info *arg_info);
-extern node *DUPntfexpr (node *arg_node, info *arg_info);
+extern node *DUPtfspec (node *arg_node, info *arg_info);
+extern node *DUPtfdef (node *arg_node, info *arg_info);
+extern node *DUPtfrel (node *arg_node, info *arg_info);
+extern node *DUPtfabs (node *arg_node, info *arg_info);
+extern node *DUPtfusr (node *arg_node, info *arg_info);
+extern node *DUPtfbin (node *arg_node, info *arg_info);
+extern node *DUPtfsupersub (node *arg_node, info *arg_info);
+extern node *DUPtfarg (node *arg_node, info *arg_info);
+extern node *DUPtfexpr (node *arg_node, info *arg_info);
 //#endif
 
 #endif /* _SAC_DUPTREE_H_ */

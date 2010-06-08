@@ -78,35 +78,35 @@ int charpos = 0;
 "<:"			   { FILTER( SUBTYPE); }
 "./"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFDIV); 
+			     FILTER( TFDIV); 
 			   }
 ".*"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFMUL); 
+			     FILTER( TFMUL); 
 			   }
 ".+"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFADD); 
+			     FILTER( TFADD); 
 			   }
 ".-"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFSUB); 
+			     FILTER( TFSUB); 
 			   }
 ".<"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFLT); 
+			     FILTER( TFLT); 
 			   }
 ".>"			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFGT); 
+			     FILTER( TFGT); 
 			   }
 ".<="			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFLE); 
+			     FILTER( TFLE); 
 			   }
 ".>="			   { 
   			     yylval.id = STRcpy(yytext); 
-			     FILTER( NTFGE); 
+			     FILTER( TFGE); 
 			   }
 "{"                        { FILTER( BRACE_L); }
 "}"                        { FILTER( BRACE_R); }
@@ -318,10 +318,10 @@ int charpos = 0;
 "noinline"                 { FILTER( NOINLINE); }
 
 "iff" 			   { FILTER( IFF); }
-"builtin-typedef" 	   { FILTER( NTFBUILTIN); }
-"user-typedef" 		   { FILTER( NTFUSER); }
-"abstract-typedef"	   { FILTER( NTFABSTRACT); }
-"typerel"		   { FILTER( TYPEREL); }
+"builtin-typedef" 	   { FILTER( TFBUILTIN); }
+"user-typedef" 		   { FILTER( TFUSER); }
+"abstract-typedef"	   { FILTER( TFABSTRACT); }
+"typerel"		   { FILTER( TFTYPEREL); }
 
 "float"                    { FILTER( TYPE_FLOAT); }
 "bool"                     { FILTER( TYPE_BOOL); }

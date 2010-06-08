@@ -72,8 +72,9 @@ struct INFO {
     int funcounter;
     node *nonlocalfun;
     node *spmdstore;
-    /*ntfrel source*/
-    node *ntfsupernode;
+    /*type family*/
+    node *tfsupernode;
+    char *tfstringexpr;
 };
 
 /* access macros print */
@@ -94,7 +95,8 @@ struct INFO {
 #define INFO_FUNCOUNTER(n) ((n)->funcounter)
 #define INFO_NONLOCCALFUN(n) ((n)->nonlocalfun)
 #define INFO_SPMDSTORE(n) ((n)->spmdstore)
-#define INFO_NTFSUPERNODE(n) ((n)->ntfsupernode)
+#define INFO_TFSUPERNODE(n) ((n)->tfsupernode)
+#define INFO_TFSTRINGEXPR(n) ((n)->tfstringexpr)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -226,7 +228,8 @@ MakeInfo ()
     INFO_FUNCOUNTER (result) = 0;
     INFO_NONLOCCALFUN (result) = NULL;
     INFO_SPMDSTORE (result) = NULL;
-    INFO_NTFSUPERNODE (result) = NULL;
+    INFO_TFSUPERNODE (result) = NULL;
+    INFO_TFSTRINGEXPR (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -5886,131 +5889,146 @@ PRTfunbundle (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-//#ifdef NTFSANTANU
 node *
-PRTntfspecs (node *arg_node, info *arg_info)
+PRTtfspec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTntfspecs");
+    DBUG_ENTER ("PRTtfspec");
     fprintf (global.outfile, "\n/*\nType family specifications\n");
-    if (NTFSPECS_DEFS (arg_node) != NULL) {
-        fprintf (global.outfile, "\n--Type definitions--\n\n");
-        TRAVdo (NTFSPECS_DEFS (arg_node), arg_info);
+    fprintf (global.outfile, "The following output is in dot format.\n");
+    fprintf (global.outfile, "It can be visualized using graphviz's dot tool.\n");
+    if (TFSPEC_DEFS (arg_node) != NULL) {
+        fprintf (global.outfile, "\ndigraph typespecs{\n\n");
+        TRAVdo (TFSPEC_DEFS (arg_node), arg_info);
+        fprintf (global.outfile, "};\n");
     }
-    if (NTFSPECS_RELS (arg_node) != NULL) {
-        fprintf (global.outfile, "\n--Type relations--\n\n");
-        TRAVdo (NTFSPECS_RELS (arg_node), arg_info);
+    /*
+    if(TFSPEC_RELS(arg_node)!=NULL){
+      fprintf(global.outfile,"\n--Type relations--\n\n");
+      TRAVdo(TFSPEC_RELS(arg_node),arg_info);
     }
+    */
     fprintf (global.outfile, "*/\n");
     DBUG_RETURN (arg_node);
 }
 
 node *
-PRTntfdefs (node *arg_node, info *arg_info)
+PRTtfdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTntfdefs");
-    if (NTFDEFS_CURR (arg_node) != NULL) {
-        TRAVdo (NTFDEFS_CURR (arg_node), arg_info);
+    DBUG_ENTER ("PRTtfdef");
+    if (TFDEF_CURR (arg_node) != NULL) {
+        TRAVdo (TFDEF_CURR (arg_node), arg_info);
+        INFO_TFSUPERNODE (arg_info) = arg_node;
     }
-    if (NTFDEFS_NEXT (arg_node) != NULL) {
-        TRAVdo (NTFDEFS_NEXT (arg_node), arg_info);
+    if (TFDEF_SUBS (arg_node) != NULL) {
+        TRAVdo (TFDEF_SUBS (arg_node), arg_info);
+    }
+    if (TFDEF_NEXT (arg_node) != NULL) {
+        TRAVdo (TFDEF_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
 
 node *
-PRTntfrels (node *arg_node, info *arg_info)
+PRTtfrel (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTntfrels");
-    if (NTFRELS_CURR (arg_node) != NULL) {
-        TRAVdo (NTFRELS_CURR (arg_node), arg_info);
-    }
-    if (NTFRELS_NEXT (arg_node) != NULL) {
-        TRAVdo (NTFRELS_NEXT (arg_node), arg_info);
+    DBUG_ENTER ("PRTtfrel");
+    fprintf (global.outfile, "\"%s\"->\"%s\";\n", TFREL_SUPERTAG (arg_node),
+             TFREL_SUBTAG (arg_node));
+    if (TFREL_NEXT (arg_node) != NULL) {
+        TRAVdo (TFREL_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
 
 node *
-PRTntfrel (node *arg_node, info *arg_info)
+PRTtfabs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTntfrel");
-    node *super, *sub;
-    char *super_tag, *sub_tag;
-    super = INFO_NTFSUPERNODE (arg_info);
-    sub = NTFREL_SUB (arg_node);
-    if (sub != NULL && super != NULL) {
-        switch (NODE_TYPE (sub)) {
-        case N_ntfabs:
-            sub_tag = NTFABS_TAG (sub);
-            break;
-        case N_ntfbin:
-            sub_tag = NTFBIN_TAG (sub);
-            break;
-        case N_ntfusr:
-            sub_tag = NTFUSR_TAG (sub);
-            break;
-        default:
-            break;
-        }
-        switch (NODE_TYPE (super)) {
-        case N_ntfabs:
-            super_tag = NTFABS_TAG (super);
-            break;
-        case N_ntfbin:
-            super_tag = NTFBIN_TAG (super);
-            break;
-        case N_ntfusr:
-            super_tag = NTFUSR_TAG (super);
-            break;
-        default:
-            break;
-        }
-        fprintf (global.outfile, "\"%s\"->\"%s\";\n", super_tag, sub_tag);
+    DBUG_ENTER ("PRTtfabs");
+    // fprintf(global.outfile,"%s\n",TFABS_TAG(arg_node));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTtfusr (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTtfusr");
+    // fprintf(global.outfile,"%s\n",TFUSR_TAG(arg_node));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTtfbin (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTtfbin");
+    // fprintf(global.outfile,"%s\n",TFBIN_TAG(arg_node));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTtfsupersub (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTtfsupersub");
+    fprintf (global.outfile, "\"%s, tree=[%d,%d]\"->\"%s, tree=[%d,%d]\"",
+             TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
+             TFDEF_DFWID (INFO_TFSUPERNODE (arg_info)),
+             TFDEF_DFWIDMAX (INFO_TFSUPERNODE (arg_info)),
+             TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))),
+             TFDEF_DFWID (TFSUPERSUB_TYPEFAMILY (arg_node)),
+             TFDEF_DFWIDMAX (TFSUPERSUB_TYPEFAMILY (arg_node)));
+    if (TFSUPERSUB_COND (arg_node) != NULL) {
+        INFO_TFSTRINGEXPR (arg_info) = NULL;
+        TRAVdo (TFSUPERSUB_COND (arg_node), arg_info);
+        fprintf (global.outfile, "\t[label=\"%s\"]", INFO_TFSTRINGEXPR (arg_info));
+    }
+    fprintf (global.outfile, ";\n");
+    if (TFSUPERSUB_NEXT (arg_node) != NULL) {
+        TRAVdo (TFSUPERSUB_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTtfarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTtfarg");
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTtfexpr (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTtfexpr");
+    INFO_TFSTRINGEXPR (arg_info) = STRcat (INFO_TFSTRINGEXPR (arg_info), "(");
+    /*
+     * The following 5 cases are possible here:
+     * Case 1: id/num op id/num
+     * Case 2: id/num op expr
+     * Case 3: expr op id/num
+     * Case 4: expr op expr
+     * Case 5: id/num
+     */
+    if (TFEXPR_OPERAND1 (arg_node) != NULL) {
+        TRAVdo (TFEXPR_OPERAND1 (arg_node), arg_info);
+        INFO_TFSTRINGEXPR (arg_info)
+          = STRcat (INFO_TFSTRINGEXPR (arg_info), TFEXPR_OPERATOR (arg_node));
     } else {
-        fprintf (global.outfile, "\"%s\"->\"%s\";\n", NTFREL_SUPERTAG (arg_node),
-                 NTFREL_SUBTAG (arg_node));
+        if (TFEXPR_ASSIGNEEID (arg_node) != NULL) {
+            INFO_TFSTRINGEXPR (arg_info)
+              = STRcat (INFO_TFSTRINGEXPR (arg_info), TFEXPR_ASSIGNEEID (arg_node));
+        }
+        INFO_TFSTRINGEXPR (arg_info)
+          = STRcat (INFO_TFSTRINGEXPR (arg_info),
+                    STRcat ("[val=", STRcat (STRitoa (TFEXPR_VALUE (arg_node)), "]")));
     }
+    if (TFEXPR_OPERAND2 (arg_node) != NULL) {
+        TRAVdo (TFEXPR_OPERAND2 (arg_node), arg_info);
+    } else {
+        /*
+         * This is possible if arg_node is a num/id. In that case, we need not print
+         * the assignee_id and value again as it has already been printed
+         * while inspecting Operand1
+         */
+    }
+    INFO_TFSTRINGEXPR (arg_info) = STRcat (INFO_TFSTRINGEXPR (arg_info), ")");
     DBUG_RETURN (arg_node);
 }
-
-node *
-PRTntfabs (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTntfabs");
-    fprintf (global.outfile, "%s\n", NTFABS_TAG (arg_node));
-    INFO_NTFSUPERNODE (arg_info) = arg_node;
-    DBUG_RETURN (arg_node);
-}
-
-node *
-PRTntfusr (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTntfusr");
-    fprintf (global.outfile, "%s\n", NTFUSR_TAG (arg_node));
-    INFO_NTFSUPERNODE (arg_info) = arg_node;
-    DBUG_RETURN (arg_node);
-}
-
-node *
-PRTntfbin (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTntfbin");
-    fprintf (global.outfile, "%s\n", NTFBIN_TAG (arg_node));
-    INFO_NTFSUPERNODE (arg_info) = arg_node;
-    DBUG_RETURN (arg_node);
-}
-
-node *
-PRTntfarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTntfarg");
-    DBUG_RETURN (arg_node);
-}
-
-node *
-PRTntfexpr (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTntfexpr");
-    DBUG_RETURN (arg_node);
-}
-//#endif
