@@ -108,14 +108,14 @@ RunConsistencyChecks (node *arg_node)
     DBUG_ENTER ("RunConsistencyCheck");
 
     if (arg_node != NULL) {
-        CTItell (4, "         -> Running syntax tree consistency checks");
-
         if (global.treecheck) {
+            CTItell (4, "         -> Running syntax tree checks");
             arg_node = CHKRSTdoTreeCheckReset (arg_node);
             arg_node = CHKdoTreeCheck (arg_node);
         }
 
         if (global.lacfuncheck) {
+            CTItell (4, "         -> Running LaC fun checks");
             arg_node = CHKLACFdoCheckLacFuns (arg_node);
         }
     }
