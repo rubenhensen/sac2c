@@ -18,6 +18,7 @@
  *****************************************************************************/
 extern node *HWLGdoHandleWithLoops (node *arg_node);
 
+extern node *HWLGlet (node *arg_node, info *arg_info);
 extern node *HWLGassign (node *arg_node, info *arg_info);
 extern node *HWLGwith (node *arg_node, info *arg_info);
 extern node *HWLGgenarray (node *arg_node, info *arg_info);

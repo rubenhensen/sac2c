@@ -28,17 +28,18 @@
  *       ( <p3> ) : e3;            ( <p3> ) : e3;            ( <p3> ) : e3;
  *     } genarray( shp, def)     } modarray( a)            } fold( fun, neutr)
  *
- * are semantically equivalent to
  *
- *     with {                    with {                    with {
+ * are semantically equivalent to
+ *                                                 fun( tmp, fun( tmp2, tmp3));
+ *     with {                    with {                    tmp3 = with {
  *       ( <p3> ) : e3;            ( <p3> ) : e3;            ( <p3> ) : e3;
- *     } modarray( tmp)          } modarray( tmp)          } fold( fun, tmp)
+ *     } modarray( tmp)          } modarray( tmp)          } fold( fun, neutr)
  *
  * provided the variable tmp is defined as
  *
  * tmp = with {                  tmp = with {              tmp = with {
  *         ( <p2> ) : e2;                ( <p2> ) : e2;            ( <p2> ) : e2;
- *       } modarray( tmp2);            } modarray( tmp2);        } fold( fun, tmp2);
+ *       } modarray( tmp2);            } modarray( tmp2);        } fold( fun, neutr);
  *
  * and tmp2 is defined as
  *
@@ -129,6 +130,13 @@ struct INFO {
     node *lastassign;
     node *lhs;
     node *withops;
+    /*
+     * Chain of exprs that point to NULL if non fold or to a spap if
+     * corresponds to fold withop
+     * NULL's are present to line up with spids of lhs of with loop
+     */
+    node *fold;
+    node *postassign;
     traversal_mode_t withop_traversal_mode;
 };
 
@@ -139,6 +147,8 @@ struct INFO {
 #define INFO_HWLG_LHS(n) (n->lhs)
 #define INFO_HWLG_NEW_WITHOPS(n) (n->withops)
 #define INFO_HWLG_MODE(n) (n->withop_traversal_mode)
+#define INFO_FOLD(n) (n->fold)
+#define INFO_POSTASSIGN(n) (n->postassign)
 
 /**
  * INFO functions
@@ -156,6 +166,8 @@ MakeInfo ()
     INFO_HWLG_LHS (result) = NULL;
     INFO_HWLG_NEW_WITHOPS (result) = NULL;
     INFO_HWLG_MODE (result) = T_traverse;
+    INFO_FOLD (result) = NULL;
+    INFO_POSTASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -164,6 +176,11 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
+
+    /*  DBUG_ASSERT( ( INFO_FOLD( info) == NULL),
+        "Freeing non empty info");*/
+
+    DBUG_ASSERT ((INFO_POSTASSIGN (info) == NULL), "Freeing info with post assigns");
 
     info = MEMfree (info);
 
@@ -219,7 +236,7 @@ HWLGdoHandleWithLoops (node *arg_node)
 node *
 HWLGassign (node *arg_node, info *arg_info)
 {
-    node *mem_last_assign, *return_node;
+    node *mem_last_assign, *return_node, *mem_postassign;
 
     DBUG_ENTER ("HWLGassign");
 
@@ -242,18 +259,131 @@ HWLGassign (node *arg_node, info *arg_info)
     INFO_HWLG_LASTASSIGN (arg_info) = mem_last_assign;
     DBUG_PRINT ("HWLG", ("LASTASSIGN (re)set to %08x!", mem_last_assign));
 
+    mem_postassign = INFO_POSTASSIGN (arg_info);
+    INFO_POSTASSIGN (arg_info) = NULL;
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
+    ASSIGN_NEXT (arg_node) = TCappendAssign (mem_postassign, ASSIGN_NEXT (arg_node));
+
     DBUG_RETURN (return_node);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *InsertInitial(node *fun, char *var)
+ *
+ * @brief given a chain of 2 argument functions where the function chain
+ *        continues on the second argument of the function place the var
+ *        as the initial value of the chain
+ *
+ *        f( ..., f( ..., f( ..., NULL);
+ *
+ *        f( ..., f( ..., f( ...., spid(var));
+ *
+ *****************************************************************************/
+
+static node *
+InsertInitial (node *fun, char *var)
+{
+    DBUG_ENTER ("InsertInitial");
+
+    if (fun != NULL) {
+        if (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))) == NULL) {
+            EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))) = TBmakeSpid (NULL, var);
+        } else {
+            EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun)))
+              = InsertInitial (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))), var);
+        }
+    }
+
+    DBUG_RETURN (fun);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RenameLhs(node *arg_node, info *arg_info)
+ *
+ * @brief Find all lhs' that are for folds.  Rename these to a new var
+ *        and finish the creation of the f(a,b..) assignment using with lhs for
+ *        f(a,b...)'s lhs
+ *
+ *        a = with {} fold(f, ...);
+ *
+ *        a' = with{} fold(f, ...);
+ *        a = f( ..., ... f(..., a') ...);
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+static node *
+RenameLhs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RenameLhs");
+
+    if (arg_node != NULL) {
+
+        if (EXPRS_EXPR (INFO_FOLD (arg_info)) == NULL) {
+            /* non fold lhs */
+            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
+            SPIDS_NEXT (arg_node) = RenameLhs (SPIDS_NEXT (arg_node), arg_info);
+        } else {
+            /* fold lhs */
+            char *newVar = TRAVtmpVar ();
+            node *fun = DUPdoDupTree (EXPRS_EXPR (INFO_FOLD (arg_info)));
+            node *next = SPIDS_NEXT (arg_node);
+            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
+
+            fun = InsertInitial (fun, newVar);
+
+            SPIDS_NEXT (arg_node) = NULL;
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (arg_node, fun), INFO_POSTASSIGN (arg_info));
+
+            arg_node = TBmakeSpids (STRcpy (newVar), RenameLhs (next, arg_info));
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *HWLGlet(node *arg_node, info *arg_info)
+ *
+ * @brief If we have fold withloop replace lhs for fold with new var and
+ *        use old lhs for result of fun( a, ...).
+ *        Create new lhs and place in inner nesting of fold fun.
+ *
+ * @param arg_node N_with to be potentially transformed
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+HWLGlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("HWLGlet");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_FOLD (arg_info) != NULL) {
+        LET_IDS (arg_node) = RenameLhs (LET_IDS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *HWLGwith(node *arg_node, info *arg_info)
  *
- * @brief creates aa sequences of With-Loop assignments with Single-Generator
+ * @brief creates a sequences of With-Loop assignments with Single-Generator
  *        With-Loops from Multi-Generator With-Loops.
  *
  * @param arg_node N_with to be potentially transformed
@@ -265,7 +395,6 @@ HWLGassign (node *arg_node, info *arg_info)
  * @return arg_node
  *
  *****************************************************************************/
-
 static node *
 SplitWith (node *arg_node, info *arg_info)
 {
@@ -402,9 +531,15 @@ HWLGgenarray (node *arg_node, info *arg_info)
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
+        if (INFO_FOLD (arg_info) != NULL) {
+            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
+        }
+
         if (GENARRAY_NEXT (arg_node) != NULL) {
             GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
         }
+
+        INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 
         tmp = TRAVtmpVar ();
 
@@ -442,9 +577,16 @@ HWLGmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("HWLGmodarray");
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
+
+        if (INFO_FOLD (arg_info) != NULL) {
+            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
+        }
+
         if (MODARRAY_NEXT (arg_node) != NULL) {
             MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
         }
+
+        INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 
         tmp = TRAVtmpVar ();
 
@@ -478,17 +620,31 @@ HWLGspfold (node *arg_node, info *arg_info)
 {
     char *tmp;
     node *new_withop;
+    node *current_fold = NULL;
 
     DBUG_ENTER ("HWLGspfold");
 
+    if (INFO_FOLD (arg_info) != NULL) {
+        /* Already have atleast one f( a, b) */
+        current_fold = INFO_FOLD (arg_info);
+        INFO_FOLD (arg_info) = EXPRS_NEXT (current_fold);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (current_fold != NULL) {
+        EXPRS_NEXT (current_fold) = INFO_FOLD (arg_info);
+        INFO_FOLD (arg_info) = current_fold;
+    } else {
+        INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
+    }
+
     if (INFO_HWLG_MODE (arg_info) == T_create) {
-        if (SPFOLD_NEXT (arg_node) != NULL) {
-            SPFOLD_NEXT (arg_node) = TRAVdo (SPFOLD_NEXT (arg_node), arg_info);
-        }
+        /*if( SPFOLD_NEXT( arg_node) != NULL) {
+          SPFOLD_NEXT( arg_node) = TRAVdo( SPFOLD_NEXT( arg_node), arg_info);
+          }*/
 
-        tmp = TRAVtmpVar ();
-
-        new_withop = TBmakeSpfold (TBmakeSpid (NULL, tmp));
+        new_withop = TBmakeSpfold (DUPdoDupTree (SPFOLD_NEUTRAL (arg_node)));
         SPFOLD_NS (new_withop) = NSdupNamespace (SPFOLD_NS (arg_node));
         SPFOLD_FUN (new_withop) = STRcpy (SPFOLD_FUN (arg_node));
         SPFOLD_GUARD (new_withop) = DUPdoDupTree (SPFOLD_GUARD (arg_node));
@@ -496,9 +652,22 @@ HWLGspfold (node *arg_node, info *arg_info)
         SPFOLD_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
 
+        tmp = TRAVtmpVar ();
+
         INFO_HWLG_LHS (arg_info) = TBmakeSpids (STRcpy (tmp), INFO_HWLG_LHS (arg_info));
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info);
+
+        {
+            node *exprRight
+              = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (INFO_FOLD (arg_info))), NULL);
+            node *exprDown = FREEdoFreeNode (INFO_FOLD (arg_info));
+            node *funName = TBmakeSpid (NSdupNamespace (SPFOLD_NS (arg_node)),
+                                        STRcpy (SPFOLD_FUN (arg_node)));
+            node *var = TBmakeSpid (NULL, STRcpy (tmp));
+
+            INFO_FOLD (arg_info)
+              = TBmakeExprs (TBmakeSpap (funName, TBmakeExprs (var, exprRight)),
+                             exprDown);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -526,9 +695,16 @@ HWLGpropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ("HWLGpropagate");
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
+
+        if (INFO_FOLD (arg_info) != NULL) {
+            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
+        }
+
         if (PROPAGATE_NEXT (arg_node) != NULL) {
             PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
         }
+
+        INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");

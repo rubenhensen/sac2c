@@ -762,6 +762,7 @@
 	      <traversal id="HWLG" name="Handle multi-generator with-loops"
 			 default="sons" include="handle_with_loop_generators.h" >
 		<travuser>
+		  <node name="Let" />
 		  <node name="Assign" />
 		  <node name="With" />
 		  <node name="Genarray" />
