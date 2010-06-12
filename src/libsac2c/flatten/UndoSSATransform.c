@@ -23,14 +23,6 @@
 #include "print.h"
 #include "globals.h"
 
-#define SSA_ASSIGN_BUG_FIXED 0
-/*
- * All SSAASSIGN links should be removed in this phase, but for some reason
- * compilation of the stdlib fails if so done. So, for now we only remove
- * those links that belong to funcond defined variables, for which there is
- * no one SSA_ASSIGN anyhow.
- */
-
 /*
  * INFO structure
  */
@@ -225,9 +217,7 @@ USSATavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSATavis");
 
-#if SSA_ASSIGN_BUG_FIXED
     AVIS_SSAASSIGN (arg_node) = NULL;
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -608,10 +598,6 @@ USSATfuncond (node *arg_node, info *arg_info)
     }
 
     INFO_REMASSIGN (arg_info) = TRUE;
-
-#if !SSA_ASSIGN_BUG_FIXED
-    AVIS_SSAASSIGN (rhsavis) = NULL;
-#endif
 
     DBUG_RETURN (arg_node);
 }

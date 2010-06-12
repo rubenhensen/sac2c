@@ -491,7 +491,11 @@ PINLid (node *arg_node, info *arg_info)
             DBUG_PRINT ("PINL", ("Created new assignment to var %s",
                                  AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
-            AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+            if (global.valid_ssaform) {
+                AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info)))
+                  = INFO_INSERT (arg_info);
+            }
+
             if (isSAAMode ()) {
                 AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
                   = DUPdoDupTree (AVIS_DIM (ID_AVIS (old_id)));
@@ -523,7 +527,9 @@ PINLid (node *arg_node, info *arg_info)
         DBUG_PRINT ("PINL", ("Created new assignment to var %s",
                              AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
-        AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+        if (global.valid_ssaform) {
+            AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+        }
 
         if (isSAAMode ()) {
             AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
@@ -566,23 +572,20 @@ PINLids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PINLids");
 
-    old_ssaassign = AVIS_SSAASSIGN (IDS_AVIS (arg_node));
-    new_ssaassign = LUTsearchInLutPp (inline_lut, old_ssaassign);
+    if (global.valid_ssaform) {
+        old_ssaassign = AVIS_SSAASSIGN (IDS_AVIS (arg_node));
+        new_ssaassign = LUTsearchInLutPp (inline_lut, old_ssaassign);
 
-#if 0
-  DBUG_ASSERT( new_ssaassign != old_ssaassign,
-               "Somehow the ssaassign has not been copied.");
-#endif
+        if (new_ssaassign != old_ssaassign) {
+            DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN corrected for %s.\n",
+                                 AVIS_NAME (IDS_AVIS (arg_node))));
+        } else {
+            DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN not corrected for %s.\n",
+                                 AVIS_NAME (IDS_AVIS (arg_node))));
+        }
 
-    if (new_ssaassign != old_ssaassign) {
-        DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN corrected for %s.\n",
-                             AVIS_NAME (IDS_AVIS (arg_node))));
-    } else {
-        DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN not corrected for %s.\n",
-                             AVIS_NAME (IDS_AVIS (arg_node))));
+        AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = new_ssaassign;
     }
-
-    AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = new_ssaassign;
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
