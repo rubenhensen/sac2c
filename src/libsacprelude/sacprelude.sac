@@ -135,11 +135,35 @@ int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
 }
 
 inline 
+int Min( int x, int y)
+{ /* Function to perform min_SxS_( x, y), but written to 
+   * let the optimizers simplify the arguments.
+   */
+
+  dif  = _sub_SxS_( x, y);
+  p = _le_SxS_( dif, 0);
+  z = p ? x : y;
+  return(z);
+}
+
+inline 
+int Max( int x, int y)
+{ /* Function to perform max_SxS_( x, y), but written to 
+   * let the optimizers simplify the arguments.
+   */
+
+  dif  = _sub_SxS_( x, y);
+  p = _ge_SxS_( dif, 0);
+  z = p ? x : y;
+  return(z);
+}
+
+inline 
 int[.], int[.], int[.], int[.]
 partitionSlicer( int[.] min, int[.] max, int axis, int[.] lb, int[.] ub)
 {
   lb_i = _sel_VxA_( [axis], lb);
-  ub_i = _max_SxS_( lb_i, _sel_VxA_( [axis], ub));
+  ub_i = Max( lb_i, _sel_VxA_( [axis], ub));
   max_lower = _modarray_AxVxS_( max, [axis], lb_i);
   min_upper = _modarray_AxVxS_( min, [axis], ub_i);
 
@@ -153,11 +177,11 @@ inline
 int[.], int[.], int[.]
 gridFiller( int[.] lb, int[.] ub, int[.] wdth, int dim, int[.] maxwidth)
 {
-  l_dim = _min_SxS_( _add_SxS_( _sel_VxA_( [dim], lb), 
+  l_dim = Min( _add_SxS_( _sel_VxA_( [dim], lb), 
                                 _sel_VxA_( [dim], wdth)),
                      _sel_VxA_( [dim], ub));
-  w_dim = _max_SxS_( _sub_SxS_( _sel_VxA_( [dim], maxwidth), 
-                                _sel_VxA_( [dim], wdth)),
+  w_dim = Max( _sub_SxS_( _sel_VxA_( [dim], maxwidth), 
+                          _sel_VxA_( [dim], wdth)),
                      0);
   nlb = _modarray_AxVxS_( lb, [dim], l_dim );
   nwidth = _modarray_AxVxS_( maxwidth, [dim], w_dim);
@@ -177,25 +201,36 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
   return(z);
 }
 
-inline int[.] partitionIntersectMax( int[.] idxmin, int[.] bound1)
-{ /* Function to perform max( idxmin, bound1), but written to 
-   * let the optimizers simplify the arguments.
+inline int[.] partitionIntersectMax( int[.] idxmin, int[.] ivmin, 
+                                                    int[.] ivmax,
+                                                    int[.] bound1)
+{ /* compute maximum of producerWL partition bounds
+   * and index vector set, then project result back into 
+   * consumerWL partition bounds.
    */
 
-  dif  = _sub_VxV_( idxmin, bound1);
+  dif  = _sub_VxV_( idxmin, ivmin);
   p = _ge_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, idxmin, bound1);
+  z = _mesh_VxVxV_( p, idxmin, ivmin);
+  z = _sub_VxV_( z, ivmin); /* project index vector back to partn bound */
+  b1 = _take_SxV_( _sel_VxA_([0], _shape_A_( ivmin)), bound1);
+  z = _add_VxV_( z, b1);
   return(z);
 }
 
-inline int[.] partitionIntersectMin( int[.] idxmax, int[.] bound2)
-{ /* Function to perform min( idxmax, bound2), but written to 
+inline int[.] partitionIntersectMin( int[.] idxmax, int[.] ivmin, 
+                                                    int[.] ivmax, 
+                                                    int[.] bound1)
+{ /* Function to perform min( idxmax, ivmax), but written to 
    * let the optimizers simplify the arguments.
    */
 
-  dif  = _sub_VxV_( idxmax, bound2);
+  dif  = _sub_VxV_( idxmax, ivmax);
   p = _le_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, idxmax, bound2);
+  z = _mesh_VxVxV_( p, idxmax, ivmax);
+  z = _sub_VxV_( z, ivmin); /* project index vector back to partn bound */
+  b1 = _take_SxV_( _sel_VxA_([0], _shape_A_( ivmin)), bound1);
+  z = _add_VxV_( z, b1);
   return(z);
 }
 

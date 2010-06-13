@@ -147,12 +147,6 @@ DCIdoDeadCodeInferenceOneFunction (node *fundef)
  *     we mark it so. We also traverse the SAA and EXTREMA
  *     links, to keep their referents alive, too.
  *
- *     This action is required because the links (e.g., AVIS_MINVAL)
- *     are attributes, not sons, in the ast.
- *     If this value is constant, it will have AVIS_MINVAL/MAXVAL
- *     pointing to its avis. In that case, we don't mark it alive.
- *     If someone else points to the constant, it will remain alive.
- *
  *****************************************************************************/
 
 static void
@@ -170,19 +164,20 @@ MarkAvisAlive (node *avis)
             DBUG_PRINT ("DCI", ("Traversing AVIS_DIM for %s", AVIS_NAME (avis)));
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
         }
+
         if (AVIS_SHAPE (avis) != NULL) {
             DBUG_PRINT ("DCI", ("Traversing AVIS_SHAPE for %s", AVIS_NAME (avis)));
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
-        if ((AVIS_MINVAL (avis) != NULL) && (AVIS_MINVAL (avis) != avis)) {
-            DBUG_PRINT ("DCI", ("Marking alive AVIS_MINVAL(%s)= %s", AVIS_NAME (avis),
-                                AVIS_NAME (AVIS_MINVAL (avis))));
-            MarkAvisAlive (AVIS_MINVAL (avis));
+
+        if (AVIS_MIN (avis) != NULL) {
+            DBUG_PRINT ("DCI", ("Traversing AVIS_MIN for %s", AVIS_NAME (avis)));
+            AVIS_MIN (avis) = TRAVdo (AVIS_MIN (avis), NULL);
         }
-        if ((AVIS_MAXVAL (avis) != NULL) && (AVIS_MAXVAL (avis) != avis)) {
-            DBUG_PRINT ("DCI", ("Marking alive AVIS_MAXVAL(%s)= %s", AVIS_NAME (avis),
-                                AVIS_NAME (AVIS_MAXVAL (avis))));
-            MarkAvisAlive (AVIS_MAXVAL (avis));
+
+        if (AVIS_MAX (avis) != NULL) {
+            DBUG_PRINT ("DCI", ("Traversing AVIS_MAX for %s", AVIS_NAME (avis)));
+            AVIS_MAX (avis) = TRAVdo (AVIS_MAX (avis), NULL);
         }
     }
 
@@ -226,13 +221,8 @@ DCIfundef (node *arg_node, info *arg_info)
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
              */
-            if (FUNDEF_VARDEC (arg_node) != NULL) {
-                FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), info);
-            }
-
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
+            FUNDEF_VARDEC (arg_node) = TRAVopt (FUNDEF_VARDEC (arg_node), info);
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
             if (FUNDEF_ISLACFUN (arg_node)) {
                 INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
@@ -305,6 +295,8 @@ DCIvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIvardec");
 
+    DBUG_PRINT ("DCI", ("marking var %s as potentially dead",
+                        AVIS_NAME (VARDEC_AVIS (arg_node))));
     AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
@@ -386,9 +378,7 @@ DCIreturn (node *arg_node, info *arg_info)
         }
     } else {
         /* mark all returned identifiers as needed */
-        if (RETURN_EXPRS (arg_node) != NULL) {
-            RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-        }
+        RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

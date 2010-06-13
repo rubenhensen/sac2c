@@ -26,6 +26,7 @@
 #include "tagdependencies.h"
 #include "resolvedependencies.h"
 #include "math_utils.h"
+#include "tree_utils.h"
 
 /**
  * INFO structure
@@ -918,31 +919,6 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
 
 /** <!--********************************************************************-->
  *
- * @fn node RemoveUnusedCodes(node *codes)
- *
- *   @brief removes all unused N_codes recursively
- *
- *   @param  node *codes : N_code chain
- *   @return node *      : modified N_code chain
- ******************************************************************************/
-static node *
-RemoveUnusedCodes (node *codes)
-{
-    DBUG_ENTER ("RemoveUnusedCodes");
-    DBUG_ASSERT ((codes != NULL), "no codes available!");
-    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
-
-    if (CODE_NEXT (codes) != NULL)
-        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
-
-    if (CODE_USED (codes) == 0)
-        codes = FREEdoFreeNode (codes);
-
-    DBUG_RETURN (codes);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node CreateEntryFlatArray(int entry, int number)
  *
  *   @brief creates an flat array with 'number' elements consisting of
@@ -1466,13 +1442,13 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
 
         WITH_PART (fusionable_wl) = FREEdoFreeTree (WITH_PART (fusionable_wl));
         WITH_PART (fusionable_wl) = new_parts_fwl;
-        WITH_CODE (fusionable_wl) = RemoveUnusedCodes (WITH_CODE (fusionable_wl));
+        WITH_CODE (fusionable_wl) = TUremoveUnusedCodes (WITH_CODE (fusionable_wl));
         DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
 
         WITH_PART (current_wl) = FREEdoFreeTree (WITH_PART (current_wl));
         WITH_PART (current_wl) = new_parts_cwl;
-        WITH_CODE (current_wl) = RemoveUnusedCodes (WITH_CODE (current_wl));
+        WITH_CODE (current_wl) = TUremoveUnusedCodes (WITH_CODE (current_wl));
         DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
     }

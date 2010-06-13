@@ -83,7 +83,8 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         ungroup_local_funs pattern_match_old tree_utils \
                         pattern_match_build_lut
 
-libsac2c_support     := dbug str ptr_buffer str_buffer system math_utils
+libsac2c_support     := dbug str ptr_buffer str_buffer system math_utils \
+                        gdb_utils
 
 libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_buildstack serialize_helper \

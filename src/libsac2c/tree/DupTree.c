@@ -1,48 +1,3 @@
-#ifdef FIXME
-this nearly works with ivextrema.c.The problem remaining, I think,
-  is related to DUP making multiple copies of lacfns.Particularly when a Loop
-    - fn contains a cond_fn,
-  as in the code
-    below.It might be fixable by making DUPap not traverse a Loop_fn from within itself.
-
-  use Array : all;
-
-int
-main ()
-{
-    y = genarray ([10], [ true, false, true, false ]);
-    x = transpose (y);
-    z = ordotandBBBSTAR (x, y);
-    StdIO::print (z);
-    return (0);
-}
-
-bool[+] ordotandBBBSTAR (bool[+] x, bool[+] y)
-{ /* CDC STAR-100 APL Algorithm for inner product */
-
-    rowsx = drop ([-1], shape (x));
-    colsx = shape (x)[[dim (x) - 1]];
-    colsy = shape (y)[[dim (y) - 1]];
-    Zrow = genarray ([colsy], false);
-    /* Parallel over rows of x */
-    z = with
-    {
-        (.<= row <=.)
-        {
-            Crow = Zrow;
-            for (colx = 0; colx < colsx; colx++) {
-                xrow = x[row];
-                xel = xrow[[colx]];
-                VEC = xel & y[[colx]];
-                Crow = VEC | Crow;
-            }
-        } : Crow;
-    } : genarray( rowsx, Zrow);
-    return (z);
-}
-
-#endif // FIXME
-
 /*
  * $Id$
  */
@@ -1274,6 +1229,9 @@ DUPblock (node *arg_node, info *arg_info)
     BLOCK_ISMTSEQUENTIALBRANCH (new_node) = BLOCK_ISMTSEQUENTIALBRANCH (arg_node);
     BLOCK_ISMTPARALLELBRANCH (new_node) = BLOCK_ISMTPARALLELBRANCH (arg_node);
 
+    // I think this entire AVIS_DIM/SHAPE loop is garbage, but I'm not yet
+    // brave enough to rip it out.
+
     /* Have to defer updating extrema until all vardecs in place */
     v = BLOCK_VARDEC (new_node);
 
@@ -1281,23 +1239,6 @@ DUPblock (node *arg_node, info *arg_info)
     while (NULL != v) {
         avis = VARDEC_AVIS (v);
         DBUG_PRINT ("DUP", ("DUPblock vardec scan looking at %s", AVIS_NAME (avis)));
-        if (NULL != AVIS_MINVAL (avis)) {
-            navis = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MINVAL (avis));
-            DBUG_ASSERT (N_avis == NODE_TYPE (navis),
-                         ("DUPblock found non-avis AVIS_MINVAL"));
-            DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_MINVAL from %s to %s",
-                                AVIS_NAME (AVIS_MINVAL (avis)), AVIS_NAME (navis)));
-            AVIS_MINVAL (avis) = navis;
-        }
-
-        if (NULL != AVIS_MAXVAL (avis)) {
-            nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAXVAL (avis));
-            DBUG_ASSERT (N_avis == NODE_TYPE (navis),
-                         ("DUPblock found non-avis AVIS_MAXVAL"));
-            DBUG_PRINT ("DUP", ("DUPblock renaming AVIS_MAXVAL from %s to %s",
-                                AVIS_NAME (AVIS_MAXVAL (avis)), AVIS_NAME (navis)));
-            AVIS_MAXVAL (avis) = navis;
-        }
 
         /* I can't figure this SAA stuff working at all unless
          * these fields are either N_num or N_id!
@@ -1598,10 +1539,10 @@ DUPids (node *arg_node, info *arg_info)
     AVIS_HASDTTHENPROXY (avis) = AVIS_HASDTTHENPROXY (IDS_AVIS (arg_node));
     AVIS_HASDTELSEPROXY (avis) = AVIS_HASDTELSEPROXY (IDS_AVIS (arg_node));
 
-    /* FIXME: not sure if next two lines really belong here??? */
-    /* And if they do, why aren't there similar lines for DUPid? */
     AVIS_DIM (avis) = DUPTRAV (AVIS_DIM (IDS_AVIS (arg_node)));
     AVIS_SHAPE (avis) = DUPTRAV (AVIS_SHAPE (IDS_AVIS (arg_node)));
+    AVIS_MIN (avis) = DUPTRAV (AVIS_MIN (IDS_AVIS (arg_node)));
+    AVIS_MAX (avis) = DUPTRAV (AVIS_MAX (IDS_AVIS (arg_node)));
 
     if ((INFO_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
         AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
@@ -2719,11 +2660,10 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
 
+    /* DEBUG TEMP FIXME  chasing missing info in N_ap */
     AVIS_DIM (new_node) = DUPTRAV (AVIS_DIM (arg_node));
     AVIS_SHAPE (new_node) = DUPTRAV (AVIS_SHAPE (arg_node));
-
-    AVIS_MINVAL (new_node) = AVIS_MINVAL (arg_node);
-    AVIS_MAXVAL (new_node) = AVIS_MAXVAL (arg_node);
+    /* DEBUG TEMP   FIXME chasing missing info in N_ap */
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
 

@@ -8,7 +8,7 @@
  *
  *         ( [:int] <= iv < [:int] ) ...
  *
- *  Adding thie case would be a good thing. At present, WLSIMP
+ *  Adding this case would be a good thing. At present, WLSIMP
  *  does it, but it really belongs here, according to the
  *  wisdom of the ages.
  */

@@ -1738,15 +1738,16 @@ void ICMCompileND_PRF_SHAPE_MATCHES_DIM( char *to_NT, char *from_NT,
 
 /** <!--********************************************************************-->
  *
- * @fn void ICMCompileND_PRF_VAL_LT_SHAPE
+ * @fn void ICMCompileND_PRF_VAL_LT_SHAPE_VxA
  *
  *****************************************************************************/
 void
-ICMCompileND_PRF_VAL_LT_SHAPE (char *to_NT, char *from_NT, char *from2_NT, int from2_sdim)
+ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
+                                   int from2_sdim)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_VAL_LT_SHAPE");
+    DBUG_ENTER ("ICMCompileND_PRF_VAL_LT_SHAPE_VxA");
 
     COND1 (fprintf (global.outfile,
                     "(SAC_ND_A_DIM(%s) != 1) &&"

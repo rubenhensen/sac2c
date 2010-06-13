@@ -24,6 +24,7 @@ extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipGuards (pattern *pat, node *expr);
+extern bool PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr);
 extern bool PMmatchFlatWith (pattern *pat, node *expr);
 
 extern node *PMmultiExprs (int num_nodes, ...);
@@ -73,6 +74,16 @@ extern node *PMOchar (node *stack);
 extern node *PMOnum (node *stack);
 extern node *PMOfloat (node *stack);
 extern node *PMOdouble (node *stack);
+extern node *PMOnumbyte (node *stack);
+extern node *PMOnumubyte (node *stack);
+extern node *PMOnumint (node *stack);
+extern node *PMOnumuint (node *stack);
+extern node *PMOnumshort (node *stack);
+extern node *PMOnumushort (node *stack);
+extern node *PMOnumlong (node *stack);
+extern node *PMOnumulong (node *stack);
+extern node *PMOnumlonglong (node *stack);
+extern node *PMOnumulonglong (node *stack);
 
 extern node *PMOboolVal (bool val, node *stack);
 extern node *PMOcharVal (char val, node *stack);

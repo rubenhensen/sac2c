@@ -137,6 +137,7 @@
 #include "pattern_match.h"
 #include "algebraic_wlfi.h"
 #include "check.h"
+#include "ivexpropagation.h"
 
 static info *
 MakeInfo ()
@@ -161,8 +162,8 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_TOPBLOCK (result) = NULL;
-    INFO_AVISMINVAL (result) = NULL;
-    INFO_AVISMAXVAL (result) = NULL;
+    INFO_AVISMIN (result) = NULL;
+    INFO_AVISMAX (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_DOINGEXTREMA (result) = FALSE;
 
@@ -305,7 +306,12 @@ IsScalarConstantNode (node *arg_node)
 {
     DBUG_ENTER ("IsScalarConstantNode");
 
-    DBUG_RETURN (PMO (PMObool (arg_node)) || PMO (PMOchar (arg_node))
+    DBUG_RETURN (PMO (PMObool (arg_node)) || PMO (PMOnumbyte (arg_node))
+                 || PMO (PMOnumubyte (arg_node)) || PMO (PMOnumint (arg_node))
+                 || PMO (PMOnumuint (arg_node)) || PMO (PMOnumshort (arg_node))
+                 || PMO (PMOnumushort (arg_node)) || PMO (PMOnumlong (arg_node))
+                 || PMO (PMOnumulong (arg_node)) || PMO (PMOnumlonglong (arg_node))
+                 || PMO (PMOnumulonglong (arg_node)) || PMO (PMOchar (arg_node))
                  || PMO (PMOnum (arg_node)) || PMO (PMOfloat (arg_node))
                  || PMO (PMOdouble (arg_node)));
 }
@@ -336,7 +342,31 @@ CFisFullyConstantNode (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @static fn node *UnflattenSimpleScalars( node *arg_node)
+ * @fn bool isNarrayHasIdNode( node *arg_node)
+ *
+ * @brief  Predicate returns TRUE if any ARRAY_AELEMS is an N_id node.
+ *
+ *****************************************************************************/
+static bool
+isNarrayHasIdNode (node *arg_node)
+{
+    bool res;
+
+    DBUG_ENTER ("isNarrayHasIdNode");
+
+    arg_node = ARRAY_AELEMS (arg_node);
+    res = FALSE;
+    while ((!res) && (arg_node != NULL)) {
+        res = res || (N_id == NODE_TYPE (EXPRS_EXPR (arg_node)));
+        arg_node = EXPRS_NEXT (arg_node);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CFunflattenSimpleScalars( node *arg_node)
  *
  * @brief  Replaces N_array elements that are N_id nodes
  *         pointing to simple scalar constants by their values.
@@ -349,9 +379,11 @@ CFisFullyConstantNode (node *arg_node)
  *
  *          arr = [ 1, 3, 2];
  *
+ *        If the N_array is already flattened, we do nothing.
+ *
  *****************************************************************************/
-static node *
-UnflattenSimpleScalars (node *arg_node)
+node *
+CFunflattenSimpleScalars (node *arg_node)
 {
     node *el;
     node *curel;
@@ -359,24 +391,26 @@ UnflattenSimpleScalars (node *arg_node)
     node *res;
     pattern *pat;
 
-    DBUG_ENTER ("UnflattenSimpleScalars");
+    DBUG_ENTER ("CFunflattenSimpleScalars");
 
-    res = DUPdoDupTree (arg_node);
+    res = arg_node;
     pat = PMconst (1, PMAgetNode (&cons));
 
-    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && CFisFullyConstantNode (arg_node)) {
+    if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && isNarrayHasIdNode (arg_node)
+        && CFisFullyConstantNode (arg_node)) {
+        res = DUPdoDupTree (arg_node);
+        DBUG_PRINT ("CF", ("Unflattening N_array of scalar constants"));
         el = ARRAY_AELEMS (res);
         while (NULL != el) {
             curel = EXPRS_EXPR (el);
             if ((N_id == NODE_TYPE (curel)) && (PMmatchFlat (pat, curel))) {
-                DBUG_PRINT ("CF", ("Flattening N_array scalar constant"));
                 FREEdoFreeNode (EXPRS_EXPR (el));
                 EXPRS_EXPR (el) = DUPdoDupNode (cons);
             }
             el = EXPRS_NEXT (el);
         }
+        arg_node = FREEdoFreeTree (arg_node);
     }
-    arg_node = FREEdoFreeTree (arg_node);
     pat = PMfree (pat);
 
     DBUG_RETURN (res);
@@ -444,14 +478,14 @@ PreventTypePrecisionLoss (node *id, ntype *oldtype)
  *
  * @fn node* node* CreateAssignsFromIdsExprs( node *ids, node *exprs)
  *
- * @brief recylcles all ids and all expressions while creating an
+ * @brief recycles all ids and all expressions while creating an
  *        assignment chain left-to-right, ie.
  *        A call with ids: A,B,C and exprs: a,b,c
  *        is transformed into
  *        A = a;
  *        B = b;
  *        C = b;
- *        The N_exprs nodes are being freed!
+ *        The N_exprs nodes are freed, SSAASSIGN links are updated.
  *
  *****************************************************************************/
 static node *
@@ -498,6 +532,44 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
     DBUG_RETURN (res);
 }
 
+#ifdef DEADCODE
+/** <!--********************************************************************-->
+ *
+ * @fn node *CorrectSSAASSIGNs( node *ids, node *exprs)
+ *
+ * @brief Correct SSAASSIGN of LHS node N_ids.
+ *
+ *****************************************************************************/
+static node *
+CorrectSSAASSIGNS (node *arg_node, info *arg_info)
+{
+    node *let;
+    node *ids;
+    node *ssa;
+
+    DBUG_ENTER ("CorrectSSAASSIGNS");
+
+    let = ASSIGN_INSTR (arg_node);
+    if (N_let == NODE_TYPE (let)) {
+        ids = LET_IDS (let);
+        while (ids != NULL) {
+            /* DEBUG REMOVE THIS */
+            ssa = AVIS_SSAASSIGN (IDS_AVIS (ids));
+            if ((ssa != NULL) && (ssa != arg_node)) {
+                DBUG_PRINT ("CF",
+                            ("Correcting SSAASSIGN for %s", AVIS_NAME (IDS_AVIS (ids))));
+            }
+            /* DEBUG REMOVE THIS */
+
+            AVIS_SSAASSIGN (IDS_AVIS (ids)) = arg_node;
+            ids = IDS_NEXT (ids);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+#endif // DEADCODE
+
 /** <!--********************************************************************-->
  *
  * @fn static node *InvokeCFprfAndFlattenExtrema( node *arg_node,
@@ -522,17 +594,17 @@ InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node
         res = fn (arg_node, arg_info);
         restype = (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
         restype = TYeliminateAKV (restype);
-        if ((NULL != res) && (NULL != INFO_AVISMINVAL (arg_info))) {
-            ex = AWLFIflattenExpression (INFO_AVISMINVAL (arg_info),
-                                         &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGN (arg_info), restype);
-            INFO_AVISMINVAL (arg_info) = ex;
+        if ((NULL != res) && (NULL != INFO_AVISMIN (arg_info))) {
+            ex
+              = AWLFIflattenExpression (INFO_AVISMIN (arg_info), &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGN (arg_info), restype);
+            INFO_AVISMIN (arg_info) = ex;
         }
-        if ((NULL != res) && (NULL != INFO_AVISMAXVAL (arg_info))) {
-            ex = AWLFIflattenExpression (INFO_AVISMAXVAL (arg_info),
-                                         &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGN (arg_info), restype);
-            INFO_AVISMAXVAL (arg_info) = ex;
+        if ((NULL != res) && (NULL != INFO_AVISMAX (arg_info))) {
+            ex
+              = AWLFIflattenExpression (INFO_AVISMAX (arg_info), &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGN (arg_info), restype);
+            INFO_AVISMAX (arg_info) = ex;
         }
     }
 
@@ -626,7 +698,7 @@ CFblock (node *arg_node, info *arg_info)
 
     if (NULL == INFO_TOPBLOCK (arg_info)) {
         INFO_TOPBLOCK (arg_info) = arg_node;
-        INFO_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
+        INFO_VARDECS (arg_info) = NULL;
     }
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -639,8 +711,11 @@ CFblock (node *arg_node, info *arg_info)
     /* New vardecs go only at top level block */
     if (INFO_TOPBLOCK (arg_info) == arg_node) {
         INFO_TOPBLOCK (arg_info) = NULL;
-        BLOCK_VARDEC (arg_node) = INFO_VARDECS (arg_info);
-        INFO_VARDECS (arg_info) = NULL;
+        if (NULL != INFO_VARDECS (arg_info)) {
+            BLOCK_VARDEC (arg_node)
+              = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
+            INFO_VARDECS (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -706,6 +781,14 @@ CFassign (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REMASSIGN (arg_info) = FALSE;
     }
+
+#ifdef DEADCODE
+    /* Correct SSAASSIGN. If we do not do this, anything that tries
+     * to follow assign chains can get very confused! Specifically,
+     * CF code in the same traversal!
+     */
+    arg_node = CorrectSSAASSIGNS (arg_node, arg_info);
+#endif // DEADCODE
 
     /**
      *  Then construct the final chain, back to front:
@@ -918,8 +1001,8 @@ CFlet (node *arg_node, info *arg_info)
      */
     DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "empty LHS of let found in CF");
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "empty RHS of let found in CF");
-    DBUG_ASSERT ((NULL == INFO_AVISMINVAL (arg_info)), "AVISMINVAL non-NULL");
-    DBUG_ASSERT ((NULL == INFO_AVISMAXVAL (arg_info)), "AVISMAXVAL non-NULL");
+    DBUG_ASSERT ((NULL == INFO_AVISMIN (arg_info)), "AVISMIN non-NULL");
+    DBUG_ASSERT ((NULL == INFO_AVISMAX (arg_info)), "AVISMAX non-NULL");
     DBUG_ASSERT ((FALSE == INFO_DOINGEXTREMA (arg_info)), "DOINGEXTREMA TRUE");
 
     DBUG_PRINT ("CF", ("Looking at LHS: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
@@ -932,13 +1015,19 @@ CFlet (node *arg_node, info *arg_info)
 
     /* If first result has extrema, add them now.
      */
-    if (NULL != INFO_AVISMINVAL (arg_info)) {
-        AVIS_MINVAL (IDS_AVIS (LET_IDS (arg_node))) = INFO_AVISMINVAL (arg_info);
-        INFO_AVISMINVAL (arg_info) = NULL;
+    if (NULL != INFO_AVISMIN (arg_info)) {
+        DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMIN (arg_info))),
+                     "AVIS_MIN not N_avis");
+        IVEXPsetMinvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
+                                 TBmakeId (INFO_AVISMIN (arg_info)), FALSE);
+        INFO_AVISMIN (arg_info) = NULL;
     }
-    if (NULL != INFO_AVISMAXVAL (arg_info)) {
-        AVIS_MAXVAL (IDS_AVIS (LET_IDS (arg_node))) = INFO_AVISMAXVAL (arg_info);
-        INFO_AVISMAXVAL (arg_info) = NULL;
+    if (NULL != INFO_AVISMAX (arg_info)) {
+        DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMAX (arg_info))),
+                     "AVIS_MAX not N_avis");
+        IVEXPsetMaxvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
+                                 TBmakeId (INFO_AVISMAX (arg_info)), FALSE);
+        INFO_AVISMAX (arg_info) = NULL;
     }
 
     if (TYisProdOfAKV (INFO_LHSTYPE (arg_info))
@@ -1078,7 +1167,7 @@ CFarray (node *arg_node, info *arg_info)
     fs = (NULL != fs) ? COfreeConstant (fs) : fs;
     pat = PMfree (pat);
 
-    res = UnflattenSimpleScalars (res);
+    res = CFunflattenSimpleScalars (res);
 
     DBUG_RETURN (res);
 }
@@ -1107,6 +1196,7 @@ CFprf (node *arg_node, info *arg_info)
     /* Try symbolic constant simplification */
     res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                         prf_cfscs_funtab[PRF_PRF (arg_node)], res);
+
     /* If that doesn't help, try structural constant constant folding */
     res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                         prf_cfsccf_funtab[PRF_PRF (arg_node)], res);

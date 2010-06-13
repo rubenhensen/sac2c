@@ -121,7 +121,10 @@ extern constant *COtake (constant *idx, constant *a);
 extern constant *COdrop (constant *idx, constant *a);
 extern constant *COdim (constant *a);
 extern constant *COshape (constant *a);
-extern constant *COmodarray (constant *a, constant *idx, constant *elem);
+extern constant *COmodarray_AxVxS (constant *a, constant *idx, constant *elem);
+extern constant *COmodarray_AxVxA (constant *a, constant *idx, constant *elem);
+extern constant *COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem);
+extern constant *COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem);
 extern constant *COcat (constant *a, constant *b);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);

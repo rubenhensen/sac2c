@@ -54,6 +54,36 @@
  *   z = [ z0, z1, z2];
  *   p = p2';
  *
+ * And,
+ *
+ *   z, p = _val_lt_shape_VxA( x, y);
+ *
+ *  becomes:
+ *
+ *   pstart = TRUE;
+ *   shp = _shape_A_( y);
+ *   x0 = _sel_VxA_( [0], x);
+ *   y0 = _sel_VxA_( [0], shp);
+ *   z0, p0 = _val_lt_val_SxS( x0, y0);
+ *   p0' = pstart && p0;
+ *
+ *   x1 = _sel_VxA_( [1], x);
+ *   y1 = _sel_VxA_( [1], shp);
+ *   z1, p1 = _val_lt_val_SxS( x1, y1);
+ *   p1' = p0' && p1;
+ *
+ *   x2 = _sel_VxA_( [2]. x);
+ *   y2 = _sel_VxA_( [2], shp);
+ *   z2, p0 = _val_lt_val_SxS( x2, y2);
+ *   p2' = p1' && p2;
+ *
+ *   z = [ z0, z1, z2];
+ *   p = p2';
+ *
+ *  Note on code structure: It might be more readable if
+ *  we a single switch() in UPRFprf, and effectively break
+ *  the code into two pieces: (a) single-result primitives,
+ *  and (b) multiple-result primitives (guards).
  *
  * </pre>
  * @{
@@ -86,21 +116,27 @@
  * INFO structure
  */
 struct INFO {
-    bool onefundef;
     node *vardec;
     node *lhs;
     node *preassign;
     node *lastp1pavis;
+    node *fundef;
+    node *shpavis;
+    int len;
+    bool onefundef;
 };
 
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_VARDEC(n) ((n)->vardec)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_LASTP1PAVIS(n) ((n)->lastp1pavis)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_SHPAVIS(n) ((n)->shpavis)
+#define INFO_LEN(n) ((n)->len)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 /*
  * INFO functions
@@ -114,11 +150,14 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = TRUE;
     INFO_VARDEC (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_LASTP1PAVIS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_SHPAVIS (result) = NULL;
+    INFO_LEN (result) = 0;
+    INFO_ONEFUNDEF (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -199,13 +238,13 @@ UPRFdoUnrollPRFsModule (node *syntax_tree)
  *
  *****************************************************************************/
 static bool
-PRFUnrollOracle (prf p)
+PRFUnrollOracle (node *arg_node)
 {
     bool res;
 
     DBUG_ENTER ("PRFUnrollOracle");
 
-    switch (p) {
+    switch (PRF_PRF (arg_node)) {
     case F_add_VxS:
     case F_add_SxV:
     case F_add_VxV:
@@ -223,8 +262,32 @@ PRFUnrollOracle (prf p)
     case F_div_VxV:
 
     case F_non_neg_val_V:
-
+    case F_neg_V:
         res = TRUE;
+        break;
+
+// iotanAKD.sac, ipape much worse without this. only testfor.sac better
+#ifdef SLOWLOOPS
+    case F_shape_A:
+        res = TRUE;
+        break;
+#endif // SLOWLOOPS
+
+    case F_val_lt_shape_VxA:
+        /* Unroll onlyif we know array dim */
+        res = TYisAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+              || TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+        break;
+
+    case F_val_le_val_VxV:
+        /* Unroll only if we know both array shapes */
+        res
+          = (TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))))
+             || TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+            && (TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+                || TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
+            && (SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+                == SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))));
         break;
 
     default:
@@ -269,6 +332,24 @@ NormalizePrf (prf p)
         p = F_non_neg_val_S;
         break;
 
+    case F_val_lt_shape_VxA:
+        p = F_val_lt_val_SxS;
+        break;
+
+    case F_neg_V:
+        p = F_neg_S;
+        break;
+
+    case F_val_le_val_VxV:
+        p = F_val_le_val_SxS;
+        break;
+
+#ifdef SLOWLOOPS
+    case F_shape_A:
+        p = F_shape_A;
+        break;
+#endif // SLOWLOOPS
+
     default:
         DBUG_ASSERT ((FALSE), "Illegal prf!");
         break;
@@ -277,88 +358,68 @@ NormalizePrf (prf p)
     DBUG_RETURN (p);
 }
 
-static bool
-FirstArgScalar (prf p)
-{
-    bool res;
-
-    DBUG_ENTER ("FirstArgScalar");
-
-    switch (p) {
-    case F_add_SxV:
-    case F_sub_SxV:
-    case F_mul_SxV:
-    case F_div_SxV:
-        res = TRUE;
-        break;
-
-    default:
-        res = FALSE;
-        break;
-    }
-
-    DBUG_RETURN (res);
-}
-
-static bool
-SecondArgScalar (prf p)
-{
-    bool res;
-
-    DBUG_ENTER ("SecondArgScalar");
-
-    switch (p) {
-    case F_add_VxS:
-    case F_sub_VxS:
-    case F_mul_VxS:
-    case F_div_VxS:
-        res = TRUE;
-        break;
-
-    default:
-        res = FALSE;
-        break;
-    }
-
-    DBUG_RETURN (res);
-}
-
 static node *
-RevertExprs (node *exprs, node *agg)
+ReverseExprs (node *exprs, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("RevertExprs");
+    DBUG_ENTER ("ReverseExprs");
 
     if (exprs == NULL) {
         res = agg;
     } else {
         res = EXPRS_NEXT (exprs);
         EXPRS_NEXT (exprs) = agg;
-        res = RevertExprs (res, exprs);
+        res = ReverseExprs (res, exprs);
     }
 
     DBUG_RETURN (res);
 }
 
-/* I think the author meant "reverse", not "revert */
 static node *
-RevertAssignments (node *ass, node *agg)
+ReverseAssignments (node *ass, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("RevertAssignments");
+    DBUG_ENTER ("ReverseAssignments");
 
     if (ass == NULL) {
         res = agg;
     } else {
         res = ASSIGN_NEXT (ass);
         ASSIGN_NEXT (ass) = agg;
-        res = RevertAssignments (res, ass);
+        res = ReverseAssignments (res, ass);
     }
 
     DBUG_RETURN (res);
 }
+
+#ifdef SLOWLOOPS
+/** <!--********************************************************************-->
+ *
+ * @fn node *MakeIntScalar(...)
+ *
+ * @brief Create integer scalar, i.
+ *        Return N_avis pointer for same.
+ *
+ *****************************************************************************/
+static node *
+MakeIntScalar (int i, info *arg_info)
+{
+    node *selarravis;
+
+    DBUG_ENTER ("MakeIntScalar");
+    selarravis = TBmakeAvis (TRAVtmpVar (),
+                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+    INFO_VARDEC (arg_info) = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
+    INFO_PREASSIGN (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL), TBmakeNum (i)),
+                      INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (selarravis) = INFO_PREASSIGN (arg_info);
+
+    DBUG_RETURN (selarravis);
+}
+#endif // SLOWLOOPS
 
 /** <!--********************************************************************-->
  *
@@ -388,30 +449,151 @@ MakeIntVec (int i, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeSelOp(...)
+ * @fn node *MakeSelOpArg1(...)
  *
- * @brief Create  _sel_VxA_( [i], arg)
+ * @brief  Create _sel_VxA_( [i], avis)
+ *
+ *****************************************************************************/
+static node *
+MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
+{
+    node *selarravis;
+    node *zavis = NULL;
+    prf nprf;
+
+    DBUG_ENTER ("MakeSelOpArg1");
+
+    switch (PRF_PRF (arg_node)) {
+
+    case F_add_SxV:
+    case F_sub_SxV:
+    case F_mul_SxV:
+    case F_div_SxV:
+    default:
+        zavis = avis;
+        break;
+
+    case F_add_VxS:
+    case F_add_VxV:
+
+    case F_sub_VxS:
+    case F_sub_VxV:
+
+    case F_mul_VxS:
+    case F_mul_VxV:
+
+    case F_div_VxS:
+    case F_div_VxV:
+
+    case F_non_neg_val_V:
+    case F_neg_V:
+    case F_val_le_val_VxV:
+        nprf = F_sel_VxA;
+        break;
+
+#ifdef SLOWLOOPS
+    case F_shape_A:
+        zavis = MakeIntScalar (i, arg_info);
+        break;
+#endif // SLOWLOOPS
+
+    case F_val_lt_shape_VxA:
+        nprf = F_sel_VxA;
+        break;
+    }
+
+    if (NULL == zavis) {
+        selarravis = MakeIntVec (i, arg_info);
+        zavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+        INFO_VARDEC (arg_info) = TBmakeVardec (zavis, INFO_VARDEC (arg_info));
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                     TCmakePrf2 (nprf, TBmakeId (selarravis),
+                                                 TBmakeId (avis))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (zavis) = INFO_PREASSIGN (arg_info);
+    }
+
+    DBUG_RETURN (zavis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MakeSelOpArg2(...)
+ *
+ * @brief Create _sel_VxA_( [i], PRF_ARG);
+ *        or, nothing for monadic ops
  *
  *        Return N_avis pointer for same.
  *
  *****************************************************************************/
 static node *
-MakeSelOp (ntype *scl, node *selarravis, node *argavis, info *arg_info)
+MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
 {
-    node *avis;
+    node *selop1;
+    node *zavis;
+    bool dyadic = TRUE;
+    prf nprf;
 
-    DBUG_ENTER ("MakeSelOp");
+    DBUG_ENTER ("MakeSelOpArg2");
 
-    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
-    INFO_VARDEC (arg_info) = TBmakeVardec (avis, INFO_VARDEC (arg_info));
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                 TCmakePrf2 (F_sel_VxA, TBmakeId (selarravis),
-                                             TBmakeId (argavis))),
-                      INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
+    switch (PRF_PRF (arg_node)) {
 
-    DBUG_RETURN (avis);
+    case F_neg_V:
+    case F_non_neg_val_V:
+        dyadic = FALSE;
+        break;
+
+    case F_add_VxS:
+    case F_sub_VxS:
+    case F_mul_VxS:
+    case F_div_VxS:
+        zavis = avis;
+        dyadic = FALSE;
+        break;
+
+    case F_val_lt_shape_VxA:
+        avis = INFO_SHPAVIS (arg_info);
+        INFO_LEN (arg_info) = TYgetDim (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+        /* Break intentionally elided */
+
+    case F_add_SxV:
+    case F_add_VxV:
+    case F_sub_SxV:
+    case F_sub_VxV:
+    case F_mul_SxV:
+    case F_mul_VxV:
+    case F_div_SxV:
+    case F_div_VxV:
+    case F_val_le_val_VxV:
+        /* Break intentionally elided */
+
+    default:
+        selop1 = TBmakeId (MakeIntVec (i, arg_info));
+        nprf = F_sel_VxA;
+        break;
+
+#ifdef SLOWLOOPS
+    case F_shape_A:
+        zavis = ID_AVIS (PRF_ARG1 (arg_node));
+        dyadic = FALSE;
+        break;
+#endif // SLOWLOOPS
+    }
+
+    if (dyadic) {
+        zavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+        INFO_VARDEC (arg_info) = TBmakeVardec (zavis, INFO_VARDEC (arg_info));
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                     TCmakePrf2 (nprf, selop1, TBmakeId (avis))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (zavis) = INFO_PREASSIGN (arg_info);
+    }
+
+    DBUG_RETURN (zavis);
 }
 
 /** <!--********************************************************************-->
@@ -424,7 +606,7 @@ MakeSelOp (ntype *scl, node *selarravis, node *argavis, info *arg_info)
  *  For guards, we produce two results: clone of PRF_ARG1, and predicate
  *  Boolean.
  *
- *  We also create an avis and vardec for the  boolean scalar predicate.
+ *  We also create an avis and vardec for the boolean scalar predicate.
  *
  * @result N_ids chain
  *
@@ -438,6 +620,8 @@ MakeIdsAndPredAvis (node *resavis, node *arg_node, info *arg_info)
     DBUG_ENTER ("MakeIdsAndPredAvis");
     switch (PRF_PRF (arg_node)) {
     case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
         predavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
         INFO_VARDEC (arg_info) = TBmakeVardec (predavis, INFO_VARDEC (arg_info));
@@ -453,7 +637,75 @@ MakeIdsAndPredAvis (node *resavis, node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeTrueScalar(...)
+ * @fn node *MakeUnrolledOp(...)
+ *
+ * @brief Emit the unrolled, scalar version of the PRF.
+ *
+ * @result
+ *
+ *****************************************************************************/
+static node *
+MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node *argavis2,
+                node *resavis)
+{
+
+    DBUG_ENTER ("MakeUnrolledOp");
+
+    switch (PRF_PRF (arg_node)) {
+
+    /* Dyadic invocations */
+    case F_add_VxS:
+    case F_add_SxV:
+    case F_add_VxV:
+    case F_sub_VxS:
+    case F_sub_SxV:
+    case F_sub_VxV:
+    case F_mul_VxS:
+    case F_mul_SxV:
+    case F_mul_VxV:
+    case F_div_VxS:
+    case F_div_SxV:
+    case F_div_VxV:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (NormalizePrf (PRF_PRF (arg_node)),
+                                                      TBmakeId (argavis1),
+                                                      TBmakeId (argavis2))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (resavis) = INFO_PREASSIGN (arg_info);
+        if (NULL != IDS_NEXT (ids)) { /* val_lt_shape_VxA only */
+            AVIS_SSAASSIGN (IDS_AVIS (IDS_NEXT (ids))) = INFO_PREASSIGN (arg_info);
+        }
+        break;
+
+    case F_non_neg_val_V:
+    case F_neg_V:
+#ifdef SLOWLOOPS
+    case F_shape_A:
+#endif // SLOWLOOPS
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (NormalizePrf (PRF_PRF (arg_node)),
+                                                      TBmakeId (argavis1))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (resavis) = INFO_PREASSIGN (arg_info);
+        if (NULL != IDS_NEXT (ids)) { /* F_non_neg_val only */
+            AVIS_SSAASSIGN (IDS_AVIS (IDS_NEXT (ids))) = INFO_PREASSIGN (arg_info);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "Missed a case!");
+        break;
+    }
+
+    DBUG_RETURN (resavis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void MakeTrueScalar(...)
  *
  * @brief Create scalar TRUE for guards.
  *        Append assign to assign chain ass.
@@ -461,27 +713,47 @@ MakeIdsAndPredAvis (node *resavis, node *arg_node, info *arg_info)
  *        the guard's scalar predicate elements.
  *
  *
- * @result  N_assign for created node, or NULL
+ * @result  none - it's all done with INFO_PREASSIGN
  *
  *****************************************************************************/
-static node *
+static void
 MakeTrueScalar (node *arg_node, info *arg_info)
 {
-    node *ass = NULL;
-    node *bavis = NULL;
+    node *assgn;
+    node *shpavis;
+    node *bavis;
+    int dim;
 
     DBUG_ENTER ("MakeTrueScalar");
 
     switch (PRF_PRF (arg_node)) {
 
-    case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+        /* Create shp = _shape_A_( y); */
+        dim = TYgetDim (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+        shpavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                        SHcreateShape (1, dim)));
+        INFO_VARDEC (arg_info) = TBmakeVardec (shpavis, INFO_VARDEC (arg_info));
+        assgn = TBmakeIds (shpavis, NULL);
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (assgn,
+                                     TCmakePrf1 (F_shape_A,
+                                                 DUPdoDupNode (PRF_ARG2 (arg_node)))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (shpavis) = INFO_PREASSIGN (arg_info);
+        INFO_SHPAVIS (arg_info) = shpavis;
+        /* Break intentionally elided */
 
+    case F_non_neg_val_V:
+    case F_val_le_val_VxV:
         bavis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
         INFO_VARDEC (arg_info) = TBmakeVardec (bavis, INFO_VARDEC (arg_info));
 
-        ass = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), TBmakeBool (TRUE)), NULL);
-        AVIS_SSAASSIGN (bavis) = ass;
+        assgn
+          = TBmakeAssign (TBmakeLet (TBmakeIds (bavis, NULL), TBmakeBool (TRUE)), NULL);
+        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), assgn);
+        AVIS_SSAASSIGN (bavis) = assgn;
         INFO_LASTP1PAVIS (arg_info) = bavis;
         break;
 
@@ -489,7 +761,7 @@ MakeTrueScalar (node *arg_node, info *arg_info)
         break;
     }
 
-    DBUG_RETURN (ass);
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -511,34 +783,31 @@ static node *
 MakeResultNode (node *arg_node, info *arg_info, node *elems, node *ids)
 {
     node *res;
+    node *guardres;
 
     DBUG_ENTER ("MakeResultNode");
+
+    /* Conditionally create guard result */
+    switch (PRF_PRF (arg_node)) {
+    case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
+        guardres = IDS_NEXT (INFO_LHS (arg_info));
+        IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (guardres, TBmakeId (INFO_LASTP1PAVIS (arg_info))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (guardres)) = INFO_PREASSIGN (arg_info);
+        break;
+    default:
+        break;
+    }
 
     /* Make N_array result */
     res = TCmakeVector (TYmakeAKS (TYcopyType (
                                      TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))),
                                    SHmakeShape (0)),
-                        RevertExprs (elems, NULL));
-
-    /* Conditionally create guard result */
-    switch (PRF_PRF (arg_node)) {
-    case F_non_neg_val_V:
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (IDS_NEXT (INFO_LHS (arg_info))),
-                                                NULL),
-                                     TBmakeId (INFO_LASTP1PAVIS (arg_info))),
-                          INFO_PREASSIGN (arg_info));
-        AVIS_SSAASSIGN (IDS_AVIS (IDS_NEXT (INFO_LHS (arg_info))))
-          = INFO_PREASSIGN (arg_info);
-
-        IDS_NEXT (INFO_LHS (arg_info))
-          = (NULL != IDS_NEXT (INFO_LHS (arg_info)))
-              ? FREEdoFreeTree (IDS_NEXT (INFO_LHS (arg_info)))
-              : NULL;
-        break;
-    default:
-        break;
-    }
+                        ReverseExprs (elems, NULL));
 
     DBUG_RETURN (res);
 }
@@ -568,6 +837,8 @@ MakeFoldOp (node *ids, node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_le_val_VxV:
         /*  make  p1' = p0' && p1;              */
         p1pavis = TBmakeAvis (TRAVtmpVar (),
                               TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
@@ -579,6 +850,7 @@ MakeFoldOp (node *ids, node *arg_node, info *arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (p1pavis, NULL),
                                      TCmakePrf2 (F_and_SxS, TBmakeId (x), TBmakeId (y))),
                           INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (p1pavis) = INFO_PREASSIGN (arg_info);
         break;
     default:
         break;
@@ -607,12 +879,20 @@ UPRFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("UPRFfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_VARDEC (arg_info) = FUNDEF_VARDEC (arg_node);
+        INFO_VARDEC (arg_info) = NULL;
+        INFO_FUNDEF (arg_info) = arg_node; /* handy for debugging */
         DBUG_PRINT ("UPRF", ("traversing body of (%s) %s",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                              FUNDEF_NAME (arg_node)));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_VARDEC (arg_node) = INFO_VARDEC (arg_info);
+
+        /* If new vardecs were made, append them to the current set */
+        if (INFO_VARDEC (arg_info) != NULL) {
+            FUNDEF_VARDEC (arg_node)
+              = TCappendVardec (INFO_VARDEC (arg_info), FUNDEF_VARDEC (arg_node));
+            INFO_VARDEC (arg_info) = NULL;
+        }
+
         DBUG_PRINT ("UPRF", ("leaving body of (%s) %s",
                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                              FUNDEF_NAME (arg_node)));
@@ -620,6 +900,8 @@ UPRFfundef (node *arg_node, info *arg_info)
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
+    INFO_FUNDEF (arg_info) = NULL;
+
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
@@ -675,92 +957,63 @@ UPRFlet (node *arg_node, info *arg_info)
  *
  * @fn node *UPRFprf( node *arg_node, info *arg_info)
  *
+ * @brief Unroll primitive function, if its result is an AKS vector,
+ *        and it belongs to a select set of functions.
+ *
  *****************************************************************************/
 node *
 UPRFprf (node *arg_node, info *arg_info)
 {
-    node *selarravis;
     node *argavis1, *argavis2, *resavis;
     node *ids;
-    node *res;
     bool monadic;
+    bool valltshp;
+    int i;
 
     DBUG_ENTER ("UPRFprf");
 
-    if ((PRFUnrollOracle (PRF_PRF (arg_node)))
-        && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
+    if ((PRFUnrollOracle (arg_node)) && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
         && (TYgetDim (IDS_NTYPE (INFO_LHS (arg_info))) == 1)) {
-        int len;
         ntype *nt1, *nt2;
 
-        len = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LHS (arg_info))));
+        INFO_LEN (arg_info) = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LHS (arg_info))));
         nt1 = NTCnewTypeCheck_Expr (PRF_ARG1 (arg_node));
         monadic = (NULL == PRF_EXPRS2 (arg_node));
+        valltshp = (F_val_lt_shape_VxA == PRF_PRF (arg_node));
         nt2 = monadic ? NULL : NTCnewTypeCheck_Expr (PRF_ARG2 (arg_node));
 
-        if ((TUshapeKnown (nt1)) && (monadic || (TUshapeKnown (nt2)))
-            && (len < global.prfunrnum)) {
-            ntype *scl;
+        if ((TUshapeKnown (nt1)) && (monadic || valltshp || (TUshapeKnown (nt2)))
+            && (INFO_LEN (arg_info) < global.prfunrnum)) {
             node *avis1, *avis2;
             node *elems = NULL;
-            int i;
 
             avis1 = ID_AVIS (PRF_ARG1 (arg_node));
             avis2 = monadic ? NULL : ID_AVIS (PRF_ARG2 (arg_node));
 
-            scl = TYmakeAKS (TYcopyType (TYgetScalar (nt1)), SHmakeShape (0));
+            MakeTrueScalar (arg_node, arg_info);
 
-            INFO_PREASSIGN (arg_info) = MakeTrueScalar (arg_node, arg_info);
+            for (i = 0; i < INFO_LEN (arg_info); i++) {
+                argavis1 = MakeSelOpArg1 (arg_node, arg_info, i, avis1);
+                argavis2 = MakeSelOpArg2 (arg_node, arg_info, i, avis2);
 
-            for (i = 0; i < len; i++) {
-                if (FirstArgScalar (PRF_PRF (arg_node))) {
-                    argavis1 = avis1;
-                } else {
-                    selarravis = MakeIntVec (i, arg_info);
-                    argavis1 = MakeSelOp (scl, selarravis, avis1, arg_info);
-                }
-
-                if (monadic || SecondArgScalar (PRF_PRF (arg_node))) {
-                    argavis2 = avis2;
-                } else {
-                    selarravis = MakeIntVec (i, arg_info);
-                    argavis2 = MakeSelOp (scl, selarravis, avis2, arg_info);
-                }
-
-                resavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
+                resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                SHcreateShape (0)));
                 INFO_VARDEC (arg_info) = TBmakeVardec (resavis, INFO_VARDEC (arg_info));
                 ids = MakeIdsAndPredAvis (resavis, arg_node, arg_info);
 
-                if (monadic) {
-                    INFO_PREASSIGN (arg_info)
-                      = TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (NormalizePrf (
-                                                                    PRF_PRF (arg_node)),
-                                                                  TBmakeId (argavis1))),
-                                      INFO_PREASSIGN (arg_info));
-                } else {
-                    INFO_PREASSIGN (arg_info)
-                      = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (NormalizePrf (
-                                                                    PRF_PRF (arg_node)),
-                                                                  TBmakeId (argavis1),
-                                                                  TBmakeId (argavis2))),
-                                      INFO_PREASSIGN (arg_info));
-                }
-                AVIS_SSAASSIGN (resavis) = INFO_PREASSIGN (arg_info);
-
+                resavis
+                  = MakeUnrolledOp (arg_node, arg_info, ids, argavis1, argavis2, resavis);
                 MakeFoldOp (ids, arg_node, arg_info);
                 elems = TBmakeExprs (TBmakeId (resavis), elems);
             }
 
-            scl = TYfreeType (scl);
-
             global.optcounters.prfunr_prf++;
-            res = MakeResultNode (arg_node, arg_info, elems, ids);
-            arg_node = FREEdoFreeNode (arg_node);
-            arg_node = res;
+            arg_node = MakeResultNode (arg_node, arg_info, elems, ids);
 
             INFO_PREASSIGN (arg_info)
-              = RevertAssignments (INFO_PREASSIGN (arg_info), NULL);
-            DBUG_PRINT ("UPRF", ("prf unrolled for %s", INFO_LHS (arg_info)));
+              = ReverseAssignments (INFO_PREASSIGN (arg_info), NULL);
+            DBUG_PRINT ("UPRF", ("prf unrolled for %s",
+                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         }
 
         nt1 = TYfreeType (nt1);

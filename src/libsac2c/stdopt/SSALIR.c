@@ -203,6 +203,7 @@ struct INFO {
     node *fundefintassign;
     travstart travstart;
     bool travinlac;
+    node *lhs;
 };
 
 /*
@@ -232,6 +233,7 @@ struct INFO {
 #define INFO_FUNDEFINTASSIGN(n) (n->fundefintassign)
 #define INFO_TRAVSTART(n) (n->travstart)
 #define INFO_TRAVINLAC(n) (n->travinlac)
+#define INFO_LHS(n) (n->lhs)
 
 /*
  * INFO functions
@@ -269,6 +271,7 @@ MakeInfo ()
     INFO_FUNDEFINTASSIGN (result) = NULL;
     INFO_TRAVSTART (result) = TS_fundef;
     INFO_TRAVINLAC (result) = FALSE;
+    INFO_LHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -395,7 +398,8 @@ CheckMoveDownFlag (node *instr, info *arg_info)
              * be moved down
              */
             LET_LIRFLAG (instr) = LET_LIRFLAG (instr) | LIRMOVE_DOWN;
-            DBUG_PRINT ("LIR", ("whole expression marked for move-down"));
+            DBUG_PRINT ("LIR", ("whole expression %s marked for move-down",
+                                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         }
     }
 
@@ -503,7 +507,7 @@ CreateNewResult (node *avis, info *arg_info)
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
-    if (isSAAMode ()) {
+    if (PHisSAAMode ()) {
         /* FIXME should set AVIS_DIM/SHAPE here */
         CTIwarn ("CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
     }
@@ -681,7 +685,7 @@ InsListPopFrame (nodelist *il)
 {
     DBUG_ENTER ("InsListPopFrame");
 
-    DBUG_ASSERT ((il != NULL), "tried to pop of empty insert list");
+    DBUG_ASSERT ((il != NULL), "tried to pop off empty insert list");
 
     il = FREEfreeNodelistNode (il);
 
@@ -829,6 +833,46 @@ InsListGetFrame (nodelist *il, int depth)
 }
 
 /* traversal functions */
+
+static node *
+foo2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("foo2");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_avis), "foo2 expected N_avis node");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *foo( node *arg_node)
+ *
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ ******************************************************************************/
+static node *
+foo (node *arg_node, info *arg_info)
+{
+    anontrav_t freetrav[2] = {{N_avis, &foo2}, {0, NULL}};
+
+    DBUG_ENTER ("foo");
+
+    if (NULL != arg_node) {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_vardec), "foo expected N_vardec node");
+
+        TRAVpushAnonymous (freetrav, &TRAVsons);
+        arg_node = TRAVcont (arg_node, arg_info);
+        TRAVpop ();
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -847,7 +891,8 @@ LIRfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LIRfundef");
 
-    DBUG_PRINT ("LIR", ("loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("LIR",
+                ("Starting loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
 
     if (((FUNDEF_ISLACFUN (arg_node))
          && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
@@ -935,6 +980,9 @@ LIRfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
+
+    DBUG_PRINT ("LIR",
+                ("Ended loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -1054,6 +1102,13 @@ LIRblock (node *arg_node, info *arg_info)
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
+    int thisisprobablywrong;
+#define FIXME
+#ifdef FIXME
+    BLOCK_VARDEC (arg_node) = foo (BLOCK_VARDEC (arg_node), arg_info);
+#endif // FIXME
+#undef FIXME
+
     /* in case of an empty block, insert at least the empty node */
     if (BLOCK_INSTR (arg_node) == NULL) {
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
@@ -1119,7 +1174,7 @@ LIRassign (node *arg_node, info *arg_info)
      * the current level. if now the withloop is moved on another level we
      * must move the preassignments, too, but this might result in wrong code.
      * so we let this withloop at its current level and try to move it in the
-     * next opt cycle as standalone expression without dependend preassigns.
+     * next opt cycle as standalone expression without dependent preassigns.
      */
     if ((INFO_TOPBLOCK (arg_info) == TRUE)
         && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
@@ -1232,6 +1287,7 @@ LIRassign (node *arg_node, info *arg_info)
 node *
 LIRlet (node *arg_node, info *arg_info)
 {
+    node *oldlir;
     node *ids;
 
     DBUG_ENTER ("LIRlet");
@@ -1241,26 +1297,33 @@ LIRlet (node *arg_node, info *arg_info)
         INFO_NONLIRUSE (arg_info) = 0;
     }
 
+    oldlir = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     DBUG_PRINT ("LIR",
-                ("LIRlet looking at: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+                ("LIRlet looking at: %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
      * Analyse dependencies carried in the DTUL
      */
+
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
 #ifdef FIXME
         node *avis = IDS_AVIS (ids);
 
-    The following breaks unit test SCSprf_sub.sac (and many others)
-    if AVIS_DIM/SHAPE are actually present. Disable for now, which
-    will likely cause other sorts of problems...
+        /*
+        The following breaks unit test SCSprf_sub.sac (and many others)
+        if AVIS_DIM/SHAPE are actually present. Disable for now, which
+        will likely cause other sorts of problems...
+        */
 
-    AVIS_DIM( avis) = TRAVopt( AVIS_DIM( avis), arg_info);
-    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+        AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
+        AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+        AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
+        AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
 #endif // FIXME
-    ids = IDS_NEXT (ids);
+        ids = IDS_NEXT (ids);
     }
 
     if (INFO_TOPBLOCK (arg_info)) {
@@ -1272,7 +1335,8 @@ LIRlet (node *arg_node, info *arg_info)
                   && (INFO_PREASSIGN (arg_info) != NULL)))) {
 
             DBUG_PRINT ("LIR",
-                        ("loop-independent expression detected - mark it for moving up"));
+                        ("Loop-independent expression %s detected - marked for moving up",
+                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
             /*
              * expression is  not in a condition and uses only LI
              * arguments -> mark expression for move up in front of loop
@@ -1287,7 +1351,8 @@ LIRlet (node *arg_node, info *arg_info)
     } else if (INFO_WITHDEPTH (arg_info) > 0) {
         /* in other blocks (with-loops), marks all definitions as local */
         if (INFO_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND) {
-            DBUG_PRINT ("LIR", ("local expression detected - mark it"));
+            DBUG_PRINT ("LIR", ("local expression %s detected & marked",
+                                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
 
             INFO_FLAG (arg_info) = LIR_MOVELOCAL;
         } else {
@@ -1309,7 +1374,8 @@ LIRlet (node *arg_node, info *arg_info)
               && (INFO_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */
         INFO_SETDEPTH (arg_info) = INFO_MAXDEPTH (arg_info);
-        DBUG_PRINT ("LIR", ("moving assignment from depth %d to depth %d",
+        DBUG_PRINT ("LIR", ("moving assignment for %s from depth %d to depth %d",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                             INFO_WITHDEPTH (arg_info), INFO_MAXDEPTH (arg_info)));
 
     } else {
@@ -1322,6 +1388,7 @@ LIRlet (node *arg_node, info *arg_info)
 
     /* step back to normal mode */
     INFO_FLAG (arg_info) = LIR_NORMAL;
+    INFO_LHS (arg_info) = oldlir;
 
     DBUG_RETURN (arg_node);
 }

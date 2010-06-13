@@ -35,6 +35,7 @@
 #include "str.h"
 #include "memory.h"
 #include "print.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -338,7 +339,6 @@ WLNCap (node *arg_node, info *arg_info)
  * @fn node *WLNCid( node *arg_node, info *arg_info)
  *
  * @brief Count sel() references in WLs for one WL only.
- *        I am not sure what the default case was originally intended to do.
  *
  *        The AVIS_COUNTING_WL code is to ensure that only one
  *        consumerWL contributes to the count.
@@ -348,24 +348,48 @@ WLNCap (node *arg_node, info *arg_info)
  *        and AVIS_WL_NEEDCOUNT, properly preventing the folding from
  *        happening.
  *
+ *        The PM is intended to handle the -ecc/-check c case,
+ *        where instead of:
+ *
+ *          PWL = with{ (...)};
+ *          CWL = with{ ...
+ *             el = _sel_VxA_( iv, PWL);
+ *           }
+ *
+ *        we have:
+ *
+ *          PWL = with{ (...)};
+ *          PWL' = _afterguard( PWL, predicates...);
+ *          CWL = with{ ...
+ *             el = _sel_VxA_( iv, PWL');
+ *           }
+ *
+ *
  *****************************************************************************/
 node *
 WLNCid (node *arg_node, info *arg_info)
 {
     node *avis;
     node *parent;
+    node *producerWL;
+    pattern *pat;
+
     DBUG_ENTER ("WLNCid");
 
     parent = INFO_FUN (arg_info);
     if ((parent != NULL) && (N_prf == NODE_TYPE (parent))) {
         switch (PRF_PRF (parent)) {
         case F_sel_VxA:
-            avis = ID_AVIS (PRF_ARG2 (parent));
-            DBUG_EXECUTE ("WLNC", PRTdoPrintNodeFile (stderr, parent););
-            DBUG_PRINT ("WLNC", ("WLNCid looking at %s.", AVIS_NAME (avis)));
-            if ((avis == ID_AVIS (arg_node))) {
-                incrementNeedcount (avis, arg_info);
+            pat = PMvar (1, PMAgetNode (&producerWL), 0);
+            if (PMmatchFlatSkipGuards (pat, PRF_ARG2 (parent))) {
+                avis = ID_AVIS (producerWL);
+                DBUG_EXECUTE ("WLNC", PRTdoPrintNodeFile (stderr, parent););
+                DBUG_PRINT ("WLNC", ("WLNCid looking at %s.", AVIS_NAME (avis)));
+                if ((avis == ID_AVIS (arg_node))) {
+                    incrementNeedcount (avis, arg_info);
+                }
             }
+            pat = PMfree (pat);
             break;
 
         case F_idx_shape_sel: /* Don't count these  */
@@ -373,12 +397,15 @@ WLNCid (node *arg_node, info *arg_info)
         case F_saabind:
         case F_dim_A:
         case F_non_neg_val_V:
+        case F_non_neg_val_S:
         case F_val_lt_shape_VxA:
         case F_val_le_val_VxV:
+        case F_val_le_val_SxS:
         case F_shape_matches_dim_VxA:
         case F_afterguard:
         case F_guard:
             break;
+
         default:
             break;
         }

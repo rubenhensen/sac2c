@@ -18,6 +18,7 @@
  *
  *****************************************************************************/
 extern node *WLSIMPdoWithloopSimplification (node *syntax_tree);
+extern node *WLSIMPdoWithloopSimplificationOneFunction (node *arg_node);
 
 extern node *WLSIMPfundef (node *arg_node, info *arg_info);
 extern node *WLSIMPassign (node *arg_node, info *arg_info);

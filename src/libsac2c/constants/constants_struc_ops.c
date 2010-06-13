@@ -896,24 +896,24 @@ COshape (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COmodarray( constant *a, constant *idx, constant *elem)
+ *    constant *COmodarray_AxVxS( constant *a, constant *idx, constant *elem)
  *
- * description:
+ * description: _modarray_AxVxS().
  *    returns modified a with value elem at index idx
  *
  ******************************************************************************/
 constant *
-COmodarray (constant *a, constant *idx, constant *elem)
+COmodarray_AxVxS (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COmodarray");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
+    DBUG_ENTER ("COmodarray_AxVxS");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx not vector!");
     DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
                  "mixed types for array and inserted elements");
     DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
-                 "idx-vector exceeds dim of array in COModarray!");
+                 "idx-vector exceeds dim of array in COModarray_AxVxS!");
 
     /* first we create the modified target constant as copy of a */
     res = COcopyConstant (a);
@@ -925,6 +925,113 @@ COmodarray (constant *a, constant *idx, constant *elem)
                               SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
                               CONSTANT_ELEMS (res),                /* to */
                               Idx2Offset (idx, res));              /* offset */
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COmodarray_AxVxA( constant *a, constant *idx, constant *elem)
+ *
+ * description: _modarray_AxVxA().
+ *    returns modified a with value elem at index idx
+ *
+ ******************************************************************************/
+constant *
+COmodarray_AxVxA (constant *a, constant *idx, constant *elem)
+{
+    constant *res;
+
+    DBUG_ENTER ("COmodarray_AxVxA");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx not vector!");
+    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+                 "mixed types for array and inserted elements");
+    DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
+                 "idx-vector exceeds dim of array in COModarray_AxVxS!");
+
+    /* first we create the modified target constant as copy of a */
+    res = COcopyConstant (a);
+
+    /* now we copy the modified elements into the target constant vector */
+    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
+                              CONSTANT_ELEMS (elem),               /* from */
+                              0,                                   /* offset */
+                              SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
+                              CONSTANT_ELEMS (res),                /* to */
+                              Idx2Offset (idx, res));              /* offset */
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COidx_modarray_AxSxS( constant *a, constant *idx,
+ *                                    constant *elem)
+ *
+ * description:
+ *    returns modified a with value elem at index idx
+ *
+ ******************************************************************************/
+constant *
+COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem)
+{
+    constant *res;
+
+    DBUG_ENTER ("COidx_modarray_AxSxS");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT ((CONSTANT_DIM (elem) == 0), "elem to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+                 "mixed types for array and inserted elements");
+
+    /* first we create the modified target constant as copy of a */
+    res = COcopyConstant (a);
+
+    /* now we copy the modified elements into the target constant vector */
+    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),   /* basetype */
+                              CONSTANT_ELEMS (elem), /* from */
+                              0,                     /* offset */
+                              1,                     /* len */
+                              CONSTANT_ELEMS (res),  /* to */
+                              COconst2Int (idx));    /* offset */
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COidx_modarray_AxSxA( constant *a, constant *idx,
+ *                                    constant *elem)
+ *
+ * description:
+ *    returns modified a with array elemens at index idx
+ *
+ ******************************************************************************/
+constant *
+COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
+{
+    constant *res;
+
+    DBUG_ENTER ("COidx_modarray_AxSxA");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+                 "mixed types for array and inserted elements");
+
+    /* first we create the modified target constant as copy of a */
+    res = COcopyConstant (a);
+
+    /* now we copy the modified elements into the target constant vector */
+    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),   /* basetype */
+                              CONSTANT_ELEMS (elem), /* from */
+                              0,                     /* offset */
+                              1,                     /* len */
+                              CONSTANT_ELEMS (res),  /* to */
+                              COconst2Int (idx));    /* offset */
 
     DBUG_RETURN (res);
 }

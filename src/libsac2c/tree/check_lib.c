@@ -150,11 +150,13 @@ CHKcorrectTypeInsertError (node *arg_node, char *string)
 node *
 CHKassignAvisSSAAssign (node *arg_node)
 {
+    node *ids;
+
     DBUG_ENTER ("CHKassignAvisSSAAssign");
 
     if (global.valid_ssaform) {
         if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
-            node *ids = LET_IDS (ASSIGN_INSTR (arg_node));
+            ids = LET_IDS (ASSIGN_INSTR (arg_node));
             while (ids != NULL) {
                 if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
                     NODE_ERROR (IDS_AVIS (ids))
@@ -195,8 +197,8 @@ isMemberVardecs (node *arg_node, node *fundef)
     vardecs = FUNDEF_BODY (fundef);
     if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
         vardecs = BLOCK_VARDEC (vardecs);
-        while ((~z) && NULL != vardecs) {
-            if (arg_node == vardecs) {
+        while ((!z) && NULL != vardecs) {
+            if (arg_node == VARDEC_AVIS (vardecs)) {
                 z = TRUE;
             } else {
                 vardecs = VARDEC_NEXT (vardecs);
@@ -229,8 +231,8 @@ isMemberArgs (node *arg_node, node *fundef)
     DBUG_ENTER ("isMemberVardecs");
 
     args = FUNDEF_ARGS (fundef);
-    while ((~z) && NULL != args) {
-        if (arg_node == args) {
+    while ((!z) && NULL != args) {
+        if (arg_node == ARG_AVIS (args)) {
             z = TRUE;
         } else {
             args = ARG_NEXT (args);
@@ -245,7 +247,7 @@ isMemberArgs (node *arg_node, node *fundef)
  * @fn node *CHKfundefVardecExtrema( node *arg_node)
  *
  * @brief: Check all vardecs in this function, to ensure that
- *         AVIS_MINVAL and AVIS_MAXVAL point to a vardec in this function,
+ *         AVIS_MIN and AVIS_MAX point to a vardec in this function,
  *         or to one of the N_args.
  *
  *
@@ -270,22 +272,26 @@ CHKfundefVardecExtrema (node *arg_node)
             vardecs = BLOCK_VARDEC (vardecs);
             curvardec = vardecs;
             while (NULL != curvardec) {
-                minmax = AVIS_MINVAL (VARDEC_AVIS (curvardec));
-                if (!(isMemberVardecs (minmax, arg_node)
-                      || isMemberArgs (minmax, arg_node))) {
-                    DBUG_PRINT (
-                      "CHK",
-                      ("AVIS_MINVAL(%s) does not point to an N_avis in fundef %s",
-                       AVIS_NAME (VARDEC_AVIS (curvardec)), FUNDEF_NAME (arg_node)));
+                minmax = AVIS_MIN (VARDEC_AVIS (curvardec));
+                if ((NULL != minmax)
+                    && (!(isMemberVardecs (ID_AVIS (minmax), arg_node)
+                          || isMemberArgs (ID_AVIS (minmax), arg_node)))) {
+                    DBUG_PRINT ("CHK",
+                                ("WARNING: AVIS_MIN(%s)= %s does not point to a "
+                                 "vardec/arg in fundef %s",
+                                 AVIS_NAME (VARDEC_AVIS (curvardec)),
+                                 AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node)));
                 }
 
-                minmax = AVIS_MAXVAL (VARDEC_AVIS (curvardec));
-                if (!(isMemberVardecs (minmax, arg_node)
-                      || isMemberArgs (minmax, arg_node))) {
-                    DBUG_PRINT (
-                      "CHK",
-                      ("AVIS_MAXVAL(%s) does not point to an N_avis in fundef %s",
-                       AVIS_NAME (VARDEC_AVIS (curvardec)), FUNDEF_NAME (arg_node)));
+                minmax = AVIS_MAX (VARDEC_AVIS (curvardec));
+                if ((NULL != minmax)
+                    && (!(isMemberVardecs (ID_AVIS (minmax), arg_node)
+                          || isMemberArgs (ID_AVIS (minmax), arg_node)))) {
+                    DBUG_PRINT ("CHK",
+                                ("WARNING: AVIS_MAX(%s)= %s does not point to an "
+                                 "vardec/arg in fundef %s",
+                                 AVIS_NAME (VARDEC_AVIS (curvardec)),
+                                 AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node)));
                 }
                 curvardec = VARDEC_NEXT (curvardec);
             }

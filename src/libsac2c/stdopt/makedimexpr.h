@@ -15,6 +15,8 @@
  *****************************************************************************/
 extern node *MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef);
 
+extern node *MDEfundef (node *arg_node, info *arg_info);
+extern node *MDEassign (node *arg_node, info *arg_info);
 extern node *MDEid (node *arg_node, info *arg_info);
 extern node *MDEfuncond (node *arg_node, info *arg_info);
 extern node *MDEap (node *arg_node, info *arg_info);

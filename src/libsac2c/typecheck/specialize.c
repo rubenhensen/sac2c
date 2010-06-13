@@ -93,7 +93,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
                                TBmakeId (avis)));
     ASSIGN_NEXT (last_assign) = TBmakeAssign (ret, NULL);
 
-    if (isSAAMode ()) {
+    if (PHisSAAMode ()) {
         AVIS_SSAASSIGN (new_avis) = last_assign;
     }
     FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));

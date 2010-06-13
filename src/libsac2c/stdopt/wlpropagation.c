@@ -569,7 +569,7 @@ WLPROPid (node *arg_node, info *arg_info)
                  * move the AVIS_DIM and AVIS_SHAPE annotations to the
                  * current context
                  */
-                if (isSAAMode ()) {
+                if (PHisSAAMode ()) {
                     if (AVIS_DIM (ARG_AVIS (witharg)) != NULL) {
                         AVIS_DIM (ARG_AVIS (witharg))
                           = FREEdoFreeTree (AVIS_DIM (ARG_AVIS (witharg)));
@@ -585,6 +585,21 @@ WLPROPid (node *arg_node, info *arg_info)
                     AVIS_SHAPE (ARG_AVIS (witharg))
                       = DUPdoDupTreeLut (AVIS_SHAPE (ID_AVIS (arg_node)), lut);
                 }
+
+                if (AVIS_MIN (ARG_AVIS (witharg)) != NULL) {
+                    AVIS_MIN (ARG_AVIS (witharg))
+                      = FREEdoFreeNode (AVIS_MIN (ARG_AVIS (witharg)));
+                }
+
+                if (AVIS_MAX (ARG_AVIS (witharg)) != NULL) {
+                    AVIS_MAX (ARG_AVIS (witharg))
+                      = FREEdoFreeNode (AVIS_MAX (ARG_AVIS (witharg)));
+                }
+
+                AVIS_MIN (ARG_AVIS (witharg))
+                  = DUPdoDupNodeLut (AVIS_MIN (ID_AVIS (arg_node)), lut);
+                AVIS_MAX (ARG_AVIS (witharg))
+                  = DUPdoDupNodeLut (AVIS_MAX (ID_AVIS (arg_node)), lut);
 
                 /*
                  * Now the withloop definition was moved into the body

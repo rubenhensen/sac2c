@@ -16,8 +16,8 @@ struct INFO {
     node *postassign;
     node *vardecs;
     node *topblock;
-    node *avisminval;
-    node *avismaxval;
+    node *avismin;
+    node *avismax;
     node *let;
     bool remassign;
     bool onefundef;
@@ -36,8 +36,8 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_TOPBLOCK(n) (n->topblock)
-#define INFO_AVISMINVAL(n) (n->avisminval)
-#define INFO_AVISMAXVAL(n) (n->avismaxval)
+#define INFO_AVISMIN(n) (n->avismin)
+#define INFO_AVISMAX(n) (n->avismax)
 #define INFO_LET(n) (n->let)
 
 #define INFO_ONEFUNDEF(n) (n->onefundef)

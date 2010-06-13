@@ -573,13 +573,13 @@ ICM_DEF( ND_PRF_SAME_SHAPE, ICM_TRACE_NONE)
 ICM_END( ND_PRF_SAME_SHAPE, (to_NT, from_NT, from_sdim, from2_NT, from2_sdim))
 #endif
 
-#if defined(ND_PRF_VAL_LT_SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_VAL_LT_SHAPE, ICM_TRACE_NONE)
+#if defined(ND_PRF_VAL_LT_SHAPE_VxA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_VAL_LT_SHAPE_VxA, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_NT( from_NT)
   ICM_NT( from2_NT)
   ICM_INT( from2_sdim)
-ICM_END( ND_PRF_VAL_LT_SHAPE, (to_NT, from_NT, from2_NT, from2_sdim))
+ICM_END( ND_PRF_VAL_LT_SHAPE_VxA, (to_NT, from_NT, from2_NT, from2_sdim))
 #endif
 
 #if defined(ND_PRF_PROD_MATCHES_PROD_SHAPE) || defined(ICM_ALL)

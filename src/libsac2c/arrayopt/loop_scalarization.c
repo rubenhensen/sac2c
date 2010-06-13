@@ -740,6 +740,7 @@ LSarg (node *arg_node, info *arg_info)
     DBUG_PRINT ("LS", ("inspecting arg %s!", ARG_NAME (arg_node)));
     /* Traverse AVIS_SHAPE, etc., to mark extrema and SAA info as AVIS_ISUSED */
     ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
+
     if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))
         && (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) > 0)) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
@@ -870,7 +871,7 @@ LSprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LSprf");
 
-    if (PRF_PRF (arg_node) == F_sel_VxA) {
+    if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
     } else {
         arg_node = TRAVcont (arg_node, arg_info);

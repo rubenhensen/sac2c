@@ -154,7 +154,7 @@ MakeVectAvis (char *name, node *dim)
         res = TBmakeAvis (name, TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
     }
 
-    if (isSAAMode ()) {
+    if (PHisSAAMode ()) {
         AVIS_DIM (res) = TBmakeNum (1);
         AVIS_SHAPE (res) = GenIntVector (DUPdoDupNode (dim));
     }

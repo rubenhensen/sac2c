@@ -448,10 +448,12 @@ CreateNewResult (node *avis, info *arg_info)
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
-    if (isSAAMode ()) {
+#ifdef LETISAADOIT
+    if (PHisSAAMode ()) {
         /* FIXME should set AVIS_DIM/SHAPE here */
         CTIwarn ("CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
     }
+#endif // LETISAADOIT
 
     DBUG_VOID_RETURN;
 }

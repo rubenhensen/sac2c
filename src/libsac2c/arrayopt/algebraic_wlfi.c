@@ -102,6 +102,7 @@
 #include "phase.h"
 #include "namespaces.h"
 #include "deserialize.h"
+#include "wls.h"
 
 /** <!--********************************************************************-->
  *
@@ -115,6 +116,8 @@ struct INFO {
     node *preassigns;
     node *consumerpart;      /* The current consumerWL partition */
     node *consumerwl;        /* The current consumerWL N_with */
+    node *producerwl;        /* The producerWL LHS for this consumerWL */
+    node *let;               /* The N_let node */
     int level;               /* The current nesting level of WLs. This
                               * is used to ensure that an index expression
                               * refers to an earlier WL in the same code
@@ -134,6 +137,8 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
+#define INFO_PRODUCERWL(n) ((n)->producerwl)
+#define INFO_LET(n) ((n)->let)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
@@ -152,6 +157,8 @@ MakeInfo (node *fundef)
     INFO_PREASSIGNS (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
+    INFO_PRODUCERWL (result) = NULL;
+    INFO_LET (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_PRODUCERWLFOLDABLE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
@@ -228,34 +235,71 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FindProducerWL( node *arg_node)
+ * @fn node *AWLFIgetWlWith( node *arg_node)
  *
- * @brief: Determine if N_id arg_node was created by a WL.
- *         If so, find its N_let.
+ * @brief Given an N_id, return its N_with node, or NULL, if arg_node
+ *        was not created by a WL.
+ *        This skips over, e.g., afterguards in the way.
  *
- * @param: arg_node: an N_id node
- *
- * @return: The N_with that created the WL, or NULL if the N_id node
- *          was not created by a WL.
+ * @params: arg_node
+ * @result: The N_with node of the WL
  *
  *****************************************************************************/
 node *
-FindProducerWL (node *arg_node)
+AWLFIgetWlWith (node *arg_node)
 {
-    node *producerWL = NULL;
+    node *wl = NULL;
+    node *z;
     pattern *pat;
 
-    DBUG_ENTER ("FindProducerWL");
+    DBUG_ENTER ("AWLFIgetWlWith");
 
-    pat = PMwith (1, PMAgetNode (&producerWL), 0);
-    if (PMmatchFlatWith (pat, arg_node)) {
-        DBUG_PRINT ("AWLFI",
-                    ("Found producerWL:%s: WITH_REFERENCED_FOLD=%d",
-                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (producerWL)));
+    pat = PMwith (1, PMAgetNode (&wl), 0);
+    z = ((PMmatchFlatWith (pat, arg_node))
+         && (N_array == NODE_TYPE (GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl))))))
+          ? wl
+          : NULL;
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *AWLFIfindWlId( node *arg_node)
+ *
+ * @brief: Determine if N_id arg_node was created by a WL.
+ *
+ * @param: arg_node: an N_id node
+ *
+ * @return: The N_id that created the WL, or NULL if the N_id node
+ *          was not created by a WL, or if the WL generators
+ *          are not N_array nodes.
+ *
+ *****************************************************************************/
+node *
+AWLFIfindWlId (node *arg_node)
+{
+    node *z = NULL;
+    node *wl;
+    pattern *pat;
+
+    DBUG_ENTER ("AWLFIfindWlId");
+
+    pat = PMvar (1, PMAgetNode (&z), 0);
+    if (PMmatchFlatSkipGuards (pat, arg_node)) {
+        wl = AWLFIgetWlWith (z);
+        if (NULL != wl) {
+            DBUG_PRINT ("AWLFI",
+                        ("Found WL:%s: WITH_REFERENCED_FOLD=%d",
+                         AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (wl)));
+        }
+    } else {
+        z = NULL;
     }
     pat = PMfree (pat);
 
-    DBUG_RETURN (producerWL);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -303,6 +347,9 @@ noDefaultPartition (node *arg_node)
  *            TMP = _max_VxV_(a, b);
  *            TMP
  *
+ *   NB: It is the caller's responsibility to DUP the arg_node,
+ *       if required.
+ *
  *   @param  node *arg_node: a node to be flattened.
  *           node **vardecs: a pointer to a vardecs chain that
  *                           will have a new vardec appended to it.
@@ -329,11 +376,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
         *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
-        DBUG_PRINT ("AWLFI",
-                    ("AWLFIflattenExpression generated assign for %s", AVIS_NAME (avis)));
-        /* FIXME either insert isSAAMode code to set AVIS_DIM/SHAPE,
-         * or move ISAA2 into SAACYC.
-         */
+        DBUG_PRINT ("AWLFI", ("Generated assign for %s", AVIS_NAME (avis)));
     }
 
     DBUG_RETURN (avis);
@@ -357,7 +400,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *          genshp = _shape_A_(GENERATOR_BOUND1( producerwlPart));
  *
  *          (The next few lines compute:
- *           intlo = _max_VxV_( AVIS_MINVAL( iv'),
+ *           intlo = _max_VxV_( AVIS_MIN( iv'),
  *                              GENERATOR_BOUND1(producerwlPart));
  *
  *          but the optimizers are unable to compute common
@@ -367,7 +410,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *
  *          Hence, we use the following:
  *
- *           xl = AVIS_MINVAL( iv');
+ *           xl = AVIS_MIN( iv');
  *           yl = GENERATOR_BOUND1( producerwlPart);
  *           d  = _sub_VxV_( xl, yl);
  *           zero = 0;
@@ -377,14 +420,14 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *
  *          ( Similar treatment for _min_VxV_ as above:
  *
- *          xh = AVIS_MAXVAL( iv');
+ *          xh = AVIS_MAX( iv');
  *          yh = GENERATOR_BOUND2( producerwlPart);
  *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
  *          p0inthi = _mesh_( p', xh, yh);
  *          )
  *
- *          iv'' = _attachextrema_(iv',
+ *          iv'' = _noteintersect(iv',
  *                                 p0bound1, p0bound2, p0intlo, p0inthi, p0int,
  *                                 p1bound1, p1bound2, p1intlo, p1inthi, p1int,
  *                                 ...);
@@ -416,7 +459,8 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  * @params arg_info.
  * @params producerPart: An N_part of the producerWL.
  * @params boundnum: 1 for bound1,     or 2 for bound2
- * @params ivminmax: AVIS_MINVAL( idx) or AVIS_MAXVAL( idx)
+ * @params ivmin: AVIS_MIN( idx)
+ * @params ivmax: AVIS_MAX( idx)
  *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions.
  *
@@ -424,11 +468,14 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
 
 static node *
 IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
-                           int boundnum, node *ivminmax)
+                           int boundnum, node *ivmin, node *ivmax)
 {
     node *producerGenerator;
     node *resavis;
     node *fncall;
+    node *bound1;
+    pattern *pat;
+    node *gen = NULL;
     char *fun;
     int shp;
 
@@ -437,22 +484,36 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     producerGenerator = (boundnum == 1)
                           ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
                           : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
+    shp = SHgetUnrLen (ARRAY_FRAMESHAPE (producerGenerator));
+    bound1 = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERPART (arg_info)));
+    DBUG_ASSERT (N_array == NODE_TYPE (bound1), "Expected N_array bound1");
+    bound1 = AWLFIflattenExpression (DUPdoDupTree (bound1), &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYmakeAKS (TYmakeSimpleType (T_int),
+                                                SHcreateShape (1, shp)));
+
+    pat = PMvar (1, PMAgetNode (&gen), 0);
+    if (PMmatchFlatSkipExtrema (pat, producerGenerator)) {
+        producerGenerator = gen;
+    }
 
     fun = (boundnum == 1) ? "partitionIntersectMax" : "partitionIntersectMin";
 
-    DBUG_ASSERT (N_id == NODE_TYPE (producerGenerator), "IntersectBoundsBuilderOne "
-                                                        "expected N_id WL-generator "
-                                                        "producerGenerator");
+    DBUG_ASSERT (N_array == NODE_TYPE (producerGenerator),
+                 "Expected N_array producerGenerator");
+    producerGenerator
+      = WLSflattenBound (DUPdoDupTree (producerGenerator), &INFO_VARDECS (arg_info),
+                         &INFO_PREASSIGNS (arg_info));
 
-    fncall
-      = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
-                           TCcreateExprsChainFromAvises (2, ID_AVIS (producerGenerator),
-                                                         ivminmax));
-    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (producerGenerator))));
+    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
+                                TCcreateExprsChainFromAvises (4, producerGenerator,
+                                                              ID_AVIS (ivmin),
+                                                              ID_AVIS (ivmax), bound1));
     resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
-                                      TYmakeAKS (TYmakeSimpleType (T_bool),
+                                      TYmakeAKS (TYmakeSimpleType (T_int),
                                                  SHcreateShape (1, shp)));
+    pat = PMfree (pat);
 
     DBUG_RETURN (resavis);
 }
@@ -467,10 +528,10 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  * @brief:  Emit symbiotic expression to determine if intersection
  *          of index vector set and partition bounds is null.
  *
- * @params: idxavismin: AVIS_MINVAL( consumerWL partition index vector)
- * @params: idxavismax: AVIS_MAXVAL( consumerWL partition index vector)
- * @params: bound1: GENERATOR_BOUND1 of producerWL partition.
- * @params: bound2: GENERATOR_BOUND2 of producerWL partition.
+ * @params: idxavismin: AVIS_MIN( consumerWL partition index vector)
+ * @params: idxavismax: AVIS_MAX( consumerWL partition index vector)
+ * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
+ * @params: bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
  * @params: arg_info: your basic arg_info node
  *
  * @result: N_avis node of generated computation's boolean result.
@@ -483,17 +544,23 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
 {
     node *fncall;
     node *resavis;
+    int shp;
 
     DBUG_ENTER ("IntersectNullComputationBuilder");
 
-    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersectNull",
-                                TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
-                                                              ID_AVIS (bound1),
-                                                              ID_AVIS (bound2)));
+    DBUG_ASSERT (N_avis == NODE_TYPE (bound1), "Expected N_avis bound1");
+    DBUG_ASSERT (N_avis == NODE_TYPE (bound2), "Expected N_avis bound2");
 
+    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersectNull",
+                                TCcreateExprsChainFromAvises (4, ID_AVIS (idxavismin),
+                                                              ID_AVIS (idxavismax),
+                                                              bound1, bound2));
+
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
     resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
-                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (bound1))));
+                                      TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                 SHcreateShape (1, shp)));
 
     DBUG_RETURN (resavis);
 }
@@ -501,21 +568,20 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
- *                                   node *producerwlPart, node *idxavis)
+ *                                   node *producerwlPart, node *ivavis)
  *
  * @brief Build a set of expressions for intersecting the bounds of
  *        all producerWL partitions with consumerWL index set, of the form:
  *
- *           sel((k*iv) + ivoffset, foldee)
+ *           sel((k*iv) + ivoffset, producerWL)
  *
  *        We traverse all producerWL partitions, building a set of
  *        intersect calcuations for each of them.
  *
- * @params arg_node: The _sel_VxA( idx, producerWL).
- * @params foldeeid: The N_id created by the producerWL.
+ * @params arg_node: The _sel_VxA( iv, producerWL).
  * @params arg_info.
  * @params boundnum: 1 for bound1,        2 for bound2
- * @params idxavis: the N_avis of the index vector used by the sel() operation.
+ * @params ivavis: the N_avis of the index vector used by the sel() operation.
  * @return An N_exprs node containing the ( 2 * # producerwlPart partitions)
  *         intersect expressions, in the form:
  *           p0bound1, p0bound2, p0intlo, p0inthi, p0nullint,
@@ -525,41 +591,57 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
  *****************************************************************************/
 
 static node *
-IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *idxavis)
+IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 {
     node *expn = NULL;
     node *partn;
-    node *producerWL;
     node *curavis;
     node *g1;
     node *g2;
+    node *gen1 = NULL;
+    node *gen2 = NULL;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
-    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
-    partn = WITH_PART (producerWL);
+    partn = WITH_PART (AWLFIgetWlWith (INFO_PRODUCERWL (arg_info)));
+    pat1 = PMvar (1, PMAgetNode (&gen1), 0);
+    pat2 = PMvar (1, PMAgetNode (&gen2), 0);
 
     while (NULL != partn) {
         g1 = GENERATOR_BOUND1 (PART_GENERATOR (partn));
+        if (PMmatchFlatSkipExtrema (pat1, g1)) {
+            g1 = gen1;
+        }
+        g1 = WLSflattenBound (DUPdoDupTree (g1), &INFO_VARDECS (arg_info),
+                              &INFO_PREASSIGNS (arg_info));
+
         g2 = GENERATOR_BOUND2 (PART_GENERATOR (partn));
-        expn = TCappendExprs (expn, TBmakeExprs (DUPdoDupNode (g1), NULL));
-        expn = TCappendExprs (expn, TBmakeExprs (DUPdoDupNode (g2), NULL));
+        if (PMmatchFlatSkipExtrema (pat2, g2)) {
+            g2 = gen2;
+        }
+        g2 = WLSflattenBound (DUPdoDupTree (g2), &INFO_VARDECS (arg_info),
+                              &INFO_PREASSIGNS (arg_info));
+
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g1), NULL));
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g2), NULL));
 
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 1,
-                                             AVIS_MINVAL (idxavis));
+                                             AVIS_MIN (ivavis), AVIS_MAX (ivavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
 
         curavis = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 2,
-                                             AVIS_MAXVAL (idxavis));
+                                             AVIS_MIN (ivavis), AVIS_MAX (ivavis));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
-
-        curavis
-          = IntersectNullComputationBuilder (AVIS_MINVAL (idxavis), AVIS_MAXVAL (idxavis),
-                                             g1, g2, arg_info);
+        curavis = IntersectNullComputationBuilder (AVIS_MIN (ivavis), AVIS_MAX (ivavis),
+                                                   g1, g2, arg_info);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
 
         partn = PART_NEXT (partn);
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (expn);
 }
@@ -570,18 +652,18 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *foldeeid, node *id
  *
  * @brief  We are looking at the N_prf for:
  *
- *            z = _sel_VxA_( idx, producerWL);
+ *            z = _sel_VxA_( iv, producerWL);
  *         within the consumerWL, and idx now has extrema attached to it.
  *         We are now in a position to compute the intersection
  *         between idx's index set and that of the producerWL
  *         partitions.
  *
- *         We create new idx' from idx, to hold the result
+ *         We create new iv' from idx, to hold the result
  *         of the intersect computations that we build here.
  *
  *      See IntersectBoundsBuilderOne for details.
  *
- * @return A pointer to the newly created N_id node for iv'.
+ * @return the N_avis for the newly created iv' node.
  *
  *****************************************************************************/
 
@@ -589,14 +671,11 @@ static node *
 attachIntersectCalc (node *arg_node, info *arg_info)
 {
     node *ivavis;
+    node *ivpavis;
     node *ivassign;
     int ivshape;
-    node *ivid;
-    node *ividprime;
     node *intersectcalc;
-    node *producerWL;
     node *args;
-    node *idxavis;
 
     DBUG_ENTER ("attachIntersectCalc");
 
@@ -605,35 +684,34 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     /* Generate expressions for lower-bound intersection and
      * upper-bound intersection calculation.
      */
-    ivid = PRF_ARG1 (arg_node);
-    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
-
-    idxavis = ID_AVIS (ivid);
-    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, producerWL, idxavis);
-    args = TBmakeExprs (TBmakeId (ID_AVIS (ivid)), NULL);
+    ivavis = ID_AVIS (PRF_ARG1 (arg_node));
+    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
+    args = TBmakeExprs (TBmakeId (ivavis), NULL);
     args = TCappendExprs (args, intersectcalc);
 
-    ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (ivid))));
-    ivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (ivid))),
-                         TYeliminateAKV (AVIS_TYPE (ID_AVIS (ivid))));
+    ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ivavis)));
+    ivpavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)),
+                          TYeliminateAKV (AVIS_TYPE (ivavis)));
 
-    INFO_VARDECS (arg_info) = TBmakeVardec (ivavis, INFO_VARDECS (arg_info));
-    ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivavis, NULL),
+    INFO_VARDECS (arg_info) = TBmakeVardec (ivpavis, INFO_VARDECS (arg_info));
+    ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivpavis, NULL),
                                         TBmakePrf (F_noteintersect, args)),
                              NULL);
     INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
-    ividprime = TBmakeId (ivavis);
     AVIS_SSAASSIGN (ivavis) = ivassign;
 
-    if (isSAAMode ()) {
-        AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ID_AVIS (ivid)));
-        AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (ivid)));
+#ifdef LETISAADOIT
+    if (PHisSAAMode ()) {
+        AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ivavis));
+        AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ivavis));
     }
+#endif //  LETISAADOIT
+
     PART_ISCONSUMERPART (INFO_CONSUMERPART (arg_info)) = TRUE;
 
     global.optcounters.awlfi_insert++;
 
-    DBUG_RETURN (ividprime);
+    DBUG_RETURN (ivpavis);
 }
 
 /** <!--********************************************************************-->
@@ -656,6 +734,7 @@ AWLFIisSingleOpWL (node *arg_node)
 
     switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
     default:
+        z = FALSE;
         DBUG_ASSERT (FALSE, "WITHOP confusion");
         break;
     case N_genarray:
@@ -685,9 +764,9 @@ AWLFIisSingleOpWL (node *arg_node)
  *
  * @fn bool checkProducerWLFoldable( node *arg_node, info *arg_info)
  *
- * @brief We are looking at _sel_VxA_(idx, foldee), contained
+ * @brief We are looking at _sel_VxA_(idx, producerWL), contained
  *        within a consumerWL. We want to determine if
- *        foldee is a WL that is a possible candidate for having some
+ *        producerWL is a WL that is a possible candidate for having some
  *        partition of itself folded into the consumerWL that
  *        contains the _sel_ expression.
  *
@@ -738,23 +817,23 @@ AWLFIisSingleOpWL (node *arg_node)
 static bool
 checkProducerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *producerWL;
+    node *p;
     bool z;
 
     DBUG_ENTER ("checkProducerWLFoldable");
 
-    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
-    if (NULL != producerWL) {
-        z = (AWLFIisSingleOpWL (producerWL)) && (noDefaultPartition (producerWL))
-            && (WITHOP_NEXT (WITH_WITHOP (producerWL)) == NULL)
-            && ((NODE_TYPE (WITH_WITHOP (producerWL)) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (producerWL)) == N_modarray));
+    p = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+    if (NULL != p) {
+        z = (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
+            && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
+            && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
+                || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray));
 
         if (z) {
             DBUG_PRINT ("AWLFI",
                         ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
                          AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
-                         WITH_REFERENCED_FOLD (producerWL)));
+                         WITH_REFERENCED_FOLD (p)));
         } else {
             DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
                                   AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
@@ -768,17 +847,26 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
  *
  * @fn bool checkConsumerWLFoldable( node *arg_node, info *arg_info)
  *
- * @brief We are looking at _sel_VxA_(idx, foldee), contained
+ * @brief We are looking at _sel_VxA_(iv, producerWL), contained
  *        within a consumerWL. We want to determine if
  *        the consumerWL is acceptable to have something folded into it.
  *
- *        We deem the prf foldable if idx derives directly from
- *        an _attachintersect_, or if idx has extrema.
+ *        We deem the prf foldable if iv derives directly from
+ *        an _attachintersect_, or if iv has extrema.
  *
  *        This may not be enough to guarantee foldability, but
  *        without extrema, we're stuck.
  *
- * @param _sel_VxA_( idx, producerWL) arg_node.
+ *        We also check that the shape of the index vector matches
+ *        that of the consumerWL generator. This is necessary
+ *        because sacprelude uses the generator to adjust
+ *        the WL intersection vector, and we do not want to be
+ *        tricked by something like:
+ *
+ *           pwl = with { ( [0,0] <= iv < [2,3]) ...;
+ *           cwl = with { ( [0]   <= jv < [2]) : pwl[ jv++[1]];
+ *
+ * @param _sel_VxA_( iv, producerWL) arg_node.
  *
  * @result True if the consumerWL (and the indexing expression)
  *         are acceptable for having another WL folded into it,
@@ -788,17 +876,32 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 static bool
 checkConsumerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *idx = NULL;
-    node *idxavis;
+    node *iv = NULL;
+    node *ivavis;
+    node *bp;
+    node *bc;
     bool z;
+    int xrhob;
+    int xrhoc;
 
     DBUG_ENTER ("checkConsumerWLFoldable");
 
-    idx = PRF_ARG1 (arg_node);
-    idxavis = ID_AVIS (idx);
-    /* idx has extrema or F_attachintersect */
-    z = ((NULL != AVIS_MINVAL (idxavis)) && (NULL != AVIS_MAXVAL (idxavis)))
+    iv = PRF_ARG1 (arg_node);
+    ivavis = ID_AVIS (iv);
+    /* iv has extrema or F_attachintersect */
+    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != INFO_CONSUMERWL (arg_info))
+         && (NULL != AVIS_MAX (ivavis)))
         || isPrfArg1AttachIntersect (arg_node);
+    if (z) {
+        bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (INFO_CONSUMERWL (arg_info))));
+        xrhob = SHgetUnrLen (ARRAY_FRAMESHAPE (bp));
+        bc = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+        if (NULL != bc) {
+            xrhoc = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (bc))));
+            z = z && (xrhob == xrhoc);
+        }
+    }
+
     DBUG_RETURN (z);
 }
 
@@ -809,40 +912,41 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
  * @brief Make any early checks we can that may show that
  *        the producerWL and consumerWL are not foldable.
  *
- *        At present, we check that the generator bounds
- *        of both WLs are of the same shape.
- *
- *        We presume that earlier phases have ensured that
- *        the BOUND1 and BOUND2 lengths are the same for each partition.
+ *        We check that the shape of the generator bound of the producerWL
+ *        matches the shape of the index vector in the consumerWL.
  *
  * @param N_prf: _sel_VxA_( idx, producerWL) arg_node.
  * @result True if the consumerWL and producerWL
- *         have no problems being folded (yet).
+ *         shapes are conformable for folding.
  *
  *****************************************************************************/
 static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
-    node *consumerWL;
-    node *producerWL;
     node *bp;
     node *bc;
-    shape *sp;
-    shape *sc;
+    node *pwl;
+    int lev;
+    int xrhob;
+    int xrhoc;
     bool z = FALSE;
 
     DBUG_ENTER ("checkBothFoldable");
 
-    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
-    consumerWL = INFO_CONSUMERWL (arg_info);
-
-    bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (producerWL)));
-    sp = TYgetShape (AVIS_TYPE (ID_AVIS (bp)));
-    bc = AVIS_MINVAL (ID_AVIS (PRF_ARG1 (arg_node)));
-    if (NULL != bc) {
-        sc = TYgetShape (AVIS_TYPE (bc));
-        z = SHcompareShapes (sp, sc);
+    pwl = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+    if (NULL != pwl) {
+        bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (pwl)));
+        xrhob = SHgetUnrLen (ARRAY_FRAMESHAPE (bp));
+        bc = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+        if (NULL != bc) {
+            xrhoc = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (bc))));
+            z = xrhob == xrhoc;
+        }
     }
+
+    /* Both producerWL and consumerWL must be at same nesting level */
+    lev = 1 + AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWL (arg_info)));
+    z = z && (lev == INFO_LEVEL (arg_info));
 
     if (z) {
         DBUG_PRINT ("AWLFI", ("with-loops are foldable"));
@@ -911,7 +1015,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
  * @fn node AWLFIassign( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
- *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
+ *        For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
  *
  *****************************************************************************/
 node *
@@ -957,10 +1061,11 @@ AWLFIwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("AWLFIwith");
 
     old_arg_info = arg_info;
+
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
-    INFO_CONSUMERWL (arg_info) = arg_node;
+    INFO_CONSUMERWL (arg_info) = AWLFIgetWlWith (arg_node);
     INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
 
     DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_CONSUMERWL, etc."));
@@ -968,7 +1073,9 @@ AWLFIwith (node *arg_node, info *arg_info)
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_REFERENCES_FOLDED (arg_node) = 0;
 
+#ifdef DEADCODE
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+#endif // DEADCODE
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     INFO_VARDECS (old_arg_info) = INFO_VARDECS (arg_info);
@@ -979,6 +1086,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFIcode( node *arg_node, info *arg_info)
@@ -996,6 +1104,7 @@ AWLFIcode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -1010,7 +1119,8 @@ AWLFIpart (node *arg_node, info *arg_info)
     DBUG_ENTER ("AWLFIpart");
 
     INFO_CONSUMERPART (arg_info) = arg_node;
-    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+    CODE_CBLOCK (PART_CODE (arg_node))
+      = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     INFO_CONSUMERPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -1054,33 +1164,32 @@ AWLFIids (node *arg_node, info *arg_info)
 node *
 AWLFIid (node *arg_node, info *arg_info)
 {
-    node *producerWL;
+    node *p;
 
     DBUG_ENTER ("AWLFIid");
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
 #ifdef NOISY
     DBUG_PRINT ("AWLFI", ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
 #endif // NOISY
-    producerWL = FindProducerWL (arg_node);
-    if ((NULL != producerWL) && (NULL == WITH_REFERENCED_CONSUMERWL (producerWL))) {
+    p = INFO_CONSUMERWL (arg_info);
+    if ((NULL != p) && (NULL == WITH_REFERENCED_CONSUMERWL (p))) {
         /* First reference to this WL. */
-        WITH_REFERENCED_CONSUMERWL (producerWL) = INFO_CONSUMERWL (arg_info);
-        WITH_REFERENCED_FOLD (producerWL) = 0;
+        WITH_REFERENCED_CONSUMERWL (p) = INFO_CONSUMERWL (arg_info);
+        WITH_REFERENCED_FOLD (p) = 0;
         DBUG_PRINT ("AWLFI", ("AWLFIid found first reference to %s",
                               AVIS_NAME (ID_AVIS (arg_node))));
     }
 
     /*
      * arg_node describes a WL, so
-     * WITH_REFERENCED_FOLD(producerWL) may have to be
+     * WITH_REFERENCED_FOLD( p) may have to be
      * incremented
      */
-    if ((NULL != producerWL) && (NULL != INFO_CONSUMERWL (arg_info))
-        && (WITH_REFERENCED_CONSUMERWL (producerWL) == INFO_CONSUMERWL (arg_info))) {
-        (WITH_REFERENCED_FOLD (producerWL)) += 1;
-        DBUG_PRINT ("AWLFI",
-                    ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
-                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (producerWL)));
+    if ((NULL != p) && (NULL != INFO_CONSUMERWL (arg_info))
+        && (WITH_REFERENCED_CONSUMERWL (p) == INFO_CONSUMERWL (arg_info))) {
+        (WITH_REFERENCED_FOLD (p))++;
+        DBUG_PRINT ("AWLFI", ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
+                              AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p)));
     } else {
 #ifdef NOISY
         DBUG_PRINT ("AWLFI", ("AWLFIid %s is not defined by a WL",
@@ -1123,6 +1232,7 @@ AWLFIprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
+        INFO_PRODUCERWL (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
         INFO_PRODUCERWLFOLDABLE (arg_info)
           = checkConsumerWLFoldable (arg_node, arg_info)
             && checkProducerWLFoldable (arg_node, arg_info)
@@ -1135,7 +1245,7 @@ AWLFIprf (node *arg_node, info *arg_info)
             && (!isPrfArg1AttachIntersect (arg_node))) {
             z = attachIntersectCalc (arg_node, arg_info);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
-            PRF_ARG1 (arg_node) = z;
+            PRF_ARG1 (arg_node) = TBmakeId (z);
             DBUG_PRINT ("AWLFI", ("AWLFIprf inserted F_attachintersect at _sel_VxA_"));
         }
     }
@@ -1170,25 +1280,26 @@ AWLFIcond (node *arg_node, info *arg_info)
  *   node *AWLFImodarray(node *arg_node, info *arg_info)
  *
  * description:
- *   if op is modarray( foldee_wl), we increment
- *   WITH_REFERENCED_FOLD for the foldee.
+ *   if op is modarray( producerWL), we increment
+ *   WITH_REFERENCED_FOLD for the producerWL.
  *
  ******************************************************************************/
 node *
 AWLFImodarray (node *arg_node, info *arg_info)
 {
-    node *producerWL;
+    node *wl;
 
     DBUG_ENTER ("AWLFImodarray");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     if (N_modarray == NODE_TYPE (arg_node)) {
-        producerWL = FindProducerWL (MODARRAY_ARRAY (arg_node));
-        (WITH_REFERENCED_FOLD (producerWL))++;
+        INFO_PRODUCERWL (arg_info) = AWLFIfindWlId (MODARRAY_ARRAY (arg_node));
+        wl = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+        (WITH_REFERENCED_FOLD (wl))++;
         DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
                               AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
-                              WITH_REFERENCED_FOLD (producerWL)));
+                              WITH_REFERENCED_FOLD (wl)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1205,9 +1316,14 @@ AWLFImodarray (node *arg_node, info *arg_info)
 node *
 AWLFIlet (node *arg_node, info *arg_info)
 {
+    node *oldlet;
+
     DBUG_ENTER ("AWLFIlet");
 
+    oldlet = INFO_LET (arg_info);
+    INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_LET (arg_info) = oldlet;
 
     DBUG_RETURN (arg_node);
 }

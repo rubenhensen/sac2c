@@ -1803,10 +1803,11 @@ PRTfundef (node *arg_node, info *arg_info)
                 }
 
                 fprintf (global.outfile,
-                         "%s(...)\n"
+                         "%s(...) [ %s ]\n"
                          " **************************************************************"
                          "**************/\n",
-                         FUNDEF_NAME (arg_node));
+                         FUNDEF_NAME (arg_node),
+                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "body"));
 
                 if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
@@ -1945,6 +1946,8 @@ node *
 PRTarg (node *arg_node, info *arg_info)
 {
     char *type_str;
+    char *minmk;
+    char *maxmk;
 
     DBUG_ENTER ("PRTarg");
 
@@ -1992,13 +1995,16 @@ PRTarg (node *arg_node, info *arg_info)
           = TRAVdo (AVIS_SHAPE (ARG_AVIS (arg_node)), arg_info);
     }
     /* Print extrema information */
-    if (AVIS_MINVAL (ARG_AVIS (arg_node)) != NULL) {
+    minmk = AVIS_ISMINHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
+    maxmk = AVIS_ISMAXHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
+    fprintf (global.outfile, ",%s%s", minmk, maxmk);
+    if (AVIS_MIN (ARG_AVIS (arg_node)) != NULL) {
         fprintf (global.outfile, ", minval: %s",
-                 AVIS_NAME (AVIS_MINVAL (ARG_AVIS (arg_node))));
+                 AVIS_NAME (ID_AVIS (AVIS_MIN (ARG_AVIS (arg_node)))));
     }
-    if (AVIS_MAXVAL (ARG_AVIS (arg_node)) != NULL) {
+    if (AVIS_MAX (ARG_AVIS (arg_node)) != NULL) {
         fprintf (global.outfile, ", maxval: %s",
-                 AVIS_NAME (AVIS_MAXVAL (ARG_AVIS (arg_node))));
+                 AVIS_NAME (ID_AVIS (AVIS_MAX (ARG_AVIS (arg_node)))));
     }
 
     fprintf (global.outfile, " } "); /* end of avis info */
@@ -2027,6 +2033,8 @@ node *
 PRTvardec (node *arg_node, info *arg_info)
 {
     char *type_str;
+    char *minmk;
+    char *maxmk;
 
     DBUG_ENTER ("PRTvardec");
 
@@ -2060,13 +2068,16 @@ PRTvardec (node *arg_node, info *arg_info)
               = TRAVdo (AVIS_SHAPE (VARDEC_AVIS (arg_node)), arg_info);
         }
         /* Print extrema information */
-        if (AVIS_MINVAL (VARDEC_AVIS (arg_node)) != NULL) {
+        minmk = AVIS_ISMINHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
+        maxmk = AVIS_ISMAXHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
+        fprintf (global.outfile, ", %s%s,", minmk, maxmk);
+        if (AVIS_MIN (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", minval: %s",
-                     AVIS_NAME (AVIS_MINVAL (VARDEC_AVIS (arg_node))));
+                     AVIS_NAME (ID_AVIS (AVIS_MIN (VARDEC_AVIS (arg_node)))));
         }
-        if (AVIS_MAXVAL (VARDEC_AVIS (arg_node)) != NULL) {
+        if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", maxval: %s",
-                     AVIS_NAME (AVIS_MAXVAL (VARDEC_AVIS (arg_node))));
+                     AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
         }
 
         fprintf (global.outfile, " } "); /* end of avis info */
@@ -2657,7 +2668,7 @@ PRTap (node *arg_node, info *arg_info)
         fprintf (global.outfile, " ");
         TRAVdo (AP_ARGS (arg_node), arg_info);
     }
-    fprintf (global.outfile, ")");
+    fprintf (global.outfile, ") ");
 
     DBUG_EXECUTE ("PRINT_PTR", fprintf (global.outfile, " /* ");
                   PRINT_POINTER (global.outfile, fundef);

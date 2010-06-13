@@ -299,7 +299,14 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_VAL_LE_VAL(to_NT, from_NT, from2_NT)                                  \
+#define SAC_ND_PRF_VAL_LT_VAL_SxS(to_NT, from_NT, from2_NT)                              \
+    {                                                                                    \
+        if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0))                       \
+            SAC_RuntimeError ("LT Constraint violated");                                 \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
+
+#define SAC_ND_PRF_VAL_LE_VAL_VxV(to_NT, from_NT, from2_NT)                              \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \

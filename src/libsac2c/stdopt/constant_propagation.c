@@ -66,6 +66,8 @@ const int PROP_array = 8;
 struct INFO {
     int propmode;
     bool onefundef;
+    node *lhs;
+    node *fundef;
 };
 
 /*
@@ -73,6 +75,8 @@ struct INFO {
  */
 #define INFO_PROPMODE(n) (n->propmode)
 #define INFO_ONEFUNDEF(n) (n->onefundef)
+#define INFO_LHS(n) (n->lhs)
+#define INFO_FUNDEF(n) (n->fundef)
 
 /*
  * INFO functions
@@ -88,6 +92,8 @@ MakeInfo ()
 
     INFO_PROPMODE (result) = PROP_nothing;
     INFO_ONEFUNDEF (result) = FALSE;
+    INFO_LHS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -135,6 +141,7 @@ IsScalarConst (node *arg_node)
 
     DBUG_RETURN (res);
 }
+
 /******************************************************************************
  *
  * function:
@@ -152,6 +159,37 @@ CParray (node *arg_node, info *arg_info)
 
     INFO_PROPMODE (arg_info) = PROP_scalarconst;
     arg_node = TRAVcont (arg_node, arg_info);
+    INFO_PROPMODE (arg_info) = PROP_nothing;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CPgenarray( node *arg_node, info *arg_info)
+ *
+ * description: Propagate N_array or array constants into WL genarray nodes.
+ *
+ *****************************************************************************/
+node *
+CPgenarray (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CPgenarray");
+
+    INFO_PROPMODE (arg_info) = PROP_arrayconst | PROP_array;
+
+#ifdef BADIDEAPERHAPS // Blind traversal puts N_array into GENARRAY_DEFAULT
+                      // which makes memory/alloc.c unhappy.
+                      // So, we'll just do CP on GENARRAY_SHAPE, which
+                      // may or may not be necessary. This is an attempt
+                      // to resolve Bug #705. FIXME
+    arg_node = TRAVcont (arg_node, arg_info);
+#else  // BADIDEAPERHAPS
+    GENARRAY_SHAPE (arg_node) = TRAVopt (GENARRAY_SHAPE (arg_node), arg_info);
+#endif // BADIDEAPERHAPS
+
     INFO_PROPMODE (arg_info) = PROP_nothing;
 
     DBUG_RETURN (arg_node);
@@ -179,14 +217,14 @@ CPavis (node *arg_node, info *arg_info)
         AVIS_SHAPE (arg_node) = TRAVdo (AVIS_SHAPE (arg_node), arg_info);
     }
 
-    if ((AVIS_MINVAL (arg_node) != NULL) && (arg_node != AVIS_MINVAL (arg_node))) {
+    if ((AVIS_MIN (arg_node) != NULL)) {
         INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
-        AVIS_MINVAL (arg_node) = TRAVdo (AVIS_MINVAL (arg_node), arg_info);
+        AVIS_MIN (arg_node) = TRAVdo (AVIS_MIN (arg_node), arg_info);
     }
 
-    if ((AVIS_MAXVAL (arg_node) != NULL) && (arg_node != AVIS_MAXVAL (arg_node))) {
+    if ((AVIS_MAX (arg_node) != NULL)) {
         INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
-        AVIS_MAXVAL (arg_node) = TRAVdo (AVIS_MAXVAL (arg_node), arg_info);
+        AVIS_MAX (arg_node) = TRAVdo (AVIS_MAX (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -217,6 +255,7 @@ CPid (node *arg_node, info *arg_info)
             || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
                 && (TYgetDim (AVIS_TYPE (avis)) == 0)))) {
         arg_node = FREEdoFreeNode (arg_node);
+        DBUG_PRINT ("CP", ("CPid replacing %s by constant", AVIS_NAME (avis)));
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
         global.optcounters.cp_expr += 1;
     } else {
@@ -414,12 +453,13 @@ CPassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("CPassign");
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
+    INFO_LHS (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    INFO_LHS (arg_info) = NULL;
 
     /* Reset the mode the PROP_nothing because the traverse
      * of instr might change the mode */
     INFO_PROPMODE (arg_info) = PROP_nothing;
-
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -442,8 +482,10 @@ CPfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CPfundef");
 
+    INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
+    INFO_FUNDEF (arg_info) = NULL;
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);

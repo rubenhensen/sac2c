@@ -526,13 +526,11 @@
         <travuser>
           <node name="Fundef" />
           <node name="Block" />
-          <node name="Vardec" />
           <node name="Funcond" />
           <node name="Cond" />
           <node name="While" />
           <node name="Assign" />
           <node name="Let" />
-          <node name="Prf" />
           <node name="With" />
           <node name="Part" />
           <node name="Ap" />
@@ -550,11 +548,14 @@
           <node name="While" />
         </travuser>
       </traversal> 
-      <traversal id="IVEXC" name="Index Variable Extrema Cleanup" default="sons" include="ivexcleanup.h" >
+      <traversal id="IVEXC" name="Index Vector Extrema Cleanup" default="sons" include="ivexcleanup.h" >
         <travuser>
-          <node name="With" />
+          <node name="Part" />
+          <node name="Let" />
           <node name="Avis" />
           <node name="Prf" />
+          <node name="Id" />
+          <node name="Ids" />
         </travuser>
       </traversal> 
       <traversal id="UGLF" name="Ungroup Local functions" default="sons" include="ungroup_local_funs.h" >
@@ -910,6 +911,9 @@
 		  <node name="Do" />
 		  <node name="While" />
 		  <node name="Funcond" />
+		  <node name="Prf" />
+		  <node name="Let" />
+		  <node name="Exprs" />
 		</travuser>
 	      </traversal>
 	      <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
@@ -1547,6 +1551,7 @@
 	  <node name="Prf" />
 	  <node name="Id" />
 	  <node name="Array" />
+	  <node name="Genarray" />
           <node name="Avis" />
 	</travuser>
       </traversal>
@@ -1931,7 +1936,6 @@
           <node name="Cond" />
           <node name="With"    />
           <node name="Modarray"    />
-          <node name="Code"    />
           <node name="Part"    />
           <node name="Ids"     />
           <node name="Prf"     />
@@ -1940,10 +1944,10 @@
      <traversal id="CUBSL" name="Algebraic With-Loop-Folding Cube Slicer" default="sons" include="cubeslicer.h" >
        <travuser>
           <node name="Fundef"  />
-          <node name="With"    />
-          <node name="Code"    />
-          <node name="Part"    />
+          <node name="Assign" />
           <node name="Let"     />
+          <node name="With"    />
+          <node name="Part"    />
           <node name="Prf"     />
        </travuser>
      </traversal>
@@ -2073,8 +2077,10 @@
       </traversal>
       <traversal id="IVERAS" name="Index Vector Elimination (Reuse WL-offsets and Scalarize)" default="sons" include="ive_reusewl_and_scalarize.h">
         <travuser>
-	  <node name="Prf" />
+	  <node name="Fundef" />
+	  <node name="Assign" />
 	  <node name="Let" />
+	  <node name="Prf" />
 	  <node name="With" />
 	  <node name="Part" />
 	  <node name="Code" />
@@ -5991,27 +5997,6 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
-        <flag name="MinvalAttached" default="FALSE" >
-         <description> 
-          If true, this N_array has already
-          an F_noteminval guard attached to it.
-          If false, IVEXP will emit the guard, then set this flag.
-         </description> 
-        </flag>
-        <flag name="MaxvalAttached" default="FALSE" >
-         <description> 
-          If true, this N_array has already
-          an F_notemaxval guard attached to it.
-          If false, IVEXP will emit the guard, then set this flag.
-         </description> 
-        </flag>
-        <flag name="NoExtremaWanted" default="FALSE" >
-         <description> 
-           If true, this N_array should not have an F_attachextrema
-           attached to it, as it is computing extrema for
-           another node.
-         </description> 
-        </flag>
       </flags>
     </node>
 <!--
@@ -6091,10 +6076,6 @@ N_tfarg :
           </description>
         </flag>
       </flags>
-
-
-
-
     </node>
 <!--
 
@@ -6545,20 +6526,6 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
-        <flag name="ExtremaAttached" default="FALSE" >
-         <description> 
-          If true, this operation has already
-          emitted an F_attachextrema guard that now precedes this
-          prf. If false, IVEXP will emit the guard, then set this flag.
-         </description> 
-        </flag>
-        <flag name="NoExtremaWanted" default="FALSE" >
-         <description> 
-                 If true, this operation should not have an F_attachextrema
-                 attached to it, as it is computing extrema for
-                 another node.
-         </description> 
-        </flag>
       </flags>
     </node>
 <!--
@@ -6980,10 +6947,10 @@ N_tfarg :
           identifier (N_id) for AUD arrays.
           </description>
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa2" to="opt_esaa2" />
+                <range from="opt_saacyc_isaa3" to="opt_esaa2" />
               </phases>
             </target>
           </targets>
@@ -6998,14 +6965,51 @@ N_tfarg :
 	  identifier (N_id) for AUD and some AKD arrays.
           </description>
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa2" to="opt_esaa2" />
+                <range from="opt_saacyc_isaa3" to="opt_esaa2" />
               </phases>
             </target>
           </targets>
         </son>        
+        <son name="Min" default="NULL">
+          <description>
+          This field is an N_id for the
+          minimum value that this variable can have. 
+          The field is valid only for integer-like
+          types, i.e., it does not apply to doubles, etc.
+          For example, the Min of the lower bound of a WL index 
+          vector might be
+          an N_id pointing to an N_array with value [0,0,0], 
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <range from="opt_saacyc" to="opt_esaa2" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+
+        <son name="Max" default="NULL">
+          <description>
+           See AVIS_MIN description; MAX points to the avis of the maximum, 
+           rather than the minimum, value of a WL index vector.
+           However, like WL index vectors, MAX is
+           part of a semi-closed interval; MAX(X) is at least 1+maxreduce(X),
+           much the same as GENERATOR_BOUND2 in a with-loop.
+          </description>
+            <targets>
+              <target mandatory="no">
+                <node name="Id" />
+                <phases>
+                  <range from="opt_saacyc" to="opt_esaa2" />
+                </phases>
+              </target>
+            </targets>
+        </son>
       </sons>
 
       <attributes>
@@ -7216,7 +7220,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="opt_al" />
-                  <range from="opt_isaa2" to="opt_ivexc" />
+                  <range from="opt_saacyc_isaa3" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -7228,7 +7232,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="With" />
                 <phases>
-                  <range from="opt_isaa2" to="opt_ivexc" />
+                  <range from="opt_saacyc_isaa3" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -7423,60 +7427,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="MinVal" default="NULL">
-          <description>
-          This field is a pointer to the N_avis of the
-          minimum value that this variable can have. 
-          The field is valid only for integer-like
-          types, i.e., it does not apply to doubles, etc.
-          The value may be an N_num, an N_array, or an N_id.
-          If it points to an N_id, the N_id must have an associated SSAASSIGN
-          giving the origin of the value. For example, the
-          MinVal of the lower bound of a WL index vector might be
-          an N_array with value [0,0,0], or it might be an N_id
-          with SSASSIGN value of "_shape_A_(X) - 1". 
-
-          A typical use of MinVal is to allow constant folding to
-          to eliminate an F_non_neg_val_V call.
-
-          The AVIS attributes DIM, SHAPE, MINVAL, and MAXVAL 
-          are explicitly handled by DCR as if they were AST sons. 
-          I.e., the presence of a non-null pointer in one of them causes
-          preservation of the AVIS pointed to, along with its baggage.
-          </description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Avis" />
-                <phases>
-                <range from="opt_ivexi" to="opt_esaa2" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-
-        <attribute name="MaxVal" default="NULL">
-          <description>
-           See MinVal description; MAXVAL points to the avis of the maximum, 
-           rather than the minimum, value of a WL index vector.
-         However, like WL index vectors, MAXVAL is
-         part of a semi-closed interval; MAXVAL(X) is at least 1+maxreduce(X),
-         much the same as GENERATOR_BOUND2 in a with-loop.
-         A typical use of MAXVAL is to allow the constant folder to
-         eliminate an F_val_le_val_VxV call.
-          </description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Avis" />
-                <phases>
-                <range from="opt_ivexi" to="opt_esaa2" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="With3Fold" inconstructor="no" >
           <type name="Link">
             <targets>
@@ -7565,20 +7515,21 @@ N_tfarg :
              that has been folded out of existence.
 	  </description>
 	</flag>
-    <flag name="IsHostReferenced" default="FALSE">
+        <flag name="IsHostReferenced" default="FALSE">
 	</flag>
-        <flag name="IsMinvalGenerated" default="FALSE">
+        <flag name="IsMinHandled" default="FALSE">
           <description>
                   If true, indicates that IVEXI/IVEXP have performed whatever
-                  needs to be done to generate AVIS_MINVAL for this node.
+                  needs to be done to generate AVIS_MIN for this node.
                   For N_array assignments, the extrema are not directly
                   attached to the LHS (v), but to v' or v'', so looking
-                  for non-NULL AVIS_MINVAL will not work.
+                  for non-NULL AVIS_MIN will not work.
           </description>
         </flag>
-        <flag name="IsMaxvalGenerated" default="FALSE">
+
+        <flag name="IsMaxHandled" default="FALSE">
           <description>
-                  Like IsMinvalGenerated, but for AVIS_MAXVAL.
+                  Like IsMinHandled, but for AVIS_MAX.
           </description>
         </flag>
         <flag name="IsCudaLocal" default="FALSE">
@@ -7917,12 +7868,6 @@ N_tfarg :
              the WLSELC (WithLoopSelectionCount) traversal.
           </description>
         </flag>
-        <flag name="ExtremaAttached" default ="FALSE">
-          <description>
-          True if IVEXI has already attached extrema variables
-          to this WL.
-          </description>
-        </flag>
 
       </flags>
     </node>
@@ -8007,7 +7952,7 @@ N_tfarg :
         <flag name="IsConsumerPart"  default="FALSE">
           <description> 
             Set to true if this WL partition has been determined
-            to be a consumer-WL, and an _attachintersect_() has
+            to be a consumer-WL, and an _noteintersect() has
             been attached to it.
             This is used by the cubeslicer to allow it to slice
             cubes in CUBSLpart.
@@ -8106,14 +8051,8 @@ N_tfarg :
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="scp_prs" to="opt_flt" />
+                <range from="scp_prs" to="final" />
               </phases>
-            </target>
-            <target>
-             <node name="Id" />
-             <phases>
-               <range from="scp_prs" to="final" />
-             </phases>
             </target>
             <target mandatory="yes">
               <node name="Dot" />
@@ -8130,14 +8069,8 @@ N_tfarg :
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <range from="scp_prs" to="opt_flt" />
+                <range from="scp_prs" to="final" />
               </phases>
-            </target>
-            <target>
-             <node name="Id" />
-             <phases>
-               <range from="scp_prs" to="final" />
-             </phases>
             </target>
             <target mandatory="yes">
               <node name="Dot" />

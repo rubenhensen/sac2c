@@ -1224,22 +1224,11 @@ CSEids (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSEids");
 
     avis = IDS_AVIS (arg_node);
-    if ((NULL != AVIS_MINVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MINVAL (avis)))) {
-        DBUG_PRINT ("CSE",
-                    ("Renamed AVIS_MINVAL %s to %s", AVIS_NAME (IDS_AVIS (arg_node)),
-                     AVIS_NAME (AVIS_SUBST (AVIS_MINVAL (avis)))));
-        AVIS_MINVAL (avis) = AVIS_SUBST (AVIS_MINVAL (avis));
-    }
-
-    if ((NULL != AVIS_MAXVAL (avis)) && (NULL != AVIS_SUBST (AVIS_MAXVAL (avis)))) {
-        DBUG_PRINT ("CSE",
-                    ("Renamed AVIS_MAXVAL %s to %s", AVIS_NAME (IDS_AVIS (arg_node)),
-                     AVIS_NAME (AVIS_SUBST (AVIS_MAXVAL (avis)))));
-        AVIS_MAXVAL (avis) = AVIS_SUBST (AVIS_MAXVAL (avis));
-    }
 
     AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+    AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
+    AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -1276,7 +1265,7 @@ CSEcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CSEdoCommonSubexpressionElimination(node* fundef)
+ *   node* CSEdoCommonSubexpressionEliminationOneFundef(node* fundef)
  *
  * description:
  *   Starts the traversal for a given fundef.
@@ -1286,11 +1275,11 @@ CSEcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CSEdoCommonSubexpressionElimination (node *fundef)
+CSEdoCommonSubexpressionEliminationOneFundef (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CSEdoCommonSubexpressionElimination");
+    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "CSE called for non-fundef node");
 
@@ -1317,7 +1306,7 @@ CSEdoCommonSubexpressionElimination (node *fundef)
 static node *
 WrapCSECall (node *arg_node, info *arg_info)
 {
-    return (CSEdoCommonSubexpressionElimination (arg_node));
+    return (CSEdoCommonSubexpressionEliminationOneFundef (arg_node));
 }
 
 node *

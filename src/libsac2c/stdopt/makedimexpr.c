@@ -37,6 +37,8 @@
 #include "constants.h"
 #include "compare_tree.h"
 #include "phase.h"
+#include "ivextrema.h"
+#include "algebraic_wlfi.h"
 
 /** <!--********************************************************************-->
  *
@@ -99,7 +101,7 @@ MakeScalarAvis (char *name)
 
     res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    if (isSAAMode ()) {
+    if (PHisSAAMode ()) {
         AVIS_DIM (res) = TBmakeNum (0);
         AVIS_SHAPE (res) = TCmakeIntVector (NULL);
     }
@@ -167,6 +169,7 @@ SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SAAdim_is_arg1_0");
 
+    /* FIXME the PRF_ARG1 zero needs to be flattened. */
     dim_expr
       = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0), DUPdoDupNode (PRF_ARG1 (arg_node)));
 
@@ -330,6 +333,10 @@ static const travfun_p makedim_funtab[] = {
  * @fn node *MDEdoMakeDimExpression( node *expr, node *avis,
  *                                   node *allids, node *fundef)
  *
+ * @param avis: An N_avis node for which we will generate AVIS_DIM.
+ *
+ * @result The preassign chain to be appended to the current fundef.
+ *
  *****************************************************************************/
 node *
 MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
@@ -428,6 +435,7 @@ MDEarray (node *arg_node, info *arg_info)
     node *lhsavis;
     node *dimavis;
     node *rhsnode;
+    node *preassigns = NULL;
     node *res = NULL;
 
     DBUG_ENTER ("MDEarray");
@@ -447,13 +455,16 @@ MDEarray (node *arg_node, info *arg_info)
         node *framedim;
         node *celldim;
 
-        framedim = TBmakeNum (SHgetDim (ARRAY_FRAMESHAPE (arg_node)));
+        framedim
+          = IVEXImakeIntScalar (SHgetDim (ARRAY_FRAMESHAPE (arg_node)),
+                                &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), &preassigns);
         celldim = AVIS_DIM (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
 
-        rhsnode = TCmakePrf2 (F_add_SxS, framedim, DUPdoDupNode (celldim));
+        rhsnode = TCmakePrf2 (F_add_SxS, TBmakeId (framedim), DUPdoDupNode (celldim));
     }
 
     res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
+    res = TCappendAssign (preassigns, res);
 
     AVIS_SSAASSIGN (dimavis) = res;
 
@@ -524,6 +535,8 @@ MDEwith (node *arg_node, info *arg_info)
     node *res = NULL;
     node *ids;
     node *withop;
+    node *preassigns = NULL;
+    node *zer;
     int woc = 0;
 
     DBUG_ENTER ("MDEwith");
@@ -592,8 +605,10 @@ MDEwith (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (fdavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
+            zer = IVEXImakeIntScalar (0, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                      &preassigns);
             res = TBmakeAssign (TBmakeLet (TBmakeIds (fdavis, NULL),
-                                           TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0),
+                                           TCmakePrf2 (F_idx_shape_sel, TBmakeId (zer),
                                                        DUPdoDupNode (genshp))),
                                 NULL);
 
@@ -601,8 +616,17 @@ MDEwith (node *arg_node, info *arg_info)
 
             framedim = TBmakeId (fdavis);
         }
-
-        rhsnode = TCmakePrf2 (F_add_SxS, framedim, celldim);
+        framedim
+          = AWLFIflattenExpression (framedim, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                    &preassigns,
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHmakeShape (0)));
+        celldim
+          = AWLFIflattenExpression (celldim, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                    &preassigns,
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHmakeShape (0)));
+        rhsnode = TCmakePrf2 (F_add_SxS, TBmakeId (framedim), TBmakeId (celldim));
     } break;
 
     case N_fold:
@@ -620,6 +644,9 @@ MDEwith (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (dimavis) = newass;
 
         res = TCappendAssign (res, newass);
+        if (NULL != preassigns) {
+            res = TCappendAssign (preassigns, res);
+        }
     }
 
     DBUG_RETURN (res);

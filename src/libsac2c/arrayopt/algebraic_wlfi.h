@@ -15,7 +15,8 @@
  *****************************************************************************/
 extern node *AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node);
 extern bool AWLFIisSingleOpWL (node *arg_node);
-extern node *FindProducerWL (node *arg_node);
+extern node *AWLFIgetWlWith (node *arg_node);
+extern node *AWLFIfindWlId (node *arg_node);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
@@ -37,9 +38,11 @@ extern node *AWLFIprf (node *arg_node, info *arg_info);
 extern node *AWLFIavis (node *arg_node, info *arg_info);
 
 /* expressions per partition are: bound1, bound2, intlo, inthi, intNull */
-#define WLBOUND1ORIGINAL(partno) (1 + (5 * partno))
-#define WLBOUND2ORIGINAL(partno) (1 + (5 * partno) + 1)
-#define WLINTERSECTION(partno, boundno) (1 + 2 + (5 * partno) + boundno)
+#define WLBOUND1ORIGINAL(partno) (1 + 0 + (5 * partno))
+#define WLBOUND2ORIGINAL(partno) (1 + 1 + (5 * partno))
+#define WLINTERSECTION1(partno) (1 + 2 + (5 * partno))
+#define WLINTERSECTION2(partno) (1 + 3 + (5 * partno))
 #define WLINTERSECTIONNULL(partno) (1 + 4 + (5 * partno))
+#define WLEXPRESSIONSPERPART (5)
 
 #endif /* _SAC_ALGEBRAIC_WLFI_H_ */

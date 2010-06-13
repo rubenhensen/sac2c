@@ -31,7 +31,7 @@ static optimize_counter_t oc_pass;
 
 /** <!--********************************************************************-->
  *
- * @fn bool isSAAMode( node *arg_node)
+ * @fn bool PHisSAAMode( node *arg_node)
  *
  * @brief Predicates for those compiler phases in which AVIS_DIM and AVIS_SHAPE
  *        should be generated and propagated.
@@ -39,14 +39,14 @@ static optimize_counter_t oc_pass;
  *****************************************************************************/
 
 bool
-isSAAMode (void)
+PHisSAAMode (void)
 {
     bool z;
 
-    DBUG_ENTER ("isSAAMode");
+    DBUG_ENTER ("PHisSAAMode");
 
     z = global.optimize.dosaa
-        && ((global.compiler_anyphase >= PH_opt_isaa2)
+        && ((global.compiler_anyphase > PH_opt_saacyc_isaa3)
             && (global.compiler_anyphase < PH_opt_esaa2));
 
     DBUG_RETURN (z);
@@ -54,18 +54,18 @@ isSAAMode (void)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isSSAMode( node *arg_node)
+ * @fn bool PHisSSAMode( node *arg_node)
  *
  * @brief Predicates for those compiler phases that are running in SSA mode.
  *
  *****************************************************************************/
 
 bool
-isSSAMode (void)
+PHisSSAMode (void)
 {
     bool z;
 
-    DBUG_ENTER ("isSSAMode");
+    DBUG_ENTER ("PHisSSAMode");
 
     z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
 

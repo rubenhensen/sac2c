@@ -616,7 +616,7 @@ range2Set (node *range)
  *
  * @fn static bool isInExtrema( node *expr)
  *
- * @brief Predicate for determining that an N_prf is an extrema note.
+ * @brief Predicate for determining that an N_prf is an extrema node.
  *
  * @param N_prf
  * @return True if N_prf is member of the set below.
@@ -646,8 +646,9 @@ isInGuards (prf prfun)
     DBUG_ENTER ("isInGuards");
     DBUG_RETURN ((prfun == F_guard) || (prfun == F_afterguard)
                  || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
-                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_V)
-                 || (prfun == F_val_lt_shape_VxA) || (prfun == F_val_le_val_VxV)
+                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_S)
+                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
+                 || (prfun == F_val_le_val_VxV) || (prfun == F_val_lt_val_SxS)
                  || (prfun == F_prod_matches_prod_shape_VxA));
 }
 
@@ -666,6 +667,24 @@ isAfterguard (prf prfun)
 {
     DBUG_ENTER ("isInGuards");
     DBUG_RETURN ((prfun == F_afterguard));
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn static bool isInExtremaOrGuards( node *expr)
+ *
+ * @brief Predicate for determining that an N_prf is an
+ *        extrema node or a guard node.
+ *
+ * @param N_prf
+ * @return True if N_prf is member of either set.
+ *
+ *****************************************************************************/
+static bool
+isInExtremaOrGuards (prf prfun)
+{
+    DBUG_ENTER ("isInExtremaOrGuards");
+    DBUG_RETURN (isInExtrema (prfun) || isInGuards (prfun));
 }
 
 /** <!--*******************************************************************-->
@@ -792,6 +811,14 @@ skipVarDefs (node *expr)
                 old_expr = expr;
                 expr = followId (old_expr);
                 expr = followPrf (isInGuards, expr);
+            } while (expr != old_expr);
+            break;
+
+        case PM_flatSkipExtremaAndGuards:
+            do {
+                old_expr = expr;
+                expr = followId (old_expr);
+                expr = followPrf (isInExtremaOrGuards, expr);
             } while (expr != old_expr);
             break;
 
@@ -1029,7 +1056,7 @@ PMvar (int num_attribs, ...)
  *
  * pattern *PMparam( int num_attribs, ... );
  *
- * @brief matches an identifyer (N_id) that has no SSA_ASSIGN and, thus,
+ * @brief matches an identifier (N_id) that has no SSA_ASSIGN and, thus,
  *        relates to either an N_arg or to a WL-index-variable!
  *        - no inner pattern
  *        - does depend on matching mode!
@@ -1666,6 +1693,31 @@ PMmatchFlatSkipGuards (pattern *pat, node *expr)
     DBUG_PRINT ("PM", ("starting flatSkipGuards match"));
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
     DBUG_PRINT ("PM", ("flatSkipGuards match %s!", (res ? "succeeded" : "failed")));
+
+    return (res);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchFlatSkipExtremaAndGuards( pattern *pat, node *expr)
+ *
+ * @brief matches pat against expr in mode PM_flatSkipExtremaAndGuards
+ * @return success
+ *
+ *****************************************************************************/
+bool
+PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
+{
+    mode = PM_flatSkipExtremaAndGuards;
+    follow_lut = NULL;
+
+    matching_level = 0;
+    bool res;
+
+    DBUG_PRINT ("PM", ("starting flatSkipExtremaAndGuards match"));
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("PM",
+                ("flatSkipExtremaAndGuards match %s!", (res ? "succeeded" : "failed")));
 
     return (res);
 }

@@ -9,20 +9,111 @@
  *  Overview:
  *  ---------
  *
- * This traversal takes care of with-loops that do nothing more
- * than copying some array. These are replaced by A = B, like in
+ * This traversal eliminates with-loops that do nothing more
+ * than copy some array, in toto.
+ *
+ * The checks in function XXX ensure that, in _sel_VxA_( IV, A),
+ * that IV matches the iv in the WL generator. I.e., there are
+ * no offsets, nor transpositions, etc, happening, merely a
+ * straight element-by-element copy.
+ *
+ * WLs matching the above criteria are replaced by A = B, e.g.:
+ *
+ * Case 1:
  *
  * B = with {
  *       (.<=iv<=.) : A[iv];
  *     } : genarray( shape(A), n );
  *
- * will be transformed to
+ * will be transformed to:
  *
  * B = A;
  *
+ * Case 2: ( NOT IMPLEMENTED YET!)
  *
- * Implementational issue:
+ * In the presence of guards, things get a bit messier, due to
+ * the unrolling of guard expressions. We start with something
+ * along these lines:
+ *
+ * ub = shape( A);  NB.   ish
+ * lb = 0 * ub;
+ *
+ * B = with {
+ *       (lb <=iv=[i]<= ub) {
+ *       imin =    _noteminval( i, lb);
+ *       iminmax = _notemaxval( imin, ub);
+ *       i',   p0 = _non_neg_val_S( iminmax);
+ *       i'',  p1 = _val_lt_val_SxS_( i', ub0);
+ *       iv''' = [ i''];
+ *       tmp = A[iv'''];
+ *       tmp2 = _afterguard_( t, p0, p1);
+ *       } : tmp2;
+ *     } : genarray( shape(A), n );
+ *
+ *
+ * This should be transformed into:
+ *
+ * ub = shape( A);  NB.   ish
+ * ub0 = ub[0];
+ * lb = 0 * ub;
+ * lb0 = lb[0];
+ * lb0, p0 = _non_neg_val_S_( lb0);
+ * ub1, p1 = _val_lt_val_SxS_( ub0, ub0);   NB. PRF_ARG2 validity
+ * B = _afterguard( A, p0, p1);
+ *
+ * Case 3: Like Case 2, but operating on IV, rather than on [i].
+ *    NOT IMPLEMENTED YET.
+ *
+ * Case 4:
+ *
+ *  This is Case 2 when CF has been able to remove the guards,
+ *  we start with:
+ *
+ * ub = shape( A);
+ * lb = 0 * ub;
+ * ub0 = ub[0];
+ * lb0 = lb[0];
+ *
+ * B = with {
+ *       (lb <=iv=[i]<= ub) {
+ *       imin =    _noteminval( i, lb0);
+ *       iminmax = _notemaxval( imin, ub0);
+ *       iv''' = [ iminmax];
+ *       tmp = A[iv'''];
+ *       } : tmp;
+ *     } : genarray( shape(A), n );
+ *
+ * This should be transformed into:
+ *
+ * B = A;
+ *
+ * Case 5: This is Case 4, but operating on IV, rathern than on [i].
+ *    NOT IMPLEMENTED YET.
+ *
+ * Case 6: This is brought about by the redesign of prfunr to handle
+ *         _shape_A_( mat). It previously generated an
+ *         array of  _idx_shape_sel() ops:
+ *
+ *            s0 = idx_shape_sel( 0, M);
+ *            s1 = idx_shape_sel( 1, M);
+ *            s2 = idx_shape_sel( 2, M);
+ *            avisshape = [ s0, s1, s2];
+ *
+ *         This approach led to performance problems because M
+ *         would always be materialized, even if it was no longer
+ *         used. The new prfunr code avoids this, and operates
+ *         on the shape vector only, in the hope that SAA and
+ *         friends will share that shape information:
+ *
+ *            shp = _shape_A_( M);
+ *            s0 = _sel_VxA_( 0, shp);
+ *            s1 = _sel_VxA_( 1, shp);
+ *            s2 = _sel_VxA_( 2, shp);
+ *            avisshape = [ s0, s1, s2];
+ *
+ * Implementation issues:
  * -----------------------
+ *
  * When matching for the pattern A[iv] (in CWLEcode), we need to make sure
  * that "A" has been defined BEFORE this WL-body rather than within it.
  * Otherwise we wrongly transform a WL of the following (pathological :-) kind:
@@ -77,6 +168,7 @@
 struct INFO {
     bool onefundef;
     node *lhs;
+    node *fundef;
     node *rhsavis;
     node *withid;
     bool valid;
@@ -87,6 +179,8 @@ struct INFO {
 /* The left hand side of the N_let, the array we are copying into */
 #define INFO_LHS(n) (n->lhs)
 /* The right hand side of the N_let, or the array we copy from, respectively */
+#define INFO_FUNDEF(n) (n->fundef)
+/* The function currently being traversed. This is here to ease debugging */
 #define INFO_RHSAVIS(n) (n->rhsavis)
 /* This is the selection-vector inside our with-loop */
 #define INFO_WITHID(n) (n->withid)
@@ -108,6 +202,7 @@ MakeInfo ()
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
     INFO_RHSAVIS (result) = NULL;
     INFO_WITHID (result) = NULL;
 
@@ -178,64 +273,236 @@ CWLEdoTemplateTraversal (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *arrayFromShapeSel( node *avisshape)
+ * @fn static node *ShapeFromShape( node *avisshape)
  *
- * @brief: if avisshape is an N_array of the form:
- *         s0 = idx_shape_sel( 0, M);
- *         s1 = idx_shape_sel( 1, M);
- *         s2 = idx_shape_sel( 2, M);
- *         avisshape = [ s0, s1, s2];
+ * @brief:  If this shape originated as an N_array
+ *          formed from shape vector selections, find
+ *          that shape vector.
  *
- *         then, z = M;
+ * Case 1: if avisshape is an N_array of the form:
+ *
+ *            shp = _shape_A_( M);
+ *            v0 = 0;
+ *            s0 = _sel_VxA_( v0, shp);
+ *            v1 = 0;
+ *            s1 = _sel_VxA_( v1, shp);
+ *            v2 = 0;
+ *            s2 = _sel_VxA_( v2, shp);
+ *            avisshape = [ s0, s1, s2];
+ *
+ *         then z is shp;
+ *
+ * @return: If avisshape is such an N_array, the result is shp;
+ *          else avisshape.
+ *
+ *****************************************************************************/
+static node *
+ShapeFromShape (node *avisshape)
+{
+    bool b;
+    pattern *patarray;
+    pattern *pat1;
+    pattern *pat2;
+    node *narray = NULL;
+    constant *con = NULL;
+    constant *c;
+    node *M = NULL;
+    int n;
+    char *nm1;
+    char *nm2;
+
+    DBUG_ENTER ("ShapeFromShape");
+
+    patarray = PMarray (1, PMAgetNode (&narray), 0);
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
+                  PMvar (1, PMAgetNode (&M), 0));
+    pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
+                  PMvar (1, PMAisNode (&M), 0));
+    b = PMmatchFlatSkipExtrema (patarray, avisshape);
+    if (b) {
+        narray = ARRAY_AELEMS (narray);
+        n = 0;
+        c = COmakeConstantFromInt (n);
+        con = COcopyScalar2OneElementVector (c);
+        c = COfreeConstant (c);
+        /* We can safely skip guards here, because the array we
+         * are ostensibly copying from will have similar guards on its
+         * creation.
+         */
+        if (PMmatchFlatSkipGuards (pat1, EXPRS_EXPR (narray))) {
+            con = COfreeConstant (con);
+            while (b && (NULL != narray)) {
+                c = COmakeConstantFromInt (n);
+                con = COcopyScalar2OneElementVector (c);
+                c = COfreeConstant (c);
+                b = b && PMmatchFlatSkipGuards (pat2, EXPRS_EXPR (narray));
+                con = COfreeConstant (con);
+                narray = EXPRS_NEXT (narray);
+                n++;
+            }
+        }
+        con = (NULL != con) ? COfreeConstant (con) : NULL;
+    }
+    PMfree (patarray);
+    PMfree (pat1);
+    PMfree (pat2);
+
+    M = b ? M : avisshape;
+
+    nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
+            ? AVIS_NAME (ID_AVIS (avisshape))
+            : "( N_array)";
+    nm2
+      = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
+    if (b) {
+        DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
+    } else {
+        DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nm1));
+    }
+
+    DBUG_RETURN (M);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *arrayFromShape( node *avisshape)
+ *
+ * @brief: Find the array that was the argument to the
+ *         expressions that built shape vector avisshape.
+ *
+ * Case 1: if avisshape is an N_array of the form:
+ *
+ *            s0 = idx_shape_sel( 0, M);
+ *            s1 = idx_shape_sel( 1, M);
+ *            s2 = idx_shape_sel( 2, M);
+ *            avisshape = [ s0, s1, s2];
+ *
+ *         then z is M;
+ *
+ * Case 2: if avisshape is an N_array of the form:
+ *
+ *            shp = _shape_A_( M);
+ *            v0 = 0;
+ *            s0 = _sel_VxA_( v0, shp);
+ *            v1 = 0;
+ *            s1 = _sel_VxA_( v1, shp);
+ *            v2 = 0;
+ *            s2 = _sel_VxA_( v2, shp);
+ *            avisshape = [ s0, s1, s2];
+ *
+ *         then z is M;
  *
  * @return: If avisshape is such an N_array, the result is M;
  *          else NULL.
  *
  *****************************************************************************/
 static node *
-arrayFromShapeSel (node *avisshape)
+arrayFromShape (node *avisshape)
 {
     bool b = TRUE;
     pattern *patarray;
-    pattern *patshapesel1;
-    pattern *patshapesel2;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
     node *narray = NULL;
     constant *con = NULL;
+    constant *c;
     node *M = NULL;
-    int n = 0;
+    node *shp = NULL;
+    int n;
+    char *nm1;
+    char *nm2;
 
-    DBUG_ENTER ("arrayFromShapeSel");
+    DBUG_ENTER ("arrayFromShape");
 
+    /* Case 1*/
     patarray = PMarray (1, PMAgetNode (&narray), 0);
-    patshapesel1 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
-                          PMvar (1, PMAgetNode (&M), 0));
-    patshapesel2 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
-                          PMvar (1, PMAisNode (&M), 0));
+    pat1 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
+                  PMvar (1, PMAgetNode (&M), 0));
+    pat2 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
+                  PMvar (1, PMAisNode (&M), 0));
     if (PMmatchFlatSkipExtrema (patarray, avisshape)) {
         narray = ARRAY_AELEMS (narray);
-        con = COmakeConstantFromInt (0);
-        if (PMmatchFlatSkipExtrema (patshapesel1, EXPRS_EXPR (narray))) {
+        n = 0;
+        con = COmakeConstantFromInt (n);
+        if (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray))) {
             COfreeConstant (con);
             while (b && (NULL != narray)) {
                 con = COmakeConstantFromInt (n);
                 n++;
-                b = b && PMmatchFlatSkipExtrema (patshapesel2, EXPRS_EXPR (narray));
+                b = b && PMmatchFlatSkipExtrema (pat2, EXPRS_EXPR (narray));
                 COfreeConstant (con);
                 narray = EXPRS_NEXT (narray);
             }
             M = b ? M : NULL;
         }
     }
-    PMfree (patarray);
-    PMfree (patshapesel1);
-    PMfree (patshapesel2);
+    PMfree (pat1);
+    PMfree (pat2);
 
-    if (b && (NULL != M)) {
-        DBUG_PRINT ("CWLE", ("AVIS_SHAPE %s is shape(%s)",
-                             AVIS_NAME (ID_AVIS (avisshape)), AVIS_NAME (ID_AVIS (M))));
+    nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
+            ? AVIS_NAME (ID_AVIS (avisshape))
+            : "( N_array)";
+    nm2
+      = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
+
+    if (b) {
+        DBUG_PRINT ("CWLE", ("Case 1: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
     } else {
-        DBUG_PRINT ("CWLE", ("AVIS_SHAPE %s not derived from _idx_shape_sel_()",
-                             AVIS_NAME (ID_AVIS (avisshape))));
+        DBUG_PRINT ("CWLE",
+                    ("Case 1: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1));
+    }
+
+    if (NULL == M) { /* Case 2 */
+        narray = NULL;
+        con = NULL;
+        /* The following patterns match the above, except for PMAisPrf */
+        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
+                      PMvar (1, PMAgetNode (&M), 0));
+        pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
+                      PMvar (1, PMAisNode (&M), 0));
+        pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&shp), 0));
+        if (PMmatchFlatSkipExtrema (patarray, avisshape)) {
+            narray = ARRAY_AELEMS (narray);
+            n = 0;
+            c = COmakeConstantFromInt (n);
+            con = COcopyScalar2OneElementVector (c);
+            c = COfreeConstant (c);
+            if (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray))) {
+                con = COfreeConstant (con);
+                while (b && (NULL != narray)) {
+                    c = COmakeConstantFromInt (n);
+                    con = COcopyScalar2OneElementVector (c);
+                    c = COfreeConstant (c);
+                    b = b && PMmatchFlatSkipExtrema (pat2, EXPRS_EXPR (narray));
+                    con = COfreeConstant (con);
+                    narray = EXPRS_NEXT (narray);
+                    n++;
+                }
+                if (b && PMmatchFlatSkipExtrema (pat3, M)) {
+                    M = shp;
+                }
+            }
+        }
+        con = (NULL != con) ? COfreeConstant (con) : NULL;
+        PMfree (patarray);
+        PMfree (pat1);
+        PMfree (pat2);
+        PMfree (pat3);
+
+        nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
+                ? AVIS_NAME (ID_AVIS (avisshape))
+                : "( N_array)";
+        nm2 = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M))
+                                                       : "( N_array)";
+
+        if (b) {
+            DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
+        } else {
+            DBUG_PRINT ("CWLE",
+                        ("Case 2: AVIS_SHAPE %s not derived from _idx_shape_sel_()",
+                         nm1));
+        }
     }
 
     DBUG_RETURN (M);
@@ -247,8 +514,11 @@ arrayFromShapeSel (node *avisshape)
  *
  * @brief Predicate for matching two N_avis AVIS_SHAPE nodes.
  *
- *        We start by doing a simple tree compare. If that fails,
- *        we do a more sophisticated comparison, to handle shapes
+ * Case 1:
+ *       A tree compare of the two nodes.
+ *
+ * Case 2:
+ *        A more sophisticated comparison, to handle shapes
  *        that are represented as N_arrays, perhaps as created
  *        by WLBSC or IVESPLIT.
  *
@@ -259,9 +529,15 @@ arrayFromShapeSel (node *avisshape)
  *         s2 = idx_shape_sel( 2, M);
  *         arg1 = [ s0, s1, s2];
  *
- *       and have arg2 (or worse, as an N_arg, where we know nothing):
+ * Case 3: We have arg2 (or worse, as an N_arg, where we know nothing):
  *
  *         arg2 = shape_( M);
+ *
+ * Case 4: arg1 comes into a function as a parameter, with:
+ *
+ *         shp1 = AVIS_SHAPE( arg1);
+ *
+ *       and within the function, another array is built with shp1.
  *
  *       For now, we see if one ( e.g., arg1) of the AVIS_SHAPE nodes
  *       is an N_array of the above form, and if so, if M
@@ -297,14 +573,23 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
         /*  Case 3 :Primogenitor of one shape matches other, or
          *  both primogenitors match */
-        M1 = arrayFromShapeSel (AVIS_SHAPE (arg1));
-        M2 = arrayFromShapeSel (AVIS_SHAPE (arg2));
+        M1 = arrayFromShape (AVIS_SHAPE (arg1));
+        M2 = arrayFromShape (AVIS_SHAPE (arg2));
 
         z = z || ((NULL != M1) && (ID_AVIS (M1) == arg2))
             || ((NULL != M2) && (ID_AVIS (M2) == arg1)) || ((NULL != M1) && (M1 == M2));
+
+        if (!z) { /* This would be simpler if AVIS_SHAPE were always an N_id */
+            M1 = ShapeFromShape (AVIS_SHAPE (arg1));
+            M2 = ShapeFromShape (AVIS_SHAPE (arg2));
+            z = ((NULL != M1) && (NULL != M2)
+                 && ((M1 == M2)
+                     || ((N_id == NODE_TYPE (M1)) && (N_id == NODE_TYPE (M2))
+                         && (ID_AVIS (M1) == ID_AVIS (M2)))));
+        }
     }
 
-#ifdef CRUD
+#ifdef FIXME
     /* I think the following cases may only be relevant for non-SAA
      * environments.
      */
@@ -319,7 +604,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
             /* Case 7: modarray of modarray */
         }
-#endif // CRUD
+#endif // FIXME
 
         if (z) {
             DBUG_PRINT ("CWLE", ("shapes match for %s and %s", AVIS_NAME (arg1),
@@ -330,6 +615,141 @@ isAvisShapesMatch (node *arg1, node *arg2)
         }
 
         DBUG_RETURN (z);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn static node *ivMatchCase1( node *arg_node, info *arg_info,
+     *                                node *cexpr)
+     *
+     * @brief: Attempt to match IV in _sel_VxA_( IV, target)
+     *         directly against WITHID_VEC withid_avis.
+     *
+     * @params: cexprs is the WL result element. We determine if it
+     *          was derived from the above _sel_VxA_ operation.
+     *
+     * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+     *          if found, else NULL.
+     *
+     *****************************************************************************/
+    static node *ivMatchCase1 (node * arg_node, info * arg_info, node * cexpr)
+    {
+        node *target = NULL;
+        node *withid_avis;
+        pattern *pat1;
+
+        DBUG_ENTER ("ivMatchCase1");
+
+        withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
+        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
+                      PMvar (1, PMAgetAvis (&target), 0));
+
+        if (PMmatchFlat (pat1, cexpr)) {
+            DBUG_PRINT ("CWLE", ("Case 1: body matches _sel_VxA_( withid, &target)"));
+        }
+        pat1 = PMfree (pat1);
+
+        DBUG_RETURN (target);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn static node *ivMatchCase4( node *arg_node, info *arg_info,
+     *                                node *cexpr)
+     *
+     * @brief: Attempt to match [i,j] in _sel_VxA_( [i,j], target)
+     *         against WL_IDS, [i,j]
+     *
+     *         We have to be careful of stuff like:
+     *
+     *              _sel_VxA_( [i], target)
+     *
+     *         in which the full index vector is not used,
+     *         and its converse:
+     *
+     *              _sel_VxA_( [i,notme, k], target)
+     *
+     *         In the case where we have guards present on the index
+     *         vectors, we can safely ignore them, because the
+     *         WL that we are copying will have identical guards
+     *         on its WITH_ID index vector, which are guaranteed
+     *         to be identical to ours. Hence, we ignore both
+     *         guards and extrema on this search. As an example from
+     *         histlp.sac, we have this pattern, sort of:
+     *
+     *           z = with { ...
+     *             ( [0] <= iv < [lim]) {
+     *              iv'  = _noteminval( iv, [0]);
+     *              iv'' = _notemaxval( iv', [lim]);
+     *              iv''', p0 = _val_lt_val_VxV_( iv'', [lim]);
+     *              el = _sel_VxA_( iv''', producerWL);
+     *              el' = _afterguard_( el, p0);
+     *             } : el';
+     *
+     *        We also have to handle the scalar i equivalent of this,
+     *        which is slightly more complex:
+     *
+     *           z = with { ...
+     *             ( [0] <= iv=[i] < [lim]) {
+     *              i'  = _noteminval( i, 0);
+     *              i'' = _notemaxval( i', lim);
+     *              i''', p0 = _val_lt_val_SxS_( i'', lim);
+     *              iv' = [ i'''];
+     *              el = _sel_VxA_( iv', producerWL);
+     *              el' = _afterguard_( el, p0);
+     *             } : el';
+     *
+     *
+     * @params: cexprs is the WL result element. We determine if it
+     *          was derived from the above _sel_VxA_ operation.
+     *
+     * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+     *          if found, else NULL.
+     *
+     *****************************************************************************/
+    static node *ivMatchCase4 (node * arg_node, info * arg_info, node * cexpr)
+    {
+        node *target = NULL;
+        node *withid_avis;
+        node *withids;
+        node *narray;
+        node *narrayels;
+        pattern *pat2;
+        pattern *pat3;
+        char *lhs;
+        bool z = TRUE;
+
+        DBUG_ENTER ("ivMatchCase4");
+
+        pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (1, PMAgetNode (&narray), 0),
+                      PMvar (1, PMAgetAvis (&target), 0));
+        pat3 = PMparam (1, PMAhasAvis (&withid_avis));
+
+        withids = WITHID_IDS (INFO_WITHID (arg_info));
+
+        lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))); /* ddd aid */
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr)) {
+            /* Match all elements. If we exhaust elements on either side, no match */
+            narrayels = ARRAY_AELEMS (narray);
+            while (z && (NULL != withids) && (NULL != narrayels)) {
+                withid_avis = IDS_AVIS (withids);
+                z = PMmatchFlatSkipExtremaAndGuards (pat3, EXPRS_EXPR (narrayels));
+                withids = IDS_NEXT (withids);
+                narrayels = EXPRS_NEXT (narrayels);
+            }
+            /* If we didn't exhaust both sides, no match */
+            z = z && (NULL == withids) && (NULL == narrayels);
+
+            if (z) {
+                DBUG_PRINT ("CWLE", ("Case 4: body matches _sel_VxA_( withid, &target)"));
+            } else {
+                target = NULL;
+            }
+        }
+        pat2 = PMfree (pat2);
+        pat3 = PMfree (pat3);
+
+        DBUG_RETURN (target);
     }
 
     /** <!--********************************************************************-->
@@ -357,10 +777,13 @@ isAvisShapesMatch (node *arg1, node *arg2)
     node *CWLEfundef (node * arg_node, info * arg_info)
     {
         bool old_onefundef;
+        node *oldfundef;
         dfmask_base_t *dfmask_base = NULL;
 
         DBUG_ENTER ("CWLEfundef");
 
+        oldfundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
         if (NULL != FUNDEF_BODY (arg_node)) {
             DBUG_PRINT ("CWLE", ("traversing body of (%s) %s",
                                  (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
@@ -370,10 +793,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
                                           BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
             INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
 
-            if (NULL != FUNDEF_ARGS (arg_node)) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            }
-
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
             INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
@@ -387,6 +807,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
         INFO_ONEFUNDEF (arg_info) = FALSE;
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
+        INFO_FUNDEF (arg_info) = oldfundef;
 
         if (!INFO_ONEFUNDEF (arg_info)) {
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -429,13 +850,14 @@ isAvisShapesMatch (node *arg1, node *arg2)
     node *CWLElet (node * arg_node, info * arg_info)
     {
         DBUG_ENTER ("CWLElet");
+#ifdef VERBOSE
         DBUG_PRINT ("CWLE", ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+#endif // VERBOSE
 
         INFO_VALID (arg_info) = TRUE;
 
         if (NULL != LET_IDS (arg_node)) {
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-
             INFO_LHS (arg_info) = LET_IDS (arg_node);
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         }
@@ -446,6 +868,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
          */
 
         INFO_VALID (arg_info) = FALSE;
+        INFO_LHS (arg_info) = NULL;
 
         DBUG_RETURN (arg_node);
     }
@@ -462,7 +885,6 @@ isAvisShapesMatch (node *arg1, node *arg2)
         DBUG_ENTER ("CWLEassign");
 
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
         DBUG_RETURN (arg_node);
@@ -505,6 +927,8 @@ isAvisShapesMatch (node *arg1, node *arg2)
     {
         DBUG_ENTER ("CWLEwith");
 
+        DBUG_PRINT ("CWLE",
+                    ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -558,36 +982,28 @@ isAvisShapesMatch (node *arg1, node *arg2)
      *      these.
      *
      *****************************************************************************/
-
     node *CWLEcode (node * arg_node, info * arg_info)
     {
         node *cexpr;
-        node *withid_avis;
-        pattern *pat;
-        node *target = NULL;
+        node *target;
+        char *lhs;
         info *subinfo;
 
         DBUG_ENTER ("CWLEcode");
 
         if (INFO_VALID (arg_info)) {
+
             DBUG_PRINT ("CWLE", ("prev nodes and wl signal ok"));
-
             cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
-            withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
-
-            pat
-              = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
-                       PMvar (1, PMAgetAvis (&target), 0));
-
-            if (PMmatchFlatSkipExtrema (pat, cexpr)) {
-                DBUG_PRINT ("CWLE", ("body matches _sel_VxA_( withid, &target)"));
-            } else {
-                DBUG_PRINT ("CWLE", ("body does not match _sel_VxA_( withid, &target)"));
+            target = ivMatchCase1 (arg_node, arg_info, cexpr);
+            target = (NULL != target) ? target : ivMatchCase4 (arg_node, arg_info, cexpr);
+            lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
+            if (NULL == target) {
+                DBUG_PRINT ("CWLE",
+                            ("body of %s does not match _sel_VxA_( withid, &target)",
+                             lhs));
                 INFO_VALID (arg_info) = FALSE;
             }
-
-            pat = PMfree (pat);
-
         } else {
             DBUG_PRINT ("CWLE", ("previous nodes signal NOT ok"));
         }

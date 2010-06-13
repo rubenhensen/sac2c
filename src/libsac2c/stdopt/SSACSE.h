@@ -21,7 +21,7 @@
 
 #include "types.h"
 
-extern node *CSEdoCommonSubexpressionElimination (node *fundef);
+extern node *CSEdoCommonSubexpressionEliminationOneFundef (node *fundef);
 extern node *CSEdoCommonSubexpressionEliminationModule (node *module);
 
 extern node *CSEfundef (node *arg_node, info *arg_info);

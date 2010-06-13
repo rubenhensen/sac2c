@@ -77,7 +77,7 @@
  *    all WL generators have the same names for their index
  *    variables and IDXS variables (Do these things have a proper name?).
  *
- *    However, in order to support AVIS_MINVAL and AVIS_MAXVAL, we
+ *    However, in order to support AVIS_MIN and AVIS_MAX, we
  *    must have distinct names for the index variables in each
  *    WL generator. Hence, we have a conflict between distinct vs.
  *    common names. The cleaner solution, adopted here, is to
@@ -88,8 +88,6 @@
  *    in the AST, or else rename the AST fields back into non-SSA
  *    form. As of this writing, the approach taken remains
  *    unresolved.
- *
- *
  *
  * implementation:
  *    In performing a top-down traversal the "C-style" controlflow
@@ -1430,9 +1428,14 @@ SSATids (node *arg_node, info *arg_info)
         if (AVIS_DIM (avis) != NULL) {
             AVIS_DIM (new_avis) = DUPdoDupNode (AVIS_DIM (avis));
         }
-
         if (AVIS_SHAPE (avis) != NULL) {
             AVIS_SHAPE (new_avis) = DUPdoDupNode (AVIS_SHAPE (avis));
+        }
+        if (AVIS_MIN (avis) != NULL) {
+            AVIS_MIN (new_avis) = DUPdoDupNode (AVIS_MIN (avis));
+        }
+        if (AVIS_MAX (avis) != NULL) {
+            AVIS_MAX (new_avis) = DUPdoDupNode (AVIS_MAX (avis));
         }
 
         if (global.compiler_phase <= PH_tc) {

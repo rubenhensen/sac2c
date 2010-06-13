@@ -6606,7 +6606,7 @@ COMPprfValLtShape (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
 
     ret_node
-      = TCmakeAssignIcm4 ("ND_PRF_VAL_LT_SHAPE", DUPdupIdsIdNt (let_ids),
+      = TCmakeAssignIcm4 ("ND_PRF_VAL_LT_SHAPE_VxA", DUPdupIdsIdNt (let_ids),
                           DUPdupIdNt (PRF_ARG1 (arg_node)),
                           DUPdupIdNt (PRF_ARG2 (arg_node)),
                           TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node)))),
@@ -6617,20 +6617,64 @@ COMPprfValLtShape (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *COMPprfValLeVal( node *arg_node, info *arg_info)
+ * @fn node *COMPprfValLtVal_SxS( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-COMPprfValLeVal (node *arg_node, info *arg_info)
+COMPprfValLtVal_SxS (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfValLeVal");
+    DBUG_ENTER ("COMPprfValLtVal_SxS");
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LE_VAL", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LT_VAL_SxS", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfValLeVal_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfValLeVal_SxS (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfValLeVal_SxS");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LE_VAL_SxS", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfValLeVal_VxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfValLeVal_VxV (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfValLeVal_VxV");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_VAL_LE_VAL_VxV", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
 

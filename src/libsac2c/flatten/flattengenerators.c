@@ -25,6 +25,7 @@
 #include "shape.h"
 #include "phase.h"
 #include "flatten.h"
+#include "algebraic_wlfi.h"
 
 /*
  * OPEN PROBLEMS:
@@ -37,11 +38,8 @@
  */
 
 /*
- * This phase flattens only WL generators.
- * It has to run in SAA mode.
- * Likely,  fixing flatten.c to do the job would
- * be a better approach, but I don't have time to
- * figure out how to make it handle types properly.
+ * This phase flattens WL generators and N_prf nodes.
+ * Sorry about the name, folks...
  *
  */
 
@@ -50,16 +48,22 @@
  */
 struct INFO {
     node *vardecs;
-    node *preassigns;
+    node *preassignsprf;
+    node *preassignswith;
+    node *lhs;
     bool assignisnwith;
+    bool exprsisinprf;
 };
 
 /**
  * INFO macros
  */
 #define INFO_VARDECS(n) (n->vardecs)
-#define INFO_PREASSIGNS(n) (n->preassigns)
+#define INFO_PREASSIGNSWITH(n) (n->preassignswith)
+#define INFO_PREASSIGNSPRF(n) (n->preassignsprf)
+#define INFO_LHS(n) (n->lhs)
 #define INFO_ASSIGNISNWITH(n) (n->assignisnwith)
+#define INFO_EXPRSISINPRF(n) (n->exprsisinprf)
 
 /**
  * INFO functions
@@ -74,8 +78,11 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_VARDECS (result) = NULL;
-    INFO_PREASSIGNS (result) = NULL;
+    INFO_PREASSIGNSWITH (result) = NULL;
+    INFO_PREASSIGNSPRF (result) = NULL;
+    INFO_LHS (result) = NULL;
     INFO_ASSIGNISNWITH (result) = FALSE;
+    INFO_EXPRSISINPRF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -115,7 +122,7 @@ FreeInfo (info *info)
  *          The only rationale for this change is to ensure that
  *          WL bounds are named. This allows us to associate an
  *          N_avis node with each bound, which will be used to
- *          store AVIS_MINVAL and AVIS_MAXVAL for the bound.
+ *          store AVIS_MIN and AVIS_MAX for the bound.
  *          These fields, in turn, will be used by the constant
  *          folder to remove guards and do other swell optimizations.
  *
@@ -182,12 +189,8 @@ FLATGflattenBound (node *arg_node, info *arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
                               NULL);
             AVIS_SSAASSIGN (avis) = nas;
-            INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), nas);
-            if (isSAAMode ()) {
-                AVIS_DIM (avis) = TBmakeNum (1);
-                AVIS_SHAPE (avis)
-                  = TCmakeIntVector (TBmakeExprs (TBmakeNum (xrho), NULL));
-            }
+            INFO_PREASSIGNSWITH (arg_info)
+              = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), nas);
 
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
@@ -282,9 +285,8 @@ FLATGfundef (node *arg_node, info *arg_info)
      * Furthermore, imported code contains IDS nodes instead of SPIDS nodes!
      * This may lead to problems when this traversal is run.
      */
-    DBUG_PRINT ("FLATG", ("Looking at function %s:", FUNDEF_NAME (arg_node)));
-    if ((FUNDEF_BODY (arg_node) != NULL) && !FUNDEF_WASIMPORTED (arg_node)
-        && FUNDEF_ISLOCAL (arg_node)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_WASIMPORTED (arg_node))
+        && (!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_ISLOCAL (arg_node))) {
         INFO_VARDECS (arg_info) = NULL;
         DBUG_PRINT ("FLATG", ("flattening function %s:", FUNDEF_NAME (arg_node)));
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
@@ -349,13 +351,8 @@ FLATGpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FLATGpart");
 
-    if (PART_CODE (arg_node) != NULL) {
-        PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-    }
-
-    if (NULL != PART_NEXT (arg_node)) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     /* We have to traverse the generators last */
     PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
@@ -368,7 +365,7 @@ FLATGpart (node *arg_node, info *arg_info)
  * @fn node FLATGwith( node *arg_node, info *arg_info)
  *
  * @brief performs a top-down traversal.
- *        We need a fresh PREASSIGN chain, because we have to collect
+ *        We need a fresh PREASSIGNWITH chain, because we have to collect
  *        the preassigns for all partitions, then pass them back
  *        to our N_assign node.
  *
@@ -388,8 +385,8 @@ FLATGwith (node *arg_node, info *arg_info)
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_info);
 
     INFO_VARDECS (arg_info) = INFO_VARDECS (new_info);
-    INFO_PREASSIGNS (arg_info)
-      = TCappendAssign (INFO_PREASSIGNS (new_info), INFO_PREASSIGNS (arg_info));
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (new_info), INFO_PREASSIGNSWITH (arg_info));
     new_info = FreeInfo (new_info);
     DBUG_RETURN (arg_node);
 }
@@ -419,16 +416,19 @@ FLATGassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if ((INFO_ASSIGNISNWITH (arg_info)) && (NULL != INFO_PREASSIGNS (arg_info))) {
-        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
-        INFO_PREASSIGNS (arg_info) = NULL;
+    if (INFO_ASSIGNISNWITH (arg_info) && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
+        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
+        INFO_PREASSIGNSWITH (arg_info) = NULL;
         INFO_ASSIGNISNWITH (arg_info) = FALSE;
     }
 
-    /* Traverse remaining assigns in this block. */
-    if (NULL != ASSIGN_NEXT (arg_node)) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    if (NULL != INFO_PREASSIGNSPRF (arg_info)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNSPRF (arg_info), arg_node);
+        INFO_PREASSIGNSPRF (arg_info) = NULL;
     }
+
+    /* Traverse remaining assigns in this block. */
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -539,6 +539,115 @@ FLATGwhile (node *arg_node, info *arg_info)
 
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGlet(node *arg_node, info *arg_info)
+ *
+ * description: Traverse N_let
+ *
+ ******************************************************************************/
+
+node *
+FLATGlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    DBUG_PRINT ("FLATG", ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_LHS (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGprf(node *arg_node, info *arg_info)
+ *
+ * description: Traverse primitive functions, flattening all
+ *              constants into N_id nodes.
+ *
+ *              Some primitives do not like to have their arguments
+ *              flattened. Those are ignored here.
+ *
+ *              idx_shape_sel() is anomalous, in that we should flatten
+ *              PRF_ARG2, but not PRF_ARG1. If that proves to be a problem,
+ *              it will have to be fixed here. Or else, we could housebreak
+ *              the function itself.
+ *
+ ******************************************************************************/
+
+node *
+FLATGprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FLATGprf");
+
+    switch (PRF_PRF (arg_node)) {
+    default:
+        INFO_EXPRSISINPRF (arg_info) = TRUE;
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        INFO_EXPRSISINPRF (arg_info) = FALSE;
+        break;
+    case F_dispatch_error:
+    case F_idx_shape_sel:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATGexprs(node *arg_node, info *arg_info)
+ *
+ * description: Flatten all non-N_id PRFARG elements.
+ *              We skip N_exprs nodes if they are not
+ *              N_prf arguments, e.g, something hanging off AVIS_SHAPE.
+ *
+ ******************************************************************************/
+
+node *
+FLATGexprs (node *arg_node, info *arg_info)
+{
+    node *expr;
+    bool doflatten;
+
+    DBUG_ENTER ("FLATGexprs");
+
+    if (INFO_EXPRSISINPRF (arg_info)) {
+        expr = EXPRS_EXPR (arg_node);
+        doflatten
+          = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
+             || (NODE_TYPE (expr) == N_numint) || (NODE_TYPE (expr) == N_numlong)
+             || (NODE_TYPE (expr) == N_numlonglong) || (NODE_TYPE (expr) == N_numubyte)
+             || (NODE_TYPE (expr) == N_numushort) || (NODE_TYPE (expr) == N_numuint)
+             || (NODE_TYPE (expr) == N_numulong) || (NODE_TYPE (expr) == N_numulonglong)
+             || (NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+             || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+             || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+             || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
+             || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
+             || (NODE_TYPE (expr) == N_cast));
+
+        if (doflatten) {
+            DBUG_PRINT ("FLATG", ("Flattening N_prf for %s",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+            expr = AWLFIflattenExpression (expr, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNSPRF (arg_info),
+                                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
+            expr = TBmakeId (expr);
+            EXPRS_EXPR (arg_node) = expr;
+        }
+
+        EXPRS_NEXT (arg_node) = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

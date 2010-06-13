@@ -80,6 +80,7 @@
 #include "makedimexpr.h"
 #include "makeshapeexpr.h"
 #include "print.h"
+#include "check.h"
 
 /** <!--********************************************************************-->
  *
@@ -223,7 +224,7 @@ ISAAdoInsertShapeVariablesOneFundef (node *fundef)
  *****************************************************************************/
 
 /*
- * some little helper functions, useful for creating new avis' of several
+ * some little helper functions, useful for creating new avis noes of several
  * shapes and sizes.
  */
 
@@ -1126,8 +1127,9 @@ ISAAfundef (node *arg_node, info *arg_info)
 
     if (INFO_TRAVSCOPE (arg_info) == TS_module) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
+
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1378,6 +1380,7 @@ ISAAids (node *arg_node, info *arg_info)
     avis = IDS_AVIS (arg_node);
 
     if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
+        && (NODE_TYPE (INFO_RHS (arg_info)) != N_str)
         && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
               && ((PRF_PRF (INFO_RHS (arg_info)) == F_saabind)
                   || (PRF_PRF (INFO_RHS (arg_info)) == F_type_conv))))) {

@@ -16,6 +16,7 @@
 #include "compare_tree.h"
 #include "globals.h"
 #include "pattern_match.h"
+#include "algebraic_wlfi.h"
 
 /**
  * forward declarations
@@ -31,6 +32,7 @@ struct INFO {
     node *lhs;
     node *vardecs;
     node *fundef;
+    node *preassigns;
 };
 
 /**
@@ -38,6 +40,9 @@ struct INFO {
  */
 #define INFO_IVINFO(n) ((n)->ivinfo)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 
 /**
  * INFO functions
@@ -53,6 +58,9 @@ MakeInfo ()
 
     INFO_IVINFO (result) = NULL;
     INFO_LHS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -117,6 +125,33 @@ struct IVINFO {
 /**
  * WITHIV functions
  */
+
+/** <!-- ****************************************************************** -->
+ * @fn node* Nids2Nid( node *withids)
+ *
+ * @brief Convert a with_ids chain into a chain of N_id nodes.
+ *
+ * @param The N_ids chain.
+ *
+ * @return The N_id chain.
+ *
+ ******************************************************************************/
+static node *
+Nids2Nid (node *withids)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ("Nids2Nid");
+
+    if (NULL != withids) {
+        z = TBmakeExprs (TBmakeId (IDS_AVIS (withids)), (NULL != IDS_NEXT (withids))
+                                                          ? Nids2Nid (IDS_NEXT (withids))
+                                                          : NULL);
+    }
+
+    DBUG_RETURN (z);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn offsetinfo *GenOffsetInfo( node *lhs, node *withops)
  *
@@ -469,11 +504,11 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
         DBUG_PRINT ("IVERAS", ("replacing vect2offset by wl-idxs2offset"));
 
         scalars = FindIVScalars (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
-
+        scalars = Nids2Nid (scalars);
         if (scalars != NULL) {
             offset
               = TBmakePrf (F_idxs2offset, TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                       TCids2Exprs (scalars)));
+                                                       DUPdoDupTree (scalars)));
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = offset;
         }
@@ -488,6 +523,55 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *FlattenEachExprsNode( node *arg_node, info *arg_info)
+ *
+ * @brief Flattens N_exprs nodes whose contents are, e.g.,
+ *           z = [ 1, 2, 3]
+ *        to be:
+ *           t1 = 1;
+ *           t2 = 2;
+ *           t3 = 3;
+ *           z = [ t1, t2, t3];
+ *
+ *        This is required so that later phases, such as the TC,
+ *        are not offended by the presence of non-flattened N_prf
+ *        arguments.
+ *
+ *        Eventually, the post-optimization CP traversal will
+ *        reunflatten these nodes.
+ *
+ * @param arg_node an N_exprs chain
+ * @param arg_info  info structure
+ *
+ * @return The flattened version of the chain.
+ *
+ ******************************************************************************/
+static node *
+FlattenEachExprsNode (node *arg_node, info *arg_info)
+{
+    node *z;
+    node *newz;
+    node *exprs;
+    ntype *typ;
+
+    DBUG_ENTER ("FlattenEachExprsNode");
+
+    z = NULL;
+
+    exprs = arg_node;
+    while (NULL != exprs) {
+        typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        newz = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (exprs)),
+                                       &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info), typ);
+        z = TCappendExprs (z, TBmakeExprs (TBmakeId (newz), NULL));
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (z);
 }
 
 /** <!-- ****************************************************************** -->
@@ -531,14 +615,12 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
                 && (TCcountExprs (ARRAY_AELEMS (shape)) == 1)))) {
         /* trivial case: the index is the offset :-) */
         DBUG_PRINT ("IVERAS", ("replacing by trivial offset (1d case)"));
-
         result = DUPdoDupTree (EXPRS_EXPR (idxs));
     } else {
         DBUG_PRINT ("IVERAS", ("replacing by idxs2offset"));
-
-        result
-          = TBmakePrf (F_idxs2offset, TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                   DUPdoDupTree (idxs)));
+        idxs = FlattenEachExprsNode (idxs, arg_info);
+        result = TBmakePrf (F_idxs2offset,
+                            TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)), idxs));
     }
 
     arg_node = FREEdoFreeNode (arg_node);
@@ -549,6 +631,46 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
 /**
  * traversal functions
  */
+
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASassign( node *arg_node, info *arg_info)
+ *
+ * @param N_assign node and info node.
+ *
+ * @return Updated N_assign node. Side effect is to handle
+ *         any preassigns created by flattening N_array elements.
+ *
+ ******************************************************************************/
+node *
+IVERASassign (node *arg_node, info *arg_info)
+{
+    node *oldpreassigns;
+
+    DBUG_ENTER ("IVERASassign");
+
+    oldpreassigns = INFO_PREASSIGNS (arg_info);
+    INFO_PREASSIGNS (arg_info) = NULL;
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (NULL != INFO_PREASSIGNS (arg_info)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    INFO_PREASSIGNS (arg_info) = oldpreassigns;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASlet( node *arg_node, info *arg_info)
+ *
+ * @param N_let node and info node.
+ *
+ * @return
+ *
+ ******************************************************************************/
 node *
 IVERASlet (node *arg_node, info *arg_info)
 {
@@ -592,10 +714,7 @@ IVERASpart (node *arg_node, info *arg_info)
     }
 
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-
-    if (NULL != PART_NEXT (arg_node)) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -656,6 +775,14 @@ IVERAScode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASprf( node *arg_node, info *arg_info)
+ *
+ * @param N_prf node and info node.
+ *
+ * @return updated arg_node
+ *
+ ******************************************************************************/
 node *
 IVERASprf (node *arg_node, info *arg_info)
 {
@@ -698,6 +825,41 @@ IVERASprf (node *arg_node, info *arg_info)
             }
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief node *IVERASfundef( node *arg_node, info *arg_info)
+ *
+ * @param N_fundef node and info node.
+ *
+ * @return updated arg_node
+ *
+ ******************************************************************************/
+node *
+IVERASfundef (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("IVERASfundef");
+
+    DBUG_PRINT ("IVERAS", ("IVERAS in %s %s begins",
+                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                           FUNDEF_NAME (arg_node)));
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    /* If new vardecs were made, append them to the current set */
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+          = TCappendVardec (INFO_VARDECS (arg_info),
+                            BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+    DBUG_PRINT ("IVERAS", ("IVERAS in %s %s ends",
+                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                           FUNDEF_NAME (arg_node)));
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

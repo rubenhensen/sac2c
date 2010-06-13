@@ -14,6 +14,9 @@
  *
  *****************************************************************************/
 extern node *IVEXPdoIndexVectorExtremaPropOneFunction (node *arg_node);
+void IVEXPsetExtremumIfNotNull (node **snk, node *src);
+void IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup);
+void IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup);
 
 extern node *IVEXPmodule (node *arg_node, info *arg_info);
 extern node *IVEXPfundef (node *arg_node, info *arg_info);

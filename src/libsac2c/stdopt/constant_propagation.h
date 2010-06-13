@@ -21,6 +21,7 @@ extern node *CPassign (node *arg_node, info *arg_info);
 extern node *CPprf (node *arg_node, info *arg_info);
 extern node *CPid (node *arg_node, info *arg_info);
 extern node *CParray (node *arg_node, info *arg_info);
+extern node *CPgenarray (node *arg_node, info *arg_info);
 extern node *CPavis (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CONSTANT_PROPAGATION_H_  */

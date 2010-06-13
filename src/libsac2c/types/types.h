@@ -756,7 +756,8 @@ typedef enum {
     PM_flat,
     PM_flatSkipExtrema,
     PM_flatSkipGuards,
-    PM_flatWith
+    PM_flatWith,
+    PM_flatSkipExtremaAndGuards
 } pm_mode_t;
 
 /*

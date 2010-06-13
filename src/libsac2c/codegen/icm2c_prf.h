@@ -99,8 +99,17 @@ extern void ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, in
 extern void ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim,
                                          char *from2_NT, int from2_sdim);
 
-extern void ICMCompileND_PRF_VAL_LT_SHAPE (char *to_NT, char *from_NT, char *from2_NT,
-                                           int from2_sdim);
+extern void ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
+                                               int from2_sdim);
+
+extern void ICMCompileND_PRF_VAL_LT_VAL_SxS (char *to_NT, char *from_NT, char *from2_NT,
+                                             int from2_sdim);
+
+extern void ICMCompileND_PRF_VAL_LE_VAL_SxS (char *to_NT, char *from_NT, char *from2_NT,
+                                             int from2_sdim);
+
+extern void ICMCompileND_PRF_VAL_LT_VAL_VxV (char *to_NT, char *from_NT, char *from2_NT,
+                                             int from2_sdim);
 
 extern void ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT,
                                                       char *from2_NT, int from2_sdim);

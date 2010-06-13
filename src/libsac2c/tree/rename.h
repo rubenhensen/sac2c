@@ -22,7 +22,6 @@
 extern node *RENdoRenameLut (node *arg_node, lut_t *lut);
 
 extern node *RENarg (node *arg_node, info *arg_info);
-extern node *RENavis (node *arg_node, info *arg_info);
 extern node *RENvardec (node *arg_node, info *arg_info);
 extern node *RENid (node *arg_node, info *arg_info);
 extern node *RENids (node *arg_node, info *arg_info);

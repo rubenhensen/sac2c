@@ -70,6 +70,7 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "phase.h"
+#include "globals.h"
 
 #include "prepare_inlining.h"
 
@@ -496,13 +497,6 @@ PINLid (node *arg_node, info *arg_info)
                   = INFO_INSERT (arg_info);
             }
 
-            if (isSAAMode ()) {
-                AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
-                  = DUPdoDupTree (AVIS_DIM (ID_AVIS (old_id)));
-                AVIS_SHAPE (IDS_AVIS (INFO_LETIDS (arg_info)))
-                  = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (old_id)));
-            }
-
             DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
                                  IDS_AVIS (INFO_LETIDS (arg_info)),
                                  AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
@@ -529,13 +523,6 @@ PINLid (node *arg_node, info *arg_info)
 
         if (global.valid_ssaform) {
             AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
-        }
-
-        if (isSAAMode ()) {
-            AVIS_DIM (IDS_AVIS (INFO_LETIDS (arg_info)))
-              = DUPdoDupTree (AVIS_DIM (ID_AVIS (old_id)));
-            AVIS_SHAPE (IDS_AVIS (INFO_LETIDS (arg_info)))
-              = DUPdoDupTree (AVIS_SHAPE (ID_AVIS (old_id)));
         }
 
         DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",

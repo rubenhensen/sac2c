@@ -197,6 +197,7 @@
 #include "check.h"
 #include "wls.h"
 #include "cubeslicer.h"
+#include "ivexcleanup.h"
 
 /** <!--********************************************************************-->
  *
@@ -221,6 +222,7 @@ struct INFO {
     node *intersectb2;
     node *idxbound1;
     node *idxbound2;
+    intersect_type_t intersecttype;
     bool onefundef;
 };
 
@@ -239,6 +241,7 @@ struct INFO {
 #define INFO_INTERSECTB2(n) ((n)->intersectb2)
 #define INFO_IDXBOUND1(n) ((n)->idxbound1)
 #define INFO_IDXBOUND2(n) ((n)->idxbound2)
+#define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -262,6 +265,7 @@ MakeInfo (node *fundef)
     INFO_INTERSECTB2 (result) = NULL;
     INFO_IDXBOUND1 (result) = NULL;
     INFO_IDXBOUND2 (result) = NULL;
+    INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -470,16 +474,21 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
 
     DBUG_ENTER ("checkAWLFoldable");
 
-    producerWL = FindProducerWL (PRF_ARG2 (arg_node));
-    producerWLavis = ID_AVIS (PRF_ARG2 (arg_node));
+    producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
+    producerWLavis = (NULL != producerWL) ? ID_AVIS (producerWL) : NULL;
+    producerWL = AWLFIgetWlWith (producerWL); /* Now the N_with */
     if ((NULL != producerWL) && (AVIS_DEFDEPTH (producerWLavis) + 1 == level)
         && (AWLFIisSingleOpWL (producerWL))) {
-        DBUG_PRINT ("AWLF",
-                    ("consumerWL %s: producerWL AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                     AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-                     AVIS_WL_NEEDCOUNT (producerWLavis)));
-        producerWLpart
-          = FindMatchingPart (arg_node, arg_info, consumerWLPart, producerWL);
+        DBUG_PRINT ("AWLF", ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                             AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                             AVIS_WL_NEEDCOUNT (producerWLavis)));
+        producerWLpart = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
+                                           consumerWLPart, producerWL, NULL);
+        if (INTERSECT_exact != INFO_INTERSECTTYPE (arg_info)) {
+            DBUG_PRINT ("AWLF", ("Cube must be sliced, or null intersect"));
+            producerWLpart = NULL;
+        }
+
         /* Allow fold if needcounts match OR if producerWLpart
          * has empty code block. This is a crude cost function:
          * We should allow "cheap" producerWL partitions to fold.
@@ -492,15 +501,17 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
         }
     } else {
         DBUG_PRINT ("AWLF",
-                    ("WL %s will never fold. AVIS_DEFDEPTH: %d, lavel: %d",
+                    ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
                      AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis), level));
     }
 
     if (NULL != producerWLpart) {
         AVIS_ISWLFOLDED (producerWLavis) = TRUE;
-        DBUG_PRINT ("AWLF", ("WL %s will be folded.", AVIS_NAME (producerWLavis)));
+        DBUG_PRINT ("AWLF",
+                    ("producerWL %s will be folded.", AVIS_NAME (producerWLavis)));
     } else {
-        DBUG_PRINT ("AWLF", ("WLs %s will not be folded.", AVIS_NAME (producerWLavis)));
+        DBUG_PRINT ("AWLF", ("producerWLs %s can not be folded, at present.",
+                             AVIS_NAME (producerWLavis)));
     }
 
     DBUG_RETURN (producerWLpart);
@@ -546,11 +557,13 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
     /* Generate a new LHS name for WITHID_VEC/IDS */
     navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (arg_node))), shp));
-
-    if (isSAAMode ()) {
+#ifdef LETISAADOIT
+    if (PHisSAAMode ()) {
         AVIS_DIM (navis) = DUPdoDupTree (AVIS_DIM (arg_node));
         AVIS_SHAPE (navis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
     }
+#endif // LETISAADOIT
+
     INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
     LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, navis);
 
@@ -607,10 +620,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
         narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
         navis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
-        if (isSAAMode ()) {
+#ifdef LETISAADOIT
+        if (PHisSAAMode ()) {
             AVIS_DIM (navis) = TBmakeNum (1);
             AVIS_SHAPE (navis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
         }
+#endif // LETISAADOIT
 
         nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
         AVIS_SSAASSIGN (navis) = nass;
@@ -628,10 +643,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
         z = TCappendAssign (z, sel);
         AVIS_SSAASSIGN (lhsavis) = sel;
 
-        if (isSAAMode ()) {
+#ifdef LETISAADOIT
+        if (PHisSAAMode ()) {
             AVIS_DIM (lhsavis) = TBmakeNum (0);
             AVIS_SHAPE (lhsavis) = TCmakeIntVector (NULL);
         }
+#endif // LETISAADOIT
 
         ids = IDS_NEXT (ids);
         k++;
@@ -645,10 +662,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
     DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
                          AVIS_NAME (ID_AVIS (idxid))));
 
-    if (isSAAMode ()) {
+#ifdef LETISAADOIT
+    if (PHisSAAMode ()) {
         AVIS_DIM (lhsavis) = TBmakeNum (1);
         AVIS_SHAPE (lhsavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
     }
+#endif // LETISAADOIT
 
     DBUG_RETURN (z);
 }
@@ -699,6 +718,8 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
 
+    /* We have to remove extrema from old block and recompute everything */
+    oldblock = IVEXCdoIndexVectorExtremaCleanupPartition (oldblock, arg_info);
     /* If producerWL is empty, don't do any code substitutions.
      * Just replace sel(iv, producerWL) by iv.
      */
@@ -876,6 +897,14 @@ AWLFwith (node *arg_node, info *arg_info)
      * blindly replace the modarray by the genarray.
      */
     consumerop = WITH_WITHOP (arg_node);
+#define BREAKSDUPLHS // FIXME
+#ifdef BREAKSDUPLHS
+    /* This code is inadequate. The modarray may not have
+     * partitions that cover the MODARRAY_ARRAY. SSAWLF somehow
+     * manages to handle this, but until I figure out how it does
+     * it, let's leave this code disabled. It breaks the awlf/duplhs.sac
+     * unit test, by giving wrong answers!
+     */
     if ((N_modarray == NODE_TYPE (consumerop))
         && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
         && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
@@ -886,6 +915,7 @@ AWLFwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("AWLF", ("Replacing modarray by genarray"));
     }
+#endif // BREAKSDUPLHS
 
     INFO_WL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);

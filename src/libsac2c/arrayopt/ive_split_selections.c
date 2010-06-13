@@ -18,6 +18,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "ctinfo.h"
+#include "algebraic_wlfi.h"
 
 /*
  * OPEN PROBLEMS:
@@ -129,33 +130,41 @@ FreeInfo (info *info)
  *        corresponding fields of the info structure.
  *
  * @param iv      index vector to be used for the vect2offset
- * @param shpexpr shape expression to be used for the vect2offset (CONSUMED!)
+ * @param shpexpr shape expression to be used for the vect2offset.
+ *                If the expression must be copied, that is the
+ *                caller's duty.
  * @param info    info structure
  *
  * @return the N_avis of the computed offset
  ******************************************************************************/
 node *
-AddVect2Offset (node *iv, node *shpexpr, info *info)
+AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 {
     node *avis, *assign;
+    ntype *typ;
 
     DBUG_ENTER ("AddVect2Offset");
 
     DBUG_ASSERT ((shpexpr != NULL), "no shape information found!");
+    DBUG_ASSERT (N_id == NODE_TYPE (iv), "expected N_id iv");
 
     avis
       = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    INFO_VARDECS (info) = TBmakeVardec (avis, INFO_VARDECS (info));
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
-    assign
-      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                 TCmakePrf2 (F_vect2offset, shpexpr, DUPdoDupTree (iv))),
-                      NULL);
-
+    typ = (N_id == NODE_TYPE (shpexpr))
+            ? TYcopyType (AVIS_TYPE (ID_AVIS (shpexpr)))
+            : TYmakeAKS (TYmakeSimpleType (T_int),
+                         SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (shpexpr))));
+    shpexpr = AWLFIflattenExpression (shpexpr, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info), typ);
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TCmakePrf2 (F_vect2offset, TBmakeId (shpexpr),
+                                                  DUPdoDupNode (iv))),
+                           NULL);
     AVIS_SSAASSIGN (avis) = assign;
-
-    INFO_PREASSIGNS (info) = TCappendAssign (INFO_PREASSIGNS (info), assign);
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), assign);
 
     DBUG_RETURN (avis);
 }
@@ -221,7 +230,7 @@ AddShapeComputation (node *array, info *arg_info)
         node *assign;
 
         avis = TBmakeAvis (TRAVtmpVar (),
-                           TYmakeAKD (TYmakeSimpleType (T_int), 1, SHcreateShape (0)));
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
         assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
@@ -295,9 +304,7 @@ IVESPLITassign (node *arg_node, info *arg_info)
         INFO_PREASSIGNS (arg_info) = NULL;
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
