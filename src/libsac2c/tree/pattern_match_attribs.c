@@ -295,7 +295,6 @@ PMAhasAvis (node **avis)
     attrib *res;
 
     DBUG_ASSERT (avis != NULL, "PMAhasAvis called with NULL argument");
-    DBUG_ASSERT (NODE_TYPE (*avis) == N_avis, "PMAhasAvis called with non-avis argument");
     res = makeAttrib (N_id, attribHasAvis);
     PATTR_N1 (res) = avis;
 
