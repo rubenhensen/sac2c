@@ -100,7 +100,7 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
     /* This traversal makes sure that all lower bounds
      * and upper bounds of a generator are now N_ids.
      */
-    syntax_tree = FLATGdoFlatten (syntax_tree);
+    // syntax_tree = FLATGdoFlatten( syntax_tree);
 
     info = MakeInfo ();
     TRAVpush (TR_cnstass);
@@ -308,15 +308,22 @@ CNSTASSgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CNSTASSgenerator");
 
-    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id),
-                 "Lower bound should be an N_id node!");
-    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_id),
-                 "Upper bound should be an N_id node!");
+    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id
+                  || NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array),
+                 "Lower bound is neither N_id nor N_array!");
+    DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id
+                  || NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array),
+                 "Upper bound is neither N_id nor N_array!");
 
-    GENERATOR_BOUND1 (arg_node)
-      = UnflattenGeneratorComponent (GENERATOR_BOUND1 (arg_node));
-    GENERATOR_BOUND2 (arg_node)
-      = UnflattenGeneratorComponent (GENERATOR_BOUND2 (arg_node));
+    if (NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id) {
+        GENERATOR_BOUND1 (arg_node)
+          = UnflattenGeneratorComponent (GENERATOR_BOUND1 (arg_node));
+    }
+
+    if (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_id) {
+        GENERATOR_BOUND2 (arg_node)
+          = UnflattenGeneratorComponent (GENERATOR_BOUND2 (arg_node));
+    }
 
     lower_bound_elements = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
     upper_bound_elements = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
@@ -331,14 +338,18 @@ CNSTASSgenerator (node *arg_node, info *arg_info)
     /* Handle Step and Width */
 
     if (GENERATOR_STEP (arg_node) != NULL) {
-        GENERATOR_STEP (arg_node)
-          = UnflattenGeneratorComponent (GENERATOR_STEP (arg_node));
+        if (NODE_TYPE (GENERATOR_STEP (arg_node)) == N_id) {
+            GENERATOR_STEP (arg_node)
+              = UnflattenGeneratorComponent (GENERATOR_STEP (arg_node));
+        }
         step_elements = ARRAY_AELEMS (GENERATOR_STEP (arg_node));
     }
 
     if (GENERATOR_WIDTH (arg_node) != NULL) {
-        GENERATOR_WIDTH (arg_node)
-          = UnflattenGeneratorComponent (GENERATOR_WIDTH (arg_node));
+        if (NODE_TYPE (GENERATOR_WIDTH (arg_node)) == N_id) {
+            GENERATOR_WIDTH (arg_node)
+              = UnflattenGeneratorComponent (GENERATOR_WIDTH (arg_node));
+        }
         width_elements = ARRAY_AELEMS (GENERATOR_WIDTH (arg_node));
     }
 
