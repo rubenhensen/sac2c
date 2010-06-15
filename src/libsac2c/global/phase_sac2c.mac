@@ -734,10 +734,9 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
 
 /* LS wants CF and LIR to follow */
 /* However, CF needs AKV values to handle _idx_sel( [0], [ int]),
+ * and _sub_SxS_( n, 0) introduced by wlsimp,
  * so we start with TC
  */
-SUBPHASE (cfls, "Applying constant folding for LS", CFdoConstantFolding,
-          global.optimize.dols &&global.optimize.docf, opt)
 
 SUBPHASE (tupls, "Applying type upgrade for LS", NTCdoNewReTypeCheck,
           global.optimize.dols &&global.optimize.dotup, opt)
@@ -747,6 +746,9 @@ SUBPHASE (etvls, "Eliminating Type Variables for LS", EATdoEliminateAlphaTypes,
 
 SUBPHASE (ebtls, "Eliminating Bottom Types for LS", EBTdoEliminateBottomTypes,
           global.optimize.dols &&global.optimize.dotup, opt)
+
+SUBPHASE (cfls, "Applying constant folding for LS", CFdoConstantFolding,
+          global.optimize.dols &&global.optimize.docf, opt)
 
 SUBPHASE (lirls, "Applying do-loop/with-loop invariant removal for LS",
           LIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dolir, opt)
