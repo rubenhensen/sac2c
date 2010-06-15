@@ -32,6 +32,7 @@
 #include "dbug.h"
 #include "NumLookUpTable.h"
 #include "DataFlowMask.h"
+#include "cuda_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -747,10 +748,11 @@ RCIwith (node *arg_node, info *arg_info)
         /*
          * Add one to the environment and create a dec_rc
          */
-        NLUTincNum (INFO_ENV (arg_info), avis, 1);
+        if (!CUisShmemTypeNew (AVIS_TYPE (avis))) {
+            NLUTincNum (INFO_ENV (arg_info), avis, 1);
 
-        INFO_POSTASSIGN (arg_info) = AdjustRC (avis, -1, INFO_POSTASSIGN (arg_info));
-
+            INFO_POSTASSIGN (arg_info) = AdjustRC (avis, -1, INFO_POSTASSIGN (arg_info));
+        }
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
