@@ -2105,11 +2105,16 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *val = NULL;
+    node *val2 = NULL;
+    node *val3 = NULL;
     node *res2;
+    node *minv;
     constant *con1 = NULL;
     constant *con2 = NULL;
     pattern *pat1;
     pattern *pat2;
+    pattern *pat3;
+    pattern *pat4;
 
     DBUG_ENTER ("SCSprf_val_lt_val_SxS");
 
@@ -2119,7 +2124,13 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pat2 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
                   PMvar (1, PMAisVar (&val), 0));
 
-    /* Case 1 */
+    pat3 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
+                  PMvar (1, PMAgetNode (&val2), 0));
+
+    pat4 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val3), 0),
+                  PMvar (1, PMAisVar (&val2), 0));
+
+    /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
         || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COlt (con1, con2)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -2128,7 +2139,10 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
+    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
 
+#ifdef DEADCODE
     /* Case 2 */
     if ((NULL == res)
         && (ID_AVIS (PRF_ARG1 (arg_node)) == ID_AVIS (PRF_ARG2 (arg_node)))) {
@@ -2138,8 +2152,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
+#endif // DEADCODE
 
-    /* Case 3 */
+    /* Case 3a */
     if ((NULL == res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {
         res2 = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
                                       AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))),
@@ -2154,6 +2169,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         }
     }
 
+    /* Case 3b */
     if ((NULL == res) && (NULL != AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))))) {
         res2 = SCSrecurseWithExtrema (arg_node, arg_info,
                                       AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -2168,10 +2184,34 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         }
     }
 
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
+    /* Case 4:  */
+    if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
+        && (PMmatchFlatSkipExtrema (pat4, val))) {
+        res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("SCS", ("removed guard Case 4( %s -> %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (val3))));
+    }
+
+    /* Case 5 */
+    if (NULL == res) {
+        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
+        con2 = COaST2Constant (PRF_ARG2 (arg_node));
+        if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2))) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
+                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        }
+    }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (res);
 }
@@ -2195,6 +2235,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *         I know this case seems silly, but it arises in
  *         SCCFprf_modarray12.sac, and is critical for
  *         loop fusion/array contraction performance.
+ *         We can remove the second guard, on iv''.
+ *
+ *       Case 5: Constant AVIS_MINVAL( y) <= constant y.
  *
  *****************************************************************************/
 node *
@@ -2205,6 +2248,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
+    node *minv;
     constant *con1 = NULL;
     constant *con2 = NULL;
     pattern *pat1;
@@ -2226,7 +2270,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     pat4 = PMprf (1, PMAisPrf (F_val_le_val_SxS), 2, PMvar (1, PMAgetNode (&val3), 0),
                   PMvar (1, PMAisVar (&val2), 0));
 
-    /* Case 1 */
+    /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
         || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -2235,16 +2279,8 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
-
-    /* Case 2 */
-    if ((NULL == res)
-        && (ID_AVIS (PRF_ARG1 (arg_node)) == ID_AVIS (PRF_ARG2 (arg_node)))) {
-        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                           TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 2( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
-    }
+    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
 
     /* Case 3 */
     if ((NULL == res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {
@@ -2281,12 +2317,26 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (val3))));
     }
 
+    /* Case 5 */
+    if (NULL == res) {
+        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
+        con2 = COaST2Constant (PRF_ARG2 (arg_node));
+        if ((NULL != con1) && (NULL != con2) && (COle (con1, con2))) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
+                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        }
+    }
+    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
-    pat3 = PMfree (pat4);
-    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
-    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (res);
 }
@@ -2295,12 +2345,16 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_val_le_val_VxV( node *arg_node, info *arg_info)
  *
- * @brief 1. If both arguments are constant, compare them, and
- *           determine if the guard is true.
- *        2. If both arguments are identical, the guard is true.
- *        3. Compare extrema:
- *             (x <= minval(y))  || (maxval(x) <= y)
+ * @brief Case 1. If both arguments are constant, compare them, and
+ *                determine if the guard is true.
+ *        Case 2. If both arguments are identical, the guard is true.
+ *        Case 3. Compare extrema:
+ *                  (x <= minval(y))  || (maxval(x) <= y)
+ *        Case 4:
+ *         iv', p   =_val_lt_val_SxS_( iv, y);
+ *         iv'', p' =_val_lt_val_SxS_( iv', y);
  *
+ *       Case 5: Constant AVIS_MINVAL( y) <= constant y.
  *
  *****************************************************************************/
 node *
@@ -2308,11 +2362,16 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *val = NULL;
+    node *val2 = NULL;
+    node *val3 = NULL;
     node *res2;
+    node *minv;
     constant *con1 = NULL;
     constant *con2 = NULL;
     pattern *pat1;
     pattern *pat2;
+    pattern *pat3;
+    pattern *pat4;
 
     DBUG_ENTER ("SCSprf_val_le_val_VxV");
 
@@ -2322,7 +2381,13 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     pat2 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val), 0),
                   PMvar (1, PMAisVar (&val), 0));
 
-    /* Case 1 */
+    pat3 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val), 0),
+                  PMvar (1, PMAgetNode (&val2), 0));
+
+    pat4 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val3), 0),
+                  PMvar (1, PMAisVar (&val2), 0));
+
+    /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
         || (PMmatchFlatSkipExtrema (pat1, arg_node)
             && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && COle (con1, con2))) {
@@ -2332,7 +2397,10 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
+    con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
 
+#ifdef DEADCODE
     /* Case 2 */
     if ((NULL == res)
         && (ID_AVIS (PRF_ARG1 (arg_node)) == ID_AVIS (PRF_ARG2 (arg_node)))) {
@@ -2342,8 +2410,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
     }
+#endif // DEADCODE
 
-    /* Case 3 */
+    /* Case 3a */
     if ((NULL == res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {
         res2 = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
                                       AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))),
@@ -2358,6 +2427,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
         }
     }
 
+    /* Case 3b */
     if ((NULL == res) && (NULL != AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))))) {
         res2 = SCSrecurseWithExtrema (arg_node, arg_info,
                                       AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -2372,8 +2442,34 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
         }
     }
 
+    /* Case 4:  */
+    if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
+        && (PMmatchFlatSkipExtrema (pat4, val))) {
+        res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("SCS", ("removed guard Case 4( %s -> %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (val3))));
+    }
+
+    /* Case 5 */
+    if (NULL == res) {
+        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
+        con2 = COaST2Constant (PRF_ARG2 (arg_node));
+        if ((NULL != con1) && (NULL != con2)
+            && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && (COle (con1, con2))) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
+                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        }
+    }
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
 
