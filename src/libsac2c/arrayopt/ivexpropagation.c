@@ -1597,6 +1597,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_afterguard:
     case F_noteintersect:
     case F_shape_matches_dim_VxA:
+    case F_val_le_val_SxS:
     case F_val_le_val_VxV:
     case F_val_lt_shape_VxA:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
