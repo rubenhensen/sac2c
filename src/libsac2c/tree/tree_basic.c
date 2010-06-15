@@ -149,6 +149,35 @@ TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
 /*--------------------------------------------------------------------------*/
 
+rc_t *
+TBmakeReuseCandidate (node *array, int dim, rc_t *next)
+{
+    rc_t *tmp;
+    int i;
+
+    DBUG_ENTER ("TBmakeReuseCandidate");
+
+    tmp = (rc_t *)MEMmalloc (sizeof (rc_t));
+
+    RC_ARRAY (tmp) = array;
+    RC_ARRAYSHP (tmp) = NULL;
+    RC_SHARRAY (tmp) = NULL;
+    RC_SHARRAYSHP (tmp) = NULL;
+    RC_DIM (tmp) = dim;
+    RC_SELFREF (tmp) = FALSE;
+    RC_NEXT (tmp) = next;
+    RC_REUSABLE (tmp) = FALSE;
+
+    for (i = 0; i < SHP_SEG_SIZE; i++) {
+        RC_NEGOFFSET (tmp, i) = 0;
+        RC_POSOFFSET (tmp, i) = 0;
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
 argtab_t *
 TBmakeArgtab (int size)
 {

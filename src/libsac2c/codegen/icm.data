@@ -979,6 +979,21 @@ ICM_DEF( CUDA_WLIDS, ICM_TRACE_NONE)
 ICM_END( CUDA_WLIDS, (wlids_NT, wlids_NT_dim, array_dim, wlids_dim_pos, iv_NT, hasstepwidth))
 #endif
 
+#if defined(CUDA_THREADIDX) || defined(ICM_ALL)
+ICM_DEF( CUDA_THREADIDX, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( dim)
+  ICM_INT( dim_pos)
+ICM_END( CUDA_THREADIDX, ( to_NT, dim, dim_pos))
+#endif
+
+#if defined(CUDA_BLOCKDIM) || defined(ICM_ALL)
+ICM_DEF( CUDA_BLOCKDIM, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( dim)
+  ICM_INT( dim_pos)
+ICM_END( CUDA_BLOCKDIM, ( to_NT, dim, dim_pos))
+#endif
 
 #if defined(CUDA_WLIDXS) || defined(ICM_ALL)
 ICM_DEF( CUDA_WLIDXS, ICM_TRACE_NONE)
@@ -1075,6 +1090,24 @@ ICM_DEF( CUDA_DECL_KERNEL_ARRAY, ICM_TRACE_NONE)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
 ICM_END( CUDA_DECL_KERNEL_ARRAY, (var_NT, basetype, sdim, shp))
+#endif
+
+#if defined(CUDA_DECL_SHMEM_ARRAY) || defined(ICM_ALL)
+ICM_DEF( CUDA_DECL_SHMEM_ARRAY, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( CUDA_DECL_SHMEM_ARRAY, (var_NT, basetype, sdim, shp))
+#endif
+
+#if defined( CUDA_SHMEM_BOUNDARY_CHECK) || defined(ICM_ALL)
+ICM_DEF( CUDA_SHMEM_BOUNDARY_CHECK, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( dim_pos)
+  ICM_NT( idx_NT)
+  ICM_INT( offset)
+ICM_END( CUDA_SHMEM_BOUNDARY_CHECK, (to_NT, dim_pos, idx_NT, offset))
 #endif
 
 #if defined(CUDA_ASSIGN) || defined(ICM_ALL)

@@ -511,6 +511,58 @@ CHKMattribAccessInfo (access_info_t *attr, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn CHKMattribRc
+ *
+ * @brief Touch Access attribute
+ *
+ * @param attr Access node to process
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+rc_t *
+CHKMattribRc (rc_t *attr, info *arg_info)
+{
+    rc_t *tmp = attr;
+
+    DBUG_ENTER ("CHKMattribAccess");
+
+    while (tmp != NULL) {
+        CHKMtouch (tmp, arg_info);
+        tmp = tmp->next;
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribReuseInfo
+ *
+ * @brief Touch ReuseInfo attribute
+ *
+ * @param attr ReuseInfo node to process
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+reuse_info_t *
+CHKMattribReuseInfo (reuse_info_t *attr, info *arg_info)
+{
+    DBUG_ENTER ("CHKMattribReuseInfo");
+
+    if (attr != NULL) {
+        attr->rcs = CHKMattribRc (attr->rcs, arg_info);
+        CHKMtouch (attr, arg_info);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn CHKMattribShpSeg
  *
  * @brief Touch ShpSeg attribute

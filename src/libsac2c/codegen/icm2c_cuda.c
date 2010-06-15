@@ -500,6 +500,102 @@ ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int a
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileCUDA_THREADIDX( int dim, int dim_pos)
+ *
+ * description:
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
+{
+    DBUG_ENTER ("ICMCompileCUDA_THREADIDX");
+
+#define CUDA_THREADIDX
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_THREADIDX
+
+    if (dim == 1) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
+    } else if (dim == 2) {
+        INDENT;
+        if (dim_pos == 0) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_Y;\n", to_NT);
+        } else if (dim_pos == 1) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
+        } else {
+            DBUG_ASSERT ((0), "Illegal dimension position found!");
+        }
+    } else if (dim == 3) {
+        INDENT;
+        if (dim_pos == 0) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_Z;\n", to_NT);
+        } else if (dim_pos == 1) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_Y;\n", to_NT);
+        } else if (dim_pos == 2) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
+        } else {
+            DBUG_ASSERT ((0), "Illegal dimension position found!");
+        }
+    } else {
+        DBUG_ASSERT ((0), "Illegal dimension found!");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_THREADIDX( int dim, int dim_pos)
+ *
+ * description:
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
+{
+    DBUG_ENTER ("ICMCompileCUDA_BLOCKDIM");
+
+#define CUDA_BLOCKDIM
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_BLOCKDIM
+
+    if (dim == 1) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
+    } else if (dim == 2) {
+        INDENT;
+        if (dim_pos == 0) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_Y;\n", to_NT);
+        } else if (dim_pos == 1) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
+        } else {
+            DBUG_ASSERT ((0), "Illegal dimension position found!");
+        }
+    } else if (dim == 3) {
+        INDENT;
+        if (dim_pos == 0) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_Z;\n", to_NT);
+        } else if (dim_pos == 1) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_Y;\n", to_NT);
+        } else if (dim_pos == 2) {
+            fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
+        } else {
+            DBUG_ASSERT ((0), "Illegal dimension position found!");
+        }
+    } else {
+        DBUG_ASSERT ((0), "Illegal dimension found!");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileCUDA_WL_ASSIGN( char *val_NT, int val_sdim,
  *                                  char *to_NT, int to_sdim,
  *                                  char *off_NT)
@@ -790,6 +886,79 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
         DBUG_ASSERT ((0), "Non-AKS array found in CUDA kernel!");
         break;
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_DECL_SHMEM_ARRAY( char *var_NT, char *basetype,
+ *                                          int sdim, int *shp)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *  CUDA_DECL_SHMEM_ARRAY( var_NT, basetype, sdim, [ shp ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *shp)
+{
+    int i, size = 1;
+    shape_class_t sc = ICUGetShapeClass (var_NT);
+    int dim = DIM_NO_OFFSET (sdim);
+
+    DBUG_ENTER ("ICMCompileCUDA_DECL_SHMEM_ARRAY");
+
+#define CUDA_DECL_SHMEM_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_DECL_SHMEM_ARRAY
+
+    switch (sc) {
+    case C_aks:
+        INDENT;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+
+        for (i = 0; i < dim; i++) {
+            size *= shp[i];
+        }
+        fprintf (global.outfile, "__shared__ %s SAC_ND_A_FIELD( %s)[%d];\n", basetype,
+                 var_NT, size);
+        break;
+    default:
+        DBUG_ASSERT ((0), "Non-AKS shared memory array found in CUDA kernel!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_SHMEM_BOUNDARY_CHECK( char *to_NT, int dim_pos,
+ *                                             char *idx_NT, int offset)
+ *
+ * description:
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_SHMEM_BOUNDARY_CHECK (char *to_NT, int dim_pos, char *idx_NT, int offset)
+{
+    DBUG_ENTER ("ICMCompileCUDA_SHMEM_BOUNDARY_CHECK");
+
+#define CUDA_SHMEM_BOUNDARY_CHECK
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_SHMEM_BOUNDARY_CHECK
+
+    INDENT;
+    fprintf (global.outfile,
+             "SAC_ND_A_FIELD( %s) = ( ( SACp_ub_%d-%d) == SAC_ND_A_FIELD( %s))\n", to_NT,
+             dim_pos, offset, idx_NT);
 
     DBUG_VOID_RETURN;
 }

@@ -37,7 +37,9 @@
 struct INFO {
     node *fundef;
     bool remove_assign;
+    bool remove_ids;
     node *lhs;
+    nlut_t *nlut;
 };
 
 /*
@@ -45,7 +47,9 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_REMOVE_ASSIGN(n) (n->remove_assign)
+#define INFO_REMOVE_IDS(n) (n->remove_ids)
 #define INFO_LHS(n) (n->lhs)
+#define INFO_NLUT(n) (n->nlut)
 
 /*
  * INFO functions
@@ -61,7 +65,9 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_REMOVE_ASSIGN (result) = FALSE;
+    INFO_REMOVE_IDS (result) = FALSE;
     INFO_LHS (result) = NULL;
+    INFO_NLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -74,6 +80,23 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+static node *
+RemoveUnusedVardecs (node *vardecs, info *arg_info)
+{
+    DBUG_ENTER ("RemoveUnusedVardecs");
+
+    if (VARDEC_NEXT (vardecs) != NULL) {
+        VARDEC_NEXT (vardecs) = RemoveUnusedVardecs (VARDEC_NEXT (vardecs), arg_info);
+    }
+
+    if (NLUTgetNum (INFO_NLUT (arg_info), VARDEC_AVIS (vardecs)) == 0) {
+        printf ("Vardec %s is being removed\n", VARDEC_NAME (vardecs));
+        vardecs = FREEdoFreeNode (vardecs);
+    }
+
+    DBUG_RETURN (vardecs);
 }
 
 node *
@@ -99,8 +122,16 @@ CLKNLfundef (node *arg_node, info *arg_info)
 
     /* we only traverse cuda kernels */
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
+
+        INFO_NLUT (arg_info)
+          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        FUNDEF_VARDEC (arg_node)
+          = RemoveUnusedVardecs (FUNDEF_VARDEC (arg_node), arg_info);
+
+        INFO_NLUT (arg_info) = NLUTremoveNlut (INFO_NLUT (arg_info));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -135,8 +166,8 @@ CLKNLlet (node *arg_node, info *arg_info)
          * in cuda kernels and they are arrays, we repalce the RHS N_id by
          * primitive copy( N_id). */
         node *avis = ID_AVIS (LET_EXPR (arg_node));
-        if (!CUisDeviceTypeNew (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node))))
-            && TYgetDim (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))) > 0) {
+        if (!CUisDeviceTypeNew (ID_NTYPE (LET_EXPR (arg_node)))
+            && TYgetDim (ID_NTYPE (LET_EXPR (arg_node))) > 0) {
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         } else if (AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node)))
@@ -157,12 +188,25 @@ CLKNLlet (node *arg_node, info *arg_info)
      * loop21. */
     else if (NODE_TYPE (LET_EXPR (arg_node)) == N_array) {
         AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
-        INFO_LHS (arg_info) = LET_IDS (arg_node);
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    } else {
-        INFO_LHS (arg_info) = LET_IDS (arg_node);
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+    if (INFO_REMOVE_IDS (arg_info)) {
+        LET_IDS (arg_node) = FREEdoFreeNode (LET_IDS (arg_node));
+        LET_IDS (arg_node) = NULL;
+        INFO_REMOVE_IDS (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CLKNLid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CLKNLid");
+
+    NLUTincNum (INFO_NLUT (arg_info), ID_AVIS (arg_node), 1);
 
     DBUG_RETURN (arg_node);
 }
@@ -179,29 +223,29 @@ CLKNLprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
         dim = PRF_ARG2 (arg_node);
-        if ((NODE_TYPE (dim) == N_num)) {
+        if (NODE_TYPE (dim) == N_num) {
             dim_num = NUM_VAL (dim);
             if (dim_num > 0) {
                 INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-                printf ("%s = F_alloc() removed in function %s\n",
-                        IDS_NAME (INFO_LHS (arg_info)),
-                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+                DBUG_PRINT ("CLKNL", ("%s = F_alloc() removed in function %s\n",
+                                      IDS_NAME (INFO_LHS (arg_info)),
+                                      FUNDEF_NAME (INFO_FUNDEF (arg_info))));
             }
-        } else if ((NODE_TYPE (dim) == N_prf)) {
+        } else if (NODE_TYPE (dim) == N_prf) {
             if (PRF_PRF (dim) == F_dim_A) {
                 array = PRF_ARG1 (dim);
                 DBUG_ASSERT ((NODE_TYPE (array) == N_id),
                              "Non N_id node found for arguemnt of F_dim_A!");
-                DBUG_ASSERT (TYgetDim (AVIS_TYPE (ID_AVIS (array))) == 0,
-                             "Non scalar found for F_dim_A as the second arguemnt of "
-                             "F_alloc!");
+                DBUG_ASSERT (TYgetDim (ID_NTYPE (array)) == 0, "Non scalar found for "
+                                                               "F_dim_A as the second "
+                                                               "arguemnt of F_alloc!");
             } else {
                 DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
             }
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         } else {
             DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
         }
-
         break;
     case F_free:
         free_var = PRF_ARG1 (arg_node);
@@ -211,8 +255,11 @@ CLKNLprf (node *arg_node, info *arg_info)
         dim_num = TYgetDim (type);
         if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            printf ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+            DBUG_PRINT ("CLKNL",
+                        ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
+                         FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+        } else {
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
         break;
     case F_dec_rc:
@@ -220,8 +267,10 @@ CLKNLprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            printf ("F_dec_rc( %s) removed in function %s\n", ID_NAME (array),
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+            DBUG_PRINT ("CLKNL", ("F_dec_rc( %s) removed in function %s\n",
+                                  ID_NAME (array), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+        } else {
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
         break;
     case F_inc_rc:
@@ -229,8 +278,10 @@ CLKNLprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            printf ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+            DBUG_PRINT ("CLKNL", ("F_inc_rc( %s) removed in function %s\n",
+                                  ID_NAME (array), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+        } else {
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
         break;
     case F_suballoc:
@@ -239,8 +290,17 @@ CLKNLprf (node *arg_node, info *arg_info)
          * do not want that, therefore, we need to set it back to
          * FALSE here */
         AVIS_ISCUDALOCAL (IDS_AVIS (INFO_LHS (arg_info))) = FALSE;
+        NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), 1);
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        break;
+    case F_syncthreads:
+        PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
+        PRF_ARGS (arg_node) = NULL;
+        INFO_REMOVE_IDS (arg_info) = TRUE;
+
         break;
     default:
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         break;
     }
 

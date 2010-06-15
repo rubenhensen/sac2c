@@ -103,6 +103,8 @@
 #include "cuda_utils.h"
 #include "cleanup_cuda_kernels.h"
 #include "lift_dec_rc.h"
+#include "adjust_shmem_access.h"
+#include "expand_shmem_boundary_load.h"
 
 /** <!--********************************************************************-->
  *
@@ -248,6 +250,8 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
+    syntax_tree = ASHAdoAdjustShmemAccess (syntax_tree);
+
     info = MakeInfo ();
 
     TRAVpush (TR_cuknl);
@@ -257,6 +261,7 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     info = FreeInfo (info);
 
     syntax_tree = CLKNLdoCleanupCUDAKernels (syntax_tree);
+    syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -343,6 +348,7 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
             bound_name = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 2));
             sprintf (bound_name, "%s%d", name, dim);
             AVIS_NAME (new_avis) = bound_name;
+
             INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
 
             if (is_bound) {
@@ -1032,7 +1038,8 @@ CUKNLid (node *arg_node, info *arg_info)
     DBUG_PRINT ("CUKNL", ("ENTER id %s", ID_NAME (arg_node)));
 
     if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis
+            && !CUisShmemTypeNew (AVIS_TYPE (avis))) {
             new_avis = DUPdoDupNode (avis);
             INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
             INFO_PARAMS (arg_info)

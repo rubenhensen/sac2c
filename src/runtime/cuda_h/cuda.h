@@ -153,6 +153,11 @@
 #define THREADIDX_Y threadIdx.y
 #define THREADIDX_Z threadIdx.z
 
+/*
+ * CUDA sync thread primitive
+ */
+#define SAC_CUDA_SYNCTHREADS() syncthreads ();
+
 /*****************************************************************************
  *
  * ICMs for CUDA bound computation and checking

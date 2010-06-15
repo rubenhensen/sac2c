@@ -54,6 +54,52 @@ CUh2dSimpleTypeConversion (simpletype sty)
     DBUG_RETURN (res);
 }
 
+simpletype
+CUd2hSimpleTypeConversion (simpletype sty)
+{
+    simpletype res = T_unknown;
+
+    DBUG_ENTER ("CUd2hSimpleTypeConversion");
+
+    switch (sty) {
+    case T_int_dev:
+        res = T_int;
+        break;
+    case T_float_dev:
+        res = T_float;
+        break;
+    case T_double_dev:
+        res = T_double;
+        break;
+    default:
+        DBUG_ASSERT ((0), "Simple type conversion found undefined device simple type!");
+    }
+    DBUG_RETURN (res);
+}
+
+simpletype
+CUd2shSimpleTypeConversion (simpletype sty)
+{
+    simpletype res = T_unknown;
+
+    DBUG_ENTER ("CUd2shSimpleTypeConversion");
+
+    switch (sty) {
+    case T_int_dev:
+        res = T_int_shmem;
+        break;
+    case T_float_dev:
+        res = T_float_shmem;
+        break;
+    case T_double_dev:
+        res = T_double_shmem;
+        break;
+    default:
+        DBUG_ASSERT ((0), "Simple type conversion found undefined device simple type!");
+    }
+    DBUG_RETURN (res);
+}
+
 bool
 CUisDeviceTypeNew (ntype *ty)
 {
@@ -64,6 +110,33 @@ CUisDeviceTypeNew (ntype *ty)
     res = TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_double_dev;
+
+    DBUG_RETURN (res);
+}
+
+bool
+CUisShmemTypeNew (ntype *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("CUisShmemTypeNew");
+
+    res = TYgetSimpleType (TYgetScalar (ty)) == T_float_shmem
+          || TYgetSimpleType (TYgetScalar (ty)) == T_int_shmem
+          || TYgetSimpleType (TYgetScalar (ty)) == T_double_shmem;
+
+    DBUG_RETURN (res);
+}
+
+bool
+CUisShmemTypeOld (types *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("CUisShmemTypeOld");
+
+    res = TCgetBasetype (ty) == T_float_shmem || TCgetBasetype (ty) == T_int_shmem
+          || TCgetBasetype (ty) == T_double_shmem;
 
     DBUG_RETURN (res);
 }

@@ -180,6 +180,28 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
 #define ACCESS_DIR(a) (a->direction)
 #define ACCESS_NEXT(a) (a->next)
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  REUSE_CANDIDATE_T :
+ ***
+ ***  permanent attributes:
+ ***
+ ***/
+
+extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
+
+#define RC_ARRAY(a) (a->array)
+#define RC_ARRAYSHP(a) (a->arrayshp)
+#define RC_SHARRAY(a) (a->sharray)
+#define RC_SHARRAYSHP(a) (a->sharrayshp)
+#define RC_DIM(a) (a->dim)
+#define RC_SELFREF(a) (a->selfref)
+#define RC_POSOFFSET(a, i) (a->posoffset[i])
+#define RC_NEGOFFSET(a, i) (a->negoffset[i])
+#define RC_REUSABLE(a) (a->reusable)
+#define RC_NEXT(a) (a->next)
+
 /*
  * this defines the new node type
  */

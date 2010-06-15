@@ -390,7 +390,6 @@ RANLIB           :=  "slranlib utc0"
 target cuda:
 
 BACKEND          :=  "Cuda"
-
 CC               :=  "nvcc"
 CCLINK           :=  "-lcutil -lcudart -lcublas"
 /*

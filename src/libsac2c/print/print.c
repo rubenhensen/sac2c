@@ -278,6 +278,98 @@ PrintSimdEnd ()
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   void IRAprintRcs( node* arg_node, info* arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+IRAprintRcs (node *arg_node, info *arg_info)
+{
+    int i, dim;
+    rc_t *rcs;
+    node *array, *sharray;
+
+    DBUG_ENTER ("IRAprintRcs");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_code), "Wrong node-type: N_code exspected");
+
+    fprintf (global.outfile, "/*\n");
+
+    dim = SHP_SEG_SIZE;
+    rcs = CODE_IRA_RCS (arg_node);
+    INDENT;
+    fprintf (global.outfile, " * IRA:\n");
+
+    if (rcs == NULL) {
+        INDENT;
+        fprintf (global.outfile, " * No reuse candidates! \n");
+    } else {
+        do {
+            array = RC_ARRAY (rcs);
+            if (RC_REUSABLE (rcs)) {
+                sharray = RC_SHARRAY (rcs);
+
+                INDENT;
+                fprintf (global.outfile, " * Reusable array: %s\n", AVIS_NAME (array));
+
+                INDENT;
+                fprintf (global.outfile, " * Reusable array shape: ");
+                if (NODE_TYPE (RC_ARRAYSHP (rcs)) == N_id) {
+                    PRTid (RC_ARRAYSHP (rcs), arg_info);
+                } else if (NODE_TYPE (RC_ARRAYSHP (rcs)) == N_array) {
+                    PRTarray (RC_ARRAYSHP (rcs), arg_info);
+                } else {
+                    DBUG_ASSERT ((0), "Wrong node type found for resuable array shape!");
+                }
+                fprintf (global.outfile, "\n");
+
+                INDENT;
+                fprintf (global.outfile, " * Shared array: %s\n", AVIS_NAME (sharray));
+
+                INDENT;
+                fprintf (global.outfile, " * Shared array shape: ");
+                PRTarray (RC_SHARRAYSHP (rcs), arg_info);
+                fprintf (global.outfile, "\n");
+
+                INDENT;
+                fprintf (global.outfile, " * Self referenced: %d\n", RC_SELFREF (rcs));
+
+                dim = RC_DIM (rcs);
+
+                INDENT;
+                fprintf (global.outfile, " * Negative offsets: [");
+                for (i = 0; i < dim; i++) {
+                    fprintf (global.outfile, "%d ", RC_NEGOFFSET (rcs, i));
+                }
+                fprintf (global.outfile, "]\n");
+
+                INDENT;
+                fprintf (global.outfile, " * Positive offsets: [");
+                for (i = 0; i < dim; i++) {
+                    fprintf (global.outfile, "%d ", RC_POSOFFSET (rcs, i));
+                }
+                fprintf (global.outfile, "]\n");
+            } else {
+                INDENT;
+                fprintf (global.outfile, " * Non-reusable candidate: %s\n",
+                         AVIS_NAME (array));
+            }
+            rcs = RC_NEXT (rcs);
+        } while (rcs != NULL);
+    }
+    INDENT;
+    fprintf (global.outfile, " */\n");
+    INDENT;
+
+    DBUG_VOID_RETURN;
+}
+
 #ifndef WLAA_DEACTIVATED
 
 /******************************************************************************
@@ -4241,6 +4333,10 @@ PRTcode (node *arg_node, info *arg_info)
 
     if (CODE_ISSIMDSUITABLE (arg_node)) {
         PrintSimdEnd ();
+    }
+
+    if (global.backend == BE_cuda && CODE_IRA_INFO (arg_node) != NULL) {
+        IRAprintRcs (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);

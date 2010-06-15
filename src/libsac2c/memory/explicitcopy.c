@@ -42,6 +42,7 @@
 #include "new_types.h"
 #include "str.h"
 #include "memory.h"
+#include "cuda_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -302,7 +303,9 @@ EMECprf (node *arg_node, info *arg_info)
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
         if (!FUNDEF_ISCUDASTGLOBALFUN (INFO_FUNDEF (arg_info))
-            && !FUNDEF_ISCUDALACFUN (INFO_FUNDEF (arg_info))) {
+            && !FUNDEF_ISCUDALACFUN (INFO_FUNDEF (arg_info)) &&
+            /* we do not explicitly copy shared memory array */
+            !CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
             PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
         }
         break;

@@ -37,6 +37,7 @@
 #include "string.h"
 #include "new_typecheck.h"
 #include "dbug.h"
+#include "cuda_utils.h"
 
 /**
  * Controls wheter AKS-Information should be used when possible
@@ -1484,7 +1485,16 @@ EMALprf (node *arg_node, info *arg_info)
          *
          * reuse( A);
          */
-        als->reuse = DUPdoDupNode (PRF_ARG1 (arg_node));
+        /* If the type of the array is shared memory, we do not
+         * attempt to reuse it. Instead, we create a normal F_alloc.
+         * This F_alloc will eventually be removed from the cuda
+         * kernel s*/
+        if (CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        } else {
+            als->reuse = DUPdoDupNode (PRF_ARG1 (arg_node));
+        }
         break;
 
     case F_hideValue_SxA:
@@ -1709,6 +1719,26 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_host2device:
     case F_device2host:
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_cuda_threadIdx:
+    case F_cuda_blockDim:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_shmem_boundary_load:
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
+    case F_shmem_boundary_check:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+    case F_syncthreads:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;

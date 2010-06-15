@@ -273,6 +273,26 @@ typedef struct ACCESS_INFO_T {
     struct NODE *wlarray;
 } access_info_t;
 
+/* These two structs are used to annotate reusable arrays
+ * in a wl. The info will be attached to N_code node */
+typedef struct RC_T {
+    node *array;
+    node *arrayshp;
+    node *sharray;
+    node *sharrayshp;
+    int dim;
+    bool selfref;
+    int posoffset[SHP_SEG_SIZE];
+    int negoffset[SHP_SEG_SIZE];
+    bool reusable;
+    struct RC_T *next;
+} rc_t;
+
+typedef struct REUSE_INFO_T {
+    int count;
+    rc_t *rcs;
+} reuse_info_t;
+
 typedef struct TYPES {
     simpletype simpletype;
     char *name;         /* only used for T_user !! */

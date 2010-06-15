@@ -261,11 +261,11 @@ GetBasetypeStr (types *type)
     if (basetype == T_user) {
         str = TYPES_NAME (type);
         DBUG_ASSERT ((str != NULL), "Name of user-defined type not found");
-    } else if (basetype == T_float_dev) {
+    } else if (basetype == T_float_dev || basetype == T_float_shmem) {
         str = "float";
-    } else if (basetype == T_int_dev) {
+    } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
-    } else if (basetype == T_double_dev) {
+    } else if (basetype == T_double_dev || basetype == T_double_shmem) {
         str = "float"; /* We do not support double in CUDA yet */
     }
     /* If the enforce_float flag is set,
@@ -2790,6 +2790,12 @@ COMPvardec (node *arg_node, info *arg_info)
                && TCgetShapeDim (VARDEC_TYPE (arg_node)) > 0) {
         VARDEC_ICM (arg_node)
           = TCmakeIcm1 ("CUDA_DECL_KERNEL_ARRAY",
+                        MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                      TRUE, TRUE, TRUE, NULL));
+    } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))
+               && CUisShmemTypeOld (VARDEC_TYPE (arg_node))) {
+        VARDEC_ICM (arg_node)
+          = TCmakeIcm1 ("CUDA_DECL_SHMEM_ARRAY",
                         MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                       TRUE, TRUE, TRUE, NULL));
     } else {
@@ -6756,6 +6762,92 @@ COMPprfDevice2Device (node *arg_node, info *arg_info)
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
                                  TCmakeIdCopyString ("cudaMemcpyDeviceToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDAThreadIdx (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    int array_dim, dim_pos;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfCUDAThreadIdx");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    array_dim = NUM_VAL (PRF_ARG1 (arg_node));
+    DBUG_ASSERT ((array_dim > 0), "Dimension of CUDA array must be > 0");
+
+    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_THREADIDX", DUPdupIdsIdNt (let_ids),
+                                 TBmakeNum (array_dim), TBmakeNum (dim_pos), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDABlockDim (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    int array_dim, dim_pos;
+    node *let_ids;
+
+    DBUG_ENTER ("COMPprfCUDABlockDim");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    array_dim = NUM_VAL (PRF_ARG1 (arg_node));
+    DBUG_ASSERT ((array_dim > 0), "Dimension of CUDA array must be > 0");
+
+    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_BLOCKDIM", DUPdupIdsIdNt (let_ids),
+                                 TBmakeNum (array_dim), TBmakeNum (dim_pos), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfShmemBoundaryLoad (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPprfShmemBoundaryLoad");
+
+    DBUG_ASSERT ((0), "Illegal primitive function found!");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPprfShmemBoundaryCheck (node *arg_node, info *arg_info)
+{
+    int dim_pos, offset;
+    node *let_ids, *idx, *ret_node;
+
+    DBUG_ENTER ("COMPprfShmemBoundaryCheck");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    dim_pos = NUM_VAL (PRF_ARG1 (arg_node));
+    idx = PRF_ARG2 (arg_node);
+    offset = NUM_VAL (PRF_ARG3 (arg_node));
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_SHMEM_BOUNDARY_CHECK", DUPdupIdsIdNt (let_ids),
+                                 TBmakeNum (dim_pos), DUPdupIdNt (idx),
+                                 TBmakeNum (offset), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfSyncthreads (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfSyncthreads");
+
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_SYNCTHREADS", NULL);
 
     DBUG_RETURN (ret_node);
 }

@@ -393,8 +393,8 @@ CUTEMassign (node *arg_node, info *arg_info)
         }
         INFO_TRAVMODE (arg_info) = cutem_untag;
     } else {
-        /* If we have a mode of cutem_update, this means we should be either
-         * in the withloop body or in a conditional */
+        /* If the mode is cutem_update when traversing this N_assign,
+         * then we are either in withloop body or in a conditional */
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         } else {
@@ -456,7 +456,7 @@ CUTEMlet (node *arg_node, info *arg_info)
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag
         || INFO_TRAVMODE (arg_info) == cutem_untag) {
-        /* Techonically, for cutem_untag traversal, we only need to traverse
+        /* Technically, for cutem_untag traversal, we only need to traverse
          * the ids and not the expr. However, since LAC functions are
          * traverse inline, therefore, to untag N_assigns in LAC functions,
          * we need to traverse expr as well */
@@ -466,7 +466,7 @@ CUTEMlet (node *arg_node, info *arg_info)
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((0), "Unknown traverse mode!");
+        DBUG_ASSERT ((0), "Invalid traverse mode!");
     }
 
     DBUG_RETURN (arg_node);
@@ -489,17 +489,20 @@ CUTEMids (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUTEMids");
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
-        /* If the LHS contains non-AKS arrays, it can only be executed
-         * on the host, i.e. CUDA_HOST_SINGLE */
+        /* If the LHS is neither scalar or AKS array, the N_assign can
+         * only be executed on the host, i.e. CUDA_HOST_SINGLE */
         if (!TUisScalar (IDS_NTYPE (arg_node)) && !TYisAKS (IDS_NTYPE (arg_node))) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
+        /* If the result produced by this N_assign is referenced in
+         * CUDA_HOST_SINGLE N_assign, the current N_assign is tagged
+         * as CUDA_HOST_SINGLE too */
         if (AVIS_ISHOSTREFERENCED (IDS_AVIS (arg_node))) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode in CUTEMids!");
+        DBUG_ASSERT ((0), "Invalid traverse mode!");
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -528,17 +531,22 @@ CUTEMid (node *arg_node, info *arg_info)
     lastassign = INFO_LASTASSIGN (arg_info);
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
+        /* If we found a N_id defined by CUDA_DEVICE_SINGLE
+         * N_assign, the N_assign referenced this N_id is also
+         * tagged as CUDA_DEVICE_SINGLE */
         if (IsIdCudaDefined (arg_node)) {
             ASSIGN_EXECMODE (lastassign) = CUDA_DEVICE_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         DBUG_ASSERT (ASSIGN_EXECMODE (lastassign) == CUDA_HOST_SINGLE,
-                     "Update variable in non-CUDA_HOST_SINGLE N_assign!");
+                     "Updating N_id in non-CUDA_HOST_SINGLE N_assign!");
 
         /* If we are in update mode, the N_id should be set host referenced
          * Also, if the N_id is in the argument list of LAC funap, we need
          * to propagate this information to the fundef as well */
         AVIS_ISHOSTREFERENCED (ID_AVIS (arg_node)) = TRUE;
+    } else {
+        /* Do nothing */
     }
 
     DBUG_RETURN (arg_node);
@@ -575,8 +583,8 @@ CUTEMap (node *arg_node, info *arg_info)
             if (HasCudaDefinedId (AP_ARGS (arg_node))) {
                 arg_node = TCULACdoTagCudaLac (arg_node, INFO_LHS (arg_info),
                                                FUNDEF_ARGS (fundef));
-                /* If the lac fun is not cudarizbale, we tag the
-                 * application of this lac fun as CUDA_HOST_SINGLE */
+                /* If the lac fun is cudarizbale, we tag the
+                 * application of this lac fun as CUDA_DEVICE_SINGLE */
                 if (FUNDEF_ISCUDALACFUN (fundef)) {
                     ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_SINGLE;
                 }
@@ -596,6 +604,8 @@ CUTEMap (node *arg_node, info *arg_info)
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         if (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
+            /* Traverse into lac function body to untage any N_assigns
+             * if needed */
             fundef = TraverseLacFun (fundef, arg_info);
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
@@ -604,7 +614,7 @@ CUTEMap (node *arg_node, info *arg_info)
             // ClearArgCudaDefined( FUNDEF_ARGS( fundef));
         }
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode in CUTEMap!");
+        DBUG_ASSERT ((0), "Invalid traverse mode!");
     }
 
     DBUG_RETURN (arg_node);
@@ -637,6 +647,8 @@ CUTEMwith (node *arg_node, info *arg_info)
         if (!WITH_CUDARIZABLE (arg_node)) {
             old_inwith = INFO_INWITH (arg_info);
             INFO_INWITH (arg_info) = TRUE;
+            /* For non cudarizable withloops, we traverse its body to
+             * set the IsHostReferenced attributes of all N_ids */
             WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
             INFO_INWITH (arg_info) = old_inwith;
         }

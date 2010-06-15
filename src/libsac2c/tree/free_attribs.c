@@ -525,6 +525,57 @@ FREEattribAccessInfo (access_info_t *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn FREEattribRc
+ *
+ * @brief Frees Rc attribute
+ *
+ * @param attr Access node to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+rc_t *
+FREEattribRc (rc_t *attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribRc");
+
+    while (attr != NULL) {
+        rc_t *tmp = attr;
+        attr = attr->next;
+        tmp = MEMfree (tmp);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FREEattribReuseInfo
+ *
+ * @brief Frees ReuseInfo attribute
+ *
+ * @param attr ReuseInfo node to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+reuse_info_t *
+FREEattribReuseInfo (reuse_info_t *attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribReuseInfo");
+
+    if (attr != NULL) {
+        attr->rcs = FREEattribRc (attr->rcs, parent);
+        attr = MEMfree (attr);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn FREEattribShpSeg
  *
  * @brief Frees ShpSeg attribute

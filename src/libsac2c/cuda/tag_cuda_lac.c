@@ -97,7 +97,7 @@ TCULACdoTagCudaLac (node *lac_ap, node *ap_ids, node *fundef_args)
     DBUG_ENTER ("TCULACdoTagCudaLac");
 
     fundef = AP_FUNDEF (lac_ap);
-    DBUG_ASSERT (fundef != NULL, "Found a lac fun with empty fundef!");
+    DBUG_ASSERT ((fundef != NULL), "Found lac function with empty fundef!");
 
     ids_args_ok = CheckApIds (ap_ids);
 
@@ -136,17 +136,19 @@ TCULACap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TCULACap");
 
-    DBUG_ASSERT ((FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISDOFUN (fundef)),
-                 "TCULAC traverses non-lac function!");
-
     fundef = AP_FUNDEF (arg_node);
 
     if (fundef != NULL) {
         if (FUNDEF_ISCONDFUN (fundef)) {
+            /* If we found a cond lac function, we continues traverse
+             * into its body */
             fundef = TRAVdo (fundef, arg_info);
         } else if (FUNDEF_ISDOFUN (fundef)) {
+            /* If we found a loop, the lac function is not cudarizable */
             INFO_ISCUDARIZABLE (arg_info) = FALSE;
         } else {
+            /* If we found a normal function application, lac
+             * function is not cudarizable */
             INFO_ISCUDARIZABLE (arg_info) = FALSE;
         }
     }
@@ -159,6 +161,7 @@ TCULACwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TCULACwith");
 
+    /* Any withloops within a lac function makes it un-cudarizable */
     INFO_ISCUDARIZABLE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);

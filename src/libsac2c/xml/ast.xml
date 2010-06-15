@@ -54,6 +54,8 @@
     copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
     copy="function" persist="no" />
+    <type name="ReuseInfo" ctype="reuse_info_t*" init="NULL"
+    copy="function" persist="no" />
     <type name="AccessFeature" ctype="feature_t" init="0"
     copy="literal"  />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
@@ -96,6 +98,45 @@
         <travuser>
           <node name="Tfspec" />
           <node name="Tfdef" />
+        </travuser>
+      </traversal>
+      <traversal id="ESBL" name="CUDA Expand shared memory boundary load" default="sons" include="expand_shmem_boundary_load.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="ASHA" name="CUDA Adjust shared memory access" default="sons" include="adjust_shmem_access.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Prf" />
+        </travuser>
+        <travnone>
+          <node name="With2" />
+        </travnone>
+      </traversal>
+      <traversal id="SHMEM" name="CUDA Exploiting data reuse with shared memory" default="sons" include="shared_memory_reuse.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="IRA" name="CUDA Infer reusable arrays in withloops" default="sons" include="infer_reusable_arrays.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="RLAC" name="CUDA Remove unused lac functions" default="sons" include="remove_unused_lac.h" >
@@ -203,6 +244,7 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Id" />
           <node name="Let" />
           <node name="Prf" />
         </travuser>
@@ -8239,6 +8281,15 @@ N_tfarg :
                   <phase name="initial" />
 		  <!-- this is only used during wlaa and array padding! -->
                 </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="IRA_Info" default="NULL" inconstructor="no">
+          <type name="ReuseInfo">
+            <targets>
+              <target mandatory="no">
+                <any />
               </target>
             </targets>
           </type>

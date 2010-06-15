@@ -147,14 +147,12 @@ PKNLGprf (node *arg_node, info *arg_info)
 
             avis = ID_AVIS (id);
 
-            printf ("Checking varaible %s\n", ID_NAME (id));
             if (TYisAKV (AVIS_TYPE (avis))) {
                 INFO_PREASSIGN (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL),
                                              COconstant2AST (
                                                TYgetValue (AVIS_TYPE (avis)))),
                                   NULL);
-                printf ("Add constant assignment before sel_VxA\n");
             }
             break;
         default:

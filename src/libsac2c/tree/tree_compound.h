@@ -700,6 +700,8 @@ extern node *TCcreateExprsFromIds (node *ids);
 #define EXPRS_EXPRS4(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n)))
 #define EXPRS_EXPRS5(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n))))
 #define EXPRS_EXPRS6(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n)))))
+#define EXPRS_EXPRS7(n)                                                                  \
+    EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n))))))
 
 #define EXPRS_EXPR1(n) EXPRS_EXPR (n)
 #define EXPRS_EXPR2(n) EXPRS_EXPR (EXPRS_EXPRS2 (n))
@@ -707,6 +709,7 @@ extern node *TCcreateExprsFromIds (node *ids);
 #define EXPRS_EXPR4(n) EXPRS_EXPR (EXPRS_EXPRS4 (n))
 #define EXPRS_EXPR5(n) EXPRS_EXPR (EXPRS_EXPRS5 (n))
 #define EXPRS_EXPR6(n) EXPRS_EXPR (EXPRS_EXPRS6 (n))
+#define EXPRS_EXPR7(n) EXPRS_EXPR (EXPRS_EXPRS7 (n))
 
 /******************************************************************************
  *
@@ -900,11 +903,17 @@ extern bool TCisPhiFun (node *id);
 #define PRF_EXPRS2(n) EXPRS_EXPRS2 (PRF_ARGS (n))
 #define PRF_EXPRS3(n) EXPRS_EXPRS3 (PRF_ARGS (n))
 #define PRF_EXPRS4(n) EXPRS_EXPRS4 (PRF_ARGS (n))
+#define PRF_EXPRS5(n) EXPRS_EXPRS5 (PRF_ARGS (n))
+#define PRF_EXPRS6(n) EXPRS_EXPRS6 (PRF_ARGS (n))
+#define PRF_EXPRS7(n) EXPRS_EXPRS7 (PRF_ARGS (n))
 
 #define PRF_ARG1(n) EXPRS_EXPR (PRF_EXPRS1 (n))
 #define PRF_ARG2(n) EXPRS_EXPR (PRF_EXPRS2 (n))
 #define PRF_ARG3(n) EXPRS_EXPR (PRF_EXPRS3 (n))
 #define PRF_ARG4(n) EXPRS_EXPR (PRF_EXPRS4 (n))
+#define PRF_ARG5(n) EXPRS_EXPR (PRF_EXPRS5 (n))
+#define PRF_ARG6(n) EXPRS_EXPR (PRF_EXPRS6 (n))
+#define PRF_ARG7(n) EXPRS_EXPR (PRF_EXPRS7 (n))
 
 #define MAKE_BIN_PRF(f, arg1, arg2)                                                      \
     TBmakePrf (f, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
@@ -1146,6 +1155,9 @@ extern bool TCcontainsDefaultPartition (node *parts);
 #define CODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (CODE_WLAA_WLARRAY (n))
 #define CODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (CODE_WLAA_INDEXVAR (n), 0)
 #define CODE_WLAA_ARRAYDIM(n) VARDEC_DIM (CODE_WLAA_WLARRAY (n))
+
+#define CODE_IRA_RCCOUNT(n) (CODE_IRA_INFO (n)->count)
+#define CODE_IRA_RCS(n) (CODE_IRA_INFO (n)->rcs)
 
 #define CODE_INC_USED(n) CODE_USED (n) = CODE_USED (n) + 1
 #define CODE_DEC_USED(n)                                                                 \

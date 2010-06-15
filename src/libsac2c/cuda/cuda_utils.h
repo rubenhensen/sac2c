@@ -24,8 +24,12 @@
 
 extern node *CUnthApArg (node *args, int n);
 extern simpletype CUh2dSimpleTypeConversion (simpletype sty);
+extern simpletype CUd2hSimpleTypeConversion (simpletype sty);
+extern simpletype CUd2shSimpleTypeConversion (simpletype sty);
 extern bool CUisDeviceTypeNew (ntype *ty);
+extern bool CUisShmemTypeNew (ntype *ty);
 extern bool CUisDeviceTypeOld (types *ty);
+extern bool CUisShmemTypeOld (types *ty);
 extern bool CUisDeviceArrayTypeNew (ntype *ty);
 
 #endif
