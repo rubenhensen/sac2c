@@ -236,27 +236,6 @@ matchValues (node *fa, node *fb)
             DBUG_PRINT ("CUBSL", ("Values do not match"));
         }
     }
-#ifdef DEADCODEUNFLATTEN
-    z = (fa == fb);
-    if ((!z) && (NULL != fa) && (NULL != fb) && TYisAKV (AVIS_TYPE (fa))
-        && TYisAKV (AVIS_TYPE (fb))) {
-        fac = COaST2Constant (fa);
-        fbc = COaST2Constant (fb);
-        z = COcompareConstants (fac, fbc);
-        fac = COfreeConstant (fac);
-        fbc = COfreeConstant (fbc);
-    }
-
-    if ((NULL != fa) && (NULL != fb)) {
-        if (z) {
-            DBUG_PRINT ("CUBSL",
-                        ("Vardecs %s and %s match", AVIS_NAME (fa), AVIS_NAME (fb)));
-        } else {
-            DBUG_PRINT ("CUBSL", ("Vardecs %s and %s do not match", AVIS_NAME (fa),
-                                  AVIS_NAME (fb)));
-        }
-    }
-#endif // DEADCODEUNFLATTEN
 
     DBUG_ASSERT (FALSE == z, "this is supposed to be dead code!");
     DBUG_RETURN (z);
@@ -318,17 +297,9 @@ matchGeneratorField (node *fa, node *fb)
         } else {
             DBUG_PRINT ("CUBSL", ("matchGeneratorField did not match"));
         }
-#ifdef DEADCODEUNFLATTEN
-        DBUG_PRINT ("CUBSL", ("matchGeneratorField %s and %s matched",
-                              AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
-    } else {
-        DBUG_PRINT ("CUBSL", ("matchGeneratorField %s and %s did not match",
-                              AVIS_NAME (ID_AVIS (fa)), AVIS_NAME (ID_AVIS (fb))));
     }
-#endif // DEADCODEUNFLATTEN
-}
 
-DBUG_RETURN (z);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -489,17 +460,6 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
       PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))))));
     intersectListLim = (intersectListLim - 1) / WLEXPRESSIONSPERPART;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
-
-#if 0
-  node *dfg;
-
-  /* too verbose */
-  if( NULL != arg_info) {
-  dfg = AVIS_SSAASSIGN( ID_AVIS( idx));
-  dfg = LET_EXPR( ASSIGN_INSTR( dfg));
-  GDBprintPrfArgs( dfg, arg_info->fundef);
-  }
-#endif // 0
 
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
@@ -675,6 +635,7 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
 
     switch (intersecttype) {
     default:
+    case INTERSECT_unknown:
     case INTERSECT_null:
         typ = "NULL";
         producerWLPart = NULL;
@@ -684,7 +645,16 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
         break;
     case INTERSECT_sliceneeded:
         typ = "slice needed";
-        producerWLPart = NULL;
+        /* FIXME: For now, we allow slicing only when the consumerWL
+         * generator has one axis. That way, we do not have to deal
+         * with permuted and/or collapsing axes.
+         */
+        if (1
+            != SHgetUnrLen (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (consumerWLGenerator)))) {
+            producerWLPart = NULL;
+            intersecttype = INTERSECT_unknown;
+            DBUG_PRINT ("CUBSL", ("Cube slicing needed, but not rank 1. FIXME!"));
+        }
         break;
     }
     (*itype) = intersecttype;
@@ -843,11 +813,6 @@ PartitionSlicerOneAxis (node *partn, node *lb, node *ub, int axis, info *arg_inf
             newub = DUPdoDupTree (partub);
             ARRAY_AELEMS (newub)
               = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
-#ifdef DEADCODEFLATTENER
-            newub = WLSflattenBound (newub, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNSWITH (arg_info));
-
-#endif // DEADCODEFLATTENER
             genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                     DUPdoDupTree (width));
             newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
@@ -857,17 +822,7 @@ PartitionSlicerOneAxis (node *partn, node *lb, node *ub, int axis, info *arg_inf
 
         /* All cases need partI */
         newlb = DUPdoDupTree (lb);
-
-#ifdef DEADCODEFLATTENER
-        newlb = WLSflattenBound (newlb, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSWITH (arg_info));
-#endif // DEADCODEFLATTENER
         newub = DUPdoDupTree (ub);
-#ifdef DEADCODEFLATTENER
-        newub = WLSflattenBound (newub, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSWITH (arg_info));
-#endif // DEADCODEFLATTENER
-
         genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                 DUPdoDupTree (width));
         newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
@@ -879,17 +834,7 @@ PartitionSlicerOneAxis (node *partn, node *lb, node *ub, int axis, info *arg_inf
             DBUG_PRINT ("Constructing partition C for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             newlb = DUPdoDupTree (ub);
-#ifdef DEADCODEFLATTENER
-            newlb = WLSflattenBound (newlb, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNSWITH (arg_info));
-#endif // DEADCODEFLATTENER
-
             newub = DUPdoDupTree (partub);
-#ifdef DEADCODEFLATTENER
-            newub = WLSflattenBound (newub, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNSWITH (arg_info));
-#endif // DEADCODEFLATTENER
-
             genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                     DUPdoDupTree (width));
             newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
@@ -1009,45 +954,39 @@ CUBSLfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUBSLfundef");
 
-    /* DISABLED FIXME - need to resolve axis collapse and axis permutation */
-    if (FALSE) { /* FIXME */
+    if (FUNDEF_BODY (arg_node) != NULL) {
+
+        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
+                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                              FUNDEF_NAME (arg_node)));
+
+        old_onefundef = INFO_ONEFUNDEF (arg_info);
+        INFO_ONEFUNDEF (arg_info) = FALSE;
+
         if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            DBUG_PRINT ("CUBSL",
-                        ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                         FUNDEF_NAME (arg_node)));
-
-            old_onefundef = INFO_ONEFUNDEF (arg_info);
-            INFO_ONEFUNDEF (arg_info) = FALSE;
-
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-                /* If new vardecs were made, append them to the current set */
-                if (INFO_VARDECS (arg_info) != NULL) {
-                    BLOCK_VARDEC (FUNDEF_BODY (arg_node))
-                      = TCappendVardec (INFO_VARDECS (arg_info),
-                                        BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
-                    INFO_VARDECS (arg_info) = NULL;
-                }
-
-                FUNDEF_LOCALFUNS (arg_node)
-                  = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-                INFO_ONEFUNDEF (arg_info) = old_onefundef;
+            /* If new vardecs were made, append them to the current set */
+            if (INFO_VARDECS (arg_info) != NULL) {
+                BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+                  = TCappendVardec (INFO_VARDECS (arg_info),
+                                    BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                INFO_VARDECS (arg_info) = NULL;
             }
 
-            DBUG_PRINT ("CUBSL",
-                        ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                         FUNDEF_NAME (arg_node)));
+            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+            INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
-        if (!INFO_ONEFUNDEF (arg_info)) {
-            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        }
-    } /* FIXME - axis collapse and axis permutation */
+        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
+                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                              FUNDEF_NAME (arg_node)));
+    }
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
