@@ -1762,34 +1762,40 @@ PRTfundef (node *arg_node, info *arg_info)
          * print function declaration
          */
 
-        if (!FUNDEF_ISZOMBIE (arg_node)) {
-            if ((FUNDEF_BODY (arg_node) == NULL)
-                || ((FUNDEF_RETURN (arg_node) != NULL)
-                    && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                fprintf (global.outfile, "%s ", PRINT_EXTERN);
+        if (global.backend == BE_cuda && FUNDEF_NS (arg_node) != NULL
+            && STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")) {
+            /* If the function is a math function, we do not print
+             * it's declaration as CUDA has already provided that. */
+        } else {
+            if (!FUNDEF_ISZOMBIE (arg_node)) {
+                if ((FUNDEF_BODY (arg_node) == NULL)
+                    || ((FUNDEF_RETURN (arg_node) != NULL)
+                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
+                    fprintf (global.outfile, "%s ", PRINT_EXTERN);
 
-                if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
-                    PrintFunctionHeader (arg_node, arg_info, FALSE);
-                } else {
-                    /* print N_icm ND_FUN_DEC */
-                    fprintf (global.outfile, "\n");
-                    TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
-                }
-
-                if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                      || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
-                    fprintf (global.outfile, ";\n");
-                }
-
-                if ((global.compiler_subphase != PH_cg_prt)
-                    && (global.compiler_subphase != PH_ccg_prt)) {
-                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                        TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                    if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                        || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
+                        PrintFunctionHeader (arg_node, arg_info, FALSE);
+                    } else {
+                        /* print N_icm ND_FUN_DEC */
+                        fprintf (global.outfile, "\n");
+                        TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
                     }
-                }
 
-                fprintf (global.outfile, "\n");
+                    if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                          || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
+                        fprintf (global.outfile, ";\n");
+                    }
+
+                    if ((global.compiler_subphase != PH_cg_prt)
+                        && (global.compiler_subphase != PH_ccg_prt)) {
+                        if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                            TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                        }
+                    }
+
+                    fprintf (global.outfile, "\n");
+                }
             }
         }
     } else {
