@@ -729,22 +729,31 @@ getInner (node *arg_node)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *followId( node *expr)
+ * @fn node *followId( node *expr, node **new_assign)
  *
  * @brief follows Variables to their definitions using SSAASSIGN and the
  *        (potentially empty) LUT
- * @param starting expression
+ * @param expr: starting expression
+ *        new_assign: where to store N_assign address for caller.
+ *
  * @return RHS of definition for the given Id node or the node itself.
+ *
+ *         We give back the assign chain as a side effect, only
+ *         so that our caller can check for _same_shape_AxA,
+ *         which has to pick proper argument, based on which
+ *         result we are chasing.
+ *
  *****************************************************************************/
 static node *
-followId (node *expr)
+followId (node *expr, node **new_assign)
 {
     node *new_id;
     DBUG_ENTER ("followId");
 
     if (NODE_TYPE (expr) == N_id) {
         if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
-            expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
+            *new_assign = AVIS_SSAASSIGN (ID_AVIS (expr));
+            expr = LET_EXPR (ASSIGN_INSTR (*new_assign));
         } else if (follow_lut != NULL) {
             new_id = (node *)LUTsearchInLutP (follow_lut, ID_AVIS (expr));
             expr = (new_id != NULL ? new_id : expr);
@@ -755,7 +764,8 @@ followId (node *expr)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *followPrf( prfMatchFun prfInspectFun, node *expr)
+ * @fn node *followPrf( prfMatchFun prfInspectFun, node *expr,
+ *                      node *new_assign, node *old_expr)
  *
  * @brief follows first arg of given prf if the prfInspectFun yields TRUE.
  * @param starting expression
@@ -763,12 +773,21 @@ followId (node *expr)
  *         otherwise the expr itself.
  *****************************************************************************/
 static node *
-followPrf (prfMatchFun prfInspectFun, node *expr)
+followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_expr)
 {
+    node *prfarg1;
+
     DBUG_ENTER ("followPrf");
 
     if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
-        expr = PRF_ARG1 (expr);
+        /* Need to pick same_shape() argument that matches result */
+        if (F_same_shape_AxA == PRF_PRF (expr)) {
+            prfarg1 = IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_assign)));
+            expr = (ID_AVIS (old_expr) == prfarg1) ? PRF_ARG1 (expr) : PRF_ARG2 (expr);
+            DBUG_PRINT ("PM", ("Found _same_shape_AxA"));
+        } else {
+            expr = PRF_ARG1 (expr);
+        }
     }
     DBUG_RETURN (expr);
 }
@@ -787,6 +806,7 @@ skipVarDefs (node *expr)
 {
     DBUG_ENTER ("skipVarDefs");
     node *old_expr;
+    node *new_assign = NULL;
 
     if (expr != NULL) {
         switch (mode) {
@@ -795,39 +815,39 @@ skipVarDefs (node *expr)
         case PM_flat:
             do {
                 old_expr = expr;
-                expr = followId (old_expr);
+                expr = followId (old_expr, &new_assign);
             } while (expr != old_expr);
             break;
 
         case PM_flatSkipExtrema:
             do {
                 old_expr = expr;
-                expr = followId (old_expr);
-                expr = followPrf (isInExtrema, expr);
+                expr = followId (old_expr, &new_assign);
+                expr = followPrf (isInExtrema, expr, new_assign, old_expr);
             } while (expr != old_expr);
             break;
 
         case PM_flatSkipGuards:
             do {
                 old_expr = expr;
-                expr = followId (old_expr);
-                expr = followPrf (isInGuards, expr);
+                expr = followId (old_expr, &new_assign);
+                expr = followPrf (isInGuards, expr, new_assign, old_expr);
             } while (expr != old_expr);
             break;
 
         case PM_flatSkipExtremaAndGuards:
             do {
                 old_expr = expr;
-                expr = followId (old_expr);
-                expr = followPrf (isInExtremaOrGuards, expr);
+                expr = followId (old_expr, &new_assign);
+                expr = followPrf (isInExtremaOrGuards, expr, new_assign, old_expr);
             } while (expr != old_expr);
             break;
 
         case PM_flatWith:
             do {
                 old_expr = expr;
-                expr = followId (old_expr);
-                expr = followPrf (isAfterguard, expr);
+                expr = followId (old_expr, &new_assign);
+                expr = followPrf (isAfterguard, expr, new_assign, old_expr);
             } while (expr != old_expr);
             break;
         }
