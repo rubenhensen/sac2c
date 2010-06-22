@@ -236,11 +236,9 @@ CFdoConstantFoldingOneFundef (node *arg_node)
     INFO_ONEFUNDEF (arg_info) = TRUE;
     INFO_LACFUNOK (arg_info) = FALSE;
 
-    SCSinitSymbolicConstantSimplification ();
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
     TRAVpop ();
-    SCSfinalizeSymbolicConstantSimplification ();
 
     arg_info = FreeInfo (arg_info);
 
@@ -275,11 +273,9 @@ CFdoConstantFolding (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    SCSinitSymbolicConstantSimplification ();
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
     TRAVpop ();
-    SCSfinalizeSymbolicConstantSimplification ();
 
     arg_info = FreeInfo (arg_info);
 

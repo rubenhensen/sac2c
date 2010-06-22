@@ -88,6 +88,7 @@ OPTIMIZE ("msca", msca, TRUE, TRUE, "memory size cache adjustment (requires -dop
 OPTIMIZE ("ap", ap, FALSE, FALSE, "array padding")
 OPTIMIZE ("apl", apl, FALSE, FALSE, "array placement")
 OPTIMIZE ("wls", wls, TRUE, TRUE, "with-loop scalarization")
+OPTIMIZE ("as", as, TRUE, TRUE, "arithmetic simplification")
 OPTIMIZE ("al", al, TRUE, TRUE, "associative law")
 OPTIMIZE ("etc", etc, TRUE, TRUE, "typeconv elimination")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")

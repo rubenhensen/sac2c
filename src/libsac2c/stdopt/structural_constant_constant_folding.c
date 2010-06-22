@@ -166,14 +166,6 @@ StructOpSel (node *arg_node, info *arg_info)
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
                             TYmakeAKS (TYmakeSimpleType (T_int),
                                        SHcreateShape (1, iv_len - X_dim)));
-#ifdef LETISAADOIT
-            if (PHisSAAMode ()) {
-                AVIS_DIM (tmpivavis) = TBmakeNum (1);
-                // Following is really GenIntVector call
-                AVIS_SHAPE (tmpivavis)
-                  = TCmakeIntVector (TBmakeExprs (TBmakeNum (iv_len - X_dim), NULL));
-            }
-#endif // LETISAADOIT
             tmpivval = COconstant2AST (con1);
             INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
             tmpivid = TBmakeId (tmpivavis);
@@ -867,16 +859,17 @@ SelModarray (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *iv = NULL;
+    node *iv2 = NULL;
     node *ivpp = NULL;
     node *X = NULL;
     node *Mprime = NULL;
     node *val = NULL;
-    node *iv2 = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     pattern *pativ;
+    pattern *pat5;
 
     DBUG_ENTER ("SelModarray");
 
@@ -884,54 +877,60 @@ SelModarray (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&ivpp), 0),
                   PMvar (1, PMAgetNode (&X), 0));
 
-    /* Chase  iv'' to iv */
-    pativ = PMvar (1, PMAgetNode (&iv), 0);
+    /* Chase  iv'' to iv's RHS */
+    pativ = PMany (1, PMAgetNode (&iv), 0);
 
     /* _X = modarray_AxVxS_( M, iv, val) */
     pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
-                  PMvar (1, PMAisVar (&iv), 0), PMvar (1, PMAgetNode (&val), 0));
+                  PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
     /* _X = modarray_AxSxA_( M, iv, val) */
     pat3 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
-                  PMvar (1, PMAisVar (&iv), 0), PMvar (1, PMAgetNode (&val), 0));
+                  PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
     /* X' = _afterguard_( X, p0, p1, ... ); */
     pat4 = PMprf (2, PMAisPrf (F_afterguard), PMAgetNode (&Mprime), 1, PMskip (0));
 
-    if (PMmatchFlatSkipGuards (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)) {
-        if (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X)) {
+    /* Chase iv' in _modarray(X, iv', val) back to iv */
+    pat5 = PMany (1, PMAisNode (&iv), 0);
 
-            int MustTrackBackiv2CompareAgainstiv; /* FIXME */
-            res = DUPdoDupNode (val);
-            DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by %s",
-                               AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
-                               AVIS_NAME (ID_AVIS (val))));
-        } else {
+    if (PMmatchFlatSkipGuards (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)
+        && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
+        && PMmatchFlat (pat5, iv2)) {
 
-            /* Case 4 */
-            if ((NULL != ivpp) && (PMmatchFlatSkipGuards (pativ, ivpp))
-                && (PMmatchFlatSkipGuards (pat4, X))
-                && (PMmatchFlatSkipGuards (pat2, Mprime)
-                    || PMmatchFlatSkipGuards (pat3, Mprime))) {
-                /* We have to preserve the afterguard on X */
-                res = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (X))));
-                res = DUPdoDupNode (res); /* The afterguard */
-                FREEdoFreeNode (PRF_ARG1 (res));
-                PRF_ARG1 (res) = DUPdoDupNode (val);
-                DBUG_PRINT (
-                  "CF",
-                  ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by guarded %s",
-                   AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
-                   AVIS_NAME (ID_AVIS (val))));
-            }
+        res = DUPdoDupNode (val);
+        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by %s",
+                           AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
+                           AVIS_NAME (ID_AVIS (val))));
+    } else {
+
+        /* Case 4 */
+        /* FIXME: This does not work properly yet. It removes the sel()
+         * correctly, but the afterguards on the modarray hang around,
+         * so we still create that result, even though we may never
+         * use it.
+         */
+        if ((NULL != ivpp) && (PMmatchFlatSkipGuards (pativ, ivpp))
+            && (PMmatchFlat (pat4, X))
+            && ((PMmatchFlatSkipGuards (pat2, Mprime)
+                 || PMmatchFlatSkipGuards (pat3, Mprime)))
+            && (PMmatchFlat (pat5, iv2))) {
+            /* Preserve the afterguard on X */
+            res = DUPdoDupNode (Mprime);
+            FREEdoFreeNode (PRF_ARG1 (res));
+            PRF_ARG1 (res) = DUPdoDupNode (val);
+            DBUG_PRINT (
+              "CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by guarded %s",
+                     AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
+                     AVIS_NAME (ID_AVIS (val))));
         }
     }
-
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
     pativ = PMfree (pativ);
+    pat5 = PMfree (pat5);
 
     DBUG_RETURN (res);
 }

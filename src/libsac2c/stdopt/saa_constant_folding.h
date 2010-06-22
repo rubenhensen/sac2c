@@ -28,6 +28,7 @@ extern node *SAACFprf_non_neg_val_S (node *arg_node, info *arg_info);
 extern node *SAACFprf_non_neg_val_V (node *arg_node, info *arg_info);
 extern node *SAACFprf_val_lt_shape_SxA (node *arg_node, info *arg_info);
 extern node *SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info);
+extern node *SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info);
 
 extern node *SAACFprf_saabind (node *arg_node, info *arg_info);
 

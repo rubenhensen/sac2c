@@ -102,32 +102,6 @@
 #include "phase.h"
 #include "algebraic_wlfi.h"
 
-/*******************************************************************************
- *  some static initialisation needed for pattern sharing across all functions
- */
-static bool initialised = FALSE;
-static node *node_ptr;
-static pattern *prf_id_args_pat;
-
-void
-SCSinitSymbolicConstantSimplification ()
-{
-    if (!initialised) {
-        prf_id_args_pat = PMprf (0, 2, PMvar (1, PMAgetNode (&node_ptr), 0),
-                                 PMvar (1, PMAisVar (&node_ptr), 0));
-        initialised = TRUE;
-    }
-}
-
-void
-SCSfinalizeSymbolicConstantSimplification ()
-{
-    if (initialised) {
-        prf_id_args_pat = PMfree (prf_id_args_pat);
-        initialised = FALSE;
-    }
-}
-
 /* local used helper functions */
 
 /******************************************************************************
@@ -328,15 +302,19 @@ SCSmakeTrue (node *prfarg)
 static bool
 MatchConstantZero (node *prfarg)
 {
-    constant *argconst;
+    constant *argconst = NULL;
+    pattern *pat;
     bool res = FALSE;
 
     DBUG_ENTER ("MatchConstantZero");
-    argconst = COaST2Constant (prfarg);
-    if (NULL != argconst) {
+
+    pat = PMconst (1, PMAgetVal (&argconst));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
         res = COisZero (argconst, TRUE);
         argconst = COfreeConstant (argconst);
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -350,15 +328,46 @@ MatchConstantZero (node *prfarg)
 static bool
 MatchConstantOne (node *prfarg)
 {
-    constant *argconst;
+    constant *argconst = NULL;
+    pattern *pat;
     bool res = FALSE;
 
     DBUG_ENTER ("MatchConstantOne");
-    argconst = COaST2Constant (prfarg);
-    if (NULL != argconst) {
+
+    pat = PMconst (1, PMAgetVal (&argconst));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
         res = COisOne (argconst, TRUE);
         argconst = COfreeConstant (argconst);
     }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool MatchPrfrgs( node *arg_node)
+ * Predicate for PRF_ARG1 matching PRF_ARG2
+ *
+ *****************************************************************************/
+static bool
+MatchPrfargs (node *arg_node)
+{
+    pattern *pat1;
+    pattern *pat2;
+    node *node_ptr = NULL;
+    bool res;
+
+    DBUG_ENTER ("MatchPrfargs");
+
+    pat1 = PMany (1, PMAgetNode (&node_ptr), 0);
+    pat2 = PMany (1, PMAisNode (&node_ptr), 0);
+    res = PMmatchFlatSkipExtremaAndGuards (pat1, PRF_ARG1 (arg_node))
+          && PMmatchFlatSkipExtremaAndGuards (pat2, PRF_ARG2 (arg_node));
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
     DBUG_RETURN (res);
 }
 
@@ -387,7 +396,8 @@ MatchNegV (node *arg1, node *arg2)
 
     pat2 = PMprf (1, PMAisPrf (F_neg_V), 1, PMvar (1, PMAisVar (&arg1p), 0));
 
-    res = PMmatchFlatSkipExtrema (pat1, arg1) && PMmatchFlatSkipExtrema (pat2, arg2);
+    res = PMmatchFlatSkipExtremaAndGuards (pat1, arg1)
+          && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -420,7 +430,8 @@ MatchNegS (node *arg1, node *arg2)
 
     pat2 = PMprf (1, PMAisPrf (F_neg_S), 1, PMvar (1, PMAisVar (&arg1p), 0));
 
-    res = PMmatchFlatSkipExtrema (pat1, arg1) && PMmatchFlatSkipExtrema (pat2, arg2);
+    res = PMmatchFlatSkipExtremaAndGuards (pat1, arg1)
+          && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
 
@@ -478,6 +489,7 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
         res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_add_SxS generated zero vector"));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -506,7 +518,7 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
         if (MatchConstantZero (PRF_ARG2 (arg_node))
-            && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+            && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
             DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]"));
@@ -576,7 +588,7 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
         if (MatchConstantZero (PRF_ARG1 (arg_node))
-            && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
+            && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
             DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]"));
@@ -609,7 +621,7 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))
-        && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+        && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]"));
@@ -637,7 +649,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
+    } else if (MatchPrfargs (arg_node)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
 
@@ -659,10 +671,8 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCSprf_sub_VxV");
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
-        /* This assumes that shape(x) == shape(y), and hence is perhaps,
-         * not a safe optimization. */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X - X */
+    } else if (MatchPrfargs (arg_node)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -704,6 +714,7 @@ SCSprf_mul_SxS (node *arg_node, info *arg_info)
  * @fn node *SCSprf_mul_SxV( node *arg_node, info *arg_info)
  * 1 * X -> X
  * 0 * X -> 0 of shape(X)
+ *
  *****************************************************************************/
 node *
 SCSprf_mul_SxV (node *arg_node, info *arg_info)
@@ -728,7 +739,7 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
         DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced  S* [0,0...,0] by [0,0,...0]"));
 
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
-               && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+               && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]"));
     }
@@ -770,7 +781,7 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
         DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [0,0...,0] * S by [0,0,...0]"));
 
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))
-               && PMmatchFlatSkipExtrema (pat, PRF_ARG1 (arg_node))) {
+               && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]"));
     }
@@ -837,7 +848,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
 
         /* Scalar extension case:      S / [1,1,...1]  --> [S,S,..,S] */
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
-               && PMmatchFlatSkipExtrema (pat, PRF_ARG2 (arg_node))) {
+               && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("CF", ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]"));
     }
@@ -938,9 +949,10 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
         /* S | S */
-    } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) {
+    } else if (MatchPrfargs (arg_node)) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -962,6 +974,7 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -983,6 +996,7 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -998,9 +1012,10 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_or_VxV");
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /*  X | X */
+    if (MatchPrfargs (arg_node)) { /*  X | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1032,9 +1047,10 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
-    } else if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /* X & X */
+    } else if (MatchPrfargs (arg_node)) { /* X & X */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1056,6 +1072,7 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1077,6 +1094,7 @@ SCSprf_and_VxS (node *arg_node, info *arg_info)
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1092,9 +1110,10 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_and_VxV");
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) { /*  X & X */
+    if (MatchPrfargs (arg_node)) { /*  X & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1113,6 +1132,7 @@ SCSprf_mod (node *arg_node, info *arg_info)
     if (MatchConstantZero (PRF_ARG2 (arg_node))) {
         CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "mod(X,0) encountered.");
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1436,7 +1456,7 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_max_SxS");
-    if (PMmatchFlat (prf_id_args_pat, arg_node)) {
+    if (MatchPrfargs (arg_node)) { /* max ( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1473,7 +1493,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_min_SxS");
-    if (PMmatchFlat (prf_id_args_pat, arg_node)) {
+    if (MatchPrfargs (arg_node)) { /* min( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1501,6 +1521,7 @@ SCSprf_min_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SCSprf_min_VxV");
     res = SCSprf_min_SxS (arg_node, arg_info);
+
     DBUG_RETURN (res);
 }
 
@@ -1573,7 +1594,7 @@ SCSprf_nlege (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_nlege");
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) {
+    if (MatchPrfargs (arg_node)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1653,7 +1674,7 @@ SCSprf_lege (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ("SCSprf_lege");
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node)) {
+    if (MatchPrfargs (arg_node)) {
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1769,7 +1790,7 @@ SCSprf_reshape (node *arg_node, info *arg_info)
     pat = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp1), 0),
                  PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp2), 0),
                         PMvar (1, PMAgetNode (&X), 0)));
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         DBUG_PRINT ("SCS", ("Replacing reshape of reshape"));
 
         res = DUPdoDupNode (arg_node);
@@ -1829,6 +1850,7 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
         res = FREEdoFreeNode (res);
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1867,13 +1889,14 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCSprf_same_shape_AxA");
     arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
     arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
-    if (PMmatchFlatSkipExtrema (prf_id_args_pat, arg_node) /* same_shape(X, X) */
+    if (MatchPrfargs (arg_node) /* same_shape(X, X) */
         || (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
             && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (DUPdoDupNode (PRF_ARG2 (arg_node)),
                                         TBmakeExprs (TBmakeBool (TRUE), NULL)));
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1973,12 +1996,6 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
         scalarp = COmakeTrue (SHmakeShape (0));
         tmpivavis
           = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
-#ifdef LETISASDOIT
-        if (PHisSAAMode ()) {
-            AVIS_DIM (tmpivavis) = TBmakeNum (0);
-            AVIS_SHAPE (tmpivavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL));
-        }
-#endif // LETISASDOIT
         INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
         INFO_PREASSIGN (arg_info) = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
                                                              COconstant2AST (scalarp)),
@@ -2552,13 +2569,6 @@ SCSprf_shape (node *arg_node, info *arg_info)
                               INFO_PREASSIGN (arg_info));
             AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
 
-#ifdef LETISASDOIT
-            if (PHisSAAMode ()) {
-                AVIS_DIM (avis) = TBmakeNum (0); /* each shape element is an int. */
-                AVIS_SHAPE (avis) = TCmakeIntVector (NULL);
-            }
-#endif // LETISASDOIT
-
             res = TBmakeExprs (TBmakeId (avis), res);
         }
         /* At this point, we have an N_exprs chain of idx_shape_sel ops.
@@ -2567,14 +2577,6 @@ SCSprf_shape (node *arg_node, info *arg_info)
         res = TCmakeIntVector (res);
         resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                         SHcreateShape (1, arg1dim)));
-#ifdef LETISASDOIT
-        if (PHisSAAMode ()) {
-            AVIS_DIM (resavis) = TBmakeNum (1);
-            AVIS_SHAPE (resavis)
-              = TCmakeIntVector (TBmakeExprs (TBmakeNum (arg1dim), NULL));
-            ;
-        }
-#endif // LETISASDOIT
 
         INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
 
@@ -2649,15 +2651,15 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_mul_SxS), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                   PMvar (1, PMAgetNode (&arg2p), 0));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1p);
             DBUG_PRINT ("CF", ("SCSprf_reciproc_S Case 1 replacing %s by %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (ID_AVIS (arg1p))));
         } else {
-            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg1p)),
@@ -2715,15 +2717,15 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_mul_VxV), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                   PMvar (1, PMAgetNode (&arg2p), 0));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1p);
             DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 1 replacing %s by %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (ID_AVIS (arg1p))));
         } else {
-            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
                                                          DUPdoDupNode (arg1p)),
@@ -2779,15 +2781,15 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                   PMvar (1, PMAgetNode (&arg2p), 0));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1);
             DBUG_PRINT ("CF", ("SCSprf_neg_S Case 1 replacing %s by %s",
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (ID_AVIS (arg1))));
         } else {
-            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
@@ -2840,8 +2842,8 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_add_VxV), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                   PMvar (1, PMAgetNode (&arg2p), 0));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        if (PMmatchFlatSkipExtrema (pat2, arg1)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1*/
 
             res = DUPdoDupNode (arg1);
@@ -2849,7 +2851,7 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                                AVIS_NAME (ID_AVIS (arg1))));
         } else {
-            if (PMmatchFlatSkipExtrema (pat3, arg1)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
                 p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),

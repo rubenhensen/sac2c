@@ -11,18 +11,20 @@
  *
  * More precisely, we look for the following patterns:
  *
- *  a + -b  =>  a - b
- *  -a + b  =>  b - a
+ *   a + -b  =>  a - b
+ *  -a +  b  =>  b - a
  *  -a + -b => -a - b
  *
- *  a * /b  =>  a / b
- *  /a * b  =>  b / a
- *  /a * /b => /a / b
+ *   a * /b  =>  a / b
+ *  /a *  b  =>  b / a
+ *  /a * /b =>  /a / b
  *
  *  /a      =>  1 / a
  *
- *  Whereas all occurrences of F_reciproc are eliminted, we lieve F_neg
+ *  Whereas all occurrences of F_reciproc are eliminated, we leave F_neg
  *  in the code because it is supported by the backend.
+ *
+ * FIXME: Let's assume that it is now the future, and remove this stuff.
  *
  *  Since both neg and reciproc are standard prfs, why do we remove them
  *  at all during the optimisation cycle rather than keeping them until

@@ -2,6 +2,21 @@
  * $Id$
  */
 
+/** <!--********************************************************************-->
+ *
+ * @file distributive_law.c
+ *
+ * Prefix: DL
+ *
+ * This optimization attempts to reorder a chain of operations
+ * such as:
+ *
+ *    a * ( b + c)
+ *
+ * into ( a * b) + ( a * c);
+ *
+ *
+ *****************************************************************************/
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -20,6 +35,8 @@
 #include "constants.h"
 #include "shape.h"
 #include "print.h"
+#include "pattern_match.h"
+#include "algebraic_wlfi.h"
 
 #include "distributive_law.h"
 
@@ -36,6 +53,7 @@ struct INFO {
     bool travrhs;
     bool onefundef;
     node *lhs;
+    node *vardecs;
 };
 
 /*
@@ -50,6 +68,7 @@ struct INFO {
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_VARDECS(n) ((n)->vardecs)
 
 /*
  * INFO functions
@@ -72,6 +91,7 @@ MakeInfo ()
     INFO_TRAVRHS (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = FALSE;
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -324,6 +344,31 @@ isArg2Scl (prf prf)
 }
 
 static node *
+flattenPrfarg (node *arg_node, info *arg_info)
+{
+    node *res;
+    DBUG_ENTER ("flattenPrfarg");
+
+#ifdef FIXME // appears to break things...
+    if (N_num == NODE_TYPE (arg_node)) {
+        res = AWLFIflattenExpression (arg_node, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGN (arg_info),
+                                      TYmakeAKS (TYmakeSimpleType (T_int),
+                                                 SHmakeShape (0)));
+        res = TBmakeId (res);
+    } else {
+        res = arg_node;
+        DBUG_ASSERT (N_id == NODE_TYPE (arg_node),
+                     "DL polluting AST with non-flattened nodes!");
+    }
+#else  //  FIXME // appears to break things...
+    res = arg_node;
+#endif //  FIXME // appears to break things...
+
+    DBUG_RETURN (res);
+}
+
+static node *
 consumeHead (node *mop)
 {
     node *res;
@@ -373,18 +418,18 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
 }
 
 static node *
-revert (node *ass, node *agg)
+ReverseAssignChain (node *ass, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("revert");
+    DBUG_ENTER ("ReverseAssignChain");
 
     if (ass == NULL) {
         res = agg;
     } else {
         res = ASSIGN_NEXT (ass);
         ASSIGN_NEXT (ass) = agg;
-        res = revert (res, ass);
+        res = ReverseAssignChain (res, ass);
     }
 
     DBUG_RETURN (res);
@@ -407,9 +452,9 @@ Mop2Ast (node *mop, info *arg_info)
             node *e1, *e2;
             prf = PRF_PRF (mop);
             e1 = consumeHead (mop);
-            e1 = Mop2Ast (e1, arg_info);
+            e1 = flattenPrfarg (Mop2Ast (e1, arg_info), arg_info);
             e2 = consumeHead (mop);
-            e2 = Mop2Ast (e2, arg_info);
+            e2 = flattenPrfarg (Mop2Ast (e2, arg_info), arg_info);
             PRF_ARGS (mop)
               = TBmakeExprs (CombineExprs2Prf (prf, e1, e2, arg_info), PRF_ARGS (mop));
             res = Mop2Ast (mop, arg_info);
@@ -425,24 +470,29 @@ static node *
 CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
 {
     node *res = NULL;
+    node *rhs = NULL;
+    pattern *pat;
+    node *left;
+    node *right;
 
     DBUG_ENTER ("CollectExprs");
 
+    DBUG_PRINT ("DL", ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (a))));
     res = TBmakeExprs (DUPdoDupNode (a), NULL);
+    pat = PMany (1, PMAgetNode (&rhs), 0);
 
     if (NODE_TYPE (EXPRS_EXPR (res)) == N_id) {
         ID_ISSCLPRF (EXPRS_EXPR (res)) = is_scalar_arg;
     }
 
-    if ((NODE_TYPE (a) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)
+    if ((NODE_TYPE (a) == N_id) && (PMmatchFlatSkipGuards (pat, a))
         && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
         && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
-
-        node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
         switch (NODE_TYPE (rhs)) {
 
         case N_id:
+            DBUG_PRINT ("DL", ("Found N_id %s", AVIS_NAME (ID_AVIS (rhs))));
             res = FREEdoFreeTree (res);
             res = CollectExprs (prf, rhs, is_scalar_arg, localmask);
             AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
@@ -450,8 +500,7 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
 
         case N_prf:
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
-                node *left, *right;
-
+                DBUG_PRINT ("DL", ("Found N_prf"));
                 left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)),
                                      localmask);
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
@@ -465,9 +514,12 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
             break;
 
         default:
+            DBUG_PRINT ("DL", ("Nothing found"));
             break;
         }
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -708,10 +760,13 @@ SplitMop (node *mcf, node *mop)
 static node *
 OptimizeMop (node *mop)
 {
+    node *exprs;
+
     DBUG_ENTER ("OptimizeMop");
 
     if (NODE_TYPE (mop) == N_prf) {
-        node *exprs = PRF_ARGS (mop);
+        exprs = PRF_ARGS (mop);
+
         while (exprs != NULL) {
             EXPRS_EXPR (exprs) = OptimizeMop (EXPRS_EXPR (exprs));
             exprs = EXPRS_NEXT (exprs);
@@ -825,6 +880,14 @@ DLfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
+
+        /* If new vardecs were made, append them to the current set */
+        if (INFO_VARDECS (arg_info) != NULL) {
+            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+              = TCappendVardec (INFO_VARDECS (arg_info),
+                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+            INFO_VARDECS (arg_info) = NULL;
+        }
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -877,7 +940,8 @@ DLassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
-        arg_node = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
+        arg_node = TCappendAssign (ReverseAssignChain (INFO_PREASSIGN (arg_info), NULL),
+                                   arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
         global.optcounters.al_expr++;
     }
@@ -897,6 +961,8 @@ DLlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         if (INFO_TRAVRHS (arg_info)) {
             INFO_LHS (arg_info) = LET_IDS (arg_node);
+            DBUG_PRINT ("DL",
+                        ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         }
     }
