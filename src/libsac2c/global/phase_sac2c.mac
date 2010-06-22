@@ -387,6 +387,9 @@ CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
                (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
                opt, cyc)
 
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, cyc)
+
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
 
@@ -557,6 +560,9 @@ CYCLEPHASEFUN (cts, "Converting comparisons into subtractions", CTZdoComparisonT
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
+
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, saacyc)
 
 CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)",
                CFdoConstantFoldingOneFundef,

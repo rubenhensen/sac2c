@@ -144,6 +144,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         constant_propagation \
                         variable_propagation \
                         signature_simplification inlining inferneedcounters \
+                        arithmetic_simplification                           \
                         associative_law  distributive_law elimtypeconv liftoptflags \
                         wlsimplification copywlelim prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
