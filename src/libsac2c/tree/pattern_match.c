@@ -768,27 +768,38 @@ followId (node *expr, node **new_assign)
  *                      node *new_assign, node *old_expr)
  *
  * @brief follows first arg of given prf if the prfInspectFun yields TRUE.
+ *        In the case of _same_shape_AxA, it may follow first or second
+ *        argument. Never follow predicates past guards.
+ *
  * @param starting expression
- * @return first arg of given prf node if in expected set;
+ *
+ * @return first/second arg of given prf node if in expected set;
  *         otherwise the expr itself.
+ *
  *****************************************************************************/
 static node *
 followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_expr)
 {
-    node *prfarg1;
-
     DBUG_ENTER ("followPrf");
 
     if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
-        /* Need to pick same_shape() argument that matches result */
-        if (F_same_shape_AxA == PRF_PRF (expr)) {
-            prfarg1 = IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_assign)));
-            expr = (ID_AVIS (old_expr) == prfarg1) ? PRF_ARG1 (expr) : PRF_ARG2 (expr);
-            DBUG_PRINT ("PM", ("Found _same_shape_AxA"));
-        } else {
+        if ((NULL != new_assign) && (N_id == NODE_TYPE (old_expr))
+            && (ID_AVIS (old_expr) == IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_assign))))) {
             expr = PRF_ARG1 (expr);
+        } else {
+            /* Need to pick same_shape() argument that matches result,
+             * and avoid picking ANY predicate.
+             */
+            if ((F_same_shape_AxA == PRF_PRF (expr)) && (NULL != new_assign)
+                && (N_id == NODE_TYPE (old_expr))
+                && (ID_AVIS (old_expr)
+                    == IDS_AVIS (IDS_NEXT (LET_IDS (ASSIGN_INSTR (new_assign)))))) {
+                expr = PRF_ARG2 (expr);
+                DBUG_PRINT ("PM", ("Found _same_shape_AxA"));
+            }
         }
     }
+
     DBUG_RETURN (expr);
 }
 
