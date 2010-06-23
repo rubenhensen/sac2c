@@ -167,6 +167,83 @@ PMAisNode (node **match)
 
 /** <!--*******************************************************************-->
  *
+ * @fn attrib *PMAgetNodeOrAvis( node **match)
+ *
+ * @brief genericly applicable attrib matcher, fetches the entire node
+ *        and either    saves it behind *match         (if not N_id node)
+ *            or        saves its N_avis behind *match (if N_id node).
+ *
+ *****************************************************************************/
+bool
+attribGetNodeOrAvis (attrib *attr, node *arg)
+{
+    DBUG_PRINT ("PMA", (PMASTART "PMAgetNodeOrAvis( " F_PTR " ):", PATTR_N1 (attr)));
+
+    if (PATTR_N1 (attr) != NULL) {
+        *PATTR_N1 (attr) = (NODE_TYPE (arg) == N_id ? ID_AVIS (arg) : arg);
+        if (arg != NULL) {
+            DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
+                                global.mdb_nodetype[NODE_TYPE (arg)],
+                                (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                                (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                                (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+        } else {
+            DBUG_PRINT ("PMA", (PMARESULT "NULL"));
+        }
+    } else {
+        DBUG_PRINT ("PMA", (PMARESULT "redundant PMAgetNodeOrAvis attribute!"));
+    }
+    return (TRUE);
+}
+
+attrib *
+PMAgetNodeOrAvis (node **match)
+{
+    attrib *res;
+
+    res = makeAttrib (N_module, attribGetNodeOrAvis);
+    PATTR_N1 (res) = match;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAisNodeOrAvis( node **match)
+ *
+ * @brief generic attrib checks for pointer equality
+ *
+ *****************************************************************************/
+bool
+attribIsNodeOrAvis (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_ASSERT (*PATTR_N1 (attr) != NULL, "node in PMAisNodeOrAvis compared without"
+                                           "being set yet!");
+    DBUG_PRINT ("PMA", (PMASTART "PMAisNodeOrAvis( " F_PTR " ):", *PATTR_N1 (attr)));
+
+    arg = (NODE_TYPE (arg) == N_id ? ID_AVIS (arg) : arg);
+    res = (arg == *PATTR_N1 (attr));
+    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+
+    return (res);
+}
+
+attrib *
+PMAisNodeOrAvis (node **match)
+{
+    attrib *res;
+
+    DBUG_ASSERT (match != NULL, "PMAisNodeOrAvis called with NULL argument");
+    res = makeAttrib (N_module, attribIsNodeOrAvis);
+    PATTR_N1 (res) = match;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn attrib *PMAisVar( node **var)
  *
  * @brief attrib for PMvar/PMparam checks for equality

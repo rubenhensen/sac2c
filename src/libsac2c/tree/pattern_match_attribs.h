@@ -13,6 +13,8 @@
  */
 extern attrib *PMAgetNode (node **match);
 extern attrib *PMAisNode (node **match);
+extern attrib *PMAgetNodeOrAvis (node **match);
+extern attrib *PMAisNodeOrAvis (node **match);
 
 /**
  * attrib matchers for PMvar / PMparam:
