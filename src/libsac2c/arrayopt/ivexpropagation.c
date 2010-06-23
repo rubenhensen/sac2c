@@ -914,10 +914,6 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
     minmaxavis = AWLFIflattenExpression (minmaxavis, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info),
                                          TYeliminateAKV (AVIS_TYPE (lhsavis)));
-#ifdef DEADCODE // TRY TO FIND SAACYC loop problem
-    AVIS_ISMINHANDLED (minmaxavis) = TRUE;
-    AVIS_ISMAXHANDLED (minmaxavis) = TRUE;
-#endif //  DEADCODE // TRY TO FIND SAACYC loop problem
     DBUG_RETURN (minmaxavis);
 }
 
@@ -1083,10 +1079,6 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
         minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info),
                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
-#ifdef DEADCODE // Chasing SAACYC loop
-        AVIS_ISMINHANDLED (minv) = TRUE;
-        AVIS_ISMAXHANDLED (minv) = TRUE;
-#endif // DEADCODE
     }
 
     if (NULL != maxarg1) {
@@ -1094,10 +1086,6 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
         maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info),
                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
-#ifdef DEADCODE
-        AVIS_ISMINHANDLED (maxv) = TRUE;
-        AVIS_ISMAXHANDLED (maxv) = TRUE;
-#endif // DEADCODE
     }
 
     /* Denormalize maxv */
@@ -1599,6 +1587,10 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
+            IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE);
+            /* We could generate a maxval, too, but we'd to add 1 to the value */
+        }
         break;
 
     case F_noteminval:
