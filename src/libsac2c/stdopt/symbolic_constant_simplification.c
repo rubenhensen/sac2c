@@ -360,8 +360,8 @@ MatchPrfargs (node *arg_node)
 
     DBUG_ENTER ("MatchPrfargs");
 
-    pat1 = PMany (1, PMAgetNode (&node_ptr), 0);
-    pat2 = PMany (1, PMAisNode (&node_ptr), 0);
+    pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
+    pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
     res = PMmatchFlatSkipExtremaAndGuards (pat1, PRF_ARG1 (arg_node))
           && PMmatchFlatSkipExtremaAndGuards (pat2, PRF_ARG2 (arg_node));
 
