@@ -12,6 +12,7 @@
 #include "dbug.h"
 #include "memory.h"
 #include "tree_compound.h"
+#include "globals.h"
 
 /* This file describes a generic array which can grow dynamically as
  * well as a generic stack.
