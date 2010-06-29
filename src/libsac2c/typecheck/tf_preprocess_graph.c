@@ -169,6 +169,16 @@ TFPPGtfspec (node *arg_node, info *arg_info)
             INFO_LABELMODE (arg_info) = edge_labeling;
             TRAVdo (defs, arg_info);
             /* Do the non-tree labeling part only if we have cross edges */
+            int currsize = ++TFSPEC_NUMHIERAR (arg_node);
+            void *_tlcmats
+              = MEMrealloc (TFSPEC_TLCMATRICES (arg_node), currsize * sizeof (matrix *),
+                            (currsize - 1) * sizeof (matrix *));
+            if (!_tlcmats) {
+                CTIabort ("Memory reallocation error in non-tree labeling!\n");
+            }
+            MEMfree (TFSPEC_TLCMATRICES (arg_node));
+            TFSPEC_TLCMATRICES (arg_node) = (matrix **)_tlcmats;
+            TFSPEC_TLCMATRICES (arg_node)[currsize - 1] = NULL;
             if (INFO_TLTABLE (arg_info) != NULL) {
                 if (INFO_ARRX (arg_info) != NULL)
                     freeDynarray (INFO_ARRX (arg_info));
@@ -177,22 +187,14 @@ TFPPGtfspec (node *arg_node, info *arg_info)
                 buildTransitiveLinkTable (INFO_TLTABLE (arg_info));
                 setXYarrays (INFO_TLTABLE (arg_info), &(INFO_ARRX (arg_info)),
                              &(INFO_ARRY (arg_info)));
-                int currsize = ++TFSPEC_NUMHIERAR (arg_node);
-                void *_tlcmats = MEMrealloc (TFSPEC_TLCMATRICES (arg_node),
-                                             currsize * sizeof (matrix *),
-                                             (currsize - 1) * sizeof (matrix *));
-                MEMfree (TFSPEC_TLCMATRICES (arg_node));
-                TFSPEC_TLCMATRICES (arg_node) = (matrix **)_tlcmats;
-                TFSPEC_TLCMATRICES (arg_node)
-                [currsize - 1]
-                  = computeTLCMatrix (INFO_TLTABLE (arg_info), INFO_ARRX (arg_info),
-                                      INFO_ARRY (arg_info));
-                printTransitiveLinkTable (INFO_TLTABLE (arg_info));
-                // printMatrix(TFSPEC_TLCMATRIX(arg_node));
-                // fflush(stdout);
+                if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
+                    TFSPEC_TLCMATRICES (arg_node)
+                    [currsize - 1]
+                      = computeTLCMatrix (INFO_TLTABLE (arg_info), INFO_ARRX (arg_info),
+                                          INFO_ARRY (arg_info));
+                }
                 freeDynarray (INFO_TLTABLE (arg_info));
                 INFO_TLTABLE (arg_info) = NULL;
-                // MEMfree(INFO_TLTABLE(arg_info));
                 /*
                  * Now label nodes for non-tree reachability.
                  * The labels are in the form of triples {x,y,z}
@@ -205,13 +207,15 @@ TFPPGtfspec (node *arg_node, info *arg_info)
         }
         defs = TFDEF_NEXT (defs);
     }
+    /*
     int i;
-    for (i = 0; i < TFSPEC_NUMHIERAR (arg_node); i++) {
-        if (TFSPEC_TLCMATRICES (arg_node)[i] != NULL) {
-            printMatrix (TFSPEC_TLCMATRICES (arg_node)[i]);
-            printf ("\n");
-        }
+    for(i=0;i<TFSPEC_NUMHIERAR(arg_node);i++){
+      if(TFSPEC_TLCMATRICES(arg_node)[i]!=NULL){
+        printMatrix(TFSPEC_TLCMATRICES(arg_node)[i]);
+        printf("\n");
+      }
     }
+    */
     DBUG_RETURN (arg_node);
 }
 
@@ -278,12 +282,12 @@ TFPPGtfdef (node *arg_node, info *arg_info)
                     /* This is a forward edge. Since back and forward edges are
                      * disallowed, throw an error here
                      */
-                    CTIerror ("Forward edge found in subtyping hierarchy");
+                    CTIabort ("Forward edge found in subtyping hierarchy");
                 } else if (pre_sub < pre_super && post_super < post_sub) {
                     /* This is a back edge. Since back and forward edges are
                      * disallowed, throw an error here
                      */
-                    CTIerror ("Back edge found in subtyping hierarchy");
+                    CTIabort ("Back edge found in subtyping hierarchy");
                 } else if (pre_sub < pre_super && post_sub < post_super) {
                     /*
                      * This must be a cross edge. Add this to the transitive
@@ -312,7 +316,7 @@ TFPPGtfdef (node *arg_node, info *arg_info)
                     *((int *)ELEM_DATA (e) + 1) = premax_sub;
                     addToArray (INFO_TLTABLE (arg_info), e);
                 } else {
-                    CTIerror ("Unclassifiable edge found in subtyping hierarchy");
+                    CTIabort ("Unclassifiable edge found in subtyping hierarchy");
                 }
             } else {
                 TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
@@ -342,9 +346,11 @@ TFPPGtfdef (node *arg_node, info *arg_info)
             }
             supers = TFSUPERSUB_NEXT (supers);
         }
-        if (TFDEF_PRE (defs) <= ELEM_IDX (DYNARRAY_ELEMS (
-                                  INFO_ARRX (arg_info))[INFO_NONTREEIDX (arg_info)])) {
-            TFDEF_NONTREEX (defs) = INFO_NONTREEIDX (arg_info);
+        if (INFO_NONTREEIDX (arg_info) < DYNARRAY_TOTALELEMS (INFO_ARRX (arg_info))) {
+            if (TFDEF_PRE (defs) <= ELEM_IDX (DYNARRAY_ELEMS (INFO_ARRX (
+                                      arg_info))[INFO_NONTREEIDX (arg_info)])) {
+                TFDEF_NONTREEX (defs) = INFO_NONTREEIDX (arg_info);
+            }
         }
         subs = TFDEF_SUBS (defs);
         while (subs != NULL) {

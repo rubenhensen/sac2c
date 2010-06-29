@@ -1,4 +1,5 @@
 #include <string.h>
+#include "ctinfo.h"
 #include "DupTree.h"
 #include "str.h"
 #include "free.h"
@@ -127,6 +128,7 @@ void *
 MEMrealloc (void *src, int allocsize, int oldsize)
 {
     void *p = MEMmalloc (allocsize);
+    memset (p, 0, allocsize);
     if (src != NULL)
         memcpy (p, src, oldsize);
     return p;
@@ -146,8 +148,7 @@ popElemstack (elemstack **s)
 {
     elemstack *top = NULL;
     if (*s == NULL) {
-        fprintf (stderr, "Trying to pop from empty elemstack\n");
-        exit (-1);
+        CTIabort ("Trying to pop from empty elemstack\n");
     } else {
         top = *s;
         *s = ELEMSTACK_NEXT (top);
@@ -166,7 +167,7 @@ addToArray (dynarray *arrayd, elem *item)
                                   (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
                                   oldsize * sizeof (elem *));
         if (!_temp) {
-            fprintf (stderr, "ERROR: addToArray couldn't realloc memory!\n");
+            CTIabort ("addToArray couldn't realloc memory!\n");
         }
         MEMfree (DYNARRAY_ELEMS (arrayd));
         DYNARRAY_ELEMS (arrayd) = (elem **)_temp;
@@ -199,7 +200,7 @@ addToArrayAtPos (dynarray *arrayd, elem *item, int pos)
                                   (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
                                   oldsize * sizeof (elem *));
         if (!_temp) {
-            fprintf (stderr, "ERROR: addToArrayAtPos couldn't realloc memory!\n");
+            CTIabort ("addToArrayAtPos couldn't realloc memory!\n");
         }
         MEMfree (DYNARRAY_ELEMS (arrayd));
         DYNARRAY_ELEMS (arrayd) = (elem **)_temp;
@@ -274,7 +275,7 @@ void
 sortArray (elem **elems, int lower, int upper, int desc)
 {
     if (elems == NULL) {
-        fprintf (stderr, "Typechecker trying to sort DYNARRAY with null elements");
+        CTIabort ("Typechecker trying to sort DYNARRAY with null elements");
     }
     if (upper - lower > 0) {
         int mid = (upper + lower) / 2;
@@ -301,7 +302,7 @@ setMatrixValue (matrix *m, int x, int y, int value)
           = MEMrealloc (MATRIX_ARRAY2D (m), (MATRIX_TOTALROWS (m) * sizeof (dynarray *)),
                         oldlength * sizeof (dynarray *));
         if (!_temp) {
-            fprintf (stderr, "ERROR: setMatrixValue couldn't realloc memory!\n");
+            CTIabort ("setMatrixValue couldn't realloc memory!\n");
         }
         MEMfree (MATRIX_ARRAY2D (m));
         MATRIX_ARRAY2D (m) = (dynarray **)_temp;
