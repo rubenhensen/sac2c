@@ -433,9 +433,7 @@ ICCassign (node *arg_node, info *arg_info)
     postassigns = INFO_POSTASSIGNS (arg_info);
     INFO_POSTASSIGNS (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     if (postassigns != NULL) {
         ASSIGN_NEXT (arg_node) = TCappendAssign (postassigns, ASSIGN_NEXT (arg_node));
@@ -486,7 +484,7 @@ ICCprf (node *arg_node, info *arg_info)
     args = PRF_ARGS (arg_node);
     arg_cnt = 0;
 
-    DBUG_PRINT ("ICC", ("Beackering prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+    DBUG_PRINT ("ICC", ("Traversing prf %s...", PRF_NAME (PRF_PRF (arg_node))));
 
     while (args != NULL) {
         /*
@@ -593,9 +591,7 @@ ICCwith (node *arg_node, info *arg_info)
     /*
      * now the self contained constraints in withops
      */
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
 
     /*
      * now go on with the code
@@ -691,7 +687,7 @@ ICCgenerator (node *arg_node, info *arg_info)
     }
 
     /*
-     * now generate generate/withop constrains
+     * now generate generate/withop constraints
      */
     if (INFO_WITHOPS (arg_info) != NULL) {
         INFO_GENERATOR (arg_info) = arg_node;
@@ -747,7 +743,7 @@ ICCgenarray (node *arg_node, info *arg_info)
 
     if (INFO_GENERATOR (arg_info) != NULL) {
         /*
-         * emit generator dependent constraints
+         * emit generator-dependent constraints
          */
         INFO_WLGUARDIDS (arg_info)
           = EmitConstraint (INFO_WLGUARDIDS (arg_info),
@@ -804,11 +800,14 @@ ICCgenarray (node *arg_node, info *arg_info)
           = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info), GENARRAY_SHAPE (arg_node),
                                 constraint_type);
         constraint_type = TYfreeType (constraint_type);
+
+        INFO_WLGUARDIDS (arg_info)
+          = EmitConstraint (INFO_WLGUARDIDS (arg_info),
+                            TCmakePrf1 (F_non_neg_val_V,
+                                        DUPdoDupTree (GENARRAY_SHAPE (arg_node))));
     }
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

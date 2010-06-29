@@ -346,9 +346,7 @@ IDCblock (node *arg_node, info *arg_info)
     post_assign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (post_assign != NULL) {
@@ -402,11 +400,9 @@ node *
 IDClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IDClet");
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -443,9 +439,7 @@ IDCids (node *arg_node, info *arg_info)
         break;
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
