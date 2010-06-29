@@ -17,6 +17,7 @@
 #include "namespaces.h"
 #include "dbug.h"
 #include "globals.h"
+#include "tf_structures.h"
 
 /** <!--******************************************************************-->
  *
@@ -782,5 +783,34 @@ FREEattribIndexInfo (index_info *attr, node *parent)
 
     attr = MEMfree (attr);
 
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn matrix ** FREEattribMatrices (matrix **attr, node *parent)
+ *
+ * @brief Frees Matrices attribute in N_tfspec
+ *
+ * @param attr an array of matrix pointers
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+matrix **
+FREEattribMatrices (matrix **attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribMatrices");
+    if (attr != NULL) {
+        int i;
+        for (i = 0; i < TFSPEC_NUMHIERAR (parent); i++) {
+            if (attr[i] != NULL) {
+                freeMatrix (attr[i]);
+                attr[i] = NULL;
+            }
+        }
+        attr = MEMfree (attr);
+    }
     DBUG_RETURN (attr);
 }

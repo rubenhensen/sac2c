@@ -999,6 +999,40 @@ typedef struct SERSTACK_T serstack_t;
 typedef constant *(*shape_oracle_funptr) (int n);
 
 /******************************************************************************
+ * typedef for cross edge reachability analysis
+ */
+
+struct ELEM {
+    int idx;
+    void *data;
+};
+
+struct DYNARRAY {
+    struct ELEM **elems;
+    int totalelems;
+    int allocelems;
+};
+
+struct MATRIX {
+    struct DYNARRAY **array2d;
+    int totalrows;
+    int totalcols;
+};
+
+struct ELEMSTACK {
+    struct ELEM *curr;
+    struct ELEMSTACK *next;
+};
+
+typedef enum { edgetree, edgecross, edgeforward, edgeback } graph_edgetype;
+typedef enum { tree_labeling, nontree_labeling, edge_labeling } graph_label_mode;
+typedef enum { vertices, edges } dot_output_mode;
+typedef struct ELEM elem;
+typedef struct DYNARRAY dynarray;
+typedef struct MATRIX matrix;
+typedef struct ELEMSTACK elemstack;
+
+/******************************************************************************
  * N_avis attributes
  */
 

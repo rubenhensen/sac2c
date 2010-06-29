@@ -77,6 +77,8 @@
     copy="literal" persist="yes" />
     <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial"
     copy="literal" />
+    <type name="Matrices" ctype="matrix**" init="NULL"
+    copy="function" />
   </attributetypes>
   <traversals>
     <!-- id is the short id of the traversal 
@@ -3541,6 +3543,32 @@ N_tfspecs :
 -->
     <node name="Tfspec">
       <description>declaration of type families and relations</description>
+      <attributes>
+        <attribute name="TLCmatrices" inconstructor="no">
+          <type name="Matrices">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Numhierar" default="0" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
       <sons>
         <son name="Defs">
           <targets>
@@ -3573,7 +3601,7 @@ N_tfdef :
     <node name="Tfdef">
       <description>Type family definitions</description>
       <attributes>
-        <attribute name="dfwid" inconstructor="no">
+        <attribute name="pre" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3585,7 +3613,55 @@ N_tfdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="dfwidmax" inconstructor="no">
+        <attribute name="premax" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="post" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="nontreeX" default="-1" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="nontreeY" default="-1" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="nontreeZ" default="-1" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3650,7 +3726,7 @@ N_tfrel :
     <node name="Tfrel">
       <description>Type family relations</description>
       <attributes>
-        <attribute name="Subtag" inconstructor="yes">
+        <attribute name="Subtag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3662,7 +3738,7 @@ N_tfrel :
             </targets>
           </type>
         </attribute>
-        <attribute name="Supertag" inconstructor="yes">
+        <attribute name="Supertag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3707,7 +3783,7 @@ N_tfexpr :
     <node name="Tfexpr">
       <description>Expression for type family relation</description>
       <attributes>
-        <attribute name="Assigneeid" inconstructor="no">
+        <attribute name="Assigneeid" default="NULL" inconstructor="no">
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -3731,7 +3807,7 @@ N_tfexpr :
             </targets>
           </type>
         </attribute>
-        <attribute name="Operator" inconstructor="yes">
+        <attribute name="Operator" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="no">
@@ -3776,7 +3852,7 @@ N_tfabs :
     <node name="Tfabs">
       <description>Abstract type family</description>
       <attributes>
-        <attribute name="tag" inconstructor="yes">
+        <attribute name="tag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3811,7 +3887,7 @@ N_tfusr :
     <node name="Tfusr">
       <description>User type family</description>
       <attributes>
-        <attribute name="tag" inconstructor="yes">
+        <attribute name="tag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3846,7 +3922,7 @@ N_tfbin :
     <node name="Tfbin">
       <description>Builtin type family</description>
       <attributes>
-        <attribute name="tag" inconstructor="yes">
+        <attribute name="tag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3893,6 +3969,18 @@ N_tfsupersub :
             </targets>
           </type>
         </attribute>
+        <attribute name="Edgetype" inconstructor="no">
+          <type name="Int">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <sons>
         <son name="Cond">
@@ -3926,7 +4014,7 @@ N_tfarg :
     <node name="Tfarg">
       <description>Arguments to type families</description>
       <attributes>
-        <attribute name="tag" inconstructor="yes">
+        <attribute name="tag" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="yes">
@@ -3938,7 +4026,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="tagtype" inconstructor="yes">
+        <attribute name="tagtype" default="NULL" inconstructor="yes">
           <type name="String">
             <targets>
               <target mandatory="no">

@@ -1208,6 +1208,28 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
     DBUG_VOID_RETURN;
 }
 
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeMatrices
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeMatrices (info *info, matrix **attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeMatrices");
+
+    fprintf (INFO_SER_FILE (info), "NULL");
+
+    DBUG_VOID_RETURN;
+}
+
 /**
  * @}
  */

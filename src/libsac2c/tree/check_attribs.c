@@ -770,3 +770,23 @@ CHKMattribIndexInfo (index_info *attr, info *arg_info)
 
     DBUG_RETURN (attr);
 }
+
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribMatrices
+ *
+ * @brief Touch Matrices attribute
+ *
+ * @param attr TLCmatrices in N_tfspec
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+matrix **
+CHKMattribMatrices (matrix **attr, info *arg_info)
+{
+    DBUG_ENTER ("CHKMattribMatrices");
+
+    DBUG_RETURN (attr);
+}

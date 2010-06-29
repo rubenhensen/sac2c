@@ -32,6 +32,7 @@
 #include "namespaces.h"
 #include "shape.h"
 #include "vector.h"
+#include "tf_structures.h"
 
 /*
  * use of arg_info in this file:
@@ -75,6 +76,7 @@ struct INFO {
     /*type family*/
     node *tfsupernode;
     char *tfstringexpr;
+    dot_output_mode dotmode;
 };
 
 /* access macros print */
@@ -97,6 +99,7 @@ struct INFO {
 #define INFO_SPMDSTORE(n) ((n)->spmdstore)
 #define INFO_TFSUPERNODE(n) ((n)->tfsupernode)
 #define INFO_TFSTRINGEXPR(n) ((n)->tfstringexpr)
+#define INFO_DOTMODE(n) ((n)->dotmode)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -230,6 +233,7 @@ MakeInfo ()
     INFO_SPMDSTORE (result) = NULL;
     INFO_TFSUPERNODE (result) = NULL;
     INFO_TFSTRINGEXPR (result) = NULL;
+    INFO_DOTMODE (result) = vertices;
 
     DBUG_RETURN (result);
 }
@@ -6006,14 +6010,29 @@ node *
 PRTtfspec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfspec");
+    int i = 0, numhierar = 0;
+    node *defs = TFSPEC_DEFS (arg_node);
     fprintf (global.outfile, "\n/*\nType family specifications\n");
     fprintf (global.outfile, "The following output is in dot format.\n");
     fprintf (global.outfile, "It can be visualized using graphviz's dot tool.\n");
-    if (TFSPEC_DEFS (arg_node) != NULL) {
-        fprintf (global.outfile, "\ndigraph typespecs{\n\n");
-        TRAVdo (TFSPEC_DEFS (arg_node), arg_info);
-        fprintf (global.outfile, "};\n");
+    fprintf (global.outfile, "\ndigraph typespecs{\n");
+    while (defs != NULL) {
+        if (TFDEF_SUPERS (defs) == NULL) {
+            fprintf (global.outfile, "subgraph cluster_%d{\n", ++i);
+            fprintf (global.outfile, "node [shape=record];\n");
+            if (TFSPEC_NUMHIERAR (arg_node) > 0) {
+                if (TFSPEC_TLCMATRICES (arg_node)[numhierar] != NULL) {
+                    printMatrixInDotFormat (TFSPEC_TLCMATRICES (arg_node)[numhierar]);
+                }
+                numhierar++;
+            }
+            fprintf (global.outfile, "node [shape=box];\n");
+            TRAVdo (defs, arg_info);
+            fprintf (global.outfile, "};\n");
+        }
+        defs = TFDEF_NEXT (defs);
     }
+    fprintf (global.outfile, "};\n");
     /*
     if(TFSPEC_RELS(arg_node)!=NULL){
       fprintf(global.outfile,"\n--Type relations--\n\n");
@@ -6028,15 +6047,49 @@ node *
 PRTtfdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfdef");
+    node *subs;
+    /*
+     * By default, the first time we output the node info in dot format
+     */
     if (TFDEF_CURR (arg_node) != NULL) {
+        fprintf (global.outfile, "<%s/> [label=\"%s\\n",
+                 TFDEF_TAG (TFDEF_CURR (arg_node)), TFDEF_TAG (TFDEF_CURR (arg_node)));
+        fprintf (global.outfile, "tree=[%d,", TFDEF_PRE (arg_node));
+        fprintf (global.outfile, "%d)\\n", TFDEF_PREMAX (arg_node));
+        if (TFDEF_NONTREEX (arg_node) == -1) {
+            fprintf (global.outfile, "nontree=[-,");
+        } else {
+            fprintf (global.outfile, "nontree=[%d,", TFDEF_NONTREEX (arg_node));
+        }
+        if (TFDEF_NONTREEY (arg_node) == -1) {
+            fprintf (global.outfile, "-,");
+        } else {
+            fprintf (global.outfile, "%d,", TFDEF_NONTREEY (arg_node));
+        }
+        if (TFDEF_NONTREEZ (arg_node) == -1) {
+            fprintf (global.outfile, "-]");
+        } else {
+            fprintf (global.outfile, "%d]", TFDEF_NONTREEZ (arg_node));
+        }
+        // fprintf(global.outfile,"\\n");
+        // fprintf(global.outfile,"post=%d",TFDEF_POST(arg_node));
+        fprintf (global.outfile, "\"];\n");
         TRAVdo (TFDEF_CURR (arg_node), arg_info);
-        INFO_TFSUPERNODE (arg_info) = arg_node;
     }
+    subs = TFDEF_SUBS (arg_node);
+    while (subs != NULL) {
+        if (TFSUPERSUB_EDGETYPE (subs) == edgetree) {
+            TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+        }
+        subs = TFSUPERSUB_NEXT (subs);
+    }
+    /*
+     * After the node information has been output, we can output the
+     * edge information. This conforms to the dot language rules.
+     */
+    INFO_TFSUPERNODE (arg_info) = arg_node;
     if (TFDEF_SUBS (arg_node) != NULL) {
         TRAVdo (TFDEF_SUBS (arg_node), arg_info);
-    }
-    if (TFDEF_NEXT (arg_node) != NULL) {
-        TRAVdo (TFDEF_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -6057,7 +6110,9 @@ node *
 PRTtfabs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfabs");
-    // fprintf(global.outfile,"%s\n",TFABS_TAG(arg_node));
+    if (INFO_DOTMODE (arg_info) == vertices) {
+        // fprintf(global.outfile,"%s\n",TFABS_TAG(arg_node));
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -6065,7 +6120,9 @@ node *
 PRTtfusr (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfusr");
-    // fprintf(global.outfile,"%s\n",TFUSR_TAG(arg_node));
+    if (INFO_DOTMODE (arg_info) == vertices) {
+        // fprintf(global.outfile,"%s\n",TFUSR_TAG(arg_node));
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -6073,7 +6130,9 @@ node *
 PRTtfbin (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfbin");
-    // fprintf(global.outfile,"%s\n",TFBIN_TAG(arg_node));
+    if (INFO_DOTMODE (arg_info) == vertices) {
+        // fprintf(global.outfile,"%s\n",TFBIN_TAG(arg_node));
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -6081,13 +6140,15 @@ node *
 PRTtfsupersub (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTtfsupersub");
-    fprintf (global.outfile, "\"%s, tree=[%d,%d]\"->\"%s, tree=[%d,%d]\"",
-             TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
-             TFDEF_DFWID (INFO_TFSUPERNODE (arg_info)),
-             TFDEF_DFWIDMAX (INFO_TFSUPERNODE (arg_info)),
-             TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))),
-             TFDEF_DFWID (TFSUPERSUB_TYPEFAMILY (arg_node)),
-             TFDEF_DFWIDMAX (TFSUPERSUB_TYPEFAMILY (arg_node)));
+    if (TFSUPERSUB_EDGETYPE (arg_node) == edgecross) {
+        fprintf (global.outfile, "<%s/>-><%s/> [style=dotted]",
+                 TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
+                 TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))));
+    } else {
+        fprintf (global.outfile, "<%s/>-><%s/>",
+                 TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
+                 TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))));
+    }
     if (TFSUPERSUB_COND (arg_node) != NULL) {
         INFO_TFSTRINGEXPR (arg_info) = NULL;
         TRAVdo (TFSUPERSUB_COND (arg_node), arg_info);

@@ -12,7 +12,7 @@
 int
 main (int argc, char *argv[])
 {
-    int result;
+    int result = 0;
 
     LAUNCHFUNCTIONFROMLIB (LIBRARY, MAINFUN, argc, argv, result);
 

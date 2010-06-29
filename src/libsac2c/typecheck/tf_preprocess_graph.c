@@ -13,28 +13,46 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "tf_preprocess_graph.h"
+#include "tf_structures.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
 #include "dbug.h"
 #include "memory.h"
 #include "tree_compound.h"
+#include "types.h"
 
 /*
  * INFO structure
- * dfwid is the depth first walk id for the nodes in the dependency
- * graph. dfwidmax is the maximum value of the dfwid of the tree
+ * pre is the depth first walk id for the nodes in the dependency
+ * graph. premax is the maximum value of the pre of the tree
  * decendants of a node
  */
 struct INFO {
-    int dfwid;
+    int pre;
+    int post;
+    graph_label_mode labelmode;
+    dynarray *tltable;
+    dynarray *arrX;
+    dynarray *arrY;
+    elemstack **estack;
+    int nontreeidx;
+    matrix **tlcmatrices;
 };
 
 /*
  * INFO macros
  */
-#define INFO_DFWID(n) n->dfwid
-#define INFO_DFWIDMAX(n) n->dfwidmax
+#define INFO_PRE(n) n->pre
+#define INFO_POST(n) n->post
+#define INFO_LABELMODE(n) n->labelmode
+#define INFO_TLTABLE(n) n->tltable
+#define INFO_ARRX(n) n->arrX
+#define INFO_ARRY(n) n->arrY
+#define INFO_NONTREEIDX(n) n->nontreeidx
+#define INFO_ESTACK(n) n->estack
+#define INFO_TLCMATRICES(n) n->tlcmatrices
+
 /*
  * INFO functions
  */
@@ -46,7 +64,15 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
-    INFO_DFWID (result) = 1;
+    INFO_PRE (result) = 1;
+    INFO_POST (result) = 1;
+    INFO_LABELMODE (result) = tree_labeling;
+    INFO_TLTABLE (result) = NULL;
+    INFO_ARRX (result) = NULL;
+    INFO_ARRY (result) = NULL;
+    INFO_ESTACK (result) = NULL;
+    INFO_NONTREEIDX (result) = 0;
+    INFO_TLCMATRICES (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -109,8 +135,12 @@ TFPPGtfspec (node *arg_node, info *arg_info)
     node *defs;
     DBUG_ENTER ("TFPPGtfspec");
     defs = TFSPEC_DEFS (arg_node);
+    /*
+     * First label nodes for tree reachability
+     */
+    INFO_LABELMODE (arg_info) = tree_labeling;
     while (defs != NULL) {
-        if (TFDEF_DFWID (defs) == 0 && TFDEF_SUPERS (defs) == NULL) {
+        if (TFDEF_PRE (defs) == 0 && TFDEF_SUPERS (defs) == NULL) {
             /*
              * Here could be the start of a potentially new type family
              * component since we have multiple components in one family.
@@ -118,12 +148,69 @@ TFPPGtfspec (node *arg_node, info *arg_info)
              * For example, \alpha and [*] both require a fresh depth first
              * walk.
              */
-            if (INFO_DFWID (arg_info) != 1) {
-                INFO_DFWID (arg_info) = 1;
+            if (INFO_PRE (arg_info) != 1) {
+                INFO_PRE (arg_info) = 1;
+            }
+            if (INFO_POST (arg_info) != 1) {
+                INFO_POST (arg_info) = 1;
             }
             TRAVdo (defs, arg_info);
         }
         defs = TFDEF_NEXT (defs);
+    }
+    /*
+     * Then classify the edges and throw an error if forward and back
+     * edges are present. The list of cross edges is used to build the
+     * trasitive link count matrix.
+     */
+    defs = TFSPEC_DEFS (arg_node);
+    while (defs != NULL) {
+        if (TFDEF_SUPERS (defs) == NULL) {
+            INFO_LABELMODE (arg_info) = edge_labeling;
+            TRAVdo (defs, arg_info);
+            /* Do the non-tree labeling part only if we have cross edges */
+            if (INFO_TLTABLE (arg_info) != NULL) {
+                if (INFO_ARRX (arg_info) != NULL)
+                    freeDynarray (INFO_ARRX (arg_info));
+                if (INFO_ARRY (arg_info) != NULL)
+                    freeDynarray (INFO_ARRY (arg_info));
+                buildTransitiveLinkTable (INFO_TLTABLE (arg_info));
+                setXYarrays (INFO_TLTABLE (arg_info), &(INFO_ARRX (arg_info)),
+                             &(INFO_ARRY (arg_info)));
+                int currsize = ++TFSPEC_NUMHIERAR (arg_node);
+                void *_tlcmats = MEMrealloc (TFSPEC_TLCMATRICES (arg_node),
+                                             currsize * sizeof (matrix *),
+                                             (currsize - 1) * sizeof (matrix *));
+                MEMfree (TFSPEC_TLCMATRICES (arg_node));
+                TFSPEC_TLCMATRICES (arg_node) = (matrix **)_tlcmats;
+                TFSPEC_TLCMATRICES (arg_node)
+                [currsize - 1]
+                  = computeTLCMatrix (INFO_TLTABLE (arg_info), INFO_ARRX (arg_info),
+                                      INFO_ARRY (arg_info));
+                printTransitiveLinkTable (INFO_TLTABLE (arg_info));
+                // printMatrix(TFSPEC_TLCMATRIX(arg_node));
+                // fflush(stdout);
+                freeDynarray (INFO_TLTABLE (arg_info));
+                INFO_TLTABLE (arg_info) = NULL;
+                // MEMfree(INFO_TLTABLE(arg_info));
+                /*
+                 * Now label nodes for non-tree reachability.
+                 * The labels are in the form of triples {x,y,z}
+                 */
+                INFO_LABELMODE (arg_info) = nontree_labeling;
+                INFO_ESTACK (arg_info) = MEMmalloc (sizeof (elemstack *));
+                INFO_NONTREEIDX (arg_info) = 0;
+                TRAVdo (defs, arg_info);
+            }
+        }
+        defs = TFDEF_NEXT (defs);
+    }
+    int i;
+    for (i = 0; i < TFSPEC_NUMHIERAR (arg_node); i++) {
+        if (TFSPEC_TLCMATRICES (arg_node)[i] != NULL) {
+            printMatrix (TFSPEC_TLCMATRICES (arg_node)[i]);
+            printf ("\n");
+        }
     }
     DBUG_RETURN (arg_node);
 }
@@ -134,7 +221,7 @@ TFPPGtfspec (node *arg_node, info *arg_info)
  *
  *   @brief
  *   We walk through the dependency graph here. If the node has not
- *   been visited i.e. its dfwid is 0, we update the dfwid of
+ *   been visited i.e. its pre is 0, we update the pre of
  *   the node. Then, we check the subs (subtypes) of the def and if
  *   they are not visited, we visit them.
  *
@@ -147,30 +234,147 @@ TFPPGtfspec (node *arg_node, info *arg_info)
 node *
 TFPPGtfdef (node *arg_node, info *arg_info)
 {
-    node *defs, *subs;
+    node *defs, *subs, *supers;
     DBUG_ENTER ("TFPPGtfdef");
     defs = arg_node;
-    subs = TFDEF_SUBS (defs);
-    TFDEF_DFWID (defs) = INFO_DFWID (arg_info)++;
-    while (subs != NULL) {
-        if (TFDEF_DFWID (TFSUPERSUB_TYPEFAMILY (subs)) == 0) {
-            /*
-             * Tree branch
-             */
-            TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
-        } else {
-            /*
-             * Cross branch here. Refer literature on Directed Acyclic
-             * Graphs.
-             */
+    if (INFO_LABELMODE (arg_info) == tree_labeling) {
+        subs = TFDEF_SUBS (defs);
+        TFDEF_PRE (defs) = INFO_PRE (arg_info)++;
+        while (subs != NULL) {
+            if (TFDEF_PRE (TFSUPERSUB_TYPEFAMILY (subs)) == 0) {
+                /*
+                 * Tree branch
+                 */
+                TFSUPERSUB_EDGETYPE (subs) = edgetree;
+                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+            } else {
+                /*
+                 * Cross/Back/Forward branch here.
+                 * Do nothing, these are dealt with in edge labeling.
+                 * Refer literature on Directed Acyclic Graphs.
+                 */
+                TFSUPERSUB_EDGETYPE (subs) = -1;
+            }
+            subs = TFSUPERSUB_NEXT (subs);
         }
-        subs = TFSUPERSUB_NEXT (subs);
+        /*
+         * We have traversed all descendants of this node. Its time to
+         * update the value of premax which is the maximum value of the
+         * pre of all tree descendant of this node
+         */
+        TFDEF_PREMAX (defs) = INFO_PRE (arg_info);
+        TFDEF_POST (defs) = INFO_POST (arg_info)++;
+    } else if (INFO_LABELMODE (arg_info) == edge_labeling) {
+        int pre_super, pre_sub, post_super, post_sub, premax_sub;
+        subs = TFDEF_SUBS (defs);
+        pre_super = TFDEF_PRE (arg_node);
+        post_super = TFDEF_POST (arg_node);
+        while (subs != NULL) {
+            if (TFSUPERSUB_EDGETYPE (subs) != edgetree) {
+                pre_sub = TFDEF_PRE (TFSUPERSUB_TYPEFAMILY (subs));
+                premax_sub = TFDEF_PREMAX (TFSUPERSUB_TYPEFAMILY (subs));
+                post_sub = TFDEF_POST (TFSUPERSUB_TYPEFAMILY (subs));
+                if (pre_super < pre_sub && post_sub < post_super) {
+                    /* This is a forward edge. Since back and forward edges are
+                     * disallowed, throw an error here
+                     */
+                    CTIerror ("Forward edge found in subtyping hierarchy");
+                } else if (pre_sub < pre_super && post_super < post_sub) {
+                    /* This is a back edge. Since back and forward edges are
+                     * disallowed, throw an error here
+                     */
+                    CTIerror ("Back edge found in subtyping hierarchy");
+                } else if (pre_sub < pre_super && post_sub < post_super) {
+                    /*
+                     * This must be a cross edge. Add this to the transitive
+                     * link table
+                     */
+                    TFSUPERSUB_EDGETYPE (subs) = edgecross;
+                    /*
+                     * Set the super relationship to be a cross edge as well.
+                     * This will be used in the non-tree labeling
+                     */
+                    supers = TFDEF_SUPERS (TFSUPERSUB_TYPEFAMILY (subs));
+                    while (supers != NULL) {
+                        if (TFSUPERSUB_TYPEFAMILY (supers) == defs) {
+                            TFSUPERSUB_EDGETYPE (supers) = edgecross;
+                        }
+                        supers = TFSUPERSUB_NEXT (supers);
+                    }
+                    if (INFO_TLTABLE (arg_info) == NULL) {
+                        INFO_TLTABLE (arg_info) = MEMmalloc (sizeof (dynarray));
+                        initDynarray (INFO_TLTABLE (arg_info));
+                    }
+                    elem *e = MEMmalloc (sizeof (elem));
+                    ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
+                    ELEM_IDX (e) = pre_super;
+                    *((int *)ELEM_DATA (e)) = pre_sub;
+                    *((int *)ELEM_DATA (e) + 1) = premax_sub;
+                    addToArray (INFO_TLTABLE (arg_info), e);
+                } else {
+                    CTIerror ("Unclassifiable edge found in subtyping hierarchy");
+                }
+            } else {
+                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+            }
+            subs = TFSUPERSUB_NEXT (subs);
+        }
+    } else if (INFO_LABELMODE (arg_info) == nontree_labeling) {
+        /*
+         * Assign non-tree labels now
+         */
+        supers = TFDEF_SUPERS (defs);
+        int pop = 0;
+        while (supers != NULL) {
+            if (TFSUPERSUB_EDGETYPE (supers) == edgecross) {
+                elem *e = MEMmalloc (sizeof (elem));
+                ELEM_DATA (e) = NULL;
+                int i;
+                for (i = 0; i < DYNARRAY_TOTALELEMS (INFO_ARRY (arg_info)); i++) {
+                    if (TFDEF_PRE (arg_node)
+                        == ELEM_IDX (DYNARRAY_ELEMS (INFO_ARRY (arg_info))[i])) {
+                        ELEM_IDX (e) = i;
+                    }
+                }
+                pushElemstack (INFO_ESTACK (arg_info), e);
+                pop = 1;
+                break;
+            }
+            supers = TFSUPERSUB_NEXT (supers);
+        }
+        if (TFDEF_PRE (defs) <= ELEM_IDX (DYNARRAY_ELEMS (
+                                  INFO_ARRX (arg_info))[INFO_NONTREEIDX (arg_info)])) {
+            TFDEF_NONTREEX (defs) = INFO_NONTREEIDX (arg_info);
+        }
+        subs = TFDEF_SUBS (defs);
+        while (subs != NULL) {
+            if (TFDEF_NONTREEX (TFSUPERSUB_TYPEFAMILY (subs)) == -1
+                && TFSUPERSUB_EDGETYPE (subs) == edgetree) {
+                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+            }
+            subs = TFSUPERSUB_NEXT (subs);
+        }
+        if (INFO_NONTREEIDX (arg_info) < DYNARRAY_TOTALELEMS (INFO_ARRX (arg_info))) {
+            int lhs, rhs;
+            lhs = TFDEF_PREMAX (defs);
+            rhs = ELEM_IDX (
+              DYNARRAY_ELEMS (INFO_ARRX (arg_info))[INFO_NONTREEIDX (arg_info)]);
+            if (lhs > rhs) {
+                INFO_NONTREEIDX (arg_info)++;
+            }
+        }
+        if (INFO_NONTREEIDX (arg_info) < DYNARRAY_TOTALELEMS (INFO_ARRX (arg_info))) {
+            TFDEF_NONTREEY (defs) = INFO_NONTREEIDX (arg_info);
+        }
+        if (*(INFO_ESTACK (arg_info)) != NULL) {
+            if (ELEMSTACK_CURR (*(INFO_ESTACK (arg_info))) != NULL) {
+                TFDEF_NONTREEZ (defs)
+                  = ELEM_IDX (ELEMSTACK_CURR (*(INFO_ESTACK (arg_info))));
+            }
+        }
+        if (pop == 1) {
+            popElemstack (INFO_ESTACK (arg_info));
+        }
     }
-    /*
-     * We have traversed all descendants of this node. Its time to
-     * update the value of dfwidmax which is the maximum value of the
-     * dfwid of all tree descendant of this node
-     */
-    TFDEF_DFWIDMAX (defs) = INFO_DFWID (arg_info);
     DBUG_RETURN (arg_node);
 }
