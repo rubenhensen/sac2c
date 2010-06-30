@@ -2291,10 +2291,27 @@ TCtakeDropExprs (int takecount, int dropcount, node *exprs)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCfilterExprs( bool (*pred)( node *), node **exprs)
+ * @brief Given an N_exprs chain and a predicate function, pred,
+ *        split the N_exprs chain into two pieces, based on
+ *        application of the predicate to each element of the
+ *        N_exprs chain.
+ *
+ * @param
+ *        exprs:  N_exprs chain
+ *
+ * @return: res: the N_exprs chain for those elements of exprs
+ *               that satisfied the predicate.
+ *          SIDE EFFECT: exprs has the satisfied elements REMOVED
+ *               from it.
+ *
+ ******************************************************************************/
 node *
 TCfilterExprs (bool (*pred) (node *), node **exprs)
 {
     node *res = NULL;
+    node *tmp;
 
     DBUG_ENTER ("TCfilterExprs");
 
@@ -2304,7 +2321,7 @@ TCfilterExprs (bool (*pred) (node *), node **exprs)
         }
 
         if (pred (EXPRS_EXPR (*exprs))) {
-            node *tmp = EXPRS_NEXT (*exprs);
+            tmp = EXPRS_NEXT (*exprs);
             EXPRS_NEXT (*exprs) = res;
             res = *exprs;
             *exprs = tmp;
@@ -2442,14 +2459,18 @@ TCmakeIntVector (node *aelems)
 /******************************************************************************
  *
  * function:
- *   node *TCcreateIntVector( int length, int value)
+ *   node *TCcreateIntVector( int length, int value, int inc)
  *
  * description:
- *   Returns an integer vector.
+ *   Returns an integer vector of length elements, with starting value
+ *   value, and incrementing by inc. Hence, to get the
+ *   vector [ 42, 43, 44, 45], invoke this function with:
+ *
+ *     TCcreateIntVector( 4, 42, 1)
  *
  *****************************************************************************/
 node *
-TCcreateIntVector (int length, int value)
+TCcreateIntVector (int length, int value, int inc)
 {
     node *result = NULL;
     int d;
@@ -2458,6 +2479,7 @@ TCcreateIntVector (int length, int value)
 
     for (d = 0; d < length; d++) {
         result = TBmakeExprs (TBmakeNum (value), result);
+        value = value + inc;
     }
 
     result = TCmakeIntVector (result);

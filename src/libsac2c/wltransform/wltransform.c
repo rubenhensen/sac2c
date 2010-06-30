@@ -6108,8 +6108,8 @@ InferSegsParamsPre (node *segs, shape *iter_shp)
          *  IDX_MIN, IDX_MAX  *
          **********************/
 
-        WLSEG_IDXINF (segs) = TCcreateIntVector (WLSEG_DIMS (segs), IDX_SHAPE);
-        WLSEG_IDXSUP (segs) = TCcreateIntVector (WLSEG_DIMS (segs), 0);
+        WLSEG_IDXINF (segs) = TCcreateIntVector (WLSEG_DIMS (segs), IDX_SHAPE, 0);
+        WLSEG_IDXSUP (segs) = TCcreateIntVector (WLSEG_DIMS (segs), 0, 0);
 
         /*
          * compute the infimum and supremum of the index-vector.

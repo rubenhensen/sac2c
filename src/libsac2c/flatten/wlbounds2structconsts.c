@@ -174,9 +174,9 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
                                 assigns);
         AVIS_SSAASSIGN (elem_avis) = assigns;
 
-        assigns
-          = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL), TCcreateIntVector (1, i)),
-                          assigns);
+        assigns = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
+                                           TCcreateIntVector (1, i, 0)),
+                                assigns);
         AVIS_SSAASSIGN (iv_avis) = assigns;
 
         /*

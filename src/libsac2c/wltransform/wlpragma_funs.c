@@ -697,15 +697,15 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
          * set ubv
          */
         if (!WLSEG_ISDYNAMIC (seg)) {
-            WLSEG_UBV (seg) = TCcreateIntVector (WLSEG_DIMS (seg), 1);
+            WLSEG_UBV (seg) = TCcreateIntVector (WLSEG_DIMS (seg), 1, 0);
 
             /*
              * set bv[]
              */
             WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                WLSEG_BV (seg)
-                  = TBmakeExprs (TCcreateIntVector (WLSEG_DIMS (seg), 1), WLSEG_BV (seg));
+                WLSEG_BV (seg) = TBmakeExprs (TCcreateIntVector (WLSEG_DIMS (seg), 1, 0),
+                                              WLSEG_BV (seg));
             }
         }
 
