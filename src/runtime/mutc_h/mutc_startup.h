@@ -4,7 +4,9 @@
 
 #define MUTC 1
 #if SAC_BACKEND == MUTC
-#include <sac_helpers.h>
+#include <stdlib.h>
+#include <string.h>
+#include <alloca.h>
 #include <svp/sep.h>
 #include <svp/slr.h>
 #include <svp/testoutput.h>
@@ -91,7 +93,6 @@ static int sac_benchmark_count;
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
-        SAC_COMMANDLINE_SET (0, NULL);                                                   \
         sl_create (, svp_pid, , , , , , SACwf__MAIN__main,                               \
                    SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
         sl_sync ();                                                                      \
@@ -105,7 +106,6 @@ static int sac_benchmark_count;
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
-        SAC_COMMANDLINE_SET (0, NULL);                                                   \
         sl_create (, , , , , , , SACwtf__MAIN__main,                                     \
                    SAC_ND_ARG_out (SAC_MUTC_MAIN_RES_NT, int));                          \
         sl_sync ();                                                                      \

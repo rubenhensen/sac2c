@@ -583,7 +583,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_PARAM_out_nodesc(var_NT, basetype)                                        \
     SAC_ND_REAL_PARAM (SAC_ND_TYPE (var_NT, basetype) *,                                 \
-                       SAC_NAMEP (SAC_ND_A_FIELD (var_NT)), var_NT)
+                       SAC_NAMEP (SAC_ND_A_FIELD (var_NT)), SET_NT_REG (INT, var_NT))
 
 #define SAC_ND_PARAM_inout(var_NT, basetype) SAC_ND_PARAM_out (var_NT, basetype)
 

@@ -28,10 +28,10 @@
     }                                                                                    \
     }
 
-#define SAC_MUTC_DECL_FAMILY(name) sl_family_t family_##name;
+#define SAC_MUTC_DECL_FAMILY(name)
 #define SAC_MUTC_DECL_INDEX(name) sl_index (name);
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
-    sl_create (family_##name, place, lb, ub, st, bl, , ap);
+    sl_create (, place, lb, ub, st, bl, , ap);
 #define SAC_MUTC_DECL_THREADFUN2(name, anon, ...) sl_decl (name, void, __VA_ARGS__)
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
@@ -184,8 +184,8 @@
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
 #define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)malloc (size);
 #else
-#define SAC_MUTC_THREAD_INIT_MALLOC tls_malloc_init ();
-#define SAC_MUTC_THREAD_CLEANUP_MALLOC tls_malloc_cleanup ();
+#define SAC_MUTC_THREAD_INIT_MALLOC
+#define SAC_MUTC_THREAD_CLEANUP_MALLOC
 #define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
 #endif
 

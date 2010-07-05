@@ -344,6 +344,7 @@ target sl:
 
 BACKEND          :=  "muTC"
 CC               :=  "slc -b seqc"
+CCFLAGS          :=  "-Wall -Wno-unused"
 LD_DYNAMIC       :=  ""
 LIB_VARIANT      :=  "mutc-seqc"
 AR_CREATE        :=  "slar seqc cr"
@@ -352,16 +353,28 @@ RANLIB           :=  "slranlib seqc"
 
 target mutc::sl:
 
-target sl_mtalpha::sl:
+/*
+ * New ppp makes use of tls
+ */      
+target sl_mta::sl:
 
-CC               :=  "slc -b mtalpha"
-LIB_VARIANT      :=  "mutc-mtalpha"
-AR_CREATE        :=  "slar mtalpha cr"
-RANLIB           :=  "slranlib mtalpha"
+CC               :=  "slc -b mta"
+LIB_VARIANT      :=  "mutc-mta"
+AR_CREATE        :=  "slar mta cr"
+RANLIB           :=  "slranlib mta"
 
-target sl_ppp::sl_ppp_lt_24:
+/*
+ * New ppp that does not use tls
+ */
+target sl_mtantls::sl_mta:
 
-target sl_ppp_lt_24::sl:
+CC               :=  "slc -b mta -lmalloc_notls"
+LIB_VARIANT      :=  "mutc-mtantls"
+
+/*
+ *  Older backends for mutc
+ */
+target sl_ppp::sl:
 
 CC               :=  "slc -b ppp"
 LIB_VARIANT      :=  "mutc-ppp"

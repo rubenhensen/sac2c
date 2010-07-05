@@ -11,7 +11,6 @@
 #if SAC_MUTC_FUNAP_AS_CREATE
 #define SAC_MUTC_FUN_AP(ap)                                                              \
     {                                                                                    \
-        family ftmp;                                                                     \
         create (ftmp;; 0; 0; 1;;;) ap;                                                   \
         sync (ftmp);                                                                     \
     }
