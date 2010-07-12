@@ -1934,7 +1934,7 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
         node *nupper, *over, *body, *index, *results, *offsets;
 
         index = MakeIntegerVar (&INFO_VARDECS (arg_info));
-        over = ComputeNewBounds (lower, upper, step, &nupper, &INFO_PREASSIGNS (arg_info),
+        over = ComputeNewBounds (upper, lower, step, &nupper, &INFO_PREASSIGNS (arg_info),
                                  arg_info);
         body = MakeRangeBody (index, DUPdoDupTree (contents), over, FALSE, &results,
                               &offsets, arg_info);
@@ -2338,9 +2338,6 @@ WLSDwith2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSDwith2");
 
-    if (WITH2_HASNAIVEORDERING (arg_node)) {
-        CTInote ("Cannot transform with-loop with naive ordering");
-    }
     if (NotImplemented (arg_node, arg_info)) {
         CTInote ("Cannot transform with-loop due to unsupported operation");
     } else {

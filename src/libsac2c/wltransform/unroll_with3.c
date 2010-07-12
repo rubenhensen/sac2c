@@ -713,6 +713,9 @@ UW3assign (node *arg_node, info *arg_info)
         /* with3 loop has been removed */
         node *arg_node_original = arg_node;
         node *let = ASSIGN_INSTR (arg_node);
+
+        DBUG_PRINT ("UW3", ("With3 unrolled compleatly"));
+
         arg_node = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_RESULTS (arg_info)),
                                    ASSIGN_NEXT (arg_node));
         LET_IDS (let) = NULL;
@@ -814,6 +817,9 @@ UW3range (node *arg_node, info *arg_info)
         if ((upper - lower) <= global.mutc_unroll) {
             int max = upper - lower;
             int i;
+
+            DBUG_PRINT ("UW3", ("Unrolling range %d times", max));
+
             for (i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
                 node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));

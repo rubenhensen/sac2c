@@ -493,6 +493,9 @@ RW3assign (node *arg_node, info *arg_info)
         /* with3 loop has been removed */
         node *arg_node_original = arg_node;
         node *let = ASSIGN_INSTR (arg_node);
+
+        DBUG_PRINT ("RW3", ("Removing with3"));
+
         arg_node
           = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_SAVED_RESULTS (arg_info)),
                             ASSIGN_NEXT (arg_node));
