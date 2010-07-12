@@ -647,6 +647,53 @@ ComputeMax (node *nodea, node *nodeb, node **assigns, info *arg_info)
     DBUG_RETURN (max);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeMin( node *nodea, node *nodeb, node **assigns,
+ *                       info *arg_info)
+ *
+ * @brief Returns an AST expression that denotes the imum of the two integer
+ *        values
+ *
+ * @param nodea node repesenting an integer value
+ * @param nodeb node repesenting an integer value
+ * @param *assigns preassigns chain to append to
+ * @param arg_info info structure
+ *
+ * @return an ast node that denotes the minimum of the two values
+ ******************************************************************************/
+static node *
+ComputeMin (node *nodea, node *nodeb, node **assigns, info *arg_info)
+{
+    node *min;
+
+    DBUG_ENTER ("ComputeMin");
+
+    if (IsNum (nodea) && IsNum (nodeb)) {
+        /*
+         * static maximum
+         */
+        if (GetNum (nodea) < GetNum (nodeb)) {
+            min = DUPdoDupNode (nodea);
+        } else {
+            min = DUPdoDupNode (nodeb);
+        }
+    } else {
+        /*
+         * we have to compute the maximum at runtime
+         */
+        node *mavis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
+        mavis = AssignValue (mavis,
+                             TCmakePrf2 (F_min_SxS, DUPdoDupNode (nodea),
+                                         DUPdoDupNode (nodeb)),
+                             assigns);
+
+        min = TBmakeId (mavis);
+    }
+
+    DBUG_RETURN (min);
+}
+
 /*
  * int i = _sel_VxA( int n, int[.] vec);
  */
@@ -1995,7 +2042,17 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
      * now build the range for this level
      */
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
     max = ComputeMax (lower, upper, &INFO_PREASSIGNS (arg_info), arg_info);
+
+    if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+        node *newMax;
+        /* Have a chunk size so do not go past the end */
+        newMax = ComputeMin (max, INFO_CURRENT_SIZE (arg_info),
+                             &INFO_PREASSIGNS (arg_info), arg_info);
+        max = FREEdoFreeTree (max);
+        max = newMax;
+    }
 
     if (*code != NULL) {
         node *preassigns = NULL;
@@ -2069,7 +2126,15 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
     }
 
     if (body != NULL) {
-        result = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), max,
+        node *min;
+        if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+            /* Have a chunk size so do not go past the end */
+            min = ComputeMin (lower, INFO_CURRENT_SIZE (arg_info),
+                              &INFO_PREASSIGNS (arg_info), arg_info);
+        } else {
+            min = DUPdoDupNode (lower);
+        }
+        result = TBmakeRange (TBmakeIds (index, NULL), min, max,
                               NULL, /* grids have no chunksize */
                               body, res, rangeoffsets, next);
         RANGE_IIRR (result) = resultindices;
