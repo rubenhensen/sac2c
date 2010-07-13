@@ -10614,7 +10614,7 @@ N_tfarg :
           </targets>
         </son>
         <son name="ChunkSize">
-	  <description>Chunk size of this range. If non-NULL, this range is not computed by computing each cell alone, but by computing vectors of ChunkSize many elements per iteration. Note that the total number of elements computed by this range needs to be a multiple of ChunkSize!</description>
+	  <description>Chunk size of this range. If non-NULL, this range is not computed by computing each cell alone, but by computing vectors of ChunkSize many elements per iteration. Note that the total number of elements computed by this range needs to be a multiple of ChunkSize! If the range is 0 then the chunk must be 1!</description>
           <targets>
             <target mandatory="no">
               <node name="Num" />

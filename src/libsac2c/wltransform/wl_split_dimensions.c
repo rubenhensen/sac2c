@@ -468,139 +468,6 @@ NeedsFitting (node *lower, node *upper, node *step)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *ComputeNewBounds( node *upper, node *lower, node *step,
- *                             node **nupper,
- *                             node **assigns, info *arg_info)
- *
- * @brief Computes a new intermediate bound and the length of the overlap
- *        to produce a fitted with-loop.
- *
- * @param upper upper bound of wl3
- * @param lower lower bound of wl3
- * @param step  step of wl3
- * @param *nupper contains the intermediate upper bound after return
-
- * @param *assigns contains, after return, assignments that need to be performed
- *                  before this range is evaluated.
- * @param arg_info info structure used to store new vardecs
- *
- * @return the size of the overlapping range
- ******************************************************************************/
-static node *
-ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **assigns,
-                  info *arg_info)
-{
-    node *newsize;
-    node *length;
-
-    DBUG_ENTER ("NewBounds");
-
-    if (IsNum (upper) && IsNum (lower)) {
-        /*
-         * static length
-         */
-        length = TBmakeNum (GetNum (upper) - GetNum (lower));
-    } else {
-        /*
-         * we have to compute the length of the range at runtime
-         */
-        node *lavis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-
-        lavis = AssignValue (lavis,
-                             TCmakePrf2 (F_sub_SxS, DUPdoDupNode (upper),
-                                         DUPdoDupNode (lower)),
-                             assigns);
-
-        length = TBmakeId (lavis);
-    }
-
-    if (IsNum (step) && IsNum (length)) {
-        int overlap;
-        /*
-         * we can compute the new size and bound statically
-         */
-        overlap = GetNum (length) % GetNum (step);
-
-        newsize = TBmakeNum (overlap);
-        *nupper = TBmakeNum (GetNum (upper) - overlap);
-
-        length = FREEdoFreeNode (length);
-    } else {
-        node *ovlAvis, *nupAvis;
-        /*
-         * we have to compute the new size and upper bound
-         * at runtime
-         */
-        ovlAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-        nupAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-
-        ovlAvis
-          = AssignValue (ovlAvis, TCmakePrf2 (F_mod_SxS, length, DUPdoDupTree (step)),
-                         assigns);
-
-        nupAvis
-          = AssignValue (nupAvis,
-                         TCmakePrf2 (F_sub_SxS, DUPdoDupTree (upper), TBmakeId (ovlAvis)),
-                         assigns);
-
-        newsize = TBmakeId (ovlAvis);
-        *nupper = TBmakeId (nupAvis);
-    }
-
-    DBUG_RETURN (newsize);
-}
-
-#if 0 /* not needed at the moment */
-/** <!-- ****************************************************************** -->
- * @fn node *ComputeSize( node *lower, node *upper, node **assigns, 
- *                        info *arg_info)
- *
- * @brief Returns a node that denotes the size (or length) of the given range.
- *        If the range is fully static, an N_num node will be returned. For
- *        dynamic ranges, code for computing the length at runtime is added to
- *        assigns and an N_id node is returned.
- * 
- * @param lower ast node denoting lower bound
- * @param upper ast node denoting upper bound
- * @param *assigns assignment chain to append the runtime code if necessary
- * @param arg_info info structure
- * 
- * @return N_num or N_id node representing the length of the range
- ******************************************************************************/
-static
-node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
-{
-  node *size;
-
-  DBUG_ENTER("ComputeSize");
-
-  if (IsNum( upper) && IsNum( lower)) {
-    /*
-     * static length
-     */
-    size = TBmakeNum( GetNum( upper) - GetNum( lower));
-
-    DBUG_ASSERT( (NUM_VAL( size) >= 0), "negative size found");
-  } else {
-    /*
-     * we have to compute the length of the range at runtime
-     */
-    node *savis = MakeIntegerVar( &INFO_VARDECS( arg_info));
-
-    savis = AssignValue( savis,
-                         TCmakePrf2( F_sub_SxS,
-                                     DUPdoDupNode( upper),
-                                     DUPdoDupNode( lower)),
-                         assigns);
-
-    size = TBmakeId( savis);
-  }
-
-  DBUG_RETURN( size);
-}
-#endif
-
-/** <!-- ****************************************************************** -->
  * @fn node *ComputeMax( node *nodea, node *nodeb, node **assigns,
  *                       info *arg_info)
  *
@@ -693,6 +560,149 @@ ComputeMin (node *nodea, node *nodeb, node **assigns, info *arg_info)
 
     DBUG_RETURN (min);
 }
+
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeNewBounds( node *upper, node *lower, node *step,
+ *                             node **nupper,
+ *                             node **assigns, info *arg_info)
+ *
+ * @brief Computes a new intermediate bound and the length of the overlap
+ *        to produce a fitted with-loop.
+ *
+ * @param upper upper bound of wl3
+ * @param lower lower bound of wl3
+ * @param step  step of wl3
+ * @param *nupper contains the intermediate upper bound after return
+
+ * @param *assigns contains, after return, assignments that need to be performed
+ *                  before this range is evaluated.
+ * @param arg_info info structure used to store new vardecs
+ *
+ * @return the size of the overlapping range
+ ******************************************************************************/
+static node *
+ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **assigns,
+                  info *arg_info)
+{
+    node *newsize;
+    node *length;
+
+    DBUG_ENTER ("NewBounds");
+
+    if (IsNum (upper) && IsNum (lower)) {
+        /*
+         * static length
+         */
+        length = TBmakeNum (GetNum (upper) - GetNum (lower));
+    } else {
+        /*
+         * we have to compute the length of the range at runtime
+         */
+        node *lavis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
+        lavis = AssignValue (lavis,
+                             TCmakePrf2 (F_sub_SxS, DUPdoDupNode (upper),
+                                         DUPdoDupNode (lower)),
+                             assigns);
+
+        length = TBmakeId (lavis);
+    }
+
+    if (IsNum (step) && IsNum (length)) {
+        int overlap;
+        /*
+         * we can compute the new size and bound statically
+         */
+        overlap = GetNum (length) % GetNum (step);
+
+        newsize = TBmakeNum (overlap);
+        *nupper = TBmakeNum (GetNum (upper) - overlap);
+
+        length = FREEdoFreeNode (length);
+    } else {
+        node *ovlAvis, *nupAvis;
+        /*
+         * we have to compute the new size and upper bound
+         * at runtime
+         */
+        ovlAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+        nupAvis = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
+        ovlAvis
+          = AssignValue (ovlAvis, TCmakePrf2 (F_mod_SxS, length, DUPdoDupTree (step)),
+                         assigns);
+
+        nupAvis
+          = AssignValue (nupAvis,
+                         TCmakePrf2 (F_sub_SxS, DUPdoDupTree (upper), TBmakeId (ovlAvis)),
+                         assigns);
+
+        newsize = TBmakeId (ovlAvis);
+        *nupper = TBmakeId (nupAvis);
+    }
+
+    {
+        /* Make sure that the size is at lest one */
+        node *one = TBmakeNum (1);
+        node *maxnewsize;
+        maxnewsize = ComputeMax (newsize, one, assigns, arg_info);
+        newsize = FREEdoFreeTree (newsize);
+        one = FREEdoFreeTree (one);
+        newsize = maxnewsize;
+    }
+
+    DBUG_RETURN (newsize);
+}
+
+#if 0 /* not needed at the moment */
+/** <!-- ****************************************************************** -->
+ * @fn node *ComputeSize( node *lower, node *upper, node **assigns, 
+ *                        info *arg_info)
+ *
+ * @brief Returns a node that denotes the size (or length) of the given range.
+ *        If the range is fully static, an N_num node will be returned. For
+ *        dynamic ranges, code for computing the length at runtime is added to
+ *        assigns and an N_id node is returned.
+ * 
+ * @param lower ast node denoting lower bound
+ * @param upper ast node denoting upper bound
+ * @param *assigns assignment chain to append the runtime code if necessary
+ * @param arg_info info structure
+ * 
+ * @return N_num or N_id node representing the length of the range
+ ******************************************************************************/
+static
+node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
+{
+  node *size;
+
+  DBUG_ENTER("ComputeSize");
+
+  if (IsNum( upper) && IsNum( lower)) {
+    /*
+     * static length
+     */
+    size = TBmakeNum( GetNum( upper) - GetNum( lower));
+
+    DBUG_ASSERT( (NUM_VAL( size) >= 0), "negative size found");
+  } else {
+    /*
+     * we have to compute the length of the range at runtime
+     */
+    node *savis = MakeIntegerVar( &INFO_VARDECS( arg_info));
+
+    savis = AssignValue( savis,
+                         TCmakePrf2( F_sub_SxS,
+                                     DUPdoDupNode( upper),
+                                     DUPdoDupNode( lower)),
+                         assigns);
+
+    size = TBmakeId( savis);
+  }
+
+  DBUG_RETURN( size);
+}
+#endif
 
 /*
  * int i = _sel_VxA( int n, int[.] vec);
