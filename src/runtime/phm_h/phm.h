@@ -38,7 +38,7 @@ typedef long int SAC_HM_size_unit_t;
 #if SAC_BACKEND != muTC
 #include <sys/types.h> /* typedef unsigned int size_t;  */
 #else
-#include "cstddef.h"
+#include "stddef.h"
 #endif
 #undef muTC
 

@@ -260,7 +260,7 @@ runtime_mt_h           := mt mt_gen schedule
 
 runtime_mutc_h         := mutc mutc_world \
                           mutc_gen mutc_tostring \
-                          mutc_unin mutc_startup 
+                          mutc_unin mutc_startup mutc_rc
 
 runtime_cuda_h         := cuda cuda_gen
 
@@ -309,7 +309,7 @@ libsac_extraclean_devel    :=
 libsac_extraclean_prod     := 
 
 ifeq  (muTC, $(CROSS_BACKEND))
-libsac_sourcedirs          := interface
+libsac_sourcedirs          := interface mutc
 else
 libsac_sourcedirs          := essentials mt phm cachesim interface
 endif
@@ -319,6 +319,8 @@ endif
 libsac_essentials   := commandline message misc profile trace
 
 libsac_interface    := sacarg sacargconvert
+
+libsac_mutc         := reference_counting
 
 libsac_mt           := mt_std mt_trace
 

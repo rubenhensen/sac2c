@@ -2201,6 +2201,7 @@ ATravNIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravNIap");
 
+#if !FUNS_IN_WL_SUPPORTED
     if (!FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         INFO_NIP_ARG (arg_info) = FALSE;
 
@@ -2209,6 +2210,7 @@ ATravNIap (node *arg_node, info *arg_info)
         INFO_NIP_RESULT (arg_info)
           = INFO_NIP_RESULT (arg_info) || INFO_NIP_ARG (arg_info);
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }

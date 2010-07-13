@@ -1187,6 +1187,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_SET__RC__NOOP(var_NT, rc) SAC_NOOP ()
 
+/* Overloaded by MUTC */
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
@@ -1200,6 +1201,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_INC_RC__NOOP(var_NT, rc) SAC_NOOP ()
 
+/* Overloaded by MUTC */
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
@@ -1213,6 +1215,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_DEC_RC__NOOP(var_NT, rc) SAC_NOOP ()
 
+/* Overloaded by MUTC */
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
@@ -1229,6 +1232,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
+/* Overloaded by MUTC */
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
