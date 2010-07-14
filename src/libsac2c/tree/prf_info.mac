@@ -719,15 +719,15 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
    * Type conversion and assertion operations
    */
 
-  PRF (type_conv, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_type_conv, NULL,
+  PRF (type_conv, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_type_conv, NULL,
        COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),
 
-  PRF (type_error, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_id, NULL,
+  PRF (type_error, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_id, NULL,
        COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEn, NULL,
        NULL),
 
-  PRF (dispatch_error, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_dispatch_error, NULL,
+  PRF (dispatch_error, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dispatch_error, NULL,
        COMPprfDispatchError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEval,
        NULL, NULL),
 

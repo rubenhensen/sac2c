@@ -919,7 +919,8 @@ extern bool TCisPhiFun (node *id);
     TBmakePrf (f, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
 
 /* PRF ARGUMENT ENCODING */
-#define PRF_ARGENCODING(prf, arg) global.prf_arg_encoding[3 * prf + arg]
+#define PRF_ARGENCODING(prf, arg)                                                        \
+    ((arg >= 3) ? PA_x : global.prf_arg_encoding[3 * prf + arg])
 
 /* PRF NAME from globals */
 #define PRF_NAME(prf) global.prf_name[prf]
