@@ -18,6 +18,8 @@
  *   - non_neg_val_S
  *   - val_lt_shape_VxA
  *   - val_le_val_VxV
+ *   - val_le_val_SxS
+ *   - val_lt_val_SxS
  *   - prod_matches_prod_shape_VxA
  * However, as the LHS-alias might have a more precise type, we introduce
  * aliasing assignments to trigger a conversion of the data representation
@@ -350,6 +352,8 @@ EMRACCprf (node *arg_node, info *arg_info)
     case F_non_neg_val_S:
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
+    case F_val_le_val_SxS:
+    case F_val_lt_val_SxS:
     case F_prod_matches_prod_shape_VxA:
         /*
          * v,p = constraint(a,b); R
