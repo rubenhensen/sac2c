@@ -19,11 +19,10 @@
 #define MUTC 1
 #if SAC_BACKEND == MUTC
 
-sl_decl (set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
-sl_decl (inc_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
-sl_decl (dec_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
-sl_decl (dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
-sl_decl (get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
+sl_decl (SAC_inc_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+sl_decl (SAC_dec_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+sl_decl (SAC_dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
+sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 
 /*
  * SAC_ND_SET__RC implementations (referenced by sac_std_gen.h)
@@ -32,7 +31,7 @@ sl_decl (get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, set_rc,                \
+        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_set_rc,            \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         sl_detach ();                                                                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
@@ -45,7 +44,7 @@ sl_decl (get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, inc_rc,                \
+        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_inc_rc,            \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         sl_detach ();                                                                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
@@ -58,7 +57,7 @@ sl_decl (get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, dec_rc,                \
+        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_dec_rc,            \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         sl_detach ();                                                                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
@@ -73,7 +72,7 @@ sl_decl (get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
                                                                                          \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, dec_and_get_rc,        \
+        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_dec_and_get_rc,    \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_sharg (int, val, rc)); \
         sl_sync ();                                                                      \
         if (sl_geta (val) == 0) {                                                        \
