@@ -51,8 +51,8 @@ CreateInfoMacroCommandLine ()
 
     res = STRcatn (3 * 4 + 1, " ", "-DSAC_REVISION=", build_rev, " ",
                    "-DSAC_REVISION_SHORT=", build_srev, " ",
-                   "-DSAC_BUILD_STYLE=", build_style, " ",
-                   "-DSAC_BACKEND=", global.backend_string[global.backend], " ");
+                   "-DSAC_BUILD_STYLE=", build_style, " ", "-DSAC_BACKEND_",
+                   global.backend_string[global.backend], " ");
 
     DBUG_RETURN (res);
 }
