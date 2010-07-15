@@ -2431,12 +2431,13 @@ DUPwlblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwlblock");
 
-    new_node
-      = TBmakeWlblock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
-                       WLBLOCK_BOUND1 (arg_node), WLBLOCK_BOUND2 (arg_node),
-                       WLBLOCK_STEP (arg_node), DUPTRAV (WLBLOCK_NEXTDIM (arg_node)),
-                       DUPTRAV (WLBLOCK_CONTENTS (arg_node)),
-                       DUPCONT (WLBLOCK_NEXT (arg_node)));
+    new_node = TBmakeWlblock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
+                              DUPTRAV (WLBLOCK_BOUND1 (arg_node)),
+                              DUPTRAV (WLBLOCK_BOUND2 (arg_node)),
+                              DUPTRAV (WLBLOCK_STEP (arg_node)),
+                              DUPTRAV (WLBLOCK_NEXTDIM (arg_node)),
+                              DUPTRAV (WLBLOCK_CONTENTS (arg_node)),
+                              DUPCONT (WLBLOCK_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2452,12 +2453,13 @@ DUPwlublock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwlublock");
 
-    new_node
-      = TBmakeWlublock (WLUBLOCK_LEVEL (arg_node), WLUBLOCK_DIM (arg_node),
-                        WLUBLOCK_BOUND1 (arg_node), WLUBLOCK_BOUND2 (arg_node),
-                        WLUBLOCK_STEP (arg_node), DUPTRAV (WLUBLOCK_NEXTDIM (arg_node)),
-                        DUPTRAV (WLUBLOCK_CONTENTS (arg_node)),
-                        DUPCONT (WLUBLOCK_NEXT (arg_node)));
+    new_node = TBmakeWlublock (WLUBLOCK_LEVEL (arg_node), WLUBLOCK_DIM (arg_node),
+                               DUPTRAV (WLUBLOCK_BOUND1 (arg_node)),
+                               DUPTRAV (WLUBLOCK_BOUND2 (arg_node)),
+                               DUPTRAV (WLUBLOCK_STEP (arg_node)),
+                               DUPTRAV (WLUBLOCK_NEXTDIM (arg_node)),
+                               DUPTRAV (WLUBLOCK_CONTENTS (arg_node)),
+                               DUPCONT (WLUBLOCK_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
