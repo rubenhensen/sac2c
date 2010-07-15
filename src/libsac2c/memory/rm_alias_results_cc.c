@@ -51,6 +51,7 @@
 #include "tree_compound.h"
 #include "free.h"
 #include "memory.h"
+#include "DupTree.h"
 
 /** <!--********************************************************************-->
  *
@@ -142,29 +143,35 @@ EMRACCdoRemoveAliasResultsFromConformityChecks (node *syntax_tree)
  *****************************************************************************/
 
 info *
-Substitute (node **ids, node *avis, info *arg_info)
+Substitute (node **ids, node *rhs, info *arg_info)
 {
     DBUG_ENTER ("Substitute");
 
-    if (TYeqTypes (AVIS_TYPE (IDS_AVIS (*ids)), AVIS_TYPE (avis))) {
+    if ((NODE_TYPE (rhs) == N_id)
+        && TYeqTypes (AVIS_TYPE (IDS_AVIS (*ids)), ID_NTYPE (rhs))) {
         /*
          * substitute
          */
-        AVIS_SUBST (IDS_AVIS (*ids)) = avis;
+        AVIS_SUBST (IDS_AVIS (*ids)) = ID_AVIS (rhs);
     } else {
         /*
          * emit assignment
          */
-        if ((!TUisScalar (AVIS_TYPE (IDS_AVIS (*ids))))
-            && (!TUisScalar (AVIS_TYPE (avis)))) {
+        if (NODE_TYPE (rhs) != N_id) {
             INFO_POSTASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL),
-                                         TBmakeId (avis)),
+                                         DUPdoDupTree (rhs)),
+                              INFO_POSTASSIGN (arg_info));
+        } else if ((!TUisScalar (AVIS_TYPE (IDS_AVIS (*ids))))
+                   && (!TUisScalar (ID_NTYPE (rhs)))) {
+            INFO_POSTASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL),
+                                         TBmakeId (ID_AVIS (rhs))),
                               INFO_POSTASSIGN (arg_info));
         } else {
             INFO_POSTASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (*ids), NULL),
-                                         TCmakePrf1 (F_copy, TBmakeId (avis))),
+                                         TCmakePrf1 (F_copy, TBmakeId (ID_AVIS (rhs)))),
                               INFO_POSTASSIGN (arg_info));
         }
         AVIS_SSAASSIGN (IDS_AVIS (*ids)) = INFO_POSTASSIGN (arg_info);
@@ -332,8 +339,8 @@ EMRACCprf (node *arg_node, info *arg_info)
          * v,p = type_constraint( t, a); R
          * => p = type_constraint( t, a); R[v\a]
          */
-        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
-                               ID_AVIS (PRF_ARG2 (arg_node)), arg_info);
+        arg_info
+          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_same_shape_AxA:
@@ -341,10 +348,10 @@ EMRACCprf (node *arg_node, info *arg_info)
          * va,vb,p = same_shape_AxA(a,b); R
          * => p = same_shape_AxA(a,b); R[va\a][vb\b]
          */
-        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
-                               ID_AVIS (PRF_ARG1 (arg_node)), arg_info);
-        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
-                               ID_AVIS (PRF_ARG2 (arg_node)), arg_info);
+        arg_info
+          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG1 (arg_node), arg_info);
+        arg_info
+          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_shape_matches_dim_VxA:
@@ -359,8 +366,8 @@ EMRACCprf (node *arg_node, info *arg_info)
          * v,p = constraint(a,b); R
          * => p = constraint(a,b) R[v\a]
          */
-        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
-                               ID_AVIS (PRF_ARG1 (arg_node)), arg_info);
+        arg_info
+          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG1 (arg_node), arg_info);
         break;
 
     default:; /* do nothing */
