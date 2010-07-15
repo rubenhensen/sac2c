@@ -886,6 +886,12 @@ ENDPHASE (cuda)
 
 PHASE (wlt, "Transforming with-loop representation", ALWAYS)
 
+SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWAYS, wlt)
+/*
+ * Repeating this optimisation here is necessary to avoid problems with exotic
+ * with-loops in subsequent wl-transform.
+ */
+
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
 SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
