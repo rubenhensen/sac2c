@@ -65,8 +65,8 @@
     SACARGFROMCVECT (name, btype, ctype)                                                 \
     SACARGFROMCSCALAR (name, btype, ctype)
 
-#define muTC 1
-#if SAC_BACKEND != muTC
+#define mutc 1
+#if SAC_BACKEND != MUTC
 CONVERTER (Byte, T_byte, byte)
 CONVERTER (Short, T_short, short)
 CONVERTER (Int, T_int, int)
@@ -82,7 +82,7 @@ CONVERTER (Float, T_float, float)
 CONVERTER (Bool, T_bool, int)
 CONVERTER (Char, T_char, char)
 #endif
-#undef muTC
+#undef MUTC
 
 void *
 SACARGconvertToVoidPointer (int btype, SACarg *arg)

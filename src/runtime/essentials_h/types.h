@@ -20,8 +20,8 @@
 #ifndef _SAC_TYPES_H
 #define _SAC_TYPES_H
 
-#define muTC 1
-#if (SAC_BACKEND != muTC)
+#define MUTC 1
+#if (SAC_BACKEND != MUTC)
 typedef char byte;
 typedef long long longlong;
 typedef unsigned char ubyte;
@@ -30,6 +30,6 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef unsigned long long ulonglong;
 #endif
-#undef muTC
+#undef MUTC
 
 #endif /* _TYPES_H */

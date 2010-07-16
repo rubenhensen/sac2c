@@ -18,7 +18,7 @@
 
 #define MUTC 1
 #if SAC_BACKEND == MUTC
-
+sl_decl (SAC_set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
 sl_decl (SAC_inc_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
 sl_decl (SAC_dec_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
 sl_decl (SAC_dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));

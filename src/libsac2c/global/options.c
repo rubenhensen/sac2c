@@ -100,9 +100,9 @@ OPTcheckOptionConsistency (void)
         exit (0);
     }
 
-    if (STReq (global.config.backend, "muTC")) {
+    if (STReq (global.config.backend, "MUTC")) {
         if (global.mtmode != MT_none) {
-            CTIerror ("Traditional MT modes are not available for the muTC "
+            CTIerror ("Traditional MT modes are not available for the MUTC "
                       "backend.");
         }
 

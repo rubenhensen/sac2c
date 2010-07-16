@@ -308,7 +308,7 @@ libsac_extraclean_all      :=
 libsac_extraclean_devel    := 
 libsac_extraclean_prod     := 
 
-ifeq  (muTC, $(CROSS_BACKEND))
+ifeq  (MUTC, $(CROSS_BACKEND))
 libsac_sourcedirs          := interface mutc
 else
 libsac_sourcedirs          := essentials mt phm cachesim interface
@@ -335,7 +335,7 @@ libsac_cachesim     := basic access_simple access_detailed
 # Subproject libsacphm
 #
 ###############################################################################
-ifeq  (muTC, $(CROSS_BACKEND))
+ifeq  (MUTC, $(CROSS_BACKEND))
 libsacphm_targets           :=
 else
 libsacphm_targets           := libsac$(CROSS_VARIANT)phm.seq.a \

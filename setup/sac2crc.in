@@ -342,13 +342,14 @@ CACHE3_MSCA      :=  0
  */
 target sl:
 
-BACKEND          :=  "muTC"
+BACKEND          :=  "MUTC"
 CC               :=  "slc -b seqc"
 CCFLAGS          :=  "-Wall -Wno-unused"
 LD_DYNAMIC       :=  ""
 LIB_VARIANT      :=  "mutc-seqc"
 AR_CREATE        :=  "slar seqc cr"
 RANLIB           :=  "slranlib seqc"
+OPT_g            :=  ""
 
 
 target mutc::sl:
