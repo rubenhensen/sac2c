@@ -263,20 +263,22 @@
 
 #define SAC_ND_PRF_GUARD(scl)                                                            \
     if (!scl)                                                                            \
-        SAC_RuntimeError ("Conditions not met at guard in " __FILE__ ":" __LINE__ ".");
+        SAC_RuntimeError ("Conditions not met at guard in " __FILE__                     \
+                          ":" TO_STR (__LINE__) ".");
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(to_NT, from_NT, scl)                              \
     if (SAC_ND_A_DIM (from_NT) != scl)                                                   \
         SAC_RuntimeError ("Array " NT_STR (from_NT) " does not adhere to "               \
                                                     "type constraint `dim == " #scl      \
-                                                    "' in " __FILE__ ":" __LINE__ ".");  \
+                                                    "' in " __FILE__                     \
+                                                    ":" TO_STR (__LINE__) ".");          \
     SAC_ND_A_FIELD (to_NT) = 1;
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AUDGZ(to_NT, from_NT)                                 \
     if (SAC_ND_A_DIM (from_NT) == 0)                                                     \
         SAC_RuntimeError ("Array " NT_STR (                                              \
           from_NT) " does not adhere to "                                                \
-                   "type constraint `dim > 0' in " __FILE__ ":" __LINE__ ".");           \
+                   "type constraint `dim > 0' in " __FILE__ ":" TO_STR (__LINE__) ".");  \
     SAC_ND_A_FIELD (to_NT) = 1;
 
 #define SAC_ND_PRF_SHAPE_MATCHES_DIM(to_NT, from_NT, from2_NT)                           \
@@ -284,7 +286,7 @@
         || (SAC_ND_A_SHAPE (from_NT, 0) != SAC_ND_A_DIM (from2_NT))) {                   \
         SAC_RuntimeError ("Arrays " NT_STR (from_NT) " and " NT_STR (                    \
           from2_NT) " do not adhere to shape "                                           \
-                    "matches dim constraint in " __FILE__ ":" __LINE__ ".");             \
+                    "matches dim constraint in " __FILE__ ":" TO_STR (__LINE__) ".");    \
     }
 
 #define SAC_ND_PRF_NON_NEG_VAL_S(to_NT, from_NT)                                         \
@@ -292,7 +294,7 @@
         if (SAC_ND_READ (from_NT, 0) < 0)                                                \
             SAC_RuntimeError ("Non-negativity constraint violated "                      \
                               "for scalar " NT_STR (from_NT) " in " __FILE__             \
-                                                             ":" __LINE__ ".");          \
+                                                             ":" TO_STR (__LINE__) "."); \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
@@ -302,8 +304,8 @@
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
             if (SAC_ND_READ (from_NT, SAC_i) < 0) {                                      \
                 SAC_RuntimeError ("Non-negativity constraint violated "                  \
-                                  "for vector " NT_STR (from_NT) " in " __FILE__         \
-                                                                 ":" __LINE__ ".");      \
+                                  "for vector " NT_STR (                                 \
+                                    from_NT) " in " __FILE__ ":" TO_STR (__LINE__) "."); \
             }                                                                            \
         }                                                                                \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
@@ -313,7 +315,7 @@
     {                                                                                    \
         if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0)) {                     \
             SAC_RuntimeError ("Scalar constraint " NT_STR (from_NT) " < " NT_STR (       \
-              from2_NT) " violated in " __FILE__ ":" __LINE__ ".");                      \
+              from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
         }                                                                                \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
@@ -324,7 +326,7 @@
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
             if (SAC_ND_READ (from_NT, SAC_i) > SAC_ND_READ (from2_NT, SAC_i)) {          \
                 SAC_RuntimeError ("Vector constraint " NT_STR (from_NT) " < " NT_STR (   \
-                  from2_NT) " violated in " __FILE__ ":" __LINE__ ".");                  \
+                  from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");         \
                 SAC_RuntimeError ("Constraint violated");                                \
             }                                                                            \
         }                                                                                \
