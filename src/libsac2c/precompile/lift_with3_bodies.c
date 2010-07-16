@@ -638,7 +638,8 @@ ShareFolds (node *exprs, lut_t *lut)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *CreateThreadFunction(node *block, node *index, info *arg_info)
+ * @fn node *CreateThreadFunction( node *block, node *results, node *index,
+ *                                 info *arg_info)
  *
  * @brief Lifts the body argument into a thread function which is prepended
  *        to INFO_THREADFUNS to be added to module node. Change variables
@@ -647,7 +648,6 @@ ShareFolds (node *exprs, lut_t *lut)
  * @param block      block to be lifted into the function ( consumed)
  * @param results    results of the range                 ( consumed)
  * @param index      avis of index variable of this range
- * @param fistRanges is this the first range in a with3 loop?
  * @param arg_info   info structure to store new function
  *
  * @return N_ap node to be used as new result of the range for use in the
@@ -830,9 +830,11 @@ LW3range (node *arg_node, info *arg_info)
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
     /* Re compute dfm to account for init of folds */
-    INFO_FUNDEF (arg_info)
-      = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
-                            HIDE_LOCALS_WITH3);
+#if 0
+  INFO_FUNDEF( arg_info) = 
+    INFDFMSdoInferDfms( RDFMSdoRemoveDfms( INFO_FUNDEF( arg_info)), 
+                        HIDE_LOCALS_WITH3);
+#endif
 
     RANGE_RESULTS (arg_node)
       = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
