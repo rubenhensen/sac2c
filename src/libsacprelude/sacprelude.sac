@@ -2,8 +2,8 @@ module sacprelude;
 
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          SACarg, prod, partitionSlicer, gridFiller
-#define muTC 1
-#if SAC_BACKEND != muTC
+#define MUTC 1
+#if SAC_BACKEND != MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
 	   isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap,
            isPartitionIntersectNull, partitionIntersectMax, partitionIntersectMin
@@ -14,7 +14,7 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
 	   isUbyte, isUshort, isUint, isUlong, isUlonglong
 #endif
 #endif
-#undef muTC
+#undef MUTC
 };
 
 external typedef SACarg;
@@ -77,6 +77,7 @@ ZERO( double, 0d)
 ZERO( float, 0f)
 ZERO( char, ' ')
 ZERO( bool, false)
+#ifdef SANTANU
 ZERO( byte, 0b)
 ZERO( short, 0s)
 ZERO( long, 0l)
@@ -86,6 +87,7 @@ ZERO( ushort, 0us)
 ZERO( uint, 0ui)
 ZERO( ulong, 0ul)
 ZERO( ulonglong, 0ull)
+#endif
 
 inline
 bool and( bool a, bool b)
@@ -234,8 +236,8 @@ inline int[.] partitionIntersectMin( int[.] idxmax, int[.] ivmin,
   return(z);
 }
 
-#define muTC 1
-#if SAC_BACKEND!=muTC
+#define MUTC 1
+#if SAC_BACKEND!=MUTC
 
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"
@@ -442,4 +444,4 @@ external bool isUlonglong( SACarg a);
 #endif
 
 #endif
-#undef muTC
+#undef MUTC
