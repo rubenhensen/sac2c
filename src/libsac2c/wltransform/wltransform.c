@@ -6824,6 +6824,8 @@ WLTRAwith (node *arg_node, info *arg_info)
             do_naive_comp
               = ExtractNaiveCompPragma (WITH_PRAGMA (arg_node), global.linenum);
 
+            do_naive_comp = do_naive_comp || global.force_naive_with2;
+
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
                 && (STReq (global.break_specifier, "conv"))) {

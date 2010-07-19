@@ -382,6 +382,11 @@ GLOBAL (char **, sigspec_mode_str, sigspec_mode_str_init)
 
 GLOBAL (spec_mode_t, spec_mode, SS_aks)
 GLOBAL (char **, spec_mode_str, spec_mode_str_init)
+
+/*
+ * Force wlt to work in naive mode
+ */
+GLOBAL (bool, force_naive_with2, FALSE)
 /*
  * Command line options for specifying particular side conditions
  * for the (new) type inference.

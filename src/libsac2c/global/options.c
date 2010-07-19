@@ -429,6 +429,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("enforceFloat", global.enforce_float = TRUE);
 
     /*
+     * Options starting with fffffffffffffffffffffffffffffffffffffffffff
+     */
+
+    ARGS_FLAG ("force_naive", global.force_naive_with2 = TRUE);
+
+    /*
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
      */
 

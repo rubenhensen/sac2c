@@ -455,6 +455,8 @@ PrintOptimisationOptions (void)
             "                          (default: %s)\n",
             global.sigspec_mode_str[global.sigspec_mode]);
 
+    printf ("    -force_naive    Make wlt always run in naive mode\n\n");
+
     DBUG_VOID_RETURN;
 }
 
