@@ -3525,7 +3525,7 @@ MakeIcm_PRF_TYPE_CONV_AKD (char *error, node *let_ids, node *id)
                           TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
                           ret_node);
 
-    for (i = TCgetShapeDim (GetType (let_ids)) - 1; i >= 0; i--) {
+    for (i = DIM_NO_OFFSET (TCgetShapeDim (GetType (let_ids))) - 1; i >= 0; i--) {
         ret_node = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKD_SHAPE", TBmakeNum (i),
                                      TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
                                                            GetType (let_ids)),
@@ -3567,7 +3567,7 @@ MakeIcm_PRF_TYPE_CONV_AKS (char *error, node *let_ids, node *id)
                           TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (id)), GetType (id)),
                           ret_node);
 
-    for (i = TCgetShapeDim (GetType (let_ids)) - 1; i >= 0; i--) {
+    for (i = DIM_NO_OFFSET (TCgetShapeDim (GetType (let_ids))) - 1; i >= 0; i--) {
         ret_node = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKS_COND", TBmakeNum (i),
                                      TCmakeIdCopyStringNt (AVIS_NAME (IDS_AVIS (let_ids)),
                                                            GetType (let_ids)),
@@ -4597,7 +4597,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          *               information always has to be present!
          */
         if (TCcountExprs (PRF_ARGS (arg_node)) >= 4) {
-            if (TCgetShapeDim (IDS_TYPE (let_ids)) < 0) {
+            if (!KNOWN_SHAPE (TCgetShapeDim (IDS_TYPE (let_ids)))) {
 #if 0 /* Still may be present if not canonical */
         DBUG_ASSERT( (PRF_ARG4( arg_node) != NULL),
                      "missing shape information for suballoc");
@@ -7615,7 +7615,7 @@ COMPwith (node *arg_node, info *arg_info)
              * (genarray only)
              */
             if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)
-                && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
+                && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                 if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
                     DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
                     /*
@@ -7643,7 +7643,7 @@ COMPwith (node *arg_node, info *arg_info)
                                     "cannot create subvar shape");
                 }
             } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
-                       && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
+                       && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                 DBUG_PRINT ("COMP", ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
                 /*
                  * set shape in modarray case based upon result
@@ -7899,7 +7899,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                  * (genarray only)
                  */
                 if ((NODE_TYPE (withop) == N_genarray)
-                    && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
+                    && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                     if (GENARRAY_DEFAULT (withop) != NULL) {
                         DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
                         /*
@@ -7925,7 +7925,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                                         "cannot create subvar shape");
                     }
                 } else if ((NODE_TYPE (withop) == N_modarray)
-                           && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
+                           && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                     DBUG_PRINT ("COMP",
                                 ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
                     /*
