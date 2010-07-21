@@ -681,13 +681,7 @@ DupExprs_NT_AddReadIcms (node *exprs)
     DBUG_ENTER ("DupExprs_NT_AddReadIcms");
 
     if (exprs != NULL) {
-        // DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs), "no N_exprs node found!");
-
-        if ((NODE_TYPE (exprs) == N_exprs)) {
-
-        } else {
-            printf ("no N_exprs node found!\n");
-        }
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
 
         new_exprs = TBmakeExprs (DupExpr_NT_AddReadIcms (EXPRS_EXPR (exprs)),
                                  DupExprs_NT_AddReadIcms (EXPRS_NEXT (exprs)));
