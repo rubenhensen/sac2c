@@ -843,7 +843,6 @@ ALassign (node *arg_node, info *arg_info)
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
-        global.optcounters.al_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -889,19 +888,21 @@ ALids (node *arg_node, info *arg_info)
 node *
 ALprf (node *arg_node, info *arg_info)
 {
+    ntype *ltype;
+    prf prf;
+    node *exprs, *tmp;
+    node *consts, *scalars, *vects;
+    node *consts_id, *scalars_id, *vects_id;
+    node *scalars_inv, *scalars_inv_id, *vects_inv, *vects_inv_id;
 
     DBUG_ENTER ("ALprf");
 
     if (isAssociativeAndCommutativePrf (PRF_PRF (arg_node))) {
-        ntype *ltype = IDS_NTYPE (INFO_LHS (arg_info));
+        ltype = IDS_NTYPE (INFO_LHS (arg_info));
+
         if ((!global.enforce_ieee)
             || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
-            prf prf;
-            node *exprs, *tmp;
-            node *consts, *ncss;
-            node *constid, *ncsid, *arrayid;
-            node *ncss_inv, *ncss_inv_id, *array_inv, *array_inv_id;
 
             prf = PRF_PRF (arg_node);
 
@@ -917,56 +918,69 @@ ALprf (node *arg_node, info *arg_info)
              */
             if (EXPRS_EXPRS3 (exprs) != NULL) {
                 consts = TCfilterExprs (isConst, &exprs);
-                ncss = TCfilterExprs (isNonConstScalar, &exprs);
+                scalars = TCfilterExprs (isNonConstScalar, &exprs);
+                vects = exprs;
 
-                if ((isSingletonOrEmpty (exprs)) && (isSingletonOrEmpty (consts))
-                    && (isSingletonOrEmpty (ncss))) {
+                scalars_inv = NULL;
 
-                    if (exprs != NULL)
-                        exprs = FREEdoFreeTree (exprs);
-                    if (consts != NULL)
-                        consts = FREEdoFreeTree (consts);
-                    if (ncss != NULL)
-                        ncss = FREEdoFreeTree (ncss);
-                } else {
+                if (!isSingletonOrEmpty (scalars)) {
                     if (isPrfAdd (prf)) {
-                        ncss_inv = identifyInverses (F_neg_S, &ncss);
-                        array_inv = identifyInverses (F_neg_S, &exprs);
+                        scalars_inv = identifyInverses (F_neg_S, &scalars);
                     } else if (isPrfMul (prf)) {
-                        ncss_inv = identifyInverses (F_reciproc_S, &ncss);
-                        array_inv = identifyInverses (F_reciproc_S, &exprs);
-                    } else {
-                        ncss_inv = NULL;
-                        array_inv = NULL;
+                        scalars_inv = identifyInverses (F_reciproc_S, &scalars);
                     }
+                }
 
-                    constid = Exprs2PrfTree (prf, consts, arg_info);
-                    ncsid = Exprs2PrfTree (prf, ncss, arg_info);
-                    arrayid = Exprs2PrfTree (prf, exprs, arg_info);
+                vects_inv = NULL;
+
+                if (!isSingletonOrEmpty (vects)) {
+                    if (isPrfAdd (prf)) {
+                        vects_inv = identifyInverses (F_neg_S, &vects);
+                    } else if (isPrfMul (prf)) {
+                        vects_inv = identifyInverses (F_reciproc_S, &vects);
+                    }
+                }
+
+                if (!isSingletonOrEmpty (consts) || (scalars_inv != NULL)
+                    || (vects_inv != NULL)) {
+
+                    /*
+                     * We only rewrite the multi-operand expression if we have
+                     *  - 2 or more constants, allowing for constant folding;
+                     *  - at least one pair of variable and its inverse among
+                     *    - the scalar operands or
+                     *    - the vector operands.
+                     */
+
+                    consts_id = Exprs2PrfTree (prf, consts, arg_info);
+                    scalars_id = Exprs2PrfTree (prf, scalars, arg_info);
+                    vects_id = Exprs2PrfTree (prf, vects, arg_info);
 
                     exprs = NULL;
-                    exprs = TCcombineExprs (arrayid, exprs);
-                    exprs = TCcombineExprs (ncsid, exprs);
-                    exprs = TCcombineExprs (constid, exprs);
+                    exprs = TCcombineExprs (vects_id, exprs);
+                    exprs = TCcombineExprs (scalars_id, exprs);
+                    exprs = TCcombineExprs (consts_id, exprs);
 
-                    while (ncss_inv != NULL) {
-                        tmp = EXPRS_NEXT (EXPRS_NEXT (ncss_inv));
-                        EXPRS_NEXT (EXPRS_NEXT (ncss_inv)) = NULL;
-                        ncss_inv_id = Exprs2PrfTree (prf, ncss_inv, arg_info);
-                        exprs = TCcombineExprs (ncss_inv_id, exprs);
-                        ncss_inv = tmp;
+                    while (scalars_inv != NULL) {
+                        tmp = EXPRS_NEXT (EXPRS_NEXT (scalars_inv));
+                        EXPRS_NEXT (EXPRS_NEXT (scalars_inv)) = NULL;
+                        scalars_inv_id = Exprs2PrfTree (prf, scalars_inv, arg_info);
+                        exprs = TCcombineExprs (scalars_inv_id, exprs);
+                        scalars_inv = tmp;
                     }
 
-                    while (array_inv != NULL) {
-                        tmp = EXPRS_NEXT (EXPRS_NEXT (array_inv));
-                        EXPRS_NEXT (EXPRS_NEXT (array_inv)) = NULL;
-                        array_inv_id = Exprs2PrfTree (prf, array_inv, arg_info);
-                        exprs = TCcombineExprs (array_inv_id, exprs);
-                        array_inv = tmp;
+                    while (vects_inv != NULL) {
+                        tmp = EXPRS_NEXT (EXPRS_NEXT (vects_inv));
+                        EXPRS_NEXT (EXPRS_NEXT (vects_inv)) = NULL;
+                        vects_inv_id = Exprs2PrfTree (prf, vects_inv, arg_info);
+                        exprs = TCcombineExprs (vects_inv_id, exprs);
+                        vects_inv = tmp;
                     }
 
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Exprs2PrfTree (prf, exprs, arg_info);
+
+                    global.optcounters.al_expr++;
 
                     /*
                      * update the maskbase
@@ -975,6 +989,17 @@ ALprf (node *arg_node, info *arg_info)
                       = DFMupdateMaskBase (INFO_DFMBASE (arg_info),
                                            FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
                                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                } else {
+                    if (consts != NULL) {
+                        consts = FREEdoFreeTree (consts);
+                    }
+                    if (scalars != NULL) {
+                        scalars = FREEdoFreeTree (scalars);
+                    }
+                    if (vects != NULL) {
+                        vects = FREEdoFreeTree (vects);
+                    }
                 }
             } else {
                 exprs = FREEdoFreeTree (exprs);
