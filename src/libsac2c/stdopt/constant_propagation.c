@@ -318,6 +318,8 @@ CPprf (node *arg_node, info *arg_info)
     case F_non_neg_val_V:
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
+    case F_val_le_val_SxS:
+    case F_val_lt_val_SxS:
     case F_prod_matches_prod_shape_VxA:
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
