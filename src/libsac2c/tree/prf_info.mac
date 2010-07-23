@@ -732,6 +732,19 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        NULL, NULL),
 
   /*******************************************************************************
+   * Function for implementing the encoding of shape details in wrapper entry
+   * functions.
+   */
+
+  PRF (we_shape_encode, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NULL, NULL,
+       COMPprfWrapperShapeEncode, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEval, NULL, NULL),
+
+  PRF (we_modfun_info, (PA_x, PA_x, PA_x), 1, XXX, NOSIMD, NULL, NULL,
+       COMPprfWrapperModFunInfo, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEval,
+       NULL, NULL),
+
+  /*******************************************************************************
    * Functions for implementing conformability constraints:
    */
 

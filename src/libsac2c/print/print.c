@@ -1851,6 +1851,10 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                     fprintf (global.outfile, " * Wrapper function:\n");
+                } else if (FUNDEF_ISINDIRECTWRAPPERFUN (arg_node)) {
+                    fprintf (global.outfile, " * Indirect wrapper function: ");
+                } else if (FUNDEF_ISWRAPPERENTRYFUN (arg_node)) {
+                    fprintf (global.outfile, " * Wrapper entry function: ");
                 } else if (FUNDEF_ISCONDFUN (arg_node)) {
                     if (INFO_NONLOCCALFUN (arg_info) == NULL) {
                         fprintf (global.outfile, " * Cond function:\n");
@@ -2756,6 +2760,12 @@ PRTap (node *arg_node, info *arg_info)
      */
     if ((FUNDEF_ISWRAPPERFUN (fundef))) {
         fprintf (global.outfile, "wrapper:");
+    }
+    if ((FUNDEF_ISINDIRECTWRAPPERFUN (fundef))) {
+        fprintf (global.outfile, "indirect wrapper:");
+    }
+    if ((FUNDEF_ISWRAPPERENTRYFUN (fundef))) {
+        fprintf (global.outfile, "wrapper entry:");
     }
     if ((FUNDEF_ISTYPEERROR (fundef))) {
         fprintf (global.outfile, "typeerror:");

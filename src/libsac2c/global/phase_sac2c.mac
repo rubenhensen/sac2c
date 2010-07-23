@@ -5,7 +5,7 @@
 #include "phase_initialise_defs.mac"
 
 /******************************************************************************/
-PHASE (scp, "Loading SAC program", ALWAYS)
+PHASE (scp, "Loading SAC program", !global.runtime)
 
 SUBPHASE (loc, "Locating source code", SPdoLocateSource, ALWAYS, scp)
 
@@ -17,7 +17,7 @@ ENDPHASE (scp)
 
 /******************************************************************************/
 
-PHASE (pre, "Preprocessing SAC program", ALWAYS)
+PHASE (pre, "Preprocessing SAC program", !global.runtime)
 
 SUBPHASE (hs, "Hiding struct definitions behind typedefs and accessors", HSdoHideStructs,
           ALWAYS, pre)
@@ -47,6 +47,9 @@ ENDPHASE (pre)
 /******************************************************************************/
 
 PHASE (mod, "Running module system", ALWAYS)
+
+SUBPHASE (prcl, "Parse runtime optimization commandline", RTsetupRuntimeCompiler,
+          global.runtime, mod)
 
 SUBPHASE (rsa, "Processing use and import statements", RSAdoResolveAll, !global.makedeps,
           mod)
@@ -83,6 +86,9 @@ SUBPHASE (udt, "Processing user defined types", RSTdoResolveSymbolTypes, ALWAYS,
 
 SUBPHASE (ggtc, "Generating generic type conversion functions",
           GGTCdoGenerateGenericTypeConversions, ALWAYS, sim)
+
+SUBPHASE (rtfilter, "Filter unneeded functions (runtime specialization)", RTdoFilter,
+          global.runtime, sim)
 
 ENDPHASE (sim)
 
@@ -1128,6 +1134,9 @@ SUBPHASE (tft, "MUTC tag functions as thread functions if needed",
 SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
           (global.backend == BE_mutc && global.filetype != F_prog), pc)
 
+/* TVD: Runtime Specialization */
+SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
+          RTSPECdoCreateWrapperEntries, global.rtspec, pc)
 /*
  * WARNING: no phases that duplicate code below this line!
  *          FPC builds the argtabs which CANNOT be maintained

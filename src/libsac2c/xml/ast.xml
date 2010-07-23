@@ -83,13 +83,26 @@
   <traversals>
     <!-- id is the short id of the traversal 
          name is a descriptive name
-	 default gives the default traversal mode
-	   user  a user defined function
-	   sons  TravSons
-	   none  TravNone
-	   error TravError
-	 include the include file needed for the traversal
+         default gives the default traversal mode
+           user  a user defined function
+           sons  TravSons
+           none  TravNone
+           error TravError
+         include the include file needed for the traversal
     -->
+      <traversal id="RTSPEC" name="Runtime Specialization" default="sons" include="runtime_specialization.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
+      <traversal id="RTFILTER" name="Filtering of unneeded functions for runtime optimization" default="sons" include="runtime_filtering.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+        </travuser>
+      </traversal>
       <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="tf_build_graph.h" >
         <travuser>
           <node name="Tfspec" />
@@ -3269,9 +3282,9 @@
     <nodeset name="Interface">
       <target>
         <node name="Import" />
-	<node name="Export" />
-	<node name="Use" />
-	<node name="Provide" />
+        <node name="Export" />
+        <node name="Use" />
+        <node name="Provide" />
       </target>
     </nodeset>
 
@@ -4603,7 +4616,9 @@ N_tfarg :
         </attribute>
         <attribute name="Impl" inconstructor="no">
 	  <description>
-	  Points to the implementation. In case of a wrapper function this is the only available instance. In case of an objectwrapper this is the wrapped function instance.
+      Points to the implementation. In case of a wrapper function this is the
+      only available instance. In case of an objectwrapper this is the wrapped
+      function instance.
 	  </description>
           <type name="ExtLink">
             <targets>
@@ -4940,6 +4955,8 @@ N_tfarg :
           <description>This is a cuda device function (called within a global kernel function).</description>
         </flag>
         <flag name="IsWrapperfun" />
+        <flag name="IsWrapperEntryfun" default="FALSE"/>
+        <flag name="IsIndirectWrapperfun" default="FALSE"/>
         <flag name="IsZombie" />
         <flag name="IsExtern" />
         <flag name="IsGeneric" >

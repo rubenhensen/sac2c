@@ -62,7 +62,8 @@ libsac2c_sourcedirs        := global tree support serialize \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
                               memory precompile codegen print \
-                              cinterface generics constraints cuda mutc
+                              cinterface generics constraints cuda mutc \
+                              rtspec
 
 ###############################################################################
 
@@ -216,7 +217,8 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
-                        icm2c_wl icm2c_error simd_infer tag_preparation icm2c_cuda
+                        icm2c_wl icm2c_error simd_infer tag_preparation icm2c_cuda \
+                        icm2c_rtspec
 
 libsac2c_print       := print convert
 
@@ -227,6 +229,8 @@ libsac2c_cinterface  := load_module_contents construct_bundles \
 
 libsac2c_constraints := insert_domain_constraints insert_conformity_checks \
                         strip_conformity_checks constraint_statistics
+
+libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filtering
 
 
 ###############################################################################
@@ -245,7 +249,8 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h cuda_h
+runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h cuda_h \
+                             rtspec_h
 
 ###############################################################################
 
@@ -263,6 +268,9 @@ runtime_mutc_h         := mutc mutc_world \
                           mutc_unin mutc_startup mutc_rc
 
 runtime_cuda_h         := cuda cuda_gen
+
+runtime_rtspec_h       := rtspec registry reqqueue optimization_controller
+                          
 
 
 ###############################################################################
@@ -311,7 +319,7 @@ libsac_extraclean_prod     :=
 ifeq  (MUTC, $(CROSS_BACKEND))
 libsac_sourcedirs          := interface mutc
 else
-libsac_sourcedirs          := essentials mt phm cachesim interface
+libsac_sourcedirs          := essentials mt phm cachesim interface rtspec
 endif
 
 ###############################################################################
@@ -328,7 +336,7 @@ libsac_phm          := nophm
 
 libsac_cachesim     := basic access_simple access_detailed
 
-
+libsac_rtspec       := registry reqqueue optimization_controller
 
 ###############################################################################
 #

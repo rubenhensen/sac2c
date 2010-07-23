@@ -2716,6 +2716,13 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("CUDA_GLOBALFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("CUDA_GLOBALFUN_DEF_END", DUPdoDupTree (icm_args));
+        } else if (FUNDEF_ISWRAPPERENTRYFUN (arg_node)) {
+            icm_args = MakeFunctionArgs (arg_node);
+            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
+            FUNDEF_ICMDEFBEGIN (arg_node)
+              = TBmakeIcm ("WE_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+            FUNDEF_ICMDEFEND (arg_node)
+              = TBmakeIcm ("WE_FUN_DEF_END", DUPdoDupTree (icm_args));
         } else {
             icm_args = MakeFunctionArgs (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
@@ -3338,6 +3345,7 @@ COMPApArgs (node *ap, info *arg_info)
                          "no N_exprs node found in argtab");
             arg = EXPRS_EXPR (argtab->ptr_in[i]);
             tag = argtab->tag[i];
+
             DBUG_ASSERT ((global.argtag_is_in[tag] || global.argtag_is_inout[tag]),
                          "illegal tag found!");
         }
@@ -3407,6 +3415,8 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
+    } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
+        icm = TBmakeIcm ("WE_FUN_AP", icm_args);
     } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
@@ -6103,6 +6113,97 @@ COMPprfTypeError (node *arg_node, info *arg_info)
     message = TBmakeStr (STRstring2SafeCEncoding (TYgetBottomError (TYPE_TYPE (bottom))));
 
     ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", message, NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn COMPprfWrapperShapeEncode( node *arg_node, info *arg_info)
+ *
+ * @brief Creates the ICM's for encoding shape information at runtime. This is
+ * needed by the wrapper entry function when using runtime specialization.
+ *
+ * @return A chain of assignment nodes.
+ *
+ ****************************************************************************/
+static node *
+COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
+{
+    node *assigns = NULL;
+    node *args;
+    node *curr_arg;
+    node *expr = NULL;
+    node *arg_expr;
+    char *name;
+    int num_args;
+
+    DBUG_ENTER ("COMPprfWrapperShapeEncode");
+
+    num_args = 0;
+    args = PRF_ARGS (arg_node);
+
+    if (args == NULL) {
+        DBUG_PRINT ("RTSPEC", ("Arguments are NULL!"));
+        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (num_args), NULL);
+    } else {
+        while (args != NULL) {
+            curr_arg = EXPRS_EXPR (args);
+            name = AVIS_NAME (ID_AVIS (curr_arg));
+
+            DBUG_ASSERT (curr_arg != NULL, "Missing argument name!");
+            DBUG_PRINT ("RTSPEC", ("Argument name: %s", name));
+
+            if (expr == NULL) {
+                expr = TBmakeExprs (TCmakeIdCopyString (name), NULL);
+                arg_expr = expr;
+            } else {
+                EXPRS_NEXT (expr) = TBmakeExprs (TCmakeIdCopyString (name), NULL);
+                expr = EXPRS_NEXT (expr);
+            }
+
+            num_args++;
+            args = EXPRS_NEXT (args);
+        }
+
+        /*DBUG_ASSERT(expr != NULL, "No arguments were encoded!");*/
+
+        assigns = TCmakeAssignIcm1 ("WE_SHAPE_ENCODE",
+                                    TBmakeExprs (TBmakeNum (num_args), arg_expr), NULL);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn COMPprfWrapperModFunInfo( node *arg_node, info *arg_info)
+ *
+ * @brief Creates the ICM's that hold the name of the function and module. This
+ * is needed by the wrapper entry when using runtime specialization.
+ *
+ * @return A chain of assignment nodes.
+ *
+ ****************************************************************************/
+static node *
+COMPprfWrapperModFunInfo (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *args;
+    node *funname;
+    node *modname;
+
+    DBUG_ENTER ("COMPprfWrapperRegister");
+
+    args = PRF_ARGS (arg_node);
+    funname = EXPRS_EXPR (args);
+    modname = EXPRS_EXPR (EXPRS_NEXT (args));
+
+    DBUG_ASSERT (funname != NULL && modname != NULL, "Missing naming information!!!");
+
+    ret_node
+      = TCmakeAssignIcm2 ("WE_MODFUN_INFO", TBmakeStr (STRcpy (STR_STRING (funname))),
+                          TBmakeStr (STRcpy (STR_STRING (modname))), NULL);
 
     DBUG_RETURN (ret_node);
 }

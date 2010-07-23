@@ -133,10 +133,20 @@ AddSacLibs (str_buf *buffer)
         SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
         SBUFprint (buffer, ".seq ");
+
+        /* This is a HACK, as I don't know how to resolve this issue.
+         *
+         * -- tvd
+         */
+        SBUFprint (buffer, "-lpthread -ldl ");
     } else {
         SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
         SBUFprint (buffer, ".mt -lpthread");
+    }
+
+    if (global.rtspec == TRUE) {
+        SBUFprint (buffer, "-lpthread -ldl ");
     }
 
     DBUG_VOID_RETURN;
@@ -273,6 +283,9 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
              global.cfilename, libpath, deplibs, libs);
+
+    printf ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
+            global.cfilename, libpath, deplibs, libs);
 
     libpath = MEMfree (libpath);
     deplibs = MEMfree (deplibs);

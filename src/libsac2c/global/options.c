@@ -35,6 +35,7 @@
 #include "phase_options.h"
 #include "phase_info.h"
 #include "resource.h"
+#include "runtime_compiler.h"
 
 /******************************************************************************
  *
@@ -671,6 +672,32 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
      */
+
+    /* -- Runtime Specialization -- */
+
+    /* Specialization has to be turned of otherwise the compiler will pick the
+     * most generic function instead of the wrapper entry function.
+     */
+    ARGS_FLAG ("rtspec", {
+        global.rtspec = TRUE;
+        global.maxspec = 0;
+    });
+
+    ARGS_FLAG ("runtime", global.runtime = TRUE);
+
+    ARGS_OPTION ("rt_old_mod", global.rt_old_module = ARG);
+
+    ARGS_OPTION ("rt_new_mod", global.rt_new_module = ARG);
+
+    ARGS_OPTION ("rttypeinfo", global.rt_type_info = ARG);
+
+    ARGS_OPTION ("rtshapeinfo", global.rt_shape_info = ARG);
+
+    ARGS_OPTION ("rtfunname", global.rt_fun_name = ARG);
+
+    ARGS_OPTION ("rtnewname", global.rt_new_name = ARG);
+
+    /* -- Runtime Specialization -- */
 
     ARGS_FLAG ("ssaiv", global.ssaiv = TRUE);
 

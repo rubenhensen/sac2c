@@ -57,6 +57,53 @@ ICM_DEF( MUTC_THREADFUN_DEF_BEGIN, ICM_TRACE_NONE)
 ICM_END( MUTC_THREADFUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
+#if defined(WE_FUN_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WE_FUN_DEF_BEGIN, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( WE_FUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(WE_MODFUN_INFO) || defined(ICM_ALL)
+ICM_DEF( WE_MODFUN_INFO, ICM_TRACE_NONE)
+  ICM_STR( name)
+  ICM_STR( modname)
+ICM_END( WE_MODFUN_INFO, (name, modname))
+#endif
+
+#if defined(WE_SHAPE_ENCODE) || defined(ICM_ALL)
+ICM_DEF( WE_SHAPE_ENCODE, ICM_TRACE_NONE)
+  ICM_INT( arg_cnt)
+  ICM_VARANY( arg_cnt, arg)
+ICM_END( WE_SHAPE_ENCODE, ( arg_cnt, arg))
+#endif
+
+#if defined(WE_NO_SHAPE_ENCODE) || defined(ICM_ALL)
+ICM_DEF( WE_NO_SHAPE_ENCODE, ICM_TRACE_NONE)
+  ICM_INT( arg_cnt)
+ICM_END( WE_NO_SHAPE_ENCODE, ( arg_cnt))
+#endif
+
+#if defined(WE_FUN_AP) || defined(ICM_ALL)
+ICM_DEF( WE_FUN_AP, ICM_TRACE(fun))
+  ICM_ID( name)
+  ICM_ID( retname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( WE_FUN_AP, (name, retname, vararg_cnt, vararg))
+#endif
+
+#if defined(WE_FUN_DEF_END) || defined(ICM_ALL)
+ICM_DEF( WE_FUN_DEF_END, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( WE_FUN_DEF_END, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
 #if defined(ND_FUN_AP) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_AP, ICM_TRACE(fun))
   ICM_ID( name)
@@ -160,7 +207,6 @@ ICM_DEF( ND_DECL__MIRROR_EXTERN, ICM_TRACE_NONE)
   ICM_INT( sdim)
 ICM_END( ND_DECL__MIRROR_EXTERN, (var_NT, sdim))
 #endif
-
 
 #if defined(ND_CHECK_REUSE) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_REUSE, ICM_TRACE_NONE)
@@ -1326,7 +1372,6 @@ ICM_DEF( MT_SCHEDULER_Affinity_INIT, ICM_TRACE_NONE)
 ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id, ts_name, ts_dims,
                                       ts_arg_num, ts_args, dim, vararg))
 #endif
-
 
 #if defined(DISPATCH_ERROR) || defined(ICM_ALL)
 ICM_DEF( DISPATCH_ERROR, ICM_TRACE_NONE)

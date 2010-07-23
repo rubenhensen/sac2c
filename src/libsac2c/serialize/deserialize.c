@@ -349,6 +349,10 @@ updateContextInformation (node *entry)
             if (!FUNDEF_ISSPECIALISATION (entry)) {
                 FUNDEF_WASIMPORTED (entry) = TRUE;
             }
+
+            if (global.runtime) {
+                FUNDEF_WASIMPORTED (entry) = TRUE;
+            }
         }
 
         /*

@@ -87,6 +87,9 @@ PrintGlobalSwitches ()
                              "/*\n"
                              " *  Global Switches\n */\n\n");
 
+    fprintf (global.outfile, "#define SAC_DO_RTSPEC          %d\n",
+             (global.rtspec) ? 1 : 0);
+
     fprintf (global.outfile, "#define SAC_DO_CHECK           %d\n",
              (global.doruntimecheck) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
@@ -565,6 +568,8 @@ GSCprintMainBegin ()
         fprintf (global.outfile, "SAC_MT_SETUP();\n");
         INDENT;
         fprintf (global.outfile, "SAC_CS_SETUP();\n");
+        INDENT;
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
     }
 
     DBUG_VOID_RETURN;
@@ -594,6 +599,8 @@ GSCprintMainEnd ()
     fprintf (global.outfile, "SAC_CS_FINALIZE();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
 
     DBUG_VOID_RETURN;
 }

@@ -129,8 +129,11 @@ RenameFunName (node *fundef)
     buf = SBUFcreate (40);
 
     buf = SBUFprint (buf, "SAC");
-    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+    if (FUNDEF_ISWRAPPERFUN (fundef) || FUNDEF_ISWRAPPERENTRYFUN (fundef)) {
         buf = SBUFprint (buf, "w");
+    }
+    if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
+        buf = SBUFprint (buf, "iw");
     }
     if (FUNDEF_ISTHREADFUN (fundef)) {
         buf = SBUFprint (buf, "t");
@@ -210,7 +213,13 @@ RenameFun (node *fun)
          * SAC functions which may be overloaded
          */
 
-        new_name = RenameFunName (fun);
+        if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
+            && FUNDEF_ISWRAPPERFUN (fun)) {
+
+            new_name = STRcpy (global.rt_new_name);
+        } else {
+            new_name = RenameFunName (fun);
+        }
 
         DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s",
                              NSgetName (FUNDEF_NS (fun)), FUNDEF_NAME (fun), new_name));

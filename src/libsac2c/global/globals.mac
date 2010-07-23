@@ -205,6 +205,97 @@ GLOBAL (bool, dynamic_shapes, FALSE)
  * Dynamic shapes are disabled by default
  */
 
+/* -- Runtime Specialization -- */
+
+/*
+ * Runtime specialization flag for generating runtime optimization
+ * functionality.
+ */
+
+GLOBAL (bool, rtspec, FALSE)
+/*
+ * Runtime specialization is disabled by default.
+ */
+
+/*
+ * Type info provided as a commandline argument for runtime optimization.
+ */
+
+GLOBAL (char *, rt_type_info, "")
+/*
+ * Default it has no value.
+ */
+
+/*
+ * Shape info provided as a commandline argument for runtime optimization.
+ */
+
+GLOBAL (char *, rt_shape_info, "")
+/*
+ * Default it has no value
+ */
+
+/*
+ * The name of the module from which to import the previous function instances.
+ */
+
+GLOBAL (char *, rt_old_module, "")
+/*
+ * Default it has no value.
+ */
+
+/*
+ * The name of the new module that is to be created at runtime.
+ */
+
+GLOBAL (char *, rt_new_module, "")
+/*
+ * Default it has no value.
+ */
+
+/*
+ * The name of the function being optimized.
+ */
+GLOBAL (char *, rt_fun_name, "")
+/*
+ * Default it has no value.
+ */
+
+/*
+ * The name the new wrapper should get.
+ */
+GLOBAL (char *, rt_new_name, "")
+/*
+ * Default it has no value.
+ */
+
+/*
+ * The functions arguments as they should be after optimization.
+ */
+GLOBAL (node *, rt_args, NULL)
+/*
+ * Default it is NULL.
+ */
+
+/*
+ * The number of arguments in the rt_args chain..
+ */
+GLOBAL (int, rt_num_args, 0)
+/*
+ * Default it is zero.
+ */
+
+/*
+ * Runtime specialization flag for recompiling at runtime.
+ */
+
+GLOBAL (bool, runtime, FALSE)
+/*
+ * Runtime specialization is disabled by default.
+ */
+
+/* -- Runtime Specialization -- */
+
 /*
  * Extended LaC fun option
  */
