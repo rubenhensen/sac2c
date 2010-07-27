@@ -56,13 +56,13 @@
 
 #define SAC_ND_PRF_SYNCIN_DESC(nt, sh)                                                   \
     SAC_ND_PRF_SYNCIN_NODESC (nt, sh)                                                    \
-    SAC_ND_DESC_NAME (nt) = sl_getp (SAC_ND_DESC_NAME (sh));
+    SAC_ND_A_DESC_NAME (nt) = sl_getp (SAC_ND_A_DESC_NAME (sh));
 
 #define SAC_ND_PRF_SYNCOUT_NODESC(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
 
 #define SAC_ND_PRF_SYNCOUT_DESC(nt, sh)                                                  \
     SAC_ND_PRF_SYNCOUT_NODESC (nt, sh)                                                   \
-    sl_setp (SAC_ND_DESC_NAME (sh), SAC_ND_DESC_NAME (nt));
+    sl_setp (SAC_ND_A_DESC_NAME (sh), SAC_ND_A_DESC_NAME (nt));
 
 #define SAC_MUTC_ND_PARAM_INT_GLO(t, name, nt) sl_glparm_mutable (t, name)
 #define SAC_MUTC_ND_PARAM_FLO_GLO(t, name, nt) sl_glfparm_mutable (t, name)
