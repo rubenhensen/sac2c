@@ -396,7 +396,7 @@ CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
 CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                global.optimize.doas, opt, cyc)
 
-CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, cyc)
 
 CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,
@@ -580,7 +580,7 @@ CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
                (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
                opt, saacyc)
 
-CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimizationOneFundef,
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, saacyc)
 
 CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,

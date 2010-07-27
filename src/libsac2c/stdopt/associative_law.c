@@ -2,6 +2,45 @@
  * $Id$
  */
 
+/*
+ * Description:
+ *
+ * This optimisation reorganises multi-operand applications of associative
+ * built-in functions such that optimisation cases for other optimisations,
+ * namely constant folding, are created. These are currently:
+ *  - moving constant operands closer together, so that a maximum partial
+ *    evaluation can be realised;
+ *  - pairing of operands and their inverse, such that the application of
+ *    of the associative operation can be replaced by its neutral element.
+ *
+ * Executive Summary:
+ *
+ * The implementation of the tree traversal is controlled by four modes,
+ * which realise two distinct pairs of top-down and bottom-up traversals.
+ *
+ * MODE_recurse: This is the first top-down traversal in each block. Here
+ * we only take care of nested blocks (due to with-loops).
+ *
+ * MODE_noop: This is the corresponding bottom-up traversal where we do
+ * effectively nothing.
+ *
+ * MODE_mark: This is the second top-down traversal. Here, we mark each
+ * avis of a left-hand-side variable as active. As we do not (recursively)
+ * traverse into right-hand-side expressions, this marking step allows
+ * us to identify all assignments in the currently active block (aka
+ * assignment chain).
+ *
+ * MODE_transform: This is the corresponding bottom-up traversal where we
+ * actually do the interesting stuff: when we reach an N_prf node with an
+ * associative function we start to recursively identify all operands of a
+ * virtual multi-operand application of the same built-in function. Then
+ * we analyse the list of operands for optimisation opportunities as sketched
+ * out above. If so, we reorder the list accordingly and re-transform it into
+ * a properly flattened tree of binary operator applications. If not, we
+ * just give up and leave the code as is.
+ *
+ */
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -12,9 +51,7 @@
 #include "str.h"
 #include "memory.h"
 #include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
-#include "inferneedcounters.h"
 #include "pattern_match.h"
 
 #include "associative_law.h"
@@ -22,12 +59,13 @@
 /*
  * INFO structure
  */
+
+typedef enum { MODE_recurse, MODE_mark, MODE_transform, MODE_noop } mode_t;
+
 struct INFO {
+    mode_t mode;
     node *fundef;
-    dfmask_base_t *dfmbase;
-    dfmask_t *localmask;
     node *preassign;
-    enum { DIR_down, DIR_up } direction;
     bool travrhs;
     bool onefundef;
     node *lhs;
@@ -37,10 +75,8 @@ struct INFO {
  * INFO macros
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_DFMBASE(n) ((n)->dfmbase)
-#define INFO_LOCALMASK(n) ((n)->localmask)
 #define INFO_PREASSIGN(n) ((n)->preassign)
-#define INFO_DIRECTION(n) ((n)->direction)
+#define INFO_MODE(n) ((n)->mode)
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
@@ -58,10 +94,8 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_DFMBASE (result) = NULL;
-    INFO_LOCALMASK (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
-    INFO_DIRECTION (result) = DIR_down;
+    INFO_MODE (result) = MODE_noop;
     INFO_TRAVRHS (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = FALSE;
@@ -92,14 +126,24 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 node *
-ALdoAssocLawOptimizationModule (node *arg_node)
+ALdoAssocLawOptimization (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("ALdoAssocLawOptimizationModule");
+    DBUG_ENTER ("ALdoAssocLawOptimization");
 
     info = MakeInfo ();
-    INFO_ONEFUNDEF (info) = FALSE;
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_module:
+        INFO_ONEFUNDEF (info) = FALSE;
+        break;
+    case N_fundef:
+        INFO_ONEFUNDEF (info) = TRUE;
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "ALdoAssocLawOptimization called with illegal node type.");
+    }
 
     TRAVpush (TR_al);
     arg_node = TRAVdo (arg_node, info);
@@ -108,37 +152,6 @@ ALdoAssocLawOptimizationModule (node *arg_node)
     info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ALdoAssocLawOptimizationOneFundef( node *arg_node)
- *
- * @brief starting point of associativity optimization
- *
- * @param arg_node
- *
- * @return
- *
- *****************************************************************************/
-
-node *
-ALdoAssocLawOptimizationOneFundef (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("ALdoAssocLawOptimization");
-
-    info = MakeInfo ();
-    INFO_ONEFUNDEF (info) = TRUE;
-
-    TRAVpush (TR_al);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
 }
 
 /******************************************************************************
@@ -710,38 +723,36 @@ Exprs2PrfTree (prf prf, node *exprs, info *arg_info)
 }
 
 static node *
-CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
+CollectExprs (prf prf, node *a, bool sclprf)
 {
-    node *res = NULL;
+    node *res, *rhs;
+    node *left, *right;
 
     DBUG_ENTER ("CollectExprs");
 
+    DBUG_ASSERT (NODE_TYPE (a) == N_id, "CollectExprs called with illegal node type");
+
     res = TBmakeExprs (DUPdoDupNode (a), NULL);
-    if (NODE_TYPE (EXPRS_EXPR (res)) == N_id) {
-        ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
-    }
 
-    if ((NODE_TYPE (a) == N_id) && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
-        && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)) {
+    ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
 
-        node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
+    if (AVIS_ISACTIVE (ID_AVIS (a))) {
+        AVIS_ISACTIVE (ID_AVIS (a)) = FALSE;
+
+        rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
         switch (NODE_TYPE (rhs)) {
 
         case N_id:
             res = FREEdoFreeTree (res);
-            res = CollectExprs (prf, rhs, sclprf, localmask);
-            AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
+            res = CollectExprs (prf, rhs, sclprf);
             break;
 
         case N_prf:
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
-                node *left, *right;
 
-                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)),
-                                     localmask);
-                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
-                                      localmask);
+                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
+                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
 #if 0
         if (  !isSingleton( left) || !isSingleton( right) ||
               !eqClass( EXPRS_EXPR( left), EXPRS_EXPR( right))) {
@@ -756,7 +767,6 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
                 res = FREEdoFreeTree (res);
                 res = TCappendExprs (left, right);
 #endif
-                AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
             }
             break;
 
@@ -764,34 +774,37 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
             break;
         }
     }
+
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
- * Associativiy optimization traversal (assoc_tab)
+ * Associativiy optimization traversal (al_tab)
  *
  * prefix: AL
  *
  *****************************************************************************/
+
+node *
+ALmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ALmodule");
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 ALfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        /*
-         * Infer need counters
-         */
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_al);
-
         INFO_FUNDEF (arg_info) = arg_node;
-        INFO_DFMBASE (arg_info)
-          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
+        INFO_FUNDEF (arg_info) = NULL;
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -806,17 +819,21 @@ ALfundef (node *arg_node, info *arg_info)
 node *
 ALblock (node *arg_node, info *arg_info)
 {
-    dfmask_t *oldmask;
+    mode_t old_mode;
 
     DBUG_ENTER ("ALblock");
 
-    oldmask = INFO_LOCALMASK (arg_info);
-    INFO_LOCALMASK (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
+    old_mode = INFO_MODE (arg_info);
 
+    INFO_MODE (arg_info) = MODE_recurse;
+    DBUG_PRINT ("AL", ("Traversing assignment chain, mode %d", INFO_MODE (arg_info)));
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-    INFO_LOCALMASK (arg_info) = DFMremoveMask (INFO_LOCALMASK (arg_info));
-    INFO_LOCALMASK (arg_info) = oldmask;
+    INFO_MODE (arg_info) = MODE_mark;
+    DBUG_PRINT ("AL", ("Traversing assignment chain, mode %d", INFO_MODE (arg_info)));
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    INFO_MODE (arg_info) = old_mode;
 
     DBUG_RETURN (arg_node);
 }
@@ -826,23 +843,38 @@ ALassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALassign");
 
-    /*
-     * Traverse LHS identifiers to mark them as local in the current block
-     */
-    INFO_DIRECTION (arg_info) = DIR_down;
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
-    /*
-     * Bottom-up traversal
-     */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    } else {
+        DBUG_PRINT ("AL",
+                    ("Reaching end of assignment chain, mode %d", INFO_MODE (arg_info)));
 
-    INFO_DIRECTION (arg_info) = DIR_up;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        switch (INFO_MODE (arg_info)) {
+        case MODE_recurse:
+            INFO_MODE (arg_info) = MODE_noop;
+            break;
+        case MODE_mark:
+            INFO_MODE (arg_info) = MODE_transform;
+            break;
+        default:
+            DBUG_ASSERT (FALSE, "Illegal mode encountered at end of assign chain.");
+            break;
+        }
+        DBUG_PRINT ("AL", ("Reaching end of assignment chain, new mode %d",
+                           INFO_MODE (arg_info)));
+    }
 
-    if (INFO_PREASSIGN (arg_info) != NULL) {
-        arg_node = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
-        INFO_PREASSIGN (arg_info) = NULL;
+    if (INFO_MODE (arg_info) == MODE_transform) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+        if (INFO_PREASSIGN (arg_info) != NULL) {
+            DBUG_PRINT ("AL", ("AL optimisation successful !!."));
+            arg_node
+              = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
+            INFO_PREASSIGN (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -853,15 +885,24 @@ ALlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALlet");
 
-    if (INFO_DIRECTION (arg_info) == DIR_down) {
+    switch (INFO_MODE (arg_info)) {
+    case MODE_recurse:
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        break;
+    case MODE_mark:
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-    } else {
+        break;
+    case MODE_transform:
         INFO_TRAVRHS (arg_info) = FALSE;
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-        if (INFO_TRAVRHS (arg_info)) {
+        if (INFO_TRAVRHS (arg_info) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
             INFO_LHS (arg_info) = LET_IDS (arg_node);
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+            INFO_LHS (arg_info) = NULL;
         }
+        break;
+    case MODE_noop:
+        break;
     }
 
     DBUG_RETURN (arg_node);
@@ -872,12 +913,18 @@ ALids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALids");
 
-    if (INFO_DIRECTION (arg_info) == DIR_down) {
-        DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (arg_node));
-    } else {
-        if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) != 0) {
+    switch (INFO_MODE (arg_info)) {
+    case MODE_mark:
+        AVIS_ISACTIVE (IDS_AVIS (arg_node)) = TRUE;
+        break;
+    case MODE_transform:
+        if (AVIS_ISACTIVE (IDS_AVIS (arg_node))) {
             INFO_TRAVRHS (arg_info) = TRUE;
+            AVIS_ISACTIVE (IDS_AVIS (arg_node)) = FALSE;
         }
+        break;
+    default:
+        break;
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -897,20 +944,30 @@ ALprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ALprf");
 
-    if (isAssociativeAndCommutativePrf (PRF_PRF (arg_node))) {
+    prf = PRF_PRF (arg_node);
+
+    if ((INFO_MODE (arg_info) == MODE_transform)
+        && isAssociativeAndCommutativePrf (prf)) {
+        DBUG_PRINT ("AL", ("Eligible prf node found: %s", global.prf_name[prf]));
+
         ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
         if ((!global.enforce_ieee)
             || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
 
-            prf = PRF_PRF (arg_node);
-
             exprs
-              = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf),
-                                             INFO_LOCALMASK (arg_info)),
-                               CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf),
-                                             INFO_LOCALMASK (arg_info)));
+              = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf)),
+                               CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf)));
+
+            DBUG_PRINT ("AL", ("Operand set:"));
+            DBUG_EXECUTE ("AL", {
+                node *tmp = exprs;
+                while (tmp != NULL) {
+                    DBUG_PRINT ("AL", ("%s ", AVIS_NAME (ID_AVIS (EXPRS_EXPR (tmp)))));
+                    tmp = EXPRS_NEXT (tmp);
+                }
+            });
 
             /*
              * The optimization can only be performed if the combined expression
@@ -981,15 +1038,6 @@ ALprf (node *arg_node, info *arg_info)
                     arg_node = Exprs2PrfTree (prf, exprs, arg_info);
 
                     global.optcounters.al_expr++;
-
-                    /*
-                     * update the maskbase
-                     */
-                    INFO_DFMBASE (arg_info)
-                      = DFMupdateMaskBase (INFO_DFMBASE (arg_info),
-                                           FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                                           FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
                 } else {
                     if (consts != NULL) {
                         consts = FREEdoFreeTree (consts);

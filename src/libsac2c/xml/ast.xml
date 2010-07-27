@@ -1479,6 +1479,7 @@
       </traversal>
       <traversal id="AL" name="Associative Law Optimization" default="sons" include="associative_law.h" >
 	<travuser>
+	  <node name="Module" />
 	  <node name="Fundef" />
 	  <node name="Block" />
 	  <node name="Assign" />
@@ -7361,7 +7362,6 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="opt_lir" />
-                  <phase name="opt_al" />
                 </phases>
               </target>
             </targets>
@@ -7689,6 +7689,14 @@ N_tfarg :
         <flag name="IsCudaLocal" default="FALSE">
           <description>
                   If true, this (array) variable should be allocated locally on CUDA.
+          </description>
+        </flag>
+        <flag name="IsActive" default="FALSE">
+          <description>
+                  This flags marks AVIS nodes as active in the current context.
+                  This is used in AL to separate identifiers from different assignment
+                  chains and in treecheck to identify AVIS nodes of the currently
+                  processed function.
           </description>
         </flag>
       </flags>

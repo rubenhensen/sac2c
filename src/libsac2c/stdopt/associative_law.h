@@ -2,8 +2,8 @@
  * $Id$
  */
 
-#ifndef _SAC_ALIATIVE_LAW_H_
-#define _SAC_ALIATIVE_LAW_H_
+#ifndef _SAC_ASSOCIATIVE_LAW_H_
+#define _SAC_ASSOCIATIVE_LAW_H_
 
 #include "types.h"
 
@@ -15,9 +15,9 @@
  *
  *****************************************************************************/
 
-extern node *ALdoAssocLawOptimizationModule (node *arg_node);
-extern node *ALdoAssocLawOptimizationOneFundef (node *arg_node);
+extern node *ALdoAssocLawOptimization (node *arg_node);
 
+extern node *ALmodule (node *arg_node, info *arg_info);
 extern node *ALfundef (node *arg_node, info *arg_info);
 extern node *ALblock (node *arg_node, info *arg_info);
 extern node *ALassign (node *arg_node, info *arg_info);
@@ -25,4 +25,4 @@ extern node *ALlet (node *arg_node, info *arg_info);
 extern node *ALids (node *arg_node, info *arg_info);
 extern node *ALprf (node *arg_node, info *arg_info);
 
-#endif /* _SAC_ALIATIVE_LAW_H_ */
+#endif /* _SAC_ASSOCIATIVE_LAW_H_ */
