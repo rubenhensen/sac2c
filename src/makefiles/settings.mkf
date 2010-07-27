@@ -92,16 +92,17 @@ ifdef CROSS
   CROSS_LD_DYNAMIC := $(shell $(SAC2C) $(CROSS_TARGET) -CLD_DYNAMIC)
   CROSS_FOR        := for $(CROSS_VARIANT)
   CROSS_BACKEND    := $(shell $(SAC2C) $(CROSS_TARGET) -CBACKEND)
+  CC_FLAGS_PROD    += -DSAC_BACKEND_$(CROSS_BACKEND)
+  CC_FLAGS_DEVEL   += -DSAC_BACKEND_$(CROSS_BACKEND)
 else
-
   CROSS_CC         := $(CC_$($(STYLE)_cap))
   CROSS_AR         := $(AR)
   CROSS_RANLIB     := $(RANLIB)
   CROSS_LD_DYNAMIC := $(LD_DYNAMIC)
+  CC_FLAGS_PROD    += -DSAC_BACKEND_C99
+  CC_FLAGS_DEVEL   += -DSAC_BACKEND_C99
 endif
 
-CC_FLAGS_PROD    += -DSAC_BACKEND_$(shell $(SAC2C) $(CROSS_TARGET) -CBACKEND)
-CC_FLAGS_DEVEL   += -DSAC_BACKEND_$(shell $(SAC2C) $(CROSS_TARGET) -CBACKEND)
 
 ################################################################################
 #

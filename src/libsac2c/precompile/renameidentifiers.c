@@ -24,7 +24,7 @@
 #include "free.h"
 #include "convert.h"
 #include "namespaces.h"
-
+#include "globals.h"
 /*
  * INFO structure
  */
