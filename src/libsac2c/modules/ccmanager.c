@@ -138,7 +138,9 @@ AddSacLibs (str_buf *buffer)
          *
          * -- tvd
          */
+#if HACKS_ALLOWED
         SBUFprint (buffer, "-lpthread -ldl ");
+#endif
     } else {
         SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
