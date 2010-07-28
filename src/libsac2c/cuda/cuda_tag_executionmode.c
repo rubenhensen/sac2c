@@ -589,11 +589,18 @@ CUTEMap (node *arg_node, info *arg_info)
                     ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_SINGLE;
                 }
             } else {
+                /* If the cond-fun is not cudarizable, we traverse
+                 * into it to tag the N_assigns in it */
                 fundef = TraverseLacFun (fundef, arg_info);
             }
         }
-        /* If the ap is loop */
+        /* If the ap is loop, it's tagged as host single and we
+         * check it's paramenters to see if any one is defined
+         * by cuda N_assign. If there is any, this information
+         * is set for each corresponding fundef argument befre
+         * traversing into the loop body */
         else if (FUNDEF_ISDOFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
+            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
             SetArgCudaDefined (AP_ARGS (arg_node), FUNDEF_ARGS (fundef));
             fundef = TraverseLacFun (fundef, arg_info);
         }
@@ -604,7 +611,7 @@ CUTEMap (node *arg_node, info *arg_info)
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         if (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
-            /* Traverse into lac function body to untage any N_assigns
+            /* Traverse into lac function body to untag any N_assigns
              * if needed */
             fundef = TraverseLacFun (fundef, arg_info);
         }
