@@ -357,7 +357,7 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "  Compiling multithreaded diagnostic $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CC_$($(STYLE)_cap)) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_DIAG) \
+                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_PTH) $(SETTINGS_DIAG) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
@@ -383,7 +383,7 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "  Compiling multithreaded $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CC_$($(STYLE)_cap)) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) \
+                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_PTH) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
