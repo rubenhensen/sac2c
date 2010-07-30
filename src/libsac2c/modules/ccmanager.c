@@ -162,7 +162,7 @@ AddSacLibs (str_buf *buffer)
     } else {
         SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
-        SBUFprint (buffer, ".mt -lpthread");
+        SBUFprint (buffer, ".mt.pth -lpthread");
     }
 
     if (global.rtspec == TRUE) {
