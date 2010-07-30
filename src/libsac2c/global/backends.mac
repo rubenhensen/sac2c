@@ -13,6 +13,7 @@
 BACKEND (BE_mutc, "MUTC")
 BACKEND (BE_c99, "C99")
 BACKEND (BE_cuda, "CUDA")
+BACKEND (BE_omp, "omp")
 
 #undef BACKENDtype
 #undef BACKENDstring
