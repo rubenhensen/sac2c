@@ -145,7 +145,7 @@ AddSacLibs (str_buf *buffer)
         if (global.backend == BE_omp) {
             SBUFprint (buffer, "-lsac");
             SBUFprint (buffer, global.config.lib_variant);
-            SBUFprint (buffer, ".mt.omp");
+            SBUFprint (buffer, ".mt.omp ");
         } else {
             SBUFprint (buffer, "-lsac");
             SBUFprint (buffer, global.config.lib_variant);
