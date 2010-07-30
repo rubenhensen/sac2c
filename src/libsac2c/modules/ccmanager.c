@@ -115,10 +115,22 @@ AddSacLibs (str_buf *buffer)
         SBUFprint (buffer, global.config.lib_variant);
 
         if (global.mtmode == MT_none) {
-            if (global.runtimecheck.heap) {
-                SBUFprint (buffer, ".seq.diag ");
+            /*
+             * for OpenMP backend
+             * zzg
+             */
+            if (global.backend == BE_omp) {
+                if (global.runtimecheck.heap) {
+                    SBUFprint (buffer, ".mt.diag ");
+                } else {
+                    SBUFprint (buffer, ".mt ");
+                }
             } else {
-                SBUFprint (buffer, ".seq ");
+                if (global.runtimecheck.heap) {
+                    SBUFprint (buffer, ".seq.diag ");
+                } else {
+                    SBUFprint (buffer, ".seq ");
+                }
             }
         } else {
             if (global.runtimecheck.heap) {
@@ -130,17 +142,23 @@ AddSacLibs (str_buf *buffer)
     }
 
     if (global.mtmode == MT_none) {
-        SBUFprint (buffer, "-lsac");
-        SBUFprint (buffer, global.config.lib_variant);
-        SBUFprint (buffer, ".seq ");
+        if (global.backend == BE_omp) {
+            SBUFprint (buffer, "-lsac");
+            SBUFprint (buffer, global.config.lib_variant);
+            SBUFprint (buffer, ".mt.omp");
+        } else {
+            SBUFprint (buffer, "-lsac");
+            SBUFprint (buffer, global.config.lib_variant);
+            SBUFprint (buffer, ".seq ");
 
-        /* This is a HACK, as I don't know how to resolve this issue.
-         *
-         * -- tvd
-         */
+            /* This is a HACK, as I don't know how to resolve this issue.
+             *
+             * -- tvd
+             */
 #if HACKS_ALLOWED
-        SBUFprint (buffer, "-lpthread -ldl ");
+            SBUFprint (buffer, "-lpthread -ldl ");
 #endif
+        }
     } else {
         SBUFprint (buffer, "-lsac");
         SBUFprint (buffer, global.config.lib_variant);
