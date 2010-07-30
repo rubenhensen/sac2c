@@ -32,6 +32,7 @@
 #ifdef MT
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
+#define SAC_DO_MT_PTHREAD 1
 #else
 #define SAC_DO_MULTITHREAD 0
 #endif /*  MT  */
