@@ -899,9 +899,8 @@ SelModarray (node *arg_node, info *arg_info)
         && PMmatchFlat (pat5, iv2)) {
 
         res = DUPdoDupNode (val);
-        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by %s",
-                           AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
-                           AVIS_NAME (ID_AVIS (val))));
+        DBUG_PRINT ("CF", ("SelModArray replaced _sel_VxA_(iv, %s) of modarray by %s",
+                           AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val))));
     } else {
 
         /* Case 4 */
@@ -920,9 +919,8 @@ SelModarray (node *arg_node, info *arg_info)
             FREEdoFreeNode (PRF_ARG1 (res));
             PRF_ARG1 (res) = DUPdoDupNode (val);
             DBUG_PRINT (
-              "CF", ("SelModArray replaced _sel_VxA_(%s, %s) of modarray by guarded %s",
-                     AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (X)),
-                     AVIS_NAME (ID_AVIS (val))));
+              "CF", ("SelModArray replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
+                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val))));
         }
     }
     pat1 = PMfree (pat1);
