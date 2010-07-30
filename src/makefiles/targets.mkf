@@ -249,7 +249,7 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := essentials_h extras_h mt_h phm_h mutc_h cuda_h \
+runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_pth_h phm_h mutc_h cuda_h \
                              rtspec_h
 
 ###############################################################################
@@ -261,7 +261,11 @@ runtime_extras_h       := cachesim profile runtimecheck trace
 
 runtime_phm_h          := phm
 
-runtime_mt_h           := mt mt_gen schedule
+runtime_mt_h           := mt
+
+runtime_mt_pth_h       := mt_pth mt_gen schedule
+
+runtime_mt_omp_h       := mt_omp
 
 runtime_mutc_h         := mutc mutc_world \
                           mutc_gen mutc_tostring \
@@ -303,10 +307,13 @@ libsacprelude_sourcedirs        := .
 #
 ###############################################################################
 
-libsac_targets             := libsac$(CROSS_VARIANT).seq.a \
-                              libsac$(CROSS_VARIANT).seq.so \
-                              libsac$(CROSS_VARIANT).mt.a \
-                              libsac$(CROSS_VARIANT).mt.so
+libsac_targets             := libsac$(CROSS_VARIANT).seq.a     \
+                              libsac$(CROSS_VARIANT).seq.so    \
+                              libsac$(CROSS_VARIANT).mt.pth.a  \
+                              libsac$(CROSS_VARIANT).mt.pth.so \
+                              libsac$(CROSS_VARIANT).mt.omp.a  \
+                              libsac$(CROSS_VARIANT).mt.omp.so
+
 libsac_targetdir           := lib
 
 libsac_subtarget_suffix    := $(CROSS_VARIANT).o
@@ -319,7 +326,7 @@ libsac_extraclean_prod     :=
 ifeq  (MUTC, $(CROSS_BACKEND))
 libsac_sourcedirs          := interface mutc
 else
-libsac_sourcedirs          := essentials mt phm cachesim interface rtspec
+libsac_sourcedirs          := essentials mt mt_omp mt_pth phm cachesim interface rtspec
 endif
 
 ###############################################################################
@@ -330,7 +337,11 @@ libsac_interface    := sacarg sacargconvert
 
 libsac_mutc         := reference_counting
 
-libsac_mt           := mt_std mt_trace
+libsac_mt           := mt
+
+libsac_mt_pth       := mt_pth_std mt_pth_trace
+
+libsac_mt_omp       := mt_omp
 
 libsac_phm          := nophm
 
