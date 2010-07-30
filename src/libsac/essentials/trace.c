@@ -29,6 +29,7 @@
 
 #ifdef MT
 #define SAC_DO_MULTITHREAD 1
+#define SAC_DO_MT_PTHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 #else
 #define SAC_DO_MULTITHREAD 0
@@ -37,6 +38,7 @@
 #include "sac.h"
 
 #undef SAC_DO_MULTITHREAD
+#undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
 
 int SAC_TR_array_memcnt = 0;
