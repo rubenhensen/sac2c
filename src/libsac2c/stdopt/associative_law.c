@@ -2,6 +2,64 @@
  * $Id$
  */
 
+/** <!--********************************************************************-->
+ *
+ * @file associative_law.c
+ *
+ * Prefix: AL
+ *
+ * This optimization attempts to reorder a chain of associative,
+ * commutative operations.
+ *
+ * The idea of AL is to reorder complex expressions such that they
+ * may be further optimized.
+ *
+ * E.g.
+ *
+ *   s = 1 + 2;
+ *   r = s + a;
+ *
+ * may be optimized (by the typechecker) to r = 3 + a, while
+ *
+ *   s'= 1 + a;
+ *   r'= s'+ 2;
+ *
+ * can't.
+ *
+ * AL tries to regroup such complex expressions into constant parts,
+ * scalar identifiers, and vector identifiers.
+ *
+ * For example, let a: int, b:int, c:int[2],d:int[2]
+ *
+ * x = a _add_SxS_ 1;
+ * y = c _add_VxS_ 1;
+ * z = b _add_SxV_ d;
+ *
+ * r = x + y
+ * s = r + z
+ *
+ * CollectExprs forms a chain with all identifiers:
+ *
+ * s = +(a,1,c,1,b,d)
+ *
+ * This is then split into constants, non-constant scalars, and
+ * non-constant vectors ( This ordering minimizes the work to
+ * compute the final result.):
+ *
+ * s = +(+(1,1),+(a,b),+(b,d))
+ *
+ * Finally, this gets transformed back into a piece of AST:
+ *
+ * const = 1 _add_SxS_ 1;
+ * nonconst = a _add_SxS_ b;
+ * vecs = c _add_VxV_ d;
+ *
+ * s' = const _add_SxS_ nonconst
+ * s = s' _add_SxV_ vecs;
+ *
+ *
+ *****************************************************************************/
+
 /*
  * Description:
  *
@@ -758,8 +816,7 @@ CollectExprs (prf prf, node *a, bool sclprf)
               !eqClass( EXPRS_EXPR( left), EXPRS_EXPR( right))) {
           res = FREEdoFreeTree( res);
           res = TCappendExprs( left, right);
-        }
-        else {
+        } else {
           left = FREEdoFreeTree( left);
           right = FREEdoFreeTree( right);
         }
