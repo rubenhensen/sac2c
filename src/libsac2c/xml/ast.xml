@@ -5963,6 +5963,10 @@ N_tfarg :
       <flags>
         <flag name="ConsiderInline" default="TRUE" />
         <flag name="IsRecursiveDoFunCall" default="FALSE" />
+        <flag name="IsSpawned">
+          <description>This function is spawned when using functional
+          parallelism</description>
+        </flag>
       </flags>
     </node>
 <!--

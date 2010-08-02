@@ -2755,6 +2755,10 @@ PRTap (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
 
+    if (AP_ISSPAWNED (arg_node)) {
+        fprintf (global.outfile, "spawn ");
+    }
+
     /*
      * print name of 'AP_FUNDEF(arg_node)'
      */
