@@ -10374,7 +10374,12 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsSpawned">
+          <description>This function is spawned when using functional
+          parallelism</description>
+        </flag>
+      </flags>
     </node>
 <!--
 

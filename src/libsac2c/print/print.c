@@ -2804,6 +2804,10 @@ PRTspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTspap");
 
+    if (SPAP_ISSPAWNED (arg_node)) {
+        fprintf (global.outfile, "spawn ");
+    }
+
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }

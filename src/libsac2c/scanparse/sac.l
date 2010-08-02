@@ -316,6 +316,7 @@ int charpos = 0;
 "specialize"               { FILTER( SPECIALIZE); }
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
 "noinline"                 { FILTER( NOINLINE); }
+"spawn"                    { FILTER( SPAWN); }
 
 "iff" 			   { FILTER( IFF); }
 "builtin-typedef" 	   { FILTER( TFBUILTIN); }
