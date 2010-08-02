@@ -435,6 +435,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("force_naive", global.force_naive_with2 = TRUE);
 
+    ARGS_FLAG ("fp", global.fp = TRUE);
+
     /*
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
      */

@@ -369,6 +369,11 @@ GLOBAL (int, min_parallel_size_per_thread, 8)
 
 GLOBAL (bool, enforce_float, FALSE)
 
+GLOBAL (bool, fp, FALSE)
+/*
+ * Use functional parallelism
+ */
+
 /*
  * Preprocessor options
  *

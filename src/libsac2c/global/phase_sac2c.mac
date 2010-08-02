@@ -953,6 +953,14 @@ ENDPHASE (mt3)
 
 /******************************************************************************/
 
+PHASE (fp, "Functional Parallelism", global.fp)
+
+SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
+
+ENDPHASE (fp)
+
+/******************************************************************************/
+
 PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
 SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
