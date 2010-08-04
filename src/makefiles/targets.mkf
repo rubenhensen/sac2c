@@ -309,12 +309,16 @@ libsacprelude_sourcedirs        := .
 #
 ###############################################################################
 
+ifeq  (MUTC, $(CROSS_BACKEND))
+libsac_targets             := libsac$(CROSS_VARIANT).seq.a
+else
 libsac_targets             := libsac$(CROSS_VARIANT).seq.a     \
                               libsac$(CROSS_VARIANT).seq.so    \
                               libsac$(CROSS_VARIANT).mt.pth.a  \
                               libsac$(CROSS_VARIANT).mt.pth.so \
                               libsac$(CROSS_VARIANT).mt.omp.a  \
                               libsac$(CROSS_VARIANT).mt.omp.so
+endif
 
 libsac_targetdir           := lib
 
