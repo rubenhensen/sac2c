@@ -1705,1534 +1705,1536 @@
 	  <node name="Let" />
 	  <node name="Ap" />
 	</travuser>
-      </traversal>
-      <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
-	<travuser>
-	  <node name="Ids" />
-	  <node name="Assign" />
-	  <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="Ap" />
-          <node name="Cond" />
-          <node name="Return" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Exprs" />
-	</travuser>
-      </traversal>
-      <traversal id="DLIR" name="Do-Loop Invariants Traversal" default="sons" include="loop_invariant_removal.h" >
-	<travuser>
-	  <node name="Ids" />
-	  <node name="Assign" />
-	  <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="Ap" />
-          <node name="Cond" />
-          <node name="Return" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Exprs" />
-	</travuser>
-      </traversal>
-      <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
-	<travuser>
-	  <node name="Ids" />
-	  <node name="Assign" />
-	  <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="With" />
-          <node name="Withid" />
-	</travuser>
-      </traversal>
-      <traversal id="LIRMOV" name="Loop Invariants Move Traversal" default="sons" include="SSALIR.h" >
-	<travuser>
-	  <node name="Id" />
-	  <node name="Withid" />
-	  <node name="Assign" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Ids" />
-	</travuser>
-      </traversal>
-      <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
-	<travuser>
-	  <node name="Id" />
-	  <node name="Withid" />
-	  <node name="Assign" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Ids" />
-	</travuser>
-      </traversal>
-      <traversal id="LUR" name="Loop Unrolling Traversal" default="sons" include="SSALUR.h" >
-	<travuser>
-	  <node name="Ap" />
-	  <node name="Assign" />
-	  <node name="Fundef" />
-	</travuser>
-      </traversal>
-      <traversal id="WLUR" name="With-Loop Unrolling Traversal" default="sons" include="SSAWLUnroll.h" >
-	<travuser>
-          <node name="Ap" />
-	  <node name="Assign" />
-          <node name="Fundef" />
-	  <node name="With" />
-	</travuser>
-      </traversal>
-      <traversal id="CS" name="Print Constraint Statistics" default="sons" include="constraint_statistics.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Prf" />
-        </travuser>
-      </traversal>
-      <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-        </travuser>
-      </traversal>
-      <traversal id="RDEPEND" name="Resolve Dependencies" default="sons" include="resolvedependencies.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Prf" />
-   	</travuser>
-      </traversal>
-      <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
-        <travuser>
-          <node name="Let" />
-          <node name="Cast" />
-          <node name="Avis" />
-          <node name="Array" />
-          <node name="Ret" />
-          <node name="Objdef" />
-          <node name="Type" />
-        </travuser>
-      </traversal>
-      <traversal id="SISI" name="Signature Simplification" default="sons" include="signature_simplification.h" >
-	<travuser>
-	  <node name="Assign" />
-          <node name="Fundef" />
-	  <node name="Block" />
-	  <node name="Let" />
-	  <node name="Return" />
-	  <node name="Ret" />
-          <node name="Ap" />
-          <node name="Ids" />
-          <node name="Id" />
-          <node name="Exprs" />
-	  <node name="Arg" />
-	  <node name="Module" />
-   	</travuser>
-      </traversal>
-      <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Id" />
-	  <node name="With" />
-   	</travuser>
-      </traversal>
-      <traversal id="ISAA" name="Insert Symbolic Array Attributes" default="sons" 
-        include="insert_symb_arrayattr.h" >
-	<travuser>
-          <node name="Fundef" />
-	  <node name="Avis" />
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Let" />
-          <node name="Ids" />
-          <node name="Id" />
-          <node name="With" />
-          <node name="Part" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Funcond" />
-          <node name="Ap" />
-   	</travuser>
-        <travnone>
-          <node name="Withid" />
-        </travnone>
-      </traversal>     
-      <traversal id="MDE" name="Make Dim Expression" default="error"
-        include="makedimexpr.h">
-        <travuser>
-          <node name="Id" />
-          <node name="Funcond" />
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="Bool" />
-          <node name="Char" />
-          <node name="Num" />
-          <node name="NumByte" />
-	  <node name="NumShort" />
-	  <node name="NumInt" />
-	  <node name="NumLong" />
-	  <node name="NumLonglong" />
-	  <node name="NumUbyte" />
-	  <node name="NumUshort" />
-	  <node name="NumUint" />
-	  <node name="NumUlong" />
-          <node name="NumUlonglong" />
-          <node name="Float" />
-          <node name="Double" />         
-        </travuser>
-      </traversal>
-      <traversal id="MSE" name="Make Shape Expression" default="error"
-        include="makeshapeexpr.h">
-        <travuser>
-          <node name="Id" />
-          <node name="Funcond" />
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="Bool" />
-          <node name="Char" />
-          <node name="Num" />
-          <node name="NumByte" />
-	  <node name="NumShort" />
-	  <node name="NumInt" />
-	  <node name="NumLong" />
-	  <node name="NumLonglong" />
-	  <node name="NumUbyte" />
-	  <node name="NumUshort" />
-	  <node name="NumUint" />
-	  <node name="NumUlong" />
-          <node name="NumUlonglong" />
-          <node name="Float" />
-          <node name="Double" />         
-        </travuser>
-      </traversal>
-      <traversal id="ESV" name="Eliminate Shape Variables" default="sons" 
-        include="elim_shapevars.h" >
-	<travuser>
-          <node name="Fundef" />
-	  <node name="Avis" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="Prf" />
-   	</travuser>
-        <travnone>
-          <node name="Withid" />
-        </travnone>
-      </traversal>      
-      <traversal id="RMV" name="Remove Vardecs" default="sons" 
-        include="remove_vardecs.h" >
-	<travuser>
-          <node name="Fundef" />
-	  <node name="Block" />
-	  <node name="Vardec" />
-          <node name="Ids" />
-   	</travuser>
-      </traversal>     
-      <traversal id="WLPROP" name="With-Loop Propagation" default="sons" include="wlpropagation.h" >
-	<travuser>
-	  <node name="Assign" />
-          <node name="Fundef" />
-	  <node name="Ap" />
-	  <node name="Exprs" /> 
-          <node name="Id" />
-        </travuser>
-      </traversal>
-       <traversal id="WLSELC" name="With-Loop Selections Counter" default="sons" include="wlselcount.h" >
-	<travuser>
-	  <node name="With" />
-          <node name="Fundef" />
-	  <node name="Code" />
-	  <node name="Ap" />
-	  <node name="Prf" /> 
-        </travuser>
-      </traversal>
-      <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Block" />
-          <node name="Let" />
-	  <node name="Assign" />
-	  <node name="Prf" />
-        </travuser>
-      </traversal>
-      <traversal id="WLI" name="With-Loop-Interference" default="sons" include="SSAWLI.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Id" />
-          <node name="Let" />
-          <node name="Cond" />
-	  <node name="With" />
-	  <node name="Modarray" />
-	  <node name="Part" />
-	  <node name="Generator" />
-          <node name="Code" />
-	</travuser>
-      </traversal>
-     <traversal id="WLF" name="With-Loop-Folding" default="sons" include="SSAWLF.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Id" />
-          <node name="Let" />
-	  <node name="With" />
-          <node name="Code" />
-	</travuser>
-     </traversal>
-     <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
-       <travuser>
-          <node name="Fundef"  />
-          <node name="Block"   />
-          <node name="Assign"  />
-          <node name="Let"  />
-          <node name="Id"  />
-          <node name="Cond" />
-          <node name="With"    />
-          <node name="Modarray"    />
-          <node name="Part"    />
-          <node name="Ids"     />
-          <node name="Prf"     />
-       </travuser>
-     </traversal>
-     <traversal id="CUBSL" name="Algebraic With-Loop-Folding Cube Slicer" default="sons" include="cubeslicer.h" >
-       <travuser>
-          <node name="Fundef"  />
-          <node name="Assign" />
-          <node name="Let"     />
-          <node name="With"    />
-          <node name="Part"    />
-          <node name="Prf"     />
-       </travuser>
-     </traversal>
-     <traversal id="AWLF" name="Algebraic With-Loop-Folding" default="sons" include="algebraic_wlf.h" >
-       <travuser>
-          <node name="Fundef"  />
-          <node name="Assign"  />
-          <node name="With"    />
-          <node name="Code"    />
-          <node name="Part"    />
-          <node name="Ids"     />
-          <node name="Prf"     />
-       </travuser>
-     </traversal>
-     <traversal id="WLCC" name="With-Loop Cost Check" default="sons" include="wl_cost_check.h" >
-       <travuser>
-          <node name="With"    />
-          <node name="Code"    />
-          <node name="Prf"     />
-          <node name="Ap"      />
-       </travuser>
-     </traversal>
-     <traversal id="WLNC" name="With-Loop NeedCount Check" default="sons" include="wl_needcount.h" >
-       <travuser>
-          <node name="Fundef"    />
-          <node name="Block"     />
-          <node name="Avis"      />
-          <node name="With"      />
-          <node name="Part"      />
-          <node name="Code"      />
-          <node name="Prf"       />
-          <node name="Ap"        />
-          <node name="Id"        />
-       </travuser>
-     </traversal>
-     <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Id" />
-	  <node name="With" />
-	  <node name="Genarray" />
-	  <node name="Modarray" />
-	  <node name="Fold" />
-	  <node name="Part" />
-	  <node name="Generator" />
-	</travuser>
-      </traversal>
-      <traversal id="WLSIMP" name="With-Loop Simplification" default="sons" include="wlsimplification.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Break" />
-          <node name="Propagate" />
-          <node name="Code" />
-          <node name="Part" />
-          <node name="Generator" />
-        </travuser>
-      </traversal>
-      <traversal id="CWLE" name="Copy With-Loop Elimination" default="sons" include="copywlelim.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="With" />
-          <node name="Let" />
-          <node name="Code" />
-          <node name="Assign" />
-          <node name="Ids" />
-          <node name="Arg" />
-        </travuser>
-      </traversal>
-      <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Fundef" />
-          <node name="With" />
-        </travuser>
-      </traversal>
-      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" default="sons" include="wls.h">
-        <travuser>
-          <node name="Block" />
-          <node name="Code" />
-          <node name="Default" />
-          <node name="Id" />
-          <node name="Part" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Generator" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Propagate" />
-        </travuser>
-      </traversal>
-      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" default="sons" include="wls.h">
-        <travuser>
-          <node name="Code" />
-          <node name="Id" />
-          <node name="Let" />
-          <node name="Part" />
-          <node name="With" />
-          <node name="Withid" />
-        </travuser>
-      </traversal>
-      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" default="sons" include="wls.h">
-        <travuser>
-          <node name="Code" />
-          <node name="Generator" />
-          <node name="Part" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-        </travuser>
-      </traversal>
-      <traversal id="IVESPLIT" name="Index Vector Elimination (Split Selections)" default="sons" include="ive_split_selections.h">
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Prf" />
-        </travuser>
-      </traversal>
-      <traversal id="IVERAS" name="Index Vector Elimination (Reuse WL-offsets and Scalarize)" default="sons" include="ive_reusewl_and_scalarize.h">
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Prf" />
-	  <node name="With" />
-	  <node name="Part" />
-	  <node name="Code" />
-        </travuser>
-      </traversal>
-      <traversal id="WLFLT" name="Flattening multi-dimensional withloops" default="sons" include="withloop_flattening.h">
-        <travuser>
-	  <node name="Id" />
-	  <node name="Avis" />
-	  <node name="With" />
-	  <node name="Genarray" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Block" />
-	  <node name="Fundef" />
-	  <node name="Withid" />
-	  <node name="Generator" />
-	  <node name="Ids" />
-        </travuser>
-      </traversal>
-      <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="Withid" />
-        </travuser>
-      </traversal>
-      <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
-        <travuser>
-          <node name="Code" />
-          <node name="Let" />
-          <node name="With" />
-        </travuser>
-      </traversal>
-      <traversal id="RW3" name="Remove With3s" default="sons" include="remove_with3.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="With3" />
-          <node name="Range" />
-        </travuser>
-      </traversal>
-      <traversal id="WLSD" name="With-Loop Split Dimensions" default="sons" include="wl_split_dimensions.h">
-        <travuser>
-	  <node name="Fundef" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Block" />
-	  <node name="With2" />
-	  <node name="Withid" />
-	  <node name="WLseg" />
-	  <node name="WLstride" />
-	  <node name="WLgrid" />
-	</travuser>
-	<traverror>
-	  <!-- blocking is not supported for now. -->
-	  <node name="WLblock" />
-	  <node name="WLublock" />
-	</traverror>
-      </traversal>
-      <traversal id="ASS" name="Add Syncs" default="sons" include="addSyncs.h">
-        <travuser>
-          <node name="Vardec" />
-          <node name="Range" />
-          <node name="With3" />
-        </travuser>
-      </traversal>
-      <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
-        <travuser> 
-          <node name="Ap" />
-          <node name="Prf" />
-          <node name="Array" />
-          <node name="With2" />
-          <node name="Code" />
-          <node name="WLstride" />
-          <node name="WLgrid" />
-        </travuser> 
-      </traversal>
-      <traversal id="EMAA" name="Alias analysis" default="none" include="aliasanalysis.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Vardec" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Block" />
-          <node name="Exprs" />
-        </travsons>
-      </traversal>
-      <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Fundef" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Cond" />
-          <node name="Code" />
-          <node name="Block" />
-        </travsons>
-      </traversal>
-      <traversal id="EMLRO" name="Loop reuse optimization" default="none" include="loopreuseopt.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Fundef" />
-          <node name="Id" />
-          <node name="Prf" />
-        </travuser>
-        <travsons>
-          <node name="Exprs" />
-          <node name="Module" />
-          <node name="Let" />
-          <node name="Assign" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Cond" />
-          <node name="Code" />
-          <node name="Block" />
-        </travsons>
-      </traversal>
-      <traversal id="ASD" name="AUD SCL distinction" 
-                 default="sons" include="audscldist.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Ap" />
-          <node name="Cond" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Code" />
-          <node name="Prf" />
-          <node name="Funcond" />
-        </travuser>
-	<traverror>
-          <node name="Do" />
-	</traverror>
-      </traversal>
-      <traversal id="EMAL" name="Allocation" default="none" include="alloc.h" >
-        <travuser>
-          <node name="Num" />
-          <node name="NumByte" />
-	  <node name="NumShort" />
-	  <node name="NumInt" />
-	  <node name="NumLong" />
-	  <node name="NumLonglong" />
-	  <node name="NumUbyte" />
-	  <node name="NumUshort" />
-	  <node name="NumUint" />
-	  <node name="NumUlong" />
-          <node name="NumUlonglong" />
-          <node name="Char" />
-          <node name="Bool" />
-          <node name="Float" />
-          <node name="Double" />
+    </traversal>
+    <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
+<travuser>
+  <node name="Ids" />
+  <node name="Assign" />
+  <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Vardec" />
+        <node name="Block" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Return" />
+        <node name="With" />
+        <node name="Withid" />
+        <node name="Exprs" />
+</travuser>
+    </traversal>
+    <traversal id="DLIR" name="Do-Loop Invariants Traversal" default="sons" include="loop_invariant_removal.h" >
+<travuser>
+  <node name="Ids" />
+  <node name="Assign" />
+  <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Vardec" />
+        <node name="Block" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Return" />
+        <node name="With" />
+        <node name="Withid" />
+        <node name="Exprs" />
+</travuser>
+    </traversal>
+    <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
+<travuser>
+  <node name="Ids" />
+  <node name="Assign" />
+  <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Vardec" />
+        <node name="Block" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="With" />
+        <node name="Withid" />
+</travuser>
+    </traversal>
+    <traversal id="LIRMOV" name="Loop Invariants Move Traversal" default="sons" include="SSALIR.h" >
+<travuser>
+  <node name="Id" />
+  <node name="Withid" />
+  <node name="Assign" />
+        <node name="Block" />
+        <node name="Let" />
+        <node name="Ids" />
+</travuser>
+    </traversal>
+    <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
+<travuser>
+  <node name="Id" />
+  <node name="Withid" />
+  <node name="Assign" />
+        <node name="Block" />
+        <node name="Let" />
+        <node name="Ids" />
+</travuser>
+    </traversal>
+    <traversal id="LUR" name="Loop Unrolling Traversal" default="sons" include="SSALUR.h" >
+<travuser>
+  <node name="Ap" />
+  <node name="Assign" />
+  <node name="Fundef" />
+</travuser>
+    </traversal>
+    <traversal id="WLUR" name="With-Loop Unrolling Traversal" default="sons" include="SSAWLUnroll.h" >
+<travuser>
+        <node name="Ap" />
+  <node name="Assign" />
+        <node name="Fundef" />
+  <node name="With" />
+</travuser>
+    </traversal>
+    <traversal id="CS" name="Print Constraint Statistics" default="sons" include="constraint_statistics.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
+    <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Vardec" />
+      </travuser>
+    </traversal>
+    <traversal id="RDEPEND" name="Resolve Dependencies" default="sons" include="resolvedependencies.h" >
+<travuser>
+  <node name="Assign" />
+  <node name="Prf" />
+  </travuser>
+    </traversal>
+    <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
+      <travuser>
+        <node name="Let" />
+        <node name="Cast" />
+        <node name="Avis" />
+        <node name="Array" />
+        <node name="Ret" />
+        <node name="Objdef" />
+        <node name="Type" />
+      </travuser>
+    </traversal>
+    <traversal id="SISI" name="Signature Simplification" default="sons" include="signature_simplification.h" >
+<travuser>
+  <node name="Assign" />
+        <node name="Fundef" />
+  <node name="Block" />
+  <node name="Let" />
+  <node name="Return" />
+  <node name="Ret" />
+        <node name="Ap" />
+        <node name="Ids" />
+        <node name="Id" />
+        <node name="Exprs" />
+  <node name="Arg" />
+  <node name="Module" />
+  </travuser>
+    </traversal>
+    <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
+<travuser>
+  <node name="Assign" />
+  <node name="Id" />
+  <node name="With" />
+  </travuser>
+    </traversal>
+    <traversal id="ISAA" name="Insert Symbolic Array Attributes" default="sons" 
+      include="insert_symb_arrayattr.h" >
+<travuser>
+        <node name="Fundef" />
+  <node name="Avis" />
+  <node name="Block" />
+  <node name="Assign" />
+  <node name="Let" />
+        <node name="Ids" />
+        <node name="Id" />
+        <node name="With" />
+        <node name="Part" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Funcond" />
+        <node name="Ap" />
+  </travuser>
+      <travnone>
+        <node name="Withid" />
+      </travnone>
+    </traversal>     
+    <traversal id="MDE" name="Make Dim Expression" default="error"
+      include="makedimexpr.h">
+      <travuser>
+        <node name="Id" />
+        <node name="Funcond" />
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="Bool" />
+        <node name="Char" />
+        <node name="Num" />
+        <node name="NumByte" />
+  <node name="NumShort" />
+  <node name="NumInt" />
+  <node name="NumLong" />
+  <node name="NumLonglong" />
+  <node name="NumUbyte" />
+  <node name="NumUshort" />
+  <node name="NumUint" />
+  <node name="NumUlong" />
+        <node name="NumUlonglong" />
+        <node name="Float" />
+        <node name="Double" />         
+      </travuser>
+    </traversal>
+    <traversal id="MSE" name="Make Shape Expression" default="error"
+      include="makeshapeexpr.h">
+      <travuser>
+        <node name="Id" />
+        <node name="Funcond" />
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="Bool" />
+        <node name="Char" />
+        <node name="Num" />
+        <node name="NumByte" />
+  <node name="NumShort" />
+  <node name="NumInt" />
+  <node name="NumLong" />
+  <node name="NumLonglong" />
+  <node name="NumUbyte" />
+  <node name="NumUshort" />
+  <node name="NumUint" />
+  <node name="NumUlong" />
+        <node name="NumUlonglong" />
+        <node name="Float" />
+        <node name="Double" />         
+      </travuser>
+    </traversal>
+    <traversal id="ESV" name="Eliminate Shape Variables" default="sons" 
+      include="elim_shapevars.h" >
+<travuser>
+        <node name="Fundef" />
+  <node name="Avis" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="Prf" />
+  </travuser>
+      <travnone>
+        <node name="Withid" />
+      </travnone>
+    </traversal>      
+    <traversal id="RMV" name="Remove Vardecs" default="sons" 
+      include="remove_vardecs.h" >
+<travuser>
+        <node name="Fundef" />
+  <node name="Block" />
+  <node name="Vardec" />
+        <node name="Ids" />
+  </travuser>
+    </traversal>     
+    <traversal id="WLPROP" name="With-Loop Propagation" default="sons" include="wlpropagation.h" >
+<travuser>
+  <node name="Assign" />
+        <node name="Fundef" />
+  <node name="Ap" />
+  <node name="Exprs" /> 
+        <node name="Id" />
+      </travuser>
+    </traversal>
+     <traversal id="WLSELC" name="With-Loop Selections Counter" default="sons" include="wlselcount.h" >
+<travuser>
+  <node name="With" />
+        <node name="Fundef" />
+  <node name="Code" />
+  <node name="Ap" />
+  <node name="Prf" /> 
+      </travuser>
+    </traversal>
+    <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
+      <travuser>
+  <node name="Fundef" />
+  <node name="Block" />
+        <node name="Let" />
+  <node name="Assign" />
+  <node name="Prf" />
+      </travuser>
+    </traversal>
+    <traversal id="WLI" name="With-Loop-Interference" default="sons" include="SSAWLI.h" >
+<travuser>
+  <node name="Fundef" />
+  <node name="Assign" />
+  <node name="Id" />
+        <node name="Let" />
+        <node name="Cond" />
+  <node name="With" />
+  <node name="Modarray" />
+  <node name="Part" />
+  <node name="Generator" />
+        <node name="Code" />
+</travuser>
+    </traversal>
+   <traversal id="WLF" name="With-Loop-Folding" default="sons" include="SSAWLF.h" >
+<travuser>
+  <node name="Fundef" />
+  <node name="Assign" />
+  <node name="Id" />
+        <node name="Let" />
+  <node name="With" />
+        <node name="Code" />
+</travuser>
+   </traversal>
+   <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="Block"   />
+        <node name="Assign"  />
+        <node name="Let"  />
+        <node name="Id"  />
+        <node name="Cond" />
+        <node name="With"    />
+        <node name="Modarray"    />
+        <node name="Part"    />
+        <node name="Ids"     />
+        <node name="Prf"     />
+     </travuser>
+   </traversal>
+   <traversal id="CUBSL" name="Algebraic With-Loop-Folding Cube Slicer" default="sons" include="cubeslicer.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="Assign" />
+        <node name="Let"     />
+        <node name="With"    />
+        <node name="Part"    />
+        <node name="Prf"     />
+     </travuser>
+   </traversal>
+   <traversal id="AWLF" name="Algebraic With-Loop-Folding" default="sons" include="algebraic_wlf.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="Assign"  />
+        <node name="With"    />
+        <node name="Code"    />
+        <node name="Part"    />
+        <node name="Ids"     />
+        <node name="Prf"     />
+     </travuser>
+   </traversal>
+   <traversal id="WLCC" name="With-Loop Cost Check" default="sons" include="wl_cost_check.h" >
+     <travuser>
+        <node name="With"    />
+        <node name="Code"    />
+        <node name="Prf"     />
+        <node name="Ap"      />
+     </travuser>
+   </traversal>
+   <traversal id="WLNC" name="With-Loop NeedCount Check" default="sons" include="wl_needcount.h" >
+     <travuser>
+        <node name="Fundef"    />
+        <node name="Block"     />
+        <node name="Avis"      />
+        <node name="With"      />
+        <node name="Part"      />
+        <node name="Code"      />
+        <node name="Prf"       />
+        <node name="Ap"        />
+        <node name="Id"        />
+     </travuser>
+   </traversal>
+   <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
+<travuser>
+  <node name="Fundef" />
+  <node name="Block" />
+  <node name="Assign" />
+  <node name="Id" />
+  <node name="With" />
+  <node name="Genarray" />
+  <node name="Modarray" />
+  <node name="Fold" />
+  <node name="Part" />
+  <node name="Generator" />
+</travuser>
+    </traversal>
+    <traversal id="WLSIMP" name="With-Loop Simplification" default="sons" include="wlsimplification.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
+        <node name="Break" />
+        <node name="Propagate" />
+        <node name="Code" />
+        <node name="Part" />
+        <node name="Generator" />
+      </travuser>
+    </traversal>
+    <traversal id="CWLE" name="Copy With-Loop Elimination" default="sons" include="copywlelim.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="With" />
+        <node name="Let" />
+        <node name="Code" />
+        <node name="Assign" />
+        <node name="Ids" />
+        <node name="Arg" />
+      </travuser>
+    </traversal>
+    <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="With" />
+      </travuser>
+    </traversal>
+    <traversal id="WLSC" name="With-Loop Scalarization Check traversal" default="sons" include="wls.h">
+      <travuser>
+        <node name="Block" />
+        <node name="Code" />
+        <node name="Default" />
+        <node name="Id" />
+        <node name="Part" />
+        <node name="With" />
+        <node name="Withid" />
+        <node name="Generator" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
+        <node name="Propagate" />
+      </travuser>
+    </traversal>
+    <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" default="sons" include="wls.h">
+      <travuser>
+        <node name="Code" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Part" />
+        <node name="With" />
+        <node name="Withid" />
+      </travuser>
+    </traversal>
+    <traversal id="WLSB" name="With-Loop Scalarization Build traversal" default="sons" include="wls.h">
+      <travuser>
+        <node name="Code" />
+        <node name="Generator" />
+        <node name="Part" />
+        <node name="With" />
+        <node name="Withid" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="IVESPLIT" name="Index Vector Elimination (Split Selections)" default="sons" include="ive_split_selections.h">
+      <travuser>
+  <node name="Fundef" />
+  <node name="Assign" />
+  <node name="Prf" />
+      </travuser>
+    </traversal>
+    <traversal id="IVERAS" name="Index Vector Elimination (Reuse WL-offsets and Scalarize)" default="sons" include="ive_reusewl_and_scalarize.h">
+      <travuser>
+  <node name="Fundef" />
+  <node name="Assign" />
+  <node name="Let" />
+  <node name="Prf" />
+  <node name="With" />
+  <node name="Part" />
+  <node name="Code" />
+      </travuser>
+    </traversal>
+    <traversal id="WLFLT" name="Flattening multi-dimensional withloops" default="sons" include="withloop_flattening.h">
+      <travuser>
+  <node name="Id" />
+  <node name="Avis" />
+  <node name="With" />
+  <node name="Genarray" />
+  <node name="Assign" />
+  <node name="Let" />
+  <node name="Block" />
+  <node name="Fundef" />
+  <node name="Withid" />
+  <node name="Generator" />
+  <node name="Ids" />
+      </travuser>
+    </traversal>
+    <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="Withid" />
+      </travuser>
+    </traversal>
+    <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
+      <travuser>
+        <node name="Code" />
+        <node name="Let" />
+        <node name="With" />
+      </travuser>
+    </traversal>
+    <traversal id="RW3" name="Remove With3s" default="sons" include="remove_with3.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="With3" />
+        <node name="Range" />
+      </travuser>
+    </traversal>
+    <traversal id="WLSD" name="With-Loop Split Dimensions" default="sons" include="wl_split_dimensions.h">
+      <travuser>
+  <node name="Fundef" />
+  <node name="Assign" />
+  <node name="Let" />
+  <node name="Block" />
+  <node name="With2" />
+  <node name="Withid" />
+  <node name="WLseg" />
+  <node name="WLstride" />
+  <node name="WLgrid" />
+</travuser>
+<traverror>
+  <!-- blocking is not supported for now. -->
+  <node name="WLblock" />
+  <node name="WLublock" />
+</traverror>
+    </traversal>
+    <traversal id="ASS" name="Add Syncs" default="sons" include="addSyncs.h">
+      <travuser>
+        <node name="Vardec" />
+        <node name="Range" />
+        <node name="With3" />
+      </travuser>
+    </traversal>
+    <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
+      <travuser> 
+        <node name="Ap" />
+        <node name="Prf" />
+        <node name="Array" />
+        <node name="With2" />
+        <node name="Code" />
+        <node name="WLstride" />
+        <node name="WLgrid" />
+      </travuser> 
+    </traversal>
+    <traversal id="EMAA" name="Alias analysis" default="none" include="aliasanalysis.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Vardec" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Block" />
+        <node name="Exprs" />
+      </travsons>
+    </traversal>
+    <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Fundef" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Cond" />
+        <node name="Code" />
+        <node name="Block" />
+      </travsons>
+    </traversal>
+    <traversal id="EMLRO" name="Loop reuse optimization" default="none" include="loopreuseopt.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Fundef" />
+        <node name="Id" />
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+        <node name="Exprs" />
+        <node name="Module" />
+        <node name="Let" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Cond" />
+        <node name="Code" />
+        <node name="Block" />
+      </travsons>
+    </traversal>
+    <traversal id="ASD" name="AUD SCL distinction" 
+               default="sons" include="audscldist.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Code" />
+        <node name="Prf" />
+        <node name="Funcond" />
+      </travuser>
+<traverror>
+        <node name="Do" />
+</traverror>
+    </traversal>
+    <traversal id="EMAL" name="Allocation" default="none" include="alloc.h" >
+      <travuser>
+        <node name="Num" />
+        <node name="NumByte" />
+  <node name="NumShort" />
+  <node name="NumInt" />
+  <node name="NumLong" />
+  <node name="NumLonglong" />
+  <node name="NumUbyte" />
+  <node name="NumUshort" />
+  <node name="NumUint" />
+  <node name="NumUlong" />
+        <node name="NumUlonglong" />
+        <node name="Char" />
+        <node name="Bool" />
+        <node name="Float" />
+        <node name="Double" />
 
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Assign" />
-          <node name="Break" />
-          <node name="Code" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Propagate" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Withid" />
-          <node name="With3" />
-          <node name="Range" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Cond" />
-          <node name="Block" />
-        </travsons>
-      </traversal>
-      <traversal id="EMDR" name="Data reuse" default="none" include="datareuse.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Withid" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="With3" />
-          <node name="Range" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Block" />
-        </travsons>
-      </traversal>
-      <traversal id="PEW3" name="Prune Empty With3" default="sons" include="prune_empty_with3.h">
-        <travuser>
-          <node name="With3"/>
-          <node name="Range"/>
-          <node name="Id"/>
-          <node name="Assign"/>
-          <node name="Let"/>
-        </travuser>
-      </traversal>
-      <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="Prf" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Cond" />
-          <node name="Code" />
-          <node name="Block" />
-        </travsons>
-      </traversal>
-      <traversal id="EMRACC" name="Remove Alias Results from Conformity Checks" default="sons" include="rm_alias_results_cc.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Id" />
-        </travuser>
-      </traversal>
-      <traversal id="SRCE" name="Scope-based reuse-candidate elimination" default="sons" include="scoperce.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Ids" />
-          <node name="Ap" />
-          <node name="Code" />
-          <node name="Prf" />
-          <node name="Exprs" />
-        </travuser>
-      </traversal>
-      <traversal id="FRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Break" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Range" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="With3" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-        </travnone>   
-      </traversal>
-      <traversal id="FPRC" name="Filter Partial Reuse Candidates" default="sons" include="filter_partial_reuse_candidates.h" >
-        <travuser>
-          <node name="Block" />
-          <node name="Avis" />
-          <node name="Assign" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Prf" />
-	</travuser>
-	<traverror>
-          <node name="With2" />
-	</traverror>
-      </traversal>
-      <traversal id="EMIA" name="Interface Analysis" default="none" include="interfaceanalysis.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Cond" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Ret" />
-          <node name="Return" />
-          <node name="Vardec" />
-          <node name="With" />
-          <node name="With2" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Exprs" />
-        </travsons>
-      </traversal>
-      <traversal id="EMRB" name="Reuse branching" default="none" include="reusebranching.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Ids" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="With3" />
-          <node name="Range" />
-          <node name="Withid" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Let" />
-          <node name="Cond" />
-          <node name="Block" />
-          <node name="Fold" />
-        </travsons>
-      </traversal>
-      <traversal id="EMRI" name="Reuse inference" default="sons" include="reuse.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-        </travuser>
-      </traversal>
-      <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="With" />     
-          <node name="Genarray" />     
-          <node name="Modarray" />     
-          <node name="Fold" />     
-          <node name="Generator" />
-        </travuser>
-      </traversal>
-      <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
-        <travuser>
-          <node name="Prf" />
-          <node name="Id" />
-          <node name="Ids" />
-        </travuser>
-      </traversal>
-      <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
-        <travuser>
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="With" />     
-          <node name="Part" />     
-        </travuser>
-      </traversal>
-      <traversal id="EMSR" name="Static Reuse" default="none" include="staticreuse.h" >
-        <travuser>
-          <node name="Prf" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Code" />
-          <node name="Block" />
-          <node name="Cond" />
-        </travsons>
-      </traversal>
-      <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Range" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-        </travnone>
-      </traversal>
-      <traversal id="EMIPH" name="Inplace Computation helper" default="sons" include="inplacecomp.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Id" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-        </travnone>
-      </traversal>
-      <traversal id="RCI" name="Reference Counting Inference" default="sons" include="referencecounting.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Propagate" />
-          <node name="Range" />
-          <node name="Return" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="With3" />
-          <node name="Withid" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-        </travnone>
-      </traversal>
-      <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Range" />
-          <node name="Return" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-          <node name="Withid" />
-        </travnone>
-      </traversal>
-      <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Fold" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Cond" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Code" />
-        </travsons>
-      </traversal>
-      <traversal id="MVSMI" name="Move shared memory management instructions" 
-        default="sons" include="movesharedmeminstr.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Fundef" />
-          <node name="Ap" />
-        </travuser>
-      </traversal>
-      <traversal id="COSMI" name="Collect shared memory management instructions"
-        default="sons" include="movesharedmeminstr.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Ret" />
-          <node name="Arg" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="With2" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-        </travuser>
-        <traverror>
-          <node name="With" />
-        </traverror>
-      </traversal>
-      <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Vardec" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Fold" />
-          <node name="Code" />
-        </travsons>
-      </traversal>
-     <traversal id="MTCM" name="Multithreading cost model" default="sons" include="cost_model.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="With2" />
-          <node name="With" />
-          <node name="Fold" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-        </travuser>
-      </traversal>
-      <traversal id="MTSTF" name="Create MT/ST functions (programs)" default="sons" include="create_mtst_funs.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="With2" />
-          <node name="Ap" />
-          <node name="Fold" />
-        </travuser>
-      </traversal>
-      <traversal id="MTSTFMOD" name="Create MT/ST functions (modules)" default="sons" include="create_mtst_funs_module.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="With2" />
-          <node name="Ap" />
-          <node name="Fold" />
-        </travuser>
-      </traversal>
-       <traversal id="MTSPMDF" name="Create SPMD functions" default="sons" include="create_spmd_funs.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="With2" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Withid" />
-        </travuser>
-      </traversal>
-       <traversal id="MTDCR" name="MT dead code removal" default="sons" include="mtdcr.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Ids" />
-          <node name="Id" />
-          <node name="Prf" />
-        </travuser>
-      </traversal>
-       <traversal id="MTRMI" name="Restore memory instructions" default="sons" include="restore_mem_instr.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="With2" />
-          <node name="Id" />
-          <node name="Withid" />
-        </travuser>
-      </traversal>
-      <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="With2" />
-          <node name="WLseg" />
-        </travuser>
-      </traversal>
-      <traversal id="SSPMDLS" name="Set SPMD linksign" default="sons" include="set_spmd_linksign.h">
-        <travuser>
-          <node name="Arg" />
-          <node name="Id" />
-          <node name="Exprs" />
-          <node name="Return" />
-          <node name="Propagate" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Break" />
-          <node name="With2" />
-          <node name="Let" />
-          <node name="Ret" />
-          <node name="Fundef" />
-          <node name="Module" />
-        </travuser>
-      </traversal>
-      <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="With2" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="CRWIW" name="Create Withinwith Replication" default="sons" include="create_withinwith.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Fundef" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="PEM" name="Propagate Executionmode" default="sons" include="propagate_executionmode.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="With2" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="CDFG" name="Create Dataflowgraph" default="sons" include="create_dataflowgraph.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Id" />
-          <node name="Withid" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="ASMRA" name="Assignments Rearrange" default="sons" include="assignments_rearrange.h">
-        <travuser>
-          <node name="Block" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="CRECE" name="Create Cells" default="sons" include="create_cells.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="CEGRO" name="Cell Growth" default="sons" include="cell_growth.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="REPFUN" name="Replicate Functions" default="sons" include="replicate_functions.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="EX" />
-          <node name="Fundef" />
-          <node name="Module" />
-          <node name="MT" />
-          <node name="ST" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="CONCEL" name="Consolidate Cells" default="sons" include="consolidate_cells.h">
-        <travuser>
-          <node name="EX" />
-          <node name="Fundef" />
-          <node name="MT" />
-          <node name="ST" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="REC" name="Remove External Code" default="sons" include="remove_external_code.h" >
-        <travuser>
-	  <node name="Fundef" />
-	</travuser>
-      </traversal>
-      <traversal id="FSFS" name="SPMD Function Signature Fix" default="sons" include="spmdfun_fix.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="Return" />
-          <node name="With2" />
-        </travuser>
-      </traversal>
-      <traversal id="RERA" name="Restore Reference Args" default="sons" include="restore_reference_args.h">
-        <travuser>
-	  <node name="Ap" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Return" />
-	  <node name="Fundef" />
-	  <node name="Prf" />
- 	  <node name="Id" />
- 	  <node name="Ids" />
-	  <node name="Module" />
-	  <node name="With" />
-	  <node name="With2" />
-	  <node name="Block" />
-	</travuser>
-      </traversal>
-      <traversal id="RESO" name="Restore Global Objects" default="sons" include="restore_objects.h">
-        <travuser>
-	  <node name="Ap" />
-	  <node name="Prf" />
-	  <node name="Id" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Block" />
-	  <node name="Fundef" />
-	  <node name="Module" />
-    <node name="Propagate" />
-	</travuser>
-      </traversal>
-      <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
-        <travuser>
-	  <node name="Module" />
-	  <node name="Fundef" />
-	  <node name="Arg" />
-	  <node name="Ret" />
-	</travuser>
-      </traversal>
-      <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
-        <travuser>
-          <node name="Block" />
-          <node name="Break" />
-          <node name="Code" />
-          <node name="Do" />
-          <node name="Fold" />
-          <node name="Fundef" />
-          <node name="Module" />
-          <node name="Genarray" />
-          <node name="Propagate" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Ap" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="With3" />
-          <node name="WLseg" />
-          <node name="Return" />
-          <node name="Ret" />
-        </travuser>
-      </traversal>
-      <traversal id="DVR" name="Dead vardec removal" default="sons" include="dead_vardec_removal.h" >
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Vardec" />
-        </travuser>
-      </traversal>
-      <traversal id="MOI" name="Manage object initialisers" default="sons" include="manage_object_initialisers.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Id" />
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="FPC" name="Function Precompilation" default="sons" include="functionprecompile.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="Ret" />
-          <node name="Arg" />
-          <node name="Ap" />
-          <node name="Range" />
-        </travuser>
-      </traversal>
-      <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Ap" />
-          <node name="Range" />
-        </travuser>
-      </traversal>
-      <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">
-        <travuser>
-          <node name="WLgrid" />
-          <node name="WLstride" />
-          <node name="WLblock" />
-          <node name="WLublock" />
-          <node name="Code" />
-          <node name="Let" />
-        </travuser>
-      </traversal>
-      <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
-        <travuser>
-	        <node name="Module" />
-	        <node name="Typedef" />
-	        <node name="Objdef" />
-	        <node name="Fundef" />
-	        <node name="Arg" />
-	        <node name="Return" />
-	        <node name="Ap" />
-	        <node name="Icm" />
-	        <node name="WLseg" />
-	        <node name="Avis" />
-	      </travuser>
-      </traversal>
-      <traversal id="RCS" name="Resolve Code Sharing" default="sons" include="resolve_code_sharing.h">
-        <travuser>
-	        <node name="With" />
-	        <node name="With2" />
-	        <node name="Code" />
-	        <node name="Part" />
-	        <node name="WLgrid" />
-	      </travuser>
-      </traversal>
-      <traversal id="COMP" name="Compile" default="sons" include="compile.h">
-        <travuser>
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="Id" />
-          <node name="Let" />
-          <node name="Do" />
-          <node name="Module" />
-          <node name="Objdef" />
-          <node name="Prf" />
-          <node name="Return" />
-          <node name="Typedef" />
-          <node name="Vardec" />
-          <node name="Num" />
-          <node name="NumByte" />
-	  <node name="NumShort" />
-	  <node name="NumInt" />
-	  <node name="NumLong" />
-	  <node name="NumLonglong" />
-	  <node name="NumUbyte" />
-	  <node name="NumUshort" />
-	  <node name="NumUint" />
-	  <node name="NumUlong" />
-          <node name="NumUlonglong" />
-          <node name="Char" />
-          <node name="Bool" />
-          <node name="Float" />
-          <node name="Double" />
-          <node name="With" />
-          <node name="Withid" />
-          <node name="Part" />
-          <node name="Generator" />
-          <node name="With2" />
-          <node name="WLseg" />
-          <node name="WLblock" />
-          <node name="WLublock" />
-          <node name="WLstride" />
-          <node name="WLgrid" />
-          <node name="Code" />
-          <node name="With3" />
-          <node name="Range" />
-        </travuser>
-        <travnone>
-          <node name="Icm">
-            <description>
-              Using TRAVsons, COMPid would be applied to ICM_ARG1.
-            </description>
-          </node>
-        </travnone>
-        <traverror>
-          <node name="Cast">
-            <description>
-              Node is already eliminated.
-            </description>
-          </node>
-          <node name="While">
-            <description>
-              Node is already eliminated.
-            </description>
-          </node>
-          <node name="Funcond">
-            <description>
-              Node is already eliminated.
-            </description>
-          </node>
-        </traverror>
-      </traversal>
-      <traversal id="CBL" name="Construct Bundles" default="sons"
-                 include="construct_bundles.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Module" />
-        </travuser>
-      </traversal>
-      <traversal id="CCWH" name="Create C wrapper header" default="sons"
-                 include="create_c_wrapper_header.h">
-        <travuser>
-          <node name="FunBundle" />
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Ret" />
-          <node name="Typedef" />
-          <node name="Module" />
-        </travuser>
-      </traversal>
-      <traversal id="GCF" name="Generate Copy And Free" default="sons"
-                 include="generate_copy_and_free.h">
-        <travuser>
-          <node name="Typedef" />
-          <node name="Module" />
-        </travuser>
-      </traversal>
-      <traversal id="CCWB" name="Create C wrapper body" default="sons"
-                 include="create_c_wrapper_body.h">
-        <travuser>
-          <node name="FunBundle" />
-        </travuser>
-      </traversal>
-      <traversal id="BTF" name="Bundle to Fundef" default="sons"
-                 include="bundle_to_fundef.h">
-        <travuser>
-          <node name="FunBundle" />
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="HS" name="Hide Structs" default="sons"
-                 include="hidestructs.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Structdef" />
-          <node name="Structelem" />
-        </travuser>
-      </traversal>
-      <traversal id="DES" name="Remove Structs" default="sons"
-                 include="destruct.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Typedef" />
-          <node name="Structdef" />
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Ret" />
-          <node name="Assign" />
-          <node name="Exprs" />
-          <node name="Let" />
-          <node name="Ids" />
-          <node name="Vardec" />
-        </travuser>
-      </traversal>
-      <traversal id="CTZ" name="Comparison to Zero" default="sons"
-                 include="comparison_to_zero.h" >
-        <travuser>
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="UCZC" name="UndoCondZeroCmp" default="sons" include="UndoCondZeroCmp.h" >
-        <travuser>
-	  <node name="Fundef" />
-          <node name="Block" />
-          <node name="Prf" />
-          <node name="Let" />
-	  <node name="Assign" />
-        </travuser>
-      </traversal>
-      <traversal id="SYN" name="Adding Sync Statements" default="sons"
-                 include="add_sync.h" >
-        <travuser>
-          <node name="Ap" />
-        </travuser>
-      </traversal>
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Break" />
+        <node name="Code" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Propagate" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Withid" />
+        <node name="With3" />
+        <node name="Range" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Cond" />
+        <node name="Block" />
+      </travsons>
+    </traversal>
+    <traversal id="EMDR" name="Data reuse" default="none" include="datareuse.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Withid" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="With3" />
+        <node name="Range" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Block" />
+      </travsons>
+    </traversal>
+    <traversal id="PEW3" name="Prune Empty With3" default="sons" include="prune_empty_with3.h">
+      <travuser>
+        <node name="With3"/>
+        <node name="Range"/>
+        <node name="Id"/>
+        <node name="Assign"/>
+        <node name="Let"/>
+      </travuser>
+    </traversal>
+    <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Cond" />
+        <node name="Code" />
+        <node name="Block" />
+      </travsons>
+    </traversal>
+    <traversal id="EMRACC" name="Remove Alias Results from Conformity Checks" default="sons" include="rm_alias_results_cc.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Block" />
+        <node name="Vardec" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Id" />
+      </travuser>
+    </traversal>
+    <traversal id="SRCE" name="Scope-based reuse-candidate elimination" default="sons" include="scoperce.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Ids" />
+        <node name="Ap" />
+        <node name="Code" />
+        <node name="Prf" />
+        <node name="Exprs" />
+      </travuser>
+    </traversal>
+    <traversal id="FRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Break" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Range" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="With3" />
+      </travuser>
+      <travnone>
+        <node name="Objdef" />
+      </travnone>   
+    </traversal>
+    <traversal id="FPRC" name="Filter Partial Reuse Candidates" default="sons" include="filter_partial_reuse_candidates.h" >
+      <travuser>
+        <node name="Block" />
+        <node name="Avis" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Prf" />
+</travuser>
+<traverror>
+        <node name="With2" />
+</traverror>
+    </traversal>
+    <traversal id="EMIA" name="Interface Analysis" default="none" include="interfaceanalysis.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Cond" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Ret" />
+        <node name="Return" />
+        <node name="Vardec" />
+        <node name="With" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Exprs" />
+      </travsons>
+    </traversal>
+    <traversal id="EMRB" name="Reuse branching" default="none" include="reusebranching.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Code" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Ids" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="With3" />
+        <node name="Range" />
+        <node name="Withid" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Let" />
+        <node name="Cond" />
+        <node name="Block" />
+        <node name="Fold" />
+      </travsons>
+    </traversal>
+    <traversal id="EMRI" name="Reuse inference" default="sons" include="reuse.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="With" />     
+        <node name="Genarray" />     
+        <node name="Modarray" />     
+        <node name="Fold" />     
+        <node name="Generator" />
+      </travuser>
+    </traversal>
+    <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
+      <travuser>
+        <node name="Prf" />
+        <node name="Id" />
+        <node name="Ids" />
+      </travuser>
+    </traversal>
+    <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
+      <travuser>
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
+        <node name="With" />     
+        <node name="Part" />     
+      </travuser>
+    </traversal>
+    <traversal id="EMSR" name="Static Reuse" default="none" include="staticreuse.h" >
+      <travuser>
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Code" />
+        <node name="Block" />
+        <node name="Cond" />
+      </travsons>
+    </traversal>
+    <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Range" />
+      </travuser>
+      <travnone>
+        <node name="Objdef" />
+      </travnone>
+    </traversal>
+    <traversal id="EMIPH" name="Inplace Computation helper" default="sons" include="inplacecomp.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Id" />
+      </travuser>
+      <travnone>
+        <node name="Objdef" />
+      </travnone>
+    </traversal>
+    <traversal id="RCI" name="Reference Counting Inference" default="sons" include="referencecounting.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Propagate" />
+        <node name="Range" />
+        <node name="Return" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="With3" />
+        <node name="Withid" />
+      </travuser>
+      <travnone>
+        <node name="Objdef" />
+        <node name="Arg" />
+        <node name="Vardec" />
+      </travnone>
+    </traversal>
+    <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Range" />
+        <node name="Return" />
+      </travuser>
+      <travnone>
+        <node name="Objdef" />
+        <node name="Withid" />
+      </travnone>
+    </traversal>
+    <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Fold" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="Cond" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Code" />
+      </travsons>
+    </traversal>
+    <traversal id="MVSMI" name="Move shared memory management instructions" 
+      default="sons" include="movesharedmeminstr.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Ap" />
+      </travuser>
+    </traversal>
+    <traversal id="COSMI" name="Collect shared memory management instructions"
+      default="sons" include="movesharedmeminstr.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ret" />
+        <node name="Arg" />
+        <node name="Block" />
+        <node name="Vardec" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="With2" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
+      </travuser>
+      <traverror>
+        <node name="With" />
+      </traverror>
+    </traversal>
+    <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Vardec" />
+      </travuser>
+      <travsons>
+        <node name="Module" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Fold" />
+        <node name="Code" />
+      </travsons>
+    </traversal>
+   <traversal id="MTCM" name="Multithreading cost model" default="sons" include="cost_model.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Block" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="With2" />
+        <node name="With" />
+        <node name="Fold" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="MTSTF" name="Create MT/ST functions (programs)" default="sons" include="create_mtst_funs.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="With2" />
+        <node name="Ap" />
+        <node name="Fold" />
+      </travuser>
+    </traversal>
+    <traversal id="MTSTFMOD" name="Create MT/ST functions (modules)" default="sons" include="create_mtst_funs_module.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="With2" />
+        <node name="Ap" />
+        <node name="Fold" />
+      </travuser>
+    </traversal>
+     <traversal id="MTSPMDF" name="Create SPMD functions" default="sons" include="create_spmd_funs.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="With2" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Withid" />
+      </travuser>
+    </traversal>
+     <traversal id="MTDCR" name="MT dead code removal" default="sons" include="mtdcr.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Block" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Ids" />
+        <node name="Id" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
+     <traversal id="MTRMI" name="Restore memory instructions" default="sons" include="restore_mem_instr.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Block" />
+        <node name="Assign" />
+        <node name="With2" />
+        <node name="Id" />
+        <node name="Withid" />
+      </travuser>
+    </traversal>
+    <traversal id="MTAS" name="Annotate scheduling" default="sons" include="annotate_scheduling.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="With2" />
+        <node name="WLseg" />
+      </travuser>
+    </traversal>
+    <traversal id="SSPMDLS" name="Set SPMD linksign" default="sons" include="set_spmd_linksign.h">
+      <travuser>
+        <node name="Arg" />
+        <node name="Id" />
+        <node name="Exprs" />
+        <node name="Return" />
+        <node name="Propagate" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Break" />
+        <node name="With2" />
+        <node name="Let" />
+        <node name="Ret" />
+        <node name="Fundef" />
+        <node name="Module" />
+      </travuser>
+    </traversal>
+    <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CRWIW" name="Create Withinwith Replication" default="sons" include="create_withinwith.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Fundef" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="PEM" name="Propagate Executionmode" default="sons" include="propagate_executionmode.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CDFG" name="Create Dataflowgraph" default="sons" include="create_dataflowgraph.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Id" />
+        <node name="Withid" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="ASMRA" name="Assignments Rearrange" default="sons" include="assignments_rearrange.h">
+      <travuser>
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CRECE" name="Create Cells" default="sons" include="create_cells.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CEGRO" name="Cell Growth" default="sons" include="cell_growth.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="REPFUN" name="Replicate Functions" default="sons" include="replicate_functions.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="EX" />
+        <node name="Fundef" />
+        <node name="Module" />
+        <node name="MT" />
+        <node name="ST" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CONCEL" name="Consolidate Cells" default="sons" include="consolidate_cells.h">
+      <travuser>
+        <node name="EX" />
+        <node name="Fundef" />
+        <node name="MT" />
+        <node name="ST" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="REC" name="Remove External Code" default="sons" include="remove_external_code.h" >
+      <travuser>
+  <node name="Fundef" />
+</travuser>
+    </traversal>
+    <traversal id="FSFS" name="SPMD Function Signature Fix" default="sons" include="spmdfun_fix.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="Return" />
+        <node name="With2" />
+      </travuser>
+    </traversal>
+    <traversal id="RERA" name="Restore Reference Args" default="sons" include="restore_reference_args.h">
+      <travuser>
+  <node name="Ap" />
+  <node name="Assign" />
+  <node name="Let" />
+  <node name="Return" />
+  <node name="Fundef" />
+  <node name="Prf" />
+  <node name="Id" />
+  <node name="Ids" />
+  <node name="Module" />
+  <node name="With" />
+  <node name="With2" />
+  <node name="Block" />
+</travuser>
+    </traversal>
+    <traversal id="RESO" name="Restore Global Objects" default="sons" include="restore_objects.h">
+      <travuser>
+  <node name="Ap" />
+  <node name="Prf" />
+  <node name="Id" />
+  <node name="Assign" />
+  <node name="Let" />
+  <node name="Block" />
+  <node name="Fundef" />
+  <node name="Module" />
+  <node name="Propagate" />
+</travuser>
+    </traversal>
+    <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
+      <travuser>
+  <node name="Module" />
+  <node name="Fundef" />
+  <node name="Arg" />
+  <node name="Ret" />
+</travuser>
+    </traversal>
+    <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
+      <travuser>
+        <node name="Block" />
+        <node name="Break" />
+        <node name="Code" />
+        <node name="Do" />
+        <node name="Fold" />
+        <node name="Fundef" />
+        <node name="Module" />
+        <node name="Genarray" />
+        <node name="Propagate" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Ap" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="With3" />
+        <node name="WLseg" />
+        <node name="Return" />
+        <node name="Ret" />
+      </travuser>
+    </traversal>
+    <traversal id="DVR" name="Dead vardec removal" default="sons" include="dead_vardec_removal.h" >
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Block" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Vardec" />
+      </travuser>
+    </traversal>
+    <traversal id="MOI" name="Manage object initialisers" default="sons" include="manage_object_initialisers.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Id" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
+    <traversal id="FPC" name="Function Precompilation" default="sons" include="functionprecompile.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="Ret" />
+        <node name="Arg" />
+        <node name="Ap" />
+        <node name="Range" />
+      </travuser>
+    </traversal>
+    <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Ap" />
+        <node name="Range" />
+      </travuser>
+    </traversal>
+    <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">
+      <travuser>
+        <node name="WLgrid" />
+        <node name="WLstride" />
+        <node name="WLblock" />
+        <node name="WLublock" />
+        <node name="Code" />
+        <node name="Let" />
+      </travuser>
+    </traversal>
+    <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Typedef" />
+        <node name="Objdef" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Return" />
+        <node name="Ap" />
+        <node name="Icm" />
+        <node name="WLseg" />
+        <node name="Avis" />
+      </travuser>
+    </traversal>
+    <traversal id="RCS" name="Resolve Code Sharing" default="sons" include="resolve_code_sharing.h">
+      <travuser>
+        <node name="With" />
+        <node name="With2" />
+        <node name="Code" />
+        <node name="Part" />
+        <node name="WLgrid" />
+      </travuser>
+    </traversal>
+    <traversal id="COMP" name="Compile" default="sons" include="compile.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Do" />
+        <node name="Module" />
+        <node name="Objdef" />
+        <node name="Prf" />
+        <node name="Return" />
+        <node name="Typedef" />
+        <node name="Vardec" />
+        <node name="Num" />
+        <node name="NumByte" />
+  <node name="NumShort" />
+  <node name="NumInt" />
+  <node name="NumLong" />
+  <node name="NumLonglong" />
+  <node name="NumUbyte" />
+  <node name="NumUshort" />
+  <node name="NumUint" />
+  <node name="NumUlong" />
+        <node name="NumUlonglong" />
+        <node name="Char" />
+        <node name="Bool" />
+        <node name="Float" />
+        <node name="Double" />
+        <node name="With" />
+        <node name="Withid" />
+        <node name="Part" />
+        <node name="Generator" />
+        <node name="With2" />
+        <node name="WLseg" />
+        <node name="WLblock" />
+        <node name="WLublock" />
+        <node name="WLstride" />
+        <node name="WLgrid" />
+        <node name="Code" />
+        <node name="With3" />
+        <node name="Range" />
+      </travuser>
+      <travnone>
+        <node name="Icm">
+          <description>
+            Using TRAVsons, COMPid would be applied to ICM_ARG1.
+          </description>
+        </node>
+      </travnone>
+      <traverror>
+        <node name="Cast">
+          <description>
+            Node is already eliminated.
+          </description>
+        </node>
+        <node name="While">
+          <description>
+            Node is already eliminated.
+          </description>
+        </node>
+        <node name="Funcond">
+          <description>
+            Node is already eliminated.
+          </description>
+        </node>
+      </traverror>
+    </traversal>
+    <traversal id="CBL" name="Construct Bundles" default="sons"
+               include="construct_bundles.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Module" />
+      </travuser>
+    </traversal>
+    <traversal id="CCWH" name="Create C wrapper header" default="sons"
+               include="create_c_wrapper_header.h">
+      <travuser>
+        <node name="FunBundle" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Ret" />
+        <node name="Typedef" />
+        <node name="Module" />
+      </travuser>
+    </traversal>
+    <traversal id="GCF" name="Generate Copy And Free" default="sons"
+               include="generate_copy_and_free.h">
+      <travuser>
+        <node name="Typedef" />
+        <node name="Module" />
+      </travuser>
+    </traversal>
+    <traversal id="CCWB" name="Create C wrapper body" default="sons"
+               include="create_c_wrapper_body.h">
+      <travuser>
+        <node name="FunBundle" />
+      </travuser>
+    </traversal>
+    <traversal id="BTF" name="Bundle to Fundef" default="sons"
+               include="bundle_to_fundef.h">
+      <travuser>
+        <node name="FunBundle" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
+    <traversal id="HS" name="Hide Structs" default="sons"
+               include="hidestructs.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Structdef" />
+        <node name="Structelem" />
+      </travuser>
+    </traversal>
+    <traversal id="DES" name="Remove Structs" default="sons"
+               include="destruct.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Typedef" />
+        <node name="Structdef" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Ret" />
+        <node name="Assign" />
+        <node name="Exprs" />
+        <node name="Let" />
+        <node name="Ids" />
+        <node name="Vardec" />
+      </travuser>
+    </traversal>
+    <traversal id="CTZ" name="Comparison to Zero" default="sons"
+               include="comparison_to_zero.h" >
+      <travuser>
+        <node name="Block" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
+    <traversal id="UCZC" name="UndoCondZeroCmp" default="sons" include="UndoCondZeroCmp.h" >
+      <travuser>
+  <node name="Fundef" />
+        <node name="Block" />
+        <node name="Prf" />
+        <node name="Let" />
+  <node name="Assign" />
+      </travuser>
+    </traversal>
+    <traversal id="SYN" name="Adding Sync Statements" default="sons"
+               include="add_sync.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+      </travuser>
+    </traversal>
 
-  </traversals>
+</traversals>
 
   <nodesets>
     <nodeset name="Expr">

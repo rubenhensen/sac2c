@@ -165,6 +165,9 @@ TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused)
 
+TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv2StrDummy,
+        sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+
 TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
