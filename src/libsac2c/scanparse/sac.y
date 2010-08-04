@@ -1608,7 +1608,7 @@ expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRAC
          {
            $$ = TBmakeSpap( $2, $5);
            SPAP_ISSPAWNED( $$) = TRUE;
-           NODE_LINE( $$) = $<cint>3;
+           NODE_LINE( $$) = $<cint>4;
          }
        ;
 
