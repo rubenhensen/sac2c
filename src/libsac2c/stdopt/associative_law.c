@@ -8,13 +8,22 @@
  *
  * Prefix: AL
  *
+ * Conceptual view:
+ *
  * This optimization attempts to reorder a chain of associative,
- * commutative operations.
+ * commutative operations. The idea of AL is to reorder complex
+ * expressions such that they may be further optimized by other
+ * optimisations, namely constant folding.
  *
- * The idea of AL is to reorder complex expressions such that they
- * may be further optimized.
+ * Currently AL aims at the following:
+ *  - moving constant operands closer together, so that a maximum partial
+ *    evaluation can be realised;
+ *  - pairing of operands and their inverse, such that the application of
+ *    of the associative operation can be replaced by its neutral element.
+ *  - separate vector operations from scalar operations in order to compute
+ *    expressions as long as possible on the scalar level.
  *
- * E.g.
+ * Example:
  *
  *   s = 1 + 2;
  *   r = s + a;
@@ -58,20 +67,7 @@
  * s = s' _add_SxV_ vecs;
  *
  *
- *****************************************************************************/
-
-/*
- * Description:
- *
- * This optimisation reorganises multi-operand applications of associative
- * built-in functions such that optimisation cases for other optimisations,
- * namely constant folding, are created. These are currently:
- *  - moving constant operands closer together, so that a maximum partial
- *    evaluation can be realised;
- *  - pairing of operands and their inverse, such that the application of
- *    of the associative operation can be replaced by its neutral element.
- *
- * Executive Summary:
+ * Implementation notes:
  *
  * The implementation of the tree traversal is controlled by four modes,
  * which realise two distinct pairs of top-down and bottom-up traversals.
@@ -97,7 +93,8 @@
  * a properly flattened tree of binary operator applications. If not, we
  * just give up and leave the code as is.
  *
- */
+ *
+ *****************************************************************************/
 
 #include "tree_basic.h"
 #include "tree_compound.h"
