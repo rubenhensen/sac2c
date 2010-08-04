@@ -118,10 +118,10 @@
  * INFO structure
  */
 
-typedef enum { MODE_recurse, MODE_mark, MODE_transform, MODE_noop } mode_t;
+typedef enum { MODE_recurse, MODE_mark, MODE_transform, MODE_noop } trav_mode_t;
 
 struct INFO {
-    mode_t mode;
+    trav_mode_t mode;
     node *fundef;
     node *preassign;
     bool travrhs;
@@ -876,7 +876,7 @@ ALfundef (node *arg_node, info *arg_info)
 node *
 ALblock (node *arg_node, info *arg_info)
 {
-    mode_t old_mode;
+    trav_mode_t old_mode;
 
     DBUG_ENTER ("ALblock");
 
