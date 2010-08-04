@@ -29,7 +29,7 @@
 #ifdef OMP /* the code is only loaded into libsac.mt.omp */
 
 #include <pthread.h>
-#include <omp.h>
+/* #include <omp.h> */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -67,7 +67,8 @@ SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 unsigned int
 SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key)
 {
-    return omp_get_thread_num ();
+    /* return omp_get_thread_num(); */
+    return 0;
 }
 
 #endif /* OMP */
