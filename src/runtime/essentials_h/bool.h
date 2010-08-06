@@ -20,6 +20,11 @@
 #ifndef _SAC_BOOL_H
 #define _SAC_BOOL_H
 
+#define MUTC 1
+#if SAC_BACKEND == MUTC
+#include "stdbool.h"
+#else
+
 #ifdef __bool_true_false_are_defined /* C99 standard */
 #undef bool
 #undef true
@@ -38,5 +43,8 @@ typedef int bool;
 
 #define true 1
 #define false 0
+
+#endif
+#undef MUTC
 
 #endif /* _SAC_BOOL_H */

@@ -116,6 +116,9 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_REAL_ARG(name, var_NT, type) name
 
 /* Overloaded by MUTC */
+#define SAC_ND_REAL_ARG_out(name, var_NT, type) name
+
+/* Overloaded by MUTC */
 #define SAC_INIT_LOCAL_MEM()
 
 /* Overloaded by MUTC */
@@ -525,7 +528,7 @@ typedef int *SAC_array_descriptor_t;
  * ND_PARAM_in_nodesc( var_NT, basetype) :
  *   macro for prototyping data as "in" parameter without descriptor
  *
- * ND_PARAM_out( var_NT, basetype) :
+ * ND_PARAM_outpw( var_NT, basetype) :
  *   macro for prototyping data as "out" parameter
  *
  * ND_PARAM_out_nodesc( var_NT, basetype) :
@@ -598,8 +601,8 @@ typedef int *SAC_array_descriptor_t;
                      SAC_ND_TYPE (var_NT, type))
 
 #define SAC_ND_ARG_out_nodesc(var_NT, type)                                              \
-    SAC_ND_REAL_ARG (&SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)), var_NT,           \
-                     SAC_ND_TYPE (var_NT, type))
+    SAC_ND_REAL_ARG_out (&SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)), var_NT,       \
+                         SAC_ND_TYPE (var_NT, type))
 
 #define SAC_ND_ARG_inout(var_NT, type) SAC_ND_ARG_out (var_NT, type)
 
@@ -652,8 +655,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_ARG_out__DESC(var_NT, type)                                               \
     SAC_ND_ARG_out_nodesc (var_NT, type *),                                              \
-      SAC_ND_REAL_ARG (&SAC_ND_A_DESC (var_NT), SET_NT_REG (INT, var_NT),                \
-                       SAC_ND_DESC_TYPE (var_NT) *)
+      SAC_ND_REAL_ARG_out (&SAC_ND_A_DESC (var_NT), SET_NT_REG (INT, var_NT),            \
+                           SAC_ND_DESC_TYPE (var_NT) *)
 /*
  * SAC_ND_RET_out implementations (referenced by sac_std_gen.h)
  */

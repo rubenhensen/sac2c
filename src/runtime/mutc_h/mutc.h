@@ -6,7 +6,7 @@
 #define MUTC 1
 #if SAC_MUTC_MACROS
 
-#define bool boolbool
+/*#define bool boolbool*/
 
 #include <svp/perf.h>
 
@@ -112,6 +112,9 @@
 
 #undef SAC_ND_REAL_ARG
 #define SAC_ND_REAL_ARG(name, nt, type) SAC_MUTC_ARG (name, nt, type)
+
+#undef SAC_ND_REAL_ARG_out
+#define SAC_ND_REAL_ARG_out(name, nt, type) SAC_MUTC_ARG_out (name, nt, type)
 
 #if SAC_MUTC_FUNAP_AS_CREATE
 #undef SAC_ND_FUNAP2

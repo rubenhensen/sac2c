@@ -4,8 +4,11 @@
 
 #define MUTC 1
 #if SAC_BACKEND == MUTC
+#define shutup_cstdlib_h
 #include <stdlib.h>
+#define shutup_cstring_h
 #include <string.h>
+#define shutup_calloca_h
 #include <alloca.h>
 #include <svp/sep.h>
 #include <svp/slr.h>
@@ -26,11 +29,11 @@ sl_place_t SAC_mutc_rc_place;
 
 #define SAC_MUTC_STARTUP                                                                 \
     SAC_MUTC_STARTUP_ANON ()                                                             \
-    SAC_MUTC_WORLD_OBJECT                                                                \
     SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \
     SAC_MUTC_SAC_SVP_IO_PUTN
 
+/*SAC_MUTC_WORLD_OBJECT*/
 #endif
 
 #define SAC_MUTC_SAC_SVP_IO_PUTN                                                         \
