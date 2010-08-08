@@ -16,7 +16,7 @@
 
 /** <!--********************************************************************-->
  *
- * @file move_spawn_sync.c
+ * @file move_sync_statement.c
  *
  * Prefix: MSS
  *
@@ -42,7 +42,6 @@
 
 struct INFO {
     node *fundef;
-    node *prevassign;
     node *ids;
     bool idsfound;
     node *sync;

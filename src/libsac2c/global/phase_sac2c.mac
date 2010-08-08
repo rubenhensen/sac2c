@@ -959,6 +959,10 @@ SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
 
 SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement, !global.fpnoopt, fp)
 
+SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, ALWAYS, fp)
+
+SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, ALWAYS, fp)
+
 ENDPHASE (fp)
 
 /******************************************************************************/

@@ -3241,6 +3241,19 @@
         <node name="Id" />
       </travuser>
     </traversal>
+    <traversal id="TFF" name="Tag Fundef Nodes" default="sons"
+               include="tag_fp_fundefs.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+      </travuser>
+    </traversal>
+    <traversal id="TFA" name="Tag Ap Nodes" default="sons"
+               include="tag_fp_aps.h" >
+      <travuser>
+        <node name="Ap" />
+      </travuser>
+    </traversal>
 
 </traversals>
 
@@ -5023,6 +5036,9 @@ N_tfarg :
         <flag name="NeedsDynamicMemory" default="TRUE">
           <description>This functions needs dynamic memory (malloc)</description>
         </flag>
+        <flag name="ContainsSpawn" default="FALSE">
+          <description>This function contains a spawn statement</description>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -5980,8 +5996,14 @@ N_tfarg :
         <flag name="ConsiderInline" default="TRUE" />
         <flag name="IsRecursiveDoFunCall" default="FALSE" />
         <flag name="IsSpawned">
-          <description>This function is spawned when using functional
-          parallelism</description>
+          <description>
+            This function call should be spawned
+          </description>
+        </flag>
+        <flag name="ToSpawn">
+          <description>
+            This node calls a function which contains spawns
+          </description>
         </flag>
       </flags>
     </node>
