@@ -3233,6 +3233,14 @@
         <node name="Let" />
       </travuser>
     </traversal>
+    <traversal id="MSS" name="Moving Sync Statements" default="sons"
+               include="move_sync_statement.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Id" />
+      </travuser>
+    </traversal>
 
 </traversals>
 

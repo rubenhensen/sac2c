@@ -374,6 +374,11 @@ GLOBAL (bool, fp, FALSE)
  * Use functional parallelism
  */
 
+GLOBAL (bool, fpnoopt, FALSE)
+/*
+ * Do FP optimizations
+ */
+
 /*
  * Preprocessor options
  *

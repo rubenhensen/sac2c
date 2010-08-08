@@ -957,6 +957,8 @@ PHASE (fp, "Functional Parallelism", global.fp)
 
 SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
 
+SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement, !global.fpnoopt, fp)
+
 ENDPHASE (fp)
 
 /******************************************************************************/
