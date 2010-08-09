@@ -3254,6 +3254,15 @@
         <node name="Ap" />
       </travuser>
     </traversal>
+    <traversal id="LVA" name="Live Variable Analysis" default="sons"
+               include="live_variable_analysis.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Ids" />
+        <node name="Id" />
+      </travuser>
+    </traversal>
 
 </traversals>
 

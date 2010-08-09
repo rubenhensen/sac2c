@@ -963,6 +963,8 @@ SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, ALWAYS, fp)
 
 SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, ALWAYS, fp)
 
+SUBPHASE (lva, "Live Variable Analysis", LVAdoLiveVariableAnalysis, ALWAYS, fp)
+
 ENDPHASE (fp)
 
 /******************************************************************************/
