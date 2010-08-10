@@ -48,6 +48,7 @@
 #include "constants.h"
 #include "type_utils.h"
 #include "shape.h"
+#include "ctinfo.h"
 
 /** <!--********************************************************************-->
  *
@@ -91,6 +92,35 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper funcions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn static void ErrorOnSpawnInExport( node *fundef, node *let)
+ *
+ * @brief Give an error when a spawn is found inside an exported function.
+ *
+ * @param fundef
+ * @param let
+ *
+ *****************************************************************************/
+static void
+ErrorOnSpawnInExport (node *fundef, node *let)
+{
+    CTIerrorLine (NODE_LINE (let), "Spawn found in exported function %s",
+                  FUNDEF_NAME (fundef));
+    CTIerrorContinued ("Not allowed, create a wrapper function to resolve this");
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -232,6 +262,10 @@ SYNlet (node *arg_node, info *arg_info)
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap && AP_ISSPAWNED (LET_EXPR (arg_node))) {
 
         DBUG_PRINT ("SYN", ("- found spawned ap"));
+
+        if (FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info))) {
+            ErrorOnSpawnInExport (INFO_FUNDEF (arg_info), arg_node);
+        }
 
         // Create an avis node to hold temporary spawn value
         avis = TBmakeAvis (TRAVtmpVar (),
