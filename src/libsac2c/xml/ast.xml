@@ -5567,6 +5567,12 @@ N_tfarg :
             below the global object-lock release.
           </description>
         </flag>
+        <flag name="HasMoved" default="FALSE">
+          <description>
+            This flag is used during moving sync statements phase in FP to
+            indicate that a node has been tried to move before.
+          </description>
+        </flag>
       </flags>
       <checks>
         <check name="CHKassignAvisSSAAssign" />

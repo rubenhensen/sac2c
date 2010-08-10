@@ -4,9 +4,15 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup mss move sync statements to increase distance
+ * @defgroup mss move sync statements to increase distance from spawn
  *
- * WARNING! Can only move 1 sync stament per function for now
+ *   Traversed the tree until a sync statement is found, then tries to move
+ *   that node down the tree. This is done by looking at the next node and see
+ *   if any declarations are needed in the next node. If not, move further
+ *   down.
+ *
+ *   If a node cannot be moved further down, the obstructing node is tried to
+ *   move as well. This pushes sync even further down.
  *
  * @ingroup fp
  *
@@ -44,13 +50,13 @@ struct INFO {
     node *fundef;
     node *ids;
     bool idsfound;
-    node *sync;
+    int moved;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_IDS(n) ((n)->ids)
 #define INFO_IDSFOUND(n) ((n)->idsfound)
-#define INFO_SYNC(n) ((n)->sync)
+#define INFO_MOVED(n) ((n)->moved)
 
 static info *
 MakeInfo ()
@@ -64,7 +70,7 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_IDS (result) = NULL;
     INFO_IDSFOUND (result) = FALSE;
-    INFO_SYNC (result) = NULL;
+    INFO_MOVED (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -183,7 +189,7 @@ IdsOccurInNode (node *ids, node *node, info *arg_info)
     INFO_IDS (arg_info) = NULL;
 
     if (!INFO_IDSFOUND (arg_info)) {
-        DBUG_PRINT ("MSS", ("Node can be moved down"));
+        DBUG_PRINT ("MSS", ("No matching ids found"));
     }
 
     DBUG_RETURN (INFO_IDSFOUND (arg_info));
@@ -191,9 +197,11 @@ IdsOccurInNode (node *ids, node *node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn static bool CanNodeMoveDown( node *ids,  node *node)
+ * @fn static bool CanNodeMoveDown( noce *current, node *next, info *arg_info)
  *
- * @brief Check to see if ids occur as N_id in node
+ * @brief Check to see if current node can move accross next
+ *
+ *   Can only move N_let nodes for now.
  *
  * @param ids N_ids node
  * @param node
@@ -205,21 +213,91 @@ IdsOccurInNode (node *ids, node *node, info *arg_info)
 static bool
 CanNodeMoveDown (node *current, node *next, info *arg_info)
 {
-    bool result;
+    bool canmove;
     node *ids;
 
     DBUG_ENTER ("CanNodeMoveDown");
 
     DBUG_ASSERT (NODE_TYPE (current) == N_assign,
                  "Current node must be an N_assign node");
-    DBUG_ASSERT (NODE_TYPE (next) == N_assign, "Current node must be an N_assign node");
+    DBUG_ASSERT (next == NULL || NODE_TYPE (next) == N_assign,
+                 "Current node must be an N_assign node");
     DBUG_PRINT ("MSS", ("Checking to see if node can move down"));
 
-    ids = LET_IDS (ASSIGN_INSTR (current));
+    if (next == NULL || NODE_TYPE (ASSIGN_INSTR (current)) != N_let) {
+        // TODO: allow non let nodes as well
+        DBUG_PRINT ("MSS", ("Node is NULL or a non-let node, cannot move"));
+        canmove = FALSE;
+    } else {
+        ids = LET_IDS (ASSIGN_INSTR (current));
+        canmove = !IdsOccurInNode (ids, next, arg_info);
+    }
 
-    result = !IdsOccurInNode (ids, next, arg_info);
+    if (canmove) {
+        DBUG_PRINT ("MSS", ("Node can move"));
+    } else {
+        DBUG_PRINT ("MSS", ("Node can _not_ move"));
+    }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (canmove);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool MoveAssignDown( node *parent, info *arg_info)
+ *
+ * @brief Move the child of given parent node down. Try to move blocking nodes
+ *        down as well
+ *
+ * @param parent an N_assign node
+ * @param arg_info
+ *
+ * @return if node was moved or not
+ *
+ *****************************************************************************/
+static bool
+MoveAssignDown (node *parent, info *arg_info)
+{
+    node *new_parent;
+    node *node;
+    bool moved;
+
+    DBUG_ENTER ("MoveAssignDown");
+    DBUG_PRINT ("MSS", ("Moving assignment node down"));
+
+    new_parent = parent;
+    node = ASSIGN_NEXT (parent);
+    moved = FALSE;
+
+    if (node == NULL || ASSIGN_HASMOVED (node)) {
+        DBUG_PRINT ("MSS", ("Node is NULL or has already been moved before"));
+    } else {
+        // see if node can be moved in the first place
+        if (CanNodeMoveDown (node, ASSIGN_NEXT (node), arg_info)) {
+            ASSIGN_NEXT (parent) = ASSIGN_NEXT (node);
+            new_parent = ASSIGN_NEXT (node);
+            moved = TRUE;
+
+            while (new_parent != NULL
+                   && CanNodeMoveDown (node, ASSIGN_NEXT (new_parent), arg_info)) {
+                new_parent = ASSIGN_NEXT (new_parent);
+            }
+
+            // insert node at new position
+            ASSIGN_NEXT (node) = ASSIGN_NEXT (new_parent);
+            ASSIGN_NEXT (new_parent) = node;
+        }
+
+        // node cannot be moved further, so try to move blocking node as well
+        if (MoveAssignDown (node, arg_info)) {
+            // move again if blocking node was moved
+            moved = MoveAssignDown (new_parent, arg_info) || moved;
+        }
+
+        ASSIGN_HASMOVED (node) = TRUE;
+    }
+
+    DBUG_RETURN (moved);
 }
 
 /** <!--********************************************************************-->
@@ -272,7 +350,7 @@ MSSfundef (node *arg_node, info *arg_info)
  *
  * @fn node *MSSassign(node *arg_node, info *arg_info)
  *
- * @brief Do something...
+ * @brief Look for sync statements and try to move them down
  *
  * @param arg_node
  * @param arg_info
@@ -283,31 +361,19 @@ MSSfundef (node *arg_node, info *arg_info)
 node *
 MSSassign (node *arg_node, info *arg_info)
 {
-    node *nextnode;
+    node *next_node;
 
     DBUG_ENTER ("MSSassign");
-    DBUG_PRINT ("MSS", ("Traversing Assign node"));
 
     if (INFO_IDS (arg_info) != NULL) {
         // Only traverse into instr if looking for ids
         ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
     } else {
-        nextnode = ASSIGN_NEXT (arg_node);
+        next_node = ASSIGN_NEXT (arg_node);
 
-        // remove sync from tree if it is the next node
-        if (nextnode != NULL && AssignIsSync (nextnode)) {
-            INFO_SYNC (arg_info) = nextnode;
-            ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (nextnode);
-            nextnode = ASSIGN_NEXT (arg_node);
-        }
-
-        // if a sync cannot go further down, insert it here
-        if (INFO_SYNC (arg_info) != NULL
-            && !CanNodeMoveDown (INFO_SYNC (arg_info), nextnode, arg_info)) {
-            DBUG_PRINT ("MSS", ("Inserting Sync"));
-            ASSIGN_NEXT (INFO_SYNC (arg_info)) = ASSIGN_NEXT (arg_node);
-            ASSIGN_NEXT (arg_node) = INFO_SYNC (arg_info);
-            INFO_SYNC (arg_info) = NULL;
+        // If next node is a sync statement, move it down
+        if (next_node != NULL && AssignIsSync (next_node)) {
+            MoveAssignDown (arg_node, arg_info);
         }
 
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -320,7 +386,7 @@ MSSassign (node *arg_node, info *arg_info)
  *
  * @fn node *MSSid(node *arg_node, info *arg_info)
  *
- * @brief Do something...
+ * @brief Look if current node occurs in IDS stored in info
  *
  * @param arg_node
  * @param arg_info
