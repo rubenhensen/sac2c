@@ -114,9 +114,13 @@ FreeInfo (info *info)
 static void
 ErrorOnSpawnInExport (node *fundef, node *let)
 {
+    DBUG_ENTER ("ErrorOnSpawnInExport");
+
     CTIerrorLine (NODE_LINE (let), "Spawn found in exported function %s",
                   FUNDEF_NAME (fundef));
     CTIerrorContinued ("Not allowed, create a wrapper function to resolve this");
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
