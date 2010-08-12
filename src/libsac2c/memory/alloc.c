@@ -1606,8 +1606,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_not_V:
     case F_neg_V:
     case F_abs_V:
-    case F_syncin:
-    case F_syncout:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
@@ -1653,6 +1651,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_prop_obj_in:
     case F_prop_obj_out:
     case F_accu:
+    case F_syncin:
+    case F_syncout:
     case F_type_error:
     case F_type_conv:
     case F_dispatch_error:

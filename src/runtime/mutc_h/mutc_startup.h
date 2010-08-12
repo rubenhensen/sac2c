@@ -18,6 +18,8 @@
 
 sl_place_t SAC_mutc_rc_place;
 
+void *tls_malloc (size_t arg1);
+
 #endif /* SAC_BACKEND */
 #undef MUTC
 

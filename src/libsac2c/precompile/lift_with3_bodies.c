@@ -290,7 +290,11 @@ ATravRange (node *arg_node, info *arg_info)
  * @brief For each ids ids2 pair create a shared with the same type.
  *        Save the new avis( ids) and avis( ids2) into the lut pointing to
  *        the new shared avis.
- *
+ *if 0
+ *        ids comes from the accu where if the accu is a shared it will
+ *        be of scalar type not the type of the shared so the type must
+ *        be updated by this function.
+ *endif
  * @param ids  Chain of ids' that are to be assisted with shareds
  * @param ids2 Chain of ids' that are to be assisted with shareds
  *             also results of range.
@@ -310,12 +314,16 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
     if (ids != NULL) {
         DBUG_ASSERT ((ids2 != NULL), "Expected two lists of the same length");
 
-        DBUG_ASSERT ((TYeqTypes (AVIS_TYPE (IDS_AVIS (ids)),
-                                 AVIS_TYPE (IDS_AVIS (ids2)))),
-                     "Expected both types to be equal");
         vardec = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
 
-        type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids)));
+        type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids2)));
+
+#if 0
+    /* set avis of ids from accu to correct type */
+    AVIS_TYPE( IDS_AVIS( ids)) = TYfreeType( AVIS_TYPE( IDS_AVIS( ids)));
+    AVIS_TYPE( IDS_AVIS( ids)) = TYcopyType( AVIS_TYPE( IDS_AVIS( ids2)));
+#endif
+
         type = TYsetMutcScope (type, MUTC_SHARED);
         avis = TBmakeAvis (TRAVtmpVar (), type);
         vardec = TBmakeVardec (avis, vardec);

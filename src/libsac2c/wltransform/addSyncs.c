@@ -36,6 +36,7 @@
 #include "memory.h"
 #include "DupTree.h"
 #include "free.h"
+#include "shape.h"
 #include "new_types.h"
 /** <!--********************************************************************-->
  *
@@ -226,7 +227,8 @@ createIds (node *lhs, node *assign, info *arg_info)
         ids = NULL;
     } else {
         node *avis;
-        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (lhs))));
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
         AVIS_SSAASSIGN (avis) = assign;

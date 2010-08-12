@@ -448,6 +448,24 @@ FAprf (node *arg_node, info *arg_info)
 }
 
 static node *
+UpgradeTypes (node *ids, node *exprs)
+{
+    DBUG_ENTER ("UpgradeTypes");
+
+    if (IDS_NEXT (ids) != NULL) {
+        DBUG_ASSERT (EXPRS_NEXT (exprs) != NULL,
+                     "Chains of ids and exprs must be same length");
+        IDS_NEXT (ids) = UpgradeTypes (IDS_NEXT (ids), EXPRS_NEXT (exprs));
+    }
+
+    AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
+
+    AVIS_TYPE (IDS_AVIS (ids)) = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))));
+
+    DBUG_RETURN (ids);
+}
+
+static node *
 FAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FAassign");
@@ -456,7 +474,8 @@ FAassign (node *arg_node, info *arg_info)
 
     if (INFO_FA_PRF_ACCU (arg_info)) {
         node *old = arg_node;
-        arg_node = TCappendAssign (JoinIdsExprs (INFO_FA_LHS (arg_info),
+        arg_node = TCappendAssign (JoinIdsExprs (UpgradeTypes (INFO_FA_LHS (arg_info),
+                                                               INFO_FA_INIT (arg_info)),
                                                  INFO_FA_INIT (arg_info)),
                                    ASSIGN_NEXT (arg_node));
         old = FREEdoFreeNode (old);
@@ -535,7 +554,7 @@ S2Iprf (node *arg_node, info *arg_info)
     case F_syncout:
         id = DUPdoDupTree (PRF_ARG1 (arg_node));
         arg_node = FREEdoFreeTree (arg_node);
-        arg_node = TBmakePrf (F_copy, TBmakeExprs (id, NULL));
+        arg_node = id;
         break;
     default:
         arg_node = TRAVcont (arg_node, arg_info);
