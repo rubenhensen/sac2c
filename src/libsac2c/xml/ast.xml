@@ -5642,6 +5642,56 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="Livevars" inconstructor="no">
+          <description>
+            If the let node is a spawn or sync statement, this attribute will
+            contain a list of all live variables at this point in the code.
+          </description>
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Livevars" />
+                <phases>
+                  <phase from="fp_lva" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_livevars :
+
+-->
+    <node name="Livevars">
+      <sons>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Livevars" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Avis" inconstructor="yes">
+          <type name="Link">
+            <targets>
+              <target mandatory="yes">
+                <node name="Avis" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>

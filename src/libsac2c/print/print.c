@@ -5722,10 +5722,10 @@ PRTdataflownode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRTerror( node *arg_node, info *arg_info)
+ *   node *prterror( node *arg_node, info *arg_info)
  *
  * description:
- *   This function print all the errors
+ *   this function print all the errors
  *
  ******************************************************************************/
 
@@ -6222,5 +6222,24 @@ PRTtfexpr (node *arg_node, info *arg_info)
          */
     }
     INFO_TFSTRINGEXPR (arg_info) = STRcat (INFO_TFSTRINGEXPR (arg_info), ")");
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRTlivevars( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   prints N_livevars node.
+ *
+ ******************************************************************************/
+node *
+PRTlivevars (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTlivevars");
+
+    LIVEVARS_NEXT (arg_node) = TRAVopt (LIVEVARS_NEXT (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }

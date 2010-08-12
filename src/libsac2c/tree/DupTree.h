@@ -140,6 +140,7 @@ extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
 extern node *DUPerror (node *arg_node, info *arg_info);
 extern node *DUPfunbundle (node *arg_node, info *arg_info);
+extern node *DUPlivevars (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);

@@ -106,6 +106,7 @@ extern node *PRTdataflowgraph (node *arg_node, info *arg_info);
 extern node *PRTdataflownode (node *arg_node, info *arg_info);
 extern node *PRTglobobj (node *arg_node, info *arg_info);
 extern node *PRTerror (node *arg_node, info *arg_info);
+extern node *PRTlivevars (node *arg_node, info *arg_info);
 
 /* with-loop (frontend) */
 extern node *PRTwith (node *arg_node, info *arg_info);

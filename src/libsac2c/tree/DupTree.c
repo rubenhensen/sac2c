@@ -2780,6 +2780,29 @@ DUPfunbundle (node *arg_node, info *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DUPlivevars( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Duplicates a Livevars node.
+ *
+ ******************************************************************************/
+
+node *
+DUPlivevars (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPlivevars");
+
+    new_node
+      = TBmakeLivevars (LIVEVARS_AVIS (arg_node), DUPCONT (LIVEVARS_NEXT (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *DUPwith3( node *arg_node, info *arg_info)
  *

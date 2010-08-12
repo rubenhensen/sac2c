@@ -271,6 +271,8 @@ LVAassign (node *arg_node, info *arg_info)
 {
     dfmask_t *mask;
     dfmask_t *tmp;
+    node *avis;
+    node *livevars;
 
     DBUG_ENTER ("LVAassign");
 
@@ -297,7 +299,17 @@ LVAassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("LVA", ("Done analysing"));
         DBUG_EXECUTE ("LVA", DFMprintMaskDetailed (stdout, mask););
 
-        // TODO: Actually save live variables in current node...
+        // save live vars in the let node
+        avis = DFMgetMaskEntryAvisSet (mask);
+        livevars = NULL;
+
+        while (avis != NULL) {
+            DBUG_PRINT ("LVA", ("Live Var Found"));
+            livevars = TBmakeLivevars (avis, livevars);
+            avis = DFMgetMaskEntryAvisSet (NULL);
+        }
+
+        LET_LIVEVARS (ASSIGN_INSTR (arg_node)) = livevars;
     } else {
         // only analyse use of variables
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
