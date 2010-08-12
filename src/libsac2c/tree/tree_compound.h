@@ -532,6 +532,9 @@ extern node *TCsearchDecl (const char *name, node *decl_node);
 #define ASSIGN_LHS(n) LET_IDS (ASSIGN_INSTR (n))
 #define ASSIGN_RHS(n) LET_EXPR (ASSIGN_INSTR (n))
 
+#define ASSIGN_SYNC_LHS(n) LET_SYNC_IDS (ASSIGN_INSTR (n))
+#define ASSIGN_SPAWN_LHS(n) ASSIGN_SYNC_LHS (n)
+
 /******************************************************************************
  *
  * Function:
@@ -748,6 +751,9 @@ extern bool TCfoldPredExprs (bool (*pred) (node *), node *exprs);
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_BASETYPE(n) (TYPES_BASETYPE (LET_TYPE (n)))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
+
+#define LET_SYNC_IDS(n) LET_IDS (LET_MATCHINGSPAWNSYNC (n))
+#define LET_SPAWN_IDS(n) LET_SYNC_IDS (n)
 
 /*--------------------------------------------------------------------------*/
 

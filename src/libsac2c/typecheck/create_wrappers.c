@@ -680,7 +680,9 @@ CRTWRPspap (node *arg_node, info *arg_info)
          * function application now and free the spap node
          */
         new_node = TBmakeAp (wrapper, SPAP_ARGS (arg_node));
-        AP_ISSPAWNED (new_node) = SPAP_ISSPAWNED (arg_node);
+
+        // only carry spawns if FP is enabled
+        AP_ISSPAWNED (new_node) = global.fp && SPAP_ISSPAWNED (arg_node);
 
         SPAP_ARGS (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);

@@ -5626,6 +5626,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="MatchingSpawnSync" inconstructor="no">
+          <description>
+            If the node contains a spawned ap or a sync statement, this
+            will point to the matching spawn or sync statement.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Let" />
+                <phases>
+                  <phase from="fp_syn" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>

@@ -38,6 +38,7 @@
 #include "new_typecheck.h"
 #include "dbug.h"
 #include "cuda_utils.h"
+#include "ctinfo.h"
 
 /**
  * Controls wheter AKS-Information should be used when possible
@@ -1759,6 +1760,16 @@ EMALprf (node *arg_node, info *arg_info)
     case F_run_mt_fold:
 
         DBUG_ASSERT ((0), "invalid prf found!");
+        break;
+
+    case F_sync:
+        /*
+         * require a special treatment as
+         * its return value must not  be allocated
+         */
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+
+        INFO_MUSTFILL (arg_info) = FALSE;
         break;
 
     default:

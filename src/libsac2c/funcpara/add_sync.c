@@ -258,6 +258,7 @@ SYNlet (node *arg_node, info *arg_info)
 {
     node *sync;
     node *avis;
+    node *let;
 
     DBUG_ENTER ("SYNlet");
 
@@ -279,16 +280,20 @@ SYNlet (node *arg_node, info *arg_info)
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-        // Create the assign node containing sync
-        sync = TBmakeAssign (TBmakeLet (LET_IDS (arg_node),
-                                        TBmakePrf (F_sync,
-                                                   TBmakeExprs (TBmakeId (avis), NULL))),
-                             NULL);
-
-        INFO_NEWASSIGN (arg_info) = sync;
+        // Create the let node
+        let = TBmakeLet (LET_IDS (arg_node),
+                         TBmakePrf (F_sync, TBmakeExprs (TBmakeId (avis), NULL)));
 
         // change ids to use newly created temp spawn value
+        // and point let nodes to each other
         LET_IDS (arg_node) = TBmakeIds (avis, NULL);
+        LET_MATCHINGSPAWNSYNC (arg_node) = let;
+        LET_MATCHINGSPAWNSYNC (let) = arg_node;
+
+        // Create the assign node and save it in info
+        sync = TBmakeAssign (let, NULL);
+
+        INFO_NEWASSIGN (arg_info) = sync;
     }
 
     DBUG_RETURN (arg_node);

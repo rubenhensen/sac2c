@@ -456,7 +456,12 @@ ASDap (node *arg_node, info *arg_info)
                         CTIitemName (AP_FUNDEF (arg_node))));
 
     ret = FUNDEF_RETS (AP_FUNDEF (arg_node));
-    ids = ASSIGN_LHS (INFO_ASSIGN (arg_info));
+
+    if (!AP_ISSPAWNED (arg_node)) {
+        ids = ASSIGN_LHS (INFO_ASSIGN (arg_info));
+    } else {
+        ids = ASSIGN_SYNC_LHS (INFO_ASSIGN (arg_info));
+    }
 
     while (ret != NULL) {
         actual_cls = NTUgetShapeClassFromNType (IDS_NTYPE (ids));

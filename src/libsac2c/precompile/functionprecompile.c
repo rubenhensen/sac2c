@@ -798,7 +798,11 @@ FPClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPClet");
 
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap && AP_ISSPAWNED (LET_EXPR (arg_node))) {
+        INFO_LHS (arg_info) = LET_SYNC_IDS (arg_node);
+    } else {
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+    }
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
