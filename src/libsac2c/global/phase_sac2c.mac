@@ -1153,6 +1153,8 @@ SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
 /* TVD: Runtime Specialization */
 SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
           RTSPECdoCreateWrapperEntries, global.rtspec, pc)
+
+SUBPHASE (msc, "Make Slow Clones", MSCdoMakeSlowClones, global.fp, pc)
 /*
  * WARNING: no phases that duplicate code below this line!
  *          FPC builds the argtabs which CANNOT be maintained

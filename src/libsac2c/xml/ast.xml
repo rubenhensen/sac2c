@@ -3263,6 +3263,12 @@
         <node name="Id" />
       </travuser>
     </traversal>
+    <traversal id="MSC" name="Make Slow Clones" default="sons"
+               include="make_slow_clones.h" >
+      <travuser>
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
 
 </traversals>
 
@@ -4932,6 +4938,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SlowClone" default="NULL" inconstructor="no">
+          <description>
+            This attribute points to the slow clone implementation if this
+            fundef is the fast clone
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <range from="pc_msc" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsMain">
@@ -5047,6 +5069,9 @@ N_tfarg :
         </flag>
         <flag name="ContainsSpawn" default="FALSE">
           <description>This function contains a spawn statement</description>
+        </flag>
+        <flag name="IsSlowClone" default="FALSE">
+          <description>This function is a slow clone</description>
         </flag>
       </flags>
     <checks>
