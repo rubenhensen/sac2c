@@ -45,6 +45,6 @@ sl_enddef
 sl_def (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val))
 {
     int dummy = sl_getp (val);
-    sl_setp (val, DESC_RC (sl_getp (desc)));
+    sl_setp (val, (DESC_RC (sl_getp (desc)) + dummy));
 }
 sl_enddef
