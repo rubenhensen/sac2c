@@ -1047,7 +1047,7 @@ static node *
 ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 {
     node *new_node;
-    ntype *old_type, *new_type;
+    ntype *old_type, *new_type = NULL;
     node *avis;
     node *mylhs;
 
@@ -1067,35 +1067,48 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((!TYisAKV (old_type)), "lhs with known value?");
 
-    if (TUshapeKnown (old_type)) {
-        shape *shape;
+    if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+        /* Outer wl has chunksize */
+        constant *length = COaST2Constant (INFO_CURRENT_SIZE (arg_info));
+        if (length != NULL) {
+            new_type = TYmakeAKS (TYcopyType (TYgetScalar (old_type)),
+                                  SHcreateShape (1, COconst2Int (length)));
+            length = COfreeConstant (length);
+        }
+    }
 
-        if ((INFO_CURRENT_SIZE (arg_info) == NULL)
-            || (IsNum (INFO_CURRENT_SIZE (arg_info)))) {
-            shape = SHdropFromShape (INFO_CURRENT_DIM (arg_info), TYgetShape (old_type));
+    if (new_type == NULL) {
+        if (TUshapeKnown (old_type)) {
+            shape *shape;
 
-            if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+            if ((INFO_CURRENT_SIZE (arg_info) == NULL)
+                || (IsNum (INFO_CURRENT_SIZE (arg_info)))) {
+                shape
+                  = SHdropFromShape (INFO_CURRENT_DIM (arg_info), TYgetShape (old_type));
+
+                if (INFO_CURRENT_SIZE (arg_info) != NULL) {
+                    /*
+                     * set outermost size
+                     */
+                    shape = SHsetExtent (shape, 0, GetNum (INFO_CURRENT_SIZE (arg_info)));
+                }
+
+                new_type = TYmakeAKS (TYcopyType (TYgetScalar (old_type)), shape);
+            } else {
                 /*
-                 * set outermost size
+                 * the size is unkown so we have to produce an AKD
                  */
-                shape = SHsetExtent (shape, 0, GetNum (INFO_CURRENT_SIZE (arg_info)));
+                new_type = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
+                                      TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info),
+                                      SHcreateShape (0));
             }
-
-            new_type = TYmakeAKS (TYcopyType (TYgetScalar (old_type)), shape);
-        } else {
-            /*
-             * the size is unkown so we have to produce an AKD
-             */
+        } else if (TUdimKnown (old_type)) {
             new_type = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
                                   TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info),
                                   SHcreateShape (0));
+        } else {
+            new_type = TYcopyType (old_type);
         }
-    } else if (TUdimKnown (old_type)) {
-        new_type = TYmakeAKD (TYcopyType (TYgetScalar (old_type)),
-                              TYgetDim (old_type) - INFO_CURRENT_DIM (arg_info),
-                              SHcreateShape (0));
-    } else {
-        new_type = TYcopyType (old_type);
     }
 
     avis = TBmakeAvis (TRAVtmpVar (), new_type);

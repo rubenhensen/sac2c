@@ -3606,6 +3606,13 @@ COMPprfSyncIn (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
     DBUG_ENTER ("COMPprfSyncIn");
+
+    ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
+                                 MakeTypeArgs (IDS_NAME (INFO_LASTIDS (arg_info)),
+                                               IDS_TYPE (INFO_LASTIDS (arg_info)), FALSE,
+                                               TRUE, FALSE, NULL),
+                                 ret_node);
+
     ret_node
       = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCIN", DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                           DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);

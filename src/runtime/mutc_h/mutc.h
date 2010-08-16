@@ -36,7 +36,11 @@
 #define SAC_MUTC_SYNC(name) sl_sync ();
 #define SAC_MUTC_THREAD_AP2(name, ...) name, __VA_ARGS__
 
-#define SAC_MUTC_SAVE(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
+#define SAC_MUTC_SAVE_NODESC(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
+
+#define SAC_MUTC_SAVE_DESC(nt)                                                           \
+    SAC_MUTC_SAVE_NODESC (nt)                                                            \
+    SAC_ND_A_DESC_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_DESC_NAME (nt), _sh));
 #define SAC_MUTC_CREATE_BLOCK_START() {
 #define SAC_MUTC_CREATE_BLOCK_END() }
 
@@ -61,6 +65,9 @@
 #define SAC_ND_PRF_SYNCOUT_NODESC(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
 
 #define SAC_ND_PRF_SYNCOUT_DESC(nt, sh)                                                  \
+    {                                                                                    \
+        __asm__ __volatile__("wmb # memory barrier" ::: "memory");                       \
+    }                                                                                    \
     SAC_ND_PRF_SYNCOUT_NODESC (nt, sh)                                                   \
     sl_setp (SAC_ND_A_DESC_NAME (sh), SAC_ND_A_DESC_NAME (nt));
 
