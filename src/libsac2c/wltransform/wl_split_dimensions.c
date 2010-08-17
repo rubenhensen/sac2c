@@ -85,6 +85,7 @@
  *                             with DupTree
  * INFO_WITH3_NESTING:         The level of with3 body that we are creating
  *                             1 is outer most body.
+ * INFO_TRANSFORMED_W2_TO_W3   Transformed with2 loops to with3 loops
  *
  * NOT IMPLEMENTED TRAVERSAL
  *
@@ -113,6 +114,7 @@ struct INFO {
     node *fundef;
     int with3_nesting;
     bool dense;
+    bool transformed_w2_to_w3;
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
@@ -137,6 +139,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
 #define INFO_DENSE(n) ((n)->dense)
+#define INFO_TRANSFORMED_W2_TO_W3(n) ((n)->transformed_w2_to_w3)
 
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
@@ -169,6 +172,7 @@ MakeInfo ()
     INFO_LUT (result) = LUTgenerateLut ();
     INFO_FUNDEF (result) = NULL;
     INFO_WITH3_NESTING (result) = 0;
+    INFO_TRANSFORMED_W2_TO_W3 (result) = FALSE;
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
@@ -264,7 +268,11 @@ WLSDdoWithLoopSplitDimensions (node *syntax_tree)
     DBUG_PRINT ("WLSD", ("Starting to split with-loops by dimension."));
 
     TRAVpush (TR_wlsd);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    do {
+        DBUG_PRINT ("WLSD", ("Running wlsd trav"));
+        INFO_TRANSFORMED_W2_TO_W3 (info) = FALSE;
+        syntax_tree = TRAVdo (syntax_tree, info);
+    } while (INFO_TRANSFORMED_W2_TO_W3 (info));
     TRAVpop ();
 
     DBUG_PRINT ("WLSD", ("With-loop splitting complete."));
@@ -2339,6 +2347,8 @@ WLSDfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = NULL;
 
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -2436,6 +2446,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
     if (NotImplemented (arg_node, arg_info)) {
         CTInote ("Cannot transform with-loop due to unsupported operation");
     } else {
+        INFO_TRANSFORMED_W2_TO_W3 (arg_info) = TRUE;
         /*
          * First of all, we transform the code blocks. As we migth potentially
          * copy them into multiple with3 bodies later on, transforming them
