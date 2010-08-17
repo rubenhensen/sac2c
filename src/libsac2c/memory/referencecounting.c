@@ -689,6 +689,13 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
         break;
 
+    case F_syncout:
+        DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+                     "_syncout_ should have 1 argument in this phase");
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        break;
+
     default:
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

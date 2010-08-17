@@ -100,9 +100,9 @@
                       SAC_ND_A_FIELD (nt))
 
 #define SAC_MUTC_ARG_SHARED_DESC_INT(nt, t)                                              \
-    SAC_MUTC_ARG_SHA_DESC (nt), SAC_MUTC_ARG_SHA_NAME (, nt, t)
+    SAC_MUTC_ARG_SHA_NAME (, nt, t), SAC_MUTC_ARG_SHA_DESC (nt)
 #define SAC_MUTC_ARG_SHARED_DESC_FLO(nt, t)                                              \
-    SAC_MUTC_ARG_SHA_DESC (nt), SAC_MUTC_ARG_SHA_NAME (f, nt, t)
+    SAC_MUTC_ARG_SHA_NAME (f, nt, t), SAC_MUTC_ARG_SHA_DESC (nt)
 #define SAC_MUTC_ARG_SHARED_NODESC_INT(nt, t) SAC_MUTC_ARG_SHA_NAME (, nt, t)
 #define SAC_MUTC_ARG_SHARED_NODESC_FLO(nt, t) SAC_MUTC_ARG_SHA_NAME (f, nt, t)
 
