@@ -740,14 +740,14 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ALLOC__DAO(var_NT, rc, dim, set_shape_icm)                                \
     {                                                                                    \
         SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim)                                        \
-        SAC_ND_SET__RC (var_NT, rc)                                                      \
+        SAC_ND_INIT__RC (var_NT, rc)                                                     \
         set_shape_icm                                                                    \
     }
 
 #define SAC_ND_ALLOC__NO_DAO(var_NT, rc, dim, set_shape_icm)                             \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
-        SAC_ND_SET__RC (var_NT, rc)                                                      \
+        SAC_ND_INIT__RC (var_NT, rc)                                                     \
         set_shape_icm SAC_ND_ALLOC__DATA (var_NT)                                        \
     }
 
@@ -758,12 +758,12 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                               \
     {                                                                                    \
         SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim, basetype)                              \
-        SAC_ND_SET__RC (var_NT, rc)
+        SAC_ND_INIT__RC (var_NT, rc)
 
 #define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                            \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
-        SAC_ND_SET__RC (var_NT, rc)
+        SAC_ND_INIT__RC (var_NT, rc)
 
 /*
  * SAC_ND_ALLOC_END implementations (referenced by sac_std_gen.h)
@@ -1195,6 +1195,19 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
         SAC_ND_A_RC (var_NT) = rc;                                                       \
+        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
+    }
+
+/*
+ * SAC_ND_INIT__RC implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_INIT__RC__NOOP(var_NT, rc) SAC_NOOP ()
+
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+    {                                                                                    \
+        SAC_TR_REF_PRINT (("ND_INIT__RC( %s, %d)", NT_STR (var_NT), rc))                 \
+        DESC_RC (SAC_ND_A_DESC (var_NT)) = rc;                                           \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 

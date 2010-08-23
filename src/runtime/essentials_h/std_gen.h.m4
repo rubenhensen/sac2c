@@ -392,6 +392,11 @@ rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `SCL', `NHD', `NUQ')
 rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
+pat(`SAC_ND_INIT__RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `*SHP', `*HID', `UNQ')
+rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__DEFAULT', `*SHP', `*HID', `NUQ')
+
 
 pat(`SAC_ND_INC_RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `*SHP', `*HID', `UNQ')
