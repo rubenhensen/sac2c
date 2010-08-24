@@ -58,6 +58,7 @@ struct INFO {
     bool inspecial;
     node *assign;
     node *fundefssa;
+    node *spawns;
 };
 
 /*
@@ -70,6 +71,7 @@ struct INFO {
 #define INFO_INSPECIAL(n) (n->inspecial)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_FUNDEFSSA(n) (n->fundefssa)
+#define INFO_SPAWNS(n) (n->spawns)
 
 /*
  * INFO functions
@@ -90,6 +92,7 @@ MakeInfo ()
     INFO_INSPECIAL (result) = FALSE;
     INFO_ASSIGN (result) = NULL;
     INFO_FUNDEFSSA (result) = NULL;
+    INFO_SPAWNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1484,6 +1487,7 @@ node *
 DUPlet (node *arg_node, info *arg_info)
 {
     node *new_node;
+    node *syncvar;
 
     DBUG_ENTER ("DUPlet");
 
@@ -1495,6 +1499,39 @@ DUPlet (node *arg_node, info *arg_info)
     LET_EXPR (new_node) = DUPTRAV (LET_EXPR (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    // update matching spawns and syncs
+    // TODO: don't put on let and don't compare names, but nodes
+    if (NODE_TYPE (LET_EXPR (new_node)) == N_ap && AP_ISSPAWNED (LET_EXPR (new_node))) {
+        DBUG_PRINT ("DUP", ("Encountered a spawned statement"));
+
+        // add spawn to list
+        INFO_SPAWNS (arg_info) = TBmakeSet (new_node, INFO_SPAWNS (arg_info));
+    } else {
+        if (NODE_TYPE (LET_EXPR (new_node)) == N_prf
+            && PRF_PRF (LET_EXPR (new_node)) == F_sync) {
+            DBUG_PRINT ("DUP", ("Encountered a sync statement"));
+            syncvar = PRF_ARG1 (LET_EXPR (arg_node));
+
+            // find matching spawn statement
+            node *set = INFO_SPAWNS (arg_info);
+
+            DBUG_PRINT ("DUP", ("Sync:  %s", ID_NAME (syncvar)));
+
+            do {
+                DBUG_PRINT ("DUP", ("Spawn: %s", IDS_NAME (LET_IDS (SET_MEMBER (set)))));
+
+                if (STReq (ID_NAME (syncvar), IDS_NAME (LET_IDS (SET_MEMBER (set))))) {
+                    // update sync to point to spawn and vice-versa
+                    DBUG_PRINT ("DUP", ("Found matching spawn and sync"));
+                    LET_MATCHINGSPAWNSYNC (SET_MEMBER (set)) = new_node;
+                    LET_MATCHINGSPAWNSYNC (new_node) = SET_MEMBER (set);
+                }
+
+                set = SET_NEXT (set);
+            } while (set != NULL);
+        }
+    }
 
     DBUG_RETURN (new_node);
 }
