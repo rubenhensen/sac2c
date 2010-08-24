@@ -64,10 +64,17 @@
 
 #define SAC_ND_PRF_SYNCOUT_NODESC(nt, sh) sl_setp (NT_NAME (sh), NT_NAME (nt));
 
-#define SAC_ND_PRF_SYNCOUT_DESC(nt, sh)                                                  \
+#if SVP_HAS_SEP
+#define SAC_MUTC_MEMORY_WRITE_BARRIER                                                    \
     {                                                                                    \
         __asm__ __volatile__("wmb # memory barrier" ::: "memory");                       \
-    }                                                                                    \
+    }
+#else
+#define SAC_MUTC_MEMORY_WRITE_BARRIER
+#endif
+
+#define SAC_ND_PRF_SYNCOUT_DESC(nt, sh)                                                  \
+    SAC_MUTC_MEMORY_WRITE_BARRIER                                                        \
     SAC_ND_PRF_SYNCOUT_NODESC (nt, sh)                                                   \
     sl_setp (SAC_ND_A_DESC_NAME (sh), SAC_ND_A_DESC_NAME (nt));
 
@@ -189,7 +196,7 @@
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
-#if SAC_MUTC_DISABLE_THREAD_MEM
+#if SAC_MUTC_DISABLE_THREAD_MEM || !SVP_HAS_SEP
 #define SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
 #define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)malloc (size);

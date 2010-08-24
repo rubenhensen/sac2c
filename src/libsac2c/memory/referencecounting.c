@@ -690,8 +690,9 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     case F_syncout:
+    case F_syncin:
         DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
-                     "_syncout_ should have 1 argument in this phase");
+                     "_sync{out,in}_ should have 1 argument in this phase");
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         break;

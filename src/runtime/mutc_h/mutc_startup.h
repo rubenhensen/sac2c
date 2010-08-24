@@ -73,8 +73,27 @@ void *tls_malloc (size_t arg1);
         }                                                                                \
         (P) = sl_geta (p)->pid;                                                          \
     } while (0)
+#define SAC_MUTC_RC_ALLOC(P)                                                             \
+    do {                                                                                 \
+        sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
+                   sl_glarg (struct SEP *, , root_sep),                                  \
+                   sl_glarg (unsigned long, , SAL_EXCLUSIVE),                            \
+                   sl_sharg (struct placeinfo *, p, 0));                                 \
+        sl_sync ();                                                                      \
+        if (sl_geta (p) == 0) {                                                          \
+            output_string (                                                              \
+              "Place allocation for exclusive place for reference counting failed!\n",   \
+              2);                                                                        \
+            svp_abort ();                                                                \
+        }                                                                                \
+        P = sl_geta (p)->pid;                                                            \
+    } while (0)
 #else
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \
+    do {                                                                                 \
+        (P) = PLACE_DEFAULT;                                                             \
+    } while (0)
+#define SAC_MUTC_RC_ALLOC(P)                                                             \
     do {                                                                                 \
         (P) = PLACE_DEFAULT;                                                             \
     } while (0)
@@ -110,19 +129,7 @@ static int sac_benchmark_count;
 #define SAC_MUTC_SAC_MAIN                                                                \
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
-        sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
-                   sl_glarg (struct SEP *, , root_sep),                                  \
-                   sl_glarg (unsigned long, , SAL_EXCLUSIVE),                            \
-                   sl_sharg (struct placeinfo *, p, 0));                                 \
-        sl_sync ();                                                                      \
-        if (sl_geta (p) == 0) {                                                          \
-            output_string (                                                              \
-              "Place allocation for exclusive place for reference counting failed!\n",   \
-              2);                                                                        \
-            svp_abort ();                                                                \
-        }                                                                                \
-        SAC_mutc_rc_place = sl_geta (p)->pid;                                            \
-                                                                                         \
+        SAC_MUTC_RC_ALLOC (SAC_mutc_rc_place);                                           \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
