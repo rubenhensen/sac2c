@@ -15,6 +15,7 @@
 #include <svp/testoutput.h>
 #include <svp/abort.h>
 #include <svp/perf.h>
+#include <svp/testoutput.h>
 
 sl_place_t SAC_mutc_rc_place;
 
@@ -71,7 +72,9 @@ void *tls_malloc (size_t arg1);
             output_string ("Place allocation failed!\n", 2);                             \
             svp_abort ();                                                                \
         }                                                                                \
-        (P) = sl_geta (p)->pid;                                                          \
+        (P) = sl_geta (p)->pid; /*                                                       \
+      output_string("main_place",2);                                                     \
+     output_int(P,2);             */                                                     \
     } while (0)
 #define SAC_MUTC_RC_ALLOC(P)                                                             \
     do {                                                                                 \
@@ -86,7 +89,9 @@ void *tls_malloc (size_t arg1);
               2);                                                                        \
             svp_abort ();                                                                \
         }                                                                                \
-        P = sl_geta (p)->pid;                                                            \
+        P = sl_geta (p)->pid; /*                                                         \
+       output_string("rc_place",2);                                                      \
+       output_int(P,2);         */                                                       \
     } while (0)
 #else
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \

@@ -16,6 +16,7 @@
  *****************************************************************************/
 
 #include <sac.h>
+#include <svp/delegate.h>
 
 #ifdef SAC_MUTC_DEBUG_RC
 #include <stdio.h>
@@ -32,6 +33,7 @@
 #define SAC_MUTC_ASSERT_RC(a, b)
 #endif
 
+/*   Original functions */
 sl_def (SAC_set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
     SAC_MUTC_DEBUG_RC (printf ("SAC_set_rc( %p, %d) was: %d\n", sl_getp (desc),
@@ -75,5 +77,30 @@ sl_def (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val))
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     int dummy = sl_getp (val);
     sl_setp (val, (DESC_RC (sl_getp (desc)) + dummy));
+}
+sl_enddef
+
+/*  Wrapper functions   */
+sl_def (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
+{
+    sl_create (, PLACE_LOCAL | 1, , , , , sl__exclusive, SAC_set_rc,
+               sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
+    sl_detach ();
+}
+sl_enddef
+
+sl_def (SAC_inc_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
+{
+    sl_create (, PLACE_LOCAL | 1, , , , , sl__exclusive, SAC_inc_rc,
+               sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
+    sl_detach ();
+}
+sl_enddef
+
+sl_def (SAC_dec_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
+{
+    sl_create (, PLACE_LOCAL | 1, , , , , sl__exclusive, SAC_dec_rc,
+               sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
+    sl_detach ();
 }
 sl_enddef

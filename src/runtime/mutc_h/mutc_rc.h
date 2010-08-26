@@ -33,9 +33,16 @@
 
 #endif
 
-sl_decl (SAC_set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
-sl_decl (SAC_inc_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
-sl_decl (SAC_dec_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+/*
+sl_decl(SAC_set_rc, void, sl_glparm(int*,desc), sl_glparm(int ,rc));
+sl_decl(SAC_inc_rc, void, sl_glparm(int*,desc), sl_glparm(int ,rc));
+sl_decl(SAC_dec_rc, void, sl_glparm(int*,desc), sl_glparm(int ,rc));
+*/
+
+sl_decl (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+sl_decl (SAC_inc_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+sl_decl (SAC_dec_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
+
 sl_decl (SAC_dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
 
@@ -47,7 +54,10 @@ sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
     {                                                                                    \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_set_rc,            \
+        /*sl_create(,SAC_mutc_rc_place,0,1,1,,sl__exclusive,SAC_set_rc,sl_glarg(int*,    \
+          ,SAC_ND_A_DESC(var_NT)),sl_glarg(int,,rc)); SAC_SL_DETACH();                                                                        \
+        */                                                                               \
+        sl_create (, SAC_mutc_rc_place & ~1, , , , , , SAC_set_rc_w,                     \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         SAC_SL_DETACH ();                                                                \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
@@ -61,7 +71,10 @@ sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
     {                                                                                    \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_inc_rc,            \
+        /*sl_create(,SAC_mutc_rc_place,0,1,1,,sl__exclusive,SAC_inc_rc,sl_glarg(int*,    \
+          ,SAC_ND_A_DESC(var_NT)),sl_glarg(int,,rc)); sl_detach();                                                                            \
+        */                                                                               \
+        sl_create (, SAC_mutc_rc_place & ~1, , , , , , SAC_inc_rc_w,                     \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         sl_detach ();                                                                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
@@ -75,7 +88,10 @@ sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
     {                                                                                    \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        sl_create (, SAC_mutc_rc_place, 0, 1, 1, , sl__exclusive, SAC_dec_rc,            \
+        /*sl_create(,SAC_mutc_rc_place,0,1,1,,sl__exclusive,SAC_dec_rc,sl_glarg(int*,    \
+          ,SAC_ND_A_DESC(var_NT)),sl_glarg(int,,rc)); sl_detach();                                                                            \
+        */                                                                               \
+        sl_create (, SAC_mutc_rc_place & ~1, , , , , , SAC_dec_rc_w,                     \
                    sl_glarg (int *, , SAC_ND_A_DESC (var_NT)), sl_glarg (int, , rc));    \
         sl_detach ();                                                                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
