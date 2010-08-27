@@ -104,3 +104,25 @@ sl_def (SAC_dec_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
     sl_detach ();
 }
 sl_enddef
+
+sl_def (SAC_dec_and_maybeFree_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, val),
+        sl_glparm (void *, data))
+{
+    sl_create (, PLACE_LOCAL | 1, , , , , sl__exclusive, SAC_dec_and_get_rc,
+               sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, sl_getp (val)));
+    sl_sync ();
+    if (sl_geta (val2) == 0) {
+        free (sl_getp (data));
+        free (sl_getp (desc));
+    }
+}
+sl_enddef
+
+sl_def (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val))
+{
+    sl_create (, PLACE_LOCAL | 1, , , , , sl__exclusive, SAC_get_rc,
+               sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, 0));
+    sl_sync ();
+    sl_setp (val, sl_geta (val2));
+}
+sl_enddef
