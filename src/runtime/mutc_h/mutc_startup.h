@@ -18,6 +18,7 @@
 #include <svp/testoutput.h>
 
 sl_place_t SAC_mutc_rc_place;
+sl_place_t SAC_mutc_rc_place_w;
 
 void *tls_malloc (size_t arg1);
 
@@ -93,12 +94,31 @@ void *tls_malloc (size_t arg1);
         /*    output_string("rc_place",2);                                               \
             output_int(P,2); */                                                                                      \
     } while (0)
+
+#define SAC_MUTC_RC_ALLOC_W(P)                                                           \
+    do {                                                                                 \
+        sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
+                   sl_glarg (struct SEP *, , root_sep), sl_glarg (unsigned long, , 1),   \
+                   sl_sharg (struct placeinfo *, p, 0));                                 \
+        sl_sync ();                                                                      \
+        if (sl_geta (p) == 0) {                                                          \
+            output_string ("Place allocation for place to use in Wrapper for reference " \
+                           "counting failed!\n",                                         \
+                           2);                                                           \
+            svp_abort ();                                                                \
+        }                                                                                \
+        P = sl_geta (p)->pid;                                                            \
+    } while (0)
 #else
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \
     do {                                                                                 \
         (P) = PLACE_DEFAULT;                                                             \
     } while (0)
 #define SAC_MUTC_RC_ALLOC(P)                                                             \
+    do {                                                                                 \
+        (P) = PLACE_DEFAULT;                                                             \
+    } while (0)
+#define SAC_MUTC_RC_ALLOC_W(P)                                                           \
     do {                                                                                 \
         (P) = PLACE_DEFAULT;                                                             \
     } while (0)
@@ -135,6 +155,7 @@ static int sac_benchmark_count;
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
         SAC_MUTC_RC_ALLOC (SAC_mutc_rc_place);                                           \
+        SAC_MUTC_RC_ALLOC_W (SAC_mutc_rc_place_w);                                       \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \
