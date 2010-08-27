@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#if !SAC_MUTC_DISABLE_CONCURRENT_RC
+
 #define MUTC 1
 #if SAC_BACKEND == MUTC
 
@@ -111,3 +113,5 @@ sl_decl (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val));
 
 #endif /* SAC_BACKEND */
 #undef MUTC
+
+#endif

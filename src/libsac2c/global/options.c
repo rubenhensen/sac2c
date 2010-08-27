@@ -155,6 +155,9 @@ OPTcheckOptionConsistency (void)
         if (global.mutc_benchmark == TRUE) {
             CTIerror ("-mutc_benchmark needs mutc backend");
         }
+        if (global.mutc_disable_concurrent_rc == TRUE) {
+            CTIerror ("-mutc_disable_concurrent_rc only works with mutc backend");
+        }
     }
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
@@ -572,6 +575,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /* mutc options */
     ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
     ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
+    ARGS_FLAG ("mutc_disable_concurrent_rc", global.mutc_disable_concurrent_rc = TRUE);
 
     ARGS_OPTION ("mutc_distribute_arg", ARG_NUM (global.mutc_distribution_mode_arg));
 

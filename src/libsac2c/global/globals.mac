@@ -1017,6 +1017,7 @@ GLOBAL (stringset_t *, dependencies, NULL);
 GLOBAL (bool, mutc_fun_as_threads, FALSE);
 GLOBAL (bool, mutc_thread_mem, FALSE);
 GLOBAL (bool, mutc_disable_thread_mem, FALSE);
+GLOBAL (bool, mutc_disable_concurrent_rc, FALSE);
 GLOBAL (bool, mutc_benchmark, FALSE);
 GLOBAL (bool, mutc_static_resource_management, FALSE);
 GLOBAL (mutc_distribution_mode_t, mutc_distribution_mode, MUTC_DMODE_default);
