@@ -128,7 +128,7 @@ TYP_IF (T_str, "string", "string", "st", COcv2ScalarDummy, COcv2CvDummy, COcv2St
         sizeof (char *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
 TYP_IF (T_char, "char", "unsigned char", "c", COcv2Char, COcv2CvChar, COcv2StrChar,
-        sizeof (unsigned char), COzipCvChar, CObaseCvDummy, MUTC_SC_INT, unused)
+        sizeof (unsigned char), COzipCvChar, CObaseCvChar, MUTC_SC_INT, unused)
 
 TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COcv2ScalarDummy, COcv2CvHidden,
         COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)

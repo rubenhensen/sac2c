@@ -445,16 +445,16 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             /*
              * Create  c  = fill( isreused( a, b), c');
              */
-            res
-              = TBmakeAssign (TBmakeLet (valids,
-                                         TCmakePrf2 (F_fill,
-                                                     TCmakePrf2 (F_isreused,
-                                                                 DUPdoDupNode (
-                                                                   EXPRS_EXPR (memvars)),
-                                                                 DUPdoDupNode (
-                                                                   EXPRS_EXPR (rc))),
-                                                     TBmakeId (memavis))),
-                              res);
+            res = TBmakeAssign (
+              TBmakeLet (valids,
+                         TCmakePrf2 (F_fill,
+                                     TCmakePrf2 (F_isreused,
+                                                 DUPdoDupTreeLutSsa (EXPRS_EXPR (memvars),
+                                                                     lut, fundef),
+                                                 DUPdoDupTreeLutSsa (EXPRS_EXPR (rc), lut,
+                                                                     fundef)),
+                                     TBmakeId (memavis))),
+              res);
             AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
 
             /*

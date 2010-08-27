@@ -27,6 +27,7 @@
     extern constant *CObaseCvULong##fun (shape *shp);                                    \
     extern constant *CObaseCvULongLong##fun (shape *shp);                                \
     extern constant *CObaseCvByte##fun (shape *shp);                                     \
+    extern constant *CObaseCvChar##fun (shape *shp);                                     \
     extern constant *CObaseCvShort##fun (shape *shp);                                    \
     extern constant *CObaseCvInt##fun (shape *shp);                                      \
     extern constant *CObaseCvLong##fun (shape *shp);                                     \
