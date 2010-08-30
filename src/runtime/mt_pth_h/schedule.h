@@ -25,6 +25,8 @@
 
 #if SAC_DO_MULTITHREAD
 
+#if SAC_DO_MT_PTHREAD
+
 /*
  *  Macros for global symbol definitions
  */
@@ -398,6 +400,8 @@
     }
 
 /******************************************************************************/
+
+#endif /* SAC_DO_MT_PTHREAD */
 
 #endif /* SAC_DO_MULTITHREAD */
 
