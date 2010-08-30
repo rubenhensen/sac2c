@@ -160,6 +160,10 @@ PrintGlobalSwitches ()
 
     fprintf (global.outfile, "#define SAC_DO_MULTITHREAD     %d\n",
              (global.num_threads == 1) ? 0 : 1);
+
+    fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD  %d\n",
+             (global.mtmode == MT_none) ? 0 : 1);
+
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
     fprintf (global.outfile, "\n");
