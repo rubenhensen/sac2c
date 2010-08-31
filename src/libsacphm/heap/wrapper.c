@@ -316,7 +316,15 @@ SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
     if (SAC_MT_not_yet_parallel) {
         return (SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[0][arena_num])));
     } else {
-        thread_id = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
+        /*
+         * OpenMP mt solution and Pthread mt solution
+         * share the same code of phm
+         * except that OpenMP and Pthread use different
+         * method to get thread id
+         *
+        thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
+        */
+        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
         return (SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }
@@ -360,7 +368,15 @@ SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
     if (SAC_MT_not_yet_parallel) {
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][arena_num])));
     } else {
-        thread_id = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
+        /*
+         * OpenMP mt solution and Pthread mt solution
+         * share the same code of phm
+         * except that OpenMP and Pthread use different
+         * method to get thread id
+         *
+        thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
+        */
+        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }
