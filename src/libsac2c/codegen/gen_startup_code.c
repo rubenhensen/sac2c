@@ -164,8 +164,12 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD  %d\n",
              (global.mtmode == MT_none) ? 0 : 1);
 
+    fprintf (global.outfile, "#define SAC_DO_MT_OMP  %d\n",
+             (global.backend == BE_omp) ? 1 : 0);
+
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
+
     fprintf (global.outfile, "\n");
 
     /* MUTC Switches */
@@ -186,6 +190,10 @@ PrintGlobalSwitches ()
 
     fprintf (global.outfile, "#define SAC_CUDA_MACROS  %d\n",
              (global.backend == BE_cuda) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_OMP_MACROS  %d\n",
+             (global.backend == BE_omp) ? 1 : 0);
+
     fprintf (global.outfile, "\n");
 
     /* Expose backend mode to backend */
@@ -198,6 +206,9 @@ PrintGlobalSwitches ()
         break;
     case BE_cuda:
         fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
+        break;
+    case BE_omp:
+        fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
         break;
     default:
         DBUG_ASSERT (FALSE, "Unknown backend");
@@ -361,6 +372,11 @@ PrintGlobalSettings (node *syntax_tree)
              global.num_threads);
     fprintf (global.outfile, "#endif\n\n");
 
+    fprintf (global.outfile, "#ifndef SAC_OMP_ACTIVE_LEVEL\n");
+    fprintf (global.outfile, "#define SAC_OMP_ACTIVE_LEVEL          %d\n",
+             global.ompnestlevel);
+    fprintf (global.outfile, "#endif\n\n");
+
     fprintf (global.outfile, "#ifndef SAC_SET_MASTERCLASS\n");
     fprintf (global.outfile, "#define SAC_SET_MASTERCLASS          %d\n",
              CalcMasterclass (global.num_threads));
@@ -460,6 +476,12 @@ PrintIncludes ()
 
     fprintf (global.outfile, "\n"
                              "#include \"sac.h\"\n\n");
+
+    fprintf (global.outfile, "\n"
+                             "#if SAC_OMP_MACROS\n");
+    fprintf (global.outfile, "\n"
+                             "#include \"omp.h\"\n\n");
+    fprintf (global.outfile, "#endif\n");
 
     fprintf (global.outfile, "\n"
                              "#if SAC_CUDA_MACROS\n");
@@ -626,12 +648,15 @@ GSCprintMainC99 ()
 {
     char *res_NT;
     types *tmp_type;
-    bool print_thread_id, run_mt;
+    bool print_thread_id, run_mt, run_mt_pthread, run_mt_omp;
 
     DBUG_ENTER ("GSCprintMainC99");
 
-    run_mt = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
-    print_thread_id = run_mt && global.optimize.dophm;
+    run_mt_pthread = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
+    run_mt_omp = (global.backend == BE_omp);
+    run_mt = run_mt_pthread || run_mt_omp;
+
+    print_thread_id = run_mt_pthread && global.optimize.dophm;
 
     INDENT;
     fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
@@ -647,6 +672,20 @@ GSCprintMainC99 ()
     tmp_type = FREEfreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
     GSCprintMainBegin ();
+
+    /*
+     * set the number of OpenMP threads according to the parameter numthreads
+     * <n> in the   command line
+     * set the max active nested parallel according to the parameter ompnestlevel
+     * <n> in the command line
+     */
+    if (global.backend == BE_omp) {
+        INDENT;
+        fprintf (global.outfile, "SAC_OMP_SET_NUM_THREADS();\n\n");
+        INDENT;
+        fprintf (global.outfile, "SAC_OMP_SET_MAX_ACTIVE_LEVEL();\n\n");
+        INDENT;
+    }
 
     INDENT;
     fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
@@ -723,6 +762,9 @@ GSCprintMain ()
         GSCprintMainMuTC ();
         break;
     case BE_cuda:
+        GSCprintMainC99 ();
+        break;
+    case BE_omp:
         GSCprintMainC99 ();
         break;
     default:
