@@ -1081,21 +1081,27 @@ ENDPHASE (ussa)
 /******************************************************************************/
 
 PHASE (mt, "Running automatic parallelisation",
-       (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
+       (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
+         || (global.backend == BE_omp))
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
 SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
-SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns, ALWAYS, mt)
+SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
-SUBPHASE (mtrmi, "Restoring memory instructions", MTRMIdoRestoreMemoryInstrs, ALWAYS, mt)
+SUBPHASE (mtrmi, "Restoring memory instructions", MTRMIdoRestoreMemoryInstrs,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
-SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval, ALWAYS, mt)
+SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
-SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling, ALWAYS, mt)
+SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
-SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign, ALWAYS, mt)
+SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 ENDPHASE (mt)
 
@@ -1165,6 +1171,9 @@ SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
 
 SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
+
+SUBPHASE (ofp, "OpenMP find private variables", OFPdoFindPrivate,
+          (global.backend == BE_omp), pc)
 
 ENDPHASE (pc)
 
