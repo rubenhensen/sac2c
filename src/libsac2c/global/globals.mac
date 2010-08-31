@@ -323,6 +323,26 @@ GLOBAL (mtmode_t, mtmode, MT_none)
  * Multi-thread mode set according to -mt and -mtmode compiler flags
  */
 
+GLOBAL (char *, ompschedule, "static")
+/*
+ * OMP schedule technique
+ */
+
+GLOBAL (int, ompbenchmark, 10000)
+/*
+ * OMP benchmark in if statement
+ */
+
+GLOBAL (int, ompnestlevel, 1)
+/*
+ * OMP nesting level
+ */
+
+GLOBAL (int, ompchunksize, 1)
+/*
+ * OMP chunk size
+ */
+
 GLOBAL (int, num_threads, 1)
 /*
  * Number of threads to be generated.
