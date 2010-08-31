@@ -234,6 +234,18 @@ typedef enum {
 } mutc_distribution_mode_t;
 
 /*
+ * fold operation OpenMP supports limited
+ * operators
+ */
+typedef enum {
+    OMP_REDUCTION_NONE = 0,
+    OMP_REDUCTION_SCL_ADD = 1,
+    OMP_REDUCTION_SCL_MUL = 2,
+    OMP_REDUCTION_BOOL_AND = 3,
+    OMP_REDUCTION_BOOL_OR = 4
+} omp_reduction_op;
+
+/*
  * structs
  */
 
