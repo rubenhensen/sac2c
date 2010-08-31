@@ -1230,6 +1230,26 @@ SATserializeMatrices (info *info, matrix **attr, node *parent)
     DBUG_VOID_RETURN;
 }
 
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeMatrices
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ ***************************************************************************/
+
+void
+SATserializeOmpOP (info *info, omp_reduction_op attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeOmpOP");
+
+    fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_VOID_RETURN;
+}
 /**
  * @}
  */
