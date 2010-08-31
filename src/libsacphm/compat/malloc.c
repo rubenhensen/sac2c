@@ -89,12 +89,21 @@ malloc (size_t sz)
 
 #ifdef MT
     if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
-        thread_id_ptr = (unsigned int *)pthread_getspecific (SAC_MT_threadid_key);
+        /*
+         * OpenMP mt solution and Pthread solution
+         * share the same code of phm
+         * except that OpenMP and Pthread use different
+         * method to get thread id
+         *
+        thread_id_ptr = (unsigned int *) pthread_getspecific(SAC_MT_threadid_key);
         if (thread_id_ptr == NULL) {
-            thread_id = 0;
-        } else {
-            thread_id = *thread_id_ptr;
+          thread_id = 0;
         }
+        else {
+          thread_id = *thread_id_ptr;
+        }
+        */
+        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
     } else {
         thread_id = 0;
     }
