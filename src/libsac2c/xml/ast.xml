@@ -79,6 +79,8 @@
     copy="literal" />
     <type name="Matrices" ctype="matrix**" init="NULL"
     copy="function" />
+    <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE"
+    copy="literal" />
   </attributetypes>
   <traversals>
     <!-- id is the short id of the traversal 
@@ -3062,6 +3064,18 @@
         <node name="Icm" />
         <node name="WLseg" />
         <node name="Avis" />
+      </travuser>
+    </traversal>
+    <traversal id="OFP" name="OpenMP Find Private" default="sons" include="omp_find_private.h">
+      <travuser>
+        <node name="Module" />
+        <node name="With" />
+        <node name="With2" />
+	<node name="Fundef" />
+        <node name="Let" />
+        <node name="Ids" />
+        <node name="Id" />
+        <node name="Withid" />
       </travuser>
     </traversal>
     <traversal id="RCS" name="Resolve Code Sharing" default="sons" include="resolve_code_sharing.h">
@@ -7847,6 +7861,16 @@ N_tfarg :
                   processed function.
           </description>
         </flag>
+	<flag name="IsOmpPrivate" default="FALSE" >
+          <description>
+                  If true, the given variable is private OpenMP variable.
+         </description>
+	</flag>
+	<flag name="IsOmpReduction" default="FALSE" >
+          <description>
+                  If true, the given variable is reduction OpenMP variable used in fold.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -8696,6 +8720,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+	<attribute name="Omp_Private_List" inconstructor="no">
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="ReUse" inconstructor="no">
           <type name="DFMask">
             <targets>
@@ -9111,6 +9147,20 @@ N_tfarg :
                 <node name="Fundef" />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="OmpReductionOp" default="0" inconstructor="no">
+          <description>
+            This attribute indicates the type of OpenMP reducation operator.
+          </description>
+          <type name="OmpOP">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
                 </phases>
               </target>
             </targets>
