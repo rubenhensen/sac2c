@@ -219,7 +219,7 @@ libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
                         icm2c_wl icm2c_error simd_infer tag_preparation icm2c_cuda \
-                        icm2c_rtspec
+                        icm2c_rtspec icm2c_fp
 
 libsac2c_print       := print convert
 
@@ -234,7 +234,7 @@ libsac2c_constraints := insert_domain_constraints insert_conformity_checks \
 libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filtering
 
 libsac2c_funcpara    := add_sync move_sync_statement tag_fp_fundefs tag_fp_aps \
-                        live_variable_analysis make_slow_clones
+                        live_variable_analysis make_slow_clones count_spawn_sync
 
 
 ###############################################################################

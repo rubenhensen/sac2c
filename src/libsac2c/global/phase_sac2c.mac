@@ -965,6 +965,8 @@ SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, ALWAYS, fp)
 
 SUBPHASE (lva, "Live Variable Analysis", LVAdoLiveVariableAnalysis, ALWAYS, fp)
 
+SUBPHASE (css, "Count Spawns and Syncs", CSSdoCountSpawnSync, ALWAYS, fp)
+
 ENDPHASE (fp)
 
 /******************************************************************************/

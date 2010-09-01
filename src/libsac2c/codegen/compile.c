@@ -2251,6 +2251,33 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
     DBUG_RETURN (ret_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeIcmFPCases( int n)
+ *
+ * @brief  Builds a N_assign chain for FP_CASE icm's
+ *
+ ******************************************************************************/
+static node *
+MakeIcmFPCases (int n)
+{
+    int i;
+    node *assign;
+
+    DBUG_ENTER ("MakeICMFPCases");
+
+    assign = TBmakeAssign (TBmakeIcm ("FP_SETUP_SLOW_END", NULL), NULL);
+
+    for (i = n; i > 0; i--) {
+        assign = TBmakeAssign (TBmakeIcm ("FP_CASE", TBmakeExprs (TBmakeNum (i), NULL)),
+                               assign);
+    }
+
+    assign = TBmakeAssign (TBmakeIcm ("FP_SETUP_SLOW_START", NULL), assign);
+
+    DBUG_RETURN (assign);
+}
+
 #ifndef DBUG_OFF
 
 /** <!--********************************************************************-->
@@ -2670,6 +2697,23 @@ COMPfundef (node *arg_node, info *arg_info)
                                                              NULL),
                                                   NULL));
             }
+
+            /*
+             * Add setup code for Functional Parallelism
+             */
+            if (FUNDEF_CONTAINSSPAWN (arg_node)) {
+                if (FUNDEF_ISSLOWCLONE (arg_node)) {
+                    BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                      = TCappendAssign (MakeIcmFPCases (FUNDEF_NUMSPAWNSYNC (arg_node)),
+                                        BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                } else {
+                    BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                      = TBmakeAssign (TCmakeIcm1 ("FP_SETUP_FAST",
+                                                  TCmakeIdCopyString (FUNDEF_NAME (
+                                                    FUNDEF_SLOWCLONE (arg_node)))),
+                                      BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                }
+            }
         }
 
         /********** end: traverse body **********/
@@ -2753,6 +2797,8 @@ COMPfundef (node *arg_node, info *arg_info)
             ICM_NAME (icm) = "MT_SPMD_BARRIER_ELEMENT";
             INFO_SPMDBARRIER (arg_info) = TBmakeAssign (icm, INFO_SPMDBARRIER (arg_info));
         }
+
+        // TODO: add entries to global task frame for fp
 
         /*
          * pop 'arg_info'
@@ -3417,15 +3463,28 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    } else {
+    }
+    //  else if (AP_ISSPAWNED( arg_node)) {
+    //    icm = TBmakeIcm( "FP_FUN_AP", icm_args);
+    //  }
+    else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
 
-    /*
-     * We return an N_assign chain here rather than an N_ap node.
-     * The surrounding COMPlet takes care of this.
-     */
-    arg_node = TBmakeAssign (icm, assigns);
+    // Wrap the ap in spawn start and end icm's
+    if (AP_ISSPAWNED (arg_node)) {
+        arg_node
+          = TBmakeAssign (TBmakeIcm ("FP_SPAWN_START", NULL),
+                          TBmakeAssign (icm,
+                                        TBmakeAssign (TBmakeIcm ("FP_SPAWN_END", NULL),
+                                                      assigns)));
+    } else {
+        /*
+         * We return an N_assign chain here rather than an N_ap node.
+         * The surrounding COMPlet takes care of this.
+         */
+        arg_node = TBmakeAssign (icm, assigns);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -6950,6 +7009,18 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPprfSyncthreads");
 
     ret_node = TCmakeAssignIcm0 ("SAC_CUDA_SYNCTHREADS", NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfSync (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPprfSync");
+
+    ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC", NULL);
 
     DBUG_RETURN (ret_node);
 }

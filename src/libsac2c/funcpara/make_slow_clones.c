@@ -106,6 +106,7 @@ MSCfundef (node *arg_node, info *arg_info)
         clone = DUPdoDupNode (arg_node);
 
         name = STRcat ("__slow__", FUNDEF_NAME (clone));
+        // free old name
         FUNDEF_NAME (clone) = name;
         FUNDEF_ISSLOWCLONE (clone) = TRUE;
 
@@ -113,6 +114,9 @@ MSCfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = clone;
 
         FUNDEF_SLOWCLONE (arg_node) = clone;
+
+        // numspawnsync is not copied?
+        FUNDEF_NUMSPAWNSYNC (clone) = FUNDEF_NUMSPAWNSYNC (arg_node);
     }
 
     DBUG_RETURN (arg_node);

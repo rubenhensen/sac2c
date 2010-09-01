@@ -3277,6 +3277,14 @@
         <node name="Id" />
       </travuser>
     </traversal>
+    <traversal id="CSS" name="Count Spawns and Syncs" default="sons"
+               include="count_spawn_sync.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
     <traversal id="MSC" name="Make Slow Clones" default="sons"
                include="make_slow_clones.h" >
       <travuser>
@@ -4963,6 +4971,18 @@ N_tfarg :
                 <node name="Fundef" />
                 <phases>
                   <range from="pc_msc" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="NumSpawnSync" default="0" mandatory="no" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="fp_css" to="final"/>
                 </phases>
               </target>
             </targets>
