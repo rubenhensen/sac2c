@@ -105,13 +105,13 @@
           <node name="Arg" />
         </travuser>
       </traversal>
-      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="tf_build_graph.h" >
+      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="build_graph.h" >
         <travuser>
           <node name="Tfspec" />
           <node name="Tfdef" />
         </travuser>
       </traversal>
-      <traversal id="TFPPG" name="Preprocess type family graph for reachability" default="sons" include="tf_preprocess_graph.h" >
+      <traversal id="TFPPG" name="Preprocess type family graph for reachability" default="sons" include="preprocess_graph.h" >
         <travuser>
           <node name="Tfspec" />
           <node name="Tfdef" />
@@ -3769,7 +3769,7 @@ N_tfdef :
         <son name="Supers">
           <targets>
             <target mandatory="no">
-              <node name="Tfsupersub" />
+              <node name="Tfedge" />
               <phases>
                 <all />
               </phases>
@@ -3779,7 +3779,7 @@ N_tfdef :
         <son name="Subs">
           <targets>
             <target mandatory="no">
-              <node name="Tfsupersub" />
+              <node name="Tfedge" />
               <phases>
                 <all />
               </phases>
@@ -4032,10 +4032,10 @@ N_tfbin :
     </node>
 <!--
 
-N_tfsupersub :
+N_tfedge :
 
 -->
-    <node name="Tfsupersub">
+    <node name="Tfedge">
       <description>Subtypes and supertypes of a type</description>
       <attributes>
         <attribute name="TypeFamily" default="NULL" inconstructor="yes">
@@ -4077,7 +4077,7 @@ N_tfsupersub :
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Tfsupersub" />
+              <node name="Tfedge" />
               <phases>
                 <all />
               </phases>

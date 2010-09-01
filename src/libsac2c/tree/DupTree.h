@@ -180,7 +180,7 @@ extern node *DUPtfrel (node *arg_node, info *arg_info);
 extern node *DUPtfabs (node *arg_node, info *arg_info);
 extern node *DUPtfusr (node *arg_node, info *arg_info);
 extern node *DUPtfbin (node *arg_node, info *arg_info);
-extern node *DUPtfsupersub (node *arg_node, info *arg_info);
+extern node *DUPtfedge (node *arg_node, info *arg_info);
 extern node *DUPtfarg (node *arg_node, info *arg_info);
 extern node *DUPtfexpr (node *arg_node, info *arg_info);
 //#endif

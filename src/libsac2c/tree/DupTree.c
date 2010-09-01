@@ -3483,12 +3483,12 @@ DUPtfbin (node *arg_node, info *arg_info)
 }
 
 node *
-DUPtfsupersub (node *arg_node, info *arg_info)
+DUPtfedge (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DUPtfsupersub");
+    DBUG_ENTER ("DUPtfedge");
     node *new_node;
-    new_node = TBmakeTfsupersub (TFSUPERSUB_TYPEFAMILY (arg_node),
-                                 TFSUPERSUB_COND (arg_node), TFSUPERSUB_NEXT (arg_node));
+    new_node = TBmakeTfedge (TFEDGE_TYPEFAMILY (arg_node), TFEDGE_COND (arg_node),
+                             TFEDGE_NEXT (arg_node));
     DBUG_RETURN (new_node);
 }
 

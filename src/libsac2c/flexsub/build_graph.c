@@ -12,7 +12,7 @@
 #include "str.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "tf_build_graph.h"
+#include "build_graph.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -132,34 +132,34 @@ TFBDGtfspec (node *arg_node, info *arg_info)
 }
 
 static void
-TFBDGaddSuperSub (node *super, node *sub, node *cond)
+TFBDGaddEdge (node *super, node *sub, node *cond)
 {
     node *itersuper, *itersub;
     itersuper = TFDEF_SUBS (super);
     if (itersuper == NULL) {
-        TFDEF_SUBS (super) = TBmakeTfsupersub (sub, NULL, NULL);
+        TFDEF_SUBS (super) = TBmakeTfedge (sub, NULL, NULL);
         if (cond != NULL)
-            TFSUPERSUB_COND (TFDEF_SUBS (super)) = DUPtfexpr (cond, NULL);
+            TFEDGE_COND (TFDEF_SUBS (super)) = DUPtfexpr (cond, NULL);
     } else {
-        while (TFSUPERSUB_NEXT (itersuper) != NULL) {
-            itersuper = TFSUPERSUB_NEXT (itersuper);
+        while (TFEDGE_NEXT (itersuper) != NULL) {
+            itersuper = TFEDGE_NEXT (itersuper);
         }
-        TFSUPERSUB_NEXT (itersuper) = TBmakeTfsupersub (sub, NULL, NULL);
+        TFEDGE_NEXT (itersuper) = TBmakeTfedge (sub, NULL, NULL);
         if (cond != NULL)
-            TFSUPERSUB_COND (itersuper) = DUPtfexpr (cond, NULL);
+            TFEDGE_COND (itersuper) = DUPtfexpr (cond, NULL);
     }
     itersub = TFDEF_SUPERS (sub);
     if (itersub == NULL) {
-        TFDEF_SUPERS (sub) = TBmakeTfsupersub (super, NULL, NULL);
+        TFDEF_SUPERS (sub) = TBmakeTfedge (super, NULL, NULL);
         if (cond != NULL)
-            TFSUPERSUB_COND (TFDEF_SUPERS (sub)) = DUPtfexpr (cond, NULL);
+            TFEDGE_COND (TFDEF_SUPERS (sub)) = DUPtfexpr (cond, NULL);
     } else {
-        while (TFSUPERSUB_NEXT (itersub) != NULL) {
-            itersub = TFSUPERSUB_NEXT (itersub);
+        while (TFEDGE_NEXT (itersub) != NULL) {
+            itersub = TFEDGE_NEXT (itersub);
         }
-        TFSUPERSUB_NEXT (itersub) = TBmakeTfsupersub (super, NULL, NULL);
+        TFEDGE_NEXT (itersub) = TBmakeTfedge (super, NULL, NULL);
         if (cond != NULL)
-            TFSUPERSUB_COND (itersub) = DUPtfexpr (cond, NULL);
+            TFEDGE_COND (itersub) = DUPtfexpr (cond, NULL);
     }
 }
 
@@ -203,7 +203,7 @@ TFBDGtfdef (node *arg_node, info *arg_info)
         CTIerror ("Sub/Super node not found for relation %s->%s",
                   INFO_SUPERTAG (arg_info), INFO_SUBTAG (arg_info));
     } else {
-        TFBDGaddSuperSub (super, sub, INFO_COND (arg_info));
+        TFBDGaddEdge (super, sub, INFO_COND (arg_info));
     }
     DBUG_RETURN (arg_node);
 }

@@ -12,8 +12,8 @@
 #include "str.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "tf_preprocess_graph.h"
-#include "tf_structures.h"
+#include "preprocess_graph.h"
+#include "structures.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -245,21 +245,21 @@ TFPPGtfdef (node *arg_node, info *arg_info)
         subs = TFDEF_SUBS (defs);
         TFDEF_PRE (defs) = INFO_PRE (arg_info)++;
         while (subs != NULL) {
-            if (TFDEF_PRE (TFSUPERSUB_TYPEFAMILY (subs)) == 0) {
+            if (TFDEF_PRE (TFEDGE_TYPEFAMILY (subs)) == 0) {
                 /*
                  * Tree branch
                  */
-                TFSUPERSUB_EDGETYPE (subs) = edgetree;
-                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+                TFEDGE_EDGETYPE (subs) = edgetree;
+                TRAVdo (TFEDGE_TYPEFAMILY (subs), arg_info);
             } else {
                 /*
                  * Cross/Back/Forward branch here.
                  * Do nothing, these are dealt with in edge labeling.
                  * Refer literature on Directed Acyclic Graphs.
                  */
-                TFSUPERSUB_EDGETYPE (subs) = -1;
+                TFEDGE_EDGETYPE (subs) = -1;
             }
-            subs = TFSUPERSUB_NEXT (subs);
+            subs = TFEDGE_NEXT (subs);
         }
         /*
          * We have traversed all descendants of this node. Its time to
@@ -274,10 +274,10 @@ TFPPGtfdef (node *arg_node, info *arg_info)
         pre_super = TFDEF_PRE (arg_node);
         post_super = TFDEF_POST (arg_node);
         while (subs != NULL) {
-            if (TFSUPERSUB_EDGETYPE (subs) != edgetree) {
-                pre_sub = TFDEF_PRE (TFSUPERSUB_TYPEFAMILY (subs));
-                premax_sub = TFDEF_PREMAX (TFSUPERSUB_TYPEFAMILY (subs));
-                post_sub = TFDEF_POST (TFSUPERSUB_TYPEFAMILY (subs));
+            if (TFEDGE_EDGETYPE (subs) != edgetree) {
+                pre_sub = TFDEF_PRE (TFEDGE_TYPEFAMILY (subs));
+                premax_sub = TFDEF_PREMAX (TFEDGE_TYPEFAMILY (subs));
+                post_sub = TFDEF_POST (TFEDGE_TYPEFAMILY (subs));
                 if (pre_super < pre_sub && post_sub < post_super) {
                     /* This is a forward edge. Since back and forward edges are
                      * disallowed, throw an error here
@@ -293,17 +293,17 @@ TFPPGtfdef (node *arg_node, info *arg_info)
                      * This must be a cross edge. Add this to the transitive
                      * link table
                      */
-                    TFSUPERSUB_EDGETYPE (subs) = edgecross;
+                    TFEDGE_EDGETYPE (subs) = edgecross;
                     /*
                      * Set the super relationship to be a cross edge as well.
                      * This will be used in the non-tree labeling
                      */
-                    supers = TFDEF_SUPERS (TFSUPERSUB_TYPEFAMILY (subs));
+                    supers = TFDEF_SUPERS (TFEDGE_TYPEFAMILY (subs));
                     while (supers != NULL) {
-                        if (TFSUPERSUB_TYPEFAMILY (supers) == defs) {
-                            TFSUPERSUB_EDGETYPE (supers) = edgecross;
+                        if (TFEDGE_TYPEFAMILY (supers) == defs) {
+                            TFEDGE_EDGETYPE (supers) = edgecross;
                         }
-                        supers = TFSUPERSUB_NEXT (supers);
+                        supers = TFEDGE_NEXT (supers);
                     }
                     if (INFO_TLTABLE (arg_info) == NULL) {
                         INFO_TLTABLE (arg_info) = MEMmalloc (sizeof (dynarray));
@@ -319,9 +319,9 @@ TFPPGtfdef (node *arg_node, info *arg_info)
                     CTIabort ("Unclassifiable edge found in subtyping hierarchy");
                 }
             } else {
-                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+                TRAVdo (TFEDGE_TYPEFAMILY (subs), arg_info);
             }
-            subs = TFSUPERSUB_NEXT (subs);
+            subs = TFEDGE_NEXT (subs);
         }
     } else if (INFO_LABELMODE (arg_info) == nontree_labeling) {
         /*
@@ -330,7 +330,7 @@ TFPPGtfdef (node *arg_node, info *arg_info)
         supers = TFDEF_SUPERS (defs);
         int pop = 0;
         while (supers != NULL) {
-            if (TFSUPERSUB_EDGETYPE (supers) == edgecross) {
+            if (TFEDGE_EDGETYPE (supers) == edgecross) {
                 elem *e = MEMmalloc (sizeof (elem));
                 ELEM_DATA (e) = NULL;
                 int i;
@@ -344,7 +344,7 @@ TFPPGtfdef (node *arg_node, info *arg_info)
                 pop = 1;
                 break;
             }
-            supers = TFSUPERSUB_NEXT (supers);
+            supers = TFEDGE_NEXT (supers);
         }
         if (INFO_NONTREEIDX (arg_info) < DYNARRAY_TOTALELEMS (INFO_ARRX (arg_info))) {
             if (TFDEF_PRE (defs) <= ELEM_IDX (DYNARRAY_ELEMS (INFO_ARRX (
@@ -354,11 +354,11 @@ TFPPGtfdef (node *arg_node, info *arg_info)
         }
         subs = TFDEF_SUBS (defs);
         while (subs != NULL) {
-            if (TFDEF_NONTREEX (TFSUPERSUB_TYPEFAMILY (subs)) == -1
-                && TFSUPERSUB_EDGETYPE (subs) == edgetree) {
-                TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+            if (TFDEF_NONTREEX (TFEDGE_TYPEFAMILY (subs)) == -1
+                && TFEDGE_EDGETYPE (subs) == edgetree) {
+                TRAVdo (TFEDGE_TYPEFAMILY (subs), arg_info);
             }
-            subs = TFSUPERSUB_NEXT (subs);
+            subs = TFEDGE_NEXT (subs);
         }
         if (INFO_NONTREEIDX (arg_info) < DYNARRAY_TOTALELEMS (INFO_ARRX (arg_info))) {
             int lhs, rhs;

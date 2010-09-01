@@ -32,7 +32,7 @@
 #include "namespaces.h"
 #include "shape.h"
 #include "vector.h"
-#include "tf_structures.h"
+#include "structures.h"
 
 /*
  * use of arg_info in this file:
@@ -6096,10 +6096,10 @@ PRTtfdef (node *arg_node, info *arg_info)
     }
     subs = TFDEF_SUBS (arg_node);
     while (subs != NULL) {
-        if (TFSUPERSUB_EDGETYPE (subs) == edgetree) {
-            TRAVdo (TFSUPERSUB_TYPEFAMILY (subs), arg_info);
+        if (TFEDGE_EDGETYPE (subs) == edgetree) {
+            TRAVdo (TFEDGE_TYPEFAMILY (subs), arg_info);
         }
-        subs = TFSUPERSUB_NEXT (subs);
+        subs = TFEDGE_NEXT (subs);
     }
     /*
      * After the node information has been output, we can output the
@@ -6155,26 +6155,26 @@ PRTtfbin (node *arg_node, info *arg_info)
 }
 
 node *
-PRTtfsupersub (node *arg_node, info *arg_info)
+PRTtfedge (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTtfsupersub");
-    if (TFSUPERSUB_EDGETYPE (arg_node) == edgecross) {
+    DBUG_ENTER ("PRTtfedge");
+    if (TFEDGE_EDGETYPE (arg_node) == edgecross) {
         fprintf (global.outfile, "<%s/>-><%s/> [style=dotted]",
                  TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))));
+                 TFDEF_TAG (TFDEF_CURR (TFEDGE_TYPEFAMILY (arg_node))));
     } else {
         fprintf (global.outfile, "<%s/>-><%s/>",
                  TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFDEF_TAG (TFDEF_CURR (TFSUPERSUB_TYPEFAMILY (arg_node))));
+                 TFDEF_TAG (TFDEF_CURR (TFEDGE_TYPEFAMILY (arg_node))));
     }
-    if (TFSUPERSUB_COND (arg_node) != NULL) {
+    if (TFEDGE_COND (arg_node) != NULL) {
         INFO_TFSTRINGEXPR (arg_info) = NULL;
-        TRAVdo (TFSUPERSUB_COND (arg_node), arg_info);
+        TRAVdo (TFEDGE_COND (arg_node), arg_info);
         fprintf (global.outfile, "\t[label=\"%s\"]", INFO_TFSTRINGEXPR (arg_info));
     }
     fprintf (global.outfile, ";\n");
-    if (TFSUPERSUB_NEXT (arg_node) != NULL) {
-        TRAVdo (TFSUPERSUB_NEXT (arg_node), arg_info);
+    if (TFEDGE_NEXT (arg_node) != NULL) {
+        TRAVdo (TFEDGE_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
