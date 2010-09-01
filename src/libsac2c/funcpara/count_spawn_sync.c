@@ -42,9 +42,11 @@
 
 struct INFO {
     int count;
+    node *let;
 };
 
 #define INFO_COUNT(n) ((n)->count)
+#define INFO_LET(n) ((n)->let)
 
 static info *
 MakeInfo ()
@@ -56,6 +58,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_COUNT (result) = 0;
+    INFO_LET (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -157,6 +160,29 @@ CSSfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CSSlet(node *arg_node, info *arg_info)
+ *
+ * @brief ...
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+CSSlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CSSlet");
+
+    INFO_LET (arg_info) = arg_node;
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CSSap(node *arg_node, info *arg_info)
  *
  * @brief ...
@@ -173,7 +199,8 @@ CSSap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSSap");
 
     if (AP_ISSPAWNED (arg_node)) {
-        INFO_COUNT (arg_info)++;
+        // check: does inc and assign work okay at same time?
+        LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
 
     DBUG_RETURN (arg_node);
@@ -197,7 +224,8 @@ CSSprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSSprf");
 
     if (PRF_PRF (arg_node) == F_sync) {
-        INFO_COUNT (arg_info)++;
+        // check: does inc and assign work okay at same time?
+        LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
 
     DBUG_RETURN (arg_node);
