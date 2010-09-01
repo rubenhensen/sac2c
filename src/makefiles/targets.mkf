@@ -63,7 +63,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               concurrent multithread profile \
                               memory precompile codegen print \
                               cinterface generics constraints cuda mutc \
-                              rtspec funcpara
+                              rtspec funcpara flexsub
 
 ###############################################################################
 
@@ -117,8 +117,7 @@ libsac2c_typecheck   := new_typecheck new_types user_types create_wrappers \
                         update_wrapper_type free_dispatch_information \
                         elim_alpha_types elim_bottom_types extend_lac_funs \
                         enforce_specialization destruct \
-                        specialization_oracle_static_shape_knowledge \
-			tf_build_graph tf_preprocess_graph tf_structures
+                        specialization_oracle_static_shape_knowledge
 
 libsac2c_types       := 
 
@@ -235,6 +234,8 @@ libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filterin
 
 libsac2c_funcpara    := add_sync move_sync_statement tag_fp_fundefs tag_fp_aps \
                         live_variable_analysis make_slow_clones count_spawn_sync
+
+libsac2c_flexsub    := build_graph preprocess_graph structures
 
 
 ###############################################################################
