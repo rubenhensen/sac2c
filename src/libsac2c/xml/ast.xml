@@ -3071,7 +3071,7 @@
         <node name="Module" />
         <node name="With" />
         <node name="With2" />
-	<node name="Fundef" />
+        <node name="Fundef" />
         <node name="Let" />
         <node name="Ids" />
         <node name="Id" />
@@ -3281,6 +3281,7 @@
                include="count_spawn_sync.h" >
       <travuser>
         <node name="Fundef" />
+        <node name="Let" />
         <node name="Ap" />
         <node name="Prf" />
       </travuser>
@@ -5717,6 +5718,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SpawnSyncIndex" inconstructor="no">
+          <description>
+            If the let node is a spawn or sync statement, this attribute
+            indicates the index of that statement
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase from="fp_css" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -7881,12 +7898,12 @@ N_tfarg :
                   processed function.
           </description>
         </flag>
-	<flag name="IsOmpPrivate" default="FALSE" >
+        <flag name="IsOmpPrivate" default="FALSE" >
           <description>
-                  If true, the given variable is private OpenMP variable.
-         </description>
-	</flag>
-	<flag name="IsOmpReduction" default="FALSE" >
+                 If true, the given variable is private OpenMP variable.
+        </description>
+        </flag>
+        <flag name="IsOmpReduction" default="FALSE" >
           <description>
                   If true, the given variable is reduction OpenMP variable used in fold.
           </description>
@@ -8740,7 +8757,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-	<attribute name="Omp_Private_List" inconstructor="no">
+        <attribute name="Omp_Private_List" inconstructor="no">
           <type name="String">
             <targets>
               <target mandatory="no">
