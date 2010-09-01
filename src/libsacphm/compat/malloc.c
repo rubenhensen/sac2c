@@ -75,7 +75,8 @@ malloc (size_t sz)
     SAC_HM_size_unit_t units;
     void *mem;
 #ifdef MT
-    unsigned int thread_id, *thread_id_ptr;
+    /* unsigned int thread_id, *thread_id_ptr; */
+    unsigned int thread_id;
     const int multi_threaded = !SAC_MT_not_yet_parallel;
 #else  /* MT */
     const unsigned int thread_id = 0;
