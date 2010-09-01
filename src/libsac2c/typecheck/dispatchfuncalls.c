@@ -95,6 +95,36 @@ CountSpecializations (int num_fundefs, node **fundeflist)
     DBUG_RETURN (res);
 }
 
+/*
+ * to find whether the fun in fold operation is OpenMP reduction clause supported operator
+ * or not
+ */
+
+static node *
+GetOMPReductionOp (node *arg_node)
+{
+    DBUG_ENTER ("GetOMPReductionOp");
+
+    char *fun_name = FUNDEF_NAME (FOLD_FUNDEF (arg_node));
+
+    if (STReq ("ScalarArith", NSgetName (FUNDEF_NS (FOLD_FUNDEF (arg_node))))) {
+        switch (*fun_name) {
+        case '+':
+            DBUG_PRINT ("DFC", ("Fold has a scalar add operation\n"));
+            FOLD_OMPREDUCTIONOP (arg_node) = OMP_REDUCTION_SCL_ADD;
+            break;
+        case '*':
+            DBUG_PRINT ("DFC", ("Fold has a scalar mul operation\n"));
+            FOLD_OMPREDUCTIONOP (arg_node) = OMP_REDUCTION_SCL_MUL;
+            break;
+        default:
+            break;
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -464,6 +494,9 @@ DFCfold (node *arg_node, info *arg_info)
 
     FOLD_FUNDEF (arg_node)
       = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types, arg_info);
+    if (global.backend == BE_omp) {
+        arg_node = GetOMPReductionOp (arg_node);
+    }
 
     /*
      * cleanup
