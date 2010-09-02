@@ -92,6 +92,7 @@ struct INFO {
     bool cond;
     node *withloop;
     node *with3folds;
+    node *let;
 };
 
 /*
@@ -118,6 +119,7 @@ struct INFO {
 #define INFO_COND(n) ((n)->cond)
 #define INFO_WITHLOOP(n) ((n)->withloop)
 #define INFO_WITH3_FOLDS(n) ((n)->with3folds)
+#define INFO_LET(n) ((n)->let)
 
 /*
  * INFO functions
@@ -2278,6 +2280,65 @@ MakeIcmFPCases (int n)
     DBUG_RETURN (assign);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeFPAp( node *let, node *icm)
+ *
+ * @brief  Surround an N_ap node with fp start and end icms
+ *
+ ******************************************************************************/
+static node *
+MakeFPAp (node *let, node *icm, info *arg_info)
+{
+    node *fundef, *ids;
+    node *livevars, *start, *vars, *end;
+    node *assign;
+
+    DBUG_ENTER ("MakeFPAp");
+
+    fundef = INFO_FUNDEF (arg_info);
+
+    livevars = NULL;
+    vars = NULL;
+
+    ids = LET_LIVEVARS (let);
+    while (ids != NULL) {
+        livevars = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                     TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                     TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (ids))),
+                                     livevars);
+        ids = LIVEVARS_NEXT (ids);
+    }
+
+    start = TCmakeIcm1 ("FP_SPAWN_START", TBmakeNum (LET_SPAWNSYNCINDEX (let)));
+
+    ids = LET_SYNC_IDS (let);
+    while (ids != NULL) {
+        vars = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                 TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                 TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (ids))), vars);
+        ids = IDS_NEXT (ids);
+    }
+
+    if (!FUNDEF_ISSLOWCLONE (fundef)) {
+        end = TCmakeIcm3 ("FP_SPAWN_END_FAST", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                          TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (LET_IDS (let)))),
+                          TBmakeNum (LET_SPAWNSYNCINDEX (let)));
+    } else {
+        end = TCmakeIcm4 ("FP_SPAWN_END_SLOW", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                          TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (LET_IDS (let)))),
+                          TBmakeNum (LET_SPAWNSYNCINDEX (let)),
+                          TBmakeNum (LET_SPAWNSYNCINDEX (LET_MATCHINGSPAWNSYNC (let))));
+    }
+
+    assign = TCappendAssign (
+      livevars,
+      TBmakeAssign (start,
+                    TBmakeAssign (icm, TCappendAssign (vars, TBmakeAssign (end, NULL)))));
+
+    DBUG_RETURN (assign);
+}
+
 #ifndef DBUG_OFF
 
 /** <!--********************************************************************-->
@@ -3235,6 +3296,10 @@ COMPreturn (node *arg_node, info *arg_info)
         INFO_POSTFUN (arg_info) = NULL;
     }
 
+    if (FUNDEF_CONTAINSSPAWN (fundef)) {
+        arg_node = TCmakeAssignIcm0 ("FP_SAVE_RESULT", arg_node);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -3257,6 +3322,7 @@ COMPlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPlet");
 
     INFO_LASTIDS (arg_info) = LET_IDS (arg_node);
+    INFO_LET (arg_info) = arg_node;
 
     expr = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -3463,21 +3529,20 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    }
-    //  else if (AP_ISSPAWNED( arg_node)) {
-    //    icm = TBmakeIcm( "FP_FUN_AP", icm_args);
-    //  }
-    else {
+    } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
 
-    // Wrap the ap in spawn start and end icm's
+    // If called function contains spawn, check result
+    if (AP_TOSPAWN (arg_node)) {
+        assigns = TCmakeAssignIcm1 ("FP_FUN_AP_CHECK", TCmakeIdCopyString (TRAVtmpVar ()),
+                                    assigns);
+    }
+
+    // If ap is spaned, wrap the ap in spawn start and end icm's
     if (AP_ISSPAWNED (arg_node)) {
         arg_node
-          = TBmakeAssign (TBmakeIcm ("FP_SPAWN_START", NULL),
-                          TBmakeAssign (icm,
-                                        TBmakeAssign (TBmakeIcm ("FP_SPAWN_END", NULL),
-                                                      assigns)));
+          = TCappendAssign (MakeFPAp (INFO_LET (arg_info), icm, arg_info), assigns);
     } else {
         /*
          * We return an N_assign chain here rather than an N_ap node.
@@ -7017,10 +7082,49 @@ node *
 COMPprfSync (node *arg_node, info *arg_info)
 {
     node *ret_node;
+    node *fundef, *let;
+    node *vars;
 
     DBUG_ENTER ("COMPprfSync");
 
-    ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC", NULL);
+    fundef = INFO_FUNDEF (arg_info);
+
+    if (!FUNDEF_ISSLOWCLONE (fundef)) {
+        // TODO: make better empty statement
+        ret_node = TCmakeAssignIcm0 ("SAC_NOOP", NULL);
+    } else {
+        ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC_END", NULL);
+
+        let = INFO_LET (arg_info);
+        vars = LET_LIVEVARS (let);
+
+        while (vars != NULL) {
+            ret_node
+              = TCmakeAssignIcm2 ("SAC_FP_GET_LIVEVAR",
+                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                  TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
+                                  ret_node);
+            vars = LIVEVARS_NEXT (vars);
+        }
+
+        ret_node = TCmakeAssignIcm3 ("SAC_FP_SYNC_START",
+                                     TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                     TCmakeIdCopyString (
+                                       AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                                     TBmakeNum (LET_SPAWNSYNCINDEX (let)), ret_node);
+
+        // TODO: set only livevars minus results from sync
+        vars = LET_LIVEVARS (let);
+
+        while (vars != NULL) {
+            ret_node
+              = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                  TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
+                                  ret_node);
+            vars = LIVEVARS_NEXT (vars);
+        }
+    }
 
     DBUG_RETURN (ret_node);
 }

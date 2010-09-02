@@ -1499,6 +1499,12 @@ DUPlet (node *arg_node, info *arg_info)
     LET_EXPR (new_node) = DUPTRAV (LET_EXPR (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+    LET_SPAWNSYNCINDEX (new_node) = LET_SPAWNSYNCINDEX (arg_node);
+
+    // TODO: are id's in livevars should point to duplicated nodes
+    if (LET_LIVEVARS (arg_node) != NULL) {
+        LET_LIVEVARS (new_node) = DUPTRAV (LET_LIVEVARS (arg_node));
+    }
 
     // update matching spawns and syncs
     // TODO: don't put on let and don't compare names, but nodes

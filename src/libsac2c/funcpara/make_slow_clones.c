@@ -89,7 +89,6 @@ node *
 MSCfundef (node *arg_node, info *arg_info)
 {
     node *clone;
-    char *name;
 
     DBUG_ENTER ("MSCfundef");
     DBUG_PRINT ("MSC", ("traversing function (%s) %s",
@@ -105,9 +104,8 @@ MSCfundef (node *arg_node, info *arg_info)
 
         clone = DUPdoDupNode (arg_node);
 
-        name = STRcat ("__slow__", FUNDEF_NAME (clone));
-        // free old name
-        FUNDEF_NAME (clone) = name;
+        // TODO: free( FUNDEF_NAME( clone));
+        FUNDEF_NAME (clone) = STRcat ("__slow__", FUNDEF_NAME (clone));
         FUNDEF_ISSLOWCLONE (clone) = TRUE;
 
         FUNDEF_NEXT (clone) = FUNDEF_NEXT (arg_node);

@@ -199,6 +199,7 @@ CSSap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSSap");
 
     if (AP_ISSPAWNED (arg_node)) {
+        DBUG_PRINT ("CSS", ("Spawn index: %d", INFO_COUNT (arg_info)));
         // check: does inc and assign work okay at same time?
         LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
@@ -224,6 +225,7 @@ CSSprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSSprf");
 
     if (PRF_PRF (arg_node) == F_sync) {
+        DBUG_PRINT ("CSS", ("Sync index:  %d", INFO_COUNT (arg_info)));
         // check: does inc and assign work okay at same time?
         LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
