@@ -1258,6 +1258,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
+        if (MODULE_FPFRAMESTORE (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  FP Frame infrastructure\n"
+                                     " */\n\n");
+            TRAVdo (MODULE_FPFRAMESTORE (arg_node), arg_info);
+        }
+
         if (MODULE_THREADFUNS (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"

@@ -1036,6 +1036,7 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
     FUNDEF_FLAGSTRUCTURE (new_node) = FUNDEF_FLAGSTRUCTURE (arg_node);
+    FUNDEF_LIVEVARS (new_node) = DUPTRAV (FUNDEF_LIVEVARS (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

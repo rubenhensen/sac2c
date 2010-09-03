@@ -60,12 +60,15 @@
 struct INFO {
     dfmask_base_t *base;
     dfmask_t *live;
+    dfmask_t *func;
     bool analyse;
+    dfmask_t *funion;
 };
 
 #define INFO_BASE(n) ((n)->base)
 #define INFO_LIVE(n) ((n)->live)
 #define INFO_ANALYSE(n) ((n)->analyse)
+#define INFO_FUNION(n) ((n)->funion)
 
 static info *
 MakeInfo ()
@@ -79,6 +82,7 @@ MakeInfo ()
     INFO_BASE (result) = NULL;
     INFO_LIVE (result) = NULL;
     INFO_ANALYSE (result) = FALSE;
+    INFO_FUNION (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -227,6 +231,7 @@ node *
 LVAfundef (node *arg_node, info *arg_info)
 {
     dfmask_base_t *base;
+    node *avis, *livevars;
 
     DBUG_ENTER ("LVAfundef");
 
@@ -242,9 +247,24 @@ LVAfundef (node *arg_node, info *arg_info)
 
         INFO_BASE (arg_info) = base;
         INFO_LIVE (arg_info) = DFMgenMaskClear (base);
+        INFO_FUNION (arg_info) = DFMgenMaskClear (base);
         INFO_ANALYSE (arg_info) = FALSE;
 
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+        DBUG_PRINT ("LVA", ("Union for fundef"));
+        DBUG_EXECUTE ("LVA", DFMprintMaskDetailed (stdout, INFO_FUNION (arg_info)););
+
+        avis = DFMgetMaskEntryAvisSet (INFO_FUNION (arg_info));
+        livevars = NULL;
+
+        while (avis != NULL) {
+            DBUG_PRINT ("LVA", ("Live Var Found"));
+            livevars = TBmakeLivevars (avis, livevars);
+            avis = DFMgetMaskEntryAvisSet (NULL);
+        }
+
+        FUNDEF_LIVEVARS (arg_node) = livevars;
     }
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
@@ -298,6 +318,9 @@ LVAassign (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("LVA", ("Done analysing"));
         DBUG_EXECUTE ("LVA", DFMprintMaskDetailed (stdout, mask););
+
+        // create union mask for entire function
+        DFMsetMaskOr (INFO_FUNION (arg_info), mask);
 
         // save live vars in the let node
         avis = DFMgetMaskEntryAvisSet (mask);

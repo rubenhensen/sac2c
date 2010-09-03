@@ -3506,6 +3506,16 @@
             </target>
           </targets>
         </son>
+        <son name="FPFrameStore" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="Assign" />
+              <phases>
+                <range from="cg_cpl" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Namespace" inconstructor="yes">
@@ -4984,6 +4994,21 @@ N_tfarg :
                 <any />
                 <phases>
                   <range from="fp_css" to="final"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Livevars" inconstructor="no">
+          <description>
+            Contains a union of all livevars inside the body
+          </description>
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Livevars" />
+                <phases>
+                  <phase from="fp_lva" to="final" />
                 </phases>
               </target>
             </targets>

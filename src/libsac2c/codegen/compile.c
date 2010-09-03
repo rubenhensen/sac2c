@@ -93,6 +93,7 @@ struct INFO {
     node *withloop;
     node *with3folds;
     node *let;
+    node *fpframe;
 };
 
 /*
@@ -120,6 +121,7 @@ struct INFO {
 #define INFO_WITHLOOP(n) ((n)->withloop)
 #define INFO_WITH3_FOLDS(n) ((n)->with3folds)
 #define INFO_LET(n) ((n)->let)
+#define INFO_FPFRAME(n) ((n)->fpframe)
 
 /*
  * INFO functions
@@ -152,6 +154,8 @@ MakeInfo ()
     INFO_COND (result) = FALSE;
     INFO_WITHLOOP (result) = NULL;
     INFO_WITH3_FOLDS (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_FPFRAME (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -2548,6 +2552,13 @@ COMPmodule (node *arg_node, info *arg_info)
         INFO_SPMDBARRIER (arg_info) = NULL;
     }
 
+    if (global.fp) {
+        MODULE_FPFRAMESTORE (arg_node)
+          = TCmakeAssignIcm0 ("FP_FRAME_START",
+                              TCappendAssign (INFO_FPFRAME (arg_info),
+                                              TCmakeAssignIcm0 ("FP_FRAME_END", NULL)));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2731,6 +2742,16 @@ COMPfundef (node *arg_node, info *arg_info)
         INFO_SCHEDULERINIT (arg_info) = NULL;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
+
+            /*
+             * Init FP frame before traversing body
+             */
+            if (FUNDEF_CONTAINSSPAWN (arg_node) && !FUNDEF_ISSLOWCLONE (arg_node)) {
+                INFO_FPFRAME (arg_info)
+                  = TCmakeAssignIcm1 ("FP_FRAME_FUNC_END",
+                                      TCmakeIdCopyString (FUNDEF_NAME (arg_node)), NULL);
+            }
+
             /*
              * Traverse body
              */
@@ -2859,7 +2880,34 @@ COMPfundef (node *arg_node, info *arg_info)
             INFO_SPMDBARRIER (arg_info) = TBmakeAssign (icm, INFO_SPMDBARRIER (arg_info));
         }
 
-        // TODO: add entries to global task frame for fp
+        /*
+         * Create enties in FP frame
+         */
+        if (FUNDEF_CONTAINSSPAWN (arg_node) && !FUNDEF_ISSLOWCLONE (arg_node)) {
+            node *livevars;
+            node *avis;
+            types *type;
+
+            livevars = FUNDEF_LIVEVARS (arg_node);
+
+            while (livevars != NULL) {
+                // TODO: print the type as well
+                avis = LIVEVARS_AVIS (livevars);
+
+                type = NODE_TYPE (AVIS_DECL (avis)) == N_vardec
+                         ? VARDEC_TYPE (AVIS_DECL (avis))
+                         : ARG_TYPE (AVIS_DECL (avis));
+
+                INFO_FPFRAME (arg_info)
+                  = TCmakeAssignIcm2 ("FP_FRAME_LIVEVAR", MakeBasetypeArg (type),
+                                      TCmakeIdCopyString (AVIS_NAME (avis)),
+                                      INFO_FPFRAME (arg_info));
+                livevars = LIVEVARS_NEXT (livevars);
+            }
+
+            INFO_FPFRAME (arg_info)
+              = TCmakeAssignIcm0 ("FP_FRAME_FUNC_START", INFO_FPFRAME (arg_info));
+        }
 
         /*
          * pop 'arg_info'
@@ -2889,7 +2937,24 @@ node *
 COMPvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPvardec");
-    if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
+
+    /*  if( TYisUser( AVIS_DECLTYPE( VARDEC_AVIS( arg_node)))) {
+        DBUG_PRINT( "COMP", ("Sync!!!"));
+      } */
+
+    if (TCgetBasetype (VARDEC_TYPE (arg_node)) == T_sync) {
+        DBUG_PRINT ("COMP", ("Removing sync vardec"));
+
+        VARDEC_ICM (arg_node) = TCmakeIcm0 ("NOOP");
+
+        if (!FUNDEF_ISSLOWCLONE (INFO_FUNDEF (arg_info))) {
+            INFO_FPFRAME (arg_info)
+              = TCmakeAssignIcm1 ("FP_FRAME_SYNC",
+                                  TCmakeIdCopyString (AVIS_NAME (VARDEC_AVIS (arg_node))),
+                                  INFO_FPFRAME (arg_info));
+        }
+
+    } else if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
         VARDEC_ICM (arg_node) = TCmakeIcm1 ("SAC_MUTC_DECL_INDEX",
                                             TCmakeIdCopyString (VARDEC_NAME (arg_node)));
     } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info)) &&
