@@ -25,6 +25,7 @@ struct INFO {
     node *letids;
     node *code;
     node *vardecs;
+    bool spawned;
 };
 
 /*
@@ -35,6 +36,7 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_CODE(n) (n->code)
 #define INFO_VARDECS(n) (n->vardecs)
+#define INFO_SPAWNED(n) (n->spawned)
 
 /*
  * INFO functions
@@ -53,6 +55,7 @@ MakeInfo ()
     INFO_LETIDS (result) = NULL;
     INFO_CODE (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_SPAWNED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -279,6 +282,11 @@ LINLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
+
+        if (INFO_SPAWNED (arg_info)) {
+            DBUG_PRINT ("LINL", ("Function inlined which contained spawn"));
+            FUNDEF_CONTAINSSPAWN (arg_node) = TRUE;
+        }
     }
     if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
         /**
@@ -399,6 +407,9 @@ LINLap (node *arg_node, info *arg_info)
          */
         AdaptConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                            AP_FUNDEF (arg_node));
+
+        INFO_SPAWNED (arg_info)
+          = INFO_SPAWNED (arg_info) || FUNDEF_CONTAINSSPAWN (AP_FUNDEF (arg_node));
 
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),

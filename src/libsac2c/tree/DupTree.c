@@ -1528,7 +1528,8 @@ DUPlet (node *arg_node, info *arg_info)
             do {
                 DBUG_PRINT ("DUP", ("Spawn: %s", IDS_NAME (LET_IDS (SET_MEMBER (set)))));
 
-                if (STReq (ID_NAME (syncvar), IDS_NAME (LET_IDS (SET_MEMBER (set))))) {
+                if (STRsuffix (ID_NAME (syncvar),
+                               IDS_NAME (LET_IDS (SET_MEMBER (set))))) {
                     // update sync to point to spawn and vice-versa
                     DBUG_PRINT ("DUP", ("Found matching spawn and sync"));
                     LET_MATCHINGSPAWNSYNC (SET_MEMBER (set)) = new_node;
