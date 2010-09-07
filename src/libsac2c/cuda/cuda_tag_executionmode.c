@@ -21,7 +21,7 @@
 #include "globals.h"
 #include "type_utils.h"
 #include "new_types.h"
-#include "tag_cuda_lac.h"
+//#include "tag_cuda_lac.h"
 
 static bool CHANGED = FALSE;
 static int ITERATION = 1;
@@ -39,6 +39,10 @@ struct INFO {
     bool inwith;
     bool incond;
     node *lhs;
+    node *fundefargs;
+    node *apargs;
+    bool dofunargs;
+    bool at_iscudarizable;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -48,6 +52,10 @@ struct INFO {
 #define INFO_INWITH(n) (n->inwith)
 #define INFO_INCOND(n) (n->incond)
 #define INFO_LHS(n) (n->lhs)
+#define INFO_FUNDEFARGS(n) (n->fundefargs)
+#define INFO_APARGS(n) (n->apargs)
+#define INFO_DOFUNARGS(n) (n->dofunargs)
+#define INFO_AT_ISCUDARIZABLE(n) (n->at_iscudarizable)
 
 /*
  * INFO functions
@@ -68,6 +76,10 @@ MakeInfo ()
     INFO_INWITH (result) = FALSE;
     INFO_INCOND (result) = FALSE;
     INFO_LHS (result) = NULL;
+    INFO_FUNDEFARGS (result) = NULL;
+    INFO_APARGS (result) = NULL;
+    INFO_DOFUNARGS (result) = FALSE;
+    INFO_AT_ISCUDARIZABLE (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -83,7 +95,25 @@ FreeInfo (info *info)
 }
 
 static bool
-IsIdCudaDefined (node *id)
+CheckApIds (node *ids)
+{
+    bool res = TRUE;
+    ntype *type;
+
+    DBUG_ENTER ("CheckApIds");
+
+    while (ids != NULL) {
+        type = IDS_NTYPE (ids);
+        res = res && (TUisScalar (type) || TYisAKS (type) || TYisAKD (type))
+              && !AVIS_ISHOSTREFERENCED (IDS_AVIS (ids));
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+IsIdCudaDefined (node *id, info *arg_info)
 {
     bool res = FALSE;
     node *ssa;
@@ -101,7 +131,7 @@ IsIdCudaDefined (node *id)
      * referenced in any CUDA_HOST_SINGLE N_assign. Otherwise the current
      * N_assign referencing this N_id is not executable on CUDA either. */
     if (ssa != NULL) {
-        if ((TUisScalar (type) || TYisAKS (type)) && /* Scalar or AKS */
+        if (/* ( TUisScalar( type) || TYisAKS( type)) && */ /* Scalar or AKS */
             !AVIS_ISHOSTREFERENCED (ID_AVIS (id)) && /* NOT referenced in host N_assign */
             (ASSIGN_EXECMODE (ssa) == CUDA_DEVICE_SINGLE
              || /* Define by DEVICE_SINGLE or DEVICE_MULTI N_assign */
@@ -109,11 +139,28 @@ IsIdCudaDefined (node *id)
             res = TRUE;
         }
     }
-    /* If the id is passed as an argument and this id in the calling
-     * context is defined by a CUDA_DEVICE_SINGLE or CUDA_DEVICE_MULTI
-     * the current assignment is set to CUDA_DEVICE_SINGLE */
+    /* If the id is passed as an argument and we are in a loop function,
+     * we count that as cuda defined. This is because if we do that, the
+     * assignment might be tagged as DEVICE_SINGLE, and we have the chance
+     * to cudarize it and therefore further remove tranfers from for-loops.
+     * Here is an example:
+     *
+     *   loop_function( ... A ...) {
+     *     val = sel( A, 0);
+     *     B = cuda_with {
+     *           ... val ...
+     *     } : genarry();
+     *     ...
+     *   }
+     *
+     * If we tag the selection as DEVICE_SINGLE, it can later be moved into
+     * the withloop and the transfer associated with A can be lifted out.
+     * Of couse, to be able to achieve this effect, A must not be referenced
+     * in any HOST_SINGLE instructions in the loop function
+     */
     else if (NODE_TYPE (ID_DECL (id)) == N_arg) {
-        if (ARG_ISCUDADEFINED (ID_DECL (id)) && !AVIS_ISHOSTREFERENCED (ID_AVIS (id))) {
+        if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) && !TUisScalar (ID_NTYPE (id))
+            && !AVIS_ISHOSTREFERENCED (ID_AVIS (id))) {
             res = TRUE;
         }
     }
@@ -121,43 +168,15 @@ IsIdCudaDefined (node *id)
     DBUG_RETURN (res);
 }
 
-static void
-SetArgCudaDefined (node *ap_args, node *fundef_args)
-{
-    DBUG_ENTER ("SetArgCudaDefined");
-
-    while (ap_args != NULL) {
-        ARG_ISCUDADEFINED (fundef_args) = IsIdCudaDefined (EXPRS_EXPR (ap_args));
-
-        ap_args = EXPRS_NEXT (ap_args);
-        fundef_args = ARG_NEXT (fundef_args);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-ClearArgCudaDefined (node *fundef_args)
-{
-    DBUG_ENTER ("ClearArgCudaDefined");
-
-    while (fundef_args != NULL) {
-        ARG_ISCUDADEFINED (fundef_args) = FALSE;
-        fundef_args = ARG_NEXT (fundef_args);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 static bool
-HasCudaDefinedId (node *ap_args)
+HasCudaDefinedId (node *ap_args, info *arg_info)
 {
     bool res = FALSE;
 
     DBUG_ENTER ("HasCudaDefinedId");
 
     while (ap_args != NULL) {
-        if (IsIdCudaDefined (EXPRS_EXPR (ap_args))) {
+        if (IsIdCudaDefined (EXPRS_EXPR (ap_args), arg_info)) {
             res = TRUE;
             break;
         }
@@ -168,9 +187,10 @@ HasCudaDefinedId (node *ap_args)
 }
 
 static node *
-TraverseLacFun (node *fundef, info *arg_info)
+TraverseLacFun (node *fundef, node *ap, info *arg_info)
 {
     node *old_fundef;
+    node *old_fundefargs, *old_apargs;
     bool old_fromap;
 
     DBUG_ENTER ("TraverseLacFun");
@@ -178,15 +198,101 @@ TraverseLacFun (node *fundef, info *arg_info)
     /* Push info */
     old_fundef = INFO_FUNDEF (arg_info);
     old_fromap = INFO_FROMAP (arg_info);
+    old_fundefargs = INFO_FUNDEFARGS (arg_info);
+    old_apargs = INFO_APARGS (arg_info);
 
+    INFO_FUNDEF (arg_info) = fundef;
     INFO_FROMAP (arg_info) = TRUE;
+    INFO_FUNDEFARGS (arg_info) = FUNDEF_ARGS (fundef);
+    INFO_APARGS (arg_info) = AP_ARGS (ap);
+
     fundef = TRAVdo (fundef, arg_info);
 
     /* Pop info */
     INFO_FROMAP (arg_info) = old_fromap;
     INFO_FUNDEF (arg_info) = old_fundef;
+    INFO_FUNDEFARGS (arg_info) = old_fundefargs;
+    INFO_APARGS (arg_info) = old_apargs;
 
     DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravFundef(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravFundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TCULACfundef");
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravAp(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravAp (node *arg_node, info *arg_info)
+{
+    node *fundef;
+
+    DBUG_ENTER ("ATravAp");
+
+    fundef = AP_FUNDEF (arg_node);
+
+    if (fundef != NULL) {
+        if (FUNDEF_ISCONDFUN (fundef)) {
+            /* If we found a cond lac function, we continues traverse
+             * into its body */
+            fundef = TRAVdo (fundef, arg_info);
+        } else if (FUNDEF_ISDOFUN (fundef)) {
+            /* If we found a loop, the lac function is not cudarizable */
+            INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
+        } else {
+            /* If we found a normal function application, lac
+             * function is not cudarizable */
+            INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravWith(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravWith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravWith");
+
+    /* Any withloops within a lac function makes it un-cudarizable */
+    INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -370,7 +476,7 @@ CUTEMassign (node *arg_node, info *arg_info)
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         /* If after tagging, the execution mode of this N_assign
-         * is still CUDA_HOST_SINGLE(means that this N_assign has
+         * has changed to CUDA_HOST_SINGLE (i.e. this N_assign has
          * to be executed on the host), we update it's RHS variables */
         if (ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
             INFO_TRAVMODE (arg_info) = cutem_update;
@@ -386,7 +492,8 @@ CUTEMassign (node *arg_node, info *arg_info)
          * mode of this N_assign has been changed from CUDA_DEVICE_SINGLE
          * to CUDA_HOST_SINGLE, we update all variables on the RHS */
         if (old_mode == CUDA_DEVICE_SINGLE
-            && ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
+            && ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE
+            /* old_mode != ASSIGN_EXECMODE( arg_node) */) {
             INFO_TRAVMODE (arg_info) = cutem_update;
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
             CHANGED = TRUE;
@@ -489,9 +596,12 @@ CUTEMids (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUTEMids");
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
-        /* If the LHS is neither scalar or AKS array, the N_assign can
-         * only be executed on the host, i.e. CUDA_HOST_SINGLE */
-        if (!TUisScalar (IDS_NTYPE (arg_node)) && !TYisAKS (IDS_NTYPE (arg_node))) {
+        /* Currently, we allow the LHS to be anything (e.g scalar, AKS, AKD, AUD)
+         * as long as there is only on ID there (note that we currently do not
+         * cudarize wls with more than one return values, so this is fine with
+         * wls too)*/
+        if (/* !TUisScalar( IDS_NTYPE( arg_node)) && !TYisAKS( IDS_NTYPE( arg_node)) */
+            IDS_NEXT (arg_node) != NULL) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
@@ -510,6 +620,30 @@ CUTEMids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("GetApArgFromFundefArg");
+
+    DBUG_ASSERT ((fundefargs != NULL), "Function argument list is NULL!");
+    DBUG_ASSERT ((apargs != NULL), "Application parameter list is NULL!");
+
+    while (apargs != NULL) {
+        if (fundefargs == arg) {
+            res = EXPRS_EXPR (apargs);
+            break;
+        }
+        apargs = EXPRS_NEXT (apargs);
+        fundefargs = ARG_NEXT (fundefargs);
+    }
+
+    DBUG_ASSERT ((res != NULL), "No matching application arg found for fundef arg!");
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *CUTEMid(node *arg_node, info)
@@ -524,7 +658,7 @@ CUTEMids (node *arg_node, info *arg_info)
 node *
 CUTEMid (node *arg_node, info *arg_info)
 {
-    node *lastassign;
+    node *lastassign, *param;
 
     DBUG_ENTER ("CUTEMid");
 
@@ -534,7 +668,7 @@ CUTEMid (node *arg_node, info *arg_info)
         /* If we found a N_id defined by CUDA_DEVICE_SINGLE
          * N_assign, the N_assign referenced this N_id is also
          * tagged as CUDA_DEVICE_SINGLE */
-        if (IsIdCudaDefined (arg_node)) {
+        if (IsIdCudaDefined (arg_node, arg_info)) {
             ASSIGN_EXECMODE (lastassign) = CUDA_DEVICE_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
@@ -544,7 +678,22 @@ CUTEMid (node *arg_node, info *arg_info)
         /* If we are in update mode, the N_id should be set host referenced
          * Also, if the N_id is in the argument list of LAC funap, we need
          * to propagate this information to the fundef as well */
-        AVIS_ISHOSTREFERENCED (ID_AVIS (arg_node)) = TRUE;
+        if (INFO_DOFUNARGS (arg_info)) {
+            if (TUisScalar (ID_NTYPE (arg_node))) {
+                AVIS_ISHOSTREFERENCED (ID_AVIS (arg_node)) = TRUE;
+            }
+        } else {
+            AVIS_ISHOSTREFERENCED (ID_AVIS (arg_node)) = TRUE;
+        }
+
+        if (NODE_TYPE (ID_DECL (arg_node)) == N_arg && !TUisScalar (ID_NTYPE (arg_node))
+            && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+
+            param
+              = GetApArgFromFundefArg (INFO_APARGS (arg_info), INFO_FUNDEFARGS (arg_info),
+                                       ID_DECL (arg_node));
+            AVIS_ISHOSTREFERENCED (ID_AVIS (param)) = TRUE;
+        }
     } else {
         /* Do nothing */
     }
@@ -567,6 +716,7 @@ node *
 CUTEMap (node *arg_node, info *arg_info)
 {
     node *fundef = NULL;
+    info *anon_info;
 
     DBUG_ENTER ("CUTEMap");
 
@@ -580,18 +730,38 @@ CUTEMap (node *arg_node, info *arg_info)
             /* If at least one of the arguments of the cond-fun
              * is cuda defined, we check the suitability of executing
              * this conditional on cuda */
-            if (HasCudaDefinedId (AP_ARGS (arg_node))) {
-                arg_node = TCULACdoTagCudaLac (arg_node, INFO_LHS (arg_info),
-                                               FUNDEF_ARGS (fundef));
+            if (HasCudaDefinedId (AP_ARGS (arg_node), arg_info)
+                && CheckApIds (INFO_LHS (arg_info))) {
+
+                /************ Anonymous Traversal ************/
+                anontrav_t atrav[4] = {{N_fundef, &ATravFundef},
+                                       {N_ap, &ATravAp},
+                                       {N_with, &ATravWith},
+                                       {0, NULL}};
+
+                TRAVpushAnonymous (atrav, &TRAVsons);
+
+                anon_info = MakeInfo ();
+
+                fundef = TRAVdo (fundef, anon_info);
+                /*********************************************/
+
+                FUNDEF_ISCUDALACFUN (fundef) = INFO_AT_ISCUDARIZABLE (arg_info);
+
                 /* If the lac fun is cudarizbale, we tag the
                  * application of this lac fun as CUDA_DEVICE_SINGLE */
                 if (FUNDEF_ISCUDALACFUN (fundef)) {
                     ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_SINGLE;
                 }
+
+                /************ Anonymous Traversal ************/
+                anon_info = FreeInfo (anon_info);
+                TRAVpop ();
+                /*********************************************/
             } else {
                 /* If the cond-fun is not cudarizable, we traverse
                  * into it to tag the N_assigns in it */
-                fundef = TraverseLacFun (fundef, arg_info);
+                fundef = TraverseLacFun (fundef, arg_node, arg_info);
             }
         }
         /* If the ap is loop, it's tagged as host single and we
@@ -601,8 +771,7 @@ CUTEMap (node *arg_node, info *arg_info)
          * traversing into the loop body */
         else if (FUNDEF_ISDOFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
-            SetArgCudaDefined (AP_ARGS (arg_node), FUNDEF_ARGS (fundef));
-            fundef = TraverseLacFun (fundef, arg_info);
+            fundef = TraverseLacFun (fundef, arg_node, arg_info);
         }
         /* If the ap is normal fun app */
         else {
@@ -613,12 +782,20 @@ CUTEMap (node *arg_node, info *arg_info)
         if (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
             /* Traverse into lac function body to untag any N_assigns
              * if needed */
-            fundef = TraverseLacFun (fundef, arg_info);
+            fundef = TraverseLacFun (fundef, arg_node, arg_info);
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         if (fundef != INFO_FUNDEF (arg_info)) {
+            /* If the fun app is a do fun, we treat its paramenter slightly
+             * differently. The ISHOSTREFERENCED flag of each array parameter
+             * is only set when we traverse the do fun body. So here we only
+             * set the flag for non-array parameters, i.e. scalars.
+             */
+            if (FUNDEF_ISDOFUN (fundef)) {
+                INFO_DOFUNARGS (arg_info) = TRUE;
+            }
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
-            // ClearArgCudaDefined( FUNDEF_ARGS( fundef));
+            INFO_DOFUNARGS (arg_info) = FALSE;
         }
     } else {
         DBUG_ASSERT ((0), "Invalid traverse mode!");
@@ -650,7 +827,7 @@ CUTEMwith (node *arg_node, info *arg_info)
         if (WITH_CUDARIZABLE (arg_node)) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_MULTI;
         }
-    } else {
+    } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         if (!WITH_CUDARIZABLE (arg_node)) {
             old_inwith = INFO_INWITH (arg_info);
             INFO_INWITH (arg_info) = TRUE;
@@ -659,6 +836,8 @@ CUTEMwith (node *arg_node, info *arg_info)
             WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
             INFO_INWITH (arg_info) = old_inwith;
         }
+    } else {
+        /* Do nothing */
     }
 
     DBUG_RETURN (arg_node);

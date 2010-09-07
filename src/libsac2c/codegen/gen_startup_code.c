@@ -597,7 +597,9 @@ GSCprintMainBegin ()
         INDENT;
         fprintf (global.outfile, "SAC_CS_SETUP();\n");
         INDENT;
-        fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
+        if (global.backend != BE_cuda) {
+            fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -628,7 +630,9 @@ GSCprintMainEnd ()
     INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
     INDENT;
-    fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
+    if (global.backend != BE_cuda) {
+        fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
+    }
 
     DBUG_VOID_RETURN;
 }

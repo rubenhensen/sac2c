@@ -183,14 +183,13 @@
     if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
         return;
 
-/*********************** 2D case ***********************/
+/*********************** 2D case (Without Step/Width) ***********************/
 #define SAC_CUDA_WLIDS_2D_0(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim)                                                \
       = BLOCKIDX_Y * BLOCKDIM_Y + THREADIDX_Y + lb_var;                                  \
     if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
         return;
 
-/*********************** 1D case (Without Step/Width) ***********************/
 #define SAC_CUDA_WLIDS_2D_1(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim)                                                \
       = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X + lb_var;                                  \
@@ -220,10 +219,10 @@
 
 /*********************** ND case (Without Step/Width) ***********************/
 #define SAC_CUDA_WLIDS_ND_0(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
 
 #define SAC_CUDA_WLIDS_ND_1(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
 
 #define SAC_CUDA_WLIDS_ND_2(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_X + lb_var;
@@ -237,15 +236,15 @@
 /*********************** ND case (With Step/Width) ***********************/
 #define SAC_CUDA_WLIDS_ND_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
                                ub_var)                                                   \
-    if (step_var > 1 && (BLOCKIDX_X % step_var > (width_var - 1)))                       \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
-
-#define SAC_CUDA_WLIDS_ND_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
     if (step_var > 1 && (BLOCKIDX_Y % step_var > (width_var - 1)))                       \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
+
+#define SAC_CUDA_WLIDS_ND_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+                               ub_var)                                                   \
+    if (step_var > 1 && (BLOCKIDX_X % step_var > (width_var - 1)))                       \
+        return;                                                                          \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
 
 #define SAC_CUDA_WLIDS_ND_SW_2(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
                                ub_var)                                                   \
@@ -264,6 +263,39 @@
     if (step_var > 1 && (THREADIDX_Z % step_var > (width_var - 1)))                      \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Z + lb_var;
+
+/*****************************************************************************
+ *
+ * NEW ICMs for WLIDS
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_CUDA_WLIDS(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx, step_var,  \
+                       width_var, lb_var, ub_var)                                        \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx + lb_var;    \
+    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
+        return;
+
+#define SAC_CUDA_WLIDS_SW(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx,         \
+                          step_var, width_var, lb_var, ub_var)                           \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx;             \
+    if (step_var > 1                                                                     \
+        && (SAC_ND_READ (wlids_NT, wlids_NT_dim) % step_var > (width_var - 1)))          \
+        return;                                                                          \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) += lb_var;                                     \
+    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
+        return;
+
+#define SAC_CUDA_WLIDS_HD(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var,    \
+                          ub_var)                                                        \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
+
+#define SAC_CUDA_WLIDS_HD_SW(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var, \
+                             ub_var)                                                     \
+    if (step_var > 1 && (index % step_var > (width_var - 1)))                            \
+        return;                                                                          \
+    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
 
 /*****************************************************************************
  *
