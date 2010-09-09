@@ -272,7 +272,7 @@ GetBasetypeStr (types *type)
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
     } else if (basetype == T_double_dev || basetype == T_double_shmem) {
-        str = "float"; /* We do not support double in CUDA yet */
+        str = "double";
     }
     /* If the enforce_float flag is set,
      * we change all doubles to floats */

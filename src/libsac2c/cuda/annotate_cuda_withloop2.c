@@ -217,17 +217,8 @@ ACUWLwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
 
-        /* We only cudarize AKS N_with and not double*/
-        WITH_CUDARIZABLE (arg_node)
-          = TYisAKS (ty) &&
-            /* TYgetSimpleType( TYgetScalar( ty)) != T_double && */
-            INFO_CUDARIZABLE (arg_info);
-
-        /*
-        if( TYgetSimpleType( TYgetScalar( ty)) == T_double) {
-          CTIwarn("Double WITH-loop uncudarizable");
-        }
-        */
+        /* We only cudarize AKS N_with */
+        WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -236,15 +227,7 @@ ACUWLwith (node *arg_node, info *arg_info)
          * inner N_with is tagged as not cudarizbale */
         WITH_CUDARIZABLE (arg_node) = FALSE;
 
-        INFO_CUDARIZABLE (arg_info)
-          = TYisAKS (ty) &&
-            /* TYgetSimpleType( TYgetScalar( ty)) != T_double && */
-            INFO_CUDARIZABLE (arg_info);
-        /*
-        if( TYgetSimpleType( TYgetScalar( ty)) == T_double) {
-          CTIwarn("Double WITH-loop uncudarizable");
-        }
-        */
+        INFO_CUDARIZABLE (arg_info) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
     }
 
     DBUG_RETURN (arg_node);
