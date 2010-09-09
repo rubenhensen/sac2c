@@ -1397,3 +1397,41 @@ ICM_DEF( ND_PRF_PROP_OBJ_OUT, ICM_TRACE_NONE)
 ICM_END( ND_PRF_PROP_OBJ_OUT, (vararg_cnt, vararg))
 #endif
 
+
+#if defined(FP_SLOWCLONE_DECL) || defined(ICM_ALL)
+ICM_DEF( FP_SLOWCLONE_DECL, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( FP_SLOWCLONE_DECL, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(FP_SLOWCLONE_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( FP_SLOWCLONE_DEF_BEGIN, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( FP_SLOWCLONE_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(FP_FUN_RET) || defined(ICM_ALL)
+ICM_DEF( FP_FUN_RET, ICM_TRACE(fun))
+  ICM_ID( framename)
+  ICM_ID( retname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( FP_FUN_RET, (framename, retname, vararg_cnt, vararg))
+#endif
+
+#if defined(FP_FUN_AP) || defined(ICM_ALL)
+ICM_DEF( FP_FUN_AP, ICM_TRACE(fun))
+  ICM_ID( framename)
+  ICM_ID( name)
+  ICM_ID( retname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( FP_FUN_AP, (framename, name, retname, vararg_cnt, vararg))
+#endif
+

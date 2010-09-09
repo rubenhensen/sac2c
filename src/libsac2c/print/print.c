@@ -1182,6 +1182,14 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
 
+        if (MODULE_FPFRAMESTORE (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  FP Frame infrastructure\n"
+                                     " */\n\n");
+            TRAVdo (MODULE_FPFRAMESTORE (arg_node), arg_info);
+        }
+
         /*
          * The following conditional is a cruel hack to get sac2tex
          * going; a much better solution should be adopted once print.c
@@ -1256,14 +1264,6 @@ PRTmodule (node *arg_node, info *arg_info)
                                      " *  SPMD infrastructure\n"
                                      " */\n\n");
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
-        }
-
-        if (MODULE_FPFRAMESTORE (arg_node) != NULL) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  FP Frame infrastructure\n"
-                                     " */\n\n");
-            TRAVdo (MODULE_FPFRAMESTORE (arg_node), arg_info);
         }
 
         if (MODULE_THREADFUNS (arg_node) != NULL) {

@@ -3273,6 +3273,7 @@
       <travuser>
         <node name="Fundef" />
         <node name="Assign" />
+        <node name="Let" />
         <node name="Ids" />
         <node name="Id" />
       </travuser>
@@ -5009,6 +5010,22 @@ N_tfarg :
                 <node name="Livevars" />
                 <phases>
                   <phase from="fp_lva" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="FPFrameName" inconstructor="no">
+          <description>
+            When this function contains spawn, unique function name is saved
+            here for the name used in the task frame.
+          </description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pc_msc" to="final" />
                 </phases>
               </target>
             </targets>

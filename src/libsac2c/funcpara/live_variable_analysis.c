@@ -22,7 +22,7 @@
  *   continues until the next spawn or sync statement and the process is
  *   repeated.
  *
- *   TODO: Doesn't actually save live variables yet, just finds them
+ *   TODO: It appears AssignIsSync and AssignIsSpawn are tunred around? Check!
  *
  * @ingroup fp
  *
@@ -63,12 +63,14 @@ struct INFO {
     dfmask_t *func;
     bool analyse;
     dfmask_t *funion;
+    bool inspawn;
 };
 
 #define INFO_BASE(n) ((n)->base)
 #define INFO_LIVE(n) ((n)->live)
 #define INFO_ANALYSE(n) ((n)->analyse)
 #define INFO_FUNION(n) ((n)->funion)
+#define INFO_INSPAWN(n) ((n)->inspawn)
 
 static info *
 MakeInfo ()
@@ -83,6 +85,7 @@ MakeInfo ()
     INFO_LIVE (result) = NULL;
     INFO_ANALYSE (result) = FALSE;
     INFO_FUNION (result) = NULL;
+    INFO_INSPAWN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -166,8 +169,8 @@ AssignIsSpawn (node *assign)
 
     instr = ASSIGN_INSTR (assign);
 
-    result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_prf
-             && PRF_PRF (LET_EXPR (instr)) == F_sync;
+    result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_ap
+             && AP_ISSPAWNED (LET_EXPR (instr));
 
     DBUG_RETURN (result);
 }
@@ -195,8 +198,8 @@ AssignIsSync (node *assign)
 
     instr = ASSIGN_INSTR (assign);
 
-    result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_ap
-             && AP_ISSPAWNED (LET_EXPR (instr));
+    result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_prf
+             && PRF_PRF (LET_EXPR (instr)) == F_sync;
 
     DBUG_RETURN (result);
 }
@@ -322,6 +325,14 @@ LVAassign (node *arg_node, info *arg_info)
         // create union mask for entire function
         DFMsetMaskOr (INFO_FUNION (arg_info), mask);
 
+        // Add ids for spawned ap to funion as well
+        // TODO: Use anonymous traversal
+        if (AssignIsSync (arg_node)) {
+            INFO_INSPAWN (arg_info) = TRUE;
+            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+            INFO_INSPAWN (arg_info) = FALSE;
+        }
+
         // save live vars in the let node
         avis = DFMgetMaskEntryAvisSet (mask);
         livevars = NULL;
@@ -345,6 +356,35 @@ LVAassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *LVAlet(node *arg_node, info *arg_info)
+ *
+ * @brief Traverse let nodes and set spawned in info if it contains
+ *        a spawned ap
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+LVAlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("LVAlet");
+    DBUG_PRINT ("LVA", ("Traversing Let node"));
+
+    if (INFO_INSPAWN (arg_info)) {
+        DBUG_PRINT ("LVA", ("Found a spawned ap!"));
+    }
+
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *LVAids(node *arg_node, info *arg_info)
  *
  * @brief Traverse ids nodes
@@ -362,6 +402,12 @@ LVAids (node *arg_node, info *arg_info)
     DBUG_PRINT ("LVA", ("Traversing Ids node: %s", AVIS_NAME (IDS_AVIS (arg_node))));
 
     DFMsetMaskEntrySet (INFO_LIVE (arg_info), NULL, IDS_AVIS (arg_node));
+
+    // Always add result from spawned ap to task frame
+    if (INFO_INSPAWN (arg_info)) {
+        DBUG_PRINT ("LVA", ("Adding Ids to funion"));
+        DFMsetMaskEntrySet (INFO_FUNION (arg_info), NULL, IDS_AVIS (arg_node));
+    }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 

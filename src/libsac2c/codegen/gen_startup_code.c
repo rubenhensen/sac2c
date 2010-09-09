@@ -170,6 +170,8 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
 
+    fprintf (global.outfile, "#define SAC_DO_FP  %d\n", (global.fp == 0) ? 0 : 1);
+
     fprintf (global.outfile, "\n");
 
     /* MUTC Switches */

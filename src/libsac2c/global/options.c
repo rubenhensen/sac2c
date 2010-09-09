@@ -206,6 +206,10 @@ OPTcheckOptionConsistency (void)
                   "Diagnostic disabled");
     }
 
+    if (global.fp && global.mtmode == MT_none) {
+        CTIerror ("Functional Parallelism only works when MT is enabled");
+    }
+
     /*
      * commandline switch for library generation not used,
      * set it to default and generate a standard SAC Library

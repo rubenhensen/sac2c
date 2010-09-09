@@ -102,6 +102,7 @@ MSCfundef (node *arg_node, info *arg_info)
     if (FUNDEF_CONTAINSSPAWN (arg_node)) {
         DBUG_PRINT ("MSC", ("Function contains spawn, creating clone"));
 
+        FUNDEF_FPFRAMENAME (arg_node) = STRcpy (FUNDEF_NAME (arg_node));
         clone = DUPdoDupNode (arg_node);
 
         // TODO: free( FUNDEF_NAME( clone));
