@@ -2097,32 +2097,34 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, "[CD]");
     }
 
-    fprintf (global.outfile, " { "); /* Start of avis info */
-    if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, "dim: ");
-        AVIS_DIM (ARG_AVIS (arg_node))
-          = TRAVdo (AVIS_DIM (ARG_AVIS (arg_node)), arg_info);
-    }
-    if (AVIS_SHAPE (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, ", shape: ");
-        AVIS_SHAPE (ARG_AVIS (arg_node))
-          = TRAVdo (AVIS_SHAPE (ARG_AVIS (arg_node)), arg_info);
-    }
-    /* Print extrema information */
-    minmk = AVIS_ISMINHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
-    maxmk = AVIS_ISMAXHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
-    fprintf (global.outfile, ",%s%s", minmk, maxmk);
-    if (AVIS_MIN (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, ", minval: %s",
-                 AVIS_NAME (ID_AVIS (AVIS_MIN (ARG_AVIS (arg_node)))));
-    }
-    if (AVIS_MAX (ARG_AVIS (arg_node)) != NULL) {
-        fprintf (global.outfile, ", maxval: %s",
-                 AVIS_NAME (ID_AVIS (AVIS_MAX (ARG_AVIS (arg_node)))));
-    }
+    if (global.tool != TOOL_sac2tex) {
 
-    fprintf (global.outfile, " } "); /* end of avis info */
+        fprintf (global.outfile, " { "); /* Start of avis info */
+        if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, "dim: ");
+            AVIS_DIM (ARG_AVIS (arg_node))
+              = TRAVdo (AVIS_DIM (ARG_AVIS (arg_node)), arg_info);
+        }
+        if (AVIS_SHAPE (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", shape: ");
+            AVIS_SHAPE (ARG_AVIS (arg_node))
+              = TRAVdo (AVIS_SHAPE (ARG_AVIS (arg_node)), arg_info);
+        }
+        /* Print extrema information */
+        minmk = AVIS_ISMINHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
+        maxmk = AVIS_ISMAXHANDLED (ARG_AVIS (arg_node)) ? "Y" : "N";
+        fprintf (global.outfile, ",%s%s", minmk, maxmk);
+        if (AVIS_MIN (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", minval: %s",
+                     AVIS_NAME (ID_AVIS (AVIS_MIN (ARG_AVIS (arg_node)))));
+        }
+        if (AVIS_MAX (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", maxval: %s",
+                     AVIS_NAME (ID_AVIS (AVIS_MAX (ARG_AVIS (arg_node)))));
+        }
 
+        fprintf (global.outfile, " } "); /* end of avis info */
+    }
     TRAVdo (ARG_AVIS (arg_node), arg_info);
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -4475,6 +4477,12 @@ PRTgenarray (node *arg_node, info *arg_info)
     if (GENARRAY_RC (arg_node) != NULL) {
         fprintf (global.outfile, ", RC(");
         TRAVdo (GENARRAY_RC (arg_node), arg_info);
+        fprintf (global.outfile, ")");
+    }
+
+    if (GENARRAY_SUB (arg_node) != NULL) {
+        fprintf (global.outfile, ", SUB(");
+        TRAVdo (GENARRAY_SUB (arg_node), arg_info);
         fprintf (global.outfile, ")");
     }
 
