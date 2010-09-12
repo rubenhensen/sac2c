@@ -37,7 +37,7 @@
  * Prefix: MBTRAN2
  *
  *****************************************************************************/
-#include "minimize_block_transfers.h"
+#include "minimize_block_transfers2.h"
 
 #include <stdlib.h>
 #include "new_types.h"

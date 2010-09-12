@@ -102,7 +102,6 @@
 #include "str.h"
 #include "cuda_utils.h"
 #include "cleanup_cuda_kernels.h"
-#include "lift_dec_rc.h"
 #include "adjust_shmem_access.h"
 #include "expand_shmem_boundary_load.h"
 

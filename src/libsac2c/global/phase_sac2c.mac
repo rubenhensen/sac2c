@@ -818,13 +818,6 @@ SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
 
 SUBPHASE (cutem, "CUDA Tag execution mode", CUTEMdoTagExecutionmode,
           global.backend == BE_cuda && global.optimize.doexpar, cuda)
-/*
-SUBPHASE( aculac,
-          "CUDA Annotate CUDA lac functions",
-          ACULACdoAnnotateCUDALacfun,
-          global.backend == BE_cuda,
-          cuda)
-*/
 
 SUBPHASE (cuskc, "CUDA Sink scalar code", CUSKCdoSinkCode,
           global.backend == BE_cuda && global.optimize.doexpar, cuda)

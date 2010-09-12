@@ -177,13 +177,6 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-      <traversal id="TCULAC" name="CUDA Tag cudarizable lac functions" default="sons" include="tag_cuda_lac.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="With" />
-        </travuser>
-      </traversal>
       <traversal id="CUSKC" name="CUDA Sink scalar code into CUDA withloop" default="sons" include="cuda_sink_code.h" >
         <travuser>
           <node name="Fundef" />
@@ -207,14 +200,6 @@
           <node name="Let" />
           <node name="Arg" />
           <node name="Ret" />
-        </travuser>
-      </traversal>
-      <traversal id="LDRC" name="CUDA Lift decrement reference count promitive from CUDA kernels" default="sons" include="lift_dec_rc.h" >
-        <travuser>
-          <node name="Prf" />
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Ap" />
         </travuser>
       </traversal>
       <traversal id="STKNL" name="CUDA Create single threaded CUDA kerenls" default="sons" include="single_thread_kernels.h" >
@@ -293,15 +278,6 @@
           <node name="Prf" />
         </travuser>
       </traversal>
-      <traversal id="ACULAC" name="Annotate CUDA lac functions" default="sons" include="annotate_cuda_lacfun.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Assign" />
-        </travuser>
-      </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
           <node name="With" />
@@ -360,16 +336,6 @@
           <node name="Funcond" />
           <node name="Return" />
           <node name="Cudast" />
-        </travuser>
-      </traversal>
-      <traversal id="MBTRAN" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="With" />
-          <node name="Cond" />
         </travuser>
       </traversal>
       <traversal id="MBTRAN2" name="Minimise the number of device-host data transfers in code blocks" default="sons" include="minimize_block_transfers2.h" >

@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include "dbug.h"
 #include "minimize_block_transfers2.h"
-#include "minimize_block_transfers.h"
 #include "annotate_memory_transfers.h"
 #include "annotate_cond_transfers.h"
 #include "minimize_loop_transfers.h"
