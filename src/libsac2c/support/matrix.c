@@ -195,6 +195,46 @@ FreeMatrix (Matrix m)
  *
  *******************************************************************************/
 void
+MatrixSetEntry (Matrix m, int x, int y, int elem)
+{
+    DBUG_ENTER ("MatrixSetEntry");
+
+    m->mtx[y][x] = elem;
+
+    DBUG_VOID_RETURN;
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+int
+MatrixGetEntry (Matrix m, int x, int y)
+{
+    int elem;
+
+    DBUG_ENTER ("MatrixGetEntry");
+
+    elem = m->mtx[y][x];
+
+    DBUG_RETURN (elem);
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+void
 MatrixToReducedREForm (Matrix m)
 {
     int lead;

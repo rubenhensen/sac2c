@@ -285,26 +285,6 @@ typedef struct ACCESS_INFO_T {
     struct NODE *wlarray;
 } access_info_t;
 
-/* These two structs are used to annotate reusable arrays
- * in a wl. The info will be attached to N_code node */
-typedef struct RC_T {
-    node *array;
-    node *arrayshp;
-    node *sharray;
-    node *sharrayshp;
-    int dim;
-    bool selfref;
-    int posoffset[SHP_SEG_SIZE];
-    int negoffset[SHP_SEG_SIZE];
-    bool reusable;
-    struct RC_T *next;
-} rc_t;
-
-typedef struct REUSE_INFO_T {
-    int count;
-    rc_t *rcs;
-} reuse_info_t;
-
 typedef struct TYPES {
     simpletype simpletype;
     char *name;         /* only used for T_user !! */
@@ -1053,6 +1033,47 @@ typedef struct sMtx {
     int *m_stor;
     int **mtx;
 } * Matrix, sMatrix;
+
+/* These two structs are used to annotate reusable arrays
+ * in a wl. The info will be attached to N_code node */
+typedef struct RC_T {
+    node *array;
+    node *arrayshp;
+    node *sharray;
+    node *sharrayshp;
+    int dim;
+    bool selfref;
+    int posoffset[SHP_SEG_SIZE];
+    int negoffset[SHP_SEG_SIZE];
+    bool reusable;
+    struct RC_T *next;
+} rc_t;
+
+typedef struct REUSE_INFO_T {
+    int count;
+    rc_t *rcs;
+} reuse_info_t;
+
+/* For the moment, we only look at potential reuse opportunities
+ * for 1 or 2 dimensional arrays */
+#define MAX_REUSE_DIM 2
+
+typedef enum { CONSTANT, THREADIDX_X, THREADIDX_Y, LOOPIDX } idx_type_t;
+
+typedef struct INDEX_T {
+    idx_type_t type;
+    int coefficient;
+    node *id;
+    struct INDEX_T *next;
+} index_t;
+
+typedef struct CUDA_ACCESS_INFO_T {
+    Matrix comtx;
+    node *array;
+    int dim;
+    int nestlevel;
+    index_t *indices[MAX_REUSE_DIM];
+} cuda_access_info_t;
 
 /******************************************************************************
  * N_avis attributes
