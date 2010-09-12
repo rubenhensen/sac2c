@@ -1045,6 +1045,16 @@ typedef struct MATRIX matrix;
 typedef struct ELEMSTACK elemstack;
 
 /******************************************************************************
+ * typedef for CUDA data reuse analysis
+ */
+
+typedef struct sMtx {
+    int dim_x, dim_y;
+    int *m_stor;
+    int **mtx;
+} * Matrix, sMatrix;
+
+/******************************************************************************
  * N_avis attributes
  */
 

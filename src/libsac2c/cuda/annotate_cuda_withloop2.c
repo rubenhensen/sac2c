@@ -218,7 +218,8 @@ ACUWLwith (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = FALSE;
 
         /* We only cudarize AKS N_with */
-        WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
+        WITH_CUDARIZABLE (arg_node)
+          = (TYisAKS (ty) || TYisAKD) && INFO_CUDARIZABLE (arg_info);
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -227,7 +228,8 @@ ACUWLwith (node *arg_node, info *arg_info)
          * inner N_with is tagged as not cudarizbale */
         WITH_CUDARIZABLE (arg_node) = FALSE;
 
-        INFO_CUDARIZABLE (arg_info) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
+        INFO_CUDARIZABLE (arg_info)
+          = (TYisAKS (ty) || TYisAKD) && INFO_CUDARIZABLE (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -316,7 +318,7 @@ ACUWLid (node *arg_node, info *arg_info)
     if (INFO_INWL (arg_info)) {
         /* We do not cudarize any N_with which contains arrays
          * other than AKS arrays */
-        if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type)) {
+        if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type) && !TYisAKD (type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
         }
     }
