@@ -146,6 +146,17 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="DAA" name="CUDA Data access analysis" default="sons" include="data_access_analysis.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Block" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="IRA" name="CUDA Infer reusable arrays in withloops" default="sons" include="infer_reusable_arrays.h" >
         <travuser>
           <node name="Fundef" />
@@ -5558,6 +5569,18 @@ N_tfarg :
             </targets>
           </type>
 	</attribute>
+	<attribute name="Level" inconstructor="no">
+	  <type name="Integer">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <range name="daa" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
         <attribute name="Visited_With" inconstructor="no">
           <type name="Link">
             <targets>
@@ -5618,6 +5641,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+
       </attributes>
       <flags>
         <flag name="IsUnused" />

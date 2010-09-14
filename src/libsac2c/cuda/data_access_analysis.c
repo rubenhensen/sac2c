@@ -26,8 +26,9 @@ typedef enum { trav_normal, trav_collect } travmode_t;
 /* Essential information of a WL partition */
 typedef struct PART_INFO {
     int dim;
-    node *withids;
-    node *withidx;
+    int type;
+    int nth;
+    node *wlids;
     node *step;
     node *width;
     struct PART_INFO *next;
@@ -37,30 +38,36 @@ typedef struct PART_INFO {
  * INFO structure
  */
 struct INFO {
-    rc_t *rcs;
-    int count;
     int nest_level;
-    bool in_cudawl;
     travmode_t travmode;
-    rc_t *current_rc;
     node *fundef;
-    node *withids;
     node *wlidxs;
-    node *loopids;
     part_info_t *part_info;
+    node *current_block;
+    node *lastassign;
+    bool is_affine;
+    int coefficient;
+    int dim;
 };
 
-#define INFO_RCS(n) (n->rcs)
-#define INFO_COUNT(n) (n->count)
 #define INFO_NEST_LEVEL(n) (n->nest_level)
-#define INFO_IN_CUDAWL(n) (n->in_cudawl)
 #define INFO_TRAVMODE(n) (n->travmode)
-#define INFO_CURRENT_RC(n) (n->current_rc)
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_WITHIDS(n) (n->withids)
 #define INFO_WLIDXS(n) (n->wlidxs)
-#define INFO_LOOPIDS(n) (n->loopids)
 #define INFO_PART_INFO(n) (n->part_info)
+#define INFO_CURRENT_BLOCK(n) (n->current_block)
+#define INFO_LASTASSIGN(n) (n->lastassign)
+#define INFO_IS_AFFINE(n) (n->is_affine)
+#define INFO_COEFFICIENT(n) (n->coefficient)
+#define INFO_DIM(n) (n->dim)
+
+#define PART_INFO_DIM(n) (n->dim)
+#define PART_INFO_TYPE(n) (n->type)
+#define PART_INFO_NTH(n) (n->nth)
+#define PART_INFO_WLIDS(n) (n->wlids)
+#define PART_INFO_STEP(n) (n->step)
+#define PART_INFO_WIDTH(n) (n->width)
+#define PART_INFO_NEXT(n) (n->next)
 
 /*
  * INFO macros
@@ -78,17 +85,16 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_RCS (result) = NULL;
-    INFO_COUNT (result) = 0;
     INFO_NEST_LEVEL (result) = 0;
-    INFO_IN_CUDAWL (result) = FALSE;
     INFO_TRAVMODE (result) = trav_normal;
-    INFO_CURRENT_RC (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_WLIDXS (result) = NULL;
-    INFO_LOOPIDS (result) = NULL;
-    INFO_WITHIDS (result) = NULL;
     INFO_PART_INFO (result) = NULL;
+    INFO_CURRENT_BLOCK (result) = NULL;
+    INFO_LASTASSIGN (result) = NULL;
+    INFO_IS_AFFINE (result) = TRUE;
+    INFO_COEFFICIENT (result) = 0;
+    INFO_DIM (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -104,7 +110,7 @@ FreeInfo (info *info)
 }
 
 static part_info_t *
-CreatePartInfo (int dim, node *wlids, node *wlidx, node *step, node *width)
+CreatePartInfo (int dim, int type, node *wlids, node *step, node *width)
 {
     part_info_t *info;
 
@@ -112,12 +118,13 @@ CreatePartInfo (int dim, node *wlids, node *wlidx, node *step, node *width)
 
     info = MEMmalloc (sizeof (part_info_t));
 
-    info->dim = dim;
-    info->wlids = wlids;
-    info->wlidx = wlidx;
-    info->step = step;
-    info->width = width;
-    info->next = NULL;
+    PART_INFO_DIM (info) = dim;
+    PART_INFO_TYPE (info) = type;
+    PART_INFO_NTH (info) = 0;
+    PART_INFO_WLIDS (info) = wlids;
+    PART_INFO_STEP (info) = step;
+    PART_INFO_WIDTH (info) = width;
+    PART_INFO_NEXT (info) = NULL;
 
     DBUG_RETURN (info);
 }
@@ -130,8 +137,10 @@ PushPartInfo (part_info_t *infos, part_info_t *info)
     if (infos == NULL) {
         infos = info;
     } else {
-        info->next = infos;
-        infos = info;
+        while (PART_INFO_NEXT (infos) != NULL) {
+            infos = PART_INFO_NEXT (infos);
+        }
+        PART_INFO_NEXT (infos) = info;
     }
 
     DBUG_RETURN (infos);
@@ -140,106 +149,46 @@ PushPartInfo (part_info_t *infos, part_info_t *info)
 static part_info_t *
 PopPartInfo (part_info_t *infos)
 {
-    part_info_t *tmp;
+    part_info_t *res;
 
     DBUG_ENTER ("PopPartInfo");
 
     DBUG_ASSERT ((infos != NULL), "Partition information chain is NULL!");
 
-    tmp = infos;
-    infos = infos->next;
-    tmp->next = NULL;
-
-    tmp = MEMfree (tmp);
-
-    DBUG_RETURN (infos);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static rc_t *SearchRc( node* arr, rc_t* rc_list)
- *
- * @brief
- *
- *****************************************************************************/
-static rc_t *
-SearchRc (node *arr, rc_t *rc_list)
-{
-    rc_t *rc = NULL;
-
-    DBUG_ENTER ("SearchRc");
-
-    while (rc_list != NULL) {
-        if (arr == RC_ARRAY (rc_list)) {
-            rc = rc_list;
-            break;
-        }
-        rc_list = RC_NEXT (rc_list);
+    if (PART_INFO_NEXT (infos) == NULL) {
+        infos = MEMfree (infos);
+        res = NULL;
+    } else {
+        PART_INFO_NEXT (infos) = PopPartInfo (PART_INFO_NEXT (infos));
+        res = infos;
     }
 
-    DBUG_RETURN (rc);
+    DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn static rc_t* ConsolidateRcs( rc_t *rc_list, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-static rc_t *
-ConsolidateRcs (rc_t *rc_list, info *arg_info)
+static part_info_t *
+SearchIndex (part_info_t *infos, node *avis)
 {
-    rc_t *rc;
-    int dim, i, negoff, posoff, block_sz, extent, shmem_sz = 1;
-    node *shmem_shp = NULL;
+    int nth = 0;
+    node *wlids;
+    part_info_t *res = NULL;
 
-    DBUG_ENTER ("ConsolidateRcs");
+    DBUG_ENTER ("SearchIndex");
 
-    rc = rc_list;
-
-    while (rc != NULL) {
-        dim = RC_DIM (rc);
-
-        if (dim == 1) {
-            block_sz = 256;
-        } else if (dim == 2) {
-            block_sz = 16;
-        } else {
-            DBUG_ASSERT ((0), "Reusable array with dimension greater than 2!");
-        }
-
-        for (i = dim - 1; i >= 0; i--) {
-            negoff = RC_NEGOFFSET (rc, i);
-            posoff = RC_POSOFFSET (rc, i);
-            extent = negoff + posoff + block_sz;
-            if ((negoff != 0 && posoff != 0)
-                || ((negoff + posoff) > 0 && RC_SELFREF (rc))) {
-                RC_REUSABLE (rc) = TRUE;
+    while (infos != NULL) {
+        wlids = PART_INFO_WLIDS (infos);
+        while (wlids != NULL) {
+            if (IDS_AVIS (wlids) == avis) {
+                PART_INFO_NTH (infos) = nth;
+                return infos;
             }
-            shmem_sz *= extent;
-            shmem_shp = TBmakeExprs (TBmakeNum (extent), shmem_shp);
+            nth += 1;
+            wlids = IDS_NEXT (wlids);
         }
-
-        if (RC_REUSABLE (rc)) {
-            RC_SHARRAY (rc)
-              = TBmakeAvis (TRAVtmpVarName ("shmem"),
-                            TYmakeAKS (TYmakeSimpleType (
-                                         CUd2shSimpleTypeConversion (TYgetSimpleType (
-                                           TYgetScalar (AVIS_TYPE (RC_ARRAY (rc)))))),
-                                       SHcreateShape (1, shmem_sz)));
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (RC_SHARRAY (rc), FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-            RC_SHARRAYSHP (rc)
-              = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), shmem_shp);
-        } else {
-            INFO_COUNT (arg_info)--;
-        }
-
-        rc = RC_NEXT (rc);
+        infos = PART_INFO_NEXT (infos);
     }
 
-    DBUG_RETURN (rc_list);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -286,27 +235,6 @@ DAAfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DAAassign( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-DAAassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DAAassign");
-
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_TRAVMODE (arg_info) == trav_normal) {
-        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *DAAwith( node *arg_node, info *arg_info)
  *
  * @brief
@@ -321,13 +249,7 @@ DAAwith (node *arg_node, info *arg_info)
 
     dim = TCcountIds (WITH_IDS (arg_node));
 
-    if (WITH_CUDARIZABLE (arg_node) && dim <= 2) {
-        INFO_NEST_LEVEL (arg_info) += dim;
-        INFO_IN_CUDAWL (arg_info) = TRUE;
-        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-        INFO_IN_CUDAWL (arg_info) = FALSE;
-        INFO_NEST_LEVEL (arg_info) -= dim;
-    } else if (INFO_IN_CUDAWL (arg_info)) {
+    if ((WITH_CUDARIZABLE (arg_node) && dim <= 2) || INFO_NEST_LEVEL (arg_info) > 0) {
         INFO_NEST_LEVEL (arg_info) += dim;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
         INFO_NEST_LEVEL (arg_info) -= dim;
@@ -349,20 +271,41 @@ DAAwith (node *arg_node, info *arg_info)
 node *
 DAApart (node *arg_node, info *arg_info)
 {
+    int dim, ids_type;
+    part_info_t *p_info;
+    node *old_wlidx;
+
     DBUG_ENTER ("DAApart");
 
-    /*
-      if( CODE_DAA_INFO( PART_CODE( arg_node)) == NULL) {
-        INFO_WITHIDS( arg_info) = PART_IDS( arg_node);
-        INFO_WLIDXS( arg_info) =  WITHID_IDXS( PART_WITHID( arg_node));
-        PART_CODE( arg_node) = TRAVopt( PART_CODE( arg_node), arg_info);
-      }
-      PART_NEXT( arg_node) = TRAVopt( PART_NEXT( arg_node), arg_info);
-    */
+    dim = TCcountIds (PART_IDS (arg_node));
 
-    INFO_WITHIDS (arg_info) = PART_IDS (arg_node);
+    /* If this partition belongs to the outer most cudarizable WL,
+     * its ids are annotated as cuda threadidx */
+    if (INFO_NEST_LEVEL (arg_info) == dim) {
+        ids_type = IDX_THREADIDX_X | IDX_THREADIDX_Y;
+    }
+    /* If this partition belongs to any inner WLs,
+     * its ids are annotated as loop index */
+    else if (INFO_NEST_LEVEL (arg_info) > dim) {
+        ids_type = IDX_LOOPIDX;
+    } else {
+        DBUG_ASSERT ((0), "Wrong nesting level found!");
+    }
+
+    /* Push information */
+    p_info = CreatePartInfo (dim, ids_type, PART_IDS (arg_node), NULL, NULL);
+    INFO_PART_INFO (arg_info) = PushPartInfo (INFO_PART_INFO (arg_info), p_info);
+    old_wlidx = INFO_WLIDXS (arg_info);
     INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
+
+    /* Start traversing the code */
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+
+    /* Pop information */
+    INFO_WLIDXS (arg_info) = old_wlidx;
+    INFO_PART_INFO (arg_info) = PopPartInfo (INFO_PART_INFO (arg_info));
+
+    /* Continue traversing other partitions */
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -380,9 +323,8 @@ DAAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DAAcode");
 
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     /*
-      CODE_CBLOCK( arg_node) = TRAVopt( CODE_CBLOCK( arg_node), arg_info);
-
       if( INFO_RCS( arg_info) != NULL) {
         INFO_RCS( arg_info) = ConsolidateRcs( INFO_RCS( arg_info), arg_info);
 
@@ -400,6 +342,56 @@ DAAcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *DAAassign( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+DAAblock (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("DAAblock");
+
+    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DAAassign( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+DAAassign (node *arg_node, info *arg_info)
+{
+    node *old_lastassign;
+
+    DBUG_ENTER ("DAAassign");
+
+    old_lastassign = INFO_LASTASSIGN (arg_info);
+    INFO_LASTASSIGN (arg_info) = arg_node;
+
+    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+        ASSIGN_LEVEL (arg_node) = INFO_NEST_LEVEL (arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    } else if (INFO_TRAVMODE (arg_info) == trav_collect) {
+        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((0), "Wrong traverse mode!");
+    }
+
+    INFO_LASTASSIGN (arg_info) = old_lastassign;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *DAAprf( node *arg_node, info *arg_info)
  *
  * @brief
@@ -411,113 +403,80 @@ DAAprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("DAAprf");
 
     /* If we are in cuda withloop */
-    if (INFO_IN_CUDAWL (arg_info)) {
-        if (PRF_PRF (arg_node) == F_idx_sel) {
-            node *idx = PRF_ARG1 (arg_node);
-            node *arr = PRF_ARG2 (arg_node);
-            rc_t *rc = NULL;
-            int dim;
+    if (INFO_NEST_LEVEL (arg_info) > 0) {
+        switch (PRF_PRF (arg_node)) {
+        case F_idx_sel:
+            if (INFO_TRAVMODE (arg_info) == trav_normal) {
+                node *idx = PRF_ARG1 (arg_node);
+                node *arr = PRF_ARG2 (arg_node);
+                int dim;
 
-            DBUG_ASSERT (NODE_TYPE (idx) == N_id,
-                         "Non-id node found in the first argument of idx_sel!");
-            DBUG_ASSERT (NODE_TYPE (arr) == N_id,
-                         "Non-id node found in the second argument of idx_sel!");
+                DBUG_ASSERT (NODE_TYPE (idx) == N_id,
+                             "Non-id node found in the first argument of idx_sel!");
+                DBUG_ASSERT (NODE_TYPE (arr) == N_id,
+                             "Non-id node found in the second argument of idx_sel!");
 
-            dim = TYgetDim (ID_NTYPE (arr));
+                dim = TYgetDim (ID_NTYPE (arr));
 
-            /* Currently, we restrict reuse candidates to be arrays
-             * with the same dimensionality as the surrounding withloop
-             * and are either 1D or 2D */
-            if (dim == TCcountIds (INFO_WITHIDS (arg_info)) && dim > 0 && dim < 3) {
-                rc = SearchRc (ID_AVIS (arr), INFO_RCS (arg_info));
-
-                /* This is the first time we come across this array */
-                if (rc == NULL) {
-                    INFO_RCS (arg_info)
-                      = TBmakeReuseCandidate (ID_AVIS (arr), dim, INFO_RCS (arg_info));
-                    INFO_CURRENT_RC (arg_info) = INFO_RCS (arg_info);
-                    INFO_COUNT (arg_info)++;
-                } else {
-                    INFO_CURRENT_RC (arg_info) = rc;
+                /* Currently, we restrict reuse candidates to be either 1D or 2D arrays */
+                if (dim == 1 || dim == 2) {
+                    /* If this index has a defining assigment within the current cuda WL,
+                     * we start to collect access information */
+                    if (ID_SSAASSIGN (idx) != NULL
+                        && ASSIGN_LEVEL (ID_SSAASSIGN (idx)) != 0) {
+                        INFO_TRAVMODE (arg_info) = trav_collect;
+                        ID_SSAASSIGN (idx) = TRAVopt (ID_SSAASSIGN (idx), arg_info);
+                        INFO_TRAVMODE (arg_info) = trav_normal;
+                    }
                 }
-
-                /* If the index variable is the wlidx of the withloop
-                 * we set relf reference to TRUE */
-                if (IDS_AVIS (INFO_WLIDXS (arg_info)) == ID_AVIS (idx)) {
-                    RC_SELFREF (INFO_CURRENT_RC (arg_info)) = TRUE;
-                } else { /* Start backtracing to collect reuse information */
-                    INFO_TRAVMODE (arg_info) = trav_collect;
-                    ID_SSAASSIGN (idx) = TRAVopt (ID_SSAASSIGN (idx), arg_info);
-                    INFO_TRAVMODE (arg_info) = trav_normal;
-                }
-                INFO_CURRENT_RC (arg_info) = NULL;
             }
-        } else if (PRF_PRF (arg_node) == F_idxs2offset
-                   && INFO_TRAVMODE (arg_info) == trav_collect) {
-            pattern *pat1, *pat2, *pat3;
-            node *id, *ids, *withids;
-            int off, dim;
-            rc_t *rc;
-            bool selfref;
+            break;
+        case F_idxs2offset:
+            if (INFO_TRAVMODE (arg_info) == trav_collect) {
+                node *ids, *avis, *ssa_assign;
+                part_info_t *part_info;
 
-            rc = INFO_CURRENT_RC (arg_info);
-            DBUG_ASSERT ((rc != NULL), "Null reuse candidate found!");
+                ids = PRF_EXPRS2 (arg_node);
+                INFO_DIM (arg_info) = 0;
+                while (ids != NULL) {
+                    avis = ID_AVIS (EXPRS_EXPR (ids));
+                    ssa_assign = AVIS_SSAASSIGN (avis);
+                    /*
+                     * SSAASSIGN is NULL can be in two cases:
+                     *  - the id is a function argument;
+                     *  - the id is withids.
+                     */
+                    if (ssa_assign == NULL) {
+                        if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
+                        } else if ((part_info
+                                    = SearchIndex (INFO_PART_INFO (arg_info), avis))
+                                   != NULL) {
 
-            pat1 = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAgetNode (&id), 0),
-                          PMint (1, PMAgetIVal (&off), 0));
-            pat2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&id), 0),
-                          PMint (1, PMAgetIVal (&off), 0));
-            pat3 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetIVal (&off), 0),
-                          PMint (1, PMAgetNode (&id), 0));
-
-            if (RC_ARRAYSHP (rc) == NULL) {
-                RC_ARRAYSHP (rc) = DUPdoDupNode (PRF_ARG1 (arg_node));
-            }
-
-            dim = 0;
-            ids = PRF_EXPRS2 (arg_node);
-            withids = INFO_WITHIDS (arg_info);
-
-            /* We currenly only look at the case when the dim of
-             * the array being inferred is same as the dim of the
-             * surrounding withloop. */
-            if (TCcountExprs (ids) == TCcountIds (withids)) {
-                while (ids != NULL && withids != NULL) {
-                    if (PMmatchFlat (pat1, EXPRS_EXPR (ids))) {
-                        if (ID_AVIS (id) == IDS_AVIS (withids)) {
-                            if (off > RC_NEGOFFSET (rc, dim)) {
-                                RC_NEGOFFSET (rc, dim) = off;
-                            } else if ((-off) > RC_POSOFFSET (rc, dim)) {
-                                RC_POSOFFSET (rc, dim) = (-off);
-                            }
+                        } else {
+                            DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it "
+                                              "is neither an arg or a withids!");
                         }
-                    } else if (PMmatchFlat (pat2, EXPRS_EXPR (ids))
-                               || PMmatchFlat (pat3, EXPRS_EXPR (ids))) {
-                        if (ID_AVIS (id) == IDS_AVIS (withids)) {
-                            if (off > RC_POSOFFSET (rc, dim)) {
-                                RC_POSOFFSET (rc, dim) = off;
-                            } else if ((-off) > RC_NEGOFFSET (rc, dim)) {
-                                RC_NEGOFFSET (rc, dim) = (-off);
-                            }
-                        }
+                    } else {
                     }
 
-                    /* Flag indicating whether the array is selected at
-                     * each position */
-                    selfref
-                      = selfref && (ID_AVIS (EXPRS_EXPR (ids)) == IDS_AVIS (withids));
-
-                    dim++;
+                    INFO_DIM (arg_info)++;
                     ids = EXPRS_NEXT (ids);
-                    withids = IDS_NEXT (withids);
                 }
-                RC_SELFREF (rc) = selfref;
+                INFO_DIM (arg_info) = 0;
             }
-
-            pat1 = PMfree (pat1);
-            pat2 = PMfree (pat2);
-            pat3 = PMfree (pat3);
-        } else {
+            break;
+        case F_add_SxS:
+            if (INFO_TRAVMODE (arg_info) == trav_collect) {
+            }
+            break;
+        case F_sub_SxS:
+            if (INFO_TRAVMODE (arg_info) == trav_collect) {
+            }
+            break;
+        default:
+            if (INFO_TRAVMODE (arg_info) == trav_collect) {
+            }
+            break;
         }
     }
 

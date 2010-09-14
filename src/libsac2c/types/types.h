@@ -1058,10 +1058,13 @@ typedef struct REUSE_INFO_T {
  * for 1 or 2 dimensional arrays */
 #define MAX_REUSE_DIM 2
 
-typedef enum { CONSTANT, THREADIDX_X, THREADIDX_Y, LOOPIDX } idx_type_t;
+#define IDX_CONSTANT 1
+#define IDX_THREADIDX_X 2
+#define IDX_THREADIDX_Y 4
+#define IDX_LOOPIDX 8
 
 typedef struct INDEX_T {
-    idx_type_t type;
+    unsigned int type;
     int coefficient;
     node *id;
     struct INDEX_T *next;

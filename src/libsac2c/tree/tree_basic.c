@@ -178,6 +178,26 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 
 /*--------------------------------------------------------------------------*/
 
+index_t *
+TBmakeIndex (unsigned int type, int coefficient, node *id, node *next)
+{
+    DBUG_ENTER ("TBmakeIndex");
+
+    DBUG_RETURN (NULL);
+}
+
+/*--------------------------------------------------------------------------*/
+
+cuda_access_info_t *
+TBmakeCudaAccessInfo (node *array, int dim, int nextlevel)
+{
+    DBUG_ENTER ("TBmakeCudaAccessInfo");
+
+    DBUG_RETURN (NULL);
+}
+
+/*--------------------------------------------------------------------------*/
+
 argtab_t *
 TBmakeArgtab (int size)
 {

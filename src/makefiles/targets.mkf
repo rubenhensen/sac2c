@@ -182,7 +182,7 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         single_thread_kernels adjust_stknl_rets cuda_sink_code \
                         insert_withloop_memtran insert_cudast_memtran \
                         split_cuda_fold remove_unused_lac infer_reusable_arrays shared_memory_reuse \
-                        adjust_shmem_access expand_shmem_boundary_load
+                        adjust_shmem_access expand_shmem_boundary_load data_access_analysis
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

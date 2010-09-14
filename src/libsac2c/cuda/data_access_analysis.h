@@ -11,6 +11,7 @@ extern node *DAAwith (node *arg_node, info *arg_info);
 extern node *DAAassign (node *arg_node, info *arg_info);
 extern node *DAApart (node *arg_node, info *arg_info);
 extern node *DAAcode (node *arg_node, info *arg_info);
+extern node *DAAblock (node *arg_node, info *arg_info);
 extern node *DAAprf (node *arg_node, info *arg_info);
 
 #endif
