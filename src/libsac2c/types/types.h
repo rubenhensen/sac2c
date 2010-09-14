@@ -1068,7 +1068,7 @@ typedef struct INDEX_T {
 } index_t;
 
 typedef struct CUDA_ACCESS_INFO_T {
-    Matrix comtx;
+    Matrix coe_mtx;
     node *array;
     int dim;
     int nestlevel;

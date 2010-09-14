@@ -417,7 +417,7 @@ void
 ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim_pos,
                       char *iv_NT, char *hasstepwidth)
 {
-    char *postfix;
+    bool has_postfix;
 
     DBUG_ENTER ("ICMCompileCUDA_WLIDS");
 
@@ -458,12 +458,14 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
       }
     */
 
-    postfix = STReq (hasstepwidth, "true") ? "_SW" : "";
+    has_postfix = STReq (hasstepwidth, "true");
 
     if (array_dim == 1) {
         INDENT;
         fprintf (global.outfile, "SAC_CUDA_WLIDS");
-        fprintf (global.outfile, postfix);
+        if (has_postfix) {
+            fprintf (global.outfile, "_SW");
+        }
         fprintf (global.outfile,
                  "( %s, %d, BLOCKIDX_X, BLOCKDIM_X, THREADIDX_X, SACp_step_%d, "
                  "SACp_width_%d, SACp_lb_%d, SACp_ub_%d)\n",
@@ -472,7 +474,9 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
     } else if (array_dim == 2) {
         INDENT;
         fprintf (global.outfile, "SAC_CUDA_WLIDS");
-        fprintf (global.outfile, postfix);
+        if (has_postfix) {
+            fprintf (global.outfile, "_SW");
+        }
         if (wlids_dim_pos == 0) {
             fprintf (global.outfile,
                      "( %s, %d, BLOCKIDX_Y, BLOCKDIM_Y, THREADIDX_Y, SACp_step_%d, "
@@ -491,7 +495,9 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
     } else if (array_dim >= 3) {
         INDENT;
         fprintf (global.outfile, "SAC_CUDA_WLIDS_HD");
-        fprintf (global.outfile, postfix);
+        if (has_postfix) {
+            fprintf (global.outfile, "_SW");
+        }
         if (wlids_dim_pos == 0) {
             fprintf (global.outfile,
                      "( %s, %d, BLOCKIDX_Y, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "

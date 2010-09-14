@@ -23,30 +23,44 @@
 
 typedef enum { trav_normal, trav_collect } travmode_t;
 
+/* Essential information of a WL partition */
+typedef struct PART_INFO {
+    int dim;
+    node *withids;
+    node *withidx;
+    node *step;
+    node *width;
+    struct PART_INFO *next;
+} part_info_t;
+
 /*
  * INFO structure
  */
 struct INFO {
     rc_t *rcs;
     int count;
-    node *withids;
     int nest_level;
     bool in_cudawl;
-    int travmode_t travmode;
+    travmode_t travmode;
     rc_t *current_rc;
     node *fundef;
+    node *withids;
     node *wlidxs;
+    node *loopids;
+    part_info_t *part_info;
 };
 
 #define INFO_RCS(n) (n->rcs)
 #define INFO_COUNT(n) (n->count)
-#define INFO_WITHIDS(n) (n->withids)
 #define INFO_NEST_LEVEL(n) (n->nest_level)
 #define INFO_IN_CUDAWL(n) (n->in_cudawl)
 #define INFO_TRAVMODE(n) (n->travmode)
 #define INFO_CURRENT_RC(n) (n->current_rc)
 #define INFO_FUNDEF(n) (n->fundef)
+#define INFO_WITHIDS(n) (n->withids)
 #define INFO_WLIDXS(n) (n->wlidxs)
+#define INFO_LOOPIDS(n) (n->loopids)
+#define INFO_PART_INFO(n) (n->part_info)
 
 /*
  * INFO macros
@@ -66,13 +80,15 @@ MakeInfo ()
 
     INFO_RCS (result) = NULL;
     INFO_COUNT (result) = 0;
-    INFO_WITHIDS (result) = NULL;
     INFO_NEST_LEVEL (result) = 0;
     INFO_IN_CUDAWL (result) = FALSE;
     INFO_TRAVMODE (result) = trav_normal;
     INFO_CURRENT_RC (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_WLIDXS (result) = NULL;
+    INFO_LOOPIDS (result) = NULL;
+    INFO_WITHIDS (result) = NULL;
+    INFO_PART_INFO (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -85,6 +101,58 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+static part_info_t *
+CreatePartInfo (int dim, node *wlids, node *wlidx, node *step, node *width)
+{
+    part_info_t *info;
+
+    DBUG_ENTER ("CreatePartInfo");
+
+    info = MEMmalloc (sizeof (part_info_t));
+
+    info->dim = dim;
+    info->wlids = wlids;
+    info->wlidx = wlidx;
+    info->step = step;
+    info->width = width;
+    info->next = NULL;
+
+    DBUG_RETURN (info);
+}
+
+static part_info_t *
+PushPartInfo (part_info_t *infos, part_info_t *info)
+{
+    DBUG_ENTER ("PushPartInfo");
+
+    if (infos == NULL) {
+        infos = info;
+    } else {
+        info->next = infos;
+        infos = info;
+    }
+
+    DBUG_RETURN (infos);
+}
+
+static part_info_t *
+PopPartInfo (part_info_t *infos)
+{
+    part_info_t *tmp;
+
+    DBUG_ENTER ("PopPartInfo");
+
+    DBUG_ASSERT ((infos != NULL), "Partition information chain is NULL!");
+
+    tmp = infos;
+    infos = infos->next;
+    tmp->next = NULL;
+
+    tmp = MEMfree (tmp);
+
+    DBUG_RETURN (infos);
 }
 
 /** <!--********************************************************************-->
@@ -263,6 +331,9 @@ DAAwith (node *arg_node, info *arg_info)
         INFO_NEST_LEVEL (arg_info) += dim;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
         INFO_NEST_LEVEL (arg_info) -= dim;
+    } else {
+        /* Outer most WL is either more than 2D or
+         * not cudarizable at all. Do nothing */
     }
 
     DBUG_RETURN (arg_node);
@@ -280,11 +351,18 @@ DAApart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DAApart");
 
-    if (CODE_DAA_INFO (PART_CODE (arg_node)) == NULL) {
-        INFO_WITHIDS (arg_info) = PART_IDS (arg_node);
-        INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
-        PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
-    }
+    /*
+      if( CODE_DAA_INFO( PART_CODE( arg_node)) == NULL) {
+        INFO_WITHIDS( arg_info) = PART_IDS( arg_node);
+        INFO_WLIDXS( arg_info) =  WITHID_IDXS( PART_WITHID( arg_node));
+        PART_CODE( arg_node) = TRAVopt( PART_CODE( arg_node), arg_info);
+      }
+      PART_NEXT( arg_node) = TRAVopt( PART_NEXT( arg_node), arg_info);
+    */
+
+    INFO_WITHIDS (arg_info) = PART_IDS (arg_node);
+    INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
+    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -302,18 +380,20 @@ DAAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DAAcode");
 
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    /*
+      CODE_CBLOCK( arg_node) = TRAVopt( CODE_CBLOCK( arg_node), arg_info);
 
-    if (INFO_RCS (arg_info) != NULL) {
-        INFO_RCS (arg_info) = ConsolidateRcs (INFO_RCS (arg_info), arg_info);
+      if( INFO_RCS( arg_info) != NULL) {
+        INFO_RCS( arg_info) = ConsolidateRcs( INFO_RCS( arg_info), arg_info);
 
-        CODE_DAA_INFO (arg_node) = MEMmalloc (sizeof (reuse_info_t));
-        CODE_DAA_RCCOUNT (arg_node) = INFO_COUNT (arg_info);
-        CODE_DAA_RCS (arg_node) = INFO_RCS (arg_info);
+        CODE_DAA_INFO( arg_node) = MEMmalloc( sizeof( reuse_info_t));
+        CODE_DAA_RCCOUNT( arg_node)  = INFO_COUNT( arg_info);
+        CODE_DAA_RCS( arg_node)      = INFO_RCS( arg_info);
 
-        INFO_COUNT (arg_info) = 0;
-        INFO_RCS (arg_info) = NULL;
-    }
+        INFO_COUNT( arg_info) = 0;
+        INFO_RCS( arg_info) = NULL;
+      }
+    */
 
     DBUG_RETURN (arg_node);
 }

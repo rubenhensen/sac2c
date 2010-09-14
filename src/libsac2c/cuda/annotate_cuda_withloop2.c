@@ -219,7 +219,7 @@ ACUWLwith (node *arg_node, info *arg_info)
 
         /* We only cudarize AKS N_with */
         WITH_CUDARIZABLE (arg_node)
-          = (TYisAKS (ty) || TYisAKD) && INFO_CUDARIZABLE (arg_info);
+          = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -229,7 +229,7 @@ ACUWLwith (node *arg_node, info *arg_info)
         WITH_CUDARIZABLE (arg_node) = FALSE;
 
         INFO_CUDARIZABLE (arg_info)
-          = (TYisAKS (ty) || TYisAKD) && INFO_CUDARIZABLE (arg_info);
+          = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
     }
 
     DBUG_RETURN (arg_node);
