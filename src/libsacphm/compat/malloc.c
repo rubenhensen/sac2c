@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "heapmgr.h"
 
@@ -52,6 +53,7 @@
  *
  ******************************************************************************/
 
+SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
 static int not_yet_initialized = 1;
 
 /******************************************************************************
