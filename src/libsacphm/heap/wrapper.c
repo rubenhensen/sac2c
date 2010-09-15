@@ -20,8 +20,11 @@
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "heapmgr.h"
+
+SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
 
 /******************************************************************************
  *
@@ -491,7 +494,7 @@ SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
  *   This function de-allocates memory chunks in the top arena.
  *   Concerning functionality, it is equivalent to SAC_HM_FreeLargeChunk().
  *   This function, however, is used during multi-threaded execution;
- *   access to the top arena´s data structures is protected by a
+ *   access to the top arenaï¿½s data structures is protected by a
  *   mutex lock.
  *
  *   This function is also considered a wrapper function; the function
@@ -547,7 +550,7 @@ SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr)
  *   multi-threaded or single-threaded.
  *
  *   In this case, the actual execution state is determined dynamically
- *   and access to the top arena´s data structures is protexted by a
+ *   and access to the top arenaï¿½s data structures is protexted by a
  *   mutex lock if necessary.
  *
  *   This function is also considered a wrapper function; the function
