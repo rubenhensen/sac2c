@@ -432,6 +432,8 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
             fprintf (global.outfile, "( ( %d)", INDEX_COEFFICIENT (idx));
             if (INDEX_ID (idx) != NULL) {
                 fprintf (global.outfile, " * %s)", AVIS_NAME (INDEX_ID (idx)));
+            } else {
+                fprintf (global.outfile, ")");
             }
 
             fprintf (global.outfile, "[%s]", CUDA_IDX_NAMES[INDEX_TYPE (idx)]);

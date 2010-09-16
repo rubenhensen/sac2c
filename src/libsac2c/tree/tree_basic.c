@@ -190,7 +190,7 @@ TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next)
     INDEX_TYPE (idx) = type;
     INDEX_COEFFICIENT (idx) = coefficient;
     INDEX_ID (idx) = id;
-    INDEX_NEXT (idx) = NULL;
+    INDEX_NEXT (idx) = next;
 
     DBUG_RETURN (idx);
 }
@@ -198,8 +198,6 @@ TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next)
 index_t *
 TBfreeIndex (index_t *index)
 {
-    index_t *res;
-
     DBUG_ENTER ("TBfreeIndex");
 
     if (INDEX_NEXT (index) != NULL) {

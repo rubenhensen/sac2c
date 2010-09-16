@@ -232,6 +232,73 @@ AddIndex (unsigned int type, int coefficient, node *idx, int dim, info *arg_info
     DBUG_VOID_RETURN;
 }
 
+static void
+ActOnId (node *avis, info *arg_info)
+{
+    node *ssa_assign;
+    part_info_t *part_info;
+
+    DBUG_ENTER ("ActOnId");
+
+    /* This function checks the id (avis) and performs the following
+     * actions:
+     *   - If the ssa assign of this id is NULL:
+     *       - If it's a function argument, we add it as an external
+     *         variable to the indices;
+     *       - If it's a WL ids, we either add a ThreadIdx or a LoopIdx
+     *         depending on whether it belongs to outermost cuda WL or
+     *         inner WLs. In this case, we also need to update the coefficient
+     *         matrix.
+     *   - If the ssa assign of this id is NOT NULL:
+     *       - If the defining assignment is outside of the current cuda
+     *         WL, we add it as an external variable to the indices;
+     *       - Otherwise, we start backtracking with a "collect" mode.
+     */
+
+    ssa_assign = AVIS_SSAASSIGN (avis);
+    /*
+     * SSAASSIGN is NULL can be in two cases:
+     *  - the id is a function argument;
+     *  - the id is withids.
+     */
+    if (ssa_assign == NULL) {
+        if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
+            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
+                      arg_info);
+        } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
+            unsigned int type = IDX_LOOPIDX;
+            DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
+                          || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
+                         "Found indices which are neither thread indiex nor loop index!");
+
+            if (PART_INFO_TYPE (part_info) == IDX_THREADIDX) {
+                type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
+                                        PART_INFO_DIM (part_info), avis);
+            }
+            AddIndex (type, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
+                      arg_info);
+            MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
+                            PART_INFO_NTH (part_info), INFO_DIM (arg_info),
+                            INFO_COEFFICIENT (arg_info));
+        } else {
+            DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it is neither an arg "
+                              "or a withids!");
+        }
+    } else {
+        /* If this id is defined by an assignment outside the current cuda WL */
+        if (ASSIGN_LEVEL (ssa_assign) == 0) {
+            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
+                      arg_info);
+        }
+        /* Otherwise, we start backtracking to collect data access information */
+        else {
+            ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *DAAdoDataAccessAnalysis( node *syntax_tree)
@@ -365,36 +432,6 @@ DAAcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("DAAcode");
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-    /*
-      if( INFO_RCS( arg_info) != NULL) {
-        INFO_RCS( arg_info) = ConsolidateRcs( INFO_RCS( arg_info), arg_info);
-
-        CODE_DAA_INFO( arg_node) = MEMmalloc( sizeof( reuse_info_t));
-        CODE_DAA_RCCOUNT( arg_node)  = INFO_COUNT( arg_info);
-        CODE_DAA_RCS( arg_node)      = INFO_RCS( arg_info);
-
-        INFO_COUNT( arg_info) = 0;
-        INFO_RCS( arg_info) = NULL;
-      }
-    */
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DAAassign( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-DAAblock (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("DAAblock");
-
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -430,73 +467,6 @@ DAAassign (node *arg_node, info *arg_info)
     INFO_LASTASSIGN (arg_info) = old_lastassign;
 
     DBUG_RETURN (arg_node);
-}
-
-static void
-ActOnId (node *avis, info *arg_info)
-{
-    node *ssa_assign;
-    part_info_t *part_info;
-
-    DBUG_ENTER ("ActOnId");
-
-    /* This function checks the id (avis) and performs the following
-     * actions:
-     *   - If the ssa assign of this id is NULL:
-     *       - If it's a function argument, we add it as an external
-     *         variable to the indices;
-     *       - If it's a WL ids, we either add a ThreadIdx or a LoopIdx
-     *         depending on whether it belongs to outermost cuda WL or
-     *         inner WLs. In this case, we also need to update the coefficient
-     *         matrix.
-     *   - If the ssa assign of this id is NOT NULL:
-     *       - If the defining assignment is outside of the current cuda
-     *         WL, we add it as an external variable to the indices;
-     *       - Otherwise, we start backtracking with a "collect" mode.
-     */
-
-    ssa_assign = AVIS_SSAASSIGN (avis);
-    /*
-     * SSAASSIGN is NULL can be in two cases:
-     *  - the id is a function argument;
-     *  - the id is withids.
-     */
-    if (ssa_assign == NULL) {
-        if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
-        } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
-            unsigned int type = IDX_LOOPIDX;
-            DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
-                          || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
-                         "Found indices which are neither thread indiex nor loop index!");
-
-            if (PART_INFO_TYPE (part_info) == IDX_THREADIDX) {
-                type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
-                                        PART_INFO_DIM (part_info), avis);
-            }
-            AddIndex (type, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
-            MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
-                            PART_INFO_NTH (part_info), INFO_DIM (arg_info),
-                            INFO_COEFFICIENT (arg_info));
-        } else {
-            DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it is neither an arg "
-                              "or a withids!");
-        }
-    } else {
-        /* If this id is defined by an assignment outside the current cuda WL */
-        if (ASSIGN_LEVEL (ssa_assign) == 0) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
-        }
-        /* Otherwise, we start backtracking to collect data access information */
-        else {
-            ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
-        }
-    }
-
-    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->

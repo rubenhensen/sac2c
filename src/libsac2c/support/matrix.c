@@ -332,10 +332,14 @@ MatrixDisplay (Matrix m, FILE *file)
         sc = " ";
         INDENT;
         for (ix = 0; ix < m->dim_x; ix++) {
-            fprintf (file, "%s %3d", sc, m->mtx[iy][ix]);
+            if (ix == 0) {
+                fprintf (file, "%s   |%d", sc, m->mtx[iy][ix]);
+            } else {
+                fprintf (file, "%s %3d", sc, m->mtx[iy][ix]);
+            }
             sc = ",";
         }
-        fprintf (file, "\n");
+        fprintf (file, "|\n");
     }
     // fprintf( file, "\n");
 

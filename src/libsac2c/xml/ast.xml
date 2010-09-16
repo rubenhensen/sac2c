@@ -155,7 +155,6 @@
           <node name="With" />
           <node name="Part" />
           <node name="Code" />
-          <node name="Block" />
           <node name="Prf" />
         </travuser>
       </traversal>
