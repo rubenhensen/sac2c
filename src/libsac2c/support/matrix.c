@@ -13,6 +13,7 @@
 #include "new_types.h"
 #include "shape.h"
 #include "namespaces.h"
+#include "print.h"
 
 #define MatrixGet(m, rix, cix) m->mtx[rix][cix]
 
@@ -147,7 +148,7 @@ NumOfZeroRows (Matrix m)
 Matrix
 NewMatrix (int dim_x, int dim_y)
 {
-    int n;
+    int n, i, j;
     Matrix m;
 
     DBUG_ENTER ("NewMatrix");
@@ -160,6 +161,12 @@ NewMatrix (int dim_x, int dim_y)
     m->mtx = malloc (m->dim_y * sizeof (int *));
     for (n = 0; n < dim_y; n++) {
         m->mtx[n] = m->m_stor + n * dim_x;
+    }
+
+    for (i = 0; i < dim_y; i++) {
+        for (j = 0; j < dim_x; j++) {
+            m->mtx[i][j] = 0;
+        }
     }
     DBUG_RETURN (m);
 }
@@ -313,7 +320,7 @@ MatrixRank (Matrix m)
  *
  *******************************************************************************/
 void
-MatrixDisplay (Matrix m)
+MatrixDisplay (Matrix m, FILE *file)
 {
     int iy, ix;
     const char *sc;
@@ -321,15 +328,16 @@ MatrixDisplay (Matrix m)
     DBUG_ENTER ("MatrixDisplay");
 
     for (iy = 0; iy < m->dim_y; iy++) {
-        printf ("   ");
+        fprintf (file, "   ");
         sc = " ";
+        INDENT;
         for (ix = 0; ix < m->dim_x; ix++) {
-            printf ("%s %3d", sc, m->mtx[iy][ix]);
+            fprintf (file, "%s %3d", sc, m->mtx[iy][ix]);
             sc = ",";
         }
-        printf ("\n");
+        fprintf (file, "\n");
     }
-    printf ("\n");
+    // fprintf( file, "\n");
 
     DBUG_VOID_RETURN;
 }

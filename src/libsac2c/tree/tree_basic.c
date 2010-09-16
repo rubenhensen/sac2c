@@ -179,9 +179,34 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 /*--------------------------------------------------------------------------*/
 
 index_t *
-TBmakeIndex (unsigned int type, int coefficient, node *id, node *next)
+TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next)
 {
+    index_t *idx;
+
     DBUG_ENTER ("TBmakeIndex");
+
+    idx = (index_t *)MEMmalloc (sizeof (index_t));
+
+    INDEX_TYPE (idx) = type;
+    INDEX_COEFFICIENT (idx) = coefficient;
+    INDEX_ID (idx) = id;
+    INDEX_NEXT (idx) = NULL;
+
+    DBUG_RETURN (idx);
+}
+
+index_t *
+TBfreeIndex (index_t *index)
+{
+    index_t *res;
+
+    DBUG_ENTER ("TBfreeIndex");
+
+    if (INDEX_NEXT (index) != NULL) {
+        INDEX_NEXT (index) = TBfreeIndex (INDEX_NEXT (index));
+    }
+
+    index = MEMfree (index);
 
     DBUG_RETURN (NULL);
 }
@@ -189,9 +214,41 @@ TBmakeIndex (unsigned int type, int coefficient, node *id, node *next)
 /*--------------------------------------------------------------------------*/
 
 cuda_access_info_t *
-TBmakeCudaAccessInfo (node *array, int dim, int nextlevel)
+TBmakeCudaAccessInfo (node *array, int dim, int nestlevel)
 {
+    cuda_access_info_t *info;
+    int i;
+
     DBUG_ENTER ("TBmakeCudaAccessInfo");
+
+    info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
+
+    CUAI_MATRIX (info) = NULL;
+    CUAI_ARRAY (info) = array;
+    CUAI_DIM (info) = dim;
+    CUAI_NESTLEVEL (info) = nestlevel;
+
+    for (i = 0; i < MAX_REUSE_DIM; i++) {
+        CUAI_INDICES (info, i) = NULL;
+    }
+
+    DBUG_RETURN (info);
+}
+
+cuda_access_info_t *
+TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
+{
+    int i;
+
+    DBUG_ENTER ("TBfreeCudaAccessInfo");
+
+    for (i = 0; i < MAX_REUSE_DIM; i++) {
+        if (CUAI_INDICES (access_info, i) != NULL) {
+            CUAI_INDICES (access_info, i) = TBfreeIndex (CUAI_INDICES (access_info, i));
+        }
+    }
+
+    access_info = MEMfree (access_info);
 
     DBUG_RETURN (NULL);
 }

@@ -33,6 +33,7 @@
 #include "shape.h"
 #include "vector.h"
 #include "structures.h"
+#include "matrix.h"
 
 /*
  * use of arg_info in this file:
@@ -370,6 +371,83 @@ IRAprintRcs (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, " */\n");
     INDENT;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void IRAprintRcs( node* arg_node, info* arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
+{
+    int i;
+    index_t *idx;
+    const char *CUDA_IDX_NAMES[6]
+      = {"CONSTANT", "THREADIDX_X", "THREADIDX_Y", "THREADIDX", "LOOPIDX", "EXTID"};
+
+    DBUG_ENTER ("CUAIprintCudaAccessInfo");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+                 "Wrong node-type: N_assign exspected");
+
+    INDENT;
+    fprintf (global.outfile, "/*\n");
+
+    INDENT;
+    fprintf (global.outfile, "   CUDA Data Access Information: \n");
+
+    INDENT;
+    fprintf (global.outfile, "     - Coefficient Matrix: \n");
+    MatrixDisplay (CUAI_MATRIX (ASSIGN_ACCESS_INFO (arg_node)), global.outfile);
+
+    INDENT;
+    fprintf (global.outfile, "     - Reuse Array: %s\n",
+             AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))));
+
+    INDENT;
+    fprintf (global.outfile, "     - Dimension: %d\n",
+             CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)));
+
+    INDENT;
+    fprintf (global.outfile, "     - Nest Level: %d\n",
+             CUAI_NESTLEVEL (ASSIGN_ACCESS_INFO (arg_node)));
+
+    INDENT;
+    fprintf (global.outfile, "     - Indices:\n");
+
+    for (i = 0; i < CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)); i++) {
+        idx = CUAI_INDICES (ASSIGN_ACCESS_INFO (arg_node), i);
+        INDENT;
+        fprintf (global.outfile, "       - Dimension %d: ", i);
+
+        while (idx != NULL) {
+            fprintf (global.outfile, "( ( %d)", INDEX_COEFFICIENT (idx));
+            if (INDEX_ID (idx) != NULL) {
+                fprintf (global.outfile, " * %s)", AVIS_NAME (INDEX_ID (idx)));
+            }
+
+            fprintf (global.outfile, "[%s]", CUDA_IDX_NAMES[INDEX_TYPE (idx)]);
+
+            if (INDEX_NEXT (idx) != NULL) {
+                fprintf (global.outfile, " + ");
+                idx = INDEX_NEXT (idx);
+            } else {
+                break;
+            }
+        }
+        fprintf (global.outfile, "\n");
+    }
+
+    INDENT;
+    fprintf (global.outfile, " */\n");
 
     DBUG_VOID_RETURN;
 }
@@ -2424,6 +2502,10 @@ PRTassign (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, "\n");
+    }
+
+    if (global.backend == BE_cuda && ASSIGN_ACCESS_INFO (arg_node) != NULL) {
+        CUAIprintCudaAccessInfo (arg_node, arg_info);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {

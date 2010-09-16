@@ -577,6 +577,62 @@ FREEattribReuseInfo (reuse_info_t *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn FREEattribIndex
+ *
+ * @brief Frees Index attribute
+ *
+ * @param attr Access node to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+index_t *
+FREEattribIndex (index_t *attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribIndex");
+
+    while (attr != NULL) {
+        index_t *tmp = attr;
+        attr = attr->next;
+        tmp = MEMfree (tmp);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FREEattribCudaAccessInfo
+ *
+ * @brief
+ *
+ * @param attr ReuseInfo node to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+cuda_access_info_t *
+FREEattribCudaAccessInfo (cuda_access_info_t *attr, node *parent)
+{
+    int i;
+
+    DBUG_ENTER ("FREEattribCudaAccessInfo");
+
+    if (attr != NULL) {
+        for (i = 0; i < MAX_REUSE_DIM; i++) {
+            CUAI_INDICES (attr, i) = FREEattribIndex (CUAI_INDICES (attr, i), parent);
+        }
+
+        attr = MEMfree (attr);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn FREEattribShpSeg
  *
  * @brief Frees ShpSeg attribute

@@ -1058,10 +1058,12 @@ typedef struct REUSE_INFO_T {
  * for 1 or 2 dimensional arrays */
 #define MAX_REUSE_DIM 2
 
-#define IDX_CONSTANT 1
-#define IDX_THREADIDX_X 2
-#define IDX_THREADIDX_Y 4
-#define IDX_LOOPIDX 8
+#define IDX_CONSTANT 0
+#define IDX_THREADIDX_X 1
+#define IDX_THREADIDX_Y 2
+#define IDX_THREADIDX 3
+#define IDX_LOOPIDX 4
+#define IDX_EXTID 5
 
 typedef struct INDEX_T {
     unsigned int type;

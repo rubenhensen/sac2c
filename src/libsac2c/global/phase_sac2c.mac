@@ -846,12 +846,22 @@ SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
           cuda)
 
-SUBPHASE (ira, "CUDA Infer reusable arrays in withloops", IRAdoInterReusableArrays,
-          global.backend == BE_cuda && global.optimize.doshr, cuda)
-
-SUBPHASE (shmem, "CUDA Exploiting data reuse with shared memory",
-          SHMEMdoSharedMemoryReuse, global.backend == BE_cuda && global.optimize.doshr,
+#if 0
+SUBPHASE( ira,
+          "CUDA Infer reusable arrays in withloops",
+          IRAdoInterReusableArrays, 
+          global.backend == BE_cuda && global.optimize.doshr,
           cuda)
+
+SUBPHASE( shmem,
+          "CUDA Exploiting data reuse with shared memory",
+          SHMEMdoSharedMemoryReuse, 
+          global.backend == BE_cuda && global.optimize.doshr,
+          cuda)
+#endif
+
+SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
+          global.backend == BE_cuda && global.optimize.doshr, cuda)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
           global.backend == BE_cuda, cuda)

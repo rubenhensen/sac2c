@@ -56,6 +56,8 @@
     copy="function" persist="no" />
     <type name="ReuseInfo" ctype="reuse_info_t*" init="NULL"
     copy="function" persist="no" />
+    <type name="CudaAccessInfo" ctype="cuda_access_info_t*" init="NULL"
+    copy="function" persist="no" />
     <type name="AccessFeature" ctype="feature_t" init="0"
     copy="literal"  />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
@@ -5641,7 +5643,15 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-
+        <attribute name="Access_Info" default="NULL" inconstructor="no">
+          <type name="CudaAccessInfo">
+            <targets>
+              <target mandatory="no">
+                <any />
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsUnused" />

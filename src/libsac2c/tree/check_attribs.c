@@ -563,6 +563,63 @@ CHKMattribReuseInfo (reuse_info_t *attr, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn CHKMattribIndex
+ *
+ * @brief Touch Access attribute
+ *
+ * @param attr Access node to process
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+index_t *
+CHKMattribIndex (index_t *attr, info *arg_info)
+{
+    index_t *tmp = attr;
+
+    DBUG_ENTER ("CHKMattribIndex");
+
+    while (tmp != NULL) {
+        CHKMtouch (tmp, arg_info);
+        tmp = tmp->next;
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribCudaAccessInfo
+ *
+ * @brief Touch ReuseInfo attribute
+ *
+ * @param attr ReuseInfo node to process
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+cuda_access_info_t *
+CHKMattribCudaAccessInfo (cuda_access_info_t *attr, info *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("CHKMattribCudaAccessInfo");
+
+    if (attr != NULL) {
+        for (i = 0; i < MAX_REUSE_DIM; i++) {
+            CUAI_INDICES (attr, i) = CHKMattribIndex (CUAI_INDICES (attr, i), arg_info);
+        }
+
+        CHKMtouch (attr, arg_info);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn CHKMattribShpSeg
  *
  * @brief Touch ShpSeg attribute
