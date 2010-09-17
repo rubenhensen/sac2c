@@ -406,7 +406,7 @@ target cuda:
 
 BACKEND          :=  "Cuda"
 CC               :=  "nvcc"
-CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
+CCLINK           :=  "-lcutil_x86_64 -lcudart -lcublas"
 /*
 CC               := "/home/unibench/ctca-cuda.stca.herts.ac.uk/cuda-3.0/cuda/bin/nvcc"
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
