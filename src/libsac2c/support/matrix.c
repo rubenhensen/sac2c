@@ -330,7 +330,7 @@ MatrixDisplay (Matrix m, FILE *file)
     for (iy = 0; iy < m->dim_y; iy++) {
         fprintf (file, "   ");
         sc = " ";
-        INDENT;
+
         for (ix = 0; ix < m->dim_x; ix++) {
             if (ix == 0) {
                 fprintf (file, "%s   |%d", sc, m->mtx[iy][ix]);
