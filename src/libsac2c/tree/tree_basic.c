@@ -179,7 +179,7 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 /*--------------------------------------------------------------------------*/
 
 index_t *
-TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next)
+TBmakeIndex (unsigned int type, int coefficient, node *id, int looplevel, index_t *next)
 {
     index_t *idx;
 
@@ -190,6 +190,7 @@ TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next)
     INDEX_TYPE (idx) = type;
     INDEX_COEFFICIENT (idx) = coefficient;
     INDEX_ID (idx) = id;
+    INDEX_LOOPLEVEL (idx) = looplevel;
     INDEX_NEXT (idx) = next;
 
     DBUG_RETURN (idx);
@@ -212,7 +213,7 @@ TBfreeIndex (index_t *index)
 /*--------------------------------------------------------------------------*/
 
 cuda_access_info_t *
-TBmakeCudaAccessInfo (node *array, int dim, int nestlevel)
+TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int nestlevel)
 {
     cuda_access_info_t *info;
     int i;
@@ -223,6 +224,9 @@ TBmakeCudaAccessInfo (node *array, int dim, int nestlevel)
 
     CUAI_MATRIX (info) = NULL;
     CUAI_ARRAY (info) = array;
+    CUAI_ARRAYSHP (info) = arrayshp;
+    CUAI_SHARRAY (info) = NULL;
+    CUAI_SHARRAYSHP (info) = NULL;
     CUAI_DIM (info) = dim;
     CUAI_NESTLEVEL (info) = nestlevel;
 

@@ -115,6 +115,7 @@ struct INFO {
     int with3_nesting;
     bool dense;
     bool transformed_w2_to_w3;
+    bool incudawl;
 
     bool nip_result;
     node *nip_lhs; /* pointer info with2_lhs*/
@@ -140,6 +141,7 @@ struct INFO {
 #define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
 #define INFO_DENSE(n) ((n)->dense)
 #define INFO_TRANSFORMED_W2_TO_W3(n) ((n)->transformed_w2_to_w3)
+#define INFO_INCUDAWL(n) ((n)->incudawl)
 
 #define INFO_NIP_RESULT(n) ((n)->nip_result)
 #define INFO_NIP_LHS(n) ((n)->nip_lhs)
@@ -173,6 +175,7 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_WITH3_NESTING (result) = 0;
     INFO_TRANSFORMED_W2_TO_W3 (result) = FALSE;
+    INFO_INCUDAWL (result) = FALSE;
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
@@ -2037,6 +2040,80 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *ProcessBlock( int level, int dim, node *lower, node *upper,
+ *                         node *step, node *contents, node *next,
+ *                         info *arg_info)
+ *
+ * @brief Computes a range node corresponding to the given stride node.
+ *
+ *        This function consumes its lower, upper and step arguments!
+ *
+ * @param level    level attribute of N_wlstride
+ * @param dim      dim attribute of N_wlstride
+ * @param lower    lower bound as either N_num or N_id.
+ * @param upper    upper bound as either N_num or N_id.
+ * @param step     step as either N_num or N_id. CONSUMED!
+ * @param contents contents son of N_wlstride
+ * @param next     next son of N_wlstride
+ * @param arg_info current state of traversal
+ *
+ * @return N_range node corresponding to the given stride.
+ ******************************************************************************/
+
+static node *
+ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *contents,
+              node *next, info *arg_info)
+{
+    node *index, *body, *results, *offsets;
+
+    DBUG_ENTER ("ProcessBlock");
+
+    /*
+     * first process all the remaining strides on this level
+     */
+    next = TRAVopt (next, arg_info);
+
+    /*
+     * We have to potentially compute two ranges here. If (lower - upper) % step
+     * is non-zero, we have to produce a first, fitted stride and one stride for
+     * the overlapping part. We do so by setting CURRENT_SIZE accordingly to
+     * either step or the result of the modulo operation. As we need to support
+     * variable strides, this modulo operation might need to be computed at
+     * runtime and we have to emit the corresponding code.
+     */
+    if (NeedsFitting (lower, upper, step)) {
+        node *nupper, *over, *body, *index, *results, *offsets;
+
+        index = MakeIntegerVar (&INFO_VARDECS (arg_info));
+        over = ComputeNewBounds (upper, lower, step, &nupper, &INFO_PREASSIGNS (arg_info),
+                                 arg_info);
+        body = MakeRangeBody (index, DUPdoDupTree (contents), over, FALSE, &results,
+                              &offsets, arg_info);
+
+        next = TBmakeRange (TBmakeIds (index, NULL), nupper, DUPdoDupTree (upper), over,
+                            body, results, offsets, next);
+
+        RANGE_ISBLOCKED (next) = TRUE;
+
+        /*
+         * replace old bounds
+         */
+        upper = nupper;
+    }
+
+    index = MakeIntegerVar (&INFO_VARDECS (arg_info));
+    body = MakeRangeBody (index, contents, step, FALSE, &results, &offsets, arg_info);
+
+    next
+      = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), DUPdoDupNode (upper),
+                     DUPdoDupNode (step), body, results, offsets, next);
+
+    RANGE_ISBLOCKED (next) = TRUE;
+
+    DBUG_RETURN (next);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ProcessGrid( int level, int dim, node *lower, node *upper,
  *                        node *nextdim, node **code, node *next,
  *                        info *arg_info)
@@ -2430,6 +2507,32 @@ WLSDblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLSDwith(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+WLSDwith (node *arg_node, info *arg_info)
+{
+    bool old_incudawl;
+
+    DBUG_ENTER ("WLSDwith");
+
+    old_incudawl = INFO_INCUDAWL (arg_info);
+    INFO_INCUDAWL (arg_info) = WITH_CUDARIZABLE (arg_node);
+
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
+
+    INFO_INCUDAWL (arg_info) = old_incudawl;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLSDwith2(node *arg_node, info *arg_info)
  *
  * @brief Transforms the given with2 node into a nesting of with3 nodes.
@@ -2445,7 +2548,8 @@ WLSDwith2 (node *arg_node, info *arg_info)
 
     if (NotImplemented (arg_node, arg_info)) {
         CTInote ("Cannot transform with-loop due to unsupported operation");
-    } else {
+    } else if ((global.backend == BE_mutc)
+               || (global.backend == BE_cuda && INFO_INCUDAWL (arg_info))) {
         INFO_TRANSFORMED_W2_TO_W3 (arg_info) = TRUE;
         /*
          * First of all, we transform the code blocks. As we migth potentially
@@ -2589,6 +2693,38 @@ WLSDwlstride (node *arg_node, info *arg_info)
                             WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
                             WLSTRIDE_STEP (arg_node), WLSTRIDE_CONTENTS (arg_node), next,
                             arg_info);
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSDwlblock(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+WLSDwlblock (node *arg_node, info *arg_info)
+{
+    node *result, *next = NULL;
+    node *contents = NULL;
+
+    DBUG_ENTER ("WLSDwlblock");
+
+    if (WLBLOCK_NEXT (arg_node) != NULL) {
+        next = TRAVdo (WLBLOCK_NEXT (arg_node), arg_info);
+    }
+
+    contents = WLBLOCK_CONTENTS (arg_node);
+
+    if (contents == NULL) {
+        contents = WLBLOCK_NEXTDIM (arg_node);
+    }
+
+    result = ProcessBlock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
+                           WLBLOCK_BOUND1 (arg_node), WLBLOCK_BOUND2 (arg_node),
+                           WLBLOCK_STEP (arg_node), contents, next, arg_info);
 
     DBUG_RETURN (result);
 }

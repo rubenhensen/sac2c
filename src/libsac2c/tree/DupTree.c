@@ -46,6 +46,7 @@
 #include "namespaces.h"
 #include "vector.h"
 #include "ctinfo.h"
+#include "matrix.h"
 
 /*
  * INFO structure
@@ -232,6 +233,55 @@ DupTreeOrNodeLutType (bool node_only, node *arg_node, lut_t *lut, int type, node
     }
 
     DBUG_RETURN (new_node);
+}
+
+static index_t *
+DUPIndex (index_t *index)
+{
+    index_t *tmp, *new_index = NULL;
+
+    DBUG_ENTER ("DUPIndex");
+
+    while (index != NULL) {
+        tmp = (index_t *)MEMmalloc (sizeof (index_t));
+        INDEX_TYPE (tmp) = INDEX_TYPE (index);
+        INDEX_COEFFICIENT (tmp) = INDEX_COEFFICIENT (index);
+        INDEX_ID (tmp) = INDEX_ID (index);
+        INDEX_LOOPLEVEL (tmp) = INDEX_LOOPLEVEL (index);
+        INDEX_NEXT (tmp) = new_index;
+        new_index = tmp;
+        index = INDEX_NEXT (index);
+    }
+
+    DBUG_RETURN (new_index);
+}
+
+static cuda_access_info_t *
+DUPCudaAccessInfo (cuda_access_info_t *access_info, info *arg_info)
+{
+    int i;
+    cuda_access_info_t *new_access_info;
+
+    DBUG_ENTER ("DUPCudaAccessInfo");
+
+    new_access_info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
+
+    CUAI_MATRIX (new_access_info) = DupMatrix (CUAI_MATRIX (access_info));
+    CUAI_ARRAY (new_access_info) = CUAI_ARRAY (access_info);
+    CUAI_ARRAYSHP (new_access_info) = DUPTRAV (CUAI_ARRAYSHP (access_info));
+    CUAI_SHARRAY (new_access_info) = CUAI_SHARRAY (access_info);
+    ;
+    CUAI_SHARRAYSHP (new_access_info) = DUPTRAV (CUAI_SHARRAYSHP (access_info));
+    CUAI_DIM (new_access_info) = CUAI_DIM (access_info);
+    ;
+    CUAI_NESTLEVEL (new_access_info) = CUAI_NESTLEVEL (access_info);
+    ;
+
+    for (i = 0; i < MAX_REUSE_DIM; i++) {
+        CUAI_INDICES (new_access_info, i) = DUPIndex (CUAI_INDICES (access_info, i));
+    }
+
+    DBUG_RETURN (new_access_info);
 }
 
 /******************************************************************************
@@ -1416,6 +1466,11 @@ DUPassign (node *arg_node, info *arg_info)
          */
 
         ASSIGN_FLAGSTRUCTURE (new_node) = ASSIGN_FLAGSTRUCTURE (arg_node);
+
+        if (ASSIGN_ACCESS_INFO (arg_node) != NULL) {
+            ASSIGN_ACCESS_INFO (new_node)
+              = DUPCudaAccessInfo (ASSIGN_ACCESS_INFO (arg_node), arg_info);
+        }
 
         CopyCommonNodeData (new_node, arg_node);
     } else {

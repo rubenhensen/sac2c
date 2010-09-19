@@ -211,11 +211,13 @@ extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
  ***
  ***/
 
-extern index_t *TBmakeIndex (unsigned int type, int coefficient, node *id, index_t *next);
+extern index_t *TBmakeIndex (unsigned int type, int coefficient, node *id, int looplevel,
+                             index_t *next);
 
 #define INDEX_TYPE(a) (a->type)
 #define INDEX_COEFFICIENT(a) (a->coefficient)
 #define INDEX_ID(a) (a->id)
+#define INDEX_LOOPLEVEL(a) (a->looplevel)
 #define INDEX_NEXT(a) (a->next)
 
 extern index_t *TBfreeIndex (index_t *index);
@@ -229,10 +231,14 @@ extern index_t *TBfreeIndex (index_t *index);
  ***
  ***/
 
-extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, int dim, int nestlevel);
+extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim,
+                                                 int nestlevel);
 
 #define CUAI_MATRIX(a) (a->coe_mtx)
 #define CUAI_ARRAY(a) (a->array)
+#define CUAI_ARRAYSHP(a) (a->arrayshp)
+#define CUAI_SHARRAY(a) (a->sharray)
+#define CUAI_SHARRAYSHP(a) (a->sharrayshp)
 #define CUAI_DIM(a) (a->dim)
 #define CUAI_NESTLEVEL(a) (a->nestlevel)
 #define CUAI_INDICES(a, i) (a->indices[i])

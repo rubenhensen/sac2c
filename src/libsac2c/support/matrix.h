@@ -5,6 +5,7 @@
 #include "types.h"
 
 extern Matrix NewMatrix (int dim_x, int dim_y);
+extern Matrix DupMatrix (Matrix m);
 extern void FreeMatrix (Matrix m);
 extern void MatrixToReducedREForm (Matrix m);
 extern int MatrixRank (Matrix m);

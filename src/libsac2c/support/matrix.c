@@ -180,6 +180,41 @@ NewMatrix (int dim_x, int dim_y)
  * Return:g
  *
  *******************************************************************************/
+Matrix
+DupMatrix (Matrix m)
+{
+    int n, i, j;
+    Matrix new_m;
+
+    DBUG_ENTER ("DupMatrix");
+
+    new_m = malloc (sizeof (sMatrix));
+    n = m->dim_x * m->dim_y;
+    new_m->dim_x = m->dim_x;
+    new_m->dim_y = m->dim_y;
+    new_m->m_stor = malloc (n * sizeof (int));
+    new_m->mtx = malloc (new_m->dim_y * sizeof (int *));
+    for (n = 0; n < new_m->dim_y; n++) {
+        new_m->mtx[n] = new_m->m_stor + n * new_m->dim_x;
+    }
+
+    for (i = 0; i < new_m->dim_y; i++) {
+        for (j = 0; j < new_m->dim_x; j++) {
+            new_m->mtx[i][j] = m->mtx[i][j];
+        }
+    }
+    DBUG_RETURN (new_m);
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
 void
 FreeMatrix (Matrix m)
 {

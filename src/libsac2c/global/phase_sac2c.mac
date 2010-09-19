@@ -904,10 +904,12 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWA
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
 SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
-          global.backend == BE_mutc, wlt)
+          (global.backend == BE_mutc || global.backend == BE_cuda), wlt)
 
 SUBPHASE (rw3, "MUTC Remove unneeded With3s", RW3doRemoveWith3,
-          global.backend == BE_mutc && global.optimize.dorw3, wlt)
+          (global.backend == BE_mutc || global.backend == BE_cuda)
+            && global.optimize.dorw3,
+          wlt)
 
 SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs, global.backend == BE_mutc, wlt)
 
@@ -915,6 +917,9 @@ SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
           global.backend == BE_mutc && global.optimize.doms, wlt)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
+
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
+          wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           wlt)

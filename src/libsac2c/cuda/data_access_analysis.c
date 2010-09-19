@@ -48,7 +48,9 @@ struct INFO {
     node *lastassign;
     bool is_affine;
     int coefficient;
-    int dim;
+    int idxdim;
+    int cuwldim;
+    node *pragma;
     cuda_access_info_t *access_info;
 };
 
@@ -61,7 +63,9 @@ struct INFO {
 #define INFO_LASTASSIGN(n) (n->lastassign)
 #define INFO_IS_AFFINE(n) (n->is_affine)
 #define INFO_COEFFICIENT(n) (n->coefficient)
-#define INFO_DIM(n) (n->dim)
+#define INFO_IDXDIM(n) (n->idxdim)
+#define INFO_CUWLDIM(n) (n->cuwldim)
+#define INFO_PRAGMA(n) (n->pragma)
 #define INFO_ACCESS_INFO(n) (n->access_info)
 
 #define PART_INFO_DIM(n) (n->dim)
@@ -97,7 +101,9 @@ MakeInfo ()
     INFO_LASTASSIGN (result) = NULL;
     INFO_IS_AFFINE (result) = TRUE;
     INFO_COEFFICIENT (result) = 1;
-    INFO_DIM (result) = 0;
+    INFO_IDXDIM (result) = 0;
+    INFO_CUWLDIM (result) = 0;
+    INFO_PRAGMA (result) = NULL;
     INFO_ACCESS_INFO (result) = NULL;
 
     DBUG_RETURN (result);
@@ -221,12 +227,13 @@ DecideThreadIdx (node *ids, int dim, node *avis)
 }
 
 static void
-AddIndex (unsigned int type, int coefficient, node *idx, int dim, info *arg_info)
+AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
+          info *arg_info)
 {
     DBUG_ENTER ("AddIndex");
 
     CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim)
-      = TBmakeIndex (type, coefficient, idx,
+      = TBmakeIndex (type, coefficient, idx, looplevel,
                      CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim));
 
     DBUG_VOID_RETURN;
@@ -263,8 +270,8 @@ ActOnId (node *avis, info *arg_info)
      */
     if (ssa_assign == NULL) {
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
+            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
+                      INFO_IDXDIM (arg_info), arg_info);
         } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
             unsigned int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
@@ -275,10 +282,10 @@ ActOnId (node *avis, info *arg_info)
                 type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
                                         PART_INFO_DIM (part_info), avis);
             }
-            AddIndex (type, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
+            AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
+                      PART_INFO_NTH (part_info) + 1, INFO_IDXDIM (arg_info), arg_info);
             MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
-                            PART_INFO_NTH (part_info), INFO_DIM (arg_info),
+                            PART_INFO_NTH (part_info), INFO_IDXDIM (arg_info),
                             INFO_COEFFICIENT (arg_info));
         } else {
             DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it is neither an arg "
@@ -287,8 +294,8 @@ ActOnId (node *avis, info *arg_info)
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
         if (ASSIGN_LEVEL (ssa_assign) == 0) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, INFO_DIM (arg_info),
-                      arg_info);
+            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
+                      INFO_IDXDIM (arg_info), arg_info);
         }
         /* Otherwise, we start backtracking to collect data access information */
         else {
@@ -297,6 +304,76 @@ ActOnId (node *avis, info *arg_info)
     }
 
     DBUG_VOID_RETURN;
+}
+
+static cuda_access_info_t *
+CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
+{
+    int i, coefficient, shmem_size, dim;
+    index_t *index;
+    int DIMS[2][2]
+      = {{1, global.cuda_1d_block_x}, {global.cuda_2d_block_y, global.cuda_2d_block_x}};
+    node *sharray_shp = NULL;
+
+    DBUG_ENTER ("CreateSharedMemory");
+
+    dim = CUAI_DIM (access_info);
+
+    for (i = dim - 1; i >= 0; i--) {
+        index = CUAI_INDICES (access_info, i);
+        DBUG_ASSERT ((index != NULL), "Found NULL index!");
+
+        shmem_size = 0;
+
+        while (index != NULL) {
+            coefficient = abs (INDEX_COEFFICIENT (index));
+
+            switch (INDEX_TYPE (index)) {
+            case IDX_THREADIDX_X:
+                shmem_size += (coefficient * DIMS[dim - 1][1]);
+                break;
+            case IDX_THREADIDX_Y:
+                shmem_size += (coefficient * DIMS[dim - 1][0]);
+                break;
+            case IDX_LOOPIDX:
+                shmem_size += (coefficient * DIMS[dim - 1][1]);
+                /* Set the block size for the loop dim */
+                AVIS_NEEDBLOCKED (INDEX_ID (index)) = TRUE;
+                AVIS_BLOCKSIZE (INDEX_ID (index)) = DIMS[dim - 1][1];
+                break;
+            default:
+                break;
+            }
+
+            if (shmem_size == 0) {
+                if (dim == 2) { /* X dimension */
+                    shmem_size = DIMS[dim - 1][i];
+                } else if (dim == 1) { /* Y dimension */
+                    shmem_size = global.cuda_2d_block_y;
+                }
+            }
+
+            sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
+
+            index = INDEX_NEXT (index);
+        }
+    }
+
+    CUAI_SHARRAYSHP (access_info)
+      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp);
+    CUAI_SHARRAY (access_info)
+      = TBmakeAvis (TRAVtmpVarName ("shmem"),
+                    TYmakeAKS (TYmakeSimpleType (
+                                 CUd2shSimpleTypeConversion (TYgetSimpleType (
+                                   TYgetScalar (AVIS_TYPE (CUAI_ARRAY (access_info)))))),
+                               SHarray2Shape (CUAI_SHARRAYSHP (access_info))));
+
+    /*
+      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) =
+        TCappendVardec( FUNDEF_VARDEC( INFO_FUNDEF( arg_info)),
+                        TBmakeVardec( CUAI_SHARRAY( access_info), NULL));
+    */
+    DBUG_RETURN (access_info);
 }
 
 /** <!--********************************************************************-->
@@ -358,15 +435,71 @@ DAAwith (node *arg_node, info *arg_info)
     dim = TCcountIds (WITH_IDS (arg_node));
 
     if ((WITH_CUDARIZABLE (arg_node) && dim <= 2) || INFO_NEST_LEVEL (arg_info) > 0) {
+
+        /* If this is the outermost cudarizable withloop, we
+         * store its dimentionality */
+        if (INFO_NEST_LEVEL (arg_info) == 0) {
+            INFO_CUWLDIM (arg_info) = dim;
+        }
+
         INFO_NEST_LEVEL (arg_info) += dim;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
         INFO_NEST_LEVEL (arg_info) -= dim;
+
+        if (INFO_PRAGMA (arg_info) != NULL) {
+            WITH_PRAGMA (arg_node) = INFO_PRAGMA (arg_info);
+            INFO_PRAGMA (arg_info) = NULL;
+        }
     } else {
         /* Outer most WL is either more than 2D or
          * not cudarizable at all. Do nothing */
     }
 
     DBUG_RETURN (arg_node);
+}
+
+static node *
+CreateBlockingPragma (node *ids, int dim)
+{
+    node *pragma, *array, *wlcomp_aps, *block_exprs = NULL;
+    bool needblocked = FALSE;
+
+    DBUG_ENTER ("CreateBlockingPragma");
+
+    pragma = TBmakePragma ();
+
+    while (ids != NULL) {
+        if (AVIS_NEEDBLOCKED (IDS_AVIS (ids))) {
+            needblocked = TRUE;
+            block_exprs
+              = TCcombineExprs (block_exprs,
+                                TBmakeExprs (TBmakeNum (AVIS_BLOCKSIZE (IDS_AVIS (ids))),
+                                             NULL));
+
+            AVIS_BLOCKSIZE (IDS_AVIS (ids)) = 0;
+            AVIS_NEEDBLOCKED (IDS_AVIS (ids)) = FALSE;
+        } else {
+            block_exprs = TCcombineExprs (block_exprs, TBmakeExprs (TBmakeNum (1), NULL));
+        }
+        ids = IDS_NEXT (ids);
+    }
+
+    if (needblocked) {
+        array
+          = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), block_exprs);
+
+        wlcomp_aps = TBmakeExprs (TBmakeSpap (TBmakeSpid (NULL, "BvL0"),
+                                              TBmakeExprs (array, NULL)),
+                                  NULL);
+
+        PRAGMA_WLCOMP_APS (pragma) = wlcomp_aps;
+    } else {
+        block_exprs = FREEdoFreeTree (block_exprs);
+        pragma = FREEdoFreeNode (pragma);
+        pragma = NULL;
+    }
+
+    DBUG_RETURN (pragma);
 }
 
 /** <!--********************************************************************-->
@@ -412,6 +545,9 @@ DAApart (node *arg_node, info *arg_info)
     /* Pop information */
     INFO_WLIDXS (arg_info) = old_wlidx;
     INFO_PART_INFO (arg_info) = PopPartInfo (INFO_PART_INFO (arg_info));
+
+    /* Create N_pragma for blocking */
+    INFO_PRAGMA (arg_info) = CreateBlockingPragma (PART_IDS (arg_node), dim);
 
     /* Continue traversing other partitions */
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -499,8 +635,11 @@ DAAprf (node *arg_node, info *arg_info)
 
                 dim = TYgetDim (ID_NTYPE (arr));
 
-                /* Currently, we restrict reuse candidates to be either 1D or 2D arrays */
-                if (dim == 1 || dim == 2) {
+                /* Currently, we restrict reuse candidates to be either 1D or 2D AKS
+                 * arrays, and the dimentionality must be equal to the outermost
+                 * cudarizable withloop */
+                if (TYisAKS (ID_NTYPE (arr)) && (dim == 1 || dim == 2)
+                    && INFO_CUWLDIM (arg_info) == dim) {
                     /* If this index has a defining assigment within the current cuda WL,
                      * we start to collect access information */
                     if (ID_SSAASSIGN (idx) != NULL
@@ -508,8 +647,11 @@ DAAprf (node *arg_node, info *arg_info)
 
                         /* Create access info structure */
                         INFO_ACCESS_INFO (arg_info)
-                          = TBmakeCudaAccessInfo (ID_AVIS (arr), dim,
-                                                  INFO_NEST_LEVEL (arg_info));
+                          = TBmakeCudaAccessInfo (ID_AVIS (arr),
+                                                  NULL, /* The shape information will be
+                                                           assigned during traversal to
+                                                           idxs2offset */
+                                                  dim, INFO_NEST_LEVEL (arg_info));
 
                         /* Generate an empty coefficient matrix */
                         CUAI_MATRIX (INFO_ACCESS_INFO (arg_info))
@@ -532,10 +674,17 @@ DAAprf (node *arg_node, info *arg_info)
             break;
         case F_idxs2offset:
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
-                node *ids, *avis;
+                node *ids, *avis, *shape;
+                int rank;
 
                 ids = PRF_EXPRS2 (arg_node);
-                INFO_DIM (arg_info) = 0;
+                shape = PRF_ARG1 (arg_node);
+                INFO_IDXDIM (arg_info) = 0;
+
+                DBUG_ASSERT ((NODE_TYPE (shape) == N_array && COisConstant (shape)),
+                             "Non-AKS reusable array found!");
+
+                CUAI_ARRAYSHP (INFO_ACCESS_INFO (arg_info)) = DUPdoDupNode (shape);
 
                 /* We loop through each index in turn */
                 while (ids != NULL) {
@@ -553,11 +702,23 @@ DAAprf (node *arg_node, info *arg_info)
                         break;
                     }
 
-                    INFO_DIM (arg_info)++;
+                    INFO_IDXDIM (arg_info)++;
                     ids = EXPRS_NEXT (ids);
                 }
 
-                INFO_DIM (arg_info) = 0;
+                INFO_IDXDIM (arg_info) = 0;
+
+                rank = MatrixRank (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)));
+                /* If rank of the coefficient matric is less than the nestlevel,
+                 * we have potential data reuse for the accessed array */
+                if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))) {
+                    INFO_ACCESS_INFO (arg_info)
+                      = CreateSharedMemory (INFO_ACCESS_INFO (arg_info), arg_info);
+                } else {
+                    INFO_ACCESS_INFO (arg_info)
+                      = TBfreeCudaAccessInfo (INFO_ACCESS_INFO (arg_info));
+                    INFO_ACCESS_INFO (arg_info) = NULL;
+                }
             }
             break;
         case F_add_SxS:
@@ -567,8 +728,8 @@ DAAprf (node *arg_node, info *arg_info)
 
                 if (NODE_TYPE (operand1) == N_num) {
                     AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL,
-                              INFO_DIM (arg_info), arg_info);
+                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
+                              INFO_IDXDIM (arg_info), arg_info);
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
@@ -577,8 +738,8 @@ DAAprf (node *arg_node, info *arg_info)
 
                 if (NODE_TYPE (operand2) == N_num) {
                     AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL,
-                              INFO_DIM (arg_info), arg_info);
+                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL, 0,
+                              INFO_IDXDIM (arg_info), arg_info);
                 } else if (NODE_TYPE (operand2) == N_id) {
                     ActOnId (ID_AVIS (operand2), arg_info);
                 } else {
@@ -594,8 +755,8 @@ DAAprf (node *arg_node, info *arg_info)
 
                 if (NODE_TYPE (operand1) == N_num) {
                     AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL,
-                              INFO_DIM (arg_info), arg_info);
+                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
+                              INFO_IDXDIM (arg_info), arg_info);
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
@@ -606,8 +767,8 @@ DAAprf (node *arg_node, info *arg_info)
                     old_coefficient = INFO_COEFFICIENT (arg_info);
                     INFO_COEFFICIENT (arg_info) *= -1;
                     AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL,
-                              INFO_DIM (arg_info), arg_info);
+                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL, 0,
+                              INFO_IDXDIM (arg_info), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else if (NODE_TYPE (operand2) == N_id) {
                     old_coefficient = INFO_COEFFICIENT (arg_info);

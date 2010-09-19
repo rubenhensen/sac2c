@@ -413,6 +413,20 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
              AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))));
 
     INDENT;
+    fprintf (global.outfile, "     - Reuse Array Shape: ");
+    PRTarray (CUAI_ARRAYSHP (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
+    fprintf (global.outfile, "\n");
+
+    INDENT;
+    fprintf (global.outfile, "     - Shared Memory: %s\n",
+             AVIS_NAME (CUAI_SHARRAY (ASSIGN_ACCESS_INFO (arg_node))));
+
+    INDENT;
+    fprintf (global.outfile, "     - Shared Memory Shape: ");
+    PRTarray (CUAI_SHARRAYSHP (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
+    fprintf (global.outfile, "\n");
+
+    INDENT;
     fprintf (global.outfile, "     - Dimension: %d\n",
              CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)));
 
@@ -436,7 +450,8 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
                 fprintf (global.outfile, ")");
             }
 
-            fprintf (global.outfile, "[%s]", CUDA_IDX_NAMES[INDEX_TYPE (idx)]);
+            fprintf (global.outfile, "[Type:%s, LoopLevel:%d]",
+                     CUDA_IDX_NAMES[INDEX_TYPE (idx)], INDEX_LOOPLEVEL (idx));
 
             if (INDEX_NEXT (idx) != NULL) {
                 fprintf (global.outfile, " + ");
@@ -5457,6 +5472,12 @@ PRTrange (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/* global */\n");
         INDENT;
     }
+
+    if (RANGE_ISBLOCKED (arg_node)) {
+        fprintf (global.outfile, "/* blocked */\n");
+        INDENT;
+    }
+
     fprintf (global.outfile, "(");
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " <= ");

@@ -1045,6 +1045,14 @@ GLOBAL (int, mutc_distribution_mode_arg, -1);
 GLOBAL (int, mutc_force_block_size, -1);
 GLOBAL (int, mutc_unroll, 1);
 
+/*
+ * CUDA backend options
+ */
+
+GLOBAL (int, cuda_1d_block_x, 512);
+GLOBAL (int, cuda_2d_block_x, 32);
+GLOBAL (int, cuda_2d_block_y, 16);
+
 #undef GLOBALtype
 #undef GLOBALname
 #undef GLOBALinit

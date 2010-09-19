@@ -1069,14 +1069,18 @@ typedef struct INDEX_T {
     unsigned int type;
     int coefficient;
     node *id;
+    int looplevel; /* This attribute is only meaningful if type is LOOPIDX */
     struct INDEX_T *next;
 } index_t;
 
 typedef struct CUDA_ACCESS_INFO_T {
     Matrix coe_mtx;
-    node *array;
     int dim;
     int nestlevel;
+    node *array;
+    node *arrayshp;
+    node *sharray;
+    node *sharrayshp;
     index_t *indices[MAX_REUSE_DIM];
 } cuda_access_info_t;
 

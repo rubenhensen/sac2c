@@ -2174,11 +2174,13 @@
   <node name="Assign" />
   <node name="Let" />
   <node name="Block" />
+  <node name="With" />
   <node name="With2" />
   <node name="Withid" />
   <node name="WLseg" />
   <node name="WLstride" />
   <node name="WLgrid" />
+  <node name="WLblock" />
 </travuser>
 <traverror>
   <!-- blocking is not supported for now. -->
@@ -7833,6 +7835,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="BlockSize" inconstructor="no" >
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                 <range name="daa" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
 
       <flags>
@@ -7947,6 +7961,11 @@ N_tfarg :
         <flag name="IsOmpReduction" default="FALSE" >
           <description>
                   If true, the given variable is reduction OpenMP variable used in fold.
+          </description>
+        </flag>
+        <flag name="NeedBlocked" default="FALSE" >
+          <description>
+                  If true, the given variable is a loop index and the loop needs to be blocked
           </description>
         </flag>
       </flags>
@@ -11010,6 +11029,9 @@ N_tfarg :
       <flags>
         <flag name="IsGlobal" default="FALSE">
 	  <description>True iff this range should be distributed globally over multiple cores</description>
+	</flag>
+        <flag name="IsBlocked" default="FALSE">
+	  <description>True iff this range is blocked by the blocking pragma</description>
 	</flag>
       </flags>
     </node>
