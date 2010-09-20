@@ -808,7 +808,8 @@ ENDPHASE (opt)
 
 /******************************************************************************/
 
-PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
+PHASE (cuda, "Automatic parallelisation for GPUs",
+       /* global.backend == BE_cuda */ NEVER)
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
