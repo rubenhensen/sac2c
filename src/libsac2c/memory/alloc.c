@@ -1724,8 +1724,12 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
-    case F_cuda_threadIdx:
-    case F_cuda_blockDim:
+    case F_cuda_threadIdx_x:
+    case F_cuda_threadIdx_y:
+    case F_cuda_threadIdx_z:
+    case F_cuda_blockDim_x:
+    case F_cuda_blockDim_y:
+    case F_cuda_blockDim_z:
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;

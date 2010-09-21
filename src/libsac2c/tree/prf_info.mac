@@ -893,12 +893,28 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfArrayVect2Offset, NULL, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
        NULL, NULL, TEone, NULL, NULL),
 
-  PRF (cuda_threadIdx, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       COMPprfCUDAThreadIdx, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+  PRF (cuda_threadIdx_x, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDAThreadIdxX, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (cuda_blockDim, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
-       COMPprfCUDABlockDim, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+  PRF (cuda_threadIdx_y, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDAThreadIdxY, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (cuda_threadIdx_z, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDAThreadIdxZ, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (cuda_blockDim_x, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDABlockDimX, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (cuda_blockDim_y, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDABlockDimY, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (cuda_blockDim_z, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+       COMPprfCUDABlockDimZ, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
   PRF (shmem_boundary_load, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_dummy, NULL,

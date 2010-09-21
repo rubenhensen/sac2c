@@ -31,11 +31,6 @@ typedef struct RANGE_INFO_T {
     struct RANGE_INFO_T *next;
 } range_info_t;
 
-#define RI_RANGE(n) (n->range)
-#define RI_TOPLEVEL(n) (n->toplevel)
-#define RI_PREV(n) (n->prev)
-#define RI_NEXT(n) (n->next)
-
 typedef struct RANGE_SET_T {
     range_info_t *last_blocked_range;
     range_info_t *last_nonblocked_range;
@@ -46,6 +41,11 @@ typedef struct RANGE_SET_T {
     struct RANGE_SET_T *next;
 } range_set_t;
 
+#define RI_RANGE(n) (n->range)
+#define RI_TOPLEVEL(n) (n->toplevel)
+#define RI_PREV(n) (n->prev)
+#define RI_NEXT(n) (n->next)
+
 #define RS_LAST_BLOCKED_RANGE(n) (n->last_blocked_range)
 #define RS_LAST_NONBLOCKED_RANGE(n) (n->last_nonblocked_range)
 #define RS_BLOCKED_RANGES(n) (n->blocked_ranges)
@@ -54,6 +54,76 @@ typedef struct RANGE_SET_T {
 #define RS_NONBLOCKED_RANGES_CNT(n) (n->nonblocked_ranges_count)
 #define RS_RANGES_CNT(n) (((n->blocked_ranges_count) + (n->nonblocked_ranges_count)))
 #define RS_NEXT(n) (n->next)
+
+typedef struct CUIDX_SET_T {
+    node *tx;
+    node *ty;
+    node *bx;
+    node *by;
+} cuidx_set_t;
+
+#define CIS_TX(n) (n->tx)
+#define CIS_TY(n) (n->ty)
+#define CIS_BX(n) (n->bx)
+#define CIS_BY(n) (n->by)
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    int level;
+    node *fundef;
+    node *lastassign;
+    range_set_t *range_sets;
+    node *with3;
+    int cuwldim;
+    cuidx_set_t *cis;
+};
+
+#define INFO_LEVEL(n) (n->level)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LASTASSIGN(n) (n->lastassign)
+#define INFO_RANGE_SETS(n) (n->range_sets)
+#define INFO_WITH3(n) (n->with3)
+#define INFO_CUWLDIM(n) (n->cuwldim)
+#define INFO_CIS(n) (n->cis)
+
+/*
+ * INFO macros
+ */
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = MEMmalloc (sizeof (info));
+
+    INFO_LEVEL (result) = 0;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LASTASSIGN (result) = NULL;
+    INFO_RANGE_SETS (result) = NULL;
+    INFO_WITH3 (result) = NULL;
+    INFO_CUWLDIM (result) = 0;
+    INFO_CIS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
 
 static range_info_t *
 CreateRangeInfo (node *range, bool toplevel)
@@ -119,7 +189,9 @@ EnqRangeInfo (range_set_t *set, node *range, bool toplevel)
             next = RI_NEXT (RS_NONBLOCKED_RANGES (set));
             RI_NEXT (RS_NONBLOCKED_RANGES (set)) = RS_BLOCKED_RANGES (set);
             RS_BLOCKED_RANGES (set) = RS_NONBLOCKED_RANGES (set);
-            dummy = CreateRangeInfo (NULL, FALSE);
+            dummy = CreateRangeInfo (TBmakeRange (NULL, NULL, NULL, NULL, NULL, NULL,
+                                                  NULL, NULL),
+                                     FALSE);
             RI_NEXT (dummy) = next;
             RI_PREV (next) = dummy;
             RS_NONBLOCKED_RANGES (set) = dummy;
@@ -171,8 +243,7 @@ DeqRangeInfo (range_set_t *set, node *range)
         RS_NONBLOCKED_RANGES_CNT (set)--;
         info = MEMfree (info);
     } else {
-        DBUG_ASSERT ((0),
-                     "Found N_range in neither blocked ranges nor nonblocked ranges!");
+        DBUG_ASSERT ((0), "N_range in neither blocked nor nonblocked ranges!");
     }
 
     DBUG_RETURN (set);
@@ -193,6 +264,7 @@ FreeRangeInfo (range_info_t *info)
 
     DBUG_RETURN (info);
 }
+
 static range_set_t *
 PushRangeSet (range_set_t *sets)
 {
@@ -233,56 +305,76 @@ PopRangeSet (range_set_t *sets)
     DBUG_RETURN (sets);
 }
 
-/*
- * INFO structure
- */
-struct INFO {
-    int level;
-    node *fundef;
-    node *lastassign;
-    range_set_t *range_sets;
-    node *with3;
-};
-
-#define INFO_LEVEL(n) (n->level)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_LASTASSIGN(n) (n->lastassign)
-#define INFO_RANGE_SETS(n) (n->range_sets)
-#define INFO_WITH3(n) (n->with3)
-
-/*
- * INFO macros
- */
-
-/*
- * INFO functions
- */
-static info *
-MakeInfo ()
+static void
+PrintSpaces (int num)
 {
-    info *result;
+    int i;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ("PrintSpaces");
 
-    result = MEMmalloc (sizeof (info));
+    for (i = 0; i < num; i++) {
+        printf ("  ");
+    }
 
-    INFO_LEVEL (result) = 0;
-    INFO_FUNDEF (result) = NULL;
-    INFO_LASTASSIGN (result) = NULL;
-    INFO_RANGE_SETS (result) = NULL;
-    INFO_WITH3 (result) = NULL;
-
-    DBUG_RETURN (result);
+    DBUG_VOID_RETURN;
 }
 
-static info *
-FreeInfo (info *info)
+static void
+PrintRangeSet (range_set_t *sets, int indent)
 {
-    DBUG_ENTER ("FreeInfo");
+    range_info_t *blocked_ranges;
+    range_info_t *nonblocked_ranges;
 
-    info = MEMfree (info);
+    DBUG_ENTER ("PrintRangeSet");
 
-    DBUG_RETURN (info);
+    blocked_ranges = RS_BLOCKED_RANGES (sets);
+    nonblocked_ranges = RS_NONBLOCKED_RANGES (sets);
+
+    PrintSpaces (indent);
+    printf ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+
+    PrintSpaces (indent);
+    if (RS_LAST_BLOCKED_RANGE (sets) != NULL) {
+        printf ("Last Blocked Range: %s[toplevel:%d]\n",
+                IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_BLOCKED_RANGE (sets)))),
+                RI_TOPLEVEL (RS_LAST_BLOCKED_RANGE (sets)));
+    } else {
+        printf ("Last Blocked Range: NULL\n");
+    }
+
+    PrintSpaces (indent);
+    if (RS_LAST_NONBLOCKED_RANGE (sets) != NULL) {
+        printf ("Last Nonblocked Range: %s[toplevel:%d]\n",
+                IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_NONBLOCKED_RANGE (sets)))),
+                RI_TOPLEVEL (RS_LAST_NONBLOCKED_RANGE (sets)));
+    } else {
+        printf ("Last Nonblocked Range: NULL\n");
+    }
+
+    PrintSpaces (indent);
+    printf ("Blocked Ranges[%d]: ", RS_BLOCKED_RANGES_CNT (sets));
+    while (blocked_ranges != NULL) {
+        printf ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (blocked_ranges))));
+        blocked_ranges = RI_NEXT (blocked_ranges);
+    }
+    printf ("\n");
+
+    PrintSpaces (indent);
+    printf ("Nonblocked Ranges[%d]: ", RS_NONBLOCKED_RANGES_CNT (sets));
+    while (nonblocked_ranges != NULL) {
+        if (RANGE_INDEX (RI_RANGE (nonblocked_ranges)) == NULL) {
+            printf ("(Index:Dummy) ");
+        } else {
+            printf ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (nonblocked_ranges))));
+        }
+        nonblocked_ranges = RI_NEXT (nonblocked_ranges);
+    }
+    printf ("\n");
+
+    PrintSpaces (indent);
+    printf ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -293,11 +385,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-CUDRdoCudaDaraReuse (node *syntax_tree)
+CUDRdoCudaDataReuse (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CUDRdoCudaDaraReuse");
+    DBUG_ENTER ("CUDRdoCudaDataReuse");
 
     info = MakeInfo ();
     TRAVpush (TR_cudr);
@@ -364,10 +456,79 @@ CUDRwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUDRwith");
 
     if (WITH_CUDARIZABLE (arg_node)) {
+        INFO_CUWLDIM (arg_info) = TCcountIds (WITH_IDS (arg_node));
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
+}
+
+static node *
+CreatePrf (char *name, simpletype sty, shape *shp, prf pfun, node *args, node **vardecs_p,
+           node **assigns_p)
+{
+    node *avis = NULL, *new_assign;
+
+    DBUG_ENTER ("CreatePrf");
+
+    if (name != NULL) {
+        avis
+          = TBmakeAvis (TRAVtmpVarName (name), TYmakeAKS (TYmakeSimpleType (sty), shp));
+
+        *vardecs_p = TBmakeVardec (avis, *vardecs_p);
+    }
+
+    new_assign = TBmakeAssign (TBmakeLet ((avis == NULL) ? avis : TBmakeIds (avis, NULL),
+                                          TBmakePrf (pfun, args)),
+                               NULL);
+
+    if (avis != NULL) {
+        AVIS_SSAASSIGN (avis) = new_assign;
+    }
+
+    if (&assigns_p == NULL) {
+        *assigns_p = new_assign;
+    } else {
+        *assigns_p = TCappendAssign (*assigns_p, new_assign);
+    }
+
+    DBUG_RETURN (avis);
+}
+
+static void
+CreateCudaIndexInitCode (node *part, info *arg_info)
+{
+    int dim;
+    cuidx_set_t *cis;
+    node *assigns = NULL, *vardecs = NULL;
+
+    DBUG_ENTER ("CreateCudaIndexInitCode");
+
+    cis = MEMmalloc (sizeof (cuidx_set_t));
+    dim = TCcountIds (PART_IDS (part));
+
+    CIS_TX (cis) = CreatePrf ("tx", T_int, SHmakeShape (0), F_cuda_threadIdx_x, NULL,
+                              &vardecs, &assigns);
+    CIS_BX (cis) = CreatePrf ("b_dim_x", T_int, SHmakeShape (0), F_cuda_blockDim_x, NULL,
+                              &vardecs, &assigns);
+
+    if (dim == 2) {
+        CIS_TY (cis) = CreatePrf ("ty", T_int, SHmakeShape (0), F_cuda_threadIdx_y, NULL,
+                                  &vardecs, &assigns);
+
+        CIS_BY (cis) = CreatePrf ("b_dim_y", T_int, SHmakeShape (0), F_cuda_blockDim_y,
+                                  NULL, &vardecs, &assigns);
+    }
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+    BLOCK_INSTR (PART_CBLOCK (part))
+      = TCappendAssign (assigns, BLOCK_INSTR (PART_CBLOCK (part)));
+
+    INFO_CIS (arg_info) = cis;
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -386,11 +547,13 @@ CUDRpart (node *arg_node, info *arg_info)
 
     dim = TCcountIds (PART_IDS (arg_node));
 
-    /* INFO_WITHIDS( arg_info) = PART_IDS( arg_node); */
-    INFO_LEVEL (arg_info) += dim;
-    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
-    INFO_LEVEL (arg_info) += dim;
+    if (NODE_TYPE (BLOCK_INSTR (PART_CBLOCK (arg_node))) != N_empty) {
+        CreateCudaIndexInitCode (arg_node, arg_info);
 
+        INFO_LEVEL (arg_info) += dim;
+        PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+        INFO_LEVEL (arg_info) -= dim;
+    }
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -410,6 +573,7 @@ CUDRwith3 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUDRwith3");
 
+    /* Everytime we enter a top level with3, we push a range set */
     if (WITH3_ISTOPLEVEL (arg_node)) {
         INFO_RANGE_SETS (arg_info) = PushRangeSet (INFO_RANGE_SETS (arg_info));
     }
@@ -419,6 +583,7 @@ CUDRwith3 (node *arg_node, info *arg_info)
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
     INFO_WITH3 (arg_info) = old_with3;
 
+    /* Everytime we leave a top level with3, we pop a range set */
     if (WITH3_ISTOPLEVEL (arg_node)) {
         INFO_RANGE_SETS (arg_info) = PopRangeSet (INFO_RANGE_SETS (arg_info));
     }
@@ -438,14 +603,35 @@ CUDRrange (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDRrange");
 
-    INFO_RANGE_SETS (arg_info) = EnqRangeInfo (INFO_RANGE_SETS (arg_info), arg_node,
-                                               WITH3_ISTOPLEVEL (INFO_WITH3 (arg_info)));
+    /* We only traverse the range if it is NOT for fitting */
+    if (!RANGE_ISFITTING (arg_node)) {
+        INFO_RANGE_SETS (arg_info)
+          = EnqRangeInfo (INFO_RANGE_SETS (arg_info), arg_node,
+                          WITH3_ISTOPLEVEL (INFO_WITH3 (arg_info)));
 
-    INFO_LEVEL (arg_info)++;
-    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
-    INFO_LEVEL (arg_info)--;
+        INFO_LEVEL (arg_info)++;
 
-    INFO_RANGE_SETS (arg_info) = DeqRangeInfo (INFO_RANGE_SETS (arg_info), arg_node);
+#if 1
+        PrintSpaces (INFO_LEVEL (arg_info));
+        printf ("Entering range [index:%s level:%d blocked:%d]\n",
+                IDS_NAME (RANGE_INDEX (arg_node)), INFO_LEVEL (arg_info),
+                RANGE_ISBLOCKED (arg_node));
+        PrintRangeSet (INFO_RANGE_SETS (arg_info), INFO_LEVEL (arg_info));
+#endif
+
+        RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+#if 1
+        PrintSpaces (INFO_LEVEL (arg_info));
+        printf ("Leaving range [index:%s level:%d blocked:%d]\n",
+                IDS_NAME (RANGE_INDEX (arg_node)), INFO_LEVEL (arg_info),
+                RANGE_ISBLOCKED (arg_node));
+#endif
+
+        INFO_LEVEL (arg_info)--;
+
+        INFO_RANGE_SETS (arg_info) = DeqRangeInfo (INFO_RANGE_SETS (arg_info), arg_node);
+    }
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
@@ -496,7 +682,12 @@ CUDRprf (node *arg_node, info *arg_info)
 
             access_info = ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info));
 
+            /* If this idx_sel accesses an array with reuse opportunity */
             if (access_info != NULL) {
+                /* Add declaration for shared memory */
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                    TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
             }
         }
     }

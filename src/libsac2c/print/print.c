@@ -5478,6 +5478,11 @@ PRTrange (node *arg_node, info *arg_info)
         INDENT;
     }
 
+    if (RANGE_ISFITTING (arg_node)) {
+        fprintf (global.outfile, "/* fitting */\n");
+        INDENT;
+    }
+
     fprintf (global.outfile, "(");
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " <= ");

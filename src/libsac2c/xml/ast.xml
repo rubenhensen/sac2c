@@ -11045,6 +11045,9 @@ N_tfarg :
         <flag name="IsBlocked" default="FALSE">
 	  <description>True iff this range is blocked by the blocking pragma</description>
 	</flag>
+        <flag name="IsFitting" default="FALSE">
+	  <description>True iff this range is a fitting range</description>
+	</flag>
       </flags>
     </node>
   </syntaxtree>

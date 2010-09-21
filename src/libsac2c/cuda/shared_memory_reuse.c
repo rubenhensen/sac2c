@@ -206,20 +206,16 @@ CreateSharedMemoryAccessCode (rc_t *rc, info *arg_info)
          *  b_dim_y = cuda_blockDim( 2, 0);
          *  b_dim_x = cuda_blockDim( 2, 1);
          */
-        args = TBmakeExprs (TBmakeNum (dim), TBmakeExprs (TBmakeNum (0), NULL));
-        ty = CreatePrf ("ty", T_int, SHmakeShape (0), F_cuda_threadIdx, args, &vardecs,
+        ty = CreatePrf ("ty", T_int, SHmakeShape (0), F_cuda_threadIdx_y, NULL, &vardecs,
                         &assigns);
 
-        args = TBmakeExprs (TBmakeNum (dim), TBmakeExprs (TBmakeNum (1), NULL));
-        tx = CreatePrf ("tx", T_int, SHmakeShape (0), F_cuda_threadIdx, args, &vardecs,
+        tx = CreatePrf ("tx", T_int, SHmakeShape (0), F_cuda_threadIdx_x, NULL, &vardecs,
                         &assigns);
 
-        args = TBmakeExprs (TBmakeNum (dim), TBmakeExprs (TBmakeNum (0), NULL));
-        b_dim_y = CreatePrf ("b_dim_y", T_int, SHmakeShape (0), F_cuda_blockDim, args,
+        b_dim_y = CreatePrf ("b_dim_y", T_int, SHmakeShape (0), F_cuda_blockDim_y, NULL,
                              &vardecs, &assigns);
 
-        args = TBmakeExprs (TBmakeNum (dim), TBmakeExprs (TBmakeNum (1), NULL));
-        b_dim_x = CreatePrf ("b_dim_x", T_int, SHmakeShape (0), F_cuda_blockDim, args,
+        b_dim_x = CreatePrf ("b_dim_x", T_int, SHmakeShape (0), F_cuda_blockDim_x, NULL,
                              &vardecs, &assigns);
 
         /*

@@ -7113,45 +7113,97 @@ COMPprfDevice2Device (node *arg_node, info *arg_info)
 }
 
 node *
-COMPprfCUDAThreadIdx (node *arg_node, info *arg_info)
+COMPprfCUDAThreadIdxX (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    int array_dim, dim_pos;
-    node *let_ids;
 
-    DBUG_ENTER ("COMPprfCUDAThreadIdx");
+    DBUG_ENTER ("COMPprfCUDAThreadIdxX");
+    /*
+      int array_dim, dim_pos;
+      node *let_ids;
 
-    let_ids = INFO_LASTIDS (arg_info);
+      let_ids = INFO_LASTIDS( arg_info);
 
-    array_dim = NUM_VAL (PRF_ARG1 (arg_node));
-    DBUG_ASSERT ((array_dim > 0), "Dimension of CUDA array must be > 0");
+      array_dim = NUM_VAL( PRF_ARG1( arg_node));
+      DBUG_ASSERT( ( array_dim > 0), "Dimension of CUDA array must be > 0");
 
-    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+      dim_pos = NUM_VAL( PRF_ARG2( arg_node));
 
-    ret_node = TCmakeAssignIcm3 ("CUDA_THREADIDX", DUPdupIdsIdNt (let_ids),
-                                 TBmakeNum (array_dim), TBmakeNum (dim_pos), NULL);
+      ret_node =
+        TCmakeAssignIcm3( "CUDA_THREADIDX",
+                          DUPdupIdsIdNt( let_ids),
+                          TBmakeNum( array_dim),
+                          TBmakeNum( dim_pos),
+                          NULL);
+    */
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDAThreadIdxY (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCUDAThreadIdxY");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-COMPprfCUDABlockDim (node *arg_node, info *arg_info)
+COMPprfCUDAThreadIdxZ (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    int array_dim, dim_pos;
-    node *let_ids;
 
-    DBUG_ENTER ("COMPprfCUDABlockDim");
+    DBUG_ENTER ("COMPprfCUDAThreadIdxZ");
 
-    let_ids = INFO_LASTIDS (arg_info);
+    DBUG_RETURN (ret_node);
+}
 
-    array_dim = NUM_VAL (PRF_ARG1 (arg_node));
-    DBUG_ASSERT ((array_dim > 0), "Dimension of CUDA array must be > 0");
+node *
+COMPprfCUDABlockDimX (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
 
-    dim_pos = NUM_VAL (PRF_ARG2 (arg_node));
+    DBUG_ENTER ("COMPprfCUDABlockDimX");
+    /*
+      int array_dim, dim_pos;
+      node *let_ids;
 
-    ret_node = TCmakeAssignIcm3 ("CUDA_BLOCKDIM", DUPdupIdsIdNt (let_ids),
-                                 TBmakeNum (array_dim), TBmakeNum (dim_pos), NULL);
+
+
+      let_ids = INFO_LASTIDS( arg_info);
+
+      array_dim = NUM_VAL( PRF_ARG1( arg_node));
+      DBUG_ASSERT( ( array_dim > 0), "Dimension of CUDA array must be > 0");
+
+      dim_pos = NUM_VAL( PRF_ARG2( arg_node));
+
+      ret_node =
+        TCmakeAssignIcm3( "CUDA_BLOCKDIM",
+                          DUPdupIdsIdNt( let_ids),
+                          TBmakeNum( array_dim),
+                          TBmakeNum( dim_pos),
+                          NULL);
+    */
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDABlockDimY (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCUDABlockDimY");
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCUDABlockDimZ");
 
     DBUG_RETURN (ret_node);
 }

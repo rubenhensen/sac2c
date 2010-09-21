@@ -2094,6 +2094,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
                             body, results, offsets, next);
 
         RANGE_ISBLOCKED (next) = TRUE;
+        RANGE_ISFITTING (next) = TRUE;
 
         /*
          * replace old bounds

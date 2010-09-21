@@ -808,8 +808,7 @@ ENDPHASE (opt)
 
 /******************************************************************************/
 
-PHASE (cuda, "Automatic parallelisation for GPUs",
-       /* global.backend == BE_cuda */ NEVER)
+PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
@@ -916,6 +915,9 @@ SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs, global.backend == BE_mutc, wlt)
 
 SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
           global.backend == BE_mutc && global.optimize.doms, wlt)
+
+SUBPHASE (cudr, "CUDA Exploiting data reuse with cuda shared memory", CUDRdoCudaDataReuse,
+          global.backend == BE_cuda, wlt)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
