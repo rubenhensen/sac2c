@@ -1,19 +1,19 @@
 /*****************************************************************************
  *
- * file:   tf_build_graph.h
+ * file:   dagbuilder.h
  *
  * description:
- *   header file for tf_build_graph.c
+ *   header file for dagbuilder.c
  *
  *****************************************************************************/
 
-#ifndef _TF_BUILD_GRAPH_H_
-#define _TF_BUILD_GRAPH_H_
+#ifndef _DAGBUILDER_H_
+#define _DAGBUILDER_H_
 
 #include "types.h"
 
 extern node *TFBDGdoBuildTFGraph (node *arg_node);
 extern node *TFBDGtfspec (node *arg_node, info *arg_info);
-extern node *TFBDGtfdef (node *arg_node, info *arg_info);
+extern node *TFBDGtfvertex (node *arg_node, info *arg_info);
 
-#endif /* _TF_BUILD_GRAPH_H_ */
+#endif /* _DAGBUILDER_H_ */

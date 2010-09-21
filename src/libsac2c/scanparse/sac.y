@@ -1987,11 +1987,11 @@ tfspec: tfdefs tfrels
 
 tfdefs: tfdef tfdefs
 	{
-	  $$=TBmakeTfdef($1,NULL,NULL,$2);
+	  $$=TBmakeTfvertex($1,NULL,NULL,$2);
 	}
 	|tfdef
 	{
-	  $$=TBmakeTfdef($1,NULL,NULL,NULL);
+	  $$=TBmakeTfvertex($1,NULL,NULL,NULL);
 	}
 	;
 tfrels: tfrel tfrels

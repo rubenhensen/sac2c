@@ -153,7 +153,8 @@ extern node *PRTfunbundle (node *arg_node, info *arg_info);
 
 //#ifdef NTFSANTANU
 extern node *PRTtfspec (node *arg_node, info *arg_info);
-extern node *PRTtfdef (node *arg_node, info *arg_info);
+extern node *PRTtfcomponent (node *arg_node, info *arg_info);
+extern node *PRTtfvertex (node *arg_node, info *arg_info);
 extern node *PRTtfrel (node *arg_node, info *arg_info);
 extern node *PRTtfabs (node *arg_node, info *arg_info);
 extern node *PRTtfusr (node *arg_node, info *arg_info);

@@ -1,0 +1,325 @@
+
+/** <!--********************************************************************-->
+ *
+ * @file classifyedges.c
+ *
+ * prefix: TFCTR
+ *
+ * description: In this file, we first classify the edges in subtyping hierarchy DAG.
+ * Then, we build a transitive link table for each DAG under consideration.
+ *
+ * The transitive link table holds information about which cross edge sources
+ * reach what cross edge target vertices. More details can be found in the paper
+ * on reachability analysis using dual labeling.
+ *
+ *****************************************************************************/
+
+#include "DupTree.h"
+#include "str.h"
+#include "free.h"
+#include "ctinfo.h"
+#include "structures.h"
+#include "tree_basic.h"
+#include "traverse.h"
+#include "str.h"
+#include "dbug.h"
+#include "memory.h"
+#include "tree_compound.h"
+#include "types.h"
+#include "ctransitive.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    dynarray *tltable;
+    dynarray *arrX;
+    dynarray *arrY;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_TLTABLE(n) n->tltable
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = MEMmalloc (sizeof (info));
+    INFO_TLTABLE (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TFCTRdoClassifyEdges( node *syntax_tree)
+ *
+ *   @brief  Inits the traversal for this phase
+ *
+ *   @param syntax_tree
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TFCTRdoCrossClosure (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("TFCTRdoCrossClosure");
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_tfctr);
+
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TFCTRtfspec( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   We loop through the defs in the type family specifications to
+ *   identify any potential apex nodes.
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TFCTRtfspec (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("TFCTRtfspec");
+
+    node *defs;
+
+    defs = TFSPEC_DEFS (arg_node);
+
+    while (defs != NULL) {
+
+        if (TFVERTEX_PARENTS (defs) == NULL) {
+
+            TRAVdo (defs, arg_info);
+
+            int currsize = ++TFSPEC_NUMCOMP (arg_node);
+
+            void *_cinfo
+              = MEMrealloc (TFSPEC_INFO (arg_node), currsize * sizeof (compinfo *),
+                            (currsize - 1) * sizeof (compinfo *));
+
+            if (!_cinfo) {
+                CTIabort (
+                  "Memory reallocation error in transitive link table construction!\n");
+            }
+
+            MEMfree (TFSPEC_INFO (arg_node));
+
+            TFSPEC_INFO (arg_node) = (compinfo **)_cinfo;
+            TFSPEC_INFO (arg_node)[currsize - 1] = NULL;
+
+            /*
+             * Do the following if we have at least one cross edge in the DAG.
+             */
+
+            if (INFO_TLTABLE (arg_info) != NULL) {
+
+                TFSPEC_INFO (arg_node)[currsize - 1] = MEMmalloc (sizeof (compinfo));
+
+                /*
+                 * We maintain a list of all cross edge sources and all cross edge
+                 * targets in a DAG.
+                 */
+
+                setSrcTarArrays (INFO_TLTABLE (arg_info),
+                                 &(COMPINFO_CSRC (TFSPEC_INFO (arg_node)[currsize - 1])),
+                                 &(COMPINFO_CTAR (TFSPEC_INFO (arg_node)[currsize - 1])));
+
+                /*
+                 * For each cross edge source, compute all the source edge targets that
+                 * it can potentially reach transitively. This will add a few more
+                 * entries in the transitive link table.
+                 */
+
+                buildTransitiveLinkTable (INFO_TLTABLE (arg_info));
+
+                if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
+                    COMPINFO_TLC (TFSPEC_INFO (arg_node)[currsize - 1])
+                      = computeTLCMatrix (INFO_TLTABLE (arg_info),
+                                          COMPINFO_CSRC (
+                                            TFSPEC_INFO (arg_node)[currsize - 1]),
+                                          COMPINFO_CTAR (
+                                            TFSPEC_INFO (arg_node)[currsize - 1]));
+                }
+
+                // freeDynarray( INFO_TLTABLE( arg_info));
+
+                COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[currsize - 1])
+                  = INFO_TLTABLE (arg_info);
+
+                INFO_TLTABLE (arg_info) = NULL;
+            }
+        }
+
+        defs = TFVERTEX_NEXT (defs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TFCTRtfvertex( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   We walk through the dependency graph here.
+ *   If the edge has not been classified, we classify the edge based
+ *   on the pre and post order numbers of the source and target
+ *   vertices for the edge.
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *
+ *   @return
+ *
+ *****************************************************************************/
+
+node *
+TFCTRtfvertex (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("TFCTRtfvertex");
+
+    node *defs, *children, *parents;
+
+    defs = arg_node;
+
+    int pre_parent, pre_child, post_parent, post_child, premax_child;
+
+    children = TFVERTEX_CHILDREN (defs);
+    pre_parent = TFVERTEX_PRE (arg_node);
+    post_parent = TFVERTEX_POST (arg_node);
+
+    while (children != NULL) {
+
+        if (!TFEDGE_WASCLASSIFIED (children)) {
+
+            /* Tree edges have already been classified during depth first walk of the
+             * graph.
+             */
+
+            pre_child = TFVERTEX_PRE (TFEDGE_TARGET (children));
+            premax_child = TFVERTEX_PREMAX (TFEDGE_TARGET (children));
+            post_child = TFVERTEX_POST (TFEDGE_TARGET (children));
+
+            if (pre_parent < pre_child && post_child < post_parent) {
+
+                /*
+                 * This is a forward edge. Since back and forward edges are
+                 * disallowed, throw an error here.
+                 *
+                 * TODO: Dont throw an error. Instead, ignore the forward edge and show
+                 * a warning.
+                 */
+
+                CTIabort ("Forward edge found in subtyping hierarchy");
+
+            } else if (pre_child < pre_parent && post_parent < post_child) {
+
+                /*
+                 * This is a back edge. Since back and forward edges are
+                 * disallowed, throw an error here.
+                 */
+
+                CTIabort ("Back edge found in subtyping hierarchy");
+
+            } else if (pre_child < pre_parent && post_child < post_parent) {
+
+                /*
+                 * This must be a cross edge. Add this to the transitive
+                 * link table
+                 */
+
+                TFEDGE_EDGETYPE (children) = edgecross;
+
+                /*
+                 * Set the parent relationship to be a cross edge as well.
+                 * This will be used in the non-tree labeling
+                 */
+
+                parents = TFVERTEX_PARENTS (TFEDGE_TARGET (children));
+
+                while (parents != NULL) {
+                    if (TFEDGE_TARGET (parents) == defs) {
+                        TFEDGE_EDGETYPE (parents) = edgecross;
+                    }
+                    parents = TFEDGE_NEXT (parents);
+                }
+
+                /*
+                 * Now that we have discovered a cross edge, we must add it
+                 * to the transitive link table.
+                 */
+
+                if (INFO_TLTABLE (arg_info) == NULL) {
+                    INFO_TLTABLE (arg_info) = MEMmalloc (sizeof (dynarray));
+                    initDynarray (INFO_TLTABLE (arg_info));
+                }
+
+                /*
+                 * The transitive link table is actually a list that consists of three
+                 * integers a,b and c in the form a->[b,c) which signifies that a vertex
+                 * with a preorder number of "a" reaches another vertex with a preorder
+                 * number "b" and "c" is the maximum preorder number of the children of
+                 * "b" increased by 1. Hence, the open interval ")".
+                 */
+
+                elem *e = MEMmalloc (sizeof (elem));
+                ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
+                ELEM_IDX (e) = pre_parent;
+                *((int *)ELEM_DATA (e)) = pre_child;
+                *((int *)ELEM_DATA (e) + 1) = premax_child;
+
+                addToArray (INFO_TLTABLE (arg_info), e);
+
+            } else {
+
+                CTIabort ("Unclassifiable edge found in subtyping hierarchy");
+            }
+
+            TFEDGE_WASCLASSIFIED (children) = 1;
+
+        } else {
+
+            TRAVdo (TFEDGE_TARGET (children), arg_info);
+        }
+
+        children = TFEDGE_NEXT (children);
+    }
+
+    DBUG_RETURN (arg_node);
+}

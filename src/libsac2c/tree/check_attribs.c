@@ -830,20 +830,20 @@ CHKMattribIndexInfo (index_info *attr, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn CHKMattribMatrices
+ * @fn CHKMattribCompInfo
  *
- * @brief Touch Matrices attribute
+ * @brief Touch CompInfo attribute
  *
- * @param attr TLCmatrices in N_tfspec
+ * @param attr Info in N_tfvertex
  * @param arg_info arg_info structure
  *
  * @return entire attribute
  *
  ***************************************************************************/
-matrix **
-CHKMattribMatrices (matrix **attr, info *arg_info)
+compinfo **
+CHKMattribCompInfoArr (compinfo **attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribMatrices");
+    DBUG_ENTER ("CHKMattribCompInfo");
 
     DBUG_RETURN (attr);
 }

@@ -124,12 +124,23 @@ ENDPHASE (ptc)
 
 /******************************************************************************/
 
+PHASE (uds, "Incorporating user-defined subtyping hierarchy", ALWAYS)
+
+SUBPHASE (bdg, "Building user defined subtyping graph", TFBDGdoBuildTFGraph, ALWAYS, uds)
+
+SUBPHASE (dfw, "Depth first walk of the subtyping graph", TFDFWdoDFWalk, ALWAYS, uds)
+
+SUBPHASE (ctr, "Classify edges and compute transitive reachability over crossedges",
+          TFCTRdoCrossClosure, ALWAYS, uds)
+
+SUBPHASE (rch, "Build link count matrix and label vertices for reachability query",
+          TFRCHdoReachabilityAnalysis, ALWAYS, uds)
+
+ENDPHASE (uds)
+
+/******************************************************************************/
+
 PHASE (tc, "Running type inference system", ALWAYS)
-
-SUBPHASE (btf, "Building type family dependency graph", TFBDGdoBuildTFGraph, ALWAYS, tc)
-
-SUBPHASE (pptg, "Preprocess type family dependency graph", TFPPGdoPreprocessTFGraph,
-          ALWAYS, tc)
 
 SUBPHASE (esp, "Enforcing Specializations", ESPdoEnforceSpecialization, ALWAYS, tc)
 

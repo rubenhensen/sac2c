@@ -79,7 +79,7 @@
     copy="literal" persist="yes" />
     <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial"
     copy="literal" />
-    <type name="Matrices" ctype="matrix**" init="NULL"
+    <type name="CompInfoArr" ctype="compinfo**" init="NULL"
     copy="function" />
     <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE"
     copy="literal" />
@@ -107,16 +107,28 @@
           <node name="Arg" />
         </travuser>
       </traversal>
-      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="build_graph.h" >
+      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="dagbuilder.h" >
         <travuser>
           <node name="Tfspec" />
-          <node name="Tfdef" />
+          <node name="Tfvertex" />
         </travuser>
       </traversal>
-      <traversal id="TFPPG" name="Preprocess type family graph for reachability" default="sons" include="preprocess_graph.h" >
+      <traversal id="TFDFW" name="Do a depth first walk of the subtyping hierarchy" default="sons" include="dfwalk.h" >
         <travuser>
           <node name="Tfspec" />
-          <node name="Tfdef" />
+          <node name="Tfvertex" />
+        </travuser>
+      </traversal>
+      <traversal id="TFCTR" name="Classify edges and build cross-edge based reachability information" default="sons" include="ctransitive.h" >
+        <travuser>
+          <node name="Tfspec" />
+          <node name="Tfvertex" />
+        </travuser>
+      </traversal>
+      <traversal id="TFRCH" name="Build link count matrix and label vertices for reachability analysis" default="sons" include="reachlabel.h" >
+        <travuser>
+          <node name="Tfspec" />
+          <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="ESBL" name="CUDA Expand shared memory boundary load" default="sons" include="expand_shmem_boundary_load.h" >
@@ -3622,14 +3634,16 @@ N_structdef :
     </node>
 <!--
 
-N_tfspecs :
+N_tfspec :
 
 -->
     <node name="Tfspec">
-      <description>declaration of type families and relations</description>
+      <description>
+      Declaration of type families and relations
+      </description>
       <attributes>
-        <attribute name="TLCmatrices" inconstructor="no">
-          <type name="Matrices">
+        <attribute name="NumComp" inconstructor="no">
+          <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />
@@ -3640,8 +3654,8 @@ N_tfspecs :
             </targets>
           </type>
         </attribute>
-        <attribute name="Numhierar" default="0" inconstructor="no">
-          <type name="Integer">
+        <attribute name="Info" default="NULL" inconstructor="no">
+          <type name="CompInfoArr">
             <targets>
               <target mandatory="no">
                 <any />
@@ -3657,7 +3671,7 @@ N_tfspecs :
         <son name="Defs">
           <targets>
             <target mandatory="yes">
-              <node name="Tfdef" />
+              <node name="Tfvertex" />
               <phases>
                 <all />
               </phases>
@@ -3679,11 +3693,11 @@ N_tfspecs :
     </node>
 <!--
 
-N_tfdef :
+N_tfvertex :
 
 -->
-    <node name="Tfdef">
-      <description>Type family definitions</description>
+    <node name="Tfvertex">
+      <description>Vertices in a graph</description>
       <attributes>
         <attribute name="pre" inconstructor="no">
           <type name="Integer">
@@ -3721,7 +3735,7 @@ N_tfdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="nontreeX" default="-1" inconstructor="no">
+        <attribute name="topo" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3733,7 +3747,7 @@ N_tfdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="nontreeY" default="-1" inconstructor="no">
+        <attribute name="row" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3745,7 +3759,43 @@ N_tfdef :
             </targets>
           </type>
         </attribute>
-        <attribute name="nontreeZ" default="-1" inconstructor="no">
+        <attribute name="reachcola" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="reachcolb" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="lubcol" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="distcol" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3769,7 +3819,7 @@ N_tfdef :
             </target>
           </targets>
         </son>
-        <son name="Supers">
+        <son name="Parents">
           <targets>
             <target mandatory="no">
               <node name="Tfedge" />
@@ -3779,7 +3829,7 @@ N_tfdef :
             </target>
           </targets>
         </son>
-        <son name="Subs">
+        <son name="Children">
           <targets>
             <target mandatory="no">
               <node name="Tfedge" />
@@ -3792,7 +3842,7 @@ N_tfdef :
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Tfdef" />
+              <node name="Tfvertex" />
               <phases>
                 <all />
               </phases>
@@ -3800,7 +3850,14 @@ N_tfdef :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags>
+        <flag name="IsCompRoot" default="FALSE"/>
+        <flag name="IsTopoVisited" default="FALSE"/>
+        <flag name="IsDFSVisited" default="FALSE"/>
+        <flag name="IsRchColaMarked" default="FALSE"/>
+        <flag name="IsRchColbMarked" default="FALSE"/>
+        <flag name="IsRowMarked" default="FALSE"/>
+      </flags>
     </node>
 <!--
 
@@ -3879,7 +3936,7 @@ N_tfexpr :
             </targets>
           </type>
         </attribute>
-        <attribute name="Value" inconstructor="no">
+        <attribute name="Value" default="0" inconstructor="no">
           <type name="Int">
             <targets>
               <target mandatory="no">
@@ -4039,13 +4096,13 @@ N_tfedge :
 
 -->
     <node name="Tfedge">
-      <description>Subtypes and supertypes of a type</description>
+      <description>Parents and children of a vertex</description>
       <attributes>
-        <attribute name="TypeFamily" default="NULL" inconstructor="yes">
+        <attribute name="Target" default="NULL" inconstructor="yes">
           <type name="Link">
             <targets>
               <target mandatory="no">
-                <node name="Tfdef" />
+                <node name="Tfvertex" />
                 <phases>
                   <all/>
                 </phases>
@@ -4088,7 +4145,9 @@ N_tfedge :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags>
+        <flag name="WasClassified" default="FALSE"/>
+      </flags>
     </node>
 <!--
 

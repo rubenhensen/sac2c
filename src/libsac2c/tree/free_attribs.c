@@ -844,29 +844,67 @@ FREEattribIndexInfo (index_info *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn matrix ** FREEattribMatrices (matrix **attr, node *parent)
+ * @fn compinfo** FREEattribCompInfo (compinfo** attr, node *parent)
  *
- * @brief Frees Matrices attribute in N_tfspec
+ * @brief Frees Info attribute in N_tfvertex
  *
- * @param attr an array of matrix pointers
+ * @param attr is a pointer to a structure of type compinfo **
  * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-matrix **
-FREEattribMatrices (matrix **attr, node *parent)
+compinfo **
+FREEattribCompInfoArr (compinfo **attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribMatrices");
+
+    DBUG_ENTER ("FREEattribReachMat");
+
+    int i, j;
+
     if (attr != NULL) {
-        int i;
-        for (i = 0; i < TFSPEC_NUMHIERAR (parent); i++) {
+
+        for (i = 0; i < TFSPEC_NUMCOMP (parent); i++) {
+
             if (attr[i] != NULL) {
-                freeMatrix (attr[i]);
-                attr[i] = NULL;
+
+                if (COMPINFO_CSRC (attr[i]) != NULL) {
+                    freeDynarray (COMPINFO_CSRC (attr[i]));
+                }
+
+                if (COMPINFO_CTAR (attr[i]) != NULL) {
+                    freeDynarray (COMPINFO_CTAR (attr[i]));
+                }
+
+                if (COMPINFO_TLTABLE (attr[i]) != NULL) {
+                    freeDynarray (COMPINFO_TLTABLE (attr[i]));
+                }
+
+                if (COMPINFO_CROSSCLOS (attr[i]) != NULL) {
+                    freeMatrix (COMPINFO_CROSSCLOS (attr[i]));
+                }
+
+                if (COMPINFO_TLC (attr[i]) != NULL) {
+                    freeMatrix (COMPINFO_TLC (attr[i]));
+                }
+
+                /*LUBMat consists of 3 matrices*/
+                for (j = 0; j < 3; j++) {
+                    if (COMPINFO_LUBPOS (attr[i], j) != NULL) {
+                        freeMatrix (COMPINFO_LUBPOS (attr[i], j));
+                    }
+                }
+
+                if (COMPINFO_DIST (attr[i]) != NULL) {
+                    freeMatrix (COMPINFO_DIST (attr[i]));
+                }
+
+                attr[i] = MEMfree (attr[i]);
             }
         }
-        attr = MEMfree (attr);
     }
+
+    attr = MEMfree (attr);
+
     DBUG_RETURN (attr);
 }

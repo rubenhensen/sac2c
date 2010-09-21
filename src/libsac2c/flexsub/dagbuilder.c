@@ -12,13 +12,13 @@
 #include "str.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "build_graph.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
 #include "dbug.h"
 #include "memory.h"
 #include "tree_compound.h"
+#include "dagbuilder.h"
 
 /*
  * INFO structure
@@ -95,7 +95,7 @@ TFBDGdoBuildTFGraph (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFBDGtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFBDGtfgraph( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -108,7 +108,9 @@ node *
 TFBDGtfspec (node *arg_node, info *arg_info)
 {
     node *rels;
+
     DBUG_ENTER ("TFBDGtfspec");
+
     if (TFSPEC_RELS (arg_node) != NULL) {
         rels = TFSPEC_RELS (arg_node);
         while (rels != NULL) {
@@ -128,44 +130,67 @@ TFBDGtfspec (node *arg_node, info *arg_info)
             rels = TFSPEC_RELS (arg_node);
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
 static void
 TFBDGaddEdge (node *super, node *sub, node *cond)
 {
+
+    DBUG_ENTER ("TFBDGaddEdge");
+
     node *itersuper, *itersub;
-    itersuper = TFDEF_SUBS (super);
+
+    itersuper = TFVERTEX_CHILDREN (super);
+
     if (itersuper == NULL) {
-        TFDEF_SUBS (super) = TBmakeTfedge (sub, NULL, NULL);
-        if (cond != NULL)
-            TFEDGE_COND (TFDEF_SUBS (super)) = DUPtfexpr (cond, NULL);
+
+        TFVERTEX_CHILDREN (super) = TBmakeTfedge (sub, NULL, NULL);
+
+        if (cond != NULL) {
+            TFEDGE_COND (TFVERTEX_CHILDREN (super)) = DUPdoDupNode (cond);
+        }
+
     } else {
+
         while (TFEDGE_NEXT (itersuper) != NULL) {
             itersuper = TFEDGE_NEXT (itersuper);
         }
+
         TFEDGE_NEXT (itersuper) = TBmakeTfedge (sub, NULL, NULL);
-        if (cond != NULL)
-            TFEDGE_COND (itersuper) = DUPtfexpr (cond, NULL);
+
+        if (cond != NULL) {
+            TFEDGE_COND (itersuper) = DUPdoDupNode (cond);
+        }
     }
-    itersub = TFDEF_SUPERS (sub);
+
+    itersub = TFVERTEX_PARENTS (sub);
+
     if (itersub == NULL) {
-        TFDEF_SUPERS (sub) = TBmakeTfedge (super, NULL, NULL);
-        if (cond != NULL)
-            TFEDGE_COND (TFDEF_SUPERS (sub)) = DUPtfexpr (cond, NULL);
+
+        TFVERTEX_PARENTS (sub) = TBmakeTfedge (super, NULL, NULL);
+        if (cond != NULL) {
+            TFEDGE_COND (TFVERTEX_PARENTS (sub)) = DUPdoDupNode (cond);
+        }
+
     } else {
+
         while (TFEDGE_NEXT (itersub) != NULL) {
             itersub = TFEDGE_NEXT (itersub);
         }
+
         TFEDGE_NEXT (itersub) = TBmakeTfedge (super, NULL, NULL);
-        if (cond != NULL)
-            TFEDGE_COND (itersub) = DUPtfexpr (cond, NULL);
+
+        if (cond != NULL) {
+            TFEDGE_COND (itersub) = DUPdoDupNode (cond);
+        }
     }
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFBDGtfdef( node *arg_node, info *arg_info)
+ * @fn node *TFBDGtfvertex( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -175,26 +200,34 @@ TFBDGaddEdge (node *super, node *sub, node *cond)
  *
  *****************************************************************************/
 node *
-TFBDGtfdef (node *arg_node, info *arg_info)
+TFBDGtfvertex (node *arg_node, info *arg_info)
 {
     node *defs, *super, *sub;
-    DBUG_ENTER ("TFBDGtfdef");
+
+    DBUG_ENTER ("TFBDGtfvertex");
+
     super = NULL;
     sub = NULL;
+
     /*
      * First we need to find the super and sub nodes
      */
+
     defs = arg_node;
+
     while (defs != NULL) {
+
         if (super == NULL
-            && STReq (INFO_SUPERTAG (arg_info), TFDEF_TAG (TFDEF_CURR (defs)))) {
+            && STReq (INFO_SUPERTAG (arg_info), TFVERTEX_TAG (TFVERTEX_CURR (defs)))) {
             super = defs;
         }
+
         if (sub == NULL
-            && STReq (INFO_SUBTAG (arg_info), TFDEF_TAG (TFDEF_CURR (defs)))) {
+            && STReq (INFO_SUBTAG (arg_info), TFVERTEX_TAG (TFVERTEX_CURR (defs)))) {
             sub = defs;
         }
-        defs = TFDEF_NEXT (defs);
+
+        defs = TFVERTEX_NEXT (defs);
     }
     /*
      * Then we need to add the subtyping relationship to these nodes
@@ -205,5 +238,6 @@ TFBDGtfdef (node *arg_node, info *arg_info)
     } else {
         TFBDGaddEdge (super, sub, INFO_COND (arg_info));
     }
+
     DBUG_RETURN (arg_node);
 }

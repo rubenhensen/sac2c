@@ -1620,7 +1620,7 @@ extern int TCcountWlseg (node *withop);
  ***  Macro to get typefamily tags
  ***/
 
-#define TFDEF_TAG(n)                                                                     \
+#define TFVERTEX_TAG(n)                                                                  \
     ((NODE_TYPE (n) == N_tfbin)                                                          \
        ? TFBIN_TAG (n)                                                                   \
        : ((NODE_TYPE (n) == N_tfusr)                                                     \

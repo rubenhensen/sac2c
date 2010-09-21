@@ -236,7 +236,7 @@ libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filterin
 libsac2c_funcpara    := add_sync move_sync_statement tag_fp_fundefs tag_fp_aps \
                         live_variable_analysis make_slow_clones count_spawn_sync
 
-libsac2c_flexsub    := build_graph preprocess_graph structures
+libsac2c_flexsub     := ctransitive dagbuilder dfwalk reachlabel structures
 
 
 ###############################################################################

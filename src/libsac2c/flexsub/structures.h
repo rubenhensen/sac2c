@@ -1,5 +1,5 @@
-#ifndef __TF_DYNAMIC_ARRAY_H__
-#define __TF_DYNAMIC_ARRAY_H__
+#ifndef __STRUCTURES_H__
+#define __STRUCTURES_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +10,7 @@ void initDynarray (dynarray *arrayd);
 void initMatrix (matrix *m);
 void initElemstack (elemstack *s);
 void pushElemstack (elemstack **s, elem *e);
-elemstack *popElemstack (elemstack **s);
+elem *popElemstack (elemstack **s);
 
 void freeElem (elem *e);
 void freeElemArray (elem **e, int count);
@@ -28,7 +28,7 @@ void printMatrix (matrix *m);
 void printMatrixInDotFormat (matrix *m);
 void printTransitiveLinkTable (dynarray *arrayd);
 void buildTransitiveLinkTable (dynarray *arrayd);
-void setXYarrays (dynarray *arrayd, dynarray **arrX, dynarray **arrY);
+void setSrcTarArrays (dynarray *arrayd, dynarray **arrX, dynarray **arrY);
 matrix *computeTLCMatrix (dynarray *arrayd, dynarray *arrX, dynarray *arrY);
 
 #define ELEM_IDX(n) ((n)->idx)
@@ -45,5 +45,14 @@ matrix *computeTLCMatrix (dynarray *arrayd, dynarray *arrX, dynarray *arrY);
 
 #define ELEMSTACK_CURR(n) ((n)->curr)
 #define ELEMSTACK_NEXT(n) ((n)->next)
+
+#define COMPINFO_CSRC(n) ((n)->csrc)
+#define COMPINFO_CTAR(n) ((n)->ctar)
+#define COMPINFO_TLTABLE(n) ((n)->tltable)
+#define COMPINFO_CROSSCLOS(n) ((n)->crossclos)
+#define COMPINFO_TLC(n) ((n)->tlc)
+#define COMPINFO_LUB(n) ((n)->lub)
+#define COMPINFO_LUBPOS(n, i) ((n)->lub[i])
+#define COMPINFO_DIST(n) ((n)->dist)
 
 #endif

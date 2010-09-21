@@ -1210,7 +1210,7 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeMatrices
+ * @fn SATserializeCompInfoArr
  *
  * @brief generates code to serialize the given attribute
  *
@@ -1221,9 +1221,9 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeMatrices (info *info, matrix **attr, node *parent)
+SATserializeCompInfoArr (info *info, compinfo **attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeMatrices");
+    DBUG_ENTER ("SATserializeCompInfoArr");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 

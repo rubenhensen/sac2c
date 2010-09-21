@@ -6153,170 +6153,251 @@ PRTfunbundle (node *arg_node, info *arg_info)
 node *
 PRTtfspec (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfspec");
-    int i = 0, numhierar = 0;
-    node *defs = TFSPEC_DEFS (arg_node);
+
+    node *defs;
+    int i = 0;
+
+    /*
+     * Print the component subtyping graphs
+     */
+
+    defs = TFSPEC_DEFS (arg_node);
+
     fprintf (global.outfile, "\n/*\nType family specifications\n");
     fprintf (global.outfile, "The following output is in dot format.\n");
     fprintf (global.outfile, "It can be visualized using graphviz's dot tool.\n");
     fprintf (global.outfile, "\ndigraph typespecs{\n");
+
     while (defs != NULL) {
-        if (TFDEF_SUPERS (defs) == NULL) {
-            fprintf (global.outfile, "subgraph cluster_%d{\n", ++i);
+        if (TFVERTEX_ISCOMPROOT (defs)) {
+
+            fprintf (global.outfile, "subgraph cluster_%d{\n", i);
             fprintf (global.outfile, "node [shape=record];\n");
-            if (TFSPEC_NUMHIERAR (arg_node) > 0) {
-                if (TFSPEC_TLCMATRICES (arg_node)[numhierar] != NULL) {
-                    printMatrixInDotFormat (TFSPEC_TLCMATRICES (arg_node)[numhierar]);
+
+            if (TFSPEC_INFO (arg_node) != NULL && (TFSPEC_INFO (arg_node)[i]) != NULL) {
+
+                if (COMPINFO_TLC (TFSPEC_INFO (arg_node)[i]) != NULL) {
+                    printMatrixInDotFormat (COMPINFO_TLC (TFSPEC_INFO (arg_node)[i]));
                 }
-                numhierar++;
+
+                if (COMPINFO_LUBPOS ((TFSPEC_INFO (arg_node)[i]), 0) != NULL) {
+                    printMatrixInDotFormat (
+                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 0));
+                }
+
+                if (COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 1) != NULL) {
+                    printMatrixInDotFormat (
+                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 1));
+                }
+
+                if (COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 2) != NULL) {
+                    printMatrixInDotFormat (
+                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 2));
+                }
+
+                if (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]) != NULL) {
+                    printMatrixInDotFormat (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]));
+                }
             }
+
+            i++;
+
             fprintf (global.outfile, "node [shape=box];\n");
+
             TRAVdo (defs, arg_info);
+
             fprintf (global.outfile, "};\n");
         }
-        defs = TFDEF_NEXT (defs);
+
+        defs = TFVERTEX_NEXT (defs);
     }
+
     fprintf (global.outfile, "};\n");
-    /*
-    if(TFSPEC_RELS(arg_node)!=NULL){
-      fprintf(global.outfile,"\n--Type relations--\n\n");
-      TRAVdo(TFSPEC_RELS(arg_node),arg_info);
-    }
-    */
     fprintf (global.outfile, "*/\n");
+
     DBUG_RETURN (arg_node);
 }
 
 node *
-PRTtfdef (node *arg_node, info *arg_info)
+PRTtfvertex (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTtfdef");
-    node *subs;
+
+    DBUG_ENTER ("PRTtfvertex");
+
+    node *children;
+
     /*
      * By default, the first time we output the node info in dot format
      */
-    if (TFDEF_CURR (arg_node) != NULL) {
+
+    if (TFVERTEX_CURR (arg_node) != NULL) {
+
         fprintf (global.outfile, "<%s/> [label=\"%s\\n",
-                 TFDEF_TAG (TFDEF_CURR (arg_node)), TFDEF_TAG (TFDEF_CURR (arg_node)));
-        fprintf (global.outfile, "tree=[%d,", TFDEF_PRE (arg_node));
-        fprintf (global.outfile, "%d)\\n", TFDEF_PREMAX (arg_node));
-        if (TFDEF_NONTREEX (arg_node) == -1) {
+                 TFVERTEX_TAG (TFVERTEX_CURR (arg_node)),
+                 TFVERTEX_TAG (TFVERTEX_CURR (arg_node)));
+
+        fprintf (global.outfile, "tree=[%d,", TFVERTEX_PRE (arg_node));
+
+        fprintf (global.outfile, "%d)\\n", TFVERTEX_PREMAX (arg_node));
+
+        int reachcola, reachcolb, row;
+
+        reachcola = TFVERTEX_REACHCOLA (arg_node);
+        reachcolb = TFVERTEX_REACHCOLB (arg_node);
+        row = TFVERTEX_ROW (arg_node);
+
+        if (!TFVERTEX_ISRCHCOLAMARKED (arg_node)) {
             fprintf (global.outfile, "nontree=[-,");
         } else {
-            fprintf (global.outfile, "nontree=[%d,", TFDEF_NONTREEX (arg_node));
+            fprintf (global.outfile, "nontree=[%d,", reachcola);
         }
-        if (TFDEF_NONTREEY (arg_node) == -1) {
+
+        if (!TFVERTEX_ISRCHCOLBMARKED (arg_node)) {
             fprintf (global.outfile, "-,");
         } else {
-            fprintf (global.outfile, "%d,", TFDEF_NONTREEY (arg_node));
+            fprintf (global.outfile, "%d,", reachcolb);
         }
-        if (TFDEF_NONTREEZ (arg_node) == -1) {
+
+        if (!TFVERTEX_ISROWMARKED (arg_node)) {
             fprintf (global.outfile, "-]");
         } else {
-            fprintf (global.outfile, "%d]", TFDEF_NONTREEZ (arg_node));
+            fprintf (global.outfile, "%d]", row);
         }
-        // fprintf(global.outfile,"\\n");
-        // fprintf(global.outfile,"post=%d",TFDEF_POST(arg_node));
+
         fprintf (global.outfile, "\"];\n");
-        TRAVdo (TFDEF_CURR (arg_node), arg_info);
+        TRAVdo (TFVERTEX_CURR (arg_node), arg_info);
     }
-    subs = TFDEF_SUBS (arg_node);
-    while (subs != NULL) {
-        if (TFEDGE_EDGETYPE (subs) == edgetree) {
-            TRAVdo (TFEDGE_TYPEFAMILY (subs), arg_info);
+
+    children = TFVERTEX_CHILDREN (arg_node);
+
+    while (children != NULL) {
+
+        if (TFEDGE_EDGETYPE (children) == edgetree) {
+            TRAVdo (TFEDGE_TARGET (children), arg_info);
         }
-        subs = TFEDGE_NEXT (subs);
+
+        children = TFEDGE_NEXT (children);
     }
+
     /*
      * After the node information has been output, we can output the
      * edge information. This conforms to the dot language rules.
      */
+
     INFO_TFSUPERNODE (arg_info) = arg_node;
-    if (TFDEF_SUBS (arg_node) != NULL) {
-        TRAVdo (TFDEF_SUBS (arg_node), arg_info);
+
+    if (TFVERTEX_CHILDREN (arg_node) != NULL) {
+        TRAVdo (TFVERTEX_CHILDREN (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfrel (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfrel");
+
     fprintf (global.outfile, "\"%s\"->\"%s\";\n", TFREL_SUPERTAG (arg_node),
              TFREL_SUBTAG (arg_node));
+
     if (TFREL_NEXT (arg_node) != NULL) {
         TRAVdo (TFREL_NEXT (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfabs (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfabs");
+
     if (INFO_DOTMODE (arg_info) == vertices) {
         // fprintf(global.outfile,"%s\n",TFABS_TAG(arg_node));
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfusr (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfusr");
+
     if (INFO_DOTMODE (arg_info) == vertices) {
         // fprintf(global.outfile,"%s\n",TFUSR_TAG(arg_node));
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfbin (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfbin");
+
     if (INFO_DOTMODE (arg_info) == vertices) {
         // fprintf(global.outfile,"%s\n",TFBIN_TAG(arg_node));
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfedge (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfedge");
+
     if (TFEDGE_EDGETYPE (arg_node) == edgecross) {
         fprintf (global.outfile, "<%s/>-><%s/> [style=dotted]",
-                 TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFDEF_TAG (TFDEF_CURR (TFEDGE_TYPEFAMILY (arg_node))));
+                 TFVERTEX_TAG (TFVERTEX_CURR (INFO_TFSUPERNODE (arg_info))),
+                 TFVERTEX_TAG (TFVERTEX_CURR (TFEDGE_TARGET (arg_node))));
     } else {
         fprintf (global.outfile, "<%s/>-><%s/>",
-                 TFDEF_TAG (TFDEF_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFDEF_TAG (TFDEF_CURR (TFEDGE_TYPEFAMILY (arg_node))));
+                 TFVERTEX_TAG (TFVERTEX_CURR (INFO_TFSUPERNODE (arg_info))),
+                 TFVERTEX_TAG (TFVERTEX_CURR (TFEDGE_TARGET (arg_node))));
     }
+
     if (TFEDGE_COND (arg_node) != NULL) {
         INFO_TFSTRINGEXPR (arg_info) = NULL;
         TRAVdo (TFEDGE_COND (arg_node), arg_info);
         fprintf (global.outfile, "\t[label=\"%s\"]", INFO_TFSTRINGEXPR (arg_info));
     }
+
     fprintf (global.outfile, ";\n");
+
     if (TFEDGE_NEXT (arg_node) != NULL) {
         TRAVdo (TFEDGE_NEXT (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfarg (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfarg");
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 PRTtfexpr (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("PRTtfexpr");
+
     INFO_TFSTRINGEXPR (arg_info) = STRcat (INFO_TFSTRINGEXPR (arg_info), "(");
+
     /*
      * The following 5 cases are possible here:
      * Case 1: id/num op id/num
@@ -6325,19 +6406,23 @@ PRTtfexpr (node *arg_node, info *arg_info)
      * Case 4: expr op expr
      * Case 5: id/num
      */
+
     if (TFEXPR_OPERAND1 (arg_node) != NULL) {
         TRAVdo (TFEXPR_OPERAND1 (arg_node), arg_info);
         INFO_TFSTRINGEXPR (arg_info)
           = STRcat (INFO_TFSTRINGEXPR (arg_info), TFEXPR_OPERATOR (arg_node));
     } else {
+
         if (TFEXPR_ASSIGNEEID (arg_node) != NULL) {
             INFO_TFSTRINGEXPR (arg_info)
               = STRcat (INFO_TFSTRINGEXPR (arg_info), TFEXPR_ASSIGNEEID (arg_node));
         }
+
         INFO_TFSTRINGEXPR (arg_info)
           = STRcat (INFO_TFSTRINGEXPR (arg_info),
                     STRcat ("[val=", STRcat (STRitoa (TFEXPR_VALUE (arg_node)), "]")));
     }
+
     if (TFEXPR_OPERAND2 (arg_node) != NULL) {
         TRAVdo (TFEXPR_OPERAND2 (arg_node), arg_info);
     } else {
@@ -6347,7 +6432,9 @@ PRTtfexpr (node *arg_node, info *arg_info)
          * while inspecting Operand1
          */
     }
+
     INFO_TFSTRINGEXPR (arg_info) = STRcat (INFO_TFSTRINGEXPR (arg_info), ")");
+
     DBUG_RETURN (arg_node);
 }
 

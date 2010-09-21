@@ -3490,99 +3490,227 @@ DUPgetCopiedSpecialFundefsHook (void)
     DBUG_RETURN (store_copied_special_fundefs);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
+
 node *
 DUPtfspec (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfspec");
+
     node *new_node;
-    new_node = TBmakeTfspec (TFSPEC_DEFS (arg_node), TFSPEC_RELS (arg_node));
+    new_node
+      = TBmakeTfspec (DUPTRAV (TFSPEC_DEFS (arg_node)), DUPTRAV (TFSPEC_RELS (arg_node)));
+
     DBUG_RETURN (new_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
+
 node *
-DUPtfdef (node *arg_node, info *arg_info)
+DUPtfvertex (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DUPtfdef");
+
+    DBUG_ENTER ("DUPtfvertex");
+
     node *new_node;
-    new_node = TBmakeTfdef (TFDEF_CURR (arg_node), TFDEF_SUPERS (arg_node),
-                            TFDEF_SUBS (arg_node), TFDEF_NEXT (arg_node));
+
+    new_node = TBmakeTfvertex (DUPTRAV (TFVERTEX_CURR (arg_node)),
+                               DUPTRAV (TFVERTEX_PARENTS (arg_node)),
+                               DUPTRAV (TFVERTEX_CHILDREN (arg_node)),
+                               DUPCONT (TFVERTEX_NEXT (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfrel (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfrel");
+
     node *new_node;
-    new_node = TBmakeTfrel (TFREL_SUPERTAG (arg_node), TFREL_SUBTAG (arg_node),
-                            TFREL_COND (arg_node), TFREL_NEXT (arg_node));
+
+    new_node
+      = TBmakeTfrel (STRcpy (TFREL_SUPERTAG (arg_node)), STRcpy (TFREL_SUBTAG (arg_node)),
+                     DUPTRAV (TFREL_COND (arg_node)), DUPCONT (TFREL_NEXT (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfabs (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfabs");
+
     node *new_node;
-    new_node = TBmakeTfabs (TFABS_TAG (arg_node), TFABS_ARGS (arg_node));
+
+    new_node
+      = TBmakeTfabs (STRcpy (TFABS_TAG (arg_node)), DUPTRAV (TFABS_ARGS (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfusr (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfusr");
+
     node *new_node;
-    new_node = TBmakeTfusr (TFUSR_TAG (arg_node), TFUSR_ARGS (arg_node));
+
+    new_node
+      = TBmakeTfusr (STRcpy (TFUSR_TAG (arg_node)), DUPTRAV (TFUSR_ARGS (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfbin (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfbin");
+
     node *new_node;
-    new_node = TBmakeTfbin (TFBIN_TAG (arg_node), TFBIN_ARGS (arg_node));
+
+    new_node
+      = TBmakeTfbin (STRcpy (TFBIN_TAG (arg_node)), DUPTRAV (TFBIN_ARGS (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfedge (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfedge");
+
     node *new_node;
-    new_node = TBmakeTfedge (TFEDGE_TYPEFAMILY (arg_node), TFEDGE_COND (arg_node),
-                             TFEDGE_NEXT (arg_node));
+
+    new_node = TBmakeTfedge (TFEDGE_TARGET (arg_node), DUPTRAV (TFEDGE_COND (arg_node)),
+                             DUPCONT (TFEDGE_NEXT (arg_node)));
+
     DBUG_RETURN (new_node);
 }
 
 node *
 DUPtfarg (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfarg");
+
     node *new_node;
     new_node = TBmakeTfarg (TFARG_TAG (arg_node), TFARG_TAGTYPE (arg_node),
-                            TFARG_NEXT (arg_node));
+                            DUPCONT (TFARG_NEXT (arg_node)));
+
     DBUG_RETURN (new_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 DUPtfexpr (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("DUPtfexpr");
+
     node *new_node, *operand1, *operand2;
+
     if (TFEXPR_OPERAND1 (arg_node) == NULL) {
         operand1 = NULL;
     } else {
-        operand1 = DUPtfexpr (TFEXPR_OPERAND1 (arg_node), arg_info);
+        operand1 = DUPTRAV (TFEXPR_OPERAND1 (arg_node));
     }
+
     if (TFEXPR_OPERAND2 (arg_node) == NULL) {
         operand2 = NULL;
     } else {
-        operand2 = DUPtfexpr (TFEXPR_OPERAND2 (arg_node), arg_info);
+        operand2 = DUPTRAV (TFEXPR_OPERAND2 (arg_node));
     }
-    new_node = TBmakeTfexpr (STRcpy (TFEXPR_OPERATOR (arg_node)), operand1, operand2);
+
+    if (TFEXPR_OPERATOR (arg_node) != NULL) {
+        new_node = TBmakeTfexpr (STRcpy (TFEXPR_OPERATOR (arg_node)), operand1, operand2);
+    } else {
+        new_node = TBmakeTfexpr (NULL, operand1, operand2);
+    }
+
     TFEXPR_ASSIGNEEID (new_node) = STRcpy (TFEXPR_ASSIGNEEID (arg_node));
     TFEXPR_VALUE (new_node) = TFEXPR_VALUE (arg_node);
+
     DBUG_RETURN (new_node);
 }

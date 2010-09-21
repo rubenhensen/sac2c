@@ -1016,6 +1016,16 @@ struct ELEMSTACK {
     struct ELEMSTACK *next;
 };
 
+struct COMPINFO {
+    struct DYNARRAY *csrc;
+    struct DYNARRAY *ctar;
+    struct DYNARRAY *tltable;
+    struct MATRIX *crossclos;
+    struct MATRIX *tlc;
+    struct MATRIX *lub[3];
+    struct MATRIX *dist;
+};
+
 typedef enum { edgetree, edgecross, edgeforward, edgeback } graph_edgetype;
 typedef enum { tree_labeling, nontree_labeling, edge_labeling } graph_label_mode;
 typedef enum { vertices, edges } dot_output_mode;
@@ -1023,6 +1033,7 @@ typedef struct ELEM elem;
 typedef struct DYNARRAY dynarray;
 typedef struct MATRIX matrix;
 typedef struct ELEMSTACK elemstack;
+typedef struct COMPINFO compinfo;
 
 /******************************************************************************
  * typedef for CUDA data reuse analysis
