@@ -40,6 +40,9 @@
 #include "pattern_match.h"
 #include "LookUpTable.h"
 #include "ctinfo.h"
+#include "globals.h"
+
+#define INC 3
 
 /** <!--********************************************************************-->
  *
@@ -103,9 +106,11 @@ struct INFO {
     node *with2_lhs;
     node *with2_lengths;
     int current_dim;
+    int dim_frame;
     node *current_size;
     node *with3_assign;
     node *indices;
+    node *frame_indices;
     node *offsets;
     node *accus;
     node *vardecs;
@@ -129,6 +134,8 @@ struct INFO {
 #define INFO_WITH2_LHS(n) ((n)->with2_lhs)
 #define INFO_WITH2_LENGTHS(n) ((n)->with2_lengths)
 #define INFO_CURRENT_DIM(n) ((n)->current_dim)
+#define INFO_DIM_FRAME(n) ((n)->dim_frame)
+#define INFO_FRAME_INDICES(n) ((n)->frame_indices)
 #define INFO_CURRENT_SIZE(n) ((n)->current_size)
 #define INFO_WITH3_ASSIGN(n) ((n)->with3_assign)
 #define INFO_INDICES(n) ((n)->indices)
@@ -164,9 +171,11 @@ MakeInfo ()
     INFO_WITH2_LHS (result) = NULL;
     INFO_WITH2_LENGTHS (result) = NULL;
     INFO_CURRENT_DIM (result) = 0;
+    INFO_DIM_FRAME (result) = -1;
     INFO_CURRENT_SIZE (result) = NULL;
     INFO_WITH3_ASSIGN (result) = NULL;
     INFO_INDICES (result) = NULL;
+    INFO_FRAME_INDICES (result) = NULL;
     INFO_OFFSETS (result) = NULL;
     INFO_ACCUS (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -190,6 +199,10 @@ FreeInfo (info *info)
     DBUG_ENTER ("FreeInfo");
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
+
+    if (INFO_FRAME_INDICES (info) != NULL) {
+        INFO_FRAME_INDICES (info) = FREEdoFreeTree (INFO_FRAME_INDICES (info));
+    }
 
     info = MEMfree (info);
 
@@ -424,9 +437,19 @@ PushDim (info *arg_info)
     DBUG_ENTER ("PushDim");
 
     INFO_CURRENT_DIM (arg_info)++;
-    zero_avis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), TBmakeNum (0),
-                             &INFO_PREASSIGNS (arg_info));
-    INFO_INDICES (arg_info) = TBmakeIds (zero_avis, INFO_INDICES (arg_info));
+    if (INFO_FRAME_INDICES (arg_info) != NULL) {
+        /* move from frame to stack */
+        node *index = INFO_FRAME_INDICES (arg_info);
+        INFO_FRAME_INDICES (arg_info) = IDS_NEXT (INFO_FRAME_INDICES (arg_info));
+
+        IDS_NEXT (index) = INFO_INDICES (arg_info);
+
+        INFO_INDICES (arg_info) = index;
+    } else {
+        zero_avis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), TBmakeNum (0),
+                                 &INFO_PREASSIGNS (arg_info));
+        INFO_INDICES (arg_info) = TBmakeIds (zero_avis, INFO_INDICES (arg_info));
+    }
 
     DBUG_RETURN (arg_info);
 }
@@ -446,8 +469,43 @@ PopDim (info *arg_info)
 {
     DBUG_ENTER ("PopDim");
 
-    INFO_INDICES (arg_info) = FREEdoFreeNode (INFO_INDICES (arg_info));
+    DBUG_ASSERT ((TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info)),
+                 "Stack eroding into frame");
+    node *index = INFO_INDICES (arg_info);
+    INFO_INDICES (arg_info) = IDS_NEXT (INFO_INDICES (arg_info));
+
+    IDS_NEXT (index) = INFO_FRAME_INDICES (arg_info);
+    INFO_FRAME_INDICES (arg_info) = index;
+
     INFO_CURRENT_DIM (arg_info)--;
+    DBUG_ASSERT ((INFO_CURRENT_DIM (arg_info) >= 0), "Negative dim found");
+    DBUG_RETURN (arg_info);
+}
+
+static info *
+FrameDim (info *arg_info)
+{
+    DBUG_ENTER ("FrameDim");
+
+    if (INFO_DIM_FRAME (arg_info) < 0) {
+        INFO_DIM_FRAME (arg_info) = INFO_CURRENT_DIM (arg_info);
+    }
+    DBUG_RETURN (arg_info);
+}
+
+static info *
+DeFrameDim (info *arg_info)
+{
+    DBUG_ENTER ("DeFrameDim");
+
+    if (INFO_DIM_FRAME (arg_info) >= 0) {
+        DBUG_ASSERT ((INFO_DIM_FRAME (arg_info) <= INFO_CURRENT_DIM (arg_info)),
+                     "Stack frame corrupted");
+        while (INFO_CURRENT_DIM (arg_info) > INFO_DIM_FRAME (arg_info)) {
+            arg_info = PopDim (arg_info);
+        }
+        INFO_DIM_FRAME (arg_info) = -1;
+    }
 
     DBUG_RETURN (arg_info);
 }
@@ -1869,7 +1927,7 @@ AnyFold (node *ops)
  * @return N_block body subtree for the given range
  ******************************************************************************/
 static node *
-MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node **results,
+MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **results,
                node **offsets, info *arg_info)
 {
     node *body, *ranges, *ops, *lhs, *with3;
@@ -1917,13 +1975,13 @@ MakeRangeBody (node *outerindex, node *contents, node *size, bool newdim, node *
     old_with3_assign = INFO_WITH3_ASSIGN (arg_info);
     INFO_WITH3_ASSIGN (arg_info) = TBmakeAssign (NULL, NULL);
 
-    if (newdim) {
+    if (newdim == TRUE || newdim == INC) {
         arg_info = PushDim (arg_info);
     }
     ranges = TRAVdo (contents, arg_info);
     ops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
     lhs = ComputeNewLhs (INFO_WITH2_WITHOPS (arg_info), arg_info);
-    if (newdim) {
+    if (newdim == TRUE) { /* DEC done by DeFrameDim*/
         arg_info = PopDim (arg_info);
     }
 
@@ -2087,7 +2145,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
         index = MakeIntegerVar (&INFO_VARDECS (arg_info));
         over = ComputeNewBounds (upper, lower, step, &nupper, &INFO_PREASSIGNS (arg_info),
                                  arg_info);
-        body = MakeRangeBody (index, DUPdoDupTree (contents), over, FALSE, &results,
+        body = MakeRangeBody (index, DUPdoDupTree (contents), over, INC, &results,
                               &offsets, arg_info);
 
         next = TBmakeRange (TBmakeIds (index, NULL), nupper, DUPdoDupTree (upper), over,
@@ -2103,7 +2161,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
     }
 
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
-    body = MakeRangeBody (index, contents, step, FALSE, &results, &offsets, arg_info);
+    body = MakeRangeBody (index, contents, step, INC, &results, &offsets, arg_info);
 
     next
       = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), DUPdoDupNode (upper),
@@ -2560,6 +2618,10 @@ WLSDwith2 (node *arg_node, info *arg_info)
          */
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
+        if (INFO_FRAME_INDICES (arg_info) != NULL) {
+            INFO_FRAME_INDICES (arg_info)
+              = FREEdoFreeTree (INFO_FRAME_INDICES (arg_info));
+        }
         /*
          * we keep the withops as a template for later use in the new with3.
          */
@@ -2686,6 +2748,8 @@ WLSDwlstride (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSDwlstride");
 
+    arg_info = DeFrameDim (arg_info);
+
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
         next = TRAVdo (WLSTRIDE_NEXT (arg_node), arg_info);
     }
@@ -2712,6 +2776,8 @@ WLSDwlblock (node *arg_node, info *arg_info)
     node *contents = NULL;
 
     DBUG_ENTER ("WLSDwlblock");
+
+    arg_info = FrameDim (arg_info);
 
     if (WLBLOCK_NEXT (arg_node) != NULL) {
         next = TRAVdo (WLBLOCK_NEXT (arg_node), arg_info);
