@@ -186,6 +186,13 @@ TFBDGaddEdge (node *super, node *sub, node *cond)
             TFEDGE_COND (itersub) = DUPdoDupNode (cond);
         }
     }
+
+    /*
+     * Update the number of parents that the subtype has. This information is
+     * necessary while topologically sorting the subtyping hierarchy.
+     */
+
+    TFVERTEX_NUMPARENTS (sub)++;
 }
 
 /** <!--********************************************************************-->

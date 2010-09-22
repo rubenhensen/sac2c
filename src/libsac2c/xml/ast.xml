@@ -119,6 +119,12 @@
           <node name="Tfvertex" />
         </travuser>
       </traversal>
+      <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
+        <travuser>
+          <node name="Tfspec" />
+          <node name="Tfvertex" />
+        </travuser>
+      </traversal>
       <traversal id="TFCTR" name="Classify edges and build cross-edge based reachability information" default="sons" include="ctransitive.h" >
         <travuser>
           <node name="Tfspec" />
@@ -3736,6 +3742,30 @@ N_tfvertex :
           </type>
         </attribute>
         <attribute name="topo" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="numtopovisits" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="numparents" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">

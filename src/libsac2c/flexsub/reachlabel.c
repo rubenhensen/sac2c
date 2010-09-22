@@ -2,7 +2,7 @@
  *
  * @file preprocess_graph.c
  *
- * prefix: TFBDG
+ * prefix: TFRCH
  *
  * description: We label vertices for answering reachability queries in this files. The
  * labeling scheme is based on the paper "Dual Labeling: Answering Graph Reachability

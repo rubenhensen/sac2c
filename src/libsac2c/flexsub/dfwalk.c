@@ -2,7 +2,7 @@
  *
  * @file dfwalk.c
  *
- * prefix: TFBDG
+ * prefix: TFDFW
  *
  * description: depth first walk of the subtyping hierarchy
  *

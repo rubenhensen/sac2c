@@ -6238,9 +6238,11 @@ PRTtfvertex (node *arg_node, info *arg_info)
                  TFVERTEX_TAG (TFVERTEX_CURR (arg_node)),
                  TFVERTEX_TAG (TFVERTEX_CURR (arg_node)));
 
-        fprintf (global.outfile, "tree=[%d,", TFVERTEX_PRE (arg_node));
+        fprintf (global.outfile, "pre=[%d,", TFVERTEX_PRE (arg_node));
 
         fprintf (global.outfile, "%d)\\n", TFVERTEX_PREMAX (arg_node));
+
+        fprintf (global.outfile, "topo=%d\\n", TFVERTEX_TOPO (arg_node));
 
         int reachcola, reachcolb, row;
 
@@ -6249,9 +6251,9 @@ PRTtfvertex (node *arg_node, info *arg_info)
         row = TFVERTEX_ROW (arg_node);
 
         if (!TFVERTEX_ISRCHCOLAMARKED (arg_node)) {
-            fprintf (global.outfile, "nontree=[-,");
+            fprintf (global.outfile, "rch=[-,");
         } else {
-            fprintf (global.outfile, "nontree=[%d,", reachcola);
+            fprintf (global.outfile, "rch=[%d,", reachcola);
         }
 
         if (!TFVERTEX_ISRCHCOLBMARKED (arg_node)) {

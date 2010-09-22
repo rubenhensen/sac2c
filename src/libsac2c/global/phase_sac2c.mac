@@ -128,9 +128,11 @@ PHASE (uds, "Incorporating user-defined subtyping hierarchy", ALWAYS)
 
 SUBPHASE (bdg, "Building user defined subtyping graph", TFBDGdoBuildTFGraph, ALWAYS, uds)
 
+SUBPHASE (top, "Topologically sorting subtyping graph", TFTOPdoTopoSort, ALWAYS, uds)
+
 SUBPHASE (dfw, "Depth first walk of the subtyping graph", TFDFWdoDFWalk, ALWAYS, uds)
 
-SUBPHASE (ctr, "Classify edges and compute transitive reachability over crossedges",
+SUBPHASE (ctr, "Classify edges and compute reachability over crossedges",
           TFCTRdoCrossClosure, ALWAYS, uds)
 
 SUBPHASE (rch, "Build link count matrix and label vertices for reachability query",
