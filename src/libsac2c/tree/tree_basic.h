@@ -242,6 +242,7 @@ extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, in
 #define CUAI_DIM(a) (a->dim)
 #define CUAI_NESTLEVEL(a) (a->nestlevel)
 #define CUAI_INDICES(a, i) (a->indices[i])
+#define CUAI_ISCONSTANT(a, i) (a->isconstant[i])
 
 extern cuda_access_info_t *TBfreeCudaAccessInfo (cuda_access_info_t *access_info);
 

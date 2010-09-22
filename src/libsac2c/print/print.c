@@ -440,7 +440,8 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
     for (i = 0; i < CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)); i++) {
         idx = CUAI_INDICES (ASSIGN_ACCESS_INFO (arg_node), i);
         INDENT;
-        fprintf (global.outfile, "       - Dimension %d: ", i);
+        fprintf (global.outfile, "       - Dimension %d[const:%d]: ", i,
+                 CUAI_ISCONSTANT (ASSIGN_ACCESS_INFO (arg_node), i));
 
         while (idx != NULL) {
             fprintf (global.outfile, "( ( %d)", INDEX_COEFFICIENT (idx));

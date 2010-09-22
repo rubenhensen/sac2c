@@ -282,6 +282,9 @@ ActOnId (node *avis, info *arg_info)
                 type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
                                         PART_INFO_DIM (part_info), avis);
             }
+            /* If either LOOPIDX of THREADIDX apprears in this dimension, it's no longer
+             * constant */
+            CUAI_ISCONSTANT (INFO_ACCESS_INFO (arg_info), INFO_IDXDIM (arg_info)) = FALSE;
             AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
                       PART_INFO_NTH (part_info) + 1, INFO_IDXDIM (arg_info), arg_info);
             MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
@@ -345,18 +348,26 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
                 break;
             }
 
-            if (shmem_size == 0) {
-                if (dim == 2) { /* X dimension */
-                    shmem_size = DIMS[dim - 1][i];
-                } else if (dim == 1) { /* Y dimension */
-                    shmem_size = global.cuda_2d_block_y;
-                }
-            }
-
-            sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
-
             index = INDEX_NEXT (index);
         }
+
+        if (shmem_size == 0) {
+            if (dim == 2) { /* X dimension */
+                shmem_size = DIMS[dim - 1][i];
+            } else if (dim == 1) { /* Y dimension */
+                shmem_size = global.cuda_2d_block_y;
+            }
+        }
+
+        /* For 2D share memory, size of each dimension must be a multiple
+         * of the corresonding block size */
+        if (dim == 2) {
+            if (shmem_size % DIMS[1][i] != 0) {
+                shmem_size = ((shmem_size + DIMS[1][i]) / DIMS[1][i]) * DIMS[1][i];
+            }
+        }
+
+        sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
     }
 
     CUAI_SHARRAYSHP (access_info)

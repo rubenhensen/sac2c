@@ -1095,6 +1095,8 @@ typedef struct CUDA_ACCESS_INFO_T {
     node *sharray;
     node *sharrayshp;
     index_t *indices[MAX_REUSE_DIM];
+    bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of
+                                       only IDX_CONSTANT and IDX_EXTID indeices*/
 } cuda_access_info_t;
 
 /******************************************************************************

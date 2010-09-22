@@ -233,6 +233,7 @@ TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int nestlevel)
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
         CUAI_INDICES (info, i) = NULL;
+        CUAI_ISCONSTANT (info, i) = TRUE;
     }
 
     DBUG_RETURN (info);

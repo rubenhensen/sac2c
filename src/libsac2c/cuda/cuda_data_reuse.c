@@ -88,6 +88,67 @@ struct INFO {
 #define INFO_CUWLDIM(n) (n->cuwldim)
 #define INFO_CIS(n) (n->cis)
 
+typedef struct RANGE_PAIR_T {
+    node *outer;
+    node *inner;
+    struct RANGE_PAIR_T *next;
+} range_pair_t;
+
+#define RP_OUTER(n) (n->outer)
+#define RP_INNER(n) (n->inner)
+#define RP_NEXT(n) (n->next)
+
+typedef struct SHARED_GLOBAL_INFO_T {
+    node *shridx_cal; /* assignments for shared memory index calculation */
+    node *glbidx_cal; /* assignments for new global memory index calculation */
+    range_pair_t *range_pairs;
+} shared_global_info_t;
+
+#define SB_INFO_SHRIDX_CAL(n) (n->shridx_cal)
+#define SB_INFO_GLBIDX_CAL(n) (n->glbidx_cal)
+#define SB_INFO_RANGE_PAIRS(n) (n->range_pairs)
+
+static shared_global_info_t *
+CreateSharedGlobalInfo ()
+{
+    shared_global_info_t *res;
+
+    DBUG_ENTER ("CreateSharedGlobalInfo");
+
+    res = MEMmalloc (sizeof (shared_global_info_t));
+
+    SB_INFO_SHRIDX_CAL (res) = NULL;
+    SB_INFO_GLBIDX_CAL (res) = NULL;
+    SB_INFO_RANGE_PAIRS (res) = NULL;
+
+    DBUG_RETURN (res);
+}
+
+static shared_global_info_t *
+AddIndexCalculation (shared_global_info_t *sg_info, int dim, int dim_pos, index_t *idx,
+                     info *arg_info)
+{
+    DBUG_ENTER ("AddIndexCalculation");
+
+    switch (INDEX_TYPE (idx)) {
+    case IDX_CONSTANT:
+        break;
+    case IDX_THREADIDX_X:
+        break;
+    case IDX_THREADIDX_Y:
+        break;
+    case IDX_LOOPIDX:
+        break;
+    case IDX_EXTID:
+        break;
+    default:
+        DBUG_ASSERT ((0), "Unknown index type found!");
+        break;
+    }
+
+    DBUG_RETURN (sg_info);
+}
+
 /*
  * INFO macros
  */
@@ -509,15 +570,20 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
 
     CIS_TX (cis) = CreatePrf ("tx", T_int, SHmakeShape (0), F_cuda_threadIdx_x, NULL,
                               &vardecs, &assigns);
+    AVIS_SSAASSIGN (CIS_TX (cis)) = assigns;
+
     CIS_BX (cis) = CreatePrf ("b_dim_x", T_int, SHmakeShape (0), F_cuda_blockDim_x, NULL,
                               &vardecs, &assigns);
+    AVIS_SSAASSIGN (CIS_BX (cis)) = assigns;
 
     if (dim == 2) {
         CIS_TY (cis) = CreatePrf ("ty", T_int, SHmakeShape (0), F_cuda_threadIdx_y, NULL,
                                   &vardecs, &assigns);
+        AVIS_SSAASSIGN (CIS_TY (cis)) = assigns;
 
         CIS_BY (cis) = CreatePrf ("b_dim_y", T_int, SHmakeShape (0), F_cuda_blockDim_y,
                                   NULL, &vardecs, &assigns);
+        AVIS_SSAASSIGN (CIS_BY (cis)) = assigns;
     }
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -665,6 +731,9 @@ CUDRcode (node *arg_node, info *arg_info)
 node *
 CUDRprf (node *arg_node, info *arg_info)
 {
+    int i;
+    shared_global_info_t *sg_info;
+
     DBUG_ENTER ("CUDRprf");
 
     /* If we are in cuda withloop */
@@ -688,6 +757,19 @@ CUDRprf (node *arg_node, info *arg_info)
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                                     TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
+
+                sg_info = CreateSharedGlobalInfo ();
+
+                index_t *idx;
+                i = 0;
+                for (i = 0; i < CUAI_DIM (access_info); i++) {
+                    idx = CUAI_INDICES (access_info, i);
+                    while (idx != NULL) {
+                        sg_info = AddIndexCalculation (sg_info, CUAI_DIM (access_info), i,
+                                                       idx, arg_info);
+                    }
+                    idx = INDEX_NEXT (idx);
+                }
             }
         }
     }
