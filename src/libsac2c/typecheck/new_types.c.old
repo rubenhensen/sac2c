@@ -176,6 +176,7 @@ struct NTYPE {
   typeattr       typeattr;
   mutcScope      mutcscope;
   mutcUsage      mutcusage;
+  bool           unique;
   struct NTYPE **sons;
 };
 
@@ -194,6 +195,7 @@ struct NTYPE {
 #define NTYPE_SON(n,i) (n->sons[i])
 #define NTYPE_MUTC_SCOPE(n) (n->mutcscope)
 #define NTYPE_MUTC_USAGE(n) (n->mutcusage)
+#define NTYPE_UNIQUE(n) (n->unique)
 /*
  * Macros for accessing the attributes...
  */
@@ -515,6 +517,20 @@ mutcUsage TYgetMutcUsage( ntype *type)
 
   DBUG_RETURN( NTYPE_MUTC_USAGE( type));
 }
+/******************************************************************************
+ *
+ * function:
+ *    bool TYisUnique( ntype *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+bool TYisUnique( ntype *type)
+{
+  DBUG_ENTER("TYisUnique");
+
+  DBUG_RETURN( NTYPE_UNIQUE( type));
+}
 
 /******************************************************************************
  *
@@ -612,6 +628,15 @@ ntype * TYsetMutcUsage(ntype *type, mutcUsage usage)
   DBUG_ENTER("TYsetMutcUsage");
 
   NTYPE_MUTC_USAGE( type) = usage;
+
+  DBUG_RETURN( type);
+}
+
+ntype *TYsetUnique(ntype *type, bool val)
+{
+  DBUG_ENTER( "TYsetUnique");
+
+  NTYPE_UNIQUE( type) = val;
 
   DBUG_RETURN( type);
 }
@@ -4636,8 +4661,11 @@ ntype * CopyTypeConstructor( ntype *type, TV_treatment new_tvars)
     default:
       break;
     }
-
   }
+
+  if ( res != NULL){
+    res = TYsetUnique( res, TYisUnique( type));
+  } 
   
   DBUG_RETURN( res);
 }
@@ -4816,6 +4844,10 @@ char *ArrayType2String( ntype *type)
   tmp_str = ScalarType2String( AKS_BASE( type));
   buf = SBUFprint( buf, tmp_str);
   tmp_str = MEMfree( tmp_str);
+
+  if ( TYisUnique( type)){
+    buf = SBUFprintf( buf, "!");
+  }
 
   switch( NTYPE_CON( type)) {
     case TC_akv:
@@ -6094,6 +6126,9 @@ types * Type2OldType( ntype *new)
   if (res != NULL && new != NULL){
     TYPES_MUTC_SCOPE( res) = NTYPE_MUTC_SCOPE( new);
     TYPES_MUTC_USAGE( res) = NTYPE_MUTC_USAGE( new);
+    if ( TYisUnique( new)){
+      TYPES_UNIQUE( res) = TRUE;
+    }
   }
 
   DBUG_RETURN( res);

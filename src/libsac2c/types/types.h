@@ -299,6 +299,8 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
+    bool unique; /* this variable is unique */
+
 } types;
 
 /*

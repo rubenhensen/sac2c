@@ -2281,7 +2281,7 @@ PRTvardec (node *arg_node, info *arg_info)
         /* Print extrema information */
         minmk = AVIS_ISMINHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
         maxmk = AVIS_ISMAXHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
-        fprintf (global.outfile, ", %s%s,", minmk, maxmk);
+        fprintf (global.outfile, ", %s%s", minmk, maxmk);
         if (AVIS_MIN (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", minval: %s",
                      AVIS_NAME (ID_AVIS (AVIS_MIN (VARDEC_AVIS (arg_node)))));
@@ -2289,6 +2289,10 @@ PRTvardec (node *arg_node, info *arg_info)
         if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", maxval: %s",
                      AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
+        }
+
+        if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
+            fprintf (global.outfile, ", SUBALLOC");
         }
 
         fprintf (global.outfile, " } "); /* end of avis info */

@@ -94,6 +94,8 @@ struct INFO {
     node *with3folds;
     node *let;
     node *fpframe;
+    node *withops;
+    node *vardec_init;
 };
 
 /*
@@ -122,7 +124,8 @@ struct INFO {
 #define INFO_WITH3_FOLDS(n) ((n)->with3folds)
 #define INFO_LET(n) ((n)->let)
 #define INFO_FPFRAME(n) ((n)->fpframe)
-
+#define INFO_WITHOPS(n) ((n)->withops)
+#define INFO_VARDEC_INIT(n) ((n)->vardec_init)
 /*
  * INFO functions
  */
@@ -156,6 +159,8 @@ MakeInfo ()
     INFO_WITH3_FOLDS (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_FPFRAME (result) = NULL;
+    INFO_WITHOPS (result) = NULL;
+    INFO_VARDEC_INIT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -272,7 +277,7 @@ GetBasetypeStr (types *type)
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
     } else if (basetype == T_double_dev || basetype == T_double_shmem) {
-        str = "double";
+        str = "float"; /* We do not support double in CUDA yet */
     }
     /* If the enforce_float flag is set,
      * we change all doubles to floats */
@@ -756,6 +761,7 @@ static node *
 MakeMutcLocalAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
 {
     DBUG_ENTER ("MakeMutcLocalAllocDescIcm");
+
     assigns
       = MakeAnAllocDescIcm (name, type, rc, get_dim, assigns, "MUTC_LOCAL_ALLOC__DESC");
     DBUG_RETURN (assigns);
@@ -2274,7 +2280,7 @@ MakeIcmFPCases (int n)
 
     assign = TBmakeAssign (TBmakeIcm ("FP_SETUP_SLOW_END", NULL), NULL);
 
-    for (i = n - 1; i >= 0; i--) {
+    for (i = n; i > 0; i--) {
         assign = TBmakeAssign (TBmakeIcm ("FP_CASE", TBmakeExprs (TBmakeNum (i), NULL)),
                                assign);
     }
@@ -2307,8 +2313,8 @@ MakeFPAp (node *let, node *icm, info *arg_info)
 
     ids = LET_LIVEVARS (let);
     while (ids != NULL) {
-        livevars = TCmakeAssignIcm2 ("FP_SET_LIVEVAR",
-                                     TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+        livevars = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                     TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                      TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (ids))),
                                      livevars);
         ids = LIVEVARS_NEXT (ids);
@@ -2318,20 +2324,18 @@ MakeFPAp (node *let, node *icm, info *arg_info)
 
     ids = LET_SYNC_IDS (let);
     while (ids != NULL) {
-        vars = TCmakeAssignIcm2 ("FP_SET_LIVEVAR",
-                                 TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+        vars = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                 TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                  TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (ids))), vars);
         ids = IDS_NEXT (ids);
     }
 
     if (!FUNDEF_ISSLOWCLONE (fundef)) {
-        end = TCmakeIcm3 ("FP_SPAWN_END_FAST",
-                          TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+        end = TCmakeIcm3 ("FP_SPAWN_END_FAST", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                           TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (LET_IDS (let)))),
                           TBmakeNum (LET_SPAWNSYNCINDEX (let)));
     } else {
-        end = TCmakeIcm4 ("FP_SPAWN_END_SLOW",
-                          TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+        end = TCmakeIcm4 ("FP_SPAWN_END_SLOW", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                           TCmakeIdCopyString (AVIS_NAME (IDS_AVIS (LET_IDS (let)))),
                           TBmakeNum (LET_SPAWNSYNCINDEX (let)),
                           TBmakeNum (LET_SPAWNSYNCINDEX (LET_MATCHINGSPAWNSYNC (let))));
@@ -2466,6 +2470,53 @@ RhsId (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+static node *
+AnnotateDescParamsWith3 (node *arg_node, info *arg_info)
+{
+    node *ops;
+    DBUG_ENTER ("AnnotateDescParamsWith3");
+
+    ops = INFO_WITHOPS (arg_info);
+    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_WITHOPS (arg_info) = ops;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+AnnotateDescParamsAp (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("AnnotateDescParamsAp");
+
+    if (FUNDEF_WITHOPS (AP_FUNDEF (arg_node)) == NULL) {
+        FUNDEF_WITHOPS (AP_FUNDEF (arg_node)) = DUPdoDupTree (INFO_WITHOPS (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+AnnotateDescParams (node *syntax_tree)
+{
+    anontrav_t trav[]
+      = {{N_with3, &AnnotateDescParamsWith3}, {N_ap, &AnnotateDescParamsAp}, {0, NULL}};
+    info *info;
+    DBUG_ENTER ("AnnotateDescParams");
+
+    info = MakeInfo ();
+
+    TRAVpushAnonymous (trav, &TRAVsons);
+    syntax_tree = TRAVopt (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
 /******************************************************************************
  *
  * COMPILE traversal functions
@@ -2491,6 +2542,11 @@ COMPdoCompile (node *arg_node)
     INFO_FOLDLUT (info) = LUTgenerateLut ();
 
     TRAVpush (TR_comp);
+
+    if (global.mutc_suballoc_desc_one_level_up) {
+        arg_node = AnnotateDescParams (arg_node);
+    }
+
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
@@ -2701,6 +2757,32 @@ COMPFundefArgs (node *fundef, info *arg_info)
     DBUG_RETURN (assigns);
 }
 
+static node *
+AddDescParams (node *ops, node *params)
+{
+    DBUG_ENTER ("AddDescParams");
+
+    if (ops != NULL) {
+        if (WITHOP_SUB (ops) != NULL) {
+            node *newParam
+              = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
+                             TBmakeExprs (TCmakeIdCopyString ("int"),
+                                          TBmakeExprs (TCmakeIcm2 ("SET_NT_USG",
+                                                                   TCmakeIdCopyString (
+                                                                     "TPA"),
+                                                                   DUPdupIdNt (
+                                                                     WITHOP_SUB (ops))),
+                                                       NULL)));
+
+            params = TCappendExprs (params, newParam);
+            NUM_VAL (EXPRS_EXPR3 (params)) += 1;
+        }
+        params = AddDescParams (WITHOP_NEXT (ops), params);
+    }
+
+    DBUG_RETURN (params);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPfundef( node *arg_node, info *arg_info)
@@ -2749,27 +2831,9 @@ COMPfundef (node *arg_node, info *arg_info)
              * Init FP frame before traversing body
              */
             if (FUNDEF_CONTAINSSPAWN (arg_node) && !FUNDEF_ISSLOWCLONE (arg_node)) {
-                node *rets;
-                int i;
-
                 INFO_FPFRAME (arg_info)
                   = TCmakeAssignIcm1 ("FP_FRAME_FUNC_END",
-                                      TCmakeIdCopyString (FUNDEF_FPFRAMENAME (arg_node)),
-                                      NULL);
-
-                // create space for results
-                // TODO: find out actual type
-                rets = FUNDEF_RETS (arg_node);
-                DBUG_PRINT ("COMP",
-                            ("Type: %s", TYtype2String (RET_TYPE (rets), FALSE, 0)));
-
-                i = 0;
-                while (rets != NULL) {
-                    INFO_FPFRAME (arg_info)
-                      = TCmakeAssignIcm2 ("FP_FRAME_RESULT", TCmakeIdCopyString ("int"),
-                                          TBmakeNum (i++), INFO_FPFRAME (arg_info));
-                    rets = RET_NEXT (rets);
-                }
+                                      TCmakeIdCopyString (FUNDEF_NAME (arg_node)), NULL);
             }
 
             /*
@@ -2849,6 +2913,10 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("MT_MTFUN_DEF_END", DUPdoDupTree (icm_args));
         } else if (FUNDEF_ISTHREADFUN (arg_node)) {
             icm_args = MakeFunctionArgs (arg_node);
+            if (FUNDEF_WASWITH3BODY (arg_node) && global.mutc_suballoc_desc_one_level_up
+                && FUNDEF_WITHOPS (arg_node) != NULL) {
+                icm_args = AddDescParams (FUNDEF_WITHOPS (arg_node), icm_args);
+            }
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MUTC_THREADFUN_DECL", icm_args);
             FUNDEF_ICMDEFBEGIN (arg_node)
               = TBmakeIcm ("MUTC_THREADFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
@@ -2869,13 +2937,6 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("WE_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("WE_FUN_DEF_END", DUPdoDupTree (icm_args));
-        } else if (FUNDEF_ISSLOWCLONE (arg_node)) {
-            icm_args = MakeFunctionArgs (arg_node);
-            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("FP_SLOWCLONE_DECL", icm_args);
-            FUNDEF_ICMDEFBEGIN (arg_node)
-              = TBmakeIcm ("FP_SLOWCLONE_DEF_BEGIN", DUPdoDupTree (icm_args));
-            FUNDEF_ICMDEFEND (arg_node)
-              = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
         } else {
             icm_args = MakeFunctionArgs (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
@@ -3005,6 +3066,16 @@ COMPvardec (node *arg_node, info *arg_info)
                                       TRUE, TRUE, TRUE, NULL));
     }
 
+    if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))
+        && global.mutc_suballoc_desc_one_level_up) {
+        INFO_VARDEC_INIT (arg_info)
+          = TCmakeAssignIcm1 ("MUTC_INIT_SUBALLOC_DESC",
+                              MakeTypeArgs (VARDEC_NAME (arg_node),
+                                            VARDEC_TYPE (arg_node), FALSE, FALSE, FALSE,
+                                            NULL),
+                              INFO_VARDEC_INIT (arg_info));
+    }
+
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
@@ -3064,6 +3135,12 @@ COMPblock (node *arg_node, info *arg_info)
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    if (INFO_VARDEC_INIT (arg_info) != NULL) {
+        BLOCK_INSTR (arg_node)
+          = TCappendAssign (INFO_VARDEC_INIT (arg_info), BLOCK_INSTR (arg_node));
+        INFO_VARDEC_INIT (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -3352,27 +3429,6 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFunRetArgsFP( node *arg_node, info *arg_info)
- *
- * @brief  Generates ICMs for N_return-node found in body of a slow clone
- *
- ******************************************************************************/
-
-static node *
-MakeFunRetArgsFP (node *arg_node, info *arg_info)
-{
-    node *args;
-
-    DBUG_ENTER ("MakeFunRetArgsFP");
-
-    args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_FPFRAMENAME (INFO_FUNDEF (arg_info))),
-                        MakeFunRetArgs (arg_node, arg_info));
-
-    DBUG_RETURN (args);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *COMPreturn( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return of a function.
@@ -3396,8 +3452,6 @@ COMPreturn (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("MUTC_THREADFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else if (FUNDEF_ISCUDAGLOBALFUN (fundef) || FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
         icm = TBmakeIcm ("CUDA_GLOBALFUN_RET", MakeFunRetArgs (arg_node, arg_info));
-    } else if (FUNDEF_ISSLOWCLONE (fundef)) {
-        icm = TBmakeIcm ("FP_FUN_RET", MakeFunRetArgsFP (arg_node, arg_info));
     } else {
         icm = TBmakeIcm ("ND_FUN_RET", MakeFunRetArgs (arg_node, arg_info));
     }
@@ -3409,6 +3463,10 @@ COMPreturn (node *arg_node, info *arg_info)
     if (INFO_POSTFUN (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_POSTFUN (arg_info), arg_node);
         INFO_POSTFUN (arg_info) = NULL;
+    }
+
+    if (FUNDEF_CONTAINSSPAWN (fundef)) {
+        arg_node = TCmakeAssignIcm0 ("FP_SAVE_RESULT", arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -3577,6 +3635,27 @@ COMPApArgs (node *ap, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+static node *
+AddDescArgs (node *ops, node *args)
+{
+    DBUG_ENTER ("AddDescArgs");
+
+    if (ops != NULL) {
+        if (WITHOP_SUB (ops) != NULL) {
+            node *newArg
+              = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
+                             TBmakeExprs (TCmakeIdCopyString ("int"),
+                                          TBmakeExprs (DUPdupIdNt (WITHOP_SUB (ops)),
+                                                       NULL)));
+            args = TCappendExprs (args, newArg);
+            NUM_VAL (EXPRS_EXPR3 (args)) += 1;
+        }
+        args = AddDescArgs (WITHOP_NEXT (ops), args);
+    }
+
+    DBUG_RETURN (args);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPap( node *arg_node, info *arg_info)
@@ -3632,6 +3711,9 @@ COMPap (node *arg_node, info *arg_info)
         if (!FUNDEF_WASWITH3BODY (fundef)) {
             icm = TBmakeIcm ("MUTC_FUNTHREADFUN_AP", icm_args);
         } else {
+            if (global.mutc_suballoc_desc_one_level_up) {
+                icm_args = AddDescArgs (INFO_WITHOPS (arg_info), icm_args);
+            }
             icm = TBmakeIcm ("MUTC_THREADFUN_AP", icm_args);
         }
     } else if (FUNDEF_ISCUDAGLOBALFUN (fundef)) {
@@ -3640,24 +3722,15 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    } else if (AP_TOSPAWN (arg_node)) {
-        icm_args
-          = TBmakeExprs (TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)), icm_args);
-
-        icm = TBmakeIcm ("FP_FUN_AP", icm_args);
     } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
 
     // If called function contains spawn, check result
-    /*
-    if( AP_TOSPAWN( arg_node))
-    {
-      assigns = TCmakeAssignIcm1( "FP_FUN_AP_CHECK",
-                                  TCmakeIdCopyString( TRAVtmpVar()),
-                                  assigns);
+    if (AP_TOSPAWN (arg_node)) {
+        assigns = TCmakeAssignIcm1 ("FP_FUN_AP_CHECK", TCmakeIdCopyString (TRAVtmpVar ()),
+                                    assigns);
     }
-    */
 
     // If ap is spaned, wrap the ap in spawn start and end icm's
     if (AP_ISSPAWNED (arg_node)) {
@@ -4827,7 +4900,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
     }
 
-    if (global.backend == BE_mutc) {
+    if ((global.backend == BE_mutc) && !(global.mutc_suballoc_desc_one_level_up)) {
 #if 0 /* Still may be present if not canonical */
     DBUG_ASSERT( (PRF_ARG3( arg_node) != NULL),
                  "suballoc lacking default information in mutc backend");
@@ -4870,16 +4943,15 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          */
         ret_node = MakeMutcLocalAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
                                               sub_get_dim, ret_node);
-#if 0 /* As allocated local do not free */
-    /*
-     * 4) add a corresponding descriptor free to the 
-     *    postfun icm chain
-     */
-    INFO_POSTFUN( arg_info) = TCmakeAssignIcm1( "ND_FREE__DESC",
-                                TCmakeIdCopyStringNt( IDS_NAME( let_ids),
-                                                      IDS_TYPE( let_ids)),
-                                INFO_POSTFUN( arg_info));
-#endif
+        /*
+         * 4) add a corresponding descriptor free to the
+         *    postfun icm chain
+         */
+        INFO_POSTFUN (arg_info)
+          = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                              TCmakeIdCopyStringNt (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids)),
+                              INFO_POSTFUN (arg_info));
     }
 
     DBUG_RETURN (ret_node);
@@ -7262,6 +7334,7 @@ COMPprfSync (node *arg_node, info *arg_info)
     fundef = INFO_FUNDEF (arg_info);
 
     if (!FUNDEF_ISSLOWCLONE (fundef)) {
+        // TODO: make better empty statement
         ret_node = TCmakeAssignIcm0 ("SAC_NOOP", NULL);
     } else {
         ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC_END", NULL);
@@ -7272,14 +7345,14 @@ COMPprfSync (node *arg_node, info *arg_info)
         while (vars != NULL) {
             ret_node
               = TCmakeAssignIcm2 ("SAC_FP_GET_LIVEVAR",
-                                  TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                   TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
                                   ret_node);
             vars = LIVEVARS_NEXT (vars);
         }
 
         ret_node = TCmakeAssignIcm3 ("SAC_FP_SYNC_START",
-                                     TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+                                     TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                      TCmakeIdCopyString (
                                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
                                      TBmakeNum (LET_SPAWNSYNCINDEX (let)), ret_node);
@@ -7290,7 +7363,7 @@ COMPprfSync (node *arg_node, info *arg_info)
         while (vars != NULL) {
             ret_node
               = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
-                                  TCmakeIdCopyString (FUNDEF_FPFRAMENAME (fundef)),
+                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                                   TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
                                   ret_node);
             vars = LIVEVARS_NEXT (vars);
@@ -8509,6 +8582,36 @@ COMPwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+static void
+COMPwith3AllocDesc (node *ops, node **pre, node **post)
+{
+    DBUG_ENTER ("COMPwith3AllocDesc");
+
+    if (global.mutc_suballoc_desc_one_level_up) {
+        if (WITHOP_NEXT (ops) != NULL) {
+            COMPwith3AllocDesc (WITHOP_NEXT (ops), pre, post);
+        }
+
+        if (((NODE_TYPE (ops) == N_genarray) && (GENARRAY_SUB (ops) != NULL))
+            || ((NODE_TYPE (ops) == N_modarray) && (MODARRAY_SUB (ops) != NULL))) {
+            node *sub
+              = NODE_TYPE (ops) == N_genarray ? GENARRAY_SUB (ops) : MODARRAY_SUB (ops);
+            int dim = TCgetDim (ID_TYPE (WITHOP_MEM (ops)));
+            DBUG_ASSERT ((dim >= 0), "Can only handle AKD or better");
+            *pre = MakeMutcLocalAllocDescIcm (ID_NAME (sub), ID_TYPE (sub), 1,
+                                              TBmakeNum (dim), *pre);
+            *pre = TCmakeAssignIcm2 ("ND_DECL__DESC",
+                                     TCmakeIdCopyStringNt (ID_NAME (sub), ID_TYPE (sub)),
+                                     TCmakeIdCopyString (""), *pre);
+            *post = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                      TCmakeIdCopyStringNt (ID_NAME (sub), ID_TYPE (sub)),
+                                      *post);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *COMPwith3( node *arg_node, info *arg_info)
@@ -8523,13 +8626,29 @@ node *
 COMPwith3 (node *arg_node, info *arg_info)
 {
     bool old_concurrentranges = INFO_CONCURRENTRANGES (arg_info);
-
+    node *pre = NULL;
+    node *post = NULL;
+    node *ops = NULL;
     DBUG_ENTER ("COMPwith3");
 
     INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
     INFO_WITH3_FOLDS (arg_info)
       = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
+
+    ops = INFO_WITHOPS (arg_info);
+    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    COMPwith3AllocDesc (INFO_WITHOPS (arg_info), &pre, &post);
     arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+
+    INFO_WITHOPS (arg_info) = ops;
+
+    if (pre != NULL) {
+        arg_node = TCappendAssign (pre, arg_node);
+    }
+    if (post != NULL) {
+        arg_node = TCappendAssign (arg_node, post);
+    }
 
     if (INFO_WITH3_FOLDS (arg_info) != NULL) {
         INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));

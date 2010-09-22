@@ -488,7 +488,9 @@ PrintMutcOptions (void)
       "                                                -mutc_distribute_arg option\n\n"
       "    -mutc_distribute_arg             numerical argument for distribution "
       "modes.\n\n"
-      "    -mutc_unroll <n>                 Maximum with3 size to unroll(1)\n\n");
+      "    -mutc_unroll <n>                 Maximum with3 size to unroll(1)\n\n"
+      "    -mutc_suballoc_desc_one_level_up Allocate discs one level higher than they\n"
+      "                                     are used\n\n");
 
     DBUG_VOID_RETURN;
 }

@@ -3015,6 +3015,13 @@
         <node name="Ret" />
       </travuser>
     </traversal>
+    <traversal id="MSA" name="MarkSubAlloc" default="sons" include="marksuballoc.h" >
+      <travuser>
+        <node name="Prf" />
+        <node name="Let" />
+        <node name="Ids" />
+      </travuser>
+    </traversal>
     <traversal id="DVR" name="Dead vardec removal" default="sons" include="dead_vardec_removal.h" >
       <travuser>
         <node name="Module" />
@@ -4628,6 +4635,17 @@ N_tfarg :
               <node name="Fundef" />
               <phases>
                 <range from="opt_glf" to="opt_uglf" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="withops" default="NULL">
+          <description>Used by mutc backend for lifting desc mallocs up</description>
+          <targets>
+            <target mandatory="no">
+              <set name="WithOp" />
+              <phases>
+                <range from="cg_cpl" to="cg_cpl" />
               </phases>
             </target>
           </targets>
@@ -8062,6 +8080,12 @@ N_tfarg :
         <flag name="IsOmpReduction" default="FALSE" >
           <description>
                   If true, the given variable is reduction OpenMP variable used in fold.
+          </description>
+        </flag>
+        <flag name="suballoc" default="FALSE">
+          <description>
+            MUTC: This var is from a suballoc where the desc is passed in to 
+            this function
           </description>
         </flag>
         <flag name="NeedBlocked" default="FALSE" >

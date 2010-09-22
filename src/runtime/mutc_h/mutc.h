@@ -180,8 +180,7 @@
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
                           NT_STR (var_NT)));                                             \
-        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT),                                   \
-                               BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int)    \
+        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)     \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
@@ -227,6 +226,9 @@
 #define SAC_MUTC_THREAD_INIT
 #define SAC_MUTC_THREAD_CLEANUP
 #endif
+
+#define SAC_MUTC_INIT_SUBALLOC_DESC(var_NT)                                              \
+    SAC_ND_A_DESC_NAME (var_NT) = sl_getp (SAC_ND_A_DESC_NAME (var_NT));
 
 #endif /* BACKEND */
 #undef MUTC

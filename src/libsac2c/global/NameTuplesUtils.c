@@ -156,6 +156,8 @@ NTUgetUniqueClassFromTypes (types *type)
         z = C_unknownu;
     } else if (TCisUnique (type)) {
         z = C_unq;
+    } else if (TYPES_UNIQUE (type)) {
+        z = C_unq;
     } else {
         z = C_nuq;
     }

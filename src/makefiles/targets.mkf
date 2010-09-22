@@ -213,7 +213,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         resolve_code_sharing lift_with3_bodies \
                         distribute_threads tag_main_fun_thread \
                         dynamic_memory_usage_inference   \
-                        omp_find_private
+                        omp_find_private marksuballoc
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \

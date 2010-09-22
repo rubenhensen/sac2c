@@ -23,6 +23,8 @@ pat(`SAC_ND_A_DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `HID', `UNQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 dnl Perform SAC_ND_A_DESC or return NULL if there is no desc
@@ -30,12 +32,16 @@ pat(`SAC_ND_A_DESC_NULL', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__NULL', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')
 rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__NULL', `SCL', `HID', `UNQ')
+rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__NULL', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__NULL', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_A_DESC_NULL', `SAC_ND_A_DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 pat(`SAC_ND_A_DESC_NAME', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__UNDEF', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__DEFAULT', `SCL', `HID', `NUQ')
 rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__UNDEF', `SCL', `HID', `UNQ')
+rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__UNDEF', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__UNDEF', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_A_DESC_NAME', `SAC_ND_A_DESC_NAME__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 pat(`SAC_ND_A_DESC_DIM', `0', `0', `NT_SHP')
@@ -81,6 +87,7 @@ rule(`SAC_ND_A_FIELD_UNBOX', `SAC_ND_A_FIELD__BOXED', `*SHP')
 pat(`SAC_ND_A_RC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_A_RC', `SAC_ND_A_RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
 
@@ -134,42 +141,56 @@ rule(`SAC_ND_TYPEDEF', `SAC_ND_TYPEDEF__DEFAULT', `*HID')
 pat(`SAC_ND_DECL__DESC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `HID', `UNQ')
+rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__NONE', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_DECL__DESC', `SAC_ND_DECL__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_PARAM_in', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_PARAM_in', `SAC_ND_PARAM_in__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_PARAM_out', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_PARAM_out', `SAC_ND_PARAM_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_ARG_in', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_ARG_in', `SAC_ND_ARG_in__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_ARG_out', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_ARG_out', `SAC_ND_ARG_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_RET_out', `1', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_RET_out', `SAC_ND_RET_out__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_RET_out', `SAC_ND_RET_out__DESC', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_DECL_PARAM_inout', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_DECL_PARAM_inout', `SAC_ND_DECL_PARAM_inout__DESC', `*SHP', `*HID', `*UNQ')
 
 
@@ -211,12 +232,16 @@ rule(`SAC_ND_REALLOC_END', `SAC_ND_REALLOC_END__NO_DAO', `AUD')
 pat(`SAC_ND_ALLOC__DESC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__AUD', `AUD', `*HID', `*UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__FIXED', `*SHP', `*HID', `*UNQ')
 
 
 pat(`SAC_ND_ALLOC__DATA', `0', `0', `NT_SHP')
 rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__NOOP', `SCL')
+
+
 rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__AKS', `AKS')
 rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__AKD_AUD', `*SHP')
 
@@ -228,6 +253,8 @@ rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD', `*SH
 pat(`SAC_ND_ALLOC__DESC_AND_DATA', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP_BASETYPE', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP_BASETYPE', `SCL', `HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP_BASETYPE', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP_BASETYPE', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__FIXED_BASETYPE', `SCL', `HID', `NUQ')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__AKS', `AKS', `*HID', `*UNQ')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__UNDEF', `*SHP', `*HID', `*UNQ')
@@ -236,6 +263,8 @@ rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__UNDEF', `*SHP'
 pat(`SAC_ND_FREE__DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HID', `UNQ')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
 
 
@@ -252,6 +281,8 @@ rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AUD', `HID')
 pat(`SAC_ND_PRF_SECOND', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `SCL', `HID', `UNQ')
+rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_NODESC', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_PRF_SECOND', `SAC_ND_PRF_SECOND_DESC', `*SHP', `*HID', `*UNQ')
 
 dnl SAC_ND_TYPE_CONV
@@ -390,29 +421,39 @@ rule(`GEN_SAC_ND_COPY__DATA__ANY', `SAC_ND_COPY__DATA__ANY_ANY', `*SHP')
 pat(`SAC_ND_SET__RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_SET__RC', `SAC_ND_SET__RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
 pat(`SAC_ND_INIT__RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_INIT__RC', `SAC_ND_INIT__RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
 
 pat(`SAC_ND_INC_RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_INC_RC', `SAC_ND_INC_RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
 
 pat(`SAC_ND_DEC_RC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_DEC_RC', `SAC_ND_DEC_RC__DEFAULT', `*SHP', `*HID', `NUQ')
 
 
 pat(`SAC_ND_DEC_RC_FREE', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__UNQ', `*SHP', `*HID', `UNQ')
 rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__NOOP', `SCL', `NHD', `NUQ')
+rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__NOOP', `SCL', `*HID', `UNQ')
+rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_DEC_RC_FREE', `SAC_ND_DEC_RC_FREE__DEFAULT', `*SHP', `*HID', `NUQ')
 
 

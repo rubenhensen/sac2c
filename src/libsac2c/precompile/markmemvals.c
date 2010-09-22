@@ -82,6 +82,8 @@
  *    passed the memory in in the first place, there is no need to pass the
  *    change to a part of it back out again.
  *
+ *    Descriptors of with3 suballocs are moved around
+ *
  */
 #include "markmemvals.h"
 
@@ -104,6 +106,7 @@
  */
 struct INFO {
     lut_t *lut;
+    lut_t *a2a_lut; /* avis of param point to avis of arg */
     node *lhs;
     node *lhs_wl;
     node *withop;
@@ -111,9 +114,11 @@ struct INFO {
     node *prop_in;
     bool toplevel;
     int with;
+    node *vardecs;
 };
 
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_A2A_LUT(n) ((n)->a2a_lut)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_LHS_WL(n) ((n)->lhs_wl)
 #define INFO_WITHOP(n) ((n)->withop)
@@ -121,6 +126,7 @@ struct INFO {
 #define INFO_PROP_IN(n) ((n)->prop_in)
 #define INFO_TOPLEVEL(n) ((n)->toplevel)
 #define INFO_WITH(n) ((n)->with)
+#define INFO_VARDECS(n) ((n)->vardecs)
 
 /**
  * INFO functions
@@ -135,6 +141,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_LUT (result) = LUTgenerateLut ();
+    INFO_A2A_LUT (result) = LUTgenerateLut ();
     INFO_LHS (result) = NULL;
     INFO_LHS_WL (result) = NULL;
     INFO_WITHOP (result) = NULL;
@@ -142,6 +149,7 @@ MakeInfo ()
     INFO_PROP_IN (result) = NULL;
     INFO_TOPLEVEL (result) = TRUE;
     INFO_WITH (result) = 0;
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -152,6 +160,7 @@ FreeInfo (info *info)
     DBUG_ENTER ("FreeInfo");
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
+    INFO_A2A_LUT (info) = LUTremoveLut (INFO_A2A_LUT (info));
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -178,9 +187,21 @@ FreeInfo (info *info)
 node *
 MMVblock (node *arg_node, info *arg_info)
 {
+    node *vardecs;
     DBUG_ENTER ("MMVblock");
 
+    vardecs = INFO_VARDECS (arg_info);
+    INFO_VARDECS (arg_info) = NULL;
+
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDEC (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    INFO_VARDECS (arg_info) = vardecs;
 
     DBUG_RETURN (arg_node);
 }
@@ -240,6 +261,7 @@ MMVfundef (node *arg_node, info *arg_info)
      */
     if (INFO_TOPLEVEL (arg_info)) {
         INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
+        INFO_A2A_LUT (arg_info) = LUTremoveContentLut (INFO_A2A_LUT (arg_info));
 
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
@@ -361,6 +383,21 @@ MMVid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static lut_t *
+pairArgs2Args (lut_t *lut, node *args_in, node *args_out)
+{
+    DBUG_ENTER ("pairParam2Args");
+
+    if (args_in != NULL) {
+        DBUG_ASSERT ((args_out != NULL), "params and args should be the same length");
+        lut = pairArgs2Args (lut, ARG_NEXT (args_in), EXPRS_NEXT (args_out));
+        lut
+          = LUTinsertIntoLutP (lut, ID_AVIS (EXPRS_EXPR (args_out)), ARG_AVIS (args_in));
+    }
+
+    DBUG_RETURN (lut);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *MMVap( node *arg_node, info *arg_info)
@@ -378,10 +415,22 @@ MMVap (node *arg_node, info *arg_info)
      * traverse special thread functions inline
      */
     if (FUNDEF_WASWITH3BODY (AP_FUNDEF (arg_node))) {
+        lut_t *lut_stack = INFO_A2A_LUT (arg_info);
         toplevel = INFO_TOPLEVEL (arg_info);
         INFO_TOPLEVEL (arg_info) = FALSE;
 
+        INFO_A2A_LUT (arg_info) = LUTgenerateLut ();
+
+        AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+
+        INFO_A2A_LUT (arg_info)
+          = pairArgs2Args (INFO_A2A_LUT (arg_info), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                           AP_ARGS (arg_node));
+
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+        INFO_A2A_LUT (arg_info) = LUTremoveLut (INFO_A2A_LUT (arg_info));
+        INFO_A2A_LUT (arg_info) = lut_stack;
 
         INFO_TOPLEVEL (arg_info) = toplevel;
     }
@@ -590,22 +639,49 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
      * leave the default element at the suballoc to be able to
      * issue the corresponding shape initialisation ICM later on.
      */
-    if (global.backend == BE_c99 || global.backend == BE_cuda) {
-        /*
-         * Find subarray identifier for this suballoc
-         */
+    /*
+     * Find subarray identifier for this suballoc
+     */
+
+    if ((global.backend != BE_mutc) || global.mutc_suballoc_desc_one_level_up) {
         ids_wl = INFO_LHS_WL (arg_info);
         withop = INFO_WITHOP (arg_info);
 
         while (ids_wl != NULL) {
-            node *newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
+            node *newavis;
 
-            if (newavis == ID_AVIS (PRF_ARG1 (arg_node))) {
+            if (global.mutc_suballoc_desc_one_level_up) {
+                newavis
+                  = LUTsearchInLutPp (INFO_LUT (arg_info),
+                                      LUTsearchInLutPp (INFO_A2A_LUT (arg_info),
+                                                        LUTsearchInLutPp (INFO_LUT (
+                                                                            arg_info),
+                                                                          IDS_AVIS (
+                                                                            ids_wl))));
+            } else {
+                newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
+            }
+
+            if ((newavis == ID_AVIS (PRF_ARG1 (arg_node)))
+                || ((INFO_WITH (arg_info) == 3)
+                    && (STReq (AVIS_NAME (newavis),
+                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))))))) {
                 /*
                  * Set a as new subarray identifier if none is set yet
                  */
                 if (WITHOP_SUB (withop) == NULL) {
                     L_WITHOP_SUB (withop, TBmakeId (IDS_AVIS (INFO_LHS (arg_info))));
+                    if (INFO_WITH (arg_info) == 3) {
+                        AVIS_SUBALLOC (ID_AVIS (WITHOP_SUB (withop))) = TRUE;
+                    }
+                } else if ((INFO_WITH (arg_info) == 3)
+                           && (global.mutc_suballoc_desc_one_level_up)) {
+                    /* Add vardec to this context */
+                    DBUG_PRINT ("MMV", ("Addd new vardec: %s",
+                                        AVIS_NAME (ID_AVIS (WITHOP_SUB (withop)))));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (DUPdoDupNode (ID_AVIS (WITHOP_SUB (withop))),
+                                      INFO_VARDECS (arg_info));
                 }
                 avis = ID_AVIS (WITHOP_SUB (withop));
                 break;
@@ -614,33 +690,27 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
             ids_wl = IDS_NEXT (ids_wl);
         }
 
-        DBUG_ASSERT (avis != NULL, "No subarray identifier found!");
+        if ((global.backend != BE_mutc) || (avis != NULL)) {
+            DBUG_ASSERT (avis != NULL, "No subarray identifier found!");
 
-        /*
-         * Insert pair (a, A_sub) into LUT
-         */
-        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
-                           AVIS_NAME (avis));
+            /*
+             * Insert pair (a, A_sub) into LUT
+             */
+            LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                               AVIS_NAME (avis));
 
-        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
-
+            LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), avis);
+        }
         /*
          * Scrap the 3rd/4th argument, as this suballoc does not need to
          * set the shape descriptor.
          */
-        if (PRF_EXPRS3 (arg_node) != NULL) {
-            PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
+        if (global.backend == BE_c99 || global.backend == BE_cuda) {
+            if (PRF_EXPRS3 (arg_node) != NULL) {
+                PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
+            }
         }
-    } else if (global.backend == BE_mutc) {
-        /*
-         * nothing to be done here :)
-         */
-#ifndef DBUG_OFF
-    } else {
-        DBUG_ASSERT (FALSE, "unknown backend!");
-#endif
     }
-
     DBUG_RETURN (arg_node);
 }
 

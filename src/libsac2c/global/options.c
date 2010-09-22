@@ -158,6 +158,9 @@ OPTcheckOptionConsistency (void)
         if (global.mutc_disable_concurrent_rc == TRUE) {
             CTIerror ("-mutc_disable_concurrent_rc only works with mutc backend");
         }
+        if (global.mutc_suballoc_desc_one_level_up == TRUE) {
+            CTIerror ("-mutc_suballoc_desc_one_level_up only works with mutc backend");
+        }
     }
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
@@ -598,6 +601,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("mutc_thread_mem", global.mutc_thread_mem = TRUE);
     ARGS_FLAG ("mutc_static_resource_management",
                global.mutc_static_resource_management = TRUE);
+    ARGS_FLAG ("mutc_suballoc_desc_one_level_up",
+               global.mutc_suballoc_desc_one_level_up = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn

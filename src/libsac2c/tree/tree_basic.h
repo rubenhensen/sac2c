@@ -107,7 +107,7 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 /* mutc old type accessors */
 #define TYPES_MUTC_SCOPE(t) (t->scope)
 #define TYPES_MUTC_USAGE(t) (t->usage)
-
+#define TYPES_UNIQUE(t) (t->unique)
 /*--------------------------------------------------------------------------*/
 
 /***

@@ -77,7 +77,7 @@
  */
 
 #define PRINTBUF 1024  /* Print buffer size */
-#define INDENT 4       /* Indentation per trace level */
+#define INDENT 1       /* Indentation per trace level */
 #define MAXDEPTH 40000 /* Maximum trace depth default */
 
 /*

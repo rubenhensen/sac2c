@@ -108,6 +108,7 @@ OPTIMIZE ("wllo", wllo, FALSE, FALSE, "run with-loop lock optimization")
 OPTIMIZE ("rw3", rw3, FALSE, FALSE, "MUTC remove with3 loops")
 OPTIMIZE ("ms", ms, TRUE, TRUE, "MUTC move syncs")
 OPTIMIZE ("uw3", uw3, TRUE, TRUE, "MUTC unroll with3 loops")
+OPTIMIZE ("msa", msa, FALSE, FALSE, "MUTC mark suballoc as unique")
 /*
 OPTIMIZE( "cuskc",  cuskc,   TRUE,  TRUE,  "CUDA sink code")
 OPTIMIZE( "cucc",   cucc,    TRUE,  TRUE,  "CUDA create cells")
