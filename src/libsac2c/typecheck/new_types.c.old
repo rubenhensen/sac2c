@@ -317,6 +317,7 @@ ntype *MakeNtype( typeconstr con, int arity)
 
   NTYPE_MUTC_SCOPE( res) = MUTC_GLOBAL;
   NTYPE_MUTC_USAGE( res) = MUTC_US_DEFAULT;
+  NTYPE_UNIQUE( res) = FALSE;
 
   DBUG_RETURN( res);
 }
