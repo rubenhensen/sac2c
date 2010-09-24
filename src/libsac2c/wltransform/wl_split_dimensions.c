@@ -115,6 +115,7 @@ struct INFO {
     node *accus;
     node *vardecs;
     node *preassigns;
+    node *block_chunk;
     lut_t *lut;
     node *fundef;
     int with3_nesting;
@@ -143,6 +144,7 @@ struct INFO {
 #define INFO_ACCUS(n) ((n)->accus)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_BLOCK_CHUNK(n) ((n)->block_chunk)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_WITH3_NESTING(n) ((n)->with3_nesting)
@@ -185,6 +187,7 @@ MakeInfo ()
     INFO_WITH3_NESTING (result) = 0;
     INFO_TRANSFORMED_W2_TO_W3 (result) = FALSE;
     INFO_INCUDAWL (result) = FALSE;
+    INFO_BLOCK_CHUNK (result) = NULL;
 
     INFO_NIP_RESULT (result) = FALSE;
     INFO_NIP_LHS (result) = NULL;
@@ -202,6 +205,10 @@ FreeInfo (info *info)
 
     if (INFO_FRAME_INDICES (info) != NULL) {
         INFO_FRAME_INDICES (info) = FREEdoFreeTree (INFO_FRAME_INDICES (info));
+    }
+
+    if (INFO_BLOCK_CHUNK (info) != NULL) {
+        INFO_BLOCK_CHUNK (info) = FREEdoFreeTree (INFO_BLOCK_CHUNK (info));
     }
 
     info = MEMfree (info);
@@ -2053,8 +2060,18 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
                node *next, info *arg_info)
 {
     node *index, *body, *results, *offsets;
-
+    node *block_chunk = NULL;
     DBUG_ENTER ("ProcessStride");
+
+    if (INFO_BLOCK_CHUNK (arg_info) != NULL) {
+        block_chunk = SET_MEMBER (INFO_BLOCK_CHUNK (arg_info));
+        INFO_BLOCK_CHUNK (arg_info) = FREEdoFreeNode (INFO_BLOCK_CHUNK (arg_info));
+    }
+
+    if (block_chunk != NULL) {
+        /* Have a chunk size so do not go past the end */
+        upper = ComputeMin (upper, block_chunk, &INFO_PREASSIGNS (arg_info), arg_info);
+    }
 
     /*
      * first process all the remaining strides on this level
@@ -2094,6 +2111,11 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
       = TBmakeRange (TBmakeIds (index, NULL), DUPdoDupNode (lower), DUPdoDupNode (upper),
                      DUPdoDupNode (step), body, results, offsets, next);
 
+    if (block_chunk != NULL) {
+        INFO_BLOCK_CHUNK (arg_info)
+          = TBmakeSet (block_chunk, INFO_BLOCK_CHUNK (arg_info));
+    }
+
     DBUG_RETURN (next);
 }
 
@@ -2123,6 +2145,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
               node *next, info *arg_info)
 {
     node *index, *body, *results, *offsets;
+    int frame;
 
     DBUG_ENTER ("ProcessBlock");
 
@@ -2141,10 +2164,12 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
      */
     if (NeedsFitting (lower, upper, step)) {
         node *nupper, *over, *body, *index, *results, *offsets;
-
+        frame = INFO_DIM_FRAME (arg_info);
         index = MakeIntegerVar (&INFO_VARDECS (arg_info));
         over = ComputeNewBounds (upper, lower, step, &nupper, &INFO_PREASSIGNS (arg_info),
                                  arg_info);
+        INFO_BLOCK_CHUNK (arg_info)
+          = TCappendSet (INFO_BLOCK_CHUNK (arg_info), TBmakeSet (over, NULL));
         body = MakeRangeBody (index, DUPdoDupTree (contents), over, INC, &results,
                               &offsets, arg_info);
 
@@ -2158,9 +2183,15 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
          * replace old bounds
          */
         upper = nupper;
+        INFO_BLOCK_CHUNK (arg_info) = TCdropSet (-1, INFO_BLOCK_CHUNK (arg_info));
+        INFO_DIM_FRAME (arg_info) = frame;
     }
 
+    frame = INFO_DIM_FRAME (arg_info);
     index = MakeIntegerVar (&INFO_VARDECS (arg_info));
+
+    INFO_BLOCK_CHUNK (arg_info)
+      = TCappendSet (INFO_BLOCK_CHUNK (arg_info), TBmakeSet (step, NULL));
     body = MakeRangeBody (index, contents, step, INC, &results, &offsets, arg_info);
 
     next
@@ -2168,6 +2199,10 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
                      DUPdoDupNode (step), body, results, offsets, next);
 
     RANGE_ISBLOCKED (next) = TRUE;
+
+    INFO_DIM_FRAME (arg_info) = frame;
+
+    INFO_BLOCK_CHUNK (arg_info) = TCdropSet (-1, INFO_BLOCK_CHUNK (arg_info));
 
     DBUG_RETURN (next);
 }
