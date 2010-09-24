@@ -473,15 +473,22 @@ static node *
 CreateBlockingPragma (node *ids, int dim)
 {
     node *pragma, *array, *wlcomp_aps, *block_exprs = NULL;
-    bool needblocked = FALSE;
+    /* bool needblocked = FALSE; */
 
     DBUG_ENTER ("CreateBlockingPragma");
 
     pragma = TBmakePragma ();
 
+    /* Note that we have removed all code assocaited with the needblocked flag.
+     * The effect of this is that all withloops in a cuda wl will be *blocked*
+     * even the blocking size might be as trivial as 1. This ensures that each
+     * dimension of the original withloop will be transformed into two with3s
+     * after wlsd (at the absence of step and width). This simplifies the
+     * implementation in cuda data reuse to find the indices of both ranges
+     */
     while (ids != NULL) {
         if (AVIS_NEEDBLOCKED (IDS_AVIS (ids))) {
-            needblocked = TRUE;
+            /* needblocked = TRUE; */
             block_exprs
               = TCcombineExprs (block_exprs,
                                 TBmakeExprs (TBmakeNum (AVIS_BLOCKSIZE (IDS_AVIS (ids))),
@@ -495,20 +502,22 @@ CreateBlockingPragma (node *ids, int dim)
         ids = IDS_NEXT (ids);
     }
 
-    if (needblocked) {
-        array
-          = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), block_exprs);
+    /* if( needblocked) { */
+    array = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), block_exprs);
 
-        wlcomp_aps = TBmakeExprs (TBmakeSpap (TBmakeSpid (NULL, "BvL0"),
-                                              TBmakeExprs (array, NULL)),
-                                  NULL);
+    wlcomp_aps
+      = TBmakeExprs (TBmakeSpap (TBmakeSpid (NULL, "BvL0"), TBmakeExprs (array, NULL)),
+                     NULL);
 
-        PRAGMA_WLCOMP_APS (pragma) = wlcomp_aps;
-    } else {
-        block_exprs = FREEdoFreeTree (block_exprs);
-        pragma = FREEdoFreeNode (pragma);
+    PRAGMA_WLCOMP_APS (pragma) = wlcomp_aps;
+    /*
+      }
+      else {
+        block_exprs = FREEdoFreeTree( block_exprs);
+        pragma = FREEdoFreeNode( pragma);
         pragma = NULL;
-    }
+      }
+    */
 
     DBUG_RETURN (pragma);
 }
@@ -561,7 +570,7 @@ DAApart (node *arg_node, info *arg_info)
     INFO_PRAGMA (arg_info) = CreateBlockingPragma (PART_IDS (arg_node), dim);
 
     /* Continue traversing other partitions */
-    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    /* PART_NEXT( arg_node) = TRAVopt( PART_NEXT( arg_node), arg_info);  */
 
     DBUG_RETURN (arg_node);
 }
