@@ -304,9 +304,6 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
     SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
              global.cfilename, libpath, deplibs, libs);
 
-    printf ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
-            global.cfilename, libpath, deplibs, libs);
-
     libpath = MEMfree (libpath);
     deplibs = MEMfree (deplibs);
 
