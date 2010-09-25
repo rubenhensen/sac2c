@@ -235,22 +235,22 @@ DupTreeOrNodeLutType (bool node_only, node *arg_node, lut_t *lut, int type, node
     DBUG_RETURN (new_node);
 }
 
-static index_t *
-DUPIndex (index_t *index)
+static cuda_index_t *
+DUPCudaIndex (cuda_index_t *index)
 {
-    index_t *tmp, *new_index = NULL;
+    cuda_index_t *tmp, *new_index = NULL;
 
-    DBUG_ENTER ("DUPIndex");
+    DBUG_ENTER ("DUPCudaIndex");
 
     while (index != NULL) {
-        tmp = (index_t *)MEMmalloc (sizeof (index_t));
-        INDEX_TYPE (tmp) = INDEX_TYPE (index);
-        INDEX_COEFFICIENT (tmp) = INDEX_COEFFICIENT (index);
-        INDEX_ID (tmp) = INDEX_ID (index);
-        INDEX_LOOPLEVEL (tmp) = INDEX_LOOPLEVEL (index);
-        INDEX_NEXT (tmp) = new_index;
+        tmp = (cuda_index_t *)MEMmalloc (sizeof (cuda_index_t));
+        CUIDX_TYPE (tmp) = CUIDX_TYPE (index);
+        CUIDX_COEFFICIENT (tmp) = CUIDX_COEFFICIENT (index);
+        CUIDX_ID (tmp) = CUIDX_ID (index);
+        CUIDX_LOOPLEVEL (tmp) = CUIDX_LOOPLEVEL (index);
+        CUIDX_NEXT (tmp) = new_index;
         new_index = tmp;
-        index = INDEX_NEXT (index);
+        index = CUIDX_NEXT (index);
     }
 
     DBUG_RETURN (new_index);
@@ -278,7 +278,7 @@ DUPCudaAccessInfo (cuda_access_info_t *access_info, info *arg_info)
     ;
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
-        CUAI_INDICES (new_access_info, i) = DUPIndex (CUAI_INDICES (access_info, i));
+        CUAI_INDICES (new_access_info, i) = DUPCudaIndex (CUAI_INDICES (access_info, i));
     }
 
     DBUG_RETURN (new_access_info);

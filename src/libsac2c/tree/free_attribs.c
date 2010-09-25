@@ -587,13 +587,13 @@ FREEattribReuseInfo (reuse_info_t *attr, node *parent)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-index_t *
-FREEattribIndex (index_t *attr, node *parent)
+cuda_index_t *
+FREEattribCudaIndex (cuda_index_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribIndex");
+    DBUG_ENTER ("FREEattribCudaIndex");
 
     while (attr != NULL) {
-        index_t *tmp = attr;
+        cuda_index_t *tmp = attr;
         attr = attr->next;
         tmp = MEMfree (tmp);
     }
@@ -622,7 +622,7 @@ FREEattribCudaAccessInfo (cuda_access_info_t *attr, node *parent)
 
     if (attr != NULL) {
         for (i = 0; i < MAX_REUSE_DIM; i++) {
-            CUAI_INDICES (attr, i) = FREEattribIndex (CUAI_INDICES (attr, i), parent);
+            CUAI_INDICES (attr, i) = FREEattribCudaIndex (CUAI_INDICES (attr, i), parent);
         }
 
         attr = MEMfree (attr);

@@ -211,16 +211,16 @@ extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
  ***
  ***/
 
-extern index_t *TBmakeIndex (unsigned int type, int coefficient, node *id, int looplevel,
-                             index_t *next);
+extern cuda_index_t *TBmakeCudaIndex (unsigned int type, int coefficient, node *id,
+                                      int looplevel, cuda_index_t *next);
 
-#define INDEX_TYPE(a) (a->type)
-#define INDEX_COEFFICIENT(a) (a->coefficient)
-#define INDEX_ID(a) (a->id)
-#define INDEX_LOOPLEVEL(a) (a->looplevel)
-#define INDEX_NEXT(a) (a->next)
+#define CUIDX_TYPE(a) (a->type)
+#define CUIDX_COEFFICIENT(a) (a->coefficient)
+#define CUIDX_ID(a) (a->id)
+#define CUIDX_LOOPLEVEL(a) (a->looplevel)
+#define CUIDX_NEXT(a) (a->next)
 
-extern index_t *TBfreeIndex (index_t *index);
+extern cuda_index_t *TBfreeCudaIndex (cuda_index_t *index);
 
 /*--------------------------------------------------------------------------*/
 

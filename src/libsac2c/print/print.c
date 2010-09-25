@@ -389,7 +389,7 @@ static void
 CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
 {
     int i;
-    index_t *idx;
+    cuda_index_t *idx;
     const char *CUDA_IDX_NAMES[6]
       = {"CONSTANT", "THREADIDX_X", "THREADIDX_Y", "THREADIDX", "LOOPIDX", "EXTID"};
 
@@ -444,19 +444,19 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
                  CUAI_ISCONSTANT (ASSIGN_ACCESS_INFO (arg_node), i));
 
         while (idx != NULL) {
-            fprintf (global.outfile, "( ( %d)", INDEX_COEFFICIENT (idx));
-            if (INDEX_ID (idx) != NULL) {
-                fprintf (global.outfile, " * %s)", AVIS_NAME (INDEX_ID (idx)));
+            fprintf (global.outfile, "( ( %d)", CUIDX_COEFFICIENT (idx));
+            if (CUIDX_ID (idx) != NULL) {
+                fprintf (global.outfile, " * %s)", AVIS_NAME (CUIDX_ID (idx)));
             } else {
                 fprintf (global.outfile, ")");
             }
 
             fprintf (global.outfile, "[Type:%s, LoopLevel:%d]",
-                     CUDA_IDX_NAMES[INDEX_TYPE (idx)], INDEX_LOOPLEVEL (idx));
+                     CUDA_IDX_NAMES[CUIDX_TYPE (idx)], CUIDX_LOOPLEVEL (idx));
 
-            if (INDEX_NEXT (idx) != NULL) {
+            if (CUIDX_NEXT (idx) != NULL) {
                 fprintf (global.outfile, " + ");
-                idx = INDEX_NEXT (idx);
+                idx = CUIDX_NEXT (idx);
             } else {
                 break;
             }

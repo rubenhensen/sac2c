@@ -179,31 +179,32 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 
 /*--------------------------------------------------------------------------*/
 
-index_t *
-TBmakeIndex (unsigned int type, int coefficient, node *id, int looplevel, index_t *next)
+cuda_index_t *
+TBmakeCudaIndex (unsigned int type, int coefficient, node *id, int looplevel,
+                 cuda_index_t *next)
 {
-    index_t *idx;
+    cuda_index_t *idx;
 
-    DBUG_ENTER ("TBmakeIndex");
+    DBUG_ENTER ("TBmakeCudaIndex");
 
-    idx = (index_t *)MEMmalloc (sizeof (index_t));
+    idx = (cuda_index_t *)MEMmalloc (sizeof (cuda_index_t));
 
-    INDEX_TYPE (idx) = type;
-    INDEX_COEFFICIENT (idx) = coefficient;
-    INDEX_ID (idx) = id;
-    INDEX_LOOPLEVEL (idx) = looplevel;
-    INDEX_NEXT (idx) = next;
+    CUIDX_TYPE (idx) = type;
+    CUIDX_COEFFICIENT (idx) = coefficient;
+    CUIDX_ID (idx) = id;
+    CUIDX_LOOPLEVEL (idx) = looplevel;
+    CUIDX_NEXT (idx) = next;
 
     DBUG_RETURN (idx);
 }
 
-index_t *
-TBfreeIndex (index_t *index)
+cuda_index_t *
+TBfreeCudaIndex (cuda_index_t *index)
 {
-    DBUG_ENTER ("TBfreeIndex");
+    DBUG_ENTER ("TBfreeCudaIndex");
 
-    if (INDEX_NEXT (index) != NULL) {
-        INDEX_NEXT (index) = TBfreeIndex (INDEX_NEXT (index));
+    if (CUIDX_NEXT (index) != NULL) {
+        CUIDX_NEXT (index) = TBfreeCudaIndex (CUIDX_NEXT (index));
     }
 
     index = MEMfree (index);
@@ -248,7 +249,8 @@ TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
         if (CUAI_INDICES (access_info, i) != NULL) {
-            CUAI_INDICES (access_info, i) = TBfreeIndex (CUAI_INDICES (access_info, i));
+            CUAI_INDICES (access_info, i)
+              = TBfreeCudaIndex (CUAI_INDICES (access_info, i));
         }
     }
 

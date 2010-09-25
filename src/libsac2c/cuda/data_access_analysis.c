@@ -233,8 +233,8 @@ AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
     DBUG_ENTER ("AddIndex");
 
     CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim)
-      = TBmakeIndex (type, coefficient, idx, looplevel,
-                     CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim));
+      = TBmakeCudaIndex (type, coefficient, idx, looplevel,
+                         CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim));
 
     DBUG_VOID_RETURN;
 }
@@ -313,7 +313,7 @@ static cuda_access_info_t *
 CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
 {
     int i, coefficient, shmem_size, dim;
-    index_t *index;
+    cuda_index_t *index;
     int DIMS[2][2]
       = {{1, global.cuda_1d_block_x}, {global.cuda_2d_block_y, global.cuda_2d_block_x}};
     node *sharray_shp = NULL;
@@ -329,9 +329,9 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
         shmem_size = 0;
 
         while (index != NULL) {
-            coefficient = abs (INDEX_COEFFICIENT (index));
+            coefficient = abs (CUIDX_COEFFICIENT (index));
 
-            switch (INDEX_TYPE (index)) {
+            switch (CUIDX_TYPE (index)) {
             case IDX_THREADIDX_X:
                 shmem_size += (coefficient * DIMS[dim - 1][1]);
                 break;
@@ -341,14 +341,14 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
             case IDX_LOOPIDX:
                 shmem_size += (coefficient * DIMS[dim - 1][1]);
                 /* Set the block size for the loop dim */
-                AVIS_NEEDBLOCKED (INDEX_ID (index)) = TRUE;
-                AVIS_BLOCKSIZE (INDEX_ID (index)) = DIMS[dim - 1][1];
+                AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
+                AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
                 break;
             default:
                 break;
             }
 
-            index = INDEX_NEXT (index);
+            index = CUIDX_NEXT (index);
         }
 
         if (shmem_size == 0) {

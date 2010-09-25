@@ -225,7 +225,7 @@ GetNthRangePair (int nth)
 }
 
 static shared_global_info_t *
-ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
+ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
 {
     node *args, *vardecs = NULL;
     node *avis1, *avis2, *avis3, *assign1 = NULL, *assign2 = NULL, *assign3 = NULL;
@@ -233,7 +233,7 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
 
     DBUG_ENTER ("ComputeIndex");
 
-    switch (INDEX_TYPE (idx)) {
+    switch (CUIDX_TYPE (idx)) {
     case IDX_CONSTANT:
         /* For constant apprearing in global index, we create
          * an assignment "var_const = NUM;". For shared memory
@@ -242,7 +242,7 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
         assign1 = TBmakeAssign (TBmakeLet (TBmakeIds (avis1, NULL),
-                                           TBmakeNum (INDEX_COEFFICIENT (idx))),
+                                           TBmakeNum (CUIDX_COEFFICIENT (idx))),
                                 NULL);
 
         vardecs = TBmakeVardec (avis1, NULL);
@@ -273,8 +273,8 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
         /* For external id apprearing in global index, we create
          * an assignment "var_extid = _mul_SxS_( id, coe);". For shared memory
          * index, we don't need to do anything */
-        args = TBmakeExprs (TBmakeId (INDEX_ID (idx)),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+        args = TBmakeExprs (TBmakeId (CUIDX_ID (idx)),
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("extid", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
 
@@ -302,13 +302,13 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
     case IDX_THREADIDX_X:
 
         /* Assignments for global memory index calculation */
-        args = TBmakeExprs (TBmakeId (INDEX_ID (idx)),
+        args = TBmakeExprs (TBmakeId (CUIDX_ID (idx)),
                             TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))), NULL));
         avis1 = CreatePrf ("tx_glb", T_int, SHmakeShape (0), F_sub_SxS, args, &vardecs,
                            &assign1);
 
         args = TBmakeExprs (TBmakeId (avis1),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis2 = CreatePrf ("tx_glb", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign2);
 
@@ -333,7 +333,7 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
 
         /* Assignments for shared memory index calculation */
         args = TBmakeExprs (TBmakeId (TBmakeId (CIS_TX (INFO_CIS (arg_info)))),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("tx_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
 
@@ -362,13 +362,13 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
     case IDX_THREADIDX_Y:
 
         /* Assignments for global memory index calculation */
-        args = TBmakeExprs (TBmakeId (INDEX_ID (idx)),
+        args = TBmakeExprs (TBmakeId (CUIDX_ID (idx)),
                             TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))), NULL));
         avis1 = CreatePrf ("ty_glb", T_int, SHmakeShape (0), F_sub_SxS, args, &vardecs,
                            &assign1);
 
         args = TBmakeExprs (TBmakeId (avis1),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis2 = CreatePrf ("ty_glb", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign2);
 
@@ -393,7 +393,7 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
 
         /* Assignments for shared memory index calculation */
         args = TBmakeExprs (TBmakeId (TBmakeId (CIS_TY (INFO_CIS (arg_info)))),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("ty_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
 
@@ -419,14 +419,14 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
 
         break;
     case IDX_LOOPIDX:
-        pair = GetNthRangePair (INDEX_LOOPLEVEL (idx) - INFO_CUWLDIM (arg_info));
+        pair = GetNthRangePair (CUIDX_LOOPLEVEL (idx) - INFO_CUWLDIM (arg_info));
         DBUG_ASSERT ((pair != NULL), "Range pair is NULL!");
         RP_NEXT (pair) = SG_INFO_RANGE_PAIRS (sg_info);
         SG_INFO_RANGE_PAIRS (sg_info) = pair;
 
         /* Assignments for global memory index calculation */
         args = TBmakeExprs (TBmakeId (RP_OUTER (pair)),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("loop_glb", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
 
@@ -449,7 +449,7 @@ ComputeIndex (shared_global_info_t *sg_info, index_t *idx, info *arg_info)
 
         /* Assignments for shared memory index calculation */
         args = TBmakeExprs (TBmakeId (RP_INNER (pair)),
-                            TBmakeExprs (TBmakeNum (INDEX_COEFFICIENT (idx)), NULL));
+                            TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("loop_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
 
@@ -1155,14 +1155,14 @@ CUDRprf (node *arg_node, info *arg_info)
                   = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                                     TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
 
-                index_t *idx;
+                cuda_index_t *idx;
                 i = 0;
                 for (i = 0; i < CUAI_DIM (access_info); i++) {
                     sg_info = CreateSharedGlobalInfo (sg_info);
                     idx = CUAI_INDICES (access_info, i);
                     while (idx != NULL) {
                         sg_info = ComputeIndex (sg_info, idx, arg_info);
-                        idx = INDEX_NEXT (idx);
+                        idx = CUIDX_NEXT (idx);
                     }
                 }
 

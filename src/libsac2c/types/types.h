@@ -1079,13 +1079,13 @@ typedef struct REUSE_INFO_T {
 #define IDX_LOOPIDX 4
 #define IDX_EXTID 5
 
-typedef struct INDEX_T {
+typedef struct CUDA_INDEX_T {
     unsigned int type;
     int coefficient;
     node *id;
     int looplevel; /* This attribute is only meaningful if type is LOOPIDX */
-    struct INDEX_T *next;
-} index_t;
+    struct CUDA_INDEX_T *next;
+} cuda_index_t;
 
 typedef struct CUDA_ACCESS_INFO_T {
     Matrix coe_mtx;
@@ -1095,7 +1095,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     node *arrayshp;
     node *sharray;
     node *sharrayshp;
-    index_t *indices[MAX_REUSE_DIM];
+    cuda_index_t *indices[MAX_REUSE_DIM];
     bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of
                                        only IDX_CONSTANT and IDX_EXTID indeices*/
 } cuda_access_info_t;

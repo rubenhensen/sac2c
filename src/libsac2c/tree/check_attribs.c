@@ -573,12 +573,12 @@ CHKMattribReuseInfo (reuse_info_t *attr, info *arg_info)
  * @return entire attribute
  *
  ***************************************************************************/
-index_t *
-CHKMattribIndex (index_t *attr, info *arg_info)
+cuda_index_t *
+CHKMattribCudaIndex (cuda_index_t *attr, info *arg_info)
 {
-    index_t *tmp = attr;
+    cuda_index_t *tmp = attr;
 
-    DBUG_ENTER ("CHKMattribIndex");
+    DBUG_ENTER ("CHKMattribCudaIndex");
 
     while (tmp != NULL) {
         CHKMtouch (tmp, arg_info);
@@ -609,7 +609,8 @@ CHKMattribCudaAccessInfo (cuda_access_info_t *attr, info *arg_info)
 
     if (attr != NULL) {
         for (i = 0; i < MAX_REUSE_DIM; i++) {
-            CUAI_INDICES (attr, i) = CHKMattribIndex (CUAI_INDICES (attr, i), arg_info);
+            CUAI_INDICES (attr, i)
+              = CHKMattribCudaIndex (CUAI_INDICES (attr, i), arg_info);
         }
 
         CHKMtouch (attr, arg_info);
