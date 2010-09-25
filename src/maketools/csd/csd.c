@@ -29,6 +29,7 @@ main ()
     int clock_screw;
     time_t sti;
     FILE *f;
+    int ignore;
 
     buf = (struct stat *)malloc (sizeof (struct stat));
 
@@ -39,7 +40,7 @@ main ()
     sti = time (NULL);
 
     fclose (f);
-    system ("rm -f .clock_screw_detection");
+    ignore = system ("rm -f .clock_screw_detection");
 
 #ifdef VERBOSE
     print_time ("last access", buf->st_atime);
