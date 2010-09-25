@@ -2084,17 +2084,17 @@ tfrel: TFTYPEREL simplentype SUBTYPE simplentype SEMIC
 	}
 	;
 tfexprs: 
-	tfexprs TFLT tfexprs
+	tfexprs DOT LT tfexprs
 	{
-	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy("<"),$1,$4);
 	}
 	| tfexprs TFGT tfexprs
 	{
 	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
 	}
-	| tfexprs TFLE tfexprs
+	| tfexprs DOT LE tfexprs
 	{
-	  $$=TBmakeTfexpr(STRcpy($2),$1,$3);
+	  $$=TBmakeTfexpr(STRcpy("<="),$1,$4);
 	}
 	| tfexprs TFGE tfexprs
 	{

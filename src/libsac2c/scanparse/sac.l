@@ -92,17 +92,9 @@ int charpos = 0;
   			     yylval.id = STRcpy(yytext); 
 			     FILTER( TFSUB); 
 			   }
-".<"			   { 
-  			     yylval.id = STRcpy(yytext); 
-			     FILTER( TFLT); 
-			   }
 ".>"			   { 
   			     yylval.id = STRcpy(yytext); 
 			     FILTER( TFGT); 
-			   }
-".<="			   { 
-  			     yylval.id = STRcpy(yytext); 
-			     FILTER( TFLE); 
 			   }
 ".>="			   { 
   			     yylval.id = STRcpy(yytext); 
