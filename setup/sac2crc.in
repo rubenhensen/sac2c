@@ -80,6 +80,9 @@
  *  CCMTLINK        CCMTLINK specifies the libraries a multi-threaded executable
  *                  has to be linked with, additionally. 
  *
+ *  CCDLLINK        CCDLLINK specifies the libraries an executable that makes use
+ *                  of runtime specialization has to be linked with, additionally. 
+ *
  *  TREE_CC         Specifies the C compiler call required to build a component
  *                  of the syntax tree representation used in modules. This 
  *                  needs to be the same as used when compiling the compiler 
@@ -253,6 +256,7 @@ CCDIR            :=  "-I$SAC2CBASE/include/ "
 LDFLAGS          :=  "@RCLDFLAGS@ -ldl -lpthread"
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
+CCDLLINK         :=  "@CCDLLINK@"
 CEXT             :=  "c"
 TREE_CC          :=  "@CC@ @GENPIC@"
 TREE_LD          :=  "@CC@ @LD_DYNAMIC@"

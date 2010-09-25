@@ -10,6 +10,7 @@
 #include "dbug.h"
 #include "usage.h"
 #include "phase_options.h"
+#include "config.h"
 
 static void
 PrintToolName (void)
@@ -102,6 +103,46 @@ PrintDescriptionSac2tex (void)
 
             "    The sac2tex tool generates tex code from sac code\n"
             "    .\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintFeatureSet (void)
+{
+    DBUG_ENTER ("PrintFeatureSet");
+
+    printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n");
+
+#if ENABLE_MT
+    printf ("    Posix Thread based parallelization:  enabled\n");
+#else
+    printf ("    Posix Thread based parallelization: disabled\n");
+#endif
+
+#if ENABLE_OMP
+    printf ("    OpenMP based parallelization:        enabled\n");
+#else
+    printf ("    OpenMP based parallelization:       disabled\n");
+#endif
+
+#if ENABLE_PHM
+    printf ("    Private heap management:             enabled\n");
+#else
+    printf ("    Private heap management:            disabled\n");
+#endif
+
+#if ENABLE_RTSPEC
+    printf ("    Runtime specialization:              enabled\n");
+#else
+    printf ("    Runtime specialization:             disabled\n");
+#endif
+
+#if ENABLE_MUTC
+    printf ("    MuTC support:                        enabled\n");
+#else
+    printf ("    MuTC support:                       disabled\n");
+#endif
 
     DBUG_VOID_RETURN;
 }
@@ -1040,6 +1081,7 @@ USGprintUsage ()
     switch (global.tool) {
     case TOOL_sac2c:
         PrintDescriptionSac2c ();
+        PrintFeatureSet ();
         PrintSpecialOptions ();
         PrintGeneralOptions ();
         PrintBreakOptions ();

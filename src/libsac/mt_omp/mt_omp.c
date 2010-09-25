@@ -17,6 +17,8 @@
  *
  *****************************************************************************/
 
+#include "config.h"
+
 /*
  * In case we do not have mt available, we have to make sure this file
  * does not cause any problems (e.g. when running implicit dependency
@@ -24,7 +26,7 @@
  * is disabled!
  */
 
-#ifndef DISABLE_MT
+#if ENABLE_MT && ENABLE_OMP
 
 #ifdef OMP /* the code is only loaded into libsac.mt.omp */
 
@@ -73,4 +75,4 @@ SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key)
 
 #endif /* OMP */
 
-#endif /* DISABLE_MT */
+#endif /*  ENABLE_MT && ENABLE_OMP  */

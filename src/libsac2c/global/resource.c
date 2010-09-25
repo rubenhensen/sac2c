@@ -93,6 +93,7 @@ static struct {
   {"LDFLAGS", str, &global.config.ldflags},
   {"CCLINK", str, &global.config.cclink},
   {"CCMTLINK", str, &global.config.ccmtlink},
+  {"CCDLLINK", str, &global.config.ccdllink},
   {"CEXT", str, &global.config.cext},
   {"BACKEND", str, &global.config.backend},
 

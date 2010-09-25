@@ -102,6 +102,11 @@ OPTcheckOptionConsistency (void)
     }
 
     if (STReq (global.config.backend, "MUTC")) {
+
+#if !ENABLE_MUTC
+        CTIerror ("MuTC support disabled in this installation.");
+#endif
+
         if (global.mtmode != MT_none) {
             CTIerror ("Traditional MT modes are not available for the MUTC "
                       "backend.");
@@ -175,7 +180,7 @@ OPTcheckOptionConsistency (void)
                  "Insertion of explicit conformity checks has been enabled.");
     }
 
-#ifdef DISABLE_MT
+#if !ENABLE_MT
     if (global.mtmode != MT_none) {
         global.mtmode = MT_none;
         global.num_threads = 1;
@@ -184,7 +189,7 @@ OPTcheckOptionConsistency (void)
     }
 #endif
 
-#ifdef DISABLE_PHM
+#if !ENABLE_PHM
     if (global.optimize.dophm) {
         CTIerror ("Private heap management not yet available for " ARCH " running " OS
                   ".");
@@ -248,6 +253,18 @@ OPTcheckOptionConsistency (void)
         global.wlunrnum = 1;
         global.optimize.dowlur = TRUE;
     }
+
+#if !ENABLE_RTSPEC || !ENABLE_MT
+    if (global.rtspec) {
+        CTIerror ("Runtime specialization (-rtspec) not supported by this installation.");
+    }
+#endif
+
+#if !ENABLE_OMP
+    if (STReq (global.config.backend, "omp")) {
+        CTIerror ("Runtime specialization (-rtspec) not supported by this installation.");
+    }
+#endif
 
     DBUG_VOID_RETURN;
 }

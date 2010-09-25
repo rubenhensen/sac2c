@@ -19,14 +19,16 @@
  *   By means of the make tool, this source file is used to produce two
  *   different object files:
  *   1. mt_pth.o        which contains the normal routines
- *   2. mt__pth.trace.o  which contains variants of the normal routines along
- *                     with some extra routines and identifiers for tracing
- *                     program execution.
+ *   2. mt_pth.trace.o  which contains variants of the normal routines along
+ *                      with some extra routines and identifiers for tracing
+ *                      program execution.
  *
  *   The compiler produces different object files by setting or unsetting
  *   the preprocessor flag TRACE.
  *
  *****************************************************************************/
+
+#include "config.h"
 
 /*
  * In case we do not have mt available, we have to make sure this file
@@ -35,7 +37,7 @@
  * is disabled!
  */
 
-#ifndef DISABLE_MT
+#if ENABLE_MT
 
 #ifdef PTH /* the code is only loaded into libsac.mt.pth */
 
@@ -503,4 +505,4 @@ unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
 
 #endif /* PTH */
 
-#endif /* DISABLE_MT */
+#endif /* ENABLE_MT */

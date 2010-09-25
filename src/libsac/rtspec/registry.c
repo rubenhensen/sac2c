@@ -1,3 +1,7 @@
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
 /** <!--*******************************************************************-->
  *
  * @file  registry.c
@@ -7,6 +11,10 @@
  * @author  tvd
  *
  ****************************************************************************/
+
+#include "config.h"
+
+#if ENABLE_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,3 +52,5 @@ SAC_registrate (char *module, void *func_ptr)
 
     return entry;
 }
+
+#endif /* ENABLE_RTSPEC */

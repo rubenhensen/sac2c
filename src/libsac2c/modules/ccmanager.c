@@ -89,7 +89,6 @@ GetCCFlags ()
     AddDebugFlag (buffer);
 
     result = SBUF2str (buffer);
-
     buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
@@ -102,71 +101,72 @@ AddCCLibs (str_buf *buffer)
 
     SBUFprintf (buffer, "%s ", global.config.cclink);
 
+    /*
+     * We link with the two libraries below if they are installed but regardless
+     * of whether multithreading or dynamic linking are actually utilized in the
+     * given program or any of the libraries it depends on.
+     *
+     * The latter is difficult to decide in the presence of the module system,
+     * where any of the subordinate modules may have been compiled with any possible
+     * set of compiler flags. Hence, the linker flags cannot be determined by the
+     * compiler flags used when compiling the final program alone.
+     *
+     * Instead of creating a complex mechanism that tracks such dependencies across
+     * modules, we just employ the linker to do this for us.
+     */
+
+#if ENABLE_MT
+    SBUFprintf (buffer, "%s ", global.config.ccmtlink);
+#endif
+
+#if ENABLE_RTSPEC
+    SBUFprintf (buffer, "%s ", global.config.ccdllink);
+#endif
+
     DBUG_VOID_RETURN;
 }
 
 static void
-AddSacLibs (str_buf *buffer)
+AddSacLib (str_buf *buffer)
 {
-    DBUG_ENTER ("AddSacLibs");
+    DBUG_ENTER ("AddSacLib");
+
+    SBUFprint (buffer, "-lsac");
+    SBUFprint (buffer, global.config.lib_variant);
+
+    if (global.mtmode == MT_none) {
+        if (global.backend == BE_omp) {
+            SBUFprint (buffer, ".mt.omp ");
+        } else {
+            SBUFprint (buffer, ".seq ");
+        }
+    } else {
+        SBUFprint (buffer, ".mt.pth ");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+AddPhmLib (str_buf *buffer)
+{
+    DBUG_ENTER ("AddPhmLib");
 
     if (global.optimize.dophm) {
         SBUFprint (buffer, "-lsacphm");
         SBUFprint (buffer, global.config.lib_variant);
 
-        if (global.mtmode == MT_none) {
-            /*
-             * for OpenMP backend
-             * zzg
-             */
-            if (global.backend == BE_omp) {
-                if (global.runtimecheck.heap) {
-                    SBUFprint (buffer, ".mt.diag ");
-                } else {
-                    SBUFprint (buffer, ".mt ");
-                }
-            } else {
-                if (global.runtimecheck.heap) {
-                    SBUFprint (buffer, ".seq.diag ");
-                } else {
-                    SBUFprint (buffer, ".seq ");
-                }
-            }
+        if ((global.mtmode == MT_none) && (global.backend != BE_omp)) {
+            SBUFprint (buffer, ".seq");
         } else {
-            if (global.runtimecheck.heap) {
-                SBUFprint (buffer, ".mt.diag ");
-            } else {
-                SBUFprint (buffer, ".mt ");
-            }
+            SBUFprint (buffer, ".mt");
         }
-    }
 
-    if (global.mtmode == MT_none) {
-        if (global.backend == BE_omp) {
-            SBUFprint (buffer, "-lsac");
-            SBUFprint (buffer, global.config.lib_variant);
-            SBUFprint (buffer, ".mt.omp ");
+        if (global.runtimecheck.heap) {
+            SBUFprint (buffer, ".diag ");
         } else {
-            SBUFprint (buffer, "-lsac");
-            SBUFprint (buffer, global.config.lib_variant);
-            SBUFprint (buffer, ".seq ");
-
-            /* This is a HACK, as I don't know how to resolve this issue.
-             *
-             * -- tvd
-             */
-#if HACKS_ALLOWED
-            SBUFprint (buffer, "-lpthread -ldl ");
-#endif
+            SBUFprint (buffer, " ");
         }
-    } else {
-        SBUFprint (buffer, "-lsac");
-        SBUFprint (buffer, global.config.lib_variant);
-        SBUFprint (buffer, ".mt.pth -lpthread");
-    }
-
-    if (global.rtspec == TRUE) {
-        SBUFprint (buffer, "-lpthread -ldl ");
     }
 
     DBUG_VOID_RETURN;
@@ -202,12 +202,12 @@ GetLibs ()
 
     buffer = SBUFcreate (256);
 
-    AddSacLibs (buffer);
+    AddPhmLib (buffer);
+    AddSacLib (buffer);
     AddCCLibs (buffer);
     AddEfenceLib (buffer);
 
     result = SBUF2str (buffer);
-
     buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);

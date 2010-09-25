@@ -73,8 +73,10 @@ LIBS_LEX        := @LEXLIB@
 # feature setup:
 #
 
-DISABLE_MT      := @DISABLE_MT@
-DISABLE_PHM     := @DISABLE_PHM@
+ENABLE_MT       := @ENABLE_MT@
+ENABLE_PHM      := @ENABLE_PHM@
+ENABLE_OMP      := @ENABLE_OMP@
+ENABLE_RTSPEC   := @ENABLE_RTSPEC@
 ENABLE_MUTC     := @ENABLE_MUTC@
 
 

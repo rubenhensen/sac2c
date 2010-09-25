@@ -1,3 +1,7 @@
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
 /** <!--********************************************************************-->
  *
  * @file reqqueue.c
@@ -7,6 +11,10 @@
  * @author tvd
  *
  *****************************************************************************/
+
+#include "config.h"
+
+#if ENABLE_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,3 +220,5 @@ SAC_freeReqqueue (queue_node_t *node)
         SAC_freeReqqueue (current);
     }
 }
+
+#endif /* ENABLE_RTSPEC */

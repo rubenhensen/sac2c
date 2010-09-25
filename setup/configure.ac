@@ -214,16 +214,60 @@ dnl search for pthread.h
 AC_CHECK_HEADER(pthread.h,[
 
 dnl if found, enable multi threading
-AC_DEFINE(HAVE_PTHREAD_H, 1, set to 1 if you have the <pthread.h> header file)
-AC_SUBST(DISABLE_MT, no)
+AC_DEFINE(HAVE_PTHREAD_H, 1, set to 1 because you have the <pthread.h> header file)
+AC_DEFINE(ENABLE_MT, 1, set to 1 to enable multi threading)
+AC_SUBST(ENABLE_MT, yes)
 
 ],[
 
-dnl otherwise disable mt
-AC_DEFINE(DISABLE_MT, 1, set to 1 to disable multi threading)
-AC_SUBST(DISABLE_MT, yes)
+dnl otherwise disable multi threading
+AC_DEFINE(HAVE_PTHREAD_H, 0, set to 0 because you do not have the <pthread.h> header file)
+AC_DEFINE(ENABLE_MT, 0, set to 0 to disable multi threading)
+AC_SUBST(ENABLE_MT, no)
 
 ])
+
+dnl search for omp.h
+AC_CHECK_HEADER(omp.h,[
+
+dnl if found, enable OpenMP backend
+AC_DEFINE(HAVE_OMP_H, 1, set to 1 because you have the <omp.h> header file)
+AC_DEFINE(ENABLE_OMP, 1, set to 1 to enable OpenMP backend)
+AC_SUBST(ENABLE_OMP, yes)
+
+],[
+
+dnl otherwise disable OpenMP backend
+AC_DEFINE(HAVE_OMP_H, 0, set to 0 because you do not have the <omp.h> header file)
+AC_DEFINE(ENABLE_OMP, 0, set to 0 to disable OpenMP backend)
+AC_SUBST(ENABLE_OMP, no)
+
+])
+
+dnl search for dlfcn.h
+AC_CHECK_HEADER(dlfcn.h,[
+
+dnl if found, enable dynamic linking
+AC_DEFINE(HAVE_DLFCN_H, 1, set to 1 because you have the <dlfcn.h> header file)
+AC_DEFINE(ENABLE_DL, 1, set to 1 to enable dynamic linking)
+AC_SUBST(ENABLE_DL, yes)
+],[
+
+dnl otherwise disable dynamic linking
+AC_DEFINE(HAVE_DLFCN_H, 0, set to 0 because you do not have the <dlfcn.h> header file)
+AC_DEFINE(ENABLE_DL, 0, set to 0 to disable dynamic linking)
+AC_SUBST(ENABLE_DL, no)
+
+])
+
+dnl set rtspec flag
+if [[ "$ENABLE_DL"="yes" -a "$ENABLE_MT"="yes" ]]; then
+  AC_DEFINE(ENABLE_RTSPEC, 1, runtime specialization enabled)
+  AC_SUBST(ENABLE_RTSPEC, yes)
+else
+  AC_DEFINE(ENABLE_RTSPEC, 0, runtime specialization disabled)
+  AC_SUBST(ENABLE_RTSPEC, no)
+fi
 
 dnl check whether to link math library
 AC_SEARCH_LIBS(sqrt, m)
@@ -248,19 +292,20 @@ sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done
 [ done ]
 
 [ if test $name = none ; then ]
-AC_DEFINE(DISABLE_PHM, 1)
-AC_SUBST(DISABLE_PHM, yes)
+AC_DEFINE(ENABLE_PHM, 0)
+AC_SUBST(ENABLE_PHM, no)
 AC_MSG_RESULT(not found)
 [ else ]
 AC_DEFINE_UNQUOTED(SBRK_T,$name,set to the type of sbrk argument)
 AC_MSG_RESULT($name)
-AC_SUBST(DISABLE_PHM, no)
+AC_SUBST(ENABLE_PHM, yes)
+AC_DEFINE(ENABLE_PHM, 1)
 [ fi ]
 ],[
 
 dnl otherwise disable pm
-AC_DEFINE(DISABLE_PHM, 1, set to disable private heapmanagement)
-AC_SUBST(DISABLE_PHM, yes)
+AC_DEFINE(ENABLE_PHM, 1, set to disable private heapmanagement)
+AC_SUBST(ENABLE_PHM, yes)
 ])
 
 dnl
@@ -353,6 +398,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
+  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -368,6 +414,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_SUBST(CCMTLINK, ["-lpthread"])
+  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -383,6 +430,7 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_SUBST(CCMTLINK, ["-pthread"])
+  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -398,6 +446,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CCMTLINK, [""])
+  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
@@ -413,6 +462,7 @@ else
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
   AC_SUBST(CCMTLINK, [""])
+  AC_SUBST(CCDLLINK, [""])
   AC_MSG_RESULT([none found])
 fi   
 
@@ -462,8 +512,8 @@ case "$target_os" in
     ;;
   *darwin*)      
     dnl darwin needs some extra flags
-    AC_DEFINE(DISABLE_PHM, 1)
-    AC_SUBST(DISABLE_PHM, yes)
+    AC_DEFINE(ENABLE_PHM, 0)
+    AC_SUBST(ENABLE_PHM, no)
     RANLIB="$RANLIB -c"
     case "$target_os" in
       *darwin10\.*)

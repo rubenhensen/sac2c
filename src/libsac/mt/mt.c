@@ -1,4 +1,25 @@
-#ifndef DISABLE_MT
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
+#include "config.h"
+
+/*****************************************************************************
+ *
+ * file:   mt.c
+ *
+ * prefix: SAC
+ *
+ * description:
+ *
+ *   This file is part of the implementation of the SAC runtime library.
+ *   It contains routines and global identifiers required by both the
+ *   OpenMP and the PThread based multi-threaded runtime systems.
+ *
+ *
+ *****************************************************************************/
+
+#if ENABLE_MT
 
 #ifdef MT
 
@@ -51,4 +72,4 @@ volatile unsigned int SAC_MT_not_yet_parallel;
 
 #endif /* MT */
 
-#endif /* DISABLE_MT */
+#endif /* ENABLE_MT */

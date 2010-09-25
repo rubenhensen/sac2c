@@ -664,6 +664,7 @@ typedef struct {
     char *ldflags;
     char *cclink;
     char *ccmtlink;
+    char *ccdllink;
     char *cext;
     char *backend;
 

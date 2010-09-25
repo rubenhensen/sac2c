@@ -1,3 +1,7 @@
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
 /** <!--********************************************************************-->
  * @file  optimization_controller.c
  *
@@ -7,6 +11,10 @@
  * @author  tvd
  *
  *****************************************************************************/
+
+#include "config.h"
+
+#if ENABLE_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -430,3 +438,5 @@ SAC_finalizeController (void)
 
     running = 0;
 }
+
+#endif /* ENABLE_RTSPEC */
