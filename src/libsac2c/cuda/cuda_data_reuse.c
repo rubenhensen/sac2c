@@ -126,7 +126,7 @@ typedef struct SHARED_GLOBAL_INFO_T {
 #define SG_INFO_NEXT(n) (n->next)
 
 static shared_global_info_t *
-CreateSharedGlobalInfo (shared_global_info_t *prev_sg_infos)
+CreateSharedGlobalInfo (shared_global_info_t **sg_infos)
 {
     shared_global_info_t *res, *tmp;
 
@@ -142,13 +142,14 @@ CreateSharedGlobalInfo (shared_global_info_t *prev_sg_infos)
     SG_INFO_RANGE_PAIRS (res) = NULL;
     SG_INFO_NEXT (res) = NULL;
 
-    if (prev_sg_infos != NULL) {
-        tmp = prev_sg_infos;
+    if (*sg_infos != NULL) {
+        tmp = *sg_infos;
         while (SG_INFO_NEXT (tmp) != NULL) {
             tmp = SG_INFO_NEXT (tmp);
         }
         SG_INFO_NEXT (tmp) = res;
-        res = prev_sg_infos;
+    } else {
+        *sg_infos = res;
     }
 
     DBUG_RETURN (res);
@@ -243,7 +244,7 @@ GetNthRangePair (int nth)
         } else {
             blocked = RS_BLOCKED_RANGES (sets);
             nonblocked = RS_NONBLOCKED_RANGES (sets);
-            while (cnt <= nth) {
+            while (cnt < nth) {
                 DBUG_ASSERT ((blocked != NULL), "Blocked range list is NULL!");
                 DBUG_ASSERT ((nonblocked != NULL), "Nonblocked range list is NULL!");
                 blocked = RI_NEXT (blocked);
@@ -285,7 +286,6 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
                                 NULL);
 
         vardecs = TBmakeVardec (avis1, NULL);
-        AVIS_SSAASSIGN (avis1) = assign1;
 
         if (SG_INFO_GLBAVIS (sg_info) != NULL) {
             args = TBmakeExprs (TBmakeId (avis1),
@@ -370,8 +370,12 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         }
         /********************************************/
 
+        assign1 = NULL;
+        assign2 = NULL;
+        assign3 = NULL;
+
         /* Assignments for shared memory index calculation */
-        args = TBmakeExprs (TBmakeId (TBmakeId (CIS_TX (INFO_CIS (arg_info)))),
+        args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
                             TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("tx_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
@@ -430,8 +434,12 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         }
         /********************************************/
 
+        assign1 = NULL;
+        assign2 = NULL;
+        assign3 = NULL;
+
         /* Assignments for shared memory index calculation */
-        args = TBmakeExprs (TBmakeId (TBmakeId (CIS_TY (INFO_CIS (arg_info)))),
+        args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
                             TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("ty_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
@@ -464,7 +472,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         SG_INFO_RANGE_PAIRS (sg_info) = pair;
 
         /* Assignments for global memory index calculation */
-        args = TBmakeExprs (TBmakeId (RP_OUTER (pair)),
+        args = TBmakeExprs (TBmakeId (IDS_AVIS (RANGE_INDEX (RP_OUTER (pair)))),
                             TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("loop_glb", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
@@ -486,8 +494,12 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         }
         /********************************************/
 
+        assign1 = NULL;
+        assign2 = NULL;
+        assign3 = NULL;
+
         /* Assignments for shared memory index calculation */
-        args = TBmakeExprs (TBmakeId (RP_INNER (pair)),
+        args = TBmakeExprs (TBmakeId (IDS_AVIS (RANGE_INDEX (RP_INNER (pair)))),
                             TBmakeExprs (TBmakeNum (CUIDX_COEFFICIENT (idx)), NULL));
         avis1 = CreatePrf ("loop_shr", T_int, SHmakeShape (0), F_mul_SxS, args, &vardecs,
                            &assign1);
@@ -508,6 +520,9 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
             SG_INFO_SHRIDX_CAL (sg_info) = assign1;
         }
         /********************************************/
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
 
         break;
     default:
@@ -730,7 +745,9 @@ PopRangeSet (range_set_t *sets)
     if (sets != NULL) {
         popped_set = sets;
         sets = RS_NEXT (sets);
-        RS_PREV (sets) = NULL;
+        if (sets != NULL) {
+            RS_PREV (sets) = NULL;
+        }
         RS_NEXT (popped_set) = NULL;
 
         RS_BLOCKED_RANGES (popped_set) = FreeRangeInfo (RS_BLOCKED_RANGES (popped_set));
@@ -822,6 +839,33 @@ PrintRangeSet (range_set_t *sets, int indent)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *ATravAssign(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravAssign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravAssign");
+
+    if (ASSIGN_ACCESS_INFO (arg_node) != NULL) {
+        ASSIGN_ACCESS_INFO (arg_node)
+          = TBfreeCudaAccessInfo (ASSIGN_ACCESS_INFO (arg_node));
+        ASSIGN_ACCESS_INFO (arg_node) = NULL;
+    }
+
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CUDRdoCudaDaraReuse( node *syntax_tree)
  *
  * @brief
@@ -909,6 +953,14 @@ CUDRwith (node *arg_node, info *arg_info)
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_CUWLDIM (arg_info) = TCcountIds (WITH_IDS (arg_node));
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+        /************ Anonymous Traversal ************/
+        anontrav_t atrav[2] = {{N_assign, &ATravAssign}, {0, NULL}};
+
+        TRAVpushAnonymous (atrav, &TRAVsons);
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), NULL);
+        TRAVpop ();
+        /*********************************************/
     }
 
     DBUG_RETURN (arg_node);
@@ -928,20 +980,16 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
 
     CIS_TX (cis) = CreatePrf ("tx", T_int, SHmakeShape (0), F_cuda_threadIdx_x, NULL,
                               &vardecs, &assigns);
-    AVIS_SSAASSIGN (CIS_TX (cis)) = assigns;
 
     CIS_BX (cis) = CreatePrf ("b_dim_x", T_int, SHmakeShape (0), F_cuda_blockDim_x, NULL,
                               &vardecs, &assigns);
-    AVIS_SSAASSIGN (CIS_BX (cis)) = assigns;
 
     if (dim == 2) {
         CIS_TY (cis) = CreatePrf ("ty", T_int, SHmakeShape (0), F_cuda_threadIdx_y, NULL,
                                   &vardecs, &assigns);
-        AVIS_SSAASSIGN (CIS_TY (cis)) = assigns;
 
         CIS_BY (cis) = CreatePrf ("b_dim_y", T_int, SHmakeShape (0), F_cuda_blockDim_y,
                                   NULL, &vardecs, &assigns);
-        AVIS_SSAASSIGN (CIS_BY (cis)) = assigns;
     }
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -980,6 +1028,7 @@ CUDRpart (node *arg_node, info *arg_info)
 
         INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
     }
+
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1045,7 +1094,16 @@ CUDRrange (node *arg_node, info *arg_info)
         PrintRangeSet (INFO_RANGE_SETS (arg_info), INFO_LEVEL (arg_info));
 #endif
 
+        RANGE_G2SINSTRS (arg_node) = NULL;
+
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+
+        if (RANGE_G2SINSTRS (arg_node) != NULL) {
+            BLOCK_INSTR (RANGE_BODY (arg_node))
+              = TCappendAssign (RANGE_G2SINSTRS (arg_node),
+                                BLOCK_INSTR (RANGE_BODY (arg_node)));
+            RANGE_G2SINSTRS (arg_node) = NULL;
+        }
 
 #if 1
         PrintSpaces (INFO_LEVEL (arg_info));
@@ -1092,7 +1150,8 @@ ComputeSharedMemoryIndex (shared_global_info_t *sg_info, cuda_access_info_t *acc
     args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
 
     while (sg_info != NULL) {
-        args = TCcombineExprs (args, TBmakeId (SG_INFO_SHRAVIS (sg_info)));
+        args = TCcombineExprs (args,
+                               TBmakeExprs (TBmakeId (SG_INFO_SHRAVIS (sg_info)), NULL));
         assigns = TCappendAssign (assigns, SG_INFO_SHRIDX_CAL (sg_info));
         sg_info = SG_INFO_NEXT (sg_info);
     }
@@ -1105,6 +1164,14 @@ ComputeSharedMemoryIndex (shared_global_info_t *sg_info, cuda_access_info_t *acc
                             NULL);
 
     INFO_PREASSIGNS (arg_info) = TCappendAssign (assigns, new_ass);
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                        TBmakeVardec (idx_avis, NULL));
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                        TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
 
     DBUG_RETURN (idx_avis);
 }
@@ -1164,6 +1231,10 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
         /* TODO */
     } else if (CUAI_DIM (access_info) == 2) {
         int x, y;
+
+        assigns = TCappendAssign (SG_INFO_GLBIDX_CAL (sg_info),
+                                  SG_INFO_GLBIDX_CAL (SG_INFO_NEXT (sg_info)));
+
         for (y = 0; y < NUM_VAL (EXPRS_EXPR1 (array_elems));
              y += global.cuda_2d_block_y) {
             shr_args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
@@ -1176,7 +1247,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             avis = CreatePrf ("ty_shr_g2s", T_int, SHmakeShape (0), F_add_SxS, args,
                               &vardecs, &assigns);
 
-            shr_args = TCcombineExprs (shr_args, TBmakeId (avis));
+            shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
 
             /* Create Aglb[base+ty+0][...], Aglb[base+ty+16][...], Aglb[base+ty+32][...]
              * ...*/
@@ -1191,7 +1262,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             avis = CreatePrf ("ty_glb_g2s", T_int, SHmakeShape (0), F_add_SxS, args,
                               &vardecs, &assigns);
 
-            glb_args = TCcombineExprs (glb_args, TBmakeId (avis));
+            glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
 
             for (x = 0; x < NUM_VAL (EXPRS_EXPR2 (array_elems));
                  x += global.cuda_2d_block_x) {
@@ -1205,7 +1276,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                 avis = CreatePrf ("tx_shr_g2s", T_int, SHmakeShape (0), F_add_SxS, args,
                                   &vardecs, &assigns);
 
-                shr_args_tmp = TCcombineExprs (shr_args_tmp, TBmakeId (avis));
+                shr_args_tmp
+                  = TCcombineExprs (shr_args_tmp, TBmakeExprs (TBmakeId (avis), NULL));
 
                 /* Create Aglb[...][base+tx+0], Aglb[...][base+tx+32], Aglb[][base+tx+64]
                  * ...*/
@@ -1222,7 +1294,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                 avis = CreatePrf ("tx_glb_g2s", T_int, SHmakeShape (0), F_add_SxS, args,
                                   &vardecs, &assigns);
 
-                glb_args_tmp = TCcombineExprs (glb_args_tmp, TBmakeId (avis));
+                glb_args_tmp
+                  = TCcombineExprs (glb_args_tmp, TBmakeExprs (TBmakeId (avis), NULL));
 
                 /* Create global2shared assignment i.e. idx_modarray_AxSxS */
                 glb_idx = CreatePrf ("idx_glb_g2s", T_int, SHmakeShape (0), F_idxs2offset,
@@ -1241,7 +1314,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                 shr_idx = CreatePrf ("idx_shr_g2s", T_int, SHmakeShape (0), F_idxs2offset,
                                      shr_args_tmp, &vardecs, &assigns);
 
-                args = TBmakeExprs (TBmakeId (CUAI_ARRAY (access_info)),
+                args = TBmakeExprs (TBmakeId (CUAI_SHARRAY (access_info)),
                                     TBmakeExprs (TBmakeId (shr_idx),
                                                  TBmakeExprs (TBmakeId (val), NULL)));
                 CUAI_SHARRAY (access_info)
@@ -1260,8 +1333,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
 
     innermost = GetInnermostRangePair (sg_info);
 
-    BLOCK_INSTR (RANGE_BODY (RP_INNER (innermost)))
-      = TCappendAssign (assigns, BLOCK_INSTR (RANGE_BODY (RP_INNER (innermost))));
+    RANGE_G2SINSTRS (RP_INNER (innermost))
+      = TCappendAssign (assigns, RANGE_G2SINSTRS (RP_INNER (innermost)));
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
@@ -1280,7 +1353,7 @@ node *
 CUDRprf (node *arg_node, info *arg_info)
 {
     int i;
-    shared_global_info_t *sg_info = NULL;
+    shared_global_info_t *sg_info = NULL, *sg_info_tmp;
     node *shr_idx;
     cuda_index_t *cuidx;
 
@@ -1303,12 +1376,11 @@ CUDRprf (node *arg_node, info *arg_info)
 
             /* If this idx_sel accesses an array with reuse opportunity */
             if (access_info != NULL) {
-                i = 0;
                 for (i = 0; i < CUAI_DIM (access_info); i++) {
-                    sg_info = CreateSharedGlobalInfo (sg_info);
+                    sg_info_tmp = CreateSharedGlobalInfo (&sg_info);
                     cuidx = CUAI_INDICES (access_info, i);
                     while (cuidx != NULL) {
-                        sg_info = ComputeIndex (sg_info, cuidx, arg_info);
+                        sg_info_tmp = ComputeIndex (sg_info_tmp, cuidx, arg_info);
                         cuidx = CUIDX_NEXT (cuidx);
                     }
                 }
@@ -1319,15 +1391,8 @@ CUDRprf (node *arg_node, info *arg_info)
                 ID_AVIS (idx) = shr_idx;
                 ID_AVIS (arr) = CUAI_SHARRAY (access_info);
 
-                /* Add declaration for shared memory */
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
-                                    TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
-
                 /* Clean up */
                 sg_info = FreeSharedGlobalInfo (sg_info);
-                access_info = TBfreeCudaAccessInfo (access_info);
-                ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)) = NULL;
             }
         }
     }

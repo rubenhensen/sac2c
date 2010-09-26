@@ -11150,6 +11150,20 @@ N_tfarg :
             </targets>
           </type>
 	</attribute>
+        <attribute name="G2SInstrs" default="0">
+	  <description>Used for temporarily storing global to shared memory data load instructions.</description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Assign" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
+
       </attributes>
       <flags>
         <flag name="IsGlobal" default="FALSE">

@@ -1136,7 +1136,9 @@ ENDPHASE (mt)
 PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (uw3, "MUTC Unroll With3", UW3doUnrollWith3,
-          global.backend == BE_mutc && global.optimize.douw3, pc)
+          (global.backend == BE_mutc || global.backend == BE_cuda)
+            && global.optimize.douw3,
+          pc)
 
 SUBPHASE (msa, "MUTC Mark SubAlloc", MSAdoMarkSubAlloc,
           global.backend == BE_mutc && global.optimize.domsa, pc)
