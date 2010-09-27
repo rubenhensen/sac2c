@@ -336,7 +336,7 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
                      "Should be an array of N_id nodes");
 
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
-            EXPRS_EXPR (elements) = TRAVdo (EXPRS_EXPR (elements), arg_info);
+            EXPRS_EXPR (elements) = TRAVopt (EXPRS_EXPR (elements), arg_info);
         } else {
             avis = ID_AVIS (EXPRS_EXPR (elements));
 
@@ -524,7 +524,7 @@ CUKNLfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
         /* We have reached the end of the N_fundef chain,
          * append the newly created CUDA kernels.*/
@@ -549,7 +549,7 @@ CUKNLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUKNLassign");
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     /* If we are not in collect mode and the RHS has been
      * lifted as a chain of CUDA kernel applications */
@@ -598,7 +598,7 @@ CUKNLlet (node *arg_node, info *arg_info)
 
     /* Save LHS */
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
     INFO_LETIDS (arg_info) = NULL;
 
@@ -626,7 +626,7 @@ CUKNLwith (node *arg_node, info *arg_info)
         INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
         old_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
         INFO_WITH (arg_info) = old_with;
         INFO_WITHOP (arg_info) = NULL;
         INFO_COLLECT (arg_info) = FALSE;
@@ -636,8 +636,8 @@ CUKNLwith (node *arg_node, info *arg_info)
     } else if (INFO_IN_CUDA_PARTITION (arg_info)) {
         old_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
         INFO_WITH (arg_info) = old_with;
         // WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info);
     }
@@ -672,10 +672,10 @@ CUKNLwith2 (node *arg_node, info *arg_info)
     old_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
 
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
-    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVopt (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVopt (WITH2_SEGS (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
 
     INFO_WITH (arg_info) = old_with;
 
@@ -711,7 +711,7 @@ CUKNLpart (node *arg_node, info *arg_info)
              * must also traverse the withop associated with the
              * N_with. */
             INFO_INWITHOP (arg_info) = TRUE;
-            INFO_WITHOP (arg_info) = TRAVdo (INFO_WITHOP (arg_info), arg_info);
+            INFO_WITHOP (arg_info) = TRAVopt (INFO_WITHOP (arg_info), arg_info);
             INFO_INWITHOP (arg_info) = FALSE;
 
             old_ids = INFO_LETIDS (arg_info);
@@ -771,7 +771,7 @@ CUKNLpart (node *arg_node, info *arg_info)
              * is needed. */
             if (PART_CODE (arg_node) != NULL && INFO_D2DTRANSFER (arg_info) == NULL) {
                 old_ids = INFO_LETIDS (arg_info);
-                PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+                PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
                 INFO_LETIDS (arg_info) = old_ids;
             }
         }
@@ -1165,11 +1165,11 @@ CUKNLprf (node *arg_node, info *arg_info)
                 IDS_AVIS (INFO_LETIDS (arg_info)) = ID_AVIS (mem_id);
                 ret_node = TBmakePrf (F_cuda_wl_assign, args);
                 arg_node = FREEdoFreeTree (arg_node);
-                PRF_ARGS (ret_node) = TRAVdo (PRF_ARGS (ret_node), arg_info);
+                PRF_ARGS (ret_node) = TRAVopt (PRF_ARGS (ret_node), arg_info);
                 /*
                           node *mem_id = DUPdoDupNode( PRF_ARG2( arg_node));
                           IDS_AVIS( INFO_LETIDS( arg_info)) = ID_AVIS( mem_id);
-                          PRF_ARGS( arg_node) = TRAVdo( PRF_ARGS( arg_node), arg_info);
+                          PRF_ARGS( arg_node) = TRAVopt( PRF_ARGS( arg_node), arg_info);
                           ret_node = arg_node;
                 */
             } else {
@@ -1190,7 +1190,7 @@ CUKNLprf (node *arg_node, info *arg_info)
         case F_idx_sel:
             if (PART_CUDARIZABLE (INFO_PART (arg_info))
                 || INFO_IN_CUDA_PARTITION (arg_info)) {
-                PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+                PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             } else {
                 /* If the N_part is not cudarizable, no CUDA kernel needs
                  * to be created. This partition simply copies array elements
@@ -1202,13 +1202,13 @@ CUKNLprf (node *arg_node, info *arg_info)
             ret_node = arg_node;
             break;
         case F_suballoc:
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             INFO_SUBALLOC_RHS (arg_info) = TRUE;
             INFO_SUBALLOC_LHS (arg_info) = INFO_LETIDS (arg_info);
             ret_node = arg_node;
             break;
         default:
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             ret_node = arg_node;
             break;
         }

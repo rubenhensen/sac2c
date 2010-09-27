@@ -291,6 +291,7 @@
           <node name="Id" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Range" />
         </travuser>
       </traversal>
       <traversal id="SCUWL" name="Split Cudarizable withloop" default="sons" include="split_cuda_withloop.h" >

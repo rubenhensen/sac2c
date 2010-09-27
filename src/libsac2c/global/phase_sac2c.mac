@@ -924,10 +924,13 @@ SUBPHASE (rw3, "MUTC Remove unneeded With3s", RW3doRemoveWith3,
             && global.optimize.dorw3,
           wlt)
 
-SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs, global.backend == BE_mutc, wlt)
+SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs,
+          (global.backend == BE_mutc || global.backend == BE_cuda), wlt)
 
 SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
-          global.backend == BE_mutc && global.optimize.doms, wlt)
+          (global.backend == BE_mutc || global.backend == BE_cuda)
+            && global.optimize.doms,
+          wlt)
 
 SUBPHASE (cudr, "CUDA Exploiting data reuse with cuda shared memory", CUDRdoCudaDataReuse,
           global.backend == BE_cuda, wlt)

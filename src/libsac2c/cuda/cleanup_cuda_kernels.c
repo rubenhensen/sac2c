@@ -193,10 +193,35 @@ CLKNLlet (node *arg_node, info *arg_info)
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     if (INFO_REMOVE_IDS (arg_info)) {
+        /* This is only required for syncthread primitive */
         LET_IDS (arg_node) = FREEdoFreeNode (LET_IDS (arg_node));
         LET_IDS (arg_node) = NULL;
         INFO_REMOVE_IDS (arg_info) = FALSE;
+    } else if (LET_IDS (arg_node) != NULL
+               && NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node))) == 0) {
+        /* Any assignment defining a id that is not used anywhere
+         * can be removed. */
+        INFO_REMOVE_ASSIGN (arg_info) = TRUE;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CLKNLrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CLKNLrange");
+
+    printf (
+      "hahaha. taversing range!___________________________________________________\n");
+
+    RANGE_RESULTS (arg_node) = TRAVopt (RANGE_RESULTS (arg_node), arg_info);
+    RANGE_INDEX (arg_node) = TRAVopt (RANGE_INDEX (arg_node), arg_info);
+    RANGE_LOWERBOUND (arg_node) = TRAVopt (RANGE_LOWERBOUND (arg_node), arg_info);
+    RANGE_UPPERBOUND (arg_node) = TRAVopt (RANGE_UPPERBOUND (arg_node), arg_info);
+    RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
+    RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+    RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
