@@ -425,7 +425,7 @@
 
 #define SAC_ND_PRF_TYPE_CONV_ERROR(error, right_NT)                                      \
     {                                                                                    \
-        SAC_Print (" *");                                                                \
+        SAC_Print (" ___");                                                              \
         SAC_ND_PRINT_SHAPE (right_NT);                                                   \
         SAC_Print (" ");                                                                 \
         SAC_Print (SAC_ND_PRF_TYPE_CONV_ERROR_NAME right_NT);                            \
