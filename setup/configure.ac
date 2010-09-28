@@ -202,6 +202,11 @@ AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
 
 if [ test "$ENABLE_MUTC" = "yes"]; then
 AC_SUBST(SLC_PATH,`which slc`)
+AC_DEFINE(ENABLE_MUTC, 1, set to 1 to enable mutc)
+AC_SUBST(ENABLE_MUTC, yes)
+else
+AC_DEFINE(ENABLE_MUTC, 0, set to 0 to disable mutc)
+AC_SUBST(ENABLE_MUTC, no)
 fi
 
 dnl search for malloc.h

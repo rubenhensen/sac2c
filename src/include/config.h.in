@@ -9,6 +9,9 @@
 /* set to 0 to disable multi threading */
 #undef ENABLE_MT
 
+/* set to 0 to enable mutc */
+#undef ENABLE_MUTC
+
 /* set to 0 to disable OpenMP backend */
 #undef ENABLE_OMP
 
