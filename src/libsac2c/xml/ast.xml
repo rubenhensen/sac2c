@@ -284,13 +284,14 @@
           <node name="Generator" />
         </travuser>
       </traversal>
-      <traversal id="CLKNL" name="Cleanup CUDA kernels" default="sons" include="cleanup_cuda_kernels.h" >
+      <traversal id="KPP" name="Kernel post processing" default="sons" include="kernel_post_processing.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Id" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="With3" />
           <node name="Range" />
         </travuser>
       </traversal>

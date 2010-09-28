@@ -7208,6 +7208,9 @@ COMPprfCUDAThreadIdxX (node *arg_node, info *arg_info)
                           TBmakeNum( dim_pos),
                           NULL);
     */
+
+    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_X", NULL);
+
     DBUG_RETURN (ret_node);
 }
 
@@ -7218,6 +7221,8 @@ COMPprfCUDAThreadIdxY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxY");
 
+    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_Y", NULL);
+
     DBUG_RETURN (ret_node);
 }
 
@@ -7227,6 +7232,8 @@ COMPprfCUDAThreadIdxZ (node *arg_node, info *arg_info)
     node *ret_node = NULL;
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxZ");
+
+    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_Z", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7257,6 +7264,9 @@ COMPprfCUDABlockDimX (node *arg_node, info *arg_info)
                           TBmakeNum( dim_pos),
                           NULL);
     */
+
+    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_X", NULL);
+
     DBUG_RETURN (ret_node);
 }
 
@@ -7267,6 +7277,8 @@ COMPprfCUDABlockDimY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDABlockDimY");
 
+    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_Y", NULL);
+
     DBUG_RETURN (ret_node);
 }
 
@@ -7276,6 +7288,8 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
     node *ret_node = NULL;
 
     DBUG_ENTER ("COMPprfCUDABlockDimZ");
+
+    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_Z", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8631,30 +8645,36 @@ COMPwith3 (node *arg_node, info *arg_info)
     node *ops = NULL;
     DBUG_ENTER ("COMPwith3");
 
-    INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
-    INFO_WITH3_FOLDS (arg_info)
-      = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
+    if (global.backend == BE_mutc) {
+        INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
+        INFO_WITH3_FOLDS (arg_info)
+          = With3Folds (INFO_LASTIDS (arg_info), WITH3_OPERATIONS (arg_node));
 
-    ops = INFO_WITHOPS (arg_info);
-    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+        ops = INFO_WITHOPS (arg_info);
+        INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
 
-    COMPwith3AllocDesc (INFO_WITHOPS (arg_info), &pre, &post);
-    arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+        COMPwith3AllocDesc (INFO_WITHOPS (arg_info), &pre, &post);
+        arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
-    INFO_WITHOPS (arg_info) = ops;
+        INFO_WITHOPS (arg_info) = ops;
 
-    if (pre != NULL) {
-        arg_node = TCappendAssign (pre, arg_node);
+        if (pre != NULL) {
+            arg_node = TCappendAssign (pre, arg_node);
+        }
+        if (post != NULL) {
+            arg_node = TCappendAssign (arg_node, post);
+        }
+
+        if (INFO_WITH3_FOLDS (arg_info) != NULL) {
+            INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
+        }
+
+        INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
+    } else if (global.backend == BE_cuda) {
+        arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT (FALSE, "With3 not defined for this backend");
     }
-    if (post != NULL) {
-        arg_node = TCappendAssign (arg_node, post);
-    }
-
-    if (INFO_WITH3_FOLDS (arg_info) != NULL) {
-        INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
-    }
-
-    INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
 
     DBUG_RETURN (arg_node);
 }
@@ -8669,93 +8689,139 @@ COMPwith3 (node *arg_node, info *arg_info)
 node *
 COMPrange (node *arg_node, info *arg_info)
 {
+    node *res;
+
     node *family, *create, *next, *sync;
     node *thread_fun;
     node *block;
     char *familyName;
     str_buf *buffer;
 
+    node *loopnests;
+
     DBUG_ENTER ("COMPrange");
 
-    buffer = SBUFcreate (1024);
+    if (global.backend == BE_mutc) {
+        buffer = SBUFcreate (1024);
 
-    buffer = SBUFprintf (buffer, "family_%s",
-                         FUNDEF_NAME (AP_FUNDEF (RANGE_RESULTS (arg_node))));
+        buffer = SBUFprintf (buffer, "family_%s",
+                             FUNDEF_NAME (AP_FUNDEF (RANGE_RESULTS (arg_node))));
 
-    familyName = SBUF2str (buffer);
-    buffer = SBUFfree (buffer);
+        familyName = SBUF2str (buffer);
+        buffer = SBUFfree (buffer);
 
-    family
-      = TCmakeAssignIcm1 ("SAC_MUTC_DECL_FAMILY", TCmakeIdCopyString (familyName), NULL);
+        family = TCmakeAssignIcm1 ("SAC_MUTC_DECL_FAMILY",
+                                   TCmakeIdCopyString (familyName), NULL);
 
-    thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
+        thread_fun = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
-    RANGE_LOWERBOUND (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));
-    RANGE_UPPERBOUND (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_UPPERBOUND (arg_node));
-    if (RANGE_CHUNKSIZE (arg_node) != NULL) {
-        RANGE_CHUNKSIZE (arg_node) = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
-    }
+        RANGE_LOWERBOUND (arg_node)
+          = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));
+        RANGE_UPPERBOUND (arg_node)
+          = MakeIcm_GETVAR_ifNeeded (RANGE_UPPERBOUND (arg_node));
+        if (RANGE_CHUNKSIZE (arg_node) != NULL) {
+            RANGE_CHUNKSIZE (arg_node)
+              = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
+        }
 
-    if (global.mutc_force_block_size >= 0) {
-        block = TBmakeNum (global.mutc_force_block_size);
-    } else if (global.mutc_static_resource_management) {
-        block = TBmakeNum (RANGE_BLOCKSIZE (arg_node));
+        if (global.mutc_force_block_size >= 0) {
+            block = TBmakeNum (global.mutc_force_block_size);
+        } else if (global.mutc_static_resource_management) {
+            block = TBmakeNum (RANGE_BLOCKSIZE (arg_node));
+        } else {
+            block = TCmakeIdCopyString ("");
+        }
+
+        create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
+                                   TCmakeIdCopyString (
+                                     RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
+                                   DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
+                                   DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
+                                   (RANGE_CHUNKSIZE (arg_node) == NULL)
+                                     ? TCmakeIdCopyString ("1")
+                                     : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
+                                   block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+
+        sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
+
+        next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+
+        family = TCappendAssign (family, create);
+#if 0
+    if (INFO_CONCURRENTRANGES( arg_info)) {
+      DBUG_ASSERT( ( INFO_WITH3_FOLDS( arg_info) == NULL),
+                   "Fold and concurrent not supported");
+      family = TCappendAssign(family, next);
+      family = TCappendAssign(family, sync);
     } else {
-        block = TCmakeIdCopyString ("");
-    }
-
-    create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
-                               TCmakeIdCopyString (
-                                 RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
-                               DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
-                               DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
-                               (RANGE_CHUNKSIZE (arg_node) == NULL)
-                                 ? TCmakeIdCopyString ("1")
-                                 : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
-                               block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
-
-    sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
-
-    next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
-
-    family = TCappendAssign (family, create);
-#if 0
-  if (INFO_CONCURRENTRANGES( arg_info)) {
-    DBUG_ASSERT( ( INFO_WITH3_FOLDS( arg_info) == NULL),
-                 "Fold and concurrent not supported");
-    family = TCappendAssign(family, next);
-    family = TCappendAssign(family, sync);
-  } else {
 #endif
-    node *start, *end;
-    family = TCappendAssign (family, sync);
-    start = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_START", NULL);
-    end = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_END", NULL);
+        node *start, *end;
+        family = TCappendAssign (family, sync);
+        start = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_START", NULL);
+        end = TCmakeAssignIcm0 ("MUTC_CREATE_BLOCK_END", NULL);
 
-    family = TCappendAssign (start, family);
+        family = TCappendAssign (start, family);
 
-    if (INFO_WITH3_FOLDS (arg_info) != NULL) {
-        node *save;
-        DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
-                     "Only single fold with3 loops supported");
-        save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
-                                 TCmakeIdCopyStringNt (IDS_NAME (
-                                                         INFO_WITH3_FOLDS (arg_info)),
-                                                       IDS_TYPE (
-                                                         INFO_WITH3_FOLDS (arg_info))),
-                                 NULL);
-        family = TCappendAssign (family, save);
-    }
-    family = TCappendAssign (family, end);
-    family = TCappendAssign (family, next);
+        if (INFO_WITH3_FOLDS (arg_info) != NULL) {
+            node *save;
+            DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
+                         "Only single fold with3 loops supported");
+            save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
+                                     TCmakeIdCopyStringNt (IDS_NAME (
+                                                             INFO_WITH3_FOLDS (arg_info)),
+                                                           IDS_TYPE (INFO_WITH3_FOLDS (
+                                                             arg_info))),
+                                     NULL);
+            family = TCappendAssign (family, save);
+        }
+        family = TCappendAssign (family, end);
+        family = TCappendAssign (family, next);
 #if 0
-  }
+    }
 #endif
 
-    /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
-    FREEdoFreeTree (thread_fun);
+        /* FREEdoFreeTree(arg_node); */ /* Done by COMPlet for us */
+        FREEdoFreeTree (thread_fun);
 
-    DBUG_RETURN (family);
+        res = family;
+    } else if (global.backend == BE_cuda) {
+        printf ("generating icm for range %s\n",
+                AVIS_NAME (ID_AVIS (RANGE_INDEX (arg_node))));
+
+        RANGE_LOWERBOUND (arg_node)
+          = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));
+        RANGE_UPPERBOUND (arg_node)
+          = MakeIcm_GETVAR_ifNeeded (RANGE_UPPERBOUND (arg_node));
+        if (RANGE_CHUNKSIZE (arg_node) != NULL) {
+            RANGE_CHUNKSIZE (arg_node)
+              = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
+        }
+
+        loopnests = TCmakeAssignIcm4 ("WL3_SCHEDULE__BEGIN",
+                                      DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
+                                      DUPdupIdNt (RANGE_INDEX (arg_node)),
+                                      DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
+                                      (RANGE_CHUNKSIZE (arg_node) == NULL)
+                                        ? TCmakeIdCopyString ("1")
+                                        : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
+                                      NULL);
+
+        RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
+        loopnests = TCappendAssign (loopnests,
+                                    DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node))));
+        loopnests
+          = TCappendAssign (loopnests, TCmakeAssignIcm0 ("WL3_SCHEDULE__END", NULL));
+
+        printf ("after generating icm for range %s\n",
+                AVIS_NAME (ID_AVIS (RANGE_INDEX (arg_node))));
+
+        next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
+        res = TCappendAssign (loopnests, next);
+    } else {
+        DBUG_ASSERT (FALSE, "N_range not defined in this backend");
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

@@ -1,5 +1,5 @@
 
-#include "cleanup_cuda_kernels.h"
+#include "kernel_post_processing.h"
 
 #include <stdlib.h>
 
@@ -40,6 +40,8 @@ struct INFO {
     bool remove_ids;
     node *lhs;
     nlut_t *nlut;
+    node *with3ids;
+    node *preassigns;
 };
 
 /*
@@ -50,6 +52,8 @@ struct INFO {
 #define INFO_REMOVE_IDS(n) (n->remove_ids)
 #define INFO_LHS(n) (n->lhs)
 #define INFO_NLUT(n) (n->nlut)
+#define INFO_WITH3IDS(n) (n->with3ids)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 
 /*
  * INFO functions
@@ -68,6 +72,8 @@ MakeInfo ()
     INFO_REMOVE_IDS (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_NLUT (result) = NULL;
+    INFO_WITH3IDS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -100,14 +106,14 @@ RemoveUnusedVardecs (node *vardecs, info *arg_info)
 }
 
 node *
-CLKNLdoCleanupCUDAKernels (node *syntax_tree)
+KPPdoKernelPostProcessing (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CLKNLdoCleanupCUDAKernels");
+    DBUG_ENTER ("KPPdoKernelPostProcessing");
 
     info = MakeInfo ();
-    TRAVpush (TR_clknl);
+    TRAVpush (TR_kpp);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
     info = FreeInfo (info);
@@ -116,9 +122,9 @@ CLKNLdoCleanupCUDAKernels (node *syntax_tree)
 }
 
 node *
-CLKNLfundef (node *arg_node, info *arg_info)
+KPPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLKNLfundef");
+    DBUG_ENTER ("KPPfundef");
 
     /* we only traverse cuda kernels */
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
@@ -140,12 +146,11 @@ CLKNLfundef (node *arg_node, info *arg_info)
 }
 
 node *
-CLKNLassign (node *arg_node, info *arg_info)
+KPPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLKNLassign");
+    DBUG_ENTER ("KPPassign");
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_REMOVE_ASSIGN (arg_info)) {
@@ -153,13 +158,18 @@ CLKNLassign (node *arg_node, info *arg_info)
         INFO_REMOVE_ASSIGN (arg_info) = FALSE;
     }
 
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
 node *
-CLKNLlet (node *arg_node, info *arg_info)
+KPPlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLKNLlet");
+    DBUG_ENTER ("KPPlet");
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
         /* if we found a assignment of the form N_id = N_id
@@ -208,12 +218,48 @@ CLKNLlet (node *arg_node, info *arg_info)
 }
 
 node *
-CLKNLrange (node *arg_node, info *arg_info)
+KPPwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLKNLrange");
+    node *old_with3ids, *preassign = NULL;
+    node *rhs = NULL;
 
-    printf (
-      "hahaha. taversing range!___________________________________________________\n");
+    DBUG_ENTER ("KPPwith3");
+
+    old_with3ids = INFO_WITH3IDS (arg_info);
+    INFO_WITH3IDS (arg_info) = INFO_LHS (arg_info);
+
+    if (NODE_TYPE (WITH3_OPERATIONS (arg_node)) == N_fold) {
+        if (FOLD_INITIAL (WITH3_OPERATIONS (arg_node)) != NULL) {
+            rhs = DUPdoDupNode (FOLD_INITIAL (WITH3_OPERATIONS (arg_node)));
+        } else if (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)) != NULL) {
+            rhs = DUPdoDupTree (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)));
+        } else {
+            DBUG_ASSERT ((0), "Both neutral and initial are NULL!");
+        }
+
+        preassign
+          = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LHS (arg_info)), rhs), NULL);
+    }
+
+    if (WITH3_RANGES (arg_node) != NULL) {
+        WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+        WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
+    } else {
+        WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
+        INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+    }
+
+    INFO_WITH3IDS (arg_info) = old_with3ids;
+
+    INFO_PREASSIGNS (arg_info) = preassign;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+KPPrange (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("KPPrange");
 
     RANGE_RESULTS (arg_node) = TRAVopt (RANGE_RESULTS (arg_node), arg_info);
     RANGE_INDEX (arg_node) = TRAVopt (RANGE_INDEX (arg_node), arg_info);
@@ -227,9 +273,9 @@ CLKNLrange (node *arg_node, info *arg_info)
 }
 
 node *
-CLKNLid (node *arg_node, info *arg_info)
+KPPid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLKNLid");
+    DBUG_ENTER ("KPPid");
 
     NLUTincNum (INFO_NLUT (arg_info), ID_AVIS (arg_node), 1);
 
@@ -237,13 +283,13 @@ CLKNLid (node *arg_node, info *arg_info)
 }
 
 node *
-CLKNLprf (node *arg_node, info *arg_info)
+KPPprf (node *arg_node, info *arg_info)
 {
     node *dim, *free_var, *array;
     int dim_num;
     ntype *type;
 
-    DBUG_ENTER ("CLKNLprf");
+    DBUG_ENTER ("KPPprf");
 
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
@@ -252,9 +298,9 @@ CLKNLprf (node *arg_node, info *arg_info)
             dim_num = NUM_VAL (dim);
             if (dim_num > 0) {
                 INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-                DBUG_PRINT ("CLKNL", ("%s = F_alloc() removed in function %s\n",
-                                      IDS_NAME (INFO_LHS (arg_info)),
-                                      FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+                DBUG_PRINT ("KPP", ("%s = F_alloc() removed in function %s\n",
+                                    IDS_NAME (INFO_LHS (arg_info)),
+                                    FUNDEF_NAME (INFO_FUNDEF (arg_info))));
             }
         } else if (NODE_TYPE (dim) == N_prf) {
             if (PRF_PRF (dim) == F_dim_A) {
@@ -280,7 +326,7 @@ CLKNLprf (node *arg_node, info *arg_info)
         dim_num = TYgetDim (type);
         if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("CLKNL",
+            DBUG_PRINT ("KPP",
                         ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
                          FUNDEF_NAME (INFO_FUNDEF (arg_info))));
         } else {
@@ -292,8 +338,8 @@ CLKNLprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("CLKNL", ("F_dec_rc( %s) removed in function %s\n",
-                                  ID_NAME (array), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("KPP", ("F_dec_rc( %s) removed in function %s\n", ID_NAME (array),
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
         } else {
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
@@ -303,15 +349,15 @@ CLKNLprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("CLKNL", ("F_inc_rc( %s) removed in function %s\n",
-                                  ID_NAME (array), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("KPP", ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
         } else {
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
         break;
     case F_suballoc:
         /* If we have a suballoc, the lhs ids might be tagged as cuda
-         * local in CLKNLlet if the rhs is an N_array. However, we
+         * local in KPPlet if the rhs is an N_array. However, we
          * do not want that, therefore, we need to set it back to
          * FALSE here */
         AVIS_ISCUDALOCAL (IDS_AVIS (INFO_LHS (arg_info))) = FALSE;
@@ -322,7 +368,12 @@ CLKNLprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
         PRF_ARGS (arg_node) = NULL;
         INFO_REMOVE_IDS (arg_info) = TRUE;
-
+        break;
+    case F_syncin:
+    case F_syncout:
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        PRF_ARGS (arg_node)
+          = TCappendExprs (PRF_ARGS (arg_node), TCids2Exprs (INFO_WITH3IDS (arg_info)));
         break;
     default:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
