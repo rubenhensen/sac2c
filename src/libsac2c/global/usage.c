@@ -531,7 +531,11 @@ PrintMutcOptions (void)
       "modes.\n\n"
       "    -mutc_unroll <n>                 Maximum with3 size to unroll(1)\n\n"
       "    -mutc_suballoc_desc_one_level_up Allocate discs one level higher than they\n"
-      "                                     are used\n\n");
+      "                                     are used\n\n"
+      "    -mutc_rc_places <n>              Number of exclusive places to be used for\n"
+      "                                     reference counting operations(1)\n\n"
+      "    -mutc_rc_indirect                Perform reference counting operations using\n"
+      "                                     wrapper functions\n\n");
 
     DBUG_VOID_RETURN;
 }

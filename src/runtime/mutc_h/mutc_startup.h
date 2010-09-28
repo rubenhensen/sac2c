@@ -17,8 +17,22 @@
 #include <svp/perf.h>
 #include <svp/testoutput.h>
 
+#if SAC_MUTC_RC_INDIRECT == 1
+#define SAC_IF_MUTC_RC_INDIRECT(A) A
+#define SAC_IF_NOT_MUTC_RC_INDIRECT(A)
+#else
+#define SAC_IF_MUTC_RC_INDIRECT(A)
+#define SAC_IF_NOT_MUTC_RC_INDIRECT(A) A
+#endif
+
+#ifndef SAC_MUTC_RC_PLACES
+#define SAC_DO_COMPILE_MODULE 1
+#endif
 sl_place_t SAC_mutc_rc_place;
-sl_place_t SAC_mutc_rc_place_w;
+#if SAC_DO_COMPILE_MODULE == 0
+sl_place_t SAC_mutc_rc_place_many[SAC_MUTC_RC_PLACES];
+#endif
+SAC_IF_MUTC_RC_INDIRECT (sl_place_t SAC_mutc_rc_place_w;)
 
 void *tls_malloc (size_t arg1);
 
@@ -95,6 +109,25 @@ void *tls_malloc (size_t arg1);
             output_int(P,2); */                                                                                      \
     } while (0)
 
+#define SAC_MUTC_RC_ALLOC_MANY(P, N)                                                     \
+    do {                                                                                 \
+        int i;                                                                           \
+        for (i = 0; i < N; i++) {                                                        \
+            sl_create (, root_sep->sep_place, , , , , sl__exclusive,                     \
+                       root_sep->sep_alloc, sl_glarg (struct SEP *, , root_sep),         \
+                       sl_glarg (unsigned long, , SAL_EXCLUSIVE),                        \
+                       sl_sharg (struct placeinfo *, p, 0));                             \
+            sl_sync ();                                                                  \
+            if (sl_geta (p) == 0) {                                                      \
+                output_string ("Place allocation for exclusive place for reference "     \
+                               "counting failed!\n",                                     \
+                               2);                                                       \
+                svp_abort ();                                                            \
+            }                                                                            \
+            P[i] = sl_geta (p)->pid;                                                     \
+        }                                                                                \
+    } while (0)
+
 #define SAC_MUTC_RC_ALLOC_W(P)                                                           \
     do {                                                                                 \
         sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
@@ -121,6 +154,13 @@ void *tls_malloc (size_t arg1);
 #define SAC_MUTC_RC_ALLOC_W(P)                                                           \
     do {                                                                                 \
         (P) = PLACE_DEFAULT;                                                             \
+    } while (0)
+#define SAC_MUTC_RC_ALLOC_MANY(P, N)                                                     \
+    do {                                                                                 \
+        int i;                                                                           \
+        for (i = 0; i < N; i++) {                                                        \
+            (P[i]) = PLACE_DEFAULT;                                                      \
+        }                                                                                \
     } while (0)
 #endif
 
@@ -155,7 +195,8 @@ static int sac_benchmark_count;
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
         SAC_MUTC_RC_ALLOC (SAC_mutc_rc_place);                                           \
-        SAC_MUTC_RC_ALLOC_W (SAC_mutc_rc_place_w);                                       \
+        SAC_MUTC_RC_ALLOC_MANY (SAC_mutc_rc_place_many, SAC_MUTC_RC_PLACES);             \
+        SAC_IF_MUTC_RC_INDIRECT (SAC_MUTC_RC_ALLOC_W (SAC_mutc_rc_place_w);)             \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
         SAC_NOTHING ()                                                                   \

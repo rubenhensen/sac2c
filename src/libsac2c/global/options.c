@@ -79,6 +79,21 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
     DBUG_VOID_RETURN;
 }
 
+static bool
+powOf2 (int arg)
+{
+    int exp = 0;
+    int orgArg = arg;
+    DBUG_ENTER ("powOf2");
+
+    DBUG_ASSERT (arg > 0, "Must be positive number");
+    while (arg > 0) {
+        arg = arg >> 1;
+        exp++;
+    }
+    DBUG_RETURN ((1 << (exp - 1)) == orgArg);
+}
+
 /******************************************************************************
  *
  * function:
@@ -141,6 +156,15 @@ OPTcheckOptionConsistency (void)
             && (global.mutc_static_resource_management)) {
             CTIerror ("Can only use one method of setting the block size at a time");
         }
+
+        if (!powOf2 (global.mutc_rc_places)) {
+            CTIerror ("-mutc_rc_places must be a power of 2");
+        }
+
+        if ((global.mutc_rc_places != 1) && (global.mutc_rc_indirect == TRUE)) {
+            CTIerror ("-mutc_rc_places can not be used with "
+                      "-mutc_rc_indirect");
+        }
     } else {
         if (global.mutc_fun_as_threads == TRUE) {
             CTIerror ("-mutc_fun_threads only works with mutc backend");
@@ -165,6 +189,12 @@ OPTcheckOptionConsistency (void)
         }
         if (global.mutc_suballoc_desc_one_level_up == TRUE) {
             CTIerror ("-mutc_suballoc_desc_one_level_up only works with mutc backend");
+        }
+        if (global.mutc_rc_places != 1) {
+            CTIerror ("-mutc_rc_places only works with mutc backend");
+        }
+        if (global.mutc_rc_indirect == TRUE) {
+            CTIerror ("-mutc_rc_indirect only works with mutc backend");
         }
     }
 
@@ -620,6 +650,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
                global.mutc_static_resource_management = TRUE);
     ARGS_FLAG ("mutc_suballoc_desc_one_level_up",
                global.mutc_suballoc_desc_one_level_up = TRUE);
+    ARGS_OPTION ("mutc_rc_places", ARG_NUM (global.mutc_rc_places));
+    ARGS_FLAG ("mutc_rc_indirect", global.mutc_rc_indirect = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
