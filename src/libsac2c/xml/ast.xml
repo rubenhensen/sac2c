@@ -113,13 +113,19 @@
           <node name="Tfvertex" />
         </travuser>
       </traversal>
-      <traversal id="TFDFW" name="Do a depth first walk of the subtyping hierarchy" default="sons" include="dfwalk.h" >
+      <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
         <travuser>
           <node name="Tfspec" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
-      <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
+      <traversal id="TFMIN" name="Computing the minimum equivalent graph" default="sons" include="mineq.h" >
+        <travuser>
+          <node name="Tfspec" />
+          <node name="Tfvertex" />
+        </travuser>
+      </traversal>
+      <traversal id="TFDFW" name="Do a depth first walk of the subtyping hierarchy" default="sons" include="dfwalk.h" >
         <travuser>
           <node name="Tfspec" />
           <node name="Tfvertex" />
@@ -3777,7 +3783,31 @@ N_tfvertex :
             </targets>
           </type>
         </attribute>
+        <attribute name="mineqchildvisits" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="numparents" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="numchildren" inconstructor="no">
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -3839,6 +3869,18 @@ N_tfvertex :
         </attribute>
         <attribute name="distcol" inconstructor="no">
           <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Ancestors" default="NULL" inconstructor="no">
+          <type name="NodeList">
             <targets>
               <target mandatory="no">
                 <any />

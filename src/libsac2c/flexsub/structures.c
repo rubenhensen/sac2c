@@ -23,6 +23,7 @@
 void
 initElem (elem *e)
 {
+
     ELEM_IDX (e) = 0;
     ELEM_DATA (e) = NULL;
 }
@@ -30,6 +31,7 @@ initElem (elem *e)
 void
 initDynarray (dynarray *arrayd)
 {
+
     DYNARRAY_ELEMS (arrayd) = NULL;
     DYNARRAY_TOTALELEMS (arrayd) = 0;
     DYNARRAY_ALLOCELEMS (arrayd) = 0;
@@ -38,6 +40,7 @@ initDynarray (dynarray *arrayd)
 void
 initMatrix (matrix *m)
 {
+
     MATRIX_ARRAY2D (m) = NULL;
     MATRIX_TOTALROWS (m) = 0;
     MATRIX_TOTALCOLS (m) = 0;
@@ -46,6 +49,7 @@ initMatrix (matrix *m)
 void
 initElemstack (elemstack *s)
 {
+
     ELEMSTACK_CURR (s) = NULL;
     ELEMSTACK_NEXT (s) = NULL;
 }
@@ -53,11 +57,15 @@ initElemstack (elemstack *s)
 void
 freeElem (elem *e)
 {
+
     if (e != NULL) {
+
         if (ELEM_DATA (e) != NULL) {
+
             MEMfree (ELEM_DATA (e));
             ELEM_DATA (e) = NULL;
         }
+
         MEMfree (e);
         e = NULL;
     }
@@ -66,14 +74,19 @@ freeElem (elem *e)
 void
 freeElemArray (elem **e, int count)
 {
+
     int i;
+
     if (e != NULL) {
+
         for (i = 0; i < count; i++) {
+
             if (e[i] != NULL) {
                 freeElem (e[i]);
                 e[i] = NULL;
             }
         }
+
         MEMfree (e);
         e = NULL;
     }
@@ -82,14 +95,20 @@ freeElemArray (elem **e, int count)
 void
 freeDynarray (dynarray *arrayd)
 {
+
     if (arrayd != NULL) {
+
         int i;
+
         for (i = 0; i < DYNARRAY_ALLOCELEMS (arrayd); i++) {
+
             if (DYNARRAY_ELEMS (arrayd)[i] != NULL) {
+
                 freeElem (DYNARRAY_ELEMS (arrayd)[i]);
                 DYNARRAY_ELEMS (arrayd)[i] = NULL;
             }
         }
+
         MEMfree (arrayd);
         arrayd = NULL;
     }
@@ -98,14 +117,20 @@ freeDynarray (dynarray *arrayd)
 void
 free2DArray (dynarray **d2, int count)
 {
+
     if (d2 != NULL) {
+
         int i;
+
         for (i = 0; i < count; i++) {
+
             if (d2[i] != NULL) {
+
                 freeDynarray (d2[i]);
                 d2[i] = NULL;
             }
         }
+
         MEMfree (d2);
         d2 = NULL;
     }
@@ -114,11 +139,15 @@ free2DArray (dynarray **d2, int count)
 void
 freeMatrix (matrix *m)
 {
+
     if (m != NULL) {
+
         if (MATRIX_ARRAY2D (m) != NULL) {
+
             free2DArray (MATRIX_ARRAY2D (m), MATRIX_TOTALROWS (m));
             MATRIX_ARRAY2D (m) = NULL;
         }
+
         MEMfree (m);
         m = NULL;
     }
@@ -127,16 +156,20 @@ freeMatrix (matrix *m)
 void *
 MEMrealloc (void *src, int allocsize, int oldsize)
 {
+
     void *p = MEMmalloc (allocsize);
     memset (p, 0, allocsize);
+
     if (src != NULL)
         memcpy (p, src, oldsize);
+
     return p;
 }
 
 void
 pushElemstack (elemstack **s, elem *e)
 {
+
     elemstack *top = MEMmalloc (sizeof (elemstack));
     ELEMSTACK_CURR (top) = e;
     ELEMSTACK_NEXT (top) = *s;
@@ -146,6 +179,7 @@ pushElemstack (elemstack **s, elem *e)
 elem *
 popElemstack (elemstack **s)
 {
+
     elemstack *top = NULL;
     elem *e;
 
@@ -165,125 +199,164 @@ popElemstack (elemstack **s)
 int
 addToArray (dynarray *arrayd, elem *item)
 {
+
     int pos, oldsize;
+
     if (DYNARRAY_TOTALELEMS (arrayd) == DYNARRAY_ALLOCELEMS (arrayd)) {
+
         oldsize = DYNARRAY_ALLOCELEMS (arrayd);
         DYNARRAY_ALLOCELEMS (arrayd) += 3;
+
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
                                   (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
                                   oldsize * sizeof (elem *));
         if (!_temp) {
             CTIabort ("addToArray couldn't realloc memory!\n");
         }
+
         MEMfree (DYNARRAY_ELEMS (arrayd));
         DYNARRAY_ELEMS (arrayd) = (elem **)_temp;
     }
+
     pos = DYNARRAY_TOTALELEMS (arrayd);
     DYNARRAY_TOTALELEMS (arrayd)++;
     DYNARRAY_ELEMS_POS (arrayd, pos) = item;
+
     return DYNARRAY_TOTALELEMS (arrayd);
 }
 
 int
 indexExistsInArray (dynarray *arrayd, int idx)
 {
+
     int i;
+
     for (i = 0; i < DYNARRAY_TOTALELEMS (arrayd); i++) {
+
         if (idx == ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, i))) {
             return 1;
         }
     }
+
     return 0;
 }
 
 int
 addToArrayAtPos (dynarray *arrayd, elem *item, int pos)
 {
+
     if (pos >= DYNARRAY_ALLOCELEMS (arrayd)) {
+
         int oldsize = DYNARRAY_ALLOCELEMS (arrayd);
         DYNARRAY_ALLOCELEMS (arrayd) = pos + 1;
+
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
                                   (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
                                   oldsize * sizeof (elem *));
+
         if (!_temp) {
             CTIabort ("addToArrayAtPos couldn't realloc memory!\n");
         }
+
         MEMfree (DYNARRAY_ELEMS (arrayd));
         DYNARRAY_ELEMS (arrayd) = (elem **)_temp;
     }
+
     DYNARRAY_TOTALELEMS (arrayd) = DYNARRAY_ALLOCELEMS (arrayd);
     DYNARRAY_ELEMS_POS (arrayd, pos) = item;
+
     return DYNARRAY_TOTALELEMS (arrayd);
 }
 
 void
 merge (elem **elems, int lower, int upper, int desc)
 {
+
     elem **left, **right, **result;
     int mid = (lower + upper) / 2;
     int ll, lr, i, total = 0;
     int cond;
+
     ll = mid - lower + 1;
     lr = upper - mid;
     left = elems + lower;
     right = elems + mid + 1;
     result = MEMmalloc ((ll + lr) * sizeof (elem *));
+
     while (ll > 0 && lr > 0) {
+
         if (ELEM_IDX (left[0]) <= ELEM_IDX (right[0])) {
+
             if (desc)
                 cond = 0;
             else
                 cond = 1;
+
         } else {
+
             if (desc)
                 cond = 1;
             else
                 cond = 0;
         }
+
         if (cond) {
+
             result[total++] = *left;
-            left = left + 1;
+            left++;
             ll--;
+
         } else {
+
             result[total++] = *right;
-            right = right + 1;
+            right++;
             lr--;
         }
     }
+
     if (ll > 0) {
+
         while (ll > 0) {
             result[total++] = *left;
-            left = left + 1;
+            left++;
             ll--;
         }
+
     } else {
+
         while (lr > 0) {
             result[total++] = *right;
-            right = right + 1;
+            right++;
             lr--;
         }
     }
+
     ll = mid - lower + 1;
     lr = upper - mid;
     left = elems + lower;
     right = elems + mid + 1;
+
     for (i = 0; i < ll; i++) {
         left[i] = result[i];
     }
+
     for (i = 0; i < lr; i++) {
         right[i] = result[i + ll];
     }
-    // freeElemArray(result,ll+lr);
+
     MEMfree (result);
 }
 
 void
 sortArray (elem **elems, int lower, int upper, int desc)
 {
+
     if (elems == NULL) {
         CTIabort ("Typechecker trying to sort DYNARRAY with null elements");
     }
+
     if (upper - lower > 0) {
+
         int mid = (upper + lower) / 2;
         sortArray (elems, lower, mid, desc);
         sortArray (elems, mid + 1, upper, desc);
@@ -294,38 +367,49 @@ sortArray (elem **elems, int lower, int upper, int desc)
 void
 setMatrixValue (matrix *m, int x, int y, int value)
 {
+
     int i, oldlength;
+
     elem *element = MEMmalloc (sizeof (elem));
     ELEM_IDX (element) = value;
     ELEM_DATA (element) = NULL;
     oldlength = MATRIX_TOTALROWS (m);
+
     if (MATRIX_TOTALCOLS (m) < y + 1) {
         MATRIX_TOTALCOLS (m) = y + 1;
     }
+
     if (MATRIX_TOTALROWS (m) < x + 1) {
         MATRIX_TOTALROWS (m) = x + 1;
+
         void *_temp
           = MEMrealloc (MATRIX_ARRAY2D (m), (MATRIX_TOTALROWS (m) * sizeof (dynarray *)),
                         oldlength * sizeof (dynarray *));
+
         if (!_temp) {
             CTIabort ("setMatrixValue couldn't realloc memory!\n");
         }
+
         MEMfree (MATRIX_ARRAY2D (m));
         MATRIX_ARRAY2D (m) = (dynarray **)_temp;
     }
+
     for (i = oldlength; i < MATRIX_TOTALROWS (m); i++) {
         MATRIX_ARRAY2D (m)[i] = NULL;
     }
+
     if (MATRIX_ARRAY2D (m)[x] == NULL) {
         MATRIX_ARRAY2D (m)[x] = MEMmalloc (sizeof (dynarray));
         initDynarray (MATRIX_ARRAY2D (m)[x]);
     }
+
     addToArrayAtPos (MATRIX_ARRAY2D (m)[x], element, y);
 }
 
 int
 getMatrixValue (matrix *m, int x, int y)
 {
+
     dynarray *arrayd = MATRIX_ARRAY2D (m)[x];
     elem *e = DYNARRAY_ELEMS (arrayd)[y];
     if (e != NULL)
@@ -337,29 +421,39 @@ getMatrixValue (matrix *m, int x, int y)
 void
 printMatrix (matrix *m)
 {
+
     int i, j;
-    dynarray **array2d = MATRIX_ARRAY2D (m);
     dynarray *arrayd;
+
+    dynarray **array2d = MATRIX_ARRAY2D (m);
+
     printf ("\n");
+
     for (i = 0; i < MATRIX_TOTALROWS (m); i++) {
+
         arrayd = array2d[i];
+
         if (arrayd != NULL) {
+
             for (j = 0; j < DYNARRAY_TOTALELEMS (arrayd); j++) {
+
                 if (DYNARRAY_ELEMS_POS (arrayd, j) != NULL) {
                     printf ("%d,", ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, j)));
                     fflush (stdout);
-                } else {
+                } else
                     printf ("-,");
-                }
             }
+
             for (j = DYNARRAY_TOTALELEMS (arrayd); j < MATRIX_TOTALCOLS (m); j++) {
                 printf ("-,");
             }
+
         } else {
-            for (j = 0; j < MATRIX_TOTALCOLS (m); j++) {
+
+            for (j = 0; j < MATRIX_TOTALCOLS (m); j++)
                 printf ("-,");
-            }
         }
+
         printf ("\n");
     }
 }
@@ -376,43 +470,63 @@ printMatrixInDotFormat (matrix *m)
     fprintf (global.outfile, "struct%d [label=\"", id++);
 
     for (i = 0; i < MATRIX_TOTALROWS (m); i++) {
+
         arrayd = array2d[i];
+
         if (arrayd != NULL) {
+
             fprintf (global.outfile, "{");
+
             for (j = 0; j < DYNARRAY_TOTALELEMS (arrayd); j++) {
+
                 if (DYNARRAY_ELEMS_POS (arrayd, j) != NULL) {
+
                     fprintf (global.outfile, "%d",
                              ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, j)));
+
                 } else {
+
                     fprintf (global.outfile, "-");
                 }
+
                 if (j != DYNARRAY_TOTALELEMS (arrayd) - 1)
                     printf ("|");
             }
+
             for (j = DYNARRAY_TOTALELEMS (arrayd); j < MATRIX_TOTALCOLS (m); j++) {
+
                 fprintf (global.outfile, "-");
                 if (j != MATRIX_TOTALCOLS (m) - 1)
                     fprintf (global.outfile, "|");
             }
+
         } else {
+
             for (j = 0; j < MATRIX_TOTALCOLS (m); j++) {
+
                 fprintf (global.outfile, "-");
                 if (j != MATRIX_TOTALCOLS (m) - 1)
                     fprintf (global.outfile, "|");
             }
         }
+
         fprintf (global.outfile, "}");
+
         if (i != MATRIX_TOTALROWS (m) - 1)
             fprintf (global.outfile, "|");
     }
+
     fprintf (global.outfile, "\"];\n");
 }
 
 void
 printTransitiveLinkTable (dynarray *arrayd)
 {
+
     int i;
+
     for (i = 0; i < DYNARRAY_TOTALELEMS (arrayd); i++) {
+
         printf ("%d->[%d,%d)\n", ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, i)),
                 *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, i))),
                 *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, i)) + 1));

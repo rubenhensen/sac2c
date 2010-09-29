@@ -862,6 +862,8 @@ FREEattribCompInfoArr (compinfo **attr, node *parent)
 
     int i, j;
 
+    nodelist *nl;
+
     if (attr != NULL) {
 
         for (i = 0; i < TFSPEC_NUMCOMP (parent); i++) {
@@ -897,6 +899,13 @@ FREEattribCompInfoArr (compinfo **attr, node *parent)
 
                 if (COMPINFO_DIST (attr[i]) != NULL) {
                     freeMatrix (COMPINFO_DIST (attr[i]));
+                }
+
+                while (COMPINFO_TOPOLIST (attr[i]) != NULL) {
+                    nl = COMPINFO_TOPOLIST (attr[i]);
+                    COMPINFO_TOPOLIST (attr[i])
+                      = NODELIST_NEXT (COMPINFO_TOPOLIST (attr[i]));
+                    MEMfree (nl);
                 }
 
                 attr[i] = MEMfree (attr[i]);

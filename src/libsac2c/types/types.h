@@ -1027,6 +1027,7 @@ struct COMPINFO {
     struct MATRIX *tlc;
     struct MATRIX *lub[3];
     struct MATRIX *dist;
+    struct NODELIST *topolist;
 };
 
 typedef enum { edgetree, edgecross, edgeforward, edgeback } graph_edgetype;

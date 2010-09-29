@@ -1,10 +1,11 @@
 /** <!--********************************************************************-->
  *
- * @file tf_build_graph.c
+ * @file dagbuilder.c
  *
  * prefix: TFBDG
  *
- * description:
+ * description: This file constructs the subtyping graph from the type relations
+ * input by the user.
  *
  *****************************************************************************/
 
@@ -95,7 +96,7 @@ TFBDGdoBuildTFGraph (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFBDGtfgraph( node *arg_node, info *arg_info)
+ * @fn node *TFBDGtfspec( node *arg_node, info *arg_info)
  *
  *   @brief
  *

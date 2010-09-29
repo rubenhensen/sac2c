@@ -237,7 +237,7 @@ libsac2c_funcpara    := add_sync move_sync_statement tag_fp_fundefs tag_fp_aps \
                         live_variable_analysis make_slow_clones count_spawn_sync
 
 libsac2c_flexsub     := ctransitive dagbuilder dfwalk reachlabel structures \
-			topo
+			topo mineq graphutils
 
 
 ###############################################################################

@@ -130,6 +130,9 @@ SUBPHASE (bdg, "Building user defined subtyping graph", TFBDGdoBuildTFGraph, ALW
 
 SUBPHASE (top, "Topologically sorting subtyping graph", TFTOPdoTopoSort, ALWAYS, uds)
 
+SUBPHASE (min, "Computing the minimum equivalent of the graph", TFMINdoReduceTFGraph,
+          ALWAYS, uds)
+
 SUBPHASE (dfw, "Depth first walk of the subtyping graph", TFDFWdoDFWalk, ALWAYS, uds)
 
 SUBPHASE (ctr, "Classify edges and compute reachability over crossedges",

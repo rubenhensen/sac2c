@@ -146,7 +146,8 @@ TFRCHtfspec (node *arg_node, info *arg_info)
 
             component++;
 
-            if (TFSPEC_INFO (arg_node)[component - 1] != NULL) {
+            if (TFSPEC_INFO (arg_node)[component - 1] != NULL
+                && COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[component - 1]) != NULL) {
 
                 INFO_TOTALCOLS (arg_info) = DYNARRAY_TOTALELEMS (
                   COMPINFO_CSRC (TFSPEC_INFO (arg_node)[component - 1]));

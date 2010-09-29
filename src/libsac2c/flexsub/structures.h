@@ -54,5 +54,6 @@ matrix *computeTLCMatrix (dynarray *arrayd, dynarray *arrX, dynarray *arrY);
 #define COMPINFO_LUB(n) ((n)->lub)
 #define COMPINFO_LUBPOS(n, i) ((n)->lub[i])
 #define COMPINFO_DIST(n) ((n)->dist)
+#define COMPINFO_TOPOLIST(n) ((n)->topolist)
 
 #endif

@@ -117,6 +117,7 @@ TFCTRtfspec (node *arg_node, info *arg_info)
     DBUG_ENTER ("TFCTRtfspec");
 
     node *defs;
+    int compidx = 0;
 
     defs = TFSPEC_DEFS (arg_node);
 
@@ -126,29 +127,11 @@ TFCTRtfspec (node *arg_node, info *arg_info)
 
             TRAVdo (defs, arg_info);
 
-            int currsize = ++TFSPEC_NUMCOMP (arg_node);
-
-            void *_cinfo
-              = MEMrealloc (TFSPEC_INFO (arg_node), currsize * sizeof (compinfo *),
-                            (currsize - 1) * sizeof (compinfo *));
-
-            if (!_cinfo) {
-                CTIabort (
-                  "Memory reallocation error in transitive link table construction!\n");
-            }
-
-            MEMfree (TFSPEC_INFO (arg_node));
-
-            TFSPEC_INFO (arg_node) = (compinfo **)_cinfo;
-            TFSPEC_INFO (arg_node)[currsize - 1] = NULL;
-
             /*
              * Do the following if we have at least one cross edge in the DAG.
              */
 
             if (INFO_TLTABLE (arg_info) != NULL) {
-
-                TFSPEC_INFO (arg_node)[currsize - 1] = MEMmalloc (sizeof (compinfo));
 
                 /*
                  * We maintain a list of all cross edge sources and all cross edge
@@ -156,8 +139,8 @@ TFCTRtfspec (node *arg_node, info *arg_info)
                  */
 
                 setSrcTarArrays (INFO_TLTABLE (arg_info),
-                                 &(COMPINFO_CSRC (TFSPEC_INFO (arg_node)[currsize - 1])),
-                                 &(COMPINFO_CTAR (TFSPEC_INFO (arg_node)[currsize - 1])));
+                                 &(COMPINFO_CSRC (TFSPEC_INFO (arg_node)[compidx])),
+                                 &(COMPINFO_CTAR (TFSPEC_INFO (arg_node)[compidx])));
 
                 /*
                  * For each cross edge source, compute all the source edge targets that
@@ -168,20 +151,21 @@ TFCTRtfspec (node *arg_node, info *arg_info)
                 buildTransitiveLinkTable (INFO_TLTABLE (arg_info));
 
                 if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
-                    COMPINFO_TLC (TFSPEC_INFO (arg_node)[currsize - 1])
+                    COMPINFO_TLC (TFSPEC_INFO (arg_node)[compidx])
                       = computeTLCMatrix (INFO_TLTABLE (arg_info),
-                                          COMPINFO_CSRC (
-                                            TFSPEC_INFO (arg_node)[currsize - 1]),
+                                          COMPINFO_CSRC (TFSPEC_INFO (arg_node)[compidx]),
                                           COMPINFO_CTAR (
-                                            TFSPEC_INFO (arg_node)[currsize - 1]));
+                                            TFSPEC_INFO (arg_node)[compidx]));
                 }
 
                 // freeDynarray( INFO_TLTABLE( arg_info));
 
-                COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[currsize - 1])
+                COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[compidx])
                   = INFO_TLTABLE (arg_info);
 
                 INFO_TLTABLE (arg_info) = NULL;
+
+                compidx++;
             }
         }
 

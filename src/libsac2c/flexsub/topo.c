@@ -31,12 +31,16 @@
 
 struct INFO {
     int topo;
+    nodelist *head;
+    nodelist *list;
 };
 
 /*
  * INFO macros
  */
 #define INFO_TOPO(n) n->topo
+#define INFO_HEAD(n) n->head
+#define INFO_LIST(n) n->list
 
 /*
  * INFO functions
@@ -50,6 +54,8 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
     INFO_TOPO (result) = 1;
+    INFO_HEAD (result) = NULL;
+    INFO_LIST (result) = NULL;
     DBUG_RETURN (result);
 }
 
@@ -65,7 +71,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFTOPdoTOPalk( node *syntax_tree)
+ * @fn node *TFTOPdoTopoSort( node *syntax_tree)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -115,6 +121,8 @@ TFTOPtfspec (node *arg_node, info *arg_info)
 
     node *defs;
 
+    int currsize;
+
     defs = TFSPEC_DEFS (arg_node);
 
     /*
@@ -133,11 +141,36 @@ TFTOPtfspec (node *arg_node, info *arg_info)
              * TODO: Ensure that there are no multi-head DAGs
              */
 
+            currsize = ++TFSPEC_NUMCOMP (arg_node);
+
+            void *_cinfo
+              = MEMrealloc (TFSPEC_INFO (arg_node), currsize * sizeof (compinfo *),
+                            (currsize - 1) * sizeof (compinfo *));
+
+            if (!_cinfo) {
+                CTIabort (
+                  "Memory reallocation error in transitive link table construction!\n");
+            }
+
+            MEMfree (TFSPEC_INFO (arg_node));
+
+            TFSPEC_INFO (arg_node) = (compinfo **)_cinfo;
+            TFSPEC_INFO (arg_node)[currsize - 1] = MEMmalloc (sizeof (compinfo));
+
             if (INFO_TOPO (arg_info) != 1) {
                 INFO_TOPO (arg_info) = 1;
             }
 
             TRAVdo (defs, arg_info);
+
+            /*
+             * Store the topologically sorted list in the Tfspec node now.
+             */
+
+            COMPINFO_TOPOLIST (TFSPEC_INFO (arg_node)[currsize - 1])
+              = INFO_HEAD (arg_info);
+
+            INFO_HEAD (arg_info) = NULL;
         }
 
         defs = TFVERTEX_NEXT (defs);
@@ -174,6 +207,26 @@ TFTOPtfvertex (node *arg_node, info *arg_info)
 
     children = TFVERTEX_CHILDREN (defs);
     TFVERTEX_TOPO (defs) = INFO_TOPO (arg_info)++;
+
+    if (INFO_HEAD (arg_info) == NULL) {
+
+        /*
+         * We also maintain a list of topologically sorted vertices for future
+         * processing here.
+         */
+
+        INFO_HEAD (arg_info) = MEMmalloc (sizeof (nodelist));
+        INFO_LIST (arg_info) = INFO_HEAD (arg_info);
+
+        NODELIST_NODE (INFO_HEAD (arg_info)) = arg_node;
+
+    } else if (NODELIST_NEXT (INFO_LIST (arg_info)) == NULL) {
+
+        NODELIST_NEXT (INFO_LIST (arg_info)) = MEMmalloc (sizeof (nodelist));
+        INFO_LIST (arg_info) = NODELIST_NEXT (INFO_LIST (arg_info));
+        NODELIST_NODE (INFO_LIST (arg_info)) = arg_node;
+        NODELIST_NEXT (INFO_LIST (arg_info)) = NULL;
+    }
 
     while (children != NULL) {
 
