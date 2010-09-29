@@ -3924,15 +3924,24 @@ COMPprfSyncIn (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     DBUG_ENTER ("COMPprfSyncIn");
 
-    ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
-                                 MakeTypeArgs (IDS_NAME (INFO_LASTIDS (arg_info)),
-                                               IDS_TYPE (INFO_LASTIDS (arg_info)), FALSE,
-                                               TRUE, FALSE, NULL),
-                                 ret_node);
+    if (global.backend == BE_mutc) {
+        ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
+                                     MakeTypeArgs (IDS_NAME (INFO_LASTIDS (arg_info)),
+                                                   IDS_TYPE (INFO_LASTIDS (arg_info)),
+                                                   FALSE, TRUE, FALSE, NULL),
+                                     ret_node);
 
-    ret_node
-      = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCIN", DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
-                          DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+        ret_node = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCIN",
+                                     DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+    } else if (global.backend == BE_cuda) {
+        ret_node = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCIN",
+                                     DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+    } else {
+        DBUG_ASSERT ((0), "syncin is not supported for this backend!");
+    }
+
     DBUG_RETURN (ret_node);
 }
 
@@ -3941,8 +3950,19 @@ COMPprfSyncOut (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
     DBUG_ENTER ("COMPprfSyncOut");
-    ret_node = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+
+    if (global.backend == BE_mutc) {
+        ret_node
+          = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG1 (arg_node)),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
+    } else if (global.backend == BE_cuda) {
+        ret_node
+          = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG2 (arg_node)),
+                              DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
+    } else {
+        DBUG_ASSERT ((0), "syncout is not supported for this backend!");
+    }
+
     DBUG_RETURN (ret_node);
 }
 
@@ -7209,7 +7229,7 @@ COMPprfCUDAThreadIdxX (node *arg_node, info *arg_info)
                           NULL);
     */
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_X", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_X", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7221,7 +7241,7 @@ COMPprfCUDAThreadIdxY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxY");
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_Y", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_Y", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7233,7 +7253,7 @@ COMPprfCUDAThreadIdxZ (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxZ");
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_THREADIDX_Z", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_Z", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7265,7 +7285,7 @@ COMPprfCUDABlockDimX (node *arg_node, info *arg_info)
                           NULL);
     */
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_X", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_X", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7277,7 +7297,7 @@ COMPprfCUDABlockDimY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDABlockDimY");
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_Y", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_Y", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7289,7 +7309,7 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDABlockDimZ");
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_BLOCKDIM_Z", NULL);
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_Z", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8785,8 +8805,6 @@ COMPrange (node *arg_node, info *arg_info)
 
         res = family;
     } else if (global.backend == BE_cuda) {
-        printf ("generating icm for range %s\n",
-                AVIS_NAME (ID_AVIS (RANGE_INDEX (arg_node))));
 
         RANGE_LOWERBOUND (arg_node)
           = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));
@@ -8810,10 +8828,9 @@ COMPrange (node *arg_node, info *arg_info)
         loopnests = TCappendAssign (loopnests,
                                     DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node))));
         loopnests
-          = TCappendAssign (loopnests, TCmakeAssignIcm0 ("WL3_SCHEDULE__END", NULL));
-
-        printf ("after generating icm for range %s\n",
-                AVIS_NAME (ID_AVIS (RANGE_INDEX (arg_node))));
+          = TCappendAssign (loopnests,
+                            TCmakeAssignIcm1 ("WL3_SCHEDULE__END",
+                                              DUPdupIdNt (RANGE_INDEX (arg_node)), NULL));
 
         next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
         res = TCappendAssign (loopnests, next);

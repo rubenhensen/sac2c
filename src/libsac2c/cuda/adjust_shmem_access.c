@@ -27,12 +27,10 @@
  */
 struct INFO {
     int level;
-    lut_t *lut;
     node *lhs;
 };
 
 #define INFO_LEVEL(n) (n->level)
-#define INFO_LUT(n) (n->lut)
 #define INFO_LHS(n) (n->lhs)
 
 /*
@@ -52,7 +50,6 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_LEVEL (result) = 0;
-    INFO_LUT (result) = NULL;
     INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -93,6 +90,60 @@ ASHAdoAdjustShmemAccess (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *ASHAarg( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ASHAarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ASHAarg");
+
+    AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASHAvardec( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ASHAvardec (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ASHAvardec");
+
+    AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
+    VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASHAassign( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+ASHAassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ASHAassign");
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *ASHAlet( node *arg_node, info *arg_info)
  *
  * @brief
@@ -101,7 +152,7 @@ ASHAdoAdjustShmemAccess (node *syntax_tree)
 node *
 ASHAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAwith");
+    DBUG_ENTER ("ASHAlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -160,11 +211,7 @@ ASHAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ASHAcode");
 
-    /* No need to push lut as we will never traverse in to any withloops
-     * nested inside a cudarizable withloop */
-    INFO_LUT (arg_info) = LUTgenerateLut ();
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -179,46 +226,38 @@ ASHAcode (node *arg_node, info *arg_info)
 node *
 ASHAprf (node *arg_node, info *arg_info)
 {
-    node *avis;
+    node *subst_avis;
 
     DBUG_ENTER ("ASHAprf");
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
-        if (PRF_PRF (arg_node) == F_idx_sel) {
-            if (CUisShmemTypeNew (ID_NTYPE (PRF_ARG2 (arg_node)))) {
-                ID_AVIS (PRF_ARG2 (arg_node))
-                  = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
-            }
-        } else if (PRF_PRF (arg_node) == F_idx_modarray_AxSxS) {
+        if (PRF_PRF (arg_node) == F_idx_modarray_AxSxS) {
             if (CUisShmemTypeNew (IDS_NTYPE (INFO_LHS (arg_info)))
                 && CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
-
-                /* shmem0 = idx_modarray_AxSxS( shmem1, idx, val);
-                 * -->
-                 * shmem0 = idx_modarray_AxSxS( shmem0, idx, val);
-                 *
-                 * Insert shmem0->shmem0 into lut.
-                 */
-                INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info),
-                                                         IDS_AVIS (INFO_LHS (arg_info)),
-                                                         IDS_AVIS (INFO_LHS (arg_info)));
+                subst_avis = AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info)));
+                if (subst_avis != NULL) {
+                    IDS_AVIS (INFO_LHS (arg_info)) = subst_avis;
+                    AVIS_SUBST (ID_AVIS (PRF_ARG1 (arg_node))) = subst_avis;
+                    ID_AVIS (PRF_ARG1 (arg_node)) = subst_avis;
+                } else {
+                    AVIS_SUBST (ID_AVIS (PRF_ARG1 (arg_node)))
+                      = IDS_AVIS (INFO_LHS (arg_info));
+                    ID_AVIS (PRF_ARG1 (arg_node)) = IDS_AVIS (INFO_LHS (arg_info));
+                }
+            }
+        } else if (PRF_PRF (arg_node) == F_syncthreads) {
+            subst_avis = AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info)));
+            if (subst_avis != NULL) {
+                IDS_AVIS (INFO_LHS (arg_info)) = subst_avis;
+                AVIS_SUBST (ID_AVIS (PRF_ARG1 (arg_node))) = subst_avis;
+                ID_AVIS (PRF_ARG1 (arg_node)) = subst_avis;
+            } else {
+                AVIS_SUBST (ID_AVIS (PRF_ARG1 (arg_node)))
+                  = IDS_AVIS (INFO_LHS (arg_info));
                 ID_AVIS (PRF_ARG1 (arg_node)) = IDS_AVIS (INFO_LHS (arg_info));
             }
         } else if (PRF_PRF (arg_node) == F_shmem_boundary_load) {
-            avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
-            INFO_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                                   avis);
-            IDS_AVIS (INFO_LHS (arg_info)) = avis;
-            ID_AVIS (PRF_ARG2 (arg_node)) = avis;
-        } else if (PRF_PRF (arg_node) == F_syncthreads) {
-            avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
-            INFO_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                                   avis);
-            IDS_AVIS (INFO_LHS (arg_info)) = avis;
-            ID_AVIS (PRF_ARG1 (arg_node)) = avis;
         } else {
         }
     }

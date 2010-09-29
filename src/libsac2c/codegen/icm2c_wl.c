@@ -297,6 +297,40 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileWL3_SCHEDULE__BEGIN( int lb, char *idx_nt, int ub, int chunksz)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL3_SCHEDULE__BEGIN( dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz)
+{
+    DBUG_ENTER ("ICMCompileWL3_SCHEDULE__BEGIN");
+
+#define WL3_SCHEDULE__BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL3_SCHEDULE__BEGIN
+
+    INDENT;
+    fprintf (global.outfile,
+             "for( SAC_ND_A_FIELD( %s) = %d; SAC_ND_A_FIELD( %s) < %d; SAC_ND_A_FIELD( "
+             "%s) += %d)\n",
+             idx_nt, lb, idx_nt, ub, idx_nt, chunksz);
+    INDENT;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileWL_DECLARE_SHAPE_FACTOR( char *to_NT, int to_sdim,
  *                                            char *idx_vec_NT, int dims)
  *
@@ -392,6 +426,35 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef WL_SCHEDULE__END
+
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL3_SCHEDULE__END( char *idx_nt)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL3_SCHEDULE__END( dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL3_SCHEDULE__END (char *idx_nt)
+{
+    DBUG_ENTER ("ICMCompileWL3_SCHEDULE__END");
+
+#define WL3_SCHEDULE__END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL3_SCHEDULE__END
 
     global.indent--;
     INDENT;

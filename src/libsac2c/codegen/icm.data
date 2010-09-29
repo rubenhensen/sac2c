@@ -742,6 +742,15 @@ ICM_DEF( WL_SCHEDULE__BEGIN, ICM_TRACE_NONE)
 ICM_END( WL_SCHEDULE__BEGIN, ( dims))
 #endif
 
+#if defined(WL3_SCHEDULE__BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL3_SCHEDULE__BEGIN, ICM_TRACE_NONE)
+  ICM_INT( lb)
+  ICM_NT( idx_nt)
+  ICM_INT( ub)
+  ICM_INT( chunksz)
+ICM_END( WL3_SCHEDULE__BEGIN, ( lb, idx_nt, ub, chunksz))
+#endif
+
 #if defined(WL_DECLARE_SHAPE_FACTOR) || defined(ICM_ALL)
 ICM_DEF( WL_DECLARE_SHAPE_FACTOR, ICM_TRACE_NONE)
   ICM_NT( to_NT)
@@ -764,6 +773,12 @@ ICM_END( WL_DEFINE_SHAPE_FACTOR, (to_NT, to_sdim, idx_vec_NT, dims))
 ICM_DEF( WL_SCHEDULE__END, ICM_TRACE_NONE)
   ICM_INT( dims)
 ICM_END( WL_SCHEDULE__END, ( dims))
+#endif
+
+#if defined(WL3_SCHEDULE__END) || defined(ICM_ALL)
+ICM_DEF( WL3_SCHEDULE__END, ICM_TRACE_NONE)
+  ICM_NT( idx_nt)
+ICM_END( WL3_SCHEDULE__END, ( idx_nt))
 #endif
 
 #if defined(WL_SUBALLOC) || defined(ICM_ALL)

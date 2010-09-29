@@ -369,6 +369,21 @@ KPPprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = NULL;
         INFO_REMOVE_IDS (arg_info) = TRUE;
         break;
+    case F_idx_modarray_AxSxS:
+        /*
+         * Note that this is a quick fix for the problem generated in
+         * cuknl. In cuknl, if a modarray_AxSxS works on shared memory,
+         * the first argument has an old avis in the calling context (
+         * See function CUKNLid in create_cuda_kernels.c). This causes
+         * problem when dvr is run when the avis in the calling context
+         * is freed. So here we simple set the avis of the first argument
+         * to the avis of the lhs ids. However, a better solution should
+         * eventually replace this quick fix.
+         */
+        if (CUisShmemTypeNew (IDS_NTYPE (INFO_LHS (arg_info)))
+            && CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
+            ID_AVIS (PRF_ARG1 (arg_node)) = IDS_AVIS (INFO_LHS (arg_info));
+        }
     case F_syncin:
     case F_syncout:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

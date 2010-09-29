@@ -116,7 +116,9 @@ AddCCLibs (str_buf *buffer)
      */
 
 #if ENABLE_MT
-    SBUFprintf (buffer, "%s ", global.config.ccmtlink);
+    if (global.backend != BE_cuda) { /* Does not work with cuda compiler nvcc */
+        SBUFprintf (buffer, "%s ", global.config.ccmtlink);
+    }
 #endif
 
 #if ENABLE_RTSPEC

@@ -249,18 +249,18 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-    // syntax_tree = ASHAdoAdjustShmemAccess( syntax_tree);
+    syntax_tree = ASHAdoAdjustShmemAccess (syntax_tree);
 
     info = MakeInfo ();
 
     TRAVpush (TR_cuknl);
-    // syntax_tree = TRAVdo( syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    // syntax_tree = KPPdoKernelPostProcessing( syntax_tree);
-    // syntax_tree = ESBLdoExpandShmemBoundaryLoad( syntax_tree);
+    syntax_tree = KPPdoKernelPostProcessing (syntax_tree);
+    syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

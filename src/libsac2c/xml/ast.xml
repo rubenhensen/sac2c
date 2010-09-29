@@ -151,6 +151,9 @@
           <node name="Part" />
           <node name="Code" />
           <node name="Prf" />
+          <node name="Assign" />
+          <node name="Arg" />
+          <node name="Vardec" />
         </travuser>
         <travnone>
           <node name="With2" />
