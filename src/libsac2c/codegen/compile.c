@@ -7229,7 +7229,8 @@ COMPprfCUDAThreadIdxX (node *arg_node, info *arg_info)
                           NULL);
     */
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_X", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_X",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7241,7 +7242,8 @@ COMPprfCUDAThreadIdxY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxY");
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_Y", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_Y",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7253,7 +7255,8 @@ COMPprfCUDAThreadIdxZ (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDAThreadIdxZ");
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_THREADIDX_Z", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_Z",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7285,7 +7288,8 @@ COMPprfCUDABlockDimX (node *arg_node, info *arg_info)
                           NULL);
     */
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_X", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_X",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7297,7 +7301,8 @@ COMPprfCUDABlockDimY (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDABlockDimY");
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_Y", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_Y",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7309,7 +7314,8 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprfCUDABlockDimZ");
 
-    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_BLOCKDIM_Z", NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_Z",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
 
     DBUG_RETURN (ret_node);
 }

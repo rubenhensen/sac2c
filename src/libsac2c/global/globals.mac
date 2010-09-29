@@ -1053,7 +1053,7 @@ GLOBAL (bool, mutc_rc_indirect, FALSE);
  */
 
 GLOBAL (int, cuda_1d_block_x, 512);
-GLOBAL (int, cuda_2d_block_x, 32);
+GLOBAL (int, cuda_2d_block_x, 16);
 GLOBAL (int, cuda_2d_block_y, 16);
 
 #undef GLOBALtype

@@ -384,6 +384,7 @@ KPPprf (node *arg_node, info *arg_info)
             && CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
             ID_AVIS (PRF_ARG1 (arg_node)) = IDS_AVIS (INFO_LHS (arg_info));
         }
+        break;
     case F_syncin:
     case F_syncout:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

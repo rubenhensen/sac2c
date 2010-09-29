@@ -153,15 +153,15 @@
 #define THREADIDX_Y threadIdx.y
 #define THREADIDX_Z threadIdx.z
 
-#define SAC_CUDA_BLOCKIDX_X() blockIdx.x;
-#define SAC_CUDA_BLOCKIDX_Y() blockIdx.y;
+#define SAC_CUDA_BLOCKIDX_X(to_nt) NT_NAME (to_nt) = blockIdx.x;
+#define SAC_CUDA_BLOCKIDX_Y(to_nt) NT_NAME (to_nt) = blockIdx.y;
 
-#define SAC_CUDA_BLOCKDIM_X() blockDim.x;
-#define SAC_CUDA_BLOCKDIM_Y() blockDim.y;
+#define SAC_CUDA_BLOCKDIM_X(to_nt) NT_NAME (to_nt) = blockDim.x;
+#define SAC_CUDA_BLOCKDIM_Y(to_nt) NT_NAME (to_nt) = blockDim.y;
 
-#define SAC_CUDA_THREADIDX_X() threadIdx.x;
-#define SAC_CUDA_THREADIDX_Y() threadIdx.y;
-#define SAC_CUDA_THREADIDX_Z() threadIdx.z;
+#define SAC_CUDA_THREADIDX_X(to_nt) NT_NAME (to_nt) = threadIdx.x;
+#define SAC_CUDA_THREADIDX_Y(to_nt) NT_NAME (to_nt) = threadIdx.y;
+#define SAC_CUDA_THREADIDX_Z(to_nt) NT_NAME (to_nt) = threadIdx.z;
 
 /*
  * CUDA sync thread primitive

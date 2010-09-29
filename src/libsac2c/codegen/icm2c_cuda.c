@@ -255,19 +255,21 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     if (array_dim == 1) {
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 grid((%s-%s)/LBLOCKSZ+1);\n", var_ANY[0],
-                 var_ANY[1]);
+        fprintf (global.outfile, "dim3 grid((%s-%s)/%d+1);\n", var_ANY[0], var_ANY[1],
+                 global.cuda_1d_block_x);
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 block(LBLOCKSZ);");
+        fprintf (global.outfile, "dim3 block(%d);", global.cuda_1d_block_x);
     } else if (array_dim == 2) {
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 grid((%s-%s)/SBLOCKSZ+1, (%s-%s)/SBLOCKSZ+1);\n",
-                 var_ANY[0], var_ANY[2], var_ANY[1], var_ANY[3]);
+        fprintf (global.outfile, "dim3 grid((%s-%s)/%d+1, (%s-%s)/%d+1);\n", var_ANY[0],
+                 var_ANY[2], global.cuda_2d_block_x, var_ANY[1], var_ANY[3],
+                 global.cuda_2d_block_y);
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 block(SBLOCKSZ,SBLOCKSZ);");
+        fprintf (global.outfile, "dim3 block(%d, %d);", global.cuda_2d_block_x,
+                 global.cuda_2d_block_y);
     } else {
         if (array_dim == 3) {
             INDENT;
