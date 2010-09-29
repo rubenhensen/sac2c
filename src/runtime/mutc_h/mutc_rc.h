@@ -24,6 +24,15 @@
 #define SAC_SL_DETACH() sl_detach ()
 #define SAC_MUTC_DEBUG_RC(a)
 
+/****************************************************
+ * In module mode number of exclusive places will be
+ * always 1 as we dont know how many exclusive places
+ * this module will be running on.
+ *
+ * In program mode it will be as many as specified,
+ * by default 1.
+ *
+ * **************************************************/
 #if SAC_DO_COMPILE_MODULE == 1
 #define SAC_MUTC_GET_RC_PLACE(DESC) SAC_mutc_rc_place
 #else /* SAC_DO_COMPILE_MODULE */
