@@ -2778,6 +2778,15 @@
         <node name="Withid" />
       </travuser>
     </traversal>
+     <traversal id="RMPR" name="Remove propagates" default="sons" include="remove_propagates.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="With2" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
      <traversal id="MTDCR" name="MT dead code removal" default="sons" include="mtdcr.h">
       <travuser>
         <node name="Module" />

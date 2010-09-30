@@ -1123,6 +1123,9 @@ SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, 
 SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns,
           ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
+SUBPHASE (rmpr, "Filtering propagates", RMPRdoRemovePropagates,
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
+
 SUBPHASE (mtrmi, "Restoring memory instructions", MTRMIdoRestoreMemoryInstrs,
           ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
