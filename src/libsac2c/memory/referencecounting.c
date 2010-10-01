@@ -1064,6 +1064,9 @@ RCIgenarray (node *arg_node, info *arg_info)
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
+    GENARRAY_DEFSHAPEEXPR (arg_node)
+      = TRAVopt (GENARRAY_DEFSHAPEEXPR (arg_node), arg_info);
+
     INFO_MODE (arg_info) = rc_apuse;
     GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
 
