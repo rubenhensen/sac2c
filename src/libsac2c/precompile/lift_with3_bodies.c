@@ -837,11 +837,15 @@ LW3range (node *arg_node, info *arg_info)
      */
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
-    /* Re compute dfm to account for init of folds */
-#if 0
-  INFO_FUNDEF( arg_info) = 
-    INFDFMSdoInferDfms( RDFMSdoRemoveDfms( INFO_FUNDEF( arg_info)), 
-                        HIDE_LOCALS_WITH3);
+    /*
+     * Re compute dfm to account for init of folds
+     * This is needed for mmult
+     * Believe the need stems from nested fold with3
+     */
+#if 1
+    INFO_FUNDEF (arg_info)
+      = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
+                            HIDE_LOCALS_WITH3);
 #endif
 
     RANGE_RESULTS (arg_node)
