@@ -277,7 +277,7 @@ GetBasetypeStr (types *type)
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
     } else if (basetype == T_double_dev || basetype == T_double_shmem) {
-        str = "float"; /* We do not support double in CUDA yet */
+        str = "double"; /* We do not support double in CUDA yet */
     }
     /* If the enforce_float flag is set,
      * we change all doubles to floats */
@@ -8821,14 +8821,14 @@ COMPrange (node *arg_node, info *arg_info)
               = MakeIcm_GETVAR_ifNeeded (RANGE_CHUNKSIZE (arg_node));
         }
 
-        loopnests = TCmakeAssignIcm4 ("WL3_SCHEDULE__BEGIN",
+        loopnests = TCmakeAssignIcm5 ("WL3_SCHEDULE__BEGIN",
                                       DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
                                       DUPdupIdNt (RANGE_INDEX (arg_node)),
                                       DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
                                       (RANGE_CHUNKSIZE (arg_node) == NULL)
                                         ? TCmakeIdCopyString ("1")
                                         : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
-                                      NULL);
+                                      TBmakeNum (RANGE_NEEDCUDAUNROLL (arg_node)), NULL);
 
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
         loopnests = TCappendAssign (loopnests,

@@ -4,7 +4,6 @@
 
 #include "types.h"
 
-extern void ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg);
 extern void ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg);
 extern void ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt,
                                                 char **vararg);

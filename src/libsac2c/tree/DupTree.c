@@ -339,6 +339,11 @@ DupFlags (node *new_node, node *old_node)
 
     /* TODO : Copy of flagvector (has to be done by sah) */
 
+    /* A quick fix to enable cuda unrolling - jgo */
+    if (NODE_TYPE (new_node) == N_range) {
+        RANGE_NEEDCUDAUNROLL (new_node) = RANGE_NEEDCUDAUNROLL (old_node);
+    }
+
     DBUG_RETURN (new_node);
 }
 

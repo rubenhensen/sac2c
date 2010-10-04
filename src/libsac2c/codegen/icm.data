@@ -748,7 +748,8 @@ ICM_DEF( WL3_SCHEDULE__BEGIN, ICM_TRACE_NONE)
   ICM_NT( idx_nt)
   ICM_INT( ub)
   ICM_INT( chunksz)
-ICM_END( WL3_SCHEDULE__BEGIN, ( lb, idx_nt, ub, chunksz))
+  ICM_INT( need_unroll)
+ICM_END( WL3_SCHEDULE__BEGIN, ( lb, idx_nt, ub, chunksz, need_unroll))
 #endif
 
 #if defined(WL_DECLARE_SHAPE_FACTOR) || defined(ICM_ALL)

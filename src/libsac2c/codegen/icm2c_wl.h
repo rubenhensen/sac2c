@@ -17,7 +17,8 @@ extern void ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim,
                                                     char *val_NT, int val_sdim);
 
 extern void ICMCompileWL_SCHEDULE__BEGIN (int dims);
-void ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz);
+void ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
+                                    bool need_unroll);
 
 extern void ICMCompileWL_DECLARE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT,
                                                int dims);

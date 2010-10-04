@@ -417,7 +417,7 @@ CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
 CC               := "/home/unibench/ctca-cuda.stca.herts.ac.uk/cuda-3.0/cuda/bin/nvcc"
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
 */
-CCFLAGS          :=  "-Xcompiler -Wall -Xcompiler -Wno-unused "
+CCFLAGS          :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
                      "-Xcompiler -fno-builtin -Xcompiler -std=c99"
 CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"

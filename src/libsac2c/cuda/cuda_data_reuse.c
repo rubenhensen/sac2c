@@ -819,7 +819,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     simpletype sty;
     range_pair_t *innermost;
 
-    DBUG_ENTER ("ComputeGlobalMemoryIndex");
+    DBUG_ENTER ("InsertGlobal2Shared");
 
     array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP (access_info));
 
@@ -937,6 +937,16 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
 
     RANGE_G2SINSTRS (RP_OUTER (innermost))
       = TCappendAssign (assigns, RANGE_G2SINSTRS (RP_OUTER (innermost)));
+
+    /* The inner loop of the blocked pair will be unrolled by the CUDA
+     * compiler. Note that this might increase the registers used by
+     * each thread and thus potentially decrease thread level parallelism,
+     * so it's a better idea to make this a compiler option which
+     * can be switched on and off for experimental purpose. Also, if this option
+     * is switched on, we should aslo set the maxrregcount option when compiling
+     * with nvcc to pervent excessive register usage. This max register count
+     * should be set to 20. */
+    RANGE_NEEDCUDAUNROLL (RP_INNER (innermost)) = TRUE;
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);

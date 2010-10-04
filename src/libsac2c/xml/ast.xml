@@ -11221,6 +11221,9 @@ N_tfarg :
         <flag name="IsFitting" default="FALSE">
 	  <description>True iff this range is a fitting range</description>
 	</flag>
+        <flag name="NeedCudaUnroll" default="FALSE">
+	  <description>True iff this range needs to be unrolled by the CUDA compiler</description>
+	</flag>
       </flags>
     </node>
   </syntaxtree>

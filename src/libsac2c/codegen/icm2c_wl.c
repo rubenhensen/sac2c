@@ -297,7 +297,8 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL3_SCHEDULE__BEGIN( int lb, char *idx_nt, int ub, int chunksz)
+ *   void ICMCompileWL3_SCHEDULE__BEGIN( int lb, char *idx_nt, int ub, int chunksz, bool
+ *need_unroll)
  *
  * description:
  *   Implements the compilation of the following ICM:
@@ -307,7 +308,8 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
  ******************************************************************************/
 
 void
-ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz)
+ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
+                               bool need_unroll)
 {
     DBUG_ENTER ("ICMCompileWL3_SCHEDULE__BEGIN");
 
@@ -315,6 +317,11 @@ ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef WL3_SCHEDULE__BEGIN
+
+    INDENT;
+    if (need_unroll) {
+        fprintf (global.outfile, "#pragma unroll\n");
+    }
 
     INDENT;
     fprintf (global.outfile,

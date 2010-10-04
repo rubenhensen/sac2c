@@ -876,9 +876,6 @@ SUBPHASE( shmem,
           cuda)
 #endif
 
-SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
-          global.backend == BE_cuda && global.optimize.doshr, cuda)
-
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
           global.backend == BE_cuda, cuda)
 
@@ -893,6 +890,9 @@ SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
           MTRANdoMinimizeTransfers, global.backend == BE_cuda && global.optimize.domemopt,
           cuda)
+
+SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
+          global.backend == BE_cuda && global.optimize.doshr, cuda)
 
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
           global.backend == BE_cuda && global.optimize.doexpar, pc)

@@ -5488,6 +5488,11 @@ PRTrange (node *arg_node, info *arg_info)
         INDENT;
     }
 
+    if (RANGE_NEEDCUDAUNROLL (arg_node)) {
+        fprintf (global.outfile, "/* unroll */\n");
+        INDENT;
+    }
+
     fprintf (global.outfile, "(");
     RANGE_LOWERBOUND (arg_node) = TRAVdo (RANGE_LOWERBOUND (arg_node), arg_info);
     fprintf (global.outfile, " <= ");
