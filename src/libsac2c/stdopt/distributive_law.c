@@ -239,7 +239,7 @@ isScalar (node *n)
         break;
 
     case N_id:
-        res = ID_ISSCLPRF (n);
+        res = TUisScalar (AVIS_TYPE (ID_AVIS (n)));
         break;
 
     default:
@@ -349,7 +349,6 @@ flattenPrfarg (node *arg_node, info *arg_info)
     node *res;
     DBUG_ENTER ("flattenPrfarg");
 
-#ifdef FIXME // appears to break things...
     if (N_num == NODE_TYPE (arg_node)) {
         res = AWLFIflattenExpression (arg_node, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGN (arg_info),
@@ -361,10 +360,6 @@ flattenPrfarg (node *arg_node, info *arg_info)
         DBUG_ASSERT (N_id == NODE_TYPE (arg_node),
                      "DL polluting AST with non-flattened nodes!");
     }
-#else  //  FIXME // appears to break things...
-    res = arg_node;
-#endif //  FIXME // appears to break things...
-
     DBUG_RETURN (res);
 }
 
