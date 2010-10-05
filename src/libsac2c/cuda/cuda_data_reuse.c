@@ -510,6 +510,7 @@ struct INFO {
     int cuwldim;
     cuidx_set_t *cis;
     node *preassigns;
+    node *g2s_assigns;
 };
 
 #define INFO_LEVEL(n) (n->level)
@@ -520,6 +521,7 @@ struct INFO {
 #define INFO_CUWLDIM(n) (n->cuwldim)
 #define INFO_CIS(n) (n->cis)
 #define INFO_PREASSIGNS(n) (n->preassigns)
+#define INFO_G2S_ASSIGNS(n) (n->g2s_assigns)
 
 /** <!--********************************************************************-->
  *
@@ -543,6 +545,7 @@ MakeInfo ()
     INFO_CUWLDIM (result) = 0;
     INFO_CIS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_G2S_ASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -619,7 +622,8 @@ ComputeIndexInternal (bool global, char *postfix, node *idx, node *coefficient,
     if (idx != NULL) {
         args = TBmakeExprs (coefficient, TBmakeExprs (idx, NULL));
     } else {
-        args = TBmakeExprs (coefficient, NULL);
+        // args = TBmakeExprs( coefficient, NULL);
+        args = coefficient;
     }
 
     /* Multiply the index by the coefficient */
@@ -681,9 +685,12 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         /* For external id apprearing in global index, we create
          * an assignment "var_extid = _mul_SxS_( id, coe);". For shared memory
          * index, we don't need to do anything */
-        sg_info = ComputeIndexInternal (TRUE, "extid", TBmakeId (CUIDX_ID (idx)),
+        sg_info = ComputeIndexInternal (TRUE, "extid_glb", TBmakeId (CUIDX_ID (idx)),
                                         TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL,
                                         TRUE, sg_info, arg_info);
+
+        sg_info = ComputeIndexInternal (FALSE, "extid_shr", NULL, TBmakeNum (0), FALSE,
+                                        NULL, FALSE, sg_info, arg_info);
         break;
 
     case IDX_THREADIDX_X:
@@ -746,7 +753,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
     DBUG_RETURN (sg_info);
 }
 
-static void
+static node *
 CreateCudaIndexInitCode (node *part, info *arg_info)
 {
     int dim;
@@ -775,12 +782,13 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
 
-    BLOCK_INSTR (PART_CBLOCK (part))
-      = TCappendAssign (assigns, BLOCK_INSTR (PART_CBLOCK (part)));
-
+    /*
+      BLOCK_INSTR( PART_CBLOCK( part)) =
+        TCappendAssign( assigns, BLOCK_INSTR( PART_CBLOCK( part)));
+    */
     INFO_CIS (arg_info) = cis;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (assigns);
 }
 
 static range_pair_t *
@@ -935,18 +943,23 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                           SHarray2Shape (CUAI_SHARRAYSHP (access_info)), F_syncthreads,
                           args, &vardecs, &assigns);
 
-    RANGE_G2SINSTRS (RP_OUTER (innermost))
-      = TCappendAssign (assigns, RANGE_G2SINSTRS (RP_OUTER (innermost)));
+    if (innermost != NULL) {
+        RANGE_G2SINSTRS (RP_OUTER (innermost))
+          = TCappendAssign (assigns, RANGE_G2SINSTRS (RP_OUTER (innermost)));
 
-    /* The inner loop of the blocked pair will be unrolled by the CUDA
-     * compiler. Note that this might increase the registers used by
-     * each thread and thus potentially decrease thread level parallelism,
-     * so it's a better idea to make this a compiler option which
-     * can be switched on and off for experimental purpose. Also, if this option
-     * is switched on, we should aslo set the maxrregcount option when compiling
-     * with nvcc to pervent excessive register usage. This max register count
-     * should be set to 20. */
-    RANGE_NEEDCUDAUNROLL (RP_INNER (innermost)) = TRUE;
+        /* The inner loop of the blocked pair will be unrolled by the CUDA
+         * compiler. Note that this might increase the registers used by
+         * each thread and thus potentially decrease thread level parallelism,
+         * so it's a better idea to make this a compiler option which
+         * can be switched on and off for experimental purpose. Also, if this option
+         * is switched on, we should aslo set the maxrregcount option when compiling
+         * with nvcc to pervent excessive register usage. This max register count
+         * should be set to 20. */
+        RANGE_NEEDCUDAUNROLL (RP_INNER (innermost)) = TRUE;
+    } else {
+        INFO_G2S_ASSIGNS (arg_info)
+          = TCappendAssign (assigns, INFO_G2S_ASSIGNS (arg_info));
+    }
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
@@ -1131,17 +1144,30 @@ node *
 CUDRpart (node *arg_node, info *arg_info)
 {
     int dim;
+    node *init_assigns;
 
     DBUG_ENTER ("CUDRpart");
 
     dim = TCcountIds (PART_IDS (arg_node));
 
     if (NODE_TYPE (BLOCK_INSTR (PART_CBLOCK (arg_node))) != N_empty) {
-        CreateCudaIndexInitCode (arg_node, arg_info);
+        init_assigns = CreateCudaIndexInitCode (arg_node, arg_info);
 
+        /* Note here that we don't need to stack N_part because there will
+         * not be any partitions within an N_part */
         INFO_LEVEL (arg_info) += dim;
         PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         INFO_LEVEL (arg_info) -= dim;
+
+        if (INFO_G2S_ASSIGNS (arg_info) != NULL) {
+            BLOCK_INSTR (PART_CBLOCK (arg_node))
+              = TCappendAssign (INFO_G2S_ASSIGNS (arg_info),
+                                BLOCK_INSTR (PART_CBLOCK (arg_node)));
+            INFO_G2S_ASSIGNS (arg_info) = NULL;
+        }
+
+        BLOCK_INSTR (PART_CBLOCK (arg_node))
+          = TCappendAssign (init_assigns, BLOCK_INSTR (PART_CBLOCK (arg_node)));
 
         INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
     }

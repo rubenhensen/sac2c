@@ -2643,7 +2643,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
     if (NotImplemented (arg_node, arg_info)) {
         CTInote ("Cannot transform with-loop due to unsupported operation");
     } else if ((global.backend == BE_mutc)
-               || (global.backend == BE_cuda /* && INFO_INCUDAWL( arg_info) */)) {
+               || (global.backend == BE_cuda && INFO_INCUDAWL (arg_info))) {
         INFO_TRANSFORMED_W2_TO_W3 (arg_info) = TRUE;
         /*
          * First of all, we transform the code blocks. As we migth potentially
