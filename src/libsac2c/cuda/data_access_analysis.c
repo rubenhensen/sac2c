@@ -282,9 +282,11 @@ ActOnId (node *avis, info *arg_info)
                 type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
                                         PART_INFO_DIM (part_info), avis);
             }
+
             /* If either LOOPIDX of THREADIDX apprears in this dimension, it's no longer
              * constant */
             CUAI_ISCONSTANT (INFO_ACCESS_INFO (arg_info), INFO_IDXDIM (arg_info)) = FALSE;
+
             AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
                       PART_INFO_NTH (part_info) + 1, INFO_IDXDIM (arg_info), arg_info);
             MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
@@ -328,43 +330,49 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
 
         shmem_size = 0;
 
-        while (index != NULL) {
-            coefficient = abs (CUIDX_COEFFICIENT (index));
+        if (!CUAI_ISCONSTANT (access_info, i)) {
+            while (index != NULL) {
+                coefficient = abs (CUIDX_COEFFICIENT (index));
 
-            switch (CUIDX_TYPE (index)) {
-            case IDX_THREADIDX_X:
-                shmem_size += (coefficient * DIMS[dim - 1][1]);
-                break;
-            case IDX_THREADIDX_Y:
-                shmem_size += (coefficient * DIMS[dim - 1][0]);
-                break;
-            case IDX_LOOPIDX:
-                shmem_size += (coefficient * DIMS[dim - 1][1]);
-                /* Set the block size for the loop dim */
-                AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
-                AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
-                break;
-            default:
-                break;
+                switch (CUIDX_TYPE (index)) {
+                case IDX_THREADIDX_X:
+                    shmem_size += (coefficient * DIMS[dim - 1][1]);
+                    break;
+                case IDX_THREADIDX_Y:
+                    shmem_size += (coefficient * DIMS[dim - 1][0]);
+                    break;
+                case IDX_LOOPIDX:
+                    shmem_size += (coefficient * DIMS[dim - 1][1]);
+                    /* Set the block size for the loop dim */
+                    AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
+                    AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
+                    break;
+                default:
+                    break;
+                }
+
+                index = CUIDX_NEXT (index);
             }
 
-            index = CUIDX_NEXT (index);
+            if (shmem_size == 0) {
+                if (dim == 2) { /* X dimension */
+                    shmem_size = DIMS[dim - 1][i];
+                } else if (dim == 1) { /* Y dimension */
+                    shmem_size = global.cuda_2d_block_y;
+                }
+            }
+
+            /* For 2D share memory, size of each dimension must be a multiple
+             * of the corresonding block size */
+            if (dim == 2) {
+                if (shmem_size % DIMS[1][i] != 0) {
+                    shmem_size = ((shmem_size + DIMS[1][i]) / DIMS[1][i]) * DIMS[1][i];
+                }
+            }
         }
-
-        if (shmem_size == 0) {
-            if (dim == 2) { /* X dimension */
-                shmem_size = DIMS[dim - 1][i];
-            } else if (dim == 1) { /* Y dimension */
-                shmem_size = global.cuda_2d_block_y;
-            }
-        }
-
-        /* For 2D share memory, size of each dimension must be a multiple
-         * of the corresonding block size */
-        if (dim == 2) {
-            if (shmem_size % DIMS[1][i] != 0) {
-                shmem_size = ((shmem_size + DIMS[1][i]) / DIMS[1][i]) * DIMS[1][i];
-            }
+        /* If the index is constant, we simply give it a size of 1. */
+        else {
+            shmem_size = 1;
         }
 
         sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);

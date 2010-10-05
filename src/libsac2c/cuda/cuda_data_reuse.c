@@ -24,6 +24,7 @@
 #include "matrix.h"
 #include "types.h"
 #include "cuda_utils.h"
+#include "create_cond_fun.h"
 
 typedef struct CUIDX_SET_T {
     node *tx;
@@ -827,6 +828,9 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     simpletype sty;
     range_pair_t *innermost;
 
+    node *in_shared_array, *out_shared_array;
+    node *cond = NULL, *predicate = NULL;
+
     DBUG_ENTER ("InsertGlobal2Shared");
 
     array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP (access_info));
@@ -836,6 +840,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     } else if (CUAI_DIM (access_info) == 2) {
         int x, y;
 
+        in_shared_array = CUAI_SHARRAY (access_info);
+
         assigns = TCappendAssign (SG_INFO_GLBIDX_CAL (sg_info),
                                   SG_INFO_GLBIDX_CAL (SG_INFO_NEXT (sg_info)));
 
@@ -844,56 +850,97 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             shr_args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
             glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
-            /* Create Ashr[ty+0][...], Ashr[ty+16][...], Ashr[ty+32][...] ...*/
-            args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
-                                TBmakeExprs (TBmakeNum (y), NULL));
-            avis = CreatePrfOrConst (TRUE, "ty_shr_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &assigns);
+            if (!CUAI_ISCONSTANT (access_info, 0)) {
+                /* Create Ashr[ty+0][...], Ashr[ty+16][...], Ashr[ty+32][...] ...*/
+                args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (y), NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_shr_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &assigns);
 
-            shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
 
-            /* Create Aglb[base+ty+0][...], Aglb[base+ty+16][...], Aglb[base+ty+32][...]
-             * ...*/
-            args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
-                                TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)), NULL));
-            avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &assigns);
+                /* Create Aglb[base+ty+0][...], Aglb[base+ty+16][...],
+                 * Aglb[base+ty+32][...] ...*/
+                args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)),
+                                                 NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &assigns);
 
-            args = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeNum (y), NULL));
-            avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &assigns);
+                args = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeNum (y), NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &assigns);
 
-            glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+                glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+            } else {
+                avis = CreatePrfOrConst (FALSE, "ty_shr_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, TBmakeNum (0), &vardecs, &assigns);
+
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                glb_args
+                  = TCcombineExprs (glb_args,
+                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)),
+                                                 NULL));
+
+                args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (0), NULL));
+
+                cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS,
+                                         args, &vardecs, &predicate);
+            }
 
             for (x = 0; x < NUM_VAL (EXPRS_EXPR2 (array_elems));
                  x += global.cuda_2d_block_x) {
                 shr_args_tmp = DUPdoDupTree (shr_args);
                 glb_args_tmp = DUPdoDupTree (glb_args);
 
-                /* Create Ashr[...][tx+0], Ashr[...][tx+32], Ashr[...][tx+64] ...*/
-                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                                    TBmakeExprs (TBmakeNum (x), NULL));
-                avis = CreatePrfOrConst (TRUE, "tx_shr_g2s", T_int, SHmakeShape (0),
-                                         F_add_SxS, args, &vardecs, &assigns);
+                if (!CUAI_ISCONSTANT (access_info, 1)) {
+                    /* Create Ashr[...][tx+0], Ashr[...][tx+32], Ashr[...][tx+64] ...*/
+                    args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                        TBmakeExprs (TBmakeNum (x), NULL));
+                    avis = CreatePrfOrConst (TRUE, "tx_shr_g2s", T_int, SHmakeShape (0),
+                                             F_add_SxS, args, &vardecs, &assigns);
 
-                shr_args_tmp
-                  = TCcombineExprs (shr_args_tmp, TBmakeExprs (TBmakeId (avis), NULL));
+                    shr_args_tmp = TCcombineExprs (shr_args_tmp,
+                                                   TBmakeExprs (TBmakeId (avis), NULL));
 
-                /* Create Aglb[...][base+tx+0], Aglb[...][base+tx+32], Aglb[][base+tx+64]
-                 * ...*/
-                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (
-                                                   SG_INFO_NEXT (sg_info))),
-                                                 NULL));
-                avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
-                                         F_add_SxS, args, &vardecs, &assigns);
+                    /* Create Aglb[...][base+tx+0], Aglb[...][base+tx+32],
+                     * Aglb[][base+tx+64] ...*/
+                    args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                        TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (
+                                                       SG_INFO_NEXT (sg_info))),
+                                                     NULL));
+                    avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
+                                             F_add_SxS, args, &vardecs, &assigns);
 
-                args = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeNum (x), NULL));
-                avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
-                                         F_add_SxS, args, &vardecs, &assigns);
+                    args
+                      = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeNum (x), NULL));
+                    avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
+                                             F_add_SxS, args, &vardecs, &assigns);
 
-                glb_args_tmp
-                  = TCcombineExprs (glb_args_tmp, TBmakeExprs (TBmakeId (avis), NULL));
+                    glb_args_tmp = TCcombineExprs (glb_args_tmp,
+                                                   TBmakeExprs (TBmakeId (avis), NULL));
+                } else {
+                    avis
+                      = CreatePrfOrConst (FALSE, "tx_shr_g2s", T_int, SHmakeShape (0),
+                                          F_add_SxS, TBmakeNum (0), &vardecs, &assigns);
+
+                    shr_args_tmp = TCcombineExprs (shr_args_tmp,
+                                                   TBmakeExprs (TBmakeId (avis), NULL));
+
+                    glb_args_tmp
+                      = TCcombineExprs (glb_args_tmp,
+                                        TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (
+                                                       SG_INFO_NEXT (sg_info))),
+                                                     NULL));
+
+                    args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                        TBmakeExprs (TBmakeNum (0), NULL));
+
+                    cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0),
+                                             F_eq_SxS, args, &vardecs, &predicate);
+                }
 
                 /* Create global2shared assignment i.e. idx_modarray_AxSxS */
                 glb_idx
@@ -931,17 +978,30 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
         DBUG_ASSERT ((0), "Reuse array with unsupported dimension!");
     }
 
-    innermost = GetInnermostRangePair (sg_info);
-
     /* Create syncthreads after loading data from global memory to shared memory */
-    args = TBmakeExprs (TBmakeId (CUAI_SHARRAY (access_info)), NULL);
+    /*
+      args =  TBmakeExprs( TBmakeId( CUAI_SHARRAY( access_info)), NULL);
 
-    CUAI_SHARRAY (access_info)
-      = CreatePrfOrConst (TRUE, "shmem",
-                          TYgetSimpleType (
-                            TYgetScalar (AVIS_TYPE (CUAI_SHARRAY (access_info)))),
-                          SHarray2Shape (CUAI_SHARRAYSHP (access_info)), F_syncthreads,
-                          args, &vardecs, &assigns);
+      CUAI_SHARRAY( access_info) =
+        CreatePrfOrConst( TRUE, "shmem",
+                          TYgetSimpleType( TYgetScalar( AVIS_TYPE( CUAI_SHARRAY(
+      access_info)))), SHarray2Shape( CUAI_SHARRAYSHP( access_info)), F_syncthreads, args,
+      &vardecs, &assigns);
+    */
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+    if (predicate != NULL) {
+        out_shared_array = CUAI_SHARRAY (access_info);
+
+        assigns = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), assigns, cond,
+                                      in_shared_array, out_shared_array);
+
+        assigns = TCappendAssign (predicate, assigns);
+    }
+
+    innermost = GetInnermostRangePair (sg_info);
 
     if (innermost != NULL) {
         RANGE_G2SINSTRS (RP_OUTER (innermost))
@@ -960,9 +1020,6 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
         INFO_G2S_ASSIGNS (arg_info)
           = TCappendAssign (assigns, INFO_G2S_ASSIGNS (arg_info));
     }
-
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
 
     DBUG_VOID_RETURN;
 }
