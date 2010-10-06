@@ -117,7 +117,7 @@ parseArguments (char *type_info, char *shape_info)
 
     shape *current_shape;
 
-    node *args = NULL, *current_arg;
+    node *args = NULL, *current_arg = NULL;
 
     DBUG_ENTER ("parseArguments");
 

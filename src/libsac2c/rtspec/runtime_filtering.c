@@ -81,7 +81,9 @@ RTFILTERarg (node *arg_node, info *arg_info)
 {
     ntype *local, *global;
 
+#ifndef DBUG_OFF
     char *tmp_str_a, *tmp_str_b;
+#endif
 
     local = ARG_NTYPE (arg_node);
     global = ARG_NTYPE (INFO_ARGS (arg_info));
