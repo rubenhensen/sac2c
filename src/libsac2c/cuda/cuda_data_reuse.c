@@ -512,6 +512,7 @@ struct INFO {
     cuidx_set_t *cis;
     node *preassigns;
     node *g2s_assigns;
+    node *condfuns;
 };
 
 #define INFO_LEVEL(n) (n->level)
@@ -523,6 +524,7 @@ struct INFO {
 #define INFO_CIS(n) (n->cis)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_G2S_ASSIGNS(n) (n->g2s_assigns)
+#define INFO_CONDFUNS(n) (n->condfuns)
 
 /** <!--********************************************************************-->
  *
@@ -547,6 +549,7 @@ MakeInfo ()
     INFO_CIS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_G2S_ASSIGNS (result) = NULL;
+    INFO_CONDFUNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -978,28 +981,34 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
         DBUG_ASSERT ((0), "Reuse array with unsupported dimension!");
     }
 
-    /* Create syncthreads after loading data from global memory to shared memory */
-    /*
-      args =  TBmakeExprs( TBmakeId( CUAI_SHARRAY( access_info)), NULL);
-
-      CUAI_SHARRAY( access_info) =
-        CreatePrfOrConst( TRUE, "shmem",
-                          TYgetSimpleType( TYgetScalar( AVIS_TYPE( CUAI_SHARRAY(
-      access_info)))), SHarray2Shape( CUAI_SHARRAYSHP( access_info)), F_syncthreads, args,
-      &vardecs, &assigns);
-    */
-
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+    vardecs = NULL;
 
     if (predicate != NULL) {
         out_shared_array = CUAI_SHARRAY (access_info);
 
-        assigns = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), assigns, cond,
-                                      in_shared_array, out_shared_array);
+        /* After this, assigns is the function application of a conditional function */
+        assigns
+          = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), assigns, cond, in_shared_array,
+                                out_shared_array, &INFO_CONDFUNS (arg_info));
 
         assigns = TCappendAssign (predicate, assigns);
     }
+
+    /* Create syncthreads after loading data from global memory to shared memory */
+    args = TBmakeExprs (TBmakeId (CUAI_SHARRAY (access_info)), NULL);
+
+    CUAI_SHARRAY (access_info)
+      = CreatePrfOrConst (TRUE, "shmem",
+                          TYgetSimpleType (
+                            TYgetScalar (AVIS_TYPE (CUAI_SHARRAY (access_info)))),
+                          SHarray2Shape (CUAI_SHARRAYSHP (access_info)), F_syncthreads,
+                          args, &vardecs, &assigns);
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
 
     innermost = GetInnermostRangePair (sg_info);
 
@@ -1123,9 +1132,14 @@ CUDRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDRfundef");
 
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    if (INFO_CONDFUNS (arg_info) != NULL) {
+        arg_node = TCappendFundef (INFO_CONDFUNS (arg_info), arg_node);
+        INFO_CONDFUNS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
