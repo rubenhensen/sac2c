@@ -100,8 +100,6 @@ CheckDisableDbug (compiler_phase_t phase)
     DBUG_VOID_RETURN;
 }
 
-#endif /* DBUG_OFF */
-
 static node *
 RunConsistencyChecks (node *arg_node)
 {
@@ -122,6 +120,8 @@ RunConsistencyChecks (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /* DBUG_OFF */
 
 node *
 PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
