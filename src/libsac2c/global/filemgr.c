@@ -14,6 +14,7 @@
 #include <fcntl.h>
 
 #include "dbug.h"
+#include "config.h"
 #include "system.h"
 #include "str.h"
 #include "memory.h"
@@ -719,10 +720,7 @@ FMGRcreateTmpDir ()
     /* mkdtemp is safer than tempnam and recommended */
     /* on linux/bsd platforms.                       */
 
-    global.tmp_dirname = (char *)MEMmalloc (STRlen (global.config.mkdir) + 12);
-    global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
-    global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
-
+    global.tmp_dirname = STRcat (global.config.tmpdir, "/SAC_XXXXXX");
     global.tmp_dirname = mkdtemp (global.tmp_dirname);
 
     if (global.tmp_dirname == NULL) {
