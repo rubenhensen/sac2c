@@ -84,7 +84,7 @@ CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
     node *fundef_args, *fundef_rets, *fundef_body;
     char *fundef_name;
     namespace_t *fundef_ns;
-    node *cond_ass, *phi_ass, *return_mem, *return_ass;
+    node *cond_ass, *phi_ass, *return_mem, *return_ass, *return_node;
     dfmask_t *in_mask;
 
     DBUG_ENTER ("CCFdoCreateCondFun");
@@ -123,11 +123,6 @@ CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
                                   TBmakeBlock (TBmakeEmpty (), NULL)),
                       NULL);
 
-    /*
-      return_mem = DUPdoDupNode( out_mem);
-      AVIS_NAME( return_mem) = MEMfree( AVIS_NAME( return_mem));
-      AVIS_NAME( return_mem) = TRAVtmpVarName( "shmem");
-    */
     return_mem = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
 
     INFO_VARDECS (arg_info) = TBmakeVardec (return_mem, INFO_VARDECS (arg_info));
@@ -146,8 +141,8 @@ CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
                       NULL);
     AVIS_SSAASSIGN (return_mem) = phi_ass;
 
-    return_ass
-      = TBmakeAssign (TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL)), NULL);
+    return_node = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));
+    return_ass = TBmakeAssign (return_node, NULL);
 
     /* Chain up the assigns */
     ASSIGN_NEXT (phi_ass) = return_ass;
@@ -156,7 +151,7 @@ CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
     FUNDEF_INSTR (*condfun_p) = cond_ass;
     FUNDEF_VARDEC (*condfun_p) = INFO_VARDECS (arg_info);
     INFO_VARDECS (arg_info) = NULL;
-    FUNDEF_RETURN (*condfun_p) = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));
+    FUNDEF_RETURN (*condfun_p) = return_node;
 
     /* Create function application in the calling context */
     ap_assign

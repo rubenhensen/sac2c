@@ -920,23 +920,29 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWA
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
 SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
-          (global.backend == BE_mutc || global.backend == BE_cuda), wlt)
+          (global.backend == BE_mutc
+           || (global.backend == BE_cuda && global.optimize.doshr)),
+          wlt)
 
 SUBPHASE (rw3, "MUTC Remove unneeded With3s", RW3doRemoveWith3,
-          (global.backend == BE_mutc || global.backend == BE_cuda)
+          (global.backend == BE_mutc
+           || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.dorw3,
           wlt)
 
 SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs,
-          (global.backend == BE_mutc || global.backend == BE_cuda), wlt)
+          (global.backend == BE_mutc
+           || (global.backend == BE_cuda && global.optimize.doshr)),
+          wlt)
 
 SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
-          (global.backend == BE_mutc || global.backend == BE_cuda)
+          (global.backend == BE_mutc
+           || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.doms,
           wlt)
 
 SUBPHASE (cudr, "CUDA Exploiting data reuse with cuda shared memory", CUDRdoCudaDataReuse,
-          global.backend == BE_cuda, wlt)
+          global.backend == BE_cuda && global.optimize.doshr, wlt)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
@@ -1145,7 +1151,8 @@ ENDPHASE (mt)
 PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (uw3, "MUTC Unroll With3", UW3doUnrollWith3,
-          (global.backend == BE_mutc || global.backend == BE_cuda)
+          (global.backend == BE_mutc
+           || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.douw3,
           pc)
 

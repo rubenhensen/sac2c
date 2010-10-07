@@ -279,6 +279,7 @@ DUPCudaAccessInfo (cuda_access_info_t *access_info, info *arg_info)
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
         CUAI_INDICES (new_access_info, i) = DUPCudaIndex (CUAI_INDICES (access_info, i));
+        CUAI_ISCONSTANT (new_access_info, i) = CUAI_ISCONSTANT (access_info, i);
     }
 
     DBUG_RETURN (new_access_info);

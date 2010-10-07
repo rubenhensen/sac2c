@@ -21,6 +21,7 @@
 #include "pattern_match_attribs.h"
 #include "cuda_utils.h"
 #include "matrix.h"
+#include "LookUpTable.h"
 
 typedef enum { trav_normal, trav_collect } travmode_t;
 
@@ -52,6 +53,8 @@ struct INFO {
     int cuwldim;
     node *pragma;
     cuda_access_info_t *access_info;
+    lut_t *lut;
+    bool fromap;
 };
 
 #define INFO_NEST_LEVEL(n) (n->nest_level)
@@ -67,6 +70,8 @@ struct INFO {
 #define INFO_CUWLDIM(n) (n->cuwldim)
 #define INFO_PRAGMA(n) (n->pragma)
 #define INFO_ACCESS_INFO(n) (n->access_info)
+#define INFO_LUT(n) (n->lut)
+#define INFO_FROMAP(n) (n->fromap)
 
 #define PART_INFO_DIM(n) (n->dim)
 #define PART_INFO_TYPE(n) (n->type)
@@ -105,6 +110,8 @@ MakeInfo ()
     INFO_CUWLDIM (result) = 0;
     INFO_PRAGMA (result) = NULL;
     INFO_ACCESS_INFO (result) = NULL;
+    INFO_LUT (result) = NULL;
+    INFO_FROMAP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -270,8 +277,15 @@ ActOnId (node *avis, info *arg_info)
      */
     if (ssa_assign == NULL) {
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
-                      INFO_IDXDIM (arg_info), arg_info);
+            node *new_avis;
+            new_avis
+              = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (AVIS_DECL (avis)));
+            if (new_avis == ARG_AVIS (AVIS_DECL (avis))) {
+                AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
+                          INFO_IDXDIM (arg_info), arg_info);
+            } else {
+                ActOnId (new_avis, arg_info);
+            }
         } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
             unsigned int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
@@ -428,11 +442,68 @@ DAAdoDataAccessAnalysis (node *syntax_tree)
 node *
 DAAfundef (node *arg_node, info *arg_info)
 {
+    node *old_fundef;
+
     DBUG_ENTER ("DAAfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_FROMAP (arg_info)) {
+        old_fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = old_fundef;
+    } else {
+        if (FUNDEF_ISLACFUN (arg_node)) {
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        } else {
+            INFO_FUNDEF (arg_info) = arg_node;
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+            INFO_FUNDEF (arg_info) = NULL;
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DAAap( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+DAAap (node *arg_node, info *arg_info)
+{
+    node *fundef, *ap_args, *fundef_args;
+    bool old_fromap;
+
+    DBUG_ENTER ("DAAap");
+
+    fundef = AP_FUNDEF (arg_node);
+
+    if (fundef != NULL && FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
+        if (INFO_NEST_LEVEL (arg_info) > 0) {
+            ap_args = AP_ARGS (arg_node);
+            fundef_args = FUNDEF_ARGS (fundef);
+
+            while (ap_args != NULL) {
+                DBUG_ASSERT ((fundef_args != NULL),
+                             "Unequal number of ap_args and fundef_args!");
+
+                INFO_LUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUT (arg_info), ARG_AVIS (fundef_args),
+                                       ID_AVIS (EXPRS_EXPR (ap_args)));
+
+                ap_args = EXPRS_NEXT (ap_args);
+                fundef_args = ARG_NEXT (fundef_args);
+            }
+        }
+        old_fromap = INFO_FROMAP (arg_info);
+        INFO_FROMAP (arg_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVopt (AP_FUNDEF (arg_node), arg_info);
+        INFO_FROMAP (arg_info) = old_fromap;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -543,22 +614,25 @@ DAApart (node *arg_node, info *arg_info)
     int dim, ids_type;
     part_info_t *p_info;
     node *old_wlidx;
+    bool outermost_part;
 
     DBUG_ENTER ("DAApart");
 
     dim = TCcountIds (PART_IDS (arg_node));
 
+    DBUG_ASSERT ((INFO_NEST_LEVEL (arg_info) >= dim), "Wrong nesting level found!");
+
+    outermost_part = (INFO_NEST_LEVEL (arg_info) == dim);
+
     /* If this partition belongs to the outer most cudarizable WL,
      * its ids are annotated as cuda threadidx */
-    if (INFO_NEST_LEVEL (arg_info) == dim) {
+    if (outermost_part) {
         ids_type = IDX_THREADIDX;
     }
     /* If this partition belongs to any inner WLs,
      * its ids are annotated as loop index */
-    else if (INFO_NEST_LEVEL (arg_info) > dim) {
+    else {
         ids_type = IDX_LOOPIDX;
-    } else {
-        DBUG_ASSERT ((0), "Wrong nesting level found!");
     }
 
     /* Push information */
@@ -567,8 +641,16 @@ DAApart (node *arg_node, info *arg_info)
     old_wlidx = INFO_WLIDXS (arg_info);
     INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
 
+    if (outermost_part) {
+        INFO_LUT (arg_info) = LUTgenerateLut ();
+    }
+
     /* Start traversing the code */
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+
+    if (outermost_part) {
+        INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+    }
 
     /* Pop information */
     INFO_WLIDXS (arg_info) = old_wlidx;
@@ -577,8 +659,16 @@ DAApart (node *arg_node, info *arg_info)
     /* Create N_pragma for blocking */
     INFO_PRAGMA (arg_info) = CreateBlockingPragma (PART_IDS (arg_node), dim);
 
-    /* Continue traversing other partitions */
-    /* PART_NEXT( arg_node) = TRAVopt( PART_NEXT( arg_node), arg_info);  */
+    /* We only continue traversing more partitions if the partion belongs
+     * to the outermost CUWL. For inner WLs, we only traverse the first partition.
+     * this is becasue each partition of a inner WL might have a completely
+     * different blocking, and this is not allowed in sac. So we only traverse
+     * one partition. However, this is also problematic as the first partition
+     * might not necessarily contains the reusable data. So we need a more
+     * complex scheme to travse the most promising partition. */
+    if (outermost_part) {
+        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

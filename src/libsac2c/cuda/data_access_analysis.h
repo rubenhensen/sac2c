@@ -7,6 +7,7 @@
 
 extern node *DAAdoDataAccessAnalysis (node *syntax_tree);
 extern node *DAAfundef (node *arg_node, info *arg_info);
+extern node *DAAap (node *arg_node, info *arg_info);
 extern node *DAAwith (node *arg_node, info *arg_info);
 extern node *DAAassign (node *arg_node, info *arg_info);
 extern node *DAApart (node *arg_node, info *arg_info);

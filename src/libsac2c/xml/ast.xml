@@ -197,6 +197,7 @@
       <traversal id="DAA" name="CUDA Data access analysis" default="sons" include="data_access_analysis.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Ap" />
           <node name="Assign" />
           <node name="With" />
           <node name="Part" />
