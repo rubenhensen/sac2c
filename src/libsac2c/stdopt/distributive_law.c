@@ -357,8 +357,10 @@ flattenPrfarg (node *arg_node, info *arg_info)
         res = TBmakeId (res);
     } else {
         res = arg_node;
-        DBUG_ASSERT (N_id == NODE_TYPE (arg_node),
-                     "DL polluting AST with non-flattened nodes!");
+        /*
+        DBUG_ASSERT( N_id == NODE_TYPE( arg_node),
+          "DL polluting AST with non-flattened nodes!");
+        */
     }
     DBUG_RETURN (res);
 }
