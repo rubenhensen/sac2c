@@ -19,6 +19,7 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
+<!--  <xsl:import href="../xml/common_c_code.xsl"/> -->
   <xsl:import href="../xml/common_key_tables.xsl"/>
   <xsl:import href="../xml/common_travfun.xsl"/>
   <xsl:import href="../xml/common_name_to_nodeenum.xsl"/>
@@ -53,13 +54,17 @@
   <xsl:template match="traversals" >
     <xsl:value-of select="'typedef enum { TR_undefined = 0'" />
     <xsl:apply-templates select="./traversal" />
-    <xsl:value-of select="', TR_anonymous = '" />
+    <xsl:value-of select="','" />
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'TR_anonymous = '" />
     <xsl:value-of select="count( ./traversal) + 1" />
     <xsl:value-of select="'} trav_t; '" />
   </xsl:template>
 
   <xsl:template match="traversal" >
-    <xsl:value-of select="', TR_'" />
+    <xsl:value-of select="','" />
+    <xsl:call-template name="newline" />
+    <xsl:value-of select="'TR_'" />
     <xsl:call-template name="lowercase" >
       <xsl:with-param name="string" >
         <xsl:value-of select="@id" />
