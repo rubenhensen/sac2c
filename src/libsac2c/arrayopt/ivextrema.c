@@ -658,7 +658,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
  *     iavis: The N_avis of the name for which we want to build iv'.
  *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
- *     k:        the index of the scalar, e.g., i=0, j=1, k=2
+ *     k:        the index of the scalar in IV, e.g., i=0, j=1, k=2
  * @return: The N_avis of the new temp.
  *
  *****************************************************************************/
@@ -693,6 +693,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
                                  &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
+    AVIS_WITHIDSINDEX (avisp) = k;
 
     DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
                           AVIS_NAME (avispp), AVIS_NAME (iavis)));
