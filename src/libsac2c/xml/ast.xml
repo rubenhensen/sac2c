@@ -8020,6 +8020,24 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="WithIdsIndex" inconstructor="no" default="-1">
+          <type name="Integer">
+            <description>
+            For WITHID_IDS nodes, this is the
+            index into the WITHID_VEC of this node. E.g., if
+            we have IV=[i,j,k], then the WithIdsIndex of i,j,k
+            are 0,1, and 2.
+            </description>
+            <targets>
+              <target mandatory="no">
+                <any />
+              <phases>
+                <range from="opt_saacyc" to="opt_esaa2" />
+              </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
 
       <flags>
