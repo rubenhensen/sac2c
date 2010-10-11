@@ -184,7 +184,9 @@
       </traversal>
       <traversal id="CUDR" name="CUDA Exploiting data reuse with cuda shared memory" default="sons" include="cuda_data_reuse.h" >
         <travuser>
+          <node name="Module" />
           <node name="Fundef" />
+          <node name="Ap" />
           <node name="Assign" />
           <node name="With" />
           <node name="Part" />

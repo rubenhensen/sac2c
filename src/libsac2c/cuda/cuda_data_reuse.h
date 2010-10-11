@@ -6,7 +6,9 @@
 #include "types.h"
 
 extern node *CUDRdoCudaDataReuse (node *syntax_tree);
+extern node *CUDRmodule (node *arg_node, info *arg_info);
 extern node *CUDRfundef (node *arg_node, info *arg_info);
+extern node *CUDRap (node *arg_node, info *arg_info);
 extern node *CUDRassign (node *arg_node, info *arg_info);
 extern node *CUDRwith (node *arg_node, info *arg_info);
 extern node *CUDRpart (node *arg_node, info *arg_info);

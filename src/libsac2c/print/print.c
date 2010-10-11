@@ -413,8 +413,9 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
     MatrixDisplay (CUAI_MATRIX (ASSIGN_ACCESS_INFO (arg_node)), global.outfile);
 
     INDENT;
-    fprintf (global.outfile, "     - Reuse Array: %s\n",
-             AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))));
+    fprintf (global.outfile, "     - Reuse Array: %s(avis: %p)\n",
+             AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))),
+             CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
     fprintf (global.outfile, "     - Reuse Array Shape: ");
@@ -450,7 +451,8 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
         while (idx != NULL) {
             fprintf (global.outfile, "( ( %d)", CUIDX_COEFFICIENT (idx));
             if (CUIDX_ID (idx) != NULL) {
-                fprintf (global.outfile, " * %s)", AVIS_NAME (CUIDX_ID (idx)));
+                fprintf (global.outfile, " * %s(avis: %p))", AVIS_NAME (CUIDX_ID (idx)),
+                         CUIDX_ID (idx));
             } else {
                 fprintf (global.outfile, ")");
             }

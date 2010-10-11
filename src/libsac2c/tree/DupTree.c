@@ -257,7 +257,7 @@ DUPCudaIndex (cuda_index_t *index)
 }
 
 static cuda_access_info_t *
-DUPCudaAccessInfo (cuda_access_info_t *access_info, info *arg_info)
+DUPCudaAccessInfo (cuda_access_info_t *access_info, node *new_array, info *arg_info)
 {
     int i;
     cuda_access_info_t *new_access_info;
@@ -267,7 +267,8 @@ DUPCudaAccessInfo (cuda_access_info_t *access_info, info *arg_info)
     new_access_info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
 
     CUAI_MATRIX (new_access_info) = DupMatrix (CUAI_MATRIX (access_info));
-    CUAI_ARRAY (new_access_info) = CUAI_ARRAY (access_info);
+    /* CUAI_ARRAY(new_access_info)        = CUAI_ARRAY(access_info); */
+    CUAI_ARRAY (new_access_info) = new_array;
     CUAI_ARRAYSHP (new_access_info) = DUPTRAV (CUAI_ARRAYSHP (access_info));
     CUAI_SHARRAY (new_access_info) = CUAI_SHARRAY (access_info);
     ;
@@ -1474,8 +1475,13 @@ DUPassign (node *arg_node, info *arg_info)
         ASSIGN_FLAGSTRUCTURE (new_node) = ASSIGN_FLAGSTRUCTURE (arg_node);
 
         if (ASSIGN_ACCESS_INFO (arg_node) != NULL) {
+            DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_prf, "Wrong node type!");
+            DBUG_ASSERT (PRF_PRF (ASSIGN_RHS (arg_node)) == F_idx_sel,
+                         "Wrong primitive type!");
+
             ASSIGN_ACCESS_INFO (new_node)
-              = DUPCudaAccessInfo (ASSIGN_ACCESS_INFO (arg_node), arg_info);
+              = DUPCudaAccessInfo (ASSIGN_ACCESS_INFO (arg_node),
+                                   ID_AVIS (PRF_ARG2 (ASSIGN_RHS (new_node))), arg_info);
         }
 
         CopyCommonNodeData (new_node, arg_node);

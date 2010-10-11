@@ -513,6 +513,7 @@ struct INFO {
     node *preassigns;
     node *g2s_assigns;
     node *condfuns;
+    bool fromap;
 };
 
 #define INFO_LEVEL(n) (n->level)
@@ -525,6 +526,7 @@ struct INFO {
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_G2S_ASSIGNS(n) (n->g2s_assigns)
 #define INFO_CONDFUNS(n) (n->condfuns)
+#define INFO_FROMAP(n) (n->fromap)
 
 /** <!--********************************************************************-->
  *
@@ -550,6 +552,7 @@ MakeInfo ()
     INFO_PREASSIGNS (result) = NULL;
     INFO_G2S_ASSIGNS (result) = NULL;
     INFO_CONDFUNS (result) = NULL;
+    INFO_FROMAP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -1122,6 +1125,29 @@ CUDRdoCudaDataReuse (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CUDRdoCudaDaraReuse( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUDRmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUDRmodule");
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    if (INFO_CONDFUNS (arg_info) != NULL) {
+        MODULE_FUNS (arg_node)
+          = TCappendFundef (MODULE_FUNS (arg_node), INFO_CONDFUNS (arg_info));
+        INFO_CONDFUNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CUDRfundef( node *arg_node, info *arg_info)
  *
  * @brief
@@ -1130,17 +1156,67 @@ CUDRdoCudaDataReuse (node *syntax_tree)
 node *
 CUDRfundef (node *arg_node, info *arg_info)
 {
+    node *old_fundef;
+
     DBUG_ENTER ("CUDRfundef");
+    /*
+      FUNDEF_NEXT( arg_node) = TRAVopt(  FUNDEF_NEXT( arg_node), arg_info);
+      INFO_FUNDEF( arg_info) = arg_node;
+      FUNDEF_BODY( arg_node) = TRAVopt(  FUNDEF_BODY( arg_node), arg_info);
 
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    INFO_FUNDEF (arg_info) = arg_node;
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+      if( INFO_CONDFUNS( arg_info) != NULL) {
+        arg_node = TCappendFundef( INFO_CONDFUNS( arg_info), arg_node);
+        INFO_CONDFUNS( arg_info) = NULL;
+      }
+    */
 
-    if (INFO_CONDFUNS (arg_info) != NULL) {
-        arg_node = TCappendFundef (INFO_CONDFUNS (arg_info), arg_node);
-        INFO_CONDFUNS (arg_info) = NULL;
+    if (INFO_FROMAP (arg_info)) {
+        old_fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
+        printf ("Traverse function %s from branch1\n", FUNDEF_NAME (arg_node));
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = old_fundef;
+    } else {
+        if (FUNDEF_ISLACFUN (arg_node)) {
+            printf ("Skip function %s from branch2\n", FUNDEF_NAME (arg_node));
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        } else {
+            INFO_FUNDEF (arg_info) = arg_node;
+            printf ("Traverse function %s from branch3\n", FUNDEF_NAME (arg_node));
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+            INFO_FUNDEF (arg_info) = NULL;
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUDRap( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUDRap (node *arg_node, info *arg_info)
+{
+    node *fundef;
+    bool old_fromap;
+
+    DBUG_ENTER ("CUDRap");
+
+    fundef = AP_FUNDEF (arg_node);
+
+    if (fundef != NULL && FUNDEF_ISLACFUN (fundef) &&
+        /* INFO_LEVEL( arg_info) > 0 && */
+        fundef != INFO_FUNDEF (arg_info)) {
+        old_fromap = INFO_FROMAP (arg_info);
+        INFO_FROMAP (arg_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVopt (AP_FUNDEF (arg_node), arg_info);
+        INFO_FROMAP (arg_info) = old_fromap;
+    }
     DBUG_RETURN (arg_node);
 }
 
