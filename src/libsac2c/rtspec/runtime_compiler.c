@@ -107,7 +107,7 @@ parseType (char *token)
 static node *
 parseArguments (char *type_info, char *shape_info)
 {
-    char *ttoken, *stoken, *type_saveptr, *shp_saveptr;
+    char *ttoken, *stoken, *type_saveptr = NULL, *shp_saveptr = NULL;
 
     char var_name[25];
 
