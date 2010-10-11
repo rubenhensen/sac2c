@@ -13,7 +13,6 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "dfwalk.h"
-#include "structures.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -21,7 +20,13 @@
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"
+#include "dynelem.h"
+#include "elemstack.h"
+#include "dynarray.h"
+#include "dynmatrix.h"
+#include "graphtypes.h"
 #include "dfwalk.h"
+#include "lubtree.h"
 
 /*
  * INFO structure
@@ -32,6 +37,7 @@
 struct INFO {
     int pre;
     int post;
+    dynarray *euler;
 };
 
 /*
@@ -39,6 +45,7 @@ struct INFO {
  */
 #define INFO_PRE(n) n->pre
 #define INFO_POST(n) n->post
+#define INFO_EULER(n) n->euler
 
 /*
  * INFO functions
@@ -53,6 +60,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
     INFO_PRE (result) = 1;
     INFO_POST (result) = 1;
+    INFO_EULER (result) = NULL;
     DBUG_RETURN (result);
 }
 
@@ -117,6 +125,7 @@ TFDFWtfspec (node *arg_node, info *arg_info)
     DBUG_ENTER ("TFDFWtfspec");
 
     node *defs;
+    int comp = 0;
 
     defs = TFSPEC_DEFS (arg_node);
 
@@ -146,7 +155,22 @@ TFDFWtfspec (node *arg_node, info *arg_info)
 
             TFVERTEX_ISCOMPROOT (defs) = 1;
 
+            INFO_EULER (arg_info) = NULL;
+
             TRAVdo (defs, arg_info);
+
+            /*
+             * Now that we have finished the depth first walk of the the type
+             * component graph, we can update the information about its eulerian tour
+             * as well.
+             */
+
+            COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp++]) = INFO_EULER (arg_info);
+
+            /*
+             * LUBcreatePartitions( COMPINFO_EULERTOUR(
+                                      TFSPEC_INFO(arg_node)[comp - 1]));
+                                      */
         }
 
         defs = TFVERTEX_NEXT (defs);
@@ -178,11 +202,38 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
     DBUG_ENTER ("TFDFWtfvertex");
 
     node *defs, *children;
+    elem *e;
 
     defs = arg_node;
 
     children = TFVERTEX_CHILDREN (defs);
     TFVERTEX_PRE (defs) = INFO_PRE (arg_info)++;
+
+    if (INFO_EULER (arg_info) == NULL) {
+        INFO_EULER (arg_info) = MEMmalloc (sizeof (dynarray));
+    }
+
+    /*
+     * We maintain an array of the pre-order number of the vertices in the order
+     * in which these vertices appear in the Eulerian tour of the DAG. In addition
+     * to the pre-order number, we also store a pointer to the vertex and its
+     * depth.
+     */
+
+    e = MEMmalloc (sizeof (elem));
+    ELEM_IDX (e) = TFVERTEX_PRE (defs);
+
+    /*
+     * ELEM_DATA(e) is a void pointer. So, we have to take this into account while
+     * initialising it.
+     */
+
+    ELEM_DATA (e) = MEMmalloc (sizeof (int) + sizeof (node *));
+
+    *((int *)ELEM_DATA (e)) = TFVERTEX_DEPTH (defs);
+    *((node **)(ELEM_DATA (e) + sizeof (int))) = defs;
+
+    addToArray (INFO_EULER (arg_info), e);
 
     while (children != NULL) {
 
@@ -192,7 +243,24 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
              */
             TFEDGE_EDGETYPE (children) = edgetree;
             TFEDGE_WASCLASSIFIED (children) = 1;
+
+            TFVERTEX_DEPTH (TFEDGE_TARGET (children)) = TFVERTEX_DEPTH (defs) + 1;
+
             TRAVdo (TFEDGE_TARGET (children), arg_info);
+
+            /*
+             * We add the parent vertex once again upon return from the traversal.
+             */
+
+            e = MEMmalloc (sizeof (elem));
+
+            ELEM_IDX (e) = TFVERTEX_PRE (defs);
+            ELEM_DATA (e) = MEMmalloc (sizeof (int) + sizeof (node *));
+
+            *((int *)ELEM_DATA (e)) = TFVERTEX_DEPTH (defs);
+            *((node **)(ELEM_DATA (e) + sizeof (int))) = defs;
+
+            addToArray (INFO_EULER (arg_info), e);
         }
 
         children = TFEDGE_NEXT (children);

@@ -1023,6 +1023,7 @@ struct COMPINFO {
     struct DYNARRAY *csrc;
     struct DYNARRAY *ctar;
     struct DYNARRAY *tltable;
+    struct DYNARRAY *eulertour;
     struct MATRIX *crossclos;
     struct MATRIX *tlc;
     struct MATRIX *lub[3];

@@ -194,6 +194,8 @@ TFBDGaddEdge (node *super, node *sub, node *cond)
      */
 
     TFVERTEX_NUMPARENTS (sub)++;
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->

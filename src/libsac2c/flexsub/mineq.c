@@ -23,7 +23,11 @@
 #include "dbug.h"
 #include "memory.h"
 #include "tree_compound.h"
-#include "structures.h"
+#include "graphtypes.h"
+#include "dynelem.h"
+#include "elemstack.h"
+#include "dynarray.h"
+#include "dynmatrix.h"
 #include "mineq.h"
 #include "graphutils.h"
 

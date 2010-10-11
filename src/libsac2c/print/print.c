@@ -32,7 +32,11 @@
 #include "namespaces.h"
 #include "shape.h"
 #include "vector.h"
-#include "structures.h"
+#include "dynelem.h"
+#include "dynarray.h"
+#include "dynmatrix.h"
+#include "graphtypes.h"
+#include "tfprintutils.h"
 #include "matrix.h"
 
 /*
@@ -6210,6 +6214,21 @@ PRTtfspec (node *arg_node, info *arg_info)
                 if (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]) != NULL) {
                     printMatrixInDotFormat (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]));
                 }
+
+                if (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]) != NULL) {
+
+                    dynarray *d = COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]);
+                    int i;
+
+                    fprintf (global.outfile, "Euler Tour: ");
+
+                    for (i = 0; i < DYNARRAY_TOTALELEMS (d); i++) {
+                        fprintf (global.outfile, "%d,",
+                                 ELEM_IDX (DYNARRAY_ELEMS_POS (d, i)));
+                    }
+
+                    fprintf (global.outfile, "\n");
+                }
             }
 
             i++;
@@ -6253,6 +6272,8 @@ PRTtfvertex (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%d)\\n", TFVERTEX_PREMAX (arg_node));
 
         fprintf (global.outfile, "topo=%d\\n", TFVERTEX_TOPO (arg_node));
+
+        fprintf (global.outfile, "depth=%d\\n", TFVERTEX_DEPTH (arg_node));
 
         int reachcola, reachcolb, row;
 

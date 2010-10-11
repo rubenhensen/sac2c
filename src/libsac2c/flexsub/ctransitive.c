@@ -18,7 +18,6 @@
 #include "str.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "structures.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -26,7 +25,13 @@
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"
+#include "dynelem.h"
+#include "elemstack.h"
+#include "dynarray.h"
+#include "dynmatrix.h"
+#include "graphtypes.h"
 #include "ctransitive.h"
+#include "reachhelper.h"
 
 /*
  * INFO structure

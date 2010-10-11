@@ -14,7 +14,6 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "dfwalk.h"
-#include "structures.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -22,6 +21,12 @@
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"
+#include "graphutils.h"
+#include "dynelem.h"
+#include "elemstack.h"
+#include "dynarray.h"
+#include "dynmatrix.h"
+#include "graphtypes.h"
 #include "topo.h"
 
 /*
