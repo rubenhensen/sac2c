@@ -96,9 +96,8 @@ LUBcomputeIntraTable (dynarray *eulertour, int start, int end)
 
     DBUG_ENTER ("LUBcomputeIntraTable");
 
-    if (start > end || eulertour == NULL) {
-        CTIabort ("Incompatible arguments passed to LUBcomputeIntraTable");
-    }
+    DBUG_ASSERT ((start <= end && eulertour != NULL),
+                 "Incompatible arguments passed to LUBcomputeIntraTable");
 
     int i, j, minvalue, minindex, currdepth;
     matrix *result = MEMmalloc (sizeof (matrix));
@@ -120,11 +119,14 @@ LUBcomputeIntraTable (dynarray *eulertour, int start, int end)
              * the picked element to the last element.
              */
 
-            currdepth = *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (eulertour, j));
+            if (j < DYNARRAY_TOTALELEMS (eulertour)) {
 
-            if (minvalue > currdepth) {
-                minvalue = currdepth;
-                minindex = j;
+                currdepth = *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (eulertour, j));
+
+                if (minvalue > currdepth) {
+                    minvalue = currdepth;
+                    minindex = j;
+                }
             }
 
             setMatrixValue (result, i, j, minindex);
@@ -141,9 +143,8 @@ LUBcomputePerBlockMin (dynarray *eulertour, int blocksize)
 
     DBUG_ENTER ("LUBcomputePerBlockMin");
 
-    if (blocksize <= 0 || eulertour == NULL) {
-        CTIabort ("Incompatible arguments passed to LUBcomputePerBlockMin");
-    }
+    DBUG_ASSERT ((blocksize > 0 && eulertour != NULL),
+                 "Incompatible arguments passed to LUBcomputePerBlockMin");
 
     dynarray *result;
     int mindepth, currdepth, minindex, i, j;
@@ -158,11 +159,14 @@ LUBcomputePerBlockMin (dynarray *eulertour, int blocksize)
 
         for (j = i + 1; j < i + blocksize; j++) {
 
-            currdepth = *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (eulertour, j));
+            if (j < DYNARRAY_TOTALELEMS (eulertour)) {
 
-            if (mindepth < currdepth) {
-                mindepth = currdepth;
-                minindex = j;
+                currdepth = *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (eulertour, j));
+
+                if (mindepth < currdepth) {
+                    mindepth = currdepth;
+                    minindex = j;
+                }
             }
         }
 
@@ -181,16 +185,16 @@ LUBprocessBlockMinArray (dynarray *a)
 
     DBUG_ENTER ("LUBprocessBlockMinArray");
 
-    DBUG_ASSERT ((a == NULL), "Incompatible arguments passed to LUBprocessBlockMinArray");
+    DBUG_ASSERT ((a != NULL), "Incompatible arguments passed to LUBprocessBlockMinArray");
 
-    DBUG_ASSERT (DYNARRAY_TOTALELEMS (a) < 2, "Array should have more than one element");
+    DBUG_ASSERT (DYNARRAY_TOTALELEMS (a) >= 2, "Array should have more than one element");
 
     int i, j;
-    matrix *m;
+    matrix *m = MEMmalloc (sizeof (matrix));
 
-    for (i = 0; i < DYNARRAY_TOTALELEMS (a); i++) {
+    for (j = 0; j < ceil (log2 (DYNARRAY_TOTALELEMS (a))); j++) {
 
-        for (j = 0; j < ceil (log2 (DYNARRAY_TOTALELEMS (a))); j++) {
+        for (i = 0; i < DYNARRAY_TOTALELEMS (a) - 1; i++) {
 
             if (j == 0) {
 
@@ -205,18 +209,22 @@ LUBprocessBlockMinArray (dynarray *a)
                 }
 
             } else {
+                if (i + (int)pow (2, j - 1) < DYNARRAY_TOTALELEMS (a)) {
+                    if (ELEM_IDX (DYNARRAY_ELEMS_POS (a, getMatrixValue (m, i, j - 1)))
+                        < ELEM_IDX (
+                            DYNARRAY_ELEMS_POS (a,
+                                                getMatrixValue (m,
+                                                                i + (int)pow (2, j - 1),
+                                                                j - 1)))) {
 
-                if (ELEM_IDX (DYNARRAY_ELEMS_POS (a, getMatrixValue (m, i, j - 1)))
-                    < ELEM_IDX (
-                        DYNARRAY_ELEMS_POS (a, getMatrixValue (m, i + (int)pow (2, j - 1),
-                                                               j - 1)))) {
+                        setMatrixValue (m, i, j, getMatrixValue (m, i, j - 1));
 
-                    setMatrixValue (m, i, j, getMatrixValue (m, i, j - 1));
+                    } else {
 
-                } else {
-
-                    setMatrixValue (m, i, j,
-                                    getMatrixValue (m, i + (int)pow (2, j - 1), j - 1));
+                        setMatrixValue (m, i, j,
+                                        getMatrixValue (m, i + (int)pow (2, j - 1),
+                                                        j - 1));
+                    }
                 }
             }
         }
@@ -233,6 +241,7 @@ LUBcreatePartitions (dynarray *eulertour)
 
     int i, totalelems, blocksize;
     matrix **rmqmatrices = NULL;
+    dynarray *d = NULL;
 
     totalelems = DYNARRAY_TOTALELEMS (eulertour);
     blocksize = log2 (totalelems) / 2.0;
@@ -246,6 +255,9 @@ LUBcreatePartitions (dynarray *eulertour)
     for (i = 0; i < totalelems; i += blocksize) {
         LUBcomputeIntraTable (eulertour, i, i + blocksize - 1);
     }
+
+    d = LUBcomputePerBlockMin (eulertour, blocksize);
+    LUBprocessBlockMinArray (d);
 
     DBUG_RETURN (rmqmatrices);
 }

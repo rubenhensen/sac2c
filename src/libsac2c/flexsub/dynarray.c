@@ -10,6 +10,7 @@
 #include "memory.h"
 #include "tree_compound.h"
 #include "globals.h"
+#include "graphutils.h"
 #include "dynelem.h"
 #include "dynarray.h"
 
