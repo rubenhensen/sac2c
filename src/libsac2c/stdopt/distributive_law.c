@@ -349,19 +349,21 @@ flattenPrfarg (node *arg_node, info *arg_info)
     node *res;
     DBUG_ENTER ("flattenPrfarg");
 
-    if (N_num == NODE_TYPE (arg_node)) {
-        res = AWLFIflattenExpression (arg_node, &INFO_VARDECS (arg_info),
-                                      &INFO_PREASSIGN (arg_info),
-                                      TYmakeAKS (TYmakeSimpleType (T_int),
-                                                 SHmakeShape (0)));
+#ifdef FIXME // Bug #759. DFM attempts to reference vardec being
+             // created by this flattening.
+    simpletype typ;
+    if (N_id != NODE_TYPE (arg_node)) {
+        typ = NTCnodeToType (arg_node);
+        res
+          = AWLFIflattenExpression (arg_node, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGN (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (typ), SHmakeShape (0)));
         res = TBmakeId (res);
     } else {
         res = arg_node;
-        /*
-        DBUG_ASSERT( N_id == NODE_TYPE( arg_node),
-          "DL polluting AST with non-flattened nodes!");
-        */
     }
+#endif // FIXME
+    res = arg_node;
     DBUG_RETURN (res);
 }
 
