@@ -463,6 +463,7 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
 
     DBUG_ENTER ("MakeSelOpArg1");
 
+    nprf = PRF_PRF (arg_node);
     switch (PRF_PRF (arg_node)) {
 
     case F_add_SxV:
@@ -538,6 +539,7 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
 
     DBUG_ENTER ("MakeSelOpArg2");
 
+    nprf = PRF_PRF (arg_node);
     switch (PRF_PRF (arg_node)) {
 
     case F_neg_V:
