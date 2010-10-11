@@ -259,7 +259,7 @@ node *
 CHKLACFdoCheckLacFuns (node *arg_node)
 {
     info *info;
-    node *keep_next;
+    node *keep_next = NULL;
 
     DBUG_ENTER ("CHKLACFdoCheckLacFuns");
 

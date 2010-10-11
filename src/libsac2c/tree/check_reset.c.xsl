@@ -76,7 +76,7 @@ version="1.0">
  *****************************************************************************/
 node *CHKRSTdoTreeCheckReset( node *arg_node)
 {
-  node *keep_next;
+  node *keep_next = NULL;
 
   DBUG_ENTER( "CHKRSTdoTreeCheckReset");
 
