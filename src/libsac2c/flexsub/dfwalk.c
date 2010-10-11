@@ -166,8 +166,10 @@ TFDFWtfspec (node *arg_node, info *arg_info)
              */
 
             COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp++]) = INFO_EULER (arg_info);
-
-            LUBcreatePartitions (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp - 1]));
+            /*
+                  LUBcreatePartitions( COMPINFO_EULERTOUR(
+                                            TFSPEC_INFO(arg_node)[comp - 1]));
+              */
         }
 
         defs = TFVERTEX_NEXT (defs);
