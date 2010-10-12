@@ -2303,6 +2303,12 @@ PRTvardec (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, " } "); /* end of avis info */
+
+        if (VARDEC_INIT (arg_node) != NULL) {
+            fprintf (global.outfile, " = ");
+            VARDEC_INIT (arg_node) = TRAVdo (VARDEC_INIT (arg_node), arg_info);
+        }
+
         fprintf (global.outfile, "; ");
 
         if (VARDEC_TYPE (arg_node) != NULL) {

@@ -369,6 +369,36 @@ AssignValue (node *avis, node *rhs, node **assigns)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *MakeIntegerConst( int rhs, node ** assigns, node **vardecs)
+ *
+ * @brief Produces a new avis for an integer variable and adds a corresponding
+ *        vardec to the vardecs chain in the info structure. Assign rhs to
+ *        avis and save into assignment into vardec chain
+ *
+ * @param rhs     constant to use
+ * @param assigns assigns chain to save into
+ * @param vardecs vardecs chain to add to
+ *
+ * @return N_avis node to be used for an integer value
+ ******************************************************************************/
+static node *
+MakeIntegerConst (int rhs, node **assigns, node **vardecs)
+{
+    node *avis;
+
+    DBUG_ENTER ("MakeIntegerConst");
+
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromInt (rhs)));
+
+    *vardecs = TBmakeVardec (avis, *vardecs);
+
+    avis = AssignValue (avis, TBmakeNum (rhs), assigns);
+
+    DBUG_RETURN (avis);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn bool IsNum( node *scalar)
  *
  * @brief Returns true if the argument denotes an integer value, either in
@@ -453,8 +483,8 @@ PushDim (info *arg_info)
 
         INFO_INDICES (arg_info) = index;
     } else {
-        zero_avis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), TBmakeNum (0),
-                                 &INFO_PREASSIGNS (arg_info));
+        zero_avis
+          = MakeIntegerConst (0, &INFO_PREASSIGNS (arg_info), &INFO_VARDECS (arg_info));
         INFO_INDICES (arg_info) = TBmakeIds (zero_avis, INFO_INDICES (arg_info));
     }
 
@@ -1347,9 +1377,7 @@ ModarrayInnerAccu (int skip, node *array, info *arg_info)
 
     length = TYgetDim (AVIS_TYPE (array));
 
-    accu = MakeIntegerVar (&INFO_VARDECS (arg_info));
-
-    AssignValue (accu, TBmakeNum (1), &INFO_PREASSIGNS (arg_info));
+    accu = MakeIntegerConst (1, &INFO_PREASSIGNS (arg_info), &INFO_VARDECS (arg_info));
 
     for (i = (skip); i < length; i++) {
         node *newAccu, *assign;
@@ -1612,8 +1640,8 @@ InitOffsets (node *lengths, info *arg_info)
     DBUG_ENTER ("InitOffsets");
 
     if (lengths != NULL) {
-        zeroavis = AssignValue (MakeIntegerVar (&INFO_VARDECS (arg_info)), TBmakeNum (0),
-                                &INFO_PREASSIGNS (arg_info));
+        zeroavis
+          = MakeIntegerConst (0, &INFO_PREASSIGNS (arg_info), &INFO_VARDECS (arg_info));
 
         do {
             result = TBmakeIds (zeroavis, result);
@@ -2672,8 +2700,8 @@ WLSDwith2 (node *arg_node, info *arg_info)
          * preset the indices and offset with 0 and compute the length of the
          * dimensions of the results.
          */
-        iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
-        iv_avis = AssignValue (iv_avis, TBmakeNum (0), &INFO_PREASSIGNS (arg_info));
+        iv_avis
+          = MakeIntegerConst (0, &INFO_PREASSIGNS (arg_info), &INFO_VARDECS (arg_info));
         INFO_INDICES (arg_info) = TBmakeIds (iv_avis, NULL);
 
         INFO_WITH2_LENGTHS (arg_info)

@@ -300,6 +300,7 @@ typedef struct TYPES {
     mutcUsage usage; /* where is this var used */
 
     bool unique; /* this variable is unique */
+    bool akv;    /* this variable is akv */
 
 } types;
 

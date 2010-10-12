@@ -19,4 +19,5 @@ extern node *UW3with3 (node *arg_node, info *arg_info);
 extern node *UW3fundef (node *arg_node, info *arg_info);
 extern node *UW3assign (node *arg_node, info *arg_info);
 extern node *UW3range (node *arg_node, info *arg_info);
+extern node *UW3fundef (node *arg_node, info *arg_info);
 #endif /* _SAC_UNROLL_WITH3_H_ */

@@ -476,6 +476,8 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_DECL__DATA(var_NT, basetype, decoration)                                  \
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
 
+#define SAC_ND_DECL_CONST__DATA(var_NT, basetype, val)                                   \
+    SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT) = val;
 /* ND_DECL__MIRROR( ...)  is a C-ICM */
 
 /* ND_DECL__MIRROR_PARAM( ...)  is a C-ICM */

@@ -1222,6 +1222,8 @@ SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWA
 SUBPHASE (ofp, "OpenMP find private variables", OFPdoFindPrivate,
           (global.backend == BE_omp), pc)
 
+SUBPHASE (mc, "Move constants to variable declaration", MCdoMoveConst, ALWAYS, pc)
+
 ENDPHASE (pc)
 
 /******************************************************************************/

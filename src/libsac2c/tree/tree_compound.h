@@ -1664,4 +1664,6 @@ extern node *TCappendError (node *chain, node *item);
 
 extern node *TCappendRange (node *range_chain, node *range);
 extern int TCcountRanges (node *range);
+
+extern bool TCisScalar (node *arg_node);
 #endif /* _SAC_TREE_COMPOUND_H_ */

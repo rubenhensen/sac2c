@@ -3710,3 +3710,41 @@ TCfindVardec_Name (char *name, node *fundef)
 
     DBUG_RETURN (curv);
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief Return true if argument is Scalar constant node
+ *
+ * @param
+ *
+ * @return
+ ******************************************************************************/
+bool
+TCisScalar (node *arg_node)
+{
+    bool res = FALSE;
+    DBUG_ENTER ("TCisScalar");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_num:
+    case N_numbyte:
+    case N_numint:
+    case N_numlong:
+    case N_numlonglong:
+    case N_nums:
+    case N_numshort:
+    case N_numubyte:
+    case N_numuint:
+    case N_numulong:
+    case N_numulonglong:
+    case N_numushort:
+    case N_double:
+    case N_float:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (res);
+}

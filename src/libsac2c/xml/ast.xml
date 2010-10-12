@@ -712,6 +712,7 @@
           <node name="Assign" />
           <node name="With3" />
           <node name="Range" />
+          <node name="Fundef" />
         </travuser>
       </traversal>
       <traversal id="MS" name="MUTC move syncs" default="sons" include="move_syncs.h">
@@ -3330,7 +3331,14 @@
         <node name="Fundef" />
       </travuser>
     </traversal>
-
+    <traversal id="MC" name="Move Const" default="sons"
+               include="move_const.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+      </travuser>
+    </traversal>
 </traversals>
 
   <nodesets>
@@ -4707,17 +4715,6 @@ N_tfarg :
             </target>
           </targets>
         </son>
-        <son name="withops" default="NULL">
-          <description>Used by mutc backend for lifting desc mallocs up</description>
-          <targets>
-            <target mandatory="no">
-              <set name="WithOp" />
-              <phases>
-                <range from="cg_cpl" to="cg_cpl" />
-              </phases>
-            </target>
-          </targets>
-        </son>
       </sons>
       <attributes>
         <attribute name="Name" inconstructor="yes">
@@ -5198,6 +5195,17 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="withops" inconstructor="no">
+          <description>Used by mutc backend for lifting desc mallocs up</description>
+          <type name="Link">
+            <target mandatory="no">
+              <set name="WithOp" />
+              <phases>
+                <range from="cg_cpl" to="cg_cpl" />
+              </phases>
+            </target>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsMain">
@@ -5667,6 +5675,16 @@ N_tfarg :
             </target>
           </targets>
         </son>
+         <son name="Init" default="NULL">
+           <targets>
+             <target mandatory="no">
+               <set name="Expr" />
+               <phases>
+                 <range from="pc_mc" to="cg_cpl" />
+               </phases>
+             </target>
+           </targets>
+         </son>
       </sons>
       <attributes>
         <attribute name="Type" default="NULL" inconstructor="no">

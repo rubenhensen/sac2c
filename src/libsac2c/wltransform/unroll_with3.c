@@ -54,6 +54,7 @@
 #include "type_utils.h"
 #include "new_types.h"
 #include "DupTree.h"
+#include "LookUpTable.h"
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -66,6 +67,7 @@ struct INFO {
     node *operators;
     int ranges;
     node *withops;
+    node *vardecs;
     /* Find Accu anon trav */
     bool fa_prf_accu;
     node *fa_init;
@@ -88,6 +90,7 @@ struct INFO {
  * INFO_ACCU            The accu of the with loop N_let
  *
  * INFO_OPERATORS       With3 operators
+ * INFO_VARDECS         Current scopes vardecs
  *
  * ** Find Accu anon trav **
  * INFO_FA_PRF_ACCU     Looking at an ACCU prf
@@ -102,6 +105,7 @@ struct INFO {
 #define INFO_RANGES(info) (info->ranges)
 #define INFO_WITHOPS(info) (info->withops)
 #define INFO_OPERATORS(info) (info->operators)
+#define INFO_VARDECS(info) (info->vardecs)
 
 #define INFO_FA_PRF_ACCU(info) (info->fa_prf_accu)
 #define INFO_FA_INIT(info) (info->fa_init)
@@ -201,24 +205,26 @@ UW3doUnrollWith3 (node *syntax_tree)
  *
  *****************************************************************************/
 
-/** <!--********************************************************************-->
- *
- * @fn node *RemoveDead( node *syntax_tree)
- *
- * @brief remove dead code created and marked by RemoveArrayIndirection
- *
- *****************************************************************************/
-#if 0
-static
-node *RemoveDead( node *syntax_tree)
+static node *
+MakeIntegerConst (int rhs, node **assigns, node **vardecs)
 {
-  DBUG_ENTER( "RemoveDead");
+    node *avis;
 
-  
+    DBUG_ENTER ("MakeIntegerConst");
 
-  DBUG_RETURN( syntax_tree);
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromInt (rhs)));
+
+    *vardecs = TCappendVardec (*vardecs, TBmakeVardec (avis, NULL));
+
+    *assigns
+      = TCappendAssign (*assigns,
+                        TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TBmakeNum (rhs)),
+                                      NULL));
+
+    DBUG_RETURN (avis);
 }
-#endif
+
 /** <!--********************************************************************-->
  *
  * @fn node *ATravRangeResult( node *syntax_tree)
@@ -799,6 +805,29 @@ UW3with3 (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+/** <!--********************************************************************-->
+ *
+ * @fn node *UW3fundef(node *arg_node, info *arg_info)
+ *
+ * @brief Save vardec chain into info structure
+ *
+ *****************************************************************************/
+node *
+UW3fundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("UW3fundef");
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--********************************************************************-->
  *
@@ -818,6 +847,7 @@ UW3range (node *arg_node, info *arg_info)
     DBUG_ENTER ("UW3range");
 
     nested_info = MakeInfo ();
+    INFO_VARDECS (nested_info) = INFO_VARDECS (arg_info);
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), nested_info);
     nested_info = FreeInfo (nested_info);
 
@@ -841,20 +871,21 @@ UW3range (node *arg_node, info *arg_info)
 
             for (i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
-                node *newcode = DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node)));
+                lut_t *lut = LUTgenerateLut ();
+                node *newIndex = MakeIntegerConst (lower + i, &INFO_ASSIGNS (arg_info),
+                                                   &INFO_VARDECS (arg_info));
+                node *newcode;
+
+                lut = LUTinsertIntoLutP (lut, ID_AVIS (RANGE_INDEX (arg_node)), newIndex);
+                newcode = DUPdoDupTreeLut (BLOCK_INSTR (RANGE_BODY (arg_node)), lut);
                 INFO_ASSIGNS (arg_info)
                   = TCappendAssign (INFO_ASSIGNS (arg_info),
-                                    TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (
-                                                                          RANGE_INDEX (
-                                                                            arg_node)),
-                                                                        NULL),
-                                                             TBmakeNum (lower + i)),
-                                                  Sync2Id (
-                                                    ReplaceAccu (newcode, INFO_OPERATORS (
-                                                                            arg_info)))));
+                                    Sync2Id (
+                                      ReplaceAccu (newcode, INFO_OPERATORS (arg_info))));
 
                 INFO_OPERATORS (arg_info)
                   = SetInitials (INFO_OPERATORS (arg_info), RANGE_RESULTS (arg_node));
+                lut = LUTremoveLut (lut);
             }
             /* range redundent now so remove */
             arg_node = FREEdoFreeNode (arg_node);

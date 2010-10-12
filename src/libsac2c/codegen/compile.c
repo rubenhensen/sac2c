@@ -3060,10 +3060,19 @@ COMPvardec (node *arg_node, info *arg_info)
                         MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                       TRUE, TRUE, TRUE, NULL));
     } else {
-        VARDEC_ICM (arg_node)
-          = TCmakeIcm1 ("ND_DECL",
-                        MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                      TRUE, TRUE, TRUE, NULL));
+        if (VARDEC_INIT (arg_node) != NULL) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm2 ("ND_DECL_CONST__DATA",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, FALSE, FALSE, NULL),
+                            VARDEC_INIT (arg_node));
+            VARDEC_INIT (arg_node) = NULL;
+        } else {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DECL",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
+        }
     }
 
     if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))
@@ -8715,7 +8724,7 @@ COMPwith3 (node *arg_node, info *arg_info)
 node *
 COMPrange (node *arg_node, info *arg_info)
 {
-    node *res;
+    node *res = NULL;
 
     node *family, *create, *next, *sync;
     node *thread_fun;
