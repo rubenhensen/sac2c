@@ -63,6 +63,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "type_utils.h"
 #include "new_types.h"
 #include "memory.h"
