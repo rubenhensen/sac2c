@@ -6477,7 +6477,7 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
     node *args;
     node *curr_arg;
     node *expr = NULL;
-    node *arg_expr;
+    node *arg_expr = NULL;
     char *name;
     int num_args;
 
@@ -8842,6 +8842,7 @@ COMPrange (node *arg_node, info *arg_info)
         res = TCappendAssign (loopnests, next);
     } else {
         DBUG_ASSERT (FALSE, "N_range not defined in this backend");
+        res = NULL;
     }
 
     DBUG_RETURN (res);
