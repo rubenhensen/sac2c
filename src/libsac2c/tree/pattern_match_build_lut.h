@@ -1,5 +1,5 @@
 /*
- * $Id: trav_template.h 15657 2007-11-13 13:57:30Z cg $
+ * $Id$
  */
 #ifndef _SAC_PATTERN_MATCHING_BUILD_LUT_H_
 #define _SAC_PATTERN_MATCHING_BUILD_LUT_H_
