@@ -12,6 +12,7 @@ extern node *NTCdoNewReTypeCheck (node *arg_node);
 extern node *NTCdoNewReTypeCheckFromScratch (node *arg_node);
 extern node *NTCdoNewTypeCheckOneFunction (node *arg_node);
 extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
+extern simpletype NTCnodeToType (node *arg_node);
 
 extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);

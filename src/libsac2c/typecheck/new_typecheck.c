@@ -1629,7 +1629,78 @@ NTCBASIC (bool, T_bool)
 /******************************************************************************
  *
  * function:
- *   node *NTCnum( node *arg_node, info *arg_info)
+ *   node *NTCnodeToType( node *arg_node)
+ *
+ * description: Convert simple scalar node type to simpletype.
+ *
+ * Parameter: arg_node: an N_num, etc., node.
+ *
+ * Result: A T_int, etc., value.
+ *
+ ******************************************************************************/
+
+simpletype
+NTCnodeToType (node *arg_node)
+{
+    DBUG_ENTER ("NTCnodeToType");
+    simpletype z;
+
+    switch (NODE_TYPE (arg_node)) {
+    default:
+        DBUG_ASSERT (FALSE, "Illegal node type");
+    case N_bool:
+        z = T_bool;
+        break;
+    case N_char:
+        z = T_char;
+        break;
+    case N_double:
+        z = T_double;
+        break;
+    case N_float:
+        z = T_float;
+        break;
+    case N_num:
+        z = T_int;
+        break;
+    case N_numint:
+        z = T_int;
+        break;
+    case N_numbyte:
+        z = T_byte;
+        break;
+    case N_numshort:
+        z = T_short;
+        break;
+    case N_numlong:
+        z = T_long;
+        break;
+    case N_numlonglong:
+        z = T_longlong;
+        break;
+    case N_numubyte:
+        z = T_ubyte;
+        break;
+    case N_numushort:
+        z = T_ushort;
+        break;
+    case N_numuint:
+        z = T_uint;
+        break;
+    case N_numulong:
+        z = T_ulong;
+        break;
+    case N_numulonglong:
+        z = T_ulonglong;
+        break;
+    }
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NTCstr( node *arg_node, info *arg_info)
  *
  * description:
  *
