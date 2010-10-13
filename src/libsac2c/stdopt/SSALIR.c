@@ -1102,7 +1102,9 @@ LIRblock (node *arg_node, info *arg_info)
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
-    int thisisprobablywrong;
+    /*
+     * thisisprobablywrong;
+     */
 #define FIXME
 #ifdef FIXME
     BLOCK_VARDEC (arg_node) = foo (BLOCK_VARDEC (arg_node), arg_info);

@@ -2035,6 +2035,8 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
  *
  ******************************************************************************/
 
+#ifdef THIS_FUNCTION_WILL_EVER_BE_USED
+
 static node *
 GenerateShapeStrides (int dim, int iter_dims, shape *iter_shp)
 {
@@ -2055,6 +2057,8 @@ GenerateShapeStrides (int dim, int iter_dims, shape *iter_shp)
 
     DBUG_RETURN (strides);
 }
+
+#endif /* THIS_FUNCTION_WILL_EVER_BE_USED */
 
 /**
  **

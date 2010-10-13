@@ -6556,6 +6556,9 @@ node *Args2Exprs( node *args)
   DBUG_RETURN( exprs);
 }
 
+
+#ifdef THIS_FUNCTION_WILL_EVER_BE_USED
+
 static
 node *ReferenceArgs2Ids( node *args)
 {
@@ -6578,6 +6581,9 @@ node *ReferenceArgs2Ids( node *args)
 
   DBUG_RETURN( ret_ids);
 }
+
+#endif  /* THIS_FUNCTION_WILL_EVER_BE_USED */
+
 
 static
 node *BuildTmpId( ntype *type, node **new_vardecs)
