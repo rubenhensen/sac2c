@@ -5,7 +5,8 @@
  *
  *
  *   1. Replaces sequence:
- *       c = add( a, const);    NB.  and others
+ *
+ *       c = add( a, b);    NB.  and others
  *       d = F_neg_( c);
  *
  *      by:
@@ -163,13 +164,14 @@ IsSuitableForPropagation (node *expression)
         && ((PRF_PRF (expression) == F_add_SxS) || (PRF_PRF (expression) == F_add_SxV)
             || (PRF_PRF (expression) == F_add_VxS)
             || (PRF_PRF (expression) == F_add_VxV))) {
-
+#ifdef DEADCODE // Why was this restricted to constants?
         if (PMmatchFlatSkipGuards (pat, PRF_ARG1 (expression))
             || PMmatchFlatSkipGuards (pat, PRF_ARG2 (expression))) {
-            result = TRUE;
-            DBUG_PRINT ("AS", ("IsSuitableForPropagation found TRUE expn"));
             con = (NULL != con) ? COfreeConstant (con) : NULL;
         }
+#endif // DEADCODE // Why was this restricted to constants?
+        result = TRUE;
+        DBUG_PRINT ("AS", ("IsSuitableForPropagation found TRUE expn"));
     }
     PMfree (pat);
 
