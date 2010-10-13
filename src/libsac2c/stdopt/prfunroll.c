@@ -533,7 +533,7 @@ static node *
 MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
 {
     node *selop1;
-    node *zavis;
+    node *zavis = NULL;
     bool dyadic = TRUE;
     prf nprf;
 
