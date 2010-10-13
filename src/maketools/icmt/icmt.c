@@ -232,8 +232,7 @@ CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
 
                     "#define SAC_DO_COMPILE_MODULE  0\n"
 
-                    "#include \"sac.h\"\n"
-                    "\n";
+                    "#include \"sac.h\"\n";
 
     FILE *file;
     char input[BUFLEN];
@@ -253,9 +252,8 @@ CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
     }
 #endif
 
-    fprintf (file, header);
-    fprintf (file, input);
-    fprintf (file, "\n\n");
+    fprintf (file, "%s\n", header);
+    fprintf (file, "%s\n", input);
 
     fclose (file);
 
