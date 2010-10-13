@@ -8053,13 +8053,13 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="WithIdsIndex" inconstructor="no" default="-1">
-          <type name="Integer">
             <description>
             For WITHID_IDS nodes, this is the
             index into the WITHID_VEC of this node. E.g., if
             we have IV=[i,j,k], then the WithIdsIndex of i,j,k
             are 0,1, and 2.
             </description>
+          <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />
@@ -8174,6 +8174,13 @@ N_tfarg :
                   This is used in AL to separate identifiers from different assignment
                   chains and in treecheck to identify AVIS nodes of the currently
                   processed function.
+          </description>
+        </flag>
+        <flag name="IsDLActive" default="FALSE">
+          <description>
+                  This flags marks AVIS nodes as active in the current context.
+                  This is used in DL to mark identifiers that are part of
+                  an expression to be simplified.
           </description>
         </flag>
         <flag name="IsOmpPrivate" default="FALSE" >
