@@ -309,13 +309,19 @@ CleanUp ()
 static void
 CleanUpInterrupted ()
 {
+    int status;
+
     DBUG_ENTER ("CleanUpInterrupted");
 
     if (global.cleanup) {
         global.cleanup = FALSE;
 
         if (global.system_cleanup != NULL) {
-            system (global.system_cleanup);
+            status = system (global.system_cleanup);
+            /*
+             * We ignore the status here nevertheless as we are already in
+             * failure mode.
+             */
         }
     }
 

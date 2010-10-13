@@ -432,7 +432,7 @@ FMGRsetupPaths ()
 const char *
 FMGRabsolutePathname (const char *path)
 {
-    char *tmp;
+    char *tmp, *cwd;
     static char buffer[MAX_PATH_LEN];
 
     DBUG_ENTER ("FMGRabsolutePathname");
@@ -440,7 +440,9 @@ FMGRabsolutePathname (const char *path)
     if (path[0] == '/') {
         strcpy (buffer, path);
     } else {
-        getcwd (buffer, MAX_PATH_LEN);
+        cwd = getcwd (buffer, MAX_PATH_LEN);
+
+        DBUG_ASSERT (cwd == buffer, "Call to getcwd() failed.");
 
         while (0 == strncmp ("../", path, 3)) {
             path += 3;
