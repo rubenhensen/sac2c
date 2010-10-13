@@ -28,7 +28,6 @@
 #include "str.h"
 #include "memory.h"
 #include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
 #include "inferneedcounters.h"
 #include "compare_tree.h"
@@ -46,8 +45,6 @@
 struct INFO {
     node *topblock;
     node *funargs;
-    dfmask_base_t *dfmbase;
-    dfmask_t *localmask;
     node *preassign;
     enum { DIR_down, DIR_up } direction;
     bool travrhs;
@@ -61,8 +58,6 @@ struct INFO {
  */
 #define INFO_TOPBLOCK(n) ((n)->topblock)
 #define INFO_FUNARGS(n) ((n)->funargs)
-#define INFO_DFMBASE(n) ((n)->dfmbase)
-#define INFO_LOCALMASK(n) ((n)->localmask)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_DIRECTION(n) ((n)->direction)
 #define INFO_TRAVRHS(n) ((n)->travrhs)
@@ -84,8 +79,6 @@ MakeInfo ()
 
     INFO_TOPBLOCK (result) = NULL;
     INFO_FUNARGS (result) = NULL;
-    INFO_DFMBASE (result) = NULL;
-    INFO_LOCALMASK (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_DIRECTION (result) = DIR_down;
     INFO_TRAVRHS (result) = FALSE;
@@ -172,6 +165,34 @@ DLdoDistribLawOptimizationOneFundef (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
+
+/******************************************************************************
+ *
+ * Utility traversal to clear avis flags
+ *
+ *****************************************************************************/
+
+static node *
+ATravDLavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravDLavis");
+    AVIS_ISDLACTIVE (arg_node) = FALSE;
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ClearDLActiveFlags (node *arg_node)
+{
+    anontrav_t ddl_trav[2] = {{N_avis, &ATravDLavis}, {0, NULL}};
+
+    DBUG_ENTER ("ClearDLActiveFlags");
+
+    TRAVpushAnonymous (ddl_trav, &TRAVsons);
+    arg_node = TRAVopt (arg_node, NULL);
+
+    TRAVpop ();
+    DBUG_RETURN (arg_node);
+}
 
 static prf
 normalizePrf (prf prf)
@@ -343,14 +364,19 @@ isArg2Scl (prf prf)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * Utility function to flatten non-id nodes. We assume the nodes
+ * are simple scalars.
+ *
+ *****************************************************************************/
+
 static node *
 flattenPrfarg (node *arg_node, info *arg_info)
 {
     node *res;
     DBUG_ENTER ("flattenPrfarg");
 
-#ifdef FIXME // Bug #759. DFM attempts to reference vardec being
-             // created by this flattening.
     simpletype typ;
     if (N_id != NODE_TYPE (arg_node)) {
         typ = NTCnodeToType (arg_node);
@@ -362,8 +388,6 @@ flattenPrfarg (node *arg_node, info *arg_info)
     } else {
         res = arg_node;
     }
-#endif // FIXME
-    res = arg_node;
     DBUG_RETURN (res);
 }
 
@@ -401,8 +425,8 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
       = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
 
-    DFMupdateMaskBase (INFO_DFMBASE (arg_info), INFO_FUNARGS (arg_info),
-                       BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
+      = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
 
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
@@ -466,7 +490,7 @@ Mop2Ast (node *mop, info *arg_info)
 }
 
 static node *
-CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
+CollectExprs (prf prf, node *a, bool is_scalar_arg)
 {
     node *res = NULL;
     node *rhs = NULL;
@@ -485,25 +509,22 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
     }
 
     if ((NODE_TYPE (a) == N_id) && (PMmatchFlatSkipGuards (pat, a))
-        && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
-        && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
+        && (AVIS_ISDLACTIVE (ID_AVIS (a))) && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
 
         switch (NODE_TYPE (rhs)) {
 
         case N_id:
             DBUG_PRINT ("DL", ("Found N_id %s", AVIS_NAME (ID_AVIS (rhs))));
             res = FREEdoFreeTree (res);
-            res = CollectExprs (prf, rhs, is_scalar_arg, localmask);
+            res = CollectExprs (prf, rhs, is_scalar_arg);
             AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
             break;
 
         case N_prf:
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
                 DBUG_PRINT ("DL", ("Found N_prf"));
-                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)),
-                                     localmask);
-                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
-                                      localmask);
+                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
+                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
 
                 res = FREEdoFreeTree (res);
                 res = TCappendExprs (left, right);
@@ -523,7 +544,7 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg, dfmask_t *localmask)
 }
 
 static node *
-BuildMopTree (node *avis, dfmask_t *localmask)
+BuildMopTree (node *avis)
 {
     node *tmp, *exprs;
     node *res;
@@ -533,7 +554,7 @@ BuildMopTree (node *avis, dfmask_t *localmask)
     DBUG_ENTER ("BuildMopTree");
 
     id = TBmakeId (avis);
-    exprs = CollectExprs (F_add_SxS, id, FALSE, localmask);
+    exprs = CollectExprs (F_add_SxS, id, FALSE);
     FREEdoFreeNode (id);
 
     tmp = exprs;
@@ -548,7 +569,7 @@ BuildMopTree (node *avis, dfmask_t *localmask)
             sclprf = TRUE;
         }
 
-        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, sclprf, localmask));
+        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, sclprf));
 
         EXPRS_EXPR (tmp) = FREEdoFreeNode (EXPRS_EXPR (tmp));
         EXPRS_EXPR (tmp) = mop;
@@ -873,12 +894,11 @@ DLfundef (node *arg_node, info *arg_info)
 
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         INFO_FUNARGS (arg_info) = FUNDEF_ARGS (arg_node);
-        INFO_DFMBASE (arg_info)
-          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
+          = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
 
         /* If new vardecs were made, append them to the current set */
         if (INFO_VARDECS (arg_info) != NULL) {
@@ -887,6 +907,8 @@ DLfundef (node *arg_node, info *arg_info)
                                 BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
             INFO_VARDECS (arg_info) = NULL;
         }
+        BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
+          = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -904,17 +926,13 @@ DLfundef (node *arg_node, info *arg_info)
 node *
 DLblock (node *arg_node, info *arg_info)
 {
-    dfmask_t *oldmask;
 
     DBUG_ENTER ("DLblock");
 
-    oldmask = INFO_LOCALMASK (arg_info);
-    INFO_LOCALMASK (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
+    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
+      = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-
-    INFO_LOCALMASK (arg_info) = DFMremoveMask (INFO_LOCALMASK (arg_info));
-    INFO_LOCALMASK (arg_info) = oldmask;
 
     DBUG_RETURN (arg_node);
 }
@@ -975,7 +993,7 @@ DLids (node *arg_node, info *arg_info)
     DBUG_ENTER ("DLids");
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
-        DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (arg_node));
+        AVIS_ISDLACTIVE (IDS_AVIS (arg_node)) = TRUE;
     } else {
         if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) != 0) {
             INFO_TRAVRHS (arg_info) = TRUE;
@@ -1013,8 +1031,7 @@ DLprf (node *arg_node, info *arg_info)
             /*
              * Collect operands into multi-operation (sum of products)
              */
-            mop
-              = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)), INFO_LOCALMASK (arg_info));
+            mop = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)));
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
                 DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
