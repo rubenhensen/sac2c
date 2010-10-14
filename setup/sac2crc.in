@@ -484,6 +484,8 @@ CCFLAGS        += "-fast"
 
 target clang:
 CC             := "clang"
+OPT_O2         :=  "-O4"
+OPT_O3         :=  "-O3"
 
 
 
