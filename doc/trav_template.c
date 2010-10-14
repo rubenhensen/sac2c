@@ -69,7 +69,7 @@ struct INFO {
 /**
  * A template entry in the template info structure
  */
-#define INFO_TEMP(n) (n->temp)
+#define INFO_TEMP(n) ((n) > temp)
 
 static info *
 MakeInfo ()
