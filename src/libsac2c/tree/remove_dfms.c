@@ -4,6 +4,46 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
+#include "memory.h"
+
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
+struct INFO {
+    bool onefundef;
+};
+
+/**
+ * A template entry in the template info structure
+ */
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
+
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = MEMmalloc (sizeof (info));
+
+    INFO_ONEFUNDEF (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
 
 /** <!-- ****************************************************************** -->
  * @fn node *RDFMSwith( node *arg_node, info *arg_info)
@@ -216,7 +256,11 @@ RDFMSfundef (node *arg_node, info *arg_info)
         FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -231,13 +275,18 @@ RDFMSfundef (node *arg_node, info *arg_info)
 node *
 RDFMSdoRemoveDfms (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ("RDFMSdoRemoveDfms");
 
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = (NODE_TYPE (arg_node) == N_fundef);
+
     TRAVpush (TR_rdfms);
-
-    arg_node = TRAVdo (arg_node, NULL);
-
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

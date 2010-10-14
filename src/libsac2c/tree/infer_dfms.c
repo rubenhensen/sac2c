@@ -22,7 +22,9 @@
  *   There are 2 possible entry calls to this traversal:
  *
  *   - INFDFMSdoInferDfms :
- *       - may be called on fundefs and modules only!
+ *       - may be called on fundefs and modules only! If called on a fundef
+ *         node, only that fundef and corresponding loop/cond funs will
+ *         be processed.
  *       - It ensures the existance of a mask base at the fundef(s)
  *         AND it allocates 3 masks at each N_cond, N_do, N_with, N_with2
  *         and N_with3 node
@@ -53,6 +55,7 @@
  *   ...FIRST          flag: first traversal?
  *   ...HIDELOC        bit field: steers hiding of local vars
  *   ...ATTACHATTRIBS  flag: attach dfms to cond/do/withX nodes
+ *   ...ONEFUNDEF      flag: only infer for the current fundef
  *
  *****************************************************************************/
 
@@ -85,6 +88,7 @@ struct INFO {
     bool first;
     int hideloc;
     bool attachattribs;
+    bool onefundef;
 };
 
 /*
@@ -99,6 +103,7 @@ struct INFO {
 #define INFO_FIRST(n) ((n)->first)
 #define INFO_HIDELOC(n) ((n)->hideloc)
 #define INFO_ATTACHATTRIBS(n) ((n)->attachattribs)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 /*
  * INFO functions
@@ -121,6 +126,7 @@ MakeInfo ()
     INFO_FIRST (result) = FALSE;
     INFO_HIDELOC (result) = 0;
     INFO_ATTACHATTRIBS (result) = FALSE;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -1447,8 +1453,8 @@ INFDFMSfundef (node *arg_node, info *arg_info)
         arg_info = RemoveMasks (arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1899,6 +1905,7 @@ INFDFMSdoInferDfms (node *syntax_tree, int hide_locals)
 
     info_node = MakeInfo ();
     INFO_HIDELOC (info_node) = hide_locals;
+    INFO_ONEFUNDEF (info_node) = (NODE_TYPE (syntax_tree) == N_fundef);
 
     /**
      * indicate that we do want to attach attribs to all N_cond, N_do,
