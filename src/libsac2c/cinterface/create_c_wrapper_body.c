@@ -157,8 +157,6 @@ CCWBdoCreateCWrapperBody (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("TEMP", ("Template traversal complete."));
-
     INFO_FILE (info) = FMGRclose (INFO_FILE (info));
 
     info = FreeInfo (info);
@@ -197,7 +195,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
     norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
 
     /*
-     * fuunction header
+     * function header
      */
     fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
