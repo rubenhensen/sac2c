@@ -2157,9 +2157,18 @@
     </traversal>
     <traversal id="IVESPLIT" name="Index Vector Elimination (Split Selections)" default="sons" include="ive_split_selections.h">
       <travuser>
-  <node name="Fundef" />
-  <node name="Assign" />
-  <node name="Prf" />
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
+    <traversal id="IVESLI" name="Index Vector Elimination (Split Loop Invariants)" default="sons" include="ive_split_loop_invariants.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="With2" />
       </travuser>
     </traversal>
     <traversal id="IVERAS" name="Index Vector Elimination (Reuse WL-offsets and Scalarize)" default="sons" include="ive_reusewl_and_scalarize.h">

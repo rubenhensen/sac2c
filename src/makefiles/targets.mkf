@@ -159,6 +159,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
 
 
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
+                        ive_split_loop_invariants \
                         wl_access_analyze tile_size_inference wls wlscheck \
                         wlsbuild wlswithloopification SSAWithloopFolding \
                         SSAWLI SSAWLF WithloopFusion detectdependencies \

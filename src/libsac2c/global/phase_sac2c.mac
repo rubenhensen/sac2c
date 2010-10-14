@@ -680,6 +680,9 @@ SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCl
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
+SUBPHASE (ivesli, "Eliminating index vectors (split loop invariants)",
+          IVESLIdoIVESplitLoopInvariants, global.optimize.doive, opt)
+
 SUBPHASE (ivevp, "Propagating variables (for IVE)", VPdoVarPropagation,
           global.optimize.doive &&global.optimize.dovp, opt)
 
