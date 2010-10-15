@@ -345,7 +345,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
         }
         if (NULL == shpprf2) {
 #ifdef WARN_MISSING_SAA
-            CTIwarn ("Insufficient symbolic shape information available. "
+            CTInote ("Insufficient symbolic shape information available. "
                      "Using explicit information to split index operation.");
 #endif
             shpprf2 = TBmakeId (AddShapeComputation (array, arg_info));
