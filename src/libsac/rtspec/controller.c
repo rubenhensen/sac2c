@@ -3,7 +3,7 @@
  */
 
 /** <!--********************************************************************-->
- * @file  optimization_controller.c
+ * @file  controller.c
  *
  * @brief  This file contains the implementation of the central dynamic
  * optimization controller.
@@ -26,7 +26,7 @@
 #include <dlfcn.h>
 #include <string.h>
 
-#include "optimization_controller.h"
+#include "controller.h"
 #include "reqqueue.h"
 #include "registry.h"
 
@@ -59,7 +59,7 @@ SAC_setupController (void)
 
     tmp_dir = malloc (MAX_STRING_LENGTH * sizeof (char));
     if (tmp_dir == NULL) {
-        fprintf (stderr, "ERROR --\t [optimization_controller.c: "
+        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
                          "init_controller()] Could not allocate string for tmp_dir!");
 
         exit (EXIT_FAILURE);
@@ -68,7 +68,7 @@ SAC_setupController (void)
     strcpy (tmp_dir, TMP_DIR_NAME);
 
     if (mkdtemp (tmp_dir) == NULL) {
-        fprintf (stderr, "ERROR --\t [optimization_controller.c: "
+        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
                          "init_controller()] Could not create temporary directory!");
 
         exit (EXIT_FAILURE);
@@ -77,7 +77,7 @@ SAC_setupController (void)
     result = pthread_create (&controller_thread, NULL, SAC_runController, NULL);
 
     if (result != 0) {
-        fprintf (stderr, "ERROR --\t [optimization_controller.c: "
+        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
                          "init_controller()] Could not start thread!");
 
         exit (EXIT_FAILURE);
@@ -86,7 +86,7 @@ SAC_setupController (void)
     processed = malloc (sizeof (list_t));
 
     if (processed == NULL) {
-        fprintf (stderr, "ERROR --\t [optimization_controller.c: "
+        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
                          "init_controller()] Could not allocate processed request list!");
 
         exit (EXIT_FAILURE);
@@ -369,13 +369,13 @@ SAC_handleRequest (queue_node_t *request)
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
-        fprintf (stderr, "ERROR -- \t [optimization_controller.c: "
+        fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
                          "handle_request()] Compilation failed!");
 
         exit (EXIT_FAILURE);
 
     case -1:
-        fprintf (stderr, "ERROR -- \t [optimization_controller.c: "
+        fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
                          "handle_request()] System call failed!");
 
         exit (EXIT_FAILURE);

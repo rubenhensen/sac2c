@@ -282,7 +282,7 @@ runtime_mutc_h         := mutc mutc_world \
 
 runtime_cuda_h         := cuda cuda_gen
 
-runtime_rtspec_h       := rtspec registry reqqueue optimization_controller
+runtime_rtspec_h       := rtspec registry reqqueue controller
 
 
 ###############################################################################
@@ -359,7 +359,8 @@ libsac_phm          := nophm
 
 libsac_cachesim     := basic access_simple access_detailed
 
-libsac_rtspec       := registry reqqueue optimization_controller
+libsac_rtspec       := registry reqqueue controller
+
 
 ###############################################################################
 #

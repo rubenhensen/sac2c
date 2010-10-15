@@ -1,6 +1,10 @@
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
 /** <!--*******************************************************************-->
  *
- * @file  optimization_controller.h
+ * @file controller.h
  *
  * @brief  Contains macro's and function prototypes for the optimization
  * controller.
@@ -9,8 +13,10 @@
  *
  ****************************************************************************/
 
-#ifndef _SAC_OPTIMIZATION_CONTROLLER_H_
-#define _SAC_OPTIMIZATION_CONTROLLER_H_
+#ifndef _SAC_CONTROLLER_H_
+#define _SAC_CONTROLLER_H_
+
+#include "reqqueue.h"
 
 /**
  * @brief Structure for holding processed requests.
@@ -28,4 +34,4 @@ void SAC_handleRequest (queue_node_t *);
 
 void SAC_finalizeController (void);
 
-#endif /* _SAC_OPTIMIZATION_CONTROLLER_H_ */
+#endif /* _SAC_CONTROLLER_H_ */
