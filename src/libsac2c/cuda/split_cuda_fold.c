@@ -115,9 +115,12 @@ SCUFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCUFfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
-
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    /* Bug found when compiling mandelbrot. We should
+     * not traverse into sticky functions */
+    if (!FUNDEF_ISSTICKY (arg_node)) {
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    }
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

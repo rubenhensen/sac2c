@@ -208,7 +208,9 @@ KPPlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = NULL;
         INFO_REMOVE_IDS (arg_info) = FALSE;
     } else if (LET_IDS (arg_node) != NULL) {
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_array) {
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_array
+            || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
+                && PRF_PRF (LET_EXPR (arg_node)) == F_copy)) {
             NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
         } else if (NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)))
                    == 0) {
