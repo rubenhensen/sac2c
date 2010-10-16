@@ -249,7 +249,9 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-    syntax_tree = ASHAdoAdjustShmemAccess (syntax_tree);
+    if (global.backend == BE_cuda && global.optimize.doshr) {
+        syntax_tree = ASHAdoAdjustShmemAccess (syntax_tree);
+    }
 
     info = MakeInfo ();
 
@@ -260,7 +262,10 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     info = FreeInfo (info);
 
     syntax_tree = KPPdoKernelPostProcessing (syntax_tree);
-    syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
+
+    if (global.backend == BE_cuda && global.optimize.doshr) {
+        syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
+    }
 
     DBUG_RETURN (syntax_tree);
 }

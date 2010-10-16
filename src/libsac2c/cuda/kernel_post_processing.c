@@ -207,11 +207,15 @@ KPPlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = FREEdoFreeNode (LET_IDS (arg_node));
         LET_IDS (arg_node) = NULL;
         INFO_REMOVE_IDS (arg_info) = FALSE;
-    } else if (LET_IDS (arg_node) != NULL
-               && NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node))) == 0) {
-        /* Any assignment defining a id that is not used anywhere
-         * can be removed. */
-        INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+    } else if (LET_IDS (arg_node) != NULL) {
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_array) {
+            NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
+        } else if (NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)))
+                   == 0) {
+            /* Any assignment defining a id that is not used anywhere
+             * can be removed. */
+            INFO_REMOVE_ASSIGN (arg_info) = TRUE;
+        }
     }
 
     DBUG_RETURN (arg_node);
