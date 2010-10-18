@@ -260,7 +260,10 @@ isScalar (node *n)
         break;
 
     case N_id:
+#ifdef BUG760
         res = TUisScalar (AVIS_TYPE (ID_AVIS (n)));
+#endif // BUG760
+        res = ID_ISSCLPRF (n);
         break;
 
     default:
@@ -385,6 +388,7 @@ flattenPrfarg (node *arg_node, info *arg_info)
                                     &INFO_PREASSIGN (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (typ), SHmakeShape (0)));
         res = TBmakeId (res);
+        ID_ISSCLPRF (res) = TRUE;
     } else {
         res = arg_node;
     }
