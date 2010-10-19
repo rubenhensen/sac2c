@@ -28,8 +28,9 @@ GetCCCall ()
 
     buffer = SBUFcreate (128);
 
-    SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
-                global.config.ldflags, global.config.ccdir, global.tmp_dirname);
+    SBUFprintf (buffer, "%s %s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
+                global.ccflags, global.config.ldflags, global.config.ccdir,
+                global.tmp_dirname);
 
     result = SBUF2str (buffer);
 

@@ -404,6 +404,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, MAX_FILE_NAME - 1));
 
+    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, MAX_FILE_NAME - 1));
+
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
     ARGS_FLAG ("c", global.break_after_phase = PH_cg);

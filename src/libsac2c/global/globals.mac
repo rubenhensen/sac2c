@@ -175,6 +175,7 @@ GLOBAL (int, sac4c_udt_offset, 20)
  * sac4c udt offset, needs to be greater than max( usertype)
  */
 
+GLOBAL (char *, ccflags, (char *)MEMmalloc (MAX_FILE_NAME))
 /*
  * Command line arguments
  */

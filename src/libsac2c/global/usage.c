@@ -172,6 +172,7 @@ PrintSpecialOptions (void)
       "                    process.\n"
       "\n"
       "    -C <name>       Print out a configuration parameter\n"
+      "    -ccflags <flags> Extra flags to give to C compiler\n"
       "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
