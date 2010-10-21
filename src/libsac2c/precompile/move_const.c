@@ -120,47 +120,35 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @name Entry functions
- * @{
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *MVdoMoveConst( node *syntax_tree)
- *
- *****************************************************************************/
-node *
-MCdoMoveConst (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("MCdoMoveConst");
-
-    info = MakeInfo ();
-
-    DBUG_PRINT ("MC", ("Starting move const traversal."));
-
-    TRAVpush (TR_mc);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    DBUG_PRINT ("MC", ("Move const traversal complete."));
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
  * @name Static helper funcions
  * @{
  *
  *****************************************************************************/
+
+static node *
+ATravIds (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravIds");
+
+    AVIS_COUNT (IDS_AVIS (arg_node))++;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+CountLhsUsage (node *syntax_tree)
+{
+    anontrav_t trav[2] = {{N_ids, &ATravIds}, {0, NULL}};
+    DBUG_ENTER ("CountLhsUsage");
+
+    TRAVpushAnonymous (trav, &TRAVsons);
+
+    syntax_tree = TRAVopt (syntax_tree, NULL);
+
+    TRAVpop ();
+
+    DBUG_RETURN (syntax_tree);
+}
 
 /** <!--********************************************************************-->
  *
@@ -187,6 +175,45 @@ SetConst (node *avis, node *rhs, node *vardecs)
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *MVdoMoveConst( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *
+MCdoMoveConst (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("MCdoMoveConst");
+
+    info = MakeInfo ();
+
+    DBUG_PRINT ("MC", ("Starting move const traversal."));
+
+    syntax_tree = CountLhsUsage (syntax_tree);
+
+    TRAVpush (TR_mc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    DBUG_PRINT ("MC", ("Move const traversal complete."));
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -258,7 +285,8 @@ MClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MClet");
 
-    if (TCisScalar (LET_EXPR (arg_node))) {
+    if (TCisScalar (LET_EXPR (arg_node))
+        && (AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node))) == 1)) {
         DBUG_ASSERT (IDS_NEXT (LET_IDS (arg_node)) == NULL,
                      "Expected const to be only var on lhs");
         SetConst (IDS_AVIS (LET_IDS (arg_node)), LET_EXPR (arg_node),
@@ -269,6 +297,7 @@ MClet (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->
  *****************************************************************************/

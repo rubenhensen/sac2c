@@ -8078,7 +8078,23 @@ N_tfarg :
               </target>
             </targets>
           </type>
+        </attribute>        
+        <attribute name="Count" inconstructor="no" default="0">
+          <description>
+            Used to count number of times the variable is used on the lhs.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                 <range name="pc_mc" />
+                </phases>
+              </target>
+            </targets>
+          </type>
         </attribute>
+
       </attributes>
 
       <flags>
