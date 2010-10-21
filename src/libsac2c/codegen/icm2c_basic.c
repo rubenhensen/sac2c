@@ -734,12 +734,12 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
         fprintf (global.outfile, ";\n");
     } else if (a_dim < 0) {
         BLOCK_VARDECS (
-          fprintf (global.outfile, "int SAC_i;");,
-                                                 /*
-                                                  * init offset
-                                                  */
-                                                 INDENT;
-          WriteScalar (off_ANY); fprintf (global.outfile, " = 0;\n");
+          fprintf (global.outfile, "int SAC_i, SAC_l;");,
+                                                        /*
+                                                         * init offset
+                                                         */
+                                                        INDENT;
+          fprintf (global.outfile, "SAC_l = 0;\n");
 
           /*
            * compute offset for indices (0 <= .. < v_size)
@@ -748,15 +748,14 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
               FOR_LOOP (fprintf (global.outfile, "SAC_i = 0");
                         , fprintf (global.outfile, "SAC_i < "); v_size_fun (v_ANY);
                         , fprintf (global.outfile, "SAC_i++");, INDENT;
-                        WriteScalar (off_ANY); fprintf (global.outfile, " = ");
-                        a_shape_fun (a_ANY, "SAC_i", -1); fprintf (global.outfile, " * ");
-                        WriteScalar (off_ANY); fprintf (global.outfile, " + ");
+                        fprintf (global.outfile, "SAC_l = ");
+                        a_shape_fun (a_ANY, "SAC_i", -1);
+                        fprintf (global.outfile, " * SAC_l + ");
                         v_read_fun (v_ANY, "SAC_i", -1);
                         fprintf (global.outfile, ";\n"););
           } else {
               INDENT;
-              WriteScalar (off_ANY);
-              fprintf (global.outfile, " = ");
+              fprintf (global.outfile, "SAC_l = ");
               for (i = v_size - 1; i > 0; i--) {
                   fprintf (global.outfile, "( ");
                   a_shape_fun (a_ANY, NULL, i);
@@ -778,23 +777,28 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
                     GetAttr (v_ANY, v_size, v_size_fun);
                     , fprintf (global.outfile, "SAC_i < ");
                     GetAttr (a_ANY, a_dim, a_dim_fun);
-                    , fprintf (global.outfile, "SAC_i++");, INDENT; WriteScalar (off_ANY);
-                    fprintf (global.outfile, " *= "); a_shape_fun (a_ANY, "SAC_i", -1);
-                    fprintf (global.outfile, ";\n");););
+                    , fprintf (global.outfile, "SAC_i++");, INDENT;
+                    fprintf (global.outfile, "SAC_l *= ");
+                    a_shape_fun (a_ANY, "SAC_i", -1); fprintf (global.outfile, ";\n"););
+          /*
+           * write back result
+           */
+          INDENT; WriteScalar (off_ANY); fprintf (global.outfile, " = SAC_l;\n");
+
+        );
     } else { /* ((a_dim >= 0) && (v_size < 0)) */
-        INDENT;
-        WriteScalar (off_ANY);
-        fprintf (global.outfile, " = 0;\n");
-        for (i = 0; i < a_dim; i++) {
-            INDENT;
-            WriteScalar (off_ANY);
-            fprintf (global.outfile, " *= ");
-            a_shape_fun (a_ANY, NULL, i);
-            fprintf (global.outfile, ";\n");
-            COND1 (fprintf (global.outfile, "%d < ", i); v_size_fun (v_ANY);
-                   , WriteScalar (off_ANY); fprintf (global.outfile, " += ");
-                   v_read_fun (v_ANY, NULL, i); fprintf (global.outfile, ";\n"););
-        }
+        BLOCK_VARDECS (
+          fprintf (global.outfile, "int SAC_l;\n");, INDENT;
+          fprintf (global.outfile, "SAC_l = 0;\n"); for (i = 0; i < a_dim; i++) {
+              INDENT;
+              fprintf (global.outfile, "SAC_l *= ");
+              a_shape_fun (a_ANY, NULL, i);
+              fprintf (global.outfile, ";\n");
+              COND1 (fprintf (global.outfile, "%d < ", i); v_size_fun (v_ANY);
+                     , fprintf (global.outfile, "SAC_l += "); v_read_fun (v_ANY, NULL, i);
+                     fprintf (global.outfile, ";\n"););
+          } WriteScalar (off_ANY);
+          fprintf (global.outfile, " = SAC_l; "););
     }
 
     DBUG_VOID_RETURN;
