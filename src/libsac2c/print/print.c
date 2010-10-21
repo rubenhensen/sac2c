@@ -2224,6 +2224,10 @@ PRTarg (node *arg_node, info *arg_info)
             fprintf (global.outfile, ", maxval: %s",
                      AVIS_NAME (ID_AVIS (AVIS_MAX (ARG_AVIS (arg_node)))));
         }
+        if (AVIS_WITHIDSINDEX (ARG_AVIS (arg_node)) != -1) {
+            fprintf (global.outfile, ", idx: %d",
+                     AVIS_WITHIDSINDEX (ARG_AVIS (arg_node)));
+        }
 
         fprintf (global.outfile, " } "); /* end of avis info */
     }
@@ -2296,6 +2300,10 @@ PRTvardec (node *arg_node, info *arg_info)
         if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", maxval: %s",
                      AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
+        }
+        if (AVIS_WITHIDSINDEX (VARDEC_AVIS (arg_node)) != -1) {
+            fprintf (global.outfile, ", idx: %d",
+                     AVIS_WITHIDSINDEX (VARDEC_AVIS (arg_node)));
         }
 
         if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
