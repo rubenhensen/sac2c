@@ -836,7 +836,7 @@ extern node *TCnodeBehindCast (node *arg_node);
  */
 extern node *TCmakeVector (ntype *basetype, node *aelems);
 extern node *TCmakeIntVector (node *aelems);
-extern node *TCcreateIntVector (int length, int value, int inc);
+extern node *TCcreateIntVector (int length, int value, int step);
 extern int TCgetIntVectorNthValue (int pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);

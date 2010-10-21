@@ -2459,7 +2459,7 @@ TCmakeIntVector (node *aelems)
 /******************************************************************************
  *
  * function:
- *   node *TCcreateIntVector( int length, int value, int inc)
+ *   node *TCcreateIntVector( int length, int value, int step)
  *
  * description:
  *   Returns an integer vector of length elements, with starting value
@@ -2470,16 +2470,19 @@ TCmakeIntVector (node *aelems)
  *
  *****************************************************************************/
 node *
-TCcreateIntVector (int length, int value, int inc)
+TCcreateIntVector (int length, int value, int step)
 {
     node *result = NULL;
     int d;
+    int v;
 
     DBUG_ENTER ("TCcreateIntVector");
 
+    v = value + ((length - 1) * step);
+
     for (d = 0; d < length; d++) {
-        result = TBmakeExprs (TBmakeNum (value), result);
-        value = value + inc;
+        result = TBmakeExprs (TBmakeNum (v), result);
+        v = v - step; /* list is built backwards */
     }
 
     result = TCmakeIntVector (result);
