@@ -279,6 +279,28 @@ KPPrange (node *arg_node, info *arg_info)
 }
 
 node *
+KPPgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("KPPgenarray");
+
+    GENARRAY_SHAPE (arg_node) = TRAVopt (GENARRAY_SHAPE (arg_node), arg_info);
+    GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
+    GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
+    GENARRAY_SUB (arg_node) = TRAVopt (GENARRAY_SUB (arg_node), arg_info);
+    GENARRAY_DEFSHAPEEXPR (arg_node)
+      = TRAVopt (GENARRAY_DEFSHAPEEXPR (arg_node), arg_info);
+
+    /* If we found a genarray in a cuda wl, we set it's
+     * is cudalocal flag to true. so it will be allocated
+     * as a kernel local array */
+    AVIS_ISCUDALOCAL (ID_AVIS (GENARRAY_MEM (arg_node))) = TRUE;
+
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 KPPid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("KPPid");

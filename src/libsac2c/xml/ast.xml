@@ -312,6 +312,7 @@
           <node name="Prf" />
           <node name="With3" />
           <node name="Range" />
+          <node name="Genarray" />
         </travuser>
       </traversal>
       <traversal id="SCUWL" name="Split Cudarizable withloop" default="sons" include="split_cuda_withloop.h" >

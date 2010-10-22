@@ -13,5 +13,6 @@ extern node *KPPid (node *arg_node, info *arg_info);
 extern node *KPPprf (node *arg_node, info *arg_info);
 extern node *KPPwith3 (node *arg_node, info *arg_info);
 extern node *KPPrange (node *arg_node, info *arg_info);
+extern node *KPPgenarray (node *arg_node, info *arg_info);
 
 #endif
