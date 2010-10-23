@@ -102,8 +102,11 @@ GDBwhatIs (char *nm, node *fundef)
 
     if (NULL != nm) {
         vardec = TCfindVardec_Name (nm, fundef);
-        if ((NULL != vardec) && (NULL != AVIS_SSAASSIGN (VARDEC_AVIS (vardec)))) {
-            PRTdoPrintNode (AVIS_SSAASSIGN (VARDEC_AVIS (vardec)));
+        if (NULL != vardec) {
+            PRTdoPrintNode (vardec);
+            if (NULL != AVIS_SSAASSIGN (VARDEC_AVIS (vardec))) {
+                PRTdoPrintNode (AVIS_SSAASSIGN (VARDEC_AVIS (vardec)));
+            }
         }
     }
 
