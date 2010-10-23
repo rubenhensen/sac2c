@@ -3695,7 +3695,7 @@ TCfindVardec_Name (char *name, node *fundef)
         while ((NULL != v) && (!b)) {
             curv = v;
             b = 0 == STReq (name, AVIS_NAME (VARDEC_AVIS (curv)));
-            v = VARDEC_NEXT (v);
+            v = b ? v : VARDEC_NEXT (v);
         }
     }
 
@@ -3705,7 +3705,7 @@ TCfindVardec_Name (char *name, node *fundef)
         while ((NULL != v) && (!b)) {
             curv = v;
             b = 0 == STReq (name, AVIS_NAME (VARDEC_AVIS (curv)));
-            v = ARG_NEXT (v);
+            v = b ? v : VARDEC_NEXT (v);
         }
     }
 
