@@ -209,6 +209,7 @@ IVEXCavis (node *arg_node, info *arg_info)
     AVIS_ISMAXHANDLED (arg_node) = FALSE;
     AVIS_COUNTING_WL (arg_node) = NULL;
     AVIS_WL_NEEDCOUNT (arg_node) = 0;
+    AVIS_WITHIDSINDEX (arg_node) = -1;
 
     DBUG_RETURN (arg_node);
 }
@@ -228,7 +229,6 @@ IVEXCprf (node *arg_node, info *arg_info)
 
     res = arg_node;
     switch (PRF_PRF (arg_node)) {
-
     case F_noteminval:
     case F_notemaxval:
     case F_noteintersect:

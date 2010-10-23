@@ -103,6 +103,7 @@
 #include "namespaces.h"
 #include "deserialize.h"
 #include "wls.h"
+#include "SSAWithloopFolding.h"
 
 /** <!--********************************************************************-->
  *
@@ -113,7 +114,8 @@
 struct INFO {
     node *fundef;
     node *vardecs;
-    node *preassigns;
+    node *preassigns;        /* These go above current statement */
+    node *preassignswl;      /* These go above the consumerWL */
     node *consumerpart;      /* The current consumerWL partition */
     node *consumerwl;        /* The current consumerWL N_with */
     node *producerwl;        /* The producerWL LHS for this consumerWL */
@@ -135,6 +137,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_PREASSIGNSWL(n) ((n)->preassignswl)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
 #define INFO_PRODUCERWL(n) ((n)->producerwl)
@@ -155,6 +158,7 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_PREASSIGNSWL (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
     INFO_PRODUCERWL (result) = NULL;
@@ -232,6 +236,208 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
  * @{
  *
  *****************************************************************************/
+
+#ifdef DEADCODE
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TraceIndexScalars(...)
+ *
+ * @brief Chase the set of N_array scalars back to their WITH_IDS,
+ *        if possible.
+ *
+ * @params:  arg_node: is an ARRAY_AELEMS node, that represents
+ *                     the iv' elements.
+ *                     Or, it's an N_id node from that N_array.
+ *           arg_info: Your basic arg_info node.
+ *           dim: the number of elements in arg_node
+ *           n:   the current element index into arg_node that
+ *                we want to examine.
+ *
+ * @result: An N_exprs node comprising the WITH_IDS rererenced
+ *          in arg_node, iff we found a full set of them.
+ *          Else, NULL.
+ *
+ *          FIXME: This should allow for mixed indexing, such as:
+ *                 sel( [0, j, i], producerWL). However, it doesn't
+ *                 do that yet.
+ *
+ *****************************************************************************/
+static node *
+TraceIndexScalars (node *arg_node, info *arg_info, int dim, int n)
+{
+    node *z = NULL;
+    node *z2;
+    node *idx = NULL;
+    node *i;
+    int m;
+
+    pattern *pat;
+
+    DBUG_ENTER ("TraceIndexScalars");
+
+    pat = PMany (1, PMAgetNode (&idx), 0);
+    i = (N_array == NODE_TYPE (arg_node)) ? TCgetNthExprsExpr (n, arg_node) : arg_node;
+    n = n + 1;
+    if (PMmatchFlatSkipExtremaAndGuards (pat, i)) {
+        switch (NODE_TYPE (idx)) {
+        case N_id:
+            m = WLFlocateIndexVar (idx, INFO_CONSUMERWL (arg_info));
+            if (0 < m) {
+                z = TBmakeExprs (TBmakeNum (m), NULL);
+                if (n < dim) {
+                    z2 = TraceIndexScalars (arg_node, arg_info, dim, n);
+                    if (NULL != z2) {
+                        z = TCappendExprs (z, z2);
+                    } else {
+                        z = FREEdoFreeTree (z);
+                    }
+                }
+            }
+            break;
+
+        case N_prf:
+            /* Since we want to trace the axis permutations only,
+             * we must not execute any scalar functions. We just
+             * trace the non-constant argument to the function.
+             */
+            switch (PRF_PRF (idx)) {
+            default:
+                break;
+            case F_add_SxS:
+            case F_sub_SxS:
+            case F_mul_SxS:
+                if (COisConstant (PRF_ARG2 (idx))) {
+                    z = TraceIndexScalars (PRF_ARG1 (idx), arg_info, 0, 0);
+                } else {
+                    DBUG_PRINT ("AWLFI", ("Punting to chase N_prf argument"));
+                    z = TraceIndexScalars (PRF_ARG2 (idx), arg_info, 0, 0);
+                }
+                break;
+            }
+            break;
+
+        default:
+            DBUG_PRINT ("AWLFI", ("Cannot chase scalar index"));
+            break;
+        }
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *
+ *
+ * @brief
+ *
+ * @params:
+ *
+ * @result:
+ *
+ *
+ *****************************************************************************/
+static node *
+TraceIndexVector (node *arg_node)
+{
+    node *z = NULL;
+    DBUG_ENTER ("TraceIndexVector");
+
+    DBUG_ASSERT (FALSE, " FIXME please ");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *BuildIVPV( node *arg_node, info *arg_info)
+ *
+ * @brief Given a consumerWL _sel_VxA_( iv', producerWL) arg_node,
+ *        create a symbiotic expression to compute the permutation
+ *        of the consumerWL's withid, iv, that will give us iv'.
+ *
+ *        We start by searching backwards from iv'.
+ *
+ * @params: arg_node, arg_info: as above
+ *
+ * @result: An N_id node to compute the PV.
+ *          If we can't solve the permutation, we return a vector
+ *          of -1s.
+ *
+ *
+ *****************************************************************************/
+static node *
+BuildIVPV (node *arg_node, info *arg_info)
+{
+    node *z;
+    node *wliv;
+    node *seliv = NULL;
+    node *arr = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    int step = 0;
+    int origin = -1;
+    int dim;
+    int ivindx;
+    DBUG_ENTER ("BuildIVPV");
+
+    pat1 = PMany (1, PMAgetNode (&seliv), 0);
+    pat2 = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, PRF_ARG1 (arg_node))) {
+        switch (NODE_TYPE (seliv)) {
+        case N_id:
+            ivindx = WLFlocateIndexVar (seliv, INFO_CONSUMERWL (arg_info));
+            switch (ivindx) {
+            case 0: /* No idea. build identity, because we need non-NULL exprs */
+                DBUG_PRINT ("AWLFI", (" Chasing N_id WITH_VEC"));
+                z = TraceIndexVector (seliv);
+                /* FIXME */
+                break;
+
+            case -1: /* Case 1: iv' or its predecessor is WITHID_VEC */
+                wliv = WITHID_VEC (PART_WITHID (WITH_PART (INFO_CONSUMERWL (arg_info))));
+                origin = 0;
+                step = 1;
+                dim = SHgetUnrLen (TYgetShape (IDS_NTYPE (wliv)));
+                break;
+
+            default: /* Case N: iv' or predecessor is WITH_IDS */
+                DBUG_ASSERT (FALSE, "Found scalar index in sel()");
+                break;
+            }
+            break;
+
+        case N_array: /* iv' is N_array */
+            wliv = WITHID_IDS (PART_WITHID (WITH_PART (INFO_CONSUMERWL (arg_info))));
+            dim = SHgetUnrLen (TYgetShape (IDS_NTYPE (wliv)));
+            if (PMmatchFlatSkipExtremaAndGuards (pat2, PRF_ARG1 (arg_node))) {
+                DBUG_PRINT ("AWLFI", (" Chasing N_array WITH_IDS"));
+                z = TraceIndexScalars (ARRAY_AELEMS (seliv), arg_info, dim, 0);
+            }
+            break;
+
+        default:
+            DBUG_PRINT ("AWLFI", ("FIXME: Need to chase something else"));
+            break;
+        }
+    }
+
+    z = (NULL != z) ? TCmakeIntVector (z) : TCcreateIntVector (dim, origin, step);
+    z = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
+                                TYmakeAKS (TYmakeSimpleType (T_int),
+                                           SHcreateShape (1, dim)));
+    z = TBmakeId (z);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
+}
+
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -438,7 +644,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *        and p0, p1... are the partitions of the producerWL.
  *
  *
- *        NB. ALL lower bounds preceed all upper bounds in the
+ *        NB. ALL lower bounds precede all upper bounds in the
  *            _attach_extrema_ arguments.
  *
  *        NB. We need the producerWL partition bounds for at least
@@ -637,6 +843,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         curavis = IntersectNullComputationBuilder (AVIS_MIN (ivavis), AVIS_MAX (ivavis),
                                                    g1, g2, arg_info);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+#ifdef DEADCODE
+        expn = TCappendExprs (expn, TBmakeExprs (BuildIVPV (arg_node, arg_info), NULL));
+#endif // DEADCODE
 
         partn = PART_NEXT (partn);
     }
@@ -700,16 +909,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
     AVIS_SSAASSIGN (ivavis) = ivassign;
 
-#ifdef LETISAADOIT
-    if (PHisSAAMode ()) {
-        AVIS_DIM (ivavis) = DUPdoDupTree (AVIS_DIM (ivavis));
-        AVIS_SHAPE (ivavis) = DUPdoDupTree (AVIS_SHAPE (ivavis));
-    }
-#endif //  LETISAADOIT
-
     PART_ISCONSUMERPART (INFO_CONSUMERPART (arg_info)) = TRUE;
-
-    global.optcounters.awlfi_insert++;
 
     DBUG_RETURN (ivpavis);
 }
@@ -1021,6 +1221,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
 node *
 AWLFIassign (node *arg_node, info *arg_info)
 {
+    node *let;
 
     DBUG_ENTER ("AWLFIassign");
 
@@ -1029,6 +1230,13 @@ AWLFIassign (node *arg_node, info *arg_info)
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    let = ASSIGN_INSTR (arg_node);
+    if ((N_let == NODE_TYPE (let)) && (N_with == NODE_TYPE (LET_EXPR (let)))
+        && (INFO_PREASSIGNSWL (arg_info) != NULL)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNSWL (arg_info), arg_node);
+        INFO_PREASSIGNSWL (arg_info) = NULL;
     }
 
     /*
@@ -1073,9 +1281,6 @@ AWLFIwith (node *arg_node, info *arg_info)
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_REFERENCES_FOLDED (arg_node) = 0;
 
-#ifdef DEADCODE
-    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
-#endif // DEADCODE
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     INFO_VARDECS (old_arg_info) = INFO_VARDECS (arg_info);
@@ -1085,26 +1290,6 @@ AWLFIwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *AWLFIcode( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-AWLFIcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("AWLFIcode");
-
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *

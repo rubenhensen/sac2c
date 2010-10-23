@@ -426,6 +426,7 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
  * @brief Search the _noteintersect_() list to see if there is an intersection
  *        that could match the current producerWL partition.
  *        Side effect is to set INFO_INTERSECTBOUND1/2( arg_info).
+ *        Side effect is to set INFO_AXISINDICES( arg_info).
  *
  *
  * @params idx: N_id node of _noteintersect() list.
@@ -458,7 +459,7 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
     intersectListNo = 0;
     intersectListLim = TCcountExprs (
       PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))))));
-    intersectListLim = (intersectListLim - 1) / WLEXPRESSIONSPERPART;
+    intersectListLim = (intersectListLim - 1) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
 
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
@@ -546,6 +547,28 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
 
 /** <!--********************************************************************-->
  *
+ * @fn node *isIotaN( node *arg_node, int N)
+ *
+ * @brief: Predicate for deciding if arg_node is an integer vector
+ *         matching iota(N).
+ *
+ * @params: arg_node, arg_info: as above
+ *
+ * @result: TRUE if predicate is satisfied.
+ *
+ *****************************************************************************/
+static bool
+isIotaN (node *arg_node, int N)
+{
+    bool z = FALSE;
+
+    DBUG_ENTER ("isIotaN");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  *
  * @fn node * FindMatchingPart(...
  *
@@ -603,6 +626,7 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
     intersect_type_t intersecttype = INTERSECT_unknown;
     char *typ;
     int producerPartno = 0;
+    int dim;
 
     DBUG_ENTER ("FindMatchingPart");
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
@@ -648,536 +672,540 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
         /* FIXME: For now, we allow slicing only when the consumerWL
          * generator has one axis. That way, we do not have to deal
          * with permuted and/or collapsing axes.
+         *
+         * 2010-06-30 starting to get better: Check for non-permuted
+         * axes and all present.
          */
-        if (1
-            != SHgetUnrLen (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (consumerWLGenerator)))) {
-            producerWLPart = NULL;
-            intersecttype = INTERSECT_unknown;
-            DBUG_PRINT ("CUBSL", ("Cube slicing needed, but not rank 1. FIXME!"));
+        dim = SHgetUnrLen (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (consumerWLGenerator)));
+#ifdef AXISPERMBUG
+        if (((1 != dim)
+             || ((NULL != arg_info) && (!isIotaN (INFO_WLIVAXISPV (arg_info), dim))))) {
+#endif //  AXISPERMBUG FIXME
+            if (((1 != dim))) {
+                producerWLPart = NULL;
+                intersecttype = INTERSECT_unknown;
+                DBUG_PRINT ("CUBSL", ("Cube slicing needed, but not rank 1. FIXME!"));
+            }
+            break;
         }
-        break;
+        (*itype) = intersecttype;
+
+        DBUG_PRINT ("CUBSL", ("Referent match type is (%s) for producerPartno %d", typ,
+                              producerPartno));
+
+        DBUG_RETURN (producerWLPart);
     }
-    (*itype) = intersecttype;
 
-    DBUG_PRINT ("CUBSL", ("Referent match type is (%s) for producerPartno %d", typ,
-                          producerPartno));
-
-    DBUG_RETURN (producerWLPart);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *PartitionSlicerOneAxis(...)
- *
- * @params partn: an N_part of the consumerWL.
- *         lb: An N_array, presenting the lower bound of the intersect
- *             between the consumerWL index set and a producerWL's
- *             partition bounds.
- *         ub: Same as lb, except the upper bound.
- *         axis: the axis which we are going to slice. e.g., for matrix,
- *            axis = 0 --> slice rows
- *            axis = 1 --> slice columns
- *            etc.
- *
- * @result: 1-3 N_part nodes, depending on the value of idx.
- *
- * @brief Slice a WL partition into 1-3 partitions.
- *
- * We have a WL partition, partn, and an intersection index set, idx,
- * for the partition that is smaller than the partition. We wish
- * to slice partn into sub-partitions, in order that AWLF
- * can operate on the sub-partition(s).
- *
- * idx is known to lie totally within partn, as it arises from
- * the WL index set intersection bounds.
- *
- * In the simplest situation, there are three possible
- * cases of intersect. The rectangle represents partn;
- * the xxxx's represent the array covered by lb, ub.
- *
- *   alpha        beta        gamma
- *  __________   __________  _________
- *  |xxxxxxxxx| | partA   | | partA   |
- *  |xxpartIxx| |         | |         |
- *  |         | |xxxxxxxxx| |         |
- *  |         | |xxpartIxx| |         |
- *  | partC   | |         | |xxxxxxxxx|
- *  |         | | partC   | |xxxxxxxxx|
- *  |_________| |_________| |xxpartIxx|
- *
- *  For cases alpha and gamma, we split partn into two parts.
- *  For case beta, we split it into three parts. In each case,
- *  one of the partitions is guaranteed to match idx.
- *
- * Because the intersection is multi-dimensional, we perform
- * the splitting on one axis at a time. Hence, we may end up
- * with each axis generating 1-3 new partitions for each
- * partition it gets as input.
- *
- * Here are the cases for splitting along axis 1 (columns) in a rank-2 array;
- * an x denotes partI:
- *
- *         Case 1:
- * alpha   alpha  alpha
- *
- * x..     .x.    ..x
- * ...     ...    ...
- * ...     ...    ...
- *
- *
- *         Case 2:
- * alpha   alpha  alpha
- * beta    beta   beta
- * ...     ...    ...
- * x..     .x.    ..x
- * ...     ...    ...
- *
- *
- *         Case 3:
- * alpha   alpha  alpha
- * gamma  gamma   gamma
- * ...    ...     ...
- * ...    ...     ...
- * x..    .x.     ..x
- *
- *
- *
- * Note: This code bears some resemblance to that of CutSlices.
- *       This is simpler, because we know more
- *       about the index set intersection.
- *
- * Note: Re the question of when to perform partition slicing.
- *       I'm not sure, but let's start here:
- *       We want to avoid a situation in which we slice
- *       a partition before we know that slicing is required.
- *       These are the requirements:
- *
- *        - The consumerWL index set is an N_array.
- *        - The intersect of the consumerWL index set with
- *          the producerWL partition bounds is:
- *            . non-empty  (or we are looking at a total mismatch)
- *            . not an exact match (because it could fold as is).
- *
- * Note: We do not do SSA renames here, because as soon as we
- *       hit IVEXI, it will do that, anyway.
- *
- *****************************************************************************/
-static node *
-PartitionSlicerOneAxis (node *partn, node *lb, node *ub, int axis, info *arg_info)
-{
-    node *partz = NULL;
-    node *newpart = NULL;
-    node *partlb = NULL;
-    node *partub = NULL;
-    node *step;
-    node *width;
-    node *withid;
-    node *newlb;
-    node *newub;
-    node *genn;
-    node *ilba;
-    node *iuba;
-    node *plba;
-    node *puba;
-    node *plb;
-    node *pub;
-    pattern *pat1;
-    pattern *pat2;
-
-    DBUG_ENTER ("PartitionSlicerOneAxis");
-
-    DBUG_ASSERT (N_part == NODE_TYPE (partn), "expected N_part partn");
-    DBUG_ASSERT (N_array == NODE_TYPE (lb), "expected N_array lb");
-    DBUG_ASSERT (N_array == NODE_TYPE (ub), "expected N_array ub");
-
-    plb = GENERATOR_BOUND1 (PART_GENERATOR (partn));
-    pub = GENERATOR_BOUND2 (PART_GENERATOR (partn));
-    pat1 = PMarray (1, PMAgetNode (&partlb), 1, PMskip (0));
-    pat2 = PMarray (1, PMAgetNode (&partub), 1, PMskip (0));
-
-    if ((PMmatchFlat (pat1, plb)) && (PMmatchFlat (pat2, pub))) {
-        step = GENERATOR_STEP (PART_GENERATOR (partn));
-        width = GENERATOR_WIDTH (PART_GENERATOR (partn));
-        withid = PART_WITHID (partn);
-
-        ilba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (lb));
-        iuba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (ub));
-        plba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partlb));
-        puba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partub));
-
-        /* Cases beta, gamma need partA */
-        if (CMPT_EQ != CMPTdoCompareTree (ilba, plba)) {
-            DBUG_PRINT ("Constructing partition A for %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            newlb = DUPdoDupTree (partlb);
-            newub = DUPdoDupTree (partub);
-            ARRAY_AELEMS (newub)
-              = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
-            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    DUPdoDupTree (width));
-            newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
-            CODE_INC_USED (PART_CODE (newpart));
-            partz = TCappendPart (partz, newpart);
-        }
-
-        /* All cases need partI */
-        newlb = DUPdoDupTree (lb);
-        newub = DUPdoDupTree (ub);
-        genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                DUPdoDupTree (width));
-        newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
-        CODE_INC_USED (PART_CODE (newpart));
-        partz = TCappendPart (partz, newpart);
-
-        /* Case alpha, beta need partC */
-        if (CMPT_EQ != CMPTdoCompareTree (iuba, puba)) {
-            DBUG_PRINT ("Constructing partition C for %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            newlb = DUPdoDupTree (ub);
-            newub = DUPdoDupTree (partub);
-            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    DUPdoDupTree (width));
-            newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
-            CODE_INC_USED (PART_CODE (newpart));
-            partz = TCappendPart (partz, newpart);
-        }
-    }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-
-    DBUG_RETURN (partz);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *PartitionSlicer(...)
- *
- * @params arg_node: an N_part of the consumerWL.
- *         arg_info: your basic info node
- *         lb: an N_array, representing the lower-bound intersect of the
- *              consumerWL index set and a producerWL partition.
- *              lb must be the same shape as the partn generators.
- *         ub: Same as lb, but for upper-bound intersect.
- *
- * @result: 1-3 N_part nodes, per dimension of the WL generator.
- *          New N_code nodes are also built.
- *
- * @brief Slice a WL partition into as many partitions as required.
- *
- * NOTE: FIXME - At present (2010-05-21), this code picks only one
- *       slice for each consumer-WL partition.
- *       It is possible to perform multiple slice operations on
- *       that partition, by choosing appropriate (adjacent?)
- *       intersections from multiple producer-WL partitions,
- *       but I have not had time to code that. The information
- *       is all there, in the F_noteintersect, but I have not
- *       had time to code it. This change should improve AWLF
- *       performance, because we would, in many cases, need
- *       fewer trips through SAACYC to achieve the same end.
- *
- *****************************************************************************/
-static node *
-PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
-{
-    node *newpartns;
-    node *curpartn;
-    node *oldpartn;
-    node *strippedcode;
-    node *p;
-    node *pnext;
-    int axis;
-    int axes;
-
-    anontrav_t freetrav[2] = {{N_prf, &IVEXCprf}, {0, NULL}};
-
-    DBUG_ENTER ("PartitionSlicer");
-
-    /* "The first thing we do, let's kill all the lawyers."
-     *  The first thing we do, let's kill all the extrema and
-     *  intersect info, which is now useless.
+    /** <!--********************************************************************-->
      *
-     *  newpartns could get cleaned up here with VP and DCR, if need be.
-     */
-    TRAVpushAnonymous (freetrav, &TRAVsons);
+     * @fn static node *PartitionSlicerOneAxis(...)
+     *
+     * @params partn: an N_part of the consumerWL.
+     *         lb: An N_array, presenting the lower bound of the intersect
+     *             between the consumerWL index set and a producerWL's
+     *             partition bounds.
+     *         ub: Same as lb, except the upper bound.
+     *         axis: the axis which we are going to slice. e.g., for matrix,
+     *            axis = 0 --> slice rows
+     *            axis = 1 --> slice columns
+     *            etc.
+     *
+     * @result: 1-3 N_part nodes, depending on the value of idx.
+     *
+     * @brief Slice a WL partition into 1-3 partitions.
+     *
+     * We have a WL partition, partn, and an intersection index set, idx,
+     * for the partition that is smaller than the partition. We wish
+     * to slice partn into sub-partitions, in order that AWLF
+     * can operate on the sub-partition(s).
+     *
+     * idx is known to lie totally within partn, as it arises from
+     * the WL index set intersection bounds.
+     *
+     * In the simplest situation, there are three possible
+     * cases of intersect. The rectangle represents partn;
+     * the xxxx's represent the array covered by lb, ub.
+     *
+     *   alpha        beta        gamma
+     *  __________   __________  _________
+     *  |xxxxxxxxx| | partA   | | partA   |
+     *  |xxpartIxx| |         | |         |
+     *  |         | |xxxxxxxxx| |         |
+     *  |         | |xxpartIxx| |         |
+     *  | partC   | |         | |xxxxxxxxx|
+     *  |         | | partC   | |xxxxxxxxx|
+     *  |_________| |_________| |xxpartIxx|
+     *
+     *  For cases alpha and gamma, we split partn into two parts.
+     *  For case beta, we split it into three parts. In each case,
+     *  one of the partitions is guaranteed to match idx.
+     *
+     * Because the intersection is multi-dimensional, we perform
+     * the splitting on one axis at a time. Hence, we may end up
+     * with each axis generating 1-3 new partitions for each
+     * partition it gets as input.
+     *
+     * Here are the cases for splitting along axis 1 (columns) in a rank-2 array;
+     * an x denotes partI:
+     *
+     *         Case 1:
+     * alpha   alpha  alpha
+     *
+     * x..     .x.    ..x
+     * ...     ...    ...
+     * ...     ...    ...
+     *
+     *
+     *         Case 2:
+     * alpha   alpha  alpha
+     * beta    beta   beta
+     * ...     ...    ...
+     * x..     .x.    ..x
+     * ...     ...    ...
+     *
+     *
+     *         Case 3:
+     * alpha   alpha  alpha
+     * gamma  gamma   gamma
+     * ...    ...     ...
+     * ...    ...     ...
+     * x..    .x.     ..x
+     *
+     *
+     *
+     * Note: This code bears some resemblance to that of CutSlices.
+     *       This is simpler, because we know more
+     *       about the index set intersection.
+     *
+     * Note: Re the question of when to perform partition slicing.
+     *       I'm not sure, but let's start here:
+     *       We want to avoid a situation in which we slice
+     *       a partition before we know that slicing is required.
+     *       These are the requirements:
+     *
+     *        - The consumerWL index set is an N_array.
+     *        - The intersect of the consumerWL index set with
+     *          the producerWL partition bounds is:
+     *            . non-empty  (or we are looking at a total mismatch)
+     *            . not an exact match (because it could fold as is).
+     *
+     * Note: We do not do SSA renames here, because as soon as we
+     *       hit IVEXI, it will do that, anyway.
+     *
+     *****************************************************************************/
+    static node *PartitionSlicerOneAxis (node * partn, node * lb, node * ub, int axis,
+                                         info *arg_info)
+    {
+        node *partz = NULL;
+        node *newpart = NULL;
+        node *partlb = NULL;
+        node *partub = NULL;
+        node *step;
+        node *width;
+        node *withid;
+        node *newlb;
+        node *newub;
+        node *genn;
+        node *ilba;
+        node *iuba;
+        node *plba;
+        node *puba;
+        node *plb;
+        node *pub;
+        pattern *pat1;
+        pattern *pat2;
 
-    /* We have to clone the N_code, or we wipe the arg_node. */
-    newpartns = DUPdoDupNode (arg_node);
-    CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
+        DBUG_ENTER ("PartitionSlicerOneAxis");
 
-    strippedcode = DUPdoDupNode (PART_CODE (newpartns));
-    CODE_USED (strippedcode) = 1;
-    strippedcode = IVEXCdoIndexVectorExtremaCleanupPartition (strippedcode, arg_info);
-    /* append new code block to N_code chain */
-    CODE_NEXT (strippedcode) = INFO_WITHCODE (arg_info);
-    INFO_WITHCODE (arg_info) = strippedcode;
-    PART_CODE (newpartns) = strippedcode;
-    TRAVpop ();
+        DBUG_ASSERT (N_part == NODE_TYPE (partn), "expected N_part partn");
+        DBUG_ASSERT (N_array == NODE_TYPE (lb), "expected N_array lb");
+        DBUG_ASSERT (N_array == NODE_TYPE (ub), "expected N_array ub");
 
-    axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
+        plb = GENERATOR_BOUND1 (PART_GENERATOR (partn));
+        pub = GENERATOR_BOUND2 (PART_GENERATOR (partn));
+        pat1 = PMarray (1, PMAgetNode (&partlb), 1, PMskip (0));
+        pat2 = PMarray (1, PMAgetNode (&partub), 1, PMskip (0));
 
-    for (axis = 0; axis < axes; axis++) {
-        DBUG_PRINT ("CUBSL", ("Slicing partition %s on axis %d",
-                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), axis));
-        oldpartn = newpartns;
-        curpartn = newpartns;
-        newpartns = NULL;
-        while (NULL != curpartn) {
-            pnext = PART_NEXT (curpartn);
-            PART_NEXT (curpartn) = NULL;
-            p = PartitionSlicerOneAxis (curpartn, lb, ub, axis, arg_info);
-            newpartns = TCappendPart (newpartns, p);
-            curpartn = pnext;
+        if ((PMmatchFlat (pat1, plb)) && (PMmatchFlat (pat2, pub))) {
+            step = GENERATOR_STEP (PART_GENERATOR (partn));
+            width = GENERATOR_WIDTH (PART_GENERATOR (partn));
+            withid = PART_WITHID (partn);
+
+            ilba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (lb));
+            iuba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (ub));
+            plba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partlb));
+            puba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partub));
+
+            /* Cases beta, gamma need partA */
+            if (CMPT_EQ != CMPTdoCompareTree (ilba, plba)) {
+                DBUG_PRINT ("Constructing partition A for %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                newlb = DUPdoDupTree (partlb);
+                newub = DUPdoDupTree (partub);
+                ARRAY_AELEMS (newub)
+                  = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
+                genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub,
+                                        DUPdoDupTree (step), DUPdoDupTree (width));
+                newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
+                CODE_INC_USED (PART_CODE (newpart));
+                partz = TCappendPart (partz, newpart);
+            }
+
+            /* All cases need partI */
+            newlb = DUPdoDupTree (lb);
+            newub = DUPdoDupTree (ub);
+            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
+                                    DUPdoDupTree (width));
+            newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
+            CODE_INC_USED (PART_CODE (newpart));
+            partz = TCappendPart (partz, newpart);
+
+            /* Case alpha, beta need partC */
+            if (CMPT_EQ != CMPTdoCompareTree (iuba, puba)) {
+                DBUG_PRINT ("Constructing partition C for %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                newlb = DUPdoDupTree (ub);
+                newub = DUPdoDupTree (partub);
+                genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub,
+                                        DUPdoDupTree (step), DUPdoDupTree (width));
+                newpart = TBmakePart (PART_CODE (partn), DUPdoDupTree (withid), genn);
+                CODE_INC_USED (PART_CODE (newpart));
+                partz = TCappendPart (partz, newpart);
+            }
         }
-        oldpartn = FREEdoFreeTree (oldpartn);
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
+
+        DBUG_RETURN (partz);
     }
 
-    DBUG_RETURN (newpartns);
-}
+    /** <!--********************************************************************-->
+     *
+     * @fn static node *PartitionSlicer(...)
+     *
+     * @params arg_node: an N_part of the consumerWL.
+     *         arg_info: your basic info node
+     *         lb: an N_array, representing the lower-bound intersect of the
+     *              consumerWL index set and a producerWL partition.
+     *              lb must be the same shape as the partn generators.
+     *         ub: Same as lb, but for upper-bound intersect.
+     *
+     * @result: 1-3 N_part nodes, per dimension of the WL generator.
+     *          New N_code nodes are also built.
+     *
+     * @brief Slice a WL partition into as many partitions as required.
+     *
+     * NOTE: FIXME - At present (2010-05-21), this code picks only one
+     *       slice for each consumer-WL partition.
+     *       It is possible to perform multiple slice operations on
+     *       that partition, by choosing appropriate (adjacent?)
+     *       intersections from multiple producer-WL partitions,
+     *       but I have not had time to code that. The information
+     *       is all there, in the F_noteintersect, but I have not
+     *       had time to code it. This change should improve AWLF
+     *       performance, because we would, in many cases, need
+     *       fewer trips through SAACYC to achieve the same end.
+     *
+     *****************************************************************************/
+    static node *PartitionSlicer (node * arg_node, info * arg_info, node * lb, node * ub)
+    {
+        node *newpartns;
+        node *curpartn;
+        node *oldpartn;
+        node *strippedcode;
+        node *p;
+        node *pnext;
+        int axis;
+        int axes;
 
-/** <!--********************************************************************-->
- *
- * @name Traversal functions
- * @{
- *****************************************************************************/
+        anontrav_t freetrav[2] = {{N_prf, &IVEXCprf}, {0, NULL}};
 
-/** <!--********************************************************************-->
- *
- * @fn node *CUBSLfundef(node *arg_node, info *arg_info)
- *
- * @brief applies CUBSL to a given fundef.
- *
- *****************************************************************************/
-node *
-CUBSLfundef (node *arg_node, info *arg_info)
-{
-    bool old_onefundef;
+        DBUG_ENTER ("PartitionSlicer");
 
-    DBUG_ENTER ("CUBSLfundef");
+        /* "The first thing we do, let's kill all the lawyers."
+         *  The first thing we do, let's kill all the extrema and
+         *  intersect info, which is now useless.
+         *
+         *  newpartns could get cleaned up here with VP and DCR, if need be.
+         */
+        TRAVpushAnonymous (freetrav, &TRAVsons);
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+        /* We have to clone the N_code, or we wipe the arg_node. */
+        newpartns = DUPdoDupNode (arg_node);
+        CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
 
-        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        strippedcode = DUPdoDupNode (PART_CODE (newpartns));
+        CODE_USED (strippedcode) = 1;
+        strippedcode = IVEXCdoIndexVectorExtremaCleanupPartition (strippedcode, arg_info);
+        /* append new code block to N_code chain */
+        CODE_NEXT (strippedcode) = INFO_WITHCODE (arg_info);
+        INFO_WITHCODE (arg_info) = strippedcode;
+        PART_CODE (newpartns) = strippedcode;
+        TRAVpop ();
 
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
+        axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
+
+        for (axis = 0; axis < axes; axis++) {
+            DBUG_PRINT ("CUBSL", ("Slicing partition %s on axis %d",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), axis));
+            oldpartn = newpartns;
+            curpartn = newpartns;
+            newpartns = NULL;
+            while (NULL != curpartn) {
+                pnext = PART_NEXT (curpartn);
+                PART_NEXT (curpartn) = NULL;
+                p = PartitionSlicerOneAxis (curpartn, lb, ub, axis, arg_info);
+                newpartns = TCappendPart (newpartns, p);
+                curpartn = pnext;
+            }
+            oldpartn = FREEdoFreeTree (oldpartn);
+        }
+
+        DBUG_RETURN (newpartns);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @name Traversal functions
+     * @{
+     *****************************************************************************/
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *CUBSLfundef(node *arg_node, info *arg_info)
+     *
+     * @brief applies CUBSL to a given fundef.
+     *
+     *****************************************************************************/
+    node *CUBSLfundef (node * arg_node, info * arg_info)
+    {
+        bool old_onefundef;
+
+        DBUG_ENTER ("CUBSLfundef");
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            /* If new vardecs were made, append them to the current set */
-            if (INFO_VARDECS (arg_info) != NULL) {
-                BLOCK_VARDEC (FUNDEF_BODY (arg_node))
-                  = TCappendVardec (INFO_VARDECS (arg_info),
-                                    BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
-                INFO_VARDECS (arg_info) = NULL;
+            DBUG_PRINT ("CUBSL",
+                        ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
+                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                         FUNDEF_NAME (arg_node)));
+
+            old_onefundef = INFO_ONEFUNDEF (arg_info);
+            INFO_ONEFUNDEF (arg_info) = FALSE;
+
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+                /* If new vardecs were made, append them to the current set */
+                if (INFO_VARDECS (arg_info) != NULL) {
+                    BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+                      = TCappendVardec (INFO_VARDECS (arg_info),
+                                        BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                    INFO_VARDECS (arg_info) = NULL;
+                }
+
+                FUNDEF_LOCALFUNS (arg_node)
+                  = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+                INFO_ONEFUNDEF (arg_info) = old_onefundef;
             }
 
-            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-            INFO_ONEFUNDEF (arg_info) = old_onefundef;
+            DBUG_PRINT ("CUBSL",
+                        ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
+                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                         FUNDEF_NAME (arg_node)));
         }
 
-        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        if (!INFO_ONEFUNDEF (arg_info)) {
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        DBUG_RETURN (arg_node);
     }
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    /** <!--********************************************************************-->
+     *
+     * @fn node CUBSLassign( node *arg_node, info *arg_info)
+     *
+     * @brief performs a top-down traversal.
+     *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
+     *
+     *        Also prepends newly generated WL bounds before the
+     *        WL they are associated with.
+     *
+     *****************************************************************************/
+    node *CUBSLassign (node * arg_node, info * arg_info)
+    {
 
-    DBUG_RETURN (arg_node);
-}
+        DBUG_ENTER ("CUBSLassign");
 
-/** <!--********************************************************************-->
- *
- * @fn node CUBSLassign( node *arg_node, info *arg_info)
- *
- * @brief performs a top-down traversal.
- *        For a foldable WL, arg_node is x = _sel_VxA_(iv, foldee).
- *
- *        Also prepends newly generated WL bounds before the
- *        WL they are associated with.
- *
- *****************************************************************************/
-node *
-CUBSLassign (node *arg_node, info *arg_info)
-{
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    DBUG_ENTER ("CUBSLassign");
+        if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
+            && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))
+            && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
+            arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
+            INFO_PREASSIGNSWITH (arg_info) = NULL;
+        }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))
-        && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
-        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
-        INFO_PREASSIGNSWITH (arg_info) = NULL;
-    }
-
-    /*
-     * Top-down traversal
-     */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CUBSLwith( node *arg_node, info *arg_info)
- *
- * @brief applies CUBSL to a with-loop.
- *        We replace the current WITH_CODE chain with
- *        the old chain amended with new partition codes.
- *
- *        We work from innermost WL to outermost, which I
- *        think is correct, but am not positive.
- *
- *****************************************************************************/
-node *
-CUBSLwith (node *arg_node, info *arg_info)
-{
-    node *oldwithcode;
-
-    DBUG_ENTER ("CUBSLwith");
-
-    oldwithcode = INFO_WITHCODE (arg_info);
-    INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
-    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = INFO_WITHCODE (arg_info);
-    INFO_WITHCODE (arg_info) = oldwithcode;
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CUBSLpart( node *arg_node, info *arg_info)
- *
- * @brief Traverse each partition of a WL.
- *
- *****************************************************************************/
-node *
-CUBSLpart (node *arg_node, info *arg_info)
-{
-    node *newparts = NULL;
-    node *oldconsumerpart;
-    intersect_type_t oldintersecttype;
-
-    DBUG_ENTER ("CUBSLpart");
-
-    DBUG_PRINT ("CUBSL", ("traversing partition for %s",
-                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-    DBUG_ASSERT (INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info),
-                 "partition confusion");
-
-    oldconsumerpart = INFO_CONSUMERPART (arg_info);
-    INFO_CONSUMERPART (arg_info) = arg_node;
-    oldintersecttype = INFO_INTERSECTTYPE (arg_info);
-    INFO_INTERSECTTYPE (arg_info) = INTERSECT_unknown;
-
-    CODE_CBLOCK (PART_CODE (arg_node))
-      = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-    if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
-        && (NULL != INFO_INTERSECTBOUND1 (arg_info))
-        && (NULL != INFO_INTERSECTBOUND2 (arg_info))) {
-
-        newparts = PartitionSlicer (arg_node, arg_info, INFO_INTERSECTBOUND1 (arg_info),
-                                    INFO_INTERSECTBOUND2 (arg_info));
-
-        newparts = TCappendPart (newparts, PART_NEXT (arg_node));
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = newparts;
-    }
-
-    DBUG_PRINT ("CUBSL", ("Partition %s intersect type is %d",
-                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                          INFO_INTERSECTTYPE (arg_info)));
-    INFO_CONSUMERPART (arg_info) = oldconsumerpart;
-    INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
-
-    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CUBSLlet( node *arg_node, info *arg_info)
- *
- * @brief Save the LHS name for debugging
- *
- *****************************************************************************/
-node *
-CUBSLlet (node *arg_node, info *arg_info)
-{
-    node *oldlhs;
-
-    DBUG_ENTER ("CUBSLlet");
-
-    oldlhs = INFO_LHS (arg_info);
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
-#ifdef VERBOSE
-    DBUG_PRINT ("CUBSL",
-                ("Start looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-#endif // VERBOSE
-
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-#ifdef VERBOSE
-    DBUG_PRINT ("CUBSL",
-                ("Finished looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-#endif // VERBOSE
-
-    INFO_LHS (arg_info) = oldlhs;
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CUBSLprf( node *arg_node, info *arg_info)
- *
- * @brief Look for suitable _sel_VxA_( iv, X) nodes in this WL partition.
- *        Leave cube-slicing info in arg_info.
- *
- *****************************************************************************/
-node *
-CUBSLprf (node *arg_node, info *arg_info)
-{
-    node *producerPart;
-    node *producerWL;
-
-    DBUG_ENTER ("CUBSLprf");
-
-    if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
-        && (isPrfArg1AttachIntersect (arg_node))) {
-        DBUG_PRINT ("CUBSL", ("Looking at %s =_sel_VxA_( iv, X)",
-                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-        producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));
-        producerWL = AWLFIgetWlWith (producerWL);
-
-        /* producerWL may be entirely gone now, perhaps
-         * due to it being copyWL, etc.
-         * Or, it may have been sliced, so partition bounds differ from
-         * what they were originally.
+        /*
+         * Top-down traversal
          */
-        if (NULL != producerWL) {
-            producerPart
-              = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
-                                  INFO_CONSUMERPART (arg_info), producerWL, arg_info);
-            if (NULL != producerPart) {
-                DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
-            }
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+        DBUG_RETURN (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
-}
+    /** <!--********************************************************************-->
+     *
+     * @fn node *CUBSLwith( node *arg_node, info *arg_info)
+     *
+     * @brief applies CUBSL to a with-loop.
+     *        We replace the current WITH_CODE chain with
+     *        the old chain amended with new partition codes.
+     *
+     *        We work from innermost WL to outermost, which I
+     *        think is correct, but am not positive.
+     *
+     *****************************************************************************/
+    node *CUBSLwith (node * arg_node, info * arg_info)
+    {
+        node *oldwithcode;
 
-/** <!--********************************************************************-->
- * @}  <!-- Algebraic with loop folding cube slicing -->
- *****************************************************************************/
+        DBUG_ENTER ("CUBSLwith");
+
+        oldwithcode = INFO_WITHCODE (arg_info);
+        INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+        WITH_CODE (arg_node) = INFO_WITHCODE (arg_info);
+        INFO_WITHCODE (arg_info) = oldwithcode;
+
+        DBUG_RETURN (arg_node);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *CUBSLpart( node *arg_node, info *arg_info)
+     *
+     * @brief Traverse each partition of a WL.
+     *
+     *****************************************************************************/
+    node *CUBSLpart (node * arg_node, info * arg_info)
+    {
+        node *newparts = NULL;
+        node *oldconsumerpart;
+        intersect_type_t oldintersecttype;
+
+        DBUG_ENTER ("CUBSLpart");
+
+        DBUG_PRINT ("CUBSL", ("traversing partition for %s",
+                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        DBUG_ASSERT (INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info),
+                     "partition confusion");
+
+        oldconsumerpart = INFO_CONSUMERPART (arg_info);
+        INFO_CONSUMERPART (arg_info) = arg_node;
+        oldintersecttype = INFO_INTERSECTTYPE (arg_info);
+        INFO_INTERSECTTYPE (arg_info) = INTERSECT_unknown;
+
+        CODE_CBLOCK (PART_CODE (arg_node))
+          = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+        if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
+            && (NULL != INFO_INTERSECTBOUND1 (arg_info))
+            && (NULL != INFO_INTERSECTBOUND2 (arg_info))) {
+
+            newparts
+              = PartitionSlicer (arg_node, arg_info, INFO_INTERSECTBOUND1 (arg_info),
+                                 INFO_INTERSECTBOUND2 (arg_info));
+
+            newparts = TCappendPart (newparts, PART_NEXT (arg_node));
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = newparts;
+        }
+
+        DBUG_PRINT ("CUBSL", ("Partition %s intersect type is %d",
+                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                              INFO_INTERSECTTYPE (arg_info)));
+        INFO_CONSUMERPART (arg_info) = oldconsumerpart;
+        INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
+
+        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+        DBUG_RETURN (arg_node);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *CUBSLlet( node *arg_node, info *arg_info)
+     *
+     * @brief Save the LHS name for debugging
+     *
+     *****************************************************************************/
+    node *CUBSLlet (node * arg_node, info * arg_info)
+    {
+        node *oldlhs;
+
+        DBUG_ENTER ("CUBSLlet");
+
+        oldlhs = INFO_LHS (arg_info);
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+#ifdef VERBOSE
+        DBUG_PRINT ("CUBSL",
+                    ("Start looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+#endif // VERBOSE
+
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+#ifdef VERBOSE
+        DBUG_PRINT ("CUBSL", ("Finished looking at %s",
+                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+#endif // VERBOSE
+
+        INFO_LHS (arg_info) = oldlhs;
+
+        DBUG_RETURN (arg_node);
+    }
+
+    /** <!--********************************************************************-->
+     *
+     * @fn node *CUBSLprf( node *arg_node, info *arg_info)
+     *
+     * @brief Look for suitable _sel_VxA_( iv, X) nodes in this WL partition.
+     *        Leave cube-slicing info in arg_info.
+     *
+     *****************************************************************************/
+    node *CUBSLprf (node * arg_node, info * arg_info)
+    {
+        node *producerPart;
+        node *producerWL;
+
+        DBUG_ENTER ("CUBSLprf");
+
+        if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
+            && (isPrfArg1AttachIntersect (arg_node))) {
+            DBUG_PRINT ("CUBSL", ("Looking at %s =_sel_VxA_( iv, X)",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+            producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));
+            producerWL = AWLFIgetWlWith (producerWL);
+
+            /* producerWL may be entirely gone now, perhaps
+             * due to it being copyWL, etc.
+             * Or, it may have been sliced, so partition bounds differ from
+             * what they were originally.
+             */
+            if (NULL != producerWL) {
+                producerPart
+                  = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
+                                      INFO_CONSUMERPART (arg_info), producerWL, arg_info);
+                if (NULL != producerPart) {
+                    DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+                }
+            }
+        }
+
+        DBUG_RETURN (arg_node);
+    }
+
+    /** <!--********************************************************************-->
+     * @}  <!-- Algebraic with loop folding cube slicing -->
+     *****************************************************************************/

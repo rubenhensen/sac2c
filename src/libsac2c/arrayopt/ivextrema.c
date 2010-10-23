@@ -493,11 +493,11 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     *preassigns = TCappendAssign (*preassigns, nas);
 
     if ((F_noteminval == nprf)) {
-        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE);
+        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE, lhsavis);
     }
 
     if ((F_notemaxval == nprf)) {
-        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE);
+        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE, lhsavis);
     }
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
@@ -686,6 +686,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
                            &INFO_PREASSIGNSPART (arg_info));
     b2 = generateSelect (b2f, arg_info, k);
 
+    AVIS_WITHIDSINDEX (iavis) = k;
     avisp = IVEXIattachExtrema (b1, iavis, &INFO_VARDECS (arg_info),
                                 &INFO_PREASSIGNSPART (arg_info), F_noteminval);
     AVIS_ISMINHANDLED (avisp) = TRUE;

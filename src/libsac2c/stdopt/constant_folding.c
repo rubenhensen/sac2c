@@ -1015,14 +1015,17 @@ CFlet (node *arg_node, info *arg_info)
         DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMIN (arg_info))),
                      "AVIS_MIN not N_avis");
         IVEXPsetMinvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
-                                 TBmakeId (INFO_AVISMIN (arg_info)), FALSE);
+                                 TBmakeId (INFO_AVISMIN (arg_info)), FALSE,
+                                 IDS_AVIS (LET_IDS (arg_node)));
+
         INFO_AVISMIN (arg_info) = NULL;
     }
     if (NULL != INFO_AVISMAX (arg_info)) {
         DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMAX (arg_info))),
                      "AVIS_MAX not N_avis");
         IVEXPsetMaxvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
-                                 TBmakeId (INFO_AVISMAX (arg_info)), FALSE);
+                                 TBmakeId (INFO_AVISMAX (arg_info)), FALSE,
+                                 IDS_AVIS (LET_IDS (arg_node)));
         INFO_AVISMAX (arg_info) = NULL;
     }
 

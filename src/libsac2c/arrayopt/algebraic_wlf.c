@@ -557,12 +557,6 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
     /* Generate a new LHS name for WITHID_VEC/IDS */
     navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                         TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (arg_node))), shp));
-#ifdef LETISAADOIT
-    if (PHisSAAMode ()) {
-        AVIS_DIM (navis) = DUPdoDupTree (AVIS_DIM (arg_node));
-        AVIS_SHAPE (navis) = DUPdoDupTree (AVIS_SHAPE (arg_node));
-    }
-#endif // LETISAADOIT
 
     INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
     LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, navis);
@@ -620,12 +614,6 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
         narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
         navis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
-#ifdef LETISAADOIT
-        if (PHisSAAMode ()) {
-            AVIS_DIM (navis) = TBmakeNum (1);
-            AVIS_SHAPE (navis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (1), NULL));
-        }
-#endif // LETISAADOIT
 
         nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
         AVIS_SSAASSIGN (navis) = nass;
@@ -642,14 +630,6 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
                             NULL);
         z = TCappendAssign (z, sel);
         AVIS_SSAASSIGN (lhsavis) = sel;
-
-#ifdef LETISAADOIT
-        if (PHisSAAMode ()) {
-            AVIS_DIM (lhsavis) = TBmakeNum (0);
-            AVIS_SHAPE (lhsavis) = TCmakeIntVector (NULL);
-        }
-#endif // LETISAADOIT
-
         ids = IDS_NEXT (ids);
         k++;
     }
@@ -661,14 +641,6 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
     AVIS_SSAASSIGN (lhsavis) = z;
     DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
                          AVIS_NAME (ID_AVIS (idxid))));
-
-#ifdef LETISAADOIT
-    if (PHisSAAMode ()) {
-        AVIS_DIM (lhsavis) = TBmakeNum (1);
-        AVIS_SHAPE (lhsavis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
-    }
-#endif // LETISAADOIT
-
     DBUG_RETURN (z);
 }
 
