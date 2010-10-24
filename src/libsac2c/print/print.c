@@ -2310,6 +2310,10 @@ PRTvardec (node *arg_node, info *arg_info)
             fprintf (global.outfile, ", SUBALLOC");
         }
 
+        if (AVIS_COUNT (VARDEC_AVIS (arg_node)) != 0) {
+            fprintf (global.outfile, ", USAGE: %d", AVIS_COUNT (VARDEC_AVIS (arg_node)));
+        }
+
         fprintf (global.outfile, " } "); /* end of avis info */
 
         if (VARDEC_INIT (arg_node) != NULL) {

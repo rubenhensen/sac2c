@@ -285,14 +285,26 @@ MClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MClet");
 
-    if (TCisScalar (LET_EXPR (arg_node))
-        && (AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node))) == 1)) {
-        DBUG_ASSERT (IDS_NEXT (LET_IDS (arg_node)) == NULL,
-                     "Expected const to be only var on lhs");
-        SetConst (IDS_AVIS (LET_IDS (arg_node)), LET_EXPR (arg_node),
-                  INFO_VARDECS (arg_info));
-        LET_EXPR (arg_node) = NULL; /* moved to vardec */
-        INFO_DEAD_ASSIGN (arg_info) = TRUE;
+    if ((LET_IDS (arg_node) != NULL)
+        && TUisScalar (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))) {
+
+        if ((AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node))) == 2)
+            && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+            && (PRF_PRF (LET_EXPR (arg_node)) == F_alloc)) {
+            DBUG_ASSERT (IDS_NEXT (LET_IDS (arg_node)) == NULL,
+                         "Expected const to be only var on lhs");
+            AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node)))--;
+            INFO_DEAD_ASSIGN (arg_info) = TRUE;
+        } else if ((AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node))) == 1)
+                   && TCisScalar (LET_EXPR (arg_node))) {
+            DBUG_ASSERT (IDS_NEXT (LET_IDS (arg_node)) == NULL,
+                         "Expected const to be only var on lhs");
+            SetConst (IDS_AVIS (LET_IDS (arg_node)), LET_EXPR (arg_node),
+                      INFO_VARDECS (arg_info));
+            LET_EXPR (arg_node) = NULL; /* moved to vardec */
+            AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node)))--;
+            INFO_DEAD_ASSIGN (arg_info) = TRUE;
+        }
     }
 
     DBUG_RETURN (arg_node);
