@@ -16,14 +16,57 @@
 #include "dynmatrix.h"
 #include "graphtypes.h"
 
+lubinfo *
+freeLubInfo (lubinfo *linfo)
+{
+
+    DBUG_ENTER ("freeLubInfo");
+
+    lubinfo *result = NULL;
+    int i;
+
+    if (linfo != NULL) {
+
+        if (LUBINFO_BLOCKMIN (linfo) != NULL) {
+            freeDynarray (LUBINFO_BLOCKMIN (linfo));
+        }
+
+        if (LUBINFO_INTRAMATS (linfo) != NULL) {
+
+            for (i = 0; i < LUBINFO_NUMINTRA (linfo); i++) {
+
+                if (LUBINFO_INTRAMATS_POS (linfo, i) != NULL) {
+                    freeMatrix (LUBINFO_INTRAMATS_POS (linfo, i));
+                }
+            }
+        }
+
+        if (LUBINFO_INTERMAT (linfo) != NULL) {
+            freeMatrix (LUBINFO_INTERMAT (linfo));
+        }
+
+        if (LUBINFO_PCPTMAT (linfo) != NULL) {
+            freeMatrix (LUBINFO_PCPTMAT (linfo));
+        }
+
+        if (LUBINFO_PCPCMAT (linfo) != NULL) {
+            freeMatrix (LUBINFO_PCPCMAT (linfo));
+        }
+
+        result = MEMfree (linfo);
+    }
+
+    DBUG_RETURN (result);
+}
+
 compinfo **
 freeCompInfoArr (compinfo **cia, int n)
 {
 
     DBUG_ENTER ("freeCompInfoArr");
 
-    int i, j;
-
+    int i;
+    compinfo **result;
     nodelist *nl;
 
     if (cia != NULL) {
@@ -44,6 +87,10 @@ freeCompInfoArr (compinfo **cia, int n)
                     freeDynarray (COMPINFO_TLTABLE (cia[i]));
                 }
 
+                if (COMPINFO_PREARR (cia[i]) != NULL) {
+                    // freeDynarray( COMPINFO_PREARR( cia[i]));
+                }
+
                 if (COMPINFO_EULERTOUR (cia[i]) != NULL) {
                     freeDynarray (COMPINFO_EULERTOUR (cia[i]));
                 }
@@ -56,11 +103,8 @@ freeCompInfoArr (compinfo **cia, int n)
                     freeMatrix (COMPINFO_TLC (cia[i]));
                 }
 
-                /*LUBMat consists of 3 matrices*/
-                for (j = 0; j < 3; j++) {
-                    if (COMPINFO_LUBPOS (cia[i], j) != NULL) {
-                        freeMatrix (COMPINFO_LUBPOS (cia[i], j));
-                    }
+                if (COMPINFO_LUB (cia[i]) != NULL) {
+                    freeLubInfo (COMPINFO_LUB (cia[i]));
                 }
 
                 if (COMPINFO_DIST (cia[i]) != NULL) {
@@ -79,7 +123,7 @@ freeCompInfoArr (compinfo **cia, int n)
         }
     }
 
-    cia = MEMfree (cia);
+    result = MEMfree (cia);
 
-    DBUG_RETURN (cia);
+    DBUG_RETURN (result);
 }

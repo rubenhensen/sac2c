@@ -26,7 +26,9 @@
 #include "dynmatrix.h"
 #include "graphtypes.h"
 #include "dfwalk.h"
+#include "tfprintutils.h"
 #include "lubtree.h"
+#include <time.h>
 
 /*
  * INFO structure
@@ -38,6 +40,7 @@ struct INFO {
     int pre;
     int post;
     dynarray *euler;
+    dynarray *prearr;
 };
 
 /*
@@ -46,6 +49,7 @@ struct INFO {
 #define INFO_PRE(n) n->pre
 #define INFO_POST(n) n->post
 #define INFO_EULER(n) n->euler
+#define INFO_PREARR(n) n->prearr
 
 /*
  * INFO functions
@@ -61,6 +65,7 @@ MakeInfo ()
     INFO_PRE (result) = 1;
     INFO_POST (result) = 1;
     INFO_EULER (result) = NULL;
+    INFO_PREARR (result) = NULL;
     DBUG_RETURN (result);
 }
 
@@ -100,6 +105,44 @@ TFDFWdoDFWalk (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+void
+randNumGen (int max, int *testpre)
+{
+
+    testpre[0] = rand () % (max);
+    testpre[1] = rand () % (max);
+}
+
+void
+testlubtree (node *arg_node)
+{
+
+    dynarray *prearr;
+    int i, j, nodecount;
+    int testpre[2];
+    node *n1, *n2, *result;
+
+    unsigned int iseed = (unsigned int)time (NULL);
+    srand (iseed);
+
+    for (i = 0; i < TFSPEC_NUMCOMP (arg_node); i++) {
+        prearr = COMPINFO_PREARR (TFSPEC_INFO (arg_node)[i]);
+        nodecount = DYNARRAY_TOTALELEMS (prearr);
+        printDepthAndPre (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]));
+        printLubInfo (COMPINFO_LUB (TFSPEC_INFO (arg_node)[i]));
+
+        for (j = 0; j < nodecount; j++) {
+            randNumGen (nodecount, testpre);
+            n1 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[0]));
+            n2 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[1]));
+            printf ("lub(%d,%d) = ", TFVERTEX_PRE (n1), TFVERTEX_PRE (n2));
+            result = LUBcomputeLCAinSPTree (n1, n2, TFSPEC_INFO (arg_node)[i]);
+            printf ("Result = %d \n", TFVERTEX_PRE (result));
+            fflush (stdout);
+        }
+    }
 }
 
 /** <!--********************************************************************-->
@@ -156,6 +199,7 @@ TFDFWtfspec (node *arg_node, info *arg_info)
             TFVERTEX_ISCOMPROOT (defs) = 1;
 
             INFO_EULER (arg_info) = NULL;
+            INFO_PREARR (arg_info) = NULL;
 
             TRAVdo (defs, arg_info);
 
@@ -166,14 +210,17 @@ TFDFWtfspec (node *arg_node, info *arg_info)
              */
 
             COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp++]) = INFO_EULER (arg_info);
-            /*
-                  LUBcreatePartitions( COMPINFO_EULERTOUR(
-                                            TFSPEC_INFO(arg_node)[comp - 1]));
-              */
+
+            COMPINFO_PREARR (TFSPEC_INFO (arg_node)[comp - 1]) = INFO_PREARR (arg_info);
+
+            COMPINFO_LUB (TFSPEC_INFO (arg_node)[comp - 1]) = LUBcreatePartitions (
+              COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp - 1]));
         }
 
         defs = TFVERTEX_NEXT (defs);
     }
+
+    // testlubtree( arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -210,6 +257,12 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
 
     if (INFO_EULER (arg_info) == NULL) {
         INFO_EULER (arg_info) = MEMmalloc (sizeof (dynarray));
+        initDynarray (INFO_EULER (arg_info));
+    }
+
+    if (INFO_PREARR (arg_info) == NULL) {
+        INFO_PREARR (arg_info) = MEMmalloc (sizeof (dynarray));
+        initDynarray (INFO_PREARR (arg_info));
     }
 
     /*
@@ -220,19 +273,32 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
      */
 
     e = MEMmalloc (sizeof (elem));
-    ELEM_IDX (e) = TFVERTEX_PRE (defs);
+    ELEM_IDX (e) = TFVERTEX_DEPTH (defs);
 
     /*
      * ELEM_DATA(e) is a void pointer. So, we have to take this into account while
      * initialising it.
      */
 
-    ELEM_DATA (e) = MEMmalloc (sizeof (int) + sizeof (node *));
+    ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
 
-    *((int *)ELEM_DATA (e)) = TFVERTEX_DEPTH (defs);
-    *((node **)(ELEM_DATA (e) + sizeof (int))) = defs;
+    *((int *)ELEM_DATA (e)) = TFVERTEX_PRE (defs);
+    ((int *)ELEM_DATA (e))[1] = 0;
 
     addToArray (INFO_EULER (arg_info), e);
+
+    TFVERTEX_EULERID (defs) = DYNARRAY_TOTALELEMS (INFO_EULER (arg_info)) - 1;
+
+    e = MEMmalloc (sizeof (elem));
+    ELEM_IDX (e) = TFVERTEX_PRE (defs);
+    /*
+     * we store the address of arg_node below because we dont want arg_node to be
+     * freed when ELEM_DATA(e) is freed.
+     */
+
+    ELEM_DATA (e) = arg_node;
+
+    addToArray (INFO_PREARR (arg_info), e);
 
     while (children != NULL) {
 
@@ -252,12 +318,11 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
              */
 
             e = MEMmalloc (sizeof (elem));
+            ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
 
-            ELEM_IDX (e) = TFVERTEX_PRE (defs);
-            ELEM_DATA (e) = MEMmalloc (sizeof (int) + sizeof (node *));
-
-            *((int *)ELEM_DATA (e)) = TFVERTEX_DEPTH (defs);
-            *((node **)(ELEM_DATA (e) + sizeof (int))) = defs;
+            ELEM_IDX (e) = TFVERTEX_DEPTH (defs);
+            *((int *)ELEM_DATA (e)) = TFVERTEX_PRE (defs);
+            ((int *)ELEM_DATA (e))[1] = 0;
 
             addToArray (INFO_EULER (arg_info), e);
         }

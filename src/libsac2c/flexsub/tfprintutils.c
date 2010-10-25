@@ -17,6 +17,21 @@
 #include "tfprintutils.h"
 
 void
+printDynarray (dynarray *arrayd)
+{
+
+    int i;
+
+    printf ("[");
+
+    for (i = 0; i < DYNARRAY_TOTALELEMS (arrayd); i++) {
+        printf ("%d,", ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, i)));
+    }
+
+    printf ("]\n");
+}
+
+void
 printMatrix (matrix *m)
 {
 
@@ -129,4 +144,66 @@ printTransitiveLinkTable (dynarray *arrayd)
                 *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, i))),
                 *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, i)) + 1));
     }
+}
+
+void
+printDepthAndPre (dynarray *d)
+{
+
+    DBUG_ENTER ("printDepthAndPre");
+
+    DBUG_ASSERT ((d != NULL), "Cannot print information for a NULL array");
+
+    int i;
+
+    printf ("\n---------\n");
+
+    for (i = 0; i < DYNARRAY_TOTALELEMS (d); i++) {
+        printf ("{%d,", *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (d, i)));
+        printf ("%d} ", ELEM_IDX (DYNARRAY_ELEMS_POS (d, i)));
+    }
+
+    printf ("\n---------\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+printLubInfo (lubinfo *linfo)
+{
+
+    DBUG_ENTER ("printLubInfo");
+
+    int i;
+
+    if (linfo != NULL) {
+
+        if (LUBINFO_BLOCKMIN (linfo) != NULL) {
+            printDepthAndPre (LUBINFO_BLOCKMIN (linfo));
+        }
+
+        if (LUBINFO_INTRAMATS (linfo) != NULL) {
+
+            for (i = 0; i < LUBINFO_NUMINTRA (linfo); i++) {
+
+                if (LUBINFO_INTRAMATS_POS (linfo, i) != NULL) {
+                    printMatrix (LUBINFO_INTRAMATS_POS (linfo, i));
+                }
+            }
+        }
+
+        if (LUBINFO_INTERMAT (linfo) != NULL) {
+            printMatrix (LUBINFO_INTERMAT (linfo));
+        }
+
+        if (LUBINFO_PCPTMAT (linfo) != NULL) {
+            printMatrix (LUBINFO_PCPTMAT (linfo));
+        }
+
+        if (LUBINFO_PCPCMAT (linfo) != NULL) {
+            printMatrix (LUBINFO_PCPCMAT (linfo));
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }

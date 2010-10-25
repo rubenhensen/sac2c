@@ -160,7 +160,7 @@ TFMINtfvertex (node *arg_node, info *arg_info)
 
     node *defs, *parents_itr1, *parents_itr2, *edge;
     nodelist *nl_next;
-    int children_visited, total_children, inlist;
+    int children_visited, total_children, inlist = 0;
 
     defs = arg_node;
 

@@ -3798,6 +3798,18 @@ N_tfvertex :
             </targets>
           </type>
         </attribute>
+        <attribute name="eulerid" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="depth" inconstructor="no">
           <type name="Integer">
             <targets>

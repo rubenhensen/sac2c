@@ -1020,14 +1020,25 @@ struct ELEMSTACK {
     struct ELEMSTACK *next;
 };
 
+struct LUBINFO {
+    int numintra;
+    int blocksize;
+    struct DYNARRAY *blockmin;
+    struct MATRIX *intermat;
+    struct MATRIX **intramats;
+    struct MATRIX *pcptmat;
+    struct MATRIX *pcpcmat;
+};
+
 struct COMPINFO {
     struct DYNARRAY *csrc;
     struct DYNARRAY *ctar;
     struct DYNARRAY *tltable;
     struct DYNARRAY *eulertour;
+    struct DYNARRAY *prearr;
     struct MATRIX *crossclos;
     struct MATRIX *tlc;
-    struct MATRIX *lub[3];
+    struct LUBINFO *lub;
     struct MATRIX *dist;
     struct NODELIST *topolist;
 };
@@ -1039,6 +1050,7 @@ typedef struct ELEM elem;
 typedef struct DYNARRAY dynarray;
 typedef struct MATRIX matrix;
 typedef struct ELEMSTACK elemstack;
+typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
 
 /******************************************************************************

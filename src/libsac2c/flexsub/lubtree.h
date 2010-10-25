@@ -12,6 +12,8 @@
 
 #include "types.h"
 
-extern matrix **LUBcreatePartitions (dynarray *eulertour);
+extern lubinfo *LUBcreatePartitions (dynarray *eulertour);
+extern int LUBgetLowestFromCandidates (dynarray *d, int indices[4]);
+extern node *LUBcomputeLCAinSPTree (node *n1, node *n2, compinfo *ci);
 
 #endif /* _LUBTREE_H_ */

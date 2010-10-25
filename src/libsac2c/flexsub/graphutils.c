@@ -59,7 +59,7 @@ nodelist *
 GUmergeLists (nodelist *nla, nodelist *nlb)
 {
 
-    nodelist *nlx, *itr_nlx, *itr_nla, *itr_nlb;
+    nodelist *nlx, *itr_nlx = NULL, *itr_nla, *itr_nlb;
 
     itr_nla = nla;
     itr_nlb = nlb;

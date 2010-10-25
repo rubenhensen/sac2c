@@ -6216,39 +6216,42 @@ PRTtfspec (node *arg_node, info *arg_info)
                     printMatrixInDotFormat (COMPINFO_TLC (TFSPEC_INFO (arg_node)[i]));
                 }
 
-                if (COMPINFO_LUBPOS ((TFSPEC_INFO (arg_node)[i]), 0) != NULL) {
-                    printMatrixInDotFormat (
-                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 0));
+                /*
+
+                if ( COMPINFO_LUBPOS( (TFSPEC_INFO( arg_node)[i]), 0) != NULL){
+                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 0));
                 }
 
-                if (COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 1) != NULL) {
-                    printMatrixInDotFormat (
-                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 1));
+                if ( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 1) != NULL){
+                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 1));
                 }
 
-                if (COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 2) != NULL) {
-                    printMatrixInDotFormat (
-                      COMPINFO_LUBPOS (TFSPEC_INFO (arg_node)[i], 2));
+                if ( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 2) != NULL){
+                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 2));
                 }
+                */
 
                 if (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]) != NULL) {
                     printMatrixInDotFormat (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]));
                 }
 
-                if (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]) != NULL) {
+                /*
 
-                    dynarray *d = COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]);
-                    int i;
+                if( COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]) != NULL){
 
-                    fprintf (global.outfile, "Euler Tour: ");
+                  dynarray *d = COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]);
+                  int i;
 
-                    for (i = 0; i < DYNARRAY_TOTALELEMS (d); i++) {
-                        fprintf (global.outfile, "%d,",
-                                 ELEM_IDX (DYNARRAY_ELEMS_POS (d, i)));
-                    }
+                  fprintf(global.outfile,"Euler Tour: ");
 
-                    fprintf (global.outfile, "\n");
+                  for( i = 0; i < DYNARRAY_TOTALELEMS(d); i++) {
+                    fprintf(global.outfile,"%d,", ELEM_IDX( DYNARRAY_ELEMS_POS( d, i)));
+                  }
+
+                  fprintf(global.outfile,"\n");
+
                 }
+                */
             }
 
             i++;
