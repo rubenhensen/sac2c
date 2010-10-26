@@ -682,10 +682,11 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         /* For constant apprearing in global index, we create
          * an assignment "var_const = NUM;". For shared memory
          * index, we don't need to do anything */
-        sg_info = ComputeIndexInternal (TRUE, "const", NULL,
-                                        TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL,
-                                        FALSE, sg_info, arg_info);
-
+        if (CUIDX_COEFFICIENT (idx) != 0) {
+            sg_info = ComputeIndexInternal (TRUE, "const", NULL,
+                                            TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE,
+                                            NULL, FALSE, sg_info, arg_info);
+        }
         break;
 
     case IDX_EXTID:

@@ -313,8 +313,14 @@ ActOnId (node *avis, info *arg_info)
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
         if (ASSIGN_LEVEL (ssa_assign) == 0) {
-            AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
-                      INFO_IDXDIM (arg_info), arg_info);
+            constant *cnst = COaST2Constant (ASSIGN_RHS (ssa_assign));
+            if (cnst != NULL) {
+                AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0,
+                          INFO_IDXDIM (arg_info), arg_info);
+            } else {
+                AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
+                          INFO_IDXDIM (arg_info), arg_info);
+            }
         }
         /* Otherwise, we start backtracking to collect data access information */
         else {
