@@ -97,6 +97,48 @@ powOf2 (int arg)
 /******************************************************************************
  *
  * function:
+ *   void OPTcheckCudaOptions(void)
+ *
+ * description:
+ *   This function is called right after command line arguments
+ *   have been analysed if cuda backend is selected.
+ *
+ ******************************************************************************/
+
+static void
+OPTcheckCudaOptions (void)
+{
+    DBUG_ENTER ("OPTcheckCudaOptions");
+
+    if (global.cuda_arch == 100 || global.cuda_arch == 110) {
+        global.optimal_threads = 256;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_x = 256;
+        global.cuda_2d_block_x = 16;
+        global.cuda_2d_block_y = 16;
+    } else if (global.cuda_arch == 120 || global.cuda_arch == 130) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 2;
+        global.cuda_1d_block_x = 512;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 16;
+    } else if (global.cuda_arch == 200) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_x = 512;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 16;
+    } else {
+        CTIerror ("-arch must be specified for CUDA backend and the value can only be "
+                  "one of the following: 100,110,120,130,200");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void OPTcheckOptionConsistency(void)
  *
  * description:
@@ -114,6 +156,10 @@ OPTcheckOptionConsistency (void)
     if (global.printConfig) {
         RSCprintConfigEntry (global.printConfig);
         exit (0);
+    }
+
+    if (STReq (global.config.backend, "Cuda")) {
+        OPTcheckCudaOptions ();
     }
 
     if (STReq (global.config.backend, "MUTC")) {
@@ -337,6 +383,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("aplimit", { ARG_RANGE (global.padding_overhead_limit, 0, 100); });
 
     ARGS_OPTION ("apdiagsize", ARG_NUM (global.apdiag_limit));
+    ARGS_OPTION ("arch", ARG_NUM (global.cuda_arch));
 
     /*
      * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
