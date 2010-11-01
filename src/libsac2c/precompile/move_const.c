@@ -286,7 +286,8 @@ MClet (node *arg_node, info *arg_info)
     DBUG_ENTER ("MClet");
 
     if ((LET_IDS (arg_node) != NULL)
-        && TUisScalar (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))) {
+        && TUisScalar (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))
+        && (!TUisHidden (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))))) {
 
         if ((AVIS_COUNT (IDS_AVIS (LET_IDS (arg_node))) == 2)
             && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
