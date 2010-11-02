@@ -474,7 +474,14 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_DECL__DATA(var_NT, basetype, decoration)                                  \
+    SAC_ND_DECL__DATA_##decoration (var_NT, basetype, decoration)
+
+#define SAC_ND_DECL__DATA_extern(var_NT, basetype, decoration)                           \
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
+
+#define SAC_ND_DECL__DATA_(var_NT, basetype, decoration)                                 \
+    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT)                    \
+      = (SAC_ND_TYPE (var_NT, basetype))0;
 
 #define SAC_ND_DECL_CONST__DATA(var_NT, basetype, val)                                   \
     const SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT) = val;
@@ -496,7 +503,13 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_DECL__DESC__DEFAULT(var_NT, decoration)                                   \
+    SAC_ND_DECL__DESC__DEFAULT_##decoration (var_NT, decoration)
+
+#define SAC_ND_DECL__DESC__DEFAULT_extern(var_NT, decoration)                            \
     decoration SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT);
+
+#define SAC_ND_DECL__DESC__DEFAULT_(var_NT, decoration)                                  \
+    decoration SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT) = NULL;
 
 /******************************************************************************
  *
