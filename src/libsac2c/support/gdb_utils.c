@@ -73,6 +73,10 @@ GDBbreakAtNid (node *arg_node, char *nm)
             z = STReq (nm, AVIS_NAME (ARG_AVIS (arg_node)));
             break;
 
+        case N_prf:
+            z = STReq (nm, AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+            break;
+
         default:
             z = FALSE;
             break;
