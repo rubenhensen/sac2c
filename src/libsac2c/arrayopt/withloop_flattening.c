@@ -291,6 +291,8 @@ createUpperBound (node *bound, info *arg_info)
     node *ub_avis;
     node *prod_avis;
     node *ap_node;
+    node *bound_avis = NULL;
+    node *bound_id;
 
     DBUG_ENTER ("createUpperBound");
 
@@ -304,8 +306,18 @@ createUpperBound (node *bound, info *arg_info)
 
     INFO_NEWSHP (arg_info) = ub_avis;
 
+    /* ensure upper bound is N_id */
+    if (NODE_TYPE (bound) != N_id) {
+        bound_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKD (TYmakeSimpleType (T_int), 1,
+                                                           SHcreateShape (0)));
+        bound_id = TBmakeId (bound_avis);
+        INFO_VARDECS (arg_info) = TBmakeVardec (bound_avis, INFO_VARDECS (arg_info));
+    } else {
+        bound_id = DUPdoDupNode (bound);
+    }
+
     ap_node = DSdispatchFunCall (NSgetNamespace (SAC_PRELUDE_NAME), "prod",
-                                 TBmakeExprs (DUPdoDupNode (bound), NULL));
+                                 TBmakeExprs (bound_id, NULL));
 
     DBUG_ASSERT ((ap_node != NULL), "cannot find `" SAC_PRELUDE_NAME "::prod'.");
 
@@ -320,6 +332,12 @@ createUpperBound (node *bound, info *arg_info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (prod_avis, NULL), ap_node),
                       INFO_PREASSIGNS (arg_info));
     AVIS_SSAASSIGN (prod_avis) = INFO_PREASSIGNS (arg_info);
+
+    if (NODE_TYPE (bound) != N_id) {
+        AVIS_SSAASSIGN (bound_avis) = INFO_PREASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (bound_avis, NULL), DUPdoDupNode (bound)),
+                          INFO_PREASSIGNS (arg_info));
+    }
 
     DBUG_RETURN (TBmakeId (ub_avis));
 }
@@ -358,6 +376,9 @@ createReshapeAssignments (node *lhs, node *old_shp, node *new_shp, info *arg_inf
                  "N_avis expected as 3nd arg in createReshapeAssignments");
 
     if (lhs != NULL) {
+        node *old_shp_id;
+        node *old_shp_avis = NULL;
+
         new_lhs = createReshapeAssignments (IDS_NEXT (lhs), old_shp, new_shp, arg_info);
 
         newtype = TYmakeSimpleType (TUgetBaseSimpleType (IDS_NTYPE (lhs)));
@@ -372,12 +393,28 @@ createReshapeAssignments (node *lhs, node *old_shp, node *new_shp, info *arg_inf
         avis = TBmakeAvis (TRAVtmpVar (), newtype);
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
+        if (NODE_TYPE (old_shp) != N_id) {
+            old_shp_avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (newtype));
+            INFO_VARDECS (arg_info)
+              = TBmakeVardec (old_shp_avis, INFO_VARDECS (arg_info));
+            old_shp_id = TBmakeId (old_shp_avis);
+        } else {
+            old_shp_id = DUPdoDupNode (old_shp);
+        }
+
         INFO_POSTASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs),
-                                     TCmakePrf2 (F_reshape_VxA, DUPdoDupNode (old_shp),
+                                     TCmakePrf2 (F_reshape_VxA, old_shp_id,
                                                  TBmakeId (avis))),
                           INFO_POSTASSIGNS (arg_info));
         AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_POSTASSIGNS (arg_info);
+
+        if (old_shp_avis != NULL) {
+            AVIS_SSAASSIGN (old_shp_avis) = INFO_POSTASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (old_shp_avis, NULL),
+                                         DUPdoDupNode (old_shp)),
+                              INFO_POSTASSIGNS (arg_info));
+        }
 
         new_lhs = TBmakeIds (avis, new_lhs);
     }
@@ -420,7 +457,7 @@ createWLAssignAndReshapes (node *with, info *arg_info)
                             INFO_POSTASSIGNS (arg_info));
 
     while (new_lhs != NULL) {
-        AVIS_SSAASSIGN (IDS_AVIS (new_lhs)) = INFO_POSTASSIGNS (arg_info);
+        AVIS_SSAASSIGN (IDS_AVIS (new_lhs)) = assigns;
         new_lhs = IDS_NEXT (new_lhs);
     }
 
