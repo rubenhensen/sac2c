@@ -1198,7 +1198,7 @@ ScanVector (node *vector, node *array, info *arg_info)
 
                         break;
                     } else if (handle->type == ID_vector) {
-                        CTIwarnLine (NODE_LINE (vector),
+                        CTInoteLine (NODE_LINE (vector),
                                      "Set notation index vector '%s' is used in a scalar "
                                      "context.",
                                      handle->id);
@@ -2593,7 +2593,7 @@ HDspid (node *arg_node, info *arg_info)
         idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info));
 
         if (type == ID_scalar) {
-            CTIwarnLine (NODE_LINE (arg_node),
+            CTInoteLine (NODE_LINE (arg_node),
                          "Cannot infer default for '%s' as it is used as argument to"
                          " a non-selection operation, using 0 as fallback",
                          SPID_NAME (arg_node));
@@ -2601,7 +2601,7 @@ HDspid (node *arg_node, info *arg_info)
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);
         } else if (type == ID_vector) {
-            CTIwarnLine (NODE_LINE (arg_node),
+            CTInoteLine (NODE_LINE (arg_node),
                          "Cannot infer default for '%s' as it is used as argument to"
                          " a non-selection operation, using 0-vector as fallback",
                          SPID_NAME (arg_node));

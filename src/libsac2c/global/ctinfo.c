@@ -1062,6 +1062,36 @@ CTInote (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
+ * @fn void CTInote( int line, const char *format, ...)
+ *
+ *   @brief  produces basic compile time information output (verbose level 2)
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTInoteLine (int line, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTInoteLine");
+
+    if (global.verbose_level >= 3) {
+        va_start (arg_p, format);
+
+        fprintf (stderr, "%sline %d  file: %s\n", note_message_header, line,
+                 global.filename);
+        PrintMessage (note_message_header, format, arg_p);
+
+        va_end (arg_p);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn void CTInote( const char *format, ...)
  *
  *   @brief produces compile time information at given verbosity level
