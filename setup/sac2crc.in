@@ -427,6 +427,19 @@ LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
 CEXT		 :=  "cu"
 GENPIC           :=  "-Xcompiler -fPIC"
 
+target cuda_fixed::cuda:
+
+BACKEND          :=  "Cuda"
+CC               :=  "nvcc"
+CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
+CCFLAGS          :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
+CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
+                     "-I$CUTIL -L$CUTIL_LIB"
+LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
+CEXT		 :=  "cu"
+GENPIC           :=  "-Xcompiler -fPIC"
+
 /*******************************************************************************
  *******************************************************************************
  *******************************************************************************
