@@ -1,5 +1,7 @@
 /**<!--*********************************************************************-->
  *
+ * $Id: gen_startup_code.c 17065 2010-09-28 15:19:00Z nkk $
+ *
  * @file  dynspec.h
  *
  * @brief Contains the ICMs for the creation of wrapper entry functions.
@@ -8,7 +10,7 @@
  *
  *****************************************************************************/
 
-#ifdef SAC_DO_RTSPEC
+#if SAC_DO_RTSPEC
 
 /*
  * Print the code necessary to setup the optimization controller.
@@ -25,8 +27,6 @@
     {                                                                                    \
         SAC_finalizeController ();                                                       \
     }
-
-#endif
 
 /*
  * Wrapper entry begin
@@ -148,3 +148,10 @@
     SAC_WE_REGISTRATION (SAC_module, name)                                               \
     SAC_WE_ENQ_REQ (types, name)                                                         \
     SAC_WE_PTR_UPDATE (*SAC_func_ptr) (__VA_ARGS__);
+
+#else /* SAC_DO_RTSPEC */
+
+#define SAC_RTSPEC_SETUP()
+#define SAC_RTSPEC_FINALIZE()
+
+#endif /* SAC_DO_RTSPEC */
