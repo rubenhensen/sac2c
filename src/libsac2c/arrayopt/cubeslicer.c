@@ -545,6 +545,7 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
     DBUG_RETURN (z);
 }
 
+#ifdef AXISPERMBUG
 /** <!--********************************************************************-->
  *
  * @fn node *isIotaN( node *arg_node, int N)
@@ -566,6 +567,7 @@ isIotaN (node *arg_node, int N)
 
     DBUG_RETURN (z);
 }
+#endif // AXISPERMBUG
 
 /** <!--********************************************************************-->
  *
