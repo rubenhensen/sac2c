@@ -636,9 +636,9 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 
     case C_aud:
         INDENT;
-        fprintf (global.outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
+        fprintf (global.outfile, "int SAC_ND_A_MIRROR_SIZE( %s) = 0;\n", var_NT);
         INDENT;
-        fprintf (global.outfile, "int SAC_ND_A_MIRROR_DIM( %s);\n", var_NT);
+        fprintf (global.outfile, "int SAC_ND_A_MIRROR_DIM( %s) = 0;\n", var_NT);
         break;
 
     default:
