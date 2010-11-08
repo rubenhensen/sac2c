@@ -1252,7 +1252,7 @@ ScanId (node *id, node *array, info *arg_info)
                 break;
             }
         } else if (ids->type == ID_scalar) {
-            CTIwarnLine (NODE_LINE (id),
+            CTInoteLine (NODE_LINE (id),
                          "Set notation index scalar '%s' is used in a vector "
                          "context.",
                          ids->id);
