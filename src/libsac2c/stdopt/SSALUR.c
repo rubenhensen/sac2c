@@ -41,6 +41,7 @@
 #include "SSAWLUnroll.h"
 #include "globals.h"
 #include "phase.h"
+#include "pattern_match.h"
 
 /*
  * INFO structure and macros
@@ -340,6 +341,7 @@ SSALURIsLURPredicate (node *predicate)
     node *arg1;
     node *arg2;
     prf comp_prf;
+    pattern *pat;
 
     DBUG_ENTER ("SSALURIsLURPredicate");
 
@@ -368,8 +370,10 @@ SSALURIsLURPredicate (node *predicate)
     arg1 = EXPRS_EXPR (PRF_ARGS (predicate));
     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (predicate)));
 
-    if (((NODE_TYPE (arg1) == N_num) && (NODE_TYPE (arg2) == N_id))
-        || ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_num))) {
+    pat = PMint (0);
+
+    if ((PMmatchFlat (pat, arg1) && (NODE_TYPE (arg2) == N_id))
+        || ((NODE_TYPE (arg1) == N_id) && PMmatchFlat (pat, arg2))) {
 
         DBUG_PRINT ("SSALUR", ("loop predicate has correct form"));
         DBUG_RETURN (TRUE);
@@ -495,6 +499,8 @@ SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term)
 {
     node *arg1;
     node *arg2;
+    int local_term;
+    pattern *pat;
 
     DBUG_ENTER ("SSALURGetPredicateData");
 
@@ -504,13 +510,17 @@ SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term)
     /* get primitive comparison function from AST */
     *pred = PRF_PRF (expr);
 
+    pat = PMint (1, PMAgetIVal (&local_term));
+
     /* get constant from AST */
     if (NODE_TYPE (arg1) == N_id) {
         /* first arg is identifier */
-        *term = (loopc_t)NUM_VAL (arg2);
+        DBUG_ASSERT (PMmatchFlat (pat, arg2),
+                     "Constant not found where constent expected");
     } else {
         /* second arg is identifier */
-        *term = (loopc_t)NUM_VAL (arg1);
+        DBUG_ASSERT (PMmatchFlat (pat, arg2),
+                     "Constant not found where constent expected");
 
         /* change prf to have normal form cond = id <prf> const */
         switch (*pred) {
@@ -534,6 +544,8 @@ SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term)
         }
     }
 
+    *term = (loopc_t)local_term;
+
     DBUG_VOID_RETURN;
 }
 
@@ -554,6 +566,7 @@ SSALURIsLURModifier (node *modifier)
     node *arg1;
     node *arg2;
     prf mod_prf;
+    pattern *pat;
 
     DBUG_ENTER ("SSALURIsLURModifier");
 
@@ -581,10 +594,11 @@ SSALURIsLURModifier (node *modifier)
     arg1 = EXPRS_EXPR (PRF_ARGS (modifier));
     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (modifier)));
 
+    pat = PMint (0);
+
     /* if prf is F_sub the first arg must be the identifier */
-    if (((NODE_TYPE (arg1) == N_num) && (NODE_TYPE (arg2) == N_id)
-         && (mod_prf != F_sub_SxS))
-        || ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_num))) {
+    if ((PMmatchFlat (pat, arg1) && (NODE_TYPE (arg2) == N_id) && (mod_prf != F_sub_SxS))
+        || ((NODE_TYPE (arg1) == N_id) && (PMmatchFlat (pat, arg2)))) {
 
         DBUG_PRINT ("SSALUR", ("loop modifier has correct form"));
         DBUG_RETURN (TRUE);
@@ -645,6 +659,8 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
 {
     node *arg1;
     node *arg2;
+    pattern *pattern;
+    int local_inc;
 
     DBUG_ENTER ("SSALURAnalyseLURModifier");
 
@@ -653,15 +669,19 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
     arg1 = EXPRS_EXPR (PRF_ARGS (modifier));
     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (modifier)));
 
+    pattern = PMint (1, PMAgetIVal (&local_inc));
+
     /* identifier is first arg */
-    if (NODE_TYPE (arg1) == N_id) {
+    if (PMmatchFlat (pattern, arg2)) {
         *id = arg1;
-        *inc = NUM_VAL (arg2);
     } else {
         /* identifier is second arg */
         *id = arg2;
-        *inc = NUM_VAL (arg1);
+        DBUG_ASSERT (PMmatchFlat (pattern, arg1),
+                     "Did not find int constant where expected");
     }
+
+    *inc = (loopc_t)local_inc;
 
     DBUG_PRINT ("SSALUR", ("LUR modifier: %s %s %d", AVIS_NAME (ID_AVIS ((*id))),
                            global.prf_name[(*loop_prf)], (*inc)));
