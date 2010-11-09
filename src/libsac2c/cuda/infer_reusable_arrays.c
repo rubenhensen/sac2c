@@ -407,7 +407,7 @@ IRAprf (node *arg_node, info *arg_info)
             node *id, *ids, *withids;
             int off, dim;
             rc_t *rc;
-            bool selfref;
+            bool selfref = TRUE;
 
             rc = INFO_CURRENT_RC (arg_info);
             DBUG_ASSERT ((rc != NULL), "Null reuse candidate found!");

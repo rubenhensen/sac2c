@@ -258,7 +258,9 @@ FreeInfo (info *info)
 
 /* functions for local usage only */
 #ifndef CREATE_UNIQUE_BY_HEAP
-static bool ForbiddenMovement (node *chain);
+#if 0
+static bool ForbiddenMovement(node *chain);
+#endif
 #endif
 static node *CheckMoveDownFlag (node *instr, info *arg_info);
 static void CreateNewResult (node *avis, info *arg_info);
@@ -280,13 +282,13 @@ static node *AdjustExternalResult (node *new_assigns, node *ext_assign, node *ex
  *   as unique
  *
  *****************************************************************************/
-static bool
-ForbiddenMovement (node *chain)
+#if 0
+static bool ForbiddenMovement(node *chain)
 {
-    bool res;
+  bool res;
 
-    DBUG_ENTER ("ForbiddenMovement");
-    res = FALSE;
+  DBUG_ENTER("ForbiddenMovement");
+  res = FALSE;
 
 #if 0
   while ((chain != NULL) && (res == FALSE)) {
@@ -295,8 +297,9 @@ ForbiddenMovement (node *chain)
   }
 #endif
 
-    DBUG_RETURN (res);
+  DBUG_RETURN(res);
 }
+#endif
 #endif
 
 /******************************************************************************

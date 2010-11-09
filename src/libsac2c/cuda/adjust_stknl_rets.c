@@ -508,6 +508,15 @@ CUASRreturn (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (NODE_TYPE (decl) == N_arg, "Declaration of avis is not N_arg!");
 
+            /* Note that this block of code has been moved here just
+             * to remove the warning message in the masterrun. However,
+             * I don't it's the right place to put the code. Further
+             * investigation is required */
+            rets_prev = rets;
+            apids_prev = apids;
+            fundef_rets_prev = fundef_rets;
+            /*******************************************************/
+
             if (!ARG_HASLINKSIGNINFO (decl)) {
                 ARG_HASLINKSIGNINFO (decl) = TRUE;
                 RET_HASLINKSIGNINFO (fundef_rets) = TRUE;
@@ -524,9 +533,11 @@ CUASRreturn (node *arg_node, info *arg_info)
                 INFO_LUT (arg_info)
                   = LUTinsertIntoLutP (INFO_LUT (arg_info), old_avis, IDS_AVIS (apids));
 
-                rets_prev = rets;
-                apids_prev = apids;
-                fundef_rets_prev = fundef_rets;
+                /* This block of code has been moved to the begining of the if
+                 * rets_prev = rets;
+                 * apids_prev = apids;
+                 * fundef_rets_prev = fundef_rets
+                 */
 
                 rets = EXPRS_NEXT (rets);
                 apids = IDS_NEXT (apids);
