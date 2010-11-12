@@ -112,6 +112,37 @@ dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
 dnl
+dnl check Cuda architure 
+dnl
+
+AC_MSG_CHECKING([checking CUDA architecture])
+AC_CHECK_PROG(ENABLE_CUDA,nvcc,"yes","no")
+if [ test "$ENABLE_CUDA" = "yes"]; then
+  #AC_MSG_NOTICE([kfvbkkdfjkl])
+  AC_SUBST(NVCC_PATH,`which nvcc`)
+  AC_DEFINE(ENABLE_CUDA, 1, set to 1 to enable cuda)
+  mkdir -p .ac_cuda_test
+  cd .ac_cuda_test
+  cp -f ../../src/tools/cuda/deviceQuery.cpp .
+  $NVCC_PATH deviceQuery.cpp -o deviceQuery
+  CUDA_COMP=$?
+  if [ test CUDA_COMP != 0 ]; then
+    AC_SUBST(ENABLE_CUDA, yes)
+    CUDA_ARCH=$(./deviceQuery 2>/dev/null)
+    AC_SUBST(CUDA_ARCH, $CUDA_ARCH)
+    #AC_MSG_RESULT(ok)
+  else
+    AC_SUBST(ENABLE_CUDA, no)
+  fi
+  cd ..
+  #rm -rf .ac_cuda_test
+else
+AC_DEFINE(ENABLE_CUDA, 0, set to 0 to disable cuda)
+AC_SUBST(ENABLE_CUDA, no)
+fi
+
+
+dnl
 dnl check whether its gnu indent
 dnl
 
