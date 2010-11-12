@@ -31,6 +31,9 @@
  *
  * Mark suballocs memory from suballoc
  *
+ * This is done by finding all suballocs and marking the avis of the lhs that it
+ * is unique.
+ *
  * @ingroup tt
  *
  * @{
