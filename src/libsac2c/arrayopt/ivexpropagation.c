@@ -493,41 +493,6 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
 /******************************************************************************
  *
  * function:
- *  static bool isConstantValue( node *arg_node)
- *
- * description: Predicate for determining if an N_id has a constant value.
- *
- * @params  arg_node: an N_id node.
- *
- * @result: True if the node has a constant value.
- *
- *  FIXME: I am not sure why I wrote this, rather than using COisConstant.
- *         Perhaps we should nix this...
- *
- ******************************************************************************/
-static bool
-isConstantValue (node *arg_node)
-{
-    constant *con = NULL;
-    pattern *pat;
-    bool z = FALSE;
-
-    DBUG_ENTER ("isConstantValue");
-
-    pat = PMconst (1, PMAgetVal (&con));
-
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
-        con = COfreeConstant (con);
-        z = TRUE;
-    }
-    pat = PMfree (pat);
-
-    DBUG_RETURN (z);
-}
-
-/******************************************************************************
- *
- * function:
  *
  * description: Predicates for determining if an N_avis node have extrema,
  *              and macro for setting extrema.
@@ -627,6 +592,7 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *arg1)
  * description:
  *        Little recursive extrema-chain builder,
  *        to get results in correct order.
+ *        If no extremum, but value is constant, use that value.
  *
  * @params  arg_node: an N_array node.
  *          minmax: 0 for MIN, 1 for MAX
@@ -647,6 +613,11 @@ buildExtremaChain (node *exprs, int minmax)
     }
     avis = ID_AVIS (EXPRS_EXPR (exprs));
     m = (0 == minmax) ? AVIS_MIN (avis) : AVIS_MAX (avis);
+    if ((0 == m) && COisConstant (EXPRS_EXPR (exprs))) {
+        m = EXPRS_EXPR (exprs);
+    }
+
+    DBUG_ASSERT ((NULL != m), "Expected non-NULL m");
     z = TBmakeExprs (DUPdoDupNode (m), z);
 
     DBUG_RETURN (z);
@@ -657,12 +628,15 @@ buildExtremaChain (node *exprs, int minmax)
  * function: node *isAllNarrayExtremumPresent( node *arg_node)
  *
  * description: Predicate for determining if an N_array node
- *              has all its AVIS_MIN/AVIS_MAX elements present.
+ *              has all its AVIS_MIN/AVIS_MAX elements present, for
+ *              non-constant elements.
+ *
  *
  * @params  arg_node: an N_array node.
  *          minmax: 0 to check AVIS_MIN, 1 to check AVIS_MAX
  *
- * @result: A boolean, TRUE if all min/max vals are present.
+ * @result: A boolean, TRUE if all min/max vals are present for
+ *          non-constant elements.
  *
  ******************************************************************************/
 static bool
@@ -675,7 +649,7 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
 
     DBUG_ENTER ("isAllNarrayExtremumPresent");
 
-    /* Check that we have extrema for all array elements.
+    /* Check that we have extrema for all non-constant array elements.
      * All N_array elements must be N_id nodes.
      */
     exprs = ARRAY_AELEMS (arg_node);
@@ -684,7 +658,7 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
         if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
             avis = ID_AVIS (EXPRS_EXPR (exprs));
             m = (0 == minmax) ? AVIS_MIN (avis) : AVIS_MAX (avis);
-            z = z && (NULL != m);
+            z = z && ((NULL != m) || COisConstant (EXPRS_EXPR (exprs)));
         } else {
             z = FALSE;
         }
@@ -850,8 +824,8 @@ GetMinvalOnNonconstantArg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("GetMinvalOnNonconstantArg");
 
-    arg1c = isConstantValue (PRF_ARG1 (arg_node));
-    arg2c = isConstantValue (PRF_ARG2 (arg_node));
+    arg1c = COisConstant (PRF_ARG1 (arg_node));
+    arg2c = COisConstant (PRF_ARG2 (arg_node));
 
     if ((arg1c != arg2c) && arg1c) {
         z = AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node)));
@@ -878,8 +852,8 @@ GetMaxvalOnNonconstantArg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("GetMaxvalNonOnconstantArg");
 
-    arg1c = isConstantValue (PRF_ARG1 (arg_node));
-    arg2c = isConstantValue (PRF_ARG2 (arg_node));
+    arg1c = COisConstant (PRF_ARG1 (arg_node));
+    arg2c = COisConstant (PRF_ARG2 (arg_node));
 
     if ((arg1c != arg2c) && arg1c) {
         z = AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node)));
@@ -985,8 +959,8 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     rhs = LET_EXPR (arg_node);
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
-    arg1c = isConstantValue (PRF_ARG1 (rhs));
-    arg2c = isConstantValue (PRF_ARG2 (rhs));
+    arg1c = COisConstant (PRF_ARG1 (rhs));
+    arg2c = COisConstant (PRF_ARG2 (rhs));
 
     /* Slight dance to circumvent bug #693, in which DL generates
      * PRF_ARGs with N_num nodes.
@@ -1293,7 +1267,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
 
                     if (NULL == nca) {
                         /* Case 1 */
-                        if (isConstantValue (PRF_ARG1 (rhs))) {
+                        if (COisConstant (PRF_ARG1 (rhs))) {
                             maxv = adjustExtremaBound (ID_AVIS (PRF_ARG1 (rhs)), arg_info,
                                                        1, &INFO_VARDECS (arg_info),
                                                        &INFO_PREASSIGNS (arg_info));
@@ -1301,7 +1275,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                             INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                             AVIS_ISMAXHANDLED (maxv) = TRUE;
                         } else {
-                            if (isConstantValue (PRF_ARG2 (rhs))) {
+                            if (COisConstant (PRF_ARG2 (rhs))) {
                                 maxv = adjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)),
                                                            arg_info, 1,
                                                            &INFO_VARDECS (arg_info),
@@ -1337,10 +1311,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
 
                     /* Case 1 */
                     if (NULL == nca) {
-                        if (isConstantValue (PRF_ARG1 (rhs))) {
+                        if (COisConstant (PRF_ARG1 (rhs))) {
                             INFO_MINVAL (arg_info) = DUPdoDupNode (PRF_ARG1 (rhs));
                         } else {
-                            if (isConstantValue (PRF_ARG2 (rhs))) {
+                            if (COisConstant (PRF_ARG2 (rhs))) {
                                 INFO_MINVAL (arg_info) = DUPdoDupNode (PRF_ARG2 (rhs));
                             }
                         }
@@ -1562,16 +1536,20 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_min_SxS:
     case F_min_VxV:
-        /* If either argument has a minval, propagate it */
-        IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE, lhsavis);
-        IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, lhsavis);
+        /* If either argument has a maxval, propagate it */
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
+                                 lhsavis);
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))), TRUE,
+                                 lhsavis);
         break;
 
     case F_max_SxS:
     case F_max_VxV:
-        /* If either argument has a maxval, propagate it */
-        IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE, lhsavis);
-        IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, lhsavis);
+        /* If either argument has a minval, propagate it */
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
+                                 lhsavis);
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))), TRUE,
+                                 lhsavis);
         break;
 
     default:
