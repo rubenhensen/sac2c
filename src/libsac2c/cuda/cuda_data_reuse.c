@@ -835,7 +835,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     simpletype sty;
     range_pair_t *innermost;
 
-    node *in_shared_array, *out_shared_array;
+    node *in_shared_array = NULL, *out_shared_array = NULL;
     node *cond = NULL, *predicate = NULL;
 
     DBUG_ENTER ("InsertGlobal2Shared");

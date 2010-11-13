@@ -162,7 +162,7 @@ static rc_t *
 ConsolidateRcs (rc_t *rc_list, info *arg_info)
 {
     rc_t *rc;
-    int dim, i, negoff, posoff, block_sz, extent, shmem_sz = 1;
+    int dim, i, negoff, posoff, block_sz = -1, extent, shmem_sz = 1;
     node *shmem_shp = NULL;
 
     DBUG_ENTER ("ConsolidateRcs");
