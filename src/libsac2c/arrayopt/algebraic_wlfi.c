@@ -237,6 +237,54 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
  *
  *****************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *GenerateInverseFunction( node *arg_node, node **vardecs)
+ *
+ * @brief: Generate inverse function for affine expression arg_node.
+ *         Typically, this will be the IV' to be used in AWLF.
+ *
+ * @params: arg_node: Starting (result) node of expression.
+ *          vardecs: Pointer to pointer to vardecs chain, for adding
+ *          new variables.
+ *
+ * @result: Inverse function expression tree, or NULL if
+ *          no inverse can be found.
+ *
+ *****************************************************************************/
+#ifdef UNDERCONSTRUCTION
+static node *
+GenerateInverseFunction (node *arg_node, node **vardecs)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ("GenerateInverseFunction");
+
+    if (NULL != arg_node) {
+
+        switch (NODE_TYPE (arg_node)) {
+        default:
+            newnode = NULL;
+            break;
+        case N_prf:
+            switch (PRF_PRF (arg_node)) {
+            default:
+                newnode = NULL;
+                break;
+            case F_add_SxS:
+                newnode = DUPdoDupNode (arg_node);
+
+                xxx;
+                break;
+            case F_add_SxV:
+            }
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+#endif // UNDERCONSTRUCTION
+
 #ifdef DEADCODE
 
 /** <!--********************************************************************-->
@@ -502,6 +550,7 @@ AWLFIfindWlId (node *arg_node)
         }
     } else {
         z = NULL;
+        DBUG_PRINT ("AWLFI", ("Did not find WL:%s", AVIS_NAME (ID_AVIS (arg_node))));
     }
     pat = PMfree (pat);
 
@@ -1057,15 +1106,6 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
  *        This may not be enough to guarantee foldability, but
  *        without extrema, we're stuck.
  *
- *        We also check that the shape of the index vector matches
- *        that of the consumerWL generator. This is necessary
- *        because sacprelude uses the generator to adjust
- *        the WL intersection vector, and we do not want to be
- *        tricked by something like:
- *
- *           pwl = with { ( [0,0] <= iv < [2,3]) ...;
- *           cwl = with { ( [0]   <= jv < [2]) : pwl[ jv++[1]];
- *
  * @param _sel_VxA_( iv, producerWL) arg_node.
  *
  * @result True if the consumerWL (and the indexing expression)
@@ -1078,11 +1118,7 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
 {
     node *iv = NULL;
     node *ivavis;
-    node *bp;
-    node *bc;
     bool z;
-    int xrhob;
-    int xrhoc;
 
     DBUG_ENTER ("checkConsumerWLFoldable");
 
@@ -1092,15 +1128,6 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
     z = ((NULL != AVIS_MIN (ivavis)) && (NULL != INFO_CONSUMERWL (arg_info))
          && (NULL != AVIS_MAX (ivavis)))
         || isPrfArg1AttachIntersect (arg_node);
-    if (z) {
-        bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (INFO_CONSUMERWL (arg_info))));
-        xrhob = SHgetUnrLen (ARRAY_FRAMESHAPE (bp));
-        bc = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-        if (NULL != bc) {
-            xrhoc = SHgetUnrLen (TYgetShape (AVIS_TYPE (ID_AVIS (bc))));
-            z = z && (xrhob == xrhoc);
-        }
-    }
 
     DBUG_RETURN (z);
 }
@@ -1149,9 +1176,11 @@ checkBothFoldable (node *arg_node, info *arg_info)
     z = z && (lev == INFO_LEVEL (arg_info));
 
     if (z) {
-        DBUG_PRINT ("AWLFI", ("with-loops are foldable"));
+        DBUG_PRINT ("AWLFI",
+                    ("Producer with-loop %s is foldable", INFO_PRODUCERWL (arg_info)));
     } else {
-        DBUG_PRINT ("AWLFI", ("with-loops are not foldable"));
+        DBUG_PRINT ("AWLFI", ("Producer with-loop %s is not foldable",
+                              INFO_PRODUCERWL (arg_info)));
     }
 
     DBUG_RETURN (z);
