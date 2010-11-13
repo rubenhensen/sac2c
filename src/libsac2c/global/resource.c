@@ -127,6 +127,7 @@ static struct {
   {"MOVE", str, &global.config.move},
   {"RSH", str, &global.config.rsh},
   {"DUMP_OUTPUT", str, &global.config.dump_output},
+  {"CUDA_ARCH", str, &global.config.cuda_arch},
 
   {"LIBPATH", str, &global.config.libpath},
   {"IMPPATH", str, &global.config.imppath},

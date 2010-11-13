@@ -699,6 +699,7 @@ typedef struct {
     char *move;
     char *rsh;
     char *dump_output;
+    char *cuda_arch;
 
     char *libpath;
     char *imppath;

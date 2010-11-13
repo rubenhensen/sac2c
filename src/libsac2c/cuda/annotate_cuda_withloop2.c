@@ -91,6 +91,38 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
+static void
+InitCudaBlockSizes ()
+{
+    DBUG_ENTER ("InitCudaBlockSizes");
+
+    if (STReq (global.config.cuda_arch, "100")
+        || STReq (global.config.cuda_arch, "110")) {
+        global.optimal_threads = 256;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_x = 256;
+        global.cuda_2d_block_x = 16;
+        global.cuda_2d_block_y = 16;
+    } else if (STReq (global.config.cuda_arch, "120")
+               || STReq (global.config.cuda_arch, "130")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 2;
+        global.cuda_1d_block_x = 512;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 16;
+    } else if (STReq (global.config.cuda_arch, "200")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_x = 512;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 16;
+    } else {
+        DBUG_ASSERT (FALSE, "Unknown CUDA architecture");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @name Entry functions
@@ -107,6 +139,8 @@ ACUWLdoAnnotateCUDAWL (node *syntax_tree)
 {
     info *info;
     DBUG_ENTER ("ACUWLdoAnnotateCUDAWL");
+
+    InitCudaBlockSizes ();
 
     info = MakeInfo ();
     TRAVpush (TR_acuwl);
