@@ -1030,7 +1030,7 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
          */
         sexpr = SHshape2Exprs (TYgetShape (atype));
 
-        for (cnt = 0; cnt < INFO_CURRENT_DIM (arg_info); cnt++) {
+        for (cnt = 0; cnt <= INFO_CURRENT_DIM (arg_info); cnt++) {
             DBUG_ASSERT ((sexpr != NULL), "Ooops, ran out of shape elements!");
             sexpr = FREEdoFreeNode (sexpr);
         }

@@ -5527,8 +5527,6 @@ PRTrange (node *arg_node, info *arg_info)
     if (RANGE_CHUNKSIZE (arg_node) != NULL) {
         fprintf (global.outfile, " in ");
         RANGE_CHUNKSIZE (arg_node) = TRAVdo (RANGE_CHUNKSIZE (arg_node), arg_info);
-    } else {
-        fprintf (global.outfile, " in 1");
     }
 
     fprintf (global.outfile, " (IDXS: ");
