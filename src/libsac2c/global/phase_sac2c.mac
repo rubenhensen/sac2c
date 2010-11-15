@@ -922,23 +922,23 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWA
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
-SUBPHASE (wlsd, "MUTC Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
+SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr)),
           wlt)
 
-SUBPHASE (rw3, "MUTC Remove unneeded With3s", RW3doRemoveWith3,
+SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.dorw3,
           wlt)
 
-SUBPHASE (ass, "MUTC Add syncs", ASdoAddSyncs,
+SUBPHASE (ass, "Add syncs", ASdoAddSyncs,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr)),
           wlt)
 
-SUBPHASE (ms, "MUTC Move syncs", MSdoMoveSyncs,
+SUBPHASE (ms, "Move syncs", MSdoMoveSyncs,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.doms,
@@ -1153,7 +1153,7 @@ ENDPHASE (mt)
 
 PHASE (pc, "Preparing C code generation", ALWAYS)
 
-SUBPHASE (uw3, "MUTC Unroll With3", UW3doUnrollWith3,
+SUBPHASE (uw3, "Unroll With3", UW3doUnrollWith3,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr))
             && global.optimize.douw3,
