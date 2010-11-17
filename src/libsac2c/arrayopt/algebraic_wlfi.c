@@ -1072,7 +1072,8 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
     DBUG_ENTER ("checkProducerWLFoldable");
 
     p = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
-    if (NULL != p) {
+    z = NULL != p;
+    if (z) {
         z = (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
             && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
             && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
