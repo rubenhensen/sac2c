@@ -22,6 +22,11 @@ start_icm_definition(mutc_gen)
  * Non SCL are pointers there for they are INTs
  */
 
+pat(`SAC_MUTC_INIT_SUBALLOC_DESC', `0', `0', `NT_SHP')
+rule(`SAC_MUTC_INIT_SUBALLOC_DESC', `SAC_NOP', `SCL')
+rule(`SAC_MUTC_INIT_SUBALLOC_DESC', `SAC_NOP', `AKS')
+rule(`SAC_MUTC_INIT_SUBALLOC_DESC', `SAC_MUTC_INIT_SUBALLOC_DESC_DO', `*SHP')
+
 pat(`SAC_MUTC_ARG_THREAD', `1', `1', `NT_REG', `NT_SCO', `NT_SHP')
 rule(`SAC_MUTC_ARG_THREAD', `SAC_MUTC_ND_ARG_INT_GLO', `INT', `GLO', `*SHP')
 rule(`SAC_MUTC_ARG_THREAD', `SAC_MUTC_ND_ARG_FLO_GLO', `FLO', `GLO', `SCL')

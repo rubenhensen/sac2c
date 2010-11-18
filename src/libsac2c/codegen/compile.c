@@ -2497,7 +2497,17 @@ AnnotateDescParamsAp (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
+/** <!--********************************************************************-->
+ *
+ * @fn  node *AnnotateDescParams( node *arg_node)
+ *
+ * @brief  Label function applications of thread functions from lifting
+ *         the body of N_range into threads with a copy of the withops
+ *         of the surrounding with3
+ *
+ *         Used to lift descriptors up one level
+ *
+ ******************************************************************************/
 static node *
 AnnotateDescParams (node *syntax_tree)
 {
@@ -2764,18 +2774,20 @@ AddDescParams (node *ops, node *params)
 
     if (ops != NULL) {
         if (WITHOP_SUB (ops) != NULL) {
-            node *newParam
-              = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
-                             TBmakeExprs (TCmakeIdCopyString ("int"),
-                                          TBmakeExprs (TCmakeIcm2 ("SET_NT_USG",
-                                                                   TCmakeIdCopyString (
-                                                                     "TPA"),
-                                                                   DUPdupIdNt (
-                                                                     WITHOP_SUB (ops))),
-                                                       NULL)));
+            shape_class_t shapeClass
+              = NTUgetShapeClassFromTypes (ID_TYPE (WITHOP_SUB (ops)));
+            if (shapeClass == C_akd || shapeClass == C_aud) {
+                node *arg2
+                  = TBmakeExprs (TCmakeIcm2 ("SET_NT_USG", TCmakeIdCopyString ("TPA"),
+                                             DUPdupIdNt (WITHOP_SUB (ops))),
+                                 NULL);
+                node *newParam
+                  = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
+                                 TBmakeExprs (TCmakeIdCopyString ("int"), arg2));
 
-            params = TCappendExprs (params, newParam);
-            NUM_VAL (EXPRS_EXPR3 (params)) += 1;
+                params = TCappendExprs (params, newParam);
+                NUM_VAL (EXPRS_EXPR3 (params)) += 1;
+            }
         }
         params = AddDescParams (WITHOP_NEXT (ops), params);
     }
@@ -3651,13 +3663,17 @@ AddDescArgs (node *ops, node *args)
 
     if (ops != NULL) {
         if (WITHOP_SUB (ops) != NULL) {
-            node *newArg
-              = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
-                             TBmakeExprs (TCmakeIdCopyString ("int"),
-                                          TBmakeExprs (DUPdupIdNt (WITHOP_SUB (ops)),
-                                                       NULL)));
-            args = TCappendExprs (args, newArg);
-            NUM_VAL (EXPRS_EXPR3 (args)) += 1;
+            shape_class_t shapeClass
+              = NTUgetShapeClassFromTypes (ID_TYPE (WITHOP_SUB (ops)));
+            if (shapeClass == C_akd || shapeClass == C_aud) {
+                node *newArg
+                  = TBmakeExprs (TCmakeIdCopyString ("in_justdesc"),
+                                 TBmakeExprs (TCmakeIdCopyString ("int"),
+                                              TBmakeExprs (DUPdupIdNt (WITHOP_SUB (ops)),
+                                                           NULL)));
+                args = TCappendExprs (args, newArg);
+                NUM_VAL (EXPRS_EXPR3 (args)) += 1;
+            }
         }
         args = AddDescArgs (WITHOP_NEXT (ops), args);
     }

@@ -124,6 +124,8 @@ typedef int *SAC_array_descriptor_t;
 /* Overloaded by MUTC */
 #define SAC_CLEANUP_LOCAL_MEM()
 
+#define SAC_NOP(...)
+
 /**********************************
  **********************************
  ***

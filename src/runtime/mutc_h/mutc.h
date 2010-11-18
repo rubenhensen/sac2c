@@ -227,7 +227,7 @@
 #define SAC_MUTC_THREAD_CLEANUP
 #endif
 
-#define SAC_MUTC_INIT_SUBALLOC_DESC(var_NT)                                              \
+#define SAC_MUTC_INIT_SUBALLOC_DESC_DO(var_NT)                                           \
     SAC_ND_A_DESC_NAME (var_NT) = sl_getp (SAC_ND_A_DESC_NAME (var_NT));
 
 #endif /* BACKEND */
