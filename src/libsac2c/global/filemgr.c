@@ -713,14 +713,14 @@ FMGRdeleteTmpDir ()
  *
  ******************************************************************************/
 
+#ifdef HAVE_MKDTEMP
+/* mkdtemp is safer than tempnam and recommended */
+/* on linux/bsd platforms.                       */
+
 void
 FMGRcreateTmpDir ()
 {
     DBUG_ENTER ("FMGRcreateTmpDir");
-
-#ifdef HAVE_MKDTEMP
-    /* mkdtemp is safer than tempnam and recommended */
-    /* on linux/bsd platforms.                       */
 
     global.tmp_dirname = STRcat (global.config.tmpdir, "/SAC_XXXXXX");
     global.tmp_dirname = mkdtemp (global.tmp_dirname);
@@ -729,10 +729,25 @@ FMGRcreateTmpDir ()
         CTIabort ("System failed to create temporary directory");
     }
 
+    global.system_cleanup = STRcat (global.config.rmdir, global.tmp_dirname);
+    /*
+     * We set this variable already here to avoid the associated string and memory
+     * handling at a later stage when the compiler is in an inconsistent state
+     * signalled via an interrupt.
+     */
+
+    DBUG_VOID_RETURN;
+}
+
 #else /* HAVE_MKDTEMP */
 
-    /* the old way for platforms not */
-    /* supporting mkdtemp            */
+/* the old way for platforms not */
+/* supporting mkdtemp            */
+
+void
+FMGRcreateTmpDir ()
+{
+    DBUG_ENTER ("FMGRcreateTmpDir");
 
     global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
 
@@ -744,17 +759,26 @@ FMGRcreateTmpDir ()
 
     /* Failure of the system call is detected in SYScall */
 
-#endif /* HAVE_MKDTEMP */
-
-    global.system_cleanup = STRcat ("rm -rf ", global.tmp_dirname);
+    global.system_cleanup = STRcat (global.config.rmdir, global.tmp_dirname);
     /*
      * We set this variable already here to avoid the associated string and memory
-     * handling at a later stage when the compiler is in an inconistent state
+     * handling at a later stage when the compiler is in an inconsistent state
      * signalled via an interrupt.
      */
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* HAVE_MKDTEMP */
+
+/** <!--********************************************************************-->
+ *
+ * @fn void FMGRforEach(const char *path, const char *filterexpr, void *funargs,
+ *                 void (fun) (const char *path, const char *file, void *params))
+ *
+ * @brief
+ *
+ ******************************************************************************/
 
 void
 FMGRforEach (const char *path, const char *filterexpr, void *funargs,

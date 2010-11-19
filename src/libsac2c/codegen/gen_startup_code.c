@@ -355,6 +355,9 @@ PrintGlobalSettings (node *syntax_tree)
                              "#define NULL                      (void*) 0\n"
                              "#endif\n\n");
 
+    fprintf (global.outfile, "#define SAC_SET_TMPDIR              \"%s\"\n",
+             global.config.tmpdir);
+
     fprintf (global.outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE      %d\n",
              global.initial_master_heapsize * 1024);
     fprintf (global.outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE      %d\n",
