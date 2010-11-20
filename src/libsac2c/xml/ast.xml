@@ -416,6 +416,7 @@
       <traversal id="CUKNL" name="Create cuda kernel functions" default="sons" include="create_cuda_kernels.h" >
         <travuser>
           <node name="Assign" />
+          <node name="Do" />
           <node name="Let" />
           <node name="With" />
           <node name="With2" />

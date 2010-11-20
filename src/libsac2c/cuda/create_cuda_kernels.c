@@ -237,7 +237,7 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *CUKNLdoCreateCudaKernels( node *syntax_tree)
+ * @fn node *
  *
  *****************************************************************************/
 node *
@@ -585,6 +585,26 @@ CUKNLassign (node *arg_node, info *arg_info)
     } else {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CUKNLdo( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUKNLdo");
+
+    /* We do not traverse SKIP son */
+    DO_BODY (arg_node) = TRAVopt (DO_BODY (arg_node), arg_info);
+    DO_COND (arg_node) = TRAVopt (DO_COND (arg_node), arg_info);
+    DO_SKIP (arg_node) = TRAVopt (DO_SKIP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

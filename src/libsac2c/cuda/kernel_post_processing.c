@@ -187,6 +187,8 @@ KPPlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         }
+        /* We do not remove assignments of the form a = b; */
+        NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
     }
     /* If an assignment of the form: A = [v1,v2...v3] occurs
      * in the kernel, we tag A as cuda local. Normally,
