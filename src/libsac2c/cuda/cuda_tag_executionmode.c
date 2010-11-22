@@ -399,7 +399,7 @@ CUTEMfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CUTEMargs(node *arg_node, info)
+ * @fn node *CUTEMarg(node *arg_node, info)
  *
  *   @brief
  *
@@ -409,9 +409,9 @@ CUTEMfundef (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CUTEMargs (node *arg_node, info *arg_info)
+CUTEMarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMargs");
+    DBUG_ENTER ("CUTEMarg");
 
     /* We initilise IsHostReferenced in the first iteration of TAG traversal.
      * This is needed only once since once the flag has been changed to TRUE,

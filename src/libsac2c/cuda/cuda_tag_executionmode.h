@@ -17,7 +17,7 @@ extern node *CUTEMdoTagExecutionmode (node *arg_node);
 extern node *CUTEMassign (node *arg_node, info *arg_info);
 extern node *CUTEMwith (node *arg_node, info *arg_info);
 extern node *CUTEMap (node *arg_node, info *arg_info);
-extern node *CUTEMargs (node *arg_node, info *arg_info);
+extern node *CUTEMarg (node *arg_node, info *arg_info);
 extern node *CUTEMid (node *arg_node, info *arg_info);
 extern node *CUTEMids (node *arg_node, info *arg_info);
 extern node *CUTEMlet (node *arg_node, info *arg_info);

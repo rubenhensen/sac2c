@@ -289,7 +289,7 @@
           <node name="Vardec" />
           <node name="Cond" />
           <node name="Block" />
-          <node name="Args" />
+          <node name="Arg" />
         </travuser>
         <travnone>
           <node name="Return" />
