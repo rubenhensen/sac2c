@@ -292,7 +292,7 @@ OPTcheckOptionConsistency (void)
 
 #if !ENABLE_OMP
     if (STReq (global.config.backend, "omp")) {
-        CTIerror ("Runtime specialization (-rtspec) not supported by this installation.");
+        CTIerror ("OpenMP backend (-target) not supported by this installation.");
     }
 #endif
 
