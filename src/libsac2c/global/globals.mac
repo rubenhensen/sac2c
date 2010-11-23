@@ -206,6 +206,14 @@ GLOBAL (bool, dynamic_shapes, FALSE)
  * Dynamic shapes are disabled by default
  */
 
+/*
+ * Irregular arrays option
+ */
+GLOBAL (bool, irregular_arrays, FALSE)
+/*
+ * Irregular arrays are disbaled by default
+ */
+
 /* -- Runtime Specialization -- */
 
 /*
