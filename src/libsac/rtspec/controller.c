@@ -8,8 +8,6 @@
  * @brief  This file contains the implementation of the central dynamic
  * optimization controller.
  *
- * @author  tvd
- *
  *****************************************************************************/
 
 #include "config.h"
@@ -30,14 +28,64 @@
 #include "reqqueue.h"
 #include "registry.h"
 
+#include "sac.h"
+
 #define TMP_DIR_NAME "/tmp/SACrt_XXXXXX"
 #define MAX_SYS_CALL 512
 #define MAX_STRING_LENGTH 256
 
 static int running = 1;
-static char *tmp_dir;
-
+static char *tmpdir_name = NULL;
+static char *rtspec_syscall = NULL;
 static list_t *processed;
+
+/** <!--*******************************************************************-->
+ *
+ * @fn CreateTmpDir( char *dir)
+ *
+ * @brief creates a uniquely named tmp directory in the given directory
+ *
+ ****************************************************************************/
+
+#ifdef HAVE_MKDTEMP
+/* mkdtemp is safer than tempnam and recommended */
+/* on linux/bsd platforms.                       */
+
+static char *
+CreateTmpDir (char *dir)
+{
+    tmpdir_name = (char *)malloc (sizeof (char) * (strlen (dir) + 16));
+
+    strcpy (tmpdir_name, dir);
+    strcat (tmpdir_name, "/SAC_XXXXXX");
+
+    tmpdir_name = mkdtemp (tmpdir_name);
+
+    return (tmpdir_name);
+}
+
+#else /* HAVE_MKDTEMP */
+
+/* the old way for platforms not */
+/* supporting mkdtemp            */
+
+static char *
+CreateTmpDir (char *dir)
+{
+    tmpdir_name = tempnam (dir, "SAC_");
+
+    if (tmpdir_name != NULL) {
+        rtspec_syscall = (char *)malloc (sizeof (char) * (strlen (tmpdir_name) + 16));
+        strcpy (rtspec_syscall, "mkdir ");
+        strcat (rtspec_syscall, tmpdir_name);
+
+        system (rtspec_syscall);
+    }
+
+    return (tmpdir_name);
+}
+
+#endif /* HAVE_MKDTEMP */
 
 /** <!--*******************************************************************-->
  *
@@ -47,50 +95,31 @@ static list_t *processed;
  *        in a separate thread.
  *
  ****************************************************************************/
+
 void
-SAC_setupController (void)
+SAC_setupController (char *dir)
 {
     pthread_t controller_thread;
     int result;
+    char *tmpdir_name;
 
     result = 0;
 
     SAC_initializeQueue ();
 
-    tmp_dir = malloc (MAX_STRING_LENGTH * sizeof (char));
-    if (tmp_dir == NULL) {
-        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
-                         "init_controller()] Could not allocate string for tmp_dir!");
+    tmpdir_name = CreateTmpDir (dir);
 
-        exit (EXIT_FAILURE);
-    }
-
-    strcpy (tmp_dir, TMP_DIR_NAME);
-
-    if (mkdtemp (tmp_dir) == NULL) {
-        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
-                         "init_controller()] Could not create temporary directory!");
-
-        exit (EXIT_FAILURE);
+    if (tmpdir_name == NULL) {
+        SAC_RuntimeError ("Unable to create tmp directory for specialization controller");
     }
 
     result = pthread_create (&controller_thread, NULL, SAC_runController, NULL);
 
     if (result != 0) {
-        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
-                         "init_controller()] Could not start thread!");
-
-        exit (EXIT_FAILURE);
+        SAC_RuntimeError ("Runtime specialization controller could not be launched");
     }
 
     processed = malloc (sizeof (list_t));
-
-    if (processed == NULL) {
-        fprintf (stderr, "ERROR --\t [RTSpec Controller: "
-                         "init_controller()] Could not allocate processed request list!");
-
-        exit (EXIT_FAILURE);
-    }
 }
 
 /** <!--*******************************************************************-->
@@ -361,10 +390,10 @@ SAC_handleRequest (queue_node_t *request)
 
     /* Build the system call. */
     sprintf (syscall, call_format, request->module_name, new_module, request->func_name,
-             new_func_name, request->type_info, shape_info, tmp_dir, tmp_dir);
+             new_func_name, request->type_info, shape_info, tmpdir_name, tmpdir_name);
 
     /* The path to the new library. */
-    sprintf (filename, "%s/lib%sMod.so", tmp_dir, new_module);
+    sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
@@ -419,22 +448,24 @@ SAC_handleRequest (queue_node_t *request)
  * @brief  Kills the optimization controller.
  *
  ****************************************************************************/
+
 void
 SAC_finalizeController (void)
 {
-    char remove_tmp_dir[MAX_SYS_CALL];
+    int success;
 
-    sprintf (remove_tmp_dir, "rm -rf %s", tmp_dir);
+    if (tmpdir_name != NULL) {
+        if (rtspec_syscall == NULL) {
+            rtspec_syscall = (char *)malloc (sizeof (char) * (strlen (tmpdir_name) + 16));
+        }
 
-    /*
-     * This is turned off for now as this can in some cases crash the SAC
-     * compiler if it is still running when the program exits.
-     */
+        strcpy (rtspec_syscall, "rm -rf  ");
+        strcat (rtspec_syscall, tmpdir_name);
 
-    /* Delete the temporary directory.
-    if (system(remove_tmp_dir) == -1) {
-        fprintf(stderr, "Could not remove temporary directory!");
-    }*/
+        success = system (rtspec_syscall);
+
+        free (rtspec_syscall);
+    }
 
     running = 0;
 }

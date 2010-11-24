@@ -22,12 +22,12 @@ typedef struct list {
     struct list *next;
 } list_t;
 
-void SAC_setupController ();
+extern void SAC_setupController (char *dir);
 
-void *SAC_runController ();
+extern void *SAC_runController ();
 
-void SAC_handleRequest (queue_node_t *);
+extern void SAC_handleRequest (queue_node_t *);
 
-void SAC_finalizeController (void);
+extern void SAC_finalizeController (void);
 
 #endif /* _SAC_CONTROLLER_H_ */
