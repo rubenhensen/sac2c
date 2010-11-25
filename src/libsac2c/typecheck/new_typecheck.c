@@ -1467,6 +1467,11 @@ NTCarray (node *arg_node, info *arg_info)
          */
         info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
                               "array-constructor", 0, 1);
+
+        /*
+         * TODO: syntatic sugar for the irregular array option
+         * This mainly consists of finding the leasy common type (*, +, .)
+         */
         type = NTCCTcomputeType (NTCCTprf_array, info, elems);
 
         TYfreeType (elems);

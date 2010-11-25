@@ -1455,10 +1455,13 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     if (base == NULL) {
         base = UTgetTypedef (udt);
         if (!TYisAKS (base)) {
-            CTIerrorLine (global.linenum,
-                          "Typedef of %s::%s is illegal; should be either"
-                          " scalar type or array type of fixed shape",
-                          NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+            if (!global.irregular_arrays) {
+                CTIerrorLine (global.linenum,
+                              "Typedef of %s::%s is illegal; should be either"
+                              " scalar type or array type of fixed shape",
+                              NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+            } else {
+            }
         } else {
             /*
              * Here, we know that we are either dealing with

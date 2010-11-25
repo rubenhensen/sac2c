@@ -104,6 +104,8 @@ int charpos = 0;
 "}"                        { FILTER( BRACE_R); }
 "("                        { FILTER( BRACKET_L); }
 ")"                        { FILTER( BRACKET_R); }
+"[>"                       { FILTER( TRIANGLEBR_L); }
+"<]"                       { FILTER( TRIANGLEBR_R); }
 "["                        { FILTER( SQBR_L); }
 "]"                        { FILTER( SQBR_R); }
 ":"                        { FILTER( COLON); }

@@ -528,7 +528,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
-    ARGS_OPTION ("irr_arr", global.irregular_arrays = TRUE);
+    ARGS_FLAG ("irr_arr", global.irregular_arrays = TRUE);
     ARGS_OPTION ("iveo", ARG_NUM (global.iveo));
     ARGS_OPTION ("ive", ARG_NUM (global.ive));
     ARGS_FLAG ("extrema", global.doivext = TRUE);

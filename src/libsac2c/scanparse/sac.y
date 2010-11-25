@@ -117,6 +117,7 @@ WLCOMP  CACHESIM  SPECIALIZE
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL SPAWN
+TRIANGLEBR_L TRIANGLEBR_R
 
 PRF_DIM_A  PRF_SHAPE_A  PRF_RESHAPE_VxA  PRF_SEL_VxA  PRF_MODARRAY_AxVxS
 PRF_HIDEVALUE_SxA PRF_HIDESHAPE_SxA PRF_HIDEDIM_SxA
@@ -251,7 +252,7 @@ TFTYPEREL SUBTYPE IFF
 GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
 %right MM_OP CAST
-%right SQBR_L BRACKET_L
+%right SQBR_L BRACKET_L TRIANGLEBR_L
 %right ELSE 
 
 %start all
@@ -1633,6 +1634,12 @@ expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
          { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_int), 
                                          SHmakeShape(0)), 
                               NULL);
+           NODE_LINE( $$) = $<cint>2;
+         }
+       | TRIANGLEBR_L { $<cint>$ = global.linenum; } exprs TRIANGLEBR_R
+         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_unknown), 
+                                         SHmakeShape(0)),
+                              $3);
            NODE_LINE( $$) = $<cint>2;
          }
        ;
