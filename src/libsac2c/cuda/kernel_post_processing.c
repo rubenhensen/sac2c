@@ -177,9 +177,14 @@ KPPlet (node *arg_node, info *arg_info)
          * primitive copy( N_id). */
         node *avis = ID_AVIS (LET_EXPR (arg_node));
         if (!CUisDeviceTypeNew (ID_NTYPE (LET_EXPR (arg_node)))
+            && !CUisShmemTypeNew (ID_NTYPE (LET_EXPR (arg_node)))
             && TYgetDim (ID_NTYPE (LET_EXPR (arg_node))) > 0) {
             LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
+        } else if (CUisShmemTypeNew (ID_NTYPE (LET_EXPR (arg_node)))) {
+            LET_EXPR (arg_node) = FREEdoFreeNode (LET_EXPR (arg_node));
+            LET_IDS (arg_node) = FREEdoFreeNode (LET_IDS (arg_node));
+            LET_EXPR (arg_node) = TBmakePrf (F_noop, NULL);
         } else if (AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node)))
                    || AVIS_ISCUDALOCAL (ID_AVIS (LET_EXPR (arg_node)))) {
             AVIS_ISCUDALOCAL (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
@@ -188,7 +193,9 @@ KPPlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node) = TCmakePrf1 (F_copy, TBmakeId (avis));
         }
         /* We do not remove assignments of the form a = b; */
-        NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
+        if (LET_IDS (arg_node) != NULL) {
+            NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
+        }
     }
     /* If an assignment of the form: A = [v1,v2...v3] occurs
      * in the kernel, we tag A as cuda local. Normally,

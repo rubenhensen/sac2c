@@ -318,6 +318,10 @@ ActOnId (node *avis, info *arg_info)
             if (cnst != NULL) {
                 AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0,
                           INFO_IDXDIM (arg_info), arg_info);
+            } else if (NODE_TYPE (ASSIGN_INSTR (ssa_assign)) == N_let
+                       && NODE_TYPE (ASSIGN_RHS (ssa_assign)) == N_prf
+                       && PRF_PRF (ASSIGN_RHS (ssa_assign)) == F_idxs2offset) {
+                ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
             } else {
                 AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
                           INFO_IDXDIM (arg_info), arg_info);
