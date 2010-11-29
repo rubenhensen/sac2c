@@ -96,21 +96,20 @@ InitCudaBlockSizes ()
 {
     DBUG_ENTER ("InitCudaBlockSizes");
 
-    if (STReq (global.config.cuda_arch, "100")
-        || STReq (global.config.cuda_arch, "110")) {
+    if (STReq (global.config.cuda_arch, "10") || STReq (global.config.cuda_arch, "11")) {
         global.optimal_threads = 256;
         global.optimal_blocks = 3;
         global.cuda_1d_block_x = 256;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-    } else if (STReq (global.config.cuda_arch, "120")
-               || STReq (global.config.cuda_arch, "130")) {
+    } else if (STReq (global.config.cuda_arch, "12")
+               || STReq (global.config.cuda_arch, "13")) {
         global.optimal_threads = 512;
         global.optimal_blocks = 2;
         global.cuda_1d_block_x = 512;
         global.cuda_2d_block_x = 32;
         global.cuda_2d_block_y = 16;
-    } else if (STReq (global.config.cuda_arch, "200")) {
+    } else if (STReq (global.config.cuda_arch, "20")) {
         global.optimal_threads = 512;
         global.optimal_blocks = 3;
         global.cuda_1d_block_x = 512;
