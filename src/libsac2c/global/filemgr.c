@@ -729,7 +729,7 @@ FMGRcreateTmpDir ()
         CTIabort ("System failed to create temporary directory");
     }
 
-    global.system_cleanup = STRcat (global.config.rmdir, global.tmp_dirname);
+    global.system_cleanup = STRcatn (3, global.config.rmdir, " ", global.tmp_dirname);
     /*
      * We set this variable already here to avoid the associated string and memory
      * handling at a later stage when the compiler is in an inconsistent state
@@ -759,7 +759,7 @@ FMGRcreateTmpDir ()
 
     /* Failure of the system call is detected in SYScall */
 
-    global.system_cleanup = STRcat (global.config.rmdir, global.tmp_dirname);
+    global.system_cleanup = STRcatn (3, global.config.rmdir, " ", global.tmp_dirname);
     /*
      * We set this variable already here to avoid the associated string and memory
      * handling at a later stage when the compiler is in an inconsistent state
