@@ -103,7 +103,7 @@ FreeAllRcs (rc_t *rcs)
 
     rcs = MEMfree (rcs);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((rc_t *)NULL);
 }
 
 static node *

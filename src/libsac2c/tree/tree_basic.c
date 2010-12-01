@@ -209,7 +209,7 @@ TBfreeCudaIndex (cuda_index_t *index)
 
     index = MEMfree (index);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((cuda_index_t *)NULL);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -256,7 +256,7 @@ TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
 
     access_info = MEMfree (access_info);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((cuda_access_info_t *)NULL);
 }
 
 /*--------------------------------------------------------------------------*/
