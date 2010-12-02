@@ -1065,7 +1065,12 @@ PrintAuthors (void)
             "      Florian Buether\n"
             "      Torben Gerhards\n"
             "      Carl A Joslin\n"
-            "      Jing Guo\n");
+            "      Jing Guo\n"
+            "      Hraban Luyat\n"
+            "      Zheng Zhangzheng\n"
+            "      Aram Visser\n"
+            "      Tim van Deurzen\n"
+            "      Roeland Douma\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1195,7 +1200,7 @@ USGprintVersionVerbose ()
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host);
 
-    printf ("(c) Copyright 1994-2007 by\n\n"
+    printf ("(c) Copyright 1994-2011 by\n\n"
 
             "  SAC Development Team\n\n"
 
