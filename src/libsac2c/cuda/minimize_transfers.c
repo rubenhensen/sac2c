@@ -70,13 +70,16 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
         syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
         syntax_tree = MCTRANdoMinimizeCondTransfers (syntax_tree);
+        /* make sure the lifted transfer are removed when ever
+         * possible before minimizing transfers in loops.
+         */
+        syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
+        /*********************************************************/
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
         // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
         j++;
     }
-
-    // syntax_tree = WLDSdoWithloopDescalarization( syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

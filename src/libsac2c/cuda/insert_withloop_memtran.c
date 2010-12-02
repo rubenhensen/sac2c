@@ -74,6 +74,7 @@
 #include "DataFlowMaskUtils.h"
 #include "remove_dfms.h"
 #include "infer_dfms.h"
+#include "NumLookUpTable.h"
 
 /** <!--********************************************************************-->
  *
@@ -96,6 +97,7 @@ struct INFO {
     node *letids;
     node *apids;
     node *topblock;
+    nlut_t *at_nlut;
 };
 
 /*
@@ -136,6 +138,7 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_APIDS(n) (n->apids)
 #define INFO_TOPBLOCK(n) (n->topblock)
+#define INFO_AT_NLUT(n) (n->at_nlut)
 
 static info *
 MakeInfo ()
@@ -159,6 +162,7 @@ MakeInfo ()
     INFO_LETIDS (result) = NULL;
     INFO_APIDS (result) = NULL;
     INFO_TOPBLOCK (result) = NULL;
+    INFO_AT_NLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -294,6 +298,49 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     }
 
     DBUG_RETURN (dev_type);
+}
+
+static node *
+ATravWith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravWith");
+
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravId (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravId");
+
+    NLUTincNum (INFO_AT_NLUT (arg_info), ID_AVIS (arg_node), 1);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravGenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravGenarray");
+
+    if (GENARRAY_DEFAULT (arg_node) != NULL
+        && NLUTgetNum (INFO_AT_NLUT (arg_info), ID_AVIS (GENARRAY_DEFAULT (arg_node)))
+             == 0) {
+        DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)),
+                     "Default element of genarray is not N_id!");
+        GENARRAY_DEFAULT (arg_node) = FREEdoFreeNode (GENARRAY_DEFAULT (arg_node));
+        GENARRAY_DEFAULT (arg_node) = NULL;
+    }
+
+    GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+    GENARRAY_PRC (arg_node) = TRAVopt (GENARRAY_PRC (arg_node), arg_info);
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -627,11 +674,36 @@ node *
 IWLMEMwith (node *arg_node, info *arg_info)
 {
     lut_t *old_lut;
+    info *anon_info;
 
     DBUG_ENTER ("IWLMEMwith");
 
     /* If the N_with is cudarizable */
     if (WITH_CUDARIZABLE (arg_node)) {
+
+        /************ Anonymous Traversal ************/
+        /* This anon traversal remove all default elements in genarray
+         * that are not used in the withloop body at all. */
+        anontrav_t atrav[4] = {{N_with, &ATravWith},
+                               {N_genarray, &ATravGenarray},
+                               {N_id, &ATravId},
+                               {0, NULL}};
+
+        TRAVpushAnonymous (atrav, &TRAVsons);
+
+        anon_info = MakeInfo ();
+
+        INFO_AT_NLUT (anon_info)
+          = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                              FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        arg_node = TRAVdo (arg_node, anon_info);
+
+        INFO_AT_NLUT (anon_info) = NLUTremoveNlut (INFO_AT_NLUT (anon_info));
+
+        anon_info = FreeInfo (anon_info);
+        TRAVpop ();
+        /*********************************************/
+
         INFO_LUT (arg_info) = LUTgenerateLut ();
 
         INFO_INCUDAWL (arg_info) = TRUE;

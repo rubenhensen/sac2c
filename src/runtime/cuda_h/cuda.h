@@ -38,17 +38,17 @@
     SAC_CUDA_ALLOC__DATA (var_NT, basetype)                                              \
     }
 
-#define SAC_CUDA_FREE(var_NT, freefun) cudaFree (SAC_ND_A_FIELD (var_NT));
+#define SAC_CUDA_FREE(var_NT, freefun) cutilSafeCall (cudaFree (SAC_ND_A_FIELD (var_NT)));
 
 #define SAC_CUDA_ALLOC__DATA__NOOP(var_NT, basetype) SAC_NOOP ()
 
 #define SAC_CUDA_ALLOC__DATA__AKS(var_NT, basetype)                                      \
-    cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
-                SAC_ND_A_SIZE (var_NT) * sizeof (basetype));
+    cutilSafeCall (cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                        \
+                               SAC_ND_A_SIZE (var_NT) * sizeof (basetype)));
 
 #define SAC_CUDA_ALLOC__DATA__AKD_AUD(var_NT, basetype)                                  \
-    cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
-                SAC_ND_A_SIZE (var_NT) * sizeof (basetype));
+    ccutilSafeCal (ludaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                        \
+                               SAC_ND_A_SIZE (var_NT) * sizeof (basetype)));
 
 #define SAC_CUDA_DEC_RC_FREE__UNQ(var_NT, rc, freefun) SAC_CUDA_FREE (var_NT, freefun)
 
@@ -76,31 +76,35 @@
  * Transfer scalar on host to an array position on device
  */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
-    cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
-                cudaMemcpyHostToDevice);
+    cutilSafeCall (cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT,                \
+                               sizeof (basetype), cudaMemcpyHostToDevice));
 
 /*
  * Transfer data element in an array position on deive to a host scalar
  */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
-    cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
-                sizeof (basetype), cudaMemcpyDeviceToHost);
+    cutilSafeCall (cudaMemcpy (&SAC_ND_A_FIELD (to_NT),                                  \
+                               SAC_ND_A_FIELD (from_NT) + offset, sizeof (basetype),     \
+                               cudaMemcpyDeviceToHost));
 
 /*
  * Transfer data from a device array to another device array
  */
 #define SAC_CUDA_MEM_TRANSFER_D2D(to_NT, offset, from_NT, basetype)                      \
-    cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, SAC_ND_A_FIELD (from_NT),               \
-                sizeof (basetype) * SAC_ND_A_SIZE (from_NT), cudaMemcpyDeviceToDevice);
+    cutilSafeCall (cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset,                          \
+                               SAC_ND_A_FIELD (from_NT),                                 \
+                               sizeof (basetype) * SAC_ND_A_SIZE (from_NT),              \
+                               cudaMemcpyDeviceToDevice));
 
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
-    cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
-                SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction);
+    cutilSafeCall (cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),         \
+                               SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype),       \
+                               direction));
 
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \
-    cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
-                SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype),                      \
-                cudaMemcpyDeviceToDevice);
+    cutilSafeCall (cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),         \
+                               SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype),       \
+                               cudaMemcpyDeviceToDevice));
 
 #define SAC_CUDA_FUN_DEF_END(...)
 

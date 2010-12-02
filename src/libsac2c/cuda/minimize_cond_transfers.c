@@ -232,6 +232,8 @@ MCTRANfundef (node *arg_node, info *arg_info)
             INFO_FUNARGNUM (arg_info) = 0;
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
+            printf ("Traverse conditional function %s\n", FUNDEF_NAME (arg_node));
+
             old_incondfun = INFO_INCONDFUN (arg_info);
             INFO_INCONDFUN (arg_info) = TRUE;
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -602,6 +604,7 @@ MCTRANreturn (node *arg_node, info *arg_info)
                                   INFO_APPOSTASSIGNS (arg_info));
                 AVIS_SSAASSIGN (IDS_AVIS (ap_ids)) = INFO_APPOSTASSIGNS (arg_info);
                 IDS_AVIS (ap_ids) = new_avis;
+                ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (INFO_APPOSTASSIGNS (arg_info)) = TRUE;
             }
 
             ret_exprs = EXPRS_NEXT (ret_exprs);
@@ -683,6 +686,7 @@ MCTRANprf (node *arg_node, info *arg_info)
                     ID_AVIS (ap_arg) = new_avis;
                     /* Maintain SSA property */
                     AVIS_SSAASSIGN (new_avis) = INFO_APPREASSIGNS (arg_info);
+                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_APPREASSIGNS (arg_info)) = TRUE;
                 }
             }
             break;

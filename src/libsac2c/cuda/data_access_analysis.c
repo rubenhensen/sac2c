@@ -56,6 +56,7 @@ struct INFO {
     cuda_access_info_t *access_info;
     lut_t *lut;
     bool fromap;
+    int blocksz_1d;
 };
 
 #define INFO_NEST_LEVEL(n) (n->nest_level)
@@ -73,6 +74,7 @@ struct INFO {
 #define INFO_ACCESS_INFO(n) (n->access_info)
 #define INFO_LUT(n) (n->lut)
 #define INFO_FROMAP(n) (n->fromap)
+#define INFO_BLOCKSZ_1D(n) (n->blocksz_1d)
 
 #define PART_INFO_DIM(n) (n->dim)
 #define PART_INFO_TYPE(n) (n->type)
@@ -113,6 +115,7 @@ MakeInfo ()
     INFO_ACCESS_INFO (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_FROMAP (result) = FALSE;
+    INFO_BLOCKSZ_1D (result) = global.cuda_1d_block_x;
 
     DBUG_RETURN (result);
 }
@@ -336,13 +339,38 @@ ActOnId (node *avis, info *arg_info)
     DBUG_VOID_RETURN;
 }
 
+static bool
+CoalescingNeeded (cuda_access_info_t *access_info, info *arg_info)
+{
+    bool res = FALSE;
+    cuda_index_t *index = NULL;
+
+    DBUG_ENTER ("CoalescingNeeded");
+
+    DBUG_ASSERT ((access_info != NULL), "Access info is NULL!");
+
+    if (CUAI_DIM (access_info) == 2) {
+        index = CUAI_INDICES (access_info, 0);
+        DBUG_ASSERT ((index != NULL), "First index of access info is NULL!");
+        while (index != NULL) {
+            if (CUIDX_TYPE (index) == IDX_THREADIDX_X) {
+                res = TRUE;
+                break;
+            }
+            index = CUIDX_NEXT (index);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 static cuda_access_info_t *
 CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
 {
     int i, coefficient, shmem_size, dim;
     cuda_index_t *index;
-    int DIMS[2][2]
-      = {{1, global.cuda_1d_block_x}, {global.cuda_2d_block_y, global.cuda_2d_block_x}};
+    int DIMS[2][2] = {{1, INFO_BLOCKSZ_1D (arg_info)},
+                      {global.cuda_2d_block_y, global.cuda_2d_block_x}};
     node *sharray_shp = NULL;
 
     DBUG_ENTER ("CreateSharedMemory");
@@ -768,7 +796,7 @@ DAAprf (node *arg_node, info *arg_info)
                  * arrays, and the dimentionality must be equal to the outermost
                  * cudarizable withloop */
                 if (TYisAKS (ID_NTYPE (arr)) && (dim == 1 || dim == 2)
-                    && INFO_CUWLDIM (arg_info) == dim) {
+                    /*  INFO_CUWLDIM( arg_info) == dim */) {
                     /* If this index has a defining assigment within the current cuda WL,
                      * we start to collect access information */
                     if (ID_SSAASSIGN (idx) != NULL
@@ -840,7 +868,9 @@ DAAprf (node *arg_node, info *arg_info)
                 rank = MatrixRank (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)));
                 /* If rank of the coefficient matric is less than the nestlevel,
                  * we have potential data reuse for the accessed array */
-                if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))) {
+                if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))
+                    || CoalescingNeeded (INFO_ACCESS_INFO (arg_info), arg_info)) {
+                    INFO_BLOCKSZ_1D (arg_info) = 64;
                     INFO_ACCESS_INFO (arg_info)
                       = CreateSharedMemory (INFO_ACCESS_INFO (arg_info), arg_info);
                 } else {
