@@ -363,9 +363,8 @@ PEW3id (node *arg_node, info *arg_info)
     pat_with3 = PMwith3 (1, PMAhasCountRange (&zero));
 
     /*
-     * is a noop OR
      * with3 with no ranges OR
-     * not a non-copy range       AKA not a copy range
+     * a non-copy range
      */
     INFO_CAN_REMOVE (arg_info)
       = (INFO_CAN_REMOVE (arg_info)
