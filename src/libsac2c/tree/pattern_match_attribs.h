@@ -50,6 +50,12 @@ extern attrib *PMAhasFS (constant **fs);
  * attrib matchers for PMprf:
  */
 extern attrib *PMAisPrf (prf fun);
+extern attrib *PMAisNotPrf (prf fun);
+
+/**
+ * attrib matchers for with3:
+ */
+extern attrib *PMAhasCountRange (int *v);
 
 /**
  * utils:

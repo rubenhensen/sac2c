@@ -772,6 +772,31 @@ PMAisPrf (prf fun)
 
 /** <!--*******************************************************************-->
  *
+ * @fn attrib *PMAisNodePrf( prf fun)
+ *
+ * @brief attrib for PMprf checks prf against fun and negates.
+ *
+ *****************************************************************************/
+bool
+attribIsNotPrf (attrib *attr, node *arg)
+{
+
+    return (!attribIsPrf (attr, arg));
+}
+
+attrib *
+PMAisNotPrf (prf fun)
+{
+    attrib *res;
+
+    res = makeAttrib (N_prf, attribIsNotPrf);
+    PATTR_PRF (res) = fun;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn attrib *PMAhasCountWithop( int count)
  *
  * @brief

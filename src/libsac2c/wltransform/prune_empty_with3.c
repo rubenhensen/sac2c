@@ -293,16 +293,22 @@ PEW3with3 (node *arg_node, info *arg_info)
     bool stack;
     DBUG_ENTER ("PEW3with3");
 
-    stack = INFO_DO_RANGE_REMOVE (arg_info);
-    INFO_DO_RANGE_REMOVE (arg_info) = !WITH3_ISTOPLEVEL (arg_node);
+    if ((TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_modarray)
+         + TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_genarray))
+        == TCcountWithops (WITH3_OPERATIONS (arg_node))) {
 
-    arg_node = TRAVcont (arg_node, arg_info);
+        stack = INFO_DO_RANGE_REMOVE (arg_info);
+        INFO_DO_RANGE_REMOVE (arg_info) = TRUE;
 
-    INFO_DO_RANGE_REMOVE (arg_info) = stack;
+        arg_node = TRAVcont (arg_node, arg_info);
 
-    if ((!WITH3_ISTOPLEVEL (arg_node))
-        && (TCcountRanges (WITH3_RANGES (arg_node)) == 0)) {
-        WITH3_OPERATIONS (arg_node) = getMemvars (WITH3_OPERATIONS (arg_node), arg_info);
+        INFO_DO_RANGE_REMOVE (arg_info) = stack;
+
+        if ((!WITH3_ISTOPLEVEL (arg_node))
+            && (TCcountRanges (WITH3_RANGES (arg_node)) == 0)) {
+            WITH3_OPERATIONS (arg_node)
+              = getMemvars (WITH3_OPERATIONS (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -348,13 +354,25 @@ PEW3range (node *arg_node, info *arg_info)
 node *
 PEW3id (node *arg_node, info *arg_info)
 {
-    pattern *pat;
+    pattern *pat_with3;
+    pattern *pat_copy;
+    int zero = 0;
     DBUG_ENTER ("PEW3range");
 
-    pat = PMprf (1, PMAisPrf (F_noop), 0);
+    pat_copy = PMprf (1, PMAisNotPrf (F_wl_assign), 0);
+    pat_with3 = PMwith3 (1, PMAhasCountRange (&zero));
+
+    /*
+     * is a noop OR
+     * with3 with no ranges OR
+     * not a non-copy range       AKA not a copy range
+     */
     INFO_CAN_REMOVE (arg_info)
-      = (INFO_CAN_REMOVE (arg_info) && PMmatchFlat (pat, arg_node));
-    pat = PMfree (pat);
+      = (INFO_CAN_REMOVE (arg_info)
+         && (PMmatchFlat (pat_with3, arg_node) || PMmatchFlat (pat_copy, arg_node)));
+
+    pat_with3 = PMfree (pat_with3);
+    pat_copy = PMfree (pat_copy);
 
     DBUG_RETURN (arg_node);
 }
