@@ -429,7 +429,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
              */
             if ((NODE_TYPE (wlass) == N_with) || (NODE_TYPE (wlass) == N_with2)
                 || (NODE_TYPE (wlass) == N_with3)) {
-                node *withop, *wlids, *wliv;
+                node *withop, *wlids = NULL, *wliv;
                 bool oneCodeIfApplicable;
                 bool iscopy = FALSE;
 

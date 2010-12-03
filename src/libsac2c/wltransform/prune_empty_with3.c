@@ -93,13 +93,11 @@
  *****************************************************************************/
 struct INFO {
     node *memvars;
-    bool do_range_remove;
     bool can_remove;
     node *replaceAssigns;
 };
 
 #define INFO_MEMVARS(n) (n->memvars)
-#define INFO_DO_RANGE_REMOVE(n) (n->do_range_remove)
 #define INFO_CAN_REMOVE(n) (n->can_remove)
 #define INFO_REPLACE_ASSIGNS(n) (n->replaceAssigns)
 
@@ -113,7 +111,6 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_MEMVARS (result) = NULL;
-    INFO_DO_RANGE_REMOVE (result) = FALSE;
     INFO_CAN_REMOVE (result) = FALSE;
     INFO_REPLACE_ASSIGNS (result) = FALSE;
 
@@ -192,24 +189,23 @@ PEW3doPruneEmptyWith3 (node *syntax_tree)
 static node *
 createAssignChain (node *arg_ids, node *exprs)
 {
-    node *assign, *ids, *rhs;
+    node *assign = NULL;
     DBUG_ENTER ("createAssignChain");
 
     DBUG_ASSERT ((arg_ids != NULL), "ids missing");
     DBUG_ASSERT ((exprs != NULL), "exprs missing");
 
-    if (IDS_NEXT (arg_ids) == NULL) {
-        assign = NULL;
-    } else {
+    if (IDS_NEXT (arg_ids) != NULL) {
         assign = createAssignChain (IDS_NEXT (arg_ids), EXPRS_NEXT (exprs));
     }
-    ids = DUPdoDupNode (arg_ids);
-    rhs = DUPdoDupNode (EXPRS_EXPR (exprs));
 
-    assign = TBmakeAssign (TBmakeLet (ids, rhs), assign);
-
-    /* avis->ssaassign needed to keep the AST legal */
-    AVIS_SSAASSIGN (IDS_AVIS (ids)) = assign;
+    {
+        node *ids = DUPdoDupNode (arg_ids);
+        assign
+          = TBmakeAssign (TBmakeLet (ids, DUPdoDupNode (EXPRS_EXPR (exprs))), assign);
+        /* avis->ssaassign needed to keep the AST legal */
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = assign;
+    }
 
     DBUG_RETURN (assign);
 }
@@ -290,19 +286,13 @@ getMemvars (node *withops, info *arg_info)
 node *
 PEW3with3 (node *arg_node, info *arg_info)
 {
-    bool stack;
     DBUG_ENTER ("PEW3with3");
 
     if ((TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_modarray)
          + TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_genarray))
         == TCcountWithops (WITH3_OPERATIONS (arg_node))) {
 
-        stack = INFO_DO_RANGE_REMOVE (arg_info);
-        INFO_DO_RANGE_REMOVE (arg_info) = TRUE;
-
         arg_node = TRAVcont (arg_node, arg_info);
-
-        INFO_DO_RANGE_REMOVE (arg_info) = stack;
 
         if ((!WITH3_ISTOPLEVEL (arg_node))
             && (TCcountRanges (WITH3_RANGES (arg_node)) == 0)) {
@@ -333,7 +323,7 @@ PEW3range (node *arg_node, info *arg_info)
     INFO_CAN_REMOVE (arg_info) = TRUE;
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
-    if (INFO_CAN_REMOVE (arg_info) && INFO_DO_RANGE_REMOVE (arg_info)) {
+    if (INFO_CAN_REMOVE (arg_info)) {
         node *del;
         del = arg_node;
         arg_node = RANGE_NEXT (del);
