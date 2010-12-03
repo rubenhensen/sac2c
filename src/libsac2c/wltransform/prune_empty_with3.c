@@ -350,7 +350,7 @@ PEW3id (node *arg_node, info *arg_info)
     DBUG_ENTER ("PEW3range");
 
     pat_copy = PMprf (1, PMAisNotPrf (F_wl_assign), 0);
-    pat_with3 = PMwith3 (1, PMAhasCountRange (&zero));
+    pat_with3 = PMwith3 (1, PMAhasCountRange (&zero), 0);
 
     /*
      * with3 with no ranges OR
