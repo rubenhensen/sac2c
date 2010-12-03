@@ -553,21 +553,21 @@ case "$target_os" in
     RANLIB="$RANLIB -c"
     case "$target_os" in
       *darwin10\.*)
-        OSFLAGS=["-no-cpp-precomp"]
+        OSFLAGS=["-no-cpp-precomp -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
         AC_MSG_RESULT([darwin 10.x settings])
         ;;
       *darwin9\.*)
-        OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
+        OSFLAGS=["-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
         AC_MSG_RESULT([darwin 9.x settings])
         ;;
       [*darwin[6-8]\.*)]
-        OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
+        OSFLAGS=["-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
         LD_PATH=["-L%path%"]
         LD_FLAGS=""

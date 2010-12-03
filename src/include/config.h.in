@@ -3,13 +3,16 @@
 /* set to the architecture */
 #undef ARCH
 
+/* set to 0 to disable cuda */
+#undef ENABLE_CUDA
+
 /* set to 0 to disable dynamic linking */
 #undef ENABLE_DL
 
 /* set to 0 to disable multi threading */
 #undef ENABLE_MT
 
-/* set to 0 to enable mutc */
+/* set to 0 to disable mutc */
 #undef ENABLE_MUTC
 
 /* set to 0 to disable OpenMP backend */

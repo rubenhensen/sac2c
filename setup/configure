@@ -4720,7 +4720,7 @@ $as_echo "OSF settings" >&6; }
     RANLIB="$RANLIB -c"
     case "$target_os" in
       *darwin10\.*)
-        OSFLAGS="-no-cpp-precomp"
+        OSFLAGS="-no-cpp-precomp -D_DARWIN_C_SOURCE"
         LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
         LD_PATH="-L%path% -Wl,-rpath,%path%"
         LD_FLAGS=""
@@ -4728,7 +4728,7 @@ $as_echo "OSF settings" >&6; }
 $as_echo "darwin 10.x settings" >&6; }
         ;;
       *darwin9\.*)
-        OSFLAGS="-no-cpp-precomp -Wno-long-double"
+        OSFLAGS="-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"
         LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
         LD_PATH="-L%path% -Wl,-rpath,%path%"
         LD_FLAGS=""
@@ -4736,7 +4736,7 @@ $as_echo "darwin 10.x settings" >&6; }
 $as_echo "darwin 9.x settings" >&6; }
         ;;
       *darwin[6-8]\.*)
-        OSFLAGS="-no-cpp-precomp -Wno-long-double"
+        OSFLAGS="-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"
         LD_DYNAMIC="-undefined suppress -flat_namespace -bundle"
         LD_PATH="-L%path%"
         LD_FLAGS=""
