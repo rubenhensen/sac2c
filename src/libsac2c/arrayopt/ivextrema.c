@@ -448,6 +448,10 @@ isSameTypeShape (node *ida, node *idb)
  *
  *           int[.] iv';
  *
+ *      The AVIS_WITHIDS of the result is AVIS_WITHIS( ivavisi), unless
+ *      ivavis is a WITHID_VEC or WITHID_IDS, in which case it
+ *      is ivavis itself.
+ *
  * @params:
  *     ivavis: The N_avis of iv, the name for which we want to build iv'.
  *     extremum: the N_avis of an AVIS_MIN/AVIS_MAX to be attached to iv'.
@@ -470,6 +474,7 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     node *prf;
     node *ivid;
     node *extid;
+    node *withids;
 
     DBUG_ENTER ("IVEXIattachExtrema");
 
@@ -492,12 +497,14 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
 
     *preassigns = TCappendAssign (*preassigns, nas);
 
+    withids
+      = (NULL == AVIS_SSAASSIGN (ivavis)) ? ivavis : ID_AVIS (AVIS_WITHIDS (ivavis));
     if ((F_noteminval == nprf)) {
-        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE, lhsavis);
+        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE, withids);
     }
 
     if ((F_notemaxval == nprf)) {
-        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE, lhsavis);
+        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE, withids);
     }
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
@@ -686,15 +693,15 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
                            &INFO_PREASSIGNSPART (arg_info));
     b2 = generateSelect (b2f, arg_info, k);
 
-    AVIS_WITHIDSINDEX (iavis) = k;
     avisp = IVEXIattachExtrema (b1, iavis, &INFO_VARDECS (arg_info),
                                 &INFO_PREASSIGNSPART (arg_info), F_noteminval);
     AVIS_ISMINHANDLED (avisp) = TRUE;
+    AVIS_WITHIDS (avisp) = TBmakeId (iavis);
 
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
                                  &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
-    AVIS_WITHIDSINDEX (avisp) = k;
+    AVIS_WITHIDS (avisp) = TBmakeId (iavis);
 
     DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
                           AVIS_NAME (avispp), AVIS_NAME (iavis)));

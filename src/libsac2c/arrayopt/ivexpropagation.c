@@ -96,6 +96,7 @@ struct INFO {
     node *vardecs;
     node *curwith;
     node *let;
+    node *withids;
     bool onefundef;
 };
 
@@ -110,6 +111,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_CURWITH(n) ((n)->curwith)
 #define INFO_LET(n) ((n)->let)
+#define INFO_WITHIDS(n) ((n)->withids)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
@@ -129,6 +131,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_CURWITH (result) = NULL;
     INFO_LET (result) = NULL;
+    INFO_WITHIDS (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -509,19 +512,18 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
 /******************************************************************************
  *
  * function: void IVEXPsetMinvalIfNotNull( node *snk, node *src, bool dup,
- *                                         node *arg1);
+ *                                         node *withids);
  * function: void IVEXPsetMaxvalIfNotNull( node *snk, node *src, bool dup,
- *                                         node *arg1);
+ *                                         node *withids);
  *
  * description: Set extremum from src if it is not NULL.
  *              If the snk is not NULL, free it first.
- *              Also, propagate AVIS_WITHIDSINDEX.
+ *              Also, propagate AVIS_WITHIDS.
  *
  * @params:     src: pointer to an N_id or NULL.
  *              snk: pointer to an N_avis
  *              dup: if TRUE, DUP the src.
- *              arg1: pointer to an N_avis to be used as source
- *                    for AVIS_WITHIDSINDEX.
+ *              withids: the N_avis to be used for the AVIS_WITHIDS
  *
  * @result: If src is NULL, or if both N_id nodes point to
  *          the same N_avis, no change.
@@ -532,7 +534,7 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
  *
  ******************************************************************************/
 void
-IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *arg1)
+IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *withids)
 {
 
     DBUG_ENTER ("IVEXPsetMinvalIfNotNull");
@@ -551,14 +553,24 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *arg1)
             DBUG_PRINT ("IVEXP", ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
                                   AVIS_NAME (ID_AVIS (src))));
         }
-        AVIS_WITHIDSINDEX (snk) = AVIS_WITHIDSINDEX (arg1);
+
+        DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
+                     "Expected N_avis withids");
+        if (NULL == AVIS_WITHIDS (snk)) {
+            DBUG_ASSERT ((NULL == withids) || NULL == AVIS_SSAASSIGN (withids),
+                         "withids must be WITHID_VEC or WITHID_IDS");
+            AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
+        } else {
+            DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
+                         "Trying to change AVIS_WITHIDS");
+        }
     }
 
     DBUG_VOID_RETURN;
 }
 
 void
-IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *arg1)
+IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
 {
 
     DBUG_ENTER ("IVEXPsetMaxValIfNotNull");
@@ -577,10 +589,95 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *arg1)
             DBUG_PRINT ("IVEXP", ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
                                   AVIS_NAME (ID_AVIS (src))));
         }
-        AVIS_WITHIDSINDEX (snk) = AVIS_WITHIDSINDEX (arg1);
+
+        DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
+                     "Expected N_avis withids");
+        if (NULL == AVIS_WITHIDS (snk)) {
+            DBUG_ASSERT ((NULL == withids) || NULL == AVIS_SSAASSIGN (withids),
+                         "withids must be WITHID_VEC or WITHID_IDS");
+            AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
+        } else {
+            DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
+                         "Trying to change AVIS_WITHIDS");
+        }
     }
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static GetWithids( arg_node)
+ *
+ * description:
+ *          Get AVIS_WITHIDS from the argument, if it has one,
+ *          or NULL.
+ *          If there is no AVIS_WITHIDS, see if arg_node is the
+ *          WITHID_IDS or WITHID_VEC. This is done by checking
+ *          if the arg_node has no SSAASSIGN.
+ *
+ * @params  arg_node: an N_id node.
+ *
+ * @result: An N_avis or NULL.
+ *
+ ******************************************************************************/
+static node *
+GetWithids (node *arg_node)
+{
+    node *z = NULL;
+    node *wid1;
+
+    DBUG_ENTER ("GetWithids");
+
+    wid1 = AVIS_WITHIDS (ID_AVIS (arg_node));
+    if (NULL != wid1) {
+        z = ID_AVIS (wid1);
+    } else {
+        z = (NULL == AVIS_SSAASSIGN (ID_AVIS (arg_node))) ? ID_AVIS (arg_node) : NULL;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static GetWithids2( arg_node)
+ *
+ * description:
+ *          Get AVIS_WITHIDS from whichever dyadic N_prf argument has it,
+ *          or NULL.
+ *          If there is no AVIS_WITHIDS, see if arg_node is the
+ *          WITHID_IDS or WITHID_VEC. This is done by checking
+ *          if the arg_node has no SSAASSIGN.
+ *
+ * @params  arg_node: an N_prf node.
+ *
+ * @result: An N_avis or NULL.
+ *
+ ******************************************************************************/
+static node *
+GetWithids2 (node *arg_node)
+{
+    node *z = NULL;
+    node *wid1;
+    node *wid2;
+
+    DBUG_ENTER ("GetWithids2");
+
+    wid1 = AVIS_WITHIDS (ID_AVIS (PRF_ARG1 (arg_node)));
+    wid2 = AVIS_WITHIDS (ID_AVIS (PRF_ARG2 (arg_node)));
+    z = (NULL != wid1) ? ID_AVIS (wid1) : NULL;
+    z = (NULL != wid2) ? ID_AVIS (wid2) : z;
+
+    if (NULL == z) {
+        z = (NULL == AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))))
+              ? ID_AVIS (PRF_ARG1 (arg_node))
+              : NULL;
+    }
+
+    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -670,6 +767,103 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
 
 /******************************************************************************
  *
+ * function: node *IVEXPcheckWithids( node *arg_node, node *curwith)
+ *
+ * description: If N_id arg_node has AVIS_WITHIDS that
+ *               is a member of WITHID_IDS,WITHID_VEC
+ *              then return arg_node; else NULL.
+ *
+ * @params  arg_node: N_id or NULL.
+ *          curwith: the current consumerWL we are looking at.
+ *
+ * @result: arg_node, if arg_node is a member of the current WITHIDS,
+ *          else NULL
+ *
+ ******************************************************************************/
+node *
+IVEXPcheckWithids (node *arg_node, node *curwith)
+{
+    node *z = NULL;
+    node *withids;
+    node *wavis;
+
+    DBUG_ENTER ("IVEXPcheckWithids");
+
+    if ((NULL != arg_node) && (NULL != AVIS_WITHIDS (ID_AVIS (arg_node)))
+        && (NULL != curwith)) {
+        withids = PART_WITHID (WITH_PART (curwith));
+        wavis = ID_AVIS (AVIS_WITHIDS (ID_AVIS (arg_node)));
+        if (wavis == IDS_AVIS (WITHID_VEC (withids))) {
+            z = arg_node;
+        }
+
+        if (NULL == z) {
+            withids = WITHID_IDS (withids);
+            while ((NULL == z) && (NULL != withids)) {
+                z = (wavis == IDS_AVIS (withids)) ? arg_node : NULL;
+                withids = IDS_NEXT (withids);
+            }
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function: node *FindWithids(...)
+ *
+ * description: Given an N_avis node that points to an N_array,
+ *              search the N_array elements for xxx
+ *              1. If no AVIS_WITHIDS that are members of
+ *                 INFO_CURWITH's WITHIDS_IDS/WITHIDS_VEC,
+ *                 then NULL.
+ *              2. Otherwise, the first matching entry we find.
+ *
+ * @params  arg_node: an N_exprs node.
+ *
+ * @result: The N_id for the WITHID_IDS/WITHID_VEC entry
+ *          that the N_array elements derived from.
+ *
+ *          NB. This is a kludge, as it's intended to let us
+ *              associate a withids with an N_array's N_id node,
+ *              even though the N_array elements may have derived
+ *              from several distinct WITHIDS entries. E.g.:
+ *
+ *              z = with {... ( lb <= iv=[i,j] < ub)...
+ *               arr = [ j, i + 1];
+ *
+ *              The code that builds the F_inverse function for arr
+ *              has to be aware of this problem, and look into the
+ *              N_array elements, as each of them may have a different
+ *              F_inverse function.
+ *
+ ******************************************************************************/
+static node *
+FindWithids (node *exprs, info *arg_info)
+{
+    node *nid;
+    node *withid;
+    node *z = NULL;
+
+    DBUG_ENTER ("FindWithids");
+
+    withid = INFO_CURWITH (arg_info);
+    while (NULL != exprs) {
+        nid = IVEXPcheckWithids (EXPRS_EXPR (exprs), INFO_CURWITH (arg_info));
+        z = ((NULL == z) && (NULL != nid)) ? AVIS_WITHIDS (ID_AVIS (nid)) : z;
+        if ((NULL != nid) && (z != nid)) {
+            DBUG_PRINT ("IVEXP", ("Warning: Found mismatched WITHIDs: %s and %s",
+                                  AVIS_NAME (ID_AVIS (z)), AVIS_NAME (ID_AVIS (nid))));
+        }
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *GenerateNarrayExtrema node *arg_node, info *arg_info)
  *
@@ -703,6 +897,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *minv = NULL;
     node *maxv = NULL;
     node *z;
+    node *withids;
 
     DBUG_ENTER ("GenerateNarrayExtrema");
 
@@ -713,18 +908,20 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
     if (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs)))) {
 
+        withids = FindWithids (ARRAY_AELEMS (rhs), arg_info);
+        withids = (NULL != withids) ? ID_AVIS (withids) : NULL;
         if ((!AVIS_ISMINHANDLED (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
             minv = makeNarray (minv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
-            IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE, lhsavis);
+            IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE, withids);
         }
 
         if ((!AVIS_ISMAXHANDLED (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 1))) {
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
             maxv = makeNarray (maxv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
-            IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE, lhsavis);
+            IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE, withids);
         }
     }
 
@@ -734,8 +931,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  *
- * @fn node *adjustExtremaBound(node *arg_node, info *arg_info, int k,
- *                             node **vardecs, node **preassigns)
+ * @fn node *IVEXPadjustExtremaBound(node *arg_node, info *arg_info, int k,
+ *                                   node **vardecs, node **preassigns)
  *
  *   @brief arg_node is an N_avis of an AVIS_MIN/AVIS_MAX,
  *          that needs adjusting, by adding +1 or -1 to it.
@@ -759,9 +956,9 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
  *   @return The N_avis result of the adjusted computation.
  *
  ******************************************************************************/
-static node *
-adjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
-                    node **preassigns)
+node *
+IVEXPadjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
+                         node **preassigns)
 {
     node *zavis;
     node *zids;
@@ -769,7 +966,7 @@ adjustExtremaBound (node *arg_node, info *arg_info, int k, node **vardecs,
     node *kavis;
     prf op;
 
-    DBUG_ENTER ("adjustExtremaBound");
+    DBUG_ENTER ("IVEXPadjustExtremaBound");
 
     if (NULL != arg_node) {
         kavis = IVEXImakeIntScalar (k, vardecs, preassigns);
@@ -984,10 +1181,10 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
             if (max2) { /* Case 1 */
                 minarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                minarg2
-                  = adjustExtremaBound (/* Normalize maxv */
-                                        minarg2, arg_info, -1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info));
+                minarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                   minarg2, arg_info, -1,
+                                                   &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info));
             } else if (min1) { /* Case 2 */
                 minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
                 minarg2 = ID_AVIS (PRF_ARG2 (rhs));
@@ -1018,10 +1215,10 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
                 maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
             } else if (max1) { /* Case 2 */
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1
-                  = adjustExtremaBound (/* Normalize maxv */
-                                        maxarg1, arg_info, -1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info));
+                maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                   maxarg1, arg_info, -1,
+                                                   &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info));
                 maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
             }
             break;
@@ -1029,18 +1226,18 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
         default:
             if (max1) {
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1
-                  = adjustExtremaBound (/* Normalize maxv */
-                                        maxarg1, arg_info, -1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info));
+                maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                   maxarg1, arg_info, -1,
+                                                   &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info));
                 maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
             } else {
                 maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                maxarg2
-                  = adjustExtremaBound (/* Normalize maxv */
-                                        maxarg2, arg_info, -1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info));
+                maxarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                   maxarg2, arg_info, -1,
+                                                   &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info));
             }
             break;
         }
@@ -1062,8 +1259,8 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     }
 
     /* Denormalize maxv */
-    maxv = adjustExtremaBound (maxv, arg_info, +1, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info));
+    maxv = IVEXPadjustExtremaBound (maxv, arg_info, +1, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info));
 
     INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
     INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
@@ -1211,6 +1408,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
 
     INFO_MINVAL (arg_info) = NULL;
     INFO_MAXVAL (arg_info) = NULL;
+    INFO_WITHIDS (arg_info) = NULL;
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
     if ((!isAvisHasBothExtrema (lhsavis))
@@ -1228,6 +1426,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 /* Try to fix maxoptcyc looping in prdreverseAKD.sac */
                 AVIS_ISMINHANDLED (lhsavis) = TRUE;
                 AVIS_ISMAXHANDLED (lhsavis) = TRUE;
+                INFO_WITHIDS (arg_info) = NULL;
                 break;
 
             case F_non_neg_val_V:
@@ -1243,6 +1442,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
+                    INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs));
                 }
                 break;
 
@@ -1268,18 +1468,20 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     if (NULL == nca) {
                         /* Case 1 */
                         if (COisConstant (PRF_ARG1 (rhs))) {
-                            maxv = adjustExtremaBound (ID_AVIS (PRF_ARG1 (rhs)), arg_info,
-                                                       1, &INFO_VARDECS (arg_info),
-                                                       &INFO_PREASSIGNS (arg_info));
+                            maxv = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG1 (rhs)),
+                                                            arg_info, 1,
+                                                            &INFO_VARDECS (arg_info),
+                                                            &INFO_PREASSIGNS (arg_info));
 
                             INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                             AVIS_ISMAXHANDLED (maxv) = TRUE;
                         } else {
                             if (COisConstant (PRF_ARG2 (rhs))) {
-                                maxv = adjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)),
-                                                           arg_info, 1,
-                                                           &INFO_VARDECS (arg_info),
-                                                           &INFO_PREASSIGNS (arg_info));
+                                maxv
+                                  = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)),
+                                                             arg_info, 1,
+                                                             &INFO_VARDECS (arg_info),
+                                                             &INFO_PREASSIGNS (arg_info));
                                 INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                                 AVIS_ISMAXHANDLED (maxv) = TRUE;
                             }
@@ -1289,6 +1491,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                         INFO_MAXVAL (arg_info) = DUPdoDupNode (nca);
                     }
                 }
+
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
                 break;
 
                 /* FIXME Have to make constant scalar into vector, or vice versa.
@@ -1323,6 +1527,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                         INFO_MINVAL (arg_info) = DUPdoDupNode (nca);
                     }
                 }
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
                 break;
 
             case F_neg_S:
@@ -1333,9 +1538,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     && (isAvisHasMin (rhsavis))) {
                     minv = InvokeMonadicFn (ID_AVIS (AVIS_MIN (rhsavis)), lhsavis, rhs,
                                             arg_info);
-                    minv
-                      = adjustExtremaBound (minv, arg_info, +1, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info));
+                    minv = IVEXPadjustExtremaBound (minv, arg_info, +1,
+                                                    &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info));
                     INFO_MAXVAL (arg_info) = TBmakeId (minv);
                 }
 
@@ -1355,6 +1560,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (maxv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (maxv);
                 }
+                INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs));
                 break;
 
             /* Non-commutative dyadic functions */
@@ -1374,7 +1580,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mul_VxV:
                 arg_node
                   = GenerateExtremaComputationsDyadicScalarPrf (arg_node, arg_info);
-
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
                 break;
 
             default:
@@ -1383,8 +1589,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             } /* end of switch */
     }
 
-    IVEXPsetMinvalIfNotNull (lhsavis, INFO_MINVAL (arg_info), FALSE, lhsavis);
-    IVEXPsetMaxvalIfNotNull (lhsavis, INFO_MAXVAL (arg_info), FALSE, lhsavis);
+    IVEXPsetMinvalIfNotNull (lhsavis, INFO_MINVAL (arg_info), FALSE,
+                             INFO_WITHIDS (arg_info));
+    IVEXPsetMaxvalIfNotNull (lhsavis, INFO_MAXVAL (arg_info), FALSE,
+                             INFO_WITHIDS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1489,6 +1697,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *lhsavis;
     node *rhs;
     node *rhsavis;
+    node *withids;
 
     DBUG_ENTER ("PropagatePrfExtrema");
 
@@ -1500,8 +1709,9 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_saabind:
         rhsavis = ID_AVIS (PRF_ARG3 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, lhsavis);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, lhsavis);
+        withids = GetWithids (PRF_ARG3 (rhs));
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         break;
 
     case F_non_neg_val_S:
@@ -1514,42 +1724,47 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_val_le_val_VxV:
     case F_val_lt_val_SxS:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, rhsavis);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, rhsavis);
+        withids = GetWithids (PRF_ARG1 (rhs));
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
-            IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE, rhsavis);
+            IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE, withids);
             /* We could generate a maxval, too, but we'd to add 1 to the value */
         }
         break;
 
     case F_noteminval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, rhsavis);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, rhsavis);
+        withids = GetWithids (PRF_ARG1 (rhs));
+        IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, withids);
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         break;
 
     case F_notemaxval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, rhsavis);
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, rhsavis);
+        withids = GetWithids (PRF_ARG1 (rhs));
+        IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, withids);
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
         break;
 
     case F_min_SxS:
     case F_min_VxV:
+        withids = GetWithids2 (rhs);
         /* If either argument has a maxval, propagate it */
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
-                                 lhsavis);
+                                 withids);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))), TRUE,
-                                 lhsavis);
+                                 withids);
         break;
 
     case F_max_SxS:
     case F_max_VxV:
+        withids = GetWithids2 (rhs);
         /* If either argument has a minval, propagate it */
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
-                                 lhsavis);
+                                 withids);
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))), TRUE,
-                                 lhsavis);
+                                 withids);
         break;
 
     default:
@@ -1576,6 +1791,7 @@ PropagateExtrema (node *arg_node, info *arg_info)
     node *rhs;
     node *lhsavis;
     node *rhsavis;
+    node *withids;
 
     DBUG_ENTER ("PropagateExtrema");
 
@@ -1584,9 +1800,10 @@ PropagateExtrema (node *arg_node, info *arg_info)
     switch (NODE_TYPE (rhs)) {
     case N_id:
         rhsavis = ID_AVIS (rhs);
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, rhsavis);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, rhsavis);
-        AVIS_WITHIDSINDEX (lhsavis) = AVIS_WITHIDSINDEX (rhsavis);
+        withids = AVIS_WITHIDS (rhsavis);
+        withids = (NULL != withids) ? ID_AVIS (withids) : NULL;
+        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         break;
 
     case N_prf:

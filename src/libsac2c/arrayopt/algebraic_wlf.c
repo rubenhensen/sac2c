@@ -330,38 +330,6 @@ AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isPrfArg1AttachIntersect( node *arg_node)
- *
- * @brief Predicate to check if arg1 of this N_prf has
- *        an F_noteintersect guard attached to it.
- *
- * @param arg_node: an N_prf
- *
- * @return Boolean TRUE if PRF_ARG2 is an F_attachintersect.
- *
- *****************************************************************************/
-bool
-isPrfArg1AttachIntersect (node *arg_node)
-{
-    node *arg1;
-    node *assgn;
-    bool z = FALSE;
-
-    DBUG_ENTER ("isPrfArg1AttachIntersect");
-
-    arg1 = PRF_ARG1 (arg_node);
-    DBUG_ASSERT (N_id == NODE_TYPE (arg1),
-                 "isPrfArg1AttachIntersect expected N_id as PRF_ARG1");
-    assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
-    if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))
-        && (F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn))))) {
-        z = TRUE;
-    }
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool isPrfArg1AttachExtrema( node *arg_node)
  *
  * @brief Predicate to check if arg1 of this N_prf is an F_noteintersect op
@@ -985,7 +953,7 @@ AWLFprf (node *arg_node, info *arg_info)
 #endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
-        && (isPrfArg1AttachIntersect (arg_node))) {
+        && (PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
         INFO_AWLFOLDABLEPRODUCERWLPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));

@@ -203,36 +203,32 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
   return(z);
 }
 
-inline int[.] partitionIntersectMax( int[.] idxmin, int[.] ivmin, 
-                                                    int[.] ivmax,
-                                                    int[.] bound1)
+inline int[.] partitionIntersectMax( int[.] PWLbound, int[.] ivmin)
 { /* compute maximum of producerWL partition bounds
-   * and index vector set, then project result back into 
-   * consumerWL partition bounds.
+   * and index vector set.
+   *  z = max( PWLbound, ivmin);
    */
 
-  dif  = _sub_VxV_( idxmin, ivmin);
+  dif  = _sub_VxV_( PWLbound, ivmin);
   p = _ge_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, idxmin, ivmin);
-  z = _sub_VxV_( z, ivmin); /* project index vector back to partn bound */
-  b1 = _take_SxV_( _sel_VxA_([0], _shape_A_( ivmin)), bound1);
-  z = _add_VxV_( z, b1);
+  z = _mesh_VxVxV_( p, PWLbound, ivmin);
   return(z);
 }
 
-inline int[.] partitionIntersectMin( int[.] idxmax, int[.] ivmin, 
-                                                    int[.] ivmax, 
-                                                    int[.] bound1)
-{ /* Function to perform min( idxmax, ivmax), but written to 
+inline int[.] partitionIntersectMin( int[.] PWLbound, int[.] ivmax)
+{ /* Function to perform min( PWLbound, ivmax), but written to 
    * let the optimizers simplify the arguments.
+
+   *  z = min( PWLbound, ivmax);
+   *
+   * The bound2 bias is removed, in case we have to switch
+   * minval and maxval. It will be restored, in any case, later.
    */
 
-  dif  = _sub_VxV_( idxmax, ivmax);
+  dif  = _sub_VxV_( PWLbound, ivmax);
   p = _le_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, idxmax, ivmax);
-  z = _sub_VxV_( z, ivmin); /* project index vector back to partn bound */
-  b1 = _take_SxV_( _sel_VxA_([0], _shape_A_( ivmin)), bound1);
-  z = _add_VxV_( z, b1);
+  z = _mesh_VxVxV_( p, PWLbound, ivmax);
+  z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }
 

@@ -7151,6 +7151,13 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsNoteIntersectPresent" default="FALSE" >
+          <description>
+                  Set by AWLFI for _sel_VxA_(iv, PWL) to
+                  indicate that an _noteintersect_ node has been
+                  generated for iv.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -7635,6 +7642,22 @@ N_tfarg :
               </target>
             </targets>
         </son>
+        <son name="WithIds" default="NULL">
+            <description>
+            Inside a WL, this is the N_id of the
+            WITHID_IDS from which this node is derived. E.g., if
+            we have IV=[i,j,k] and k' = k + 42, then the 
+            WithIdsof k' is k.
+            </description>
+            <targets>
+              <target mandatory="no">
+                <node name="Id" />
+              <phases>
+                <range from="opt_saacyc" to="opt_esaa2" />
+              </phases>
+              </target>
+            </targets>
+        </son>        
       </sons>
 
       <attributes>
@@ -8075,24 +8098,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="WithIdsIndex" inconstructor="no" default="-1">
-            <description>
-            For WITHID_IDS nodes, this is the
-            index into the WITHID_VEC of this node. E.g., if
-            we have IV=[i,j,k], then the WithIdsIndex of i,j,k
-            are 0,1, and 2.
-            </description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-              <phases>
-                <range from="opt_saacyc" to="opt_esaa2" />
-              </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>        
         <attribute name="Count" inconstructor="no" default="0">
           <description>
             Used to count number of times the variable is used on the lhs.
@@ -8241,6 +8246,12 @@ N_tfarg :
         <flag name="NeedBlocked" default="FALSE" >
           <description>
                   If true, the given variable is a loop index and the loop needs to be blocked
+          </description>
+        </flag>
+        <flag name="FinverseSwap" default="FALSE" >
+          <description>
+                  If true, the AVIS_MIN and AVIS_MAX values for this
+                  index vector have to be swapped.
           </description>
         </flag>
       </flags>
