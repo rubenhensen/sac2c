@@ -9,6 +9,7 @@
 
 #include "types.h"
 
+extern void STRtoupper (char *source, int start, int stop);
 extern char *STRcpy (const char *source);
 extern char *STRncpy (const char *source, int maxlen);
 extern char *STRcat (const char *first, const char *second);

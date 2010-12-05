@@ -137,6 +137,17 @@ GenerateSerFileModuleInfo (node *module, FILE *file)
 {
     DBUG_ENTER ("GenerateSerFileModuleInfo");
 
+    char *uppercase;
+
+    uppercase = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
+
+    STRtoupper (uppercase, 0, STRlen (uppercase));
+
+    fprintf (file,
+             "const char *__%s_MIXEDCASENAME() {\n"
+             "  return( \"%s\"); \n}\n\n",
+             uppercase, NSgetName (MODULE_NAMESPACE (module)));
+
     fprintf (file,
              "const char *__%s_ASTVERSION() {\n"
              "  return( \"%s\"); \n}\n\n",

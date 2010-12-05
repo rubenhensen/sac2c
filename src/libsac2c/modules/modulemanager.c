@@ -32,10 +32,44 @@ static module_t *modulepool = NULL;
 typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
 typedef const char *(*astversionfun_p) ();
+typedef const char *(*mixedcasenamefun_p) ();
 typedef int (*serversionfun_p) ();
 typedef int (*flagfun_p) ();
 typedef const char *(*deprecatedfun_p) ();
 typedef void (*nsmapfun_p) ();
+
+static void
+checkMixedCasesCorrect (module_t *module)
+{
+    mixedcasenamefun_p mixedcasenamefun;
+    char *name;
+
+    DBUG_ENTER ("checkMixedCasesCorrect");
+
+    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 17));
+    sprintf (name, "__%s_MIXEDCASENAME", module->name);
+
+    STRtoupper (name, 2, 2 + STRlen (module->name));
+
+    mixedcasenamefun = (mixedcasenamefun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (mixedcasenamefun == NULL) {
+        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+                  "file format.",
+                  module->name, module->sofile);
+    }
+
+    if (!STReq (mixedcasenamefun (), module->name)) {
+        CTIabort ("Module '%s' not found; file-system search returned a module "
+                  "named '%s'. "
+                  "Most likely, you are using a case-insensitive filesystem. "
+                  "Please check your module spelling and make sure you do "
+                  "not attempt to use two modules that differ in their cases only.",
+                  module->name, mixedcasenamefun ());
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 static void
 checkHasSameASTVersion (module_t *module)
@@ -230,6 +264,7 @@ AddModuleToPool (const char *name)
                   result->sofile, LIBMgetError ());
     }
 
+    checkMixedCasesCorrect (result);
     checkHasSameASTVersion (result);
     checkWhetherDeprecated (result);
 

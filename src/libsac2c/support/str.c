@@ -23,6 +23,31 @@
 
 /*******************************************************************************
  *
+ * Description: Modify string by turning all characters from start to stop-1
+ *              into upper case.
+ *
+ * Parameters: - source, start and stop index
+ *
+ *******************************************************************************/
+
+void
+STRtoupper (char *source, int start, int stop)
+{
+    int i;
+
+    DBUG_ENTER ("STRtoupper");
+
+    if (source != NULL) {
+        for (i = start; i < stop; i++) {
+            source[i] = toupper (source[i]);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*******************************************************************************
+ *
  * Description: Copy string and allocate memory for new string.
  *
  * Parameters: - source, string to copy
