@@ -18,6 +18,7 @@
 #include "type_utils.h"
 #include "free.h"
 #include "compare_tree.h"
+#include "traverse.h"
 
 /**
  *
@@ -343,4 +344,163 @@ TUremoveUnusedCodes (node *codes)
         codes = FREEdoFreeNode (codes);
 
     DBUG_RETURN (codes);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TUmakeIntVec(...)
+ *
+ * @brief Create one-element integer vector, i.
+ *        Return N_avis pointer for same.
+ *
+ * @param: i: the value of vector.
+ *         preassigns: pointer to pointer of preassigns chain.
+ *         vardecs:    pointer to pointer of vardecs chain.
+ *
+ * @result: N_avis node for resulting vector..
+ *
+ *****************************************************************************/
+node *
+TUmakeIntVec (int i, node **preassign, node **vardec)
+{
+    node *selarravis;
+
+    DBUG_ENTER ("TUmakeIntVec");
+    selarravis = TBmakeAvis (TRAVtmpVar (),
+                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+    *vardec = TBmakeVardec (selarravis, *vardec);
+    *preassign
+      = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL),
+                                 TCmakeIntVector (TBmakeExprs (TBmakeNum (i), NULL))),
+                      *preassign);
+    AVIS_SSAASSIGN (selarravis) = *preassign;
+
+    DBUG_RETURN (selarravis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TUscalarizeVector(...)
+ *
+ * @brief  Scalarize vector arg_node.
+ *         arg_node must be an AKS/AKV vector.
+ *         We produce the following:
+ *
+ *         i0 = [0];
+ *         s0 = _sel_VxA_( i0, arg_node);
+ *         i1 = [1];
+ *         s1 = _sel_VxA_( i1, arg_node);
+ *         ...
+ *         iz = [n-1];
+ *         sz = _sel_VxA_( iz, arg_node);
+ *         z = [ s0, s1, ..., sz];
+ *
+ * @param: arg_node: The N_avis of the vector to be scalarized.
+ *         preassigns: pointer to pointer of preassigns chain.
+ *         vardecs:    pointer to pointer of vardecs chain.
+ *
+ * @result: N_avis node for z.
+ *
+ *****************************************************************************/
+node *
+TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs, ntype *restyp)
+{
+    node *selarravis;
+    node *zavis;
+    node *asgn;
+    node *z = NULL;
+    int lim;
+    int i;
+
+    DBUG_ENTER ("TUscalarizeVector");
+
+    DBUG_ASSERT (TYisAKV (restyp) || TYisAKS (restyp), "Expected AKS or AKD restyp");
+    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis arg_node");
+    lim = SHgetUnrLen (TYgetShape (restyp));
+
+    /* Build i0, s0, i1,s1...,iz,sz */
+    for (i = 0; i < lim; i++) {
+        selarravis = TUmakeIntVec (i, preassigns, vardecs); /*  i0 = [i] */
+        zavis = TBmakeAvis (TRAVtmpVarName ("ausv"),
+                            TYmakeAKS (TYmakeSimpleType (T_unknown), SHcreateShape (0)));
+        *vardecs = TBmakeVardec (zavis, *vardecs);
+        asgn = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                        TCmakePrf2 (F_sel_VxA, TBmakeId (selarravis),
+                                                    TBmakeId (arg_node))),
+                             NULL);
+        *preassigns = TCappendAssign (*preassigns, asgn);
+        AVIS_SSAASSIGN (zavis) = asgn;
+        z = TCappendExprs (z, TBmakeExprs (TBmakeId (zavis), NULL));
+    }
+
+    /* Build N_array result, z */
+    zavis = TBmakeAvis (TRAVtmpVarName ("ausv"), TYcopyType (restyp));
+    *vardecs = TBmakeVardec (zavis, *vardecs);
+    asgn = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                    TCmakeVector (TYcopyType (restyp), z)),
+                         NULL);
+    *preassigns = TCappendAssign (*preassigns, asgn);
+    AVIS_SSAASSIGN (zavis) = asgn;
+
+    DBUG_RETURN (zavis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TUmoveAssign(node *avis, node *preassigns)
+ *
+ *   @brief Find N_assign for avis in preassigns chain,
+ *          and move it to the end of the preassigns chain.
+ *
+ *   @param  node *avis: An N_avis for the LHS we want to move.
+ *           node *preassigns: A non-NULL N_assign chain that
+ *                             contains an assign for N_avis
+ *   @return node *      : modified N_assign chain
+ *
+ *   NB. We only look at the first N_ids element in the LHS.
+ *       This is pure laziness on my part.
+ *
+ ******************************************************************************/
+node *
+TUmoveAssign (node *avis, node *preassigns)
+{
+    node *z;
+    node *pred = NULL;
+    node *ournode;
+
+    DBUG_ENTER ("TUmoveAssign");
+
+    z = preassigns;
+
+    /* Locate avis in assign chain */
+    while ((NULL != preassigns) && (AVIS_SSAASSIGN (avis) != preassigns)) {
+        pred = preassigns;
+        preassigns = ASSIGN_NEXT (preassigns);
+    }
+    DBUG_ASSERT (NULL != preassigns, "Did not find ournode in preassigns chain");
+    ournode = preassigns;
+
+    if (preassigns == z) {
+        z = ASSIGN_NEXT (preassigns); /* head-of-chain ournode removed from chain */
+    } else {
+        /* non-head of chain ournode removed*/
+        ASSIGN_NEXT (pred) = ASSIGN_NEXT (ournode);
+    }
+
+    ASSIGN_NEXT (ournode) = NULL; /* ournode has no successor */
+
+    /* Find end-of-chain */
+    preassigns = pred; /* NULL if ournode was head-of-chain */
+    while (NULL != preassigns) {
+        pred = preassigns;
+        preassigns = ASSIGN_NEXT (preassigns);
+    }
+
+    if (NULL != pred) {
+        ASSIGN_NEXT (pred) = ournode; /* append ournode assign to end of chain */
+    } else {
+        z = ournode;
+    }
+
+    DBUG_RETURN (z);
 }
