@@ -2208,12 +2208,14 @@ TCgetNthExprs (int n, node *exprs)
  * @return updated N_exprs chain
  ******************************************************************************/
 node *
-TCputNthExprs (int n, node *exprs, node *val)
+TCputNthExprs (int n, node *oldexprs, node *val)
 {
     int cnt;
+    node *exprs;
 
     DBUG_ENTER ("TCputNthExprs");
 
+    exprs = oldexprs;
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             DBUG_ASSERT (FALSE, "n > N_exprs chain length.");
@@ -2225,7 +2227,7 @@ TCputNthExprs (int n, node *exprs, node *val)
 
     EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
     EXPRS_EXPR (exprs) = val;
-    DBUG_RETURN (exprs);
+    DBUG_RETURN (oldexprs);
 }
 
 /** <!-- ****************************************************************** -->
