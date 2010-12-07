@@ -108,6 +108,20 @@
 #include "SSAWithloopFolding.h"
 #include "new_typecheck.h"
 #include "ivexpropagation.h"
+#include "SSACSE.h"
+#include "constant_folding.h"
+#include "variable_propagation.h"
+#include "ElimSubDiv.h"
+#include "arithmetic_simplification.h"
+#include "associative_law.h"
+#include "distributive_law.h"
+#include "UndoElimSubDiv.h"
+#include "inlining.h"
+#include "elim_alpha_types.h"
+#include "elim_bottom_types.h"
+#include "insert_symb_arrayattr.h"
+#include "dispatchfuncalls.h"
+#include "string.h"
 
 /** <!--********************************************************************-->
  *
@@ -255,6 +269,101 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
  * @{
  *
  *****************************************************************************/
+
+/******************************************************************************
+ *
+ * function: node *SimplifySymbioticExpression
+ *
+ * description: Code to simplify symbiotic expression for
+ *              AWLF intersect calculation.
+ *
+ *              We perform inlining to bring sacprelude code into
+ *              this function, then repeatedly invoke a small
+ *              set of optimizations until we reach a fix point
+ *              or give up.
+ *
+ * @params  arg_node: an N_fundef node.
+ *
+ * @result: an updated N_fundef node.
+ *
+ ******************************************************************************/
+static node *
+SimplifySymbioticExpression (node *arg_node, info *arg_info)
+{
+    int i;
+    int j;
+    int ct;
+    int countINL;
+    int countCSE;
+    int countTUP;
+    int countCF;
+    int countVP;
+    int countAS;
+    int countAL;
+    int countDL;
+
+    DBUG_ENTER ("SimplifySymbioticExpression");
+
+#define LISTCOUNT 17
+    anontrav_t freetravOptList[LISTCOUNT]
+      = {{N_fundef, &INLdoInliningAnon},
+         {N_fundef, &ISAAdoInsertShapeVariablesOneFundefAnon},
+         {N_fundef, &CSEdoCommonSubexpressionEliminationOneFundefAnon},
+         {N_fundef, &NTCdoNewTypeCheckOneFundefAnon},
+         {N_fundef, &EATdoEliminateAlphaTypesOneFundefAnon},
+         {N_fundef, &EBTdoEliminateBottomTypesOneFundefAnon},
+         {N_fundef, &DFCdoDispatchFunCallsOneFundefAnon},
+         {N_fundef, &CFdoConstantFoldingOneFundefAnon},
+         {N_fundef, &VPdoVarPropagationOneFundefAnon},
+         {N_fundef, &ESDdoElimSubDivOneFundefAnon},
+         {N_fundef, &ASdoArithmeticSimplificationOneFundefAnon},
+         {N_fundef, &CSEdoCommonSubexpressionEliminationOneFundefAnon},
+         {N_fundef, &CFdoConstantFoldingOneFundefAnon},
+         {N_fundef, &ALdoAssocLawOptimizationOneFundefAnon},
+         {N_fundef, &DLdoDistributiveLawOptimizationOneFundefAnon},
+         {N_fundef, &UESDdoUndoElimSubDivOneFundefAnon}};
+
+    anontrav_t freetravOpt[2] = {{N_fundef, NULL}, {0, NULL}};
+
+    DBUG_PRINT ("SSE", ("Entering opt micro-cycle for %s %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                        FUNDEF_NAME (arg_node)));
+    /* Loop over optimizers until we reach a fix point or give up */
+    for (i = 0; i < global.max_optcycles; i++) {
+        ct = i;
+        countINL = global.optcounters.inl_fun;
+        countCSE = global.optcounters.cse_expr;
+        countTUP = global.optcounters.tup_upgrades;
+        countCF = global.optcounters.cf_expr;
+        countVP = global.optcounters.vp_expr;
+        countAS = global.optcounters.as_expr;
+        countAL = global.optcounters.al_expr;
+        countDL = global.optcounters.dl_expr;
+
+        /* Invoke each opt */
+        for (j = 0; j < LISTCOUNT; j++) {
+            memcpy (freetravOpt, freetravOptList + j, sizeof (anontrav_t));
+            TRAVpushAnonymous (freetravOpt, &TRAVsons);
+            arg_node = TRAVopt (arg_node, arg_info);
+            TRAVpop ();
+        }
+
+        if (/* Fix point check */
+            (countINL == global.optcounters.inl_fun)
+            && (countCSE == global.optcounters.cse_expr)
+            && (countTUP == global.optcounters.tup_upgrades)
+            && (countCF == global.optcounters.cf_expr)
+            && (countVP == global.optcounters.vp_expr)
+            && (countAS == global.optcounters.as_expr)
+            && (countAL == global.optcounters.al_expr)
+            && (countDL == global.optcounters.dl_expr)) {
+            i = global.max_optcycles;
+        }
+    }
+    DBUG_PRINT ("SSE", ("Stabilized at iteration %d", ct));
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -918,9 +1027,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_int),
                                                  SHcreateShape (1, shp)));
-    resavis
-      = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info), &INFO_VARDECS (arg_info),
-                           TYcopyType (AVIS_TYPE (resavis)));
+    resavis = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
+                                 &INFO_VARDECS (arg_info));
     /* Project partitionIntersectMin/Max data back from PWL to CWL */
     z = BuildInverseProjectionOne (arg_node, arg_info, resavis);
 
@@ -1461,6 +1569,8 @@ AWLFIfundef (node *arg_node, info *arg_info)
 
             INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
+
+        arg_node = SimplifySymbioticExpression (arg_node, arg_info);
 
         DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s ends",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),

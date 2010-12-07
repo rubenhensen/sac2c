@@ -403,17 +403,21 @@ TUmakeIntVec (int i, node **preassign, node **vardec)
  *
  *****************************************************************************/
 node *
-TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs, ntype *restyp)
+TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs)
 {
     node *selarravis;
     node *zavis;
     node *asgn;
+    ntype *restyp;
+    simpletype scalartype;
     node *z = NULL;
     int lim;
     int i;
 
     DBUG_ENTER ("TUscalarizeVector");
 
+    restyp = AVIS_TYPE (arg_node);
+    scalartype = TYgetSimpleType (TYgetScalar (restyp));
     DBUG_ASSERT (TYisAKV (restyp) || TYisAKS (restyp), "Expected AKS or AKD restyp");
     DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis arg_node");
     lim = SHgetUnrLen (TYgetShape (restyp));
@@ -422,7 +426,7 @@ TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs, ntype *res
     for (i = 0; i < lim; i++) {
         selarravis = TUmakeIntVec (i, preassigns, vardecs); /*  i0 = [i] */
         zavis = TBmakeAvis (TRAVtmpVarName ("ausv"),
-                            TYmakeAKS (TYmakeSimpleType (T_unknown), SHcreateShape (0)));
+                            TYmakeAKS (TYmakeSimpleType (scalartype), SHcreateShape (0)));
         *vardecs = TBmakeVardec (zavis, *vardecs);
         asgn = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
                                         TCmakePrf2 (F_sel_VxA, TBmakeId (selarravis),
@@ -436,9 +440,12 @@ TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs, ntype *res
     /* Build N_array result, z */
     zavis = TBmakeAvis (TRAVtmpVarName ("ausv"), TYcopyType (restyp));
     *vardecs = TBmakeVardec (zavis, *vardecs);
-    asgn = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
-                                    TCmakeVector (TYcopyType (restyp), z)),
-                         NULL);
+    asgn
+      = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                 TCmakeVector (TYmakeAKS (TYmakeSimpleType (scalartype),
+                                                          SHcreateShape (0)),
+                                               z)),
+                      NULL);
     *preassigns = TCappendAssign (*preassigns, asgn);
     AVIS_SSAASSIGN (zavis) = asgn;
 

@@ -195,33 +195,6 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
  *
  *****************************************************************************/
 
-/** <!-- ****************************************************************** -->
- * @fn node *getNthMatchingExpr(int n, node *args)
- *
- * @brief Given an N_exprs chain
- *        in the chain. If 0==n, return the argument.
- *        If n > chain length, return NULL.
- *
- * @param N_exprs chain
- *
- * @return N_node of some sort
- ******************************************************************************/
-static node *
-xxx (int n, node *exprs)
-{
-    node *result = NULL;
-
-    DBUG_ENTER ("xxx");
-
-    exprs = TCgetNthExprs (n, exprs);
-
-    if (exprs != NULL) {
-        result = EXPRS_EXPR (exprs);
-    }
-
-    DBUG_RETURN (result);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn bool matchValues( node *fa, node *fb)
