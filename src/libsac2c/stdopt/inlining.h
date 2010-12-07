@@ -23,6 +23,7 @@
 #include "types.h"
 
 extern node *INLdoInlining (node *arg_node);
+extern node *INLdoInliningAnon (node *arg_node, info *arg_info);
 
 extern node *INLmodule (node *arg_node, info *arg_info);
 extern node *INLfundef (node *arg_node, info *arg_info);

@@ -314,9 +314,9 @@ UESDdoUndoElimSubDivModule (node *arg_node)
 
 /**<!--****************************************************************-->
  *
- * @fn node *UESDdoUndoElimSubDiv(node *module)
+ * @fn node *UESDdoUndoElimSubDiv(node *arg_node)
  *
- * @brief startimng function of UndoElimSubDiv
+ * @brief starting function of UndoElimSubDiv
  *
  * @param fundef
  *
@@ -341,6 +341,30 @@ UESDdoUndoElimSubDiv (node *arg_node)
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--****************************************************************-->
+ *
+ * @fn node *UESDdoUndoElimSubDivOneFundefAnon( node *arg_node, info *arg_info)
+ *
+ * @brief starting function of UndoElimSubDiv for a single function,
+ *        invoked from an anonymous traversal.
+ *
+ * @param arg_node: An N_fundef node
+ *        arg_info: Ignored; present only to placate anonymous traversal call.
+ *
+ * @return Updated N_fundef node.
+ *
+ ************************************************************************/
+node *
+UESDdoUndoElimSubDivOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("UESDdoUndoElimSubDivOneFundefAnon");
+
+    arg_node = UESDdoUndoElimSubDiv (arg_node);
 
     DBUG_RETURN (arg_node);
 }

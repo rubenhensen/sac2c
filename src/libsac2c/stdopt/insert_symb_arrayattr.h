@@ -14,7 +14,8 @@
  *
  *****************************************************************************/
 extern node *ISAAdoInsertShapeVariables (node *syntax_tree);
-
+extern node *ISAAdoInsertShapeVariablesOneFundef (node *arg_node);
+extern node *ISAAdoInsertShapeVariablesOneFundefAnon (node *arg_node, info *arg_info);
 extern node *ISAAfundef (node *arg_node, info *arg_info);
 extern node *ISAAavis (node *arg_node, info *arg_info);
 extern node *ISAAblock (node *arg_node, info *arg_info);

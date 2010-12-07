@@ -272,6 +272,29 @@ ESDdoElimSubDiv (node *arg_node)
 
 /**<!--**************************************************************-->
  *
+ * @fn node *ESDdoElimSubDivOneFundefAnon(node *arg_node, info *arg_info)
+ *
+ * @brief start function for ESD traversal of one function, invoked
+ *        by an anonymous traversal.
+ *
+ * @param arg_node: fundef node
+ *        arg_info: Ignored; used only to placate anonymous traversal call
+ *
+ * @return updated N_fundef node
+ *
+ **********************************************************************/
+node *
+ESDdoElimSubDivOneFundefAnon (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ESDdoElimSubDivOneFundefAnon");
+
+    arg_node = ESDdoElimSubDiv (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--**************************************************************-->
+ *
  * @fn node *ESDfundef(node arg_node, info *arg_info)
  *
  * @brief Traverses into fundef local LAC fuctions, then function

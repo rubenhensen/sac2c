@@ -319,6 +319,31 @@ ASdoArithmeticSimplification (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASdoArithmeticSimplificationOneFundefAnon( node *arg_node,
+ *                                                      info *arg_info)
+ *
+ * @brief starting point of arithmetic simplification for single
+ *        function from an anonymous traversal.
+ *
+ * @param arg_node - An N_fundef
+ *        arg_info - ignored. Only present to placate anonymous traversal.
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ASdoArithmeticSimplificationOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("ASdoArithmeticSimplificationOneFundefAnon");
+
+    arg_node = ASdoArithmeticSimplification (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 ASfundef (node *arg_node, info *arg_info)
 {
@@ -386,11 +411,13 @@ ASprf (node *arg_node, info *arg_info)
                                        Negate (PRF_ARG1 (contained), arg_info),
                                        Negate (PRF_ARG2 (contained), arg_info));
                 DBUG_PRINT ("AS", ("Negating both arguments"));
+                global.optcounters.as_expr++;
             } else if (IsNegationOfNegation (contained)) {
                 DBUG_PRINT ("AS", ("Replacing negation of negation"));
                 contained = PRF_ARG1 (contained);
                 arg_node = FREEdoFreeTree (arg_node);
                 arg_node = DUPdoDupTree (contained);
+                global.optcounters.as_expr++;
             }
         }
     }

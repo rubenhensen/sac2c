@@ -209,6 +209,32 @@ ALdoAssocLawOptimization (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ALdoAssocLawOptimizationOneFundefAnon( node *arg_node,
+ *                                                  info *arg_info)
+ *
+ * @brief starting point of associativity optimization for
+ *        a single function, invoked by anonymous traversal
+ *
+ * @param arg_node: An N_fundef node
+ *        arg_info: Ignored; present only to placate anonymous traversal.
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+ALdoAssocLawOptimizationOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("ALdoAssocLawOptimizationOneFundefAnon");
+
+    arg_node = ALdoAssocLawOptimization (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * Helper functions

@@ -254,7 +254,7 @@ VPdoVarPropagationOneFundef (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("VPdoVarPropagation");
+    DBUG_ENTER ("VPdoVarPropagationOneFundef");
 
     arg_info = MakeInfo ();
 
@@ -265,6 +265,31 @@ VPdoVarPropagationOneFundef (node *arg_node)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/********************************************************************
+ *
+ * function:
+ *   node *VPdoVarPropagationOneFundefAnon( node *arg_node, info *arg_info)
+ *
+ * description: Entry point for variable propagation within a single
+ *              function, invoked from an anonymous traversal.
+ *
+ * parameters: arg_node - an N_fundef node
+ *             arg_info - ignored; present only to placate anonymous
+ *                        traversal invocation
+ *
+ ********************************************************************/
+
+node *
+VPdoVarPropagationOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("VPdoVarPropagationOneFundefAnon");
+
+    arg_node = VPdoVarPropagationOneFundef (arg_node);
 
     DBUG_RETURN (arg_node);
 }

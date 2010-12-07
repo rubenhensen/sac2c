@@ -146,7 +146,7 @@ DLdoDistribLawOptimizationOneFundef (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DLdoDistribLawOptimization");
+    DBUG_ENTER ("DLdoDistribLawOptimizationOneFundef");
 
     info = MakeInfo ();
     INFO_ONEFUNDEF (info) = TRUE;
@@ -158,6 +158,33 @@ DLdoDistribLawOptimizationOneFundef (node *syntax_tree)
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DLdoDistributiveLawOptimizationOneFundefAnon( node *arg_node,
+ *                                                         info *arg_info)
+ *
+ * @brief starting point of distributivity optimization for
+ *        a single function, invoked by an anonymous traversal
+ *
+ * @param arg_node
+ *        arg_node: ignored; present only to placate anonymous traversal
+ *                  code
+ *
+ * @return updated arg_node
+ *
+ *****************************************************************************/
+
+node *
+DLdoDistributiveLawOptimizationOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("DLdoDistributiveLawOptimizationOneFundefAnon");
+
+    arg_node = DLdoDistribLawOptimizationOneFundef (arg_node);
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

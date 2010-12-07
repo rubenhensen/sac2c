@@ -16,6 +16,7 @@
  *****************************************************************************/
 extern node *VPdoVarPropagation (node *arg_node);
 extern node *VPdoVarPropagationOneFundef (node *arg_node);
+extern node *VPdoVarPropagationOneFundefAnon (node *arg_node, info *arg_info);
 extern node *VPfundef (node *arg_node, info *arg_info);
 extern node *VPassign (node *arg_node, info *arg_info);
 extern node *VPid (node *arg_node, info *arg_info);

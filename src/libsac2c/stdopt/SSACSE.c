@@ -1265,7 +1265,7 @@ CSEcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CSEdoCommonSubexpressionEliminationOneFundef(node* fundef)
+ *   node* CSEdoCommonSubexpressionEliminationOneFundef(node *fundef)
  *
  * description:
  *   Starts the traversal for a given fundef.
@@ -1275,27 +1275,51 @@ CSEcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CSEdoCommonSubexpressionEliminationOneFundef (node *fundef)
+CSEdoCommonSubexpressionEliminationOneFundef (node *arg_node)
 {
     info *arg_info;
 
     DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundef");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "CSE called for non-fundef node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "CSE called for non-fundef node");
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (arg_node))) {
 
         arg_info = MakeInfo ();
 
         TRAVpush (TR_cse);
-        fundef = TRAVdo (fundef, arg_info);
+        arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CSEdoCommonSubexpressionEliminationOneFundefAnon( node *arg_node,
+ *                                                           info *arg_info)
+ *
+ * description:
+ *   Starts the traversal for a given fundef.
+ *   Starting fundef must not be a special fundef (do, while, cond) created by
+ *   lac2fun transformation. These "inline" functions will be traversed in
+ *   their order of usage.
+ *
+ *****************************************************************************/
+node *
+CSEdoCommonSubexpressionEliminationOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundefAnon");
+
+    arg_node = CSEdoCommonSubexpressionEliminationOneFundef (arg_node);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

@@ -12,6 +12,7 @@
  *
  *****************************************************************************/
 extern node *ESDdoElimSubDiv (node *arg_node);
+extern node *ESDdoElimSubDivOneFundefAnon (node *arg_node, info *arg_info);
 extern node *ESDdoElimSubDivModule (node *arg_node);
 
 extern node *ESDblock (node *, info *);

@@ -260,6 +260,27 @@ CFdoConstantFoldingOneFundef (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CFdoConstantFoldingOneFundefAnon( node* arg_node, info *arg_info)
+ *
+ * @brief This performs constant folding on one N_fundef node, invoked
+ *        from an anonymous traversal
+ *
+ *
+ *****************************************************************************/
+
+node *
+CFdoConstantFoldingOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CFdoConstantFoldingOneFundefAnon");
+
+    arg_node = CFdoConstantFoldingOneFundef (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node* CFdoConstantFolding(node* arg_node)
  *
  *****************************************************************************/

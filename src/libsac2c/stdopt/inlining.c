@@ -436,3 +436,30 @@ INLdoInlining (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *INLdoInliningAnon( node *arg_node, info *arg_info)
+ *
+ * @brief initiates function inlining as optimization phase
+ *        for this function only.
+ *
+ *
+ * @param arg_node: N_fundef
+ *        arg_info: Ignored. Only used to appease anonymous traversal code.
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+INLdoInliningAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("INLdoInliningAnon");
+
+    FUNDEF_ISINLINECOMPLETED (arg_node) = FALSE;
+    arg_node = INLdoInlining (arg_node);
+
+    DBUG_RETURN (arg_node);
+}

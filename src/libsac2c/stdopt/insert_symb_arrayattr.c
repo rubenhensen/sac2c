@@ -213,6 +213,23 @@ ISAAdoInsertShapeVariablesOneFundef (node *fundef)
 }
 
 /** <!--********************************************************************-->
+ *
+ * @fn node *ISAAdoInsertShapeVariablesOneFundefAnon( node *arg_node,
+ *                                                    info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISAAdoInsertShapeVariablesOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("ISAAdoInsertShapeVariablesOneFundefAnon");
+
+    arg_node = ISAAdoInsertShapeVariablesOneFundef (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
  *****************************************************************************/
 
