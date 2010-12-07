@@ -11,7 +11,7 @@
 
 extern node *EATdoEliminateAlphaTypes (node *arg_node);
 extern node *EATdoEliminateAlphaTypesOneFunction (node *arg_node);
-
+extern node *EATdoEliminateAlphaTypesOneFundefAnon (node *arg_node, info *arg_info);
 extern node *EATmodule (node *arg_node, info *arg_info);
 extern node *EATfundef (node *arg_node, info *arg_info);
 extern node *EATap (node *arg_node, info *arg_info);

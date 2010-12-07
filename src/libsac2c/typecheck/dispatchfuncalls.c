@@ -629,3 +629,24 @@ DFCdoDispatchFunCallsOneFundef (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFCdoDispatchFunCallsOneFundefAnon( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DFCdoDispatchFunCallsOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("DFCdoDispatchFunCallsOneFundefAnon");
+
+    arg_node = DFCdoDispatchFunCallsOneFundef (arg_node);
+
+    DBUG_RETURN (arg_node);
+}

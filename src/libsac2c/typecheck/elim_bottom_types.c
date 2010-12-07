@@ -295,6 +295,31 @@ EBTdoEliminateBottomTypesOneFunction (node *arg_node)
 /******************************************************************************
  *
  * function:
+ *   node *EBTdoEliminateBottomTypesOneFundefAnon( node *arg_node, info *arg_info)
+ *
+ * description: Apply EBT to one function, called from anonymous traversal
+ *
+ * @param arg_node: an N_fundef node
+ *        arg_info: Included only to placate anonymous traversal call.
+ *
+ * @result: updated N_fundef node
+ *
+ ******************************************************************************/
+
+node *
+EBTdoEliminateBottomTypesOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("EBTdoEliminateBottomTypesOneFundefAnon");
+
+    arg_node = EBTdoEliminateBottomTypesOneFunction (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *EBTmodule( node *arg_node, info *arg_info)
  *
  * description:

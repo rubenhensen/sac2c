@@ -23,6 +23,7 @@
 
 node *DFCdoDispatchFunCalls (node *ast);
 node *DFCdoDispatchFunCallsOneFundef (node *ast);
+node *DFCdoDispatchFunCallsOneFundefAnon (node *arg_node, info *arg_info);
 
 node *DFCmodule (node *arg_node, info *arg_info);
 node *DFCfundef (node *arg_node, info *arg_info);

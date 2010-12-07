@@ -377,6 +377,7 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
 /** <!--********************************************************************-->
  *
  * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)
+ * @fn node *NTCdoNewTypeCheckOneFundefAnon( node *arg_node)
  *
  *****************************************************************************/
 
@@ -468,6 +469,17 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
          */
         global.maxspec = oldmaxspec;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+NTCdoNewTypeCheckOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("NTCdoNewTypeCheckOneFundefAnon");
+
+    arg_node = NTCdoNewTypeCheckOneFunction (arg_node);
 
     DBUG_RETURN (arg_node);
 }

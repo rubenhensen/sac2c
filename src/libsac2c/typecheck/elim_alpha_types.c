@@ -194,6 +194,33 @@ EATdoEliminateAlphaTypesOneFunction (node *arg_node)
 /******************************************************************************
  *
  * function:
+ *   node *EATdoEliminateAlphaTypesOneFundefAnon( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   adjusts all old vardec types according to the attached ntypes!
+ *   Called for one function only, from anonymous traversal
+ *
+ * @param arg_node: An N_fundef node
+ *        arg_info: Ignored; supplied only to placate anonymous traversal call
+ *
+ * @result: updated N_fundef node
+ *
+ ******************************************************************************/
+
+node *
+EATdoEliminateAlphaTypesOneFundefAnon (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("EATdoEliminateAlphaTypesOneFundefAnon");
+
+    arg_node = EATdoEliminateAlphaTypesOneFunction (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *EATmodule( node *arg_node, info *arg_info)
  *
  * description:
