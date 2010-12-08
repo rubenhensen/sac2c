@@ -4689,7 +4689,7 @@ $as_echo_n "checking sac2crc system flags... " >&6; }
 OSFLAGS=""
 case "$target_os" in
   solaris*)
-    OSFLAGS="-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"
+    OSFLAGS="-D__EXTENSIONS__ -D_XPG6 -DMUST_INIT_YY -DPIC"
     LD_DYNAMIC="-G -dy"
     LD_PATH="-L%path% -R%path%"
     LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"

@@ -526,7 +526,7 @@ AC_MSG_CHECKING([sac2crc system flags])
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-    OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -DPIC"]
+    OSFLAGS=["-D__EXTENSIONS__ -D_XPG6 -DMUST_INIT_YY -DPIC"]
     LD_DYNAMIC=["-G -dy"]
     LD_PATH=["-L%path% -R%path%"]
     LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"
