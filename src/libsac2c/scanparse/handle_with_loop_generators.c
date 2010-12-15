@@ -624,25 +624,22 @@ HWLGspfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("HWLGspfold");
 
-    if (INFO_FOLD (arg_info) != NULL) {
-        /* Already have atleast one f( a, b) */
-        current_fold = INFO_FOLD (arg_info);
-        INFO_FOLD (arg_info) = EXPRS_NEXT (current_fold);
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    if (current_fold != NULL) {
-        EXPRS_NEXT (current_fold) = INFO_FOLD (arg_info);
-        INFO_FOLD (arg_info) = current_fold;
-    } else {
-        INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
-    }
-
     if (INFO_HWLG_MODE (arg_info) == T_create) {
-        /*if( SPFOLD_NEXT( arg_node) != NULL) {
-          SPFOLD_NEXT( arg_node) = TRAVdo( SPFOLD_NEXT( arg_node), arg_info);
-          }*/
+
+        if (INFO_FOLD (arg_info) != NULL) {
+            /* Already have atleast one f( a, b) */
+            current_fold = INFO_FOLD (arg_info);
+            INFO_FOLD (arg_info) = EXPRS_NEXT (current_fold);
+        }
+
+        arg_node = TRAVcont (arg_node, arg_info);
+
+        if (current_fold != NULL) {
+            EXPRS_NEXT (current_fold) = INFO_FOLD (arg_info);
+            INFO_FOLD (arg_info) = current_fold;
+        } else {
+            INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
+        }
 
         new_withop = TBmakeSpfold (DUPdoDupTree (SPFOLD_NEUTRAL (arg_node)));
         SPFOLD_NS (new_withop) = NSdupNamespace (SPFOLD_NS (arg_node));
