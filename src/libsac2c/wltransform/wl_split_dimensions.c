@@ -458,9 +458,12 @@ GetNum (node *scalar)
 /** <!-- ****************************************************************** -->
  * @fn info *PushDim(info *arg_info)
  *
- * @brief Increases the level of the dimension encoded in the info structure.
- *        This includes incrementing INFO_CURRENT_DIM and pushing an empty
- *        N_ids node on the withloop indices stack.
+ * @brief Increases the level of the dimension encoded in the info
+ *        structure.  This includes incrementing INFO_CURRENT_DIM and
+ *        pushing an empty N_ids node on the withloop indices
+ *        stack. Unless there are framed indices, in which case one
+ *        index is moved from the frame to the indices stack rather
+ *        than creating a new ids.
  *
  * @param arg_info info structure
  *
@@ -494,7 +497,7 @@ PushDim (info *arg_info)
 /** <!-- ****************************************************************** -->
  * @fn info PopDim( info *arg_info)
  *
- * @brief Undoes the changes done by PushDim and removes on level of nesting
+ * @brief Undoes the changes done by PushDim and removes one level of nesting
  *        from the info structure.
  *
  * @param arg_info info structure
@@ -2178,7 +2181,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
     DBUG_ENTER ("ProcessBlock");
 
     /*
-     * first process all the remaining strides on this level
+     * first process all the remaining blocks on this level
      */
     next = TRAVopt (next, arg_info);
 
