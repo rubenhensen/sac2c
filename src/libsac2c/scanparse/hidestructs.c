@@ -18,6 +18,7 @@
 #include "memory.h"
 #include "str.h"
 #include "ctinfo.h"
+#include "globals.h"
 
 /**
  *
