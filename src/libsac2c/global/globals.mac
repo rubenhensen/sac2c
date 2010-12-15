@@ -214,6 +214,11 @@ GLOBAL (bool, irregular_arrays, FALSE)
  * Irregular arrays are disbaled by default
  */
 
+/*
+ * Struct support options
+ */
+GLOBAL (bool, enable_structs, FALSE)
+
 /* -- Runtime Specialization -- */
 
 /*

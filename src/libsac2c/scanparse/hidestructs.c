@@ -17,6 +17,7 @@
 #include "dbug.h"
 #include "memory.h"
 #include "str.h"
+#include "ctinfo.h"
 
 /**
  *
@@ -155,6 +156,13 @@ HSstructdef (node *arg_node, info *arg_info)
     char *sname;
 
     DBUG_ENTER ("HSstructdef");
+
+    if (!global.enable_structs) {
+        CTIabort (
+          "Structs are a novel feature of SAC that is only partially implemented. "
+          "Struct support needs to be enabled through the -enable_structs option. "
+          "Beware that code with structs may arbitrarily misbehave for the time being.");
+    }
 
     module = INFO_MODULE (arg_info);
     sname = STRcat (STRUCT_TYPE, STRUCTDEF_NAME (arg_node));
