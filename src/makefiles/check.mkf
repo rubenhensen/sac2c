@@ -95,7 +95,7 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
 	  fi 
 	@ if which diff >/dev/null;         \
 	  then                              \
-            if diff $@ $@.new;              \
+            if diff $@ $@.new >/dev/null;   \
 	      then rm $@.new;               \
 	      else mv $@.new $@;            \
             fi	                            \
