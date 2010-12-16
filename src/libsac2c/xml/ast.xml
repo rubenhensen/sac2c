@@ -327,8 +327,12 @@
       </traversal>
       <traversal id="PKNLG" name="Prepare cuda kernel generation" default="sons" include="prepare_kernel_generation.h" >
         <travuser>
+          <node name="Fundef" />
           <node name="With" />
+          <node name="With2" />
+          <node name="Genarray" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="Prf" />
         </travuser>
       </traversal>

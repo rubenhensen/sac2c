@@ -8,6 +8,7 @@
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
+#include "free.h"
 #include "globals.h"
 #include "dbug.h"
 #include "ctinfo.h"
@@ -322,7 +323,7 @@ KPPid (node *arg_node, info *arg_info)
 node *
 KPPprf (node *arg_node, info *arg_info)
 {
-    node *dim, *free_var, *array;
+    node *lhs_avis, *rhs_avis, *dim, *free_var, *array;
     int dim_num;
     ntype *type;
 
@@ -427,6 +428,21 @@ KPPprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         PRF_ARGS (arg_node)
           = TCappendExprs (PRF_ARGS (arg_node), TCids2Exprs (INFO_WITH3IDS (arg_info)));
+        break;
+    case F_type_conv:
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        rhs_avis = ID_AVIS (PRF_ARG2 (arg_node));
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = TBmakeId (rhs_avis);
+
+        /* The left hand side of type_conv is not cuda local and needs
+         * needs to have the same simple type as the newly created
+         * right hand side id */
+        lhs_avis = IDS_AVIS (INFO_LHS (arg_info));
+        AVIS_ISCUDALOCAL (lhs_avis) = FALSE;
+
+        TYsetSimpleType (TYgetScalar (AVIS_TYPE (lhs_avis)),
+                         TYgetSimpleType (TYgetScalar (AVIS_TYPE (rhs_avis))));
         break;
     default:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

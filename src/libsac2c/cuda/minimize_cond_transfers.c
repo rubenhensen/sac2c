@@ -232,8 +232,6 @@ MCTRANfundef (node *arg_node, info *arg_info)
             INFO_FUNARGNUM (arg_info) = 0;
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-            printf ("Traverse conditional function %s\n", FUNDEF_NAME (arg_node));
-
             old_incondfun = INFO_INCONDFUN (arg_info);
             INFO_INCONDFUN (arg_info) = TRUE;
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);

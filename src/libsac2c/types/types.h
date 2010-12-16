@@ -1095,6 +1095,9 @@ typedef struct REUSE_INFO_T {
 #define IDX_LOOPIDX 4
 #define IDX_EXTID 5
 
+#define ACCTY_REUSE 0
+#define ACCTY_COALESCE 1
+
 typedef struct CUDA_INDEX_T {
     unsigned int type;
     int coefficient;
@@ -1105,6 +1108,7 @@ typedef struct CUDA_INDEX_T {
 
 typedef struct CUDA_ACCESS_INFO_T {
     Matrix coe_mtx;
+    unsigned int type; /* Type of this access: either reuse or coalescing */
     int dim;
     int nestlevel;
     node *array;

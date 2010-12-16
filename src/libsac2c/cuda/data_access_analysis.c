@@ -24,7 +24,12 @@
 #include "LookUpTable.h"
 #include "str.h"
 
-typedef enum { trav_normal, trav_collect } travmode_t;
+typedef enum {
+    trav_normal,
+    trav_collect,
+    trav_recal /* Recalculating the shared memory size based on new blocking factor
+                  information */
+} travmode_t;
 
 /* Essential information of a WL partition */
 typedef struct PART_INFO {
@@ -115,7 +120,7 @@ MakeInfo ()
     INFO_ACCESS_INFO (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_FROMAP (result) = FALSE;
-    INFO_BLOCKSZ_1D (result) = global.cuda_1d_block_x;
+    INFO_BLOCKSZ_1D (result) = global.cuda_1d_block_large;
 
     DBUG_RETURN (result);
 }
@@ -349,7 +354,10 @@ CoalescingNeeded (cuda_access_info_t *access_info, info *arg_info)
 
     DBUG_ASSERT ((access_info != NULL), "Access info is NULL!");
 
-    if (CUAI_DIM (access_info) == 2) {
+    /* If the first dimension of a 2D array access contains threadIdx.x
+     * and the second dimension is not constant, we need to consider
+     * coalescing the access */
+    if (CUAI_DIM (access_info) == 2 && !CUAI_ISCONSTANT (access_info, 1)) {
         index = CUAI_INDICES (access_info, 0);
         DBUG_ASSERT ((index != NULL), "First index of access info is NULL!");
         while (index != NULL) {
@@ -365,15 +373,19 @@ CoalescingNeeded (cuda_access_info_t *access_info, info *arg_info)
 }
 
 static cuda_access_info_t *
-CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
+CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 {
     int i, coefficient, shmem_size, dim;
     cuda_index_t *index;
-    int DIMS[2][2] = {{1, INFO_BLOCKSZ_1D (arg_info)},
+    int DIMS[2][2] = {{1, global.cuda_1d_block_large},
                       {global.cuda_2d_block_y, global.cuda_2d_block_x}};
     node *sharray_shp = NULL;
 
-    DBUG_ENTER ("CreateSharedMemory");
+    DBUG_ENTER ("CreateSharedMemoryForReuse");
+
+    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+        CUAI_TYPE (access_info) = ACCTY_REUSE;
+    }
 
     dim = CUAI_DIM (access_info);
 
@@ -395,10 +407,18 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
                     shmem_size += (coefficient * DIMS[dim - 1][0]);
                     break;
                 case IDX_LOOPIDX:
-                    shmem_size += (coefficient * DIMS[dim - 1][1]);
-                    /* Set the block size for the loop dim */
-                    AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
-                    AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
+                    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+                        shmem_size += (coefficient * DIMS[dim - 1][1]);
+                        /* Set the block size for the loop dim */
+                        AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
+                        /* Set the blocking factor of the loop index */
+                        if (DIMS[dim - 1][1] <= AVIS_BLOCKSIZE (CUIDX_ID (index))
+                            || AVIS_BLOCKSIZE (CUIDX_ID (index)) == 0) {
+                            AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
+                        }
+                    } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+                        shmem_size += (coefficient * AVIS_BLOCKSIZE (CUIDX_ID (index)));
+                    }
                     break;
                 default:
                     break;
@@ -431,6 +451,10 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
         sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
     }
 
+    if (INFO_TRAVMODE (arg_info) == trav_recal) {
+        CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+    }
+
     CUAI_SHARRAYSHP (access_info)
       = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp);
     CUAI_SHARRAY (access_info)
@@ -440,11 +464,127 @@ CreateSharedMemory (cuda_access_info_t *access_info, info *arg_info)
                                    TYgetScalar (AVIS_TYPE (CUAI_ARRAY (access_info)))))),
                                SHarray2Shape (CUAI_SHARRAYSHP (access_info))));
 
-    /*
-      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) =
-        TCappendVardec( FUNDEF_VARDEC( INFO_FUNDEF( arg_info)),
-                        TBmakeVardec( CUAI_SHARRAY( access_info), NULL));
-    */
+    DBUG_RETURN (access_info);
+}
+
+static cuda_access_info_t *
+CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info)
+{
+    int i, coefficient, shmem_size, dim, cuwl_dim;
+    cuda_index_t *index;
+    int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
+    int blocking_factor = global.cuda_2d_block_x;
+    node *sharray_shp = NULL;
+
+    DBUG_ENTER ("CreateSharedMemoryForCoalescing");
+
+    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+        CUAI_TYPE (access_info) = ACCTY_COALESCE;
+    }
+
+    /* To be able to execute this function, we must have
+     * come across a array access which has the following
+     * charateristics:
+     *
+     *   1) The array access is 2D;
+     *   2) The array access is no reusable;
+     *   3) The first dimension of this array access
+     *      contains threadIdx.x
+     *   4) The second dimension of this array access
+     *      id NOT constant.
+     *
+     * If all three are true, we need to create a shared
+     * memory with appropriate size to enable memory
+     * access coalescing. We need to be very careful
+     * when dealing with 1D cuda withloop. This is because
+     * if we reuse the predefined 1D thread block size
+     * i.e. 256 or 512, we could end up have not enough
+     * shared memory space to allocate just shared memory
+     * for just one thread block! For this reason, we
+     * need to reduce the size of the 1D thread block.
+     * The current choice is 64. However, this might not
+     * be the best size and experimental space needs to
+     * be explored. Also, we set the loop blocking size
+     * to the size of the x dimension of 2D thread block,
+     * i.e. 16 or 32 depending on the CUDA architecture.
+     */
+
+    dim = CUAI_DIM (access_info);
+    DBUG_ASSERT ((dim == 2), "Non-2D array found for coalescing!");
+
+    /* Dimension of cuda withloop can be either 1d or 2d */
+    cuwl_dim = INFO_CUWLDIM (arg_info);
+
+    for (i = dim - 1; i >= 0; i--) {
+        DBUG_ASSERT ((!CUAI_ISCONSTANT (access_info, i)),
+                     "Constant index found array to be coalesced!");
+        index = CUAI_INDICES (access_info, i);
+        DBUG_ASSERT ((index != NULL), "Found NULL index!");
+
+        shmem_size = 0;
+
+        while (index != NULL) {
+            coefficient = abs (CUIDX_COEFFICIENT (index));
+
+            switch (CUIDX_TYPE (index)) {
+            case IDX_THREADIDX_X:
+                if (cuwl_dim == 1) {
+                    shmem_size += (coefficient * global.cuda_1d_block_small);
+                } else if (cuwl_dim == 2) {
+                    shmem_size += (coefficient * block_sizes_2d[1]);
+                } else {
+                    DBUG_ASSERT ((0), "Unknown array dimension found!");
+                }
+                break;
+            case IDX_THREADIDX_Y:
+                DBUG_ASSERT ((cuwl_dim != 1), "THREADIDX_Y found for 1d cuda withloop!");
+                shmem_size += (coefficient * block_sizes_2d[0]);
+                break;
+            case IDX_LOOPIDX:
+                if (INFO_TRAVMODE (arg_info) == trav_normal) {
+                    shmem_size += (coefficient * blocking_factor);
+                    /* Set the block size for the loop dim */
+                    AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
+                    /* Set the blocking factor of the loop index */
+                    if (blocking_factor <= AVIS_BLOCKSIZE (CUIDX_ID (index))
+                        || AVIS_BLOCKSIZE (CUIDX_ID (index)) == 0) {
+                        AVIS_BLOCKSIZE (CUIDX_ID (index)) = blocking_factor;
+                    }
+                } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+                    shmem_size += (coefficient * AVIS_BLOCKSIZE (CUIDX_ID (index)));
+                }
+                break;
+            default:
+                break;
+            }
+
+            index = CUIDX_NEXT (index);
+        }
+
+        /* For 2D share memory, size of each dimension must be a multiple
+         * of the corresonding block size */
+        if (dim == 2) {
+            int size = block_sizes_2d[i];
+            if (shmem_size % size != 0) {
+                shmem_size = ((shmem_size + size) / size) * size;
+            }
+        }
+        sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
+    }
+
+    if (INFO_TRAVMODE (arg_info) == trav_recal) {
+        CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+    }
+
+    CUAI_SHARRAYSHP (access_info)
+      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp);
+    CUAI_SHARRAY (access_info)
+      = TBmakeAvis (TRAVtmpVarName ("shmem"),
+                    TYmakeAKS (TYmakeSimpleType (
+                                 CUd2shSimpleTypeConversion (TYgetSimpleType (
+                                   TYgetScalar (AVIS_TYPE (CUAI_ARRAY (access_info)))))),
+                               SHarray2Shape (CUAI_SHARRAYSHP (access_info))));
+
     DBUG_RETURN (access_info);
 }
 
@@ -558,6 +698,7 @@ node *
 DAAwith (node *arg_node, info *arg_info)
 {
     int dim;
+    travmode_t old_mode;
 
     DBUG_ENTER ("DAAwith");
 
@@ -573,6 +714,14 @@ DAAwith (node *arg_node, info *arg_info)
 
         INFO_NEST_LEVEL (arg_info) += dim;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+        if (!WITH_CUDARIZABLE (arg_node)) {
+            old_mode = INFO_TRAVMODE (arg_info);
+            INFO_TRAVMODE (arg_info) = trav_recal;
+            WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+            INFO_TRAVMODE (arg_info) = old_mode;
+        }
+
         INFO_NEST_LEVEL (arg_info) -= dim;
 
         if (INFO_PRAGMA (arg_info) != NULL) {
@@ -753,7 +902,12 @@ DAAassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_TRAVMODE (arg_info) == trav_collect) {
         ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
-    } else {
+    } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    else {
         DBUG_ASSERT ((0), "Wrong traverse mode!");
     }
 
@@ -827,6 +981,23 @@ DAAprf (node *arg_node, info *arg_info)
                         }
                     }
                 }
+            } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+                if (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)) != NULL) {
+                    if (CUAI_TYPE (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)))
+                        == ACCTY_REUSE) {
+                        ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info))
+                          = CreateSharedMemoryForReuse (ASSIGN_ACCESS_INFO (
+                                                          INFO_LASTASSIGN (arg_info)),
+                                                        arg_info);
+                    } else if (CUAI_TYPE (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)))
+                               == ACCTY_COALESCE) {
+                        ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info))
+                          = CreateSharedMemoryForCoalescing (ASSIGN_ACCESS_INFO (
+                                                               INFO_LASTASSIGN (
+                                                                 arg_info)),
+                                                             arg_info);
+                    }
+                }
             }
             break;
         case F_idxs2offset:
@@ -868,11 +1039,14 @@ DAAprf (node *arg_node, info *arg_info)
                 rank = MatrixRank (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)));
                 /* If rank of the coefficient matric is less than the nestlevel,
                  * we have potential data reuse for the accessed array */
-                if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))
-                    || CoalescingNeeded (INFO_ACCESS_INFO (arg_info), arg_info)) {
-                    INFO_BLOCKSZ_1D (arg_info) = 64;
+                if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))) {
                     INFO_ACCESS_INFO (arg_info)
-                      = CreateSharedMemory (INFO_ACCESS_INFO (arg_info), arg_info);
+                      = CreateSharedMemoryForReuse (INFO_ACCESS_INFO (arg_info),
+                                                    arg_info);
+                } else if (CoalescingNeeded (INFO_ACCESS_INFO (arg_info), arg_info)) {
+                    INFO_ACCESS_INFO (arg_info)
+                      = CreateSharedMemoryForCoalescing (INFO_ACCESS_INFO (arg_info),
+                                                         arg_info);
                 } else {
                     INFO_ACCESS_INFO (arg_info)
                       = TBfreeCudaAccessInfo (INFO_ACCESS_INFO (arg_info));

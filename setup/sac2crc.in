@@ -421,7 +421,7 @@ CC               := "/home/unibench/ctca-cuda.stca.herts.ac.uk/cuda-3.0/cuda/bin
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
 */
 CCFLAGS          :=  "-arch=sm_@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
-                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
+                     "-Xcompiler -fno-builtin"
 CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"
 LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
@@ -480,7 +480,7 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
 target intelcc:
 
 CC             := "icc"
-CCFLAGS        := "-shared-intel"
+CCFLAGS        := "-shared-intel -xsse4.2"
 
 target intelcc_sse2::intelcc:
 

@@ -257,10 +257,10 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
         INDENT;
         INDENT;
         fprintf (global.outfile, "dim3 grid((%s-%s)/%d+1);\n", var_ANY[0], var_ANY[1],
-                 global.cuda_1d_block_x);
+                 global.cuda_1d_block_large);
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 block(%d);", global.cuda_1d_block_x);
+        fprintf (global.outfile, "dim3 block(%d);", global.cuda_1d_block_large);
     } else if (array_dim == 2) {
         INDENT;
         INDENT;

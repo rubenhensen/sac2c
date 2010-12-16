@@ -225,6 +225,7 @@ TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int nestlevel)
     info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
 
     CUAI_MATRIX (info) = NULL;
+    CUAI_TYPE (info) = ACCTY_REUSE;
     CUAI_ARRAY (info) = array;
     CUAI_ARRAYSHP (info) = arrayshp;
     CUAI_SHARRAY (info) = NULL;

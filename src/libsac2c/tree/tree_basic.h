@@ -236,6 +236,7 @@ extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, in
                                                  int nestlevel);
 
 #define CUAI_MATRIX(a) (a->coe_mtx)
+#define CUAI_TYPE(a) (a->type)
 #define CUAI_ARRAY(a) (a->array)
 #define CUAI_ARRAYSHP(a) (a->arrayshp)
 #define CUAI_SHARRAY(a) (a->sharray)

@@ -681,18 +681,8 @@ node *
 CUKNLwith2 (node *arg_node, info *arg_info)
 {
     node *old_with;
-    /* node *new_avis; */
 
     DBUG_ENTER ("CUKNLwith2");
-
-    /*
-      if( INFO_COLLECT( arg_info) &&
-            ( IDS_AVIS( INFO_SUBALLOC_LHS( arg_info)) ==
-              IDS_AVIS( INFO_LETIDS( arg_info))) {
-        new_avis = DUPdoDupNode( IDS_AVIS( INFO_LETIDS( arg_info)));
-
-      }
-    */
 
     old_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;

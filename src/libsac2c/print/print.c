@@ -397,6 +397,8 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
     const char *CUDA_IDX_NAMES[6]
       = {"CONSTANT", "THREADIDX_X", "THREADIDX_Y", "THREADIDX", "LOOPIDX", "EXTID"};
 
+    const char *ACCESS_TYPE_NAMES[2] = {"REUSE", "COALESCE"};
+
     DBUG_ENTER ("CUAIprintCudaAccessInfo");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
@@ -413,12 +415,15 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
     MatrixDisplay (CUAI_MATRIX (ASSIGN_ACCESS_INFO (arg_node)), global.outfile);
 
     INDENT;
-    fprintf (global.outfile, "     - Reuse Array: %s(avis: %p)\n",
+    fprintf (global.outfile, "     - Access Type: %s\n",
+             ACCESS_TYPE_NAMES[CUAI_TYPE (ASSIGN_ACCESS_INFO (arg_node))]);
+    INDENT;
+    fprintf (global.outfile, "     - Access Array: %s(avis: %p)\n",
              AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))),
              CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
-    fprintf (global.outfile, "     - Reuse Array Shape: ");
+    fprintf (global.outfile, "     - Access Array Shape: ");
     PRTarray (CUAI_ARRAYSHP (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
     fprintf (global.outfile, "\n");
 
@@ -1506,7 +1511,7 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.backend != BE_mutc) {
+    if (global.backend != BE_mutc && global.backend != BE_cuda) {
         if (TYPEDEF_COPYFUN (arg_node) != NULL) {
             fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
                      TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
