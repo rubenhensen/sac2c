@@ -882,9 +882,15 @@ ALfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("ALfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("AL", ("traversing body of (%s) %s",
+                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                           FUNDEF_NAME (arg_node)));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
+        DBUG_PRINT ("AL", ("leaving body of (%s) %s",
+                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                           FUNDEF_NAME (arg_node)));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -965,6 +971,7 @@ ALlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALlet");
 
+    DBUG_PRINT ("AL", ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
     switch (INFO_MODE (arg_info)) {
     case MODE_recurse:
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
