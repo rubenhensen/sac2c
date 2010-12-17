@@ -296,6 +296,19 @@ OPTcheckOptionConsistency (void)
     }
 #endif
 
+    if ((global.mtmode != MT_none) && (global.num_threads == 1)) {
+        CTIwarn ("Multithreading activated but number of threads set to 1."
+                 "Compiling in sequential mode");
+        global.mtmode = MT_none;
+    }
+
+    if ((global.mtmode == MT_none) && (global.num_threads != 1)) {
+        CTIwarn ("Number of threads set via -num_threads option, "
+                 "but multithreading not activated. "
+                 "Compiling in sequential mode");
+        global.num_threads = 1;
+    }
+
     DBUG_VOID_RETURN;
 }
 
