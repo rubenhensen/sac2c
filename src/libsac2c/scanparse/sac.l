@@ -108,16 +108,22 @@ int charpos = 0;
 "<]"                       { FILTER( TRIANGLEBR_R); }
 "["                        { FILTER( SQBR_L); }
 "]"                        { FILTER( SQBR_R); }
-":"                        { FILTER( COLON); }
 "::"                       { FILTER( DCOLON); }
+":"                        { FILTER( COLON); }
 ";"                        { FILTER( SEMIC); }
 ","                        { FILTER( COMMA); }
 "="                        { FILTER( LET); }
-"."                        { FILTER( DOT); }
-".."                       { FILTER( TWODOTS); }
 "..."                      { FILTER( THREEDOTS); }
+".."                       { FILTER( TWODOTS); }
+"."                        { FILTER( DOT); }
 "->"                       { FILTER( RIGHTARROW); }
 "<-"                       { FILTER( LEFTARROW); }
+
+"+="                       { FILTER( ADDON); }
+"-="                       { FILTER( SUBON); }
+"*="                       { FILTER( MULON); }
+"/="                       { FILTER( DIVON); }
+"%="                       { FILTER( MODON); }
 
 "&"                        { FILTER( AMPERS);} /* needed for refernce params */
 "!"                        { FILTER( EXCL); }  /* needed for monop supp      */
@@ -130,13 +136,6 @@ int charpos = 0;
 "<="                       { FILTER( LE);   }  /* needed for WL generators   */
 "<"                        { FILTER( LT);   }  /* needed for WL generators   */
 ">"                        { FILTER( GT);   }  /* needed for SIBs            */
-
-"+="                       { FILTER( ADDON); }
-"-="                       { FILTER( SUBON); }
-"*="                       { FILTER( MULON); }
-"/="                       { FILTER( DIVON); }
-"%="                       { FILTER( MODON); }
-
 
 "_dim_A_"                  { FILTER( PRF_DIM_A); }
 "_shape_A_"                { FILTER( PRF_SHAPE_A); }
